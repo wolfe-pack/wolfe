@@ -12,7 +12,7 @@ package scalapplcodefest
  * the functions assigned to sub-parts of the term. For example, the term `x + 1` for a state `x->2` is mapped
  * to the sum of the meaning of `x` (the Int `2`) and the meaning of `1` (the Int `1`).
  *
- * Denotations of terms are defined through their [[scalapplcodefest.Term# e v a l]] method.
+ * Denotations of terms are defined through their `eval` method.
  * @author Sebastian Riedel
  */
 trait Term[+T] {
