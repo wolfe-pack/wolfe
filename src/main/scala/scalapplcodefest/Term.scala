@@ -5,7 +5,8 @@ package scalapplcodefest
  * lambda abstractions. Notably, every probabilistic model itself is a term (composed of other terms).
  *
  * The meaning of a term is defined
- * through [[http://en.wikipedia.org/wiki/Denotational_semantics compositional denotational semantics]]. Given a
+ * through [[http://en.wikipedia.org/wiki/Denotational_semantics compositional denotational semantics]]
+ * (sometimes also known as '''mathematical semantics'''). Given a
  * [[scalapplcodefest.State]] (or "environment") which assigns free variables to objects of type `T`,
  * a term itself denotes an object of that domain. In other words, the meaning of a term is a mapping from
  * [[scalapplcodefest.State]] objects to objects of type `T`. Usually this function is recursively defined through
@@ -53,6 +54,15 @@ case class Constant[T](value: T) extends Term[T] {
   def default = value
 }
 
+/**
+ * FunctionTerm evaluate to partial functions. The domain where the function is defined for
+ * may depend on the state, and is hence a term itself.
+ * @tparam A type of arguments to function.
+ * @tparam B type of return values of function.
+ */
+trait FunctionTerm[-A,+B] extends Term[PartialFunction[A,B]] {
+  def domain[C<:A]:Term[Iterable[C]]
+}
 
 
 
