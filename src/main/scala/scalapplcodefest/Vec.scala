@@ -6,6 +6,8 @@ import scalaxy.loops._
 
 
 /**
+ * An interface to vectors.
+ *
  * @author Sebastian Riedel
  */
 trait Vec {
@@ -34,7 +36,7 @@ object Vec {
     result
   }
 
-  def sumSingletons(args:Array[SingletonVec]) = {
+  def sumSingletons(args:Array[UnitVector]) = {
     val result = new SparseTroveVec(args.length)
     for (arg <- args) result += arg
     result
@@ -48,14 +50,14 @@ object Vec {
   }
 }
 
-final class SingletonVec(val index:Int, val value:Double) extends Vec {
+final class UnitVector(val index:Int, val value:Double = 1.0) extends Vec {
   def apply(index: Int) = if (this.index == index) value else 0.0
 
-  def ===(that:SingletonVec) = this.index == that.index && this.value == that.value
+  def ===(that:UnitVector) = this.index == that.index && this.value == that.value
   def activeIndices = Seq(index)
   def dot(that: Vec) = that(index) * value
   override def equals(p1: Any) = p1 match {
-    case x:SingletonVec => x.index == index && x.value == value
+    case x:UnitVector => x.index == index && x.value == value
     case _ => false
   }
 }
@@ -89,7 +91,7 @@ final class SparseTroveVec(initialCapacity:Int) extends Vec {
     this
   }
 
-  def +=(that:SingletonVec):this.type =  {
+  def +=(that:UnitVector):this.type =  {
     map.adjustOrPutValue(that.index,that.value,that.value)
     this
   }

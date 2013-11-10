@@ -24,6 +24,24 @@ object Util {
   }
 
   /**
+   * Set (possibly infinite in size) that requires a complex implementation,
+   * and which implementation is not immediately needed.
+   */
+  class SetToBeImplementedLater[T] extends Set[T] {
+    def contains(elem: T) = ???
+    def +(elem: T) = ???
+    def -(elem: T) = ???
+    def iterator = ???
+  }
+
+  /**
+   * Creates a set class that is not yet implemented
+   * @tparam T type of set elements
+   * @return the set.
+   */
+  def setToBeImplementedLater[T] = new SetToBeImplementedLater[T]
+
+  /**
    * Loads a resource as stream. This returns either a resource in the classpath,
    * or in case no such named resource exists, from the file system.
    */

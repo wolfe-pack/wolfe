@@ -1,5 +1,8 @@
 package scalapplcodefest
 
+import scala.language.implicitConversions
+
+
 /**
  * A `Term` is a typed expression of the language. The core types of terms are constants, variables and
  * lambda abstractions. Notably, every probabilistic model itself is a term (composed of other terms).
@@ -34,6 +37,17 @@ trait Term[+T] {
   def variables: Set[Variable[Any]]
 
   /**
+   * A domain of a term is a set of values such that for every possible state the term evaluates to a value that
+   * is within this domain. The domain may be larger than necessary, that is, some values in the domain may not
+   * ever be produced by the term. The domain itself is a term. This means that its value may be undefined
+   * (because it can contain free variables).
+   * @tparam C a superclass of `T`. This type parameter is introduced to maintain covariance of terms. Clients
+   *           can use this parameter to, in a way, cast the domain to a set of more generic objects.
+   * @return the domain of the term.
+   */
+  def domain[C >: T]: Term[Set[C]]
+
+  /**
    * A default value assigned to this term. This value does not depend on a
    * state. Default values are useful to determine the type parameter of a term
    * w/o going through manifests.
@@ -44,6 +58,19 @@ trait Term[+T] {
 }
 
 /**
+ * Scala covariance/contravariance for Sets requires frequent casting of sets.
+ * Import this object to make casting a little easier.
+ */
+object SetCastHelper {
+
+  case class Proxy[T](term: Term[Set[T]]) {
+    def as[C] = term.asInstanceOf[Term[Set[C]]]
+  }
+
+  implicit def toTermSetProxy[T](term: Term[Set[T]]) = Proxy(term)
+}
+
+/**
  * The simplest type of term always evaluates to the same value.
  * @param value the value of the constant.
  * @tparam T the type of the constant.
@@ -51,50 +78,9 @@ trait Term[+T] {
 case class Constant[T](value: T) extends Term[T] {
   def eval(state: State) = Some(value)
   def variables = Set.empty
+  def domain[C >: T] = Constant(Set(value))
   def default = value
 }
 
-/**
- * FunctionTerm evaluate to partial functions. The domain where the function is defined for
- * may depend on the state, and is hence a term itself.
- * @tparam A type of arguments to function.
- * @tparam B type of return values of function.
- */
-trait FunctionTerm[-A,+B] extends Term[PartialFunction[A,B]] {
-  def domain[C<:A]:Term[Set[C]]
-  def range[D>:B]:Term[Set[D]]
-}
-
-/**
- * Application of a function to an argument
- * @param function the function to apply
- * @param arg the argument to apply the function to
- * @tparam A argument type of function
- * @tparam B return type of function
- */
-case class FunApp[A,B](function:FunctionTerm[A,B],arg:Term[A]) extends Term[B] {
-  def eval(state: State) =
-    for (f <- function.eval(state);
-         a <- arg.eval(state);
-         v <- f.lift(a)) yield v
-  def variables = function match {
-    case Predicate(_,dom,ran) => ???
-    case _ => SetUtil.Union(Set(function.variables,arg.variables))
-  }
-  def default = function.default(function.domain.default.head)
-}
-
-/**
- * A term that is evaluated to a range of integers.
- * @param from starting integer (included)
- * @param to end integer (excluded)
- */
-case class RangeSet(from:Term[Int],to:Term[Int]) extends Term[Set[Int]] {
-  def eval(state: State) =
-    for (f <- from.eval(state);
-         t <- to.eval(state)) yield Range(f,t).toSet
-  def variables = SetUtil.Union(Set(from.variables,to.variables))
-  def default = Range(from.default,to.default).toSet
-}
 
 

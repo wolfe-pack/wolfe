@@ -13,14 +13,15 @@ case class Predicate[A,B](name:Symbol, dom:Term[Set[A]],ran:Term[Set[B]]) extend
   thisPredicate =>
 
   def eval(state: State) = {
-    for (d <- domain[A].eval(state)) yield new PartialFunction[A, B] {
+    for (d <- superDomain[A].eval(state)) yield new PartialFunction[A, B] {
       def apply(a: A) = GroundAtom(thisPredicate, a).eval(state).get
       def isDefinedAt(a: A) = d(a) && GroundAtom(thisPredicate, a).eval(state).isDefined
     }
   }
   def variables = AllGroundAtoms(thisPredicate).asInstanceOf[Set[Variable[Any]]]
-  def domain[C <: A] = dom.asInstanceOf[Term[Set[C]]]
-  def range[C >: B] = ran.asInstanceOf[Term[Set[C]]]
+  def superDomain[C <: A] = dom.asInstanceOf[Term[Set[C]]]
+  def superRange[C >: B] = ran.asInstanceOf[Term[Set[C]]]
+  def domain[C >: PartialFunction[A, B]] = Constant(Util.setToBeImplementedLater)
   def default = { case a => ran.default.head }
   override def toString = name.toString()
 }
@@ -35,7 +36,7 @@ case class Predicate[A,B](name:Symbol, dom:Term[Set[A]],ran:Term[Set[B]]) extend
  * @tparam B the type of the variable.
  */
 case class GroundAtom[A, B](predicate: Predicate[A, B], arg: A) extends Variable[B] {
-  def domain[C >: B] = predicate.range
+  def domain[C >: B] = predicate.superRange
 }
 
 /**
@@ -49,9 +50,9 @@ case class AllGroundAtoms[A,B](predicate:Predicate[A,B], condition:State = State
   }
   def +(elem: Variable[B]) = SetUtil.Union(Set(this,Set(elem)))
   def -(elem: Variable[B]) = SetUtil.SetMinus(this,Set(elem))
-  def iterator = predicate.domain[A].eval(condition) match {
+  def iterator = predicate.superDomain[A].eval(condition) match {
     case Some(domain) => domain.iterator.map(arg => GroundAtom(predicate,arg))
-    case _ => sys.error(s"The domain of $predicate is undefined" )
+    case _ => sys.error(s"The domain of $predicate is undefined and we can't iterate over its atoms" )
   }
 }
 

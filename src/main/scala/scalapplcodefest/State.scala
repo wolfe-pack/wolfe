@@ -7,6 +7,8 @@ package scalapplcodefest
  */
 trait State {
 
+  self =>
+
   /**
    * Value assigned to the variable, or `None` if no value is assigned.
    * @param variable the variable to get the value for.
@@ -21,6 +23,17 @@ trait State {
    */
   def domain:Set[Variable[Any]]
 
+
+  /**
+   * Overlays this state over the given state. This may not be a good idea to use when adding several states.
+   * @param state the state to "underlay".
+   * @return A state that returns the value assigned to the variable, if such value exists,
+   *         or the value assigned to the variable in the passed state.
+   */
+  def +(state: State) = new State {
+    def get[V](variable: Variable[V]) = self.get(variable).orElse(state.get(variable))
+    def domain = self.domain ++ state.domain
+  }
 }
 
 /**
@@ -41,4 +54,18 @@ object State {
 class MapBasedState(val map:Map[Variable[Any],Any]) extends State {
   def get[T](variable: Variable[T]) = map.get(variable).asInstanceOf[Option[T]]
   def domain = map.keySet
+}
+
+/**
+ * A state with exactly one variable->value mapping.
+ * @param variable the variable to be set
+ * @param state the value of the variable
+ * @tparam Value the type of value the variable takes on.
+ */
+case class SingletonState[Value](variable: Variable[Value], state: Value) extends State {
+  def get[V](variable: Variable[V]) =
+    if (variable == this.variable) Some(state.asInstanceOf[V]) else None
+
+  override def toString = variable + " = " + state
+  override def domain = Set(variable)
 }
