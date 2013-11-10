@@ -13,7 +13,7 @@ trait Variable[+T] extends Term[T] {
    * depends on the sentence length.
    * @return the term that describes the domain of a variable.
    */
-  def domain: Term[Iterable[T]]
+  def domain[C>:T]: Term[Set[C]]
 
   /**
    * The denotation of a variable.
@@ -22,7 +22,7 @@ trait Variable[+T] extends Term[T] {
    *        `state` as `dom` and `dom(value)` holds. Else `None`.
    */
   def eval(state: State) = {
-    for (dom <- domain.eval(state); value <- state.get(this) if dom.toSet(value)) yield value
+    for (dom <- domain.eval(state); value <- state.get(this) if dom(value)) yield value
   }
 
   /**
@@ -36,4 +36,14 @@ trait Variable[+T] extends Term[T] {
    * @return the default value assigned to this term.
    */
   def default = domain.default.head
+}
+
+/**
+ * Simple named variable. Identity based on name and domain.
+ * @param name name of the variable.
+ * @param dom domain of the variable
+ * @tparam T type of values associated with variable.
+ */
+case class Var[T](name:Symbol,dom:Term[Set[T]]) extends Variable[T] {
+  def domain[C >: T] = dom.asInstanceOf[Term[Set[C]]]
 }

@@ -28,6 +28,10 @@ trait State {
  */
 object State {
   def apply(map: Map[Variable[Any], Any]): State = new MapBasedState(map)
+  val empty = new State {
+    def get[T](variable: Variable[T]) = None
+    def domain = Set.empty
+  }
 }
 
 /**

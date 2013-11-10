@@ -61,8 +61,40 @@ case class Constant[T](value: T) extends Term[T] {
  * @tparam B type of return values of function.
  */
 trait FunctionTerm[-A,+B] extends Term[PartialFunction[A,B]] {
-  def domain[C<:A]:Term[Iterable[C]]
+  def domain[C<:A]:Term[Set[C]]
+  def range[D>:B]:Term[Set[D]]
 }
 
+/**
+ * Application of a function to an argument
+ * @param function the function to apply
+ * @param arg the argument to apply the function to
+ * @tparam A argument type of function
+ * @tparam B return type of function
+ */
+case class FunApp[A,B](function:FunctionTerm[A,B],arg:Term[A]) extends Term[B] {
+  def eval(state: State) =
+    for (f <- function.eval(state);
+         a <- arg.eval(state);
+         v <- f.lift(a)) yield v
+  def variables = function match {
+    case Predicate(_,dom,ran) => ???
+    case _ => SetUtil.Union(Set(function.variables,arg.variables))
+  }
+  def default = function.default(function.domain.default.head)
+}
+
+/**
+ * A term that is evaluated to a range of integers.
+ * @param from starting integer (included)
+ * @param to end integer (excluded)
+ */
+case class RangeSet(from:Term[Int],to:Term[Int]) extends Term[Set[Int]] {
+  def eval(state: State) =
+    for (f <- from.eval(state);
+         t <- to.eval(state)) yield Range(f,t).toSet
+  def variables = SetUtil.Union(Set(from.variables,to.variables))
+  def default = Range(from.default,to.default).toSet
+}
 
 
