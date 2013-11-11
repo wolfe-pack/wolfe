@@ -10,7 +10,7 @@ object ChunkingExample {
 
   def main(args: Array[String]) {
     val Chunks = Set("O", "B-VP", "B-NP", "B-PP", "I-VP", "I-NP", "I-PP")
-    val SentenceLengths = Constant(Range(0, 1000).toSet)
+    val SentenceLengths = RangeSet(0,1000)
     val n = Var('n, SentenceLengths)
     val Tokens = RangeSet(0, n)
     val chunk = Predicate('chunk, RangeSet(0, n), Chunks)
@@ -38,7 +38,7 @@ object ChunkingExample {
 
     println(plus3.variables)
     println(test.variables)
-    //println((test2 | n -> 2).variables)
+    println((test2 | n -> 2).variables)
 
     println(uncurried.eval(State.empty).get(2->30))
     println(eval.get(3))

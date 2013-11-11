@@ -4,7 +4,7 @@ package scalapplcodefest
  * @author Sebastian Riedel
  */
 trait SetValue[T] extends Set[T] {
-  def +(elem: T) = SetUtil.Union(Set(this, Set(elem)))
+  def +(elem: T) = SetUtil.Union(List(this, Set(elem)))
   def -(elem: T) = SetUtil.SetMinus(this, Set(elem))
 }
 
@@ -16,10 +16,22 @@ trait SetValue[T] extends Set[T] {
 case class RangeSet(from: Term[Int], to: Term[Int]) extends Term[Set[Int]] {
   def eval(state: State) =
     for (f <- from.eval(state);
-         t <- to.eval(state)) yield Range(f, t).toSet
-  def variables = SetUtil.Union(Set(from.variables, to.variables))
-  def default = Range(from.default, to.default).toSet
+         t <- to.eval(state)) yield RangeSetValue(f, t)
+  def variables = SetUtil.Union(List(from.variables, to.variables))
+  def default = RangeSetValue(from.default, to.default)
   def domain[C >: Set[Int]] = Constant(Util.setToBeImplementedLater)
+}
+
+/**
+ * Set-version of a [[scala.collection.immutable.Range]].
+ * @param from start (included)
+ * @param to end (excluded)
+ */
+case class RangeSetValue(from:Int,to:Int) extends SetValue[Int] {
+  val range = Range(from,to)
+  val rangeSet = range.toSet
+  def contains(elem: Int) = rangeSet(elem)
+  def iterator = range.iterator
 }
 
 trait AllObjects[T] extends SetValue[T] {

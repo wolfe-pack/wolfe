@@ -69,7 +69,7 @@ case class FunApp[A, B](function: FunTerm[A, B], arg: Term[A]) extends Term[B] {
          v <- f.lift(a)) yield v
   def variables = function match {
     //case Predicate(_, dom, ran) => ???
-    case _ => SetUtil.Union(Set(function.variables, arg.variables))
+    case _ => SetUtil.Union(List(function.variables, arg.variables))
   }
   def default = function.default(function.superDomain.default.head)
   def domain[C >: B] = function.superRange.asInstanceOf[Term[Set[C]]]

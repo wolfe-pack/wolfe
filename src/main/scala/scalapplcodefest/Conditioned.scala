@@ -8,10 +8,11 @@ case class Conditioned[T](term:Term[T], condition:State) extends Term[T] {
   def variables = {
     def conditionVars(vars: Set[Variable[Any]]): Set[Variable[Any]] = vars match {
       case SetUtil.Union(args) => SetUtil.Union(args.map(conditionVars))
+      case SetUtil.SetMinus(set,without) => SetUtil.SetMinus(conditionVars(set),conditionVars(without))
       case AllGroundAtoms(pred,state) => AllGroundAtoms(pred,state + condition)
       case _ => vars
     }
-    conditionVars(term.variables)
+    SetUtil.SetMinus(conditionVars(term.variables),condition.domain)
   }
   def default = term.default
   def domain[C >: T] = term.domain[C]

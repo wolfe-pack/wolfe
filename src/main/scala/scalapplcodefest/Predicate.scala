@@ -49,7 +49,7 @@ case class AllGroundAtoms[A,B](predicate:Predicate[A,B], condition:State = State
     case GroundAtom(p,_) => p == predicate
     case _ => false
   }
-  def +(elem: Variable[B]) = SetUtil.Union(Set(this,Set(elem)))
+  def +(elem: Variable[B]) = SetUtil.Union(List(this,Set(elem)))
   def -(elem: Variable[B]) = SetUtil.SetMinus(this,Set(elem))
   def iterator = predicate.superDomain.eval(condition) match {
     case Some(domain) => domain.iterator.map(arg => GroundAtom(predicate,arg))
