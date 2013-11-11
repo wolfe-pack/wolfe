@@ -14,7 +14,7 @@ object ChunkingExample {
     val n = Var('n, SentenceLengths)
     val triple = Var('pair, SentenceLengths x SentenceLengths x SentenceLengths)
     val Tokens = RangeSet(0, n)
-    val chunk = Predicate('chunk, Tokens, Chunks)
+    val chunk = Predicate('chunk, RangeSet(0, n), Chunks)
     val next = Predicate('neighbor, Constant(Set(0 -> 1)), Bools)
     val next2 = Predicate('next2, Tokens x Tokens, Bools)
     val atom = chunk.atom(0)
@@ -31,8 +31,10 @@ object ChunkingExample {
     val plus3 = for (x <- Ints; y <- Ints; z <- Ints) yield x + y + z
 
     val eval = plus1.eval(State.empty)
+    val Curried2(uncurried) = plus2
 
 
+    println(uncurried.eval(State.empty).get(2->30))
     println(eval.get(3))
     println(plus2.eval(State.empty).get(2)(3))
     println(plus3.eval(State.empty).get(2)(3)(4))
