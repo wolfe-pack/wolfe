@@ -12,9 +12,11 @@ object ChunkingExample {
     val Chunks = Set("O", "B-VP", "B-NP", "B-PP", "I-VP", "I-NP", "I-PP")
     val SentenceLengths = Constant(Range(0, 1000).toSet)
     val n = Var('n, SentenceLengths)
-    val triple = Var('pair, SentenceLengths x SentenceLengths x SentenceLengths)
     val Tokens = RangeSet(0, n)
     val chunk = Predicate('chunk, RangeSet(0, n), Chunks)
+    val word = Predicate('word, RangeSet(0, n), Strings)
+
+    val triple = Var('pair, SentenceLengths x SentenceLengths x SentenceLengths)
     val next = Predicate('neighbor, Constant(Set(0 -> 1)), Bools)
     val next2 = Predicate('next2, Tokens x Tokens, Bools)
     val atom = chunk.atom(0)
@@ -26,13 +28,17 @@ object ChunkingExample {
     val test3 = Tokens.flatMap(i => Tokens.map( j => chunk(i)))
     val test4 = for (i <- Tokens; j <- Tokens) yield next(i,j)
     val test5 = for (i <- Tokens; j <- Tokens; k <- Tokens) yield i + k + j
-    val plus1 = for (x <- Ints) yield x + 1
-    val plus2 = for (x <- Ints; y <- Ints) yield x + y
-    val plus3 = for (x <- Ints; y <- Ints; z <- Ints) yield x + y + z
+    val Dom = Constant(Ints)
+    val plus1 = for (x <- Dom) yield x + 1
+    val plus2 = for (x <- Dom; y <- Dom) yield x + y
+    val plus3 = for (x <- Dom; y <- Dom; z <- Dom) yield x + y + z
 
     val eval = plus1.eval(State.empty)
     val Curried2(uncurried) = plus2
 
+    println(plus3.variables)
+    println(test.variables)
+    //println((test2 | n -> 2).variables)
 
     println(uncurried.eval(State.empty).get(2->30))
     println(eval.get(3))

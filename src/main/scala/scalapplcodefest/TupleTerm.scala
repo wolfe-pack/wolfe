@@ -51,3 +51,10 @@ case class CartesianProductTerm3[A1,A2,A3](a1:Term[Set[A1]],a2:Term[Set[A2]],a3:
   def default = Set((a1.default.head,a2.default.head,a3.default.head))
   def domain[C >: Set[(A1, A2, A3)]] = Constant(Util.setToBeImplementedLater)
 }
+
+object Wrapped3 {
+  def unroll[A1,A2,A3](term:TupleTerm2[(A1,A2),A3]):Option[TupleTerm3[A1,A2,A3]] = term match {
+    case TupleTerm2(TupleTerm2(a1,a2),a3) => Some(TupleTerm3(a1,a2,a3))
+    case _ => None
+  }
+}

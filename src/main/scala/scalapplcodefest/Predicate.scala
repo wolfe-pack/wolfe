@@ -8,21 +8,19 @@ package scalapplcodefest
  *
  * @author Sebastian Riedel
  */
-case class Predicate[A,B](name:Symbol, dom:Term[Set[A]],ran:Term[Set[B]]) extends FunctionTerm[A, B] {
+case class Predicate[A,B](name:Symbol, superDomain:Term[Set[A]],superRange:Term[Set[B]]) extends FunTerm[A, B] {
 
   thisPredicate =>
 
   def eval(state: State) = {
-    for (d <- superDomain[A].eval(state)) yield new PartialFunction[A, B] {
+    for (d <- superDomain.eval(state); r <- superRange.eval(state)) yield new Fun[A, B] {
       def apply(a: A) = GroundAtom(thisPredicate, a).eval(state).get
-      def isDefinedAt(a: A) = d(a) && GroundAtom(thisPredicate, a).eval(state).isDefined
+      def isDefinedAt(a: A) = d(a) && GroundAtom(thisPredicate, a).eval(state).exists(r(_))
     }
   }
   def variables = AllGroundAtoms(thisPredicate).asInstanceOf[Set[Variable[Any]]]
-  def superDomain[C <: A] = dom.asInstanceOf[Term[Set[C]]]
-  def superRange[C >: B] = ran.asInstanceOf[Term[Set[C]]]
-  def domain[C >: PartialFunction[A, B]] = Constant(Util.setToBeImplementedLater)
-  def default = { case a => ran.default.head }
+  def domain[C >: Fun[A, B]] = Constant(Util.setToBeImplementedLater)
+  def default = Fun{ case a => superRange.default.head }
   override def toString = name.toString()
 }
 
@@ -36,7 +34,10 @@ case class Predicate[A,B](name:Symbol, dom:Term[Set[A]],ran:Term[Set[B]]) extend
  * @tparam B the type of the variable.
  */
 case class GroundAtom[A, B](predicate: Predicate[A, B], arg: A) extends Variable[B] {
-  def domain[C >: B] = predicate.superRange
+
+  import SetCastHelper._
+
+  def domain[C >: B] = predicate.superRange.as[C]
 }
 
 /**
@@ -50,7 +51,7 @@ case class AllGroundAtoms[A,B](predicate:Predicate[A,B], condition:State = State
   }
   def +(elem: Variable[B]) = SetUtil.Union(Set(this,Set(elem)))
   def -(elem: Variable[B]) = SetUtil.SetMinus(this,Set(elem))
-  def iterator = predicate.superDomain[A].eval(condition) match {
+  def iterator = predicate.superDomain.eval(condition) match {
     case Some(domain) => domain.iterator.map(arg => GroundAtom(predicate,arg))
     case _ => sys.error(s"The domain of $predicate is undefined and we can't iterate over its atoms" )
   }
