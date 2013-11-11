@@ -7,7 +7,7 @@ case class Conditioned[T](term:Term[T], condition:State) extends Term[T] {
   def eval(state: State) = term.eval(state + condition)
   def variables = {
     def conditionVars(vars: Set[Variable[Any]]): Set[Variable[Any]] = vars match {
-      case SetUtil.Union(args) => SetUtil.Union(args.map(conditionVars))
+      case SetUtil.SetUnion(args) => SetUtil.SetUnion(args.map(conditionVars))
       case SetUtil.SetMinus(set,without) => SetUtil.SetMinus(conditionVars(set),conditionVars(without))
       case AllGroundAtoms(pred,state) => AllGroundAtoms(pred,state + condition)
       case _ => vars
@@ -17,3 +17,5 @@ case class Conditioned[T](term:Term[T], condition:State) extends Term[T] {
   def default = term.default
   def domain[C >: T] = term.domain[C]
 }
+
+

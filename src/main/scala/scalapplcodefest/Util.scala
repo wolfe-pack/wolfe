@@ -79,9 +79,9 @@ object SetUtil {
     def iterator = set.iterator.filterNot(without)
   }
 
-  case class Union[T](sets: List[Set[T]]) extends Set[T] {
+  case class SetUnion[T](sets: List[Set[T]]) extends Set[T] {
     def contains(elem: T) = sets.exists(_.contains(elem))
-    def +(elem: T) = Union(Set(elem) :: sets)
+    def +(elem: T) = SetUnion(Set(elem) :: sets)
     def -(elem: T) = SetMinus(this, Set(elem))
     def iterator = sets.flatMap(identity).iterator
   }

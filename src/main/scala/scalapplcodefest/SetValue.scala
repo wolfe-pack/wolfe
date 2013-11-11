@@ -4,8 +4,16 @@ package scalapplcodefest
  * @author Sebastian Riedel
  */
 trait SetValue[T] extends Set[T] {
-  def +(elem: T) = SetUtil.Union(List(this, Set(elem)))
+  def +(elem: T) = SetUtil.SetUnion(List(this, Set(elem)))
   def -(elem: T) = SetUtil.SetMinus(this, Set(elem))
+}
+
+
+case class FirstOrderOperator[T,R](op:FunTerm[(T,T),R],arguments:Term[Set[T]]) extends Term[R] {
+  def eval(state: State) = ???
+  def variables = ???
+  def domain[C >: R] = ???
+  def default = ???
 }
 
 /**
@@ -17,7 +25,7 @@ case class RangeSet(from: Term[Int], to: Term[Int]) extends Term[Set[Int]] {
   def eval(state: State) =
     for (f <- from.eval(state);
          t <- to.eval(state)) yield RangeSetValue(f, t)
-  def variables = SetUtil.Union(List(from.variables, to.variables))
+  def variables = SetUtil.SetUnion(List(from.variables, to.variables))
   def default = RangeSetValue(from.default, to.default)
   def domain[C >: Set[Int]] = Constant(Util.setToBeImplementedLater)
 }

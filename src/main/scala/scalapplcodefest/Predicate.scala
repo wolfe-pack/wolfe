@@ -8,19 +8,19 @@ package scalapplcodefest
  *
  * @author Sebastian Riedel
  */
-case class Predicate[A,B](name:Symbol, superDomain:Term[Set[A]],superRange:Term[Set[B]]) extends FunTerm[A, B] {
+case class Predicate[A,B](name:Symbol, superDomain:Term[Set[A]],targetSet:Term[Set[B]]) extends FunTerm[A, B] {
 
   thisPredicate =>
 
   def eval(state: State) = {
-    for (d <- superDomain.eval(state); r <- superRange.eval(state)) yield new Fun[A, B] {
+    for (d <- superDomain.eval(state); r <- targetSet.eval(state)) yield new Fun[A, B] {
       def apply(a: A) = GroundAtom(thisPredicate, a).eval(state).get
       def isDefinedAt(a: A) = d(a) && GroundAtom(thisPredicate, a).eval(state).exists(r(_))
     }
   }
   def variables = AllGroundAtoms(thisPredicate).asInstanceOf[Set[Variable[Any]]]
   def domain[C >: Fun[A, B]] = Constant(Util.setToBeImplementedLater)
-  def default = Fun{ case a => superRange.default.head }
+  def default = Fun{ case a => targetSet.default.head }
   override def toString = name.toString()
 }
 
@@ -37,7 +37,7 @@ case class GroundAtom[A, B](predicate: Predicate[A, B], arg: A) extends Variable
 
   import SetCastHelper._
 
-  def domain[C >: B] = predicate.superRange.as[C]
+  def domain[C >: B] = predicate.targetSet.as[C]
 }
 
 /**
@@ -49,7 +49,7 @@ case class AllGroundAtoms[A,B](predicate:Predicate[A,B], condition:State = State
     case GroundAtom(p,_) => p == predicate
     case _ => false
   }
-  def +(elem: Variable[B]) = SetUtil.Union(List(this,Set(elem)))
+  def +(elem: Variable[B]) = SetUtil.SetUnion(List(this,Set(elem)))
   def -(elem: Variable[B]) = SetUtil.SetMinus(this,Set(elem))
   def iterator = predicate.superDomain.eval(condition) match {
     case Some(domain) => domain.iterator.map(arg => GroundAtom(predicate,arg))
