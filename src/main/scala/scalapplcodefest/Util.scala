@@ -86,5 +86,11 @@ object SetUtil {
     def iterator = sets.flatMap(identity).iterator
   }
 
+  case class SetMap[T,R](set:Set[T],function:T=>R) extends SetValue[R] {
+    lazy val mapped = set.map(function)
+    def contains(elem: R) = mapped(elem)
+    def iterator = mapped.iterator
+  }
+
 }
 

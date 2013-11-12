@@ -19,10 +19,11 @@ trait FunTerm[A, B] extends Term[Fun[A, B]] {
  * @tparam A argument type.
  * @tparam B return type.
  */
-trait Fun[A,B] extends PartialFunction[A,B] {
-  def superDomain:Set[A]
-  def domain:Set[A] = superDomain.filter(isDefinedAt) //TODO: would like to make this lazy
-  def targetSet:Set[B]
+trait Fun[A, B] extends PartialFunction[A, B] {
+  def superDomain: Set[A]
+  def domain: Set[A] = superDomain.filter(isDefinedAt)
+  //TODO: would like to make this lazy
+  def targetSet: Set[B]
 
 }
 
@@ -30,24 +31,31 @@ trait Fun[A,B] extends PartialFunction[A,B] {
  * Helper object to build Fun objects.
  */
 object Fun {
-  def apply[A,B](f:PartialFunction[A,B], dom:Set[A] = new All[A], ran:Set[B] = new All[B]) = new Fun[A,B] {
+  def apply[A, B](f: PartialFunction[A, B], dom: Set[A] = new All[A], ran: Set[B] = new All[B]) = new Fun[A, B] {
     def apply(v1: A) = f.apply(v1)
     def isDefinedAt(x: A) = dom(x) && f.lift(x).exists(ran(_))
     def superDomain = dom
     def targetSet = ran
   }
+
+  def empty[A, B] = new Fun[A, B] {
+    def superDomain = Set.empty
+    def targetSet = Set.empty
+    def apply(v1: A) = sys.error(s"Empty function not defined at $v1")
+    def isDefinedAt(x: A) = false
+  }
+
 }
 
 /**
  * Helper to create constant function terms typed as FunTerm.
  */
 object ConstantFun {
-  def apply[A,B](fun:Fun[A,B]) = new Constant(fun) with FunTerm[A,B] {
+  def apply[A, B](fun: Fun[A, B]) = new Constant(fun) with FunTerm[A, B] {
     def superDomain = Constant(fun.superDomain)
     def targetSet = Constant(fun.targetSet)
   }
 }
-
 
 
 /**
@@ -67,7 +75,8 @@ case class FunApp[A, B](function: FunTerm[A, B], arg: Term[A]) extends Term[B] {
     case _ => SetUtil.SetUnion(List(function.variables, arg.variables))
   }
   def default = function.default(function.superDomain.default.head)
-  def domain[C >: B] = function.targetSet.asInstanceOf[Term[Set[C]]]
+  def domain[C >: B] = Image(function)(arg.domain).asInstanceOf[Term[Set[C]]]
+
 }
 
 /**
@@ -80,7 +89,7 @@ case class FunApp[A, B](function: FunTerm[A, B], arg: Term[A]) extends Term[B] {
  * @tparam A type of arguments to function.
  * @tparam B type of return values of function.
  */
-case class LambdaAbstraction[A, B](variable: Variable[A], term: Term[B]) extends FunTerm[A, B]  {
+case class LambdaAbstraction[A, B](variable: Variable[A], term: Term[B]) extends FunTerm[A, B] {
 
   lambda =>
 
@@ -95,15 +104,47 @@ case class LambdaAbstraction[A, B](variable: Variable[A], term: Term[B]) extends
       override def isDefinedAt(a: A) = d(a) && get(a).exists(r(_))
     }
   }
-  def variables = SetUtil.SetMinus(term.variables,Set(variable))
-  def default = new Fun[A,B] {
+  def variables = SetUtil.SetMinus(term.variables, Set(variable))
+  def default = new Fun[A, B] {
     def superDomain = lambda.superDomain.default
     def targetSet = lambda.targetSet.default
     def apply(v1: A) = term.default
     def isDefinedAt(x: A) = variable.domain.default(x)
   }
-  def domain[C >: Fun[A,B]] = Constant(Util.setToBeImplementedLater)
+  def domain[C >: Fun[A, B]] = Constant(AllFunctions(superDomain.eval().get, targetSet.eval().get)).asInstanceOf[Term[Set[C]]]
 }
+
+/**
+ * Set of a functions from domain to range
+ * @param domain the domain of the functions
+ * @param range the range of the functions
+ * @tparam A argument type.
+ * @tparam B return type.
+ */
+case class AllFunctions[A, B](domain: Set[A], range: Set[B]) extends SetValue[Fun[A, B]] {
+
+  self =>
+
+  def contains(elem: Fun[A, B]) = elem.domain == domain && elem.targetSet == range
+  def iterator = {
+    def allFunctions(d: List[A], r: List[B], funs: List[Fun[A, B]] = List(Fun.empty)): List[Fun[A, B]] = {
+      d match {
+        case Nil => funs
+        case newArg :: tail =>
+          val newFunctions = for (v <- r; f <- funs) yield new Fun[A, B] {
+            def superDomain = self.domain
+            def targetSet = range
+            override def domain = self.domain
+            def apply(v1: A) = if (v1 == newArg) v else f(v1)
+            def isDefinedAt(x: A) = x == newArg || f.isDefinedAt(x)
+          }
+          allFunctions(tail, r, newFunctions)
+      }
+    }
+    allFunctions(domain.toList, range.toList).iterator
+  }
+}
+
 
 /**
  * The Image of a function term is the set of return values we get by applying
@@ -112,25 +153,25 @@ case class LambdaAbstraction[A, B](variable: Variable[A], term: Term[B]) extends
  * @tparam A argument type of function.
  * @tparam B return type of function.
  */
-case class Image[A,B](fun:FunTerm[A,B]) extends Term[Set[B]] {
-  def eval(state: State) = ???
-  def variables = ???
-  def domain[C >: Set[B]] = ???
-  def default = ???
+case class Image[A, B](fun: FunTerm[A, B])(dom: Term[Set[A]] = fun.domain) extends Term[Set[B]] {
+  def eval(state: State) = for (f <- fun.eval(state); d <- dom.eval(state)) yield SetUtil.SetMap(d,f)
+  def variables = fun.variables
+  def domain[C >: Set[B]] = Constant(Util.setToBeImplementedLater[C])
+  def default = fun.default.targetSet
 }
 
 
-trait UncurriedLambdaAbstraction[A1,R] {
-  def lambda1:LambdaAbstraction[A1,_]
-  def lambdaLast:LambdaAbstraction[_,R]
+trait UncurriedLambdaAbstraction[A1, R] {
+  def lambda1: LambdaAbstraction[A1, _]
+  def lambdaLast: LambdaAbstraction[_, R]
   def variables = lambda1.variables
   def targetSet = lambdaLast.targetSet
 }
 
 object Curried2 {
-  def unapply[A1,A2,R](f:FunTerm[A1,Fun[A2,R]]) = {
+  def unapply[A1, A2, R](f: FunTerm[A1, Fun[A2, R]]) = {
     f match {
-      case l1@LambdaAbstraction(v1,l2@LambdaAbstraction(v2,term)) => Some(UncurriedLambdaAbstraction2[A1,A2,R](l1,l2))
+      case l1@LambdaAbstraction(v1, l2@LambdaAbstraction(v2, term)) => Some(UncurriedLambdaAbstraction2[A1, A2, R](l1, l2))
       case _ => None
     }
   }
@@ -139,10 +180,14 @@ object Curried2 {
 
 case class UncurriedLambdaAbstraction2[A1, A2, R](lambda1: LambdaAbstraction[A1, Fun[A2, R]],
                                                   lambdaLast: LambdaAbstraction[A2, R])
-  extends FunTerm[(A1, A2), R] with UncurriedLambdaAbstraction[A1,R] {
+  extends FunTerm[(A1, A2), R] with UncurriedLambdaAbstraction[A1, R] {
 
-  def eval(state: State) = for (f <- lambda1.eval(state)) yield Fun({case (a1,a2) => f(a1)(a2)})
+  def eval(state: State) = for (f <- lambda1.eval(state)) yield Fun({
+    case (a1, a2) => f(a1)(a2)
+  })
   def domain[C >: Fun[(A1, A2), R]] = Constant(Util.setToBeImplementedLater)
-  def default = Fun({case (a1,a2) => lambda1.default(a1)(a2)})
-  def superDomain = CartesianProductTerm2(lambda1.variable.domain,lambdaLast.variable.domain)
+  def default = Fun({
+    case (a1, a2) => lambda1.default(a1)(a2)
+  })
+  def superDomain = CartesianProductTerm2(lambda1.variable.domain, lambdaLast.variable.domain)
 }

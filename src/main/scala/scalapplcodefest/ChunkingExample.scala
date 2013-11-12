@@ -45,6 +45,11 @@ object ChunkingExample {
     println(plus2.eval(State.empty).get(2)(3))
     println(plus3.eval(State.empty).get(2)(3)(4))
 
+    val allBinaryOperators = AllFunctions(CartesianProduct2(Bools,Bools),Bools)
+    for (op <- allBinaryOperators) {
+      println("---")
+      for (a1 <- Bools;a2 <- Bools) println(op(a1 -> a2))
+    }
 
 
 

@@ -9,11 +9,11 @@ trait SetValue[T] extends Set[T] {
 }
 
 
-case class FirstOrderOperator[T,R](op:FunTerm[(T,T),R],arguments:Term[Set[T]]) extends Term[R] {
-  def eval(state: State) = ???
-  def variables = ???
-  def domain[C >: R] = ???
-  def default = ???
+case class Reduce[T](op:FunTerm[(T,T),T],arguments:Term[Set[T]]) extends Term[T] {
+  def eval(state: State) = for (f <- op.eval(state); set <- arguments.eval(state)) yield set.reduce((a1,a2) => f(a1->a2))
+  def variables = op.variables ++ arguments.variables
+  def domain[C >: T] = op.superDomain.asInstanceOf[Term[Set[C]]]
+  def default = op.targetSet.default.head
 }
 
 /**

@@ -26,7 +26,7 @@ trait Term[+T] {
    * @param state the state object that binds variables to values.
    * @return `Some(value)` if term's `value` is defined with respect to `state`, `None` otherwise.
    */
-  def eval(state: State): Option[T]
+  def eval(state: State = State.empty): Option[T]
 
   /**
    * Free variables in term. Notice that the returned sets can often have structure and be implicitly defined.
