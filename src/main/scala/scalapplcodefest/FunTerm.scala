@@ -19,41 +19,36 @@ trait FunTerm[A, B] extends Term[Fun[A, B]] {
  * @tparam A argument type.
  * @tparam B return type.
  */
-trait Fun[A,B] extends PartialFunction[A,B]
+trait Fun[A,B] extends PartialFunction[A,B] {
+  def superDomain:Set[A]
+  def domain:Set[A] = superDomain.filter(isDefinedAt) //TODO: would like to make this lazy
+  def targetSet:Set[B]
+
+}
 
 /**
  * Helper object to build Fun objects.
  */
 object Fun {
-  def apply[A,B](f:PartialFunction[A,B]) = new Fun[A,B] {
+  def apply[A,B](f:PartialFunction[A,B], dom:Set[A] = new All[A], ran:Set[B] = new All[B]) = new Fun[A,B] {
     def apply(v1: A) = f.apply(v1)
-    def isDefinedAt(x: A) = f.isDefinedAt(x)
+    def isDefinedAt(x: A) = dom(x) && f.lift(x).exists(ran(_))
+    def superDomain = dom
+    def targetSet = ran
   }
 }
 
 /**
- * A function constant with restricted super domain and range.
- * @param function the partial function underlying the function.
- * @param superDomain a super domain (everything outside of this domain is undefined)
- * @param targetSet a super range (everything outside of this range can never be returned)
- * @tparam A type of arguments to function.
- * @tparam B type of return values of function.
+ * Helper to create constant function terms typed as FunTerm.
  */
-case class ConstantFun[A, B](function: Fun[A, B], superDomain: Term[Set[A]], targetSet: Term[Set[B]]) extends FunTerm[A, B] {
-
-  val restrictedFunction = new Fun[A, B] {
-    def apply(v1: A) = function(v1)
-    def isDefinedAt(x: A) = {
-      val d = superDomain.eval(State.empty)
-      val r = targetSet.eval(State.empty)
-      d.isDefined && function.isDefinedAt(x) && d.get(x) && r.isDefined && r.get(function(x))
-    }
+object ConstantFun {
+  def apply[A,B](fun:Fun[A,B]) = new Constant(fun) with FunTerm[A,B] {
+    def superDomain = Constant(fun.superDomain)
+    def targetSet = Constant(fun.targetSet)
   }
-  def eval(state: State) = Some(restrictedFunction)
-  def variables = superDomain.variables ++ targetSet.variables
-  def domain[C >: Fun[A, B]] = Constant(Set(restrictedFunction))
-  def default = function
 }
+
+
 
 /**
  * Application of a function to an argument
@@ -86,17 +81,24 @@ case class FunApp[A, B](function: FunTerm[A, B], arg: Term[A]) extends Term[B] {
  * @tparam B type of return values of function.
  */
 case class LambdaAbstraction[A, B](variable: Variable[A], term: Term[B]) extends FunTerm[A, B]  {
+
+  lambda =>
+
   def superDomain = variable.domain
   def targetSet = term.domain[B]
   def eval(state: State) = {
     for (r <- targetSet.eval(state); d <- superDomain.eval(state)) yield new Fun[A, B] {
+      def superDomain = d
+      def targetSet = r
       def get(a: A) = term.eval(state + SingletonState(variable, a))
       def apply(a: A) = get(a).get
-      def isDefinedAt(a: A) = d(a) && get(a).isDefined
+      override def isDefinedAt(a: A) = d(a) && get(a).exists(r(_))
     }
   }
   def variables = SetUtil.SetMinus(term.variables,Set(variable))
   def default = new Fun[A,B] {
+    def superDomain = lambda.superDomain.default
+    def targetSet = lambda.targetSet.default
     def apply(v1: A) = term.default
     def isDefinedAt(x: A) = variable.domain.default(x)
   }

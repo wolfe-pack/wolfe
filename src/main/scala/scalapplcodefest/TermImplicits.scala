@@ -64,7 +64,7 @@ object TermImplicits {
 
 
   case class RichIntTerm(i: Term[Int]) {
-    def +(that: Term[Int]) = FunApp(ConstantFun(Math.IntAdd, CartesianProductTerm2(Ints, Ints), Ints), TupleTerm2(i, that))
+    def +(that: Term[Int]) = FunApp(ConstantFun(Math.IntAdd), TupleTerm2(i, that))
   }
 
   case class RichFunctionTerm[A, B](f: FunTerm[A, B]) {

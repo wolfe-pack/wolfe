@@ -16,6 +16,8 @@ case class Predicate[A,B](name:Symbol, superDomain:Term[Set[A]],targetSet:Term[S
     for (d <- superDomain.eval(state); r <- targetSet.eval(state)) yield new Fun[A, B] {
       def apply(a: A) = GroundAtom(thisPredicate, a).eval(state).get
       def isDefinedAt(a: A) = d(a) && GroundAtom(thisPredicate, a).eval(state).exists(r(_))
+      def superDomain = d
+      def targetSet = r
     }
   }
   def variables = AllGroundAtoms(thisPredicate).asInstanceOf[Set[Variable[Any]]]

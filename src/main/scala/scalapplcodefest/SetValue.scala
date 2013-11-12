@@ -79,4 +79,7 @@ case object Doubles extends AllObjects[Double] {
   override def head = 0.0
 }
 
+class All[T] extends AllObjects[T] {
+  def iterator = Util.tooLargeToIterate
+}
 
