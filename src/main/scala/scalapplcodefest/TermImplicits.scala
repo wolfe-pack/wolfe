@@ -27,6 +27,11 @@ object TermImplicits {
   //math
   def e_(index:Term[Int],value:Term[Double] = Constant(1.0)) = UnitVec(index,value)
 
+  implicit def uncurry[A1, A2, R](f: FunTerm[A1, Fun[A2, R]]) = f match {
+    case Curried2(uncurried) => uncurried
+    case _ => ???
+  }
+
 
 
   case class RichSetTerm[T](s: Term[Set[T]]) {

@@ -38,6 +38,8 @@ object ChunkingExample {
 
     val feat = Quantified.VecSum(for (i <- Tokens) yield e_(i))
 
+    val feat2 = Quantified.VecSum(for (i <- Tokens; j <- Tokens) yield e_(i))
+
 
 
     val eval = plus1.eval(State.empty)

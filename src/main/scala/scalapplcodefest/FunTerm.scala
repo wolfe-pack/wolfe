@@ -180,6 +180,7 @@ object Curried2 {
     }
   }
 
+
 }
 
 case class UncurriedLambdaAbstraction2[A1, A2, R](lambda1: LambdaAbstraction[A1, Fun[A2, R]],
