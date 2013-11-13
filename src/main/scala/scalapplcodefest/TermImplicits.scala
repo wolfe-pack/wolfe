@@ -1,6 +1,7 @@
 package scalapplcodefest
 
 import scala.language.implicitConversions
+import scalapplcodefest.Math.UnitVec
 
 /**
  * This object provides a set of implicit conversions that allow users
@@ -11,6 +12,7 @@ import scala.language.implicitConversions
 object TermImplicits {
 
   implicit def intToConstant(x: Int) = Constant(x)
+  implicit def doubleToConstant(x: Double) = Constant(x)
   implicit def setToConstant[T](x: Set[T]) = Constant(x)
   implicit def toTupleTerm2[T1,T2](tuple:(Term[T1],Term[T2])) = TupleTerm2(tuple._1,tuple._2)
   implicit def toRichTerm[T](term:Term[T]) = RichTerm(term)
@@ -21,6 +23,11 @@ object TermImplicits {
   implicit def toRichPredicate2[A1, A2, B](p: Predicate[(A1, A2), B]) = RichPredicate2(p)
   implicit def toRichSetTerm[T](s: Term[Set[T]]) = RichSetTerm(s)
   implicit def toFinishedCartesianProduct[A](unfinished: UnfinishedCartesianProduct[A]) = unfinished.finish
+
+  //math
+  def e_(index:Term[Int],value:Term[Double] = Constant(1.0)) = UnitVec(index,value)
+
+
 
   case class RichSetTerm[T](s: Term[Set[T]]) {
 

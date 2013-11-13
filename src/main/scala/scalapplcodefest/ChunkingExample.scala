@@ -1,5 +1,7 @@
 package scalapplcodefest
 
+import scalapplcodefest.Math.UnitVec
+
 
 /**
  * @author Sebastian Riedel
@@ -7,6 +9,7 @@ package scalapplcodefest
 object ChunkingExample {
 
   import TermImplicits._
+
 
   def main(args: Array[String]) {
     val Chunks = Set("O", "B-VP", "B-NP", "B-PP", "I-VP", "I-NP", "I-PP")
@@ -32,6 +35,10 @@ object ChunkingExample {
     val plus1 = for (x <- Dom) yield x + 1
     val plus2 = for (x <- Dom; y <- Dom) yield x + y
     val plus3 = for (x <- Dom; y <- Dom; z <- Dom) yield x + y + z
+
+    val feat = Quantified.VecSum(for (i <- Tokens) yield e_(i))
+
+
 
     val eval = plus1.eval(State.empty)
     val Curried2(uncurried) = plus2

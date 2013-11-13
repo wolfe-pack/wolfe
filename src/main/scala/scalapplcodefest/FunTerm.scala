@@ -55,6 +55,10 @@ object ConstantFun {
     def superDomain = Constant(fun.superDomain)
     def targetSet = Constant(fun.targetSet)
   }
+  def unapply[A,B](term:FunTerm[A,B]) = term match {
+    //case Constant(fun) => Option(fun)
+    case _ => None
+  }
 }
 
 
@@ -75,7 +79,7 @@ case class FunApp[A, B](function: FunTerm[A, B], arg: Term[A]) extends Term[B] {
     case _ => SetUtil.SetUnion(List(function.variables, arg.variables))
   }
   def default = function.default(function.superDomain.default.head)
-  def domain[C >: B] = Image(function)(arg.domain).asInstanceOf[Term[Set[C]]]
+  def domain[C >: B] = Image(function,arg.domain).asInstanceOf[Term[Set[C]]]
 
 }
 
@@ -153,7 +157,7 @@ case class AllFunctions[A, B](domain: Set[A], range: Set[B]) extends SetValue[Fu
  * @tparam A argument type of function.
  * @tparam B return type of function.
  */
-case class Image[A, B](fun: FunTerm[A, B])(dom: Term[Set[A]] = fun.domain) extends Term[Set[B]] {
+case class Image[A, B](fun: FunTerm[A, B],dom: Term[Set[A]]) extends Term[Set[B]] {
   def eval(state: State) = for (f <- fun.eval(state); d <- dom.eval(state)) yield SetUtil.SetMap(d,f)
   def variables = fun.variables
   def domain[C >: Set[B]] = Constant(Util.setToBeImplementedLater[C])

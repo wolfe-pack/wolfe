@@ -92,5 +92,11 @@ object SetUtil {
     def iterator = mapped.iterator
   }
 
+  case class SetFilter[T](set:Set[T],filter:T=>Boolean) extends SetValue[T] {
+    def contains(elem: T) = !filter(elem) && set(elem)
+    def iterator = set.view.iterator.filter(filter)
+  }
+
+
 }
 

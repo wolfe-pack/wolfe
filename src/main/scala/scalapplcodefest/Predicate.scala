@@ -8,7 +8,7 @@ package scalapplcodefest
  *
  * @author Sebastian Riedel
  */
-case class Predicate[A,B](name:Symbol, superDomain:Term[Set[A]],targetSet:Term[Set[B]]) extends FunTerm[A, B] {
+case class Predicate[A,B](name:Symbol, superDomain:Term[Set[A]],targetSet:Term[Set[B]] = Constant(Bools)) extends FunTerm[A, B] {
 
   thisPredicate =>
 
