@@ -72,8 +72,9 @@ object ChunkingExample {
 
     val i = ConstantFun(new Index())
     val app = i(Constant('w),Constant('a))
+    val f = for (i <- RangeSet(0,n); j <- RangeSet(0,n)) yield i + j
 
-    println(ImageSeqCurried2(test3).eval( n -> 2))
+    println(ImageSeqCurried2(f).eval( n -> 2).map(_.mkString(",")))
 
     val stream = Util.getStreamFromClassPathOrFile("scalapplcodefest/datasets/conll2000/train.txt")
 

@@ -22,7 +22,7 @@ object FunTerm {
    * Returns term that corresponds to creating the set of all possible functions
    * given a domain and range.
    */
-  def allFunctions[A,B] = ConstantFun(new AllFunctionsOp[A,B])
+  def allFunctions[A, B] = ConstantFun(new AllFunctionsOp[A, B])
 }
 
 /**
@@ -66,7 +66,7 @@ object ConstantFun {
     def superDomain = Constant(fun.superDomain)
     def targetSet = Constant(fun.targetSet)
   }
-  def unapply[A,B](term:FunTerm[A,B]) = term match {
+  def unapply[A, B](term: FunTerm[A, B]) = term match {
     //case Constant(fun) => Option(fun)
     case _ => None
   }
@@ -90,7 +90,7 @@ case class FunApp[A, B](function: FunTerm[A, B], arg: Term[A]) extends Term[B] {
     case _ => SetUtil.SetUnion(List(function.variables, arg.variables))
   }
   def default = function.default(function.superDomain.default.head)
-  def domain[C >: B] = Image(function,arg.domain).asInstanceOf[Term[Set[C]]]
+  def domain[C >: B] = Image(function, arg.domain).asInstanceOf[Term[Set[C]]]
 
 }
 
@@ -127,7 +127,7 @@ case class LambdaAbstraction[A, B](variable: Variable[A], term: Term[B]) extends
     def isDefinedAt(x: A) = variable.domain.default(x)
   }
   def domain[C >: Fun[A, B]] =
-    FunApp(FunTerm.allFunctions[A,B],TupleTerm2(superDomain,targetSet)).asInstanceOf[Term[Set[C]]]
+    FunApp(FunTerm.allFunctions[A, B], TupleTerm2(superDomain, targetSet)).asInstanceOf[Term[Set[C]]]
 }
 
 /**
@@ -161,12 +161,12 @@ case class AllFunctions[A, B](domain: Set[A], range: Set[B]) extends SetValue[Fu
   }
 }
 
-class AllFunctionsOp[A,B] extends Fun[(Set[A],Set[B]),Set[Fun[A,B]]] {
-  def superDomain = new AllOfType[(Set[A],Set[B])]
+class AllFunctionsOp[A, B] extends Fun[(Set[A], Set[B]), Set[Fun[A, B]]] {
+  def superDomain = new AllOfType[(Set[A], Set[B])]
   override def domain = superDomain
-  def targetSet = new AllOfType[Set[Fun[A,B]]]
+  def targetSet = new AllOfType[Set[Fun[A, B]]]
   def isDefinedAt(x: (Set[A], Set[B])) = true
-  def apply(v1: (Set[A], Set[B])) = AllFunctions(v1._1,v1._2)
+  def apply(v1: (Set[A], Set[B])) = AllFunctions(v1._1, v1._2)
 }
 
 
@@ -177,9 +177,9 @@ class AllFunctionsOp[A,B] extends Fun[(Set[A],Set[B]),Set[Fun[A,B]]] {
  * @tparam A argument type of function.
  * @tparam B return type of function.
  */
-case class Image[A, B](fun: FunTerm[A, B],dom: Term[Set[A]]) extends Term[Set[B]] {
-  def eval(state: State) = for (f <- fun.eval(state); d <- dom.eval(state)) yield SetUtil.SetMap(d,f)
-  def variables = SetUtil.SetUnion(List(fun.variables,dom.variables))
+case class Image[A, B](fun: FunTerm[A, B], dom: Term[Set[A]]) extends Term[Set[B]] {
+  def eval(state: State) = for (f <- fun.eval(state); d <- dom.eval(state)) yield SetUtil.SetMap(d, f)
+  def variables = SetUtil.SetUnion(List(fun.variables, dom.variables))
   def domain[C >: Set[B]] = Constant(Util.setToBeImplementedLater[C])
   def default = fun.default.targetSet
 }
@@ -192,14 +192,14 @@ case class Image[A, B](fun: FunTerm[A, B],dom: Term[Set[A]]) extends Term[Set[B]
  * @tparam A argument type of function.
  * @tparam B return type of function.
  */
-case class ImageSeq[A, B](fun: FunTerm[A, B],dom: Term[Set[A]]) extends Term[Seq[B]] {
+case class ImageSeq[A, B](fun: FunTerm[A, B], dom: Term[Set[A]]) extends Term[Seq[B]] {
   def eval(state: State) = for (f <- fun.eval(state); d <- dom.eval(state)) yield d.view.toSeq.map(f)
   def variables = fun.variables
   def domain[C >: Seq[B]] = Constant(new AllOfType[C])
   def default = fun.default.targetSet.toSeq
 }
 
-case class ImageSeqCurried2[A1, A2, B](fun: FunTerm[A1, Fun[A2,B]]) extends Term[Seq[B]] {
+case class ImageSeqCurried2[A1, A2, B](fun: FunTerm[A1, Fun[A2, B]]) extends Term[Seq[B]] {
   def eval(state: State) = for (f <- fun.eval(state); d <- fun.superDomain.eval(state)) yield {
     for (a1 <- d.view.toSeq; f1 = f(a1); a1 <- f1.domain.view.toSeq) yield f1(a1)
   }
@@ -207,8 +207,6 @@ case class ImageSeqCurried2[A1, A2, B](fun: FunTerm[A1, Fun[A2,B]]) extends Term
   def domain[C >: Seq[B]] = Constant(new AllOfType[C])
   def default = fun.default.targetSet.head.targetSet.view.toSeq
 }
-
-
 
 
 trait UncurriedLambdaAbstraction[A1, R] {
