@@ -10,7 +10,7 @@ trait SetValue[T] extends Set[T] {
   def -(elem: T) = SetUtil.SetMinus(this, Set(elem))
 }
 
-case class Reduce[T](op:FunTerm[(T,T),T],arguments:Term[Set[T]]) extends Term[T] {
+case class Reduce[T](op:FunTerm[(T,T),T],arguments:Term[Seq[T]]) extends Term[T] {
   def eval(state: State) = for (f <- op.eval(state); set <- arguments.eval(state)) yield set.reduce((a1,a2) => f(a1->a2))
   def variables = op.variables ++ arguments.variables
   def domain[C >: T] = op.superDomain.asInstanceOf[Term[Set[C]]]
@@ -21,9 +21,9 @@ case class Reduce[T](op:FunTerm[(T,T),T],arguments:Term[Set[T]]) extends Term[T]
  * Helpers to create compositional objects that correspond to quantification term.
  */
 object Quantified {
-  def apply[A,B](op:FunTerm[(B,B),B], fun:FunTerm[A,B]) = Reduce(op,Image(fun,fun.superDomain))
+  def apply[A,B](op:FunTerm[(B,B),B], fun:FunTerm[A,B]) = Reduce(op,ImageSeq(fun,fun.superDomain))
   def unapply[B](term:Term[B]) = term match {
-    case Reduce(op,Image(fun,_)) => Option((op,fun))
+    case Reduce(op,ImageSeq(fun,_)) => Option((op,fun))
     case _ => None
   }
 
@@ -119,7 +119,17 @@ case object Doubles extends AllObjects[Double] {
   override def head = 0.0
 }
 
-class All[T] extends AllObjects[T] {
+class AllOfType[T] extends AllObjects[T] {
   def iterator = Util.tooLargeToIterate
 }
+
+case object All extends AllObjects[Any] {
+  def iterator = Util.tooLargeToIterate
+}
+
+case object AllRefs extends AllObjects[AnyRef] {
+  def iterator = Util.tooLargeToIterate
+}
+
+
 

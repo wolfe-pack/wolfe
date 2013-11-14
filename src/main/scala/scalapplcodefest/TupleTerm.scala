@@ -58,3 +58,19 @@ object Wrapped3 {
     case _ => None
   }
 }
+
+/**
+ * A term that evaluates to a sequence of values based on the given argument terms. The term value
+ * is undefined if any of the argument term values are undefined.
+ * @param seq the sequence of terms that is turned into a sequence of values.
+ * @tparam T type of values in the sequence.
+ */
+case class SeqTerm[T](seq:Seq[Term[T]]) extends Term[Seq[T]] {
+  def eval(state: State) = {
+    val result = seq.map(_.eval(state))
+    if (result.forall(_.isDefined)) Some(result.map(_.get)) else None
+  }
+  def variables = SetUtil.SetUnion(seq.toList.map(_.variables))
+  def domain[C >: Seq[T]] = Constant(new AllOfType[C])
+  def default = seq.map(_.default)
+}

@@ -15,6 +15,17 @@ trait FunTerm[A, B] extends Term[Fun[A, B]] {
 }
 
 /**
+ * Helper object to build FunTerms
+ */
+object FunTerm {
+  /**
+   * Returns term that corresponds to creating the set of all possible functions
+   * given a domain and range.
+   */
+  def allFunctions[A,B] = ConstantFun(new AllFunctionsOp[A,B])
+}
+
+/**
  * Partial functions with invariant argument and result types. This is important for pattern matching.
  * @tparam A argument type.
  * @tparam B return type.
@@ -31,7 +42,7 @@ trait Fun[A, B] extends PartialFunction[A, B] {
  * Helper object to build Fun objects.
  */
 object Fun {
-  def apply[A, B](f: PartialFunction[A, B], dom: Set[A] = new All[A], ran: Set[B] = new All[B]) = new Fun[A, B] {
+  def apply[A, B](f: PartialFunction[A, B], dom: Set[A] = new AllOfType[A], ran: Set[B] = new AllOfType[B]) = new Fun[A, B] {
     def apply(v1: A) = f.apply(v1)
     def isDefinedAt(x: A) = dom(x) && f.lift(x).exists(ran(_))
     def superDomain = dom
@@ -115,7 +126,8 @@ case class LambdaAbstraction[A, B](variable: Variable[A], term: Term[B]) extends
     def apply(v1: A) = term.default
     def isDefinedAt(x: A) = variable.domain.default(x)
   }
-  def domain[C >: Fun[A, B]] = Constant(AllFunctions(superDomain.eval().get, targetSet.eval().get)).asInstanceOf[Term[Set[C]]]
+  def domain[C >: Fun[A, B]] =
+    FunApp(FunTerm.allFunctions[A,B],TupleTerm2(superDomain,targetSet)).asInstanceOf[Term[Set[C]]]
 }
 
 /**
@@ -149,6 +161,14 @@ case class AllFunctions[A, B](domain: Set[A], range: Set[B]) extends SetValue[Fu
   }
 }
 
+class AllFunctionsOp[A,B] extends Fun[(Set[A],Set[B]),Set[Fun[A,B]]] {
+  def superDomain = new AllOfType[(Set[A],Set[B])]
+  override def domain = superDomain
+  def targetSet = new AllOfType[Set[Fun[A,B]]]
+  def isDefinedAt(x: (Set[A], Set[B])) = true
+  def apply(v1: (Set[A], Set[B])) = AllFunctions(v1._1,v1._2)
+}
+
 
 /**
  * The Image of a function term is the set of return values we get by applying
@@ -159,10 +179,36 @@ case class AllFunctions[A, B](domain: Set[A], range: Set[B]) extends SetValue[Fu
  */
 case class Image[A, B](fun: FunTerm[A, B],dom: Term[Set[A]]) extends Term[Set[B]] {
   def eval(state: State) = for (f <- fun.eval(state); d <- dom.eval(state)) yield SetUtil.SetMap(d,f)
-  def variables = fun.variables
+  def variables = SetUtil.SetUnion(List(fun.variables,dom.variables))
   def domain[C >: Set[B]] = Constant(Util.setToBeImplementedLater[C])
   def default = fun.default.targetSet
 }
+
+/**
+ * The ImageSeq of a function term is a sequence of return values we get by applying
+ * the function to all elements of its domain (in some undefined order). Compared to the image
+ * of a function, here return values can be repeated.
+ * @param fun the function to get the image for
+ * @tparam A argument type of function.
+ * @tparam B return type of function.
+ */
+case class ImageSeq[A, B](fun: FunTerm[A, B],dom: Term[Set[A]]) extends Term[Seq[B]] {
+  def eval(state: State) = for (f <- fun.eval(state); d <- dom.eval(state)) yield d.view.toSeq.map(f)
+  def variables = fun.variables
+  def domain[C >: Seq[B]] = Constant(new AllOfType[C])
+  def default = fun.default.targetSet.toSeq
+}
+
+case class ImageSeqCurried2[A1, A2, B](fun: FunTerm[A1, Fun[A2,B]]) extends Term[Seq[B]] {
+  def eval(state: State) = for (f <- fun.eval(state); d <- fun.superDomain.eval(state)) yield {
+    for (a1 <- d.view.toSeq; f1 = f(a1); a1 <- f1.domain.view.toSeq) yield f1(a1)
+  }
+  def variables = fun.variables
+  def domain[C >: Seq[B]] = Constant(new AllOfType[C])
+  def default = fun.default.targetSet.head.targetSet.view.toSeq
+}
+
+
 
 
 trait UncurriedLambdaAbstraction[A1, R] {

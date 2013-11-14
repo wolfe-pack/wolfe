@@ -15,14 +15,19 @@ object TermImplicits {
   implicit def doubleToConstant(x: Double) = Constant(x)
   implicit def setToConstant[T](x: Set[T]) = Constant(x)
   implicit def toTupleTerm2[T1,T2](tuple:(Term[T1],Term[T2])) = TupleTerm2(tuple._1,tuple._2)
+  implicit def toRichVariable[T](v:Variable[T]) = RichVariable(v)
   implicit def toRichTerm[T](term:Term[T]) = RichTerm(term)
   implicit def toRichInt(i: Term[Int]) = RichIntTerm(i)
   implicit def toRichFunction[A, B](f: FunTerm[A, B]) = RichFunctionTerm(f)
+  implicit def toRichFunctionSeq[A, B](f: FunTerm[Seq[A], B]) = RichFunctionTermSeq(f)
   implicit def toRichFunction2[A1, A2, B](f: FunTerm[(A1, A2), B]) = RichFunctionTerm2(f)
   implicit def toRichPredicate[A, B](p: Predicate[A, B]) = RichPredicate(p)
   implicit def toRichPredicate2[A1, A2, B](p: Predicate[(A1, A2), B]) = RichPredicate2(p)
   implicit def toRichSetTerm[T](s: Term[Set[T]]) = RichSetTerm(s)
+  implicit def toRichVec(term:Term[Vec]) = RichVecTerm(term)
   implicit def toFinishedCartesianProduct[A](unfinished: UnfinishedCartesianProduct[A]) = unfinished.finish
+
+
 
   //math
   def e_(index:Term[Int],value:Term[Double] = Constant(1.0)) = UnitVec(index,value)
@@ -33,6 +38,13 @@ object TermImplicits {
   }
 
 
+  case class RichVariable[T](v:Variable[T]) {
+    //def ->(value:T) = VarValuePair(v,value)
+  }
+
+  case class RichVecTerm(term:Term[Vec]) {
+    def dot(that:Term[Vec]) = FunApp(ConstantFun(Math.Dot),TupleTerm2(term,that))
+  }
 
   case class RichSetTerm[T](s: Term[Set[T]]) {
 
@@ -58,9 +70,14 @@ object TermImplicits {
     def finish: Term[Set[T]]
   }
 
+  case class VarValuePair[T](variable:Variable[T],value:T)
+
   case class RichTerm[T](term:Term[T]) {
     def |(condition:State) = Conditioned(term,condition)
     def |(mappings:(Variable[Any],Any)*) = Conditioned(term,State(mappings.toMap))
+    def eval(state:(Variable[Any],Any)*):Option[T] = term.eval(State(state.toMap))
+    //    def eval(state:VarValuePair[T]*):Option[T] = term.eval(State(state.map(_.toTuple).toMap))
+
   }
 
   case class UnfinishedCartesianProduct2[T1, T2](dom1: Term[Set[T1]], dom2: Term[Set[T2]])
@@ -77,7 +94,15 @@ object TermImplicits {
 
   case class RichIntTerm(i: Term[Int]) {
     def +(that: Term[Int]) = FunApp(ConstantFun(Math.IntAdd), TupleTerm2(i, that))
+    def -(that: Term[Int]) = FunApp(ConstantFun(Math.IntMinus), TupleTerm2(i, that))
   }
+
+  case class RichDoubleTerm(x: Term[Double]) {
+    def +(that: Term[Double]) = FunApp(ConstantFun(Math.DoubleAdd), TupleTerm2(x, that))
+    def *(that: Term[Double]) = FunApp(ConstantFun(Math.DoubleMultiply), TupleTerm2(x, that))
+
+  }
+
 
   case class RichFunctionTerm[A, B](f: FunTerm[A, B]) {
     def apply(a: Term[A]) = FunApp(f, a)
@@ -86,6 +111,10 @@ object TermImplicits {
   case class RichFunctionTerm2[A1, A2, B](f: FunTerm[(A1, A2), B]) {
     def apply(a1: Term[A1], a2: Term[A2]) = FunApp(f, TupleTerm2(a1, a2))
   }
+  case class RichFunctionTermSeq[A, B](f: FunTerm[Seq[A], B]) {
+    def apply(args:Term[A]*) = FunApp(f, SeqTerm(args.toSeq))
+  }
+
 
 
   case class RichPredicate[A, B](p: Predicate[A, B]) {

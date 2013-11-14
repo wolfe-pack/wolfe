@@ -5,34 +5,55 @@ package scalapplcodefest
  */
 object Math {
 
-  trait BinaryOperator[T] extends Fun[(T,T),T] {
+  trait BinaryOperatorSameDomain[T] extends Fun[(T,T),T] {
     def dom:Set[T]
     def superDomain = CartesianProduct2(dom,dom)
     def targetSet = dom
     def isDefinedAt(x: (T, T)) = true
   }
 
-  object IntAdd extends BinaryOperator[Int] {
+  trait BinaryOperator[T,R] extends Fun[(T,T),R] {
+    def dom:Set[T]
+    def superDomain = CartesianProduct2(dom,dom)
+    def isDefinedAt(x: (T, T)) = true
+  }
+
+  object Dot extends BinaryOperator[Vec,Double] {
+    def targetSet = Doubles
+    def apply(v1: (Vec, Vec)) = v1._1 dot v1._2
+    def dom = Vecs
+  }
+
+  case object IntAdd extends BinaryOperatorSameDomain[Int] {
     def apply(v1: (Int, Int)) = v1._1 + v1._2
     def dom = Ints
   }
 
-  object DoubleAdd extends BinaryOperator[Double] {
+  case object IntMinus extends BinaryOperatorSameDomain[Int] {
+    def apply(v1: (Int, Int)) = v1._1 - v1._2
+    def dom = Ints
+  }
+
+  case object DoubleAdd extends BinaryOperatorSameDomain[Double] {
     def apply(v1: (Double, Double)) = v1._1 + v1._2
     def dom = Doubles
   }
+  case object DoubleMultiply extends BinaryOperatorSameDomain[Double] {
+    def apply(v1: (Double, Double)) = v1._1 * v1._2
+    def dom = Doubles
+  }
 
-  object And extends BinaryOperator[Boolean] {
+  case object And extends BinaryOperatorSameDomain[Boolean] {
     def apply(v1: (Boolean, Boolean)) = v1._1 && v1._2
     def dom = Bools
   }
 
-  object Or extends BinaryOperator[Boolean] {
+  case object Or extends BinaryOperatorSameDomain[Boolean] {
     def apply(v1: (Boolean, Boolean)) = v1._1 || v1._2
     def dom = Bools
   }
 
-  object VecAdd extends BinaryOperator[Vec] {
+  object VecAdd extends BinaryOperatorSameDomain[Vec] {
     def apply(v1: (Vec, Vec)) = v1._1 + v1._2
     def dom = Vecs
   }

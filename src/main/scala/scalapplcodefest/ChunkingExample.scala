@@ -40,6 +40,16 @@ object ChunkingExample {
 
     val feat2 = Quantified.VecSum(for (i <- Tokens; j <- Tokens) yield e_(i))
 
+    val weights = Var('w,Vecs)
+
+    val model = feat2 dot weights
+
+    println(feat2.eval(n -> 2))
+
+
+
+
+
 
 
     val eval = plus1.eval(State.empty)
@@ -60,7 +70,10 @@ object ChunkingExample {
       for (a1 <- Bools;a2 <- Bools) println(op(a1 -> a2))
     }
 
+    val i = ConstantFun(new Index())
+    val app = i(Constant('w),Constant('a))
 
+    println(ImageSeqCurried2(test3).eval( n -> 2))
 
     val stream = Util.getStreamFromClassPathOrFile("scalapplcodefest/datasets/conll2000/train.txt")
 
