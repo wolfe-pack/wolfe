@@ -45,18 +45,23 @@ case class GroundAtom[A, B](predicate: Predicate[A, B], arg: A) extends Variable
 /**
  * The set of all ground atom variables of the given predicate.
  * @param predicate the predicate of the ground atoms in this set.
+ * @param condition the state we use to evaluate the domain of the predicate with.
  */
-case class AllGroundAtoms[A,B](predicate:Predicate[A,B], condition:State = State.empty) extends Set[Variable[B]] {
-  def contains(elem: Variable[B]) = elem match {
+case class AllGroundAtoms[A,B](predicate:Predicate[A,B], condition:State = State.empty) extends Set[Variable[Any]] {
+  def contains(elem: Variable[Any]) = elem match {
     case GroundAtom(p,_) => p == predicate
     case _ => false
   }
-  def +(elem: Variable[B]) = SetUtil.SetUnion(List(this,Set(elem)))
-  def -(elem: Variable[B]) = SetUtil.SetMinus(this,Set(elem))
+  def +(elem: Variable[Any]) = SetUtil.SetUnion(List(this,Set(elem)))
+  def -(elem: Variable[Any]) = SetUtil.SetMinus(this,Set(elem))
   def iterator = predicate.superDomain.eval(condition) match {
     case Some(domain) => domain.iterator.map(arg => GroundAtom(predicate,arg))
     case _ => sys.error(s"The domain of $predicate is undefined and we can't iterate over its atoms" )
   }
 }
 
+/**
+ * Set of all variables.
+ */
+case object AllVariables extends AllObjectsLarge[Variable[Any]]
 

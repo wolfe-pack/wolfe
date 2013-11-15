@@ -6,8 +6,8 @@ import scala.language.existentials
  * @author Sebastian Riedel
  */
 trait SetValue[T] extends Set[T] {
-  def +(elem: T) = SetUtil.SetUnion(List(this, Set(elem)))
-  def -(elem: T) = SetUtil.SetMinus(this, Set(elem))
+  def +(elem: T):Set[T] = SetUtil.SetUnion(List(this, Set(elem)))
+  def -(elem: T):Set[T] = SetUtil.SetMinus(this, Set(elem))
 }
 
 case class Reduce[T](op:FunTerm[(T,T),T],arguments:Term[Seq[T]]) extends Term[T] {
@@ -34,6 +34,9 @@ object Quantified {
   object Exists extends AbstractQuantified[Boolean] { def operator = ConstantFun(Math.Or)}
   object Forall extends AbstractQuantified[Boolean] { def operator = ConstantFun(Math.And)}
   object VecSum extends AbstractQuantified[Vec] { def operator = ConstantFun(Math.VecAdd)}
+  object DoubleSum extends AbstractQuantified[Double] { def operator = ConstantFun(Math.DoubleAdd)}
+
+
 
 }
 
@@ -71,6 +74,8 @@ trait AllObjects[T] extends SetValue[T] {
     case x:AnyRef => x eq this
     case _ => false
   }
+  override def +(elem: T) = this
+
 
 }
 
@@ -83,11 +88,13 @@ case object Ints extends AllObjects[Int] {
   override def head = 0
 }
 
+trait AllObjectsLarge[T] extends AllObjects[T] {
+  def iterator = Util.tooLargeToIterate
+}
 /**
  * Set of all vectors.
  */
-case object Vecs extends AllObjects[Vec] {
-  def iterator = Util.tooLargeToIterate
+case object Vecs extends AllObjectsLarge[Vec] {
   override def size = Util.tooLargeToCount
   override def head = Vec.zero
 }
@@ -103,31 +110,20 @@ case object Bools extends AllObjects[Boolean] {
 /**
  * All String objects.
  */
-case object Strings extends AllObjects[String] {
-  def iterator = Util.tooLargeToIterate
+case object Strings extends AllObjectsLarge[String] {
   override def head = ""
-
 }
 
 /**
  * All Double objects.
  */
-case object Doubles extends AllObjects[Double] {
-  def iterator = Util.tooLargeToIterate
+case object Doubles extends AllObjectsLarge[Double] {
   override def head = 0.0
 }
 
-class AllOfType[T] extends AllObjects[T] {
-  def iterator = Util.tooLargeToIterate
-}
-
-case object All extends AllObjects[Any] {
-  def iterator = Util.tooLargeToIterate
-}
-
-case object AllRefs extends AllObjects[AnyRef] {
-  def iterator = Util.tooLargeToIterate
-}
+class AllOfType[T] extends AllObjectsLarge[T]
+case object All extends AllObjectsLarge[Any]
+case object AllRefs extends AllObjectsLarge[AnyRef]
 
 
 

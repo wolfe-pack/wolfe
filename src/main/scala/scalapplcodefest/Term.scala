@@ -58,6 +58,18 @@ trait Term[+T] {
 }
 
 /**
+ * Proxy of another term. All methods are delegated to the inner term.
+ * @tparam T type of term.
+ */
+trait ProxyTerm[T] extends Term[T] {
+  def self:Term[T]
+  def eval(state: State) = self.eval(state)
+  def variables = self.variables
+  def domain[C >: T] = self.domain
+  def default = self.default
+}
+
+/**
  * Scala covariance/contravariance for Sets requires frequent casting of sets.
  * Import this object to make casting a little easier.
  */

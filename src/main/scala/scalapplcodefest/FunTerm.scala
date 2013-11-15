@@ -23,6 +23,15 @@ object FunTerm {
    * given a domain and range.
    */
   def allFunctions[A, B] = ConstantFun(new AllFunctionsOp[A, B])
+
+  /**
+   * Turns a function term into a FunTerm
+   */
+  def apply[A,B](f:Term[Fun[A,B]]) = new FunTerm[A,B] with ProxyTerm[Fun[A,B]] {
+    def self = f
+    def superDomain = Constant(new AllOfType[A])
+    def targetSet = Constant(new AllOfType[B])
+  }
 }
 
 /**
@@ -65,10 +74,6 @@ object ConstantFun {
   def apply[A, B](fun: Fun[A, B]) = new Constant(fun) with FunTerm[A, B] {
     def superDomain = Constant(fun.superDomain)
     def targetSet = Constant(fun.targetSet)
-  }
-  def unapply[A, B](term: FunTerm[A, B]) = term match {
-    //case Constant(fun) => Option(fun)
-    case _ => None
   }
 }
 

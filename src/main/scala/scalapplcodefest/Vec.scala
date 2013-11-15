@@ -24,6 +24,11 @@ trait Vec {
     activeIndices.map(i => "%5d %f".format(i,this(i))).mkString("\n")
   }
 
+  def toMappedString(implicit index:Index) = {
+    val inverse = index.inverse()
+    activeIndices.map(i => "%20s %f".format(inverse(i).mkString(", "),this(i))).mkString("\n")
+  }
+
   def toMap = activeIndices.map(i => i -> apply(i)).toMap
 
 }

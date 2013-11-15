@@ -59,7 +59,7 @@ object Math {
   }
 
   case class UnitVec(index:Term[Int],value:Term[Double]) extends Term[Vec] {
-    def eval(state: State) = for (i <- index.eval(state); v <- value.eval(state)) yield new UnitVector(i,v)
+    def eval(state: State) = for (i <- index.eval(state);v <- value.eval(state)) yield new UnitVector(i,v)
     def variables = SetUtil.SetUnion(List(index.variables,value.variables))
     def domain[C >: Vec] = Constant(Vecs).asInstanceOf[Term[Set[C]]]
     def default = new UnitVector(index.default,value.default)

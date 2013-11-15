@@ -34,6 +34,43 @@ trait State {
     def domain = self.domain ++ state.domain
   }
 
+  /**
+   * By default states have open world semantics: variables without an assignment return None as result
+   * of calling get. This method returns a closed world version of a state: for unassigned variables
+   * get returns Some([default state for that variable].
+   * @return a closed world version of the given state.
+   */
+  def closed(vars: Set[Variable[Any]] = AllVariables) = new State {
+    def get[V](variable: Variable[V]) = self.get(variable).orElse(if (domain(variable)) Some(variable.default) else None)
+    override def domain = SetUtil.SetUnion(List(self.domain,vars))
+  }
+
+  /**
+   * If a variable v has no assigned variable, this state returns its assigned Target value as
+   * denoted by the Target(v) variable binding, if it exists.
+   * @return a target state.
+   */
+  def target = new State {
+    def get[V](variable: Variable[V]) = self.get(variable).orElse(self.get(Target(variable)))
+    override def domain = self.domain.map({ case Target(v) => v; case v => v })
+  }
+
+  /**
+   * Hides variables (matching the predicate) and turns them into target variables. That is,
+   * accessing the state for a variable v that is hidden yields None, but accessing
+   * Target(v) returns the original result
+   * @param shouldBeTarget predicate to test whether variable should be a target.
+   * @return a state where the given variables have become target variables.
+   */
+  def asTargets(shouldBeTarget: Set[Variable[Any]]) = new State {
+    def get[V](variable: Variable[V]) = variable match {
+      case Target(v) if shouldBeTarget(v) => self.get(v)
+      case v => if (shouldBeTarget(v)) None else self.get(v)
+    }
+    override def domain = self.domain.map(v => if (shouldBeTarget(v)) Target(v) else v)
+  }
+
+
   override def toString = {
     domain.map(v => "%s->%s".format(v, get(v).get)).mkString(",")
   }
@@ -61,7 +98,13 @@ object State {
  * @param map the map the state is based on.
  */
 class MapBasedState(val map:Map[Variable[Any],Any]) extends State {
-  def get[T](variable: Variable[T]) = map.get(variable).asInstanceOf[Option[T]]
+  def get[T](variable: Variable[T]) = {
+//    println("%s %s".format(variable,map.get(variable)))
+    if (map.get(variable) == None) {
+//      println(variable)
+    }
+    map.get(variable).asInstanceOf[Option[T]]
+  }
   def domain = map.keySet
 }
 
