@@ -8,21 +8,21 @@ package scalapplcodefest
  *
  * @author Sebastian Riedel
  */
-case class Predicate[A,B](name:Symbol, superDomain:Term[Set[A]],targetSet:Term[Set[B]] = Constant(Bools)) extends FunTerm[A, B] {
+case class Predicate[A,B](name:Symbol, funCandidateDom:Term[Set[A]],funRange:Term[Set[B]] = Constant(Bools)) extends FunTerm[A, B] {
 
   thisPredicate =>
 
   def eval(state: State) = {
-    for (d <- superDomain.eval(state); r <- targetSet.eval(state)) yield new Fun[A, B] {
+    for (d <- funCandidateDom.eval(state); r <- funRange.eval(state)) yield new Fun[A, B] {
       def apply(a: A) = GroundAtom(thisPredicate, a).eval(state).get
       def isDefinedAt(a: A) = d(a) && GroundAtom(thisPredicate, a).eval(state).exists(r(_))
-      def superDomain = d
-      def targetSet = r
+      def funCandidateDom = d
+      def funRange = r
     }
   }
   def variables = AllGroundAtoms(thisPredicate).asInstanceOf[Set[Variable[Any]]]
   def domain[C >: Fun[A, B]] = Constant(Util.setToBeImplementedLater)
-  def default = Fun{ case a => targetSet.default.head }
+  def default = Fun{ case a => funRange.default.head }
   override def toString = name.toString()
 }
 
@@ -39,7 +39,7 @@ case class GroundAtom[A, B](predicate: Predicate[A, B], arg: A) extends Variable
 
   import SetCastHelper._
 
-  def domain[C >: B] = predicate.targetSet.as[C]
+  def domain[C >: B] = predicate.funRange.as[C]
 }
 
 /**
@@ -54,7 +54,7 @@ case class AllGroundAtoms[A,B](predicate:Predicate[A,B], condition:State = State
   }
   def +(elem: Variable[Any]) = SetUtil.SetUnion(List(this,Set(elem)))
   def -(elem: Variable[Any]) = SetUtil.SetMinus(this,Set(elem))
-  def iterator = predicate.superDomain.eval(condition) match {
+  def iterator = predicate.funCandidateDom.eval(condition) match {
     case Some(domain) => domain.iterator.map(arg => GroundAtom(predicate,arg))
     case _ => sys.error(s"The domain of $predicate is undefined and we can't iterate over its atoms" )
   }

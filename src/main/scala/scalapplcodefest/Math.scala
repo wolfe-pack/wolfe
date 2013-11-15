@@ -7,19 +7,19 @@ object Math {
 
   trait BinaryOperatorSameDomain[T] extends Fun[(T,T),T] {
     def dom:Set[T]
-    def superDomain = CartesianProduct2(dom,dom)
-    def targetSet = dom
+    def funCandidateDom = CartesianProduct2(dom,dom)
+    def funRange = dom
     def isDefinedAt(x: (T, T)) = true
   }
 
   trait BinaryOperator[T,R] extends Fun[(T,T),R] {
     def dom:Set[T]
-    def superDomain = CartesianProduct2(dom,dom)
+    def funCandidateDom = CartesianProduct2(dom,dom)
     def isDefinedAt(x: (T, T)) = true
   }
 
   object Dot extends BinaryOperator[Vec,Double] {
-    def targetSet = Doubles
+    def funRange = Doubles
     def apply(v1: (Vec, Vec)) = v1._1 dot v1._2
     def dom = Vecs
   }

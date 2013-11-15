@@ -37,7 +37,7 @@ object TermImplicits {
   def dsum(args:Term[Seq[Double]]) = Quantified.DoubleSum(args)
   def vsum(args:Term[Seq[Vec]]) = Quantified.VecSum(args)
 
-  implicit def toImageSeq[A,B](f:FunTerm[A,B]) = ImageSeq(f,f.superDomain)
+  implicit def toImageSeq[A,B](f:FunTerm[A,B]) = ImageSeq(f,f.funCandidateDom)
   implicit def toImageSeqCurried2[A1,A2,B](f:FunTerm[A1,Fun[A2,B]]) = ImageSeqCurried2(f)
 
 

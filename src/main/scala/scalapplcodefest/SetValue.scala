@@ -13,8 +13,8 @@ trait SetValue[T] extends Set[T] {
 case class Reduce[T](op:FunTerm[(T,T),T],arguments:Term[Seq[T]]) extends Term[T] {
   def eval(state: State) = for (f <- op.eval(state); set <- arguments.eval(state)) yield set.reduce((a1,a2) => f(a1->a2))
   def variables = op.variables ++ arguments.variables
-  def domain[C >: T] = op.superDomain.asInstanceOf[Term[Set[C]]]
-  def default = op.targetSet.default.head
+  def domain[C >: T] = op.funCandidateDom.asInstanceOf[Term[Set[C]]]
+  def default = op.funRange.default.head
 }
 
 /**
