@@ -21,17 +21,12 @@ case class Reduce[T](op:FunTerm[(T,T),T],arguments:Term[Seq[T]]) extends Term[T]
  * Helpers to create compositional objects that correspond to quantification term.
  */
 object Quantified {
-  def apply[A,B](op:FunTerm[(B,B),B], fun:FunTerm[A,B]) = Reduce(op,ImageSeq(fun,fun.superDomain))
-  def unapply[B](term:Term[B]) = term match {
-    case Reduce(op,ImageSeq(fun,_)) => Option((op,fun))
-    case _ => None
-  }
 
   trait AbstractQuantified[T] {
     def operator:FunTerm[(T,T),T]
-    def apply[A](term:FunTerm[A,T]) = Quantified[A,T](operator,term)
+    def apply[A](term:Term[Seq[T]]) = Reduce(operator,term)
     def unapply(term:Term[T]) = term match {
-      case Quantified(operator,fun) => Option(fun)
+      case Reduce(operator,seq) => Option(seq)
       case _ => None
     }
   }
@@ -39,10 +34,6 @@ object Quantified {
   object Exists extends AbstractQuantified[Boolean] { def operator = ConstantFun(Math.Or)}
   object Forall extends AbstractQuantified[Boolean] { def operator = ConstantFun(Math.And)}
   object VecSum extends AbstractQuantified[Vec] { def operator = ConstantFun(Math.VecAdd)}
-
-
-
-
 
 }
 
@@ -75,6 +66,12 @@ case class RangeSetValue(from:Int,to:Int) extends SetValue[Int] {
 
 trait AllObjects[T] extends SetValue[T] {
   def contains(elem: T) = true
+  override def hashCode() = System.identityHashCode(this)
+  override def equals(that: Any) = that match {
+    case x:AnyRef => x eq this
+    case _ => false
+  }
+
 }
 
 /**
@@ -109,6 +106,7 @@ case object Bools extends AllObjects[Boolean] {
 case object Strings extends AllObjects[String] {
   def iterator = Util.tooLargeToIterate
   override def head = ""
+
 }
 
 /**

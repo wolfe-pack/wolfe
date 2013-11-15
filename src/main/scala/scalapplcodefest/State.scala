@@ -23,7 +23,6 @@ trait State {
    */
   def domain:Set[Variable[Any]]
 
-
   /**
    * Overlays this state over the given state. This may not be a good idea to use when adding several states.
    * @param state the state to "underlay".
@@ -34,6 +33,16 @@ trait State {
     def get[V](variable: Variable[V]) = self.get(variable).orElse(state.get(variable))
     def domain = self.domain ++ state.domain
   }
+
+  override def toString = {
+    domain.map(v => "%s->%s".format(v, get(v).get)).mkString(",")
+  }
+
+  def toPrettyString = {
+    domain.map(v => "%30s -> %s".format(v, get(v).get)).mkString("\n")
+  }
+
+
 }
 
 /**

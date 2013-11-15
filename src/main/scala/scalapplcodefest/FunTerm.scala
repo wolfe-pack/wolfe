@@ -199,6 +199,14 @@ case class ImageSeq[A, B](fun: FunTerm[A, B], dom: Term[Set[A]]) extends Term[Se
   def default = fun.default.targetSet.toSeq
 }
 
+/**
+ * The sequence of terms we get by iterating over the domain of the function, and for each return function
+ * iterating over that domain to get a sequence of the type of the inner function's target domain.
+ * @param fun a curried function.
+ * @tparam A1 argument of first function
+ * @tparam A2 argument of inner functions.
+ * @tparam B return type of inner functions.
+ */
 case class ImageSeqCurried2[A1, A2, B](fun: FunTerm[A1, Fun[A2, B]]) extends Term[Seq[B]] {
   def eval(state: State) = for (f <- fun.eval(state); d <- fun.superDomain.eval(state)) yield {
     for (a1 <- d.view.toSeq; f1 = f(a1); a1 <- f1.domain.view.toSeq) yield f1(a1)

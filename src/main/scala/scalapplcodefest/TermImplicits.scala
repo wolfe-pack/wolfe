@@ -32,6 +32,10 @@ object TermImplicits {
   //math
   def e_(index:Term[Int],value:Term[Double] = Constant(1.0)) = UnitVec(index,value)
 
+  implicit def toImageSeq[A,B](f:FunTerm[A,B]) = ImageSeq(f,f.superDomain)
+  implicit def toImageSeqCurried2[A1,A2,B](f:FunTerm[A1,Fun[A2,B]]) = ImageSeqCurried2(f)
+
+
   implicit def uncurry[A1, A2, R](f: FunTerm[A1, Fun[A2, R]]) = f match {
     case Curried2(uncurried) => uncurried
     case _ => ???
@@ -112,7 +116,7 @@ object TermImplicits {
     def apply(a1: Term[A1], a2: Term[A2]) = FunApp(f, TupleTerm2(a1, a2))
   }
   case class RichFunctionTermSeq[A, B](f: FunTerm[Seq[A], B]) {
-    def apply(args:Term[A]*) = FunApp(f, SeqTerm(args.toSeq))
+    def apply[C](args:Term[A]*)(implicit convert:C=>Term[A]) = FunApp(f, SeqTerm(args.toSeq))
   }
 
 

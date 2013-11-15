@@ -10,7 +10,7 @@ import scala.collection.convert.decorateAsScala
 /**
  * @author Sebastian Riedel
  */
-class Index extends Fun[Seq[AnyRef],Int] {
+class Index extends Fun[Seq[Any],Int] {
 
   class ArrayHashing extends HashingStrategy[Array[AnyRef]] {
     def computeHashCode(arg: Array[AnyRef]) = util.Arrays.deepHashCode(arg)
@@ -20,10 +20,10 @@ class Index extends Fun[Seq[AnyRef],Int] {
   private val map = new TObjectIntCustomHashMap[Array[AnyRef]](new ArrayHashing)
 
 
-  def superDomain = new AllOfType[Seq[AnyRef]]//map.keySet().asScala
+  def superDomain = new AllOfType[Seq[Any]]//map.keySet().asScala
   def targetSet = Ints
-  def apply(v1: Seq[AnyRef]) = index(v1.toArray)
-  def isDefinedAt(x: Seq[AnyRef]) = map.containsKey(x.toArray)
+  def apply(v1: Seq[Any]) = index(v1.map(_.asInstanceOf[AnyRef]).toArray)
+  def isDefinedAt(x: Seq[Any]) = map.containsKey(x.toArray)
   def index(args:Array[AnyRef]):Int = {
     map.adjustOrPutValue(args,0,map.size)
   }

@@ -1,6 +1,7 @@
 package scalapplcodefest
 
 import scalapplcodefest.Math.UnitVec
+import scala.io.Source
 
 
 /**
@@ -10,6 +11,12 @@ object ChunkingExample {
 
   import TermImplicits._
 
+  def toState(lines:Seq[String], predicates:Seq[Predicate[Int,String]]) = {
+    val map = for ((line,i) <- lines.zipWithIndex;
+                   (s,pred) <- line.split("\\s+") zip predicates) yield pred.atom(i)->s
+    State(map.toMap)
+  }
+
 
   def main(args: Array[String]) {
     val Chunks = Set("O", "B-VP", "B-NP", "B-PP", "I-VP", "I-NP", "I-PP")
@@ -18,6 +25,7 @@ object ChunkingExample {
     val Tokens = RangeSet(0, n)
     val chunk = Predicate('chunk, RangeSet(0, n), Chunks)
     val word = Predicate('word, RangeSet(0, n), Strings)
+    val tag = Predicate('tag, RangeSet(0, n), Strings)
 
     val triple = Var('pair, SentenceLengths x SentenceLengths x SentenceLengths)
     val next = Predicate('neighbor, Constant(Set(0 -> 1)), Bools)
@@ -46,12 +54,6 @@ object ChunkingExample {
 
     println(feat2.eval(n -> 2))
 
-
-
-
-
-
-
     val eval = plus1.eval(State.empty)
     val Curried2(uncurried) = plus2
 
@@ -71,12 +73,18 @@ object ChunkingExample {
     }
 
     val i = ConstantFun(new Index())
-    val app = i(Constant('w),Constant('a))
+    val app = i(1,2)
     val f = for (i <- RangeSet(0,n); j <- RangeSet(0,n)) yield i + j
 
     println(ImageSeqCurried2(f).eval( n -> 2).map(_.mkString(",")))
 
     val stream = Util.getStreamFromClassPathOrFile("scalapplcodefest/datasets/conll2000/train.txt")
+    val sentences = Util.groupLines(Source.fromInputStream(stream).getLines().take(100))
+    val states = sentences.map(toState(_,Seq(word,tag,chunk)))
+
+    println(states.head.toPrettyString)
+
+
 
   }
 }
