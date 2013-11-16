@@ -49,7 +49,7 @@ object ChunkingExample {
 
     val feat2 = Quantified.VecSum(for (i <- Tokens; j <- Tokens) yield e_(i))
 
-    val weights = Var('w, Vecs)
+    val weights = Var('weights, Vecs)
 
     val model = feat2 dot weights
 
@@ -89,13 +89,19 @@ object ChunkingExample {
     println(hidden.toPrettyString)
 
     implicit val $ = new Index()
-    val feat = vsum(for (i <- RangeSet(0,n)) yield e_($(1, chunk(i))))
+    val feat = vsum(for (i <- 0 ~~ n) yield e_($(1, chunk(i))))
     val first = states.head
 
     val vec = feat.eval(first).get
+    val w = Var('w, Vecs)
+
 
     println(vec.toMappedString)
+
+    val m = (feat dot w) + 1.0
 
 
   }
 }
+
+

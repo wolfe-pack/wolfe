@@ -13,8 +13,8 @@ import scala.collection.convert.decorateAsScala
 class Index extends Fun[Seq[Any],Int] {
 
   class ArrayHashing extends HashingStrategy[Array[AnyRef]] {
-    def computeHashCode(arg: Array[AnyRef]) = util.Arrays.deepHashCode(arg)
-    def equals(o1: Array[AnyRef], o2: Array[AnyRef]) = util.Arrays.deepEquals(o1,o2)
+    def computeHashCode(arg: Array[AnyRef]) = java.util.Arrays.deepHashCode(arg)
+    def equals(o1: Array[AnyRef], o2: Array[AnyRef]) = java.util.Arrays.deepEquals(o1,o2)
   }
 
   private val map = new TObjectIntCustomHashMap[Array[AnyRef]](new ArrayHashing)

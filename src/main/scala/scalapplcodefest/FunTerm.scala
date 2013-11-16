@@ -1,11 +1,11 @@
 package scalapplcodefest
 
 /**
- * FunTerms evaluate to partial functions. The domain where the function is defined for
+ * FunTerms evaluate to partial functions. The function candidate domain where the function is defined for
  * may depend on the state, and is hence a term itself.
- * The general contract for partial functions with the given function domain and target set are as follows:
- * the function is undefined for all values outside the domain, and every result is part of the target set. Note that
- * the function may also be undefined for some values inside the (super) domain.
+ * The general contract for partial functions with the given function candidate domain and target set are as follows:
+ * the function is undefined for all values outside the candidate domain, and every result is part of the range. Note that
+ * the function may also be undefined for some values inside the candidate domain.
  * @tparam A type of arguments to function.
  * @tparam B type of return values of function.
  */

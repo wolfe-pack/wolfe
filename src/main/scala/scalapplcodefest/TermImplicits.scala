@@ -12,13 +12,15 @@ import scalapplcodefest.Math.UnitVec
 object TermImplicits {
 
   implicit def intToConstant(x: Int) = Constant(x)
+  implicit def intToTerm(x: Int) = RichIntTerm(x)
   implicit def doubleToConstant(x: Double) = Constant(x)
   implicit def setToConstant[T](x: Set[T]) = Constant(x)
   //implicit def funToConstant[A,B](x:Fun[A,B]) = ConstantFun(x)
   implicit def toTupleTerm2[T1,T2](tuple:(Term[T1],Term[T2])) = TupleTerm2(tuple._1,tuple._2)
   implicit def toRichVariable[T](v:Variable[T]) = RichVariable(v)
   implicit def toRichTerm[T](term:Term[T]) = RichTerm(term)
-  implicit def toRichInt(i: Term[Int]) = RichIntTerm(i)
+  implicit def toRichInt[A](i: Term[Int]) = RichIntTerm(i)
+  implicit def toRichDouble[A](t: Term[Double]) = RichDoubleTerm(t)
   implicit def toRichFunTerm[A, B](term: Term[Fun[A, B]]):RichFunTerm[A,B] = term match {
     case f:FunTerm[_,_] => RichFunTerm(f).asInstanceOf[RichFunTerm[A,B]]
     case f => RichFunTerm(FunTerm(f))
@@ -104,6 +106,7 @@ object TermImplicits {
   case class RichIntTerm(i: Term[Int]) {
     def +(that: Term[Int]) = FunApp(ConstantFun(Math.IntAdd), TupleTerm2(i, that))
     def -(that: Term[Int]) = FunApp(ConstantFun(Math.IntMinus), TupleTerm2(i, that))
+    def ~~(that: Term[Int]) = RangeSet(i,that)
   }
 
   case class RichDoubleTerm(x: Term[Double]) {
