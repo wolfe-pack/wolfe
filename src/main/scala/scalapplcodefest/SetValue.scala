@@ -1,6 +1,9 @@
 package scalapplcodefest
 
 import scala.language.existentials
+import scala.collection.GenTraversableOnce
+import scala.collection.generic.CanBuildFrom
+import cc.factorie.la.{ScalarTensor, Tensor1}
 
 /**
  * @author Sebastian Riedel
@@ -8,6 +11,8 @@ import scala.language.existentials
 trait SetValue[T] extends Set[T] {
   def +(elem: T):Set[T] = SetUtil.SetUnion(List(this, Set(elem)))
   def -(elem: T):Set[T] = SetUtil.SetMinus(this, Set(elem))
+  def --(that:Set[T]):Set[T] = SetUtil.SetMinus(this, that)
+  def ++(that:Set[T]):Set[T] = SetUtil.SetUnion(List(this,that))
 }
 
 case class Reduce[T](op:FunTerm[(T,T),T],arguments:Term[Seq[T]]) extends Term[T] {
@@ -33,7 +38,7 @@ object Quantified {
 
   object Exists extends AbstractQuantified[Boolean] { def operator = ConstantFun(Math.Or)}
   object Forall extends AbstractQuantified[Boolean] { def operator = ConstantFun(Math.And)}
-  object VecSum extends AbstractQuantified[Vec] { def operator = ConstantFun(Math.VecAdd)}
+  object VecSum extends AbstractQuantified[Vector] { def operator = ConstantFun(Math.VecAdd)}
   object DoubleSum extends AbstractQuantified[Double] { def operator = ConstantFun(Math.DoubleAdd)}
 
 }
@@ -96,6 +101,15 @@ case object Vecs extends AllObjectsLarge[Vec] {
   override def size = Util.tooLargeToCount
   override def head = Vec.zero
 }
+
+/**
+ * Set of all vectors.
+ */
+case object Vectors extends AllObjectsLarge[Vector] {
+  override def size = Util.tooLargeToCount
+  override def head = new ScalarTensor(0.0)
+}
+
 
 /**
  * All Boolean objects.

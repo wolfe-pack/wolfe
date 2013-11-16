@@ -37,6 +37,14 @@ class Index extends Fun[Seq[Any],Int] {
     result
   }
 
+  def vectorToString(vector:Vector, sep:String = "\n") = {
+    val inv = inverse()
+    val lines = for (i <- vector.activeDomain.toSeq) yield {
+      f"${inv(i).mkString(" ")}%20s ${vector(i)}%5.2f"
+    }
+    lines.mkString(sep)
+  }
+
   //def apply(args:Term[Any]*) = Indexed(this,SeqTerm(args))
 
   def toVerboseString = {

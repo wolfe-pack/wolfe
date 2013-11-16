@@ -67,7 +67,7 @@ trait State {
    * @param shouldBeTarget predicate to test whether variable should be a target.
    * @return a state where the given variables have become target variables.
    */
-  def asTargets(shouldBeTarget: Set[Variable[Any]]) = new State {
+  def asTargets(shouldBeTarget: Set[Variable[Any]]):State = new State {
     def get[V](variable: Variable[V]) = variable match {
       case Target(v) if shouldBeTarget(v) => self.get(v)
       case v => if (shouldBeTarget(v)) None else self.get(v)
@@ -75,13 +75,23 @@ trait State {
     override def domain = self.domain.map(v => if (shouldBeTarget(v)) Target(v) else v)
   }
 
+  /**
+   * Convenience method for when the targets are all ground atoms.
+   */
+  def asTargets(shouldBeTarget:Predicate[_,_]*):State = asTargets(SetUtil.SetUnion(shouldBeTarget.map(AllGroundAtoms(_)).toList))
+
 
   override def toString = {
     domain.map(v => "%s->%s".format(v, get(v).get)).mkString(",")
   }
 
   def toPrettyString = {
-    domain.map(v => "%30s -> %s".format(v, get(v).get)).mkString("\n")
+//    val ordering = new Ordering[Variable[Any]] {
+//      def compare(x1: Variable[Any], x2: Variable[Any]) = (x1,x2) match {
+//        case (a1@GroundAtom(pred1,arg1), a2@GroundAtom(pred2,arg2)) =>
+//      }
+//    }
+    domain.toSeq.sortBy(_.toString).map(v => "%30s -> %s".format(v, get(v).get)).mkString("\n")
   }
 
 

@@ -1,6 +1,5 @@
 package scalapplcodefest
 
-import scalapplcodefest.Math.UnitVec
 import scala.io.Source
 
 
@@ -11,15 +10,30 @@ object ChunkingExample {
 
   import TermImplicits._
 
-  def toState(lines: Seq[String], predicates: Seq[Predicate[Int, String]], length: Var[Int]) = {
-    val map = for ((line, i) <- lines.zipWithIndex;
-                   (s, pred) <- line.split("\\s+") zip predicates) yield pred.atom(i) -> s
-    State((map :+ length -> lines.length).toMap)
-  }
-
-
   def main(args: Array[String]) {
     val Chunks = Set("O", "B-VP", "B-NP", "B-PP", "I-VP", "I-NP", "I-PP", "B-SBAR", "I-SBAR", "B-ADJP", "I-ADJP")
+
+    val n = 'n of Ints
+    val word = 'word of (0 ~~ n |-> Strings)
+    val tag = 'tag of (0 ~~ n |-> Strings)
+    val chunk = 'chunk of (0 ~~ n |-> Chunks)
+    val weights = 'weights of Vecs
+
+    val key = new Index()
+    val bias = vsum(for (i <- 0 ~~ n) yield e_(key('bias,chunk(i))))
+    val wordChunk = vsum(for (i <- 0 ~~ n) yield e_(key('wordChunk,word(i),chunk(i))))
+    val feat = bias + wordChunk
+    //val model = LinearModel(feat,weights)
+
+    val stream = Util.getStreamFromClassPathOrFile("scalapplcodefest/datasets/conll2000/train.txt")
+    val sentences = Util.loadCoNLL(Source.fromInputStream(stream).getLines().take(100),Seq(word, tag, chunk), n)
+    val train = sentences.map(_.asTargets(chunk))
+
+    println(train.head.toPrettyString)
+
+
+
+    /*
     val SentenceLengths = RangeSet(0, 1000)
     val n = Var('n, SentenceLengths)
     val Tokens = RangeSet(0, n)
@@ -90,8 +104,8 @@ object ChunkingExample {
     val hidden = states.head.asTargets(AllGroundAtoms(chunk))
     println(hidden.toPrettyString)
 
-    implicit val $ = new Index()
-    val feat = vsum(for (i <- 0 ~~ n) yield e_($(1, chunk(i))))
+    implicit val key = new Index()
+    val feat = vsum(for (i <- 0 ~~ n) yield e_(key(1, chunk(i))))
     val first = states.head
 
     val vec = feat.eval(first).get
@@ -102,6 +116,7 @@ object ChunkingExample {
 
     val m = (feat dot w) + 1.0
 
+  */
 
   }
 }

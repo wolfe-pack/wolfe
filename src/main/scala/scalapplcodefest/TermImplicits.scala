@@ -14,6 +14,8 @@ object TermImplicits {
   implicit def intToConstant(x: Int) = Constant(x)
   implicit def intToTerm(x: Int) = RichIntTerm(x)
   implicit def doubleToConstant(x: Double) = Constant(x)
+  implicit def symbolToConstant(x: Symbol) = Constant(x)
+
   implicit def setToConstant[T](x: Set[T]) = Constant(x)
   //implicit def funToConstant[A,B](x:Fun[A,B]) = ConstantFun(x)
   implicit def toTupleTerm2[T1,T2](tuple:(Term[T1],Term[T2])) = TupleTerm2(tuple._1,tuple._2)
@@ -32,7 +34,7 @@ object TermImplicits {
   implicit def toRichPredicate[A, B](p: Predicate[A, B]) = RichPredicate(p)
   implicit def toRichPredicate2[A1, A2, B](p: Predicate[(A1, A2), B]) = RichPredicate2(p)
   implicit def toRichSetTerm[T](s: Term[Set[T]]) = RichSetTerm(s)
-  implicit def toRichVec(term:Term[Vec]) = RichVecTerm(term)
+  implicit def toRichVec(term:Term[Vector]) = RichVecTerm(term)
   implicit def toRichVarSymbol(symbol:Symbol) = RichVarSymbol(symbol)
   implicit def toRichPredSymbol(symbol:Symbol) = RichPredSymbol(symbol)
 
@@ -43,7 +45,7 @@ object TermImplicits {
   def I(term:Term[Boolean]) = FunApp(ConstantFun(Math.Iverson),term)
 
   def dsum(args:Term[Seq[Double]]) = Quantified.DoubleSum(args)
-  def vsum(args:Term[Seq[Vec]]) = Quantified.VecSum(args)
+  def vsum(args:Term[Seq[Vector]]) = Quantified.VecSum(args)
 
   implicit def toImageSeq[A,B](f:FunTerm[A,B]) = ImageSeq(f,f.funCandidateDom)
   implicit def toImageSeqCurried2[A1,A2,B](f:FunTerm[A1,Fun[A2,B]]) = ImageSeqCurried2(f)
@@ -67,8 +69,9 @@ object TermImplicits {
     //def ->(value:T) = VarValuePair(v,value)
   }
 
-  case class RichVecTerm(term:Term[Vec]) {
-    def dot(that:Term[Vec]) = FunApp(ConstantFun(Math.Dot),TupleTerm2(term,that))
+  case class RichVecTerm(term:Term[Vector]) {
+    def dot(that:Term[Vector]) = FunApp(ConstantFun(Math.Dot),TupleTerm2(term,that))
+    def +(that:Term[Vector]) = FunApp(ConstantFun(Math.VecAdd),TupleTerm2(term,that))
   }
 
   case class RichSetTerm[T](s: Term[Set[T]]) {
@@ -135,6 +138,7 @@ object TermImplicits {
     def ||(that: Term[Boolean]) = FunApp(ConstantFun(Math.Or), TupleTerm2(x, that))
     def |=>(that: Term[Boolean]) = FunApp(ConstantFun(Math.Implies), TupleTerm2(x, that))
     def unary_! = FunApp(ConstantFun(Math.Neg),x)
+    def unary_$ = FunApp(ConstantFun(Math.Iverson),x)
   }
 
 

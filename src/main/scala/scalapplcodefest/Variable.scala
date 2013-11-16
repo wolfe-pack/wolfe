@@ -46,6 +46,7 @@ trait Variable[+T] extends Term[T] {
  */
 case class Var[T](name:Symbol,dom:Term[Set[T]]) extends Variable[T] {
   def domain[C >: T] = dom.asInstanceOf[Term[Set[C]]]
+  override def toString = name.name
 }
 
 /**

@@ -64,6 +64,17 @@ object Util {
     }
   }
 
+  def loadCoNLL(lines:Iterator[String], predicates: Seq[Predicate[Int, String]], length: Var[Int]) =
+    groupLines(lines).map(conllToState(_,predicates, length))
+
+  def conllToState(lines: Seq[String], predicates: Seq[Predicate[Int, String]], length: Var[Int]) = {
+    import TermImplicits._
+    val map = for ((line, i) <- lines.zipWithIndex;
+                   (s, pred) <- line.split("\\s+") zip predicates) yield pred.atom(i) -> s
+    State((map :+ length -> lines.length).toMap)
+  }
+
+
 
 }
 
