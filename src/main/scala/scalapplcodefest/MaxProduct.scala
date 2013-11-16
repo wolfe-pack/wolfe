@@ -170,16 +170,68 @@ class FG {
     for (i1 <- 0 until dims(0);
          i2 <- 0 until dims(1);
          i3 <- 0 until dims(2)) {
-      val entry = i1 + i2 * dims(0) + i3 * dims(1)
+      val entry = i1 + i2 * dims(0) + i3 * dims(1) * dims(0)
       scores(entry) = table(i1)(i2)(i3)
       settings(entry) = Array(i1, i2, i3)
     }
     val f = new Factor(scores, dims, settings)
     factors += f
     f
+  }
+}
+
+object FGBuilder {
+  def main(args: Array[String]) {
+    import TermImplicits._
+    val r = 'r of (0 ~~ 1 |-> Bools)
+    val s = 's of (0 ~~ 1 |-> Bools)
+
+    val f = dsum(for (i <- 0 ~~ 1) yield I(r(i) && s(i)))
+
+    println(f.eval(r.atom(0) -> true, s.atom(0) -> false))
+
+
 
   }
 
+  def build(term: Term[Double]): FG = {
+    val vars = term.variables.toList
+    val domains = vars.map(v => v -> v.domain.eval().get.toList).toMap
+    val dims = domains.map(_._2.size).toArray
+    val inverseDomains = domains.map(d => d._1 -> d._2.zipWithIndex.toMap)
+    val fg = new FG
+    var entryCount = 1
+    for (v <- vars) {
+      val dom = domains(v)
+      val n = fg.createNode(dom.size)
+      entryCount *= n.dim
+    }
+    //iterate over possible states, get the state index
+    val settings = Array.ofDim[Array[Int]](entryCount)
+    val scores = Array.ofDim[Double](entryCount)
+    for ((state, stateIndex) <- State.allStates(vars).zipWithIndex) {
+      val setting = Array.ofDim[Int](vars.size)
+      val score = term.eval(state).get
+      var entry = 0
+      var dim = 1
+      var offset = 0
+      for (((v, i), (_, d)) <- vars.zipWithIndex zip domains) {
+        val valueIndex = inverseDomains(v)(state(v)) + offset
+        setting(i) = valueIndex
+        entry += valueIndex
+        dim *= d.size
+        offset = dim
+      }
+      settings(stateIndex) = setting
+      scores(stateIndex) = score
+    }
+    val f = fg.createFactor(scores, settings, dims)
+    for (n <- fg.nodes) {
+      fg.createEdge(f, n)
+    }
+    fg.build()
+    fg
+  }
 }
 
 

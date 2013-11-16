@@ -18,6 +18,11 @@ trait State {
   def get[T](variable:Variable[T]):Option[T]
 
   /**
+   * Syntactic sugar for when we know that a term is defined.
+   */
+  def apply[T](variable:Variable[T]) = get(variable).get
+
+  /**
    * All variables for which the state defines a value.
    * @return the domain of this state.
    */
@@ -90,6 +95,16 @@ object State {
   val empty = new State {
     def get[T](variable: Variable[T]) = None
     def domain = Set.empty
+  }
+
+  def allStates(vars:List[Variable[Any]], toConjoinWith:Seq[State] = Seq(State.empty).view):Seq[State] = {
+    vars match {
+      case Nil => toConjoinWith
+      case head :: tail =>
+        val newStates = for (oldState <- toConjoinWith; value <- head.domain.eval().get.view) yield
+          oldState + SingletonState(head,value)
+        allStates(tail,newStates)
+    }
   }
 }
 

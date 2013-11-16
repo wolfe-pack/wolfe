@@ -26,6 +26,8 @@ object ChunkingExample {
     val chunk = Predicate('chunk, RangeSet(0, n), Chunks)
     val word = Predicate('word, RangeSet(0, n), Strings)
     val tag = Predicate('tag, RangeSet(0, n), Strings)
+    val tag2 = 'tag of (0 ~~ 2 |-> Strings)
+    val w2 = 'w2 of Vecs
 
     val triple = Var('pair, SentenceLengths x SentenceLengths x SentenceLengths)
     val next = Predicate('neighbor, Constant(Set(0 -> 1)), Bools)
