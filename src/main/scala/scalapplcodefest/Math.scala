@@ -60,6 +60,14 @@ object Math {
     def apply(v1: (Boolean, Boolean)) = !v1._1 || v1._2
   }
 
+  case object Neg extends Fun[Boolean,Boolean] {
+    def funCandidateDom = Bools
+    override def funDom = Bools
+    def funRange = Bools
+    def isDefinedAt(x: Boolean) = true
+    def apply(v1:Boolean) = !v1
+  }
+
   case object VecAdd extends BinaryOperatorSameDomain[Vec] {
     def apply(v1: (Vec, Vec)) = v1._1 + v1._2
     def dom = Vecs

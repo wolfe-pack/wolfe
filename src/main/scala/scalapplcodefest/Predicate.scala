@@ -40,6 +40,7 @@ case class GroundAtom[A, B](predicate: Predicate[A, B], arg: A) extends Variable
   import SetCastHelper._
 
   def domain[C >: B] = predicate.funRange.as[C]
+  override def toString = s"${predicate.name.name}($arg)"
 }
 
 /**

@@ -134,6 +134,7 @@ object TermImplicits {
     def &&(that: Term[Boolean]) = FunApp(ConstantFun(Math.And), TupleTerm2(x, that))
     def ||(that: Term[Boolean]) = FunApp(ConstantFun(Math.Or), TupleTerm2(x, that))
     def |=>(that: Term[Boolean]) = FunApp(ConstantFun(Math.Implies), TupleTerm2(x, that))
+    def unary_! = FunApp(ConstantFun(Math.Neg),x)
   }
 
 

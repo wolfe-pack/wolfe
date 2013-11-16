@@ -3,6 +3,9 @@ package scalapplcodefest
 import scalaxy.loops._
 import java.util
 import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable
+import cc.factorie.maths
+import cc.factorie.maths.ArrayOps
 
 
 /**
@@ -74,12 +77,21 @@ class FG {
   val nodes = new ArrayBuffer[Node]
   val factors = new ArrayBuffer[Factor]
 
-  final class Node(val dim: Int) {
+  final class Node(val index:Int, val dim: Int) {
     var edges: Array[Edge] = null
     private[FG] var edgeCount: Int = 0
     private[FG] var edgeFilled: Int = 0
     val b = Array.ofDim[Double](dim)
     val in = Array.ofDim[Double](dim)
+
+    override def toString = {
+      """-----------------
+        |Node:   %d
+        |Belief:
+        |%s
+      """.stripMargin.format(index,b.mkString("\n"))
+    }
+
 
   }
 
@@ -90,7 +102,7 @@ class FG {
     var indexInNode = -1
   }
 
-  final class Factor(val table: Array[Double], val dims: Array[Int], val settings: Array[Array[Int]]) {
+  final class Factor(val index:Int, val table: Array[Double], val dims: Array[Int], val settings: Array[Array[Int]]) {
     var edges: Array[Edge] = null
     private[FG] var edgeCount: Int = 0
     private[FG] var edgeFilled: Int = 0
@@ -103,10 +115,20 @@ class FG {
     def score(entry: Int): Double = {
       table(entry)
     }
+    override def toString = {
+      val tableString = for ((setting,index) <- settings.zipWithIndex) yield
+        s"${setting.mkString(" ")} ${table(index)}"
+      """-----------------
+        |Factor:  %d
+        |Nodes:   %s
+        |Table:
+        |%s
+      """.stripMargin.format(index, edges.map(_.n.index).mkString(" "),tableString.mkString("\n"))
+    }
   }
 
   def createNode(dim: Int) = {
-    val n = new Node(dim)
+    val n = new Node(nodes.size, dim)
     nodes += n
     n
   }
@@ -132,14 +154,24 @@ class FG {
     }
   }
 
+
+  override def toString = {
+    """
+      |Nodes:
+      |%s
+      |
+      |Factors:
+      |%s
+    """.stripMargin.format(nodes.mkString("\n"),factors.mkString("\n"))
+  }
   def createFactor1(table: Array[Double]) = {
-    val f = new Factor(table, Array(table.length), Range(0, table.length).map(Array(_)).toArray)
+    val f = new Factor(factors.size, table, Array(table.length), Range(0, table.length).map(Array(_)).toArray)
     factors += f
     f
   }
 
   def createFactor(scores: Array[Double], settings: Array[Array[Int]], dims: Array[Int]) = {
-    val f = new Factor(scores, dims, settings)
+    val f = new Factor(factors.size, scores, dims, settings)
     factors += f
     f
   }
@@ -156,7 +188,7 @@ class FG {
       scores(entry) = table(i1)(i2)
       settings(entry) = Array(i1, i2)
     }
-    val f = new Factor(scores, dims, settings)
+    val f = new Factor(factors.size, scores, dims, settings)
     factors += f
     f
   }
@@ -174,63 +206,85 @@ class FG {
       scores(entry) = table(i1)(i2)(i3)
       settings(entry) = Array(i1, i2, i3)
     }
-    val f = new Factor(scores, dims, settings)
+    val f = new Factor(factors.size, scores, dims, settings)
     factors += f
     f
   }
 }
 
 object FGBuilder {
+
+  class TermAlignedFG(val term:Term[Double]) {
+    val vars = term.variables.toSeq
+    val fg = new FG
+    def createVariableMapping(variable:Variable[Any]) = {
+      val domain = variable.domain.eval().get.toSeq
+      val indexOfValue = domain.zipWithIndex.toMap
+      val node = fg.createNode(domain.size)
+      VariableMapping(variable, node, domain, indexOfValue)
+    }
+    val variableMappings = vars.map(createVariableMapping)
+    val dims = variableMappings.map(_.dom.size)
+    val entryCount = dims.product
+
+    def beliefToState() = {
+      val map = for (v <- variableMappings) yield {
+        val winner = ArrayOps.maxIndex(v.node.b)
+        val value = v.dom(winner)
+        v.variable -> value
+      }
+      State(map.toMap)
+    }
+  }
+
+  case class VariableMapping(variable:Variable[Any],node:FG#Node, dom:Seq[Any], indexOfValue:Map[Any,Int])
+
   def main(args: Array[String]) {
     import TermImplicits._
     val r = 'r of (0 ~~ 1 |-> Bools)
     val s = 's of (0 ~~ 1 |-> Bools)
 
-    val f = dsum(for (i <- 0 ~~ 1) yield I(r(i) && s(i)))
+    val f = dsum(for (i <- 0 ~~ 1) yield I(!(r(i) || s(i))))
 
     println(f.eval(r.atom(0) -> true, s.atom(0) -> false))
+
+    val fg = build(f)
+    println(fg.fg)
+    println(fg.fg.nodes.size)
+    println(fg.fg.factors.size)
+    println(fg.fg.factors.head.rank)
+
+    MaxProduct.runMessagePassing(fg.fg,1)
+    println(fg.beliefToState().toPrettyString)
 
 
 
   }
 
-  def build(term: Term[Double]): FG = {
-    val vars = term.variables.toList
-    val domains = vars.map(v => v -> v.domain.eval().get.toList).toMap
-    val dims = domains.map(_._2.size).toArray
-    val inverseDomains = domains.map(d => d._1 -> d._2.zipWithIndex.toMap)
-    val fg = new FG
-    var entryCount = 1
-    for (v <- vars) {
-      val dom = domains(v)
-      val n = fg.createNode(dom.size)
-      entryCount *= n.dim
-    }
+  def build(t: Term[Double]): TermAlignedFG = {
+    val aligned = new TermAlignedFG(t)
+    import aligned._
     //iterate over possible states, get the state index
     val settings = Array.ofDim[Array[Int]](entryCount)
     val scores = Array.ofDim[Double](entryCount)
-    for ((state, stateIndex) <- State.allStates(vars).zipWithIndex) {
+    for (state <- State.allStates(vars.toList)) {
       val setting = Array.ofDim[Int](vars.size)
       val score = term.eval(state).get
-      var entry = 0
-      var dim = 1
-      var offset = 0
-      for (((v, i), (_, d)) <- vars.zipWithIndex zip domains) {
-        val valueIndex = inverseDomains(v)(state(v)) + offset
+      var stateIndex = 0
+      for ((v,i) <- variableMappings.zipWithIndex) {
+        val valueIndex = v.indexOfValue(state(v.variable))
+        stateIndex = valueIndex + v.dom.size * stateIndex
         setting(i) = valueIndex
-        entry += valueIndex
-        dim *= d.size
-        offset = dim
       }
       settings(stateIndex) = setting
       scores(stateIndex) = score
     }
-    val f = fg.createFactor(scores, settings, dims)
+    val f = fg.createFactor(scores, settings, dims.toArray)
     for (n <- fg.nodes) {
       fg.createEdge(f, n)
     }
     fg.build()
-    fg
+    aligned
   }
 }
 
