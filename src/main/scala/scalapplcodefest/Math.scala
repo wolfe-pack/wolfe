@@ -137,6 +137,7 @@ object Math {
     def variables = SetUtil.SetUnion(List(index.variables, value.variables))
     def domain[C >: Vector] = Constant(Vectors).asInstanceOf[Term[Set[C]]]
     def default = new SingletonTensor1(1, index.default, value.default)
+    override def toString = s"$value * e_($index)"
   }
 
 }

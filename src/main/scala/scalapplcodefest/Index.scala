@@ -54,5 +54,5 @@ class Index extends Fun[Seq[Any],Int] {
     })
     result.toString()
   }
-  override def toString = "|Index|=" + map.size()
+  override def toString = "Index"
 }

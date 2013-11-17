@@ -12,7 +12,7 @@ case class TupleTerm2[+A1, +A2](a1: Term[A1], a2: Term[A2])
   def eval(state: State) = for (b1 <- a1.eval(state); b2 <- a2.eval(state)) yield (b1, b2)
   def default = (a1.default, a2.default)
   def domain[C >: (A1, A2)] = CartesianProductTerm2(a1.domain,a2.domain).as[C]
-  //def copy[C1 >: A1,C2 >: A2](a1:Term[C1] = this.a1,a2:Term[C2] = this.a2) = TupleTerm2(a1,a2)
+  override def toString = s"$a1, $a2"
 }
 
 case class TupleTerm3[A1, A2, A3](a1: Term[A1], a2: Term[A2], a3: Term[A3])
@@ -71,4 +71,5 @@ case class SeqTerm[T](seq:Seq[Term[T]]) extends Term[Seq[T]] {
   def variables = SetUtil.SetUnion(seq.toList.map(_.variables))
   def domain[C >: Seq[T]] = Constant(new AllOfType[C])
   def default = seq.map(_.default)
+  override def toString = seq.mkString("[",",","]")
 }

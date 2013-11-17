@@ -154,6 +154,7 @@ object FGBuilder {
     val distributed = TermConverter.distDots(model)
     val unrolled = TermConverter.unrollLambdas(distributed)
     val flatten = TermConverter.flattenDouble(unrolled)
+    println(distributed)
     println(unrolled)
     println(flatten)
 

@@ -92,6 +92,7 @@ case class Constant[T](value: T) extends Term[T] {
   def variables = Set.empty
   def domain[C >: T] = Constant(Set(value))
   def default = value
+  override def toString = value.toString
 }
 
 /**

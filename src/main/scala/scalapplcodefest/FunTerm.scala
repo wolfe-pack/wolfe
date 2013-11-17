@@ -84,6 +84,7 @@ case class ConstantFun[A,B](fun:Fun[A,B]) extends FunTerm[A,B] {
   def default = fun
   def funCandidateDom = Constant(fun.funCandidateDom)
   def funRange = Constant(fun.funRange)
+  override def toString = fun.toString()
 }
 
 ///**
@@ -120,6 +121,7 @@ case class FunApp[A, B](function: FunTerm[A, B], arg: Term[A]) extends Term[B] {
   }
   def default = function.default(function.funCandidateDom.default.head)
   def domain[C >: B] = Image(function, arg.domain).asInstanceOf[Term[Set[C]]]
+  override def toString = s"$function($arg)"
 }
 
 case object BinaryFunApp {
@@ -163,6 +165,7 @@ case class LambdaAbstraction[A, B](variable: Variable[A], term: Term[B]) extends
   }
   def domain[C >: Fun[A, B]] =
     FunApp(FunTerm.allFunctions[A, B], TupleTerm2(funCandidateDom, funRange)).asInstanceOf[Term[Set[C]]]
+  override def toString = s"lam $variable. { $term }"
 }
 
 /**
