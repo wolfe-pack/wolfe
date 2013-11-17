@@ -72,7 +72,7 @@ class FG {
     f
   }
 
-  def addLinearFactor(stats: Array[SparseVector], settings: Array[Array[Int]], dims: Array[Int]) = {
+  def addLinearFactor(stats: Array[Vector], settings: Array[Array[Int]], dims: Array[Int]) = {
     val f = new Factor(this, factors.size, dims, settings, LINEAR, null, stats)
     factors += f
     f
@@ -162,7 +162,7 @@ object FG {
   final class Factor(val fg: FG, val index: Int, val dims: Array[Int], val settings: Array[Array[Int]],
                      val typ: FactorType.Value = FG.FactorType.TABLE,
                      val table: Array[Double],
-                     val stats: Array[SparseVector] = null) {
+                     val stats: Array[Vector] = null) {
     var edges: Array[Edge] = null
     def rank = dims.length
     val entryCount = {

@@ -53,7 +53,7 @@ object FGBuilder {
       val setting = Array.ofDim[Int](vars.size)
       val score = term.eval(state).get
       var stateIndex = 0
-      for ((v,i) <- aligned.variableMappings.zipWithIndex) {
+      for ((v,i) <- mappings.zipWithIndex) {
         val valueIndex = v.indexOfValue(state(v.variable))
         stateIndex = valueIndex + v.dom.size * stateIndex
         setting(i) = valueIndex
@@ -65,7 +65,7 @@ object FGBuilder {
     BuiltFactor(f,mappings)
   }
 
-  def buildLinearFactor(aligned:TermAlignedFG, term:LinearModel) = {
+  def buildLinearFactor(aligned:TermAlignedFG, term:Term[Double], feats:Term[Vector], condition:State = State.empty) = {
     val vars = term.variables.toSeq.filter(_ != aligned.weights)
     val mappings = vars.map(aligned.variable2Mapping)
     val dims = mappings.view.map(_.dom.size).toArray
@@ -73,14 +73,14 @@ object FGBuilder {
 
     //create a factor using term and all variables
     val settings = Array.ofDim[Array[Int]](entryCount)
-    val stats = Array.ofDim[SparseVector](entryCount)
+    val stats = Array.ofDim[Vector](entryCount)
 
     //iterate over possible states, get the state index
     for (state <- State.allStates(vars.toList)) {
       val setting = Array.ofDim[Int](vars.size)
-      val feat = term.features.eval(state).get.asInstanceOf[SparseVector] //todo: maybe be more generic here
+      val feat = feats.eval(state + condition).get
       var stateIndex = 0
-      for ((v,i) <- aligned.variableMappings.zipWithIndex) {
+      for ((v,i) <- mappings.zipWithIndex) {
         val valueIndex = v.indexOfValue(state(v.variable))
         stateIndex = valueIndex + v.dom.size * stateIndex
         setting(i) = valueIndex
@@ -95,7 +95,8 @@ object FGBuilder {
 
   def buildFactor(aligned:TermAlignedFG, term:Term[Double], weights:Variable[Vector]):BuiltFactor = {
     term match {
-      case l@LinearModel(feats,w,base) if w == weights => buildLinearFactor(aligned, l)
+      case l@LinearModel(feats,w,base) if w == weights => buildLinearFactor(aligned, l, feats) //todo: do something with base
+      case c@Conditioned(Math.Dot.Applied(feats,w),cond) if w == weights => buildLinearFactor(aligned, c, feats,cond)
       case t => buildTableFactor(aligned,t)
     }
   }
@@ -157,6 +158,11 @@ object FGBuilder {
     println(distributed)
     println(unrolled)
     println(flatten)
+
+    val flatFG = build(flatten,w)
+
+    flatFG.fg.weights = new DenseVector(Array(1.0,2.0,3.0,4.0))
+    println(flatFG.fg.toVerboseString(key))
 
   }
 

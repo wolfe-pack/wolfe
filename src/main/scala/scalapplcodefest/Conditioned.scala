@@ -10,6 +10,7 @@ case class Conditioned[T](term:Term[T], condition:State) extends Term[T] {
       case SetUtil.SetUnion(args) => SetUtil.SetUnion(args.map(conditionVars))
       case SetUtil.SetMinus(set,without) => SetUtil.SetMinus(conditionVars(set),conditionVars(without))
       case AllGroundAtoms(pred,state) => AllGroundAtoms(pred,state + condition)
+      case p@PartialGroundAtoms(_,_,_) => p.copy(condition = p.condition + condition)
       case _ => vars
     }
     SetUtil.SetMinus(conditionVars(term.variables),condition.domain)

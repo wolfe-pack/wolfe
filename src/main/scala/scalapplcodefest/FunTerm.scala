@@ -87,22 +87,6 @@ case class ConstantFun[A,B](fun:Fun[A,B]) extends FunTerm[A,B] {
   override def toString = fun.toString()
 }
 
-///**
-// * Helper to create constant function terms typed as FunTerm.
-// */
-//object ConstantFun {
-//  def apply[A, B](fun: Fun[A, B]) = new Constant(fun) with FunTerm[A, B] {
-//    def funCandidateDom = Constant(fun.funCandidateDom)
-//    def funRange = Constant(fun.funRange)
-//  }
-//
-//  def unapply[A,B](term:Term[Fun[A,B]]) = term match {
-//    case Constant(f) => Some(f)
-//    case _ => None
-//  }
-//}
-
-
 /**
  * Application of a function to an argument
  * @param function the function to apply
@@ -116,7 +100,7 @@ case class FunApp[A, B](function: FunTerm[A, B], arg: Term[A]) extends Term[B] {
          a <- arg.eval(state);
          v <- f.lift(a)) yield v
   def variables = function match {
-    //case Predicate(_, dom, ran) => ???
+    case p@Predicate(n,d,r) => PartialGroundAtoms(p,arg)
     case _ => SetUtil.SetUnion(List(function.variables, arg.variables))
   }
   def default = function.default(function.funCandidateDom.default.head)
