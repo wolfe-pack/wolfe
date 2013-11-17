@@ -5,13 +5,13 @@ import cc.factorie.maths.ArrayOps
 /**
  * @author Sebastian Riedel
  */
-object FGBuilder {
+object MessagePassingGraphBuilder {
 
-  import FG._
+  import MessagePassingGraph._
 
   class TermAlignedFG(val term:Term[Double], val weights:Variable[Vector]) {
     val vars = term.variables.toSeq.filter(_ != weights).sorted(VariableOrdering)
-    val fg = new FG
+    val fg = new MessagePassingGraph
     def createVariableMapping(variable:Variable[Any]) = {
       val domain = variable.domain.eval().get.toSeq
       val indexOfValue = domain.zipWithIndex.toMap
@@ -96,7 +96,7 @@ object FGBuilder {
   def buildFactor(aligned:TermAlignedFG, term:Term[Double], weights:Variable[Vector]):BuiltFactor = {
     term match {
       case l@LinearModel(feats,w,base) if w == weights => buildLinearFactor(aligned, l, feats) //todo: do something with base
-      case c@Conditioned(Math.Dot.Applied(feats,w),cond) if w == weights => buildLinearFactor(aligned, c, feats,cond)
+      case c@Conditioned(Math.Dot.Applied2(feats,w),cond) if w == weights => buildLinearFactor(aligned, c, feats,cond)
       case t => buildTableFactor(aligned,t)
     }
   }
@@ -161,7 +161,12 @@ object FGBuilder {
 
     val flatFG = build(flatten,w)
 
-    flatFG.fg.weights = new DenseVector(Array(1.0,2.0,3.0,4.0))
+//    flatFG.fg.weights = new DenseVector(Array(1.0,2.0,3.0,4.0))
+    flatFG.fg.weights = key.createDenseVector(
+      Seq(false,false) -> 1.0,
+      Seq(false,true) -> 2.0,
+      Seq(true,false) -> 3.0,
+      Seq(true,true) -> 4.0)()
     println(flatFG.fg.toVerboseString(key))
 
   }

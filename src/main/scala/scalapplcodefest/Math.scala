@@ -3,68 +3,30 @@ package scalapplcodefest
 import cc.factorie.la.SingletonTensor1
 
 /**
- * Math-related function objects that can serve as terms when wrapped with a constant.
+ * Math-related function objects.
+ *
  * @author Sebastian Riedel
  */
 object Math {
 
-  trait BinaryOperatorSameDomain[T] extends Fun[(T, T), T] {
-    self =>
-    def dom: Set[T]
-    def funCandidateDom = CartesianProduct2(dom, dom)
-    def funRange = dom
-    def isDefinedAt(x: (T, T)) = true
 
-    object Applied {
-      def unapply(x: Term[Any]): Option[(Term[T], Term[T])] = x match {
-        case FunApp(ConstantFun(op), TupleTerm2(arg1, arg2)) if op == self =>
-          Some((arg1.asInstanceOf[Term[T]], arg2.asInstanceOf[Term[T]]))
-        case _ => None
-      }
-    }
-    object Reduced {
-      def unapply(x: Term[Any]): Option[Term[Seq[T]]] = x match {
-        case Reduce(ConstantFun(op), args) if op == self => Some(args.asInstanceOf[Term[Seq[T]]])
-        case _ => None
-      }
-    }
-
-  }
-
-  trait BinaryOperator[T, R] extends Fun[(T, T), R] {
-
-    self =>
-    def dom: Set[T]
-    def funCandidateDom = CartesianProduct2(dom, dom)
-    def isDefinedAt(x: (T, T)) = true
-
-    object Applied {
-      def unapply(x: Term[R]): Option[(Term[T], Term[T])] = x match {
-        case FunApp(ConstantFun(op), TupleTerm2(arg1, arg2)) if op == self =>
-          Some((arg1.asInstanceOf[Term[T]], arg2.asInstanceOf[Term[T]]))
-        case _ => None
-      }
-    }
-
-  }
-
-  object Dot extends BinaryOperator[Vector, Double] {
+  object Dot extends BinaryOperatorSameDomain[Vector, Double] {
     def funRange = Doubles
     def apply(v1: (Vector, Vector)) = v1._1 dot v1._2
     def dom = Vectors
   }
 
-  case object IntAdd extends BinaryOperatorSameDomain[Int] {
+  case object IntAdd extends BinaryOperatorSameDomainAndRange[Int] {
     def apply(v1: (Int, Int)) = v1._1 + v1._2
     def dom = Ints
   }
 
-  case object IntMinus extends BinaryOperatorSameDomain[Int] {
+  case object IntMinus extends BinaryOperatorSameDomainAndRange[Int] {
     def apply(v1: (Int, Int)) = v1._1 - v1._2
     def dom = Ints
   }
 
-  case object DoubleAdd extends BinaryOperatorSameDomain[Double] {
+  case object DoubleAdd extends BinaryOperatorSameDomainAndRange[Double] {
     def apply(v1: (Double, Double)) = v1._1 + v1._2
     def dom = Doubles
   }
@@ -77,37 +39,12 @@ object Math {
     def apply(x: Double) = ???
   }
 
-  case object DoubleMultiply extends BinaryOperatorSameDomain[Double] {
+  case object DoubleMultiply extends BinaryOperatorSameDomainAndRange[Double] {
     def apply(v1: (Double, Double)) = v1._1 * v1._2
     def dom = Doubles
   }
 
-  trait BinaryBoolOperator extends BinaryOperatorSameDomain[Boolean] {
-    def dom = Bools
-
-  }
-
-  case object And extends BinaryBoolOperator {
-    def apply(v1: (Boolean, Boolean)) = v1._1 && v1._2
-  }
-
-  case object Or extends BinaryBoolOperator {
-    def apply(v1: (Boolean, Boolean)) = v1._1 || v1._2
-  }
-
-  case object Implies extends BinaryBoolOperator {
-    def apply(v1: (Boolean, Boolean)) = !v1._1 || v1._2
-  }
-
-  case object Neg extends Fun[Boolean, Boolean] {
-    def funCandidateDom = Bools
-    override def funDom = Bools
-    def funRange = Bools
-    def isDefinedAt(x: Boolean) = true
-    def apply(v1: Boolean) = !v1
-  }
-
-  case object VecAdd extends BinaryOperatorSameDomain[Vector] {
+  case object VecAdd extends BinaryOperatorSameDomainAndRange[Vector] {
     def apply(pair: (Vector, Vector)) = {
       pair match {
         case (s1: SingletonVector, s2: SingletonVector) =>
@@ -139,5 +76,37 @@ object Math {
     def default = new SingletonTensor1(1, index.default, value.default)
     override def toString = s"$value * e_($index)"
   }
+
+}
+
+/**
+ * Logic related function objects.
+ */
+object Logic {
+
+  trait BinaryBoolOperator extends BinaryOperatorSameDomainAndRange[Boolean] {
+    def dom = Bools
+  }
+
+  case object And extends BinaryBoolOperator {
+    def apply(v1: (Boolean, Boolean)) = v1._1 && v1._2
+  }
+
+  case object Or extends BinaryBoolOperator {
+    def apply(v1: (Boolean, Boolean)) = v1._1 || v1._2
+  }
+
+  case object Implies extends BinaryBoolOperator {
+    def apply(v1: (Boolean, Boolean)) = !v1._1 || v1._2
+  }
+
+  case object Neg extends Fun[Boolean, Boolean] {
+    def funCandidateDom = Bools
+    override def funDom = Bools
+    def funRange = Bools
+    def isDefinedAt(x: Boolean) = true
+    def apply(v1: Boolean) = !v1
+  }
+
 
 }

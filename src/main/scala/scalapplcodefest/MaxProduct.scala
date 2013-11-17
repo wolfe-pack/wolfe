@@ -10,10 +10,10 @@ import cc.factorie.maths.ArrayOps
  */
 object MaxProduct {
 
-  import FG._
+  import MessagePassingGraph._
 
   def main(args: Array[String]) {
-    val fg = new FG
+    val fg = new MessagePassingGraph
     val f1 = fg.addFactor2(Array(Array(1.0, 2.0, 3.0), Array(4.0, 5.0, 6.0)))
     val n1 = fg.addNode(2)
     val n2 = fg.addNode(3)
@@ -28,7 +28,7 @@ object MaxProduct {
 
   }
 
-  def run(fg: FG, maxIteration: Int) {
+  def run(fg: MessagePassingGraph, maxIteration: Int) {
     for (i <- (0 until maxIteration).optimized) {
       for (edge <- fg.edges) {
         updateN2F(edge)

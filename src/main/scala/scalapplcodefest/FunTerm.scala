@@ -42,40 +42,7 @@ object FunTerm {
   }
 }
 
-/**
- * Partial functions with invariant argument and result types. This is important for pattern matching.
- * @tparam A argument type.
- * @tparam B return type.
- */
-trait Fun[A, B] extends PartialFunction[A, B] {
-  def funCandidateDom: Set[A]
-  def funDom: Set[A] = funCandidateDom.filter(isDefinedAt)
-  //TODO: would like to make this lazy
-  def funRange: Set[B]
-  object Term extends ConstantFun(this)
 
-  override def toString() = getClass().getSimpleName
-}
-
-/**
- * Helper object to build Fun objects.
- */
-object Fun {
-  def apply[A, B](f: PartialFunction[A, B], dom: Set[A] = new AllOfType[A], ran: Set[B] = new AllOfType[B]) = new Fun[A, B] {
-    def apply(v1: A) = f.apply(v1)
-    def isDefinedAt(x: A) = dom(x) && f.lift(x).exists(ran(_))
-    def funCandidateDom = dom
-    def funRange = ran
-  }
-
-  def empty[A, B] = new Fun[A, B] {
-    def funCandidateDom = Set.empty
-    def funRange = Set.empty
-    def apply(v1: A) = sys.error(s"Empty function not defined at $v1")
-    def isDefinedAt(x: A) = false
-  }
-
-}
 
 case class ConstantFun[A,B](fun:Fun[A,B]) extends FunTerm[A,B] {
   def eval(state: State) = Some(fun)
@@ -104,7 +71,7 @@ case class FunApp[A, B](function: FunTerm[A, B], arg: Term[A]) extends Term[B] {
     case _ => SetUtil.SetUnion(List(function.variables, arg.variables))
   }
   def default = function.default(function.funCandidateDom.default.head)
-  def domain[C >: B] = Image(function, arg.domain).asInstanceOf[Term[Set[C]]]
+  def domain[C >: B] = Image(function, arg.domain).asInstanceOf[Term[Set[C]]] //could also be function.runRange
   override def toString = s"$function($arg)"
 }
 

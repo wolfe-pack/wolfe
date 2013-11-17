@@ -2,23 +2,25 @@ package scalapplcodefest
 
 import scala.collection.mutable.ArrayBuffer
 import scalaxy.loops._
-import cc.factorie.la.{DenseTensor1, SparseTensor1}
 
 
 /**
  * A simple Factor Graph with infrastructure for message passing.
- * It stores message and table potentials in double arrays.
+ * It stores messages and table potentials in double arrays.
+ * Factors can have one of three types:
+ * (1) simple dense table based;
+ * (2) based on a feature vector for each state that is multiplied with a shared weight vector
+ * (3) generic (calls a function to be evaluated at a particular state)
  */
-class FG {
+final class MessagePassingGraph {
 
-  import FG.FactorType._
-  import FG._
+  import MessagePassingGraph.FactorType._
+  import MessagePassingGraph._
 
   val edges = new ArrayBuffer[Edge]
   val nodes = new ArrayBuffer[Node]
   val factors = new ArrayBuffer[Factor]
   var weights: DenseVector = null
-
 
   def addNode(dim: Int) = {
     val n = new Node(nodes.size, dim)
@@ -51,7 +53,7 @@ class FG {
   }
 
 
-  def toVerboseString(implicit index:Index = null) = {
+  def toVerboseString(implicit index: Index = null) = {
     """
       |Nodes:
       |%s
@@ -96,7 +98,7 @@ class FG {
     f
   }
 
-  def createFactor3(table: Array[Array[Array[Double]]]) = {
+  def addFactor3(table: Array[Array[Array[Double]]]) = {
     val dims = Array(table.length, table(0).length, table(0)(0).length)
     val entryCount = dims(0) * dims(1) * dims(2)
     val scores = Array.ofDim[Double](entryCount)
@@ -115,8 +117,13 @@ class FG {
   }
 }
 
-object FG {
+object MessagePassingGraph {
 
+  /**
+   * We define a set of factor types. Inference algorithms will use the type of a factor
+   * to determine how to treat the factor. We use a type instead of sub-classing to
+   * avoid any kind of polymorphism inside the inner loop of inference.
+   */
   object FactorType extends Enumeration {
     val TABLE, LINEAR = Value
   }
@@ -129,20 +136,25 @@ object FG {
    * @param dim the dimension of the variable the node is representing.
    */
   final class Node(val index: Int, val dim: Int) {
+    /* all edges to factors that this node is connected to */
     var edges: Array[Edge] = null
+
+    /* node belief */
     val b = Array.ofDim[Double](dim)
+
+    /* external message for this node. Will usually not be updated during inference */
     val in = Array.ofDim[Double](dim)
 
     override def toString = {
-      """-----------------
-        |Node:   %d
+      f"""-----------------
+        |Node:   $index%d
         |Belief:
-        |%s
-      """.stripMargin.format(index, b.mkString("\n"))
+        |${b.mkString("\n")}
+      """.stripMargin
     }
 
-    private[FG] var edgeCount: Int = 0
-    private[FG] var edgeFilled: Int = 0
+    private[MessagePassingGraph] var edgeCount: Int = 0
+    private[MessagePassingGraph] var edgeFilled: Int = 0
 
   }
 
@@ -159,8 +171,8 @@ object FG {
     var indexInNode = -1
   }
 
-  final class Factor(val fg: FG, val index: Int, val dims: Array[Int], val settings: Array[Array[Int]],
-                     val typ: FactorType.Value = FG.FactorType.TABLE,
+  final class Factor(val fg: MessagePassingGraph, val index: Int, val dims: Array[Int], val settings: Array[Array[Int]],
+                     val typ: FactorType.Value = MessagePassingGraph.FactorType.TABLE,
                      val table: Array[Double],
                      val stats: Array[Vector] = null) {
     var edges: Array[Edge] = null
@@ -176,14 +188,14 @@ object FG {
         case LINEAR => stats(entry).dot(fg.weights)
       }
     }
-    def toVerboseString(implicit key:Index) = {
+    def toVerboseString(implicit key: Index) = {
       val tableString = typ match {
         case TABLE =>
           for ((setting, index) <- settings.zipWithIndex) yield
             s"${setting.mkString(" ")} | ${table(index)}"
         case LINEAR =>
           for ((setting, index) <- settings.zipWithIndex) yield
-            s"${setting.mkString(" ")} | ${score(index)} | ${key.vectorToString(stats(index)," ")}"
+            s"${setting.mkString(" ")} | ${score(index)} | ${key.vectorToString(stats(index), " ")}"
 
       }
       """-----------------
@@ -195,8 +207,8 @@ object FG {
       """.stripMargin.format(index, edges.map(_.n.index).mkString(" "), tableString.mkString("\n"))
     }
 
-    private[FG] var edgeCount: Int = 0
-    private[FG] var edgeFilled: Int = 0
+    private[MessagePassingGraph] var edgeCount: Int = 0
+    private[MessagePassingGraph] var edgeFilled: Int = 0
 
   }
 

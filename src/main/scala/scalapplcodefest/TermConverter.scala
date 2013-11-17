@@ -23,7 +23,7 @@ object TermConverter {
   def flattenDoubleSums(term: Term[Double]): Seq[Term[Double]] = {
     val raw = term match {
       case Math.DoubleAdd.Reduced(SeqTerm(args)) => args.flatMap(flattenDoubleSums)
-      case Math.DoubleAdd.Applied(arg1, arg2) => flattenDoubleSums(arg1) ++ flattenDoubleSums(arg1)
+      case Math.DoubleAdd.Applied2(arg1, arg2) => flattenDoubleSums(arg1) ++ flattenDoubleSums(arg1)
       case _ => Seq(term)
     }
     raw.filter(_ != Constant(0.0))
@@ -34,7 +34,7 @@ object TermConverter {
     term match {
       case FunTermProxy(self) => FunTermProxy(flattenDouble(self))
       case Math.DoubleAdd.Reduced(SeqTerm(args)) => dsum(SeqTerm(args.flatMap(flattenDoubleSums)))
-      case Math.DoubleAdd.Applied(arg1, arg2) => dsum(SeqTerm(flattenDoubleSums(arg1) ++ flattenDoubleSums(arg2)))
+      case Math.DoubleAdd.Applied2(arg1, arg2) => dsum(SeqTerm(flattenDoubleSums(arg1) ++ flattenDoubleSums(arg2)))
       case f@FunApp(fun,arg) => FunApp(FunTerm(flattenDouble(fun)),flattenDouble(arg))
       case _ => term
     }
@@ -63,16 +63,16 @@ object TermConverter {
 
   def flattenVectorSums(term: Term[Vector]): Seq[Term[Vector]] = term match {
     case Math.VecAdd.Reduced(SeqTerm(args)) => args.flatMap(flattenVectorSums)
-    case Math.VecAdd.Applied(arg1, arg2) => flattenVectorSums(arg1) ++ flattenVectorSums(arg1)
+    case Math.VecAdd.Applied2(arg1, arg2) => flattenVectorSums(arg1) ++ flattenVectorSums(arg1)
     case _ => Seq(term)
   }
 
   def distDots(term: Term[Double]): Term[Double] = {
     term match {
       case LinearModel(f, w, base) => distDots(f dot w) + base
-      case Math.Dot.Applied(Math.VecAdd.Applied(f1, f2), w) => distDots(f1 dot w) + distDots(f2 dot w)
-      case Math.Dot.Applied(Math.VecAdd.Reduced(SeqTerm(args)), w) => dsum(SeqTerm(args.map(a => distDots(a dot w))))
-      case Math.Dot.Applied(Quantified.VecSum(ImageSeq(LambdaAbstraction(v, arg))), w) =>
+      case Math.Dot.Applied2(Math.VecAdd.Applied2(f1, f2), w) => distDots(f1 dot w) + distDots(f2 dot w)
+      case Math.Dot.Applied2(Math.VecAdd.Reduced(SeqTerm(args)), w) => dsum(SeqTerm(args.map(a => distDots(a dot w))))
+      case Math.Dot.Applied2(Quantified.VecSum(ImageSeq(LambdaAbstraction(v, arg))), w) =>
         dsum(LambdaAbstraction(v, distDots(arg dot w)))
       case _ => term
     }

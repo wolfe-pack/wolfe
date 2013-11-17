@@ -141,10 +141,10 @@ object TermImplicits {
   }
 
   case class RichBooleanTerm(x: Term[Boolean]) {
-    def &&(that: Term[Boolean]) = FunApp(Math.And.Term, TupleTerm2(x, that))
-    def ||(that: Term[Boolean]) = FunApp(Math.Or.Term, TupleTerm2(x, that))
-    def |=>(that: Term[Boolean]) = FunApp(Math.Implies.Term, TupleTerm2(x, that))
-    def unary_! = FunApp(Math.Neg.Term, x)
+    def &&(that: Term[Boolean]) = FunApp(Logic.And.Term, TupleTerm2(x, that))
+    def ||(that: Term[Boolean]) = FunApp(Logic.Or.Term, TupleTerm2(x, that))
+    def |=>(that: Term[Boolean]) = FunApp(Logic.Implies.Term, TupleTerm2(x, that))
+    def unary_! = FunApp(Logic.Neg.Term, x)
     def unary_$ = FunApp(Math.Iverson.Term, x)
   }
 

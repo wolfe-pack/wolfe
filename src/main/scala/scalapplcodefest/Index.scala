@@ -45,8 +45,6 @@ class Index extends Fun[Seq[Any],Int] {
     lines.mkString(sep)
   }
 
-  //def apply(args:Term[Any]*) = Indexed(this,SeqTerm(args))
-
   def toVerboseString = {
     val result = new mutable.StringBuilder()
     map.forEachEntry(new TObjectIntProcedure[Array[AnyRef]] {
@@ -55,4 +53,14 @@ class Index extends Fun[Seq[Any],Int] {
     result.toString()
   }
   override def toString = "Index"
+
+  def createDenseVector(features:(Seq[Any],Double)*)(dim:Int = features.size) = {
+    val vector = new DenseVector(dim)
+    for ((feat,value) <- features) {
+      val indexOfFeat = index(feat.toArray.asInstanceOf[Array[AnyRef]])
+      vector(indexOfFeat) = value
+    }
+    vector
+  }
+
 }

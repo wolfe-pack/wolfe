@@ -7,37 +7,54 @@ import cc.factorie.la.ScalarTensor
  * @author Sebastian Riedel
  */
 trait SetValue[T] extends Set[T] {
-  def +(elem: T):Set[T] = SetUtil.SetUnion(List(this, Set(elem)))
-  def -(elem: T):Set[T] = SetUtil.SetMinus(this, Set(elem))
-  def --(that:Set[T]):Set[T] = SetUtil.SetMinus(this, that)
-  def ++(that:Set[T]):Set[T] = SetUtil.SetUnion(List(this,that))
+  def +(elem: T): Set[T] = SetUtil.SetUnion(List(this, Set(elem)))
+  def -(elem: T): Set[T] = SetUtil.SetMinus(this, Set(elem))
+  def --(that: Set[T]): Set[T] = SetUtil.SetMinus(this, that)
+  def ++(that: Set[T]): Set[T] = SetUtil.SetUnion(List(this, that))
 }
 
-case class Reduce[T](op:FunTerm[(T,T),T],arguments:Term[Seq[T]]) extends Term[T] {
-  def eval(state: State) = for (f <- op.eval(state); set <- arguments.eval(state)) yield set.reduce((a1,a2) => f(a1->a2))
+/**
+ * A Term that represents the reduce operation applied to a sequence of values.
+ * @param op the binary operator used to reduce elements.
+ * @param arguments the elements to be reduced.
+ * @tparam T the type of elements to reduce.
+ */
+case class Reduce[T](op: FunTerm[(T, T), T], arguments: Term[Seq[T]]) extends Term[T] {
+  def eval(state: State) = for (f <- op.eval(state); set <- arguments.eval(state)) yield set.reduce((a1, a2) => f(a1 -> a2))
   def variables = op.variables ++ arguments.variables
-  def domain[C >: T] = op.funCandidateDom.asInstanceOf[Term[Set[C]]]
+  def domain[C >: T] = op.funRange.asInstanceOf[Term[Set[C]]]
   def default = op.funRange.default.head
 }
 
 /**
- * Helpers to create compositional objects that correspond to quantification term.
+ * Helpers to create compositional objects that correspond to set based operators.
  */
 object Quantified {
 
   trait AbstractQuantified[T] {
-    def operator:FunTerm[(T,T),T]
-    def apply[A](term:Term[Seq[T]]) = Reduce(operator,term)
-    def unapply(term:Term[T]) = term match {
-      case Reduce(operator,seq) => Option(seq)
+    def operator: FunTerm[(T, T), T]
+    def apply[A](term: Term[Seq[T]]) = Reduce(operator, term)
+    def unapply(term: Term[T]) = term match {
+      case Reduce(operator, seq) => Option(seq)
       case _ => None
     }
   }
 
-  object Exists extends AbstractQuantified[Boolean] { def operator = Math.Or.Term}
-  object Forall extends AbstractQuantified[Boolean] { def operator = Math.And.Term}
-  object VecSum extends AbstractQuantified[Vector] { def operator = Math.VecAdd.Term}
-  object DoubleSum extends AbstractQuantified[Double] { def operator = Math.DoubleAdd.Term}
+  object Exists extends AbstractQuantified[Boolean] {
+    def operator = Logic.Or.Term
+  }
+
+  object Forall extends AbstractQuantified[Boolean] {
+    def operator = Logic.And.Term
+  }
+
+  object VecSum extends AbstractQuantified[Vector] {
+    def operator = Math.VecAdd.Term
+  }
+
+  object DoubleSum extends AbstractQuantified[Double] {
+    def operator = Math.DoubleAdd.Term
+  }
 
 }
 
@@ -61,8 +78,8 @@ case class RangeSet(from: Term[Int], to: Term[Int]) extends Term[Set[Int]] {
  * @param from start (included)
  * @param to end (excluded)
  */
-case class RangeSetValue(from:Int,to:Int) extends SetValue[Int] {
-  val range = Range(from,to)
+case class RangeSetValue(from: Int, to: Int) extends SetValue[Int] {
+  val range = Range(from, to)
   val rangeSet = range.toSet
   def contains(elem: Int) = rangeSet(elem)
   def iterator = range.iterator
@@ -72,7 +89,7 @@ trait AllObjects[T] extends SetValue[T] {
   def contains(elem: T) = true
   override def hashCode() = System.identityHashCode(this)
   override def equals(that: Any) = that match {
-    case x:AnyRef => x eq this
+    case x: AnyRef => x eq this
     case _ => false
   }
   override def +(elem: T) = this
@@ -92,6 +109,7 @@ case object Ints extends AllObjects[Int] {
 trait AllObjectsLarge[T] extends AllObjects[T] {
   def iterator = Util.tooLargeToIterate
 }
+
 /**
  * Set of all vectors.
  */
@@ -132,7 +150,9 @@ case object Doubles extends AllObjectsLarge[Double] {
 }
 
 class AllOfType[T] extends AllObjectsLarge[T]
+
 case object All extends AllObjectsLarge[Any]
+
 case object AllRefs extends AllObjectsLarge[AnyRef]
 
 
