@@ -10,7 +10,7 @@ object FGBuilder {
   import FG._
 
   class TermAlignedFG(val term:Term[Double], val weights:Variable[Vector]) {
-    val vars = term.variables.toSeq.filter(_ != weights)
+    val vars = term.variables.toSeq.filter(_ != weights).sorted(VariableOrdering)
     val fg = new FG
     def createVariableMapping(variable:Variable[Any]) = {
       val domain = variable.domain.eval().get.toSeq
@@ -39,7 +39,7 @@ object FGBuilder {
   case class BuiltFactor(factor:Factor,vars:Seq[VariableMapping])
 
   def buildTableFactor(aligned:TermAlignedFG,term:Term[Double]) = {
-    val vars = term.variables.toSeq.filter(_ != aligned.weights)
+    val vars = term.variables.toSeq.filter(_ != aligned.weights).sorted(VariableOrdering)
     val mappings = vars.map(aligned.variable2Mapping)
     val dims = mappings.view.map(_.dom.size).toArray
     val entryCount = dims.view.product
@@ -66,7 +66,7 @@ object FGBuilder {
   }
 
   def buildLinearFactor(aligned:TermAlignedFG, term:Term[Double], feats:Term[Vector], condition:State = State.empty) = {
-    val vars = term.variables.toSeq.filter(_ != aligned.weights)
+    val vars = term.variables.toSeq.filter(_ != aligned.weights).sorted(VariableOrdering)
     val mappings = vars.map(aligned.variable2Mapping)
     val dims = mappings.view.map(_.dom.size).toArray
     val entryCount = dims.view.product

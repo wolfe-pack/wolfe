@@ -57,3 +57,22 @@ case class Var[T](name:Symbol,dom:Term[Set[T]]) extends Variable[T] {
 case class Target[+V](variable:Variable[V]) extends Variable[V] {
   def domain[C >: V] = variable.domain
 }
+
+/**
+ * Defines a canonical ordering on variables.
+ */
+object VariableOrdering extends Ordering[Variable[Any]] {
+
+  def compare(x1: Variable[Any], x2: Variable[Any]) = (x1,x2) match {
+    case (GroundAtom(p1,a1:Int),GroundAtom(p2,a2:Int)) =>
+      Ordering[(String,Int)].compare((p1.name.name,a1),(p2.name.name,a2))
+    case (GroundAtom(p1,a1),GroundAtom(p2,a2)) =>
+      Ordering[String].compare(p1.name.toString(),p2.name.toString())
+    case (GroundAtom(p1,a1),_) => 1
+    case (_,GroundAtom(p2,a2)) => -1
+    case (Var(v1,_),Var(v2,_)) => Ordering[String].compare(v1.name,v2.name)
+    case _ => 0
+  }
+
+
+}

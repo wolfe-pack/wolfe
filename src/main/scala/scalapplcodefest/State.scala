@@ -86,12 +86,7 @@ trait State {
   }
 
   def toPrettyString = {
-//    val ordering = new Ordering[Variable[Any]] {
-//      def compare(x1: Variable[Any], x2: Variable[Any]) = (x1,x2) match {
-//        case (a1@GroundAtom(pred1,arg1), a2@GroundAtom(pred2,arg2)) =>
-//      }
-//    }
-    domain.toSeq.sortBy(_.toString).map(v => "%30s -> %s".format(v, get(v).get)).mkString("\n")
+    domain.toSeq.sorted(VariableOrdering).map(v => "%30s -> %s".format(v, get(v).get)).mkString("\n")
   }
 
 
