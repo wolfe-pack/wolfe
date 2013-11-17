@@ -17,10 +17,10 @@ object TermImplicits {
   implicit def symbolToConstant(x: Symbol) = Constant(x)
 
   implicit def setToConstant[T](x: Set[T]) = Constant(x)
-  //implicit def funToConstant[A,B](x:Fun[A,B]) = ConstantFun(x)
+  //implicit def funToConstant[A,B](x:Fun[A,B]) = x)
   implicit def toTupleTerm2[T1,T2](tuple:(Term[T1],Term[T2])) = TupleTerm2(tuple._1,tuple._2)
   implicit def toRichVariable[T](v:Variable[T]) = RichVariable(v)
-  implicit def toRichTerm[T](term:Term[T]) = RichTerm(term)
+  implicit def toRichTerm[T](term:Term[T]) = new RichTerm(term)
   implicit def toRichInt[A](i: Term[Int]) = RichIntTerm(i)
   implicit def toRichDouble[A](t: Term[Double]) = RichDoubleTerm(t)
   implicit def toRichBooleanTerm[A](t: Term[Boolean]) = RichBooleanTerm(t)
@@ -42,12 +42,12 @@ object TermImplicits {
 
   //math
   def e_(index:Term[Int],value:Term[Double] = Constant(1.0)) = UnitVec(index,value)
-  def I(term:Term[Boolean]) = FunApp(ConstantFun(Math.Iverson),term)
+  def I(term:Term[Boolean]) = FunApp(Math.Iverson.Term,term)
 
   def dsum(args:Term[Seq[Double]]) = Quantified.DoubleSum(args)
   def vsum(args:Term[Seq[Vector]]) = Quantified.VecSum(args)
 
-  implicit def toImageSeq[A,B](f:FunTerm[A,B]) = ImageSeq(f,f.funCandidateDom)
+  implicit def toImageSeq[A,B](f:FunTerm[A,B]) = ImageSeq(f)
   implicit def toImageSeqCurried2[A1,A2,B](f:FunTerm[A1,Fun[A2,B]]) = ImageSeqCurried2(f)
 
 
@@ -70,8 +70,8 @@ object TermImplicits {
   }
 
   case class RichVecTerm(term:Term[Vector]) {
-    def dot(that:Term[Vector]) = FunApp(ConstantFun(Math.Dot),TupleTerm2(term,that))
-    def +(that:Term[Vector]) = FunApp(ConstantFun(Math.VecAdd),TupleTerm2(term,that))
+    def dot(that:Term[Vector]) = FunApp(Math.Dot.Term,TupleTerm2(term,that))
+    def +(that:Term[Vector]) = FunApp(Math.VecAdd.Term,TupleTerm2(term,that))
   }
 
   case class RichSetTerm[T](s: Term[Set[T]]) {
@@ -102,7 +102,7 @@ object TermImplicits {
 
   case class VarValuePair[T](variable:Variable[T],value:T)
 
-  case class RichTerm[T](term:Term[T]) {
+  class RichTerm[T](term:Term[T]) {
     def |(condition:State) = Conditioned(term,condition)
     def |(mappings:(Variable[Any],Any)*) = Conditioned(term,State(mappings.toMap))
     def eval(state:(Variable[Any],Any)*):Option[T] = term.eval(State(state.toMap))
@@ -123,22 +123,22 @@ object TermImplicits {
 
 
   case class RichIntTerm(i: Term[Int]) {
-    def +(that: Term[Int]) = FunApp(ConstantFun(Math.IntAdd), TupleTerm2(i, that))
-    def -(that: Term[Int]) = FunApp(ConstantFun(Math.IntMinus), TupleTerm2(i, that))
+    def +(that: Term[Int]) = FunApp(Math.IntAdd.Term, TupleTerm2(i, that))
+    def -(that: Term[Int]) = FunApp(Math.IntMinus.Term, TupleTerm2(i, that))
     def ~~(that: Term[Int]) = RangeSet(i,that)
   }
 
   case class RichDoubleTerm(x: Term[Double]) {
-    def +(that: Term[Double]) = FunApp(ConstantFun(Math.DoubleAdd), TupleTerm2(x, that))
-    def *(that: Term[Double]) = FunApp(ConstantFun(Math.DoubleMultiply), TupleTerm2(x, that))
+    def +(that: Term[Double]) = FunApp(Math.DoubleAdd.Term, TupleTerm2(x, that))
+    def *(that: Term[Double]) = FunApp(Math.DoubleMultiply.Term, TupleTerm2(x, that))
   }
 
   case class RichBooleanTerm(x: Term[Boolean]) {
-    def &&(that: Term[Boolean]) = FunApp(ConstantFun(Math.And), TupleTerm2(x, that))
-    def ||(that: Term[Boolean]) = FunApp(ConstantFun(Math.Or), TupleTerm2(x, that))
-    def |=>(that: Term[Boolean]) = FunApp(ConstantFun(Math.Implies), TupleTerm2(x, that))
-    def unary_! = FunApp(ConstantFun(Math.Neg),x)
-    def unary_$ = FunApp(ConstantFun(Math.Iverson),x)
+    def &&(that: Term[Boolean]) = FunApp(Math.And.Term, TupleTerm2(x, that))
+    def ||(that: Term[Boolean]) = FunApp(Math.Or.Term, TupleTerm2(x, that))
+    def |=>(that: Term[Boolean]) = FunApp(Math.Implies.Term, TupleTerm2(x, that))
+    def unary_! = FunApp(Math.Neg.Term,x)
+    def unary_$ = FunApp(Math.Iverson.Term,x)
   }
 
 

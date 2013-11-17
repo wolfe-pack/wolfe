@@ -9,16 +9,43 @@ import cc.factorie.la.SingletonTensor1
 object Math {
 
   trait BinaryOperatorSameDomain[T] extends Fun[(T, T), T] {
+    self =>
     def dom: Set[T]
     def funCandidateDom = CartesianProduct2(dom, dom)
     def funRange = dom
     def isDefinedAt(x: (T, T)) = true
+
+    object Applied {
+      def unapply(x: Term[Any]): Option[(Term[T], Term[T])] = x match {
+        case FunApp(ConstantFun(op), TupleTerm2(arg1, arg2)) if op == self =>
+          Some((arg1.asInstanceOf[Term[T]], arg2.asInstanceOf[Term[T]]))
+        case _ => None
+      }
+    }
+    object Reduced {
+      def unapply(x: Term[Any]): Option[Term[Seq[T]]] = x match {
+        case Reduce(ConstantFun(op), args) if op == self => Some(args.asInstanceOf[Term[Seq[T]]])
+        case _ => None
+      }
+    }
+
   }
 
   trait BinaryOperator[T, R] extends Fun[(T, T), R] {
+
+    self =>
     def dom: Set[T]
     def funCandidateDom = CartesianProduct2(dom, dom)
     def isDefinedAt(x: (T, T)) = true
+
+    object Applied {
+      def unapply(x: Term[R]): Option[(Term[T], Term[T])] = x match {
+        case FunApp(ConstantFun(op), TupleTerm2(arg1, arg2)) if op == self =>
+          Some((arg1.asInstanceOf[Term[T]], arg2.asInstanceOf[Term[T]]))
+        case _ => None
+      }
+    }
+
   }
 
   object Dot extends BinaryOperator[Vector, Double] {
@@ -42,6 +69,14 @@ object Math {
     def dom = Doubles
   }
 
+  case object DoubleAddCurried extends Fun[Double, Fun[Double, Double]] {
+    def funCandidateDom = ???
+    //TODO: would like to make this lazy
+    def funRange = ???
+    def isDefinedAt(x: Double) = ???
+    def apply(x: Double) = ???
+  }
+
   case object DoubleMultiply extends BinaryOperatorSameDomain[Double] {
     def apply(v1: (Double, Double)) = v1._1 * v1._2
     def dom = Doubles
@@ -59,29 +94,30 @@ object Math {
   case object Or extends BinaryBoolOperator {
     def apply(v1: (Boolean, Boolean)) = v1._1 || v1._2
   }
+
   case object Implies extends BinaryBoolOperator {
     def apply(v1: (Boolean, Boolean)) = !v1._1 || v1._2
   }
 
-  case object Neg extends Fun[Boolean,Boolean] {
+  case object Neg extends Fun[Boolean, Boolean] {
     def funCandidateDom = Bools
     override def funDom = Bools
     def funRange = Bools
     def isDefinedAt(x: Boolean) = true
-    def apply(v1:Boolean) = !v1
+    def apply(v1: Boolean) = !v1
   }
 
   case object VecAdd extends BinaryOperatorSameDomain[Vector] {
     def apply(pair: (Vector, Vector)) = {
       pair match {
-        case (s1:SingletonVector, s2:SingletonVector) =>
+        case (s1: SingletonVector, s2: SingletonVector) =>
           val result = new SparseVector(2) // what should the dimension be?
           result += s1
           result += s2
           result
-        case (singleton:SingletonVector,other) => other + singleton
-        case (other, singleton:SingletonVector) => other + singleton
-        case (v1,v2) => v1 + v2
+        case (singleton: SingletonVector, other) => other + singleton
+        case (other, singleton: SingletonVector) => other + singleton
+        case (v1, v2) => v1 + v2
       }
     }
     def dom = Vectors
@@ -100,7 +136,7 @@ object Math {
       new SingletonTensor1(1, i, v)
     def variables = SetUtil.SetUnion(List(index.variables, value.variables))
     def domain[C >: Vector] = Constant(Vectors).asInstanceOf[Term[Set[C]]]
-    def default = new SingletonTensor1(1,index.default, value.default)
+    def default = new SingletonTensor1(1, index.default, value.default)
   }
 
 }

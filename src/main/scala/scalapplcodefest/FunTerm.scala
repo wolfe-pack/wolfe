@@ -15,6 +15,15 @@ trait FunTerm[A, B] extends Term[Fun[A, B]] {
 }
 
 /**
+ * A proxy for terms that evaluate to Fun objects, but are not implementing the FunTerm interface
+ * @param self the wrapped term.
+ */
+case class FunTermProxy[A,B](self:Term[Fun[A,B]]) extends FunTerm[A,B] with ProxyTerm[Fun[A,B]] {
+  def funCandidateDom = Constant(new AllOfType[A])
+  def funRange = Constant(new AllOfType[B])
+}
+
+/**
  * Helper object to build FunTerms
  */
 object FunTerm {
@@ -27,10 +36,9 @@ object FunTerm {
   /**
    * Turns a function term into a FunTerm
    */
-  def apply[A,B](f:Term[Fun[A,B]]) = new FunTerm[A,B] with ProxyTerm[Fun[A,B]] {
-    def self = f
-    def funCandidateDom = Constant(new AllOfType[A])
-    def funRange = Constant(new AllOfType[B])
+  def apply[A,B](f:Term[Fun[A,B]]):FunTerm[A,B] = f match {
+    case ft:FunTerm[_,_] => ft.asInstanceOf[FunTerm[A,B]]
+    case _ => FunTermProxy(f)
   }
 }
 
@@ -44,7 +52,9 @@ trait Fun[A, B] extends PartialFunction[A, B] {
   def funDom: Set[A] = funCandidateDom.filter(isDefinedAt)
   //TODO: would like to make this lazy
   def funRange: Set[B]
+  object Term extends ConstantFun(this)
 
+  override def toString() = getClass().getSimpleName
 }
 
 /**
@@ -67,15 +77,29 @@ object Fun {
 
 }
 
-/**
- * Helper to create constant function terms typed as FunTerm.
- */
-object ConstantFun {
-  def apply[A, B](fun: Fun[A, B]) = new Constant(fun) with FunTerm[A, B] {
-    def funCandidateDom = Constant(fun.funCandidateDom)
-    def funRange = Constant(fun.funRange)
-  }
+case class ConstantFun[A,B](fun:Fun[A,B]) extends FunTerm[A,B] {
+  def eval(state: State) = Some(fun)
+  def variables = Set.empty
+  def domain[C >: Fun[A, B]] = Constant(Set(fun))
+  def default = fun
+  def funCandidateDom = Constant(fun.funCandidateDom)
+  def funRange = Constant(fun.funRange)
 }
+
+///**
+// * Helper to create constant function terms typed as FunTerm.
+// */
+//object ConstantFun {
+//  def apply[A, B](fun: Fun[A, B]) = new Constant(fun) with FunTerm[A, B] {
+//    def funCandidateDom = Constant(fun.funCandidateDom)
+//    def funRange = Constant(fun.funRange)
+//  }
+//
+//  def unapply[A,B](term:Term[Fun[A,B]]) = term match {
+//    case Constant(f) => Some(f)
+//    case _ => None
+//  }
+//}
 
 
 /**
@@ -96,7 +120,13 @@ case class FunApp[A, B](function: FunTerm[A, B], arg: Term[A]) extends Term[B] {
   }
   def default = function.default(function.funCandidateDom.default.head)
   def domain[C >: B] = Image(function, arg.domain).asInstanceOf[Term[Set[C]]]
+}
 
+case object BinaryFunApp {
+  def unapply[T](term:FunApp[(T,T),T]) = term match {
+    case FunApp(f,a) => Some((f,a))
+    case _=> None
+  }
 }
 
 /**
@@ -197,8 +227,8 @@ case class Image[A, B](fun: FunTerm[A, B], dom: Term[Set[A]]) extends Term[Set[B
  * @tparam A argument type of function.
  * @tparam B return type of function.
  */
-case class ImageSeq[A, B](fun: FunTerm[A, B], dom: Term[Set[A]]) extends Term[Seq[B]] {
-  def eval(state: State) = for (f <- fun.eval(state); d <- dom.eval(state)) yield d.view.toSeq.map(f)
+case class ImageSeq[A, B](fun: FunTerm[A, B]) extends Term[Seq[B]] {
+  def eval(state: State) = for (f <- fun.eval(state); d <- fun.funCandidateDom.eval(state)) yield d.view.toSeq.map(f)
   def variables = fun.variables
   def domain[C >: Seq[B]] = Constant(new AllOfType[C])
   def default = fun.default.funRange.toSeq

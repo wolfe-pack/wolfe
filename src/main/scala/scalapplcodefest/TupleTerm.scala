@@ -1,26 +1,24 @@
 package scalapplcodefest
 
-import scala.collection.SeqProxy
-
 /**
  * @author Sebastian Riedel
  */
-trait TupleTerm extends Term[Product] with SeqProxy[Term[Any]] {
-  def variables = this.map(_.variables).reduce(_ ++ _)
-}
-
-case class TupleTerm2[A1, A2](a1: Term[A1], a2: Term[A2]) extends TupleTerm with Term[(A1, A2)] {
+case class TupleTerm2[+A1, +A2](a1: Term[A1], a2: Term[A2])
+  extends Term[(A1, A2)] {
   import SetCastHelper._
-  def self = Seq(a1, a2)
+  def variables = a1.variables ++ a2.variables
+  def components = List(a1,a2)
+  //def copy(args: Seq[Term[Any]]) = TupleTerm2(args(0).asInstanceOf[Term[A1]],args(1).asInstanceOf[Term[A2]])
   def eval(state: State) = for (b1 <- a1.eval(state); b2 <- a2.eval(state)) yield (b1, b2)
   def default = (a1.default, a2.default)
   def domain[C >: (A1, A2)] = CartesianProductTerm2(a1.domain,a2.domain).as[C]
+  //def copy[C1 >: A1,C2 >: A2](a1:Term[C1] = this.a1,a2:Term[C2] = this.a2) = TupleTerm2(a1,a2)
 }
 
 case class TupleTerm3[A1, A2, A3](a1: Term[A1], a2: Term[A2], a3: Term[A3])
-  extends TupleTerm with Term[(A1, A2, A3)] {
+  extends Term[(A1, A2, A3)] {
   import SetCastHelper._
-  def self = Seq(a1, a2, a3)
+  def variables = a1.variables ++ a2.variables ++ a3.variables
   def eval(state: State) = for (b1 <- a1.eval(state); b2 <- a2.eval(state); b3 <- a3.eval(state)) yield (b1, b2, b3)
   def default = (a1.default, a2.default, a3.default)
   def domain[C >: (A1, A2, A3)] = CartesianProductTerm3(a1.domain, a2.domain, a3.domain).as[C]

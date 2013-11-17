@@ -1,9 +1,7 @@
 package scalapplcodefest
 
 import scala.language.existentials
-import scala.collection.GenTraversableOnce
-import scala.collection.generic.CanBuildFrom
-import cc.factorie.la.{ScalarTensor, Tensor1}
+import cc.factorie.la.ScalarTensor
 
 /**
  * @author Sebastian Riedel
@@ -36,10 +34,10 @@ object Quantified {
     }
   }
 
-  object Exists extends AbstractQuantified[Boolean] { def operator = ConstantFun(Math.Or)}
-  object Forall extends AbstractQuantified[Boolean] { def operator = ConstantFun(Math.And)}
-  object VecSum extends AbstractQuantified[Vector] { def operator = ConstantFun(Math.VecAdd)}
-  object DoubleSum extends AbstractQuantified[Double] { def operator = ConstantFun(Math.DoubleAdd)}
+  object Exists extends AbstractQuantified[Boolean] { def operator = Math.Or.Term}
+  object Forall extends AbstractQuantified[Boolean] { def operator = Math.And.Term}
+  object VecSum extends AbstractQuantified[Vector] { def operator = Math.VecAdd.Term}
+  object DoubleSum extends AbstractQuantified[Double] { def operator = Math.DoubleAdd.Term}
 
 }
 

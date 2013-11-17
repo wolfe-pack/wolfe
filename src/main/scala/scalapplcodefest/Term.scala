@@ -94,5 +94,15 @@ case class Constant[T](value: T) extends Term[T] {
   def default = value
 }
 
+/**
+ * Generic representation of terms that have sub-terms / components.
+ * @tparam T the type of the term value.
+ * @tparam This the type of the term itself.
+ */
+trait CompositeTerm[T,This<:Term[T]] extends Term[T] {
+  def components:List[Term[Any]]
+  def copy(args:Seq[Term[Any]]):This
+  def variables = SetUtil.SetUnion(components.map(_.variables))
+}
 
 

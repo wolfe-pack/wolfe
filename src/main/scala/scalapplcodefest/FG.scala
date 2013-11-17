@@ -20,13 +20,13 @@ class FG {
   var weights: DenseVector = null
 
 
-  def createNode(dim: Int) = {
+  def addNode(dim: Int) = {
     val n = new Node(nodes.size, dim)
     nodes += n
     n
   }
 
-  def createEdge(f: Factor, n: Node) = {
+  def addEdge(f: Factor, n: Node) = {
     val e = new Edge(n, f, n.dim)
     n.edgeCount += 1
     f.edgeCount += 1
@@ -60,26 +60,26 @@ class FG {
       |%s
     """.stripMargin.format(nodes.mkString("\n"), factors.map(_.toVerboseString(index)).mkString("\n"))
   }
-  def createFactor1(table: Array[Double]) = {
+  def addFactor1(table: Array[Double]) = {
     val f = new Factor(this, factors.size, Array(table.length), Range(0, table.length).map(Array(_)).toArray, TABLE, table)
     factors += f
     f
   }
 
-  def createFactor(scores: Array[Double], settings: Array[Array[Int]], dims: Array[Int]) = {
+  def addFactor(scores: Array[Double], settings: Array[Array[Int]], dims: Array[Int]) = {
     val f = new Factor(this, factors.size, dims, settings, TABLE, scores)
     factors += f
     f
   }
 
-  def createLinearFactor(stats: Array[SparseVector], settings: Array[Array[Int]], dims: Array[Int]) = {
+  def addLinearFactor(stats: Array[SparseVector], settings: Array[Array[Int]], dims: Array[Int]) = {
     val f = new Factor(this, factors.size, dims, settings, LINEAR, null, stats)
     factors += f
     f
   }
 
 
-  def createFactor2(table: Array[Array[Double]]) = {
+  def addFactor2(table: Array[Array[Double]]) = {
     val dims = Array(table.length, table(0).length)
     val entryCount = dims(0) * dims(1)
     val scores = Array.ofDim[Double](entryCount)
