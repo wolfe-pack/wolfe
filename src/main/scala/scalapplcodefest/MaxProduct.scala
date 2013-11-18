@@ -53,8 +53,9 @@ object MaxProduct {
    * @param fg factor graph.
    * @param result vector to add results to.
    */
-  def featureExpectations(fg: MessagePassingGraph, result:SparseVector) {
-    for (factor <- fg.factors; if factor.typ == MessagePassingGraph.FactorType.LINEAR) {
+  def featureExpectationsAndObjective(fg: MessagePassingGraph, result: SparseVector): Double = {
+    var obj = 0.0
+    for (factor <- fg.factors) {
       // 1) go over all states, find max
       var norm = Double.NegativeInfinity
       for (i <- 0 until factor.entryCount) {
@@ -63,24 +64,30 @@ object MaxProduct {
         norm = math.max(score, norm)
       }
 
-      // 2) count number of maximums
-      var maxCount = 0
-      for (i <- 0 until factor.entryCount) {
-        val setting = factor.settings(i)
-        val score = penalizedScore(factor, i, setting)
-        if (score == norm) maxCount += 1
-      }
+      obj += norm
 
-      // 3) prob = 1/|maxs| for all maximums, add corresponding vector
-      for (i <- 0 until factor.entryCount) {
-        val setting = factor.settings(i)
-        val score = penalizedScore(factor, i, setting)
-        if (score == norm) {
-          result +=(factor.stats(i),1.0 / maxCount)
+      if (factor.typ == MessagePassingGraph.FactorType.LINEAR) {
+
+        // 2) count number of maximums
+        var maxCount = 0
+        for (i <- 0 until factor.entryCount) {
+          val setting = factor.settings(i)
+          val score = penalizedScore(factor, i, setting)
+          if (score == norm) maxCount += 1
         }
-      }
 
+        // 3) prob = 1/|maxs| for all maximums, add corresponding vector
+        for (i <- 0 until factor.entryCount) {
+          val setting = factor.settings(i)
+          val score = penalizedScore(factor, i, setting)
+          if (score == norm) {
+            result +=(factor.stats(i), 1.0 / maxCount)
+          }
+        }
+
+      }
     }
+    obj
   }
 
 
@@ -142,7 +149,7 @@ object MaxProduct {
     //find max value
     var max = Double.NegativeInfinity
     for (i <- 0 until node.dim)
-      max = math.max(max,node.b(i))
+      max = math.max(max, node.b(i))
 
     //how many values with max value?
     var maxCount = 0
