@@ -16,7 +16,8 @@ object Trainer {
       MaxProduct.run(aligned.graph, 1)
 
 
-      val guessFeats = MaxProduct.featureExpectations(aligned.graph)
+      val guessFeats = new SparseVector(100)
+      MaxProduct.featureExpectations(aligned.graph, guessFeats)
       val obj = MaxProduct.objective(aligned.graph)
 
 
