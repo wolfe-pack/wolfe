@@ -38,6 +38,21 @@ object MaxProduct {
     for (node <- fg.nodes) updateBelief(node)
   }
 
+  def objective(fg: MessagePassingGraph): Double = {
+    ???
+  }
+
+  def featureExpectations(fg: MessagePassingGraph): SparseVector = {
+    val result = new SparseVector(100)
+    for (factor <- fg.factors; if factor.typ == MessagePassingGraph.FactorType.LINEAR) {
+      for (i <- 0 until factor.entryCount) {
+        val setting = factor.settings(i)
+        var score = factor.score(i)
+      }
+    }
+    ???
+  }
+
   def updateF2N(edge: Edge) {
     val factor = edge.f
     util.Arrays.fill(edge.f2n, Double.MinValue)
@@ -67,6 +82,16 @@ object MaxProduct {
       for (i <- 0 until node.dim)
         node.b(i) += node.edges(e).f2n(i)
   }
+
+  def updateAssignment(node: Node) {
+    var max = Double.MinValue
+    for (i <- 0 until node.dim)
+      max = math.max(max,node.b(i))
+    for (i <- 0 until node.dim) {
+      node.a(i) = if (node.b(i) == max) 0.0 else Double.NegativeInfinity
+    }
+  }
+
 }
 
 

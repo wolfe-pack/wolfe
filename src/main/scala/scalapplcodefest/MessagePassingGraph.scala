@@ -131,6 +131,37 @@ object MessagePassingGraph {
   import FactorType._
 
   /**
+   * Turns a setting vector into an entry number.
+   * @param setting setting
+   * @param dims dimensions of each variable.
+   * @return the entry corresponding to the given setting.
+   */
+  final def settingToEntry(setting:Array[Int],dims:Array[Int]) = {
+    var result = 0
+    for (i <- (0 until dims.length).optimized) {
+      result = setting(i) + result * dims(i)
+    }
+    result
+  }
+
+  /**
+   * Turns an entry into a setting
+   * @param entry the entry number.
+   * @param dims dimensions of the variables.
+   * @return a setting array corresponding to the entry.
+   */
+  final def entryToSetting(entry:Int,dims:Array[Int]) = {
+    val result = Array.ofDim[Int](dims.length)
+    var current = entry
+    for (i <- (0 until dims.length).optimized) {
+      val value = current % dims(i)
+      result(i) = value
+      current = current / dims(i)
+    }
+    result
+  }
+
+  /**
    * A node representing a variable.
    * @param index the index of the node.
    * @param dim the dimension of the variable the node is representing.
@@ -141,6 +172,9 @@ object MessagePassingGraph {
 
     /* node belief */
     val b = Array.ofDim[Double](dim)
+
+    /* node assignment */
+    val a = Array.ofDim[Double](dim)
 
     /* external message for this node. Will usually not be updated during inference */
     val in = Array.ofDim[Double](dim)

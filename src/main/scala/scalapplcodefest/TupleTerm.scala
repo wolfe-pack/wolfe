@@ -33,6 +33,11 @@ case class CartesianProduct3[A1,A2,A3](d1:Set[A1],d2:Set[A2],d3:Set[A3]) extends
   def iterator = for (v1 <- d1.iterator; v2 <- d2.iterator; v3 <- d3.iterator) yield (v1,v2,v3)
 }
 
+//abstract class CartesianOperator2[A1,A2] extends Operator[(Set[A1],Set[A2]),Set[(A1,A2)]] {
+//  def funCandidateDom = ???
+//  def funRange = ???
+//  def apply(v1: (Set[A1], Set[A2])) = CartesianProduct2(v1._1,v1._2)
+//}
 
 case class CartesianProductTerm2[A1,A2](a1:Term[Set[A1]],a2:Term[Set[A2]]) extends Term[Set[(A1,A2)]] {
   def eval(state: State) =

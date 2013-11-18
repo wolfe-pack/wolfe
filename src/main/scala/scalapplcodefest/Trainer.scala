@@ -5,16 +5,20 @@ package scalapplcodefest
  */
 object Trainer {
 
-  def train(model: LinearModel, instances: Seq[State]): Vec = {
+  def train(model: LinearModel, instances: Seq[State]): Vector = {
     import TermImplicits._
-    val weights = new DenseVec(100)
+    val weights = new DenseVector(10000)
     for (instance <- instances) {
       val conditioned = model | instance
-      //todo: this could also allow specification of a weight variable that the builder will spot
-      //todo: in LogLinear terms. The build fg will then provide the possibility to set this weight directly
-      //todo: and to read off the feature expectations
-      val aligned = MessagePassingGraphBuilder.build(conditioned)
-      MaxProduct.run(aligned.fg, 1)
+
+      val aligned = MessagePassingGraphBuilder.build(conditioned,model.weights)
+      aligned.graph.weights = weights
+      MaxProduct.run(aligned.graph, 1)
+
+
+      val guessFeats = MaxProduct.featureExpectations(aligned.graph)
+      val obj = MaxProduct.objective(aligned.graph)
+
 
     }
     //have: MaxProduct.

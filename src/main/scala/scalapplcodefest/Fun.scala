@@ -4,20 +4,33 @@ package scalapplcodefest
  * @author Sebastian Riedel
  */
 /**
- * Partial functions with invariant argument and result types. This is important for pattern matching.
+ * Partial functions with invariant argument and result types.
  * @tparam A argument type.
  * @tparam B return type.
  */
 trait Fun[A, B] extends PartialFunction[A, B] {
 
-  self =>
-
   def funCandidateDom: Set[A]
-  def funDom: Set[A] = funCandidateDom.filter(isDefinedAt)
   //TODO: would like to make this lazy
+  def funDom: Set[A] = funCandidateDom.filter(isDefinedAt)
   def funRange: Set[B]
 
+
+  override def toString() = getClass().getSimpleName
+}
+
+/**
+ * This trait should be implemented by singleton function objects such as "Add" "And" etc. The trait provides
+ * both a term version of the function and better support for pattern matching.
+ * @tparam A argument type.
+ * @tparam B return type.
+ */
+trait Operator[A,B] extends Fun[A,B] {
+  self =>
   object Term extends ConstantFun(this)
+
+  def isDefinedAt(x: A) = true
+
   object Applied {
     def unapply(x: Term[Any]): Option[Term[A]] = x match {
       case FunApp(ConstantFun(op), arg) if op == self => Some(arg.asInstanceOf[Term[A]])
@@ -25,7 +38,6 @@ trait Fun[A, B] extends PartialFunction[A, B] {
     }
   }
 
-  override def toString() = getClass().getSimpleName
 }
 
 /**
@@ -67,14 +79,13 @@ trait BinaryOperatorSameDomain[T, R] extends BinaryOperator[T,T, R] {
   def dom2 = dom
 }
 
-trait BinaryOperator[T1,T2, R] extends Fun[(T1, T2), R] {
+trait BinaryOperator[T1,T2, R] extends Operator[(T1, T2), R] {
 
   self =>
   def dom1: Set[T1]
   def dom2: Set[T2]
 
   def funCandidateDom = CartesianProduct2(dom1, dom2)
-  def isDefinedAt(x: (T1, T2)) = true
 
   object Applied2 {
     def unapply(x: Term[Any]): Option[(Term[T1], Term[T2])] = x match {

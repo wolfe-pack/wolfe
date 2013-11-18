@@ -60,11 +60,10 @@ object Math {
     def dom = Vectors
   }
 
-  case object Iverson extends Fun[Boolean, Double] {
+  case object Iverson extends Operator[Boolean, Double] {
     def funCandidateDom = Bools
     override def funDom = Bools
     def funRange = Doubles
-    def isDefinedAt(x: Boolean) = true
     def apply(x: Boolean) = if (x) 1.0 else 0.0
   }
 
@@ -84,27 +83,16 @@ object Math {
  */
 object Logic {
 
-  trait BinaryBoolOperator extends BinaryOperatorSameDomainAndRange[Boolean] {
-    def dom = Bools
-  }
+  trait BinaryBoolOperator extends BinaryOperatorSameDomainAndRange[Boolean] {def dom = Bools}
 
-  case object And extends BinaryBoolOperator {
-    def apply(v1: (Boolean, Boolean)) = v1._1 && v1._2
-  }
+  case object And extends BinaryBoolOperator {def apply(v1: (Boolean, Boolean)) = v1._1 && v1._2}
+  case object Or extends BinaryBoolOperator {def apply(v1: (Boolean, Boolean)) = v1._1 || v1._2}
+  case object Implies extends BinaryBoolOperator {def apply(v1: (Boolean, Boolean)) = !v1._1 || v1._2}
 
-  case object Or extends BinaryBoolOperator {
-    def apply(v1: (Boolean, Boolean)) = v1._1 || v1._2
-  }
-
-  case object Implies extends BinaryBoolOperator {
-    def apply(v1: (Boolean, Boolean)) = !v1._1 || v1._2
-  }
-
-  case object Neg extends Fun[Boolean, Boolean] {
+  case object Neg extends Operator[Boolean, Boolean] {
     def funCandidateDom = Bools
     override def funDom = Bools
     def funRange = Bools
-    def isDefinedAt(x: Boolean) = true
     def apply(v1: Boolean) = !v1
   }
 

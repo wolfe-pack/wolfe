@@ -40,21 +40,10 @@ object Quantified {
     }
   }
 
-  object Exists extends AbstractQuantified[Boolean] {
-    def operator = Logic.Or.Term
-  }
-
-  object Forall extends AbstractQuantified[Boolean] {
-    def operator = Logic.And.Term
-  }
-
-  object VecSum extends AbstractQuantified[Vector] {
-    def operator = Math.VecAdd.Term
-  }
-
-  object DoubleSum extends AbstractQuantified[Double] {
-    def operator = Math.DoubleAdd.Term
-  }
+  object Exists extends AbstractQuantified[Boolean] {def operator = Logic.Or.Term}
+  object Forall extends AbstractQuantified[Boolean] {def operator = Logic.And.Term}
+  object VecSum extends AbstractQuantified[Vector] {def operator = Math.VecAdd.Term}
+  object DoubleSum extends AbstractQuantified[Double] {def operator = Math.DoubleAdd.Term}
 
 }
 
