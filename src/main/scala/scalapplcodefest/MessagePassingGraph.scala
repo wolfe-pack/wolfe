@@ -205,6 +205,18 @@ object MessagePassingGraph {
     var indexInNode = -1
   }
 
+  /**
+   * A factor in a message passing factor graph.
+   * @param fg the factor graph.
+   * @param index the index/id of the factor
+   * @param dims array with dimensions of the participating variables, in the order of the `edges` array of edges.
+   * @param settings array with integer array representations of settings of the neighbors
+   * @param typ the type of factor
+   * @param table if `typ=Table` this stores a score for each possible setting (indexed by the index of the setting in
+   *              `settings`.
+   * @param stats if `typ=Linear` this stores a feature vector for each setting (index by the index of the setting
+   *              in `settings`.
+   */
   final class Factor(val fg: MessagePassingGraph, val index: Int, val dims: Array[Int], val settings: Array[Array[Int]],
                      val typ: FactorType.Value = MessagePassingGraph.FactorType.TABLE,
                      val table: Array[Double],
