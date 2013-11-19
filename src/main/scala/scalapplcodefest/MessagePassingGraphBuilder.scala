@@ -14,7 +14,7 @@ object MessagePassingGraphBuilder {
     val vars = term.variables.toSeq.filter(_ != weights).sorted(VariableOrdering)
     val graph = new MessagePassingGraph
     def createVariableMapping(variable: Variable[Any]) = {
-      val domain = variable.domain.eval().get.toSeq
+      val domain = variable.domain.eval().right.get.toSeq
       val indexOfValue = domain.zipWithIndex.toMap
       val node = graph.addNode(domain.size)
       VariableMapping(variable, node, domain, indexOfValue)
@@ -52,7 +52,7 @@ object MessagePassingGraphBuilder {
     //iterate over possible states, get the state index
     for (state <- State.allStates(vars.toList)) {
       val setting = Array.ofDim[Int](vars.size)
-      val score = term.eval(state).get
+      val score = term.eval(state).right.get
       var stateIndex = 0
       for ((v, i) <- mappings.zipWithIndex) {
         val valueIndex = v.indexOfValue(state(v.variable))
@@ -79,7 +79,7 @@ object MessagePassingGraphBuilder {
     //iterate over possible states, get the state index
     for (state <- State.allStates(vars.toList)) {
       val setting = Array.ofDim[Int](vars.size)
-      val feat = feats.eval(state + condition).get
+      val feat = feats.eval(state + condition).right.get
       var stateIndex = 0
       for ((v, i) <- mappings.zipWithIndex) {
         val valueIndex = v.indexOfValue(state(v.variable))
@@ -149,7 +149,7 @@ object MessagePassingGraphBuilder {
 
     val conditioned = model | instance
 
-    val distributed = TermConverter.distDots(model)
+    val distributed = TermConverter.distDots(conditioned)
     val unrolled = TermConverter.unrollLambdas(distributed)
     val flatten = TermConverter.flattenDouble(unrolled)
     println(distributed)

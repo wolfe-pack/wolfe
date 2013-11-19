@@ -27,7 +27,7 @@ object Trainer {
 
         val guessFeats = new SparseVector(100)
         val guessScore = MaxProduct.featureExpectationsAndObjective(aligned.graph, guessFeats)
-        val goldScore = conditioned.eval(target).get
+        val goldScore = conditioned.eval(target).right.get
         value.accumulate(guessScore - goldScore)
         gradient.accumulate(key,guessFeats)
 

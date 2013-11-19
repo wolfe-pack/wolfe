@@ -109,7 +109,7 @@ object State {
     vars match {
       case Nil => toConjoinWith
       case head :: tail =>
-        val newStates = for (oldState <- toConjoinWith; value <- head.domain.eval().get.view) yield
+        val newStates = for (oldState <- toConjoinWith; value <- head.domain.eval().right.get.view) yield
           oldState + SingletonState(head,value)
         allStates(tail,newStates)
     }

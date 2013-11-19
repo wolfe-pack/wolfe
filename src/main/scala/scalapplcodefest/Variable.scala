@@ -18,11 +18,11 @@ trait Variable[+T] extends Term[T] {
   /**
    * The denotation of a variable.
    * @param state the state object that binds variables to values.
-   * @return `Some(value)` if `variable->value` in `state`, [[scalapplcodefest.Variable# d o m a i n]] is defined in
-   *         `state` as `dom` and `dom(value)` holds. Else `None`.
+   * @return `Right(value)` if `variable->value` in `state`, [[scalapplcodefest.Variable#domain]] is defined in
+   *         `state` as `dom` and `dom(value)` holds. Else `Left(this)`.
    */
   def eval(state: State) = {
-    for (dom <- domain.eval(state); value <- state.get(this) if dom(value)) yield value
+    for (dom <- domain.eval(state).right; value <- state.get(this).filter(dom).toRight(this).right) yield value
   }
 
   /**

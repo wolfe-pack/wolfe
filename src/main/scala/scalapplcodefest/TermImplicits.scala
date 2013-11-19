@@ -112,7 +112,7 @@ object TermImplicits {
   class RichTerm[T](term: Term[T]) {
     def |(condition: State) = Conditioned(term, condition)
     def |(mappings: (Variable[Any], Any)*) = Conditioned(term, State(mappings.toMap))
-    def eval(state: (Variable[Any], Any)*): Option[T] = term.eval(State(state.toMap))
+    def eval(state: (Variable[Any], Any)*) = term.eval(State(state.toMap))
     //    def eval(state:VarValuePair[T]*):Option[T] = term.eval(State(state.map(_.toTuple).toMap))
 
   }

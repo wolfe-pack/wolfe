@@ -24,9 +24,9 @@ trait Term[+T] {
   /**
    * Defines the meaning of a term as a mapping from states to objects.
    * @param state the state object that binds variables to values.
-   * @return `Some(value)` if term's `value` is defined with respect to `state`, `None` otherwise.
+   * @return `Right(value)` if term's `value` is defined with respect to `state`, `Left(undefinedTerm)` otherwise.
    */
-  def eval(state: State = State.empty): Option[T]
+  def eval(state: State = State.empty): Either[Term[Any],T]
 
   /**
    * Free variables in term. Notice that the returned sets can often have structure and be implicitly defined.
@@ -88,7 +88,7 @@ object SetCastHelper {
  * @tparam T the type of the constant.
  */
 case class Constant[T](value: T) extends Term[T] {
-  def eval(state: State) = Some(value)
+  def eval(state: State) = Right(value)
   def variables = Set.empty
   def domain[C >: T] = Constant(Set(value))
   def default = value
