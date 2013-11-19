@@ -14,6 +14,7 @@ object Trainer {
     import TermImplicits._
     val weightsSet = new WeightsSet
     val key = weightsSet.newWeights( new DenseVector(10000))
+
     case class PerceptronExample(instance:State) extends Example {
 
       val target = instance.target

@@ -23,8 +23,8 @@ object ChunkingExample {
 
     val bias = vsum(for (i <- 0 ~~ n) yield e_(key('bias,chunk(i))))
     val wordChunk = vsum(for (i <- 0 ~~ n) yield e_(key('wordChunk,word(i),chunk(i))))
-    //val feat = bias + wordChunk
-    val model = LinearModel(wordChunk,weights)
+    val feat = bias + wordChunk
+    val model = LinearModel(feat,weights)
 
     val stream = Util.getStreamFromClassPathOrFile("scalapplcodefest/datasets/conll2000/train.txt")
     val sentences = Util.loadCoNLL(Source.fromInputStream(stream).getLines().take(2),Seq(word, tag, chunk), n)
