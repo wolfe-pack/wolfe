@@ -145,13 +145,9 @@ object MessagePassingGraphBuilder {
     val w = 'w of Vectors
     val model = LinearModel(feat, w)
 
-    println(vec.map(_.mkString(" ")))
+    val instance = State(Map(r.atom(0) -> false, r.atom(1) -> true))
 
-    val fg2 = build(model, w)
-    fg2.graph.weights = new DenseVector(Array(1.0, 2.0, 3.0, 4.0))
-
-    println(fg2.graph.toVerboseString(key))
-    println(key.vectorToString(fg2.graph.weights, "\n"))
+    val conditioned = model | instance
 
     val distributed = TermConverter.distDots(model)
     val unrolled = TermConverter.unrollLambdas(distributed)

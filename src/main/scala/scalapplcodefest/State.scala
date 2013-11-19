@@ -97,10 +97,13 @@ trait State {
  */
 object State {
   def apply(map: Map[Variable[Any], Any]): State = new MapBasedState(map)
+
   val empty = new State {
     def get[T](variable: Variable[T]) = None
     def domain = Set.empty
   }
+
+
 
   def allStates(vars:List[Variable[Any]], toConjoinWith:Seq[State] = Seq(State.empty).view):Seq[State] = {
     vars match {
