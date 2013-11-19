@@ -149,10 +149,13 @@ object MessagePassingGraphBuilder {
 
     val conditioned = model | instance
 
-    val distributed = TermConverter.distDots(conditioned)
-    val unrolled = TermConverter.unrollLambdas(distributed)
+    val distConds = TermConverter.distConds(conditioned)
+    val distDots = TermConverter.distDots(distConds)
+    val unrolled = TermConverter.unrollLambdas(distDots)
     val flatten = TermConverter.flattenDouble(unrolled)
-    println(distributed)
+    println(conditioned)
+    println(distConds)
+    println(distDots)
     println(unrolled)
     println(flatten)
 

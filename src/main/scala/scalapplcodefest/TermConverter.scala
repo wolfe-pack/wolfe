@@ -9,14 +9,18 @@ object TermConverter {
 
   import TermImplicits._
 
-  def distributeConditions[T](term: Term[T], condition: State = State.empty): Term[T] = {
-    val vars = term.variables
+  def distConds[T](term: Term[T]): Term[T] = {
+    implicit def cast(t: Term[Any]) = t.asInstanceOf[Term[T]]
     term match {
-      case t if !condition.domain.exists(vars(_)) => t
-      case FunApp(f, a) => FunApp(FunTerm(distributeConditions(f, condition)), distributeConditions(a, condition))
-      case SeqTerm(args) => SeqTerm(args.map(distributeConditions(_, condition))).asInstanceOf[Term[T]]
-      case TupleTerm2(arg1, arg2) => TupleTerm2(distributeConditions(arg1, condition), distributeConditions(arg2, condition)).asInstanceOf[Term[T]]
-      case _ => term | condition
+      case Conditioned(const@Constant(_),_) => const
+      case Conditioned(LinearModel(feats,weights,base),c) => LinearModel(distConds(feats | c),weights, distConds(base|c))
+      case Conditioned(Math.VecAdd.Reduced(args),c) => vsum(distConds(args | c))
+      case Conditioned(Math.VecAdd.Applied2(arg1,arg2),c) => distConds(arg1 | c) + distConds(arg2 | c)
+      case Conditioned(Math.DoubleAdd.Reduced(args),c) => dsum(distConds(args | c))
+      case Conditioned(Math.DoubleAdd.Applied2(arg1,arg2),c) => distConds(arg1 | c) + distConds(arg2 | c)
+      case Conditioned(SeqTerm(args),c) => SeqTerm(args.map(a => distConds(a | c)))
+      case Conditioned(ImageSeq(LambdaAbstraction(v,arg)),c) => ImageSeq(LambdaAbstraction(v,distConds(arg | c)))
+      case _ => term
     }
   }
 
@@ -50,9 +54,7 @@ object TermConverter {
     implicit def cast(t: Term[Any]) = t.asInstanceOf[Term[T]]
     term match {
       case ImageSeq(fun@LambdaAbstraction(v, arg)) => SeqTerm(State.allStates(List(v)).map(state => arg | state))
-      //      case Math.VecAdd.Reduced(args) => vsum(unrollLambdas(args))
       case r@Reduce(op, args) => r.copy(op = unrollLambdas(op).asInstanceOf[FunTerm[(T,T),T]], arguments = unrollLambdas(args))
-      //      case r@Reduce(op,args) => Reduce(FunTerm(unrollLambdas(op)),unrollLambdas(args))//, arguments = unrollLambdas(args))
       case app@FunApp(f, a) => app.copy(function = FunTerm(unrollLambdas(f)), arg = unrollLambdas(a))
       case s@SeqTerm(args) => s.copy(seq = args.map(unrollLambdas)) //red in IDEA
       case t@TupleTerm2(arg1, arg2) => t.copy(a1 = unrollLambdas(arg1), a2 = unrollLambdas(arg2)) //red in IDEA
@@ -69,11 +71,20 @@ object TermConverter {
 
   def distDots(term: Term[Double]): Term[Double] = {
     term match {
+      case Conditioned(t,c) => Conditioned(distDots(t),c)
       case LinearModel(f, w, base) => distDots(f dot w) + base
       case Math.Dot.Applied2(Math.VecAdd.Applied2(f1, f2), w) => distDots(f1 dot w) + distDots(f2 dot w)
       case Math.Dot.Applied2(Math.VecAdd.Reduced(SeqTerm(args)), w) => dsum(SeqTerm(args.map(a => distDots(a dot w))))
       case Math.Dot.Applied2(Quantified.VecSum(ImageSeq(LambdaAbstraction(v, arg))), w) =>
         dsum(LambdaAbstraction(v, distDots(arg dot w)))
+      case _ => term
+    }
+  }
+
+  def simplifyConds[T](term:Term[T]):Term[T] = {
+    term match {
+      case Conditioned(Conditioned(t,c1),c2) => Conditioned(t,c1 + c2)
+      case app@FunApp(f,a) => app.copy(FunTerm(simplifyConds(f)),simplifyConds(a))
       case _ => term
     }
   }

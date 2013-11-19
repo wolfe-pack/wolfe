@@ -232,13 +232,13 @@ object MessagePassingGraph {
             s"${setting.mkString(" ")} | ${score(index)} | ${key.vectorToString(stats(index), " ")}"
 
       }
-      """-----------------
-        |Factor:  %d
-        |Nodes:   %s
-        |Type:    TABLE
+      f"""-----------------
+        |Factor:  $index
+        |Nodes:   ${edges.map(_.n.index).mkString(" ")}
+        |Type:    $typ
         |Table:
-        |%s
-      """.stripMargin.format(index, edges.map(_.n.index).mkString(" "), tableString.mkString("\n"))
+        |${tableString.mkString("\n")}
+      """.stripMargin
     }
 
     private[MessagePassingGraph] var edgeCount: Int = 0
