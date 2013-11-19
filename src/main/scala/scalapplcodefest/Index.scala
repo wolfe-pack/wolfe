@@ -39,7 +39,7 @@ class Index extends Fun[Seq[Any],Int] {
 
   def vectorToString(vector:Vector, sep:String = "\n") = {
     val inv = inverse()
-    val lines = for (i <- vector.activeDomain.toSeq) yield {
+    val lines = for (i <- vector.activeDomain.toSeq; if vector(i) != 0.0) yield {
       f"${inv(i).mkString(" ")}%20s ${vector(i)}%5.2f"
     }
     lines.mkString(sep)

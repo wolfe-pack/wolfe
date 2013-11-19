@@ -16,10 +16,11 @@ object TermConverter {
       case Conditioned(LinearModel(feats,weights,base),c) => LinearModel(distConds(feats | c),weights, distConds(base|c))
       case Conditioned(Math.VecAdd.Reduced(args),c) => vsum(distConds(args | c))
       case Conditioned(Math.VecAdd.Applied2(arg1,arg2),c) => distConds(arg1 | c) + distConds(arg2 | c)
+      case Conditioned(Math.Dot.Applied2(arg1,arg2),c) => distConds(arg1 | c) dot distConds(arg2 | c)
       case Conditioned(Math.DoubleAdd.Reduced(args),c) => dsum(distConds(args | c))
       case Conditioned(Math.DoubleAdd.Applied2(arg1,arg2),c) => distConds(arg1 | c) + distConds(arg2 | c)
       case Conditioned(SeqTerm(args),c) => SeqTerm(args.map(a => distConds(a | c)))
-      case Conditioned(ImageSeq(LambdaAbstraction(v,arg)),c) => ImageSeq(LambdaAbstraction(v,distConds(arg | c)))
+      case Conditioned(ImageSeq(LambdaAbstraction(Var(v,d),arg)),c) => ImageSeq(LambdaAbstraction(Var(v,distConds(d|c)),distConds(arg | c)))
       case _ => term
     }
   }

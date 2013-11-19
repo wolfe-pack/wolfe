@@ -25,6 +25,8 @@ trait Term[+T] {
    * Defines the meaning of a term as a mapping from states to objects.
    * @param state the state object that binds variables to values.
    * @return `Right(value)` if term's `value` is defined with respect to `state`, `Left(undefinedTerm)` otherwise.
+   *        Undefined can either be variables undefined in the state, or function applications where an
+   *        argument outside of the domain was used.
    */
   def eval(state: State = State.empty): Either[Term[Any],T]
 
@@ -40,7 +42,7 @@ trait Term[+T] {
    * A domain of a term is a set of values such that for every possible state the term evaluates to a value that
    * is within this domain. The domain may be larger than necessary, that is, some values in the domain may not
    * ever be produced by the term. The domain itself is a term. This means that its value may be undefined
-   * (because it can contain free variables).
+   * (for example because it can contain free variables) without a state.
    * @tparam C a superclass of `T`. This type parameter is introduced to maintain covariance of terms. Clients
    *           can use this parameter to, in a way, cast the domain to a set of more generic objects.
    * @return the domain of the term.

@@ -60,7 +60,7 @@ case class RangeSet(from: Term[Int], to: Term[Int]) extends Term[Set[Int]] {
   def variables = SetUtil.SetUnion(List(from.variables, to.variables))
   def default = RangeSetValue(from.default, to.default)
   def domain[C >: Set[Int]] = Constant(Util.setToBeImplementedLater)
-
+  override def toString = s"($from ~~ $to)"
 }
 
 /**

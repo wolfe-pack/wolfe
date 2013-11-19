@@ -76,7 +76,7 @@ object Wrapped3 {
 case class SeqTerm[T](seq:Seq[Term[T]]) extends Term[Seq[T]] {
   def eval(state: State) = {
     val result = seq.map(_.eval(state))
-    if (result.forall(_.isRight)) Right(result.map(_.right.get)) else Left(this)
+    if (result.forall(_.isRight)) Right(result.map(_.right.get)) else Left(Conditioned(this,state))
   }
   def variables = SetUtil.SetUnion(seq.toList.map(_.variables))
   def domain[C >: Seq[T]] = Constant(new AllOfType[C])

@@ -39,7 +39,7 @@ trait Variable[+T] extends Term[T] {
 }
 
 /**
- * Simple named variable. Identity based on name and domain.
+ * Simple named variable. Identity based only on name.
  * @param name name of the variable.
  * @param dom domain of the variable
  * @tparam T type of values associated with variable.
@@ -47,6 +47,11 @@ trait Variable[+T] extends Term[T] {
 case class Var[T](name: Symbol, dom: Term[Set[T]]) extends Variable[T] {
   def domain[C >: T] = dom.asInstanceOf[Term[Set[C]]]
   override def toString = name.name
+  override def equals(v: scala.Any) = v match {
+    case Var(n,_) => name == n
+    case _ => false
+  }
+  override def hashCode() = name.hashCode()
 }
 
 /**

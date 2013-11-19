@@ -65,7 +65,7 @@ case class FunApp[A, B](function: FunTerm[A, B], arg: Term[A]) extends Term[B] {
   def eval(state: State) =
     for (f <- function.eval(state).right;
          a <- arg.eval(state).right;
-         v <- f.lift(a).toRight(this).right) yield v
+         v <- f.lift(a).toRight(Conditioned(this,state)).right) yield v
   def variables = function match {
     case p@Predicate(n,d,r) => PartialGroundAtoms(p,arg)
     case _ => SetUtil.SetUnion(List(function.variables, arg.variables))
@@ -116,7 +116,7 @@ case class LambdaAbstraction[A, B](variable: Variable[A], term: Term[B]) extends
   }
   def domain[C >: Fun[A, B]] =
     FunApp(FunTerm.allFunctions[A, B], TupleTerm2(funCandidateDom, funRange)).asInstanceOf[Term[Set[C]]]
-  override def toString = s"lam $variable. { $term }"
+  override def toString = s"lam $variable :${variable.domain} { $term }"
 }
 
 /**

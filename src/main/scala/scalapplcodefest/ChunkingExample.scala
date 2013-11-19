@@ -33,6 +33,8 @@ object ChunkingExample {
 
     val learned = Trainer.train(model, train)
 
+    println(key.vectorToString(learned))
+
 
 
 

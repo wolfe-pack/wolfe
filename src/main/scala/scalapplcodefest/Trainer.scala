@@ -18,7 +18,18 @@ object Trainer {
 
       val target = instance.target
       val conditioned = model | instance
-      val aligned = MessagePassingGraphBuilder.build(conditioned,model.weights)
+      val distConds = TermConverter.distConds(conditioned)
+      val distDots = TermConverter.distDots(distConds)
+      val unrolled = TermConverter.unrollLambdas(distDots)
+      val flatten = TermConverter.flattenDouble(unrolled)
+
+      println(conditioned)
+      println(distConds)
+      println(distDots)
+      println(unrolled)
+      println(flatten)
+
+      val aligned = MessagePassingGraphBuilder.build(flatten,model.weights)
 
       def accumulateValueAndGradient(value: DoubleAccumulator, gradient: WeightsMapAccumulator) = {
 
@@ -27,7 +38,7 @@ object Trainer {
 
         val guessFeats = new SparseVector(100)
         val guessScore = MaxProduct.featureExpectationsAndObjective(aligned.graph, guessFeats)
-        val goldScore = conditioned.eval(target).right.get
+        val goldScore = (conditioned | model.weights -> weightsSet(key)).eval(target).right.get
         value.accumulate(guessScore - goldScore)
         gradient.accumulate(key,guessFeats)
 
