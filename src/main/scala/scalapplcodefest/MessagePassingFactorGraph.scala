@@ -12,10 +12,10 @@ import scalaxy.loops._
  * (2) based on a feature vector for each state that is multiplied with a shared weight vector
  * (3) generic (calls a function to be evaluated at a particular state)
  */
-final class MessagePassingGraph {
+final class MessagePassingFactorGraph {
 
-  import MessagePassingGraph.FactorType._
-  import MessagePassingGraph._
+  import MessagePassingFactorGraph.FactorType._
+  import MessagePassingFactorGraph._
 
   val edges = new ArrayBuffer[Edge]
   val nodes = new ArrayBuffer[Node]
@@ -53,14 +53,14 @@ final class MessagePassingGraph {
   }
 
 
-  def toVerboseString(implicit index: Index = null) = {
-    """
+  def toVerboseString(fgPrinter:FGPrinter = DefaultPrinter) = {
+    f"""
       |Nodes:
-      |%s
+      |${nodes.map(_.toVerboseString(fgPrinter.node2String)).mkString("\n")}
       |
       |Factors:
-      |%s
-    """.stripMargin.format(nodes.mkString("\n"), factors.map(_.toVerboseString(index)).mkString("\n"))
+      |${factors.map(_.toVerboseString(fgPrinter)).mkString("\n")}
+    """.stripMargin
   }
   def addFactor1(table: Array[Double]) = {
     val f = new Factor(this, factors.size, Array(table.length), Range(0, table.length).map(Array(_)).toArray, TABLE, table)
@@ -117,7 +117,7 @@ final class MessagePassingGraph {
   }
 }
 
-object MessagePassingGraph {
+object MessagePassingFactorGraph {
 
   /**
    * We define a set of factor types. Inference algorithms will use the type of a factor
@@ -129,6 +129,7 @@ object MessagePassingGraph {
   }
 
   import FactorType._
+
 
   /**
    * Turns a setting vector into an entry number.
@@ -179,16 +180,16 @@ object MessagePassingGraph {
     /* external message for this node. Will usually not be updated during inference */
     val in = Array.ofDim[Double](dim)
 
-    override def toString = {
+    def toVerboseString(nodePrinter:Node => String = n => "") = {
       f"""-----------------
-        |Node:   $index%d
+        |Node:   $index%3d ${nodePrinter(this)}
         |Belief:
         |${b.mkString("\n")}
       """.stripMargin
     }
 
-    private[MessagePassingGraph] var edgeCount: Int = 0
-    private[MessagePassingGraph] var edgeFilled: Int = 0
+    private[MessagePassingFactorGraph] var edgeCount: Int = 0
+    private[MessagePassingFactorGraph] var edgeFilled: Int = 0
 
   }
 
@@ -217,8 +218,8 @@ object MessagePassingGraph {
    * @param stats if `typ=Linear` this stores a feature vector for each setting (index by the index of the setting
    *              in `settings`.
    */
-  final class Factor(val fg: MessagePassingGraph, val index: Int, val dims: Array[Int], val settings: Array[Array[Int]],
-                     val typ: FactorType.Value = MessagePassingGraph.FactorType.TABLE,
+  final class Factor(val fg: MessagePassingFactorGraph, val index: Int, val dims: Array[Int], val settings: Array[Array[Int]],
+                     val typ: FactorType.Value = MessagePassingFactorGraph.FactorType.TABLE,
                      val table: Array[Double],
                      val stats: Array[Vector] = null) {
     var edges: Array[Edge] = null
@@ -234,28 +235,40 @@ object MessagePassingGraph {
         case LINEAR => stats(entry).dot(fg.weights)
       }
     }
-    def toVerboseString(implicit key: Index) = {
+    def toVerboseString(implicit fgPrinter: FGPrinter) = {
       val tableString = typ match {
         case TABLE =>
           for ((setting, index) <- settings.zipWithIndex) yield
             s"${setting.mkString(" ")} | ${table(index)}"
         case LINEAR =>
           for ((setting, index) <- settings.zipWithIndex) yield
-            s"${setting.mkString(" ")} | ${score(index)} | ${key.vectorToString(stats(index), " ")}"
+            s"${setting.mkString(" ")} | ${score(index)} | ${fgPrinter.vector2String(stats(index))}"
 
       }
       f"""-----------------
         |Factor:  $index
-        |Nodes:   ${edges.map(_.n.index).mkString(" ")}
+        |Nodes:   ${edges.map(_.n.index).mkString(" ")} ${edges.map(e => fgPrinter.node2String(e.n)).mkString(" ")}
         |Type:    $typ
         |Table:
         |${tableString.mkString("\n")}
       """.stripMargin
     }
 
-    private[MessagePassingGraph] var edgeCount: Int = 0
-    private[MessagePassingGraph] var edgeFilled: Int = 0
+    private[MessagePassingFactorGraph] var edgeCount: Int = 0
+    private[MessagePassingFactorGraph] var edgeFilled: Int = 0
 
+  }
+
+  trait FGPrinter {
+    def node2String(node:Node):String
+    def factor2String(factor:Factor):String
+    def vector2String(vector:Vector):String
+  }
+
+  object DefaultPrinter extends FGPrinter {
+    def node2String(node: Node) = ""
+    def factor2String(factor: Factor) = ""
+    def vector2String(vector: scalapplcodefest.Vector) = vector.toString()
   }
 
 

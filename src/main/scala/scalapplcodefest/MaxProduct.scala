@@ -10,10 +10,10 @@ import cc.factorie.maths.ArrayOps
  */
 object MaxProduct {
 
-  import MessagePassingGraph._
+  import MessagePassingFactorGraph._
 
   def main(args: Array[String]) {
-    val fg = new MessagePassingGraph
+    val fg = new MessagePassingFactorGraph
     val f1 = fg.addFactor2(Array(Array(1.0, 2.0, 3.0), Array(4.0, 5.0, 6.0)))
     val n1 = fg.addNode(2)
     val n2 = fg.addNode(3)
@@ -33,7 +33,7 @@ object MaxProduct {
    * @param fg the message passing graph to run
    * @param maxIteration maximum number of iterations.
    */
-  def run(fg: MessagePassingGraph, maxIteration: Int) {
+  def run(fg: MessagePassingFactorGraph, maxIteration: Int) {
     for (i <- 0 until maxIteration) {
       for (edge <- fg.edges) {
         updateN2F(edge)
@@ -43,7 +43,7 @@ object MaxProduct {
     for (node <- fg.nodes) updateBelief(node)
   }
 
-  def objective(fg: MessagePassingGraph): Double = {
+  def objective(fg: MessagePassingFactorGraph): Double = {
     ???
   }
 
@@ -53,7 +53,7 @@ object MaxProduct {
    * @param fg factor graph.
    * @param result vector to add results to.
    */
-  def featureExpectationsAndObjective(fg: MessagePassingGraph, result: SparseVector): Double = {
+  def featureExpectationsAndObjective(fg: MessagePassingFactorGraph, result: SparseVector): Double = {
     var obj = 0.0
     for (factor <- fg.factors) {
       // 1) go over all states, find max
@@ -66,7 +66,7 @@ object MaxProduct {
 
       obj += norm
 
-      if (factor.typ == MessagePassingGraph.FactorType.LINEAR) {
+      if (factor.typ == MessagePassingFactorGraph.FactorType.LINEAR) {
 
         // 2) count number of maximums
         var maxCount = 0
@@ -91,7 +91,7 @@ object MaxProduct {
   }
 
 
-  def penalizedScore(factor: MessagePassingGraph.Factor, entry: Int, setting: Array[Int]): Double = {
+  def penalizedScore(factor: MessagePassingFactorGraph.Factor, entry: Int, setting: Array[Int]): Double = {
     var score = factor.score(entry)
     for (j <- 0 until factor.rank) {
       score += factor.edges(j).n2f(setting(j))

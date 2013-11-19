@@ -8,11 +8,11 @@ import cc.factorie.maths.ArrayOps
  */
 object MessagePassingGraphBuilder {
 
-  import MessagePassingGraph._
+  import MessagePassingFactorGraph._
 
   class TermAlignedFG(val term: Term[Double], val weights: Variable[Vector]) {
     val vars = term.variables.toSeq.filter(_ != weights).sorted(VariableOrdering)
-    val graph = new MessagePassingGraph
+    val graph = new MessagePassingFactorGraph
     def createVariableMapping(variable: Variable[Any]) = {
       val domain = variable.domain.eval().right.get.toSeq
       val indexOfValue = domain.zipWithIndex.toMap
@@ -23,6 +23,7 @@ object MessagePassingGraphBuilder {
     val variable2Mapping = variableMappings.map(m => m.variable -> m).toMap
     val dims = variableMappings.map(_.dom.size)
     val entryCount = dims.product
+    lazy val node2variable = variableMappings.map(m => m.node -> m.variable).toMap
 
     def beliefToState() = {
       val map = for (v <- variableMappings) yield {
@@ -31,6 +32,12 @@ object MessagePassingGraphBuilder {
         v.variable -> value
       }
       State(map.toMap)
+    }
+
+    class FGPrinter(index:Index) extends MessagePassingFactorGraph.FGPrinter {
+      def node2String(node: Node) = node2variable(node).toString
+      def factor2String(factor: Factor) = ""
+      def vector2String(vector: scalapplcodefest.Vector) = index.vectorToString(vector, " ")
     }
   }
 
@@ -160,6 +167,7 @@ object MessagePassingGraphBuilder {
     println(flatten)
 
     val flatFG = build(flatten, w)
+    val printer = new flatFG.FGPrinter(key)
 
     //    flatFG.fg.weights = new DenseVector(Array(1.0,2.0,3.0,4.0))
     flatFG.graph.weights = key.createDenseVector(
@@ -167,7 +175,7 @@ object MessagePassingGraphBuilder {
       Seq(false, true) -> 2.0,
       Seq(true, false) -> 3.0,
       Seq(true, true) -> 4.0)()
-    println(flatFG.graph.toVerboseString(key))
+    println(flatFG.graph.toVerboseString(printer))
 
   }
 
