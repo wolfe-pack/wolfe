@@ -82,7 +82,7 @@ trait State {
 
 
   override def toString = {
-    domain.map(v => "%s->%s".format(v, get(v).get)).mkString(",")
+    domain.toSeq.sorted(VariableOrdering).map(v => "%s->%s".format(v, get(v).get)).mkString(",")
   }
 
   def toPrettyString = {

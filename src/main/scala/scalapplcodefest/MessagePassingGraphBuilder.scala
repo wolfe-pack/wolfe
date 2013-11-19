@@ -177,6 +177,13 @@ object MessagePassingGraphBuilder {
       Seq(true, true) -> 4.0)()
     println(flatFG.graph.toVerboseString(printer))
 
+    MaxProduct.run(flatFG.graph, 1)
+
+    val feats = new SparseVector(100)
+    MaxProduct.featureExpectationsAndObjective(flatFG.graph, feats)
+
+    println(key.vectorToString(feats))
+
   }
 
 }

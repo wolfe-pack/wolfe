@@ -59,7 +59,10 @@ object TermImplicits {
   case class RichVarSymbol(symbol: Symbol) {
     def of[T](set: Term[Set[T]]) = Var(symbol, set)
     def of[T](set: Set[T]) = Var(symbol, Constant(set))
+  }
 
+  case class RichState(state:State) {
+    def +[T](pair:(Variable[T],T)) = state + SingletonState(pair._1,pair._2)
   }
 
   case class RichPredSymbol(symbol: Symbol) {

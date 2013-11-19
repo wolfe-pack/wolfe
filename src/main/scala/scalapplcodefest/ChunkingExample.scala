@@ -10,6 +10,8 @@ object ChunkingExample {
 
   import TermImplicits._
 
+  val key = new Index() //shouldn't be here, but for debugging purposes (as index is needed in trainer for better print outs)
+
   def main(args: Array[String]) {
     val Chunks = Set("O", "B-VP", "B-NP", "B-PP", "I-VP", "I-NP", "I-PP", "B-SBAR", "I-SBAR", "B-ADJP", "I-ADJP")
 
@@ -19,7 +21,6 @@ object ChunkingExample {
     val chunk = 'chunk of (0 ~~ n |-> Chunks)
     val weights = 'weights of Vectors
 
-    val key = new Index()
     val bias = vsum(for (i <- 0 ~~ n) yield e_(key('bias,chunk(i))))
     val wordChunk = vsum(for (i <- 0 ~~ n) yield e_(key('wordChunk,word(i),chunk(i))))
     //val feat = bias + wordChunk

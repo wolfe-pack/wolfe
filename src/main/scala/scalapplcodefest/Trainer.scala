@@ -17,7 +17,9 @@ object Trainer {
     case class PerceptronExample(instance:State) extends Example {
 
       val target = instance.target
+      val targetFeats = model.features.eval(target).right.get
       val conditioned = model | instance
+
       val distConds = TermConverter.distConds(conditioned)
       val distDots = TermConverter.distDots(distConds)
       val unrolled = TermConverter.unrollLambdas(distDots)
@@ -38,9 +40,20 @@ object Trainer {
 
         val guessFeats = new SparseVector(100)
         val guessScore = MaxProduct.featureExpectationsAndObjective(aligned.graph, guessFeats)
-        val goldScore = (conditioned | model.weights -> weightsSet(key)).eval(target).right.get
-        value.accumulate(guessScore - goldScore)
-        gradient.accumulate(key,guessFeats)
+        val guess = aligned.beliefToState()
+        val targetScore = model.eval(target + SingletonState(model.weights,weightsSet(key))).right.get
+
+        println("----------")
+        println(s"Gold: $target")
+        println(s"Gold Vector: \n ${ChunkingExample.key.vectorToString(targetFeats)}")
+        println(s"Guess: $guess")
+        println(s"Guess Vector: \n ${ChunkingExample.key.vectorToString(guessFeats)}")
+
+        value.accumulate(guessScore - targetScore)
+        //WARNING: side effect, guessfeats is changed
+        gradient.accumulate(key,guessFeats,-1.0)
+        gradient.accumulate(key,targetFeats)
+
 
       }
     }
