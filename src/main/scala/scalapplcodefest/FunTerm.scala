@@ -93,6 +93,7 @@ case object BinaryFunApp {
  * @tparam B type of return values of function.
  */
 case class LambdaAbstraction[A, B](variable: Variable[A], term: Term[B]) extends FunTerm[A, B] {
+  //todo: variable should be a Var?
 
   lambda =>
 

@@ -140,28 +140,7 @@ object MaxProduct {
         node.b(i) += node.edges(e).f2n(i)
   }
 
-  /**
-   * Takes the belief at a node and derives an assignment vector in [0,1]
-   * from it.
-   * @param node the node to update assignment for.
-   */
-  def updateAssignment(node: Node) {
-    //find max value
-    var max = Double.NegativeInfinity
-    for (i <- 0 until node.dim)
-      max = math.max(max, node.b(i))
 
-    //how many values with max value?
-    var maxCount = 0
-    for (i <- 0 until node.dim) {
-      if (node.b(i) == max) maxCount += 1
-    }
-
-    //assign probability 1/maxCount to all winners, 0.0 to the rest.
-    for (i <- 0 until node.dim) {
-      node.a(i) = if (node.b(i) == max) math.log(1.0 / maxCount) else Double.NegativeInfinity
-    }
-  }
 
 }
 

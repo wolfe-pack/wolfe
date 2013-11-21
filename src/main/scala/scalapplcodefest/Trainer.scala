@@ -10,6 +10,18 @@ import cc.factorie.WeightsSet
  */
 object Trainer {
 
+  trait Inference {
+    def state:State
+    def obj:Double
+    def feats:Vector
+    def updateResult(newWeights:DenseVector)
+  }
+
+
+  object Inference {
+    def maxProduct(maxIterations:Int)(model:LinearModel)(weights:DenseVector)(instance:State):Inference = ???
+  }
+
   def train(model: LinearModel, instances: Seq[State]): Vector = {
     import TermImplicits._
     val weightsSet = new WeightsSet

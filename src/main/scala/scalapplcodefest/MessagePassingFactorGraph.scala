@@ -174,9 +174,6 @@ object MessagePassingFactorGraph {
     /* node belief */
     val b = Array.ofDim[Double](dim)
 
-    /* node assignment */
-    val a = Array.ofDim[Double](dim)
-
     /* external message for this node. Will usually not be updated during inference */
     val in = Array.ofDim[Double](dim)
 
