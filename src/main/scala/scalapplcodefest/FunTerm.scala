@@ -182,7 +182,7 @@ case class Image[A, B](fun: FunTerm[A, B], dom: Term[Set[A]]) extends Term[Set[B
  * @tparam A argument type of function.
  * @tparam B return type of function.
  */
-case class ImageSeq[A, B](fun: FunTerm[A, B]) extends Term[Seq[B]] {
+case class ImageSeq1[A, B](fun: FunTerm[A, B]) extends Term[Seq[B]] {
   def eval(state: State) = for (f <- fun.eval(state).right; d <- fun.funCandidateDom.eval(state).right) yield d.view.toSeq.map(f)
   def variables = fun.variables
   def domain[C >: Seq[B]] = Constant(new AllOfType[C])
@@ -197,7 +197,7 @@ case class ImageSeq[A, B](fun: FunTerm[A, B]) extends Term[Seq[B]] {
  * @tparam A2 argument of inner functions.
  * @tparam B return type of inner functions.
  */
-case class ImageSeqCurried2[A1, A2, B](fun: FunTerm[A1, Fun[A2, B]]) extends Term[Seq[B]] {
+case class ImageSeq2[A1, A2, B](fun: FunTerm[A1, Fun[A2, B]]) extends Term[Seq[B]] {
   def eval(state: State) = for (f <- fun.eval(state).right; d <- fun.funCandidateDom.eval(state).right) yield {
     for (a1 <- d.view.toSeq; f1 = f(a1); a1 <- f1.funDom.view.toSeq) yield f1(a1)
   }

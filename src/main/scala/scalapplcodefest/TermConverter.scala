@@ -21,8 +21,8 @@ object TermConverter {
       case FunApp(f, a) => converter.convert(FunApp(FunTerm(convertDepthFirst(f, converter)), convertDepthFirst(a, converter)))
       case Conditioned(t, c) => converter.convert(Conditioned(convertDepthFirst(t, converter), c))
       case SeqTerm(args) => converter.convert(SeqTerm(args.map(convertDepthFirst(_, converter))))
-      case ImageSeq(f) => converter.convert(ImageSeq(FunTerm(convertDepthFirst(f, converter))))
-      case ImageSeqCurried2(f) => converter.convert(ImageSeqCurried2(FunTerm(convertDepthFirst(f, converter))))
+      case ImageSeq1(f) => converter.convert(ImageSeq1(FunTerm(convertDepthFirst(f, converter))))
+      case ImageSeq2(f) => converter.convert(ImageSeq2(FunTerm(convertDepthFirst(f, converter))))
       case LambdaAbstraction(Var(v, d), t) => converter.convert(LambdaAbstraction(Var(v, convertDepthFirst(d, converter)), convertDepthFirst(t, converter)))
       case Var(v, d) => converter.convert(Var(v, convertDepthFirst(d, converter)))
       case Reduce(o, a) => converter.convert(Reduce(FunTerm(convertDepthFirst(o, converter)).asInstanceOf[FunTerm[(T, T), T]], convertDepthFirst(a, converter)))
@@ -49,7 +49,7 @@ object TermConverter {
       case Conditioned(Math.DoubleAdd.Reduced(args), c) => dsum(distConds(args | c))
       case Conditioned(Math.DoubleAdd.Applied2(arg1, arg2), c) => distConds(arg1 | c) + distConds(arg2 | c)
       case Conditioned(SeqTerm(args), c) => SeqTerm(args.map(a => distConds(a | c)))
-      case Conditioned(ImageSeq(LambdaAbstraction(Var(v, d), arg)), c) => ImageSeq(LambdaAbstraction(Var(v, distConds(d | c)), distConds(arg | c)))
+      case Conditioned(ImageSeq1(LambdaAbstraction(Var(v, d), arg)), c) => ImageSeq1(LambdaAbstraction(Var(v, distConds(d | c)), distConds(arg | c)))
       case _ => term
     }
   }
@@ -76,14 +76,14 @@ object TermConverter {
 
 
   def unrollLambdaAbstractions2[T](term: Term[Seq[T]]): Term[Seq[T]] = term match {
-    case ImageSeq(fun@LambdaAbstraction(v, arg)) => SeqTerm(State.allStates(List(v)).map(state => fun(arg | state)))
+    case ImageSeq1(fun@LambdaAbstraction(v, arg)) => SeqTerm(State.allStates(List(v)).map(state => fun(arg | state)))
     case _ => term
   }
 
   def unrollLambdas[T](term: Term[T]): Term[T] = {
     implicit def cast(t: Term[Any]) = t.asInstanceOf[Term[T]]
     term match {
-      case ImageSeq(fun@LambdaAbstraction(v, arg)) => SeqTerm(State.allStates(List(v)).map(state => arg | state))
+      case ImageSeq1(fun@LambdaAbstraction(v, arg)) => SeqTerm(State.allStates(List(v)).map(state => arg | state))
       case r@Reduce(op, args) => r.copy(op = unrollLambdas(op).asInstanceOf[FunTerm[(T, T), T]], arguments = unrollLambdas(args))
       case app@FunApp(f, a) => app.copy(function = FunTerm(unrollLambdas(f)), arg = unrollLambdas(a))
       case s@SeqTerm(args) => s.copy(seq = args.map(unrollLambdas)) //red in IDEA
@@ -105,7 +105,7 @@ object TermConverter {
       case LinearModel(f, w, base) => distDots(f dot w) + base
       case Math.Dot.Applied2(Math.VecAdd.Applied2(f1, f2), w) => distDots(f1 dot w) + distDots(f2 dot w)
       case Math.Dot.Applied2(Math.VecAdd.Reduced(SeqTerm(args)), w) => dsum(SeqTerm(args.map(a => distDots(a dot w))))
-      case Math.Dot.Applied2(Quantified.VecSum(ImageSeq(LambdaAbstraction(v, arg))), w) =>
+      case Math.Dot.Applied2(Quantified.VecSum(ImageSeq1(LambdaAbstraction(v, arg))), w) =>
         dsum(LambdaAbstraction(v, distDots(arg dot w)))
       case _ => term
     }
@@ -123,41 +123,56 @@ object TermConverter {
     implicit def cast(t: Term[Any]) = t.asInstanceOf[Term[T]]
 
     //merge a term with one element in a list of previous terms if possible, otherwise prepend
-    def mergeOneTerm[T](current:List[Term[T]], toMerge:Term[T], op:BinaryOperatorSameDomainAndRange[T]) = {
-      val first = current.view.map(that => that -> mergeLambdas(that,toMerge,op)).find(_._2.isDefined)
+    def mergeOneTerm[T](current: List[Term[T]], toMerge: Term[T], op: BinaryOperatorSameDomainAndRange[T]) = {
+      val first = current.view.map(that => that -> mergeLambdas(that, toMerge, op)).find(_._2.isDefined)
       first match {
-        case Some((orig,Some(mergedTerm))) => current.map(t => if (t == orig) mergedTerm else orig)
+        case Some((orig, Some(mergedTerm))) => current.map(t => if (t == orig) mergedTerm else orig)
         case _ => toMerge :: current
       }
     }
     term match {
       case Math.VecAdd.Reduced(SeqTerm(args)) =>
-        val merged = args.foldLeft(List.empty[Term[Vector]]) (mergeOneTerm(_,_,Math.VecAdd))
+        val merged = args.foldLeft(List.empty[Term[Vector]])(mergeOneTerm(_, _, Math.VecAdd))
         vsum(SeqTerm(merged))
       case Math.DoubleAdd.Reduced(SeqTerm(args)) =>
-        val merged = args.foldLeft(List.empty[Term[Double]]) (mergeOneTerm(_,_,Math.DoubleAdd))
+        val merged = args.foldLeft(List.empty[Term[Double]])(mergeOneTerm(_, _, Math.DoubleAdd))
         dsum(SeqTerm(merged))
     }
   }
 
   def mergeLambdas[T](t1: Term[T], t2: Term[T],
-                        operator:BinaryOperatorSameDomainAndRange[T],
-                        condition: State = State.empty): Option[Term[T]] = {
-    (t1,t2) match {
-      case (operator.Reduced(ImageSeq(LambdaAbstraction(v1,a1))),operator.Reduced(ImageSeq(LambdaAbstraction(v2,a2)))) =>
+                      operator: BinaryOperatorSameDomainAndRange[T],
+                      condition: State = State.empty): Option[Term[T]] = {
+    
+    def mergeable(replaced1:Term[T],replaced2:Term[T],newCondition:State) = {
+      val conditioned1 = replaced1 | newCondition
+      val conditioned2 = replaced2 | newCondition
+      val vars1 = conditioned1.variables
+      val vars2 = conditioned2.variables
+      vars1 == vars2
+    }
+
+    (t1, t2) match {
+      case (operator.Reduced(ImageSeq1(LambdaAbstraction(v1, a1))), operator.Reduced(ImageSeq1(LambdaAbstraction(v2, a2)))) =>
         val default = v1.domain.default.head
-        val newVar = v1
-        val replaced1 = a1
         val replaced2 = substituteVariable(a2, v2, v1)
-        val newCondition = condition + SingletonState(newVar, default)
-        val conditioned1 = replaced1 | newCondition
-        val conditioned2 = replaced2 | newCondition
-        val vars1 = conditioned1.variables
-        val vars2 = conditioned2.variables
-        if (vars1 == vars2) {
-          Some(Reduce(operator.Term, ImageSeq(LambdaAbstraction(newVar,FunApp(operator.Term,TupleTerm2(replaced1,replaced2))))))
+        val newCondition = condition + SingletonState(v1, default)
+        if (mergeable(a1,replaced2,newCondition)) {
+          Some(Reduce(operator.Term, ImageSeq1(LambdaAbstraction(v1, FunApp(operator.Term, TupleTerm2(a1, replaced2))))))
         } else
           None
+      case (operator.Reduced(ImageSeq2(LambdaAbstraction(v1, LambdaAbstraction(v1_2,a1)))), operator.Reduced(ImageSeq2(LambdaAbstraction(v2, LambdaAbstraction(v2_2,a2))))) =>
+        val default = v1.domain.default.head
+        val default_2 = v1_2.domain.default.head
+        val replaced2 = substituteVariable(substituteVariable(a2, v2, v1),v2_2, v1_2)
+        val newCondition = condition + State(Map(v1 -> default, v1_2 -> default_2))
+        if (mergeable(a1,replaced2,newCondition)) {
+          val inner = LambdaAbstraction(v1_2, FunApp(operator.Term, TupleTerm2(a1, replaced2)))
+          val outer = LambdaAbstraction(v1, inner)
+          Some(Reduce(operator.Term, ImageSeq2(outer)))
+        } else
+          None
+
     }
 
 
@@ -169,15 +184,24 @@ object TermConverter {
     val l1 = dsum(for (i <- 0 ~~ 2) yield r(i))
     val l2 = dsum(for (j <- 0 ~~ 2) yield r(j))
 
-    val sum = dsum(SeqTerm(Seq(l1,l2)))
+    val s = 's of ((0 ~~ 2) x (0 ~~ 2)) |-> Doubles
 
-    val merged = mergeLambdas(l1,l2, Math.DoubleAdd)
+    val sum = dsum(SeqTerm(Seq(l1, l2)))
+
+    val merged = mergeLambdas(l1, l2, Math.DoubleAdd)
 
     println(merged)
 
     val grouped = groupLambdas(sum)
 
     println(grouped)
+
+    val f1 = dsum(for (i<- 0 ~~ 2; j <- 0 ~~ 2) yield s(i,j))
+    val f2 = dsum(for (k<- 0 ~~ 2; l <- 0 ~~ 2) yield s(k,l))
+    val grouped2 = groupLambdas(dsum(SeqTerm(Seq(f1,f2))))
+    println(grouped2)
+
+
   }
 
 

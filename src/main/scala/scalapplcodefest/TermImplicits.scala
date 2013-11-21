@@ -17,6 +17,8 @@ object TermImplicits {
   implicit def symbolToConstant(x: Symbol) = Constant(x)
 
   implicit def setToConstant[T](x: Set[T]) = Constant(x)
+  implicit def setToRichSetTerm[T](x: Set[T]) = RichSetTerm(Constant(x))
+
   //implicit def funToConstant[A,B](x:Fun[A,B]) = x)
   implicit def toTupleTerm2[T1, T2](tuple: (Term[T1], Term[T2])) = TupleTerm2(tuple._1, tuple._2)
   implicit def toRichVariable[T](v: Variable[T]) = RichVariable(v)
@@ -39,6 +41,8 @@ object TermImplicits {
   implicit def toRichPredSymbol(symbol: Symbol) = RichPredSymbol(symbol)
 
   implicit def toFinishedCartesianProduct[A](unfinished: UnfinishedCartesianProduct[A]) = unfinished.finish
+  implicit def toRichFinishedCartesianProduct[A](unfinished: UnfinishedCartesianProduct[A]) = RichSetTerm(unfinished.finish)
+
 
   //math
   def e_(index: Term[Int], value: Term[Double] = Constant(1.0)) = UnitVec(index, value)
@@ -47,8 +51,8 @@ object TermImplicits {
   def dsum(args: Term[Seq[Double]]) = Quantified.DoubleSum(args)
   def vsum(args: Term[Seq[Vector]]) = Quantified.VecSum(args)
 
-  implicit def toImageSeq[A, B](f: FunTerm[A, B]) = ImageSeq(f)
-  implicit def toImageSeqCurried2[A1, A2, B](f: FunTerm[A1, Fun[A2, B]]) = ImageSeqCurried2(f)
+  implicit def toImageSeq[A, B](f: FunTerm[A, B]) = ImageSeq1(f)
+  implicit def toImageSeqCurried2[A1, A2, B](f: FunTerm[A1, Fun[A2, B]]) = ImageSeq2(f)
 
 
   implicit def uncurry[A1, A2, R](f: FunTerm[A1, Fun[A2, R]]) = f match {
@@ -101,6 +105,8 @@ object TermImplicits {
     }
 
     def x[T2](that: Term[Set[T2]]) = UnfinishedCartesianProduct2(s, that)
+    def x[T2](that: Set[T2]) = UnfinishedCartesianProduct2(s, Constant(that))
+
 
     def |->[T2](that: Term[Set[T2]]) = (s, that)
 
