@@ -120,28 +120,32 @@ object TermConverter {
   }
 
   def groupLambdas[T](term: Term[T]): Term[T] = {
+    implicit def cast(t: Term[Any]) = t.asInstanceOf[Term[T]]
+
+    //merge a term with one element in a list of previous terms if possible, otherwise prepend
+    def mergeOneTerm[T](current:List[Term[T]], toMerge:Term[T], op:BinaryOperatorSameDomainAndRange[T]) = {
+      val first = current.view.map(that => that -> mergeLambdas(that,toMerge,op)).find(_._2.isDefined)
+      first match {
+        case Some((orig,Some(mergedTerm))) => current.map(t => if (t == orig) mergedTerm else orig)
+        case _ => toMerge :: current
+      }
+    }
     term match {
       case Math.VecAdd.Reduced(SeqTerm(args)) =>
-      //val lambdas = args.collect({case l@LambdaAbstraction(_, _) => l})
-      //find terms with the same set of hidden variables (with respect to the quantified variable)
-      //for that: (1) find FunApps of predicates (2) check whether they have identical structure
-      //(same arguments with variables in same domain)
+        val merged = args.foldLeft(List.empty[Term[Vector]]) (mergeOneTerm(_,_,Math.VecAdd))
+        vsum(SeqTerm(merged))
+      case Math.DoubleAdd.Reduced(SeqTerm(args)) =>
+        val merged = args.foldLeft(List.empty[Term[Double]]) (mergeOneTerm(_,_,Math.DoubleAdd))
+        dsum(SeqTerm(merged))
     }
-    ???
   }
 
   def mergeLambdas[T](t1: Term[T], t2: Term[T],
-                      merger: (Term[Any], Term[Any]) => Term[Any], condition: State = State.empty): Option[Term[T]] = {
-    implicit def cast(t: Term[Any]) = t.asInstanceOf[Term[T]]
-    //two lambda abstractions can be merged if they have the same domain, and for each element of the domain
-    //the set of free variables in both function terms is identical for each binding
-    //we approximate this as follows:
-    //  take a default element of the variable domain, and pass it into both function terms
-    //  if the variables of these "conditioned" terms are identical, we can merge
-    //  in this case we can try to further merge the conditioned terms in case they contain additional lambda abstractions
-    (t1, t2) match {
-      case (l1@LambdaAbstraction(v1@Var(_, d1), a1), l2@LambdaAbstraction(v2@Var(_, d2), a2)) if d1 == d2 =>
-        val default = d1.default.head
+                        operator:BinaryOperatorSameDomainAndRange[T],
+                        condition: State = State.empty): Option[Term[T]] = {
+    (t1,t2) match {
+      case (operator.Reduced(ImageSeq(LambdaAbstraction(v1,a1))),operator.Reduced(ImageSeq(LambdaAbstraction(v2,a2)))) =>
+        val default = v1.domain.default.head
         val newVar = v1
         val replaced1 = a1
         val replaced2 = substituteVariable(a2, v2, v1)
@@ -151,24 +155,29 @@ object TermConverter {
         val vars1 = conditioned1.variables
         val vars2 = conditioned2.variables
         if (vars1 == vars2) {
-          mergeLambdas(replaced1, replaced2, merger, newCondition) match {
-            case Some(merged) => Some(LambdaAbstraction(newVar, merged))
-            case None => Some(LambdaAbstraction(newVar, merger(replaced1, replaced2)))
-          }
-        } else None
-      case _ => None
+          Some(Reduce(operator.Term, ImageSeq(LambdaAbstraction(newVar,FunApp(operator.Term,TupleTerm2(replaced1,replaced2))))))
+        } else
+          None
     }
+
+
   }
 
   def main(args: Array[String]) {
 
     val r = 'r of (0 ~~ 2 |-> Doubles)
-    val l1 = for (i <- 0 ~~ 2) yield r(i)
-    val l2 = for (j <- 0 ~~ 2) yield r(j)
+    val l1 = dsum(for (i <- 0 ~~ 2) yield r(i))
+    val l2 = dsum(for (j <- 0 ~~ 2) yield r(j))
 
-    val merged = mergeLambdas(l1,l2,(t1:Term[Any],t2:Term[Any]) => t1.asInstanceOf[Term[Double]] + t2.asInstanceOf[Term[Double]])
+    val sum = dsum(SeqTerm(Seq(l1,l2)))
+
+    val merged = mergeLambdas(l1,l2, Math.DoubleAdd)
 
     println(merged)
+
+    val grouped = groupLambdas(sum)
+
+    println(grouped)
   }
 
 
