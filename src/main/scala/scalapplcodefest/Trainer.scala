@@ -26,12 +26,14 @@ object Trainer {
     import TermImplicits._
     val weightsSet = new WeightsSet
     val key = weightsSet.newWeights( new DenseVector(10000))
+    val flattenedGeneric = TermConverter.flattenDouble(model)
+    val groupedLambdas = TermConverter.groupLambdas(flattenedGeneric)
 
     case class PerceptronExample(instance:State) extends Example {
 
       val target = instance.target
       val targetFeats = model.features.eval(target).right.get
-      val conditioned = model | instance
+      val conditioned = groupedLambdas | instance
 
       val distConds = TermConverter.distConds(conditioned)
       val distDots = TermConverter.distDots(distConds)

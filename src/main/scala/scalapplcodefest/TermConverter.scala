@@ -137,6 +137,7 @@ object TermConverter {
       case Math.DoubleAdd.Reduced(SeqTerm(args)) =>
         val merged = args.foldLeft(List.empty[Term[Double]])(mergeOneTerm(_, _, Math.DoubleAdd))
         dsum(SeqTerm(merged))
+      case _ => term
     }
   }
 
@@ -198,7 +199,7 @@ object TermConverter {
 
     val f1 = dsum(for (i<- 0 ~~ 2; j <- 0 ~~ 2) yield s(i,j))
     val f2 = dsum(for (k<- 0 ~~ 2; l <- 0 ~~ 2) yield s(k,l))
-    val grouped2 = groupLambdas(dsum(SeqTerm(Seq(f1,f2))))
+    val grouped2 = groupLambdas(flattenDouble(f1 + f2))
     println(grouped2)
 
 

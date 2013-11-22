@@ -22,12 +22,23 @@ final class MessagePassingFactorGraph {
   val factors = new ArrayBuffer[Factor]
   var weights: DenseVector = null
 
+  /**
+   * Adds a node for a variable of domain size `dim`
+   * @param dim size of domain of corresponding variable
+   * @return the added node.
+   */
   def addNode(dim: Int) = {
     val n = new Node(nodes.size, dim)
     nodes += n
     n
   }
 
+  /**
+   * Adds an edge between node and factor
+   * @param f factor to connect.
+   * @param n node to connect.
+   * @return the added edge.
+   */
   def addEdge(f: Factor, n: Node) = {
     val e = new Edge(n, f, n.dim)
     n.edgeCount += 1
@@ -251,11 +262,22 @@ object MessagePassingFactorGraph {
       """.stripMargin
     }
 
+    /**
+     * Calculates scores in table based on feature vectors and currently set weights.
+     */
+    def cacheLinearScores() {
+      for (i <-0 until settings.length) table(i) = stats(i).dot(fg.weights)
+    }
+
     private[MessagePassingFactorGraph] var edgeCount: Int = 0
     private[MessagePassingFactorGraph] var edgeFilled: Int = 0
 
   }
 
+  /**
+   * Printer of nodes, factors and edges. Helps debugging (as the graph itself is
+   * independent of the original model it comes from.
+   */
   trait FGPrinter {
     def node2String(node:Node):String
     def factor2String(factor:Factor):String
