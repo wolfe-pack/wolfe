@@ -23,11 +23,12 @@ object ChunkingExample {
 
     val bias = vsum(for (i <- 0 ~~ n) yield e_(key('bias,chunk(i))))
     val wordChunk = vsum(for (i <- 0 ~~ n) yield e_(key('wordChunk,word(i),chunk(i))))
-    val feat = bias + wordChunk
+    val trans = vsum(for (i <- 0 ~~ (n-1)) yield e_(key('trans, chunk(i),chunk(i+1))))
+    val feat = bias + wordChunk + trans
     val model = LinearModel(feat,weights)
 
     val stream = Util.getStreamFromClassPathOrFile("scalapplcodefest/datasets/conll2000/train.txt")
-    val sentences = Util.loadCoNLL(Source.fromInputStream(stream).getLines().take(100),Seq(word, tag, chunk), n)
+    val sentences = Util.loadCoNLL(Source.fromInputStream(stream).getLines().take(3),Seq(word, tag, chunk), n)
     val train = sentences.map(_.asTargets(chunk))
 
     println(train.head.toPrettyString)
@@ -36,7 +37,7 @@ object ChunkingExample {
     val predictor = Inference.maxProduct(1)(model)(learnedWeights)(_:State).state()
     val evaluation = Evaluator.evaluate(train,predictor)
 
-    println(key.vectorToString(learnedWeights))
+    //println(key.vectorToString(learnedWeights))
     println(evaluation)
 
 

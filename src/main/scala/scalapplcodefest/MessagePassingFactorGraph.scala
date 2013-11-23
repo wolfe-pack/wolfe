@@ -71,6 +71,9 @@ final class MessagePassingFactorGraph {
       |
       |Factors:
       |${factors.map(_.toVerboseString(fgPrinter)).mkString("\n")}
+      |
+      |Edges:
+      |${edges.map(_.toVerboseString(fgPrinter)).mkString("\n")}
     """.stripMargin
   }
   def addFactor1(table: Array[Double]) = {
@@ -79,7 +82,7 @@ final class MessagePassingFactorGraph {
     f
   }
 
-  def addFactor(scores: Array[Double], settings: Array[Array[Int]], dims: Array[Int]) = {
+  def addTableFactor(scores: Array[Double], settings: Array[Array[Int]], dims: Array[Int]) = {
     val f = new Factor(this, factors.size, dims, settings, TABLE, scores)
     factors += f
     f
@@ -212,6 +215,13 @@ object MessagePassingFactorGraph {
     val f2n = Array.ofDim[Double](dim)
     var indexInFactor = -1
     var indexInNode = -1
+
+    def toVerboseString(fgPrinter:FGPrinter) =
+      f"""----------
+        |Node:    ${n.index} ${fgPrinter.node2String(n)}
+        |Factor:  ${f.index} ${fgPrinter.factor2String(f)}
+      """.stripMargin
+
   }
 
   /**
@@ -254,7 +264,7 @@ object MessagePassingFactorGraph {
 
       }
       f"""-----------------
-        |Factor:  $index
+        |Factor:  $index ${fgPrinter.factor2String(this)}}
         |Nodes:   ${edges.map(_.n.index).mkString(" ")} ${edges.map(e => fgPrinter.node2String(e.n)).mkString(" ")}
         |Type:    $typ
         |Table:

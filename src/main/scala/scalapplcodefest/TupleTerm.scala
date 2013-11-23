@@ -6,7 +6,7 @@ package scalapplcodefest
 case class TupleTerm2[+A1, +A2](a1: Term[A1], a2: Term[A2])
   extends Term[(A1, A2)] {
   import SetCastHelper._
-  def variables = a1.variables ++ a2.variables
+  def variables = SetUtil.SetUnion(List(a1.variables,a2.variables))
   def components = List(a1,a2)
   //def copy(args: Seq[Term[Any]]) = TupleTerm2(args(0).asInstanceOf[Term[A1]],args(1).asInstanceOf[Term[A2]])
   def eval(state: State) = for (b1 <- a1.eval(state).right; b2 <- a2.eval(state).right) yield (b1, b2)

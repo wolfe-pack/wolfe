@@ -77,17 +77,16 @@ object Inference {
     val distDots = TermConverter.distDots(groupedLambdas)
     val unrolled = TermConverter.unrollLambdas(distDots)
     val flatten = TermConverter.flatten(unrolled, Math.DoubleAdd)
+
+    println(conditioned)
+    println(flattenQuantified)
+    println(distConds)
+    println(groupedLambdas)
+    println(distDots)
+    println(unrolled)
+    println(flatten)
+
     val aligned = MessagePassingGraphBuilder.build(flatten, model.weights)
-
-    //      println(conditioned)
-    //      println(flattenQuantified)
-    //      println(distConds)
-    //      println(groupedLambdas)
-    //      println(distDots)
-    //      println(unrolled)
-    //      println(flatten)
-
-
 
     val result = new Inference {
       private var dirtyState = true
@@ -115,6 +114,7 @@ object Inference {
       def feats() = {inferObjAndFeatures(); _feats }
       def updateResult(newWeights: DenseVector) = {
         aligned.graph.weights = weights
+        println(aligned.graph.toVerboseString(new aligned.FGPrinter(ChunkingExample.key)))
         dirtyState = true
         dirtyObjAndFeats = true
       }

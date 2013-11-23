@@ -1,6 +1,8 @@
 package scalapplcodefest
 
 import cc.factorie.maths.ArrayOps
+import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
 /**
  * Takes a term and builds a message passing graph for it.
@@ -24,6 +26,7 @@ object MessagePassingGraphBuilder {
     val dims = variableMappings.map(_.dom.size)
     val entryCount = dims.product
     lazy val node2variable = variableMappings.map(m => m.node -> m.variable).toMap
+    val factor2Term = new mutable.HashMap[Factor,Term[Double]]
 
     def argmaxState() = {
       val map = for (v <- variableMappings) yield {
@@ -36,7 +39,7 @@ object MessagePassingGraphBuilder {
 
     class FGPrinter(index:Index) extends MessagePassingFactorGraph.FGPrinter {
       def node2String(node: Node) = node2variable(node).toString
-      def factor2String(factor: Factor) = ""
+      def factor2String(factor: Factor) = factor2Term(factor).toString
       def vector2String(vector: scalapplcodefest.Vector) = index.vectorToString(vector, " ")
     }
   }
@@ -69,7 +72,7 @@ object MessagePassingGraphBuilder {
       settings(stateIndex) = setting
       scores(stateIndex) = score
     }
-    val f = aligned.graph.addFactor(scores, settings, dims)
+    val f = aligned.graph.addTableFactor(scores, settings, dims)
     BuiltFactor(f, mappings)
   }
 
@@ -103,7 +106,7 @@ object MessagePassingGraphBuilder {
 
   def buildFactor(aligned: TermAlignedFG, term: Term[Double], weights: Variable[Vector]): BuiltFactor = {
     import TermImplicits._
-    term match {
+    val result = term match {
       case l@LinearModel(feats, w, base) if w == weights => buildLinearFactor(aligned, l, feats) //todo: do something with base
       case c@Conditioned(Math.Dot.Applied2(feats, w), cond) if w == weights => buildLinearFactor(aligned, c, feats, cond)
       case s@Conditioned(Math.DoubleAdd.Reduced(SeqTerm(args)),outerCondition) =>
@@ -116,25 +119,44 @@ object MessagePassingGraphBuilder {
         buildLinearFactor(aligned,s,featSum,outerCondition)
       case t => buildTableFactor(aligned, t)
     }
+    aligned.factor2Term(result.factor) = term
+    result
+  }
+
+  object EdgeOrdering extends Ordering[(Node,Factor,Int)] {
+    def compare(x: (Node, Factor,Int), y: (Node, Factor,Int)):Int = {
+      val ((n1,f1,i1),(n2,f2,i2)) = (x,y)
+      if (f1.rank != f2.rank) return f1.rank - f2.rank
+      if (i1 != i2) return i2 - i1
+      val sign = -1 + (i1 % 2) * 2
+      if (n1.index != n2.index) return sign * (n1.index - n2.index)
+      f1.index - f2.index
+    }
   }
 
   def build(term: Term[Double], weights: Variable[Vector] = null): TermAlignedFG = {
     val aligned = new TermAlignedFG(term, weights)
+    val edges = new ArrayBuffer[(Node,Factor, Int)]
 
     term match {
       case Reduce(ConstantFun(Math.DoubleAdd), SeqTerm(args)) =>
         for (arg <- args; if arg != Constant(0.0)) {
           val f = buildFactor(aligned, arg, weights)
-          for (mapping <- f.vars) {
-            aligned.graph.addEdge(f.factor, mapping.node)
+          for ((mapping,index) <- f.vars.zipWithIndex) {
+            edges += ((mapping.node,f.factor,index))
+            //aligned.graph.addEdge(f.factor, mapping.node)
           }
         }
       case _ =>
         val f = buildFactor(aligned, term, weights)
-        for (mapping <- f.vars) {
-          aligned.graph.addEdge(f.factor, mapping.node)
+        for ((mapping,index) <- f.vars.zipWithIndex) {
+          edges += ((mapping.node,f.factor,index))
+//          aligned.graph.addEdge(f.factor, mapping.node)
         }
     }
+    val sorted = edges.sorted(EdgeOrdering)
+    for ((n,f,_) <- sorted)
+      aligned.graph.addEdge(f,n)
 
     aligned.graph.build()
     aligned
