@@ -25,7 +25,7 @@ object MessagePassingGraphBuilder {
     val entryCount = dims.product
     lazy val node2variable = variableMappings.map(m => m.node -> m.variable).toMap
 
-    def beliefToState() = {
+    def argmaxState() = {
       val map = for (v <- variableMappings) yield {
         val winner = ArrayOps.maxIndex(v.node.b)
         val value = v.dom(winner)
@@ -152,7 +152,7 @@ object MessagePassingGraphBuilder {
     val fg = build(f)
 
     MaxProduct.run(fg.graph, 1)
-    println(fg.beliefToState().toPrettyString)
+    println(fg.argmaxState().toPrettyString)
 
     val key = new Index
     val feat = vsum(for (i <- 0 ~~ 2) yield e_(key(r(i), s(i))))

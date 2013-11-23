@@ -13,7 +13,7 @@ object ChunkingExample {
   val key = new Index() //shouldn't be here, but for debugging purposes (as index is needed in trainer for better print outs)
 
   def main(args: Array[String]) {
-    val Chunks = Set("O", "B-VP", "B-NP", "B-PP", "I-VP", "I-NP", "I-PP", "B-SBAR", "I-SBAR", "B-ADJP", "I-ADJP")
+    val Chunks = SetValue("O", "B-VP", "B-NP", "B-PP", "I-VP", "I-NP", "I-PP", "B-SBAR", "I-SBAR", "B-ADJP", "I-ADJP")
 
     val n = 'n of Ints
     val word = 'word of (0 ~~ n |-> Strings)
@@ -27,14 +27,17 @@ object ChunkingExample {
     val model = LinearModel(feat,weights)
 
     val stream = Util.getStreamFromClassPathOrFile("scalapplcodefest/datasets/conll2000/train.txt")
-    val sentences = Util.loadCoNLL(Source.fromInputStream(stream).getLines().take(2),Seq(word, tag, chunk), n)
+    val sentences = Util.loadCoNLL(Source.fromInputStream(stream).getLines().take(100),Seq(word, tag, chunk), n)
     val train = sentences.map(_.asTargets(chunk))
 
     println(train.head.toPrettyString)
 
-    val learned = Trainer.train(model, train)
+    val learnedWeights = Trainer.train(model, train, 3, Inference.maxProduct(1))
+    val predictor = Inference.maxProduct(1)(model)(learnedWeights)(_:State).state()
+    val evaluation = Evaluator.evaluate(train,predictor)
 
-    println(key.vectorToString(learned))
+    println(key.vectorToString(learnedWeights))
+    println(evaluation)
 
 
 

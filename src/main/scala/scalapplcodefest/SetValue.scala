@@ -4,6 +4,7 @@ import scala.language.existentials
 import cc.factorie.la.ScalarTensor
 
 /**
+ * A set that performs lazy set union and set minus
  * @author Sebastian Riedel
  */
 trait SetValue[T] extends Set[T] {
@@ -11,6 +12,17 @@ trait SetValue[T] extends Set[T] {
   def -(elem: T): Set[T] = SetUtil.SetMinus(this, Set(elem))
   def --(that: Set[T]): Set[T] = SetUtil.SetMinus(this, that)
   def ++(that: Set[T]): Set[T] = SetUtil.SetUnion(List(this, that))
+}
+
+/**
+ * Helper to build SetValue objects.
+ */
+object SetValue {
+  def apply[T](elems:T*) = new SetValue[T] {
+    val self = elems.toSet
+    def contains(elem: T) = self(elem)
+    def iterator = elems.iterator
+  }
 }
 
 /**
