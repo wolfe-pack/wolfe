@@ -94,7 +94,7 @@ object SetUtil {
     def contains(elem: T) = sets.exists(_.contains(elem))
     def +(elem: T) = SetUnion(Set(elem) :: sets)
     def -(elem: T) = SetMinus(this, Set(elem))
-    def iterator = sets.flatMap(identity).iterator
+    def iterator = sets.flatMap(identity).toSet.iterator
   }
 
   case class SetMap[T,R](set:Set[T],function:T=>R) extends SetValue[R] {
@@ -108,6 +108,12 @@ object SetUtil {
     def iterator = set.view.iterator.filter(filter)
   }
 
+  def main(args: Array[String]) {
+    val test = SetUnion(List(SetUnion(List(Set(1,2))), SetUnion(List(SetUnion(List(Set(1,2)))))))
+    val seq = test.toSeq
+    println(seq)
+    println(test.size)
+  }
 
 }
 

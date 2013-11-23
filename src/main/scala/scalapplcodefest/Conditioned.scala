@@ -14,6 +14,7 @@ case class Conditioned[T](term:Term[T], condition:State) extends Term[T] {
       case _ => vars
     }
     val v = term.variables
+    val condtioned = conditionVars(term.variables)
     SetUtil.SetMinus(conditionVars(term.variables),condition.domain)
   }
   def default = term.default
