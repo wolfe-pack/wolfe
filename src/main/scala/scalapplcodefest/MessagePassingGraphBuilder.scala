@@ -102,9 +102,18 @@ object MessagePassingGraphBuilder {
 
 
   def buildFactor(aligned: TermAlignedFG, term: Term[Double], weights: Variable[Vector]): BuiltFactor = {
+    import TermImplicits._
     term match {
       case l@LinearModel(feats, w, base) if w == weights => buildLinearFactor(aligned, l, feats) //todo: do something with base
       case c@Conditioned(Math.Dot.Applied2(feats, w), cond) if w == weights => buildLinearFactor(aligned, c, feats, cond)
+      case s@Conditioned(Math.DoubleAdd.Reduced(SeqTerm(args)),outerCondition) =>
+        val feats = args.collect {
+          case c@Math.Dot.Applied2(f, w) if w == weights => f
+        }
+        val featSum = vsum(SeqTerm(feats))
+        //val condition = feats.map(_._2).foldLeft(outerCondition)(_ + _)
+        //todo: do something with the non-linear terms
+        buildLinearFactor(aligned,s,featSum,outerCondition)
       case t => buildTableFactor(aligned, t)
     }
   }
@@ -114,7 +123,7 @@ object MessagePassingGraphBuilder {
 
     term match {
       case Reduce(ConstantFun(Math.DoubleAdd), SeqTerm(args)) =>
-        for (arg <- args) {
+        for (arg <- args; if arg != Constant(0.0)) {
           val f = buildFactor(aligned, arg, weights)
           for (mapping <- f.vars) {
             aligned.graph.addEdge(f.factor, mapping.node)
@@ -159,7 +168,7 @@ object MessagePassingGraphBuilder {
     val distConds = TermConverter.distConds(conditioned)
     val distDots = TermConverter.distDots(distConds)
     val unrolled = TermConverter.unrollLambdas(distDots)
-    val flatten = TermConverter.flattenDouble(unrolled)
+    val flatten = TermConverter.flatten(unrolled,Math.DoubleAdd)
     println(conditioned)
     println(distConds)
     println(distDots)

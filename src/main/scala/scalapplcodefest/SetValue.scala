@@ -22,7 +22,7 @@ trait SetValue[T] extends Set[T] {
 case class Reduce[T](op: FunTerm[(T, T), T], arguments: Term[Seq[T]]) extends Term[T] {
   def eval(state: State) = for (f <- op.eval(state).right; set <- arguments.eval(state).right) yield
     set.reduce((a1, a2) => f(a1 -> a2))
-  def variables = op.variables ++ arguments.variables
+  def variables = SetUtil.SetUnion(List(op.variables,arguments.variables))
   def domain[C >: T] = op.funRange.asInstanceOf[Term[Set[C]]]
   def default = op.funRange.default.head
 }
@@ -58,7 +58,7 @@ case class RangeSet(from: Term[Int], to: Term[Int]) extends Term[Set[Int]] {
     for (f <- from.eval(state).right;
          t <- to.eval(state).right) yield RangeSetValue(f, t)
   def variables = SetUtil.SetUnion(List(from.variables, to.variables))
-  def default = RangeSetValue(from.default, to.default)
+  def default = RangeSetValue(from.default, to.default + 1)
   def domain[C >: Set[Int]] = Constant(Util.setToBeImplementedLater)
   override def toString = s"($from ~~ $to)"
 }

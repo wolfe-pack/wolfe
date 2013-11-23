@@ -13,6 +13,7 @@ case class Conditioned[T](term:Term[T], condition:State) extends Term[T] {
       case p@PartialGroundAtoms(_,_,_) => p.copy(condition = p.condition + condition)
       case _ => vars
     }
+    val v = term.variables
     SetUtil.SetMinus(conditionVars(term.variables),condition.domain)
   }
   def default = term.default

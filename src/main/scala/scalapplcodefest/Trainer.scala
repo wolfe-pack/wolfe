@@ -26,22 +26,24 @@ object Trainer {
     import TermImplicits._
     val weightsSet = new WeightsSet
     val key = weightsSet.newWeights( new DenseVector(10000))
-    val flattenedGeneric = TermConverter.flattenDouble(model)
-    val groupedLambdas = TermConverter.groupLambdas(flattenedGeneric)
 
     case class PerceptronExample(instance:State) extends Example {
 
       val target = instance.target
       val targetFeats = model.features.eval(target).right.get
-      val conditioned = groupedLambdas | instance
 
-      val distConds = TermConverter.distConds(conditioned)
-      val distDots = TermConverter.distDots(distConds)
+      val conditioned = model | instance
+      val flattenQuantified = TermConverter.flatten(conditioned, Math.VecAdd)
+      val distConds = TermConverter.distConds(flattenQuantified)
+      val groupedLambdas =  TermConverter.groupLambdasDeep(distConds)
+      val distDots = TermConverter.distDots(groupedLambdas)
       val unrolled = TermConverter.unrollLambdas(distDots)
-      val flatten = TermConverter.flattenDouble(unrolled)
+      val flatten = TermConverter.flatten(unrolled, Math.DoubleAdd)
 
       println(conditioned)
+      println(flattenQuantified)
       println(distConds)
+      println(groupedLambdas)
       println(distDots)
       println(unrolled)
       println(flatten)
@@ -51,6 +53,8 @@ object Trainer {
       def accumulateValueAndGradient(value: DoubleAccumulator, gradient: WeightsMapAccumulator) = {
 
         aligned.graph.weights = weightsSet(key).asInstanceOf[DenseVector]
+        val printer = new aligned.FGPrinter(ChunkingExample.key)
+        println(aligned.graph.toVerboseString(printer))
         MaxProduct.run(aligned.graph, 1)
 
         val guessFeats = new SparseVector(100)
