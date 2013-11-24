@@ -31,9 +31,9 @@ object ChunkingExample {
     val sentences = Util.loadCoNLL(Source.fromInputStream(stream).getLines().take(3),Seq(word, tag, chunk), n)
     val train = sentences.map(_.asTargets(chunk))
 
-    println(train.head.toPrettyString)
+    //println(train.head.toPrettyString)
 
-    val learnedWeights = Trainer.train(model, train, 3, Inference.maxProduct(1))
+    val learnedWeights = Trainer.train(model, train, 30, Inference.maxProduct(1))
     val predictor = Inference.maxProduct(1)(model)(learnedWeights)(_:State).state()
     val evaluation = Evaluator.evaluate(train,predictor)
 

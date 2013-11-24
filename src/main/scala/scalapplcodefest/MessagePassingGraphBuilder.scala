@@ -128,7 +128,7 @@ object MessagePassingGraphBuilder {
       val ((n1,f1,i1),(n2,f2,i2)) = (x,y)
       if (f1.rank != f2.rank) return f1.rank - f2.rank
       if (i1 != i2) return i2 - i1
-      val sign = -1 + (i1 % 2) * 2
+      val sign = -1 + (i1 % 2) * 2 //edges can be forward processed or backward processed depending on their position in the factor
       if (n1.index != n2.index) return sign * (n1.index - n2.index)
       f1.index - f2.index
     }

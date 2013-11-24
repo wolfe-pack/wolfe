@@ -218,6 +218,7 @@ object MessagePassingFactorGraph {
 
     def toVerboseString(fgPrinter:FGPrinter) =
       f"""----------
+        |Edge
         |Node:    ${n.index} ${fgPrinter.node2String(n)}
         |Factor:  ${f.index} ${fgPrinter.factor2String(f)}
       """.stripMargin

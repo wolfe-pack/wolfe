@@ -12,6 +12,11 @@ object TermConverter {
 
   import TermImplicits._
 
+  /**
+   * A term converter converts a single term, usually only the root of the term.
+   * Full tree conversion can be achieved by combining a converter with the
+   * convertDepthFirst method.
+   */
   trait Converter {
     def convert[T](term: Term[T]): Term[T]
   }
@@ -74,14 +79,6 @@ object TermConverter {
     }
   }
 
-  def flattenDoubleSums(term: Term[Double]): Seq[Term[Double]] = {
-    val raw = term match {
-      case Math.DoubleAdd.Reduced(SeqTerm(args)) => args.flatMap(flattenDoubleSums)
-      case Math.DoubleAdd.Applied2(arg1, arg2) => flattenDoubleSums(arg1) ++ flattenDoubleSums(arg2)
-      case _ => Seq(term)
-    }
-    raw.filter(_ != Constant(0.0))
-  }
 
   def flatten[T, O](term: Term[T], op: BinaryOperatorSameDomainAndRange[O]): Term[T] = convertDepthFirst(term, new Converter {
     def convert[A](arg: Term[A]) = {
