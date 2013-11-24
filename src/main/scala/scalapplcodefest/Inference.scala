@@ -55,6 +55,10 @@ object Inference {
     flatten
   }
 
+  def exhaustiveArgmax(term:Term[Double]) = {
+    State.allStates(term.variables.toList).view.maxBy(term.eval(_).right.get)
+  }
+
   def maxProduct(maxIterations: Int)(model: LinearModel)(weights: DenseVector)(instance: State): Inference = {
     import TermImplicits._
 

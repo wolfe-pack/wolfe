@@ -29,7 +29,7 @@ object Trainer {
 
         val guessFeats = inference.feats()
         val guessScore = inference.obj()
-        val guess = inference.state()
+        //val guess = inference.state()
         val targetScore = model.eval(target + SingletonState(model.weights, weightsSet(key))).right.get
 
 //        println("----------")
