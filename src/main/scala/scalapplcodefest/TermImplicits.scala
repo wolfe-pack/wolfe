@@ -43,6 +43,8 @@ object TermImplicits {
   implicit def toFinishedCartesianProduct[A](unfinished: UnfinishedCartesianProduct[A]) = unfinished.finish
   implicit def toRichFinishedCartesianProduct[A](unfinished: UnfinishedCartesianProduct[A]) = RichSetTerm(unfinished.finish)
 
+  //table building
+  def T[A,B](domain:Term[Set[A]],f:PartialFunction[A,B]) = ConstantFun(Fun.table(domain.eval().right.get,f))
 
   //math
   def e_(index: Term[Int], value: Term[Double] = Constant(1.0)) = UnitVec(index, value)

@@ -19,7 +19,7 @@ class Specs extends FlatSpec with Matchers {
     argmax(y) should be (false)
   }
 
-  "An MaxProduct argmaxer" should "find the maximizing assignment of a chain/tree" in {
+  "An MaxProduct argmaxer" should "find the maximizing assignment of a chain" in {
     val x = 'x of Bools
     val y = 'y of Bools
     val z = 'z of Bools

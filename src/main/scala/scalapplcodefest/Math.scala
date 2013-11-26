@@ -1,6 +1,8 @@
 package scalapplcodefest
 
 import cc.factorie.la.SingletonTensor1
+import cc.factorie.maths.ArrayOps
+import java.util
 
 /**
  * Math-related function objects.
@@ -75,6 +77,13 @@ object Math {
     def default = new SingletonTensor1(1, index.default, value.default)
     override def toString = s"$value * e_($index)"
   }
+
+}
+
+object MoreArrayOps extends ArrayOps {
+  def maxValue(s:A): Double = { var result = s(0); var i = 0; while (i < s.length) { if (s(i) > result) result = s(i); i += 1 }; result }
+  def maxNormalize(s:A) { val norm = maxValue(s); this -= (s,norm)}
+  def fill(s:A,v:Double) { util.Arrays.fill(s,v)}
 
 }
 

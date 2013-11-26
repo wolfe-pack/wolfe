@@ -216,6 +216,8 @@ object MessagePassingFactorGraph {
   final class Edge(val n: Node, val f: Factor, val dim: Int) {
     val n2f = Array.ofDim[Double](dim)
     val f2n = Array.ofDim[Double](dim)
+    val f2nLast = Array.ofDim[Double](dim)
+
     var indexInFactor = -1
     var indexInNode = -1
 

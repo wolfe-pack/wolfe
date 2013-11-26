@@ -11,6 +11,7 @@ import cc.factorie.maths.ArrayOps
 object MaxProduct {
 
   import MessagePassingFactorGraph._
+  import MoreArrayOps._
 
   def main(args: Array[String]) {
     val fg = new MessagePassingFactorGraph
@@ -101,7 +102,14 @@ object MaxProduct {
    */
   def updateF2N(edge: Edge) {
     val factor = edge.f
-    util.Arrays.fill(edge.f2n, Double.MinValue)
+
+    //remember last message for calculating residuals
+    set(edge.f2n, edge.f2nLast)
+
+    //initializing to low number for later maxing
+    fill(edge.f2n, Double.NegativeInfinity)
+
+    //max over all settings
     for (i <- 0 until factor.entryCount) {
       val setting = factor.settings(i)
       var score = factor.score(i)
@@ -111,6 +119,9 @@ object MaxProduct {
       }
       edge.f2n(varValue) = math.max(score, edge.f2n(varValue))
     }
+
+    //normalizing by max value
+    maxNormalize(edge.f2n)
   }
 
   /**

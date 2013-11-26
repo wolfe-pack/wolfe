@@ -58,6 +58,12 @@ object Fun {
     def isDefinedAt(x: A) = false
   }
 
+  def table[A,B](domain:Set[A], f:PartialFunction[A,B]) = {
+    val map = domain.map(a => a -> f(a)).toMap
+    val range = map.map(_._2).toSet
+    apply(map,domain,range)
+  }
+
 }
 
 trait BinaryOperatorSameDomainAndRange[T] extends BinaryOperatorSameDomain[T,T] {
