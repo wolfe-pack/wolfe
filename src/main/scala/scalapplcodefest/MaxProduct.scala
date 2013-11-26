@@ -17,8 +17,8 @@ object MaxProduct {
     val f1 = fg.addFactor2(Array(Array(1.0, 2.0, 3.0), Array(4.0, 5.0, 6.0)))
     val n1 = fg.addNode(2)
     val n2 = fg.addNode(3)
-    val e1 = fg.addEdge(f1, n1)
-    val e2 = fg.addEdge(f1, n2)
+    val e1 = fg.addEdge(f1, n1, 0)
+    val e2 = fg.addEdge(f1, n2, 1)
     fg.build()
 
     MaxProduct.run(fg, 1)

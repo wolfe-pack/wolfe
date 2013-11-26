@@ -26,8 +26,7 @@ class Specs extends FlatSpec with Matchers {
     val model = I(x |=> y) + I(y |=> z) + I(x)
     val expected = Inference.exhaustiveArgmax(model).state()
     val actual = Inference.maxProductArgmax(1)(model).state()
-    println(expected)
-    println(actual)
+    actual should be (expected)
 
   }
 

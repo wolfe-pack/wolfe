@@ -155,8 +155,8 @@ object MessagePassingGraphBuilder {
         }
     }
     val sorted = edges.sorted(EdgeOrdering)
-    for ((n,f,_) <- sorted)
-      aligned.graph.addEdge(f,n)
+    for ((n,f,i) <- sorted)
+      aligned.graph.addEdge(f,n,i)
 
     aligned.graph.build()
     aligned

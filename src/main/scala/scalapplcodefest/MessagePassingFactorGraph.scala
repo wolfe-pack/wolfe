@@ -37,10 +37,12 @@ final class MessagePassingFactorGraph {
    * Adds an edge between node and factor
    * @param f factor to connect.
    * @param n node to connect.
+   * @param indexInFactor the index the edge has in the factor.
    * @return the added edge.
    */
-  def addEdge(f: Factor, n: Node) = {
+  def addEdge(f: Factor, n: Node, indexInFactor:Int) = {
     val e = new Edge(n, f, n.dim)
+    e.indexInFactor = indexInFactor
     n.edgeCount += 1
     f.edgeCount += 1
     edges += e
@@ -54,7 +56,6 @@ final class MessagePassingFactorGraph {
     for (edge <- edges) {
       if (edge.f.edges == null) edge.f.edges = Array.ofDim[Edge](edge.f.edgeCount)
       if (edge.n.edges == null) edge.n.edges = Array.ofDim[Edge](edge.n.edgeCount)
-      edge.indexInFactor = edge.f.edgeFilled
       edge.indexInNode = edge.n.edgeFilled
       edge.f.edges(edge.indexInFactor) = edge
       edge.n.edges(edge.indexInNode) = edge

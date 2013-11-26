@@ -73,7 +73,7 @@ object Inference {
   def maxProductArgmax(maxIterations:Int)(term:Term[Double]):Inference = {
     val unrolled = unrollModel(term)
     val aligned = MessagePassingGraphBuilder.build(unrolled, null)
-    println(aligned.graph.toVerboseString())
+    println(aligned.graph.toVerboseString(new aligned.FGPrinter(null)))
     MaxProduct.run(aligned.graph, maxIterations)
     val argmaxState = aligned.argmaxState()
 

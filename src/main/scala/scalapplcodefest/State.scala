@@ -81,6 +81,16 @@ trait State {
   def asTargets(shouldBeTarget:Predicate[_,_]*):State = asTargets(SetUtil.SetUnion(shouldBeTarget.map(AllGroundAtoms(_)).toList))
 
 
+  /**
+   * Equals based on having the same variables with same values.
+   * @param that the other state to compare to.
+   * @return true iff both states have same variables which are mapped to the same values.
+   */
+  override def equals(that: scala.Any) = that match {
+    case s:State => s.domain.size == domain.size && domain.forall(v => get(v) == s.get(v))
+    case _ => false
+  }
+
   override def toString = {
     domain.toSeq.sorted(VariableOrdering).map(v => "%s->%s".format(v, get(v).get)).mkString(",")
   }
