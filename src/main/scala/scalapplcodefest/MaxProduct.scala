@@ -36,16 +36,13 @@ object MaxProduct {
   def run(fg: MessagePassingFactorGraph, maxIteration: Int) {
     for (i <- 0 until maxIteration) {
       for (edge <- fg.edges) {
-        updateN2F(edge)
+        for (other <- fg.edges; if other != edge) updateN2F(other)
         updateF2N(edge)
       }
     }
     for (node <- fg.nodes) updateBelief(node)
   }
 
-  def objective(fg: MessagePassingFactorGraph): Double = {
-    ???
-  }
 
   /**
    * Accumulates the expectations of all feature vectors under the current model. In MaxProduce expectations

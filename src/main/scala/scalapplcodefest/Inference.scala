@@ -24,15 +24,17 @@ trait Inference {
    * under the model, or the feature vector of the argmax state.
    * @return feature representation associated with the inference.
    */
-  def feats(): SparseVector
+  def feats(): Vector
 
+}
+
+trait MutableInference extends Inference {
   /**
    * Change the weights and update the inference.
    * @param newWeights new weight vector to use.
    */
   def updateResult(newWeights: DenseVector)
 }
-
 
 object Inference {
 
@@ -55,11 +57,35 @@ object Inference {
     flatten
   }
 
-  def exhaustiveArgmax(term:Term[Double]) = {
-    State.allStates(term.variables.toList).view.maxBy(term.eval(_).right.get)
+  def exhaustiveArgmax(term:Term[Double]):Inference = {
+    val argmaxState = State.allStates(term.variables.toList).view.maxBy(term.eval(_).right.get)
+    val featTerm = term match {
+      case LinearModel(feats,_,_) => feats
+      case _ => Constant(new SparseVector(0))
+    }
+    new Inference {
+      def state() = argmaxState
+      def obj() = term.eval(argmaxState).right.get
+      def feats() = featTerm.eval(argmaxState).right.get
+    }
+  }
+  
+  def maxProductArgmax(maxIterations:Int)(term:Term[Double]):Inference = {
+    val unrolled = unrollModel(term)
+    val aligned = MessagePassingGraphBuilder.build(unrolled, null)
+    println(aligned.graph.toVerboseString())
+    MaxProduct.run(aligned.graph, maxIterations)
+    val argmaxState = aligned.argmaxState()
+
+    new Inference {
+      def state() = argmaxState
+      def obj() = term.eval(argmaxState).right.get
+      def feats() = ???
+    }
+
   }
 
-  def maxProduct(maxIterations: Int)(model: LinearModel)(weights: DenseVector)(instance: State): Inference = {
+  def maxProduct(maxIterations: Int)(model: LinearModel)(weights: DenseVector)(instance: State): MutableInference = {
     import TermImplicits._
 
     val conditioned = model | instance
@@ -67,7 +93,7 @@ object Inference {
 
     val aligned = MessagePassingGraphBuilder.build(unrolled, model.weights)
 
-    val result = new Inference {
+    val result = new MutableInference {
       private var dirtyState = true
       private var dirtyObjAndFeats = true
       private var _state:State = null

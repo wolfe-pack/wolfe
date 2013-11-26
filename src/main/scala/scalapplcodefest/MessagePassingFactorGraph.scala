@@ -199,6 +199,8 @@ object MessagePassingFactorGraph {
       """.stripMargin
     }
 
+    override def toString = index.toString
+
     private[MessagePassingFactorGraph] var edgeCount: Int = 0
     private[MessagePassingFactorGraph] var edgeFilled: Int = 0
 
@@ -222,7 +224,7 @@ object MessagePassingFactorGraph {
         |Node:    ${n.index} ${fgPrinter.node2String(n)}
         |Factor:  ${f.index} ${fgPrinter.factor2String(f)}
       """.stripMargin
-
+    override def toString = s"${f.index} -> ${n.index}"
   }
 
   /**
@@ -265,13 +267,15 @@ object MessagePassingFactorGraph {
 
       }
       f"""-----------------
-        |Factor:  $index ${fgPrinter.factor2String(this)}}
+        |Factor:  $index ${fgPrinter.factor2String(this)}
         |Nodes:   ${edges.map(_.n.index).mkString(" ")} ${edges.map(e => fgPrinter.node2String(e.n)).mkString(" ")}
         |Type:    $typ
         |Table:
         |${tableString.mkString("\n")}
       """.stripMargin
     }
+
+    override def toString = index.toString
 
     /**
      * Calculates scores in table based on feature vectors and currently set weights.
