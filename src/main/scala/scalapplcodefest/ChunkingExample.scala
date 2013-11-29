@@ -28,13 +28,13 @@ object ChunkingExample {
     val model = LinearModel(feat,weights)
 
     val stream = Util.getStreamFromClassPathOrFile("scalapplcodefest/datasets/conll2000/train.txt")
-    val sentences = Util.loadCoNLL(Source.fromInputStream(stream).getLines().take(3),Seq(word, tag, chunk), n)
+    val sentences = Util.loadCoNLL(Source.fromInputStream(stream).getLines().take(100),Seq(word, tag, chunk), n)
     val train = sentences.map(_.asTargets(chunk))
 
     //println(train.head.toPrettyString)
 
-    val learnedWeights = Trainer.train(model, train, 30, Inference.maxProduct(1))
-    val predictor = Inference.maxProduct(1)(model)(learnedWeights)(_:State).state()
+    val learnedWeights = Trainer.train(model, train, 10, Inference.maxProductArgmax(1))
+    val predictor = (s:State) => Inference.maxProductArgmax(1)(model | s | weights -> learnedWeights ).state()
     val evaluation = Evaluator.evaluate(train,predictor)
 
     //println(key.vectorToString(learnedWeights))

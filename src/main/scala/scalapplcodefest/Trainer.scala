@@ -10,10 +10,12 @@ import cc.factorie.WeightsSet
  */
 object Trainer {
 
+  import TermImplicits._
+
 
   def train(model: LinearModel, instances: Seq[State],
             maxIterations:Int,
-            inferencer:Inferencer = Inference.maxProduct(1)): DenseVector = {
+            inferencer:Term[Double] => Inference = Inference.maxProductArgmax(1)): DenseVector = {
     val weightsSet = new WeightsSet
     val key = weightsSet.newWeights(new DenseVector(10000))
 
@@ -21,15 +23,14 @@ object Trainer {
 
       val target = instance.target
       val targetFeats = model.features.eval(target).right.get
-      val inference = inferencer(model)(weightsSet(key).asInstanceOf[DenseVector])(instance)
 
       def accumulateValueAndGradient(value: DoubleAccumulator, gradient: WeightsMapAccumulator) = {
 
-        inference.updateResult(weightsSet(key).asInstanceOf[DenseVector])
+        val conditioned = model | instance | model.weights -> weightsSet(key).asInstanceOf[DenseVector]
+        val inference = inferencer(conditioned)
 
         val guessFeats = inference.feats()
         val guessScore = inference.obj()
-        //val guess = inference.state()
         val targetScore = model.eval(target + SingletonState(model.weights, weightsSet(key))).right.get
 
 //        println("----------")

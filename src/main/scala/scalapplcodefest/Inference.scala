@@ -71,60 +71,25 @@ object Inference {
   }
   
   def maxProductArgmax(maxIterations:Int)(term:Term[Double]):Inference = {
-    val unrolled = unrollModel(term)
-    val aligned = MessagePassingGraphBuilder.build(unrolled, null)
-    println(aligned.graph.toVerboseString(new aligned.FGPrinter(null)))
+    val (weightVar,inner, weights) = term match {
+      case Conditioned(withInstance@Conditioned(LinearModel(f,w,b),_),s) => (w,withInstance,s(w))
+      case _ => (null,term,null)
+    }
+    val unrolled = unrollModel(inner)
+    val aligned = MessagePassingGraphBuilder.build(unrolled, weightVar)
+    aligned.graph.weights = weights.asInstanceOf[DenseVector]
+    println(aligned.graph.toVerboseString(new aligned.FGPrinter(ChunkingExample.key)))
     MaxProduct.run(aligned.graph, maxIterations)
     val argmaxState = aligned.argmaxState()
+    val argmaxFeats = new SparseVector(10)
+    val argmaxScore = MaxProduct.featureExpectationsAndObjective(aligned.graph,argmaxFeats)
 
     new Inference {
       def state() = argmaxState
-      def obj() = term.eval(argmaxState).right.get
-      def feats() = ???
+      def obj() = argmaxScore
+      def feats() = argmaxFeats
     }
 
   }
 
-  def maxProduct(maxIterations: Int)(model: LinearModel)(weights: DenseVector)(instance: State): MutableInference = {
-    import TermImplicits._
-
-    val conditioned = model | instance
-    val unrolled = unrollModel(conditioned)
-
-    val aligned = MessagePassingGraphBuilder.build(unrolled, model.weights)
-
-    val result = new MutableInference {
-      private var dirtyState = true
-      private var dirtyObjAndFeats = true
-      private var _state:State = null
-      private var _obj:Double = Double.NegativeInfinity
-      private var _feats:SparseVector = null
-      private def inferState() {
-        if (dirtyState) {
-          MaxProduct.run(aligned.graph, maxIterations)
-          dirtyState = false
-        }
-      }
-      private def inferObjAndFeatures() {
-        if (dirtyObjAndFeats) {
-          inferState()
-          _feats = new SparseVector(10)
-          _obj = MaxProduct.featureExpectationsAndObjective(aligned.graph,_feats)
-          dirtyObjAndFeats = false
-        }
-      }
-
-      def state() = {inferState(); aligned.argmaxState()}
-      def obj() = {inferObjAndFeatures(); _obj}
-      def feats() = {inferObjAndFeatures(); _feats }
-      def updateResult(newWeights: DenseVector) = {
-        aligned.graph.weights = weights
-        //        println(aligned.graph.toVerboseString(new aligned.FGPrinter(ChunkingExample.key)))
-        dirtyState = true
-        dirtyObjAndFeats = true
-      }
-    }
-    result.updateResult(weights)
-    result
-  }
 }
