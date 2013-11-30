@@ -11,6 +11,7 @@ import scalapplcodefest.Math.UnitVec
 object TermConverter {
 
   import TermImplicits._
+  import Math._
 
   /**
    * A term converter converts a single term, usually only the root of the term.
@@ -99,23 +100,17 @@ object TermConverter {
     }
   }}
 
-  def distConds[T](term: Term[T]): Term[T] = {
-    implicit def cast(t: Term[Any]) = t.asInstanceOf[Term[T]]
-    term match {
-      case Conditioned(const@Constant(_), _) => const
-      case Conditioned(LinearModel(feats, weights, base), c) => LinearModel(distConds(feats | c), weights, distConds(base | c))
-      case Conditioned(Math.VecAdd.Reduced(args), c) => vsum(distConds(args | c))
-      case Conditioned(Math.VecAdd.Applied2(arg1, arg2), c) => distConds(arg1 | c) + distConds(arg2 | c)
-      case Conditioned(Math.Dot.Applied2(arg1, arg2), c) => distConds(arg1 | c) dot distConds(arg2 | c)
-      case Conditioned(Math.DoubleAdd.Reduced(args), c) => dsum(distConds(args | c))
-      case Conditioned(Math.DoubleAdd.Applied2(arg1, arg2), c) => distConds(arg1 | c) + distConds(arg2 | c)
-      case Conditioned(SeqTerm(args), c) => SeqTerm(args.map(a => distConds(a | c)))
-      case Conditioned(ImageSeq1(LambdaAbstraction(Var(v, d), arg)), c) => ImageSeq1(LambdaAbstraction(Var(v, distConds(d | c)), distConds(arg | c)))
-      case _ => term
-    }
-  }
 
 
+  /**
+   * Replaces trees of applications of binary operators with reductions of the operator to the sequence of terms on
+   * the tree's yield.
+   * @param term the term to convert.
+   * @param op the binary operator to flatten trees for
+   * @tparam T type of term to convert
+   * @tparam O type of arguments to the binary operator
+   * @return term with flattened trees.
+   */
   def flatten[T, O](term: Term[T], op: BinaryOperatorSameDomainAndRange[O]): Term[T] = convertDepthFirst(term)(new Converter {
     def convert[A](arg: Term[A]) = {
       implicit def cast(t: Term[Any]) = t.asInstanceOf[Term[A]]
@@ -140,6 +135,36 @@ object TermConverter {
       }
     }
   })
+
+  /**
+   * Pushes dot products into sums of doubles
+   * @param term the term to convert.
+   * @tparam T type of term to convert.
+   * @return a term where dot products of vector sums are replaced by double sums of dot products.
+   */
+  def pushDownDotProducts[T](term:Term[T]):Term[T] = convertDepthFirst(term) {new Converter {
+    def convert[A](term: Term[A]) = {
+      val dots = term match {
+        case Dot.Applied2(VecAdd.Reduced(ImageSeq1(LambdaAbstraction(v,t1))),a2) =>
+          Seq(dsum(ImageSeq1(LambdaAbstraction(v,t1 dot a2))))
+        case Dot.Applied2(VecAdd.Reduced(SeqTerm(args1)),VecAdd.Reduced(SeqTerm(args2))) =>
+          for (a1 <- args1; a2 <- args2) yield a1 dot a2
+        case Dot.Applied2(a1,VecAdd.Reduced(SeqTerm(args2))) =>
+          for (a2 <- args2) yield a1 dot a2
+        case Dot.Applied2(VecAdd.Reduced(SeqTerm(args1)),a2) =>
+          for (a1 <- args1) yield a1 dot a2
+        case _ => Seq.empty
+      }
+
+      val pushedDown = dots.map(pushDownDotProducts(_))
+
+      pushedDown match {
+        case s if s.size == 1 => s(0).asInstanceOf[Term[A]]
+        case s if s.size > 1 => dsum(SeqTerm(s)).asInstanceOf[Term[A]]
+        case _ => term
+      }
+    }
+  }}
 
 
   def unrollLambdaAbstractions2[T](term: Term[Seq[T]]): Term[Seq[T]] = term match {
@@ -241,8 +266,24 @@ object TermConverter {
 
     }
 
-
   }
+
+  def distConds[T](term: Term[T]): Term[T] = {
+    implicit def cast(t: Term[Any]) = t.asInstanceOf[Term[T]]
+    term match {
+      case Conditioned(const@Constant(_), _) => const
+      case Conditioned(LinearModel(feats, weights, base), c) => LinearModel(distConds(feats | c), weights, distConds(base | c))
+      case Conditioned(Math.VecAdd.Reduced(args), c) => vsum(distConds(args | c))
+      case Conditioned(Math.VecAdd.Applied2(arg1, arg2), c) => distConds(arg1 | c) + distConds(arg2 | c)
+      case Conditioned(Math.Dot.Applied2(arg1, arg2), c) => distConds(arg1 | c) dot distConds(arg2 | c)
+      case Conditioned(Math.DoubleAdd.Reduced(args), c) => dsum(distConds(args | c))
+      case Conditioned(Math.DoubleAdd.Applied2(arg1, arg2), c) => distConds(arg1 | c) + distConds(arg2 | c)
+      case Conditioned(SeqTerm(args), c) => SeqTerm(args.map(a => distConds(a | c)))
+      case Conditioned(ImageSeq1(LambdaAbstraction(Var(v, d), arg)), c) => ImageSeq1(LambdaAbstraction(Var(v, distConds(d | c)), distConds(arg | c)))
+      case _ => term
+    }
+  }
+
 
   def main(args: Array[String]) {
 

@@ -74,5 +74,16 @@ class Specs extends FlatSpec with Matchers {
     actual should be(expected)
   }
 
+  "Pushing down dot products" should "replace dot products of vector sums with double sums of dot products" in {
+    val w = 'w of Vectors
+    val f1 = vsum(for (i <- (0 ~~ 2) named "i") yield e_(i))
+    val f2 = vsum(e_(0), e_(1))
+    val term = (f1 + f2) dot w
+    val flat = TermConverter.flatten(term, Math.VecAdd)
+    val actual = TermConverter.pushDownDotProducts(flat)
+    val expected = dsum(dsum(for (i <- (0 ~~ 2) named "i") yield e_(i) dot w), e_(0) dot w, e_(1) dot w)
+    actual should be (expected)
+
+  }
 
 }
