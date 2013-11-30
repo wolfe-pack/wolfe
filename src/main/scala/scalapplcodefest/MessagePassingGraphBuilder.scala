@@ -76,7 +76,9 @@ object MessagePassingGraphBuilder {
     BuiltFactor(f, mappings)
   }
 
-  def buildLinearFactor(aligned: TermAlignedFG, term: Term[Double], feats: Term[Vector], condition: State = State.empty) = {
+  def buildLinearFactor(aligned: TermAlignedFG, term: Term[Double], feats: Term[Vector],
+                        base:Term[Double] = Constant(0.0),
+                        condition: State = State.empty) = {
     val vars = term.variables.toSeq.filter(_ != aligned.weights).sorted(VariableOrdering)
     val mappings = vars.map(aligned.variable2Mapping)
     val dims = mappings.view.map(_.dom.size).toArray
@@ -85,6 +87,8 @@ object MessagePassingGraphBuilder {
     //create a factor using term and all variables
     val settings = Array.ofDim[Array[Int]](entryCount)
     val stats = Array.ofDim[Vector](entryCount)
+    val baseScores = Array.ofDim[Double](entryCount)
+
 
     //iterate over possible states, get the state index
     for (state <- State.allStates(vars.toList)) {
@@ -98,8 +102,9 @@ object MessagePassingGraphBuilder {
       }
       settings(stateIndex) = setting
       stats(stateIndex) = feat
+      baseScores(stateIndex) = base.eval(state + condition).right.get
     }
-    val f = aligned.graph.addLinearFactor(stats, settings, dims)
+    val f = aligned.graph.addLinearFactor(stats, baseScores, settings, dims)
     BuiltFactor(f, mappings)
   }
 
@@ -107,16 +112,19 @@ object MessagePassingGraphBuilder {
   def buildFactor(aligned: TermAlignedFG, term: Term[Double], weights: Variable[Vector]): BuiltFactor = {
     import TermImplicits._
     val result = term match {
-      case l@LinearModel(feats, w, base) if w == weights => buildLinearFactor(aligned, l, feats) //todo: do something with base
-      case c@Conditioned(Math.Dot.Applied2(feats, w), cond) if w == weights => buildLinearFactor(aligned, c, feats, cond)
+      case l@Linear(feats, w, base) if w == weights => buildLinearFactor(aligned, l, feats, base)
+      case c@Conditioned(Linear(feats, w, base), cond) if w == weights => buildLinearFactor(aligned, c, feats, base, cond)
       case s@Conditioned(Math.DoubleAdd.Reduced(SeqTerm(args)),outerCondition) =>
-        val feats = args.collect {
-          case c@Math.Dot.Applied2(f, w) if w == weights => f
+        val featsOrDoubles = args.map {
+          case c@Math.Dot.Applied2(f, w) if w == weights => Right(f)
+          case l => Left(l)
         }
+        val feats = featsOrDoubles.collect({case Right(f) => f})
+        val doubles = featsOrDoubles.collect({case Left(d) => d})
         val featSum = vsum(SeqTerm(feats))
-        //val condition = feats.map(_._2).foldLeft(outerCondition)(_ + _)
+        val doubleSum = dsum(SeqTerm(Constant(0.0) +: doubles))
         //todo: do something with the non-linear terms
-        buildLinearFactor(aligned,s,featSum,outerCondition)
+        buildLinearFactor(aligned,s,featSum,doubleSum,outerCondition)
       case t => buildTableFactor(aligned, t)
     }
     aligned.factor2Term(result.factor) = term

@@ -89,8 +89,8 @@ final class MessagePassingFactorGraph {
     f
   }
 
-  def addLinearFactor(stats: Array[Vector], settings: Array[Array[Int]], dims: Array[Int]) = {
-    val f = new Factor(this, factors.size, dims, settings, LINEAR, null, stats)
+  def addLinearFactor(stats: Array[Vector], base:Array[Double], settings: Array[Array[Int]], dims: Array[Int]) = {
+    val f = new Factor(this, factors.size, dims, settings, LINEAR, base, stats)
     factors += f
     f
   }
@@ -256,7 +256,7 @@ object MessagePassingFactorGraph {
     def score(entry: Int): Double = {
       typ match {
         case TABLE => table(entry)
-        case LINEAR => stats(entry).dot(fg.weights)
+        case LINEAR => table(entry) + stats(entry).dot(fg.weights)
       }
     }
     def toVerboseString(implicit fgPrinter: FGPrinter) = {
@@ -266,7 +266,7 @@ object MessagePassingFactorGraph {
             s"${setting.mkString(" ")} | ${table(index)}"
         case LINEAR =>
           for ((setting, index) <- settings.zipWithIndex) yield
-            s"${setting.mkString(" ")} | ${score(index)} | ${fgPrinter.vector2String(stats(index))}"
+            s"${setting.mkString(" ")} | ${score(index)} | ${table(index)} | ${fgPrinter.vector2String(stats(index))}"
 
       }
       f"""-----------------
@@ -284,7 +284,8 @@ object MessagePassingFactorGraph {
      * Calculates scores in table based on feature vectors and currently set weights.
      */
     def cacheLinearScores() {
-      for (i <-0 until settings.length) table(i) = stats(i).dot(fg.weights)
+      //todo: this should write into a dedicated cache array as the table array is used for base scores in the linear model.
+      //for (i <-0 until settings.length) table(i) = stats(i).dot(fg.weights)
     }
 
     private[MessagePassingFactorGraph] var edgeCount: Int = 0

@@ -60,7 +60,8 @@ object Inference {
   def exhaustiveArgmax(term:Term[Double]):Inference = {
     val argmaxState = State.allStates(term.variables.toList).view.maxBy(term.eval(_).right.get)
     val featTerm = term match {
-      case LinearModel(feats,_,_) => feats
+      case Linear(feats,_,_) => feats
+      case Conditioned(Linear(feats,_,_),_) => feats
       case _ => Constant(new SparseVector(0))
     }
     new Inference {
