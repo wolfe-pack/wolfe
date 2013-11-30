@@ -51,6 +51,7 @@ object TermImplicits {
   def I(term: Term[Boolean]) = FunApp(Math.Iverson.Term, term)
 
   def dsum(args: Term[Seq[Double]]) = Quantified.DoubleSum(args)
+  def dsum(args: Term[Double]*) = Quantified.DoubleSum(SeqTerm(args))
   def vsum(args: Term[Seq[Vector]]) = Quantified.VecSum(args)
 
   implicit def toImageSeq[A, B](f: FunTerm[A, B]) = ImageSeq1(f)
@@ -92,9 +93,11 @@ object TermImplicits {
     "_x" + anonVarCount
   }
 
-  case class RichSetTerm[T](s: Term[Set[T]]) {
+  case class RichSetTerm[T](s: Term[Set[T]], variableName: () =>String = () => freshName()) {
 
-    def freshVariable[A](dom: Term[Set[A]] = s) = Var(Symbol(freshName()),dom)
+    def freshVariable[A](dom: Term[Set[A]] = s) = Var(Symbol(variableName()),dom)
+
+    def named(name:String) = RichSetTerm(s, () => name)
 
     def map[R](f: Variable[T] => Term[R]): LambdaAbstraction[T, R] = {
       val variable = freshVariable()

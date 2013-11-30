@@ -87,6 +87,7 @@ trait State {
    * @return true iff both states have same variables which are mapped to the same values.
    */
   override def equals(that: scala.Any) = that match {
+    case s:State if s eq this => true
     case s:State => s.domain.size == domain.size && domain.forall(v => get(v) == s.get(v))
     case _ => false
   }
@@ -111,7 +112,9 @@ object State {
   val empty = new State {
     def get[T](variable: Variable[T]) = None
     def domain = Set.empty
+    override def +(state: State) = state
   }
+
 
 
 

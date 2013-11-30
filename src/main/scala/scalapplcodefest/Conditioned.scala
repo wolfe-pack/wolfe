@@ -1,6 +1,8 @@
 package scalapplcodefest
 
 /**
+ * The Conditioned term add a "condition" to each state its evaluates against. This can serve as
+ * mechanism to inject observations and weight vectors into more generic terms.
  * @author Sebastian Riedel
  */
 case class Conditioned[T](term:Term[T], condition:State) extends Term[T] {
@@ -13,13 +15,11 @@ case class Conditioned[T](term:Term[T], condition:State) extends Term[T] {
       case p@PartialGroundAtoms(_,_,_) => p.copy(condition = p.condition + condition)
       case _ => vars
     }
-    val v = term.variables
-    val condtioned = conditionVars(term.variables)
     SetUtil.SetMinus(conditionVars(term.variables),condition.domain)
   }
   def default = term.default
   def domain[C >: T] = term.domain[C]
-  override def toString = "Cond:" + term
+  override def toString = "C:" + term
 }
 
 

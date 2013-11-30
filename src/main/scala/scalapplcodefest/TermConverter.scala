@@ -18,7 +18,7 @@ object TermConverter {
    * convertDepthFirst method.
    */
   trait Converter {
-    def convert[T](term: Term[T]): Term[T]
+    def convert[A](term: Term[A]): Term[A]
   }
 
   /**
@@ -30,21 +30,24 @@ object TermConverter {
    * @tparam T the type of term.
    * @return the converted term.
    */
-  def convertDepthFirst[T](term: Term[T], converter: Converter): Term[T] = {
+  def convertDepthFirst[T](term: Term[T])(converter: Converter): Term[T] = {
     implicit def cast(t: Term[Any]) = t.asInstanceOf[Term[T]]
     term match {
-      case FunTermProxy(t) => converter.convert(FunTermProxy(convertDepthFirst(t, converter)))
-      case TupleTerm2(a1, a2) => converter.convert(TupleTerm2(convertDepthFirst(a1, converter), convertDepthFirst(a2, converter)))
-      case FunApp(f, a) => converter.convert(FunApp(FunTerm(convertDepthFirst(f, converter)), convertDepthFirst(a, converter)))
-      case Conditioned(t, c) => converter.convert(Conditioned(convertDepthFirst(t, converter), c))
-      case SeqTerm(args) => converter.convert(SeqTerm(args.map(convertDepthFirst(_, converter))))
-      case ImageSeq1(f) => converter.convert(ImageSeq1(FunTerm(convertDepthFirst(f, converter))))
-      case ImageSeq2(f) => converter.convert(ImageSeq2(FunTerm(convertDepthFirst(f, converter))))
-      case LambdaAbstraction(Var(v, d), t) => converter.convert(LambdaAbstraction(Var(v, convertDepthFirst(d, converter)), convertDepthFirst(t, converter)))
-      case Var(v, d) => converter.convert(Var(v, convertDepthFirst(d, converter)))
-      case Reduce(o, a) => converter.convert(Reduce(FunTerm(convertDepthFirst(o, converter)).asInstanceOf[FunTerm[(T, T), T]], convertDepthFirst(a, converter)))
-      case LinearModel(f, Var(w, d), b) => converter.convert(LinearModel(convertDepthFirst(f, converter), Var(w, convertDepthFirst(d, converter)), convertDepthFirst(b, converter)))
-      case UnitVec(i, v) => converter.convert(UnitVec(convertDepthFirst(i, converter), convertDepthFirst(v, converter)))
+      case FunTermProxy(t) => converter.convert(FunTermProxy(convertDepthFirst(t)(converter)))
+      case TupleTerm2(a1, a2) => converter.convert(TupleTerm2(convertDepthFirst(a1)( converter), convertDepthFirst(a2)(converter)))
+      case FunApp(f, a) => converter.convert(FunApp(FunTerm(convertDepthFirst(f)( converter)), convertDepthFirst(a)( converter)))
+      case Conditioned(t, c) => converter.convert(Conditioned(convertDepthFirst(t)( converter), c))
+      case SeqTerm(args) => converter.convert(SeqTerm(args.map(convertDepthFirst(_)( converter))))
+      case ImageSeq1(f) => converter.convert(ImageSeq1(FunTerm(convertDepthFirst(f)( converter))))
+      case ImageSeq2(f) => converter.convert(ImageSeq2(FunTerm(convertDepthFirst(f)( converter))))
+      case LambdaAbstraction(Var(v, d), t) => converter.convert(LambdaAbstraction(Var(v, convertDepthFirst(d)( converter)), convertDepthFirst(t)( converter)))
+      case Var(v, d) => converter.convert(Var(v, convertDepthFirst(d)( converter)))
+      case Reduce(o, a) => converter.convert(Reduce(FunTerm(convertDepthFirst(o)( converter)).asInstanceOf[FunTerm[(T, T), T]], convertDepthFirst(a)( converter)))
+      case LinearModel(f, Var(w, d), b) => converter.convert(LinearModel(convertDepthFirst(f)( converter), Var(w, convertDepthFirst(d)( converter)), convertDepthFirst(b)( converter)))
+      case UnitVec(i, v) => converter.convert(UnitVec(convertDepthFirst(i)( converter), convertDepthFirst(v)( converter)))
+      case Predicate(n,d,r) => converter.convert(Predicate(n, convertDepthFirst(d)( converter),convertDepthFirst(r)( converter)))
+      case GroundAtom(p,a) => converter.convert(GroundAtom(convertDepthFirst(p)( converter).asInstanceOf[Predicate[Any,_]],a))
+      case RangeSet(f,t) => converter.convert(RangeSet(convertDepthFirst(f)(converter),convertDepthFirst(t)(converter)))
       case _ => converter.convert(term)
     }
   }
@@ -59,9 +62,42 @@ object TermConverter {
    * @return the original term with all occurrences of `toReplace` replaced by `replacement`.
    */
   def substituteVariable[A, B](term: Term[A], toReplace: Term[B], replacement: Term[B]) =
-    convertDepthFirst(term, new Converter {
+    convertDepthFirst(term)(new Converter {
       def convert[T](term: Term[T]) = if (term == toReplace) replacement.asInstanceOf[Term[T]] else term
     })
+
+  /**
+   * This function takes conditioned terms within the term tree and moves the condition downward as far as possible.
+   * @param term the term to convert.
+   * @param condition the condition to push down.
+   * @tparam T type of term
+   * @return a term in which conditioned terms are to be found at the leaf variables and predicate applications.
+   */
+  def pushDownConditions[T](term:Term[T], condition:State = State.empty):Term[T] = convertDepthFirst(term)( new Converter {
+    def convert[A](term: Term[A]) = term match {
+      case Conditioned(t,state) => pushDownConditions(t,condition + state)
+      case v@Var(_,_) if condition.domain(v) => Conditioned(v,condition)
+      case a@GroundAtom(_,_) if condition.domain(a) => Conditioned(a,condition)
+      case f@FunApp(Predicate(_,_,_),_) if !condition.domain.isEmpty => Conditioned(f,condition) //todo: should check whether predicate is involved
+      case t => t
+    }
+  })
+
+  /**
+   * Convert images of lambda abstractions to sequences of terms by replacing the lambda variables with
+   * constant values in the variable domain.
+   * @param term the term to convert
+   * @tparam T type of term to convert
+   * @return the term with all images of lambda abstractions replaced with sequences of terms.
+   */
+  def unrollLambdaImages[T](term:Term[T]) = convertDepthFirst(term) { new Converter {
+    def convert[A](term: Term[A]) = term match {
+      case ImageSeq1(LambdaAbstraction(v,t)) =>
+        val domainSeq = v.domain.eval().right.get.view.toSeq
+        SeqTerm(domainSeq.map(value => substituteVariable(t,v,Constant(value)))).asInstanceOf[Term[A]]
+      case t => t
+    }
+  }}
 
   def distConds[T](term: Term[T]): Term[T] = {
     implicit def cast(t: Term[Any]) = t.asInstanceOf[Term[T]]
@@ -80,7 +116,7 @@ object TermConverter {
   }
 
 
-  def flatten[T, O](term: Term[T], op: BinaryOperatorSameDomainAndRange[O]): Term[T] = convertDepthFirst(term, new Converter {
+  def flatten[T, O](term: Term[T], op: BinaryOperatorSameDomainAndRange[O]): Term[T] = convertDepthFirst(term)(new Converter {
     def convert[A](arg: Term[A]) = {
       implicit def cast(t: Term[Any]) = t.asInstanceOf[Term[A]]
       arg match {
@@ -144,7 +180,7 @@ object TermConverter {
   }
 
 
-  def groupLambdasDeep[T](term: Term[T]) = convertDepthFirst(term, new Converter {
+  def groupLambdasDeep[T](term: Term[T]) = convertDepthFirst(term)(new Converter {
     def convert[A](arg: Term[A]) = groupLambdas(arg)
   })
 
