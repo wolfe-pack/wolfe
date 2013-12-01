@@ -18,7 +18,7 @@ trait FunTerm[A, B] extends Term[Fun[A, B]] {
  * A proxy for terms that evaluate to Fun objects, but are not implementing the FunTerm interface
  * @param self the wrapped term.
  */
-case class FunTermProxy[A,B](self:Term[Fun[A,B]]) extends FunTerm[A,B] with ProxyTerm[Fun[A,B]] {
+case class FunTermProxy[A, B](self: Term[Fun[A, B]]) extends FunTerm[A, B] with ProxyTerm[Fun[A, B]] {
   def funCandidateDom = Constant(new AllOfType[A])
   def funRange = Constant(new AllOfType[B])
 }
@@ -36,15 +36,14 @@ object FunTerm {
   /**
    * Turns a function term into a FunTerm
    */
-  def apply[A,B](f:Term[Fun[A,B]]):FunTerm[A,B] = f match {
-    case ft:FunTerm[_,_] => ft.asInstanceOf[FunTerm[A,B]]
+  def apply[A, B](f: Term[Fun[A, B]]): FunTerm[A, B] = f match {
+    case ft: FunTerm[_, _] => ft.asInstanceOf[FunTerm[A, B]]
     case _ => FunTermProxy(f)
   }
 }
 
 
-
-case class ConstantFun[A,B](fun:Fun[A,B]) extends FunTerm[A,B] {
+case class ConstantFun[A, B](fun: Fun[A, B]) extends FunTerm[A, B] {
   def eval(state: State) = Right(fun)
   def variables = Set.empty
   def domain[C >: Fun[A, B]] = Constant(Set(fun))
@@ -65,20 +64,21 @@ case class FunApp[A, B](function: FunTerm[A, B], arg: Term[A]) extends Term[B] {
   def eval(state: State) =
     for (f <- function.eval(state).right;
          a <- arg.eval(state).right;
-         v <- f.lift(a).toRight(Conditioned(this,state)).right) yield v
+         v <- f.lift(a).toRight(Conditioned(this, state)).right) yield v
   def variables = function match {
-    case p@Predicate(n,d,r) => PartialGroundAtoms(p,arg)
+    case p@Predicate(n, d, r) => PartialGroundAtoms(p, arg)
     case _ => SetUtil.SetUnion(List(function.variables, arg.variables))
   }
   def default = function.default(function.funCandidateDom.default.head)
-  def domain[C >: B] = Image(function, arg.domain).asInstanceOf[Term[Set[C]]] //could also be function.funRange
+  def domain[C >: B] = Image(function, arg.domain).asInstanceOf[Term[Set[C]]]
+  //could also be function.funRange
   override def toString = s"$function($arg)"
 }
 
 case object BinaryFunApp {
-  def unapply[T](term:FunApp[(T,T),T]) = term match {
-    case FunApp(f,a) => Some((f,a))
-    case _=> None
+  def unapply[T](term: FunApp[(T, T), T]) = term match {
+    case FunApp(f, a) => Some((f, a))
+    case _ => None
   }
 }
 

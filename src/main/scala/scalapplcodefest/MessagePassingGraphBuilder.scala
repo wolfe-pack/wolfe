@@ -185,7 +185,7 @@ object MessagePassingGraphBuilder {
     println(fg.argmaxState().toPrettyString)
 
     val key = new Index
-    val feat = vsum(for (i <- 0 ~~ 2) yield e_(key(r(i), s(i))))
+    val feat = vsum(for (i <- 0 ~~ 2) yield unit(key(r(i), s(i))))
 
     val vec = feat.eval(r.atom(0) -> true, s.atom(0) -> false, r.atom(1) -> false, s.atom(1) -> true)
     val w = 'w of Vectors

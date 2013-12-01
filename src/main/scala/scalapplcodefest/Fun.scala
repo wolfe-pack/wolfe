@@ -70,6 +70,7 @@ trait BinaryOperatorSameDomainAndRange[T] extends BinaryOperatorSameDomain[T,T] 
   self =>
   def funRange = dom
 
+  def reduce(args:Term[Seq[T]]) = Reduce(Term,args)
   object Reduced {
     def unapply(x: Term[Any]): Option[Term[Seq[T]]] = x match {
       case Reduce(ConstantFun(op), args) if op == self => Some(args.asInstanceOf[Term[Seq[T]]])
@@ -83,6 +84,14 @@ trait BinaryOperatorSameDomain[T, R] extends BinaryOperator[T,T, R] {
   def dom: Set[T]
   def dom1 = dom
   def dom2 = dom
+}
+
+object Equals {
+  def apply[T] = new BinaryOperatorSameDomain[T,Boolean] {
+    def apply(v1: (T, T)) = v1._1 == v1._2
+    def dom = new AllOfType[T]
+    def funRange = Bools
+  }
 }
 
 trait BinaryOperator[T1,T2, R] extends Operator[(T1, T2), R] {

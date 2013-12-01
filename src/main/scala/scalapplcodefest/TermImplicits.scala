@@ -47,8 +47,10 @@ object TermImplicits {
   def T[A,B](domain:Term[Set[A]],f:PartialFunction[A,B]) = ConstantFun(Fun.table(domain.eval().right.get,f))
 
   //math
-  def e_(index: Term[Int], value: Term[Double] = Constant(1.0)) = UnitVec(index, value)
+  def unit(index: Term[Int], value: Term[Double] = Constant(1.0)) = UnitVec(index, value)
   def I(term: Term[Boolean]) = FunApp(Math.Iverson.Term, term)
+  def log(term: Term[Double]) = FunApp(Math.Log.Term, term)
+
 
   def dsum(args: Term[Seq[Double]]) = Quantified.DoubleSum(args)
   def dsum(args: Term[Double]*) = Quantified.DoubleSum(SeqTerm(args))
@@ -99,7 +101,7 @@ object TermImplicits {
 
     def freshVariable[A](dom: Term[Set[A]] = s) = Var(Symbol(variableName()),dom)
 
-    def named(name:String) = RichSetTerm(s, () => name)
+    def as(name:String) = RichSetTerm(s, () => name)
 
     def map[R](f: Variable[T] => Term[R]): LambdaAbstraction[T, R] = {
       val variable = freshVariable()
@@ -129,6 +131,8 @@ object TermImplicits {
     def |(condition: State) = Conditioned(term, condition)
     def |(mappings: (Variable[Any], Any)*) = Conditioned(term, State(mappings.toMap))
     def eval(state: (Variable[Any], Any)*) = term.eval(State(state.toMap))
+    def ===(that:Term[T]) = FunApp(Equals[T].Term, TupleTerm2(term,that))
+    def ===(that:T) = FunApp(Equals[T].Term, TupleTerm2(term,Constant(that)))
     //    def eval(state:VarValuePair[T]*):Option[T] = term.eval(State(state.map(_.toTuple).toMap))
 
   }
@@ -180,6 +184,7 @@ object TermImplicits {
 
   case class RichPredicate[A, B](p: Predicate[A, B]) {
     def atom(a: A) = GroundAtom(p, a)
+    def allAtoms = AllGroundAtoms(p)
   }
 
   case class RichPredicate2[A1, A2, B](p: Predicate[(A1, A2), B]) {

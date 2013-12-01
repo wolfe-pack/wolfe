@@ -35,20 +35,20 @@ object TermConverter {
     implicit def cast(t: Term[Any]) = t.asInstanceOf[Term[T]]
     term match {
       case FunTermProxy(t) => converter.convert(FunTermProxy(convertDepthFirst(t)(converter)))
-      case TupleTerm2(a1, a2) => converter.convert(TupleTerm2(convertDepthFirst(a1)( converter), convertDepthFirst(a2)(converter)))
-      case FunApp(f, a) => converter.convert(FunApp(FunTerm(convertDepthFirst(f)( converter)), convertDepthFirst(a)( converter)))
-      case Conditioned(t, c) => converter.convert(Conditioned(convertDepthFirst(t)( converter), c))
-      case SeqTerm(args) => converter.convert(SeqTerm(args.map(convertDepthFirst(_)( converter))))
-      case ImageSeq1(f) => converter.convert(ImageSeq1(FunTerm(convertDepthFirst(f)( converter))))
-      case ImageSeq2(f) => converter.convert(ImageSeq2(FunTerm(convertDepthFirst(f)( converter))))
-      case LambdaAbstraction(Var(v, d), t) => converter.convert(LambdaAbstraction(Var(v, convertDepthFirst(d)( converter)), convertDepthFirst(t)( converter)))
-      case Var(v, d) => converter.convert(Var(v, convertDepthFirst(d)( converter)))
-      case Reduce(o, a) => converter.convert(Reduce(FunTerm(convertDepthFirst(o)( converter)).asInstanceOf[FunTerm[(T, T), T]], convertDepthFirst(a)( converter)))
-      case LinearModel(f, Var(w, d), b) => converter.convert(LinearModel(convertDepthFirst(f)( converter), Var(w, convertDepthFirst(d)( converter)), convertDepthFirst(b)( converter)))
-      case UnitVec(i, v) => converter.convert(UnitVec(convertDepthFirst(i)( converter), convertDepthFirst(v)( converter)))
-      case Predicate(n,d,r) => converter.convert(Predicate(n, convertDepthFirst(d)( converter),convertDepthFirst(r)( converter)))
-      case GroundAtom(p,a) => converter.convert(GroundAtom(convertDepthFirst(p)( converter).asInstanceOf[Predicate[Any,_]],a))
-      case RangeSet(f,t) => converter.convert(RangeSet(convertDepthFirst(f)(converter),convertDepthFirst(t)(converter)))
+      case TupleTerm2(a1, a2) => converter.convert(TupleTerm2(convertDepthFirst(a1)(converter), convertDepthFirst(a2)(converter)))
+      case FunApp(f, a) => converter.convert(FunApp(FunTerm(convertDepthFirst(f)(converter)), convertDepthFirst(a)(converter)))
+      case Conditioned(t, c) => converter.convert(Conditioned(convertDepthFirst(t)(converter), c))
+      case SeqTerm(args) => converter.convert(SeqTerm(args.map(convertDepthFirst(_)(converter))))
+      case ImageSeq1(f) => converter.convert(ImageSeq1(FunTerm(convertDepthFirst(f)(converter))))
+      case ImageSeq2(f) => converter.convert(ImageSeq2(FunTerm(convertDepthFirst(f)(converter))))
+      case LambdaAbstraction(Var(v, d), t) => converter.convert(LambdaAbstraction(Var(v, convertDepthFirst(d)(converter)), convertDepthFirst(t)(converter)))
+      case Var(v, d) => converter.convert(Var(v, convertDepthFirst(d)(converter)))
+      case Reduce(o, a) => converter.convert(Reduce(FunTerm(convertDepthFirst(o)(converter)).asInstanceOf[FunTerm[(T, T), T]], convertDepthFirst(a)(converter)))
+      case LinearModel(f, Var(w, d), b) => converter.convert(LinearModel(convertDepthFirst(f)(converter), Var(w, convertDepthFirst(d)(converter)), convertDepthFirst(b)(converter)))
+      case UnitVec(i, v) => converter.convert(UnitVec(convertDepthFirst(i)(converter), convertDepthFirst(v)(converter)))
+      case Predicate(n, d, r) => converter.convert(Predicate(n, convertDepthFirst(d)(converter), convertDepthFirst(r)(converter)))
+      case GroundAtom(p, a) => converter.convert(GroundAtom(convertDepthFirst(p)(converter).asInstanceOf[Predicate[Any, _]], a))
+      case RangeSet(f, t) => converter.convert(RangeSet(convertDepthFirst(f)(converter), convertDepthFirst(t)(converter)))
       case _ => converter.convert(term)
     }
   }
@@ -62,10 +62,27 @@ object TermConverter {
    * @tparam B type parameter of term to replace.
    * @return the original term with all occurrences of `toReplace` replaced by `replacement`.
    */
-  def substituteVariable[A, B](term: Term[A], toReplace: Term[B], replacement: Term[B]) =
-    convertDepthFirst(term)(new Converter {
+  def substituteTerm[A, B](term: Term[A], toReplace: Term[B], replacement: Term[B]) = convertDepthFirst(term) {
+    new Converter {
       def convert[T](term: Term[T]) = if (term == toReplace) replacement.asInstanceOf[Term[T]] else term
-    })
+    }
+  }
+
+  /**
+   * Replaces variables with Constants according to the value assigned to the variable in the given state.
+   * @param term the term to convert.
+   * @param state the binding of variables to values used to replace variables.
+   * @tparam T the type of term to convert.
+   * @return a term in which variables are replaced with constants if the variables have bindings in the state.
+   */
+  def ground[T](term:Term[T], state:State) = convertDepthFirst(term) {
+    new Converter {
+      def convert[A](term: Term[A]) = term match {
+        case v:Variable[_] => state.get(v).map(value => Constant(value)).getOrElse(v).asInstanceOf[Term[A]]
+        case _ => term
+      }
+    }
+  }
 
   /**
    * This function takes conditioned terms within the term tree and moves the condition downward as far as possible.
@@ -74,15 +91,17 @@ object TermConverter {
    * @tparam T type of term
    * @return a term in which conditioned terms are to be found at the leaf variables and predicate applications.
    */
-  def pushDownConditions[T](term:Term[T], condition:State = State.empty):Term[T] = convertDepthFirst(term)( new Converter {
-    def convert[A](term: Term[A]) = term match {
-      case Conditioned(t,state) => pushDownConditions(t,condition + state)
-      case v@Var(_,_) if condition.domain(v) => Conditioned(v,condition)
-      case a@GroundAtom(_,_) if condition.domain(a) => Conditioned(a,condition)
-      case f@FunApp(Predicate(_,_,_),_) if !condition.domain.isEmpty => Conditioned(f,condition) //todo: should check whether predicate is involved
-      case t => t
+  def pushDownConditions[T](term: Term[T], condition: State = State.empty): Term[T] = convertDepthFirst(term) {
+    new Converter {
+      def convert[A](term: Term[A]) = term match {
+        case Conditioned(t, state) => pushDownConditions(t, condition + state)
+        case v@Var(_, _) if condition.domain(v) => Conditioned(v, condition)
+        case a@GroundAtom(_, _) if condition.domain(a) => Conditioned(a, condition)
+        case f@FunApp(Predicate(_, _, _), _) if !condition.domain.isEmpty => Conditioned(f, condition) //todo: should check whether predicate is involved
+        case t => t
+      }
     }
-  })
+  }
 
   /**
    * Convert images of lambda abstractions to sequences of terms by replacing the lambda variables with
@@ -91,15 +110,16 @@ object TermConverter {
    * @tparam T type of term to convert
    * @return the term with all images of lambda abstractions replaced with sequences of terms.
    */
-  def unrollLambdaImages[T](term:Term[T]) = convertDepthFirst(term) { new Converter {
-    def convert[A](term: Term[A]) = term match {
-      case ImageSeq1(LambdaAbstraction(v,t)) =>
-        val domainSeq = v.domain.eval().right.get.view.toSeq
-        SeqTerm(domainSeq.map(value => substituteVariable(t,v,Constant(value)))).asInstanceOf[Term[A]]
-      case t => t
+  def unrollLambdaImages[T](term: Term[T]) = convertDepthFirst(term) {
+    new Converter {
+      def convert[A](term: Term[A]) = term match {
+        case ImageSeq1(LambdaAbstraction(v, t)) =>
+          val domainSeq = v.domain.eval().right.get.view.toSeq
+          SeqTerm(domainSeq.map(value => substituteTerm(t, v, Constant(value)))).asInstanceOf[Term[A]]
+        case t => t
+      }
     }
-  }}
-
+  }
 
 
   /**
@@ -142,29 +162,61 @@ object TermConverter {
    * @tparam T type of term to convert.
    * @return a term where dot products of vector sums are replaced by double sums of dot products.
    */
-  def pushDownDotProducts[T](term:Term[T]):Term[T] = convertDepthFirst(term) {new Converter {
-    def convert[A](term: Term[A]) = {
-      val dots = term match {
-        case Dot.Applied2(VecAdd.Reduced(ImageSeq1(LambdaAbstraction(v,t1))),a2) =>
-          Seq(dsum(ImageSeq1(LambdaAbstraction(v,t1 dot a2))))
-        case Dot.Applied2(VecAdd.Reduced(SeqTerm(args1)),VecAdd.Reduced(SeqTerm(args2))) =>
-          for (a1 <- args1; a2 <- args2) yield a1 dot a2
-        case Dot.Applied2(a1,VecAdd.Reduced(SeqTerm(args2))) =>
-          for (a2 <- args2) yield a1 dot a2
-        case Dot.Applied2(VecAdd.Reduced(SeqTerm(args1)),a2) =>
-          for (a1 <- args1) yield a1 dot a2
-        case _ => Seq.empty
-      }
+  def pushDownDotProducts[T](term: Term[T]): Term[T] = convertDepthFirst(term) {
+    new Converter {
+      def convert[A](term: Term[A]) = {
+        val dots = term match {
+          case Dot.Applied2(VecAdd.Reduced(ImageSeq1(LambdaAbstraction(v, t1))), a2) =>
+            Seq(dsum(ImageSeq1(LambdaAbstraction(v, t1 dot a2))))
+          case Dot.Applied2(VecAdd.Reduced(SeqTerm(args1)), VecAdd.Reduced(SeqTerm(args2))) =>
+            for (a1 <- args1; a2 <- args2) yield a1 dot a2
+          case Dot.Applied2(a1, VecAdd.Reduced(SeqTerm(args2))) =>
+            for (a2 <- args2) yield a1 dot a2
+          case Dot.Applied2(VecAdd.Reduced(SeqTerm(args1)), a2) =>
+            for (a1 <- args1) yield a1 dot a2
+          case _ => Seq.empty
+        }
 
-      val pushedDown = dots.map(pushDownDotProducts(_))
+        val pushedDown = dots.map(pushDownDotProducts(_))
 
-      pushedDown match {
-        case s if s.size == 1 => s(0).asInstanceOf[Term[A]]
-        case s if s.size > 1 => dsum(SeqTerm(s)).asInstanceOf[Term[A]]
-        case _ => term
+        pushedDown match {
+          case s if s.size == 1 => s(0).asInstanceOf[Term[A]]
+          case s if s.size > 1 => dsum(SeqTerm(s)).asInstanceOf[Term[A]]
+          case _ => term
+        }
       }
     }
-  }}
+  }
+
+  /**
+   * Finds sums of lambda abstractions and turns them into lambda abstractions of sums. Two lambda abstractions
+   * are merged / grouped when they have the same argument domain and are likely to produce the same free variables.
+   * @param term term to convert.
+   * @param filter decides which hidden variables should be used as criteria for merging. Two lambda abstractions will
+   *               be merged if, when applied to the first element of the domain, both abstractions
+   *               give the same free variables after applying the filter.
+   * @tparam T type of term to convert.
+   * @return term in which sums of lambda abstractions have been converted to lambda abstractions of sums.
+   */
+  def groupLambdas[T](term: Term[T], filter:Variable[Any] => Boolean = x => true) = convertDepthFirst(term) {
+    new Converter {
+      def convert[A](arg: Term[A]) = groupLambdasOnce(arg,filter)
+    }
+  }
+
+  /**
+   * Flatten a linear model and merge lambda abstractions with respect to the merge filter.
+   * @param term term to normalize
+   * @param mergeFilter filter that is used when comparing free variables of terms to merge
+   * @tparam T type of term to convert.
+   * @return normalized linear model.
+   */
+  def normalizeLinearModel[T](term:Term[Double], mergeFilter:Variable[Any] => Boolean = x => true) = {
+    val flatDouble = flatten(term, DoubleAdd)
+    val flatVector = flatten(flatDouble, VecAdd)
+    val grouped = groupLambdas(flatVector,mergeFilter)
+    grouped
+  }
 
 
   def unrollLambdaAbstractions2[T](term: Term[Seq[T]]): Term[Seq[T]] = term match {
@@ -205,64 +257,64 @@ object TermConverter {
   }
 
 
-  def groupLambdasDeep[T](term: Term[T]) = convertDepthFirst(term)(new Converter {
-    def convert[A](arg: Term[A]) = groupLambdas(arg)
-  })
-
-  def groupLambdas[T](term: Term[T]): Term[T] = {
+  def groupLambdasOnce[T](term: Term[T],filter:Variable[Any] => Boolean = x => true): Term[T] = {
     implicit def cast(t: Term[Any]) = t.asInstanceOf[Term[T]]
 
     //merge a term with one element in a list of previous terms if possible, otherwise prepend
-    def mergeOneTerm[T](current: List[Term[T]], toMerge: Term[T], op: BinaryOperatorSameDomainAndRange[T]) = {
-      val first = current.view.map(that => that -> mergeLambdas(that, toMerge, op)).find(_._2.isDefined)
+    def mergeOneTerm[A](current: List[Term[A]], toMerge: Term[A], op: BinaryOperatorSameDomainAndRange[A]) = {
+      val first = current.view.map(that => that -> mergeLambdas(that, toMerge, op, filter = filter)).find(_._2.isDefined)
       first match {
-        case Some((orig, Some(mergedTerm))) => current.map(t => if (t == orig) mergedTerm else orig)
+        case Some((orig, Some(mergedTerm))) =>
+          val mapped = current.map(t => if (t == orig) mergedTerm else t)
+          mapped
         case _ => toMerge :: current
       }
     }
     term match {
       case Math.VecAdd.Reduced(SeqTerm(args)) =>
         val merged = args.foldLeft(List.empty[Term[Vector]])(mergeOneTerm(_, _, Math.VecAdd))
-        vsum(SeqTerm(merged))
+        if (merged.size > 1) vsum(SeqTerm(merged)) else merged(0)
       case Math.DoubleAdd.Reduced(SeqTerm(args)) =>
         val merged = args.foldLeft(List.empty[Term[Double]])(mergeOneTerm(_, _, Math.DoubleAdd))
-        dsum(SeqTerm(merged))
+        if (merged.size > 1) dsum(SeqTerm(merged)) else merged(0)
       case _ => term
     }
   }
 
   def mergeLambdas[T](t1: Term[T], t2: Term[T],
                       operator: BinaryOperatorSameDomainAndRange[T],
-                      condition: State = State.empty): Option[Term[T]] = {
+                      condition: State = State.empty,
+                      filter:Variable[Any] => Boolean = x => true): Option[Term[T]] = {
 
     def mergeable(replaced1: Term[T], replaced2: Term[T], newCondition: State) = {
-      val conditioned1 = replaced1 | newCondition
-      val conditioned2 = replaced2 | newCondition
-      val vars1 = conditioned1.variables
-      val vars2 = conditioned2.variables
+      val conditioned1 = ground(replaced1,newCondition)
+      val conditioned2 = ground(replaced2,newCondition)
+      val vars1 = conditioned1.variables.filter(filter)
+      val vars2 = conditioned2.variables.filter(filter)
       vars1 == vars2
     }
 
     (t1, t2) match {
       case (operator.Reduced(ImageSeq1(LambdaAbstraction(v1, a1))), operator.Reduced(ImageSeq1(LambdaAbstraction(v2, a2)))) =>
         val default = v1.default
-        val replaced2 = substituteVariable(a2, v2, v1)
+        val replaced2 = substituteTerm(a2, v2, v1)
         val newCondition = condition + SingletonState(v1, default)
         if (mergeable(a1, replaced2, newCondition)) {
-          Some(Reduce(operator.Term, ImageSeq1(LambdaAbstraction(v1, FunApp(operator.Term, TupleTerm2(a1, replaced2))))))
+          Some(Reduce(operator.Term, ImageSeq1(LambdaAbstraction(v1, operator.reduce(SeqTerm(Seq(a1, replaced2)))))))
         } else
           None
       case (operator.Reduced(ImageSeq2(LambdaAbstraction(v1, LambdaAbstraction(v1_2, a1)))), operator.Reduced(ImageSeq2(LambdaAbstraction(v2, LambdaAbstraction(v2_2, a2))))) =>
         val default = v1.default
         val default_2 = v1_2.default
-        val replaced2 = substituteVariable(substituteVariable(a2, v2, v1), v2_2, v1_2)
+        val replaced2 = substituteTerm(substituteTerm(a2, v2, v1), v2_2, v1_2)
         val newCondition = condition + State(Map(v1 -> default, v1_2 -> default_2))
         if (mergeable(a1, replaced2, newCondition)) {
-          val inner = LambdaAbstraction(v1_2, FunApp(operator.Term, TupleTerm2(a1, replaced2)))
+          val inner = LambdaAbstraction(v1_2, operator.reduce(SeqTerm(Seq(a1, replaced2))))
           val outer = LambdaAbstraction(v1, inner)
           Some(Reduce(operator.Term, ImageSeq2(outer)))
         } else
           None
+      case _ => None
 
     }
 
@@ -299,13 +351,13 @@ object TermConverter {
 
     println(merged)
 
-    val grouped = groupLambdas(sum)
+    val grouped = groupLambdasOnce(sum)
 
     println(grouped)
 
     val f1 = dsum(for (i <- 0 ~~ 2; j <- 0 ~~ 2) yield s(i, j))
     val f2 = dsum(for (k <- 0 ~~ 2; l <- 0 ~~ 2) yield s(k, l))
-    val grouped2 = groupLambdas(flatten(f1 + f2, Math.DoubleAdd))
+    val grouped2 = groupLambdasOnce(flatten(f1 + f2, Math.DoubleAdd))
     println(grouped2)
 
 

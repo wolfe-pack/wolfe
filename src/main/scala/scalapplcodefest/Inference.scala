@@ -41,7 +41,7 @@ object Inference {
   def unrollModel(term:Term[Double]) = {
     val flattenQuantified = TermConverter.flatten(term, Math.VecAdd)
     val distConds = TermConverter.distConds(flattenQuantified)
-    val groupedLambdas = TermConverter.groupLambdasDeep(distConds)
+    val groupedLambdas = TermConverter.groupLambdas(distConds)
     val distDots = TermConverter.distDots(groupedLambdas)
     val unrolled = TermConverter.unrollLambdas(distDots)
     val flatten = TermConverter.flatten(unrolled, Math.DoubleAdd)

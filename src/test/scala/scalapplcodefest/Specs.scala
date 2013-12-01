@@ -35,7 +35,7 @@ class Specs extends FlatSpec with Matchers {
     val w = 'w of Vectors
     val index = new Index
     val weights = index.createDenseVector(Seq(0) -> -1.0, Seq(1) -> 1.0)()
-    val model = {(e_(x) + e_(y)) dot w} | w -> weights
+    val model = {(unit(x) + unit(y)) dot w} | w -> weights
 
     val expected = Inference.exhaustiveArgmax(model)
     //    val actual = Inference.maxProductArgmax(1)(model)
@@ -51,10 +51,10 @@ class Specs extends FlatSpec with Matchers {
     val n = 'n of Ints
     val p = 'p of (0 ~~ n |-> Bools)
     val state = State(Map(n -> 2))
-    val term = dsum {for (i <- (0 ~~ n) named "i") yield I(p(i)) + 1.0} | state
+    val term = dsum {for (i <- (0 ~~ n) as "i") yield I(p(i)) + 1.0} | state
     val actual = TermConverter.pushDownConditions(term)
     val pCond = 'p of (0 ~~ (n | state) |-> Bools)
-    val expected = dsum {for (i <- (0 ~~ (n | state)) named "i") yield I(pCond(i) | state) + 1.0}
+    val expected = dsum {for (i <- (0 ~~ (n | state)) as "i") yield I(pCond(i) | state) + 1.0}
     actual should be(expected)
   }
 
@@ -76,13 +76,49 @@ class Specs extends FlatSpec with Matchers {
 
   "Pushing down dot products" should "replace dot products of vector sums with double sums of dot products" in {
     val w = 'w of Vectors
-    val f1 = vsum(for (i <- (0 ~~ 2) named "i") yield e_(i))
-    val f2 = vsum(e_(0), e_(1))
+    val f1 = vsum(for (i <- (0 ~~ 2) as "i") yield unit(i))
+    val f2 = vsum(unit(0), unit(1))
     val term = (f1 + f2) dot w
     val flat = TermConverter.flatten(term, Math.VecAdd)
     val actual = TermConverter.pushDownDotProducts(flat)
-    val expected = dsum(dsum(for (i <- (0 ~~ 2) named "i") yield e_(i) dot w), e_(0) dot w, e_(1) dot w)
-    actual should be (expected)
+    val expected = dsum(dsum(for (i <- (0 ~~ 2) as "i") yield unit(i) dot w), unit(0) dot w, unit(1) dot w)
+    actual should be(expected)
+  }
+
+  "Grouping lambda abstractions" should "group lambda abstractions over the same domain if they have the same hidden variables" in {
+    val p = 'p of Ints |-> Ints
+    val f1 = vsum(for (i <- (0 ~~ 2) as "i") yield unit(p(i)))
+    val f2 = vsum(for (i <- (0 ~~ 2) as "i") yield unit(p(i) + 1))
+    val term = vsum(f1, f2)
+    val actual = TermConverter.groupLambdas(term)
+    val expected = vsum(for (i <- (0 ~~ 2) as "i") yield vsum(unit(p(i)), unit(p(i) + 1)))
+    actual should be(expected)
+  }
+
+  "Normalizing linear models" should "result in flat terms with merged lambda abstractions" in {
+    val n = 'n of Ints
+    val word = 'word of (0 ~~ n |-> Strings)
+    val chunk = 'chunk of (0 ~~ n |-> Strings)
+    val weights = 'weights of Vectors
+    val key = new Index()
+    val bias = vsum(for (i <- 0 ~~ n as "i") yield unit(key('bias, chunk(i))))
+    val wordChunk = vsum(for (i <- 0 ~~ n as "i") yield unit(key('wordChunk, word(i), chunk(i))))
+    val trans = vsum(for (i <- 0 ~~ (n - 1) as "i") yield unit(key('trans, chunk(i), chunk(i + 1))))
+    val hard1 = dsum(for (i <- 0 ~~ n) yield log(I(chunk(i) === "O")))
+    val hard2 = dsum(for (i <- 0 ~~ n) yield log(I(chunk(i) === "B-NP")))
+
+    val feat = bias + wordChunk + trans
+    val model = (feat dot weights) + hard1 + hard2
+
+    val actual = TermConverter.normalizeLinearModel(model, chunk.allAtoms)
+    val expected = vsum(
+      vsum(for (i <- 0 ~~ (n - 1) as "i") yield unit(key('trans, chunk(i), chunk(i + 1)))),
+      vsum(for (i <- 0 ~~ n as "i") yield vsum(unit(key('bias, chunk(i))), unit(key('wordChunk, word(i), chunk(i)))))
+    ) dot weights
+
+    println(actual)
+    //actual should be (expected)
+
 
   }
 

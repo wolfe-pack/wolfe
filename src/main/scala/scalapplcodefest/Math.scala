@@ -62,6 +62,12 @@ object Math {
     def dom = Vectors
   }
 
+  case object Log extends Operator[Double,Double] {
+    def funCandidateDom = Doubles //todo: non-negative
+    def funRange = Doubles
+    def apply(x: Double) = math.log(x)
+  }
+
   case object Iverson extends Operator[Boolean, Double] {
     def funCandidateDom = Bools
     override def funDom = Bools
