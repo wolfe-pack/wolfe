@@ -14,6 +14,8 @@ object TermImplicits {
   implicit def intToConstant(x: Int) = Constant(x)
   implicit def intToTerm(x: Int) = RichIntTerm(x)
   implicit def doubleToConstant(x: Double) = Constant(x)
+  implicit def booleanToConstant(x: Boolean) = Constant(x)
+
   implicit def symbolToConstant(x: Symbol) = Constant(x)
 
   implicit def setToConstant[T](x: Set[T]) = Constant(x)

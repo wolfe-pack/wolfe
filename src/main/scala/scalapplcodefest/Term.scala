@@ -72,6 +72,14 @@ trait ProxyTerm[T] extends Term[T] {
 }
 
 /**
+ * A term that will not be converted in term conversions. Note that its inner term will be converted
+ * but the term itself remains atomic.
+ * @param self the term this term is representing.
+ * @tparam T type of term.
+ */
+case class Bracketed[T](self:Term[T]) extends ProxyTerm[T]
+
+/**
  * Scala covariance/contravariance for Sets requires frequent casting of sets.
  * Import this object to make casting a little easier.
  */

@@ -24,6 +24,11 @@ case class Predicate[A,B](name:Symbol, funCandidateDom:Term[Set[A]],funRange:Ter
   def domain[C >: Fun[A, B]] = Constant(Util.setToBeImplementedLater)
   def default = Fun{ case a => funRange.default.head }
   override def toString = name.toString()
+  override def equals(p1: scala.Any) = p1 match {
+    case Predicate(n,_,_) => n == name
+    case _ => false
+  }
+  override def hashCode() = name.hashCode()
 }
 
 

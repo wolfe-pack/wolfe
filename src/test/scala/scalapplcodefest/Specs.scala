@@ -10,6 +10,12 @@ class Specs extends FlatSpec with Matchers {
 
   import TermImplicits._
 
+  "A FunApp of a predicate" should "return no free variables if conditioned to have all variables set" in {
+    val p = 'p of Bools |-> Bools
+    val term = p(true) | p.atom(true) -> true
+    term.variables should be (Set.empty)
+  }
+
   "An exhaustive argmaxer" should "find the maximizing assignment of a term" in {
     val x = 'x of Bools
     val y = 'y of Bools
@@ -38,13 +44,12 @@ class Specs extends FlatSpec with Matchers {
     val model = {(unit(x) + unit(y)) dot w} | w -> weights
 
     val expected = Inference.exhaustiveArgmax(model)
-    //    val actual = Inference.maxProductArgmax(1)(model)
-    //    actual.state() should be(expected.state())
+    val actual = Inference.maxProductArgmax(1)(model)
 
-    println(expected.state())
-    //    println(actual.feats())
-    println(expected.feats())
-    println(expected.feats()(1))
+    actual.state() should be (expected.state())
+    actual.feats()(0) should be (expected.feats()(0))
+    actual.feats()(1) should be (expected.feats()(1))
+
   }
 
   "Pushing down conditions" should "move condition terms downward the term tree" in {

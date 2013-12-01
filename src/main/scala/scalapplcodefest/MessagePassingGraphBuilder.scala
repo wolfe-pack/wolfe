@@ -112,9 +112,7 @@ object MessagePassingGraphBuilder {
   def buildFactor(aligned: TermAlignedFG, term: Term[Double], weights: Variable[Vector]): BuiltFactor = {
     import TermImplicits._
     val result = term match {
-      case l@Linear(feats, w, base) if w == weights => buildLinearFactor(aligned, l, feats, base)
-      case c@Conditioned(Linear(feats, w, base), cond) if w == weights => buildLinearFactor(aligned, c, feats, base, cond)
-      case s@Conditioned(Math.DoubleAdd.Reduced(SeqTerm(args)),outerCondition) =>
+      case s@Math.DoubleAdd.Reduced(SeqTerm(args)) =>
         val featsOrDoubles = args.map {
           case c@Math.Dot.Applied2(f, w) if w == weights => Right(f)
           case l => Left(l)
@@ -123,8 +121,8 @@ object MessagePassingGraphBuilder {
         val doubles = featsOrDoubles.collect({case Left(d) => d})
         val featSum = vsum(SeqTerm(feats))
         val doubleSum = dsum(SeqTerm(Constant(0.0) +: doubles))
-        //todo: do something with the non-linear terms
-        buildLinearFactor(aligned,s,featSum,doubleSum,outerCondition)
+        buildLinearFactor(aligned,s,featSum,doubleSum,State.empty)
+      case l@Linear(feats, w, base) if w == weights => buildLinearFactor(aligned, l, feats, base)
       case t => buildTableFactor(aligned, t)
     }
     aligned.factor2Term(result.factor) = term

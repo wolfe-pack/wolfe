@@ -46,7 +46,7 @@ object ChunkingExample {
   val feat = bias + wordChunk + trans
 
   //the model (in log space) is a dot product of sufficient statistics and weights.
-  val model = LinearModel(feat,weights)
+  val model =  feat dot weights
 
   def main(args: Array[String]) {
 
@@ -56,8 +56,8 @@ object ChunkingExample {
 
     //println(train.head.toPrettyString)
 
-    val learnedWeights = Trainer.train(model, train, 10, Inference.maxProductArgmax(1))
-    val predictor = (s:State) => Inference.maxProductArgmax(1)(model | s | weights -> learnedWeights ).state()
+    val learnedWeights = Trainer.train(model, train, 10, Inference.maxProductArgmax(1,chunk.allAtoms))
+    val predictor = (s:State) => Inference.maxProductArgmax(1,chunk.allAtoms)(model | s | weights -> learnedWeights ).state()
     val evaluation = Evaluator.evaluate(train,predictor)
 
     //println(key.vectorToString(learnedWeights))

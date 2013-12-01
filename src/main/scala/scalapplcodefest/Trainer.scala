@@ -13,31 +13,31 @@ object Trainer {
   import TermImplicits._
 
 
-  def train(model: LinearModel, instances: Seq[State],
-            maxIterations:Int,
-            inferencer:Term[Double] => Inference = Inference.maxProductArgmax(1)): DenseVector = {
+  def train(model: Term[Double], instances: Seq[State], maxIterations: Int,
+            inferencer: Term[Double] => Inference = Inference.maxProductArgmax(1)): DenseVector = {
     val weightsSet = new WeightsSet
     val key = weightsSet.newWeights(new DenseVector(10000))
+    val Linear(features,weights,_) = model
 
     case class PerceptronExample(instance: State) extends Example {
 
       val target = instance.target
-      val targetFeats = model.features.eval(target).right.get
+      val targetFeats = features.eval(target).right.get
 
       def accumulateValueAndGradient(value: DoubleAccumulator, gradient: WeightsMapAccumulator) = {
 
-        val conditioned = model | instance | model.weights -> weightsSet(key).asInstanceOf[DenseVector]
+        val conditioned = model | instance | weights -> weightsSet(key).asInstanceOf[DenseVector]
         val inference = inferencer(conditioned)
 
         val guessFeats = inference.feats()
         val guessScore = inference.obj()
-        val targetScore = model.eval(target + SingletonState(model.weights, weightsSet(key))).right.get
+        val targetScore = model.eval(target + SingletonState(weights, weightsSet(key))).right.get
 
-//        println("----------")
-//        println(s"Gold: $target")
-//        println(s"Gold Vector: \n ${ChunkingExample.key.vectorToString(targetFeats)}")
-//        println(s"Guess: $guess")
-//        println(s"Guess Vector: \n ${ChunkingExample.key.vectorToString(guessFeats)}")
+        //        println("----------")
+        //        println(s"Gold: $target")
+        //        println(s"Gold Vector: \n ${ChunkingExample.key.vectorToString(targetFeats)}")
+        //        println(s"Guess: $guess")
+        //        println(s"Guess Vector: \n ${ChunkingExample.key.vectorToString(guessFeats)}")
 
         value.accumulate(guessScore - targetScore)
         //todo: WARNING: side effect, guessfeats is changed

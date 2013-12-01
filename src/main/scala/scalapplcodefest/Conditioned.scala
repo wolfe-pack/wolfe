@@ -19,6 +19,8 @@ case class Conditioned[T](term:Term[T], condition:State) extends Term[T] {
   }
   def default = term.default
   def domain[C >: T] = term.domain[C]
+  val debug = variables
+  val debug2 = debug.toSeq
   override def toString = "C:" + term
 }
 
