@@ -25,7 +25,7 @@ trait Fun[A, B] extends PartialFunction[A, B] {
  * @tparam A argument type.
  * @tparam B return type.
  */
-trait Operator[A,B] extends Fun[A,B] {
+trait Operator[A, B] extends Fun[A, B] {
   self =>
   object Term extends ConstantFun(this)
 
@@ -58,19 +58,19 @@ object Fun {
     def isDefinedAt(x: A) = false
   }
 
-  def table[A,B](domain:Set[A], f:PartialFunction[A,B]) = {
+  def table[A, B](domain: Set[A], f: PartialFunction[A, B]) = {
     val map = domain.map(a => a -> f(a)).toMap
     val range = map.map(_._2).toSet
-    apply(map,domain,range)
+    apply(map, domain, range)
   }
 
 }
 
-trait BinaryOperatorSameDomainAndRange[T] extends BinaryOperatorSameDomain[T,T] {
+trait BinaryOperatorSameDomainAndRange[T] extends BinaryOperatorSameDomain[T, T] {
   self =>
   def funRange = dom
 
-  def reduce(args:Term[Seq[T]]) = Reduce(Term,args)
+  def reduce(args: Term[Seq[T]]) = Reduce(Term, args)
   object Reduced {
     def unapply(x: Term[Any]): Option[Term[Seq[T]]] = x match {
       case Reduce(ConstantFun(op), args) if op == self => Some(args.asInstanceOf[Term[Seq[T]]])
@@ -80,21 +80,24 @@ trait BinaryOperatorSameDomainAndRange[T] extends BinaryOperatorSameDomain[T,T] 
 
 }
 
-trait BinaryOperatorSameDomain[T, R] extends BinaryOperator[T,T, R] {
+trait BinaryOperatorSameDomain[T, R] extends BinaryOperator[T, T, R] {
   def dom: Set[T]
   def dom1 = dom
   def dom2 = dom
 }
 
-object Equals {
-  def apply[T] = new BinaryOperatorSameDomain[T,Boolean] {
-    def apply(v1: (T, T)) = v1._1 == v1._2
-    def dom = new AllOfType[T]
-    def funRange = Bools
+class Equals[T] extends BinaryOperatorSameDomain[T, Boolean] {
+  def apply(v1: (T, T)) = v1._1 == v1._2
+  def dom = new AllOfType[T]
+  def funRange = Bools
+  override def equals(p1: scala.Any) = p1 match {
+    case e:Equals[_] => true
+    case _ => false
   }
 }
 
-trait BinaryOperator[T1,T2, R] extends Operator[(T1, T2), R] {
+
+trait BinaryOperator[T1, T2, R] extends Operator[(T1, T2), R] {
 
   self =>
   def dom1: Set[T1]

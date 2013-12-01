@@ -261,21 +261,21 @@ object TermConverter {
     implicit def cast(t: Term[Any]) = t.asInstanceOf[Term[T]]
 
     //merge a term with one element in a list of previous terms if possible, otherwise prepend
-    def mergeOneTerm[A](current: List[Term[A]], toMerge: Term[A], op: BinaryOperatorSameDomainAndRange[A]) = {
+    def mergeOneTerm[A](current: Seq[Term[A]], toMerge: Term[A], op: BinaryOperatorSameDomainAndRange[A]) = {
       val first = current.view.map(that => that -> mergeLambdas(that, toMerge, op, filter = filter)).find(_._2.isDefined)
       first match {
         case Some((orig, Some(mergedTerm))) =>
           val mapped = current.map(t => if (t == orig) mergedTerm else t)
           mapped
-        case _ => toMerge :: current
+        case _ => current :+ toMerge
       }
     }
     term match {
       case Math.VecAdd.Reduced(SeqTerm(args)) =>
-        val merged = args.foldLeft(List.empty[Term[Vector]])(mergeOneTerm(_, _, Math.VecAdd))
+        val merged = args.foldLeft(Seq.empty[Term[Vector]])(mergeOneTerm(_, _, Math.VecAdd))
         if (merged.size > 1) vsum(SeqTerm(merged)) else merged(0)
       case Math.DoubleAdd.Reduced(SeqTerm(args)) =>
-        val merged = args.foldLeft(List.empty[Term[Double]])(mergeOneTerm(_, _, Math.DoubleAdd))
+        val merged = args.foldLeft(Seq.empty[Term[Double]])(mergeOneTerm(_, _, Math.DoubleAdd))
         if (merged.size > 1) dsum(SeqTerm(merged)) else merged(0)
       case _ => term
     }

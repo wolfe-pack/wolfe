@@ -95,7 +95,7 @@ class Specs extends FlatSpec with Matchers {
     actual should be(expected)
   }
 
-  "Normalizing linear models" should "result in flat terms with merged lambda abstractions" in {
+  "Normalizing linear models" should "result in flat vector and double terms with merged lambda abstractions" in {
     val n = 'n of Ints
     val word = 'word of (0 ~~ n |-> Strings)
     val chunk = 'chunk of (0 ~~ n |-> Strings)
@@ -104,20 +104,22 @@ class Specs extends FlatSpec with Matchers {
     val bias = vsum(for (i <- 0 ~~ n as "i") yield unit(key('bias, chunk(i))))
     val wordChunk = vsum(for (i <- 0 ~~ n as "i") yield unit(key('wordChunk, word(i), chunk(i))))
     val trans = vsum(for (i <- 0 ~~ (n - 1) as "i") yield unit(key('trans, chunk(i), chunk(i + 1))))
-    val hard1 = dsum(for (i <- 0 ~~ n) yield log(I(chunk(i) === "O")))
-    val hard2 = dsum(for (i <- 0 ~~ n) yield log(I(chunk(i) === "B-NP")))
+    val hard1 = dsum(for (i <- 0 ~~ n as "i") yield log(I(chunk(i) === "O")))
+    val hard2 = dsum(for (i <- 0 ~~ n as "i") yield log(I(chunk(i) === "B-NP")))
 
     val feat = bias + wordChunk + trans
     val model = (feat dot weights) + hard1 + hard2
 
     val actual = TermConverter.normalizeLinearModel(model, chunk.allAtoms)
-    val expected = vsum(
-      vsum(for (i <- 0 ~~ (n - 1) as "i") yield unit(key('trans, chunk(i), chunk(i + 1)))),
-      vsum(for (i <- 0 ~~ n as "i") yield vsum(unit(key('bias, chunk(i))), unit(key('wordChunk, word(i), chunk(i)))))
-    ) dot weights
+    val expected = dsum(
+      vsum(
+        vsum(for (i <- 0 ~~ n as "i") yield vsum(unit(key('bias, chunk(i))), unit(key('wordChunk, word(i), chunk(i))))),
+        vsum(for (i <- 0 ~~ (n - 1) as "i") yield unit(key('trans, chunk(i), chunk(i + 1))))
+      ) dot weights,
+      dsum(for (i <- 0 ~~ n as "i") yield dsum(log(I(chunk(i) === "O")), log(I(chunk(i) === "B-NP"))))
+    )
 
-    println(actual)
-    //actual should be (expected)
+    actual should be (expected)
 
 
   }

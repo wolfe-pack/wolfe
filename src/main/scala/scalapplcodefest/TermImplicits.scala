@@ -131,8 +131,8 @@ object TermImplicits {
     def |(condition: State) = Conditioned(term, condition)
     def |(mappings: (Variable[Any], Any)*) = Conditioned(term, State(mappings.toMap))
     def eval(state: (Variable[Any], Any)*) = term.eval(State(state.toMap))
-    def ===(that:Term[T]) = FunApp(Equals[T].Term, TupleTerm2(term,that))
-    def ===(that:T) = FunApp(Equals[T].Term, TupleTerm2(term,Constant(that)))
+    def ===(that:Term[T]) = FunApp(new Equals[T].Term, TupleTerm2(term,that))
+    def ===(that:T) = FunApp(new Equals[T].Term, TupleTerm2(term,Constant(that)))
     //    def eval(state:VarValuePair[T]*):Option[T] = term.eval(State(state.map(_.toTuple).toMap))
 
   }
