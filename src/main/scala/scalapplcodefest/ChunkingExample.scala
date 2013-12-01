@@ -4,6 +4,8 @@ import scala.io.Source
 
 
 /**
+ * A first order linear chain for syntactic chunking (shallow parsing).
+ *
  * @author Sebastian Riedel
  */
 object ChunkingExample {
@@ -56,8 +58,8 @@ object ChunkingExample {
 
     //println(train.head.toPrettyString)
 
-    val learnedWeights = Trainer.train(model, train, 10, Inference.maxProductArgmax(1,chunk))
-    val predictor = (s:State) => Inference.maxProductArgmax(1,chunk)(model | s | weights -> learnedWeights ).state()
+    val learnedWeights = Trainer.train(model, train, 10, Inference.maxProductArgmax(1,chunk.allAtoms))
+    val predictor = (s:State) => Inference.maxProductArgmax(1,chunk.allAtoms)(model | s | weights -> learnedWeights ).state()
     val evaluation = Evaluator.evaluate(train,predictor)
 
     //println(key.vectorToString(learnedWeights))

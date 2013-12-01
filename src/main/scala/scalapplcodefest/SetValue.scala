@@ -26,6 +26,13 @@ object SetValue {
 }
 
 /**
+ * Helper to build simple Term[Set] objects.
+ */
+object SetTerm {
+  def apply[T](elems:T*) = Constant(SetValue(elems:_*))
+}
+
+/**
  * A Term that represents the reduce operation applied to a sequence of values.
  * @param op the binary operator used to reduce elements.
  * @param arguments the elements to be reduced.

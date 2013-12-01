@@ -15,7 +15,7 @@ object TermImplicits {
   implicit def intToTerm(x: Int) = RichIntTerm(x)
   implicit def doubleToConstant(x: Double) = Constant(x)
   implicit def booleanToConstant(x: Boolean) = Constant(x)
-  implicit def predicateToAllAtoms[A,B](p:Predicate[A,B]) = AllGroundAtoms(p)
+  //implicit def predicateToAllAtoms[A,B](p:Predicate[A,B]) = AllGroundAtoms(p)
 
   implicit def symbolToConstant(x: Symbol) = Constant(x)
 
@@ -28,7 +28,7 @@ object TermImplicits {
   implicit def toRichTerm[T](term: Term[T]) = new RichTerm(term)
   implicit def toRichInt[A](i: Term[Int]) = RichIntTerm(i)
   implicit def toRichDouble[A](t: Term[Double]) = RichDoubleTerm(t)
-  implicit def toRichBooleanTerm[A](t: Term[Boolean]) = RichBooleanTerm(t)
+  implicit def toRichBooleanTerm(t: Term[Boolean]) = RichBooleanTerm(t)
 
   implicit def toRichFunTerm[A, B](term: Term[Fun[A, B]]): RichFunTerm[A, B] = term match {
     case f: FunTerm[_, _] => RichFunTerm(f).asInstanceOf[RichFunTerm[A, B]]
@@ -167,6 +167,7 @@ object TermImplicits {
     def &&(that: Term[Boolean]) = FunApp(Logic.And.Term, TupleTerm2(x, that))
     def ||(that: Term[Boolean]) = FunApp(Logic.Or.Term, TupleTerm2(x, that))
     def |=>(that: Term[Boolean]) = FunApp(Logic.Implies.Term, TupleTerm2(x, that))
+    def <=>(that: Term[Boolean]) = FunApp(Logic.Equiv.Term, TupleTerm2(x, that))
     def unary_! = FunApp(Logic.Neg.Term, x)
     def unary_$ = FunApp(Math.Iverson.Term, x)
   }

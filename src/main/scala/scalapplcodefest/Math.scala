@@ -103,6 +103,8 @@ object Logic {
   case object And extends BinaryBoolOperator {def apply(v1: (Boolean, Boolean)) = v1._1 && v1._2}
   case object Or extends BinaryBoolOperator {def apply(v1: (Boolean, Boolean)) = v1._1 || v1._2}
   case object Implies extends BinaryBoolOperator {def apply(v1: (Boolean, Boolean)) = !v1._1 || v1._2}
+  case object Equiv extends BinaryBoolOperator {def apply(v1: (Boolean, Boolean)) = v1._1 == v1._2}
+
 
   case object Neg extends Operator[Boolean, Boolean] {
     def funCandidateDom = Bools
