@@ -6,13 +6,22 @@ import cc.factorie.la.WeightsMapAccumulator
 import cc.factorie.WeightsSet
 
 /**
+ * Training algorithms.
+ *
  * @author Sebastian Riedel
  */
 object Trainer {
 
   import TermImplicits._
 
-
+  /**
+   * Trains a linear model using the provided inference algorithm in the inner loop of training.
+   * @param model the model to train. It must be a term that can be converted to a linear model.
+   * @param instances instances to train from.
+   * @param maxIterations maximum number of training iterations through the corpus.
+   * @param inferencer a function that takes conditioned models and returns an inference result.
+   * @return learned weights.
+   */
   def train(model: Term[Double], instances: Seq[State], maxIterations: Int,
             inferencer: Term[Double] => Inference = Inference.maxProductArgmax(1)): DenseVector = {
     val weightsSet = new WeightsSet

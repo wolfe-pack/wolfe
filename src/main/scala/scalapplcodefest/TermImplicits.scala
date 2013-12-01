@@ -15,6 +15,7 @@ object TermImplicits {
   implicit def intToTerm(x: Int) = RichIntTerm(x)
   implicit def doubleToConstant(x: Double) = Constant(x)
   implicit def booleanToConstant(x: Boolean) = Constant(x)
+  implicit def predicateToAllAtoms[A,B](p:Predicate[A,B]) = AllGroundAtoms(p)
 
   implicit def symbolToConstant(x: Symbol) = Constant(x)
 
