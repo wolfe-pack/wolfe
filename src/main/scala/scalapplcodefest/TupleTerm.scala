@@ -83,3 +83,13 @@ case class SeqTerm[T](seq:Seq[Term[T]]) extends Term[Seq[T]] {
   def default = seq.map(_.default)
   override def toString = seq.mkString("[",",","]")
 }
+
+/**
+ * Helper to identify sequence of terms that are all variables
+ */
+object VarSeq {
+  def unapply[T](term:Term[Seq[T]]):Option[Seq[Variable[T]]] = term match {
+    case SeqTerm(args) if args.forall(_.isInstanceOf[Variable[_]]) => Some(args.map(_.asInstanceOf[Variable[T]]))
+    case _ => None
+  }
+}

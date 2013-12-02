@@ -15,7 +15,7 @@ object MessagePassingGraphBuilder {
   import MessagePassingFactorGraph._
 
   trait Recipe {
-    def potential(vars:Seq[VariableMapping]):StructuredPotential
+    def potential(fg:TermAlignedFG):StructuredPotential
   }
   val recipes = new ArrayBuffer[PartialFunction[Term[Double],Recipe]]
 
@@ -177,8 +177,8 @@ object MessagePassingGraphBuilder {
 
   def main(args: Array[String]) {
 
-    recipes += {case Math.ExactlyOne.Applied(SeqTerm(a)) => new Recipe {
-      def potential(vars: Seq[VariableMapping]) = new StructuredPotential {
+    recipes += {case Math.ExactlyOne.Applied(VarSeq(v)) => new Recipe {
+      def potential(fg:TermAlignedFG) = new StructuredPotential {
         def maxScoreAndFeatures(factor: Factor, featureDest: scalapplcodefest.Vector) = ???
         def maxMarginal2Node(edge: Edge) = ???
         def maxMarginal2AllNodes(factor: Factor) = ???

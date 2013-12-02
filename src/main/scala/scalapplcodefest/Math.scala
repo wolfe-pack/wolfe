@@ -33,10 +33,10 @@ object Math {
     def dom = Doubles
   }
 
-  case object ExactlyOne extends Operator[Seq[Double],Double] {
-    def funCandidateDom = new AllOfType[Seq[Double]]
+  case object ExactlyOne extends Operator[Seq[Boolean],Double] {
+    def funCandidateDom = new AllOfType[Seq[Boolean]]
     def funRange = Doubles
-    def apply(x: Seq[Double]) = if (x.sum == 1.0) 0.0 else Double.NegativeInfinity
+    def apply(x: Seq[Boolean]) = if (x.count(identity) == 1) 0.0 else Double.NegativeInfinity
   }
 
   case object DoubleMultiply extends BinaryOperatorSameDomainAndRange[Double] {
