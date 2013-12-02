@@ -3,14 +3,21 @@ package scalapplcodefest
 import cc.factorie.maths.ArrayOps
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
+import scalapplcodefest.MessagePassingFactorGraph.{Factor, Edge}
 
 /**
  * Takes a term and builds a message passing graph for it.
+ * This code is very preliminary and needs a complete rewrite.
  * @author Sebastian Riedel
  */
 object MessagePassingGraphBuilder {
 
   import MessagePassingFactorGraph._
+
+  trait Recipe {
+    def potential(vars:Seq[VariableMapping]):StructuredPotential
+  }
+  val recipes = new ArrayBuffer[PartialFunction[Term[Double],Recipe]]
 
   class TermAlignedFG(val term: Term[Double], val weights: Variable[Vector]) {
     val vars = term.variables.toSeq.filter(_ != weights).sorted(VariableOrdering)
@@ -44,8 +51,8 @@ object MessagePassingGraphBuilder {
     }
   }
 
-  case class VariableMapping(variable: Variable[Any], node: Node, dom: Seq[Any], indexOfValue: Map[Any, Int])
 
+  case class VariableMapping(variable: Variable[Any], node: Node, dom: Seq[Any], indexOfValue: Map[Any, Int])
 
   case class BuiltFactor(factor: Factor, vars: Seq[VariableMapping])
 
@@ -169,59 +176,19 @@ object MessagePassingGraphBuilder {
   }
 
   def main(args: Array[String]) {
-    import TermImplicits._
-    val r = 'r of (0 ~~ 2 |-> Bools)
-    val s = 's of (0 ~~ 2 |-> Bools)
 
-    val f = dsum(for (i <- 0 ~~ 1) yield I(!(r(i) || s(i))))
+    recipes += {case Math.ExactlyOne.Applied(SeqTerm(a)) => new Recipe {
+      def potential(vars: Seq[VariableMapping]) = new StructuredPotential {
+        def maxScoreAndFeatures(factor: Factor, featureDest: scalapplcodefest.Vector) = ???
+        def maxMarginal2Node(edge: Edge) = ???
+        def maxMarginal2AllNodes(factor: Factor) = ???
+        def score(factor: Factor, setting: Array[Int]) = ???
+      }
+    }}
 
-    println(f.eval(r.atom(0) -> true, s.atom(0) -> false))
-
-    val fg = build(f)
-
-    MaxProduct.run(fg.graph, 1)
-    println(fg.argmaxState().toPrettyString)
-
-    val key = new Index
-    val feat = vsum(for (i <- 0 ~~ 2) yield unit(key(r(i), s(i))))
-
-    val vec = feat.eval(r.atom(0) -> true, s.atom(0) -> false, r.atom(1) -> false, s.atom(1) -> true)
-    val w = 'w of Vectors
-    val model = LinearModel(feat, w)
-
-    val instance = State(Map(r.atom(0) -> false, r.atom(1) -> true))
-
-    val conditioned = model | instance
-
-    val distConds = TermConverter.distConds(conditioned)
-    val distDots = TermConverter.distDots(distConds)
-    val unrolled = TermConverter.unrollLambdas(distDots)
-    val flatten = TermConverter.flatten(unrolled,Math.DoubleAdd)
-    println(conditioned)
-    println(distConds)
-    println(distDots)
-    println(unrolled)
-    println(flatten)
-
-    val flatFG = build(flatten, w)
-    val printer = new flatFG.FGPrinter(key)
-
-    //    flatFG.fg.weights = new DenseVector(Array(1.0,2.0,3.0,4.0))
-    flatFG.graph.weights = key.createDenseVector(
-      Seq(false, false) -> 1.0,
-      Seq(false, true) -> 2.0,
-      Seq(true, false) -> 3.0,
-      Seq(true, true) -> 4.0)()
-    println(flatFG.graph.toVerboseString(printer))
-
-    MaxProduct.run(flatFG.graph, 1)
-
-    val feats = new SparseVector(100)
-    MaxProduct.featureExpectationsAndObjective(flatFG.graph, feats)
-
-    println(key.vectorToString(feats))
 
   }
 
 }
+
 

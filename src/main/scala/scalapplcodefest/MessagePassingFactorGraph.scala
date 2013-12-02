@@ -77,11 +77,6 @@ final class MessagePassingFactorGraph {
       |${edges.map(_.toVerboseString(fgPrinter)).mkString("\n")}
     """.stripMargin
   }
-  def addFactor1(table: Array[Double]) = {
-    val f = new Factor(this, factors.size, Array(table.length), Range(0, table.length).map(Array(_)).toArray, TABLE, table)
-    factors += f
-    f
-  }
 
   def addTableFactor(scores: Array[Double], settings: Array[Array[Int]], dims: Array[Int]) = {
     val f = new Factor(this, factors.size, dims, settings, TABLE, scores)
@@ -96,40 +91,7 @@ final class MessagePassingFactorGraph {
   }
 
 
-  def addFactor2(table: Array[Array[Double]]) = {
-    val dims = Array(table.length, table(0).length)
-    val entryCount = dims(0) * dims(1)
-    val scores = Array.ofDim[Double](entryCount)
-    val settings = Array.ofDim[Int](entryCount, dims.length)
 
-    for (i1 <- 0 until dims(0);
-         i2 <- 0 until dims(1)) {
-      val entry = i1 + i2 * dims(0)
-      scores(entry) = table(i1)(i2)
-      settings(entry) = Array(i1, i2)
-    }
-    val f = new Factor(this, factors.size, dims, settings, TABLE, scores)
-    factors += f
-    f
-  }
-
-  def addFactor3(table: Array[Array[Array[Double]]]) = {
-    val dims = Array(table.length, table(0).length, table(0)(0).length)
-    val entryCount = dims(0) * dims(1) * dims(2)
-    val scores = Array.ofDim[Double](entryCount)
-    val settings = Array.ofDim[Int](entryCount, dims.length)
-
-    for (i1 <- 0 until dims(0);
-         i2 <- 0 until dims(1);
-         i3 <- 0 until dims(2)) {
-      val entry = i1 + i2 * dims(0) + i3 * dims(1) * dims(0)
-      scores(entry) = table(i1)(i2)(i3)
-      settings(entry) = Array(i1, i2, i3)
-    }
-    val f = new Factor(this, factors.size, dims, settings, TABLE, scores)
-    factors += f
-    f
-  }
 }
 
 object MessagePassingFactorGraph {
@@ -140,7 +102,7 @@ object MessagePassingFactorGraph {
    * avoid any kind of polymorphism inside the inner loop of inference.
    */
   object FactorType extends Enumeration {
-    val TABLE, LINEAR = Value
+    val TABLE, LINEAR, STRUCTURED = Value
   }
 
   import FactorType._
@@ -237,15 +199,18 @@ object MessagePassingFactorGraph {
    * @param dims array with dimensions of the participating variables, in the order of the `edges` array of edges.
    * @param settings array with integer array representations of settings of the neighbors
    * @param typ the type of factor
-   * @param table if `typ=Table` this stores a score for each possible setting (indexed by the index of the setting in
-   *              `settings`.
-   * @param stats if `typ=Linear` this stores a feature vector for each setting (index by the index of the setting
+   * @param table if `typ=TABLE` this stores a score for each possible setting (indexed by the index of the setting in
+   *              `settings`. If `typ=LINEAR` this serves as base score to be added to the linear score.
+   * @param stats if `typ=TABLE` this stores a feature vector for each setting (index by the index of the setting
    *              in `settings`.
+   * @param structured if `typ=STRUCTURED` this stores a generic object for scoring the factor and inference related
+   *                   operations.
    */
   final class Factor(val fg: MessagePassingFactorGraph, val index: Int, val dims: Array[Int], val settings: Array[Array[Int]],
                      val typ: FactorType.Value = MessagePassingFactorGraph.FactorType.TABLE,
                      val table: Array[Double],
-                     val stats: Array[Vector] = null) {
+                     val stats: Array[Vector] = null,
+                     val structured: StructuredPotential = null) {
     var edges: Array[Edge] = null
     def rank = dims.length
     val entryCount = {
@@ -253,12 +218,25 @@ object MessagePassingFactorGraph {
       for (i <- (0 until dims.length).optimized) result *= dims(i)
       result
     }
-    def score(entry: Int): Double = {
+    
+    /**
+     * Evaluates the score of the factor for the setting corresponding to the given setting index.
+     * @param settingIndex the index of the setting to score.
+     * @return score of the setting under this factor.
+     */
+    def score(settingIndex: Int): Double = {
       typ match {
-        case TABLE => table(entry)
-        case LINEAR => table(entry) + stats(entry).dot(fg.weights)
+        case TABLE => table(settingIndex)
+        case LINEAR => table(settingIndex) + stats(settingIndex).dot(fg.weights)
+        case STRUCTURED => structured.score(this, entryToSetting(settingIndex, dims))
       }
     }
+
+    /**
+     * More verbose string representation that shows that potential table depending on factor type.
+     * @param fgPrinter a printer that can print nodes and factors.
+     * @return A verbose string representation of this factor.
+     */
     def toVerboseString(implicit fgPrinter: FGPrinter) = {
       val tableString = typ match {
         case TABLE =>
@@ -294,6 +272,18 @@ object MessagePassingFactorGraph {
   }
 
   /**
+   * A generic message passing interface for terms that have structure and give rise to more efficient
+   * inference algorithms.
+   */
+  trait StructuredPotential {
+    def score(factor:Factor, setting:Array[Int]):Double
+    def maxMarginal2Node(edge:Edge)
+    def maxMarginal2AllNodes(factor:Factor)
+    def maxScoreAndFeatures(factor:Factor, featureDest:Vector)
+  }
+
+
+  /**
    * Printer of nodes, factors and edges. Helps debugging (as the graph itself is
    * independent of the original model it comes from.
    */
@@ -302,6 +292,8 @@ object MessagePassingFactorGraph {
     def factor2String(factor:Factor):String
     def vector2String(vector:Vector):String
   }
+
+
 
   object DefaultPrinter extends FGPrinter {
     def node2String(node: Node) = ""

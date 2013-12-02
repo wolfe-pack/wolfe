@@ -13,22 +13,6 @@ object MaxProduct {
   import MessagePassingFactorGraph._
   import MoreArrayOps._
 
-  def main(args: Array[String]) {
-    val fg = new MessagePassingFactorGraph
-    val f1 = fg.addFactor2(Array(Array(1.0, 2.0, 3.0), Array(4.0, 5.0, 6.0)))
-    val n1 = fg.addNode(2)
-    val n2 = fg.addNode(3)
-    val e1 = fg.addEdge(f1, n1, 0)
-    val e2 = fg.addEdge(f1, n2, 1)
-    fg.build()
-
-    MaxProduct.run(fg, 1)
-
-    println(n1.b.mkString(" "))
-    println(n2.b.mkString(" "))
-
-  }
-
   /**
    * Runs some iterations of belief propagation.
    * @param fg the message passing graph to run
@@ -88,14 +72,21 @@ object MaxProduct {
     obj
   }
 
-
-  def penalizedScore(factor: MessagePassingFactorGraph.Factor, entry: Int, setting: Array[Int]): Double = {
-    var score = factor.score(entry)
+  /**
+   * Calculates the score of a setting and adds penalties based on incoming messages of the factor.
+   * @param factor the factor to calculate the penalised score for.
+   * @param settingId id of the setting to score.
+   * @param setting the setting corresponding to the id.
+   * @return penalized score of setting.
+   */
+  def penalizedScore(factor: MessagePassingFactorGraph.Factor, settingId: Int, setting: Array[Int]): Double = {
+    var score = factor.score(settingId)
     for (j <- 0 until factor.rank) {
       score += factor.edges(j).n2f(setting(j))
     }
     score
   }
+
   /**
    * Updates the message from factor to node.
    * @param edge the factor-node edge.
@@ -147,6 +138,8 @@ object MaxProduct {
       for (i <- 0 until node.dim)
         node.b(i) += node.edges(e).f2n(i)
   }
+
+
 
 
 

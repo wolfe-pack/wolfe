@@ -242,43 +242,6 @@ object TermConverter {
     }
   }
 
-  def unrollLambdaAbstractions2[T](term: Term[Seq[T]]): Term[Seq[T]] = term match {
-    case ImageSeq1(fun@LambdaAbstraction(v, arg)) => SeqTerm(State.allStates(List(v)).map(state => fun(arg | state)))
-    case _ => term
-  }
-
-  def unrollLambdas[T](term: Term[T]): Term[T] = {
-    implicit def cast(t: Term[Any]) = t.asInstanceOf[Term[T]]
-    term match {
-      case ImageSeq1(fun@LambdaAbstraction(v, arg)) => SeqTerm(State.allStates(List(v)).map(state => arg | state))
-      case r@Reduce(op, args) => r.copy(op = unrollLambdas(op).asInstanceOf[FunTerm[(T, T), T]], arguments = unrollLambdas(args))
-      case app@FunApp(f, a) => app.copy(function = FunTerm(unrollLambdas(f)), arg = unrollLambdas(a))
-      case s@SeqTerm(args) => s.copy(seq = args.map(unrollLambdas)) //red in IDEA
-      case t@TupleTerm2(arg1, arg2) => t.copy(a1 = unrollLambdas(arg1), a2 = unrollLambdas(arg2)) //red in IDEA
-      case _ => term
-    }
-  }
-
-  def distDots(term: Term[Double]): Term[Double] = {
-    term match {
-      case Conditioned(t, c) => Conditioned(distDots(t), c)
-      case LinearModel(f, w, base) => distDots(f dot w) + base
-      case Math.Dot.Applied2(Math.VecAdd.Applied2(f1, f2), w) => distDots(f1 dot w) + distDots(f2 dot w)
-      case Math.Dot.Applied2(Math.VecAdd.Reduced(SeqTerm(args)), w) => dsum(SeqTerm(args.map(a => distDots(a dot w))))
-      case Math.Dot.Applied2(Quantified.VecSum(ImageSeq1(LambdaAbstraction(v, arg))), w) =>
-        dsum(LambdaAbstraction(v, distDots(arg dot w)))
-      case _ => term
-    }
-  }
-
-  def simplifyConds[T](term: Term[T]): Term[T] = {
-    term match {
-      case Conditioned(Conditioned(t, c1), c2) => Conditioned(t, c1 + c2)
-      case app@FunApp(f, a) => app.copy(FunTerm(simplifyConds(f)), simplifyConds(a))
-      case _ => term
-    }
-  }
-
 
   def groupLambdasOnce[T](term: Term[T], filter: Variable[Any] => Boolean = x => true): Term[T] = {
     implicit def cast(t: Term[Any]) = t.asInstanceOf[Term[T]]
@@ -342,23 +305,6 @@ object TermConverter {
     }
 
   }
-
-  def distConds[T](term: Term[T]): Term[T] = {
-    implicit def cast(t: Term[Any]) = t.asInstanceOf[Term[T]]
-    term match {
-      case Conditioned(const@Constant(_), _) => const
-      case Conditioned(LinearModel(feats, weights, base), c) => LinearModel(distConds(feats | c), weights, distConds(base | c))
-      case Conditioned(Math.VecAdd.Reduced(args), c) => vsum(distConds(args | c))
-      case Conditioned(Math.VecAdd.Applied2(arg1, arg2), c) => distConds(arg1 | c) + distConds(arg2 | c)
-      case Conditioned(Math.Dot.Applied2(arg1, arg2), c) => distConds(arg1 | c) dot distConds(arg2 | c)
-      case Conditioned(Math.DoubleAdd.Reduced(args), c) => dsum(distConds(args | c))
-      case Conditioned(Math.DoubleAdd.Applied2(arg1, arg2), c) => distConds(arg1 | c) + distConds(arg2 | c)
-      case Conditioned(SeqTerm(args), c) => SeqTerm(args.map(a => distConds(a | c)))
-      case Conditioned(ImageSeq1(LambdaAbstraction(Var(v, d), arg)), c) => ImageSeq1(LambdaAbstraction(Var(v, distConds(d | c)), distConds(arg | c)))
-      case _ => term
-    }
-  }
-
 
   def main(args: Array[String]) {
 

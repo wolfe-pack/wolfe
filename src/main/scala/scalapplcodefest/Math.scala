@@ -33,12 +33,10 @@ object Math {
     def dom = Doubles
   }
 
-  case object DoubleAddCurried extends Fun[Double, Fun[Double, Double]] {
-    def funCandidateDom = ???
-    //TODO: would like to make this lazy
-    def funRange = ???
-    def isDefinedAt(x: Double) = ???
-    def apply(x: Double) = ???
+  case object ExactlyOne extends Operator[Seq[Double],Double] {
+    def funCandidateDom = new AllOfType[Seq[Double]]
+    def funRange = Doubles
+    def apply(x: Seq[Double]) = if (x.sum == 1.0) 0.0 else Double.NegativeInfinity
   }
 
   case object DoubleMultiply extends BinaryOperatorSameDomainAndRange[Double] {
@@ -90,7 +88,6 @@ object MoreArrayOps extends ArrayOps {
   def maxValue(s:A): Double = { var result = s(0); var i = 0; while (i < s.length) { if (s(i) > result) result = s(i); i += 1 }; result }
   def maxNormalize(s:A) { val norm = maxValue(s); this -= (s,norm)}
   def fill(s:A,v:Double) { util.Arrays.fill(s,v)}
-
 }
 
 /**

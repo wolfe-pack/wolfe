@@ -1,6 +1,8 @@
 package scalapplcodefest
 
 /**
+ * The smokes & cancer MLN.
+ *
  * @author Sebastian Riedel
  */
 object MarkovLogicExample {
@@ -11,7 +13,7 @@ object MarkovLogicExample {
   //index for indexing feature vectors
   val key = new Index()
 
-  //domain objects. Note that this set itself is a term (a constant evaluating to the given set).
+  //domain objects. Note that this set itself is a term (a constant evaluating to the given set, but it could be dynamic too).
   val Persons = SetTerm('Anna, 'Bob)
 
   //Unary predicates
@@ -35,10 +37,10 @@ object MarkovLogicExample {
   //The MLN without assigned weights
   val mln = (f1 + f2) dot weights
 
-  //an actual weight vector that can be plugged into the mln.
-  val concreteWeights = key.createDenseVector(Seq('smokingIsBad) -> 1.0, Seq('peerPressure) -> 1.0)()
-
   def main(args: Array[String]) {
+    //an actual weight vector that can be plugged into the mln.
+    val concreteWeights = key.createDenseVector(Seq('smokingIsBad) -> 1.0, Seq('peerPressure) -> 1.0)()
+
     //some observations
     val condition = State(Map(
       friends.atom('Anna,'Bob) -> true,

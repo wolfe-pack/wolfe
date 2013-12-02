@@ -38,24 +38,6 @@ trait MutableInference extends Inference {
 
 object Inference {
 
-  def unrollModel(term:Term[Double]) = {
-    val flattenQuantified = TermConverter.flatten(term, Math.VecAdd)
-    val distConds = TermConverter.distConds(flattenQuantified)
-    val groupedLambdas = TermConverter.groupLambdas(distConds)
-    val distDots = TermConverter.distDots(groupedLambdas)
-    val unrolled = TermConverter.unrollLambdas(distDots)
-    val flatten = TermConverter.flatten(unrolled, Math.DoubleAdd)
-
-    //    println(conditioned)
-    //    println(flattenQuantified)
-    //    println(distConds)
-    //    println(groupedLambdas)
-    //    println(distDots)
-    //    println(unrolled)
-    //    println(flatten)
-
-    flatten
-  }
 
   def exhaustiveArgmax(term:Term[Double]):Inference = {
     val argmaxState = State.allStates(term.variables.toList).view.maxBy(term.eval(_).right.get)
