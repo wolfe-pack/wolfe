@@ -15,9 +15,8 @@ object TermImplicits {
   implicit def intToTerm(x: Int) = RichIntTerm(x)
   implicit def doubleToConstant(x: Double) = Constant(x)
   implicit def booleanToConstant(x: Boolean) = Constant(x)
-  //implicit def predicateToAllAtoms[A,B](p:Predicate[A,B]) = AllGroundAtoms(p)
-
   implicit def symbolToConstant(x: Symbol) = Constant(x)
+  //implicit def predicateToAllAtoms[A,B](p:Predicate[A,B]) = AllGroundAtoms(p)
 
   implicit def setToConstant[T](x: Set[T]) = Constant(x)
   implicit def setToRichSetTerm[T](x: Set[T]) = RichSetTerm(Constant(x))
@@ -45,6 +44,9 @@ object TermImplicits {
 
   implicit def toFinishedCartesianProduct[A](unfinished: UnfinishedCartesianProduct[A]) = unfinished.finish
   implicit def toRichFinishedCartesianProduct[A](unfinished: UnfinishedCartesianProduct[A]) = RichSetTerm(unfinished.finish)
+
+  //create bracketed terms
+  def br[T](term:Term[T]) = Bracketed(term)
 
   //table building
   def T[A,B](domain:Term[Set[A]],f:PartialFunction[A,B]) = ConstantFun(Fun.table(domain.eval().right.get,f))

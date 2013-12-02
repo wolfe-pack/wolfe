@@ -242,6 +242,17 @@ object TermConverter {
     }
   }
 
+  /**
+   * Wraps brackets around the term inside lambda abstractions.
+   * @param root the term to convert.
+   * @tparam T type of term to convert.
+   * @return term with terms inside lambda abstractions bracketed.
+   */
+  def bracketInsideLambda[T](root:Term[T]) = convertDepthFirst(root) { new Converter {
+    def convert[A](term: Term[A]) = term match {
+      case LambdaAbstraction(v,t) => LambdaAbstraction(v,Bracketed(t)).asInstanceOf[Term[A]]}
+  }}
+
 
   def groupLambdasOnce[T](term: Term[T], filter: Variable[Any] => Boolean = x => true): Term[T] = {
     implicit def cast(t: Term[Any]) = t.asInstanceOf[Term[T]]

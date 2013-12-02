@@ -40,7 +40,7 @@ final class MessagePassingFactorGraph {
    * @param indexInFactor the index the edge has in the factor.
    * @return the added edge.
    */
-  def addEdge(f: Factor, n: Node, indexInFactor:Int) = {
+  def addEdge(f: Factor, n: Node, indexInFactor: Int) = {
     val e = new Edge(n, f, n.dim)
     e.indexInFactor = indexInFactor
     n.edgeCount += 1
@@ -48,6 +48,36 @@ final class MessagePassingFactorGraph {
     edges += e
     e
   }
+
+  /**
+   * Adds a factor based on a table of scores, one for each setting.
+   * @param scores the scores as an array over setting indices.
+   * @param settings the settings as integer arrays ordered in the same way as the scores.
+   * @param dims the dimensions of the variables that connect to this factor.
+   * @return the created factor.
+   */
+  def addTableFactor(scores: Array[Double], settings: Array[Array[Int]], dims: Array[Int]) = {
+    val f = new Factor(this, factors.size, dims, settings, TABLE, scores)
+    factors += f
+    f
+  }
+
+  /**
+   * Adds a factor based on sufficient statistics for each setting, and a base score. The score
+   * of a setting is the current weight vector times the feature vector of the setting, plus the
+   * base score for that setting.
+   * @param stats array of statistics vector, one for each setting.
+   * @param base array of base scores, one for each setting.
+   * @param settings the settings as integer arrays ordered in the same way as stats and base.
+   * @param dims the dimensions of the variables that connect to this factor.
+   * @return the created factor.
+   */
+  def addLinearFactor(stats: Array[Vector], base: Array[Double], settings: Array[Array[Int]], dims: Array[Int]) = {
+    val f = new Factor(this, factors.size, dims, settings, LINEAR, base, stats)
+    factors += f
+    f
+  }
+
 
   /**
    * Connecting nodes and factors to the edges between them.
@@ -65,7 +95,12 @@ final class MessagePassingFactorGraph {
   }
 
 
-  def toVerboseString(fgPrinter:FGPrinter = DefaultPrinter) = {
+  /**
+   * Verbose string representation of the graph.
+   * @param fgPrinter a printer for nodes and factors.
+   * @return string representation of graph.
+   */
+  def toVerboseString(fgPrinter: FGPrinter = DefaultPrinter) = {
     f"""
       |Nodes:
       |${nodes.map(_.toVerboseString(fgPrinter.node2String)).mkString("\n")}
@@ -77,19 +112,6 @@ final class MessagePassingFactorGraph {
       |${edges.map(_.toVerboseString(fgPrinter)).mkString("\n")}
     """.stripMargin
   }
-
-  def addTableFactor(scores: Array[Double], settings: Array[Array[Int]], dims: Array[Int]) = {
-    val f = new Factor(this, factors.size, dims, settings, TABLE, scores)
-    factors += f
-    f
-  }
-
-  def addLinearFactor(stats: Array[Vector], base:Array[Double], settings: Array[Array[Int]], dims: Array[Int]) = {
-    val f = new Factor(this, factors.size, dims, settings, LINEAR, base, stats)
-    factors += f
-    f
-  }
-
 
 
 }
@@ -114,7 +136,7 @@ object MessagePassingFactorGraph {
    * @param dims dimensions of each variable.
    * @return the entry corresponding to the given setting.
    */
-  final def settingToEntry(setting:Array[Int],dims:Array[Int]) = {
+  final def settingToEntry(setting: Array[Int], dims: Array[Int]) = {
     var result = 0
     for (i <- (0 until dims.length).optimized) {
       result = setting(i) + result * dims(i)
@@ -128,7 +150,7 @@ object MessagePassingFactorGraph {
    * @param dims dimensions of the variables.
    * @return a setting array corresponding to the entry.
    */
-  final def entryToSetting(entry:Int,dims:Array[Int]) = {
+  final def entryToSetting(entry: Int, dims: Array[Int]) = {
     val result = Array.ofDim[Int](dims.length)
     var current = entry
     for (i <- (0 until dims.length).optimized) {
@@ -154,7 +176,7 @@ object MessagePassingFactorGraph {
     /* external message for this node. Will usually not be updated during inference */
     val in = Array.ofDim[Double](dim)
 
-    def toVerboseString(nodePrinter:Node => String = n => "") = {
+    def toVerboseString(nodePrinter: Node => String = n => "") = {
       f"""-----------------
         |Node:   $index%3d ${nodePrinter(this)}
         |Belief:
@@ -183,7 +205,7 @@ object MessagePassingFactorGraph {
     var indexInFactor = -1
     var indexInNode = -1
 
-    def toVerboseString(fgPrinter:FGPrinter) =
+    def toVerboseString(fgPrinter: FGPrinter) =
       f"""----------
         |Edge
         |Node:    ${n.index} ${fgPrinter.node2String(n)}
@@ -218,7 +240,7 @@ object MessagePassingFactorGraph {
       for (i <- (0 until dims.length).optimized) result *= dims(i)
       result
     }
-    
+
     /**
      * Evaluates the score of the factor for the setting corresponding to the given setting index.
      * @param settingIndex the index of the setting to score.
@@ -276,10 +298,10 @@ object MessagePassingFactorGraph {
    * inference algorithms.
    */
   trait StructuredPotential {
-    def score(factor:Factor, setting:Array[Int]):Double
-    def maxMarginal2Node(edge:Edge)
-    def maxMarginal2AllNodes(factor:Factor)
-    def maxScoreAndFeatures(factor:Factor, featureDest:Vector)
+    def score(factor: Factor, setting: Array[Int]): Double
+    def maxMarginal2Node(edge: Edge)
+    def maxMarginal2AllNodes(factor: Factor)
+    def maxScoreAndFeatures(factor: Factor, featureDest: Vector)
   }
 
 
@@ -288,11 +310,10 @@ object MessagePassingFactorGraph {
    * independent of the original model it comes from.
    */
   trait FGPrinter {
-    def node2String(node:Node):String
-    def factor2String(factor:Factor):String
-    def vector2String(vector:Vector):String
+    def node2String(node: Node): String
+    def factor2String(factor: Factor): String
+    def vector2String(vector: Vector): String
   }
-
 
 
   object DefaultPrinter extends FGPrinter {
