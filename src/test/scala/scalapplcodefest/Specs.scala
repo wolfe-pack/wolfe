@@ -1,7 +1,7 @@
 package scalapplcodefest
 
 import org.scalatest.{Matchers, FlatSpec}
-import org.scalautils.Bad
+import org.scalautils._
 
 /**
  * Set of specs.
@@ -10,22 +10,35 @@ import org.scalautils.Bad
 class Specs extends FlatSpec with Matchers {
 
   import TermImplicits._
+  import CustomEqualities._
 
   "Undefined variables" should "evaluate to an Undefined object" in {
     val x = 'x of Ints
-    x.eval(State.empty) should be (Bad(VariableUndefined(x,State.empty)))
+    x.eval(State.empty) should be(Bad(VariableUndefined(x, State.empty)))
   }
 
   "Applications of functions outside of domain" should "evaluate to a Undefined object" in {
     val f = for (i <- 0 ~~ 2) yield i
     val app = f(3)
-    app.eval(State.empty) should be (Bad(FunctionNotDefinedAt(app,State.empty)))
+    app.eval(State.empty) should be(Bad(FunctionNotDefinedAt(app, State.empty)))
   }
 
   "A FunApp of a predicate" should "return no free variables if conditioned to have all variables set" in {
     val p = 'p of Bools |-> Bools
     val term = p(true) | p.atom(true) -> true
-    term.variables should be (Set.empty)
+    term.variables should be(Set.empty)
+  }
+
+  "A brute force maximization" should "find argmax, gradient, and max value of a linear term" in {
+    val w = 'w of Vectors
+    val i = 'i of 0 ~~ 3
+    val term = (unit(i) dot w) + 4.0
+    val max = Max.ByBruteForce(term)
+    val arg = new DenseVector(Array(0.0, 0.0, 3.0))
+    val at = max.at(arg)
+    at.value() should be(7.0)
+    at.argmax() should be(State(Map(i -> 2)))
+    at.subGradient() should equal (unit(2).value()) (decided by vectorEq)
   }
 
   "An exhaustive argmaxer" should "find the maximizing assignment of a term" in {
@@ -58,9 +71,9 @@ class Specs extends FlatSpec with Matchers {
     val expected = Inference.exhaustiveArgmax(model)
     val actual = Inference.maxProductArgmax(1)(model)
 
-    actual.state() should be (expected.state())
-    actual.feats()(0) should be (expected.feats()(0))
-    actual.feats()(1) should be (expected.feats()(1))
+    actual.state() should be(expected.state())
+    actual.feats()(0) should be(expected.feats()(0))
+    actual.feats()(1) should be(expected.feats()(1))
 
   }
 
@@ -136,9 +149,23 @@ class Specs extends FlatSpec with Matchers {
       dsum(for (i <- 0 ~~ n as "i") yield dsum(log(I(chunk(i) === "O")), log(I(chunk(i) === "B-NP"))))
     )
 
-    actual should be (expected)
-
+    actual should be(expected)
 
   }
 
+}
+
+object CustomEqualities {
+  def eps = 0.0002
+
+  import Tolerance._
+  import TripleEquals._
+
+  implicit val vectorEq = new Equality[Vector] {
+    def areEqual(a: Vector, b: Any): Boolean =
+      b match {
+        case p: Vector => p.length == a.length && p.activeDomain.forall(i => a(i) === p(i) +- eps)
+        case _ => false
+      }
+  }
 }

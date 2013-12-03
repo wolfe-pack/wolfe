@@ -32,3 +32,14 @@ object Linear {
     case _ => None
   }
 }
+
+/**
+ * Forces a double term into linear form: either the term has a `coeff * param + base` structure,
+ * or a new unused variable x is introduced, and the term becomes `0 * x + term`.
+ */
+object ForceLinear {
+  def unapply(term:Term[Double]):Option[(Term[Vector],Variable[Vector],Term[Double])] = term match {
+    case Linear(c,p,b) => Some(c,p,b)
+    case _ => Some(Constant(new SparseVector(0)),new UnusedParameter, term)
+  }
+}

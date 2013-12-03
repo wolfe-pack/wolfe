@@ -31,7 +31,6 @@ trait Term[+T] {
    */
   def eval(state: State = State.empty): T Or Undefined
 
-
   /**
    * Free variables in term. Notice that the returned sets can often have structure and be implicitly defined.
    * For example, a set of ground atom variables can be defined through specifying the predicate and the domain
@@ -58,6 +57,13 @@ trait Term[+T] {
    * @return the default value assigned to this term.
    */
   def default: T
+
+  /**
+   * Convenience method to call when clients are sure that the term is defined.
+   * @param state the state to evaluate the term against.
+   * @return the value of the term in the state, if defined, otherwise an exception is thrown.
+   */
+  def value(state:State = State.empty): T = eval(state).get
 
 }
 
@@ -135,8 +141,20 @@ case class Constant[T](value: T) extends Term[T] {
  * @tparam T the type of the term value.
  * @tparam This the type of the term itself.
  */
-trait CompositeTerm[T, This <: Term[T]] extends Term[T] {
+trait CompositeTerm[T, This <: Term[T]] {
   def components: List[Term[Any]]
   def copy(args: Seq[Term[Any]]): This
-  def variables = SetUtil.SetUnion(components.map(_.variables))
+}
+
+/**
+ * Helper object for composite objects.
+ */
+object CompositeTerm {
+  /**
+   * Import this object if you want to avoid casts when implementing the copy method of composites.
+   */
+  object CastCarelessly {
+    import scala.language.implicitConversions
+    implicit def cast[A<:Term[Any]](a:Term[Any]) = a.asInstanceOf[A]
+  }
 }
