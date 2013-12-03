@@ -87,8 +87,8 @@ final class MPGraph {
    * @param dims the dimensions of the variables that connect to this factor.
    * @return the created factor.
    */
-  def addLinearFactor(stats: Array[Vector], base: Array[Double], settings: Array[Array[Int]], dims: Array[Int]) = {
-    val f = new Factor(this, factors.size, dims, settings, LINEAR, base, stats)
+  def addLinearFactor(stats: Array[Vector], settings: Array[Array[Int]], dims: Array[Int]) = {
+    val f = new Factor(this, factors.size, dims, settings, LINEAR, null, stats)
     factors += f
     f
   }
@@ -247,7 +247,7 @@ object MPGraph {
    * @param settings array with integer array representations of settings of the neighbors
    * @param typ the type of factor
    * @param table if `typ=TABLE` this stores a score for each possible setting (indexed by the index of the setting in
-   *              `settings`. If `typ=LINEAR` this serves as base score to be added to the linear score.
+   *              `settings`.
    * @param stats if `typ=TABLE` this stores a feature vector for each setting (index by the index of the setting
    *              in `settings`.
    * @param structured if `typ=STRUCTURED` this stores a generic object for scoring the factor and inference related
@@ -274,7 +274,7 @@ object MPGraph {
     def score(settingIndex: Int): Double = {
       typ match {
         case TABLE => table(settingIndex)
-        case LINEAR => table(settingIndex) + stats(settingIndex).dot(fg.weights)
+        case LINEAR => stats(settingIndex).dot(fg.weights)
         case STRUCTURED => structured.score(this, entryToSetting(settingIndex, dims), fg.weights)
       }
     }

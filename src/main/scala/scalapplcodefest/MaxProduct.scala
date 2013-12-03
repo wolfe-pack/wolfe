@@ -1,9 +1,5 @@
 package scalapplcodefest
 
-import scalaxy.loops._
-import java.util
-import cc.factorie.maths.ArrayOps
-
 
 /**
  * @author Sebastian Riedel
@@ -26,6 +22,11 @@ object MaxProduct {
       }
     }
     for (node <- fg.nodes) updateBelief(node)
+
+    //calculate gradient and objective
+    fg.gradient = new SparseVector(1000)
+    fg.value = featureExpectationsAndObjective(fg,fg.gradient)
+
   }
 
 
@@ -35,7 +36,7 @@ object MaxProduct {
    * @param fg factor graph.
    * @param result vector to add results to.
    */
-  def featureExpectationsAndObjective(fg: MPGraph, result: SparseVector): Double = {
+  def featureExpectationsAndObjective(fg: MPGraph, result: Vector): Double = {
     var obj = 0.0
     for (factor <- fg.factors) {
       // 1) go over all states, find max

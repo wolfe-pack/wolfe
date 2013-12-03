@@ -110,7 +110,7 @@ object MessagePassingGraphBuilder {
       stats(stateIndex) = feat
       baseScores(stateIndex) = base.eval(state + condition).get
     }
-    val f = aligned.graph.addLinearFactor(stats, baseScores, settings, dims)
+    val f = aligned.graph.addLinearFactor(stats, settings, dims)
     BuiltFactor(f, mappings)
   }
 

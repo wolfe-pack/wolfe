@@ -99,6 +99,11 @@ object Max {
     }
   }
 
+  /**
+   * Maximizing by running some message passing algorithm on the a factor graph.
+   * @param term the term to maximize
+   * @param algorithm applies a message passing algorithm to the message passing graph.
+   */
   case class ByMessagePassing(term:Term[Double], algorithm: MPGraph => Unit) extends Max {
 
     val mp = MPGraphCompiler.compile(term)

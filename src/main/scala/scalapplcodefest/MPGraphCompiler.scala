@@ -145,6 +145,7 @@ object MPGraphCompiler {
       case Some(recipe) => compileStructuredDouble(coeffTerm, recipe, metaNodes, mpGraph)
       case None => compileCoefficientTerm(coeffTerm, metaNodes, mpGraph)
     }
+    mpGraph.build()
     Result(mpGraph, metaNodes)
   }
 
@@ -201,7 +202,7 @@ object MPGraphCompiler {
         val vector = baseTerm.value(state)
         vectors(index) = vector
     }
-    val factor = mpGraph.addLinearFactor(vectors, null, settings, dims)
+    val factor = mpGraph.addLinearFactor(vectors, settings, dims)
     for ((m, i) <- factorMeta.zipWithIndex) mpGraph.addEdge(factor, m.node, i)
   }
 
