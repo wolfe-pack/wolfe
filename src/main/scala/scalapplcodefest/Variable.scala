@@ -67,6 +67,15 @@ case class Target[+V](variable: Variable[V]) extends Variable[V] {
 }
 
 /**
+ * A variable that represents the beliefs of another variable.
+ * @param variable the variable for which this variable represents the beliefs
+ * @tparam T the type of variable we need beliefs over.
+ */
+case class Belief[T](variable:Variable[T]) extends Variable[Fun[T,Double]] {
+  def domain[C >: Fun[T, Double]] = Constant(new AllOfType[C])
+}
+
+/**
  * Defines a canonical ordering on variables.
  */
 object VariableOrdering extends Ordering[Variable[Any]] {

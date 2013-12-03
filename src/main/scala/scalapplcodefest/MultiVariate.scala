@@ -9,9 +9,9 @@ import org.scalautils.Good
 trait MultiVariate extends Term[Double] {
   type At <: MultiVariateAt
   def parameter: Variable[Vector]
-  def at(argument: Vector): At
+  def at(argument: Vector = new DenseVector(0)): At
   def variables = Set(parameter)
-  def eval(state: State) = for (argument <- parameter.eval(state)) yield at(argument).value()
+  def eval(state: State) = for (argument <- parameter.eval(state)) yield at(argument).value
   def default = 0.0
   def domain[C >: Double] = ???
 }
@@ -21,7 +21,7 @@ trait MultiVariate extends Term[Double] {
  */
 trait MultiVariateAt {
   def argument: Vector
-  def value: () => Double
+  def value: Double
 }
 
 /**
@@ -33,7 +33,7 @@ trait Differentiable extends MultiVariate {type At <: DifferentiableAt}
  * Information about a differentiable function at a given argument.
  */
 trait DifferentiableAt extends MultiVariateAt {
-  def subGradient: () => Vector
+  def subGradient:  Vector
 }
 
 /**
@@ -46,7 +46,7 @@ case class Parametrized(parameter: Var[Vector], self: Term[Double])
   type At = ParametrizedAt
   def at(argument: Vector) = {
     val value = self.eval(SingletonState(parameter, argument)).get
-    ParametrizedAt(argument, () => value)
+    ParametrizedAt(argument, value)
   }
   def components = List(parameter, self)
 
@@ -60,7 +60,7 @@ case class Parametrized(parameter: Var[Vector], self: Term[Double])
  * @param argument the argument the function is evaluated at.
  * @param value the value of the function at this argument.
  */
-case class ParametrizedAt(argument: Vector, value: () => Double) extends MultiVariateAt
+case class ParametrizedAt(argument: Vector, value: Double) extends MultiVariateAt
 
 /**
  * The Max functions maximizes over all free variables of a term other than the designated parameter of the multivariate
@@ -75,7 +75,7 @@ trait Max extends Differentiable {type At = MaxAt}
  * @param subGradient the sub-gradient at the argument.
  * @param value the value at the argument.
  */
-case class MaxAt(argument: Vector, argmax: () => State, subGradient: () => Vector, value: () => Double) extends DifferentiableAt
+case class MaxAt(argument: Vector, argmax: State, subGradient: Vector, value: Double) extends DifferentiableAt
 
 /**
  * Collection of different (possibly approximate) implementations of the Max function.
@@ -93,16 +93,25 @@ object Max {
     def at(argument: Vector) = {
       val injected = term | parameter -> argument
       val argmax = State.allStates(injected.variables.toList).view.maxBy(injected.eval(_).get)
-      val gradient = () => coefficient.eval(argmax).get
-      val value = () => injected.eval(argmax).get
-      MaxAt(argument, () => argmax, gradient, value)
+      val gradient = coefficient.eval(argmax).get
+      val value = injected.eval(argmax).get
+      MaxAt(argument, argmax, gradient, value)
     }
   }
 
-  case class ByMaxProduct(term:Term[Double],
-                          maxIterations:Int = 1) extends Max {
-    val ForceLinear(coefficient,parameter,_) = term
-    def at(argument: scalapplcodefest.Vector) = ???
+  case class ByMessagePassing(term:Term[Double], algorithm: MPGraph => Unit) extends Max {
+
+    val mp = MPGraphCompiler.compile(term)
+    val ForceLinear(_,parameter,_) = term
+
+    def at(argument: Vector) = {
+      mp.graph.weights = argument
+      algorithm(mp.graph)
+      val argmax = mp.currentArgmax()
+      val gradient = mp.currentGradient()
+      val value = mp.currentValue()
+      MaxAt(argument, argmax, gradient, value)
+    }
   }
 }
 

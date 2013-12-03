@@ -36,9 +36,9 @@ class Specs extends FlatSpec with Matchers {
     val max = Max.ByBruteForce(term)
     val arg = new DenseVector(Array(0.0, 0.0, 3.0))
     val at = max.at(arg)
-    at.value() should be(7.0)
-    at.argmax() should be(State(Map(i -> 2)))
-    at.subGradient() should equal (unit(2).value()) (decided by vectorEq)
+    at.value should be(7.0)
+    at.argmax should be(State(Map(i -> 2)))
+    at.subGradient should equal (unit(2).value()) (decided by vectorEq)
   }
 
   "An exhaustive argmaxer" should "find the maximizing assignment of a term" in {

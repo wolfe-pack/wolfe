@@ -24,7 +24,7 @@ final class MPGraph {
   /**
    * Linear factors can depend
    */
-  var weights: DenseVector = null
+  var weights: Vector = null
 
   /**
    * Algorithms that use message passing to calculate a value (maximum, log partition function ...) can store the

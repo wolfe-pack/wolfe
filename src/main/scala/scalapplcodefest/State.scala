@@ -15,18 +15,18 @@ trait State {
    * @tparam T type of value of variable.
    * @return `Some(value)` if `variable` is mapped to `value`, `None` otherwise.
    */
-  def get[T](variable:Variable[T]):Option[T]
+  def get[T](variable: Variable[T]): Option[T]
 
   /**
    * Syntactic sugar for when we know that a term is defined.
    */
-  def apply[T](variable:Variable[T]) = get(variable).get
+  def apply[T](variable: Variable[T]) = get(variable).get
 
   /**
    * All variables for which the state defines a value.
    * @return the domain of this state.
    */
-  def domain:Set[Variable[Any]]
+  def domain: Set[Variable[Any]]
 
   /**
    * Overlays this state over the given state. This may not be a good idea to use when adding several states.
@@ -47,7 +47,7 @@ trait State {
    */
   def closed(vars: Set[Variable[Any]] = AllVariables) = new State {
     def get[V](variable: Variable[V]) = self.get(variable).orElse(if (domain(variable)) Some(variable.default) else None)
-    override def domain = SetUtil.SetUnion(List(self.domain,vars))
+    override def domain = SetUtil.SetUnion(List(self.domain, vars))
   }
 
   /**
@@ -57,7 +57,7 @@ trait State {
    */
   def target = new State {
     def get[V](variable: Variable[V]) = self.get(variable).orElse(self.get(Target(variable)))
-    override def domain = self.domain.map({ case Target(v) => v; case v => v })
+    override def domain = self.domain.map({case Target(v) => v; case v => v})
   }
 
   /**
@@ -67,7 +67,7 @@ trait State {
    * @param shouldBeTarget predicate to test whether variable should be a target.
    * @return a state where the given variables have become target variables.
    */
-  def asTargets(shouldBeTarget: Set[Variable[Any]]):State = new State {
+  def asTargets(shouldBeTarget: Set[Variable[Any]]): State = new State {
     def get[V](variable: Variable[V]) = variable match {
       case Target(v) if shouldBeTarget(v) => self.get(v)
       case v => if (shouldBeTarget(v)) None else self.get(v)
@@ -78,8 +78,15 @@ trait State {
   /**
    * Convenience method for when the targets are all ground atoms.
    */
-  def asTargets(shouldBeTarget:Predicate[_,_]*):State = asTargets(SetUtil.SetUnion(shouldBeTarget.map(AllGroundAtoms(_)).toList))
+  def asTargets(shouldBeTarget: Predicate[_, _]*): State = asTargets(SetUtil.SetUnion(shouldBeTarget.map(AllGroundAtoms(_)).toList))
 
+  /**
+   * Returns the belief for a variable `x` as denoted by state's assignment to `Belief(x)`
+   * @param variable the variable to get the belief for.
+   * @tparam T type of variable.
+   * @return the value assigned to `Belief(variable)` if defined, otherwise an exception is thrown.
+   */
+  def belief[T](variable: Variable[T]):Fun[T,Double] = apply(Belief(variable))
 
   /**
    * Equals based on having the same variables with same values.
@@ -87,8 +94,8 @@ trait State {
    * @return true iff both states have same variables which are mapped to the same values.
    */
   override def equals(that: scala.Any) = that match {
-    case s:State if s eq this => true
-    case s:State => s.domain.size == domain.size && domain.forall(v => get(v) == s.get(v))
+    case s: State if s eq this => true
+    case s: State => s.domain.size == domain.size && domain.forall(v => get(v) == s.get(v))
     case _ => false
   }
 
@@ -116,15 +123,13 @@ object State {
   }
 
 
-
-
-  def allStates(vars:List[Variable[Any]], toConjoinWith:Seq[State] = Seq(State.empty).view):Seq[State] = {
+  def allStates(vars: List[Variable[Any]], toConjoinWith: Seq[State] = Seq(State.empty).view): Seq[State] = {
     vars match {
       case Nil => toConjoinWith
       case head :: tail =>
         val newStates = for (oldState <- toConjoinWith; value <- head.domain.eval().get.view) yield
-          oldState + SingletonState(head,value)
-        allStates(tail,newStates)
+          oldState + SingletonState(head, value)
+        allStates(tail, newStates)
     }
   }
 }
@@ -133,14 +138,8 @@ object State {
  * State based on an immutable map.
  * @param map the map the state is based on.
  */
-class MapBasedState(val map:Map[Variable[Any],Any]) extends State {
-  def get[T](variable: Variable[T]) = {
-//    println("%s %s".format(variable,map.get(variable)))
-    if (map.get(variable) == None) {
-//      println(variable)
-    }
-    map.get(variable).asInstanceOf[Option[T]]
-  }
+class MapBasedState(val map: Map[Variable[Any], Any]) extends State {
+  def get[T](variable: Variable[T]) = map.get(variable).asInstanceOf[Option[T]]
   def domain = map.keySet
 }
 
@@ -157,3 +156,4 @@ case class SingletonState[Value](variable: Variable[Value], state: Value) extend
   override def toString = variable + " = " + state
   override def domain = Set(variable)
 }
+
