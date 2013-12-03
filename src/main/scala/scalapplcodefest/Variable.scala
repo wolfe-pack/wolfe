@@ -1,5 +1,7 @@
 package scalapplcodefest
 
+import org.scalautils.{Bad, Good}
+
 /**
  * Variables are terms that get replaced by values assignment to them in states.
  * @author Sebastian Riedel
@@ -22,7 +24,8 @@ trait Variable[+T] extends Term[T] {
    *         `state` as `dom` and `dom(value)` holds. Else `Left(this)`.
    */
   def eval(state: State) = {
-    for (dom <- domain.eval(state).right; value <- state.get(this).filter(dom).toRight(this).right) yield value
+    for (dom <- domain.eval(state);
+         value <- state.get(this).filter(dom).map(Good(_)).getOrElse(Bad(VariableUndefined(this,state)))) yield value
   }
 
   /**

@@ -49,7 +49,7 @@ object TermImplicits {
   def br[T](term:Term[T]) = Bracketed(term)
 
   //table building
-  def T[A,B](domain:Term[Set[A]],f:PartialFunction[A,B]) = ConstantFun(Fun.table(domain.eval().right.get,f))
+  def T[A,B](domain:Term[Set[A]],f:PartialFunction[A,B]) = ConstantFun(Fun.table(domain.eval().get,f))
 
   //math
   def unit(index: Term[Int], value: Term[Double] = Constant(1.0)) = UnitVec(index, value)

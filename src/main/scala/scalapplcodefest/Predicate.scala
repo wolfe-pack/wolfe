@@ -1,5 +1,7 @@
 package scalapplcodefest
 
+import org.scalautils.{Bad, Good}
+
 /**
  * A predicate evaluates to a function. The function's behavior is defined
  * through a set of variables `pred(a)` and their assignments
@@ -13,9 +15,9 @@ case class Predicate[A,B](name:Symbol, funCandidateDom:Term[Set[A]],funRange:Ter
   thisPredicate =>
 
   def eval(state: State) = {
-    for (d <- funCandidateDom.eval(state).right; r <- funRange.eval(state).right) yield new Fun[A, B] {
-      def apply(a: A) = GroundAtom(thisPredicate, a).eval(state).right.get
-      def isDefinedAt(a: A) = d(a) && GroundAtom(thisPredicate, a).eval(state).right.exists(r(_))
+    for (d <- funCandidateDom.eval(state); r <- funRange.eval(state)) yield new Fun[A, B] {
+      def apply(a: A) = GroundAtom(thisPredicate, a).eval(state).get
+      def isDefinedAt(a: A) = d(a) && GroundAtom(thisPredicate, a).eval(state).exists(r(_))
       def funCandidateDom = d
       def funRange = r
     }
@@ -59,8 +61,8 @@ case class AllGroundAtoms[A,B](predicate:Predicate[A,B], condition:State = State
     case _ => false
   }
   def iterator = predicate.funCandidateDom.eval(condition) match {
-    case Right(domain) => domain.iterator.map(arg => GroundAtom(predicate,arg))
-    case Left(undefined) => sys.error(s"The domain of $predicate is undefined because $undefined is undefined and we can't iterate over its atoms" )
+    case Good(domain) => domain.iterator.map(arg => GroundAtom(predicate,arg))
+    case Bad(undefined) => sys.error(s"$predicate is undefined and we can't iterate over its atoms because of $undefined" )
   }
 }
 
@@ -68,11 +70,11 @@ case class PartialGroundAtoms[A,B](predicate:Predicate[A,B],arg:Term[A], conditi
   extends SetValue[Variable[Any]] {
   lazy val argDomain = arg.asInstanceOf[Term[Any]] match {
     case TupleTerm2(arg1,arg2) => (arg1.eval(condition),arg2.eval(condition)) match {
-      case ((Right(a1),Left(_))) => CartesianProduct2(Set(a1),arg2.domain.eval(condition).right.get)
-      case ((Left(_),Right(a2))) => CartesianProduct2(arg1.domain.eval(condition).right.get,Set(a2))
-      case _ => arg.domain.eval(condition).right.get
+      case ((Good(a1),Bad(_))) => CartesianProduct2(Set(a1),arg2.domain.eval(condition).get)
+      case ((Bad(_),Good(a2))) => CartesianProduct2(arg1.domain.eval(condition).get,Set(a2))
+      case _ => arg.domain.eval(condition).get
     }
-    case _ => arg.eval(condition).right.map(v => Set(v)).right.getOrElse(arg.domain.eval(condition).right.get)
+    case _ => arg.eval(condition).map(v => Set(v)).getOrElse(arg.domain.eval(condition).get)
   }
   lazy val argDomainCast = argDomain.asInstanceOf[Set[Any]]
 

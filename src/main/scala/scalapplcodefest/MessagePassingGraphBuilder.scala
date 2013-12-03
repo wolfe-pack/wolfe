@@ -23,7 +23,7 @@ object MessagePassingGraphBuilder {
     val vars = term.variables.toSeq.filter(_ != weights).sorted(VariableOrdering)
     val graph = new MessagePassingFactorGraph
     def createVariableMapping(variable: Variable[Any]) = {
-      val domain = variable.domain.eval().right.get.toSeq
+      val domain = variable.domain.eval().get.toSeq
       val indexOfValue = domain.zipWithIndex.toMap
       val node = graph.addNode(domain.size)
       VariableMapping(variable, node, domain, indexOfValue)
@@ -69,7 +69,7 @@ object MessagePassingGraphBuilder {
     //iterate over possible states, get the state index
     for (state <- State.allStates(vars.toList)) {
       val setting = Array.ofDim[Int](vars.size)
-      val score = term.eval(state).right.get
+      val score = term.eval(state).get
       var stateIndex = 0
       for ((v, i) <- mappings.zipWithIndex) {
         val valueIndex = v.indexOfValue(state(v.variable))
@@ -100,7 +100,7 @@ object MessagePassingGraphBuilder {
     //iterate over possible states, get the state index
     for (state <- State.allStates(vars.toList)) {
       val setting = Array.ofDim[Int](vars.size)
-      val feat = feats.eval(state + condition).right.get
+      val feat = feats.eval(state + condition).get
       var stateIndex = 0
       for ((v, i) <- mappings.zipWithIndex) {
         val valueIndex = v.indexOfValue(state(v.variable))
@@ -109,7 +109,7 @@ object MessagePassingGraphBuilder {
       }
       settings(stateIndex) = setting
       stats(stateIndex) = feat
-      baseScores(stateIndex) = base.eval(state + condition).right.get
+      baseScores(stateIndex) = base.eval(state + condition).get
     }
     val f = aligned.graph.addLinearFactor(stats, baseScores, settings, dims)
     BuiltFactor(f, mappings)

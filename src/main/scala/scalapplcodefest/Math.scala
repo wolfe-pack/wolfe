@@ -74,7 +74,7 @@ object Math {
   }
 
   case class UnitVec(index: Term[Int], value: Term[Double]) extends Term[Vector] {
-    def eval(state: State) = for (i <- index.eval(state).right; v <- value.eval(state).right) yield
+    def eval(state: State) = for (i <- index.eval(state); v <- value.eval(state)) yield
       new SingletonTensor1(1, i, v)
     def variables = SetUtil.SetUnion(List(index.variables, value.variables))
     def domain[C >: Vector] = Constant(Vectors).asInstanceOf[Term[Set[C]]]

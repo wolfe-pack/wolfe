@@ -1,6 +1,7 @@
 package scalapplcodefest
 
 import org.scalatest.{Matchers, FlatSpec}
+import org.scalautils.Bad
 
 /**
  * Set of specs.
@@ -9,6 +10,17 @@ import org.scalatest.{Matchers, FlatSpec}
 class Specs extends FlatSpec with Matchers {
 
   import TermImplicits._
+
+  "Undefined variables" should "evaluate to an Undefined object" in {
+    val x = 'x of Ints
+    x.eval(State.empty) should be (Bad(VariableUndefined(x,State.empty)))
+  }
+
+  "Applications of functions outside of domain" should "evaluate to a Undefined object" in {
+    val f = for (i <- 0 ~~ 2) yield i
+    val app = f(3)
+    app.eval(State.empty) should be (Bad(FunctionNotDefinedAt(app,State.empty)))
+  }
 
   "A FunApp of a predicate" should "return no free variables if conditioned to have all variables set" in {
     val p = 'p of Bools |-> Bools

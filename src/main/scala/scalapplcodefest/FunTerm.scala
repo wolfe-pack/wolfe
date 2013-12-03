@@ -1,5 +1,7 @@
 package scalapplcodefest
 
+import org.scalautils.{Bad, Good}
+
 /**
  * FunTerms evaluate to partial functions. The function candidate domain where the function is defined for
  * may depend on the state, and is hence a term itself.
@@ -44,7 +46,7 @@ object FunTerm {
 
 
 case class ConstantFun[A, B](fun: Fun[A, B]) extends FunTerm[A, B] {
-  def eval(state: State) = Right(fun)
+  def eval(state: State) = Good(fun)
   def variables = Set.empty
   def domain[C >: Fun[A, B]] = Constant(Set(fun))
   def default = fun
@@ -62,9 +64,9 @@ case class ConstantFun[A, B](fun: Fun[A, B]) extends FunTerm[A, B] {
  */
 case class FunApp[A, B](function: FunTerm[A, B], arg: Term[A]) extends Term[B] {
   def eval(state: State) =
-    for (f <- function.eval(state).right;
-         a <- arg.eval(state).right;
-         v <- f.lift(a).toRight(Conditioned(this, state)).right) yield v
+    for (f <- function.eval(state);
+         a <- arg.eval(state);
+         v <- f.lift(a).map(Good(_)).getOrElse(Bad(FunctionNotDefinedAt(this,state)))) yield v
   def variables = function match {
     case p@Predicate(n, d, r) => PartialGroundAtoms(p, arg)
     case _ => SetUtil.SetUnion(List(function.variables, arg.variables))
@@ -100,12 +102,12 @@ case class LambdaAbstraction[A, B](variable: Variable[A], term: Term[B]) extends
   def funCandidateDom = variable.domain
   def funRange = term.domain[B]
   def eval(state: State) = {
-    for (r <- funRange.eval(state).right; d <- funCandidateDom.eval(state).right) yield new Fun[A, B] {
+    for (r <- funRange.eval(state); d <- funCandidateDom.eval(state)) yield new Fun[A, B] {
       def funCandidateDom = d
       def funRange = r
       def get(a: A) = term.eval(state + SingletonState(variable, a))
-      def apply(a: A) = get(a).right.get
-      override def isDefinedAt(a: A) = d(a) && get(a).right.exists(r(_))
+      def apply(a: A) = get(a).get
+      override def isDefinedAt(a: A) = d(a) && get(a).exists(r(_))
     }
   }
   def variables = SetUtil.SetMinus(term.variables, Set(variable))
@@ -168,7 +170,7 @@ class AllFunctionsOp[A, B] extends Fun[(Set[A], Set[B]), Set[Fun[A, B]]] {
  * @tparam B return type of function.
  */
 case class Image[A, B](fun: FunTerm[A, B], dom: Term[Set[A]]) extends Term[Set[B]] {
-  def eval(state: State) = for (f <- fun.eval(state).right; d <- dom.eval(state).right) yield SetUtil.SetMap(d, f)
+  def eval(state: State) = for (f <- fun.eval(state); d <- dom.eval(state)) yield SetUtil.SetMap(d, f)
   def variables = SetUtil.SetUnion(List(fun.variables, dom.variables))
   def domain[C >: Set[B]] = Constant(Util.setToBeImplementedLater[C])
   def default = fun.default.funRange
@@ -183,7 +185,7 @@ case class Image[A, B](fun: FunTerm[A, B], dom: Term[Set[A]]) extends Term[Set[B
  * @tparam B return type of function.
  */
 case class ImageSeq1[A, B](fun: FunTerm[A, B]) extends Term[Seq[B]] {
-  def eval(state: State) = for (f <- fun.eval(state).right; d <- fun.funCandidateDom.eval(state).right) yield d.view.toSeq.map(f)
+  def eval(state: State) = for (f <- fun.eval(state); d <- fun.funCandidateDom.eval(state)) yield d.view.toSeq.map(f)
   def variables = fun.variables
   def domain[C >: Seq[B]] = Constant(new AllOfType[C])
   def default = fun.default.funRange.toSeq
@@ -198,7 +200,7 @@ case class ImageSeq1[A, B](fun: FunTerm[A, B]) extends Term[Seq[B]] {
  * @tparam B return type of inner functions.
  */
 case class ImageSeq2[A1, A2, B](fun: FunTerm[A1, Fun[A2, B]]) extends Term[Seq[B]] {
-  def eval(state: State) = for (f <- fun.eval(state).right; d <- fun.funCandidateDom.eval(state).right) yield {
+  def eval(state: State) = for (f <- fun.eval(state); d <- fun.funCandidateDom.eval(state)) yield {
     for (a1 <- d.view.toSeq; f1 = f(a1); a1 <- f1.funDom.view.toSeq) yield f1(a1)
   }
   def variables = fun.variables
@@ -229,7 +231,7 @@ case class UncurriedLambdaAbstraction2[A1, A2, R](lambda1: LambdaAbstraction[A1,
                                                   lambdaLast: LambdaAbstraction[A2, R])
   extends FunTerm[(A1, A2), R] with UncurriedLambdaAbstraction[A1, R] {
 
-  def eval(state: State) = for (f <- lambda1.eval(state).right) yield Fun({
+  def eval(state: State) = for (f <- lambda1.eval(state)) yield Fun({
     case (a1, a2) => f(a1)(a2)
   })
   def domain[C >: Fun[(A1, A2), R]] = Constant(Util.setToBeImplementedLater)

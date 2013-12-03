@@ -1,6 +1,7 @@
 package scalapplcodefest
 
 import scala.language.implicitConversions
+import org.scalautils.{Good, Or}
 
 
 /**
@@ -10,11 +11,11 @@ import scala.language.implicitConversions
  * The meaning of a term is defined
  * through [[http://en.wikipedia.org/wiki/Denotational_semantics compositional denotational semantics]]
  * (sometimes also known as '''mathematical semantics'''). Given a
- * [[scalapplcodefest.State]] (or "environment") which assigns free variables to objects of type `T`,
- * a term itself denotes an object of that domain. In other words, the meaning of a term is a mapping from
+ * [[scalapplcodefest.State]] (or "environment") which assigns free variables to objects in a domain,
+ * a term itself denotes an object with Type `T` of that domain. In other words, the meaning of a term is a mapping from
  * [[scalapplcodefest.State]] objects to objects of type `T`. Usually this function is recursively defined through
  * the functions assigned to sub-parts of the term. For example, the term `x + 1` for a state `x->2` is mapped
- * to the sum of the meaning of `x` (the Int `2`) and the meaning of `1` (the Int `1`).
+ * to the sum (meaning of `+`) of the meaning of `x` (the Int `2`) and the meaning of `1` (the Int `1`).
  *
  * Denotations of terms are defined through their `eval` method.
  * @author Sebastian Riedel
@@ -24,11 +25,12 @@ trait Term[+T] {
   /**
    * Defines the meaning of a term as a mapping from states to objects.
    * @param state the state object that binds variables to values.
-   * @return `Right(value)` if term's `value` is defined with respect to `state`, `Left(undefinedTerm)` otherwise.
-   *        Undefined can either be variables undefined in the state, or function applications where an
-   *        argument outside of the domain was used.
+   * @return `Good(value)` if term's `value` is defined with respect to `state`, `Bad(undefined)` otherwise.
+   *         Undefined can either be variables undefined in the state, or function applications where an
+   *         argument outside of the domain was used.
    */
-  def eval(state: State = State.empty): Either[Term[Any],T]
+  def eval(state: State = State.empty): T Or Undefined
+
 
   /**
    * Free variables in term. Notice that the returned sets can often have structure and be implicitly defined.
@@ -60,11 +62,34 @@ trait Term[+T] {
 }
 
 /**
+ * A message created when evaluating terms for which either variables or function applications are undefined.
+ */
+sealed trait Undefined
+
+/**
+ * During term evaluation a variable was found that had no assigned value in the state.
+ * @param variable the variable without assigned value in the state.
+ * @param state the state in which the variable assignment was searched for but not found.
+ * @tparam T type of the variable.
+ */
+case class VariableUndefined[T](variable: Variable[T], state: State) extends Undefined
+
+/**
+ * During term evaluation a function was evaluated at a argument outside of the function's domain.
+ * @param funApp the function application that was undefined.
+ * @param state the state for which the function definition was undefined.
+ * @tparam A type of arguments to function.
+ * @tparam B return type of function.
+ */
+case class FunctionNotDefinedAt[A, B](funApp: FunApp[A, B], state: State) extends Undefined
+
+
+/**
  * Proxy of another term. All methods are delegated to the inner term.
  * @tparam T type of term.
  */
 trait ProxyTerm[T] extends Term[T] {
-  def self:Term[T]
+  def self: Term[T]
   def eval(state: State) = self.eval(state)
   def variables = self.variables
   def domain[C >: T] = self.domain
@@ -77,7 +102,7 @@ trait ProxyTerm[T] extends Term[T] {
  * @param self the term this term is representing.
  * @tparam T type of term.
  */
-case class Bracketed[T](self:Term[T]) extends ProxyTerm[T]
+case class Bracketed[T](self: Term[T]) extends ProxyTerm[T]
 
 /**
  * Scala covariance/contravariance for Sets requires frequent casting of sets.
@@ -98,7 +123,7 @@ object SetCastHelper {
  * @tparam T the type of the constant.
  */
 case class Constant[T](value: T) extends Term[T] {
-  def eval(state: State) = Right(value)
+  def eval(state: State) = Good(value)
   def variables = Set.empty
   def domain[C >: T] = Constant(Set(value))
   def default = value
@@ -110,10 +135,8 @@ case class Constant[T](value: T) extends Term[T] {
  * @tparam T the type of the term value.
  * @tparam This the type of the term itself.
  */
-trait CompositeTerm[T,This<:Term[T]] extends Term[T] {
-  def components:List[Term[Any]]
-  def copy(args:Seq[Term[Any]]):This
+trait CompositeTerm[T, This <: Term[T]] extends Term[T] {
+  def components: List[Term[Any]]
+  def copy(args: Seq[Term[Any]]): This
   def variables = SetUtil.SetUnion(components.map(_.variables))
 }
-
-

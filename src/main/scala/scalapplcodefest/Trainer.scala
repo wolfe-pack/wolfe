@@ -31,7 +31,7 @@ object Trainer {
     case class PerceptronExample(instance: State) extends Example {
 
       val target = instance.target
-      val targetFeats = features.eval(target).right.get
+      val targetFeats = features.eval(target).get
 
       def accumulateValueAndGradient(value: DoubleAccumulator, gradient: WeightsMapAccumulator) = {
 
@@ -40,7 +40,7 @@ object Trainer {
 
         val guessFeats = inference.feats()
         val guessScore = inference.obj()
-        val targetScore = model.eval(target + SingletonState(weights, weightsSet(key))).right.get
+        val targetScore = model.eval(target + SingletonState(weights, weightsSet(key))).get
 
         //        println("----------")
         //        println(s"Gold: $target")

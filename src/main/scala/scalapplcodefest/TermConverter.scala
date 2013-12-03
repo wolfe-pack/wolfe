@@ -116,7 +116,7 @@ object TermConverter {
     new Converter {
       def convert[A](term: Term[A]) = term match {
         case ImageSeq1(LambdaAbstraction(v, t)) =>
-          val domainSeq = v.domain.eval().right.get.view.toSeq
+          val domainSeq = v.domain.eval().get.view.toSeq
           SeqTerm(domainSeq.map(value => wrap(substituteTerm(t, v, Constant(value))))).asInstanceOf[Term[A]]
         case t => t
       }
