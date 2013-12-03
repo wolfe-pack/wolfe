@@ -10,7 +10,7 @@ import cc.factorie.maths.ArrayOps
  */
 object MaxProduct {
 
-  import MessagePassingFactorGraph._
+  import MPGraph._
   import MoreArrayOps._
 
   /**
@@ -18,7 +18,7 @@ object MaxProduct {
    * @param fg the message passing graph to run
    * @param maxIteration maximum number of iterations.
    */
-  def run(fg: MessagePassingFactorGraph, maxIteration: Int) {
+  def run(fg: MPGraph, maxIteration: Int) {
     for (i <- 0 until maxIteration) {
       for (edge <- fg.edges) {
         for (other <- fg.edges; if other != edge) updateN2F(other)
@@ -35,7 +35,7 @@ object MaxProduct {
    * @param fg factor graph.
    * @param result vector to add results to.
    */
-  def featureExpectationsAndObjective(fg: MessagePassingFactorGraph, result: SparseVector): Double = {
+  def featureExpectationsAndObjective(fg: MPGraph, result: SparseVector): Double = {
     var obj = 0.0
     for (factor <- fg.factors) {
       // 1) go over all states, find max
@@ -48,7 +48,7 @@ object MaxProduct {
 
       obj += norm
 
-      if (factor.typ == MessagePassingFactorGraph.FactorType.LINEAR) {
+      if (factor.typ == MPGraph.FactorType.LINEAR) {
 
         // 2) count number of maximums
         var maxCount = 0
@@ -79,7 +79,7 @@ object MaxProduct {
    * @param setting the setting corresponding to the id.
    * @return penalized score of setting.
    */
-  def penalizedScore(factor: MessagePassingFactorGraph.Factor, settingId: Int, setting: Array[Int]): Double = {
+  def penalizedScore(factor: MPGraph.Factor, settingId: Int, setting: Array[Int]): Double = {
     var score = factor.score(settingId)
     for (j <- 0 until factor.rank) {
       score += factor.edges(j).n2f(setting(j))

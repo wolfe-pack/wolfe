@@ -12,15 +12,30 @@ import scalaxy.loops._
  * (2) based on a feature vector for each state that is multiplied with a shared weight vector
  * (3) generic (calls a function to be evaluated at a particular state)
  */
-final class MessagePassingFactorGraph {
+final class MPGraph {
 
-  import MessagePassingFactorGraph.FactorType._
-  import MessagePassingFactorGraph._
+  import MPGraph.FactorType._
+  import MPGraph._
 
   val edges = new ArrayBuffer[Edge]
   val nodes = new ArrayBuffer[Node]
   val factors = new ArrayBuffer[Factor]
+
+  /**
+   * Linear factors can depend
+   */
   var weights: DenseVector = null
+
+  /**
+   * Algorithms that use message passing to calculate a value (maximum, log partition function ...) can store the
+   * result here.
+   */
+  var value = 0.0
+
+  /**
+   * Algorithms that calculate gradients (or sub-gradients) can store their results here.
+   */
+  var gradient:Vector = null
 
   /**
    * Adds a node for a variable of domain size `dim`
@@ -78,6 +93,16 @@ final class MessagePassingFactorGraph {
     f
   }
 
+  /**
+   * Creates and adds a potential with structure and custom scoring etc.
+   * @param potential the potential the factor should have.
+   * @return the created factor.
+   */
+  def addStructuredFactor(potential:StructuredPotential) = {
+    val f = new Factor(this, factors.size, null, null, STRUCTURED, null, structured = potential)
+    factors += f
+    f
+  }
 
   /**
    * Connecting nodes and factors to the edges between them.
@@ -116,7 +141,7 @@ final class MessagePassingFactorGraph {
 
 }
 
-object MessagePassingFactorGraph {
+object MPGraph {
 
   /**
    * We define a set of factor types. Inference algorithms will use the type of a factor
@@ -186,8 +211,8 @@ object MessagePassingFactorGraph {
 
     override def toString = index.toString
 
-    private[MessagePassingFactorGraph] var edgeCount: Int = 0
-    private[MessagePassingFactorGraph] var edgeFilled: Int = 0
+    private[MPGraph] var edgeCount: Int = 0
+    private[MPGraph] var edgeFilled: Int = 0
 
   }
 
@@ -228,8 +253,8 @@ object MessagePassingFactorGraph {
    * @param structured if `typ=STRUCTURED` this stores a generic object for scoring the factor and inference related
    *                   operations.
    */
-  final class Factor(val fg: MessagePassingFactorGraph, val index: Int, val dims: Array[Int], val settings: Array[Array[Int]],
-                     val typ: FactorType.Value = MessagePassingFactorGraph.FactorType.TABLE,
+  final class Factor(val fg: MPGraph, val index: Int, val dims: Array[Int], val settings: Array[Array[Int]],
+                     val typ: FactorType.Value = MPGraph.FactorType.TABLE,
                      val table: Array[Double],
                      val stats: Array[Vector] = null,
                      val structured: StructuredPotential = null) {
@@ -250,7 +275,7 @@ object MessagePassingFactorGraph {
       typ match {
         case TABLE => table(settingIndex)
         case LINEAR => table(settingIndex) + stats(settingIndex).dot(fg.weights)
-        case STRUCTURED => structured.score(this, entryToSetting(settingIndex, dims))
+        case STRUCTURED => structured.score(this, entryToSetting(settingIndex, dims), fg.weights)
       }
     }
 
@@ -288,8 +313,8 @@ object MessagePassingFactorGraph {
       //for (i <-0 until settings.length) table(i) = stats(i).dot(fg.weights)
     }
 
-    private[MessagePassingFactorGraph] var edgeCount: Int = 0
-    private[MessagePassingFactorGraph] var edgeFilled: Int = 0
+    private[MPGraph] var edgeCount: Int = 0
+    private[MPGraph] var edgeFilled: Int = 0
 
   }
 
@@ -298,7 +323,7 @@ object MessagePassingFactorGraph {
    * inference algorithms.
    */
   trait StructuredPotential {
-    def score(factor: Factor, setting: Array[Int]): Double
+    def score(factor: Factor, setting: Array[Int], weights:Vector): Double
     def maxMarginal2Node(edge: Edge)
     def maxMarginal2AllNodes(factor: Factor)
     def maxScoreAndFeatures(factor: Factor, featureDest: Vector)

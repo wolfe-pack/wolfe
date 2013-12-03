@@ -242,6 +242,11 @@ object TermConverter {
     }
   }
 
+  def asSeq[T](term:Term[T],op:BinaryOperatorSameDomainAndRange[T]):Seq[Term[T]] = term match {
+    case op.Reduced(SeqTerm(args)) => args
+    case _ => Seq(term)
+  }
+
   /**
    * Wraps brackets around the term inside lambda abstractions.
    * @param root the term to convert.
