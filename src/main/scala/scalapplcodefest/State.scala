@@ -89,6 +89,15 @@ trait State {
   def belief[T](variable: Variable[T]):Fun[T,Double] = apply(Belief(variable))
 
   /**
+   * Queries the state for all arguments to the given query that evaluate to true in the state.
+   * @param query a filter or query.
+   * @tparam T type of the arguments.
+   * @return a sequence of values that fulfill the query.
+   */
+  def query[T](query:FunTerm[T,Boolean]) =
+    for (q <- query.eval(this); dom <- query.funCandidateDom.eval(this)) yield dom.filter(q)
+
+  /**
    * Equals based on having the same variables with same values.
    * @param that the other state to compare to.
    * @return true iff both states have same variables which are mapped to the same values.

@@ -37,6 +37,7 @@ object TermImplicits {
   implicit def toRichFunction2[A1, A2, B](f: FunTerm[(A1, A2), B]) = RichFunctionTerm2(f)
   implicit def toRichPredicate[A, B](p: Predicate[A, B]) = RichPredicate(p)
   implicit def toRichPredicate2[A1, A2, B](p: Predicate[(A1, A2), B]) = RichPredicate2(p)
+  implicit def toRichCartesianProductTerm2[T1,T2](term:CartesianProductTerm2[T1,T2]) = RichCartesianProductTerm2(term)
   implicit def toRichSetTerm[T](s: Term[Set[T]]) = RichSetTerm(s)
   implicit def toRichVec(term: Term[Vector]) = RichVecTerm(term)
   implicit def toRichVarSymbol(symbol: Symbol) = RichVarSymbol(symbol)
@@ -46,10 +47,11 @@ object TermImplicits {
   implicit def toRichFinishedCartesianProduct[A](unfinished: UnfinishedCartesianProduct[A]) = RichSetTerm(unfinished.finish)
 
   //create bracketed terms
-  def br[T](term:Term[T]) = Bracketed(term)
+  def br[T](term: Term[T]) = Bracketed(term)
 
   //table building
-  def T[A,B](domain:Term[Set[A]],f:PartialFunction[A,B]) = ConstantFun(Fun.table(domain.eval().get,f))
+  def T[A, B](domain: Term[Set[A]], f: PartialFunction[A, B]) = ConstantFun(Fun.table(domain.eval().get, f))
+  def C[T1,T2](a1:Term[Set[T1]], a2:Term[Set[T2]]) = RichCartesianProductTerm2(CartesianProductTerm2(a1,a2))
 
   //math
   def unit(index: Term[Int], value: Term[Double] = Constant(1.0)) = UnitVec(index, value)
@@ -77,8 +79,8 @@ object TermImplicits {
     def of[T](set: Set[T]) = Var(symbol, Constant(set))
   }
 
-  case class RichState(state:State) {
-    def +[T](pair:(Variable[T],T)) = state + SingletonState(pair._1,pair._2)
+  case class RichState(state: State) {
+    def +[T](pair: (Variable[T], T)) = state + SingletonState(pair._1, pair._2)
   }
 
   case class RichPredSymbol(symbol: Symbol) {
@@ -102,11 +104,11 @@ object TermImplicits {
     "_x" + anonVarCount
   }
 
-  case class RichSetTerm[T](s: Term[Set[T]], variableName: () =>String = () => freshName()) {
+  case class RichSetTerm[T](s: Term[Set[T]], variableName: () => String = () => freshName()) {
 
-    def freshVariable[A](dom: Term[Set[A]] = s) = Var(Symbol(variableName()),dom)
+    def freshVariable[A](dom: Term[Set[A]] = s) = Var(Symbol(variableName()), dom)
 
-    def as(name:String) = RichSetTerm(s, () => name)
+    def as(name: String) = RichSetTerm(s, () => name)
 
     def map[R](f: Variable[T] => Term[R]): LambdaAbstraction[T, R] = {
       val variable = freshVariable()
@@ -126,6 +128,31 @@ object TermImplicits {
 
   }
 
+  //todo: this doesn't work yet
+  case class RichCartesianProductTerm2[T1, T2](term: CartesianProductTerm2[T1, T2],
+                                               variableName1: () => String = () => freshName(),
+                                               variableName2: () => String = () => freshName()) {
+    def as(name1: String, name2: String) = RichCartesianProductTerm2(term, () => name1, () => name2)
+
+    def map[R](f: ((Variable[T1], Variable[T2])) => Term[R]): LambdaAbstraction[(T1, T2), R] = {
+      val variable1 = Var(Symbol(variableName1()), term.a1)
+      val variable2 = Var(Symbol(variableName2()), term.a2)
+      val applied = f(variable1, variable2)
+      //todo: replace variables with arg1 && arg2 of tuple
+      val tupleVar = Var(Symbol(s"${variable1.name}_${variable2.name}"),term)
+      val arg1 = FunApp(ConstantFun[(T1,T2),T1](Fun({case (t1,t2) => t1})),tupleVar)
+      val arg2 = FunApp(ConstantFun[(T1,T2),T2](Fun({case (t1,t2) => t2})),tupleVar)
+      val substituted1 = TermConverter.substituteTerm(applied, variable1, arg1)
+      val substituted2 = TermConverter.substituteTerm(substituted1, variable2, arg2)
+      LambdaAbstraction(tupleVar, substituted2)
+    }
+
+    def filter(f: ((Variable[T1], Variable[T2])) => Boolean) = this
+    def withFilter(f: ((Variable[T1], Variable[T2])) => Boolean) = this
+
+  }
+
+
   trait UnfinishedCartesianProduct[T] {
     def finish: Term[Set[T]]
   }
@@ -136,8 +163,8 @@ object TermImplicits {
     def |(condition: State) = Conditioned(term, condition)
     def |(mappings: (Variable[Any], Any)*) = Conditioned(term, State(mappings.toMap))
     def eval(state: (Variable[Any], Any)*) = term.eval(State(state.toMap))
-    def ===(that:Term[T]) = FunApp(new Equals[T].Term, TupleTerm2(term,that))
-    def ===(that:T) = FunApp(new Equals[T].Term, TupleTerm2(term,Constant(that)))
+    def ===(that: Term[T]) = FunApp(new Equals[T].Term, TupleTerm2(term, that))
+    def ===(that: T) = FunApp(new Equals[T].Term, TupleTerm2(term, Constant(that)))
     //    def eval(state:VarValuePair[T]*):Option[T] = term.eval(State(state.map(_.toTuple).toMap))
 
   }

@@ -29,6 +29,11 @@ class Specs extends FlatSpec with Matchers {
     term.variables should be(Set.empty)
   }
 
+  "A lambda abstract with tuple arguments" should "evaluate to a function with tuple arguments" in {
+    val f = for ((x,y) <- C(Bools,Bools)) yield  x || y
+    f.value()(false,false) should be (false)
+  }
+
   def maxProduct = Max.ByMessagePassing(_:Term[Double],MaxProduct.run(_,1))
   def bruteForce = Max.ByBruteForce(_:Term[Double])
 

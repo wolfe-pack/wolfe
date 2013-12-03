@@ -95,8 +95,10 @@ object MPGraphCompiler {
    * @return sequence of terms in the factorization.
    */
   def factorize[T](base: Term[T], op: BinaryOperatorSameDomainAndRange[T]): Seq[Term[T]] = {
-    val flat = flatten(base, op)
-    val grouped = groupLambdas(flat)
+    val conditionsPushed = pushDownConditions(base)
+    val flat = flatten(conditionsPushed, op)
+    val dotsPushed = pushDownDotProducts(flat)
+    val grouped = groupLambdas(dotsPushed)
     val brackets = bracketInsideLambda(grouped)
     val unrolled = unrollLambdaImages(brackets)
     val result = flatten(unrolled, op)
