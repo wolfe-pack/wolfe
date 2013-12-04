@@ -1,6 +1,6 @@
 package scalapplcodefest
 
-import cc.factorie.optimize.{Perceptron, OnlineTrainer, Example}
+import cc.factorie.optimize.{Trainer, Perceptron, OnlineTrainer, Example}
 import cc.factorie.util.DoubleAccumulator
 import cc.factorie.la.WeightsMapAccumulator
 import cc.factorie.WeightsSet
@@ -10,7 +10,7 @@ import cc.factorie.WeightsSet
  *
  * @author Sebastian Riedel
  */
-object Trainer {
+object TrainerOld {
 
   import TermImplicits._
 
@@ -26,7 +26,7 @@ object Trainer {
             inferencer: Term[Double] => Inference = Inference.maxProductArgmax(1)): DenseVector = {
     val weightsSet = new WeightsSet
     val key = weightsSet.newWeights(new DenseVector(10000))
-    val Linear(features,weights,_) = model
+    val Linear(features, weights, _) = model
 
     case class PerceptronExample(instance: State) extends Example {
 
@@ -65,4 +65,35 @@ object Trainer {
   }
 
 
+}
+
+/**
+ * A minimizer of a differentiable real valued function. Uses factorie optimization package and
+ * the [[scalapplcodefest.Differentiable]] interface.
+ */
+object GradientBasedMinimizer {
+  def minimize(objective: Term[Double], trainerFor: WeightsSet => Trainer = new OnlineTrainer(_, new Perceptron, 5)) {
+    val weightsSet = new WeightsSet
+    val key = weightsSet.newWeights(new DenseVector(10000))
+    val instances = TermConverter.asSeq(objective, Math.DoubleAdd)
+    val examples = for (instance <- instances) yield {
+      instance match {
+        case d: Differentiable =>
+          new Example {
+            def accumulateValueAndGradient(value: DoubleAccumulator, gradient: WeightsMapAccumulator) = {
+              val weights = weightsSet(key).asInstanceOf[Vector]
+              val at = d.at(weights)
+              value.accumulate(at.value)
+              gradient.accumulate(key, at.subGradient, -1.0)
+            }
+          }
+        case _ => sys.error("Can't differentiate " + instance)
+      }
+    }
+    val trainer = trainerFor(weightsSet)
+    trainer.trainFromExamples(examples)
+    weightsSet(key).asInstanceOf[Vector]
+
+
+  }
 }

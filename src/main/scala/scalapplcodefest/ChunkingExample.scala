@@ -58,7 +58,7 @@ object ChunkingExample {
 
     //println(train.head.toPrettyString)
 
-    val learnedWeights = Trainer.train(model, train, 10, Inference.maxProductArgmax(1,chunk.allAtoms))
+    val learnedWeights = TrainerOld.train(model, train, 10, Inference.maxProductArgmax(1,chunk.allAtoms))
     val predictor = (s:State) => Inference.maxProductArgmax(1,chunk.allAtoms)(model | s | weights -> learnedWeights ).state()
     val evaluation = Evaluator.evaluate(train,predictor)
 

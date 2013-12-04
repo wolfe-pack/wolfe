@@ -34,6 +34,14 @@ class Specs extends FlatSpec with Matchers {
     f.value()(false,false) should be (false)
   }
 
+  "A state" should "be support boolean queries" in {
+    val p = 'p of 0 ~~ 4 |-> Bools
+    val query = for (i <- 0 ~~ 4) yield p(i)
+    val state = State(Map(p.atom(0) -> true, p.atom(1) -> false, p.atom(2) -> true, p.atom(3) -> false))
+    val result = state.query(query)
+    result should be (Good(Set(0,2)))
+  }
+
   def maxProduct = Max.ByMessagePassing(_:Term[Double],MaxProduct.run(_,1))
   def bruteForce = Max.ByBruteForce(_:Term[Double])
 

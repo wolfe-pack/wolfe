@@ -92,7 +92,7 @@ trait State {
    * Queries the state for all arguments to the given query that evaluate to true in the state.
    * @param query a filter or query.
    * @tparam T type of the arguments.
-   * @return a sequence of values that fulfill the query.
+   * @return a set of values that fulfill the query.
    */
   def query[T](query:FunTerm[T,Boolean]) =
     for (q <- query.eval(this); dom <- query.funCandidateDom.eval(this)) yield dom.filter(q)
