@@ -44,7 +44,28 @@ object FunTerm {
   }
 }
 
+/**
+ * A constant function with dynamic domain and range.
+ * @param fun the constant function.
+ * @param funCandidateDom the domain term. Depending on its value the domain of the function can be limited.
+ * @param funRange the range term. Depending on its value the range of the function can be limited. This means that
+ *                 for predicates some arguments values can become undefined.
+ * @tparam A type of arguments to function.
+ * @tparam B type of return values of function.
+ */
+case class DynFunTerm[A,B](fun:PartialFunction[A,B], funCandidateDom:Term[Set[A]], funRange:Term[Set[B]]) extends FunTerm[A,B] {
+  def variables = funCandidateDom.variables ++ funRange.variables
+  def default = Fun(fun,funCandidateDom.default,funRange.default)
+  def domain[C >: Fun[A, B]] = Constant(new AllOfType[C])
+  def eval(state: State) = for (d <- funCandidateDom.eval(state); r <- funRange.eval(state)) yield Fun(fun,d,r)
+}
 
+/**
+ * Fixed function with fixed domain and range.
+ * @param fun the function this term is always evaluated to.
+ * @tparam A type of arguments to function.
+ * @tparam B type of return values of function.
+ */
 case class ConstantFun[A, B](fun: Fun[A, B]) extends FunTerm[A, B] {
   def eval(state: State) = Good(fun)
   def variables = Set.empty

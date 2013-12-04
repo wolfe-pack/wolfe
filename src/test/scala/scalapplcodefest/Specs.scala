@@ -29,9 +29,10 @@ class Specs extends FlatSpec with Matchers {
     term.variables should be(Set.empty)
   }
 
-  "A lambda abstract with tuple arguments" should "evaluate to a function with tuple arguments" in {
+  "A lambda abstraction with tuple arguments" should "evaluate to a function with tuple arguments" in {
     val f = for ((x,y) <- C(Bools,Bools)) yield  x || y
     f.value()(false,false) should be (false)
+    f.value()(false,true) should be (true)
   }
 
   "A state" should "be support boolean queries" in {

@@ -140,8 +140,8 @@ object TermImplicits {
       val applied = f(variable1, variable2)
       //todo: replace variables with arg1 && arg2 of tuple
       val tupleVar = Var(Symbol(s"${variable1.name}_${variable2.name}"),term)
-      val arg1 = FunApp(ConstantFun[(T1,T2),T1](Fun({case (t1,t2) => t1})),tupleVar)
-      val arg2 = FunApp(ConstantFun[(T1,T2),T2](Fun({case (t1,t2) => t2})),tupleVar)
+      val arg1 = FunApp(ArgTerm(term,term.a1,0),tupleVar)
+      val arg2 = FunApp(ArgTerm(term,term.a1,1),tupleVar)
       val substituted1 = TermConverter.substituteTerm(applied, variable1, arg1)
       val substituted2 = TermConverter.substituteTerm(substituted1, variable2, arg2)
       LambdaAbstraction(tupleVar, substituted2)

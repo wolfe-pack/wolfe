@@ -34,6 +34,37 @@ case class TupleTerm3[A1, A2, A3](a1: Term[A1], a2: Term[A2], a3: Term[A3])
   def domain[C >: (A1, A2, A3)] = CartesianProductTerm3(a1.domain, a2.domain, a3.domain).as[C]
 }
 
+case class Arg[P <:Product, A](dom:Set[P], range:Set[A], arg:Int) extends Fun[P,A] {
+  def funCandidateDom = dom
+  def funRange = range
+  def isDefinedAt(x: P) = dom(x)
+  def apply(x: P) = x.productElement(arg).asInstanceOf[A]
+}
+
+case object ArgNew extends PartialFunction[(Product,Int),Any] {
+  self =>
+  def isDefinedAt(x: (Product, Int)) = x._2 < x._1.productArity
+  def apply(v1: (Product, Int)) = v1._1.productElement(v1._2)
+
+  case object Applied2 {
+    def unapply(term:Term[Any]) = term match {
+      case FunApp(DynFunTerm(f,dom,range),TupleTerm2(tuple,index)) if f == self =>
+        Some(dom.asInstanceOf[Term[Set[(Product,Int)]]], range, tuple.asInstanceOf[Term[Product]], index.asInstanceOf[Term[Int]])
+      case _ => None
+    }
+  }
+}
+
+
+case class ArgTerm[P <:Product, A](dom:Term[Set[P]], range:Term[Set[A]], arg:Term[Int]) extends FunTerm[P,A] {
+  def funCandidateDom = dom
+  def funRange = range
+  def domain[C >: Fun[P, A]] = Constant(new AllOfType[C])
+  def variables = dom.variables ++ range.variables ++ arg.variables
+  def default = Arg(dom.default,range.default,arg.default)
+  def eval(state: State) = for (d <- dom.eval(state); r <- range.eval(state); a <- arg.eval(state)) yield Arg(d,r,a)
+}
+
 case class CartesianProduct2[A1,A2](d1:Set[A1],d2:Set[A2]) extends SetValue[(A1,A2)] {
   def contains(elem: (A1, A2)) = d1(elem._1) && d2(elem._2)
   def iterator = for (v1 <- d1.iterator; v2 <- d2.iterator) yield (v1,v2)
