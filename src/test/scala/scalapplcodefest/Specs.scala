@@ -22,6 +22,11 @@ class Specs extends FlatSpec with Matchers {
     x.eval(State.empty) should be(Bad(VariableUndefined(x, State.empty)))
   }
 
+  it should "evaluate to an Undefined object if the assigned value is outside the domain" in {
+    val x = 'x of 0 ~~ 2
+    x.eval(state(x -> 3)) should be (Bad(VariableUndefined(x, state(x -> 3))))
+  }
+
   "Applications of functions outside of domain" should "evaluate to a Undefined object" in {
     val f = for (i <- 0 ~~ 2) yield i
     val app = f(3)

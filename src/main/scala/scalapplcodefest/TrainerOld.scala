@@ -72,7 +72,7 @@ object TrainerOld {
  * the [[scalapplcodefest.Differentiable]] interface.
  */
 object GradientBasedMinimizer {
-  def minimize(objective: Term[Double], trainerFor: WeightsSet => Trainer = new OnlineTrainer(_, new Perceptron, 5)) {
+  def minimize(objective: Term[Double], trainerFor: WeightsSet => Trainer = new OnlineTrainer(_, new Perceptron, 5)) = {
     val weightsSet = new WeightsSet
     val key = weightsSet.newWeights(new DenseVector(10000))
     val instances = TermConverter.asSeq(objective, Math.DoubleAdd)

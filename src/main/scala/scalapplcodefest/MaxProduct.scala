@@ -13,11 +13,14 @@ object MaxProduct {
    * Runs some iterations of belief propagation.
    * @param fg the message passing graph to run
    * @param maxIteration maximum number of iterations.
+   * @param canonical should edges be processed in canonical ordering according to [[scalapplcodefest.MPGraph.EdgeOrdering]].
    */
-  def run(fg: MPGraph, maxIteration: Int) {
+  def run(fg: MPGraph, maxIteration: Int, canonical:Boolean = true) {
+    val edges = if (canonical) fg.edges.sorted(MPGraph.EdgeOrdering) else fg.edges
+
     for (i <- 0 until maxIteration) {
-      for (edge <- fg.edges) {
-        for (other <- fg.edges; if other != edge) updateN2F(other)
+      for (edge <- edges) {
+        for (other <- edge.f.edges; if other != edge) updateN2F(other)
         updateF2N(edge)
       }
     }

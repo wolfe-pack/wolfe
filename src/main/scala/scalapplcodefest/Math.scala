@@ -32,6 +32,11 @@ object Math {
     def apply(v1: (Double, Double)) = v1._1 + v1._2
     def dom = Doubles
   }
+  case object DoubleMinus extends BinaryOperatorSameDomainAndRange[Double] {
+    def apply(v1: (Double, Double)) = v1._1 - v1._2
+    def dom = Doubles
+  }
+
 
   case object ExactlyOne extends Operator[Seq[Boolean],Double] {
     def funCandidateDom = new AllOfType[Seq[Boolean]]
@@ -59,6 +64,23 @@ object Math {
     }
     def dom = Vectors
   }
+
+  case object VecMinus extends BinaryOperatorSameDomainAndRange[Vector] {
+    def apply(pair: (Vector, Vector)) = {
+      pair match {
+        case (s1: SingletonVector, s2: SingletonVector) =>
+          val result = new SparseVector(2) // what should the dimension be?
+          result += s1
+          result -= s2
+          result
+        case (singleton: SingletonVector, other) =>singleton - other
+        case (other, singleton: SingletonVector) => singleton - other
+        case (v1, v2) => v1 - v2
+      }
+    }
+    def dom = Vectors
+  }
+
 
   case object Log extends Operator[Double,Double] {
     def funCandidateDom = Doubles //todo: non-negative

@@ -103,6 +103,7 @@ object TermImplicits {
   case class RichVecTerm(term: Term[Vector]) {
     def dot(that: Term[Vector]) = FunApp(Math.Dot.Term, TupleTerm2(term, that))
     def +(that: Term[Vector]) = FunApp(Math.VecAdd.Term, TupleTerm2(term, that))
+    def -(that: Term[Vector]) = FunApp(Math.VecMinus.Term, TupleTerm2(term, that))
   }
 
   private var anonVarCount = 0
@@ -209,6 +210,7 @@ object TermImplicits {
 
   case class RichDoubleTerm(x: Term[Double]) {
     def +(that: Term[Double]) = FunApp(Math.DoubleAdd.Term, TupleTerm2(x, that))
+    def -(that: Term[Double]) = FunApp(Math.DoubleMinus.Term, TupleTerm2(x, that))
     def *(that: Term[Double]) = FunApp(Math.DoubleMultiply.Term, TupleTerm2(x, that))
   }
 

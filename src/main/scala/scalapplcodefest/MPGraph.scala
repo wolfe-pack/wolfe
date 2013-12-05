@@ -82,7 +82,6 @@ final class MPGraph {
    * of a setting is the current weight vector times the feature vector of the setting, plus the
    * base score for that setting.
    * @param stats array of statistics vector, one for each setting.
-   * @param base array of base scores, one for each setting.
    * @param settings the settings as integer arrays ordered in the same way as stats and base.
    * @param dims the dimensions of the variables that connect to this factor.
    * @return the created factor.
@@ -329,6 +328,20 @@ object MPGraph {
     def maxScoreAndFeatures(factor: Factor, featureDest: Vector)
   }
 
+  /**
+   * A canonical ordering of edges. Designed so that on a chain with variables indexed in order, the
+   * edge order resembles forward-backward.
+   */
+  object EdgeOrdering extends Ordering[Edge] {
+    def compare(x1: Edge, x2: Edge):Int = {
+      if (x1.f.rank != x2.f.rank) return x1.f.rank - x2.f.rank
+      if (x1.indexInFactor != x2.indexInFactor) return x2.indexInFactor - x1.indexInFactor
+      val sign = -1 + (x1.indexInFactor % 2) * 2
+      if (x1.n.index != x2.n.index) return sign * (x1.n.index - x2.n.index)
+      x1.f.index - x2.f.index
+    }
+  }
+  
 
   /**
    * Printer of nodes, factors and edges. Helps debugging (as the graph itself is

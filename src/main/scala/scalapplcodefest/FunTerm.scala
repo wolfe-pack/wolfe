@@ -45,16 +45,16 @@ object FunTerm {
     case _ => FunTermProxy(f)
   }
 
+  /**
+   * Create a function term from a partial function
+   * @param f the partial function to wrap the term around.
+   * @tparam A argument type.
+   * @tparam B return type.
+   * @return a function term that evaluates to the given partial function.
+   */
+  def fromPartial[A,B](f:PartialFunction[A,B]) = Dyn[A,B](f)
 
-}
 
-object MoreFun {
-  def apply[A,B](f:PartialFunction[A,B]) = Constant(Fun(f, new AllOfType[A], new AllOfType[B]))
-
-//  def apply[A,B](f:A=>B, p:A=>Boolean = (x:A) => true) = Constant( new PartialFunction[A,B] {
-//    def apply(v1: A) = f(v1)
-//    def isDefinedAt(x: A) = p(x)
-//  }, new AllOfType[A], new AllOfType[B])
 }
 
 /**
@@ -134,36 +134,36 @@ case object BinaryFunApp {
  * term with the variable bound to the given argument.
  *
  * @param variable the variable that corresponds to the argument of the function.
- * @param term the term that when evaluated becomes the return value of the function.
+ * @param body the term that when evaluated becomes the return value of the function.
  * @tparam A type of arguments to function.
  * @tparam B type of return values of function.
  */
-case class LambdaAbstraction[A, B](variable: Variable[A], term: Term[B]) extends FunTerm[A, B] {
+case class LambdaAbstraction[A, B](variable: Variable[A], body: Term[B]) extends FunTerm[A, B] {
   //todo: variable should be a Var?
 
   lambda =>
 
   def funCandidateDom = variable.domain
-  def funRange = term.domain[B]
+  def funRange = body.domain[B]
   def eval(state: State) = {
     for (r <- funRange.eval(state); d <- funCandidateDom.eval(state)) yield new Fun[A, B] {
       def funCandidateDom = d
       def funRange = r
-      def get(a: A) = term.eval(state + SingletonState(variable, a))
+      def get(a: A) = body.eval(state + SingletonState(variable, a))
       def apply(a: A) = get(a).get
       override def isDefinedAt(a: A) = d(a) && get(a).exists(r(_))
     }
   }
-  def variables = SetUtil.SetMinus(term.variables, Set(variable))
+  def variables = SetUtil.SetMinus(body.variables, Set(variable))
   def default = new Fun[A, B] {
     def funCandidateDom = lambda.funCandidateDom.default
     def funRange = lambda.funRange.default
-    def apply(v1: A) = term.default
+    def apply(v1: A) = body.default
     def isDefinedAt(x: A) = variable.domain.default(x)
   }
   def domain[C >: Fun[A, B]] = Constant(new AllOfType[C])
     //FunApp(FunTerm.allFunctions[A, B], TupleTerm2(funCandidateDom, funRange)).asInstanceOf[Term[Set[C]]]
-  override def toString = s"lam $variable :${variable.domain} { $term }"
+  override def toString = s"lam $variable :${variable.domain} { $body }"
 }
 
 /**

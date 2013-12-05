@@ -65,6 +65,13 @@ object ChunkingExample {
     //println(key.vectorToString(learnedWeights))
     println(evaluation)
 
+    //define a perceptron loss and find weights that minimize it.
+    val loss = dsum(SeqTerm(for (i <- train) yield Max.ByMessagePassing((model | i) - (model | i.target))))
+    val learned = GradientBasedMinimizer.minimize(loss)
+    val predict = (s:State) => Max.ByMessagePassing(model | s).at(learned).argmax
+    val eval = Evaluator.evaluate(train, predict)
+    println(eval)
+
   }
 }
 

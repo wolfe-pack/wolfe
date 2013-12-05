@@ -104,7 +104,7 @@ object Max {
    * @param term the term to maximize
    * @param algorithm applies a message passing algorithm to the message passing graph.
    */
-  case class ByMessagePassing(term:Term[Double], algorithm: MPGraph => Unit) extends Max {
+  case class ByMessagePassing(term:Term[Double], algorithm: MPGraph => Unit = MaxProduct.run(_,1)) extends Max {
 
     val mp = MPGraphCompiler.compile(term)
     val ForceLinear(_,parameter,_) = term
