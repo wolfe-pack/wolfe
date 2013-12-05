@@ -49,7 +49,11 @@ object TermImplicits {
   case class Assign[T](variable:Variable[T],value:T)
 
   implicit def toAssign[T](pair:(Variable[T],T)) = Assign(pair._1,pair._2)
+
+
   def state(assignments:Assign[_]*) = State(assignments.map(a => a.variable -> a.value).toMap)
+
+  def funTerm[A,B](f:PartialFunction[A,B]) = Constant(Fun(f, new AllOfType[A], new AllOfType[B]))
 
   //create bracketed terms
   def br[T](term: Term[T]) = Bracketed(term)

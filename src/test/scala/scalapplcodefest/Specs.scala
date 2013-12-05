@@ -12,7 +12,12 @@ class Specs extends FlatSpec with Matchers {
   import TermImplicits._
   import CustomEqualities._
 
-  "Undefined variables" should "evaluate to an Undefined object" in {
+  "A variable" should "evaluate to the value it is assigned to the state" in {
+    val x = 'x of Ints
+    x.eval(state(x -> 0)) should be (Good(0))
+  }
+
+  it should "evaluate to an Undefined object if no value is assigned to it" in {
     val x = 'x of Ints
     x.eval(State.empty) should be(Bad(VariableUndefined(x, State.empty)))
   }
@@ -49,6 +54,11 @@ class Specs extends FlatSpec with Matchers {
     val f = for (i <- Constant(Ints)) yield i === 1
     val m = s filteredBy f
     m.value(n -> 2) should be (Set(1))
+  }
+
+  "A constant function term" should "be acting like the function when doing function application" in {
+    val f = funTerm[String,Int]({case x => x.length})
+    f.value()("123") should be (3)
   }
 
   "A partial function term" should "provide a definedAt function" in {

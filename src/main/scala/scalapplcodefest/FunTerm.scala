@@ -44,6 +44,17 @@ object FunTerm {
     case ft: FunTerm[_, _] => ft.asInstanceOf[FunTerm[A, B]]
     case _ => FunTermProxy(f)
   }
+
+
+}
+
+object MoreFun {
+  def apply[A,B](f:PartialFunction[A,B]) = Constant(Fun(f, new AllOfType[A], new AllOfType[B]))
+
+//  def apply[A,B](f:A=>B, p:A=>Boolean = (x:A) => true) = Constant( new PartialFunction[A,B] {
+//    def apply(v1: A) = f(v1)
+//    def isDefinedAt(x: A) = p(x)
+//  }, new AllOfType[A], new AllOfType[B])
 }
 
 /**
