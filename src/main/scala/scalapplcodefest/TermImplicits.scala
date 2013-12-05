@@ -46,6 +46,11 @@ object TermImplicits {
   implicit def toFinishedCartesianProduct[A](unfinished: UnfinishedCartesianProduct[A]) = unfinished.finish
   implicit def toRichFinishedCartesianProduct[A](unfinished: UnfinishedCartesianProduct[A]) = RichSetTerm(unfinished.finish)
 
+  case class Assign[T](variable:Variable[T],value:T)
+
+  implicit def toAssign[T](pair:(Variable[T],T)) = Assign(pair._1,pair._2)
+  def state(assignments:Assign[_]*) = State(assignments.map(a => a.variable -> a.value).toMap)
+
   //create bracketed terms
   def br[T](term: Term[T]) = Bracketed(term)
 
@@ -126,9 +131,17 @@ object TermImplicits {
 
     def |->[T2](that: Term[Set[T2]]) = (s, that)
 
+    def mappedBy[A](f:FunTerm[T,A]) =
+      FunApp(Dyn(MapIterable,CartesianProductTerm2(s.domain,f.domain),Constant(new AllOfType[Set[A]])),(s,f))
+
+    def collectedBy[A](f:FunTerm[T,A]) =
+      FunApp(Dyn(CollectIterable,CartesianProductTerm2(s.domain,f.domain),Constant(new AllOfType[Set[A]])),(s,f))
+
+    def filteredBy[A](f:FunTerm[T,Boolean]) =
+      FunApp(Dyn(FilterIterable,CartesianProductTerm2(s.domain,f.domain),Constant(new AllOfType[Set[T]])),(s,f))
+
   }
 
-  //todo: this doesn't work yet
   case class RichCartesianProductTerm2[T1, T2](term: CartesianProductTerm2[T1, T2],
                                                variableName1: () => String = () => freshName(),
                                                variableName2: () => String = () => freshName()) {
@@ -163,6 +176,7 @@ object TermImplicits {
     def |(condition: State) = Conditioned(term, condition)
     def |(mappings: (Variable[Any], Any)*) = Conditioned(term, State(mappings.toMap))
     def eval(state: (Variable[Any], Any)*) = term.eval(State(state.toMap))
+    def value(state: (Variable[Any], Any)*) = term.value(State(state.toMap))
     def ===(that: Term[T]) = FunApp(new Equals[T].Term, TupleTerm2(term, that))
     def ===(that: T) = FunApp(new Equals[T].Term, TupleTerm2(term, Constant(that)))
     //    def eval(state:VarValuePair[T]*):Option[T] = term.eval(State(state.map(_.toTuple).toMap))
@@ -184,6 +198,8 @@ object TermImplicits {
   case class RichIntTerm(i: Term[Int]) {
     def +(that: Term[Int]) = FunApp(Math.IntAdd.Term, TupleTerm2(i, that))
     def -(that: Term[Int]) = FunApp(Math.IntMinus.Term, TupleTerm2(i, that))
+    def /(that: Term[Int]) = FunApp(Dyn(IntDivide,CartesianProductTerm2(i.domain,that.domain),Constant(Ints)), TupleTerm2(i, that))
+
     def ~~(that: Term[Int]) = RangeSet(i, that)
   }
 
@@ -204,6 +220,9 @@ object TermImplicits {
 
   case class RichFunTerm[A, B](f: FunTerm[A, B]) {
     def apply(a: Term[A]) = FunApp(f, a)
+    def isDefined = for (x <- f.funCandidateDom) yield
+      FunApp(Dyn(IsDefined,CartesianProductTerm2(f.domain,f.funCandidateDom),Constant(Bools)),TupleTerm2(f,x))
+
   }
 
   case class RichFunctionTerm2[A1, A2, B](f: FunTerm[(A1, A2), B]) {

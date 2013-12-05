@@ -132,3 +132,29 @@ object VarSeq {
     case _ => None
   }
 }
+
+
+case object MapIterable extends PartialFunction[(Iterable[Any],Fun[Any,Any]),Iterable[Any]] {
+  def apply(v1: (Iterable[Any], Fun[Any, Any])) = v1 match {case (s,f) => s.map(f)}
+  def isDefinedAt(x: (Iterable[Any], Fun[Any, Any])) = true
+}
+
+case object CollectIterable extends PartialFunction[(Iterable[Any],Fun[Any,Any]),Iterable[Any]] {
+  def apply(v1: (Iterable[Any], Fun[Any, Any])) = v1 match {case (s,f) => s.collect(f)}
+  def isDefinedAt(x: (Iterable[Any], Fun[Any, Any])) = true
+}
+
+case object FilterIterable extends PartialFunction[(Iterable[Any],Fun[Any,Boolean]),Iterable[Any]] {
+  def apply(v1: (Iterable[Any], Fun[Any, Boolean])) = v1 match {case (s,f) => s.filter(f)}
+  def isDefinedAt(x: (Iterable[Any], Fun[Any, Boolean])) = true
+}
+
+case object IsDefined extends PartialFunction[(PartialFunction[Any,Any],Any),Boolean] {
+  def isDefinedAt(x: (PartialFunction[Any, Any], Any)) = true
+  def apply(x: (PartialFunction[Any, Any], Any)) = x match {case (f,a) => f.isDefinedAt(a)}
+}
+
+case object IntDivide extends PartialFunction[(Int,Int),Int] {
+  def isDefinedAt(x: (Int, Int)) = x._2 != 0
+  def apply(x:(Int,Int)) = x._1 / x._2
+}

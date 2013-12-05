@@ -78,7 +78,7 @@ case class RangeSet(from: Term[Int], to: Term[Int]) extends Term[Set[Int]] {
          t <- to.eval(state)) yield RangeSetValue(f, t)
   def variables = SetUtil.SetUnion(List(from.variables, to.variables))
   def default = RangeSetValue(from.default, to.default + 1)
-  def domain[C >: Set[Int]] = Constant(Util.setToBeImplementedLater)
+  def domain[C >: Set[Int]] = Constant(new AllOfType[C])
   override def toString = s"($from ~~ $to)"
 }
 

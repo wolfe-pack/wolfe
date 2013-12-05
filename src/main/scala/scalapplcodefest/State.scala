@@ -95,7 +95,7 @@ trait State {
    * @return a set of values that fulfill the query.
    */
   def query[T](query:FunTerm[T,Boolean]) =
-    for (q <- query.eval(this); dom <- query.funCandidateDom.eval(this)) yield dom.filter(q)
+    for (q <- query.eval(this); dom <- query.funDom.eval(this)) yield dom.filter(q)
 
   /**
    * Equals based on having the same variables with same values.

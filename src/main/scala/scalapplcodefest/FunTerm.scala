@@ -12,8 +12,10 @@ import org.scalautils.{Bad, Good}
  * @tparam B type of return values of function.
  */
 trait FunTerm[A, B] extends Term[Fun[A, B]] {
+  import TermImplicits._
   def funCandidateDom: Term[Set[A]]
   def funRange: Term[Set[B]]
+  def funDom = funCandidateDom.filteredBy(this.isDefined)
 }
 
 /**
@@ -60,6 +62,16 @@ case class DynFunTerm[A,B](fun:PartialFunction[A,B], funCandidateDom:Term[Set[A]
   def eval(state: State) = for (d <- funCandidateDom.eval(state); r <- funRange.eval(state)) yield Fun(fun,d,r)
 }
 
+case class Dyn[A,B](fun:AnyFunction,
+                    funCandidateDom:Term[Set[A]] = Constant(new AllOfType[A]),
+                    funRange:Term[Set[B]] = Constant(new AllOfType[B])) extends FunTerm[A,B] {
+  def cast = fun.asInstanceOf[PartialFunction[A,B]]
+  def variables = funCandidateDom.variables ++ funRange.variables
+  def default = Fun(cast,funCandidateDom.default,funRange.default)
+  def domain[C >: Fun[A, B]] = Constant(new AllOfType[C])
+  def eval(state: State) = for (d <- funCandidateDom.eval(state); r <- funRange.eval(state)) yield Fun(cast,d,r)
+}
+
 /**
  * Fixed function with fixed domain and range.
  * @param fun the function this term is always evaluated to.
@@ -93,7 +105,7 @@ case class FunApp[A, B](function: FunTerm[A, B], arg: Term[A]) extends Term[B] {
     case _ => SetUtil.SetUnion(List(function.variables, arg.variables))
   }
   def default = function.default(function.funCandidateDom.default.head)
-  def domain[C >: B] = Image(function, arg.domain).asInstanceOf[Term[Set[C]]]
+  def domain[C >: B] = Image(function, arg.domain).asInstanceOf[Term[Set[C]]] //replace by function.funDomain collectedBy function?
   //could also be function.funRange
   override def toString = s"$function($arg)"
 }
@@ -138,8 +150,8 @@ case class LambdaAbstraction[A, B](variable: Variable[A], term: Term[B]) extends
     def apply(v1: A) = term.default
     def isDefinedAt(x: A) = variable.domain.default(x)
   }
-  def domain[C >: Fun[A, B]] =
-    FunApp(FunTerm.allFunctions[A, B], TupleTerm2(funCandidateDom, funRange)).asInstanceOf[Term[Set[C]]]
+  def domain[C >: Fun[A, B]] = Constant(new AllOfType[C])
+    //FunApp(FunTerm.allFunctions[A, B], TupleTerm2(funCandidateDom, funRange)).asInstanceOf[Term[Set[C]]]
   override def toString = s"lam $variable :${variable.domain} { $term }"
 }
 

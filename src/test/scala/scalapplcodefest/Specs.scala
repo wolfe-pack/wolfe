@@ -35,11 +35,38 @@ class Specs extends FlatSpec with Matchers {
     f.value()(false,true) should be (true)
   }
 
-  "A state" should "be support boolean queries" in {
+  "A map on a set" should "map each element in the set" in {
+    val n = 'n of Ints
+    val s = 0 ~~ n
+    val f = for (i <- Constant(Ints)) yield i + 1
+    val m = s mappedBy f
+    m.value(n -> 2) should be (Set(1,2))
+  }
+
+  "A filter on a set" should "filter each element in the set" in {
+    val n = 'n of Ints
+    val s = 0 ~~ n
+    val f = for (i <- Constant(Ints)) yield i === 1
+    val m = s filteredBy f
+    m.value(n -> 2) should be (Set(1))
+  }
+
+  "A partial function term" should "provide a definedAt function" in {
+    val f = for (i <- 0 ~~ 2) yield 2 / i
+    f.isDefined.value()(0) should be (false)
+    f.isDefined.value()(1) should be (true)
+  }
+
+  it should "provide a term representing its domain" in {
+    val f = for (i <- 0 ~~ 2) yield 2 / i
+    f.funDom.value() should be (Set(1))
+  }
+
+  "A state" should "support boolean queries" in {
     val p = 'p of 0 ~~ 4 |-> Bools
     val query = for (i <- 0 ~~ 4) yield p(i)
-    val state = State(Map(p.atom(0) -> true, p.atom(1) -> false, p.atom(2) -> true, p.atom(3) -> false))
-    val result = state.query(query)
+    val data = state(p.atom(0) -> true, p.atom(1) -> false, p.atom(2) -> true, p.atom(3) -> false)
+    val result = data.query(query)
     result should be (Good(Set(0,2)))
   }
 
@@ -55,7 +82,7 @@ class Specs extends FlatSpec with Matchers {
       val arg = new DenseVector(Array(0.0, 0.0, 3.0))
       val at = max.at(arg)
       at.value should be(7.0)
-      at.argmax should be(State(Map(i -> 2)))
+      at.argmax should be(state(i -> 2))
       at.subGradient should equal (unit(2).value()) (decided by vectorEq)
     }
   }
