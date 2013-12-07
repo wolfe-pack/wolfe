@@ -262,7 +262,6 @@ object TermConverter {
     }
   }
 
-
   def groupLambdasOnce[T](term: Term[T], filter: Variable[Any] => Boolean = x => true): Term[T] = {
     implicit def cast(t: Term[Any]) = t.asInstanceOf[Term[T]]
 

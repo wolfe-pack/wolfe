@@ -94,16 +94,17 @@ class Specs extends FlatSpec with Matchers {
       val i = 'i of 0 ~~ 3
       val term = (unit(i) dot w) + 4.0
       val max = newMaximizer(term)
-      val arg = new DenseVector(Array(0.0, 0.0, 3.0))
-      val at = max.at(arg)
-      at.value should be(7.0)
-      at.argmax should be(state(i -> 2))
-      at.subGradient should equal (unit(2).value()) (decided by vectorEq)
+      val arg = state(w -> new DenseVector(Array(0.0, 0.0, 3.0)))
+      max.value(arg) should be (7.0)
+      max.argmax.value(arg) should be (state(i -> 2))
+      max.gradient.value(arg) should equal (unit(2).value()) (decided by vectorEq)
     }
   }
 
-  "Max Product" should behave like maximizer(maxProduct)
-  "Brute Force" should behave like maximizer(bruteForce)
+
+  "Max Product 2" should behave like maximizer(maxProduct)
+  "Brute Force 2" should behave like maximizer(bruteForce)
+
 
   "An exhaustive argmaxer" should "find the maximizing assignment of a term" ignore {
     val x = 'x of Bools

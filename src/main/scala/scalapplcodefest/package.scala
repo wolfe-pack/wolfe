@@ -9,5 +9,6 @@ package object scalapplcodefest {
   type DenseVector = DenseTensor1
   type SingletonVector = SingletonTensor1
   type AnyFunction = PartialFunction[Nothing,Any]
+  type ValueAndGradient = (Double,Vector)
   type Inferencer = LinearModel => DenseVector => State => MutableInference
 }

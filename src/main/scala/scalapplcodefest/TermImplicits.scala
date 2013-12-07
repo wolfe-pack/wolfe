@@ -23,11 +23,13 @@ object TermImplicits {
 
   //implicit def funToConstant[A,B](x:Fun[A,B]) = x)
   implicit def toTupleTerm2[T1, T2](tuple: (Term[T1], Term[T2])) = TupleTerm2(tuple._1, tuple._2)
+  implicit def toRichTupleTerm2[T1, T2](tuple: (Term[(T1,T2)])) = RichTupleTerm2(tuple)
   implicit def toRichVariable[T](v: Variable[T]) = RichVariable(v)
   implicit def toRichTerm[T](term: Term[T]) = new RichTerm(term)
   implicit def toRichInt[A](i: Term[Int]) = RichIntTerm(i)
   implicit def toRichDouble[A](t: Term[Double]) = RichDoubleTerm(t)
   implicit def toRichBooleanTerm(t: Term[Boolean]) = RichBooleanTerm(t)
+  implicit def toRichValueAndGradient(tuple: (Term[(Double,Vector)])) = RichValueAndGradient(tuple)
 
   implicit def toRichFunTerm[A, B](term: Term[Fun[A, B]]): RichFunTerm[A, B] = term match {
     case f: FunTerm[_, _] => RichFunTerm(f).asInstanceOf[RichFunTerm[A, B]]
@@ -51,7 +53,8 @@ object TermImplicits {
   implicit def toAssign[T](pair:(Variable[T],T)) = Assign(pair._1,pair._2)
 
 
-  def state(assignments:Assign[_]*) = State(assignments.map(a => a.variable -> a.value).toMap)
+  def state(assignments:Assign[_]*) =
+    if (assignments.isEmpty) State.empty else State(assignments.map(a => a.variable -> a.value).toMap)
 
   def funTerm[A,B](f:PartialFunction[A,B]) = Constant(Fun(f, new AllOfType[A], new AllOfType[B]))
 
@@ -199,6 +202,15 @@ object TermImplicits {
     def finish = CartesianProductTerm3(dom1, dom2, dom3)
   }
 
+  case class RichTupleTerm2[T1,T2](t:Term[(T1,T2)]) {
+    def _1 = ArgTerm(t.domain,Constant(new AllOfType[T2]), 0)
+    def _2 = ArgTerm(t.domain,Constant(new AllOfType[T2]), 1)
+  }
+
+  case class RichValueAndGradient(term:Term[ValueAndGradient]) {
+    def +(that: Term[ValueAndGradient]) = FunApp(Math.DoubleAndVectorAdd.Term, TupleTerm2(term,that))
+    def -(that: Term[ValueAndGradient]) = FunApp(Math.DoubleAndVectorMinus.Term, TupleTerm2(term,that))
+  }
 
   case class RichIntTerm(i: Term[Int]) {
     def +(that: Term[Int]) = FunApp(Math.IntAdd.Term, TupleTerm2(i, that))

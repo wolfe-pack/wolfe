@@ -8,6 +8,7 @@ package scalapplcodefest
 object MarkovLogicExample {
 
   //this gives us syntactic sugar
+
   import TermImplicits._
 
   //index for indexing feature vectors
@@ -42,9 +43,7 @@ object MarkovLogicExample {
     val concreteWeights = key.createDenseVector(Seq('smokingIsBad) -> 1.0, Seq('peerPressure) -> 1.0)()
 
     //some observations
-    val condition = State(Map(
-      friends.atom('Anna,'Bob) -> true,
-      smokes.atom('Anna) -> true))
+    val condition = state(friends.atom('Anna, 'Bob) -> true, smokes.atom('Anna) -> true)
 
     //the mln with weights and some ground atoms set to some observation
     val conditioned = mln | condition | weights -> concreteWeights

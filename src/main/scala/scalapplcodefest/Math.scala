@@ -32,6 +32,19 @@ object Math {
     def apply(v1: (Double, Double)) = v1._1 + v1._2
     def dom = Doubles
   }
+
+  case object DoubleAndVectorAdd extends BinaryOperatorSameDomainAndRange[ValueAndGradient] {
+    def apply(x: (ValueAndGradient, ValueAndGradient)) = x match {case ((v1,g1),(v2,g2)) => (v1 + v2, g1 + g2)}
+    def dom = CartesianProduct2(Doubles,Vectors)
+  }
+
+  case object DoubleAndVectorMinus extends BinaryOperatorSameDomainAndRange[ValueAndGradient] {
+    def apply(x: (ValueAndGradient, ValueAndGradient)) = x match {case ((v1,g1),(v2,g2)) => (v1 - v2, g1 - g2)}
+    def dom = CartesianProduct2(Doubles,Vectors)
+  }
+
+
+
   case object DoubleMinus extends BinaryOperatorSameDomainAndRange[Double] {
     def apply(v1: (Double, Double)) = v1._1 - v1._2
     def dom = Doubles
