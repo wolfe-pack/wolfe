@@ -2,6 +2,9 @@ package scalapplcodefest
 
 import org.scalatest.{Matchers, FlatSpec}
 import org.scalautils._
+import Tolerance._
+import org.scalautils._
+import cc.factorie.optimize.{Perceptron, OnlineTrainer}
 
 /**
  * Set of specs.
@@ -9,12 +12,14 @@ import org.scalautils._
  */
 class Specs extends FlatSpec with Matchers {
 
+  def eps = 0.0002
+
   import TermImplicits._
   import CustomEqualities._
 
   "A variable" should "evaluate to the value it is assigned to the state" in {
     val x = 'x of Ints
-    x.eval(state(x -> 0)) should be (Good(0))
+    x.eval(state(x -> 0)) should be(Good(0))
   }
 
   it should "evaluate to an Undefined object if no value is assigned to it" in {
@@ -24,7 +29,7 @@ class Specs extends FlatSpec with Matchers {
 
   it should "evaluate to an Undefined object if the assigned value is outside the domain" in {
     val x = 'x of 0 ~~ 2
-    x.eval(state(x -> 3)) should be (Bad(VariableUndefined(x, state(x -> 3))))
+    x.eval(state(x -> 3)) should be(Bad(VariableUndefined(x, state(x -> 3))))
   }
 
   "Applications of functions outside of domain" should "evaluate to a Undefined object" in {
@@ -40,9 +45,9 @@ class Specs extends FlatSpec with Matchers {
   }
 
   "A lambda abstraction with tuple arguments" should "evaluate to a function with tuple arguments" in {
-    val f = for ((x,y) <- C(Bools,Bools)) yield  x || y
-    f.value()(false,false) should be (false)
-    f.value()(false,true) should be (true)
+    val f = for ((x, y) <- C(Bools, Bools)) yield x || y
+    f.value()(false, false) should be(false)
+    f.value()(false, true) should be(true)
   }
 
   "A map on a set" should "map each element in the set" in {
@@ -50,7 +55,7 @@ class Specs extends FlatSpec with Matchers {
     val s = 0 ~~ n
     val f = for (i <- Constant(Ints)) yield i + 1
     val m = s mappedBy f
-    m.value(n -> 2) should be (Set(1,2))
+    m.value(n -> 2) should be(Set(1, 2))
   }
 
   "A filter on a set" should "filter each element in the set" in {
@@ -58,23 +63,25 @@ class Specs extends FlatSpec with Matchers {
     val s = 0 ~~ n
     val f = for (i <- Constant(Ints)) yield i === 1
     val m = s filteredBy f
-    m.value(n -> 2) should be (Set(1))
+    m.value(n -> 2) should be(Set(1))
   }
 
   "A constant function term" should "be acting like the function when doing function application" in {
-    val f = funTerm[String,Int]({case x => x.length})
-    f.value()("123") should be (3)
+    val f = funTerm[String, Int]({
+      case x => x.length
+    })
+    f.value()("123") should be(3)
   }
 
   "A partial function term" should "provide a definedAt function" in {
     val f = for (i <- 0 ~~ 2) yield 2 / i
-    f.isDefined.value()(0) should be (false)
-    f.isDefined.value()(1) should be (true)
+    f.isDefined.value()(0) should be(false)
+    f.isDefined.value()(1) should be(true)
   }
 
   it should "provide a term representing its domain" in {
     val f = for (i <- 0 ~~ 2) yield 2 / i
-    f.funDom.value() should be (Set(1))
+    f.funDom.value() should be(Set(1))
   }
 
   "A state" should "support boolean queries" in {
@@ -82,11 +89,9 @@ class Specs extends FlatSpec with Matchers {
     val query = for (i <- 0 ~~ 4) yield p(i)
     val data = state(p.atom(0) -> true, p.atom(1) -> false, p.atom(2) -> true, p.atom(3) -> false)
     val result = data.query(query)
-    result should be (Good(Set(0,2)))
+    result should be(Good(Set(0, 2)))
   }
 
-  def maxProduct = Max.ByMessagePassing(_:Term[Double],MaxProduct.run(_,1))
-  def bruteForce = Max.ByBruteForce(_:Term[Double])
 
   def maximizer(newMaximizer: => (Term[Double] => Max)) {
     it should "find argmax, gradient, and max value of a linear term" in {
@@ -95,67 +100,59 @@ class Specs extends FlatSpec with Matchers {
       val term = (unit(i) dot w) + 4.0
       val max = newMaximizer(term)
       val arg = state(w -> new DenseVector(Array(0.0, 0.0, 3.0)))
-      max.value(arg) should be (7.0)
-      max.argmax.value(arg) should be (state(i -> 2))
-      max.gradient.value(arg) should equal (unit(2).value()) (decided by vectorEq)
+      max.value(arg) should be(7.0)
+      max.argmax.value(arg) should be(state(i -> 2))
+      max.gradient.value(arg) should equal(unit(2).value())(decided by vectorEq)
     }
   }
 
+  def maxProduct = Max.ByMessagePassing(_: Term[Double], MaxProduct.run(_, 1))
+  def bruteForce = Max.ByBruteForce(_: Term[Double])
 
-  "Max Product 2" should behave like maximizer(maxProduct)
-  "Brute Force 2" should behave like maximizer(bruteForce)
+  "Max Product" should behave like maximizer(maxProduct)
+  "Brute Force" should behave like maximizer(bruteForce)
 
+  def gradientBasedMinizer(newMinimizer: => (Term[Double] => Vector)) {
 
-  "An exhaustive argmaxer" should "find the maximizing assignment of a term" ignore {
-    val x = 'x of Bools
-    val y = 'y of Bools
-    val model = I(x && !y)
-    val argmax = Inference.exhaustiveArgmax(model).state()
-    argmax(x) should be(true)
-    argmax(y) should be(false)
+    it should "find a minimum of a perceptron loss" in {
+      val i = 'i of 0 ~~ 3
+      val weights = 'w of Vectors
+      val model = unit(i) dot weights
+      val gold = state(i -> 2)
+      val loss = Max.ByBruteForce(model) - (model | gold)
+      val result = newMinimizer(loss)
+      loss.value(state(weights -> result)) should be (0.0 +- eps)
+      val resultLoss = loss.value(state(weights -> result))
+      println(result)
+      println(resultLoss)
+
+    }
   }
 
-  "A MaxProduct argmaxer" should "find the maximizing assignment of a chain" ignore {
-    val x = 'x of Bools
-    val y = 'y of Bools
-    val z = 'z of Bools
-    val model = I(x |=> y) + I(y |=> z) + I(x)
-    val expected = Inference.exhaustiveArgmax(model).state()
-    val actual = Inference.maxProductArgmax(1)(model).state()
-    actual should be(expected)
-  }
+  def perceptronMinimizer = GradientBasedMinimizer.minimize(_:Term[Double], new OnlineTrainer(_, new Perceptron, 5))
 
-  "A MaxProduct argmaxer" should "provide argmax feature vectors for linear models" ignore {
-    val x = 'x of 0 ~~ 2
-    val y = 'y of 0 ~~ 2
-    val w = 'w of Vectors
-    val index = new Index
-    val weights = index.createDenseVector(Seq(0) -> -1.0, Seq(1) -> 1.0)()
-    val model = {(unit(x) + unit(y)) dot w} | w -> weights
-
-    val expected = Inference.exhaustiveArgmax(model)
-    val actual = Inference.maxProductArgmax(1)(model)
-
-    actual.state() should be(expected.state())
-    actual.feats()(0) should be(expected.feats()(0))
-    actual.feats()(1) should be(expected.feats()(1))
-
-  }
+  "Perceptron Minimizer" should behave like gradientBasedMinizer(perceptronMinimizer)
 
   "Pushing down conditions" should "move condition terms downward the term tree" in {
     val n = 'n of Ints
     val p = 'p of (0 ~~ n |-> Bools)
     val state = State(Map(n -> 2))
-    val term = dsum {for (i <- (0 ~~ n) as "i") yield I(p(i)) + 1.0} | state
+    val term = dsum {
+      for (i <- (0 ~~ n) as "i") yield I(p(i)) + 1.0
+    } | state
     val actual = TermConverter.pushDownConditions(term)
     val pCond = 'p of (0 ~~ (n | state) |-> Bools)
-    val expected = dsum {for (i <- (0 ~~ (n | state)) as "i") yield I(pCond(i) | state) + 1.0}
+    val expected = dsum {
+      for (i <- (0 ~~ (n | state)) as "i") yield I(pCond(i) | state) + 1.0
+    }
     actual should be(expected)
   }
 
   "Unrolling images of lambda abstractions" should "create sequences of terms, one for each element in the domain" in {
     val p = 'p of (0 ~~ 3 |-> Bools)
-    val term = dsum {for (i <- 0 ~~ 3) yield I(p(i))}
+    val term = dsum {
+      for (i <- 0 ~~ 3) yield I(p(i))
+    }
     val expected = dsum(I(p(0)), I(p(1)), I(p(2)))
     val actual = TermConverter.unrollLambdaImages(term)
     actual should be(expected)
@@ -223,13 +220,12 @@ class Specs extends FlatSpec with Matchers {
 object CustomEqualities {
   def eps = 0.0002
 
-  import Tolerance._
   import TripleEquals._
 
   implicit val vectorEq = new Equality[Vector] {
-    def areEqual(a: Vector, b: Any): Boolean = (a,b) match {
-      case (v1:SparseVector, v2:SingletonVector) => v1.activeDomain.forall(i => v1(i) === v2(i) +- eps)
-      case (v1: Vector, v2:Vector) => v1.length == v2.length && v1.activeDomain.forall(i => a(i) === v1(i) +- eps)
+    def areEqual(a: Vector, b: Any): Boolean = (a, b) match {
+      case (v1: SparseVector, v2: SingletonVector) => v1.activeDomain.forall(i => v1(i) === v2(i) +- eps)
+      case (v1: Vector, v2: Vector) => v1.length == v2.length && v1.activeDomain.forall(i => a(i) === v1(i) +- eps)
       case _ => false
     }
   }

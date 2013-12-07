@@ -77,7 +77,7 @@ object GradientBasedMinimizer {
     val key = weightsSet.newWeights(new DenseVector(10000))
     val instances = TermConverter.asSeq(objective, Math.DoubleAdd)
     val examples = for (instance <- instances) yield {
-      instance match {
+      TermConverter.pushDownConditions(instance) match {
         case Differentiable(param,gradientTerm) =>
           new Example {
             def accumulateValueAndGradient(value: DoubleAccumulator, gradient: WeightsMapAccumulator) = {

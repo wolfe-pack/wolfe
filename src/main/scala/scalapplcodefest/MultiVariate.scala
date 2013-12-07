@@ -2,11 +2,14 @@ package scalapplcodefest
 
 import org.scalautils.Good
 import TermImplicits._
+import Math._
 
 object MultiVariate {
   def unapply(term: Term[Double]): Option[Variable[Vector]] = term match {
     case m: MultiVariate => Some(m.parameter)
     case Linear(_, p, _) => Some(p)
+    case DoubleAdd.Applied2(MultiVariate(p1),MultiVariate(p2)) if p1 == p2 => Some(p1)
+    case DoubleMinus.Applied2(MultiVariate(p1),MultiVariate(p2)) if p1 == p2 => Some(p1)
     case _ => None
   }
 }
