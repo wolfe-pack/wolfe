@@ -148,6 +148,15 @@ class Specs extends FlatSpec with Matchers {
     actual should be(expected)
   }
 
+  "A Domain Collector" should "collect values for dynamic domains from states" in {
+    val Dom = 'Dom of Constant(new AllOfType[Set[String]])
+    val p = 'p of 0 ~~ 2 |-> Dom
+    val r = 'r of (Dom x Dom) |-> Bools
+    val states = Seq(state(p.atom(0) -> "A"), state(p.atom(1) -> "B", r.atom("B","C") -> true))
+    val domains = DomainCollector.collect(states)
+    domains(Dom) should be (Set("A","B", "C"))
+  }
+
   "Unrolling images of lambda abstractions" should "create sequences of terms, one for each element in the domain" in {
     val p = 'p of (0 ~~ 3 |-> Bools)
     val term = dsum {
