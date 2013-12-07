@@ -56,7 +56,10 @@ trait State {
    * @return a target state.
    */
   def target = new State {
-    def get[V](variable: Variable[V]) = self.get(variable).orElse(self.get(Target(variable)))
+    def get[V](variable: Variable[V]) = variable match {
+      case Target(_) => None
+      case _ => self.get(variable).orElse(self.get(Target(variable)))
+    }
     override def domain = self.domain.map({case Target(v) => v; case v => v})
   }
 
@@ -67,7 +70,7 @@ trait State {
    * @param shouldBeTarget predicate to test whether variable should be a target.
    * @return a state where the given variables have become target variables.
    */
-  def asTargets(shouldBeTarget: Set[Variable[Any]]): State = new State {
+  def asTargets[V<:Variable[Any]](shouldBeTarget: Variable[Any] => Boolean): State = new State {
     def get[V](variable: Variable[V]) = variable match {
       case Target(v) if shouldBeTarget(v) => self.get(v)
       case v => if (shouldBeTarget(v)) None else self.get(v)

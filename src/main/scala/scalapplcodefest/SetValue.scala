@@ -2,6 +2,7 @@ package scalapplcodefest
 
 import scala.language.existentials
 import cc.factorie.la.ScalarTensor
+import scala.collection.SetProxy
 
 /**
  * A set that performs lazy set union and set minus
@@ -23,6 +24,15 @@ object SetValue {
     def contains(elem: T) = self(elem)
     def iterator = elems.iterator
   }
+}
+
+/**
+ * Turns a set with specific type to a GENeric set over Any objects.
+ * @param set the set to convert to a generic set.
+ * @tparam T type of elements in original set.
+ */
+case class Gen[T](set:Set[T]) extends SetProxy[Any] {
+  def self = set.asInstanceOf[Set[Any]]
 }
 
 /**
