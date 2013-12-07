@@ -1,6 +1,6 @@
 package scalapplcodefest
 
-import org.scalatest.{WordSpec, Matchers, FlatSpec}
+import org.scalatest.{WordSpec, Matchers}
 import org.scalautils._
 import Tolerance._
 import org.scalautils._
@@ -66,6 +66,12 @@ class Specs extends WordSpec with Matchers {
 
 
   "A lambda abstraction" should {
+    "evaluate to a function that returns the value of the body for a state where the lambda variable is assigned to the function argument" in {
+      val l = for (x <- Constant(Bools)) yield x
+      val f = l.value()
+      f(true) should be (true)
+      f(false) should be (false)
+    }
     "evaluate to a function with tuple arguments if the variable is a tuple" in {
       val f = for ((x, y) <- C(Bools, Bools)) yield x || y
       f.value()(false, false) should be(false)
