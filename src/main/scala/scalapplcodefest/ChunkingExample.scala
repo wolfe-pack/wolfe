@@ -56,15 +56,6 @@ object ChunkingExample {
     val sentences = Util.loadCoNLL(Source.fromInputStream(stream).getLines().take(100), Seq(word, tag, chunk), n)
     val train = sentences.map(_.asTargets(chunk))
 
-    //println(train.head.toPrettyString)
-
-    val learnedWeights = TrainerOld.train(model, train, 10, Inference.maxProductArgmax(1, chunk.allAtoms))
-    val predictor = (s: State) => Inference.maxProductArgmax(1, chunk.allAtoms)(model | s | weights -> learnedWeights).state()
-    val evaluation = Evaluator.evaluate(train, predictor)
-
-    //println(key.vectorToString(learnedWeights))
-    println(evaluation)
-
     //define a perceptron loss and find weights that minimize it.
     val loss = dsum(SeqTerm(for (i <- train) yield Max.ByMessagePassing(model | i) - (model | i.target)))
     val learned = state(weights -> GradientBasedMinimizer.minimize(loss))

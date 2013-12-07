@@ -20,12 +20,12 @@ class Specs extends WordSpec with Matchers {
   "A constant" should {
     "evaluate to its value" in {
       val c = Constant(10)
-      c.eval(state()) should be (Good(10))
+      c.eval(state()) should be(Good(10))
     }
   }
 
   "A variable" should {
-    "evaluate to the value it is assigned to the state" in {
+    "evaluate to the value it is assigned to in the state" in {
       val x = 'x of Ints
       x.eval(state(x -> 0)) should be(Good(0))
     }
@@ -40,12 +40,11 @@ class Specs extends WordSpec with Matchers {
   }
 
   "A function application" should {
-    "evaluate to the value of the function term applied to the value of the argument term"in {
+    "evaluate to the value of the function term applied to the value of the argument term" in {
       val f = Logic.Neg.Term
       val app = f(false)
-      app.eval(state()) should be (Good(true))
+      app.eval(state()) should be(Good(true))
     }
-
     "evaluate to a Undefined object outside of the functions domain" in {
       val f = for (i <- 0 ~~ 2) yield i
       val app = f(3)
@@ -63,14 +62,12 @@ class Specs extends WordSpec with Matchers {
     }
   }
 
-
-
   "A lambda abstraction" should {
     "evaluate to a function that returns the value of the body for a state where the lambda variable is assigned to the function argument" in {
       val l = for (x <- Constant(Bools)) yield x
       val f = l.value()
-      f(true) should be (true)
-      f(false) should be (false)
+      f(true) should be(true)
+      f(false) should be(false)
     }
     "evaluate to a function with tuple arguments if the variable is a tuple" in {
       val f = for ((x, y) <- C(Bools, Bools)) yield x || y
@@ -96,7 +93,6 @@ class Specs extends WordSpec with Matchers {
     }
   }
 
-
   "A constant function term" should {
     "be acting like the function when doing function application" in {
       val f = funTerm[String, Int]({case x => x.length})
@@ -115,7 +111,6 @@ class Specs extends WordSpec with Matchers {
       f.funDom.value() should be(Set(1))
     }
   }
-
 
   "A state" should {
     "provide values of variables or return None" in {
@@ -161,11 +156,11 @@ class Specs extends WordSpec with Matchers {
       max.argmax.value(arg) should be(state(i -> 2))
       max.gradient.value(arg) should equal(unit(2).value())(decided by vectorEq)
     }
+
   }
 
   def maxProduct = Max.ByMessagePassing(_: Term[Double], MaxProduct.run(_, 1))
   def bruteForce = Max.ByBruteForce(_: Term[Double])
-
 
 
   "Max Product" should {
@@ -178,7 +173,7 @@ class Specs extends WordSpec with Matchers {
 
   def gradientBasedMinizer(newMinimizer: => (Term[Double] => Vector)) {
 
-   "find a minimum of a perceptron loss" in {
+    "find a minimum of a perceptron loss" in {
       val i = 'i of 0 ~~ 3
       val weights = 'w of Vectors
       val model = unit(i) dot weights
