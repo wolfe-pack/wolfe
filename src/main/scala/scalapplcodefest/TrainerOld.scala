@@ -78,12 +78,12 @@ object GradientBasedMinimizer {
     val instances = TermConverter.asSeq(objective, Math.DoubleAdd)
     val examples = for (instance <- instances) yield {
       instance match {
-        case Differentiable(param,valueTerm,gradientTerm) =>
+        case Differentiable(param,gradientTerm) =>
           new Example {
             def accumulateValueAndGradient(value: DoubleAccumulator, gradient: WeightsMapAccumulator) = {
               val weights = weightsSet(key).asInstanceOf[Vector]
               val state = State(Map(param -> weights))
-              val v = valueTerm.value(state)
+              val v = instance.value(state)
               val g = gradientTerm.value(state)
               value.accumulate(v)
               gradient.accumulate(key, g, -1.0)

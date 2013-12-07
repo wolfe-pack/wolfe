@@ -4,9 +4,9 @@ import org.scalautils.Good
 import TermImplicits._
 
 object MultiVariate {
-  def unapply(term: Term[Double]): Option[(Variable[Vector], Term[Double])] = term match {
-    case m: MultiVariate => Some(m.parameter, term)
-    case Linear(_, p, _) => Some(p, term)
+  def unapply(term: Term[Double]): Option[Variable[Vector]] = term match {
+    case m: MultiVariate => Some(m.parameter)
+    case Linear(_, p, _) => Some(p)
     case _ => None
   }
 }
@@ -17,9 +17,9 @@ trait MultiVariate extends DoubleTerm {
 }
 
 object Differentiable {
-  def unapply(term: Term[Double]): Option[(Variable[Vector], Term[Double], Term[Vector])] = term match {
-    case d: Differentiable => Some(d.parameter, term, d.gradient)
-    case MultiVariate(p, value) => Differentiator.differentiate(value).map(g => (p,value,g))
+  def unapply(term: Term[Double]): Option[(Variable[Vector],Term[Vector])] = term match {
+    case d: Differentiable => Some(d.parameter, d.gradient)
+    case MultiVariate(p) => Differentiator.differentiate(term).map(g => (p,g))
     case _ => None
   }
 }
@@ -29,8 +29,8 @@ trait Differentiable extends MultiVariate {
 }
 
 object Max {
-  def unapply(term: Term[Double]): Option[(Variable[Vector], Term[Double], Term[Vector], Term[State])] = term match {
-    case m: Max => Some(m.parameter, term, m.gradient, m.argmax)
+  def unapply(term: Term[Double]): Option[(Variable[Vector], Term[Vector], Term[State])] = term match {
+    case m: Max => Some(m.parameter, m.gradient, m.argmax)
     case _ => None
   }
 
