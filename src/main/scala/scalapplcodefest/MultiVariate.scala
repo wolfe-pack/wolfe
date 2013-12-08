@@ -67,7 +67,10 @@ object Max {
     val ForceLinear(_, parameter, _) = term
     private val mp = MPGraphCompiler.compile(term)
     private val withStateDo = new WithStateDo(state => {
-      mp.graph.weights = state(parameter)
+      mp.graph.weights = parameter match {
+        case u:UnusedParameter => new DenseVector(0)
+        case _ => state(parameter)
+      }
       algorithm(mp.graph)
     })
     def eval(state: State) = withStateDo.get(state, Good(mp.currentValue()))

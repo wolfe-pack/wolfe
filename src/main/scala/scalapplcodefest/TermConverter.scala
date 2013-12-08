@@ -89,20 +89,29 @@ object TermConverter {
   /**
    * This function takes conditioned terms within the term tree and moves the condition downward as far as possible.
    * @param term the term to convert.
-   * @param condition the condition to push down.
    * @tparam T type of term
    * @return a term in which conditioned terms are to be found at the leaf variables and predicate applications.
    */
-  def pushDownConditions[T](term: Term[T], condition: State = State.empty): Term[T] = convertDepthFirst(term) {
-    new Converter {
-      def convert[A](term: Term[A]) = term match {
-        case Conditioned(t, state) => pushDownConditions(t, condition + state)
-        case v@Var(_, _) if condition.domain(v) => Conditioned(v, condition)
-        case a@GroundAtom(_, _) if condition.domain(a) => Conditioned(a, condition)
-        case f@FunApp(Predicate(_, _, _), _) if !condition.domain.isEmpty => Conditioned(f, condition) //todo: should check whether predicate is involved
-        case t => t
+  def pushDownConditions[T](term: Term[T]): Term[T] = {
+    def pushConditions[S](term: Term[S], condition: State): Term[S] = convertDepthFirst(term) {
+      new Converter {
+        def convert[A](arg: Term[A]) = arg match {
+          case v@Var(_, _) if condition.domain(v) => Conditioned(v, condition)
+          case a@GroundAtom(_, _) if condition.domain(a) => Conditioned(a, condition)
+          case f@FunApp(Predicate(_, _, _), _) if !condition.domain.isEmpty => Conditioned(f, condition) //todo: should check whether predicate is involved
+          case t => t
+        }
       }
     }
+    def findAndPushConditions[S](term:Term[S])=  convertDepthFirst(term) {
+      new Converter {
+        def convert[A](arg: Term[A]) = arg match {
+          case Conditioned(t, state) => pushConditions(t, state)
+          case t => t
+        }
+      }
+    }
+    findAndPushConditions(term)
   }
 
   /**
