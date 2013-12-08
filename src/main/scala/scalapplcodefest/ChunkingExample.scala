@@ -1,6 +1,7 @@
 package scalapplcodefest
 
 import scala.io.Source
+import cc.factorie.optimize.{Perceptron, OnlineTrainer}
 
 
 /**
@@ -52,14 +53,17 @@ object ChunkingExample {
 
   def main(args: Array[String]) {
 
+    //this is only needed if we want to print out meaningful feature vectors in low-level code.
+    Index.toDebug = Some(key)
+
     val stream = Util.getStreamFromClassPathOrFile("scalapplcodefest/datasets/conll2000/train.txt")
     val sentences = Util.loadCoNLL(Source.fromInputStream(stream).getLines().take(100), Seq(word, tag, chunk), n)
     val train = sentences.map(_.asTargets(chunk))
 
     //define a perceptron loss and find weights that minimize it.
     val loss = dsum(SeqTerm(for (i <- train) yield Max.ByMessagePassing(model | i) - (model | i.target)))
-    val learned = state(weights -> GradientBasedMinimizer.minimize(loss))
-    val predict = (s:State) => Max.ByMessagePassing(model | s).argmax.value(learned)
+    val learned = state(weights -> GradientBasedMinimizer.minimize(loss, new OnlineTrainer(_, new Perceptron, 10)))
+    val predict = (s: State) => Max.ByMessagePassing(model | s).argmax.value(learned)
     val eval = Evaluator.evaluate(train, predict)
     println(eval)
 

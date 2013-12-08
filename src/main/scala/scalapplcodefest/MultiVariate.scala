@@ -3,14 +3,17 @@ package scalapplcodefest
 import org.scalautils.Good
 import TermImplicits._
 import Math._
+import scalapplcodefest.TermConverter._
+import scala.Some
 
 object MultiVariate {
   def unapply(term: Term[Double]): Option[Variable[Vector]] = term match {
+    case Conditioned(MultiVariate(p), c) if !c.domain(p) => Some(p)
     case m: MultiVariate => Some(m.parameter)
     case Linear(_, p, _) => Some(p)
-    case DoubleAdd.Applied2(MultiVariate(p1),MultiVariate(p2)) if p1 == p2 => Some(p1)
-    case DoubleMinus.Applied2(MultiVariate(p1),MultiVariate(p2)) if p1 == p2 => Some(p1)
-    case _ => None
+    case DoubleAdd.Applied2(MultiVariate(p1), MultiVariate(p2)) if p1 == p2 => Some(p1)
+    case DoubleMinus.Applied2(MultiVariate(p1), MultiVariate(p2)) if p1 == p2 => Some(p1)
+    case _ => Some(new UnusedParameter)
   }
 }
 
@@ -20,9 +23,9 @@ trait MultiVariate extends DoubleTerm {
 }
 
 object Differentiable {
-  def unapply(term: Term[Double]): Option[(Variable[Vector],Term[Vector])] = term match {
+  def unapply(term: Term[Double]): Option[(Variable[Vector], Term[Vector])] = term match {
     case d: Differentiable => Some(d.parameter, d.gradient)
-    case MultiVariate(p) => Differentiator.differentiate(term).map(g => (p,g))
+    case MultiVariate(p) => Differentiator.differentiate(p, term).map(g => (p, g))
     case _ => None
   }
 }
@@ -53,8 +56,8 @@ object Max {
       arg = State.allStates(conditionedValue.variables.toList).view.maxBy(conditionedValue.eval(_).get)
     })
     def eval(state: State) = withStateDo.get(state, conditionedValue.eval(arg))
-    def gradient = VectorTerm(withStateDo.get(_, conditionedCoefficient.value(arg)),Set(parameter))
-    def argmax = StateTerm(withStateDo.get(_, arg),Set(parameter))
+    def gradient = VectorTerm(withStateDo.get(_, conditionedCoefficient.value(arg)), Set(parameter))
+    def argmax = StateTerm(withStateDo.get(_, arg), Set(parameter))
   }
 
   /**
@@ -64,20 +67,20 @@ object Max {
    */
   case class ByMessagePassing(term: Term[Double], algorithm: MPGraph => Unit = MaxProduct.run(_, 1)) extends Max {
 
-    val ForceLinear(_, parameter, _) = term
-    private val mp = MPGraphCompiler.compile(term)
+    val normalized = pushDownConditions(term)
+    val ForceLinear(_, parameter, _) = normalized
+
+    private val mp = MPGraphCompiler.compile(normalized)
+
     private val withStateDo = new WithStateDo(state => {
-      mp.graph.weights = parameter match {
-        case u:UnusedParameter => new DenseVector(0)
-        case _ => state(parameter)
-      }
+      mp.graph.weights = state(parameter)
+      //println(mp.graph.toVerboseString(mp.printer()))
       algorithm(mp.graph)
     })
     def eval(state: State) = withStateDo.get(state, Good(mp.currentValue()))
-    def gradient = VectorTerm(withStateDo.get(_, mp.currentGradient()),Set(parameter))
-    def argmax = StateTerm(withStateDo.get(_, mp.currentArgmax()),Set(parameter))
+    def gradient = VectorTerm(withStateDo.get(_, mp.currentGradient()), Set(parameter))
+    def argmax = StateTerm(withStateDo.get(_, mp.currentArgmax()), Set(parameter))
   }
-
 
 
 }
@@ -92,28 +95,19 @@ trait Max extends Differentiable {
  */
 object Differentiator {
 
-  def differentiate(term: Term[Double]): Option[Term[Vector]] = {
+  def differentiate(param: Variable[Vector], term: Term[Double]): Option[Term[Vector]] = {
     term match {
       case d: Differentiable => Some(d.gradient)
+      case Conditioned(t, c) => c.domain(param) match {
+        case true => Some(Constant(new SparseVector(0)))
+        case false => differentiate(param, t).map(v => Conditioned(v, c))
+      }
       case Linear(g, _, _) => Some(g)
       case Math.DoubleAdd.Applied2(arg1, arg2) =>
-        for (g1 <- differentiate(arg1); g2 <- differentiate(arg2)) yield g1 + g2
+        for (g1 <- differentiate(param, arg1); g2 <- differentiate(param, arg2)) yield g1 + g2
       case Math.DoubleMinus.Applied2(arg1, arg2) =>
-        for (g1 <- differentiate(arg1); g2 <- differentiate(arg2)) yield g1 - g2
+        for (g1 <- differentiate(param, arg1); g2 <- differentiate(param, arg2)) yield g1 - g2
       case _ => None
-    }
-  }
-}
-
-class WithStateDo(doSomething: State => Unit) {
-  private var current: State = null
-  def get[T](state: State, value: => T) = {
-    this.synchronized {
-      if (!(state eq current)) {
-        doSomething(state)
-        current = state
-      }
-      value
     }
   }
 }

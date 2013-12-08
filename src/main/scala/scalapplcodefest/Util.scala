@@ -117,3 +117,32 @@ object SetUtil {
 
 }
 
+/**
+ * Caches computation that is based on a state. Given a state, provides results from this computation. If
+ * results for the same state are requested twice in row, the computation is only performed once.
+ * @param doSomething the computation to do on the state.
+ */
+class WithStateDo(doSomething: State => Unit) {
+  private var current: State = null
+
+  /**
+   * Takes the state and checks whether the last computation was on the same state (as determined by
+   * object identity). If not, the `doSomething` procedure is executed on the state, otherwise no computation is done.
+   * After this check the value expression is evaluated, and this expression would usually involve mutable variables
+   * changed by the computation.
+   * @param state the state on which the value to return depends on.
+   * @param value expression that evaluates to a value.
+   * @tparam T type of value.
+   * @return the `value` after `doSomething` has been applied to `state`.
+   */
+  def get[T](state: State, value: => T) = {
+    this.synchronized {
+      if (!(state eq current)) {
+        doSomething(state)
+        current = state
+      }
+      value
+    }
+  }
+}
+

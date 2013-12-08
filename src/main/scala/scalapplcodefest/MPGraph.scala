@@ -22,7 +22,7 @@ final class MPGraph {
   val factors = new ArrayBuffer[Factor]
 
   /**
-   * Linear factors can depend
+   * Linear factors can depend on a weight vector to calculate their scores.
    */
   var weights: Vector = null
 
@@ -108,8 +108,8 @@ final class MPGraph {
    */
   def build() {
     for (edge <- edges) {
-      if (edge.f.edges == null) edge.f.edges = Array.ofDim[Edge](edge.f.edgeCount)
-      if (edge.n.edges == null) edge.n.edges = Array.ofDim[Edge](edge.n.edgeCount)
+      if (edge.f.edges.length != edge.f.edgeCount) edge.f.edges = Array.ofDim[Edge](edge.f.edgeCount)
+      if (edge.n.edges.length != edge.n.edgeCount) edge.n.edges = Array.ofDim[Edge](edge.n.edgeCount)
       edge.indexInNode = edge.n.edgeFilled
       edge.f.edges(edge.indexInFactor) = edge
       edge.n.edges(edge.indexInNode) = edge
@@ -192,7 +192,7 @@ object MPGraph {
    */
   final class Node(val index: Int, val dim: Int) {
     /* all edges to factors that this node is connected to */
-    var edges: Array[Edge] = null
+    var edges: Array[Edge] = Array.ofDim(0)
 
     /* node belief */
     val b = Array.ofDim[Double](dim)
@@ -257,7 +257,7 @@ object MPGraph {
                      val table: Array[Double],
                      val stats: Array[Vector] = null,
                      val structured: StructuredPotential = null) {
-    var edges: Array[Edge] = null
+    var edges: Array[Edge] = Array.ofDim(0)
     def rank = dims.length
     val entryCount = {
       var result = 1
@@ -290,7 +290,7 @@ object MPGraph {
             s"${setting.mkString(" ")} | ${table(index)}"
         case LINEAR =>
           for ((setting, index) <- settings.zipWithIndex) yield
-            s"${setting.mkString(" ")} | ${score(index)} | ${table(index)} | ${fgPrinter.vector2String(stats(index))}"
+            f"${setting.mkString(" ")}%5s | ${score(index)}%7.4f | ${fgPrinter.vector2String(stats(index))}"
 
       }
       f"""-----------------

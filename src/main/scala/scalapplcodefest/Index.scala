@@ -64,3 +64,7 @@ class Index extends Fun[Seq[Any],Int] {
   }
 
 }
+
+object Index {
+  var toDebug:Option[Index] = None
+}
