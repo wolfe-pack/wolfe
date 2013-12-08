@@ -76,6 +76,21 @@ class Specs extends WordSpec with Matchers {
     }
   }
 
+  "A conditioned term" should {
+    "evaluate to the value its inner term would evaluate to if the condition was added to its state argument" in {
+      val x = 'x of Ints
+      val y = 'y of Ints
+      val c = (x + y) | state(x -> 2)
+      c.eval(state(y -> 1)) should be (Good(3))
+    }
+    "should not return free variables that are defined in its condition" in {
+      val x = 'x of Ints
+      val y = 'y of Ints
+      val c = (x + y) | state(x -> 2)
+      c.variables should be (Set(y))
+    }
+  }
+
   "A set term" should {
     "map each element in the set when mapped" in {
       val n = 'n of Ints
