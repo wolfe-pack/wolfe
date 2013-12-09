@@ -19,7 +19,6 @@ class Index extends Fun[Seq[Any],Int] {
 
   private val map = new TObjectIntCustomHashMap[Array[AnyRef]](new ArrayHashing)
 
-
   def funCandidateDom = new AllOfType[Seq[Any]]//map.keySet().asScala
   def funRange = Ints
   def apply(v1: Seq[Any]) = index(v1.map(_.asInstanceOf[AnyRef]).toArray)

@@ -127,14 +127,6 @@ trait AllObjectsLarge[T] extends AllObjects[T] {
 /**
  * Set of all vectors.
  */
-case object Vecs extends AllObjectsLarge[Vec] {
-  override def size = Util.tooLargeToCount
-  override def head = Vec.zero
-}
-
-/**
- * Set of all vectors.
- */
 case object Vectors extends AllObjectsLarge[Vector] {
   override def size = Util.tooLargeToCount
   override def head = new ScalarTensor(0.0)

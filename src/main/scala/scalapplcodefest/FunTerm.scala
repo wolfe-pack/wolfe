@@ -27,6 +27,7 @@ object FunTerm {
 
   def unapply[A,B](term:Term[Fun[A,B]]):Option[(Term[Set[A]],Term[Set[B]])] = term match {
     case f:FunTerm[_,_] => Some(f.funCandidateDom.asInstanceOf[Term[Set[A]]],f.funRange.asInstanceOf[Term[Set[B]]])
+    case Constant(f) => Some(Constant(f.funCandidateDom),Constant(f.funRange))
     case _ => Some(all[A],all[B])
   }
 

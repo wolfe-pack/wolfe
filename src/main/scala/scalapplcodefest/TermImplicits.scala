@@ -262,12 +262,15 @@ object TermImplicits extends TermDSL {
 }
 
 trait TermDSL {
-  def all[T] = Constant(new AllOfType[T])
-  def set[T](values:T*) = Constant(SeqSet(values))
   val ints = Constant(Ints)
   val doubles = Constant(Doubles)
   val bools = Constant(Bools)
   val vectors = Constant(Vectors)
   val strings = Constant(Strings)
+
+  def all[T] = Constant(new AllOfType[T])
+  def set[T](values:T*) = Constant(SeqSet(values))
+  def fun[A,B](f:PartialFunction[A,B], dom:Set[A] = new AllOfType[A], range:Set[B] = new AllOfType[B]) = Constant(Fun(f,dom,range))
+
 
 }

@@ -110,7 +110,7 @@ class Specs extends WordSpec with Matchers {
 
   "A constant function term" should {
     "be acting like the function when doing function application" in {
-      val f = funTerm[String, Int]({case x => x.length})
+      val f = fun[String, Int]({case x => x.length})
       f.value()("123") should be(3)
     }
   }

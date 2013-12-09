@@ -40,6 +40,12 @@ trait Operator[A, B] extends Fun[A, B] {
 
 }
 
+case class TypedFun[A,B](f:AnyFunction, funCandidateDom:Set[A],funRange:Set[B]) extends Fun[A,B] {
+  val typed = f.asInstanceOf[PartialFunction[A,B]]
+  def isDefinedAt(x: A) = typed.isDefinedAt(x)
+  def apply(x:A) = typed(x)
+}
+
 /**
  * Helper object to build Fun objects.
  */

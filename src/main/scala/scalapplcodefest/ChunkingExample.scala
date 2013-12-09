@@ -20,7 +20,7 @@ object ChunkingExample {
   val chunks = set("O", "B-VP", "B-NP", "B-PP", "I-VP", "I-NP", "I-PP", "B-SBAR", "I-SBAR", "B-ADJP", "I-ADJP")
 
   //a variable corresponding to sentence length.
-  val n = 'n of Ints
+  val n = 'n of ints
 
   //a predicate that maps tokens (integers) in a sentence to their words. Note that the domain of this predicate is dynamic.
   val word = 'word of (0 ~~ n |-> strings)
