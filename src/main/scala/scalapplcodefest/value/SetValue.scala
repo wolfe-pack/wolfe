@@ -1,10 +1,11 @@
 package scalapplcodefest.value
 
 import scala.language.existentials
-import cc.factorie.la.ScalarTensor
+import cc.factorie.la.{SingletonTensor1, ScalarTensor}
 import scala.collection.SetProxy
 import scalapplcodefest._
-import scalapplcodefest.term.{State, Constant, Term, FunTerm}
+import scalapplcodefest.term._
+import scalapplcodefest.term.Constant
 
 /**
  * A set that performs lazy set union and set minus
@@ -102,6 +103,30 @@ case object Ints extends AllObjects[Int] {
     def funRange = new AllOfType[Set[Int]]
     def apply(x:(Int,Int)) = RangeSetValue(x._1,x._2)
   }
+
+  case object Add extends BinaryOperatorSameDomainAndRange[Int] {
+    def apply(v1: (Int, Int)) = v1._1 + v1._2
+    def dom = Ints
+  }
+
+  case object Minus extends BinaryOperatorSameDomainAndRange[Int] {
+    def apply(v1: (Int, Int)) = v1._1 - v1._2
+    def dom = Ints
+  }
+
+  case object ExactlyOne extends Operator[Seq[Boolean],Double] {
+    def funCandidateDom = new AllOfType[Seq[Boolean]]
+    def funRange = Doubles
+    def apply(x: Seq[Boolean]) = if (x.count(identity) == 1) 0.0 else Double.NegativeInfinity
+  }
+
+  case object Divide extends Fun[(Int,Int),Int] {
+    def isDefinedAt(x: (Int, Int)) = x._2 != 0
+    def apply(x:(Int,Int)) = x._1 / x._2
+    def funCandidateDom = CartesianProduct2(Ints,Ints)
+    def funRange = Ints
+  }
+
 }
 
 trait AllObjectsLarge[T] extends AllObjects[T] {
@@ -115,6 +140,53 @@ trait AllObjectsLarge[T] extends AllObjects[T] {
 case object Vectors extends AllObjectsLarge[Vector] {
   override def size = Util.tooLargeToCount
   override def head = new ScalarTensor(0.0)
+
+  object Dot extends BinaryOperatorSameDomain[Vector, Double] {
+    def funRange = Doubles
+    def apply(v1: (Vector, Vector)) = v1._1 dot v1._2
+    def dom = Vectors
+  }
+
+
+  case object VecAdd extends BinaryOperatorSameDomainAndRange[Vector] {
+    def apply(pair: (Vector, Vector)) = {
+      pair match {
+        case (s1: SingletonVector, s2: SingletonVector) =>
+          val result = new SparseVector(2) // what should the dimension be?
+          result += s1
+          result += s2
+          result
+        case (singleton: SingletonVector, other) => other + singleton
+        case (other, singleton: SingletonVector) => other + singleton
+        case (v1, v2) => v1 + v2
+      }
+    }
+    def dom = Vectors
+  }
+
+  case object VecMinus extends BinaryOperatorSameDomainAndRange[Vector] {
+    def apply(pair: (Vector, Vector)) = {
+      pair match {
+        case (s1: SingletonVector, s2: SingletonVector) =>
+          val result = new SparseVector(2) // what should the dimension be?
+          result += s1
+          result -= s2
+          result
+        case (singleton: SingletonVector, other) =>singleton - other
+        case (other, singleton: SingletonVector) => singleton - other
+        case (v1, v2) => v1 - v2
+      }
+    }
+    def dom = Vectors
+  }
+
+  case object UnitVector extends Operator[(Int,Double),Vector] {
+    def funCandidateDom = CartesianProduct2(Ints,Doubles)
+    def funRange = Vectors
+    def apply(indexValue:(Int,Double)) = new SingletonTensor1(1, indexValue._1, indexValue._2)
+  }
+
+
 }
 
 
@@ -124,6 +196,30 @@ case object Vectors extends AllObjectsLarge[Vector] {
 case object Bools extends AllObjects[Boolean] {
   def iterator = Iterator(false, true)
   override def head = false
+
+  trait BinaryBoolOperator extends BinaryOperatorSameDomainAndRange[Boolean] {def dom = Bools}
+
+  case object And extends BinaryBoolOperator {def apply(v1: (Boolean, Boolean)) = v1._1 && v1._2}
+  case object Or extends BinaryBoolOperator {def apply(v1: (Boolean, Boolean)) = v1._1 || v1._2}
+  case object Implies extends BinaryBoolOperator {def apply(v1: (Boolean, Boolean)) = !v1._1 || v1._2}
+  case object Equiv extends BinaryBoolOperator {def apply(v1: (Boolean, Boolean)) = v1._1 == v1._2}
+
+
+  case object Neg extends Operator[Boolean, Boolean] {
+    def funCandidateDom = Bools
+    override def funDom = Bools
+    def funRange = Bools
+    def apply(v1: Boolean) = !v1
+  }
+
+  case object Iverson extends Operator[Boolean, Double] {
+    def funCandidateDom = Bools
+    override def funDom = Bools
+    def funRange = Doubles
+    def apply(x: Boolean) = if (x) 1.0 else 0.0
+  }
+
+
 }
 
 /**
@@ -138,9 +234,27 @@ case object Strings extends AllObjectsLarge[String] {
  */
 case object Doubles extends AllObjectsLarge[Double] {
   override def head = 0.0
-}
 
-import scala.reflect._
+  case object Add extends BinaryOperatorSameDomainAndRange[Double] {
+    def apply(v1: (Double, Double)) = v1._1 + v1._2
+    def dom = Doubles
+  }
+
+  case object Minus extends BinaryOperatorSameDomainAndRange[Double] {
+    def apply(v1: (Double, Double)) = v1._1 - v1._2
+    def dom = Doubles
+  }
+  case object Times extends BinaryOperatorSameDomainAndRange[Double] {
+    def apply(v1: (Double, Double)) = v1._1 * v1._2
+    def dom = Doubles
+  }
+
+  case object Log extends Operator[Double,Double] {
+    def funCandidateDom = Doubles //todo: non-negative
+    def funRange = Doubles
+    def apply(x: Double) = math.log(x)
+  }
+}
 
 class AllOfType[T] extends AllObjectsLarge[T] {
   val tag = manifest

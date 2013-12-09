@@ -8,7 +8,6 @@ import scala.Some
 import scalapplcodefest.value.Reduce
 import scalapplcodefest.term.RestrictedFun
 import scalapplcodefest.term.DynFunTerm
-import Math.UnitVec
 import scalapplcodefest.value.SeqSet
 import scalapplcodefest.term.FunApp
 
@@ -73,7 +72,7 @@ object TermDSL {
   def C[T1, T2](a1: Term[Set[T1]], a2: Term[Set[T2]]) = RichCartesianProductTerm2(CartesianProductTerm2(a1, a2))
 
   //math
-  def unit(index: Term[Int], value: Term[Double] = Constant(1.0)) = UnitVec(index, value)
+  def unit(index: Term[Int], value: Term[Double] = Constant(1.0)) = FunApp(vectors.unit, TupleTerm2(index, value))
   def I(term: Term[Boolean]) = FunApp(bools.iverson, term)
   def log(term: Term[Double]) = FunApp(doubles.log, term)
 
@@ -210,14 +209,14 @@ object TermDSL {
   }
 
   case class RichTupleTerm2[T1, T2](t: Term[(T1, T2)]) {
-    def _1 = ArgTerm(t.domain, Constant(new AllOfType[T2]), 0)
-    def _2 = ArgTerm(t.domain, Constant(new AllOfType[T2]), 1)
+    def _1 = ArgTerm(t.domain, Constant(new AllOfType[T2]), Constant(0))
+    def _2 = ArgTerm(t.domain, Constant(new AllOfType[T2]), Constant(1))
   }
 
   case class RichIntTerm(i: Term[Int]) {
     def +(that: Term[Int]) = FunApp(ints.add, TupleTerm2(i, that))
     def -(that: Term[Int]) = FunApp(ints.minus, TupleTerm2(i, that))
-    def /(that: Term[Int]) = FunApp(RestrictedFun(IntDivide, CartesianProductTerm2(i.domain, that.domain), Constant(Ints)), TupleTerm2(i, that))
+    def /(that: Term[Int]) = FunApp(ints.divide, TupleTerm2(i, that))
 
     def ~~(that: Term[Int]) = RangeSet(i, that)
   }
@@ -277,8 +276,6 @@ object TermDSL {
 
 //}
 
-//trait TermDSL {
-
   trait ConstantValue[T] extends Term[T] {
     def unapply(term: Term[Any]): Boolean = term == this
   }
@@ -327,32 +324,35 @@ object TermDSL {
   }
 
   object ints extends Constant(Ints) with ConstantSet[Int] {
-    val add = new Constant(Math.IntAdd) with ConstantOperator[Int]
-    val minus = new Constant(Math.IntMinus) with ConstantOperator[Int]
+    val add = new Constant(Ints.Add) with ConstantOperator[Int]
+    val minus = new Constant(Ints.Minus) with ConstantOperator[Int]
     val range = new Constant(Ints.Range) with ConstantFun2[Int,Int,Set[Int]]
+    val divide = new Constant(Ints.Divide) with ConstantOperator[Int]
+
   }
 
   object doubles extends Constant(Doubles) with ConstantSet[Double] {
-    val add = new Constant(Math.DoubleAdd) with ConstantOperator[Double]
-    val minus = new Constant(Math.DoubleMinus) with ConstantOperator[Double]
-    val times = new Constant(Math.DoubleMultiply) with ConstantOperator[Double]
-    val log = new Constant(Math.Log) with ConstantFun1[Double,Double]
+    val add = new Constant(Doubles.Add) with ConstantOperator[Double]
+    val minus = new Constant(Doubles.Minus) with ConstantOperator[Double]
+    val times = new Constant(Doubles.Times) with ConstantOperator[Double]
+    val log = new Constant(Doubles.Log) with ConstantFun1[Double,Double]
   }
 
   object bools extends Constant(Bools) with ConstantSet[Boolean] {
-    val and = new Constant(Logic.And) with ConstantOperator[Boolean]
-    val or = new Constant(Logic.Or) with ConstantOperator[Boolean]
-    val implies = new Constant(Logic.Implies) with ConstantOperator[Boolean]
-    val equiv = new Constant(Logic.Equiv) with ConstantOperator[Boolean]
-    val neg = new Constant(Logic.Neg) with ConstantFun1[Boolean,Boolean]
-    val iverson = new Constant(Math.Iverson) with ConstantFun1[Boolean,Double]
+    val and = new Constant(Bools.And) with ConstantOperator[Boolean]
+    val or = new Constant(Bools.Or) with ConstantOperator[Boolean]
+    val implies = new Constant(Bools.Implies) with ConstantOperator[Boolean]
+    val equiv = new Constant(Bools.Equiv) with ConstantOperator[Boolean]
+    val neg = new Constant(Bools.Neg) with ConstantFun1[Boolean,Boolean]
+    val iverson = new Constant(Bools.Iverson) with ConstantFun1[Boolean,Double]
 
   }
 
   object vectors extends Constant(Vectors) with ConstantSet[Vector] {
-    val dot = new Constant(Math.Dot) with ConstantFun2[Vector, Vector, Double]
-    val add = new Constant(Math.VecAdd) with ConstantOperator[Vector]
-    val minus = new Constant(Math.VecMinus) with ConstantOperator[Vector]
+    val dot = new Constant(Vectors.Dot) with ConstantFun2[Vector, Vector, Double]
+    val add = new Constant(Vectors.VecAdd) with ConstantOperator[Vector]
+    val minus = new Constant(Vectors.VecMinus) with ConstantOperator[Vector]
+    val unit = new Constant(Vectors.UnitVector) with ConstantFun2[Int,Double,Vector]
 
   }
 

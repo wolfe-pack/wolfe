@@ -1,7 +1,7 @@
 package scalapplcodefest.term
 
 import org.scalautils.Good
-import scalapplcodefest.value.{Fun, Bools, AllObjectsLarge, SetValue}
+import scalapplcodefest.value._
 import scalapplcodefest._
 import org.scalautils.Bad
 

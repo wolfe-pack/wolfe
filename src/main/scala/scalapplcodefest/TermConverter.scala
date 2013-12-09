@@ -54,7 +54,7 @@ object TermConverter {
       case Var(v, d) => converter.convert(Var(v, convertDepthFirst(d, keepBrackets)(converter)))
       case Reduce(o, a) => converter.convert(Reduce(convertDepthFirst(o, keepBrackets)(converter).asInstanceOf[Term[Fun[(T, T), T]]], convertDepthFirst(a, keepBrackets)(converter)))
       case LinearModel(f, Var(w, d), b) => converter.convert(LinearModel(convertDepthFirst(f, keepBrackets)(converter), Var(w, convertDepthFirst(d, keepBrackets)(converter)), convertDepthFirst(b, keepBrackets)(converter)))
-      case UnitVec(i, v) => converter.convert(UnitVec(convertDepthFirst(i, keepBrackets)(converter), convertDepthFirst(v, keepBrackets)(converter)))
+//      case UnitVec(i, v) => converter.convert(UnitVec(convertDepthFirst(i, keepBrackets)(converter), convertDepthFirst(v, keepBrackets)(converter)))
       case Predicate(n, d, r) => converter.convert(Predicate(n, convertDepthFirst(d, keepBrackets)(converter), convertDepthFirst(r, keepBrackets)(converter)))
       case GroundAtom(p, a) => converter.convert(GroundAtom(convertDepthFirst(p, keepBrackets)(converter).asInstanceOf[Predicate[Any, _]], a))
       case RangeSet(f, t) => converter.convert(RangeSet(convertDepthFirst(f, keepBrackets)(converter), convertDepthFirst(t, keepBrackets)(converter)))

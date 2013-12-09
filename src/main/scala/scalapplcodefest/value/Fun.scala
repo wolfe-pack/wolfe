@@ -1,6 +1,5 @@
 package scalapplcodefest.value
 
-import scalapplcodefest.term.CartesianProduct2
 import scalapplcodefest.AnyFunction
 
 /**
@@ -104,6 +103,46 @@ trait BinaryOperator[T1, T2, R] extends Operator[(T1, T2), R] {
   def funCandidateDom = CartesianProduct2(dom1, dom2)
 
 }
+
+/**
+ * Set of a functions from domain to range
+ * @param domain the domain of the functions
+ * @param range the range of the functions
+ * @tparam A argument type.
+ * @tparam B return type.
+ */
+case class AllFunctions[A, B](domain: Set[A], range: Set[B]) extends SetValue[Fun[A, B]] {
+
+  self =>
+
+  def contains(elem: Fun[A, B]) = elem.funDom == domain && elem.funRange == range
+  def iterator = {
+    def allFunctions(d: List[A], r: List[B], funs: List[Fun[A, B]] = List(Fun.empty)): List[Fun[A, B]] = {
+      d match {
+        case Nil => funs
+        case newArg :: tail =>
+          val newFunctions = for (v <- r; f <- funs) yield new Fun[A, B] {
+            def funCandidateDom = self.domain
+            def funRange = range
+            override def funDom = self.domain
+            def apply(v1: A) = if (v1 == newArg) v else f(v1)
+            def isDefinedAt(x: A) = x == newArg || f.isDefinedAt(x)
+          }
+          allFunctions(tail, r, newFunctions)
+      }
+    }
+    allFunctions(domain.toList, range.toList).iterator
+  }
+}
+
+class AllFunctionsOp[A, B] extends Fun[(Set[A], Set[B]), Set[Fun[A, B]]] {
+  def funCandidateDom = new AllOfType[(Set[A], Set[B])]
+  override def funDom = funCandidateDom
+  def funRange = new AllOfType[Set[Fun[A, B]]]
+  def isDefinedAt(x: (Set[A], Set[B])) = true
+  def apply(v1: (Set[A], Set[B])) = AllFunctions(v1._1, v1._2)
+}
+
 
 
 

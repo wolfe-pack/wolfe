@@ -1,8 +1,5 @@
 package scalapplcodefest
 
-import scalapplcodefest.value.MoreArrayOps
-
-
 /**
  * @author Sebastian Riedel
  */

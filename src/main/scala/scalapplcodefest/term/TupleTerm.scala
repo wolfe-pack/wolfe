@@ -61,14 +61,6 @@ case class ArgTerm[P <:Product, A](dom:Term[Set[P]], range:Term[Set[A]], arg:Ter
   def eval(state: State) = for (d <- dom.eval(state); r <- range.eval(state); a <- arg.eval(state)) yield Arg(d,r,a)
 }
 
-case class CartesianProduct2[A1,A2](d1:Set[A1],d2:Set[A2]) extends SetValue[(A1,A2)] {
-  def contains(elem: (A1, A2)) = d1(elem._1) && d2(elem._2)
-  def iterator = for (v1 <- d1.iterator; v2 <- d2.iterator) yield (v1,v2)
-}
-case class CartesianProduct3[A1,A2,A3](d1:Set[A1],d2:Set[A2],d3:Set[A3]) extends SetValue[(A1,A2,A3)] {
-  def contains(elem: (A1, A2, A3)) = d1(elem._1) && d2(elem._2) && d3(elem._3)
-  def iterator = for (v1 <- d1.iterator; v2 <- d2.iterator; v3 <- d3.iterator) yield (v1,v2,v3)
-}
 
 //abstract class CartesianOperator2[A1,A2] extends Operator[(Set[A1],Set[A2]),Set[(A1,A2)]] {
 //  def funCandidateDom = ???
@@ -129,28 +121,3 @@ object VarSeq {
   }
 }
 
-
-case object MapIterable extends PartialFunction[(Iterable[Any],Fun[Any,Any]),Iterable[Any]] {
-  def apply(v1: (Iterable[Any], Fun[Any, Any])) = v1 match {case (s,f) => s.map(f)}
-  def isDefinedAt(x: (Iterable[Any], Fun[Any, Any])) = true
-}
-
-case object CollectIterable extends PartialFunction[(Iterable[Any],Fun[Any,Any]),Iterable[Any]] {
-  def apply(v1: (Iterable[Any], Fun[Any, Any])) = v1 match {case (s,f) => s.collect(f)}
-  def isDefinedAt(x: (Iterable[Any], Fun[Any, Any])) = true
-}
-
-case object FilterIterable extends PartialFunction[(Iterable[Any],Fun[Any,Boolean]),Iterable[Any]] {
-  def apply(v1: (Iterable[Any], Fun[Any, Boolean])) = v1 match {case (s,f) => s.filter(f)}
-  def isDefinedAt(x: (Iterable[Any], Fun[Any, Boolean])) = true
-}
-
-case object IsDefined extends PartialFunction[(PartialFunction[Any,Any],Any),Boolean] {
-  def isDefinedAt(x: (PartialFunction[Any, Any], Any)) = true
-  def apply(x: (PartialFunction[Any, Any], Any)) = x match {case (f,a) => f.isDefinedAt(a)}
-}
-
-case object IntDivide extends PartialFunction[(Int,Int),Int] {
-  def isDefinedAt(x: (Int, Int)) = x._2 != 0
-  def apply(x:(Int,Int)) = x._1 / x._2
-}

@@ -3,6 +3,8 @@ package scalapplcodefest
 import java.io.{FileInputStream, InputStream}
 import scalapplcodefest.value.SetValue
 import scalapplcodefest.term.{State, Predicate, Var}
+import cc.factorie.maths.ArrayOps
+import java.util
 
 /**
  * @author Sebastian Riedel
@@ -147,6 +149,13 @@ class WithStateDo(doSomething: State => Unit) {
     }
   }
 }
+
+object MoreArrayOps extends ArrayOps {
+  def maxValue(s:A): Double = { var result = s(0); var i = 0; while (i < s.length) { if (s(i) > result) result = s(i); i += 1 }; result }
+  def maxNormalize(s:A) { val norm = maxValue(s); this -= (s,norm)}
+  def fill(s:A,v:Double) { util.Arrays.fill(s,v)}
+}
+
 
 object PatternMatchingVariancePlayground {
   trait Term[T]
