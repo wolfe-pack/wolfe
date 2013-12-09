@@ -9,7 +9,7 @@ import scalapplcodefest.Math.UnitVec
  *
  * @author Sebastian Riedel
  */
-object TermImplicits {
+object TermImplicits extends TermDSL {
 
   implicit def intToConstant(x: Int) = Constant(x)
   implicit def intToTerm(x: Int) = RichIntTerm(x)
@@ -261,4 +261,8 @@ object TermImplicits {
     def atom(a1: A1, a2: A2) = GroundAtom(p, (a1, a2))
   }
 
+}
+
+trait TermDSL {
+  def all[T] = Constant(new AllOfType[T])
 }

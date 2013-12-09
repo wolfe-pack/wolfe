@@ -31,6 +31,14 @@ case class FunTermProxy[A, B](self: Term[Fun[A, B]]) extends FunTerm[A, B] with 
  * Helper object to build FunTerms
  */
 object FunTerm {
+
+  import TermImplicits._
+
+  def unapply[A,B](term:Term[Fun[A,B]]):Option[(Term[Set[A]],Term[Set[B]])] = term match {
+    case f:FunTerm[_,_] => Some(f.funCandidateDom.asInstanceOf[Term[Set[A]]],f.funRange.asInstanceOf[Term[Set[B]]])
+    case _ => Some(all[A],all[B])
+  }
+
   /**
    * Returns term that corresponds to creating the set of all possible functions
    * given a domain and range.
@@ -106,7 +114,8 @@ case class ConstantFun[A, B](fun: Fun[A, B]) extends FunTerm[A, B] {
  * @tparam A argument type of function
  * @tparam B return type of function
  */
-case class FunApp[A, B](function: FunTerm[A, B], arg: Term[A]) extends Term[B] {
+case class FunApp[A, B](function: Term[Fun[A, B]], arg: Term[A]) extends Term[B] {
+  val FunTerm(funCandidateDom, funRange) = function
   def eval(state: State) =
     for (f <- function.eval(state);
          a <- arg.eval(state);
@@ -115,7 +124,7 @@ case class FunApp[A, B](function: FunTerm[A, B], arg: Term[A]) extends Term[B] {
     case p@Predicate(n, d, r) => PartialGroundAtoms(p, arg)
     case _ => SetUtil.SetUnion(List(function.variables, arg.variables))
   }
-  def default = function.default(function.funCandidateDom.default.head)
+  def default = function.default(funCandidateDom.default.head)
   def domain[C >: B] = Image(function, arg.domain).asInstanceOf[Term[Set[C]]] //replace by function.funDomain collectedBy function?
   //could also be function.funRange
   override def toString = s"$function($arg)"
@@ -213,7 +222,7 @@ class AllFunctionsOp[A, B] extends Fun[(Set[A], Set[B]), Set[Fun[A, B]]] {
  * @tparam A argument type of function.
  * @tparam B return type of function.
  */
-case class Image[A, B](fun: FunTerm[A, B], dom: Term[Set[A]]) extends Term[Set[B]] {
+case class Image[A, B](fun: Term[Fun[A, B]], dom: Term[Set[A]]) extends Term[Set[B]] {
   def eval(state: State) = for (f <- fun.eval(state); d <- dom.eval(state)) yield SetUtil.SetMap(d, f)
   def variables = SetUtil.SetUnion(List(fun.variables, dom.variables))
   def domain[C >: Set[B]] = Constant(Util.setToBeImplementedLater[C])
