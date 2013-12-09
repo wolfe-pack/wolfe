@@ -15,3 +15,4 @@ project/plugins/project/
 # intellij
 .idea 
 .idea_modules
+!.idea/codeStyleSettings.xml
