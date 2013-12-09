@@ -1,7 +1,8 @@
-package scalapplcodefest
+package scalapplcodefest.term
 
 import org.scalautils.{Bad, Good}
-import scalapplcodefest.value.{AllOfType, SetValue}
+import scalapplcodefest.value.{Fun, AllOfType, SetValue}
+import scalapplcodefest._
 
 /**
  * FunTerms evaluate to partial functions. The function candidate domain where the function is defined for
@@ -14,7 +15,7 @@ import scalapplcodefest.value.{AllOfType, SetValue}
  */
 trait FunTerm[A, B] extends Term[Fun[A, B]] {
 
-  import TermImplicits._
+  import TermDSL._
 
   def funCandidateDom: Term[Set[A]]
   def funRange: Term[Set[B]]
@@ -26,7 +27,7 @@ trait FunTerm[A, B] extends Term[Fun[A, B]] {
  */
 object FunTerm {
 
-  import TermImplicits._
+  import TermDSL._
 
   def unapply[A, B](term: Term[Fun[A, B]]): Option[(Term[Set[A]], Term[Set[B]])] = term match {
     case f: FunTerm[_, _] => Some(f.funCandidateDom.asInstanceOf[Term[Set[A]]], f.funRange.asInstanceOf[Term[Set[B]]])

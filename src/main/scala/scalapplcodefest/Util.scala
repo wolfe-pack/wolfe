@@ -2,6 +2,7 @@ package scalapplcodefest
 
 import java.io.{FileInputStream, InputStream}
 import scalapplcodefest.value.SetValue
+import scalapplcodefest.term.{State, Predicate, Var}
 
 /**
  * @author Sebastian Riedel
@@ -69,7 +70,7 @@ object Util {
     groupLines(lines).map(conllToState(_,predicates, length))
 
   def conllToState(lines: Seq[String], predicates: Seq[Predicate[Int, String]], length: Var[Int]) = {
-    import TermImplicits._
+    import TermDSL._
     val map = for ((line, i) <- lines.zipWithIndex;
                    (s, pred) <- line.split("\\s+") zip predicates) yield pred.atom(i) -> s
     State((map :+ length -> lines.length).toMap)

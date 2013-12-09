@@ -4,12 +4,13 @@ import cc.factorie.optimize.{Trainer, Perceptron, OnlineTrainer, Example}
 import cc.factorie.util.DoubleAccumulator
 import cc.factorie.la.WeightsMapAccumulator
 import cc.factorie.WeightsSet
-import TermImplicits._
+import TermDSL._
+import scalapplcodefest.term.{State, Differentiable, Term}
 
 
 /**
  * A minimizer of a differentiable real valued function. Uses factorie optimization package and
- * the [[scalapplcodefest.Differentiable]] pattern.
+ * the [[Differentiable]] pattern.
  */
 object GradientBasedMinimizer {
   def minimize(objective: Term[Double], trainerFor: WeightsSet => Trainer = new OnlineTrainer(_, new Perceptron, 5)) = {

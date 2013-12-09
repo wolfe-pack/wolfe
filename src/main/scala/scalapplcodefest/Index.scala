@@ -6,7 +6,8 @@ import gnu.trove.map.custom_hash.TObjectIntCustomHashMap
 import scala.collection.mutable
 import gnu.trove.procedure.TObjectIntProcedure
 import scala.collection.convert.decorateAsScala
-import scalapplcodefest.value.{AllOfType, Ints}
+import scalapplcodefest.value.{Fun, AllOfType, Ints}
+import scalapplcodefest.term.{Constant, Term, SeqTerm, FunApp}
 
 /**
  * @author Sebastian Riedel

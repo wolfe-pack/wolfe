@@ -4,6 +4,7 @@ import scala.language.existentials
 import cc.factorie.la.ScalarTensor
 import scala.collection.SetProxy
 import scalapplcodefest._
+import scalapplcodefest.term.{State, Constant, Term, FunTerm}
 
 /**
  * A set that performs lazy set union and set minus

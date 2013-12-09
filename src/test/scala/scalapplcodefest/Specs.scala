@@ -6,6 +6,13 @@ import Tolerance._
 import org.scalautils._
 import cc.factorie.optimize.{Perceptron, OnlineTrainer}
 import scalapplcodefest.value.{AllOfType, Doubles, Vectors, Gen}
+import scalapplcodefest.term._
+import scala.Some
+import scalapplcodefest.value.Gen
+import scalapplcodefest.term.FunctionNotDefinedAt
+import scalapplcodefest.term.Constant
+import org.scalautils.Bad
+import scalapplcodefest.term.VariableUndefined
 
 /**
  * Set of specs.
@@ -15,7 +22,7 @@ class Specs extends WordSpec with Matchers {
 
   def eps = 0.0002
 
-  import TermImplicits._
+  import TermDSL._
   import CustomEqualities._
 
   "A constant" should {

@@ -1,7 +1,8 @@
-package scalapplcodefest
+package scalapplcodefest.term
 
 import org.scalautils.{Bad, Good}
-import scalapplcodefest.value.{AllOfType, SetValue}
+import scalapplcodefest.value._
+import scalapplcodefest.{Util,SetUtil}
 
 /**
  * @author Sebastian Riedel

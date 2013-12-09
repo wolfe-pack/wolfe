@@ -1,4 +1,6 @@
-package scalapplcodefest
+package scalapplcodefest.term
+
+import scalapplcodefest._
 
 /**
  * The Conditioned term add a "condition" to each state its evaluates against. This can serve as

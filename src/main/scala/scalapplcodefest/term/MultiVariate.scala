@@ -1,11 +1,11 @@
-package scalapplcodefest
+package scalapplcodefest.term
 
 import org.scalautils.Good
-import TermImplicits._
-import Math._
 import scalapplcodefest.TermConverter._
-import scala.Some
 import scalapplcodefest.value.Vectors
+import scalapplcodefest._
+import scala.Some
+import TermDSL._
 
 object MultiVariate {
   def unapply(term: Term[Double]): Option[Variable[Vector]] = term match {

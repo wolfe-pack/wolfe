@@ -1,4 +1,4 @@
-package scalapplcodefest
+package scalapplcodefest.term
 
 import scalapplcodefest.value.Doubles
 

@@ -1,8 +1,15 @@
-package scalapplcodefest
+package scalapplcodefest.example
 
 import scala.io.Source
 import cc.factorie.optimize.{Perceptron, OnlineTrainer}
 import scalapplcodefest.value.Vectors
+import scalapplcodefest.term.{State, Max, SeqTerm}
+import scalapplcodefest._
+import scalapplcodefest.TermDSL._
+import scalapplcodefest.term.SeqTerm
+import scala.Some
+import scalapplcodefest.term.SeqTerm
+import scala.Some
 
 
 /**
@@ -12,7 +19,7 @@ import scalapplcodefest.value.Vectors
  */
 object ChunkingExample {
 
-  import TermImplicits._
+  import TermDSL._
 
   // An map from value sequences (such as word,chunk pairs) to integer indices into a vector space.
   val key = new Index()

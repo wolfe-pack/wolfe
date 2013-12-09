@@ -1,5 +1,7 @@
 package scalapplcodefest
 
+import scalapplcodefest.term._
+
 /**
  * State-based generic evaluators.
  * @author Sebastian Riedel

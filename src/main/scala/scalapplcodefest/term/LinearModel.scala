@@ -1,20 +1,21 @@
-package scalapplcodefest
+package scalapplcodefest.term
 
-import TermImplicits._
+import scalapplcodefest._
+import scala.Some
+
 /**
  * A linear model: vectors.dot product of feature and weights, added to a base measure.
  * @author Sebastian Riedel
  */
 case class LinearModel(features:Term[Vector],weights:Variable[Vector],base:Term[Double] = Constant(0.0))
   extends Term[Double] with ProxyTerm[Double] {
-  import TermImplicits._
+  import TermDSL._
   def self = (features dot weights) + base
 }
 
 object Linear {
 
-  import Math._
-  import TermImplicits._
+  import TermDSL._
 
   def unapply(term:Term[Double]):Option[(Term[Vector],Variable[Vector],Term[Double])] = term match {
     case LinearModel(f,w,b) => Some(f,w,b)

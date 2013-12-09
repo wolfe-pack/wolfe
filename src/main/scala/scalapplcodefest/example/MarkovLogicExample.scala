@@ -1,6 +1,9 @@
-package scalapplcodefest
+package scalapplcodefest.example
 
 import scalapplcodefest.value.Vectors
+import scalapplcodefest.term.Max
+import scalapplcodefest.{Index, TermDSL}
+import scalapplcodefest.TermDSL._
 
 /**
  * The smokes & cancer MLN.
@@ -11,7 +14,7 @@ object MarkovLogicExample {
 
   //this gives us syntactic sugar
 
-  import TermImplicits._
+  import TermDSL._
 
   //index for indexing feature vectors
   val key = new Index()

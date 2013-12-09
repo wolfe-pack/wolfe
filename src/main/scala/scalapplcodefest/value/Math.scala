@@ -1,9 +1,12 @@
-package scalapplcodefest
+package scalapplcodefest.value
 
 import cc.factorie.la.SingletonTensor1
 import cc.factorie.maths.ArrayOps
 import java.util
-import scalapplcodefest.value._
+import scalapplcodefest.term._
+import scalapplcodefest._
+import scalapplcodefest.Vector
+import scalapplcodefest.term.CartesianProduct2
 
 /**
  * Math-related function objects.

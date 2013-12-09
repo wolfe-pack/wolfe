@@ -1,8 +1,11 @@
 package scalapplcodefest
 
 import cc.factorie.maths.ArrayOps
-import scalapplcodefest.value.Doubles
-import TermImplicits._
+import scalapplcodefest.value.{Fun, Doubles}
+import TermDSL._
+import scalapplcodefest.term._
+import scalapplcodefest.term.Belief
+import scala.Some
 
 /**
  * Turns double terms into message passing factor graphs.

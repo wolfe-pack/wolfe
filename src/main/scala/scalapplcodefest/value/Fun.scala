@@ -1,6 +1,7 @@
-package scalapplcodefest
+package scalapplcodefest.value
 
-import scalapplcodefest.value.{All, AllOfType, Bools}
+import scalapplcodefest.term.CartesianProduct2
+import scalapplcodefest.AnyFunction
 
 /**
  * @author Sebastian Riedel
@@ -13,12 +14,11 @@ import scalapplcodefest.value.{All, AllOfType, Bools}
 trait Fun[A, B] extends PartialFunction[A, B] {
 
   def funCandidateDom: Set[A]
-  //TODO: would like to make this lazy
   def funDom: Set[A] = funCandidateDom.filter(isDefinedAt)
   def funRange: Set[B]
 
 
-  override def toString() = getClass().getSimpleName
+  override def toString() = getClass.getSimpleName
 }
 
 /**
@@ -27,7 +27,7 @@ trait Fun[A, B] extends PartialFunction[A, B] {
  * @tparam A argument type.
  * @tparam B return type.
  */
-trait Operator[A, B] extends Fun[A, B] {
+trait Operator[A, B] extends Fun[A, B] {  //todo naming is not consistent with the DSL implicit
   self =>
 
   def isDefinedAt(x: A) = true

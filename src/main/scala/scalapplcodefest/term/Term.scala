@@ -1,4 +1,4 @@
-package scalapplcodefest
+package scalapplcodefest.term
 
 import scala.language.implicitConversions
 import org.scalautils.{Good, Or}
@@ -11,9 +11,9 @@ import org.scalautils.{Good, Or}
  * The meaning of a term is defined
  * through [[http://en.wikipedia.org/wiki/Denotational_semantics compositional denotational semantics]]
  * (sometimes also known as '''mathematical semantics'''). Given a
- * [[scalapplcodefest.State]] (or "environment") which assigns free variables to objects in a domain,
+ * [[scalapplcodefest.term.State]] (or "environment") which assigns free variables to objects in a domain,
  * a term itself denotes an object with Type `T` of that domain. In other words, the meaning of a term is a mapping from
- * [[scalapplcodefest.State]] objects to objects of type `T`. Usually this function is recursively defined through
+ * [[scalapplcodefest.term.State]] objects to objects of type `T`. Usually this function is recursively defined through
  * the functions assigned to sub-parts of the term. For example, the term `x + 1` for a state `x->2` is mapped
  * to the sum (meaning of `+`) of the meaning of `x` (the Int `2`) and the meaning of `1` (the Int `1`).
  *

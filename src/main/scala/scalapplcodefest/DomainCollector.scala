@@ -1,6 +1,7 @@
 package scalapplcodefest
 
 import scala.collection.mutable
+import scalapplcodefest.term._
 
 /**
  * @author Sebastian Riedel

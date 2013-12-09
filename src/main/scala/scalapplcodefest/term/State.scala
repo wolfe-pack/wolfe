@@ -1,4 +1,8 @@
-package scalapplcodefest
+package scalapplcodefest.term
+
+import scalapplcodefest.value.Fun
+import scala.Some
+import scalapplcodefest.SetUtil
 
 /**
  * A state maps variables to values.

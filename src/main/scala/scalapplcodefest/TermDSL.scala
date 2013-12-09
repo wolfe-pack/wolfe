@@ -2,10 +2,15 @@ package scalapplcodefest
 
 import scala.language.implicitConversions
 import scalapplcodefest.value._
+import scalapplcodefest.term._
 import scalapplcodefest.value.RangeSet
 import scala.Some
-import scalapplcodefest.Math.UnitVec
+import scalapplcodefest.value.Reduce
+import scalapplcodefest.term.RestrictedFun
+import scalapplcodefest.term.DynFunTerm
+import Math.UnitVec
 import scalapplcodefest.value.SeqSet
+import scalapplcodefest.term.FunApp
 
 /**
  * This object provides a set of implicit conversions that allow users
@@ -13,7 +18,7 @@ import scalapplcodefest.value.SeqSet
  *
  * @author Sebastian Riedel
  */
-object TermImplicits {
+object TermDSL {
 
   implicit def intToConstant(x: Int) = Constant(x)
   implicit def intToTerm(x: Int) = RichIntTerm(x)

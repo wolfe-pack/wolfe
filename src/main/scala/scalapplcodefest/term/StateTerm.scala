@@ -1,4 +1,4 @@
-package scalapplcodefest
+package scalapplcodefest.term
 
 import org.scalautils.Good
 import scalapplcodefest.value.AllOfType

@@ -1,7 +1,8 @@
-package scalapplcodefest
+package scalapplcodefest.term
 
-import org.scalautils.{Bad, Good}
-import scalapplcodefest.value.AllOfType
+import org.scalautils.Good
+import scalapplcodefest.value.{Fun, AllOfType}
+import org.scalautils.Bad
 
 /**
  * Variables are terms that get replaced by values assignment to them in states.
@@ -21,7 +22,7 @@ trait Variable[+T] extends Term[T] {
   /**
    * The denotation of a variable.
    * @param state the state object that binds variables to values.
-   * @return `Right(value)` if `variable->value` in `state`, [[scalapplcodefest.Variable#domain]] is defined in
+   * @return `Right(value)` if `variable->value` in `state`, [[Variable#domain]] is defined in
    *         `state` as `dom` and `dom(value)` holds. Else `Left(this)`.
    */
   def eval(state: State) = {

@@ -1,7 +1,17 @@
 package scalapplcodefest
 
 import scala.language.implicitConversions
-import scalapplcodefest.value.{RangeSet, Reduce}
+import scalapplcodefest.value._
+import scalapplcodefest.term._
+import scalapplcodefest.value.RangeSet
+import scala.Some
+import scalapplcodefest.term.ImageSeq1
+import scalapplcodefest.value.Reduce
+import scalapplcodefest.term.ImageSeq2
+import scalapplcodefest.term.LambdaAbstraction
+import scalapplcodefest.term.SeqTerm
+import scalapplcodefest.term.TupleTerm2
+import scalapplcodefest.term.FunApp
 
 /**
  * A set of methods to convert one term into another.
@@ -10,7 +20,7 @@ import scalapplcodefest.value.{RangeSet, Reduce}
  */
 object TermConverter {
 
-  import TermImplicits._
+  import TermDSL._
   import Math._
 
   /**
