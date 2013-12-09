@@ -1,7 +1,7 @@
 package scalapplcodefest
 
 import scala.language.implicitConversions
-import scalapplcodefest.Math.UnitVec
+import scalapplcodefest.value.{RangeSet, Reduce}
 
 /**
  * A set of methods to convert one term into another.
@@ -150,7 +150,7 @@ object TermConverter {
    * @tparam O type of arguments to the binary operator
    * @return term with flattened trees.
    */
-  def flatten[T, O](term: Term[T], op: BinaryOperatorSameDomainAndRange[O]): Term[T] = convertDepthFirst(term) {
+  def flatten[T, O](term: Term[T], op: ConstantOperator[O]): Term[T] = convertDepthFirst(term) {
     new Converter {
       def convert[A](arg: Term[A]) = {
         implicit def cast(t: Term[Any]) = t.asInstanceOf[Term[A]]
@@ -161,21 +161,22 @@ object TermConverter {
               case t => Seq(t)
             })
             val flattened = inner.flatMap(identity)
-            Reduce(op.Term, SeqTerm(flattened))
+            Reduce(op, SeqTerm(flattened))
           case op.Applied2(op.Reduced(k@SeqTerm(args1)), op.Reduced(SeqTerm(args2))) =>
-            Reduce(op.Term, SeqTerm(args1 ++ args2))
+            Reduce(op, SeqTerm(args1 ++ args2))
           case op.Applied2(op.Reduced(SeqTerm(args1)), arg2) =>
-            Reduce(op.Term, SeqTerm(args1 :+ arg2))
+            Reduce(op, SeqTerm(args1 :+ arg2))
           case op.Applied2(arg1, op.Reduced(SeqTerm(args2))) =>
-            Reduce(op.Term, SeqTerm(arg1 +: args2))
+            Reduce(op, SeqTerm(arg1 +: args2))
           case op.Applied2(arg1, arg2) =>
-            Reduce(op.Term, SeqTerm(Seq(arg1, arg2)))
+            Reduce(op, SeqTerm(Seq(arg1, arg2)))
           case _ => arg
 
         }
       }
     }
   }
+
 
   /**
    * Pushes dot products into sums of doubles
@@ -187,13 +188,13 @@ object TermConverter {
     new Converter {
       def convert[A](term: Term[A]) = {
         val dots = term match {
-          case Dot.Applied2(VecAdd.Reduced(ImageSeq1(LambdaAbstraction(v, t1))), a2) =>
+          case vectors.dot.Applied2(vectors.add.Reduced(ImageSeq1(LambdaAbstraction(v, t1))), a2) =>
             Seq(dsum(ImageSeq1(LambdaAbstraction(v, t1 dot a2))))
-          case Dot.Applied2(VecAdd.Reduced(SeqTerm(args1)), VecAdd.Reduced(SeqTerm(args2))) =>
+          case vectors.dot.Applied2(vectors.add.Reduced(SeqTerm(args1)), vectors.add.Reduced(SeqTerm(args2))) =>
             for (a1 <- args1; a2 <- args2) yield a1 dot a2
-          case Dot.Applied2(a1, VecAdd.Reduced(SeqTerm(args2))) =>
+          case vectors.dot.Applied2(a1, vectors.add.Reduced(SeqTerm(args2))) =>
             for (a2 <- args2) yield a1 dot a2
-          case Dot.Applied2(VecAdd.Reduced(SeqTerm(args1)), a2) =>
+          case vectors.dot.Applied2(vectors.add.Reduced(SeqTerm(args1)), a2) =>
             for (a1 <- args1) yield a1 dot a2
           case _ => Seq.empty
         }
@@ -238,8 +239,8 @@ object TermConverter {
         def convert[A](term: Term[A]) = term match {case l: LinearModel => l.self.asInstanceOf[Term[A]]; case t => t }
       }
     }
-    val flatDouble = flatten(replaceLinearModel, DoubleAdd)
-    val flatVector = flatten(flatDouble, VecAdd)
+    val flatDouble = flatten(replaceLinearModel, doubles.add)
+    val flatVector = flatten(flatDouble, vectors.add)
     val grouped = groupLambdas(flatVector, mergeFilter)
     grouped
   }
@@ -259,7 +260,7 @@ object TermConverter {
     }
   }
 
-  def asSeq[T](term: Term[T], op: BinaryOperatorSameDomainAndRange[T]): Seq[Term[T]] = term match {
+  def asSeq[T](term: Term[T], op: ConstantOperator[T]): Seq[Term[T]] = term match {
     case op.Reduced(SeqTerm(args)) => args
     case _ => Seq(term)
   }
@@ -283,7 +284,7 @@ object TermConverter {
     implicit def cast(t: Term[Any]) = t.asInstanceOf[Term[T]]
 
     //merge a term with one element in a list of previous terms if possible, otherwise prepend
-    def mergeOneTerm[A](current: Seq[Term[A]], toMerge: Term[A], op: BinaryOperatorSameDomainAndRange[A]) = {
+    def mergeOneTerm[A](current: Seq[Term[A]], toMerge: Term[A], op: ConstantOperator[A]) = {
       val first = current.view.map(that => that -> mergeLambdas(that, toMerge, op, filter = filter)).find(_._2.isDefined)
       first match {
         case Some((orig, Some(mergedTerm))) =>
@@ -293,18 +294,18 @@ object TermConverter {
       }
     }
     term match {
-      case Math.VecAdd.Reduced(SeqTerm(args)) =>
-        val merged = args.foldLeft(Seq.empty[Term[Vector]])(mergeOneTerm(_, _, Math.VecAdd))
+      case vectors.add.Reduced(SeqTerm(args)) =>
+        val merged = args.foldLeft(Seq.empty[Term[Vector]])(mergeOneTerm(_, _, vectors.add))
         if (merged.size > 1) vsum(SeqTerm(merged)) else merged(0)
-      case Math.DoubleAdd.Reduced(SeqTerm(args)) =>
-        val merged = args.foldLeft(Seq.empty[Term[Double]])(mergeOneTerm(_, _, Math.DoubleAdd))
+      case doubles.add.Reduced(SeqTerm(args)) =>
+        val merged = args.foldLeft(Seq.empty[Term[Double]])(mergeOneTerm(_, _, doubles.add))
         if (merged.size > 1) dsum(SeqTerm(merged)) else merged(0)
       case _ => term
     }
   }
 
   def mergeLambdas[T](t1: Term[T], t2: Term[T],
-                      operator: BinaryOperatorSameDomainAndRange[T],
+                      operator: ConstantOperator[T],
                       condition: State = State.empty,
                       filter: Variable[Any] => Boolean = x => true): Option[Term[T]] = {
 
@@ -322,7 +323,7 @@ object TermConverter {
         val replaced2 = substituteTerm(a2, v2, v1)
         val newCondition = condition + SingletonState(v1, default)
         if (mergeable(a1, replaced2, newCondition)) {
-          Some(Reduce(operator.Term, ImageSeq1(LambdaAbstraction(v1, operator.reduce(SeqTerm(Seq(a1, replaced2)))))))
+          Some(Reduce(operator, ImageSeq1(LambdaAbstraction(v1, operator.reduce(SeqTerm(Seq(a1, replaced2)))))))
         } else
           None
       case (operator.Reduced(ImageSeq2(LambdaAbstraction(v1, LambdaAbstraction(v1_2, a1)))), operator.Reduced(ImageSeq2(LambdaAbstraction(v2, LambdaAbstraction(v2_2, a2))))) =>
@@ -333,7 +334,7 @@ object TermConverter {
         if (mergeable(a1, replaced2, newCondition)) {
           val inner = LambdaAbstraction(v1_2, operator.reduce(SeqTerm(Seq(a1, replaced2))))
           val outer = LambdaAbstraction(v1, inner)
-          Some(Reduce(operator.Term, ImageSeq2(outer)))
+          Some(Reduce(operator, ImageSeq2(outer)))
         } else
           None
       case _ => None
@@ -352,7 +353,7 @@ object TermConverter {
 
     val sum = dsum(SeqTerm(Seq(l1, l2)))
 
-    val merged = mergeLambdas(l1, l2, Math.DoubleAdd)
+    val merged = mergeLambdas(l1, l2, doubles.add)
 
     println(merged)
 
@@ -362,7 +363,7 @@ object TermConverter {
 
     val f1 = dsum(for (i <- 0 ~~ 2; j <- 0 ~~ 2) yield s(i, j))
     val f2 = dsum(for (k <- 0 ~~ 2; l <- 0 ~~ 2) yield s(k, l))
-    val grouped2 = groupLambdasOnce(flatten(f1 + f2, Math.DoubleAdd))
+    val grouped2 = groupLambdasOnce(flatten(f1 + f2, doubles.add))
     println(grouped2)
 
 

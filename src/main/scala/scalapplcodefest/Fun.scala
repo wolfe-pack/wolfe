@@ -1,5 +1,7 @@
 package scalapplcodefest
 
+import scalapplcodefest.value.{All, AllOfType, Bools}
+
 /**
  * @author Sebastian Riedel
  */
@@ -27,16 +29,8 @@ trait Fun[A, B] extends PartialFunction[A, B] {
  */
 trait Operator[A, B] extends Fun[A, B] {
   self =>
-  object Term extends Constant(this)
 
   def isDefinedAt(x: A) = true
-
-  object Applied {
-    def unapply(x: Term[Any]): Option[Term[A]] = x match {
-      case FunApp(Constant(op), arg) if op == self => Some(arg.asInstanceOf[Term[A]])
-      case _ => None
-    }
-  }
 
 }
 
@@ -76,14 +70,6 @@ trait BinaryOperatorSameDomainAndRange[T] extends BinaryOperatorSameDomain[T, T]
   self =>
   def funRange = dom
 
-  def reduce(args: Term[Seq[T]]) = Reduce(Term, args)
-  object Reduced {
-    def unapply(x: Term[Any]): Option[Term[Seq[T]]] = x match {
-      case Reduce(Constant(op), args) if op == self => Some(args.asInstanceOf[Term[Seq[T]]])
-      case _ => None
-    }
-  }
-
 }
 
 trait BinaryOperatorSameDomain[T, R] extends BinaryOperator[T, T, R] {
@@ -116,14 +102,6 @@ trait BinaryOperator[T1, T2, R] extends Operator[(T1, T2), R] {
   def dom2: Set[T2]
 
   def funCandidateDom = CartesianProduct2(dom1, dom2)
-
-  object Applied2 {
-    def unapply(x: Term[Any]): Option[(Term[T1], Term[T2])] = x match {
-      case FunApp(Constant(op), TupleTerm2(arg1, arg2)) if op == self =>
-        Some((arg1.asInstanceOf[Term[T1]], arg2.asInstanceOf[Term[T2]]))
-      case _ => None
-    }
-  }
 
 }
 

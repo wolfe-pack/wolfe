@@ -2,6 +2,7 @@ package scalapplcodefest
 
 import scala.io.Source
 import cc.factorie.optimize.{Perceptron, OnlineTrainer}
+import scalapplcodefest.value.Vectors
 
 
 /**

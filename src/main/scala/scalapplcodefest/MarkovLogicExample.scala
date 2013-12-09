@@ -1,5 +1,7 @@
 package scalapplcodefest
 
+import scalapplcodefest.value.Vectors
+
 /**
  * The smokes & cancer MLN.
  *

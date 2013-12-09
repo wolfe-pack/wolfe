@@ -1,6 +1,7 @@
 package scalapplcodefest
 
 import java.io.{FileInputStream, InputStream}
+import scalapplcodefest.value.SetValue
 
 /**
  * @author Sebastian Riedel

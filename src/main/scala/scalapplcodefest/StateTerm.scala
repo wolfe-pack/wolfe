@@ -1,6 +1,7 @@
 package scalapplcodefest
 
 import org.scalautils.Good
+import scalapplcodefest.value.AllOfType
 
 /**
  * @author Sebastian Riedel

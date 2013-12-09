@@ -5,6 +5,7 @@ import org.scalautils._
 import Tolerance._
 import org.scalautils._
 import cc.factorie.optimize.{Perceptron, OnlineTrainer}
+import scalapplcodefest.value.{AllOfType, Doubles, Vectors, Gen}
 
 /**
  * Set of specs.
@@ -41,7 +42,7 @@ class Specs extends WordSpec with Matchers {
 
   "A function application" should {
     "evaluate to the value of the function term applied to the value of the argument term" in {
-      val f = Logic.Neg.Term
+      val f = bools.neg
       val app = f(false)
       app.eval(state()) should be(Good(true))
     }
@@ -249,7 +250,7 @@ class Specs extends WordSpec with Matchers {
       val x = 'x of Doubles
       val term = ((x + x) + (x + x)) + dsum(x, x) + x
       val expected = dsum(x, x, x, x, x, x, x)
-      val actual = TermConverter.flatten(term, Math.DoubleAdd)
+      val actual = TermConverter.flatten(term, doubles.add)
       actual should be(expected)
     }
   }
@@ -260,7 +261,7 @@ class Specs extends WordSpec with Matchers {
       val f1 = vsum(for (i <- (0 ~~ 2) as "i") yield unit(i))
       val f2 = vsum(unit(0), unit(1))
       val term = (f1 + f2) dot w
-      val flat = TermConverter.flatten(term, Math.VecAdd)
+      val flat = TermConverter.flatten(term, vectors.add)
       val actual = TermConverter.pushDownDotProducts(flat)
       val expected = dsum(dsum(for (i <- (0 ~~ 2) as "i") yield unit(i) dot w), unit(0) dot w, unit(1) dot w)
       actual should be(expected)

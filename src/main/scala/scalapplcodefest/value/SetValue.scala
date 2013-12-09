@@ -1,8 +1,9 @@
-package scalapplcodefest
+package scalapplcodefest.value
 
 import scala.language.existentials
 import cc.factorie.la.ScalarTensor
 import scala.collection.SetProxy
+import scalapplcodefest._
 
 /**
  * A set that performs lazy set union and set minus
@@ -46,30 +47,6 @@ case class Reduce[T](op: Term[Fun[(T, T), T]], arguments: Term[Seq[T]]) extends 
   def variables = SetUtil.SetUnion(List(op.variables, arguments.variables))
   def domain[C >: T] = funRange.asInstanceOf[Term[Set[C]]]
   def default = funRange.default.head
-}
-
-/**
- * Helpers to create compositional objects that correspond to set based operators.
- */
-object Quantified {
-
-  trait AbstractQuantified[T] {
-    def operator: Term[Fun[(T, T), T]]
-    def apply[A](term: Term[Seq[T]]) = Reduce(operator, term)
-    def unapply(term: Term[T]) = term match {
-      case Reduce(operator, seq) => Option(seq)
-      case _ => None
-    }
-  }
-
-  object Exists extends AbstractQuantified[Boolean] {def operator = Logic.Or.Term}
-
-  object Forall extends AbstractQuantified[Boolean] {def operator = Logic.And.Term}
-
-  object VecSum extends AbstractQuantified[Vector] {def operator = Math.VecAdd.Term}
-
-  object DoubleSum extends AbstractQuantified[Double] {def operator = Math.DoubleAdd.Term}
-
 }
 
 /**
@@ -118,10 +95,17 @@ case object Ints extends AllObjects[Int] {
   def iterator = Util.tooLargeToIterate
   override def size = Util.tooLargeToCount
   override def head = 0
+
+  case object Range extends BinaryOperatorSameDomain[Int,Set[Int]] {
+    def dom = Ints
+    def funRange = new AllOfType[Set[Int]]
+    def apply(x:(Int,Int)) = RangeSetValue(x._1,x._2)
+  }
 }
 
 trait AllObjectsLarge[T] extends AllObjects[T] {
   def iterator = Util.tooLargeToIterate
+  override def toString() = getClass.getSimpleName
 }
 
 /**
@@ -155,7 +139,15 @@ case object Doubles extends AllObjectsLarge[Double] {
   override def head = 0.0
 }
 
-class AllOfType[T] extends AllObjectsLarge[T]
+import scala.reflect._
+
+class AllOfType[T] extends AllObjectsLarge[T] {
+  val tag = manifest
+  override def equals(that: Any) = that match {
+    case a:AllOfType[_] => true  //todo: Waargh
+    case _ => false
+  }
+}
 
 case object All extends AllObjectsLarge[Any]
 

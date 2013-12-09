@@ -1,7 +1,11 @@
 package scalapplcodefest
 
 import scala.language.implicitConversions
+import scalapplcodefest.value._
+import scalapplcodefest.value.RangeSet
+import scala.Some
 import scalapplcodefest.Math.UnitVec
+import scalapplcodefest.value.SeqSet
 
 /**
  * This object provides a set of implicit conversions that allow users
@@ -9,7 +13,7 @@ import scalapplcodefest.Math.UnitVec
  *
  * @author Sebastian Riedel
  */
-object TermImplicits extends TermDSL {
+object TermImplicits {
 
   implicit def intToConstant(x: Int) = Constant(x)
   implicit def intToTerm(x: Int) = RichIntTerm(x)
@@ -29,7 +33,6 @@ object TermImplicits extends TermDSL {
   implicit def toRichInt[A](i: Term[Int]) = RichIntTerm(i)
   implicit def toRichDouble[A](t: Term[Double]) = RichDoubleTerm(t)
   implicit def toRichBooleanTerm(t: Term[Boolean]) = RichBooleanTerm(t)
-  implicit def toRichValueAndGradient(tuple: (Term[(Double, Vector)])) = RichValueAndGradient(tuple)
 
   implicit def toRichFunTerm[A, B](term: Term[Fun[A, B]]): RichFunTerm[A, B] = RichFunTerm(term)
   implicit def toRichFunctionSeq[A, B](f: FunTerm[Seq[A], B]) = RichFunctionTermSeq(f)
@@ -66,14 +69,14 @@ object TermImplicits extends TermDSL {
 
   //math
   def unit(index: Term[Int], value: Term[Double] = Constant(1.0)) = UnitVec(index, value)
-  def I(term: Term[Boolean]) = FunApp(Math.Iverson.Term, term)
-  def log(term: Term[Double]) = FunApp(Math.Log.Term, term)
+  def I(term: Term[Boolean]) = FunApp(bools.iverson, term)
+  def log(term: Term[Double]) = FunApp(doubles.log, term)
 
 
-  def dsum(args: Term[Seq[Double]]) = Quantified.DoubleSum(args)
-  def dsum(args: Term[Double]*) = Quantified.DoubleSum(SeqTerm(args))
-  def vsum(args: Term[Seq[Vector]]) = Quantified.VecSum(args)
-  def vsum(args: Term[Vector]*) = Quantified.VecSum(SeqTerm(args))
+  def dsum(args: Term[Seq[Double]]) = Reduce(doubles.add, args)
+  def dsum(args: Term[Double]*) = Reduce(doubles.add, SeqTerm(args))
+  def vsum(args: Term[Seq[Vector]]) = Reduce(vectors.add, args)
+  def vsum(args: Term[Vector]*) = Reduce(vectors.add, SeqTerm(args))
 
 
   implicit def toImageSeq[A, B](f: FunTerm[A, B]) = ImageSeq1(f)
@@ -103,9 +106,9 @@ object TermImplicits extends TermDSL {
   }
 
   case class RichVecTerm(term: Term[Vector]) {
-    def dot(that: Term[Vector]) = FunApp(Math.Dot.Term, TupleTerm2(term, that))
-    def +(that: Term[Vector]) = FunApp(Math.VecAdd.Term, TupleTerm2(term, that))
-    def -(that: Term[Vector]) = FunApp(Math.VecMinus.Term, TupleTerm2(term, that))
+    def dot(that: Term[Vector]) = FunApp(vectors.dot, TupleTerm2(term, that))
+    def +(that: Term[Vector]) = FunApp(vectors.add, TupleTerm2(term, that))
+    def -(that: Term[Vector]) = FunApp(vectors.minus, TupleTerm2(term, that))
   }
 
   private var anonVarCount = 0
@@ -184,8 +187,8 @@ object TermImplicits extends TermDSL {
     def |(mappings: (Variable[Any], Any)*) = Conditioned(term, State(mappings.toMap))
     def eval(state: (Variable[Any], Any)*) = term.eval(State(state.toMap))
     def value(state: (Variable[Any], Any)*) = term.value(State(state.toMap))
-    def ===(that: Term[T]) = FunApp(new Equals[T].Term, TupleTerm2(term, that))
-    def ===(that: T) = FunApp(new Equals[T].Term, TupleTerm2(term, Constant(that)))
+    def ===(that: Term[T]) = FunApp(RestrictedFun[(T,T),Boolean](Equal), TupleTerm2(term, that))//FunApp(new Equals[T].Term, TupleTerm2(term, that))
+    def ===(that: T) = FunApp(RestrictedFun[(T,T),Boolean](Equal), TupleTerm2(term, Constant(that))) //FunApp(new Equals[T].Term, TupleTerm2(term, Constant(that)))
     //    def eval(state:VarValuePair[T]*):Option[T] = term.eval(State(state.map(_.toTuple).toMap))
 
   }
@@ -206,32 +209,27 @@ object TermImplicits extends TermDSL {
     def _2 = ArgTerm(t.domain, Constant(new AllOfType[T2]), 1)
   }
 
-  case class RichValueAndGradient(term: Term[ValueAndGradient]) {
-    def +(that: Term[ValueAndGradient]) = FunApp(Math.DoubleAndVectorAdd.Term, TupleTerm2(term, that))
-    def -(that: Term[ValueAndGradient]) = FunApp(Math.DoubleAndVectorMinus.Term, TupleTerm2(term, that))
-  }
-
   case class RichIntTerm(i: Term[Int]) {
-    def +(that: Term[Int]) = FunApp(Math.IntAdd.Term, TupleTerm2(i, that))
-    def -(that: Term[Int]) = FunApp(Math.IntMinus.Term, TupleTerm2(i, that))
+    def +(that: Term[Int]) = FunApp(ints.add, TupleTerm2(i, that))
+    def -(that: Term[Int]) = FunApp(ints.minus, TupleTerm2(i, that))
     def /(that: Term[Int]) = FunApp(RestrictedFun(IntDivide, CartesianProductTerm2(i.domain, that.domain), Constant(Ints)), TupleTerm2(i, that))
 
     def ~~(that: Term[Int]) = RangeSet(i, that)
   }
 
   case class RichDoubleTerm(x: Term[Double]) {
-    def +(that: Term[Double]) = FunApp(Math.DoubleAdd.Term, TupleTerm2(x, that))
-    def -(that: Term[Double]) = FunApp(Math.DoubleMinus.Term, TupleTerm2(x, that))
-    def *(that: Term[Double]) = FunApp(Math.DoubleMultiply.Term, TupleTerm2(x, that))
+    def +(that: Term[Double]) = FunApp(doubles.add, TupleTerm2(x, that))
+    def -(that: Term[Double]) = FunApp(doubles.minus, TupleTerm2(x, that))
+    def *(that: Term[Double]) = FunApp(doubles.times, TupleTerm2(x, that))
   }
 
   case class RichBooleanTerm(x: Term[Boolean]) {
-    def &&(that: Term[Boolean]) = FunApp(Logic.And.Term, TupleTerm2(x, that))
-    def ||(that: Term[Boolean]) = FunApp(Logic.Or.Term, TupleTerm2(x, that))
-    def |=>(that: Term[Boolean]) = FunApp(Logic.Implies.Term, TupleTerm2(x, that))
-    def <=>(that: Term[Boolean]) = FunApp(Logic.Equiv.Term, TupleTerm2(x, that))
-    def unary_! = FunApp(Logic.Neg.Term, x)
-    def unary_$ = FunApp(Math.Iverson.Term, x)
+    def &&(that: Term[Boolean]) = FunApp(bools.and, TupleTerm2(x, that))
+    def ||(that: Term[Boolean]) = FunApp(bools.or, TupleTerm2(x, that))
+    def |=>(that: Term[Boolean]) = FunApp(bools.implies, TupleTerm2(x, that))
+    def <=>(that: Term[Boolean]) = FunApp(bools.equiv, TupleTerm2(x, that))
+    def unary_! = FunApp(bools.neg, x)
+    def unary_$ = FunApp(bools.iverson, x)
   }
 
 
@@ -272,38 +270,50 @@ object TermImplicits extends TermDSL {
       dynFun[(A1, A2), Int]({case (x1, x2) => index.index(Array(symbol, x1, x2))}, a1.domain x a2.domain, ints)(a1, a2)
   }
 
-}
+//}
 
-trait TermDSL {
+//trait TermDSL {
 
-  trait ConstantValue[T] {
-    this: Term[T] =>
-    def unapply(term: Term[Any]): Boolean = term eq this
+  trait ConstantValue[T] extends Term[T] {
+    def unapply(term: Term[Any]): Boolean = term == this
   }
 
-  trait ConstantFun1[A, B] extends ConstantValue[Fun[A, B]] {
-    this: Term[Fun[A, B]] =>
+  trait ConstantFun1[A, B] extends ConstantValue[Fun[A, B]]  {
+    self =>
 
     object Applied1 {
       def unapply(term: Term[Any]): Option[Term[A]] = term match {
-        case FunApp(op, arg) if op eq this => Some(arg.asInstanceOf[Term[A]])
+        case FunApp(op, arg) if op eq self => Some(arg.asInstanceOf[Term[A]])
         case _ => None
       }
     }
 
   }
 
-  trait ConstantFun2[A1, A2, B] extends ConstantFun1[(A1, A2), B] {
-    this: Term[Fun[(A1, A2), B]] =>
+  trait ConstantFun2[A1, A2, B] extends ConstantFun1[(A1, A2), B]  {
+    self =>
 
     object Applied2 {
       def unapply(term: Term[Any]): Option[(Term[A1], Term[A2])] = term match {
-        case FunApp(op, TupleTerm2(arg1, arg2)) if op eq this => Some(arg1.asInstanceOf[Term[A1]], arg2.asInstanceOf[Term[A2]])
+        case FunApp(op, TupleTerm2(arg1, arg2)) if op == self => Some(arg1.asInstanceOf[Term[A1]], arg2.asInstanceOf[Term[A2]])
         case _ => None
       }
     }
 
   }
+
+  trait ConstantOperator[T] extends ConstantFun2[T,T,T] {
+    self =>
+    object Reduced {
+      def unapply(x: Term[Any]): Option[Term[Seq[T]]] = x match {
+        case Reduce(op, args) if op == self => Some(args.asInstanceOf[Term[Seq[T]]])
+        case _ => None
+      }
+    }
+    def reduce(args:Term[Seq[T]]) = Reduce(self,args)
+
+  }
+
 
   trait ConstantSet[T] extends ConstantValue[Set[T]] {
     this: Term[Set[T]] =>
@@ -311,33 +321,48 @@ trait TermDSL {
 
   }
 
-  val ints = new Constant(Ints) with ConstantSet[Int] {
-    val add = new Constant(Math.IntAdd) with ConstantFun2[Int, Int, Int]
+  object ints extends Constant(Ints) with ConstantSet[Int] {
+    val add = new Constant(Math.IntAdd) with ConstantOperator[Int]
+    val minus = new Constant(Math.IntMinus) with ConstantOperator[Int]
+    val range = new Constant(Ints.Range) with ConstantFun2[Int,Int,Set[Int]]
   }
 
-  val doubles = new Constant(Doubles) with ConstantSet[Double] {
-    val add = new Constant(Math.DoubleAdd) with ConstantFun2[Double, Double, Double]
+  object doubles extends Constant(Doubles) with ConstantSet[Double] {
+    val add = new Constant(Math.DoubleAdd) with ConstantOperator[Double]
+    val minus = new Constant(Math.DoubleMinus) with ConstantOperator[Double]
+    val times = new Constant(Math.DoubleMultiply) with ConstantOperator[Double]
+    val log = new Constant(Math.Log) with ConstantFun1[Double,Double]
   }
 
-  val bools = new Constant(Bools) with ConstantSet[Boolean] {
-    val and = new Constant(Logic.And) with ConstantFun2[Boolean, Boolean, Boolean]
-    val or = new Constant(Logic.Or) with ConstantFun2[Boolean, Boolean, Boolean]
+  object bools extends Constant(Bools) with ConstantSet[Boolean] {
+    val and = new Constant(Logic.And) with ConstantOperator[Boolean]
+    val or = new Constant(Logic.Or) with ConstantOperator[Boolean]
+    val implies = new Constant(Logic.Implies) with ConstantOperator[Boolean]
+    val equiv = new Constant(Logic.Equiv) with ConstantOperator[Boolean]
+    val neg = new Constant(Logic.Neg) with ConstantFun1[Boolean,Boolean]
+    val iverson = new Constant(Math.Iverson) with ConstantFun1[Boolean,Double]
+
   }
 
-  val vectors = new Constant(Vectors) with ConstantSet[Vector] {
+  object vectors extends Constant(Vectors) with ConstantSet[Vector] {
     val dot = new Constant(Math.Dot) with ConstantFun2[Vector, Vector, Double]
+    val add = new Constant(Math.VecAdd) with ConstantOperator[Vector]
+    val minus = new Constant(Math.VecMinus) with ConstantOperator[Vector]
+
   }
 
-  val strings = new Constant(Strings) with ConstantSet[String] {
+  object strings extends Constant(Strings) with ConstantSet[String] {
     val length = fun[String, Int]({case x => x.length})
   }
 
   //val all = new Constant(All) with ConstantSet[Any] {}
 
+  def c[T1,T2](arg1:Term[Set[T1]],arg2:Term[Set[T2]]) = CartesianProductTerm2(arg1,arg2)
   def all[T] = Constant(new AllOfType[T])
   def set[T](values: T*) = Constant(SeqSet(values))
   def fun[A, B](f: PartialFunction[A, B], dom: Set[A] = new AllOfType[A], range: Set[B] = new AllOfType[B]) = Constant(Fun(f, dom, range))
   def dynFun[A, B](f: PartialFunction[A, B], dom: Term[Set[A]] = all[Set[A]], range: Term[Set[B]] = all[Set[B]]) = DynFunTerm(f, dom, range)
+
 
 
 }

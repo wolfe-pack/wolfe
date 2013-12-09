@@ -1,6 +1,7 @@
 package scalapplcodefest
 
 import org.scalautils.{Bad, Good}
+import scalapplcodefest.value.{AllOfType, SetValue}
 
 /**
  * FunTerms evaluate to partial functions. The function candidate domain where the function is defined for
@@ -63,12 +64,16 @@ case class DynFunTerm[A, B](fun: PartialFunction[A, B], funCandidateDom: Term[Se
 
 case class RestrictedFun[A, B](fun: AnyFunction,
                                funCandidateDom: Term[Set[A]] = Constant(new AllOfType[A]),
-                               funRange: Term[Set[B]] = Constant(new AllOfType[B])) extends FunTerm[A, B] {
+                               funRange: Term[Set[B]] = Constant(new AllOfType[B]))
+  extends FunTerm[A, B] with Composite2[Set[A],Set[B],Fun[A,B]] {
+
   def cast = fun.asInstanceOf[PartialFunction[A, B]]
   def variables = funCandidateDom.variables ++ funRange.variables
   def default = Fun(cast, funCandidateDom.default, funRange.default)
   def domain[C >: Fun[A, B]] = Constant(new AllOfType[C])
   def eval(state: State) = for (d <- funCandidateDom.eval(state); r <- funRange.eval(state)) yield Fun(cast, d, r)
+  def components = (funCandidateDom,funRange)
+  def copy(t1: Term[Set[A]], t2: Term[Set[B]]) = RestrictedFun(fun,t1,t2)
 }
 
 /**

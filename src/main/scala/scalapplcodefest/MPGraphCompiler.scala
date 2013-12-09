@@ -1,6 +1,8 @@
 package scalapplcodefest
 
 import cc.factorie.maths.ArrayOps
+import scalapplcodefest.value.Doubles
+import TermImplicits._
 
 /**
  * Turns double terms into message passing factor graphs.
@@ -11,7 +13,6 @@ object MPGraphCompiler {
 
   import MPGraph._
   import TermConverter._
-  import Math._
 
   /**
    * A recipe can generate a structured MPGraph potential for a given term and meta information about the nodes.
@@ -117,7 +118,7 @@ object MPGraphCompiler {
    * @tparam T type of term.
    * @return sequence of terms in the factorization.
    */
-  def factorize[T](base: Term[T], op: BinaryOperatorSameDomainAndRange[T]): Seq[Term[T]] = {
+  def factorize[T](base: Term[T], op: ConstantOperator[T]): Seq[Term[T]] = {
     val conditionsPushed = pushDownConditions(base)
     val flat = flatten(conditionsPushed, op)
     val dotsPushed = pushDownDotProducts(flat)
@@ -158,8 +159,8 @@ object MPGraphCompiler {
     val vars = (coefficient.variables ++ base.variables).toSeq.sorted(VariableOrdering)
     val mpGraph = new MPGraph()
     val metaNodes = createNodes(vars, mpGraph)
-    val factorizedBase = factorize(base, DoubleAdd).toArray
-    val factorizedCoefficient = factorize(coefficient, VecAdd).toArray
+    val factorizedBase = factorize(base, doubles.add).toArray
+    val factorizedCoefficient = factorize(coefficient, vectors.add).toArray
 
     val baseFactors = for (baseTerm <- factorizedBase) yield dispatcher.lift(baseTerm) match {
       case Some(recipe) => compileStructuredDouble(baseTerm, recipe, metaNodes, mpGraph) -> baseTerm

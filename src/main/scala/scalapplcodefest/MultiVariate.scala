@@ -5,14 +5,15 @@ import TermImplicits._
 import Math._
 import scalapplcodefest.TermConverter._
 import scala.Some
+import scalapplcodefest.value.Vectors
 
 object MultiVariate {
   def unapply(term: Term[Double]): Option[Variable[Vector]] = term match {
     case Conditioned(MultiVariate(p), c) if !c.domain(p) => Some(p)
     case m: MultiVariate => Some(m.parameter)
     case Linear(_, p, _) => Some(p)
-    case DoubleAdd.Applied2(MultiVariate(p1), MultiVariate(p2)) if p1 == p2 => Some(p1)
-    case DoubleMinus.Applied2(MultiVariate(p1), MultiVariate(p2)) if p1 == p2 => Some(p1)
+    case doubles.add.Applied2(MultiVariate(p1), MultiVariate(p2)) if p1 == p2 => Some(p1)
+    case doubles.minus.Applied2(MultiVariate(p1), MultiVariate(p2)) if p1 == p2 => Some(p1)
     case _ => Some(new UnusedParameter)
   }
 }
@@ -75,7 +76,7 @@ object Max {
     private val mp = MPGraphCompiler.compile(normalized)
 
     private val withStateDo = new WithStateDo(state => {
-      mp.graph.weights = state(parameter)
+      mp.graph.weights = parameter.value(state)
       //println(mp.graph.toVerboseString(mp.printer()))
       algorithm(mp.graph)
     })
@@ -105,9 +106,9 @@ object Differentiator {
         case false => differentiate(param, t).map(v => Conditioned(v, c))
       }
       case Linear(g, _, _) => Some(g)
-      case Math.DoubleAdd.Applied2(arg1, arg2) =>
+      case doubles.add.Applied2(arg1, arg2) =>
         for (g1 <- differentiate(param, arg1); g2 <- differentiate(param, arg2)) yield g1 + g2
-      case Math.DoubleMinus.Applied2(arg1, arg2) =>
+      case doubles.minus.Applied2(arg1, arg2) =>
         for (g1 <- differentiate(param, arg1); g2 <- differentiate(param, arg2)) yield g1 - g2
       case _ => None
     }

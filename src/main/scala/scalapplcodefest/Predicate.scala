@@ -1,6 +1,7 @@
 package scalapplcodefest
 
 import org.scalautils.{Bad, Good}
+import scalapplcodefest.value.{Bools, AllObjectsLarge, SetValue}
 
 /**
  * A predicate evaluates to a function. The function's behavior is defined

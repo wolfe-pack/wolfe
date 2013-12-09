@@ -1,6 +1,7 @@
 package scalapplcodefest
 
 import org.scalautils.{Bad, Good}
+import scalapplcodefest.value.AllOfType
 
 /**
  * Variables are terms that get replaced by values assignment to them in states.

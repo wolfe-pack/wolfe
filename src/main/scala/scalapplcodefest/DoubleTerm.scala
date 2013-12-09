@@ -1,5 +1,7 @@
 package scalapplcodefest
 
+import scalapplcodefest.value.Doubles
+
 /**
  * @author Sebastian Riedel
  */

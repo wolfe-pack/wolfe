@@ -3,6 +3,7 @@ package scalapplcodefest
 import cc.factorie.la.SingletonTensor1
 import cc.factorie.maths.ArrayOps
 import java.util
+import scalapplcodefest.value._
 
 /**
  * Math-related function objects.
@@ -10,7 +11,6 @@ import java.util
  * @author Sebastian Riedel
  */
 object Math {
-
 
   object Dot extends BinaryOperatorSameDomain[Vector, Double] {
     def funRange = Doubles

@@ -4,6 +4,7 @@ import cc.factorie.optimize.{Trainer, Perceptron, OnlineTrainer, Example}
 import cc.factorie.util.DoubleAccumulator
 import cc.factorie.la.WeightsMapAccumulator
 import cc.factorie.WeightsSet
+import TermImplicits._
 
 
 /**
@@ -14,7 +15,7 @@ object GradientBasedMinimizer {
   def minimize(objective: Term[Double], trainerFor: WeightsSet => Trainer = new OnlineTrainer(_, new Perceptron, 5)) = {
     val weightsSet = new WeightsSet
     val key = weightsSet.newWeights(new DenseVector(10000))
-    val instances = TermConverter.asSeq(objective, Math.DoubleAdd)
+    val instances = TermConverter.asSeq(objective, doubles.add)
     val examples = for (instance <- instances) yield {
       TermConverter.pushDownConditions(instance) match {
         case Differentiable(param,gradientTerm) =>
