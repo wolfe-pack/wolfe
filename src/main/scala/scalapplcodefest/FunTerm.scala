@@ -12,7 +12,9 @@ import org.scalautils.{Bad, Good}
  * @tparam B type of return values of function.
  */
 trait FunTerm[A, B] extends Term[Fun[A, B]] {
+
   import TermImplicits._
+
   def funCandidateDom: Term[Set[A]]
   def funRange: Term[Set[B]]
   def funDom = funCandidateDom.filteredBy(this.isDefined)
@@ -25,10 +27,10 @@ object FunTerm {
 
   import TermImplicits._
 
-  def unapply[A,B](term:Term[Fun[A,B]]):Option[(Term[Set[A]],Term[Set[B]])] = term match {
-    case f:FunTerm[_,_] => Some(f.funCandidateDom.asInstanceOf[Term[Set[A]]],f.funRange.asInstanceOf[Term[Set[B]]])
-    case Constant(f) => Some(Constant(f.funCandidateDom),Constant(f.funRange))
-    case _ => Some(all[A],all[B])
+  def unapply[A, B](term: Term[Fun[A, B]]): Option[(Term[Set[A]], Term[Set[B]])] = term match {
+    case f: FunTerm[_, _] => Some(f.funCandidateDom.asInstanceOf[Term[Set[A]]], f.funRange.asInstanceOf[Term[Set[B]]])
+    case Constant(f) => Some(Constant(f.funCandidateDom), Constant(f.funRange))
+    case _ => Some(all[A], all[B])
   }
 
   /**
@@ -38,7 +40,7 @@ object FunTerm {
    * @tparam B return type.
    * @return a function term that evaluates to the given partial function.
    */
-  def fromPartial[A,B](f:PartialFunction[A,B]) = Dyn[A,B](f)
+  def fromPartial[A, B](f: PartialFunction[A, B]) = RestrictedFun[A, B](f)
 
 
 }
@@ -52,21 +54,21 @@ object FunTerm {
  * @tparam A type of arguments to function.
  * @tparam B type of return values of function.
  */
-case class DynFunTerm[A,B](fun:PartialFunction[A,B], funCandidateDom:Term[Set[A]], funRange:Term[Set[B]]) extends FunTerm[A,B] {
+case class DynFunTerm[A, B](fun: PartialFunction[A, B], funCandidateDom: Term[Set[A]], funRange: Term[Set[B]]) extends FunTerm[A, B] {
   def variables = funCandidateDom.variables ++ funRange.variables
-  def default = Fun(fun,funCandidateDom.default,funRange.default)
+  def default = Fun(fun, funCandidateDom.default, funRange.default)
   def domain[C >: Fun[A, B]] = Constant(new AllOfType[C])
-  def eval(state: State) = for (d <- funCandidateDom.eval(state); r <- funRange.eval(state)) yield Fun(fun,d,r)
+  def eval(state: State) = for (d <- funCandidateDom.eval(state); r <- funRange.eval(state)) yield Fun(fun, d, r)
 }
 
-case class Dyn[A,B](fun:AnyFunction,
-                    funCandidateDom:Term[Set[A]] = Constant(new AllOfType[A]),
-                    funRange:Term[Set[B]] = Constant(new AllOfType[B])) extends FunTerm[A,B] {
-  def cast = fun.asInstanceOf[PartialFunction[A,B]]
+case class RestrictedFun[A, B](fun: AnyFunction,
+                               funCandidateDom: Term[Set[A]] = Constant(new AllOfType[A]),
+                               funRange: Term[Set[B]] = Constant(new AllOfType[B])) extends FunTerm[A, B] {
+  def cast = fun.asInstanceOf[PartialFunction[A, B]]
   def variables = funCandidateDom.variables ++ funRange.variables
-  def default = Fun(cast,funCandidateDom.default,funRange.default)
+  def default = Fun(cast, funCandidateDom.default, funRange.default)
   def domain[C >: Fun[A, B]] = Constant(new AllOfType[C])
-  def eval(state: State) = for (d <- funCandidateDom.eval(state); r <- funRange.eval(state)) yield Fun(cast,d,r)
+  def eval(state: State) = for (d <- funCandidateDom.eval(state); r <- funRange.eval(state)) yield Fun(cast, d, r)
 }
 
 /**
@@ -81,13 +83,14 @@ case class FunApp[A, B](function: Term[Fun[A, B]], arg: Term[A]) extends Term[B]
   def eval(state: State) =
     for (f <- function.eval(state);
          a <- arg.eval(state);
-         v <- f.lift(a).map(Good(_)).getOrElse(Bad(FunctionNotDefinedAt(this,state)))) yield v
+         v <- f.lift(a).map(Good(_)).getOrElse(Bad(FunctionNotDefinedAt(this, state)))) yield v
   def variables = function match {
     case p@Predicate(n, d, r) => PartialGroundAtoms(p, arg)
     case _ => SetUtil.SetUnion(List(function.variables, arg.variables))
   }
   def default = function.default(funCandidateDom.default.head)
-  def domain[C >: B] = Image(function, arg.domain).asInstanceOf[Term[Set[C]]] //replace by function.funDomain collectedBy function?
+  def domain[C >: B] = Image(function, arg.domain).asInstanceOf[Term[Set[C]]]
+  //replace by function.funDomain collectedBy function?
   //could also be function.funRange
   override def toString = s"$function($arg)"
 }
@@ -133,7 +136,7 @@ case class LambdaAbstraction[A, B](variable: Variable[A], body: Term[B]) extends
     def isDefinedAt(x: A) = variable.domain.default(x)
   }
   def domain[C >: Fun[A, B]] = Constant(new AllOfType[C])
-    //FunApp(FunTerm.allFunctions[A, B], TupleTerm2(funCandidateDom, funRange)).asInstanceOf[Term[Set[C]]]
+  //FunApp(FunTerm.allFunctions[A, B], TupleTerm2(funCandidateDom, funRange)).asInstanceOf[Term[Set[C]]]
   override def toString = s"lam $variable :${variable.domain} { $body }"
 }
 
@@ -200,7 +203,7 @@ case class Image[A, B](fun: Term[Fun[A, B]], dom: Term[Set[A]]) extends Term[Set
  * @tparam B return type of function.
  */
 case class ImageSeq1[A, B](fun: Term[Fun[A, B]]) extends Term[Seq[B]] {
-  val FunTerm(funCandidateDom,_) = fun
+  val FunTerm(funCandidateDom, _) = fun
   def eval(state: State) = for (f <- fun.eval(state); d <- funCandidateDom.eval(state)) yield d.view.toSeq.map(f)
   def variables = fun.variables
   def domain[C >: Seq[B]] = Constant(new AllOfType[C])
@@ -216,7 +219,7 @@ case class ImageSeq1[A, B](fun: Term[Fun[A, B]]) extends Term[Seq[B]] {
  * @tparam B return type of inner functions.
  */
 case class ImageSeq2[A1, A2, B](fun: Term[Fun[A1, Fun[A2, B]]]) extends Term[Seq[B]] {
-  val FunTerm(funCandidateDom,_) = fun
+  val FunTerm(funCandidateDom, _) = fun
   def eval(state: State) = for (f <- fun.eval(state); d <- funCandidateDom.eval(state)) yield {
     for (a1 <- d.view.toSeq; f1 = f(a1); a1 <- f1.funDom.view.toSeq) yield f1(a1)
   }

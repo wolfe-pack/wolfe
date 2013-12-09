@@ -146,3 +146,16 @@ class WithStateDo(doSomething: State => Unit) {
   }
 }
 
+object PatternMatchingVariancePlayground {
+  trait Term[T]
+  trait Fun[+A,+B]
+  case class FunApp[A,B](fun:Term[Fun[A,B]],arg:Term[A]) extends Term[B]
+  case class Constant[T](value:T) extends Term[T]
+  case object AddOne extends Fun[Int,Int]
+
+  def copy[T](term:Term[T]):Term[T] = term match {
+    case FunApp(f@Constant(AddOne),arg) => FunApp(f,arg)
+    case t => t
+  }
+
+}

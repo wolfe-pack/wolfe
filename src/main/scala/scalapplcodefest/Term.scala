@@ -63,7 +63,7 @@ trait Term[+T] {
    * @param state the state to evaluate the term against.
    * @return the value of the term in the state, if defined, otherwise an exception is thrown.
    */
-  def value(state:State = State.empty): T = eval(state).get
+  def value(state: State = State.empty): T = eval(state).get
 
 }
 
@@ -137,24 +137,23 @@ case class Constant[T](value: T) extends Term[T] {
 }
 
 /**
- * Generic representation of terms that have sub-terms / components.
- * @tparam T the type of the term value.
- * @tparam This the type of the term itself.
+ * Term that is composed of other terms.
+ * @tparam T1 the type of the first argument term.
+ * @tparam C the type of this term.
  */
-trait CompositeTerm[T, This <: Term[T]] {
-  def components: List[Term[Any]]
-  def copy(args: Seq[Term[Any]]): This
+trait Composite1[T1, C] extends Term[C] {
+  def components: Term[T1]
+  def copy(t1: Term[T1]): Term[C]
 }
 
-/**
- * Helper object for composite objects.
- */
-object CompositeTerm {
-  /**
-   * Import this object if you want to avoid casts when implementing the copy method of composites.
-   */
-  object CastCarelessly {
-    import scala.language.implicitConversions
-    implicit def cast[A<:Term[Any]](a:Term[Any]) = a.asInstanceOf[A]
-  }
+trait Composite2[T1, T2, C] extends Term[C] {
+  def components: (Term[T1], Term[T2])
+  def copy(t1: Term[T1], t2: Term[T2]): Term[C]
 }
+
+trait Composite3[T1, T2, T3, C] extends Term[C] {
+  def components: (Term[T1], Term[T2], Term[T3])
+  def copy(t1: Term[T1], t2: Term[T2], t3: Term[T3]): Term[C]
+}
+
+

@@ -50,6 +50,15 @@ object TermConverter {
       case RangeSet(f, t) => converter.convert(RangeSet(convertDepthFirst(f, keepBrackets)(converter), convertDepthFirst(t, keepBrackets)(converter)))
       case Bracketed(t) if keepBrackets => Bracketed(convertDepthFirst(t, keepBrackets)(converter))
       case Bracketed(t) if !keepBrackets => converter.convert(Bracketed(convertDepthFirst(t, keepBrackets)(converter)))
+      case c:Composite1[_,_] => converter.convert(c.asInstanceOf[Composite1[Any,Any]].copy(
+        convertDepthFirst(c.components, keepBrackets)(converter)))
+      case c:Composite2[_,_,_] => converter.convert(c.asInstanceOf[Composite2[Any,Any,Any]].copy(
+        convertDepthFirst(c.components._1, keepBrackets)(converter),
+        convertDepthFirst(c.components._2, keepBrackets)(converter)))
+      case c:Composite3[_,_,_,_] => converter.convert(c.asInstanceOf[Composite3[Any,Any,Any,Any]].copy(
+        convertDepthFirst(c.components._1, keepBrackets)(converter),
+        convertDepthFirst(c.components._2, keepBrackets)(converter),
+        convertDepthFirst(c.components._3, keepBrackets)(converter)))
       case _ => converter.convert(term)
     }
   }

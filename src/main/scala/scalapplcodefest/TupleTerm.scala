@@ -17,12 +17,6 @@ case class TupleTerm2[+A1, +A2](a1: Term[A1], a2: Term[A2])
   override def toString = s"$a1, $a2"
 }
 
-case class TupleVar2[T1,T2](v1:Variable[T1],v2:Variable[T2]) extends Variable[(T1,T2)] {
-  def domain[C >: (T1, T2)] = CartesianProductTerm2(v1.domain,v2.domain).asInstanceOf[Term[Set[C]]]
-}
-
-
-
 case class TupleTerm3[A1, A2, A3](a1: Term[A1], a2: Term[A2], a3: Term[A3])
   extends Term[(A1, A2, A3)] {
   import SetCastHelper._

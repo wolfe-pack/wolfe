@@ -102,6 +102,12 @@ class Equals[T] extends BinaryOperatorSameDomain[T, Boolean] {
   }
 }
 
+case object Equal extends BinaryOperatorSameDomain[Any, Boolean] {
+  def funRange = Bools
+  def dom = All
+  def apply(x:(Any,Any)) = x._1 == x._2
+}
+
 
 trait BinaryOperator[T1, T2, R] extends Operator[(T1, T2), R] {
 

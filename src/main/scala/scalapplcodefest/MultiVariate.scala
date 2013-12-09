@@ -44,7 +44,7 @@ object Max {
    * Maximizes the term by exhaustive search.
    * @param term the term to maximize.
    */
-  case class ByBruteForce(term: Term[Double]) extends Max {
+  case class ByBruteForce(term: Term[Double]) extends Max with Composite1[Double,Double] {
     val ForceLinear(coefficient, parameter, _) = term
     private var arg: State = _
     private var conditionedValue: Term[Double] = _
@@ -58,6 +58,8 @@ object Max {
     def eval(state: State) = withStateDo.get(state, conditionedValue.eval(arg))
     def gradient = VectorTerm(withStateDo.get(_, conditionedCoefficient.value(arg)), Set(parameter))
     def argmax = StateTerm(withStateDo.get(_, arg), Set(parameter))
+    def copy(t1: Term[Double]) = ByBruteForce(t1)
+    def components = term
   }
 
   /**
