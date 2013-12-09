@@ -49,9 +49,6 @@ object TermDSL {
   implicit def toRichVarSymbol(symbol: Symbol) = RichVarSymbol(symbol)
   implicit def toRichPredSymbol(symbol: Symbol) = RichPredSymbol(symbol)
 
-  implicit def toFinishedCartesianProduct[A](unfinished: UnfinishedCartesianProduct[A]) = unfinished.finish
-  implicit def toRichFinishedCartesianProduct[A](unfinished: UnfinishedCartesianProduct[A]) = RichSetTerm(unfinished.finish)
-
   implicit def toRichIndex(index: Index) = RichIndex(index)
 
   case class Assign[T](variable: Variable[T], value: T)
@@ -94,7 +91,7 @@ object TermDSL {
 
   case class RichVarSymbol(symbol: Symbol) {
     def of[T](set: Term[Set[T]]) = Var(symbol, set)
-    def of[T](set: Set[T]) = Var(symbol, Constant(set))
+    //def of[T](set: Set[T]) = Var(symbol, Constant(set))
   }
 
   case class RichState(state: State) {
@@ -139,9 +136,6 @@ object TermDSL {
       LambdaAbstraction(variable, innerLambda)
     }
 
-    def x[T2](that: Term[Set[T2]]) = UnfinishedCartesianProduct2(s, that)
-    def x[T2](that: Set[T2]) = UnfinishedCartesianProduct2(s, Constant(that))
-
 
     def |->[T2](that: Term[Set[T2]]) = (s, that)
 
@@ -180,10 +174,6 @@ object TermDSL {
   }
 
 
-  trait UnfinishedCartesianProduct[T] {
-    def finish: Term[Set[T]]
-  }
-
   case class VarValuePair[T](variable: Variable[T], value: T)
 
   class RichTerm[T](term: Term[T]) {
@@ -195,17 +185,6 @@ object TermDSL {
     def ===(that: T) = FunApp(RestrictedFun[(T,T),Boolean](Equal), TupleTerm2(term, Constant(that))) //FunApp(new Equals[T].Term, TupleTerm2(term, Constant(that)))
     //    def eval(state:VarValuePair[T]*):Option[T] = term.eval(State(state.map(_.toTuple).toMap))
 
-  }
-
-  case class UnfinishedCartesianProduct2[T1, T2](dom1: Term[Set[T1]], dom2: Term[Set[T2]])
-    extends UnfinishedCartesianProduct[(T1, T2)] {
-    def x[T3](that: Term[Set[T3]]) = UnfinishedCartesianProduct3(dom1, dom2, that)
-    def finish = CartesianProductTerm2(dom1, dom2)
-  }
-
-  case class UnfinishedCartesianProduct3[T1, T2, T3](dom1: Term[Set[T1]], dom2: Term[Set[T2]], dom3: Term[Set[T3]])
-    extends UnfinishedCartesianProduct[(T1, T2, T3)] {
-    def finish = CartesianProductTerm3(dom1, dom2, dom3)
   }
 
   case class RichTupleTerm2[T1, T2](t: Term[(T1, T2)]) {
@@ -271,7 +250,7 @@ object TermDSL {
     def apply[A1 <: AnyRef](a1: Term[A1]) =
       dynFun[A1, Int]({case x => index.index(Array(symbol, x))}, a1.domain, ints)(a1)
     def apply[A1 <: AnyRef, A2 <: AnyRef](a1: Term[A1], a2: Term[A2]) =
-      dynFun[(A1, A2), Int]({case (x1, x2) => index.index(Array(symbol, x1, x2))}, a1.domain x a2.domain, ints)(a1, a2)
+      dynFun[(A1, A2), Int]({case (x1, x2) => index.index(Array(symbol, x1, x2))}, c(a1.domain,a2.domain), ints)(a1, a2)
   }
 
 //}

@@ -359,7 +359,7 @@ object TermConverter {
     val l1 = dsum(for (i <- 0 ~~ 2) yield r(i))
     val l2 = dsum(for (j <- 0 ~~ 2) yield r(j))
 
-    val s = 's of ((0 ~~ 2) x (0 ~~ 2)) |-> doubles
+    val s = 's of c(0 ~~ 2, 0 ~~ 2) |-> doubles
 
     val sum = dsum(SeqTerm(Seq(l1, l2)))
 

@@ -89,13 +89,13 @@ class Specs extends WordSpec with Matchers {
       val x = 'x of ints
       val y = 'y of ints
       val c = (x + y) | state(x -> 2)
-      c.eval(state(y -> 1)) should be (Good(3))
+      c.eval(state(y -> 1)) should be(Good(3))
     }
     "should not return free variables that are defined in its condition" in {
       val x = 'x of ints
       val y = 'y of ints
       val c = (x + y) | state(x -> 2)
-      c.variables should be (Set(y))
+      c.variables should be(Set(y))
     }
   }
 
@@ -170,7 +170,7 @@ class Specs extends WordSpec with Matchers {
 
   def maximizer(newMaximizer: => (Term[Double] => Max)) {
     "find argmax, gradient, and max value of a linear term" in {
-      val w = 'w of Vectors
+      val w = 'w of vectors
       val i = 'i of 0 ~~ 3
       val term = (unit(i) dot w) + 4.0
       val max = newMaximizer(term)
@@ -198,7 +198,7 @@ class Specs extends WordSpec with Matchers {
 
     "find a minimum of a perceptron loss" in {
       val i = 'i of 0 ~~ 3
-      val weights = 'w of Vectors
+      val weights = 'w of vectors
       val model = unit(i) dot weights
       val gold = state(i -> 2)
       val loss = Max.ByBruteForce(model) - (model | gold)
@@ -235,7 +235,7 @@ class Specs extends WordSpec with Matchers {
       val Dom = 'Dom of Constant(new AllOfType[Set[String]])
       val d = 'd of Dom
       val p = 'p of 0 ~~ 2 |-> Dom
-      val r = 'r of (Dom x Dom) |-> bools
+      val r = 'r of c(Dom, Dom) |-> bools
       val states = Seq(state(p.atom(0) -> "A"), state(p.atom(1) -> "B", r.atom("B", "C") -> true), state(d -> "D"))
       val domains = DomainCollector.collect(states)
       domains(Dom) should be(Set("A", "B", "C", "D"))
@@ -254,7 +254,7 @@ class Specs extends WordSpec with Matchers {
 
   "Flattening terms" should {
     "replace trees of binary function applications with reductions of the function" in {
-      val x = 'x of Doubles
+      val x = 'x of doubles
       val term = ((x + x) + (x + x)) + dsum(x, x) + x
       val expected = dsum(x, x, x, x, x, x, x)
       val actual = TermConverter.flatten(term, doubles.add)
@@ -264,7 +264,7 @@ class Specs extends WordSpec with Matchers {
 
   "Pushing down dot products" should {
     "replace dot products of vector sums with double sums of dot products" in {
-      val w = 'w of Vectors
+      val w = 'w of vectors
       val f1 = vsum(for (i <- (0 ~~ 2) as "i") yield unit(i))
       val f2 = vsum(unit(0), unit(1))
       val term = (f1 + f2) dot w
@@ -292,7 +292,7 @@ class Specs extends WordSpec with Matchers {
       val n = 'n of ints
       val word = 'word of (0 ~~ n |-> strings)
       val chunk = 'chunk of (0 ~~ n |-> strings)
-      val weights = 'weights of Vectors
+      val weights = 'weights of vectors
       val key = new Index()
       val bias = vsum(for (i <- 0 ~~ n as "i") yield unit(key('bias, chunk(i))))
       val wordChunk = vsum(for (i <- 0 ~~ n as "i") yield unit(key('wordChunk, word(i), chunk(i))))

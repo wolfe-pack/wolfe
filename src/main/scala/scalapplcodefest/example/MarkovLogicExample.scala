@@ -27,10 +27,10 @@ object MarkovLogicExample {
   val cancer = 'cancer of persons |-> bools
 
   //Binary predicate
-  val friend = 'friend of (persons x persons) |-> bools
+  val friend = 'friend of c(persons, persons) |-> bools
 
   //Weight vector variable.
-  val weights = 'weights of Vectors
+  val weights = 'weights of vectors
 
   //Smoking can lead to cancer
   val f1 = vsum(for (p <- persons) yield unit(key('smokingIsBad),

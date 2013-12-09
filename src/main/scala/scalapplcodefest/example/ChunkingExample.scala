@@ -40,7 +40,7 @@ object ChunkingExample {
   val chunk = 'chunk of (0 ~~ n |-> chunks)
 
   //a variable corresponding to the weight vector of the model. Learning will find an assignment to this variable.
-  val weights = 'weights of Vectors
+  val weights = 'weights of vectors
 
   //Now create a list of sufficient statistics terms that evaluate to the feature vector of a possible world.
 
