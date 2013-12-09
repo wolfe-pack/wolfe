@@ -34,16 +34,15 @@ object TermConverter {
   def convertDepthFirst[T](term: Term[T], keepBrackets: Boolean = true)(converter: Converter): Term[T] = {
     implicit def cast(t: Term[Any]) = t.asInstanceOf[Term[T]]
     term match {
-      case FunTermProxy(t) => converter.convert(FunTermProxy(convertDepthFirst(t, keepBrackets)(converter)))
       case TupleTerm2(a1, a2) => converter.convert(TupleTerm2(convertDepthFirst(a1, keepBrackets)(converter), convertDepthFirst(a2, keepBrackets)(converter)))
-      case FunApp(f, a) => converter.convert(FunApp(FunTerm(convertDepthFirst(f, keepBrackets)(converter)), convertDepthFirst(a, keepBrackets)(converter)))
+      case FunApp(f, a) => converter.convert(FunApp(convertDepthFirst(f, keepBrackets)(converter), convertDepthFirst(a, keepBrackets)(converter)))
       case Conditioned(t, c) => converter.convert(Conditioned(convertDepthFirst(t, keepBrackets)(converter), c))
       case SeqTerm(args) => converter.convert(SeqTerm(args.map(convertDepthFirst(_, keepBrackets)(converter))))
-      case ImageSeq1(f) => converter.convert(ImageSeq1(FunTerm(convertDepthFirst(f, keepBrackets)(converter))))
-      case ImageSeq2(f) => converter.convert(ImageSeq2(FunTerm(convertDepthFirst(f, keepBrackets)(converter))))
+      case ImageSeq1(f) => converter.convert(ImageSeq1(convertDepthFirst(f, keepBrackets)(converter)))
+      case ImageSeq2(f) => converter.convert(ImageSeq2(convertDepthFirst(f, keepBrackets)(converter)))
       case LambdaAbstraction(Var(v, d), t) => converter.convert(LambdaAbstraction(Var(v, convertDepthFirst(d, keepBrackets)(converter)), convertDepthFirst(t, keepBrackets)(converter)))
       case Var(v, d) => converter.convert(Var(v, convertDepthFirst(d, keepBrackets)(converter)))
-      case Reduce(o, a) => converter.convert(Reduce(FunTerm(convertDepthFirst(o, keepBrackets)(converter)).asInstanceOf[FunTerm[(T, T), T]], convertDepthFirst(a, keepBrackets)(converter)))
+      case Reduce(o, a) => converter.convert(Reduce(convertDepthFirst(o, keepBrackets)(converter).asInstanceOf[Term[Fun[(T, T), T]]], convertDepthFirst(a, keepBrackets)(converter)))
       case LinearModel(f, Var(w, d), b) => converter.convert(LinearModel(convertDepthFirst(f, keepBrackets)(converter), Var(w, convertDepthFirst(d, keepBrackets)(converter)), convertDepthFirst(b, keepBrackets)(converter)))
       case UnitVec(i, v) => converter.convert(UnitVec(convertDepthFirst(i, keepBrackets)(converter), convertDepthFirst(v, keepBrackets)(converter)))
       case Predicate(n, d, r) => converter.convert(Predicate(n, convertDepthFirst(d, keepBrackets)(converter), convertDepthFirst(r, keepBrackets)(converter)))

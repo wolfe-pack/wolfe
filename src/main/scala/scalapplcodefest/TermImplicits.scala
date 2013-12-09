@@ -31,10 +31,7 @@ object TermImplicits extends TermDSL {
   implicit def toRichBooleanTerm(t: Term[Boolean]) = RichBooleanTerm(t)
   implicit def toRichValueAndGradient(tuple: (Term[(Double,Vector)])) = RichValueAndGradient(tuple)
 
-  implicit def toRichFunTerm[A, B](term: Term[Fun[A, B]]): RichFunTerm[A, B] = term match {
-    case f: FunTerm[_, _] => RichFunTerm(f).asInstanceOf[RichFunTerm[A, B]]
-    case f => RichFunTerm(FunTerm(f))
-  }
+  implicit def toRichFunTerm[A, B](term: Term[Fun[A, B]]): RichFunTerm[A, B] = RichFunTerm(term)
   implicit def toRichFunctionSeq[A, B](f: FunTerm[Seq[A], B]) = RichFunctionTermSeq(f)
   implicit def toRichFunction2[A1, A2, B](f: FunTerm[(A1, A2), B]) = RichFunctionTerm2(f)
   implicit def toRichPredicate[A, B](p: Predicate[A, B]) = RichPredicate(p)
@@ -62,7 +59,7 @@ object TermImplicits extends TermDSL {
   def br[T](term: Term[T]) = Bracketed(term)
 
   //table building
-  def T[A, B](domain: Term[Set[A]], f: PartialFunction[A, B]) = ConstantFun(Fun.table(domain.eval().get, f))
+  def T[A, B](domain: Term[Set[A]], f: PartialFunction[A, B]) = Constant(Fun.table(domain.eval().get, f))
   def C[T1,T2](a1:Term[Set[T1]], a2:Term[Set[T2]]) = RichCartesianProductTerm2(CartesianProductTerm2(a1,a2))
 
   //math
@@ -236,10 +233,11 @@ object TermImplicits extends TermDSL {
   }
 
 
-  case class RichFunTerm[A, B](f: FunTerm[A, B]) {
+  case class RichFunTerm[A, B](f: Term[Fun[A, B]]) {
+    val FunTerm(funCandidateDom,_) = f
     def apply(a: Term[A]) = FunApp(f, a)
-    def isDefined = for (x <- f.funCandidateDom) yield
-      FunApp(Dyn(IsDefined,CartesianProductTerm2(f.domain,f.funCandidateDom),Constant(Bools)),TupleTerm2(f,x))
+    def isDefined = for (x <- funCandidateDom) yield
+      FunApp(Dyn(IsDefined,CartesianProductTerm2(f.domain,funCandidateDom),Constant(Bools)),TupleTerm2(f,x))
 
   }
 

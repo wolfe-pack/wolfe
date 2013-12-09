@@ -48,12 +48,13 @@ object SetTerm {
  * @param arguments the elements to be reduced.
  * @tparam T the type of elements to reduce.
  */
-case class Reduce[T](op: FunTerm[(T, T), T], arguments: Term[Seq[T]]) extends Term[T] {
+case class Reduce[T](op: Term[Fun[(T, T), T]], arguments: Term[Seq[T]]) extends Term[T] {
+  val FunTerm(_,funRange) = op
   def eval(state: State) = for (f <- op.eval(state); set <- arguments.eval(state)) yield
     set.reduce((a1, a2) => f(a1 -> a2))
   def variables = SetUtil.SetUnion(List(op.variables,arguments.variables))
-  def domain[C >: T] = op.funRange.asInstanceOf[Term[Set[C]]]
-  def default = op.funRange.default.head
+  def domain[C >: T] = funRange.asInstanceOf[Term[Set[C]]]
+  def default = funRange.default.head
 }
 
 /**
@@ -62,7 +63,7 @@ case class Reduce[T](op: FunTerm[(T, T), T], arguments: Term[Seq[T]]) extends Te
 object Quantified {
 
   trait AbstractQuantified[T] {
-    def operator: FunTerm[(T, T), T]
+    def operator: Term[Fun[(T, T), T]]
     def apply[A](term: Term[Seq[T]]) = Reduce(operator, term)
     def unapply(term: Term[T]) = term match {
       case Reduce(operator, seq) => Option(seq)

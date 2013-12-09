@@ -27,13 +27,13 @@ trait Fun[A, B] extends PartialFunction[A, B] {
  */
 trait Operator[A, B] extends Fun[A, B] {
   self =>
-  object Term extends ConstantFun(this)
+  object Term extends Constant(this)
 
   def isDefinedAt(x: A) = true
 
   object Applied {
     def unapply(x: Term[Any]): Option[Term[A]] = x match {
-      case FunApp(ConstantFun(op), arg) if op == self => Some(arg.asInstanceOf[Term[A]])
+      case FunApp(Constant(op), arg) if op == self => Some(arg.asInstanceOf[Term[A]])
       case _ => None
     }
   }
@@ -73,7 +73,7 @@ trait BinaryOperatorSameDomainAndRange[T] extends BinaryOperatorSameDomain[T, T]
   def reduce(args: Term[Seq[T]]) = Reduce(Term, args)
   object Reduced {
     def unapply(x: Term[Any]): Option[Term[Seq[T]]] = x match {
-      case Reduce(ConstantFun(op), args) if op == self => Some(args.asInstanceOf[Term[Seq[T]]])
+      case Reduce(Constant(op), args) if op == self => Some(args.asInstanceOf[Term[Seq[T]]])
       case _ => None
     }
   }
@@ -107,7 +107,7 @@ trait BinaryOperator[T1, T2, R] extends Operator[(T1, T2), R] {
 
   object Applied2 {
     def unapply(x: Term[Any]): Option[(Term[T1], Term[T2])] = x match {
-      case FunApp(ConstantFun(op), TupleTerm2(arg1, arg2)) if op == self =>
+      case FunApp(Constant(op), TupleTerm2(arg1, arg2)) if op == self =>
         Some((arg1.asInstanceOf[Term[T1]], arg2.asInstanceOf[Term[T2]]))
       case _ => None
     }
