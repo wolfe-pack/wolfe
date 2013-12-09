@@ -26,11 +26,11 @@ class Specs extends WordSpec with Matchers {
 
   "A variable" should {
     "evaluate to the value it is assigned to in the state" in {
-      val x = 'x of Ints
+      val x = 'x of ints
       x.eval(state(x -> 0)) should be(Good(0))
     }
     "evaluate to an Undefined object if no value is assigned to it" in {
-      val x = 'x of Ints
+      val x = 'x of ints
       x.eval(State.empty) should be(Bad(VariableUndefined(x, State.empty)))
     }
     "evaluate to an Undefined object if the assigned value is outside the domain" in {
@@ -51,12 +51,12 @@ class Specs extends WordSpec with Matchers {
       app.eval(State.empty) should be(Bad(FunctionNotDefinedAt(app, State.empty)))
     }
     "return ground atoms as variables if the function is a predicate" in {
-      val p = 'p of Bools |-> Bools
+      val p = 'p of bools |-> bools
       val term = p(true)
       term.variables should be(Set(p.atom(true)))
     }
     "return no free variables if the function is a predicate and the application is conditioned to have all variables set" in {
-      val p = 'p of Bools |-> Bools
+      val p = 'p of bools |-> bools
       val term = p(true) | p.atom(true) -> true
       term.variables should be(Set.empty)
     }
@@ -64,13 +64,13 @@ class Specs extends WordSpec with Matchers {
 
   "A lambda abstraction" should {
     "evaluate to a function that returns the value of the body for a state where the lambda variable is assigned to the function argument" in {
-      val l = for (x <- Constant(Bools)) yield x
+      val l = for (x <- bools) yield x
       val f = l.value()
       f(true) should be(true)
       f(false) should be(false)
     }
     "evaluate to a function with tuple arguments if the variable is a tuple" in {
-      val f = for ((x, y) <- C(Bools, Bools)) yield x || y
+      val f = for ((x, y) <- C(bools, bools)) yield x || y
       f.value()(false, false) should be(false)
       f.value()(false, true) should be(true)
     }
@@ -78,14 +78,14 @@ class Specs extends WordSpec with Matchers {
 
   "A conditioned term" should {
     "evaluate to the value its inner term would evaluate to if the condition was added to its state argument" in {
-      val x = 'x of Ints
-      val y = 'y of Ints
+      val x = 'x of ints
+      val y = 'y of ints
       val c = (x + y) | state(x -> 2)
       c.eval(state(y -> 1)) should be (Good(3))
     }
     "should not return free variables that are defined in its condition" in {
-      val x = 'x of Ints
-      val y = 'y of Ints
+      val x = 'x of ints
+      val y = 'y of ints
       val c = (x + y) | state(x -> 2)
       c.variables should be (Set(y))
     }
@@ -93,16 +93,16 @@ class Specs extends WordSpec with Matchers {
 
   "A set term" should {
     "map each element in the set when mapped" in {
-      val n = 'n of Ints
+      val n = 'n of ints
       val s = 0 ~~ n
-      val f = for (i <- Constant(Ints)) yield i + 1
+      val f = for (i <- ints) yield i + 1
       val m = s mappedBy f
       m.value(n -> 2) should be(Set(1, 2))
     }
     "filter out elements in the set if they match the predicate" in {
-      val n = 'n of Ints
+      val n = 'n of ints
       val s = 0 ~~ n
-      val f = for (i <- Constant(Ints)) yield i === 1
+      val f = for (i <- ints) yield i === 1
       val m = s filteredBy f
       m.value(n -> 2) should be(Set(1))
     }
@@ -129,14 +129,14 @@ class Specs extends WordSpec with Matchers {
 
   "A state" should {
     "provide values of variables or return None" in {
-      val i = 'i of Ints
-      val j = 'j of Ints
+      val i = 'i of ints
+      val j = 'j of ints
       val s = state(i -> 1)
       s.get(i) should be(Some(1))
       s.get(j) should be(None)
     }
     "turn values of variables to target values" in {
-      val i = 'i of Ints
+      val i = 'i of ints
       val s = state(i -> 1)
       val t = s.asTargets(Gen(Set(i)))
       t.get(Target(i)) should be(Some(1))
@@ -144,7 +144,7 @@ class Specs extends WordSpec with Matchers {
     }
 
     "turn target values of variables to actual values" in {
-      val i = 'i of Ints
+      val i = 'i of ints
       val s = state(Target(i) -> 1)
       val t = s.target
       t.get(Target(i)) should be(None)
@@ -152,7 +152,7 @@ class Specs extends WordSpec with Matchers {
     }
 
     "support boolean queries" in {
-      val p = 'p of 0 ~~ 4 |-> Bools
+      val p = 'p of 0 ~~ 4 |-> bools
       val query = for (i <- 0 ~~ 4) yield p(i)
       val data = state(p.atom(0) -> true, p.atom(1) -> false, p.atom(2) -> true, p.atom(3) -> false)
       val result = data.query(query)
@@ -211,12 +211,12 @@ class Specs extends WordSpec with Matchers {
 
   "Pushing down conditions" should {
     "move condition terms downward the term tree" in {
-      val n = 'n of Ints
-      val p = 'p of (0 ~~ n |-> Bools)
+      val n = 'n of ints
+      val p = 'p of (0 ~~ n |-> bools)
       val state = State(Map(n -> 2))
       val term = dsum {for (i <- (0 ~~ n) as "i") yield I(p(i)) + 1.0} | state
       val actual = TermConverter.pushDownConditions(term)
-      val pCond = 'p of (0 ~~ (n | state) |-> Bools)
+      val pCond = 'p of (0 ~~ (n | state) |-> bools)
       val expected = dsum {for (i <- (0 ~~ (n | state)) as "i") yield I(pCond(i) | state) + 1.0}
       actual should be(expected)
     }
@@ -227,7 +227,7 @@ class Specs extends WordSpec with Matchers {
       val Dom = 'Dom of Constant(new AllOfType[Set[String]])
       val d = 'd of Dom
       val p = 'p of 0 ~~ 2 |-> Dom
-      val r = 'r of (Dom x Dom) |-> Bools
+      val r = 'r of (Dom x Dom) |-> bools
       val states = Seq(state(p.atom(0) -> "A"), state(p.atom(1) -> "B", r.atom("B", "C") -> true), state(d -> "D"))
       val domains = DomainCollector.collect(states)
       domains(Dom) should be(Set("A", "B", "C", "D"))
@@ -236,7 +236,7 @@ class Specs extends WordSpec with Matchers {
 
   "Unrolling images of lambda abstractions" should {
     "create sequences of terms, one for each element in the domain" in {
-      val p = 'p of (0 ~~ 3 |-> Bools)
+      val p = 'p of (0 ~~ 3 |-> bools)
       val term = dsum {for (i <- 0 ~~ 3) yield I(p(i))}
       val expected = dsum(I(p(0)), I(p(1)), I(p(2)))
       val actual = TermConverter.unrollLambdaImages(term)
@@ -269,7 +269,7 @@ class Specs extends WordSpec with Matchers {
 
   "Grouping lambda abstractions" should {
     "group lambda abstractions over the same domain if they have the same hidden variables" in {
-      val p = 'p of Ints |-> Ints
+      val p = 'p of ints |-> ints
       val f1 = vsum(for (i <- (0 ~~ 2) as "i") yield unit(p(i)))
       val f2 = vsum(for (i <- (0 ~~ 2) as "i") yield unit(p(i) + 1))
       val term = vsum(f1, f2)
@@ -281,9 +281,9 @@ class Specs extends WordSpec with Matchers {
 
   "Normalizing linear models" should {
     "result in flat vector and double terms with merged lambda abstractions" in {
-      val n = 'n of Ints
-      val word = 'word of (0 ~~ n |-> Strings)
-      val chunk = 'chunk of (0 ~~ n |-> Strings)
+      val n = 'n of ints
+      val word = 'word of (0 ~~ n |-> strings)
+      val chunk = 'chunk of (0 ~~ n |-> strings)
       val weights = 'weights of Vectors
       val key = new Index()
       val bias = vsum(for (i <- 0 ~~ n as "i") yield unit(key('bias, chunk(i))))

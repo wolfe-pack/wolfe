@@ -335,11 +335,11 @@ object TermConverter {
 
   def main(args: Array[String]) {
 
-    val r = 'r of (0 ~~ 2 |-> Doubles)
+    val r = 'r of (0 ~~ 2 |-> doubles)
     val l1 = dsum(for (i <- 0 ~~ 2) yield r(i))
     val l2 = dsum(for (j <- 0 ~~ 2) yield r(j))
 
-    val s = 's of ((0 ~~ 2) x (0 ~~ 2)) |-> Doubles
+    val s = 's of ((0 ~~ 2) x (0 ~~ 2)) |-> doubles
 
     val sum = dsum(SeqTerm(Seq(l1, l2)))
 

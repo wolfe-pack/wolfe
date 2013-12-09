@@ -18,8 +18,8 @@ object TermImplicits extends TermDSL {
   implicit def symbolToConstant(x: Symbol) = Constant(x)
   //implicit def predicateToAllAtoms[A,B](p:Predicate[A,B]) = AllGroundAtoms(p)
 
-  implicit def setToConstant[T](x: Set[T]) = Constant(x)
-  implicit def setToRichSetTerm[T](x: Set[T]) = RichSetTerm(Constant(x))
+  //implicit def setToConstant[T](x: Set[T]) = Constant(x)
+  //implicit def setToRichSetTerm[T](x: Set[T]) = RichSetTerm(Constant(x))
 
   //implicit def funToConstant[A,B](x:Fun[A,B]) = x)
   implicit def toTupleTerm2[T1, T2](tuple: (Term[T1], Term[T2])) = TupleTerm2(tuple._1, tuple._2)
@@ -263,4 +263,11 @@ object TermImplicits extends TermDSL {
 
 trait TermDSL {
   def all[T] = Constant(new AllOfType[T])
+  def set[T](values:T*) = Constant(SeqSet(values))
+  val ints = Constant(Ints)
+  val doubles = Constant(Doubles)
+  val bools = Constant(Bools)
+  val vectors = Constant(Vectors)
+  val strings = Constant(Strings)
+
 }

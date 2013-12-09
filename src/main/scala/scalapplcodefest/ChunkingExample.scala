@@ -17,19 +17,19 @@ object ChunkingExample {
   val key = new Index()
 
   //All possible chunk types
-  val Chunks = SetValue("O", "B-VP", "B-NP", "B-PP", "I-VP", "I-NP", "I-PP", "B-SBAR", "I-SBAR", "B-ADJP", "I-ADJP")
+  val chunks = set("O", "B-VP", "B-NP", "B-PP", "I-VP", "I-NP", "I-PP", "B-SBAR", "I-SBAR", "B-ADJP", "I-ADJP")
 
   //a variable corresponding to sentence length.
   val n = 'n of Ints
 
   //a predicate that maps tokens (integers) in a sentence to their words. Note that the domain of this predicate is dynamic.
-  val word = 'word of (0 ~~ n |-> Strings)
+  val word = 'word of (0 ~~ n |-> strings)
 
   //a predicate mapping tokens to their Part-of-Speech.
-  val tag = 'tag of (0 ~~ n |-> Strings)
+  val tag = 'tag of (0 ~~ n |-> strings)
 
   //a predicate mapping tokens to their chunk labels. We use the Chunk type as range (and not Strings) as we need to search over it.
-  val chunk = 'chunk of (0 ~~ n |-> Chunks)
+  val chunk = 'chunk of (0 ~~ n |-> chunks)
 
   //a variable corresponding to the weight vector of the model. Learning will find an assignment to this variable.
   val weights = 'weights of Vectors

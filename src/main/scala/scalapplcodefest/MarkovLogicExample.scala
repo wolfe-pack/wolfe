@@ -15,25 +15,25 @@ object MarkovLogicExample {
   val key = new Index()
 
   //domain objects. Note that this set itself is a term (a constant evaluating to the given set, but it could be dynamic too).
-  val Persons = SetTerm('Anna, 'Bob)
+  val persons = set('Anna, 'Bob)
 
   //Unary predicates
-  val smokes = 'smokes of Persons |-> Bools
-  val cancer = 'cancer of Persons |-> Bools
+  val smokes = 'smokes of persons |-> bools
+  val cancer = 'cancer of persons |-> bools
 
   //Binary predicate
-  val friends = 'friend of (Persons x Persons) |-> Bools
+  val friend = 'friend of (persons x persons) |-> bools
 
   //Weight vector variable.
   val weights = 'weights of Vectors
 
   //Smoking can lead to cancer
-  val f1 = vsum(for (p <- Persons) yield unit(key('smokingIsBad),
+  val f1 = vsum(for (p <- persons) yield unit(key('smokingIsBad),
     I(smokes(p) |=> cancer(p))))
 
   //friends make friends smoke / not smoke
-  val f2 = vsum(for (p1 <- Persons; p2 <- Persons) yield unit(key('peerPressure),
-    I(friends(p1, p2) |=> (smokes(p1) <=> smokes(p2)))))
+  val f2 = vsum(for (p1 <- persons; p2 <- persons) yield unit(key('peerPressure),
+    I(friend(p1, p2) |=> (smokes(p1) <=> smokes(p2)))))
 
   //The MLN without assigned weights
   val mln = (f1 + f2) dot weights
@@ -43,7 +43,7 @@ object MarkovLogicExample {
     val concreteWeights = key.createDenseVector(Seq('smokingIsBad) -> 1.0, Seq('peerPressure) -> 1.0)()
 
     //some observations
-    val condition = state(friends.atom('Anna, 'Bob) -> true, smokes.atom('Anna) -> true)
+    val condition = state(friend.atom('Anna, 'Bob) -> true, smokes.atom('Anna) -> true)
 
     //the mln with weights and some ground atoms set to some observation
     val conditioned = mln | condition | weights -> concreteWeights

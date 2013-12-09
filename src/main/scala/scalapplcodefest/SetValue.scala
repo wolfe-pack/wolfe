@@ -18,12 +18,10 @@ trait SetValue[T] extends Set[T] {
 /**
  * Helper to build SetValue objects.
  */
-object SetValue {
-  def apply[T](elems:T*) = new SetValue[T] {
-    val self = elems.toSet
-    def contains(elem: T) = self(elem)
-    def iterator = elems.iterator
-  }
+case class SeqSet[T](elems: Seq[T]) extends SetValue[T] {
+  val self = elems.toSet
+  def contains(elem: T) = self(elem)
+  def iterator = elems.iterator
 }
 
 /**
@@ -31,15 +29,8 @@ object SetValue {
  * @param set the set to convert to a generic set.
  * @tparam T type of elements in original set.
  */
-case class Gen[T](set:Set[T]) extends SetProxy[Any] {
+case class Gen[T](set: Set[T]) extends SetProxy[Any] {
   def self = set.asInstanceOf[Set[Any]]
-}
-
-/**
- * Helper to build simple Term[Set] objects.
- */
-object SetTerm {
-  def apply[T](elems:T*) = Constant(SetValue(elems:_*))
 }
 
 /**
@@ -49,10 +40,10 @@ object SetTerm {
  * @tparam T the type of elements to reduce.
  */
 case class Reduce[T](op: Term[Fun[(T, T), T]], arguments: Term[Seq[T]]) extends Term[T] {
-  val FunTerm(_,funRange) = op
+  val FunTerm(_, funRange) = op
   def eval(state: State) = for (f <- op.eval(state); set <- arguments.eval(state)) yield
     set.reduce((a1, a2) => f(a1 -> a2))
-  def variables = SetUtil.SetUnion(List(op.variables,arguments.variables))
+  def variables = SetUtil.SetUnion(List(op.variables, arguments.variables))
   def domain[C >: T] = funRange.asInstanceOf[Term[Set[C]]]
   def default = funRange.default.head
 }
@@ -72,8 +63,11 @@ object Quantified {
   }
 
   object Exists extends AbstractQuantified[Boolean] {def operator = Logic.Or.Term}
+
   object Forall extends AbstractQuantified[Boolean] {def operator = Logic.And.Term}
+
   object VecSum extends AbstractQuantified[Vector] {def operator = Math.VecAdd.Term}
+
   object DoubleSum extends AbstractQuantified[Double] {def operator = Math.DoubleAdd.Term}
 
 }
