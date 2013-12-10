@@ -117,7 +117,7 @@ class Specs extends WordSpec with Matchers {
   }
 
   "A constant function term" should {
-    "be acting like the function when doing function application" in {
+    "be acting like the function value when doing function application" in {
       val f = fun[String, Int]({case x => x.length})
       f.value()("123") should be(3)
     }
@@ -284,36 +284,6 @@ class Specs extends WordSpec with Matchers {
       val actual = TermConverter.groupLambdas(term)
       val expected = vsum(for (i <- (0 ~~ 2) as "i") yield vsum(unit(p(i)), unit(p(i) + 1)))
       actual should be(expected)
-    }
-  }
-
-  "Normalizing linear models" should {
-    "result in flat vector and double terms with merged lambda abstractions" in {
-      val n = 'n of ints
-      val word = 'word of (0 ~~ n |-> strings)
-      val chunk = 'chunk of (0 ~~ n |-> strings)
-      val weights = 'weights of vectors
-      val key = new Index()
-      val bias = vsum(for (i <- 0 ~~ n as "i") yield unit(key('bias, chunk(i))))
-      val wordChunk = vsum(for (i <- 0 ~~ n as "i") yield unit(key('wordChunk, word(i), chunk(i))))
-      val trans = vsum(for (i <- 0 ~~ (n - 1) as "i") yield unit(key('trans, chunk(i), chunk(i + 1))))
-      val hard1 = dsum(for (i <- 0 ~~ n as "i") yield log(I(chunk(i) === "O")))
-      val hard2 = dsum(for (i <- 0 ~~ n as "i") yield log(I(chunk(i) === "B-NP")))
-
-      val feat = bias + wordChunk + trans
-      val model = (feat dot weights) + hard1 + hard2
-
-      val actual = TermConverter.normalizeLinearModel(model, chunk.allAtoms)
-      val expected = dsum(
-        vsum(
-          vsum(for (i <- 0 ~~ n as "i") yield vsum(unit(key('bias, chunk(i))), unit(key('wordChunk, word(i), chunk(i))))),
-          vsum(for (i <- 0 ~~ (n - 1) as "i") yield unit(key('trans, chunk(i), chunk(i + 1))))
-        ) dot weights,
-        dsum(for (i <- 0 ~~ n as "i") yield dsum(log(I(chunk(i) === "O")), log(I(chunk(i) === "B-NP"))))
-      )
-
-      actual should be(expected)
-
     }
   }
 

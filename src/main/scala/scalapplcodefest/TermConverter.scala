@@ -227,25 +227,6 @@ object TermConverter {
   }
 
   /**
-   * Flatten a linear model and merge lambda abstractions with respect to the merge filter.
-   * @param term term to normalize
-   * @param mergeFilter filter that is used when comparing free variables of terms to merge
-   * @tparam T type of term to convert.
-   * @return normalized linear model.
-   */
-  def normalizeLinearModel[T](term: Term[Double], mergeFilter: Variable[Any] => Boolean = x => true) = {
-    val replaceLinearModel = convertDepthFirst(term) {
-      new Converter {
-        def convert[A](term: Term[A]) = term match {case l: LinearModel => l.self.asInstanceOf[Term[A]]; case t => t }
-      }
-    }
-    val flatDouble = flatten(replaceLinearModel, doubles.add)
-    val flatVector = flatten(flatDouble, vectors.add)
-    val grouped = groupLambdas(flatVector, mergeFilter)
-    grouped
-  }
-
-  /**
    * Unwrap bracketed terms in the tree
    * @param root the term to convert.
    * @tparam T type parameter of the term to convert.
