@@ -66,7 +66,6 @@ object TermDSL {
 
   //table building
   def T[A, B](domain: Term[Set[A]], f: PartialFunction[A, B]) = Constant(Fun.table(domain.eval().get, f))
-  def C[T1, T2](a1: Term[Set[T1]], a2: Term[Set[T2]]) = RichCartesianProductTerm2(CartesianProductTerm2(a1, a2))
 
   //math
   def unit(index: Term[Int], value: Term[Double] = Constant(1.0)) = FunApp(vectors.unit, TupleTerm2(index, value))

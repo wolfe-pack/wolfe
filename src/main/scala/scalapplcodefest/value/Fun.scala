@@ -50,6 +50,7 @@ object Fun {
     def funRange = ran
   }
 
+
   def empty[A, B] = new Fun[A, B] {
     def funCandidateDom = Set.empty
     def funRange = Set.empty

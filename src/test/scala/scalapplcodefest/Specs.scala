@@ -72,13 +72,19 @@ class Specs extends WordSpec with Matchers {
 
   "A lambda abstraction" should {
     "evaluate to a function that returns the value of the body for a state where the lambda variable is assigned to the function argument" in {
-      val l = for (x <- bools) yield x
+      val l = for (x <- bools) yield !x
       val f = l.value()
-      f(true) should be(true)
-      f(false) should be(false)
+      f(true) should be(false)
+      f(false) should be(true)
+    }
+    "evaluate to functions with different domains if the variable domain is state-dependent" in {
+      val n = 'n of ints
+      val f = for (i <- 0 ~~ n) yield i
+      f.value(state(n -> 1)).funDom should be(Set(0))
+      f.value(state(n -> 3)).funDom should be(Set(0, 1, 2))
     }
     "evaluate to a function with tuple arguments if the variable is a tuple" in {
-      val f = for ((x, y) <- C(bools, bools)) yield x || y
+      val f = for ((x, y) <- c(bools, bools)) yield x || y
       f.value()(false, false) should be(false)
       f.value()(false, true) should be(true)
     }
@@ -132,6 +138,16 @@ class Specs extends WordSpec with Matchers {
     "provide a term representing its domain" in {
       val f = for (i <- 0 ~~ 2) yield 2 / i
       f.funDom.value() should be(Set(1))
+    }
+  }
+
+  "A unit vector" should {
+    "evaluate to a vector that is active only at the component the index term evaluates to" in {
+      val i = 'i of ints
+      val d = 'd of doubles
+      val v = unit(i,d).value(state(i -> 2, d -> 2.0))
+      v(2) should be (2.0 +- eps)
+      for (j <- v.activeDomain.asSeq; if j != 2) v(j) should be (0.0 +- eps)
     }
   }
 
