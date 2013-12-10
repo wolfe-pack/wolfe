@@ -188,8 +188,8 @@ object TermDSL {
   }
 
   case class RichTupleTerm2[T1, T2](t: Term[(T1, T2)]) {
-    def _1 = ArgTerm(t.domain, Constant(new AllOfType[T2]), Constant(0))
-    def _2 = ArgTerm(t.domain, Constant(new AllOfType[T2]), Constant(1))
+    def _1 = ArgTerm(t.domain, all[T1], Constant(0))
+    def _2 = ArgTerm(t.domain, all[T2], Constant(1))
   }
 
   case class RichIntTerm(i: Term[Int]) {
@@ -197,7 +197,7 @@ object TermDSL {
     def -(that: Term[Int]) = FunApp(ints.minus, TupleTerm2(i, that))
     def /(that: Term[Int]) = FunApp(ints.divide, TupleTerm2(i, that))
 
-    def ~~(that: Term[Int]) = RangeSet(i, that) // FunApp(ints.range, TupleTerm2(i, that))
+    def ~~(that: Term[Int]) = RangeSet(i, that) // FunApp(ints.range, TupleTerm2(i, that)) doesn't work because funapp can't guess reasonable default
   }
 
   case class RichDoubleTerm(x: Term[Double]) {
