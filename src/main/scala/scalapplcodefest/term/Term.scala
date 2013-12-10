@@ -1,7 +1,9 @@
 package scalapplcodefest.term
 
 import scala.language.implicitConversions
-import org.scalautils.{Good, Or}
+import org.scalautils.{Bad, Good, Or}
+import scalapplcodefest.value.{AllOfType, OOV}
+import scalapplcodefest.TermDSL
 
 
 /**
@@ -89,7 +91,6 @@ case class VariableUndefined[T](variable: Variable[T], state: State) extends Und
  */
 case class FunctionNotDefinedAt[A, B](funApp: FunApp[A, B], state: State) extends Undefined
 
-
 /**
  * Proxy of another term. All methods are delegated to the inner term.
  * @tparam T type of term.
@@ -156,4 +157,19 @@ trait Composite3[T1, T2, T3, C] extends Term[C] {
   def copy(t1: Term[T1], t2: Term[T2], t3: Term[T3]): Term[C]
 }
 
+/**
+ * Evaluates to the inner term (wrapped in `Good`) if the value is the denotation of the given domain, otherwise
+ * an out-of-vocabulary element is returned.
+ * @param term the term that denotes the original value before conversion to in-domain `Good` or out-of-domain.
+ * @param vocab the vocabulary to check whether the value is in.
+ * @tparam T type of the inner term.
+ */
+case class OOVTerm[T](term:Term[T],vocab:Term[Set[T]]) extends Composite2[T,Set[T],T Or OOV[T]] {
+  def eval(state: State) = for (v <- term.eval(state); d <- vocab.eval(state)) yield if (d(v)) Good(v) else Bad(new OOV(v))
+  def variables = term.variables ++ vocab.variables
+  def domain[A >: T Or OOV[T]] = TermDSL.all[A]
+  def default = Good(term.default)
+  def components = (term,vocab)
+  def copy(t1: Term[T], t2: Term[Set[T]]) = OOVTerm(t1,t2)
+}
 

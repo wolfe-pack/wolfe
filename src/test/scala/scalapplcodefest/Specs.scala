@@ -25,6 +25,40 @@ class Specs extends WordSpec with Matchers {
   import TermDSL._
   import CustomEqualities._
 
+  "A state" should {
+    "provide values of variables or return None" in {
+      val i = 'i of ints
+      val j = 'j of ints
+      val s = state(i -> 1)
+      s.get(i) should be(Some(1))
+      s.get(j) should be(None)
+    }
+    "turn values of variables to target values" in {
+      val i = 'i of ints
+      val s = state(i -> 1)
+      val t = s.asTargets(Gen(Set(i)))
+      t.get(Target(i)) should be(Some(1))
+      t.get(i) should be(None)
+    }
+
+    "turn target values of variables to actual values" in {
+      val i = 'i of ints
+      val s = state(Target(i) -> 1)
+      val t = s.target
+      t.get(Target(i)) should be(None)
+      t.get(i) should be(Some(1))
+    }
+
+    "support boolean queries" in {
+      val p = 'p of 0 ~~ 4 |-> bools
+      val query = for (i <- 0 ~~ 4) yield p(i)
+      val data = state(p.atom(0) -> true, p.atom(1) -> false, p.atom(2) -> true, p.atom(3) -> false)
+      val result = data.query(query)
+      result should be(Good(Set(0, 2)))
+    }
+  }
+
+
   "A constant" should {
     "evaluate to its value" in {
       val c = Constant(10)
@@ -44,6 +78,19 @@ class Specs extends WordSpec with Matchers {
     "evaluate to an Undefined object if the assigned value is outside the domain" in {
       val x = 'x of 0 ~~ 2
       x.eval(state(x -> 3)) should be(Bad(VariableUndefined(x, state(x -> 3))))
+    }
+  }
+
+  "A predicate" should {
+    "evaluate to a function controlled by the assignments to the predicate's atoms" in {
+      val p = 'p of 0 ~~ 2 |-> bools
+      val f = p.value(state(p.atom(0) -> false, p.atom(1) -> true))
+      f(0) should be(false)
+      f(1) should be(true)
+    }
+    "return as variables all ground atoms of the predicate" in {
+      val p = 'p of 0 ~~ 2 |-> bools
+      p.variables should be(Set(p.atom(0), p.atom(1)))
     }
   }
 
@@ -141,48 +188,57 @@ class Specs extends WordSpec with Matchers {
     }
   }
 
+  "A sum" when {
+    "used with a sequence of argument terms" should {
+      "evaluate to the sum of the denotations of its arguments" in {
+        val d = 'd of doubles
+        val s = doubles.sum(d, d, d + d)
+        s.value(d -> 2.0) should be(8.0)
+      }
+    }
+
+    "used with a function argument" should {
+      "evaluate to the sum of the values we get by applying the function to all values in its domain" in {
+        val n = 'n of ints
+        val s = ints.sum(for (i <- 0 ~~ n) yield i)
+        s.value(n -> 4) should be(6)
+      }
+    }
+  }
+
+  "An Iverson Bracket" should {
+    "denote 1.0 if the inner boolean term is true, and 0.0 for false" in {
+      val i = 'i of ints
+      val t = I(i === 2)
+      t.value(i -> 2) should be (1.0)
+      t.value(i -> 10) should be (0.0)
+    }
+  }
+
+
   "A unit vector" should {
     "evaluate to a vector that is active only at the component the index term evaluates to" in {
       val i = 'i of ints
       val d = 'd of doubles
-      val v = unit(i,d).value(state(i -> 2, d -> 2.0))
-      v(2) should be (2.0 +- eps)
-      for (j <- v.activeDomain.asSeq; if j != 2) v(j) should be (0.0 +- eps)
+      val v = unit(i, d).value(state(i -> 2, d -> 2.0))
+      v(2) should be(2.0 +- eps)
+      for (j <- v.activeDomain.asSeq; if j != 2) v(j) should be(0.0 +- eps)
     }
   }
 
-  "A state" should {
-    "provide values of variables or return None" in {
-      val i = 'i of ints
-      val j = 'j of ints
-      val s = state(i -> 1)
-      s.get(i) should be(Some(1))
-      s.get(j) should be(None)
-    }
-    "turn values of variables to target values" in {
-      val i = 'i of ints
-      val s = state(i -> 1)
-      val t = s.asTargets(Gen(Set(i)))
-      t.get(Target(i)) should be(Some(1))
-      t.get(i) should be(None)
-    }
-
-    "turn target values of variables to actual values" in {
-      val i = 'i of ints
-      val s = state(Target(i) -> 1)
-      val t = s.target
-      t.get(Target(i)) should be(None)
-      t.get(i) should be(Some(1))
-    }
-
-    "support boolean queries" in {
-      val p = 'p of 0 ~~ 4 |-> bools
-      val query = for (i <- 0 ~~ 4) yield p(i)
-      val data = state(p.atom(0) -> true, p.atom(1) -> false, p.atom(2) -> true, p.atom(3) -> false)
-      val result = data.query(query)
-      result should be(Good(Set(0, 2)))
+  "An index" should {
+    "evaluate to a unique and fixed integer index for each possible argument array" in {
+      val index = new Index
+      val i = 's of strings
+      val b = 'b of bools
+      val t1 = index(i, b)
+      val t2 = index(i)
+      t1.value(i -> "A", b -> true) should be(t1.value(i -> "A", b -> true))
+      t1.value(i -> "A", b -> true) should not be t2.value(i -> "A", b -> true)
+      t1.value(i -> "A", b -> true) should not be t1.value(i -> "B", b -> false)
     }
   }
+
 
   def maximizer(newMaximizer: => (Term[Double] => Max)) {
     "find argmax, gradient, and max value of a linear term" in {
