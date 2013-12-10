@@ -95,7 +95,7 @@ case class FunApp[A, B](function: Term[Fun[A, B]], arg: Term[A]) extends Term[B]
     case _ => SetUtil.SetUnion(List(function.variables, arg.variables))
   }
   def default = function.default(funCandidateDom.default.head)
-  def domain[C >: B] = TermDSL.all[C]//Image(function, arg.domain).asInstanceOf[Term[Set[C]]]
+  def domain[C >: B] = Image(function, arg.domain).asInstanceOf[Term[Set[C]]] // TermDSL.all[C]//
   //replace by function.funDomain collectedBy function?
   //could also be function.funRange
   override def toString = s"$function($arg)"

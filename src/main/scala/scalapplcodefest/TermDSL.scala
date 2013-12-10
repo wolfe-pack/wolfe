@@ -302,7 +302,14 @@ object TermDSL {
 
   }
 
-  object ints extends Constant(Ints) with ConstantSet[Int] {
+  trait HasAdd[T] {
+    def add:ConstantOperator[T]
+    def sum(args:Term[T]*) = Reduce(add,SeqTerm(args))
+    def sumSeq(args:Seq[Term[T]]) = Reduce(add,SeqTerm(args))
+    def sum[A](args:Term[Fun[A,T]]) = Reduce(add,ImageSeq1(args))
+  }
+
+  object ints extends Constant(Ints) with ConstantSet[Int] with HasAdd[Int] {
     val add = new Constant(Ints.Add) with ConstantOperator[Int]
     val minus = new Constant(Ints.Minus) with ConstantOperator[Int]
     val range = new Constant(Ints.Range) with ConstantFun2[Int,Int,Set[Int]]
@@ -310,7 +317,7 @@ object TermDSL {
 
   }
 
-  object doubles extends Constant(Doubles) with ConstantSet[Double] {
+  object doubles extends Constant(Doubles) with ConstantSet[Double] with HasAdd[Double] {
     val add = new Constant(Doubles.Add) with ConstantOperator[Double]
     val minus = new Constant(Doubles.Minus) with ConstantOperator[Double]
     val times = new Constant(Doubles.Times) with ConstantOperator[Double]
@@ -327,7 +334,7 @@ object TermDSL {
 
   }
 
-  object vectors extends Constant(Vectors) with ConstantSet[Vector] {
+  object vectors extends Constant(Vectors) with ConstantSet[Vector] with HasAdd[Vector] {
     val dot = new Constant(Vectors.Dot) with ConstantFun2[Vector, Vector, Double]
     val add = new Constant(Vectors.VecAdd) with ConstantOperator[Vector]
     val minus = new Constant(Vectors.VecMinus) with ConstantOperator[Vector]

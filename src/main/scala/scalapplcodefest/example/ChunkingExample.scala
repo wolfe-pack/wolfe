@@ -45,13 +45,13 @@ object ChunkingExample {
   //Now create a list of sufficient statistics terms that evaluate to the feature vector of a possible world.
 
   //summing over all tokens and add a unit vector that is active at an index corresponding to the chunk of the token.
-  val bias = vsum(for (i <- 0 ~~ n) yield unit(key('bias, chunk(i))))
+  val bias = vectors.sum(for (i <- 0 ~~ n) yield unit(key('bias, chunk(i))))
 
   //adding unit vectors corresponding to combination of word and chunk at a token
-  val wordChunk = vsum(for (i <- 0 ~~ n) yield unit(key('wordChunk, word(i), chunk(i))))
+  val wordChunk = vectors.sum(for (i <- 0 ~~ n) yield unit(key('wordChunk, word(i), chunk(i))))
 
   //adding a transition feature corresponding to pairs of current and next chunk label
-  val trans = vsum(for (i <- 0 ~~ (n - 1)) yield unit(key('trans, chunk(i), chunk(i + 1))))
+  val trans = vectors.sum(for (i <- 0 ~~ (n - 1)) yield unit(key('trans, chunk(i), chunk(i + 1))))
 
   //the combination all sufficient statistics vectors
   val feat = bias + wordChunk + trans
@@ -70,7 +70,7 @@ object ChunkingExample {
 
     //this is the perceptron loss: maximize over hidden variables in each instance (but condition first on observation)
     //and subtract the model score of the target solution.
-    val loss = dsum(SeqTerm(for (i <- train) yield Max.ByMessagePassing(model | i) - (model | i.target)))
+    val loss = doubles.sumSeq(for (i <- train) yield Max.ByMessagePassing(model | i) - (model | i.target))
 
     //find a weight vector that minimizes this loss and assign it to the weight variable.
     val learned = state(weights -> GradientBasedMinimizer.minimize(loss, new OnlineTrainer(_, new Perceptron, 10)))

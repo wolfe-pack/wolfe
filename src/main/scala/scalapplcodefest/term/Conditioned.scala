@@ -21,8 +21,8 @@ case class Conditioned[T](term:Term[T], condition:State) extends Term[T] with Co
   }
   def default = term.default
   def domain[C >: T] = term.domain[C]
-  val debug = variables
-  val debug2 = debug.toSeq
+//  val debug = variables
+//  val debug2 = debug.toSeq
   override def toString = "C:" + term
   def components = term
   def copy(t1: Term[T]) = Conditioned(t1,condition)

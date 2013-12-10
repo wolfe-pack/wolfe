@@ -222,10 +222,10 @@ class Specs extends WordSpec with Matchers {
       val n = 'n of ints
       val p = 'p of (0 ~~ n |-> bools)
       val state = State(Map(n -> 2))
-      val term = dsum {for (i <- (0 ~~ n) as "i") yield I(p(i)) + 1.0} | state
+      val term = doubles.sum {for (i <- (0 ~~ n) as "i") yield I(p(i)) + 1.0} | state
       val actual = TermConverter.pushDownConditions(term)
       val pCond = 'p of (0 ~~ (n | state) |-> bools)
-      val expected = dsum {for (i <- (0 ~~ (n | state)) as "i") yield I(pCond(i) | state) + 1.0}
+      val expected = doubles.sum {for (i <- (0 ~~ (n | state)) as "i") yield I(pCond(i) | state) + 1.0}
       actual should be(expected)
     }
   }
@@ -245,8 +245,8 @@ class Specs extends WordSpec with Matchers {
   "Unrolling images of lambda abstractions" should {
     "create sequences of terms, one for each element in the domain" in {
       val p = 'p of (0 ~~ 3 |-> bools)
-      val term = dsum {for (i <- 0 ~~ 3) yield I(p(i))}
-      val expected = dsum(I(p(0)), I(p(1)), I(p(2)))
+      val term = doubles.sum {for (i <- 0 ~~ 3) yield I(p(i))}
+      val expected = doubles.sum(I(p(0)), I(p(1)), I(p(2)))
       val actual = TermConverter.unrollLambdaImages(term)
       actual should be(expected)
     }
@@ -255,8 +255,8 @@ class Specs extends WordSpec with Matchers {
   "Flattening terms" should {
     "replace trees of binary function applications with reductions of the function" in {
       val x = 'x of doubles
-      val term = ((x + x) + (x + x)) + dsum(x, x) + x
-      val expected = dsum(x, x, x, x, x, x, x)
+      val term = ((x + x) + (x + x)) + doubles.sum(x, x) + x
+      val expected = doubles.sum(x, x, x, x, x, x, x)
       val actual = TermConverter.flatten(term, doubles.add)
       actual should be(expected)
     }
@@ -265,12 +265,12 @@ class Specs extends WordSpec with Matchers {
   "Pushing down dot products" should {
     "replace dot products of vector sums with double sums of dot products" in {
       val w = 'w of vectors
-      val f1 = vsum(for (i <- (0 ~~ 2) as "i") yield unit(i))
-      val f2 = vsum(unit(0), unit(1))
+      val f1 = vectors.sum(for (i <- (0 ~~ 2) as "i") yield unit(i))
+      val f2 = vectors.sum(unit(0), unit(1))
       val term = (f1 + f2) dot w
       val flat = TermConverter.flatten(term, vectors.add)
       val actual = TermConverter.pushDownDotProducts(flat)
-      val expected = dsum(dsum(for (i <- (0 ~~ 2) as "i") yield unit(i) dot w), unit(0) dot w, unit(1) dot w)
+      val expected = doubles.sum(doubles.sum(for (i <- (0 ~~ 2) as "i") yield unit(i) dot w), unit(0) dot w, unit(1) dot w)
       actual should be(expected)
     }
   }
@@ -278,11 +278,11 @@ class Specs extends WordSpec with Matchers {
   "Grouping lambda abstractions" should {
     "group lambda abstractions over the same domain if they have the same hidden variables" in {
       val p = 'p of ints |-> ints
-      val f1 = vsum(for (i <- (0 ~~ 2) as "i") yield unit(p(i)))
-      val f2 = vsum(for (i <- (0 ~~ 2) as "i") yield unit(p(i) + 1))
-      val term = vsum(f1, f2)
+      val f1 = vectors.sum(for (i <- (0 ~~ 2) as "i") yield unit(p(i)))
+      val f2 = vectors.sum(for (i <- (0 ~~ 2) as "i") yield unit(p(i) + 1))
+      val term = vectors.sum(f1, f2)
       val actual = TermConverter.groupLambdas(term)
-      val expected = vsum(for (i <- (0 ~~ 2) as "i") yield vsum(unit(p(i)), unit(p(i) + 1)))
+      val expected = vectors.sum(for (i <- (0 ~~ 2) as "i") yield vectors.sum(unit(p(i)), unit(p(i) + 1)))
       actual should be(expected)
     }
   }
