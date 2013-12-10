@@ -56,7 +56,7 @@ case class Reduce[T](op: Term[Fun[(T, T), T]], arguments: Term[Seq[T]]) extends 
  * @param from starting integer (included)
  * @param to end integer (excluded)
  */
-case class RangeSet(from: Term[Int], to: Term[Int]) extends Term[Set[Int]] {
+case class RangeSet(from: Term[Int], to: Term[Int]) extends Term[Set[Int]] with Composite2[Int,Int,Set[Int]] {
   def eval(state: State) =
     for (f <- from.eval(state);
          t <- to.eval(state)) yield RangeSetValue(f, t)
@@ -64,6 +64,8 @@ case class RangeSet(from: Term[Int], to: Term[Int]) extends Term[Set[Int]] {
   def default = RangeSetValue(from.default, to.default + 1)
   def domain[C >: Set[Int]] = Constant(new AllOfType[C])
   override def toString = s"($from ~~ $to)"
+  def components = (from,to)
+  def copy(t1: Term[Int], t2: Term[Int]) = RangeSet(t1,t2)
 }
 
 /**

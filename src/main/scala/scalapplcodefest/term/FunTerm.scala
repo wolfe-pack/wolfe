@@ -84,7 +84,7 @@ case class RestrictedFun[A, B](fun: AnyFunction,
  * @tparam A argument type of function
  * @tparam B return type of function
  */
-case class FunApp[A, B](function: Term[Fun[A, B]], arg: Term[A]) extends Term[B] {
+case class FunApp[A, B](function: Term[Fun[A, B]], arg: Term[A]) extends Term[B] with Composite2[Fun[A,B],A,B]{
   val FunTerm(funCandidateDom, funRange) = function
   def eval(state: State) =
     for (f <- function.eval(state);
@@ -95,10 +95,12 @@ case class FunApp[A, B](function: Term[Fun[A, B]], arg: Term[A]) extends Term[B]
     case _ => SetUtil.SetUnion(List(function.variables, arg.variables))
   }
   def default = function.default(funCandidateDom.default.head)
-  def domain[C >: B] = Image(function, arg.domain).asInstanceOf[Term[Set[C]]]
+  def domain[C >: B] = TermDSL.all[C]//Image(function, arg.domain).asInstanceOf[Term[Set[C]]]
   //replace by function.funDomain collectedBy function?
   //could also be function.funRange
   override def toString = s"$function($arg)"
+  def components = (function,arg)
+  def copy(t1: Term[Fun[A, B]], t2: Term[A]) = FunApp(t1,t2)
 }
 
 case object BinaryFunApp {

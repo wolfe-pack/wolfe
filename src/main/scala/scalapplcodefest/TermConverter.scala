@@ -3,7 +3,6 @@ package scalapplcodefest
 import scala.language.implicitConversions
 import scalapplcodefest.value._
 import scalapplcodefest.term._
-import scalapplcodefest.value.RangeSet
 import scala.Some
 import scalapplcodefest.term.ImageSeq1
 import scalapplcodefest.value.Reduce
@@ -21,7 +20,6 @@ import scalapplcodefest.term.FunApp
 object TermConverter {
 
   import TermDSL._
-  import Math._
 
   /**
    * A term converter converts a single term, usually only the root of the term.
@@ -42,34 +40,26 @@ object TermConverter {
    * @return the converted term.
    */
   def convertDepthFirst[T](term: Term[T], keepBrackets: Boolean = true)(converter: Converter): Term[T] = {
+    def convert[A](term: Term[A]) = converter.convert(term)
+    def cdf[A](term: Term[A]) = convertDepthFirst(term, keepBrackets)(converter)
     implicit def cast(t: Term[Any]) = t.asInstanceOf[Term[T]]
     term match {
-      case TupleTerm2(a1, a2) => converter.convert(TupleTerm2(convertDepthFirst(a1, keepBrackets)(converter), convertDepthFirst(a2, keepBrackets)(converter)))
-      case FunApp(f, a) => converter.convert(FunApp(convertDepthFirst(f, keepBrackets)(converter), convertDepthFirst(a, keepBrackets)(converter)))
-      case Conditioned(t, c) => converter.convert(Conditioned(convertDepthFirst(t, keepBrackets)(converter), c))
-      case SeqTerm(args) => converter.convert(SeqTerm(args.map(convertDepthFirst(_, keepBrackets)(converter))))
-      case ImageSeq1(f) => converter.convert(ImageSeq1(convertDepthFirst(f, keepBrackets)(converter)))
-      case ImageSeq2(f) => converter.convert(ImageSeq2(convertDepthFirst(f, keepBrackets)(converter)))
-      case LambdaAbstraction(Var(v, d), t) => converter.convert(LambdaAbstraction(Var(v, convertDepthFirst(d, keepBrackets)(converter)), convertDepthFirst(t, keepBrackets)(converter)))
-      case Var(v, d) => converter.convert(Var(v, convertDepthFirst(d, keepBrackets)(converter)))
-      case Reduce(o, a) => converter.convert(Reduce(convertDepthFirst(o, keepBrackets)(converter).asInstanceOf[Term[Fun[(T, T), T]]], convertDepthFirst(a, keepBrackets)(converter)))
-      case LinearModel(f, Var(w, d), b) => converter.convert(LinearModel(convertDepthFirst(f, keepBrackets)(converter), Var(w, convertDepthFirst(d, keepBrackets)(converter)), convertDepthFirst(b, keepBrackets)(converter)))
-//      case UnitVec(i, v) => converter.convert(UnitVec(convertDepthFirst(i, keepBrackets)(converter), convertDepthFirst(v, keepBrackets)(converter)))
-      case Predicate(n, d, r) => converter.convert(Predicate(n, convertDepthFirst(d, keepBrackets)(converter), convertDepthFirst(r, keepBrackets)(converter)))
-      case GroundAtom(p, a) => converter.convert(GroundAtom(convertDepthFirst(p, keepBrackets)(converter).asInstanceOf[Predicate[Any, _]], a))
-      case RangeSet(f, t) => converter.convert(RangeSet(convertDepthFirst(f, keepBrackets)(converter), convertDepthFirst(t, keepBrackets)(converter)))
-      case Bracketed(t) if keepBrackets => Bracketed(convertDepthFirst(t, keepBrackets)(converter))
-      case Bracketed(t) if !keepBrackets => converter.convert(Bracketed(convertDepthFirst(t, keepBrackets)(converter)))
-      case c:Composite1[_,_] => converter.convert(c.asInstanceOf[Composite1[Any,Any]].copy(
-        convertDepthFirst(c.components, keepBrackets)(converter)))
-      case c:Composite2[_,_,_] => converter.convert(c.asInstanceOf[Composite2[Any,Any,Any]].copy(
-        convertDepthFirst(c.components._1, keepBrackets)(converter),
-        convertDepthFirst(c.components._2, keepBrackets)(converter)))
-      case c:Composite3[_,_,_,_] => converter.convert(c.asInstanceOf[Composite3[Any,Any,Any,Any]].copy(
-        convertDepthFirst(c.components._1, keepBrackets)(converter),
-        convertDepthFirst(c.components._2, keepBrackets)(converter),
-        convertDepthFirst(c.components._3, keepBrackets)(converter)))
-      case _ => converter.convert(term)
+      case TupleTerm2(a1, a2) => convert(TupleTerm2(cdf(a1), cdf(a2)))
+      case SeqTerm(args) => convert(SeqTerm(args.map(cdf(_))))
+      case ImageSeq1(f) => convert(ImageSeq1(cdf(f)))
+      case ImageSeq2(f) => convert(ImageSeq2(cdf(f)))
+      case LambdaAbstraction(Var(v, d), t) => convert(LambdaAbstraction(Var(v, cdf(d)), cdf(t)))
+      case Var(v, d) => convert(Var(v, cdf(d)))
+      case Reduce(o, a) => convert(Reduce(cdf(o).asInstanceOf[Term[Fun[(T, T), T]]], cdf(a)))
+      case LinearModel(f, Var(w, d), b) => convert(LinearModel(cdf(f), Var(w, cdf(d)), cdf(b)))
+      case Predicate(n, d, r) => convert(Predicate(n, cdf(d), cdf(r)))
+      case GroundAtom(p, a) => convert(GroundAtom(cdf(p).asInstanceOf[Predicate[Any, _]], a))
+      case Bracketed(t) if keepBrackets => Bracketed(cdf(t))
+      case Bracketed(t) if !keepBrackets => convert(Bracketed(cdf(t)))
+      case c: Composite1[_, _] => convert(c.asInstanceOf[Composite1[Any, Any]].copy(cdf(c.components)))
+      case c: Composite2[_, _, _] => convert(c.asInstanceOf[Composite2[Any, Any, Any]].copy(cdf(c.components._1), cdf(c.components._2)))
+      case c: Composite3[_, _, _, _] => convert(c.asInstanceOf[Composite3[Any, Any, Any, Any]].copy(cdf(c.components._1), cdf(c.components._2), cdf(c.components._3)))
+      case _ => convert(term)
     }
   }
 
@@ -121,7 +111,7 @@ object TermConverter {
         }
       }
     }
-    def findAndPushConditions[S](term:Term[S])=  convertDepthFirst(term) {
+    def findAndPushConditions[S](term: Term[S]) = convertDepthFirst(term) {
       new Converter {
         def convert[A](arg: Term[A]) = arg match {
           case Conditioned(t, state) => pushConditions(t, state)

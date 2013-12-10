@@ -7,7 +7,7 @@ import scalapplcodefest._
  * mechanism to inject observations and weight vectors into more generic terms.
  * @author Sebastian Riedel
  */
-case class Conditioned[T](term:Term[T], condition:State) extends Term[T] {
+case class Conditioned[T](term:Term[T], condition:State) extends Term[T] with Composite1[T,T] {
   def eval(state: State) = term.eval(state + condition)
   def variables = {
     def conditionVars(vars: Set[Variable[Any]]): Set[Variable[Any]] = vars match {
@@ -24,6 +24,8 @@ case class Conditioned[T](term:Term[T], condition:State) extends Term[T] {
   val debug = variables
   val debug2 = debug.toSeq
   override def toString = "C:" + term
+  def components = term
+  def copy(t1: Term[T]) = Conditioned(t1,condition)
 }
 
 

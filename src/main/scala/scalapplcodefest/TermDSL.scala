@@ -197,7 +197,7 @@ object TermDSL {
     def -(that: Term[Int]) = FunApp(ints.minus, TupleTerm2(i, that))
     def /(that: Term[Int]) = FunApp(ints.divide, TupleTerm2(i, that))
 
-    def ~~(that: Term[Int]) = RangeSet(i, that)
+    def ~~(that: Term[Int]) = RangeSet(i, that) // FunApp(ints.range, TupleTerm2(i, that))
   }
 
   case class RichDoubleTerm(x: Term[Double]) {
