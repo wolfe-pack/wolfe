@@ -5,7 +5,7 @@ import org.scalautils._
 import Tolerance._
 import org.scalautils._
 import cc.factorie.optimize.{Perceptron, OnlineTrainer}
-import scalapplcodefest.value.{AllOfType, Doubles, Vectors, Gen}
+import scalapplcodefest.value.AllOfType
 import scalapplcodefest.term._
 import scala.Some
 import scalapplcodefest.value.Gen
@@ -89,6 +89,11 @@ class Specs extends WordSpec with Matchers {
     "evaluate to an Undefined object if the assigned value is outside the domain" in {
       val x = 'x of 0 ~~ 2
       x.eval(state(x -> 3)) should be(Bad(ValueOutsideOfDomain(x, state(x -> 3))))
+    }
+    "cause parent terms to evaluate to undefined if it is not defined in the state" in {
+      val x = 'x of ints
+      val t = x + x + 5
+      t.eval(state()) should be(Bad(VariableUndefined(x, state())))
     }
   }
 
@@ -268,6 +273,7 @@ class Specs extends WordSpec with Matchers {
       t1.value(i -> "A", b -> true) should be(t1.value(i -> "A", b -> true))
       t1.value(i -> "A", b -> true) should not be t2.value(i -> "A", b -> true)
       t1.value(i -> "A", b -> true) should not be t1.value(i -> "B", b -> false)
+      t2.value(i -> "A") should be (index.index(Array("A")))
     }
   }
 
@@ -336,13 +342,13 @@ class Specs extends WordSpec with Matchers {
 
   "A Domain Collector" should {
     "collect values for dynamic domains from states" in {
-      val Dom = 'Dom of Constant(new AllOfType[Set[String]])
-      val d = 'd of Dom
-      val p = 'p of 0 ~~ 2 |-> Dom
-      val r = 'r of c(Dom, Dom) |-> bools
+      val dom = 'dom of Constant(new AllOfType[Set[String]])
+      val d = 'd of dom
+      val p = 'p of 0 ~~ 2 |-> dom
+      val r = 'r of c(dom, dom) |-> bools
       val states = Seq(state(p.atom(0) -> "A"), state(p.atom(1) -> "B", r.atom("B", "C") -> true), state(d -> "D"))
       val domains = DomainCollector.collect(states)
-      domains(Dom) should be(Set("A", "B", "C", "D"))
+      domains(dom) should be(Set("A", "B", "C", "D"))
     }
   }
 
@@ -388,6 +394,20 @@ class Specs extends WordSpec with Matchers {
       val actual = TermConverter.groupLambdas(term)
       val expected = vectors.sum(for (i <- (0 ~~ 2) as "i") yield vectors.sum(unit(p(i)), unit(p(i) + 1)))
       actual should be(expected)
+    }
+  }
+
+  "An argmax" should {
+    "return the primitive argument that maximizes a function" in {
+      val f = for (b <- bools) yield I(b)
+      val a = argmax(f)
+      a.value() should be (true)
+    }
+    "return a the function value argument that maximizes a function" in {
+      val f = for (f <- bools ||-> bools) yield doubles.sum(for (b <- bools) yield I(f(b)))
+      val a = argmax(f)
+      a.value()(false) should be (true)
+      a.value()(true) should be (true)
     }
   }
 

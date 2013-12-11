@@ -137,6 +137,8 @@ object TermDSL {
 
 
     def |->[T2](that: Term[Set[T2]]) = (s, that)
+    def ||->[T2](that: Term[Set[T2]]) = FunApp(Constant(new AllFunctionsOp[T,T2]),TupleTerm2(s,that))
+
 
     def mappedBy[A](f: FunTerm[T, A]) =
       FunApp(RestrictedFun(MapIterable, CartesianProductTerm2(s.domain, f.domain), Constant(new AllOfType[Set[A]])), (s, f))
@@ -352,7 +354,7 @@ object TermDSL {
   def set[T](values: T*) = Constant(SeqSet(values))
   def fun[A, B](f: PartialFunction[A, B], dom: Set[A] = new AllOfType[A], range: Set[B] = new AllOfType[B]) = Constant(Fun(f, dom, range))
   def dynFun[A, B](f: PartialFunction[A, B], dom: Term[Set[A]] = all[Set[A]], range: Term[Set[B]] = all[Set[B]]) = DynFunTerm(f, dom, range)
-
+  def argmax[T](f:Term[Fun[T,Double]]) = FunApp(Constant(new Argmax[T]),f)
 
 
 }

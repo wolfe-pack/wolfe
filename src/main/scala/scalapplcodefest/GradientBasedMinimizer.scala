@@ -10,7 +10,7 @@ import scalapplcodefest.term.{State, Differentiable, Term}
 
 /**
  * A minimizer of a differentiable real valued function. Uses factorie optimization package and
- * the [[Differentiable]] pattern.
+ * the [[scalapplcodefest.term.Differentiable]] pattern.
  */
 object GradientBasedMinimizer {
   def minimize(objective: Term[Double], trainerFor: WeightsSet => Trainer = new OnlineTrainer(_, new Perceptron, 5)) = {
