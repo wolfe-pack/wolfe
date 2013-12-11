@@ -49,6 +49,17 @@ class Specs extends WordSpec with Matchers {
       t.get(i) should be(Some(1))
     }
 
+    "provide a closed world view" in {
+      val i = 'i of ints
+      val j = 'j of ints
+      val k = 'k of ints
+      val s = state(i -> 1).closed(Set(j))
+      s.get(i) should be (Some(1))
+      s.get(j) should be (Some(j.default))
+      s.get(k) should be (None)
+      s.domain should be (Set(i,j))
+    }
+
     "support boolean queries" in {
       val p = 'p of 0 ~~ 4 |-> bools
       val query = for (i <- 0 ~~ 4) yield p(i)
@@ -77,7 +88,7 @@ class Specs extends WordSpec with Matchers {
     }
     "evaluate to an Undefined object if the assigned value is outside the domain" in {
       val x = 'x of 0 ~~ 2
-      x.eval(state(x -> 3)) should be(Bad(VariableOutsideOfDomain(x, state(x -> 3))))
+      x.eval(state(x -> 3)) should be(Bad(ValueOutsideOfDomain(x, state(x -> 3))))
     }
   }
 

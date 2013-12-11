@@ -22,15 +22,15 @@ trait Variable[+T] extends Term[T] {
   /**
    * The denotation of a variable.
    * @param state the state object that binds variables to values.
-   * @return `Right(value)` if `variable->value` in `state`, [[scalapplcodefest.term.Variable#domain]] is defined in
-   *         `state` as `dom` and `dom(value)` holds. Else `Left(this)`.
+   * @return `Good(value)` if `variable->value` in `state`, [[scalapplcodefest.term.Variable#domain]] is defined in
+   *         `state` as `dom` and `dom(value)` holds. Else undefined.
    */
   def eval(state: State) = {
     domain.eval(state) match {
       case Bad(undefined) => Bad(undefined)
       case Good(dom) => state.get(this) match {
         case None => Bad(VariableUndefined(this,state))
-        case Some(value) => if (dom(value)) Good(value) else Bad(VariableOutsideOfDomain(this,state))
+        case Some(value) => if (dom(value)) Good(value) else Bad(ValueOutsideOfDomain(this,state))
       }
     }
   }

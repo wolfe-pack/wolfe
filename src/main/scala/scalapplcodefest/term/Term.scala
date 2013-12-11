@@ -98,7 +98,7 @@ case class FunctionNotDefinedAt[A, B](funApp: FunApp[A, B], state: State) extend
  * @param state the state in which the variable assignment is invalid.
  * @tparam T type of the variable.
  */
-case class VariableOutsideOfDomain[T](variable: Variable[T], state: State) extends Undefined
+case class ValueOutsideOfDomain[T](variable: Variable[T], state: State) extends Undefined
 
 
 /**
