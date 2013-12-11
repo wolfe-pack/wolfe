@@ -64,8 +64,14 @@ object ChunkingExample {
     //this is only needed if we want to print out meaningful feature vectors in low-level code.
     Index.toDebug = Some(key)
 
+    //load a stream of lines from the resource.
     val stream = Util.getStreamFromClassPathOrFile("scalapplcodefest/datasets/conll2000/train.txt")
+
+    //turn the CoNLL format sentences into states. Map the second column to the word function, the second to the
+    //tag function, the third to the chunk function. The sentence length is stored in an assignment for `n`.
     val sentences = Util.loadCoNLL(Source.fromInputStream(stream).getLines().take(100), Seq(word, tag, chunk), n)
+
+    //convert assignments to the chunk predicate to assignments that indicate that chunk variable is the target of prediction.
     val train = sentences.map(_.asTargets(chunk))
 
     //this is the perceptron loss: maximize over hidden variables in each instance (but condition first on observation)

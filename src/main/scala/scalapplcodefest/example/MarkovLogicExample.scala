@@ -33,18 +33,18 @@ object MarkovLogicExample {
   val weights = 'weights of vectors
 
   //Smoking can lead to cancer
-  val f1 = vsum(for (p <- persons) yield unit(key('smokingIsBad),
+  val f1 = vectors.sum(for (p <- persons) yield unit(key('smokingIsBad),
     I(smokes(p) |=> cancer(p))))
 
   //friends make friends smoke / not smoke
-  val f2 = vsum(for (p1 <- persons; p2 <- persons) yield unit(key('peerPressure),
+  val f2 = vectors.sum(for ((p1,p2) <- c(persons, persons)) yield unit(key('peerPressure),
     I(friend(p1, p2) |=> (smokes(p1) <=> smokes(p2)))))
 
   //The MLN without assigned weights
   val mln = (f1 + f2) dot weights
 
   def main(args: Array[String]) {
-    //an actual weight vector that can be plugged into the mln.
+    //an actual weight vector that can be plugged into the mln. todo: this should be created by terms
     val concreteWeights = key.createDenseVector(Seq('smokingIsBad) -> 1.0, Seq('peerPressure) -> 1.0)()
 
     //some observations
