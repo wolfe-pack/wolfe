@@ -227,5 +227,6 @@ case class UncurriedLambdaAbstraction2[A1, A2, R](lambda1: LambdaAbstraction[A1,
   def default = Fun({
     case (a1, a2) => lambda1.default(a1)(a2)
   })
+  //todo: this may not work if the domain of the last variable depends on the first variable.
   def funCandidateDom = CartesianProductTerm2(lambda1.variable.domain, lambdaLast.variable.domain)
 }

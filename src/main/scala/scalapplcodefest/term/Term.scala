@@ -91,6 +91,16 @@ case class VariableUndefined[T](variable: Variable[T], state: State) extends Und
  */
 case class FunctionNotDefinedAt[A, B](funApp: FunApp[A, B], state: State) extends Undefined
 
+
+/**
+ * During term evaluation a variable was found that has a value outside of the variable's domain.
+ * @param variable the variable for which the value is outside of the domain.
+ * @param state the state in which the variable assignment is invalid.
+ * @tparam T type of the variable.
+ */
+case class VariableOutsideOfDomain[T](variable: Variable[T], state: State) extends Undefined
+
+
 /**
  * Proxy of another term. All methods are delegated to the inner term.
  * @tparam T type of term.

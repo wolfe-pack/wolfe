@@ -77,7 +77,7 @@ class Specs extends WordSpec with Matchers {
     }
     "evaluate to an Undefined object if the assigned value is outside the domain" in {
       val x = 'x of 0 ~~ 2
-      x.eval(state(x -> 3)) should be(Bad(VariableUndefined(x, state(x -> 3))))
+      x.eval(state(x -> 3)) should be(Bad(VariableOutsideOfDomain(x, state(x -> 3))))
     }
   }
 
@@ -194,7 +194,7 @@ class Specs extends WordSpec with Matchers {
   }
 
   "A sum" when {
-    "used with a sequence of argument terms" should {
+    "given a sequence of argument terms" should {
       "evaluate to the sum of the denotations of its arguments" in {
         val d = 'd of doubles
         val s = doubles.sum(d, d, d + d)
@@ -202,11 +202,18 @@ class Specs extends WordSpec with Matchers {
       }
     }
 
-    "used with a function argument" should {
+    "given a function argument" should {
       "evaluate to the sum of the values we get by applying the function to all values in its domain" in {
         val n = 'n of ints
         val s = ints.sum(for (i <- 0 ~~ n) yield i)
         s.value(n -> 4) should be(6)
+      }
+    }
+    "given a curried function argument" should {
+      "evaluate to the sum over all arguments to all functions the first abstraction yields" in {
+        val n = 'n of ints
+        val s = ints.sum(for (i <- 0 ~~ n; j <- 0 ~~ n) yield i + j)
+        s.value(n -> 3) should be (18)
       }
     }
   }
