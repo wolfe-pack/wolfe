@@ -135,6 +135,11 @@ class Specs extends WordSpec with Matchers {
       f.value()(false, false) should be(false)
       f.value()(false, true) should be(true)
     }
+    "evaluate to a curried function if nested with another lambda abstraction" in {
+      val f = for (x <- bools; y <- bools) yield x || y
+      f.value()(false)(false) should be(false)
+      f.value()(false)(true) should be(true)
+    }
   }
 
   "A conditioned term" should {
