@@ -229,7 +229,7 @@ class Specs extends WordSpec with Matchers {
     }
   }
 
-  "An Iverson Bracket" should {
+  "An Iverson bracket" should {
     "denote 1.0 if the inner boolean term is true, and 0.0 for false" in {
       val i = 'i of ints
       val t = I(i === 2)
@@ -246,6 +246,15 @@ class Specs extends WordSpec with Matchers {
       val v = unit(i, d).value(state(i -> 2, d -> 2.0))
       v(2) should be(2.0 +- eps)
       for (j <- v.activeDomain.asSeq; if j != 2) v(j) should be(0.0 +- eps)
+    }
+  }
+
+  "A dot product" should {
+    "evaluate to the dot product of the denotations of its arguments" in {
+      val i = 'i of ints
+      val v = 'v of doubles
+      val d = unit(i,v) dot unit(i,v)
+      d.value(i -> 1, v -> 2.0) should be (4.0)
     }
   }
 
