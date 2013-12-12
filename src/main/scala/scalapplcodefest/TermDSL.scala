@@ -127,12 +127,12 @@ object TermDSL {
 
     def map[R](f: Variable[T] => Term[R]): LambdaAbstraction[T, R] = {
       val variable = freshVariable()
-      LambdaAbstraction(variable, f(variable))
+      LambdaAbstraction(VarSig(variable), f(variable))
     }
     def flatMap[A1, A2](f: Variable[T] => LambdaAbstraction[A1, A2]) = {
       val variable: Variable[T] = freshVariable()
       val innerLambda = f(variable)
-      LambdaAbstraction(variable, innerLambda)
+      LambdaAbstraction(VarSig(variable), innerLambda)
     }
 
 
@@ -161,12 +161,13 @@ object TermDSL {
       val variable2 = Var(Symbol(variableName2()), term.a2)
       val applied = f(variable1, variable2)
       //todo: replace variables with arg1 && arg2 of tuple
-      val tupleVar = Var(Symbol(s"${variable1.name}_${variable2.name}"), term)
-      val arg1 = FunApp(ArgTerm(term, term.a1, 0), tupleVar)
-      val arg2 = FunApp(ArgTerm(term, term.a1, 1), tupleVar)
-      val substituted1 = TermConverter.substituteTerm(applied, variable1, arg1)
-      val substituted2 = TermConverter.substituteTerm(substituted1, variable2, arg2)
-      LambdaAbstraction(tupleVar, substituted2)
+//      val tupleVar = Var(Symbol(s"${variable1.name}_${variable2.name}"), term)
+//      val arg1 = FunApp(ArgTerm(term, term.a1, 0), tupleVar)
+//      val arg2 = FunApp(ArgTerm(term, term.a1, 1), tupleVar)
+//      val substituted1 = TermConverter.substituteTerm(applied, variable1, arg1)
+//      val substituted2 = TermConverter.substituteTerm(substituted1, variable2, arg2)
+//      LambdaAbstraction(tupleVar, substituted2)
+      LambdaAbstraction(TupleSig2(VarSig(variable1),VarSig(variable2)),applied)
     }
 
     def filter(f: ((Variable[T1], Variable[T2])) => Boolean) = this
@@ -350,6 +351,7 @@ object TermDSL {
   //val all = new Constant(All) with ConstantSet[Any] {}
 
   def c[T1,T2](arg1:Term[Set[T1]],arg2:Term[Set[T2]]) = CartesianProductTerm2(arg1,arg2)
+  def c[T1,T2,T3](arg1:Term[Set[T1]],arg2:Term[Set[T2]],arg3:Term[Set[T3]]) = CartesianProductTerm3(arg1,arg2,arg3)
   def all[T] = Constant(new AllOfType[T])
   def set[T](values: T*) = Constant(SeqSet(values))
   def fun[A, B](f: PartialFunction[A, B], dom: Set[A] = new AllOfType[A], range: Set[B] = new AllOfType[B]) = Constant(Fun(f, dom, range))

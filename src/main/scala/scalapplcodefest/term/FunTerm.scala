@@ -110,43 +110,7 @@ case object BinaryFunApp {
   }
 }
 
-/**
- * A Lambda Abstraction corresponds to a function and consists of a variable and a term.
- * The functions value at a particular argument can be determined by evaluating the inner
- * term with the variable bound to the given argument.
- *
- * @param variable the variable that corresponds to the argument of the function.
- * @param body the term that when evaluated becomes the return value of the function.
- * @tparam A type of arguments to function.
- * @tparam B type of return values of function.
- */
-case class LambdaAbstraction[A, B](variable: Variable[A], body: Term[B]) extends FunTerm[A, B] {
-  //todo: variable should be a Var?
 
-  lambda =>
-
-  def funCandidateDom = variable.domain
-  def funRange = body.domain[B]
-  def eval(state: State) = {
-    for (r <- funRange.eval(state); d <- funCandidateDom.eval(state)) yield new Fun[A, B] {
-      def funCandidateDom = d
-      def funRange = r
-      def get(a: A) = body.eval(state + SingletonState(variable, a))
-      def apply(a: A) = get(a).get
-      override def isDefinedAt(a: A) = d(a) && get(a).exists(r(_))
-    }
-  }
-  def variables = SetUtil.SetMinus(body.variables, Set(variable))
-  def default = new Fun[A, B] {
-    def funCandidateDom = lambda.funCandidateDom.default
-    def funRange = lambda.funRange.default
-    def apply(v1: A) = body.default
-    def isDefinedAt(x: A) = variable.domain.default(x)
-  }
-  def domain[C >: Fun[A, B]] = Constant(new AllOfType[C])
-  //FunApp(FunTerm.allFunctions[A, B], TupleTerm2(funCandidateDom, funRange)).asInstanceOf[Term[Set[C]]]
-  override def toString = s"lam $variable :${variable.domain} { $body }"
-}
 
 
 /**
@@ -228,5 +192,6 @@ case class UncurriedLambdaAbstraction2[A1, A2, R](lambda1: LambdaAbstraction[A1,
     case (a1, a2) => lambda1.default(a1)(a2)
   })
   //todo: this may not work if the domain of the last variable depends on the first variable.
-  def funCandidateDom = CartesianProductTerm2(lambda1.variable.domain, lambdaLast.variable.domain)
+  def funCandidateDom = CartesianProductTerm2(lambda1.sig.domain, lambdaLast.sig.domain)
 }
+

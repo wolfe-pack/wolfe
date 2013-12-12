@@ -103,3 +103,5 @@ object VariableOrdering extends Ordering[Variable[Any]] {
 
 
 }
+
+

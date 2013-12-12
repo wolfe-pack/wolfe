@@ -48,7 +48,7 @@ object TermConverter {
       case SeqTerm(args) => convert(SeqTerm(args.map(cdf(_))))
       case ImageSeq1(f) => convert(ImageSeq1(cdf(f)))
       case ImageSeq2(f) => convert(ImageSeq2(cdf(f)))
-      case LambdaAbstraction(Var(v, d), t) => convert(LambdaAbstraction(Var(v, cdf(d)), cdf(t)))
+      case LambdaAbstraction(sig, t) => convert(LambdaAbstraction(cdf(sig).asInstanceOf[Sig[Any]], cdf(t)))
       case Var(v, d) => convert(Var(v, cdf(d)))
       case Reduce(o, a) => convert(Reduce(cdf(o).asInstanceOf[Term[Fun[(T, T), T]]], cdf(a)))
       case LinearModel(f, Var(w, d), b) => convert(LinearModel(cdf(f), Var(w, cdf(d)), cdf(b)))
@@ -77,6 +77,25 @@ object TermConverter {
       def convert[T](term: Term[T]) = if (term == toReplace) replacement.asInstanceOf[Term[T]] else term
     }
   }
+
+  def groundSig[A, B](term: Term[A], toReplace: Sig[B], replacement: B):Term[A] = {
+    (toReplace,replacement) match {
+      case (VarSig(v),value) => substituteTerm(term,v,Constant(value))
+      case (TupleSig2(s1,s2),(v1,v2)) => groundSig(groundSig(term,s1,v1),s2,v2)
+      case (TupleSig3(s1,s2,s3),(v1,v2,v3)) => groundSig(groundSig(groundSig(term,s1,v1),s2,v2),s3,v3)
+      case _ => term
+    }
+  }
+
+  def replaceSig[A, B](term: Term[A], toReplace: Sig[B], replacement: Sig[B]):Term[A] = {
+    (toReplace,replacement) match {
+      case (VarSig(a),VarSig(b)) => substituteTerm(term,a,b)
+      case (TupleSig2(a1,a2),TupleSig2(b1,b2)) => groundSig(groundSig(term,a1,b1),a2,b2)
+      case (TupleSig3(a1,a2,a3),TupleSig3(b1,b2,b3)) => groundSig(groundSig(groundSig(term,a1,b1),a2,b2),a3,b3)
+      case _ => term
+    }
+  }
+
 
   /**
    * Replaces variables with Constants according to the value assigned to the variable in the given state.
@@ -132,9 +151,9 @@ object TermConverter {
   def unrollLambdaImages[T](term: Term[T], wrap: Term[Any] => Term[Any] = identity) = convertDepthFirst(term) {
     new Converter {
       def convert[A](term: Term[A]) = term match {
-        case ImageSeq1(LambdaAbstraction(v, t)) =>
-          val domainSeq = v.domain.eval().get.view.toSeq
-          SeqTerm(domainSeq.map(value => wrap(substituteTerm(t, v, Constant(value))))).asInstanceOf[Term[A]]
+        case ImageSeq1(LambdaAbstraction(sig, t)) =>
+          val domainSeq = sig.domain.eval().get.view.toSeq
+          SeqTerm(domainSeq.map(value => wrap(groundSig(t, sig, value)))).asInstanceOf[Term[A]]
         case t => t
       }
     }
@@ -301,25 +320,14 @@ object TermConverter {
     (t1, t2) match {
       case (operator.Reduced(ImageSeq1(LambdaAbstraction(v1, a1))), operator.Reduced(ImageSeq1(LambdaAbstraction(v2, a2)))) =>
         val default = v1.default
-        val replaced2 = substituteTerm(a2, v2, v1)
-        val newCondition = condition + SingletonState(v1, default)
-        if (mergeable(a1, replaced2, newCondition)) {
-          Some(Reduce(operator, ImageSeq1(LambdaAbstraction(v1, operator.reduce(SeqTerm(Seq(a1, replaced2)))))))
-        } else
-          None
-      case (operator.Reduced(ImageSeq2(LambdaAbstraction(v1, LambdaAbstraction(v1_2, a1)))), operator.Reduced(ImageSeq2(LambdaAbstraction(v2, LambdaAbstraction(v2_2, a2))))) =>
-        val default = v1.default
-        val default_2 = v1_2.default
-        val replaced2 = substituteTerm(substituteTerm(a2, v2, v1), v2_2, v1_2)
-        val newCondition = condition + State(Map(v1 -> default, v1_2 -> default_2))
-        if (mergeable(a1, replaced2, newCondition)) {
-          val inner = LambdaAbstraction(v1_2, operator.reduce(SeqTerm(Seq(a1, replaced2))))
-          val outer = LambdaAbstraction(v1, inner)
-          Some(Reduce(operator, ImageSeq2(outer)))
+        val grounded1 = groundSig(a1,v1,default)
+        val grounded2 = groundSig(a2,v2,default) //substituteTerm(a2, v2, v1)
+        if (mergeable(grounded1, grounded2, condition)) {
+          val replaced = replaceSig(a2,v2,v1)
+          Some(Reduce(operator, ImageSeq1(LambdaAbstraction(v1, operator.reduce(SeqTerm(Seq(a1, replaced)))))))
         } else
           None
       case _ => None
-
     }
 
   }
