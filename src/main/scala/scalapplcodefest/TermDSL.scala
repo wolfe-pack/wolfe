@@ -124,6 +124,8 @@ object TermDSL extends ValueDSL {
     def freshVariable[A](dom: Term[Set[A]] = s) = Var(Symbol(variableName()), dom)
 
     def as(name: String) = RichSetTerm(s, () => name)
+    def as(symbol: Symbol) = RichSetTerm(s, () => symbol.name)
+
 
     def map[R](f: Variable[T] => Term[R]): LambdaAbstraction[T, R] = {
       val variable = freshVariable()

@@ -7,11 +7,6 @@ import org.scalautils._
 import cc.factorie.optimize.{Perceptron, OnlineTrainer}
 import scalapplcodefest.value._
 import scalapplcodefest.term._
-import scala.Some
-import scalapplcodefest.term.FunctionNotDefinedAt
-import scalapplcodefest.term.Constant
-import org.scalautils.Bad
-import scalapplcodefest.term.VariableUndefined
 import scalapplcodefest.term.Target
 import scalapplcodefest.term.ValueOutsideOfDomain
 import scala.Some
@@ -31,6 +26,7 @@ class Specs extends WordSpec with Matchers {
 
   import TermDSL._
   import CustomEqualities._
+
 
   "A state" should {
     "provide values of variables or return None" in {
@@ -76,11 +72,27 @@ class Specs extends WordSpec with Matchers {
     }
   }
 
-
   "A constant" should {
     "evaluate to its value" in {
       val c = Constant(10)
       c.eval(state()) should be(Good(10))
+    }
+  }
+
+  "A DSL" should {
+    "convert scala-like expressions to symbolic terms" in {
+      val x = Constant(1)
+      val t = (x + x) - 1
+      t should be (FunApp(Constant(Ints.Minus), TupleTerm2(FunApp(Constant(Ints.Add), TupleTerm2(x, x)), Constant(1))))
+    }
+    "convert '[var name] of' expressions to variable definitions" in {
+      val i = 'i of ints
+      i should be (Var('i,ints))
+    }
+    "convert for-comprehensions into lambda abstractions" in {
+      val t = for (i <- ints as 'i) yield i + 1
+      val i = 'i of ints
+      t should be (LambdaAbstraction(i,i+1))
     }
   }
 
@@ -422,7 +434,7 @@ class Specs extends WordSpec with Matchers {
       val inLex = 'inLex of ints ||-> bools
       val cap = 'cap of dom ||-> bools
       val ner = 'ner of dom ||-> bools
-      val model = doubles.sum {for (i <- dom as "i") yield I((inLex(i) === cap(i)) && (inLex(i) === ner(i)))}
+      val model = doubles.sum {for (i <- dom) yield I((inLex(i) === cap(i)) && (inLex(i) === ner(i)))}
       val observed = sig(n, inLex)
       val hidden = sig(cap, ner)
 
@@ -431,8 +443,9 @@ class Specs extends WordSpec with Matchers {
       val s = lambda(observed, lambda(hidden, model))
       val h = for (x <- X) yield argmax(for (y <- Y(x)) yield s(x)(y))
       val (f1, f2) = h.value()(2, Tab(Ints, Bools, Map(0 -> false, 1 -> true)))
-      f1 should be (Table(0 -> false, 1 -> true))
-      f2 should be (Table(0 -> false, 1 -> true))
+
+      f1 should be(Table(0 -> false, 1 -> true))
+      f2 should be(Table(0 -> false, 1 -> true))
     }
   }
 
