@@ -27,12 +27,16 @@ class Specs extends WordSpec with Matchers {
   import TermDSL._
 
   "A DSL" should {
-    "convert scala-like expressions to symbolic terms" in {
+    "convert scala values to constants" in {
+      val i:Term[Int] = 1
+      i should be (Constant(1))
+    }
+    "convert scala operations to symbolic terms" in {
       val x = Constant(1)
       val t = (x + x) - 1
       t should be (FunApp(Constant(Ints.Minus), TupleTerm2(FunApp(Constant(Ints.Add), TupleTerm2(x, x)), Constant(1))))
     }
-    "convert '[var name] of' expressions to variable definitions" in {
+    "convert '[var name] of' expressions into variables" in {
       val i = 'i of ints
       i should be (Var('i,ints))
     }
@@ -45,6 +49,11 @@ class Specs extends WordSpec with Matchers {
       val e = 'e of ints
       val d = 0 ~~ e
       d should be (RangeSet(0,e))
+    }
+    "use lower case names for terms, and upper case names for values" in {
+      val t = ints
+      val v = Ints
+      t should be (Constant(v))
     }
 
   }
