@@ -16,7 +16,6 @@ trait Fun[A, B] extends PartialFunction[A, B] {
   def funDom: Set[A] = funCandidateDom.filter(isDefinedAt)
   def funRange: Set[B]
 
-
   override def toString() = getClass.getSimpleName
 }
 
@@ -39,11 +38,21 @@ case class TypedFun[A,B](f:AnyFunction, funCandidateDom:Set[A],funRange:Set[B]) 
   def apply(x:A) = typed(x)
 }
 
+trait DeepEqualFun {
+  this:Fun[_,_] =>
+  override def equals(p1: scala.Any) = p1 match {
+    case f:Fun[_,_] =>
+      f.funDom == funDom &&
+        f.funDom.forall(a => f.asInstanceOf[Fun[Any,Any]](a) == this.asInstanceOf[Fun[Any,Any]](a))
+  }
+}
+
 /**
  * Helper object to build Fun objects.
  */
 object Fun {
-  def apply[A, B](f: PartialFunction[A, B], dom: Set[A] = new AllOfType[A], ran: Set[B] = new AllOfType[B]) = new Fun[A, B] {
+  def apply[A, B](f: PartialFunction[A, B], dom: Set[A] = new AllOfType[A], ran: Set[B] = new AllOfType[B]) =
+    new Fun[A, B] with DeepEqualFun {
     def apply(v1: A) = f.apply(v1)
     def isDefinedAt(x: A) = dom(x) && f.lift(x).exists(ran(_))
     def funCandidateDom = dom
@@ -63,6 +72,8 @@ object Fun {
     val range = map.map(_._2).toSet
     apply(map, domain, range)
   }
+
+
 
 }
 
@@ -122,7 +133,7 @@ case class AllFunctions[A, B](domain: Set[A], range: Set[B]) extends SetValue[Fu
       d match {
         case Nil => funs
         case newArg :: tail =>
-          val newFunctions = for (v <- r; f <- funs) yield new Fun[A, B] {
+          val newFunctions = for (v <- r; f <- funs) yield new Fun[A, B] with DeepEqualFun {
             def funCandidateDom = self.domain
             def funRange = range
             override def funDom = self.domain

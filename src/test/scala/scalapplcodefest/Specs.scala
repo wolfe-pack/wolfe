@@ -5,8 +5,15 @@ import org.scalautils._
 import Tolerance._
 import org.scalautils._
 import cc.factorie.optimize.{Perceptron, OnlineTrainer}
-import scalapplcodefest.value.AllOfType
+import scalapplcodefest.value._
 import scalapplcodefest.term._
+import scala.Some
+import scalapplcodefest.term.FunctionNotDefinedAt
+import scalapplcodefest.term.Constant
+import org.scalautils.Bad
+import scalapplcodefest.term.VariableUndefined
+import scalapplcodefest.term.Target
+import scalapplcodefest.term.ValueOutsideOfDomain
 import scala.Some
 import scalapplcodefest.value.Gen
 import scalapplcodefest.term.FunctionNotDefinedAt
@@ -54,10 +61,10 @@ class Specs extends WordSpec with Matchers {
       val j = 'j of ints
       val k = 'k of ints
       val s = state(i -> 1).closed(Set(j))
-      s.get(i) should be (Some(1))
-      s.get(j) should be (Some(j.default))
-      s.get(k) should be (None)
-      s.domain should be (Set(i,j))
+      s.get(i) should be(Some(1))
+      s.get(j) should be(Some(j.default))
+      s.get(k) should be(None)
+      s.domain should be(Set(i, j))
     }
 
     "support boolean queries" in {
@@ -229,7 +236,7 @@ class Specs extends WordSpec with Matchers {
       "evaluate to the sum over all arguments to all functions the first abstraction yields" in {
         val n = 'n of ints
         val s = ints.sum(for (i <- 0 ~~ n; j <- 0 ~~ n) yield i + j)
-        s.value(n -> 3) should be (18)
+        s.value(n -> 3) should be(18)
       }
     }
   }
@@ -238,8 +245,8 @@ class Specs extends WordSpec with Matchers {
     "denote 1.0 if the inner boolean term is true, and 0.0 for false" in {
       val i = 'i of ints
       val t = I(i === 2)
-      t.value(i -> 2) should be (1.0)
-      t.value(i -> 10) should be (0.0)
+      t.value(i -> 2) should be(1.0)
+      t.value(i -> 10) should be(0.0)
     }
   }
 
@@ -258,8 +265,8 @@ class Specs extends WordSpec with Matchers {
     "evaluate to the dot product of the denotations of its arguments" in {
       val i = 'i of ints
       val v = 'v of doubles
-      val d = unit(i,v) dot unit(i,v)
-      d.value(i -> 1, v -> 2.0) should be (4.0)
+      val d = unit(i, v) dot unit(i, v)
+      d.value(i -> 1, v -> 2.0) should be(4.0)
     }
   }
 
@@ -273,7 +280,7 @@ class Specs extends WordSpec with Matchers {
       t1.value(i -> "A", b -> true) should be(t1.value(i -> "A", b -> true))
       t1.value(i -> "A", b -> true) should not be t2.value(i -> "A", b -> true)
       t1.value(i -> "A", b -> true) should not be t1.value(i -> "B", b -> false)
-      t2.value(i -> "A") should be (index.index(Array("A")))
+      t2.value(i -> "A") should be(index.index(Array("A")))
     }
   }
 
@@ -401,13 +408,31 @@ class Specs extends WordSpec with Matchers {
     "return the primitive argument that maximizes a function" in {
       val f = for (b <- bools) yield I(b)
       val a = argmax(f)
-      a.value() should be (true)
+      a.value() should be(true)
     }
     "return a the function value argument that maximizes a function" in {
-      val f = for (f <- bools ||-> bools) yield doubles.sum(for (b <- bools) yield I(f(b)))
-      val a = argmax(f)
-      a.value()(false) should be (true)
-      a.value()(true) should be (true)
+      //experimental: ||->
+      val p = for (f <- bools ||-> bools) yield doubles.sum(for (b <- bools) yield I(f(b)))
+      val a = argmax(p)
+      a.value() should be(Table(false -> true, true -> true))
+    }
+    "return a tuple of functions that maximize a function" in {
+      val n = 'n of ints
+      val dom = 0 ~~ n
+      val inLex = 'inLex of ints ||-> bools
+      val cap = 'cap of dom ||-> bools
+      val ner = 'ner of dom ||-> bools
+      val model = doubles.sum {for (i <- dom as "i") yield I((inLex(i) === cap(i)) && (inLex(i) === ner(i)))}
+      val observed = sig(n, inLex)
+      val hidden = sig(cap, ner)
+
+      val X = observed.dom
+      val Y = lambda(observed, hidden.dom)
+      val s = lambda(observed, lambda(hidden, model))
+      val h = for (x <- X) yield argmax(for (y <- Y(x)) yield s(x)(y))
+      val (f1, f2) = h.value()(2, Tab(Ints, Bools, Map(0 -> false, 1 -> true)))
+      f1 should be (Table(0 -> false, 1 -> true))
+      f2 should be (Table(0 -> false, 1 -> true))
     }
   }
 

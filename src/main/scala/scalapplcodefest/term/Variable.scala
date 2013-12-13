@@ -29,8 +29,8 @@ trait Variable[+T] extends Term[T] {
     domain.eval(state) match {
       case Bad(undefined) => Bad(undefined)
       case Good(dom) => state.get(this) match {
-        case None => Bad(VariableUndefined(this,state))
         case Some(value) => if (dom(value)) Good(value) else Bad(ValueOutsideOfDomain(this,state))
+        case None => Bad(VariableUndefined(this,state))
       }
     }
   }

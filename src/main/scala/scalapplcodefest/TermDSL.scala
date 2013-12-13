@@ -17,7 +17,7 @@ import scalapplcodefest.term.FunApp
  *
  * @author Sebastian Riedel
  */
-object TermDSL {
+object TermDSL extends ValueDSL {
 
   implicit def intToConstant(x: Int) = Constant(x)
   implicit def intToTerm(x: Int) = RichIntTerm(x)
@@ -59,13 +59,13 @@ object TermDSL {
   def state(assignments: Assign[_]*) =
     if (assignments.isEmpty) State.empty else State(assignments.map(a => a.variable -> a.value).toMap)
 
-  def funTerm[A, B](f: PartialFunction[A, B]) = Constant(Fun(f, new AllOfType[A], new AllOfType[B]))
+  def funTerm[A, B](f: PartialFunction[A, B]) = Constant(value.Fun(f, new AllOfType[A], new AllOfType[B]))
 
   //create bracketed terms
   def br[T](term: Term[T]) = Bracketed(term)
 
   //table building
-  def T[A, B](domain: Term[Set[A]], f: PartialFunction[A, B]) = Constant(Fun.table(domain.eval().get, f))
+  def T[A, B](domain: Term[Set[A]], f: PartialFunction[A, B]) = Constant(value.Fun.table(domain.eval().get, f))
 
   //math
   def unit(index: Term[Int], value: Term[Double] = Constant(1.0)) = FunApp(vectors.unit, TupleTerm2(index, value))
@@ -137,7 +137,7 @@ object TermDSL {
 
 
     def |->[T2](that: Term[Set[T2]]) = (s, that)
-    def ||->[T2](that: Term[Set[T2]]) = FunApp(Constant(new AllFunctionsOp[T,T2]),TupleTerm2(s,that))
+    def ||->[T2](that: Term[Set[T2]]) = FunApp(Constant(new AllFunctionsOp[T, T2]), TupleTerm2(s, that))
 
 
     def mappedBy[A](f: FunTerm[T, A]) =
@@ -161,13 +161,13 @@ object TermDSL {
       val variable2 = Var(Symbol(variableName2()), term.a2)
       val applied = f(variable1, variable2)
       //todo: replace variables with arg1 && arg2 of tuple
-//      val tupleVar = Var(Symbol(s"${variable1.name}_${variable2.name}"), term)
-//      val arg1 = FunApp(ArgTerm(term, term.a1, 0), tupleVar)
-//      val arg2 = FunApp(ArgTerm(term, term.a1, 1), tupleVar)
-//      val substituted1 = TermConverter.substituteTerm(applied, variable1, arg1)
-//      val substituted2 = TermConverter.substituteTerm(substituted1, variable2, arg2)
-//      LambdaAbstraction(tupleVar, substituted2)
-      LambdaAbstraction(TupleSig2(VarSig(variable1),VarSig(variable2)),applied)
+      //      val tupleVar = Var(Symbol(s"${variable1.name}_${variable2.name}"), term)
+      //      val arg1 = FunApp(ArgTerm(term, term.a1, 0), tupleVar)
+      //      val arg2 = FunApp(ArgTerm(term, term.a1, 1), tupleVar)
+      //      val substituted1 = TermConverter.substituteTerm(applied, variable1, arg1)
+      //      val substituted2 = TermConverter.substituteTerm(substituted1, variable2, arg2)
+      //      LambdaAbstraction(tupleVar, substituted2)
+      LambdaAbstraction(TupleSig2(VarSig(variable1), VarSig(variable2)), applied)
     }
 
     def filter(f: ((Variable[T1], Variable[T2])) => Boolean) = this
@@ -183,8 +183,9 @@ object TermDSL {
     def |(mappings: (Variable[Any], Any)*) = Conditioned(term, State(mappings.toMap))
     def eval(state: (Variable[Any], Any)*) = term.eval(State(state.toMap))
     def value(state: (Variable[Any], Any)*) = term.value(State(state.toMap))
-    def ===(that: Term[T]) = FunApp(RestrictedFun[(T,T),Boolean](Equal), TupleTerm2(term, that))//FunApp(new Equals[T].Term, TupleTerm2(term, that))
-    def ===(that: T) = FunApp(RestrictedFun[(T,T),Boolean](Equal), TupleTerm2(term, Constant(that))) //FunApp(new Equals[T].Term, TupleTerm2(term, Constant(that)))
+    def ===(that: Term[T]) = FunApp(RestrictedFun[(T, T), Boolean](Equal), TupleTerm2(term, that))
+    //FunApp(new Equals[T].Term, TupleTerm2(term, that))
+    def ===(that: T) = FunApp(RestrictedFun[(T, T), Boolean](Equal), TupleTerm2(term, Constant(that))) //FunApp(new Equals[T].Term, TupleTerm2(term, Constant(that)))
     //    def eval(state:VarValuePair[T]*):Option[T] = term.eval(State(state.map(_.toTuple).toMap))
 
   }
@@ -228,6 +229,7 @@ object TermDSL {
 
   case class RichFunctionTerm2[A1, A2, B](f: FunTerm[(A1, A2), B]) {
     def apply(a1: Term[A1], a2: Term[A2]) = FunApp(f, TupleTerm2(a1, a2))
+    def apply(a1: Term[(A1, A2)]) = FunApp(f, a1)
   }
 
   case class RichFunctionTermSeq[A, B](f: FunTerm[Seq[A], B]) {
@@ -252,16 +254,16 @@ object TermDSL {
     def apply[A1 <: AnyRef](a1: Term[A1]) =
       dynFun[A1, Int]({case x => index.index(Array(symbol, x))}, a1.domain, ints)(a1)
     def apply[A1 <: AnyRef, A2 <: AnyRef](a1: Term[A1], a2: Term[A2]) =
-      dynFun[(A1, A2), Int]({case (x1, x2) => index.index(Array(symbol, x1, x2))}, c(a1.domain,a2.domain), ints)(a1, a2)
+      dynFun[(A1, A2), Int]({case (x1, x2) => index.index(Array(symbol, x1, x2))}, c(a1.domain, a2.domain), ints)(a1, a2)
   }
 
-//}
+  //}
 
   trait ConstantValue[T] extends Term[T] {
     def unapply(term: Term[Any]): Boolean = term == this
   }
 
-  trait ConstantFun1[A, B] extends ConstantValue[Fun[A, B]]  {
+  trait ConstantFun1[A, B] extends ConstantValue[Fun[A, B]] {
     self =>
 
     object Applied1 {
@@ -273,7 +275,7 @@ object TermDSL {
 
   }
 
-  trait ConstantFun2[A1, A2, B] extends ConstantFun1[(A1, A2), B]  {
+  trait ConstantFun2[A1, A2, B] extends ConstantFun1[(A1, A2), B] {
     self =>
 
     object Applied2 {
@@ -285,15 +287,17 @@ object TermDSL {
 
   }
 
-  trait ConstantOperator[T] extends ConstantFun2[T,T,T] {
+  trait ConstantOperator[T] extends ConstantFun2[T, T, T] {
     self =>
+
     object Reduced {
       def unapply(x: Term[Any]): Option[Term[Seq[T]]] = x match {
         case Reduce(op, args) if op == self => Some(args.asInstanceOf[Term[Seq[T]]])
         case _ => None
       }
     }
-    def reduce(args:Term[Seq[T]]) = Reduce(self,args)
+
+    def reduce(args: Term[Seq[T]]) = Reduce(self, args)
 
   }
 
@@ -305,16 +309,16 @@ object TermDSL {
   }
 
   trait HasAdd[T] {
-    def add:ConstantOperator[T]
-    def sum(args:Term[T]*) = Reduce(add,SeqTerm(args))
-    def sumSeq(args:Seq[Term[T]]) = Reduce(add,SeqTerm(args))
-    def sum[A](args:Term[Fun[A,T]]) = Reduce(add,ImageSeq1(args))
+    def add: ConstantOperator[T]
+    def sum(args: Term[T]*) = Reduce(add, SeqTerm(args))
+    def sumSeq(args: Seq[Term[T]]) = Reduce(add, SeqTerm(args))
+    def sum[A](args: Term[Fun[A, T]]) = Reduce(add, ImageSeq1(args))
   }
 
   object ints extends Constant(Ints) with ConstantSet[Int] with HasAdd[Int] {
     val add = new Constant(Ints.Add) with ConstantOperator[Int]
     val minus = new Constant(Ints.Minus) with ConstantOperator[Int]
-    val range = new Constant(Ints.Range) with ConstantFun2[Int,Int,Set[Int]]
+    val range = new Constant(Ints.Range) with ConstantFun2[Int, Int, Set[Int]]
     val divide = new Constant(Ints.Divide) with ConstantOperator[Int]
 
   }
@@ -323,7 +327,7 @@ object TermDSL {
     val add = new Constant(Doubles.Add) with ConstantOperator[Double]
     val minus = new Constant(Doubles.Minus) with ConstantOperator[Double]
     val times = new Constant(Doubles.Times) with ConstantOperator[Double]
-    val log = new Constant(Doubles.Log) with ConstantFun1[Double,Double]
+    val log = new Constant(Doubles.Log) with ConstantFun1[Double, Double]
   }
 
   object bools extends Constant(Bools) with ConstantSet[Boolean] {
@@ -331,8 +335,8 @@ object TermDSL {
     val or = new Constant(Bools.Or) with ConstantOperator[Boolean]
     val implies = new Constant(Bools.Implies) with ConstantOperator[Boolean]
     val equiv = new Constant(Bools.Equiv) with ConstantOperator[Boolean]
-    val neg = new Constant(Bools.Neg) with ConstantFun1[Boolean,Boolean]
-    val iverson = new Constant(Bools.Iverson) with ConstantFun1[Boolean,Double]
+    val neg = new Constant(Bools.Neg) with ConstantFun1[Boolean, Boolean]
+    val iverson = new Constant(Bools.Iverson) with ConstantFun1[Boolean, Double]
 
   }
 
@@ -340,8 +344,7 @@ object TermDSL {
     val dot = new Constant(Vectors.Dot) with ConstantFun2[Vector, Vector, Double]
     val add = new Constant(Vectors.VecAdd) with ConstantOperator[Vector]
     val minus = new Constant(Vectors.VecMinus) with ConstantOperator[Vector]
-    val unit = new Constant(Vectors.UnitVector) with ConstantFun2[Int,Double,Vector]
-
+    val unit = new Constant(Vectors.UnitVector) with ConstantFun2[Int, Double, Vector]
   }
 
   object strings extends Constant(Strings) with ConstantSet[String] {
@@ -350,13 +353,37 @@ object TermDSL {
 
   //val all = new Constant(All) with ConstantSet[Any] {}
 
-  def c[T1,T2](arg1:Term[Set[T1]],arg2:Term[Set[T2]]) = CartesianProductTerm2(arg1,arg2)
-  def c[T1,T2,T3](arg1:Term[Set[T1]],arg2:Term[Set[T2]],arg3:Term[Set[T3]]) = CartesianProductTerm3(arg1,arg2,arg3)
+  def c[T1, T2](arg1: Term[Set[T1]], arg2: Term[Set[T2]]) = CartesianProductTerm2(arg1, arg2)
+  def c[T1, T2, T3](arg1: Term[Set[T1]], arg2: Term[Set[T2]], arg3: Term[Set[T3]]) = CartesianProductTerm3(arg1, arg2, arg3)
   def all[T] = Constant(new AllOfType[T])
   def set[T](values: T*) = Constant(SeqSet(values))
-  def fun[A, B](f: PartialFunction[A, B], dom: Set[A] = new AllOfType[A], range: Set[B] = new AllOfType[B]) = Constant(Fun(f, dom, range))
+
+  def fun[A, B](f: PartialFunction[A, B], dom: Set[A] = new AllOfType[A], range: Set[B] = new AllOfType[B]): Term[Fun[A, B]] =
+    Constant(value.Fun(f, dom, range))
+  //def fun[A,B](pairs:(A,B)*):Term[Fun[A,B]] = Constant(Fun(pairs.toMap))
+
+
   def dynFun[A, B](f: PartialFunction[A, B], dom: Term[Set[A]] = all[Set[A]], range: Term[Set[B]] = all[Set[B]]) = DynFunTerm(f, dom, range)
-  def argmax[T](f:Term[Fun[T,Double]]) = FunApp(Constant(new Argmax[T]),f)
+  def argmax[T](f: Term[Fun[T, Double]]) = FunApp(Constant(new Argmax[T]), f)
 
+  implicit def toSig[T](variable: Variable[T]) = VarSig(variable)
+  def sig[T1, T2](sig1: Sig[T1], sig2: Sig[T2]) = TupleSig2(sig1, sig2)
+  def lambda[A, B](sig: Sig[A], body: Term[B]) = LambdaAbstraction(sig, body)
 
+}
+
+trait ValueDSL {
+  def Fun[A, B](map: Map[A, B]): Fun[A, B] = value.Fun(map, map.keySet, map.values.toSet)
+  def Table[A, B](pairs: (A, B)*): Fun[A, B] = Fun(pairs.toMap)
+  def Tab[A, B](domain: Set[A], range: Set[B], fun: PartialFunction[A, B]) = new Fun[A, B] with DeepEqualFun {
+    def apply(v1: A) =
+      if (fun.isDefinedAt(v1))
+        fun(v1)
+      else
+        range.head
+    override def funDom = domain
+    def funCandidateDom = domain
+    def funRange = range
+    def isDefinedAt(x: A) = domain(x)
+  }
 }
