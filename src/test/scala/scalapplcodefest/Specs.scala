@@ -25,8 +25,29 @@ class Specs extends WordSpec with Matchers {
   def eps = 0.0002
 
   import TermDSL._
-  import CustomEqualities._
 
+  "A DSL" should {
+    "convert scala-like expressions to symbolic terms" in {
+      val x = Constant(1)
+      val t = (x + x) - 1
+      t should be (FunApp(Constant(Ints.Minus), TupleTerm2(FunApp(Constant(Ints.Add), TupleTerm2(x, x)), Constant(1))))
+    }
+    "convert '[var name] of' expressions to variable definitions" in {
+      val i = 'i of ints
+      i should be (Var('i,ints))
+    }
+    "convert for-comprehensions into lambda abstractions" in {
+      val t = for (i <- ints as 'i) yield i + 1
+      val i = 'i of ints
+      t should be (LambdaAbstraction(i,i+1))
+    }
+    "convert i ~~ j expresions into range sets [i,j)" in {
+      val e = 'e of ints
+      val d = 0 ~~ e
+      d should be (RangeSet(0,e))
+    }
+
+  }
 
   "A state" should {
     "provide values of variables or return None" in {
@@ -76,23 +97,6 @@ class Specs extends WordSpec with Matchers {
     "evaluate to its value" in {
       val c = Constant(10)
       c.eval(state()) should be(Good(10))
-    }
-  }
-
-  "A DSL" should {
-    "convert scala-like expressions to symbolic terms" in {
-      val x = Constant(1)
-      val t = (x + x) - 1
-      t should be (FunApp(Constant(Ints.Minus), TupleTerm2(FunApp(Constant(Ints.Add), TupleTerm2(x, x)), Constant(1))))
-    }
-    "convert '[var name] of' expressions to variable definitions" in {
-      val i = 'i of ints
-      i should be (Var('i,ints))
-    }
-    "convert for-comprehensions into lambda abstractions" in {
-      val t = for (i <- ints as 'i) yield i + 1
-      val i = 'i of ints
-      t should be (LambdaAbstraction(i,i+1))
     }
   }
 
@@ -176,6 +180,18 @@ class Specs extends WordSpec with Matchers {
       f.value()(false)(true) should be(true)
     }
   }
+
+
+}
+
+class ExperimentalSpecs extends WordSpec with Matchers {
+
+  def eps = 0.0002
+
+  import TermDSL._
+  import CustomEqualities._
+
+  //ignore from here (things may still change a little)
 
   "A conditioned term" should {
     "evaluate to the value its inner term would evaluate to if the condition was added to its state argument" in {
@@ -449,7 +465,11 @@ class Specs extends WordSpec with Matchers {
     }
   }
 
+
+
 }
+
+
 
 object CustomEqualities {
   def eps = 0.0002
