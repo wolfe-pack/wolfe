@@ -1,11 +1,12 @@
 package scalapplcodefest
 
 import cc.factorie.maths.ArrayOps
-import scalapplcodefest.value.{Fun, Doubles}
+import scalapplcodefest.value.{CartesianProduct2, AllFunctions, Fun, Doubles}
 import TermDSL._
 import scalapplcodefest.term._
 import scalapplcodefest.term.Belief
 import scala.Some
+import scala.collection.mutable
 
 /**
  * Turns double terms into message passing factor graphs.
@@ -16,6 +17,7 @@ object MPGraphCompilerNew {
 
   import MPGraph._
   import TermConverter._
+  import Sig._
 
   /**
    * A recipe can generate a structured MPGraph potential for a given term and meta information about the nodes.
@@ -73,7 +75,8 @@ object MPGraphCompilerNew {
      * @return a state based on maximizing the node beliefs.
      */
     def currentArgmaxNew():T = {
-      ???
+      val builder = sig.newBuilder()
+      builder.build()
     }
 
 
@@ -255,6 +258,7 @@ object MPGraphCompilerNew {
     }
     settings
   }
+
 
 
 }

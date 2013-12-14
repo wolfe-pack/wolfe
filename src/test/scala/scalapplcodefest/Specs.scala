@@ -64,7 +64,7 @@ class Specs extends WordSpec with Matchers {
       s should be(State(Map(i -> 1, j -> false)))
     }
     "creates an empty state" in {
-      state() should be (State.empty)
+      state() should be(State.empty)
     }
 
   }
@@ -243,9 +243,9 @@ class Specs extends WordSpec with Matchers {
       a.value() should be(Table(false -> true, true -> true))
     }
     "return a vector argument that maximizes a function" in {
-      val dom = set(Unit(0,1.0), Unit(1,1.0))
-      val max = argmax(for (w <- dom) yield w dot (unit(0,1.0) + unit(1,10.0)))
-      max.value() should equal (Unit(1,1.0)) (decided by vectorEq)
+      val dom = set(Unit(0, 1.0), Unit(1, 1.0))
+      val max = argmax(for (w <- dom) yield w dot (unit(0, 1.0) + unit(1, 10.0)))
+      max.value() should equal(Unit(1, 1.0))(decided by vectorEq)
     }
     "return a tuple of functions that maximize a function" in {
       val n = 'n of ints
@@ -267,7 +267,6 @@ class Specs extends WordSpec with Matchers {
       f2 should be(Table(0 -> false, 1 -> true))
     }
   }
-
 
 
 }
@@ -386,7 +385,7 @@ class ExperimentalSpecs extends WordSpec with Matchers {
 
   }
 
-  def maxProduct = Max.ByMessagePassing(_: Term[Double], MaxProduct.run(_, 1))
+  def maxProduct = Max.ByMessagePassing(_: Term[Double], MaxProduct.apply(_, 1))
   def bruteForce = Max.ByBruteForce(_: Term[Double])
 
 
@@ -494,14 +493,19 @@ class ExperimentalSpecs extends WordSpec with Matchers {
 }
 
 object CompilerSpec extends WordSpec with Matchers {
+
   import TermDSL._
 
   "A compiler" when {
     "compiling an argmax term with max-product maximization hint for a tree graph" should {
-      "yield a term that returns the evaluates to the optimal solution " in {
-        val obj = for ((y,p) <- c(bools,bools ||-> bools)) yield
-          I(p(true)) + I(p(true) |=> y) + I(y |=> p(false))
-        val sol = argmax(obj)
+      "yield a term that evaluates to the optimal solution " in {
+        val y = 'y of bools
+        val p = 'p of bools ||-> bools
+        val s = (I(p(true)) + I(p(true) |=> y) + I(y |=> p(false))) hint MessagePassingHint(MaxProduct(_,1))
+        val optimal = argmax(lambda(sig(y,p),s))
+        val compiled = Compiler.compile(optimal)
+//        compiled should not be optimal
+//        compiled.value() should be (optimal.value())
 
       }
     }

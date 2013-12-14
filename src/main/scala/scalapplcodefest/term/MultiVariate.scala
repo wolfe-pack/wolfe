@@ -68,7 +68,7 @@ object Max {
    * @param term the term to maximize
    * @param algorithm applies a message passing algorithm to the message passing graph.
    */
-  case class ByMessagePassing(term: Term[Double], algorithm: MPGraph => Unit = MaxProduct.run(_, 1)) extends Max {
+  case class ByMessagePassing(term: Term[Double], algorithm: MPGraph => Unit = MaxProduct.apply(_, 1)) extends Max {
 
     val normalized = pushDownConditions(term)
     val ForceLinear(_, parameter, _) = normalized
@@ -135,7 +135,7 @@ trait ArgmaxHint extends CompilerHint {
   def withParam[T](sig: Sig[T], param: Var[Vector], term: Term[Double]): ArgmaxValueGradient[T] //should have one free variable: param
 }
 
-case class MessagePassingHint(algorithm: MPGraph => Unit = MaxProduct.run(_, 1)) extends ArgmaxHint {
+case class MessagePassingHint(algorithm: MPGraph => Unit = MaxProduct.apply(_, 1)) extends ArgmaxHint {
   def withoutParam[T](sig: Sig[T], term: Term[Double]) = {
     require(term.variables.forall(sig.variables(_)),
       s"Unbound variable ${term.variables.find(!sig.variables(_))}")

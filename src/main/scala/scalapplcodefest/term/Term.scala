@@ -166,21 +166,32 @@ case class Constant[T](value: T) extends Term[T] {
   override def toString = value.toString
 }
 
+
+trait Composite[T] extends Term[T] {
+  def componentSeq:Seq[Term[Any]]
+  def copySeq(args:Seq[Term[Any]]):Term[T]
+}
 /**
  * Term that is composed of other terms.
  * @tparam T1 the type of the first argument term.
  * @tparam C the type of this term.
  */
-trait Composite1[T1, C] extends Term[C] {
+trait Composite1[T1, C] extends Composite[C] {
   def components: Term[T1]
   def copy(t1: Term[T1]): Term[C]
   def asAny = asInstanceOf[Composite1[Any, Any]]
+  def componentSeq = Seq(components)
+  def copySeq(args: Seq[Term[Any]]) = copy(args(0).asInstanceOf[Term[T1]])
 }
 
-trait Composite2[T1, T2, C] extends Term[C] {
+trait Composite2[T1, T2, C] extends Composite[C] {
   def components: (Term[T1], Term[T2])
   def copy(t1: Term[T1], t2: Term[T2]): Term[C]
   def asAny = asInstanceOf[Composite2[Any, Any, Any]]
+  def componentSeq = Seq(components._1,components._2)
+  def copySeq(args: Seq[Term[Any]]) = copy(
+    args(0).asInstanceOf[Term[T1]],
+    args(1).asInstanceOf[Term[T2]])
 
 }
 
@@ -188,6 +199,11 @@ trait Composite3[T1, T2, T3, C] extends Term[C] {
   def components: (Term[T1], Term[T2], Term[T3])
   def copy(t1: Term[T1], t2: Term[T2], t3: Term[T3]): Term[C]
   def asAny = asInstanceOf[Composite3[Any, Any, Any, Any]]
+  def componentSeq = Seq(components._1,components._2,components._3)
+  def copySeq(args: Seq[Term[Any]]) = copy(
+    args(0).asInstanceOf[Term[T1]],
+    args(1).asInstanceOf[Term[T2]],
+    args(2).asInstanceOf[Term[T3]])
 
 }
 

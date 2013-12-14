@@ -103,7 +103,7 @@ object Wrapped3 {
  * @param seq the sequence of terms that is turned into a sequence of values.
  * @tparam T type of values in the sequence.
  */
-case class SeqTerm[T](seq:Seq[Term[T]]) extends Term[Seq[T]] {
+case class SeqTerm[T](seq:Seq[Term[T]]) extends Term[Seq[T]] with Composite[Seq[T]] {
   def eval(state: State) = {
     val result = seq.map(_.eval(state))
     if (result.forall(_.isGood)) Good(result.map(_.get)) else Bad(result.find(_.isBad).get.swap.get)
@@ -112,6 +112,8 @@ case class SeqTerm[T](seq:Seq[Term[T]]) extends Term[Seq[T]] {
   def domain[C >: Seq[T]] = Constant(new AllOfType[C])
   def default = seq.map(_.default)
   override def toString = seq.mkString("[",",","]")
+  def componentSeq = seq
+  def copySeq(args: Seq[Term[Any]]) = SeqTerm(args).asInstanceOf[Term[Seq[T]]]
 }
 
 /**

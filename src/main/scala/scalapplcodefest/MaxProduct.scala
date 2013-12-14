@@ -14,7 +14,7 @@ object MaxProduct {
    * @param maxIteration maximum number of iterations.
    * @param canonical should edges be processed in canonical ordering according to [[scalapplcodefest.MPGraph.EdgeOrdering]].
    */
-  def run(fg: MPGraph, maxIteration: Int, canonical:Boolean = true) {
+  def apply(fg: MPGraph, maxIteration: Int, canonical:Boolean = true) {
     val edges = if (canonical) fg.edges.sorted(MPGraph.EdgeOrdering) else fg.edges
 
     for (i <- 0 until maxIteration) {

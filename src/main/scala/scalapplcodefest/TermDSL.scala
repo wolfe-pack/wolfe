@@ -190,6 +190,7 @@ object TermDSL extends ValueDSL {
     //FunApp(new Equals[T].Term, TupleTerm2(term, that))
     def ===(that: T) = FunApp(RestrictedFun[(T, T), Boolean](Equal), TupleTerm2(term, Constant(that))) //FunApp(new Equals[T].Term, TupleTerm2(term, Constant(that)))
     //    def eval(state:VarValuePair[T]*):Option[T] = term.eval(State(state.map(_.toTuple).toMap))
+    def hint(hint:CompilerHint) = Annotation(term,hint)
 
   }
 
@@ -367,7 +368,7 @@ object TermDSL extends ValueDSL {
 
 
   def dynFun[A, B](f: PartialFunction[A, B], dom: Term[Set[A]] = all[Set[A]], range: Term[Set[B]] = all[Set[B]]) = DynFunTerm(f, dom, range)
-  def argmax[T](f: Term[Fun[T, Double]]) = FunApp(Constant(new Argmax[T]), f)
+  def argmax[T](f: Term[Fun[T, Double]]) = FunApp(RestrictedFun(Argmax,all[Fun[T,Double]],all[T]), f)
 
   implicit def toSig[T](variable: Variable[T]) = VarSig(variable)
   def sig[T1, T2](sig1: Sig[T1], sig2: Sig[T2]) = TupleSig2(sig1, sig2)

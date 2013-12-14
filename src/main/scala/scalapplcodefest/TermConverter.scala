@@ -27,7 +27,7 @@ object TermConverter {
    * convertDepthFirst method.
    */
   trait Converter {
-    def convert[A](term: Term[A]): Term[A]
+    def convert[A](toConvert: Term[A]): Term[A]
   }
 
   /**
@@ -72,6 +72,19 @@ object TermConverter {
     }
   }
 
+  /**
+   * Collects a list of items by traversing through the term tree.
+   * @param term the term tree to traverse.
+   * @param collector a function to collect items for a single node
+   * @tparam C type of items.
+   * @return list of all items collected from term tree.
+   */
+  def collect[C](term:Term[Any], collector:Term[Any] => List[C]):List[C] = {
+    term match {
+      case c:Composite[_] => collector(c) ++ c.componentSeq.toList.flatMap(collect(_,collector))
+      case _ => collector(term)
+    }
+  }
 
   /**
    * Converts a term by replacing each occurrence of a sub-term with another term.
