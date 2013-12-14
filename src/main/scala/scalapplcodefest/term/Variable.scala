@@ -54,7 +54,7 @@ trait Variable[+T] extends Term[T] {
  * @param dom domain of the variable
  * @tparam T type of values associated with variable.
  */
-case class Var[T](name: Symbol, dom: Term[Set[T]]) extends Variable[T] {
+case class Var[T](name: Symbol, dom: Term[Set[T]]) extends Variable[T] with Composite1[Set[T],T] {
   def domain[C >: T] = dom.asInstanceOf[Term[Set[C]]]
   override def toString = name.name
   override def equals(v: scala.Any) = v match {
@@ -62,6 +62,8 @@ case class Var[T](name: Symbol, dom: Term[Set[T]]) extends Variable[T] {
     case _ => false
   }
   override def hashCode() = name.hashCode()
+  def components = dom
+  def copy(t1: Term[Set[T]]) = Var(name,t1)
 }
 
 /**

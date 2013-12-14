@@ -13,7 +13,8 @@ import org.scalautils.Bad
  *
  * @author Sebastian Riedel
  */
-case class Predicate[A,B](name:Symbol, funCandidateDom:Term[Set[A]],funRange:Term[Set[B]] = Constant(Bools)) extends FunTerm[A, B] {
+case class Predicate[A,B](name:Symbol, funCandidateDom:Term[Set[A]],funRange:Term[Set[B]] = Constant(Bools))
+  extends FunTerm[A, B] with Composite2[Set[A],Set[B],Fun[A,B]] {
 
   thisPredicate =>
 
@@ -34,6 +35,8 @@ case class Predicate[A,B](name:Symbol, funCandidateDom:Term[Set[A]],funRange:Ter
     case _ => false
   }
   override def hashCode() = name.hashCode()
+  def components = (funCandidateDom,funRange)
+  def copy(t1: Term[Set[A]], t2: Term[Set[B]]) = Predicate(name,t1,t2)
 }
 
 
@@ -45,12 +48,14 @@ case class Predicate[A,B](name:Symbol, funCandidateDom:Term[Set[A]],funRange:Ter
  * @tparam A argument type.
  * @tparam B the type of the variable.
  */
-case class GroundAtom[A, B](predicate: Predicate[A, B], arg: A) extends Variable[B] {
+case class GroundAtom[A, B](predicate: Predicate[A, B], arg: A) extends Variable[B] with Composite1[Fun[A,B],B] {
 
   import SetCastHelper._
 
   def domain[C >: B] = predicate.funRange.as[C]
   override def toString = s"${predicate.name.name}($arg)"
+  def components = predicate
+  def copy(t1: Term[Fun[A, B]]) = GroundAtom(t1.asInstanceOf[Predicate[A,B]],arg)
 }
 
 /**

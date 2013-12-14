@@ -45,7 +45,7 @@ object Max {
    * Maximizes the term by exhaustive search.
    * @param term the term to maximize.
    */
-  case class ByBruteForce(term: Term[Double]) extends Max with Composite1[Double,Double] {
+  case class ByBruteForce(term: Term[Double]) extends Max with Composite1[Double, Double] {
     val ForceLinear(coefficient, parameter, _) = term
     private var arg: State = _
     private var conditionedValue: Term[Double] = _
@@ -125,3 +125,14 @@ class UnusedParameter extends Variable[Vector] {
   def domain[C >: scalapplcodefest.Vector] = Constant(Vectors).asInstanceOf[Term[Set[C]]]
   override def eval(state: State) = Good(new DenseVector(0))
 }
+
+case class ArgmaxHint[T](sig: Sig[T], compiler: ArgmaxCompiler)
+
+trait ArgmaxCompiler {
+  type ArgmaxValue[T] = (Term[T], Term[Double])
+  type ArgmaxValueGradient[T] = (Term[T], Term[Double],Term[Vector])
+  def withoutParam[T](sig: Sig[T], term: Term[Double]): ArgmaxValue[T]
+  def withParam[T](sig: Sig[T], param: Var[Vector], term: Term[Double]): ArgmaxValueGradient[T]
+}
+
+

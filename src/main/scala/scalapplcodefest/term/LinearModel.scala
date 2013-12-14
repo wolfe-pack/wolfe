@@ -8,9 +8,12 @@ import scala.Some
  * @author Sebastian Riedel
  */
 case class LinearModel(features:Term[Vector],weights:Variable[Vector],base:Term[Double] = Constant(0.0))
-  extends Term[Double] with ProxyTerm[Double] {
+  extends Composite3[Vector,Vector,Double, Double] with ProxyTerm[Double] {
   import TermDSL._
   def self = (features dot weights) + base
+  def components = (features,weights,base)
+  def copy(t1: Term[scalapplcodefest.Vector], t2: Term[scalapplcodefest.Vector], t3: Term[Double]) =
+    LinearModel(t1,t2.asInstanceOf[Variable[Vector]],t3)
 }
 
 object Linear {

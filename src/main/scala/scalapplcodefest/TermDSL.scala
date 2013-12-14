@@ -10,6 +10,7 @@ import scalapplcodefest.term.RestrictedFun
 import scalapplcodefest.term.DynFunTerm
 import scalapplcodefest.value.SeqSet
 import scalapplcodefest.term.FunApp
+import cc.factorie.la.SingletonTensor1
 
 /**
  * This object provides a set of implicit conversions that allow users
@@ -388,4 +389,5 @@ trait ValueDSL {
     def funRange = range
     def isDefinedAt(x: A) = domain(x)
   }
+  def Unit(index: Int, value: Double = 1.0) = new SingletonTensor1(1, index, value)
 }

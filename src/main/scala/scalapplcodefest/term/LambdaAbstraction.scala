@@ -13,7 +13,7 @@ import scalapplcodefest.SetUtil
  * @tparam A type of arguments to function.
  * @tparam B type of return values of function.
  */
-case class LambdaAbstraction[A,B](sig:Sig[A],body:Term[B]) extends FunTerm[A,B] {
+case class LambdaAbstraction[A,B](sig:Sig[A],body:Term[B]) extends FunTerm[A,B] with Composite2[A,B,Fun[A,B]] {
   lambda =>
 
   def funCandidateDom = sig.dom
@@ -36,7 +36,8 @@ case class LambdaAbstraction[A,B](sig:Sig[A],body:Term[B]) extends FunTerm[A,B] 
   }
   def domain[C >: Fun[A, B]] = Constant(new AllOfType[C])
   override def toString = s"lam $sig { $body }"
-
+  def components = (sig,body)
+  def copy(t1: Term[A], t2: Term[B]) = LambdaAbstraction(t1.asInstanceOf[Sig[A]],t2)
 }
 
 /**

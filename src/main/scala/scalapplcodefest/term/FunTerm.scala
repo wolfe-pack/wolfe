@@ -135,12 +135,14 @@ case class Image[A, B](fun: Term[Fun[A, B]], dom: Term[Set[A]]) extends Term[Set
  * @tparam A argument type of function.
  * @tparam B return type of function.
  */
-case class ImageSeq1[A, B](fun: Term[Fun[A, B]]) extends Term[Seq[B]] {
+case class ImageSeq1[A, B](fun: Term[Fun[A, B]]) extends Composite1[Fun[A,B],Seq[B]]  {
   val FunTerm(funCandidateDom, _) = fun
   def eval(state: State) = for (f <- fun.eval(state); d <- funCandidateDom.eval(state)) yield d.view.toSeq.map(f)
   def variables = fun.variables
   def domain[C >: Seq[B]] = Constant(new AllOfType[C])
   def default = fun.default.funRange.toSeq
+  def components = fun
+  def copy(t1: Term[Fun[A, B]]) = ImageSeq1(t1)
 }
 
 /**
@@ -151,7 +153,7 @@ case class ImageSeq1[A, B](fun: Term[Fun[A, B]]) extends Term[Seq[B]] {
  * @tparam A2 argument of inner functions.
  * @tparam B return type of inner functions.
  */
-case class ImageSeq2[A1, A2, B](fun: Term[Fun[A1, Fun[A2, B]]]) extends Term[Seq[B]] {
+case class ImageSeq2[A1, A2, B](fun: Term[Fun[A1, Fun[A2, B]]]) extends Composite1[Fun[A1, Fun[A2, B]], Seq[B]] {
   val FunTerm(funCandidateDom, _) = fun
   def eval(state: State) = for (f <- fun.eval(state); d <- funCandidateDom.eval(state)) yield {
     for (a1 <- d.view.toSeq; f1 = f(a1); a1 <- f1.funDom.view.toSeq) yield f1(a1)
@@ -159,6 +161,8 @@ case class ImageSeq2[A1, A2, B](fun: Term[Fun[A1, Fun[A2, B]]]) extends Term[Seq
   def variables = fun.variables
   def domain[C >: Seq[B]] = Constant(new AllOfType[C])
   def default = fun.default.funRange.head.funRange.view.toSeq
+  def components = fun
+  def copy(t1: Term[Fun[A1, Fun[A2, B]]]) = ImageSeq2(t1)
 }
 
 

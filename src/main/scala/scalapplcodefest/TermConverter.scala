@@ -44,16 +44,7 @@ object TermConverter {
     def cdf[A](term: Term[A]) = convertDepthFirst(term, keepBrackets)(converter)
     implicit def cast(t: Term[Any]) = t.asInstanceOf[Term[T]]
     term match {
-      case TupleTerm2(a1, a2) => convert(TupleTerm2(cdf(a1), cdf(a2)))
-      case SeqTerm(args) => convert(SeqTerm(args.map(cdf(_))))
-      case ImageSeq1(f) => convert(ImageSeq1(cdf(f)))
-      case ImageSeq2(f) => convert(ImageSeq2(cdf(f)))
-      case LambdaAbstraction(sig, t) => convert(LambdaAbstraction(cdf(sig).asInstanceOf[Sig[Any]], cdf(t)))
-      case Var(v, d) => convert(Var(v, cdf(d)))
-      case Reduce(o, a) => convert(Reduce(cdf(o).asInstanceOf[Term[Fun[(T, T), T]]], cdf(a)))
-      case LinearModel(f, Var(w, d), b) => convert(LinearModel(cdf(f), Var(w, cdf(d)), cdf(b)))
-      case Predicate(n, d, r) => convert(Predicate(n, cdf(d), cdf(r)))
-      case GroundAtom(p, a) => convert(GroundAtom(cdf(p).asInstanceOf[Predicate[Any, _]], a))
+      case SeqTerm(args) => convert(SeqTerm(args.map(cdf)))
       case Bracketed(t) if keepBrackets => Bracketed(cdf(t))
       case Bracketed(t) if !keepBrackets => convert(Bracketed(cdf(t)))
       case c: Composite1[_, _] => convert(c.asInstanceOf[Composite1[Any, Any]].copy(cdf(c.components)))

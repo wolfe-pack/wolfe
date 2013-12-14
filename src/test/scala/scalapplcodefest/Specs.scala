@@ -25,35 +25,46 @@ class Specs extends WordSpec with Matchers {
   def eps = 0.0002
 
   import TermDSL._
+  import CustomEqualities._
+
 
   "A DSL" should {
     "convert scala values to constants" in {
-      val i:Term[Int] = 1
-      i should be (Constant(1))
+      val i: Term[Int] = 1
+      i should be(Constant(1))
     }
     "convert scala operations to symbolic terms" in {
       val x = Constant(1)
       val t = (x + x) - 1
-      t should be (FunApp(Constant(Ints.Minus), TupleTerm2(FunApp(Constant(Ints.Add), TupleTerm2(x, x)), Constant(1))))
+      t should be(FunApp(Constant(Ints.Minus), TupleTerm2(FunApp(Constant(Ints.Add), TupleTerm2(x, x)), Constant(1))))
     }
     "convert '[var name] of' expressions into variables" in {
       val i = 'i of ints
-      i should be (Var('i,ints))
+      i should be(Var('i, ints))
     }
     "convert for-comprehensions into lambda abstractions" in {
       val t = for (i <- ints as 'i) yield i + 1
       val i = 'i of ints
-      t should be (LambdaAbstraction(i,i+1))
+      t should be(LambdaAbstraction(i, i + 1))
     }
     "convert i ~~ j expresions into range sets [i,j)" in {
       val e = 'e of ints
       val d = 0 ~~ e
-      d should be (RangeSet(0,e))
+      d should be(RangeSet(0, e))
     }
     "use lower case names for terms, and upper case names for values" in {
       val t = ints
       val v = Ints
-      t should be (Constant(v))
+      t should be(Constant(v))
+    }
+    "creates states with pairs of variables and values" in {
+      val i = 'i of ints
+      val j = 'j of bools
+      val s = state(i -> 1, j -> false)
+      s should be(State(Map(i -> 1, j -> false)))
+    }
+    "creates an empty state" in {
+      state() should be (State.empty)
     }
 
   }
@@ -190,6 +201,74 @@ class Specs extends WordSpec with Matchers {
     }
   }
 
+  "An Iverson bracket" should {
+    "denote 1.0 if the inner boolean term is true, and 0.0 for false" in {
+      val i = 'i of ints
+      val t = I(i === 2)
+      t.value(i -> 2) should be(1.0)
+      t.value(i -> 10) should be(0.0)
+    }
+  }
+
+
+  "A unit vector" should {
+    "evaluate to a vector that is active only at the component the index term evaluates to" in {
+      val i = 'i of ints
+      val d = 'd of doubles
+      val v = unit(i, d).value(state(i -> 2, d -> 2.0))
+      v(2) should be(2.0 +- eps)
+      for (j <- v.activeDomain.asSeq; if j != 2) v(j) should be(0.0 +- eps)
+    }
+  }
+
+  "A dot product" should {
+    "evaluate to the dot product of the denotations of its arguments" in {
+      val i = 'i of ints
+      val v = 'v of doubles
+      val d = unit(i, v) dot unit(i, v)
+      d.value(i -> 1, v -> 2.0) should be(4.0)
+    }
+  }
+
+  "An argmax" should {
+    "return the primitive argument that maximizes a function" in {
+      val f = for (b <- bools) yield I(b)
+      val a = argmax(f)
+      a.value() should be(true)
+    }
+    "return a the function value argument that maximizes a function" in {
+      //experimental: ||->
+      val p = for (f <- bools ||-> bools) yield doubles.sum(for (b <- bools) yield I(f(b)))
+      val a = argmax(p)
+      a.value() should be(Table(false -> true, true -> true))
+    }
+    "return a vector argument that maximizes a function" in {
+      val dom = set(Unit(0,1.0), Unit(1,1.0))
+      val max = argmax(for (w <- dom) yield w dot (unit(0,1.0) + unit(1,10.0)))
+      max.value() should equal (Unit(1,1.0)) (decided by vectorEq)
+    }
+    "return a tuple of functions that maximize a function" in {
+      val n = 'n of ints
+      val dom = 0 ~~ n
+      val inLex = 'inLex of ints ||-> bools
+      val cap = 'cap of dom ||-> bools
+      val ner = 'ner of dom ||-> bools
+      val model = doubles.sum {for (i <- dom) yield I((inLex(i) === cap(i)) && (inLex(i) === ner(i)))}
+      val observed = sig(n, inLex)
+      val hidden = sig(cap, ner)
+
+      val X = observed.dom
+      val Y = lambda(observed, hidden.dom)
+      val s = lambda(observed, lambda(hidden, model))
+      val h = for (x <- X) yield argmax(for (y <- Y(x)) yield s(x)(y))
+      val (f1, f2) = h.value()(2, Tab(Ints, Bools, Map(0 -> false, 1 -> true)))
+
+      f1 should be(Table(0 -> false, 1 -> true))
+      f2 should be(Table(0 -> false, 1 -> true))
+    }
+  }
+
+
 
 }
 
@@ -275,35 +354,6 @@ class ExperimentalSpecs extends WordSpec with Matchers {
         val s = ints.sum(for (i <- 0 ~~ n; j <- 0 ~~ n) yield i + j)
         s.value(n -> 3) should be(18)
       }
-    }
-  }
-
-  "An Iverson bracket" should {
-    "denote 1.0 if the inner boolean term is true, and 0.0 for false" in {
-      val i = 'i of ints
-      val t = I(i === 2)
-      t.value(i -> 2) should be(1.0)
-      t.value(i -> 10) should be(0.0)
-    }
-  }
-
-
-  "A unit vector" should {
-    "evaluate to a vector that is active only at the component the index term evaluates to" in {
-      val i = 'i of ints
-      val d = 'd of doubles
-      val v = unit(i, d).value(state(i -> 2, d -> 2.0))
-      v(2) should be(2.0 +- eps)
-      for (j <- v.activeDomain.asSeq; if j != 2) v(j) should be(0.0 +- eps)
-    }
-  }
-
-  "A dot product" should {
-    "evaluate to the dot product of the denotations of its arguments" in {
-      val i = 'i of ints
-      val v = 'v of doubles
-      val d = unit(i, v) dot unit(i, v)
-      d.value(i -> 1, v -> 2.0) should be(4.0)
     }
   }
 
@@ -441,43 +491,23 @@ class ExperimentalSpecs extends WordSpec with Matchers {
     }
   }
 
-  "An argmax" should {
-    "return the primitive argument that maximizes a function" in {
-      val f = for (b <- bools) yield I(b)
-      val a = argmax(f)
-      a.value() should be(true)
-    }
-    "return a the function value argument that maximizes a function" in {
-      //experimental: ||->
-      val p = for (f <- bools ||-> bools) yield doubles.sum(for (b <- bools) yield I(f(b)))
-      val a = argmax(p)
-      a.value() should be(Table(false -> true, true -> true))
-    }
-    "return a tuple of functions that maximize a function" in {
-      val n = 'n of ints
-      val dom = 0 ~~ n
-      val inLex = 'inLex of ints ||-> bools
-      val cap = 'cap of dom ||-> bools
-      val ner = 'ner of dom ||-> bools
-      val model = doubles.sum {for (i <- dom) yield I((inLex(i) === cap(i)) && (inLex(i) === ner(i)))}
-      val observed = sig(n, inLex)
-      val hidden = sig(cap, ner)
+}
 
-      val X = observed.dom
-      val Y = lambda(observed, hidden.dom)
-      val s = lambda(observed, lambda(hidden, model))
-      val h = for (x <- X) yield argmax(for (y <- Y(x)) yield s(x)(y))
-      val (f1, f2) = h.value()(2, Tab(Ints, Bools, Map(0 -> false, 1 -> true)))
+object CompilerSpec extends WordSpec with Matchers {
+  import TermDSL._
 
-      f1 should be(Table(0 -> false, 1 -> true))
-      f2 should be(Table(0 -> false, 1 -> true))
+  "A compiler" when {
+    "compiling an argmax term with max-product maximization hint for a tree graph" should {
+      "yield a term that returns the evaluates to the optimal solution " in {
+        val obj = for ((y,p) <- c(bools,bools ||-> bools)) yield
+          I(p(true)) + I(p(true) |=> y) + I(y |=> p(false))
+        val sol = argmax(obj)
+
+      }
     }
   }
 
-
-
 }
-
 
 
 object CustomEqualities {
