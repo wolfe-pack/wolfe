@@ -100,6 +100,22 @@ case class FunctionNotDefinedAt[A, B](funApp: FunApp[A, B], state: State) extend
  */
 case class ValueOutsideOfDomain[T](variable: Variable[T], state: State) extends Undefined
 
+/**
+ * Companion object to create generic terms.
+ */
+object Term {
+  def apply[T](semantics: State => T, vars: Set[Variable[Any]], defaultValue: T) = new Term[T] {
+    def eval(state: State) = {
+      vars.find(!state.domain(_)) match {
+        case Some(v) => Bad(VariableUndefined(v, state))
+        case None => Good(semantics(state))
+      }
+    }
+    def variables = vars
+    def domain[C >: T] = TermDSL.all[C]
+    def default = defaultValue
+  }
+}
 
 /**
  * Proxy of another term. All methods are delegated to the inner term.
@@ -119,7 +135,10 @@ trait ProxyTerm[T] extends Term[T] {
  * @param self the term this term is representing.
  * @tparam T type of term.
  */
-case class Bracketed[T](self: Term[T]) extends ProxyTerm[T]
+case class Bracketed[T](self: Term[T]) extends ProxyTerm[T] with Composite1[T,T] {
+  def components = self
+  def copy(t1: Term[T]) = Bracketed(t1)
+}
 
 /**
  * Scala covariance/contravariance for Sets requires frequent casting of sets.
@@ -155,16 +174,21 @@ case class Constant[T](value: T) extends Term[T] {
 trait Composite1[T1, C] extends Term[C] {
   def components: Term[T1]
   def copy(t1: Term[T1]): Term[C]
+  def asAny = asInstanceOf[Composite1[Any, Any]]
 }
 
 trait Composite2[T1, T2, C] extends Term[C] {
   def components: (Term[T1], Term[T2])
   def copy(t1: Term[T1], t2: Term[T2]): Term[C]
+  def asAny = asInstanceOf[Composite2[Any, Any, Any]]
+
 }
 
 trait Composite3[T1, T2, T3, C] extends Term[C] {
   def components: (Term[T1], Term[T2], Term[T3])
   def copy(t1: Term[T1], t2: Term[T2], t3: Term[T3]): Term[C]
+  def asAny = asInstanceOf[Composite3[Any, Any, Any, Any]]
+
 }
 
 /**
@@ -174,12 +198,12 @@ trait Composite3[T1, T2, T3, C] extends Term[C] {
  * @param vocab the vocabulary to check whether the value is in.
  * @tparam T type of the inner term.
  */
-case class OOVTerm[T](term:Term[T],vocab:Term[Set[T]]) extends Composite2[T,Set[T],T Or OOV[T]] {
+case class OOVTerm[T](term: Term[T], vocab: Term[Set[T]]) extends Composite2[T, Set[T], T Or OOV[T]] {
   def eval(state: State) = for (v <- term.eval(state); d <- vocab.eval(state)) yield if (d(v)) Good(v) else Bad(new OOV(v))
   def variables = term.variables ++ vocab.variables
   def domain[A >: T Or OOV[T]] = TermDSL.all[A]
   def default = Good(term.default)
-  def components = (term,vocab)
-  def copy(t1: Term[T], t2: Term[Set[T]]) = OOVTerm(t1,t2)
+  def components = (term, vocab)
+  def copy(t1: Term[T], t2: Term[Set[T]]) = OOVTerm(t1, t2)
 }
 

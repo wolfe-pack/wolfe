@@ -39,20 +39,39 @@ object TermConverter {
    * @tparam T the type of term.
    * @return the converted term.
    */
-  def convertDepthFirst[T](term: Term[T], keepBrackets: Boolean = true)(converter: Converter): Term[T] = {
+  def convertChildrenFirst[T](term: Term[T], keepBrackets: Boolean = true)(converter: Converter): Term[T] = {
     def convert[A](term: Term[A]) = converter.convert(term)
-    def cdf[A](term: Term[A]) = convertDepthFirst(term, keepBrackets)(converter)
+    def ccf[A](term: Term[A]) = convertChildrenFirst(term, keepBrackets)(converter)
     implicit def cast(t: Term[Any]) = t.asInstanceOf[Term[T]]
     term match {
-      case SeqTerm(args) => convert(SeqTerm(args.map(cdf)))
-      case Bracketed(t) if keepBrackets => Bracketed(cdf(t))
-      case Bracketed(t) if !keepBrackets => convert(Bracketed(cdf(t)))
-      case c: Composite1[_, _] => convert(c.asInstanceOf[Composite1[Any, Any]].copy(cdf(c.components)))
-      case c: Composite2[_, _, _] => convert(c.asInstanceOf[Composite2[Any, Any, Any]].copy(cdf(c.components._1), cdf(c.components._2)))
-      case c: Composite3[_, _, _, _] => convert(c.asInstanceOf[Composite3[Any, Any, Any, Any]].copy(cdf(c.components._1), cdf(c.components._2), cdf(c.components._3)))
+      case SeqTerm(args) => convert(SeqTerm(args.map(ccf)))
+      case c: Composite1[_, _] => convert(c.asAny.copy(ccf(c.components)))
+      case c: Composite2[_, _, _] => convert(c.asAny.copy(ccf(c.components._1), ccf(c.components._2)))
+      case c: Composite3[_, _, _, _] => convert(c.asAny.copy(ccf(c.components._1), ccf(c.components._2), ccf(c.components._3)))
       case _ => convert(term)
     }
   }
+
+  /**
+   * This method converts the term tree by converting parents first, and then its children.
+   * @param term the term to convert.
+   * @param converter a converter that takes an individual term and converts it (no traversal).
+   * @tparam T the type of term.
+   * @return the converted term.
+   */
+  def convertParentFirst[T](term: Term[T])(converter: Converter): Term[T] = {
+    def convert[A](term: Term[A]) = converter.convert(term)
+    def cpf[A](term: Term[A]) = convertParentFirst(term)(converter)
+    implicit def cast(t: Term[Any]) = t.asInstanceOf[Term[T]]
+    convert(term) match {
+      case SeqTerm(args) => SeqTerm(args.map(cpf))
+      case c: Composite1[_, _] => c.asAny.copy(cpf(c.components))
+      case c: Composite2[_, _, _] => c.asAny.copy(cpf(c.components._1), cpf(c.components._2))
+      case c: Composite3[_, _, _, _] => c.asAny.copy(cpf(c.components._1), cpf(c.components._2), cpf(c.components._3))
+      case _ => term
+    }
+  }
+
 
   /**
    * Converts a term by replacing each occurrence of a sub-term with another term.
@@ -63,26 +82,26 @@ object TermConverter {
    * @tparam B type parameter of term to replace.
    * @return the original term with all occurrences of `toReplace` replaced by `replacement`.
    */
-  def substituteTerm[A, B](term: Term[A], toReplace: Term[B], replacement: Term[B]) = convertDepthFirst(term) {
+  def substituteTerm[A, B](term: Term[A], toReplace: Term[B], replacement: Term[B]) = convertChildrenFirst(term) {
     new Converter {
       def convert[T](term: Term[T]) = if (term == toReplace) replacement.asInstanceOf[Term[T]] else term
     }
   }
 
-  def groundSig[A, B](term: Term[A], toReplace: Sig[B], replacement: B):Term[A] = {
-    (toReplace,replacement) match {
-      case (VarSig(v),value) => substituteTerm(term,v,Constant(value))
-      case (TupleSig2(s1,s2),(v1,v2)) => groundSig(groundSig(term,s1,v1),s2,v2)
-      case (TupleSig3(s1,s2,s3),(v1,v2,v3)) => groundSig(groundSig(groundSig(term,s1,v1),s2,v2),s3,v3)
+  def groundSig[A, B](term: Term[A], toReplace: Sig[B], replacement: B): Term[A] = {
+    (toReplace, replacement) match {
+      case (VarSig(v), value) => substituteTerm(term, v, Constant(value))
+      case (TupleSig2(s1, s2), (v1, v2)) => groundSig(groundSig(term, s1, v1), s2, v2)
+      case (TupleSig3(s1, s2, s3), (v1, v2, v3)) => groundSig(groundSig(groundSig(term, s1, v1), s2, v2), s3, v3)
       case _ => term
     }
   }
 
-  def replaceSig[A, B](term: Term[A], toReplace: Sig[B], replacement: Sig[B]):Term[A] = {
-    (toReplace,replacement) match {
-      case (VarSig(a),VarSig(b)) => substituteTerm(term,a,b)
-      case (TupleSig2(a1,a2),TupleSig2(b1,b2)) => groundSig(groundSig(term,a1,b1),a2,b2)
-      case (TupleSig3(a1,a2,a3),TupleSig3(b1,b2,b3)) => groundSig(groundSig(groundSig(term,a1,b1),a2,b2),a3,b3)
+  def replaceSig[A, B](term: Term[A], toReplace: Sig[B], replacement: Sig[B]): Term[A] = {
+    (toReplace, replacement) match {
+      case (VarSig(a), VarSig(b)) => substituteTerm(term, a, b)
+      case (TupleSig2(a1, a2), TupleSig2(b1, b2)) => groundSig(groundSig(term, a1, b1), a2, b2)
+      case (TupleSig3(a1, a2, a3), TupleSig3(b1, b2, b3)) => groundSig(groundSig(groundSig(term, a1, b1), a2, b2), a3, b3)
       case _ => term
     }
   }
@@ -95,7 +114,7 @@ object TermConverter {
    * @tparam T the type of term to convert.
    * @return a term in which variables are replaced with constants if the variables have bindings in the state.
    */
-  def ground[T](term: Term[T], state: State) = convertDepthFirst(term) {
+  def ground[T](term: Term[T], state: State) = convertChildrenFirst(term) {
     new Converter {
       def convert[A](term: Term[A]) = term match {
         case v: Variable[_] => state.get(v).map(value => Constant(value)).getOrElse(v).asInstanceOf[Term[A]]
@@ -111,7 +130,7 @@ object TermConverter {
    * @return a term in which conditioned terms are to be found at the leaf variables and predicate applications.
    */
   def pushDownConditions[T](term: Term[T]): Term[T] = {
-    def pushConditions[S](term: Term[S], condition: State): Term[S] = convertDepthFirst(term) {
+    def pushConditions[S](term: Term[S], condition: State): Term[S] = convertChildrenFirst(term) {
       new Converter {
         def convert[A](arg: Term[A]) = arg match {
           case v@Var(_, _) if condition.domain(v) => Conditioned(v, condition)
@@ -121,7 +140,7 @@ object TermConverter {
         }
       }
     }
-    def findAndPushConditions[S](term: Term[S]) = convertDepthFirst(term) {
+    def findAndPushConditions[S](term: Term[S]) = convertChildrenFirst(term) {
       new Converter {
         def convert[A](arg: Term[A]) = arg match {
           case Conditioned(t, state) => pushConditions(t, state)
@@ -139,7 +158,7 @@ object TermConverter {
    * @tparam T type of term to convert
    * @return the term with all images of lambda abstractions replaced with sequences of terms.
    */
-  def unrollLambdaImages[T](term: Term[T], wrap: Term[Any] => Term[Any] = identity) = convertDepthFirst(term) {
+  def unrollLambdaImages[T](term: Term[T], wrap: Term[Any] => Term[Any] = identity) = convertChildrenFirst(term) {
     new Converter {
       def convert[A](term: Term[A]) = term match {
         case ImageSeq1(LambdaAbstraction(sig, t)) =>
@@ -160,7 +179,7 @@ object TermConverter {
    * @tparam O type of arguments to the binary operator
    * @return term with flattened trees.
    */
-  def flatten[T, O](term: Term[T], op: ConstantOperator[O]): Term[T] = convertDepthFirst(term) {
+  def flatten[T, O](term: Term[T], op: ConstantOperator[O]): Term[T] = convertChildrenFirst(term) {
     new Converter {
       def convert[A](arg: Term[A]) = {
         implicit def cast(t: Term[Any]) = t.asInstanceOf[Term[A]]
@@ -194,7 +213,7 @@ object TermConverter {
    * @tparam T type of term to convert.
    * @return a term where dot products of vector sums are replaced by double sums of dot products.
    */
-  def pushDownDotProducts[T](term: Term[T]): Term[T] = convertDepthFirst(term) {
+  def pushDownDotProducts[T](term: Term[T]): Term[T] = convertChildrenFirst(term) {
     new Converter {
       def convert[A](term: Term[A]) = {
         val dots = term match {
@@ -230,7 +249,7 @@ object TermConverter {
    * @tparam T type of term to convert.
    * @return term in which sums of lambda abstractions have been converted to lambda abstractions of sums.
    */
-  def groupLambdas[T](term: Term[T], filter: Variable[Any] => Boolean = x => true) = convertDepthFirst(term) {
+  def groupLambdas[T](term: Term[T], filter: Variable[Any] => Boolean = x => true) = convertChildrenFirst(term) {
     new Converter {
       def convert[A](arg: Term[A]) = groupLambdasOnce(arg, filter)
     }
@@ -242,7 +261,7 @@ object TermConverter {
    * @tparam T type parameter of the term to convert.
    * @return a term tree in which each bracketed term has been replaced with the term in brackets.
    */
-  def unbracket[T](root: Term[T]) = convertDepthFirst(root, false) {
+  def unbracket[T](root: Term[T]) = convertChildrenFirst(root, false) {
     new Converter {
       def convert[A](term: Term[A]) = term match {
         case Bracketed(t) => t
@@ -262,7 +281,7 @@ object TermConverter {
    * @tparam T type of term to convert.
    * @return term with terms inside lambda abstractions bracketed.
    */
-  def bracketInsideLambda[T](root: Term[T]) = convertDepthFirst(root) {
+  def bracketInsideLambda[T](root: Term[T]) = convertChildrenFirst(root) {
     new Converter {
       def convert[A](term: Term[A]) = term match {
         case LambdaAbstraction(v, t) => LambdaAbstraction(v, Bracketed(t)).asInstanceOf[Term[A]]
@@ -311,41 +330,15 @@ object TermConverter {
     (t1, t2) match {
       case (operator.Reduced(ImageSeq1(LambdaAbstraction(v1, a1))), operator.Reduced(ImageSeq1(LambdaAbstraction(v2, a2)))) =>
         val default = v1.default
-        val grounded1 = groundSig(a1,v1,default)
-        val grounded2 = groundSig(a2,v2,default) //substituteTerm(a2, v2, v1)
+        val grounded1 = groundSig(a1, v1, default)
+        val grounded2 = groundSig(a2, v2, default) //substituteTerm(a2, v2, v1)
         if (mergeable(grounded1, grounded2, condition)) {
-          val replaced = replaceSig(a2,v2,v1)
+          val replaced = replaceSig(a2, v2, v1)
           Some(Reduce(operator, ImageSeq1(LambdaAbstraction(v1, operator.reduce(SeqTerm(Seq(a1, replaced)))))))
         } else
           None
       case _ => None
     }
-
-  }
-
-  def main(args: Array[String]) {
-
-    val r = 'r of (0 ~~ 2 |-> doubles)
-    val l1 = dsum(for (i <- 0 ~~ 2) yield r(i))
-    val l2 = dsum(for (j <- 0 ~~ 2) yield r(j))
-
-    val s = 's of c(0 ~~ 2, 0 ~~ 2) |-> doubles
-
-    val sum = dsum(SeqTerm(Seq(l1, l2)))
-
-    val merged = mergeLambdas(l1, l2, doubles.add)
-
-    println(merged)
-
-    val grouped = groupLambdasOnce(sum)
-
-    println(grouped)
-
-    val f1 = dsum(for (i <- 0 ~~ 2; j <- 0 ~~ 2) yield s(i, j))
-    val f2 = dsum(for (k <- 0 ~~ 2; l <- 0 ~~ 2) yield s(k, l))
-    val grouped2 = groupLambdasOnce(flatten(f1 + f2, doubles.add))
-    println(grouped2)
-
 
   }
 

@@ -126,13 +126,35 @@ class UnusedParameter extends Variable[Vector] {
   override def eval(state: State) = Good(new DenseVector(0))
 }
 
-case class ArgmaxHint[T](sig: Sig[T], compiler: ArgmaxCompiler)
 
-trait ArgmaxCompiler {
+trait ArgmaxHint extends CompilerHint {
   type ArgmaxValue[T] = (Term[T], Term[Double])
-  type ArgmaxValueGradient[T] = (Term[T], Term[Double],Term[Vector])
+  type ArgmaxValueGradient[T] = (Term[T], Term[Double], Term[Vector])
   def withoutParam[T](sig: Sig[T], term: Term[Double]): ArgmaxValue[T]
-  def withParam[T](sig: Sig[T], param: Var[Vector], term: Term[Double]): ArgmaxValueGradient[T]
+  // should have no free variables
+  def withParam[T](sig: Sig[T], param: Var[Vector], term: Term[Double]): ArgmaxValueGradient[T] //should have one free variable: param
+}
+
+case class MessagePassingHint(algorithm: MPGraph => Unit = MaxProduct.run(_, 1)) extends ArgmaxHint {
+  def withoutParam[T](sig: Sig[T], term: Term[Double]) = {
+    require(term.variables.forall(sig.variables(_)),
+      s"Unbound variable ${term.variables.find(!sig.variables(_))}")
+    val mpg = MPGraphCompilerNew.compile(sig, term)
+    val withStateDo = new WithStateDo(state => algorithm(mpg.graph))
+    val argmax = Term(withStateDo.get(_, mpg.currentArgmaxNew()),Set.empty,sig.default)
+    val value = Term(withStateDo.get(_, mpg.currentValue()),Set.empty,0.0)
+    (argmax,value)
+  }
+  def withParam[T](sig: Sig[T], param: Var[scalapplcodefest.Vector], term: Term[Double]) = {
+    require((term.variables - param).forall(sig.variables(_)),
+      s"Unbound variable ${(term.variables - param).find(!sig.variables(_))}")
+    val mpg = MPGraphCompilerNew.compile(sig, term, Some(param)) //pass signature
+    val withStateDo = new WithStateDo(state => {mpg.graph.weights = state(param); algorithm(mpg.graph)})
+    val argmax = Term(withStateDo.get(_, mpg.currentArgmaxNew()),Set.empty,sig.default)
+    val value = Term(withStateDo.get(_, mpg.currentValue()),Set.empty,0.0)
+    val gradient = Term(withStateDo.get(_, mpg.currentGradient()),Set.empty,Vectors.Zero)
+    (argmax,value,gradient)
+  }
 }
 
 

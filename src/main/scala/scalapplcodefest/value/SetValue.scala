@@ -143,7 +143,9 @@ trait AllObjectsLarge[T] extends AllObjects[T] {
  */
 case object Vectors extends AllObjectsLarge[Vector] {
   override def size = Util.tooLargeToCount
-  override def head = new ScalarTensor(0.0)
+  override def head = Zero
+
+  val Zero = new ScalarTensor(0.0)
 
   object Dot extends BinaryOperatorSameDomain[Vector, Double] {
     def funRange = Doubles
