@@ -20,6 +20,14 @@ case class TupleTerm2[A1, A2](a1: Term[A1], a2: Term[A2])
   override def toString = s"($a1, $a2)"
 }
 
+object ProductTerm {
+  def unapply(term:Term[Any]):Option[Seq[Term[Any]]] = term match {
+    case TupleTerm2(a1,a2) => Some(Seq(a1.domain,a2.domain))
+    case TupleTerm3(a1,a2,a3) => Some(Seq(a1.domain,a2.domain,a3.domain))
+    case _ => None
+  }
+}
+
 case class TupleTerm3[A1, A2, A3](a1: Term[A1], a2: Term[A2], a3: Term[A3])
   extends Composite3[A1,A2,A3,(A1, A2, A3)] {
   import SetCastHelper._
@@ -33,43 +41,14 @@ case class TupleTerm3[A1, A2, A3](a1: Term[A1], a2: Term[A2], a3: Term[A3])
   def copy(t1: Term[A1], t2: Term[A2], t3: Term[A3]) = TupleTerm3(t1,t2,t3)
 }
 
-case class Arg[P <:Product, A](dom:Set[P], range:Set[A], arg:Int) extends Fun[P,A] {
-  def funCandidateDom = dom
-  def funRange = range
-  def isDefinedAt(x: P) = dom(x)
-  def apply(x: P) = x.productElement(arg).asInstanceOf[A]
+case class ArgOf[P <: Product, A](product:Term[P],index:Term[Int]) extends Term[A] with Composite2[P,Int,A] {
+  def domain[C >: A] = TermDSL.all[C]
+  def variables = product.variables ++ index.variables
+  def default = product.default.productElement(index.default).asInstanceOf[A]
+  def eval(state: State) = for (p <- product.eval(state); i <- index.eval(state)) yield p.productElement(i).asInstanceOf[A]
+  def components = (product,index)
+  def copy(t1: Term[P], t2: Term[Int]) = ArgOf(t1,t2)
 }
-
-case object ArgNew extends PartialFunction[(Product,Int),Any] {
-  self =>
-  def isDefinedAt(x: (Product, Int)) = x._2 < x._1.productArity
-  def apply(v1: (Product, Int)) = v1._1.productElement(v1._2)
-
-  case object Applied2 {
-    def unapply(term:Term[Any]) = term match {
-      case FunApp(DynFunTerm(f,dom,range),TupleTerm2(tuple,index)) if f == self =>
-        Some(dom.asInstanceOf[Term[Set[(Product,Int)]]], range, tuple.asInstanceOf[Term[Product]], index.asInstanceOf[Term[Int]])
-      case _ => None
-    }
-  }
-}
-
-
-case class ArgTerm[P <:Product, A](dom:Term[Set[P]], range:Term[Set[A]], arg:Term[Int]) extends FunTerm[P,A] {
-  def funCandidateDom = dom
-  def funRange = range
-  def domain[C >: Fun[P, A]] = Constant(new AllOfType[C])
-  def variables = dom.variables ++ range.variables ++ arg.variables
-  def default = Arg(dom.default,range.default,arg.default)
-  def eval(state: State) = for (d <- dom.eval(state); r <- range.eval(state); a <- arg.eval(state)) yield Arg(d,r,a)
-}
-
-
-//abstract class CartesianOperator2[A1,A2] extends Operator[(Set[A1],Set[A2]),Set[(A1,A2)]] {
-//  def funCandidateDom = ???
-//  def funRange = ???
-//  def apply(v1: (Set[A1], Set[A2])) = CartesianProduct2(v1._1,v1._2)
-//}
 
 case class CartesianProductTerm2[A1,A2](a1:Term[Set[A1]],a2:Term[Set[A2]]) extends Term[Set[(A1,A2)]] {
   def eval(state: State) =

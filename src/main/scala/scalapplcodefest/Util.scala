@@ -1,10 +1,13 @@
 package scalapplcodefest
 
 import java.io.{FileInputStream, InputStream}
-import scalapplcodefest.value.SetValue
-import scalapplcodefest.term.{State, Predicate, Var}
+import scalapplcodefest.value.{Fun, SetValue}
+import scalapplcodefest.term._
 import cc.factorie.maths.ArrayOps
 import java.util
+import org.scalautils.{Bad, Good, Or}
+import scalapplcodefest.term.Var
+import scalapplcodefest.term.Predicate
 
 /**
  * @author Sebastian Riedel
@@ -62,14 +65,14 @@ object Util {
   /**
    * Takes an iterator over lines and groups this according to a delimiter line.
    */
-  def groupLines(lines: Iterator[String], delim:String = "") = {
+  def groupLines(lines: Iterator[String], delim: String = "") = {
     lines.foldLeft(Seq(Seq.empty[String])) {
-      (result, line) => if (line == delim) result :+ Seq.empty else result.init :+ (result.last :+ line )
+      (result, line) => if (line == delim) result :+ Seq.empty else result.init :+ (result.last :+ line)
     }
   }
 
-  def loadCoNLL(lines:Iterator[String], predicates: Seq[Predicate[Int, String]], length: Var[Int]) =
-    groupLines(lines).map(conllToState(_,predicates, length))
+  def loadCoNLL(lines: Iterator[String], predicates: Seq[Predicate[Int, String]], length: Var[Int]) =
+    groupLines(lines).map(conllToState(_, predicates, length))
 
   def conllToState(lines: Seq[String], predicates: Seq[Predicate[Int, String]], length: Var[Int]) = {
     import TermDSL._
@@ -77,7 +80,6 @@ object Util {
                    (s, pred) <- line.split("\\s+") zip predicates) yield pred.atom(i) -> s
     State((map :+ length -> lines.length).toMap)
   }
-
 
 
 }
@@ -101,19 +103,19 @@ object SetUtil {
     def iterator = sets.flatMap(identity).toSet.iterator
   }
 
-  case class SetMap[T,R](set:Set[T],function:PartialFunction[T,R]) extends SetValue[R] {
+  case class SetMap[T, R](set: Set[T], function: PartialFunction[T, R]) extends SetValue[R] {
     lazy val mapped = set.collect(function)
     def contains(elem: R) = mapped(elem)
     def iterator = mapped.iterator
   }
 
-  case class SetFilter[T](set:Set[T],filter:T=>Boolean) extends SetValue[T] {
+  case class SetFilter[T](set: Set[T], filter: T => Boolean) extends SetValue[T] {
     def contains(elem: T) = !filter(elem) && set(elem)
     def iterator = set.view.iterator.filter(filter)
   }
 
   def main(args: Array[String]) {
-    val test = SetUnion(List(SetUnion(List(Set(1,2))), SetUnion(List(SetUnion(List(Set(1,2)))))))
+    val test = SetUnion(List(SetUnion(List(Set(1, 2))), SetUnion(List(SetUnion(List(Set(1, 2)))))))
     val seq = test.toSeq
     println(seq)
     println(test.size)
@@ -151,22 +153,130 @@ class WithStateDo(doSomething: State => Unit) {
 }
 
 object MoreArrayOps extends ArrayOps {
-  def maxValue(s:A): Double = { var result = s(0); var i = 0; while (i < s.length) { if (s(i) > result) result = s(i); i += 1 }; result }
-  def maxNormalize(s:A) { val norm = maxValue(s); this -= (s,norm)}
-  def fill(s:A,v:Double) { util.Arrays.fill(s,v)}
+  def maxValue(s: A): Double = { var result = s(0); var i = 0; while (i < s.length) {if (s(i) > result) result = s(i); i += 1}; result }
+  def maxNormalize(s: A) { val norm = maxValue(s); this -=(s, norm) }
+  def fill(s: A, v: Double) { util.Arrays.fill(s, v) }
 }
 
 
 object PatternMatchingVariancePlayground {
-  trait Term[T]
-  trait Fun[+A,+B]
-  case class FunApp[A,B](fun:Term[Fun[A,B]],arg:Term[A]) extends Term[B]
-  case class Constant[T](value:T) extends Term[T]
-  case object AddOne extends Fun[Int,Int]
 
-  def copy[T](term:Term[T]):Term[T] = term match {
-    case FunApp(f@Constant(AddOne),arg) => FunApp(f,arg)
-    case t => t
+  import scala.language.implicitConversions
+  import scala.language.reflectiveCalls
+
+  trait TypedTerm[T] extends Term {
+    def typed(state: State) = eval(state).asInstanceOf[T Or Undefined]
   }
+
+  case class TupleTerm2(arg1: Term, arg2: Term) extends Term {
+    def eval(state: State) = for (a1 <- arg1.eval(state); a2 <- arg2.eval(state)) yield (a1, a2)
+    def domain = ???
+  }
+
+  implicit def toRichDoubleTerm(term: TypedTerm[Double]) = new AnyRef {
+    def +(that: TypedTerm[Double]) = new FunApp(Constant(DoubleAdd), TupleTerm2(term, that)) with TypedTerm[Double]
+  }
+
+  implicit def symbolToVarBuilder(symbol: Symbol) = new AnyRef {
+    def of[A](domain: TypedTerm[Set[A]]) = new Var(symbol, domain) with TypedTerm[A]
+  }
+
+  def set[T](args: T*) = new Constant(args.toSet) with TypedTerm[Set[T]]
+
+  case object DoubleAdd extends TypedFun[(Double, Double), Double] {
+    def typedIsDefinedAt(x: (Double, Double)) = true
+    def typedApply(x: (Double, Double)) = x._1 + x._2
+    def typedFunDom = ???
+    def typedFunRange = Doubles
+  }
+
+  case object Doubles extends Set[Double] {
+    def contains(elem: Double) = ???
+    def +(elem: Double) = ???
+    def -(elem: Double) = ???
+    def iterator = ???
+  }
+
+  trait Fun extends PartialFunction[Any, Any] {
+    def funDom: Set[Any]
+    def funRange: Set[Any]
+  }
+
+  trait TypedFun[A, B] extends Fun {
+    def typedIsDefinedAt(a: A): Boolean
+    def isDefinedAt(x: Any) = typedIsDefinedAt(x.asInstanceOf[A])
+    def apply(v1: Any) = typedApply(v1.asInstanceOf[A])
+    def typedApply(v1: A): B
+    def typedFunRange: Set[B]
+    def typedFunDom: Set[A]
+    def funRange = typedFunRange.asInstanceOf[Set[Any]]
+    def funDom = typedFunDom.asInstanceOf[Set[Any]]
+  }
+
+  trait Term {
+    def eval(state: State): Any Or Undefined
+    def domain: Term
+  }
+
+  case class Constant(value: Any) extends Term {
+    def eval(state: State) = Good(value)
+    def domain = Constant(Set(value))
+  }
+
+  case object AllFunctions extends Fun {
+    def funDom = ???
+    def funRange = ???
+    def isDefinedAt(x: Any) = ???
+    def apply(x: Any) = ???
+  }
+
+  case class Sig(variable: Var) extends Term {
+    def eval(state: State) = ???
+    def domain = ???
+  }
+
+  case class LambdaAbstraction(sig: Sig, body: Term) extends Term {
+    def domain = FunApp(Constant(AllFunctions), TupleTerm2(sig.domain, body.domain))
+    def eval(state: State) = {
+      ???
+    }
+  }
+
+  object FunTerm {
+    def unapply(term: Term): Option[(Term, Term)] = term match {
+      case Constant(f: Fun) => Some(Constant(f.funDom), Constant(f.funRange))
+      case LambdaAbstraction(sig, body) => Some(sig.domain, body.domain)
+      case FunApp(FunTerm(_, FunApp(Constant(AllFunctions), TupleTerm2(dom, range))), _) => Some(dom, range)
+      case _ => None
+    }
+  }
+
+  case class Var(name: Symbol, domain: Term) extends Term {
+    def eval(state: State) = state.get(this.asInstanceOf[Variable[Any]]) match {
+      case Some(value) => domain.eval(state) match {
+        case Good(s: Set[_]) => if (s.asInstanceOf[Set[Any]](value)) Good(value) else Bad(???)
+        case b => b
+      }
+      case None => Bad(VariableUndefined(???, state))
+    }
+  }
+
+  case class FunApp(fun: Term, arg: Term) extends Term {
+    def eval(state: State) = for (f <- fun.eval(state); arg <- arg.eval(state)) yield f.asInstanceOf[Fun](arg)
+    def domain = {
+      val FunTerm(_, range) = fun
+      range
+    }
+  }
+
+  def main(args: Array[String]) {
+    val dom = set(1.0, 2.0, 3.0)
+    val x = 'x of dom
+    val sum = x + x
+    val value = sum.typed(???).get
+
+
+  }
+
 
 }

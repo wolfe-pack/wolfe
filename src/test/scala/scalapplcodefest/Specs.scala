@@ -113,6 +113,7 @@ class Specs extends WordSpec with Matchers {
     }
   }
 
+
   "A constant" should {
     "evaluate to its value" in {
       val c = Constant(10)
@@ -269,6 +270,9 @@ class Specs extends WordSpec with Matchers {
   }
 
 
+
+
+
 }
 
 class ExperimentalSpecs extends WordSpec with Matchers {
@@ -279,6 +283,26 @@ class ExperimentalSpecs extends WordSpec with Matchers {
   import CustomEqualities._
 
   //ignore from here (things may still change a little)
+
+  "A mutable state" should {
+    "store simple values" in {
+      val v = 'v of ints
+      val s = new MutableState
+      s(v) = 10
+      s.get(v) should be (Some(10))
+    }
+
+    "store function values" in {
+      val f = 'f of ints ||-> (ints ||-> ints)
+      val s = new MutableState
+      s(f(0)) = Tab[Int,Int](Ints,Ints, {case _ => 15})
+      s(f(0)(1)) = 20
+
+      f(0)(1).eval(s) should be (Good(20))
+      f(0)(2).eval(s) should be (Good(15))
+      f(1)(0).eval(s) should be (Good(0))
+    }
+  }
 
   "A conditioned term" should {
     "evaluate to the value its inner term would evaluate to if the condition was added to its state argument" in {
@@ -487,6 +511,19 @@ class ExperimentalSpecs extends WordSpec with Matchers {
       val actual = TermConverter.groupLambdas(term)
       val expected = vectors.sum(for (i <- (0 ~~ 2) as "i") yield vectors.sum(unit(p(i)), unit(p(i) + 1)))
       actual should be(expected)
+    }
+  }
+
+  "All paths starting at a term" should {
+    "include all function applications of function variables" in {
+      val f = 'f of 0 ~~ 2 ||-> bools
+      val paths = MutableState.allPathTermsFrom(f)
+      paths.toSet should be (Set(f(0),f(1)))
+    }
+    "include all curried function applications of curried function variables" in {
+      val f = 'f of 0 ~~ 1 ||-> (bools ||-> (bools ||-> bools))
+      val paths = MutableState.allPathTermsFrom(f)
+      paths.toSet should be (Set(f(0)(false)(false),f(0)(false)(true),f(0)(true)(false),f(0)(true)(true)))
     }
   }
 

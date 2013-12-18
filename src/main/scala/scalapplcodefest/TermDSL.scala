@@ -140,7 +140,7 @@ object TermDSL extends ValueDSL {
 
 
     def |->[T2](that: Term[Set[T2]]) = (s, that)
-    def ||->[T2](that: Term[Set[T2]]) = FunApp(Constant(new AllFunctionsOp[T, T2]), TupleTerm2(s, that))
+    def ||->[T2](that: Term[Set[T2]]) = AllFunctionsTerm(s,that) //FunApp(Constant(new AllFunctionsOp[T, T2]), TupleTerm2(s, that))
 
 
     def mappedBy[A](f: FunTerm[T, A]) =
@@ -195,8 +195,8 @@ object TermDSL extends ValueDSL {
   }
 
   case class RichTupleTerm2[T1, T2](t: Term[(T1, T2)]) {
-    def _1 = ArgTerm(t.domain, all[T1], Constant(0))
-    def _2 = ArgTerm(t.domain, all[T2], Constant(1))
+    def _1 = ArgOf(t, Constant(0))
+    def _2 = ArgOf(t, Constant(1))
   }
 
   case class RichIntTerm(i: Term[Int]) {

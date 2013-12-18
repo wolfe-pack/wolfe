@@ -1,8 +1,11 @@
 package scalapplcodefest.term
 
-import org.scalautils.{Bad, Good}
-import scalapplcodefest.value.{Fun, AllOfType, SetValue}
+import org.scalautils.Good
+import scalapplcodefest.value.{Fun, AllOfType}
 import scalapplcodefest._
+import scala.Some
+import scalapplcodefest.value.AllFunctions
+import org.scalautils.Bad
 
 /**
  * FunTerms evaluate to partial functions. The function candidate domain where the function is defined for
@@ -30,9 +33,14 @@ object FunTerm {
   import TermDSL._
 
   def unapply[A, B](term: Term[Fun[A, B]]): Option[(Term[Set[A]], Term[Set[B]])] = term match {
-    case f: FunTerm[_, _] => Some(f.funCandidateDom.asInstanceOf[Term[Set[A]]], f.funRange.asInstanceOf[Term[Set[B]]])
-    case Constant(f) => Some(Constant(f.funCandidateDom), Constant(f.funRange))
-    case _ => Some(all[A], all[B])
+    case f: FunTerm[_, _] =>
+      Some(f.funCandidateDom.asInstanceOf[Term[Set[A]]], f.funRange.asInstanceOf[Term[Set[B]]])
+    case Constant(f) =>
+      Some(Constant(f.funCandidateDom), Constant(f.funRange))
+    case FunApp(FunApp(FunTerm(_,Constant(AllFunctions(dom,range))),_),_) =>
+      Some(Constant(dom).asInstanceOf[Term[Set[A]]],Constant(range).asInstanceOf[Term[Set[B]]])
+    case _ =>
+      Some(all[A], all[B])
   }
 
   /**
@@ -44,6 +52,37 @@ object FunTerm {
    */
   def fromPartial[A, B](f: PartialFunction[A, B]) = RestrictedFun[A, B](f)
 
+}
+
+case class AllFunctionsTerm[A,B](dom:Term[Set[A]],range:Term[Set[B]])
+  extends Term[Set[Fun[A,B]]] with Composite2[Set[A],Set[B],Set[Fun[A,B]]] {
+  def eval(state: State) = for (d <- dom.eval(state); r <- range.eval(state)) yield AllFunctions(d,r)
+  def variables = dom.variables ++ range.variables
+  def domain[C >: Set[Fun[A, B]]] = TermDSL.all[C]
+  def default = AllFunctions(dom.default,range.default)
+  def components = (dom,range)
+  def copy(t1: Term[Set[A]], t2: Term[Set[B]]) = AllFunctionsTerm(t1,t2)
+}
+
+/**
+ * Pattern matching for untyped terms.
+ */
+object UntypedFunTerm {
+  def unapply(term: Term[Any]): Option[(Term[Set[Any]], Term[Set[Any]])] = term match {
+    case f: FunTerm[_, _] =>
+      Some(f.funCandidateDom.asInstanceOf[Term[Set[Any]]], f.funRange.asInstanceOf[Term[Set[Any]]])
+    case Constant(f:Fun[_,_]) =>
+      Some(Constant(f.funCandidateDom.asInstanceOf[Set[Any]]), Constant(f.funRange.asInstanceOf[Set[Any]]))
+    case Var(_,d) if d.isInstanceOf[AllFunctionsTerm[_,_]] =>
+      val cast = d.asInstanceOf[AllFunctionsTerm[Any,Any]]
+      Some(cast.dom,cast.range)
+    case FunApp(UntypedFunTerm(_,range),_) if range.isInstanceOf[AllFunctionsTerm[_,_]] =>
+      val cast = range.asInstanceOf[AllFunctionsTerm[Any,Any]]
+      Some(cast.dom,cast.range)
+    case _ =>
+      None
+      //Some(all[Any], all[Any])
+  }
 
 }
 
@@ -109,6 +148,7 @@ case object BinaryFunApp {
     case _ => None
   }
 }
+
 
 
 

@@ -44,6 +44,7 @@ trait DeepEqualFun {
     case f:Fun[_,_] =>
       f.funDom == funDom &&
         f.funDom.forall(a => f.asInstanceOf[Fun[Any,Any]](a) == this.asInstanceOf[Fun[Any,Any]](a))
+    case _ => false
   }
 }
 
@@ -127,7 +128,15 @@ case class AllFunctions[A, B](domain: Set[A], range: Set[B]) extends SetValue[Fu
 
   self =>
 
-  def contains(elem: Fun[A, B]) = elem.funDom == domain && elem.funRange == range
+  override def head = new Fun[A, B] with DeepEqualFun {
+    def funCandidateDom = self.domain
+    def funRange = range
+    override def funDom = self.domain
+    def apply(v1: A) = range.head
+    def isDefinedAt(x: A) = domain(x)
+  }
+
+  def contains(elem: Fun[A, B]) = (elem.funDom == domain) && (elem.funRange == range)
   def iterator = {
     def allFunctions(d: List[A], r: List[B], funs: List[Fun[A, B]] = List(Fun.empty)): List[Fun[A, B]] = {
       d match {
@@ -144,6 +153,10 @@ case class AllFunctions[A, B](domain: Set[A], range: Set[B]) extends SetValue[Fu
       }
     }
     allFunctions(domain.toList, range.toList).iterator
+  }
+  override def equals(that: Any) = that match {
+    case AllFunctions(d,r) => d == domain && r == range
+    case _ => false
   }
 }
 

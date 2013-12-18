@@ -1,4 +1,5 @@
 import cc.factorie.la.{SingletonTensor1, DenseTensor1, SparseTensor1, Tensor1}
+import scalapplcodefest.value.Fun
 
 /**
  * @author Sebastian Riedel
@@ -9,4 +10,6 @@ package object scalapplcodefest {
   type DenseVector = DenseTensor1
   type SingletonVector = SingletonTensor1
   type AnyFunction = PartialFunction[Nothing,Any]
+  type AnyFun = Fun[Nothing,Any]
+
 }

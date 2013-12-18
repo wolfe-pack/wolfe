@@ -141,7 +141,7 @@ case class MessagePassingHint(algorithm: MPGraph => Unit = MaxProduct.apply(_, 1
       s"Unbound variable ${term.variables.find(!sig.variables(_))}")
     val mpg = MPGraphCompilerNew.compile(sig, term)
     val withStateDo = new WithStateDo(state => algorithm(mpg.graph))
-    val argmax = Term(withStateDo.get(_, mpg.currentArgmaxNew()),Set.empty,sig.default)
+    val argmax = Term(withStateDo.get(_, mpg.currentArgmax()),Set.empty,sig.default)
     val value = Term(withStateDo.get(_, mpg.currentValue()),Set.empty,0.0)
     (argmax,value)
   }
@@ -150,7 +150,7 @@ case class MessagePassingHint(algorithm: MPGraph => Unit = MaxProduct.apply(_, 1
       s"Unbound variable ${(term.variables - param).find(!sig.variables(_))}")
     val mpg = MPGraphCompilerNew.compile(sig, term, Some(param)) //pass signature
     val withStateDo = new WithStateDo(state => {mpg.graph.weights = state(param); algorithm(mpg.graph)})
-    val argmax = Term(withStateDo.get(_, mpg.currentArgmaxNew()),Set.empty,sig.default)
+    val argmax = Term(withStateDo.get(_, mpg.currentArgmax()),Set.empty,sig.default)
     val value = Term(withStateDo.get(_, mpg.currentValue()),Set.empty,0.0)
     val gradient = Term(withStateDo.get(_, mpg.currentGradient()),Set.empty,Vectors.Zero)
     (argmax,value,gradient)
