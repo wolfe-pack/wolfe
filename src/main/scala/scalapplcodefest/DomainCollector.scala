@@ -19,7 +19,7 @@ object DomainCollector {
       (term, value) match {
         case (v: Variable[_], _) => result(v) = result.getOrElse(v, Set.empty) + value
         case (CartesianProductTerm2(d1, d2), (v1, v2)) => {
-          add(d1, v2); add(d2, v2)
+          add(d1, v1); add(d2, v2)
         }
         case _ =>
       }
