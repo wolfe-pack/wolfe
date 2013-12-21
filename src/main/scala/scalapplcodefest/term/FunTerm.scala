@@ -37,8 +37,11 @@ object FunTerm {
       Some(f.funCandidateDom.asInstanceOf[Term[Set[A]]], f.funRange.asInstanceOf[Term[Set[B]]])
     case Constant(f) =>
       Some(Constant(f.funCandidateDom), Constant(f.funRange))
-    case FunApp(FunApp(FunTerm(_,Constant(AllFunctions(dom,range))),_),_) =>
-      Some(Constant(dom).asInstanceOf[Term[Set[A]]],Constant(range).asInstanceOf[Term[Set[B]]])
+    case FunApp(FunTerm(_,AllFunctionsTerm(dom,range)),_) =>
+      Some(dom.asInstanceOf[Term[Set[A]]],range.asInstanceOf[Term[Set[B]]])
+    case Var(_,d) if d.isInstanceOf[AllFunctionsTerm[_,_]] =>
+      val cast = d.asInstanceOf[AllFunctionsTerm[A,B]]
+      Some(cast.dom,cast.range)
     case _ =>
       Some(all[A], all[B])
   }
@@ -134,7 +137,8 @@ case class FunApp[A, B](function: Term[Fun[A, B]], arg: Term[A]) extends Term[B]
     case _ => SetUtil.SetUnion(List(function.variables, arg.variables))
   }
   def default = function.default(funCandidateDom.default.head)
-  def domain[C >: B] = Image(function, arg.domain).asInstanceOf[Term[Set[C]]] // TermDSL.all[C]//
+  def domain[C >: B] = funRange.asInstanceOf[Term[Set[C]]]
+  // TermDSL.all[C]//
   //replace by function.funDomain collectedBy function?
   //could also be function.funRange
   override def toString = s"$function($arg)"

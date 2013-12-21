@@ -32,6 +32,7 @@ object TermDSL extends ValueDSL {
 
   //implicit def funToConstant[A,B](x:Fun[A,B]) = x)
   implicit def toTupleTerm2[T1, T2](tuple: (Term[T1], Term[T2])) = TupleTerm2(tuple._1, tuple._2)
+  //implicit def toTupleTerm3[T1, T2](tuple: (T1,T2)) = TupleTerm2(Constant(tuple._1), Constant(tuple._2))
   implicit def toRichTupleTerm2[T1, T2](tuple: (Term[(T1, T2)])) = RichTupleTerm2(tuple)
   implicit def toRichVariable[T](v: Variable[T]) = RichVariable(v)
   implicit def toRichTerm[T](term: Term[T]) = new RichTerm(term)
@@ -361,6 +362,9 @@ object TermDSL extends ValueDSL {
   def c[T1, T2, T3](arg1: Term[Set[T1]], arg2: Term[Set[T2]], arg3: Term[Set[T3]]) = CartesianProductTerm3(arg1, arg2, arg3)
   def all[T] = Constant(new AllOfType[T])
   def set[T](values: T*) = Constant(SeqSet(values))
+  def seq[T](values: Term[T]*) = SeqTerm(values)
+  def tuple[T1,T2](arg1:Term[T1],arg2:Term[T2]) = TupleTerm2(arg1,arg2)
+
 
   def fun[A, B](f: PartialFunction[A, B], dom: Set[A] = new AllOfType[A], range: Set[B] = new AllOfType[B]): Term[Fun[A, B]] =
     Constant(value.Fun(f, dom, range))
@@ -369,6 +373,10 @@ object TermDSL extends ValueDSL {
 
   def dynFun[A, B](f: PartialFunction[A, B], dom: Term[Set[A]] = all[Set[A]], range: Term[Set[B]] = all[Set[B]]) = DynFunTerm(f, dom, range)
   def argmax[T](f: Term[Fun[T, Double]]) = FunApp(RestrictedFun(Argmax,all[Fun[T,Double]],all[T]), f)
+  def argmin[T](f: Term[Fun[T, Double]]) = FunApp(RestrictedFun(Argmin,all[Fun[T,Double]],all[T]), f)
+  def max[T](f:Term[Fun[T,Double]]) = FunApp(f,argmax(f))
+  def min[T](f:Term[Fun[T,Double]]) = FunApp(f,argmin(f))
+
 
   implicit def toSig[T](variable: Variable[T]) = VarSig(variable)
   def sig[T1, T2](sig1: Sig[T1], sig2: Sig[T2]) = TupleSig2(sig1, sig2)

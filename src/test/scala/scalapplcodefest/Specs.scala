@@ -175,6 +175,12 @@ class Specs extends WordSpec with Matchers {
       val term = p(true) | p.atom(true) -> true
       term.variables should be(Set.empty)
     }
+    "provide the domain of the result of the function application" in {
+      val n = 'n of ints
+      val f = 'f of 0 ~~ n ||-> (0 ~~ n ||-> 0 ~~ n)
+      val d = f(0)(0).domain
+      d.value(n -> 2) should be(Set(0, 1))
+    }
   }
 
   "A lambda abstraction" should {
@@ -270,9 +276,6 @@ class Specs extends WordSpec with Matchers {
   }
 
 
-
-
-
 }
 
 class ExperimentalSpecs extends WordSpec with Matchers {
@@ -289,18 +292,41 @@ class ExperimentalSpecs extends WordSpec with Matchers {
       val v = 'v of ints
       val s = new MutableState
       s(v) = 10
-      s.get(v) should be (Some(10))
+      s.get(v) should be(Some(10))
     }
 
     "store function values" in {
       val f = 'f of ints ||-> (ints ||-> ints)
       val s = new MutableState
-      s(f(0)) = Tab[Int,Int](Ints,Ints, {case _ => 15})
+      s(f(0)) = Tab[Int, Int](Ints, Ints, {case _ => 15})
       s(f(0)(1)) = 20
 
-      f(0)(1).eval(s) should be (Good(20))
-      f(0)(2).eval(s) should be (Good(15))
-      f(1)(0).eval(s) should be (Good(0))
+      f(0)(1).eval(s) should be(Good(20))
+      f(0)(2).eval(s) should be(Good(15))
+      f(1)(0).eval(s) should be(Good(0))
+    }
+  }
+
+  "All states for a list of paths" should {
+    "assign each possible value to each included path, and the default value otherwise" in {
+      val p = 'p of bools ||-> (bools ||-> bools)
+      val p1 = p(false)(false)
+      val p2 = p(true)(false)
+      val states = MutableState.allStates(List(p1, p2))
+      states.size should be(4)
+      states.map(p1.eval).toSet should be(Set(Good(false), Good(true)))
+      states.map(p2.eval).toSet should be(Set(Good(false), Good(true)))
+      states.map(p(true)(true).eval).toSet should be(Set(Good(false)))
+    }
+  }
+
+  "All path terms in a term" should {
+    "should only include those paths that can affect the evaluation of the term." in {
+      val p = 'p of bools ||-> (bools ||-> bools)
+      val f = 'f of 0 ~~ 2 ||-> 0 ~~ 2
+      val s = seq(p(true)(false) || p(true)(true), f)
+      val paths = MutableState.allPathTerms(s).toSet
+      paths should be(Set(p(true)(false), p(true)(true), f(0), f(1)))
     }
   }
 
@@ -518,35 +544,92 @@ class ExperimentalSpecs extends WordSpec with Matchers {
     "include all function applications of function variables" in {
       val f = 'f of 0 ~~ 2 ||-> bools
       val paths = MutableState.allPathTermsFrom(f)
-      paths.toSet should be (Set(f(0),f(1)))
+      paths.toSet should be(Set(f(0), f(1)))
     }
     "include all curried function applications of curried function variables" in {
       val f = 'f of 0 ~~ 1 ||-> (bools ||-> (bools ||-> bools))
       val paths = MutableState.allPathTermsFrom(f)
-      paths.toSet should be (Set(f(0)(false)(false),f(0)(false)(true),f(0)(true)(false),f(0)(true)(true)))
+      paths.toSet should be(Set(f(0)(false)(false), f(0)(false)(true), f(0)(true)(false), f(0)(true)(true)))
     }
   }
 
 }
 
-object CompilerSpec extends WordSpec with Matchers {
+class CompilerSpec extends WordSpec with Matchers {
 
   import TermDSL._
+
+  "A MPGraph compiler" when {
+    "compiling a tree-shaped objective function into a graph" should {
+      "return a graph that when run max product on yields the optimal solution" in {
+        val y = 'y of bools
+        val p = 'p of bools ||-> bools
+        val s = I(p(true)) + I(p(true) |=> y) + I(y |=> !p(false))
+        val result = MPGraphCompilerNew.compile(sig(y, p), s)
+        MaxProduct(result.graph, 1)
+        val argmax = result.currentArgmaxState()
+        y.value(argmax) should be(true)
+        p(true).value(argmax) should be(true)
+        p(false).value(argmax) should be(false)
+      }
+    }
+    "compiling a linear model" should {
+      "yield linear factors" in {
+        val key = new Index
+        val p = 'p of 0 ~~ 2 ||-> bools
+        val w = 'w of vectors
+        val f = unit(key('bias, p(0))) + unit(key('bias, p(1))) + unit(key('pair, p(0), p(1)))
+        val s = f dot w
+        val result = MPGraphCompilerNew.compile(p, s, Some(w))
+        result.graph.factors.size should be(3)
+        result.graph.nodes.size should be(2)
+        result.graph.edges.size should be(4)
+        result.graph.factors.count(_.typ == MPGraph.FactorType.LINEAR) should be(3)
+        for (factor <- result.graph.factors) {
+          val term = result.metaFactors.forCoeff(factor)
+          val paths = MutableState.allPathTerms(term).toSet
+          val nodes = factor.edges.map(_.n)
+          for (n <- nodes)
+            paths(result.metaNodes.forNode(n).path) should be(true)
+        }
+
+      }
+    }
+  }
 
   "A compiler" when {
     "compiling an argmax term with max-product maximization hint for a tree graph" should {
       "yield a term that evaluates to the optimal solution " in {
         val y = 'y of bools
         val p = 'p of bools ||-> bools
-        val s = (I(p(true)) + I(p(true) |=> y) + I(y |=> p(false))) hint MessagePassingHint(MaxProduct(_,1))
-        val optimal = argmax(lambda(sig(y,p),s))
+        val s = (I(p(true)) + I(p(true) |=> y) + I(y |=> p(false))) hint MessagePassingHint(MaxProduct(_, 1))
+        val optimal = argmax(lambda(sig(y, p), s))
         val compiled = Compiler.compile(optimal)
-//        compiled should not be optimal
-//        compiled.value() should be (optimal.value())
+        compiled should not be optimal
+        compiled.value() should be(optimal.value())
+      }
+    }
+    "compiling a gradient based hint" should {
+      "blah" in {
+        val key = new Index
+        val y = 'y of 0 ~~ 2
+        val x = 'x of bools
+        val weights = 'w of vectors
+        val model = (unit(key(x, y)) + unit(key(y))) dot weights
+        val data = Seq(state(x -> true, y -> 1), state(x -> false, y -> 0))
+        val train = data.map(_.asTargets(Set[Any](y)))
+        val loss = doubles.sumSeq(train.map(i => max(lambda(y,model | i)) - model | i.target)) hint GradientBasedArgminHint()
+//        val learned = argmin(lambda(weights,loss))
 
+//        val s = lambda(weights, lambda(x, lambda(y, model)))
+        //val data = seq(tuple(true,1),tuple(false,0))
+        //        val h = for (w <- vectors; x <- X) yield argmax(for (y <- Y) yield s(w)(x)(y))
+        //        val l = for (w <- vectors; x <- X; y <- Y) yield s(w)(x)(h(w)(x)) - s(w)(x)(y)
+        //        val loss = for (w <- vectors) yield l(w)(true)(1) + l(w)(false)(0)
       }
     }
   }
+
 
 }
 

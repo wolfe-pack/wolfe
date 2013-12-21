@@ -1,7 +1,7 @@
 package scalapplcodefest.term
 
 import scala.collection.mutable
-import scalapplcodefest.value.Fun
+import scalapplcodefest.value.{DeepEqualFun, Fun}
 import org.scalautils.Good
 
 /**
@@ -17,6 +17,10 @@ class MutableState extends State {
   private val buffers = new mutable.HashMap[Variable[Any], Buffer]()
   def get[T](variable: Variable[T]) = buffers.get(variable) match {
     case Some(buffer) => buffer.build(this).asInstanceOf[Option[T]]
+    case None => None
+  }
+  def view[T](variable: Variable[T]) = buffers.get(variable) match {
+    case Some(buffer) => buffer.view(this).asInstanceOf[Option[T]]
     case None => None
   }
   def domain = buffers.keySet.toSet
@@ -35,34 +39,70 @@ class MutableState extends State {
 
 object MutableState {
 
+  type Path = List[PathStep]
+
+  def allSettings(pathTerms: List[Term[Any]],
+                  settings: Seq[MutableState => Unit] = Seq(s => {}),
+                  state: State = State.empty): Seq[MutableState => Unit] =
+    pathTerms match {
+      case Nil => settings
+      case path :: tail =>
+        val newSettings = for (setting <- settings.view;
+                               value <- path.domain.value(state)) yield (state: MutableState) => {
+          setting(state)
+          state(path) = value
+        }
+        allSettings(tail, newSettings, state)
+    }
+
+  def allStates(pathTerms: List[Term[Any]], state: State = State.empty) = {
+    for (setting <- allSettings(pathTerms,state = state).view) yield {
+      val modifiedState = new MutableState
+      setting(modifiedState)
+      modifiedState
+    }
+  }
 
   trait Buffer {
     def build(state: State): Option[Any]
+    def view(state: State): Option[Any]
+
     def update(path: Path, value: Any)
   }
 
   class FunBuffer(dom: Term[Set[Any]], range: Term[Set[Any]]) extends Buffer {
     val map = new mutable.HashMap[Any, Buffer]
-    var default:PartialFunction[Any,Any] = new PartialFunction[Any,Any] {
+    var default: PartialFunction[Any, Any] = new PartialFunction[Any, Any] {
       def apply(v1: Any) = range.default.head
       def isDefinedAt(x: Any) = true
+    }
+
+    def createFun(fun: Any => Any, d: Set[Any], r: Set[Any]) = new Fun[Any, Any] with DeepEqualFun {
+      def apply(v1: Any) = fun(v1)
+      def funCandidateDom = d
+      override def funDom = d
+      def funRange = r
+      def isDefinedAt(x: Any) = d(x)
+      override def toString() = d.map(arg => s"$arg -> ${apply(arg)}").mkString("FunBuffer(",",",")")
     }
 
     def build(state: State) = {
       (dom.eval(state), range.eval(state)) match {
         case (Good(d), Good(r)) =>
           val mapping = for ((arg, buffer) <- map; value <- buffer.build(state)) yield arg -> value
-          val fun = new Fun[Any, Any] {
-            def apply(v1: Any) = mapping.getOrElse(v1, default(v1))
-            def funCandidateDom = d
-            override def funDom = d
-            def funRange = r
-            def isDefinedAt(x: Any) = d(x)
-          }
-          Some(fun)
+          Some(createFun(v1 => mapping.getOrElse(v1, default(v1)), d, r))
         case _ => None
       }
     }
+
+    def view(state: State) = {
+      (dom.eval(state), range.eval(state)) match {
+        case (Good(d), Good(r)) =>
+          Some(createFun(v1 => map.get(v1).map(_.view(state)).getOrElse(v1, default(v1)), d, r))
+        case _ => None
+      }
+    }
+
     def update(path: MutableState.Path, value: Any) = path match {
       case FunArgStep(arg) :: tail =>
         map.getOrElseUpdate(arg, bufferFor(range))(tail) = value
@@ -76,6 +116,7 @@ object MutableState {
   class ValueBuffer(dom: Term[Set[_]]) extends Buffer {
     var buffer: Any = dom.default.head
     def build(state: State) = Some(buffer)
+    def view(state: State) = build(state)
     def update(path: MutableState.Path, value: Any) = path match {
       case Nil => buffer = value
       case _ => sys.error("Bad path " + path)
@@ -87,13 +128,6 @@ object MutableState {
     case AllFunctionsTerm(d, r) => new FunBuffer(d, r)
     case _ => new ValueBuffer(dom)
   }
-
-
-  type Path = List[PathStep]
-
-  //set FunApp(FunApp(ArgAt(tuple,index),arg2),arg1) = v
-  //=> Path ...
-  //tuple => [ FunApp(FunApp(ArgAt(tuple,index),arg2),arg1)), ...
 
 
   object Path {
@@ -127,6 +161,7 @@ object MutableState {
     case _ => Nil
   }
 
-  def completePathTerms(paths: List[Term[Any]]) = paths.flatMap(allPathTermsFrom)
+  def allPathTerms(term: Term[Any]) = allPathTermsIn(term).flatMap(allPathTermsFrom)
+
 
 }

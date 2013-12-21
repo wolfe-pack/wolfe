@@ -18,8 +18,11 @@ object MultiVariate {
   }
 }
 
-trait MultiVariate extends DoubleTerm {
+trait MultiVariate extends Term[Double] {
   def parameter: Variable[Vector]
+}
+
+trait MultiVariateHelper extends MultiVariate with DoubleTerm {
   def variables = Set(parameter)
 }
 
@@ -45,7 +48,7 @@ object Max {
    * Maximizes the term by exhaustive search.
    * @param term the term to maximize.
    */
-  case class ByBruteForce(term: Term[Double]) extends Max with Composite1[Double, Double] {
+  case class ByBruteForce(term: Term[Double]) extends Max with Composite1[Double, Double] with MultiVariateHelper {
     val ForceLinear(coefficient, parameter, _) = term
     private var arg: State = _
     private var conditionedValue: Term[Double] = _
@@ -68,7 +71,7 @@ object Max {
    * @param term the term to maximize
    * @param algorithm applies a message passing algorithm to the message passing graph.
    */
-  case class ByMessagePassing(term: Term[Double], algorithm: MPGraph => Unit = MaxProduct.apply(_, 1)) extends Max {
+  case class ByMessagePassing(term: Term[Double], algorithm: MPGraph => Unit = MaxProduct.apply(_, 1)) extends Max with MultiVariateHelper{
 
     val normalized = pushDownConditions(term)
     val ForceLinear(_, parameter, _) = normalized
@@ -92,6 +95,11 @@ trait Max extends Differentiable {
   def argmax: Term[State]
 }
 
+trait Max2[T] extends Term[Double] {
+  def argmax: Term[T]
+}
+
+
 
 /**
  * Takes terms and returns the the gradient, if possible.
@@ -105,7 +113,7 @@ object Differentiator {
         case true => Some(Constant(new SparseVector(0)))
         case false => differentiate(param, t).map(v => Conditioned(v, c))
       }
-      case Linear(g, _, _) => Some(g)
+      case Linear(g, p, _) if p == param => Some(g)
       case doubles.add.Applied2(arg1, arg2) =>
         for (g1 <- differentiate(param, arg1); g2 <- differentiate(param, arg2)) yield g1 + g2
       case doubles.minus.Applied2(arg1, arg2) =>
@@ -126,35 +134,53 @@ class UnusedParameter extends Variable[Vector] {
   override def eval(state: State) = Good(new DenseVector(0))
 }
 
-
-trait ArgmaxHint extends CompilerHint {
-  type ArgmaxValue[T] = (Term[T], Term[Double])
-  type ArgmaxValueGradient[T] = (Term[T], Term[Double], Term[Vector])
-  def withoutParam[T](sig: Sig[T], term: Term[Double]): ArgmaxValue[T]
-  // should have no free variables
-  def withParam[T](sig: Sig[T], param: Var[Vector], term: Term[Double]): ArgmaxValueGradient[T] //should have one free variable: param
+/**
+ * Something that has a score term.
+ */
+trait Scored {
+  def score: Term[Double]
 }
 
-case class MessagePassingHint(algorithm: MPGraph => Unit = MaxProduct.apply(_, 1)) extends ArgmaxHint {
+trait MaxHint extends CompilerHint {
+  type ArgmaxValue[T] = (Term[T], Term[Double])
+  type ArgmaxValueGradient[T] = (Term[T], Term[Double], Term[Vector])
+  // should have no free variables
+  def withoutParam[T](sig: Sig[T], term: Term[Double]): Max2[T]
+  //should have one free variable: param
+  def withParam[T](sig: Sig[T], param: Var[Vector], term: Term[Double]): Max2[T] with Differentiable
+}
+
+case class MessagePassingHint(algorithm: MPGraph => Unit = MaxProduct.apply(_, 1)) extends MaxHint {
   def withoutParam[T](sig: Sig[T], term: Term[Double]) = {
     require(term.variables.forall(sig.variables(_)),
       s"Unbound variable ${term.variables.find(!sig.variables(_))}")
     val mpg = MPGraphCompilerNew.compile(sig, term)
     val withStateDo = new WithStateDo(state => algorithm(mpg.graph))
-    val argmax = Term(withStateDo.get(_, mpg.currentArgmax()),Set.empty,sig.default)
-    val value = Term(withStateDo.get(_, mpg.currentValue()),Set.empty,0.0)
-    (argmax,value)
+    val argmaxAt = Term(withStateDo.get(_, mpg.currentArgmax()), Set.empty, sig.default)
+    val valueAt = Term(withStateDo.get(_, mpg.currentValue()), Set.empty, 0.0)
+    new ProxyTerm[Double] with Max2[T] {
+      def argmax = argmaxAt
+      def self = valueAt
+    }
   }
+
   def withParam[T](sig: Sig[T], param: Var[scalapplcodefest.Vector], term: Term[Double]) = {
     require((term.variables - param).forall(sig.variables(_)),
       s"Unbound variable ${(term.variables - param).find(!sig.variables(_))}")
     val mpg = MPGraphCompilerNew.compile(sig, term, Some(param)) //pass signature
     val withStateDo = new WithStateDo(state => {mpg.graph.weights = state(param); algorithm(mpg.graph)})
-    val argmax = Term(withStateDo.get(_, mpg.currentArgmax()),Set.empty,sig.default)
-    val value = Term(withStateDo.get(_, mpg.currentValue()),Set.empty,0.0)
-    val gradient = Term(withStateDo.get(_, mpg.currentGradient()),Set.empty,Vectors.Zero)
-    (argmax,value,gradient)
+    val argmaxAt = Term(withStateDo.get(_, mpg.currentArgmax()), Set(param), sig.default)
+    val valueAt = Term(withStateDo.get(_, mpg.currentValue()), Set(param), 0.0)
+    val gradientAt = Term(withStateDo.get(_, mpg.currentGradient()), Set(param), Vectors.Zero)
+    new ProxyTerm[Double] with Max2[T] with Differentiable {
+      def gradient = gradientAt
+      def parameter = param
+      def argmax = argmaxAt
+      def self = valueAt
+    }
   }
 }
+
+
 
 
