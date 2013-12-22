@@ -19,7 +19,7 @@ object GradientBasedMinimizer {
     val instances = TermConverter.asSeq(objective, doubles.add)
     val examples = for (instance <- instances) yield {
       TermConverter.pushDownConditions(instance) match {
-        case Differentiable(param,gradientTerm) =>
+        case Differentiable(param, gradientTerm) =>
           new Example {
             def accumulateValueAndGradient(value: DoubleAccumulator, gradient: WeightsMapAccumulator) = {
               val weights = weightsSet(key).asInstanceOf[Vector]
@@ -40,19 +40,19 @@ object GradientBasedMinimizer {
 }
 
 trait ContinuousArgminHint extends CompilerHint {
-  def minimize(param:Variable[Vector], objective: Term[Double]):Vector
+  def minimize(param: Variable[Vector], objective: Term[Double]): Vector
 }
 
 case class GradientBasedArgminHint(trainerFor: WeightsSet => Trainer = new OnlineTrainer(_, new Perceptron, 5))
-  extends ContinuousArgminHint{
+  extends ContinuousArgminHint {
 
-  def minimize(param:Variable[Vector], objective: Term[Double]) = {
+  def minimize(param: Variable[Vector], objective: Term[Double]) = {
     val weightsSet = new WeightsSet
     val key = weightsSet.newWeights(new DenseVector(10000))
     val instances = TermConverter.asSeq(objective, doubles.add)
     val examples = for (instance <- instances) yield {
       TermConverter.pushDownConditions(instance) match {
-        case Differentiable(p,gradientTerm) if p == param =>
+        case Differentiable(p, gradientTerm) if p == param =>
           new Example {
             def accumulateValueAndGradient(value: DoubleAccumulator, gradient: WeightsMapAccumulator) = {
               val weights = weightsSet(key).asInstanceOf[Vector]

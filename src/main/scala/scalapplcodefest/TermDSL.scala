@@ -374,8 +374,8 @@ object TermDSL extends ValueDSL {
   def dynFun[A, B](f: PartialFunction[A, B], dom: Term[Set[A]] = all[Set[A]], range: Term[Set[B]] = all[Set[B]]) = DynFunTerm(f, dom, range)
   def argmax[T](f: Term[Fun[T, Double]]) = FunApp(RestrictedFun(Argmax,all[Fun[T,Double]],all[T]), f)
   def argmin[T](f: Term[Fun[T, Double]]) = FunApp(RestrictedFun(Argmin,all[Fun[T,Double]],all[T]), f)
-  def max[T](f:Term[Fun[T,Double]]) = FunApp(f,argmax(f))
-  def min[T](f:Term[Fun[T,Double]]) = FunApp(f,argmin(f))
+  def max[T](f:Term[Fun[T,Double]]) = FunApp(RestrictedFun(MaxValue,all[Fun[T,Double]],doubles), f)
+  def min[T](f:Term[Fun[T,Double]]) = FunApp(RestrictedFun(MinValue,all[Fun[T,Double]],doubles), f)
 
 
   implicit def toSig[T](variable: Variable[T]) = VarSig(variable)

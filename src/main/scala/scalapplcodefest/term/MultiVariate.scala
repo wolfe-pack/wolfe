@@ -147,7 +147,7 @@ trait MaxHint extends CompilerHint {
   // should have no free variables
   def withoutParam[T](sig: Sig[T], term: Term[Double]): Max2[T]
   //should have one free variable: param
-  def withParam[T](sig: Sig[T], param: Var[Vector], term: Term[Double]): Max2[T] with Differentiable
+  def withParam[T](sig: Sig[T], param: Variable[Vector], term: Term[Double]): Max2[T] with Differentiable
 }
 
 case class MessagePassingHint(algorithm: MPGraph => Unit = MaxProduct.apply(_, 1)) extends MaxHint {
@@ -164,7 +164,7 @@ case class MessagePassingHint(algorithm: MPGraph => Unit = MaxProduct.apply(_, 1
     }
   }
 
-  def withParam[T](sig: Sig[T], param: Var[scalapplcodefest.Vector], term: Term[Double]) = {
+  def withParam[T](sig: Sig[T], param: Variable[scalapplcodefest.Vector], term: Term[Double]) = {
     require((term.variables - param).forall(sig.variables(_)),
       s"Unbound variable ${(term.variables - param).find(!sig.variables(_))}")
     val mpg = MPGraphCompilerNew.compile(sig, term, Some(param)) //pass signature

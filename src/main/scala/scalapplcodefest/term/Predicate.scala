@@ -27,7 +27,7 @@ case class Predicate[A,B](name:Symbol, funCandidateDom:Term[Set[A]],funRange:Ter
     }
   }
   def variables = AllGroundAtoms(thisPredicate).asInstanceOf[Set[Variable[Any]]]
-  def domain[C >: Fun[A, B]] = Constant(Util.setToBeImplementedLater)
+  def domain[C >: Fun[A, B]] = TermDSL.all[C]
   def default = Fun{ case a => funRange.default.head }
   override def toString = name.toString()
   override def equals(p1: scala.Any) = p1 match {
@@ -37,6 +37,7 @@ case class Predicate[A,B](name:Symbol, funCandidateDom:Term[Set[A]],funRange:Ter
   override def hashCode() = name.hashCode()
   def components = (funCandidateDom,funRange)
   def copy(t1: Term[Set[A]], t2: Term[Set[B]]) = Predicate(name,t1,t2)
+
 }
 
 
@@ -82,7 +83,9 @@ case class PartialGroundAtoms[A,B](predicate:Predicate[A,B],arg:Term[A], conditi
       case ((Bad(_),Good(a2))) => CartesianProduct2(arg1.domain.eval(condition).get,Set(a2))
       case _ => arg.domain.eval(condition).get
     }
-    case _ => arg.eval(condition).map(v => Set(v)).getOrElse(arg.domain.eval(condition).get)
+    case _ => arg.eval(condition).map(v => Set(v)).getOrElse({
+      predicate.funCandidateDom.eval(condition).get
+    })
   }
   lazy val argDomainCast = argDomain.asInstanceOf[Set[Any]]
 
