@@ -10,7 +10,6 @@ import scalapplcodefest.{TermDSL, Util, SetUtil}
 case class TupleTerm2[A1, A2](a1: Term[A1], a2: Term[A2])
   extends Composite2[A1,A2,(A1, A2)] {
   import SetCastHelper._
-  def variables = SetUtil.SetUnion(List(a1.variables,a2.variables))
   def components = (a1,a2)
   //def copy(args: Seq[Term[Any]]) = TupleTerm2(args(0).asInstanceOf[Term[A1]],args(1).asInstanceOf[Term[A2]])
   def eval(state: State) = for (b1 <- a1.eval(state); b2 <- a2.eval(state)) yield (b1, b2)
@@ -31,7 +30,6 @@ object ProductTerm {
 case class TupleTerm3[A1, A2, A3](a1: Term[A1], a2: Term[A2], a3: Term[A3])
   extends Composite3[A1,A2,A3,(A1, A2, A3)] {
   import SetCastHelper._
-  def variables = a1.variables ++ a2.variables ++ a3.variables
   def eval(state: State) = for (b1 <- a1.eval(state);
                                 b2 <- a2.eval(state);
                                 b3 <- a3.eval(state)) yield (b1, b2, b3)
@@ -43,7 +41,6 @@ case class TupleTerm3[A1, A2, A3](a1: Term[A1], a2: Term[A2], a3: Term[A3])
 
 case class ArgOf[P <: Product, A](product:Term[P],index:Term[Int]) extends Term[A] with Composite2[P,Int,A] {
   def domain[C >: A] = TermDSL.all[C]
-  def variables = product.variables ++ index.variables
   def default = product.default.productElement(index.default).asInstanceOf[A]
   def eval(state: State) = for (p <- product.eval(state); i <- index.eval(state)) yield p.productElement(i).asInstanceOf[A]
   def components = (product,index)
@@ -87,7 +84,6 @@ case class SeqTerm[T](seq:Seq[Term[T]]) extends Term[Seq[T]] with Composite[Seq[
     val result = seq.map(_.eval(state))
     if (result.forall(_.isGood)) Good(result.map(_.get)) else Bad(result.find(_.isBad).get.swap.get)
   }
-  def variables = SetUtil.SetUnion(seq.toList.map(_.variables))
   def domain[C >: Seq[T]] = Constant(new AllOfType[C])
   def default = seq.map(_.default)
   override def toString = seq.mkString("[",",","]")

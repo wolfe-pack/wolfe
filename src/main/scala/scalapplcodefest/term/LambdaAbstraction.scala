@@ -27,7 +27,7 @@ case class LambdaAbstraction[A,B](sig:Sig[A],body:Term[B]) extends FunTerm[A,B] 
       override def isDefinedAt(a: A) = d(a) && get(a).exists(r(_))
     }
   }
-  def variables = SetUtil.SetMinus(body.variables, sig.variables)
+  override def variables = SetUtil.SetMinus(body.variables, sig.variables)
   def default = new Fun[A, B] {
     def funCandidateDom = lambda.funCandidateDom.default
     def funRange = lambda.funRange.default

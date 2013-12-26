@@ -46,7 +46,6 @@ case class Reduce[T](op: Term[Fun[(T, T), T]], arguments: Term[Seq[T]]) extends 
   val FunTerm(_, funRange) = op
   def eval(state: State) = for (f <- op.eval(state); set <- arguments.eval(state)) yield
     set.reduce((a1, a2) => f(a1 -> a2))
-  def variables = SetUtil.SetUnion(List(op.variables, arguments.variables))
   def domain[C >: T] = funRange.asInstanceOf[Term[Set[C]]]
   def default = funRange.default.head
   def components = (op,arguments)
@@ -62,7 +61,6 @@ case class RangeSet(from: Term[Int], to: Term[Int]) extends Term[Set[Int]] with 
   def eval(state: State) =
     for (f <- from.eval(state);
          t <- to.eval(state)) yield RangeSetValue(f, t)
-  def variables = SetUtil.SetUnion(List(from.variables, to.variables))
   def default = RangeSetValue(from.default, to.default + 1)
   def domain[C >: Set[Int]] = Constant(new AllOfType[C])
   override def toString = s"($from ~~ $to)"

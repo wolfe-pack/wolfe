@@ -64,6 +64,7 @@ case class Var[T](name: Symbol, dom: Term[Set[T]]) extends Variable[T] with Comp
   override def hashCode() = name.hashCode()
   def components = dom
   def copy(t1: Term[Set[T]]) = Var(name,t1)
+  override def variables = super[Variable].variables
 }
 
 /**

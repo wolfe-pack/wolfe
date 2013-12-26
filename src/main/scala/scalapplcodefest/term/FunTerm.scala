@@ -60,7 +60,6 @@ object FunTerm {
 case class AllFunctionsTerm[A,B](dom:Term[Set[A]],range:Term[Set[B]])
   extends Term[Set[Fun[A,B]]] with Composite2[Set[A],Set[B],Set[Fun[A,B]]] {
   def eval(state: State) = for (d <- dom.eval(state); r <- range.eval(state)) yield AllFunctions(d,r)
-  def variables = dom.variables ++ range.variables
   def domain[C >: Set[Fun[A, B]]] = TermDSL.all[C]
   def default = AllFunctions(dom.default,range.default)
   def components = (dom,range)
@@ -111,7 +110,6 @@ case class RestrictedFun[A, B](fun: AnyFunction,
   extends FunTerm[A, B] with Composite2[Set[A],Set[B],Fun[A,B]] {
 
   def cast = fun.asInstanceOf[PartialFunction[A, B]]
-  def variables = funCandidateDom.variables ++ funRange.variables
   def default = Fun(cast, funCandidateDom.default, funRange.default)
   def domain[C >: Fun[A, B]] = Constant(new AllOfType[C])
   def eval(state: State) = for (d <- funCandidateDom.eval(state); r <- funRange.eval(state)) yield Fun(cast, d, r)
@@ -132,7 +130,7 @@ case class FunApp[A, B](function: Term[Fun[A, B]], arg: Term[A]) extends Term[B]
     for (f <- function.eval(state);
          a <- arg.eval(state);
          v <- f.lift(a).map(Good(_)).getOrElse(Bad(FunctionNotDefinedAt(this, state)))) yield v
-  def variables = function match {
+  override def variables = function match {
     case p@Predicate(n, d, r) => PartialGroundAtoms(p, arg)
     case _ => SetUtil.SetUnion(List(function.variables, arg.variables))
   }
@@ -182,7 +180,6 @@ case class Image[A, B](fun: Term[Fun[A, B]], dom: Term[Set[A]]) extends Term[Set
 case class ImageSeq1[A, B](fun: Term[Fun[A, B]]) extends Composite1[Fun[A,B],Seq[B]]  {
   val FunTerm(funCandidateDom, _) = fun
   def eval(state: State) = for (f <- fun.eval(state); d <- funCandidateDom.eval(state)) yield d.view.toSeq.map(f)
-  def variables = fun.variables
   def domain[C >: Seq[B]] = Constant(new AllOfType[C])
   def default = fun.default.funRange.toSeq
   def components = fun
@@ -202,7 +199,6 @@ case class ImageSeq2[A1, A2, B](fun: Term[Fun[A1, Fun[A2, B]]]) extends Composit
   def eval(state: State) = for (f <- fun.eval(state); d <- funCandidateDom.eval(state)) yield {
     for (a1 <- d.view.toSeq; f1 = f(a1); a1 <- f1.funDom.view.toSeq) yield f1(a1)
   }
-  def variables = fun.variables
   def domain[C >: Seq[B]] = Constant(new AllOfType[C])
   def default = fun.default.funRange.head.funRange.view.toSeq
   def components = fun

@@ -3,25 +3,12 @@ package scalapplcodefest.term
 import scalapplcodefest._
 import scala.Some
 
-/**
- * A linear model: vectors.dot product of feature and weights, added to a base measure.
- * @author Sebastian Riedel
- */
-case class LinearModel(features:Term[Vector],weights:Variable[Vector],base:Term[Double] = Constant(0.0))
-  extends Composite3[Vector,Vector,Double, Double] with ProxyTerm[Double] {
-  import TermDSL._
-  def self = (features dot weights) + base
-  def components = (features,weights,base)
-  def copy(t1: Term[scalapplcodefest.Vector], t2: Term[scalapplcodefest.Vector], t3: Term[Double]) =
-    LinearModel(t1,t2.asInstanceOf[Variable[Vector]],t3)
-}
 
 object Linear {
 
   import TermDSL._
 
   def unapply(term:Term[Double]):Option[(Term[Vector],Variable[Vector],Term[Double])] = term match {
-    case LinearModel(f,w,b) => Some(f,w,b)
     case doubles.add.Reduced(SeqTerm(args)) =>
       val featWeight = args collectFirst {
         case t@vectors.dot.Applied2(f,v@Var(_,_)) => t -> (f,v)

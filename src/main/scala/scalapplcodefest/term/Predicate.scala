@@ -26,7 +26,7 @@ case class Predicate[A,B](name:Symbol, funCandidateDom:Term[Set[A]],funRange:Ter
       def funRange = r
     }
   }
-  def variables = AllGroundAtoms(thisPredicate).asInstanceOf[Set[Variable[Any]]]
+  override def variables = AllGroundAtoms(thisPredicate).asInstanceOf[Set[Variable[Any]]]
   def domain[C >: Fun[A, B]] = TermDSL.all[C]
   def default = Fun{ case a => funRange.default.head }
   override def toString = name.toString()
@@ -57,6 +57,7 @@ case class GroundAtom[A, B](predicate: Predicate[A, B], arg: A) extends Variable
   override def toString = s"${predicate.name.name}($arg)"
   def components = predicate
   def copy(t1: Term[Fun[A, B]]) = GroundAtom(t1.asInstanceOf[Predicate[A,B]],arg)
+  override def variables = super[Variable].variables
 }
 
 /**

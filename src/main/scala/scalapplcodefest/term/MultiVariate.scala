@@ -48,7 +48,7 @@ object Max {
    * Maximizes the term by exhaustive search.
    * @param term the term to maximize.
    */
-  case class ByBruteForce(term: Term[Double]) extends Max with Composite1[Double, Double] with MultiVariateHelper {
+  case class ByBruteForce(term: Term[Double]) extends Max with Composite1[Double, Double] with DoubleTerm {
     val ForceLinear(coefficient, parameter, _) = term
     private var arg: State = _
     private var conditionedValue: Term[Double] = _

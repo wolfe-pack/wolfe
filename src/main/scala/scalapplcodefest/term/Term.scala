@@ -4,6 +4,7 @@ import scala.language.implicitConversions
 import org.scalautils.{Bad, Good, Or}
 import scalapplcodefest.value.{AllOfType, OOV}
 import scalapplcodefest.TermDSL
+import scalapplcodefest.SetUtil.SetUnion
 
 
 /**
@@ -124,9 +125,9 @@ object Term {
 trait ProxyTerm[T] extends Term[T] {
   def self: Term[T]
   def eval(state: State) = self.eval(state)
-  def variables = self.variables
   def domain[C >: T] = self.domain
   def default = self.default
+  def variables = self.variables
 }
 
 /**
@@ -138,6 +139,7 @@ trait ProxyTerm[T] extends Term[T] {
 case class Bracketed[T](self: Term[T]) extends ProxyTerm[T] with Composite1[T,T] {
   def components = self
   def copy(t1: Term[T]) = Bracketed(t1)
+  override def variables = super[ProxyTerm].variables
 }
 
 /**
@@ -170,6 +172,7 @@ case class Constant[T](value: T) extends Term[T] {
 trait Composite[T] extends Term[T] {
   def componentSeq:Seq[Term[Any]]
   def copySeq(args:Seq[Term[Any]]):Term[T]
+  def variables:Set[Variable[Any]] = SetUnion(componentSeq.toList.map(_.variables))
 }
 /**
  * Term that is composed of other terms.
@@ -195,7 +198,7 @@ trait Composite2[T1, T2, C] extends Composite[C] {
 
 }
 
-trait Composite3[T1, T2, T3, C] extends Term[C] {
+trait Composite3[T1, T2, T3, C] extends Composite[C] {
   def components: (Term[T1], Term[T2], Term[T3])
   def copy(t1: Term[T1], t2: Term[T2], t3: Term[T3]): Term[C]
   def asAny = asInstanceOf[Composite3[Any, Any, Any, Any]]
@@ -216,7 +219,6 @@ trait Composite3[T1, T2, T3, C] extends Term[C] {
  */
 case class OOVTerm[T](term: Term[T], vocab: Term[Set[T]]) extends Composite2[T, Set[T], T Or OOV[T]] {
   def eval(state: State) = for (v <- term.eval(state); d <- vocab.eval(state)) yield if (d(v)) Good(v) else Bad(new OOV(v))
-  def variables = term.variables ++ vocab.variables
   def domain[A >: T Or OOV[T]] = TermDSL.all[A]
   def default = Good(term.default)
   def components = (term, vocab)

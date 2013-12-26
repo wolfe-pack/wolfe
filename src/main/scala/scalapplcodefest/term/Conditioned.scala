@@ -9,7 +9,7 @@ import scalapplcodefest._
  */
 case class Conditioned[T](term:Term[T], condition:State) extends Term[T] with Composite1[T,T] {
   def eval(state: State) = term.eval(state + condition)
-  def variables = {
+  override def variables = {
     def conditionVars(vars: Set[Variable[Any]]): Set[Variable[Any]] = vars match {
       case SetUtil.SetUnion(args) => SetUtil.SetUnion(args.map(conditionVars))
       case SetUtil.SetMinus(set,without) => SetUtil.SetMinus(conditionVars(set),conditionVars(without))
