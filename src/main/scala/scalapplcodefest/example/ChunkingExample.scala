@@ -76,13 +76,13 @@ object ChunkingExample {
 
     //this is the perceptron loss: maximize over hidden variables in each instance (but condition first on observation)
     //and subtract the model score of the target solution.
-    val loss = doubles.sumSeq(for (i <- train) yield Max.ByMessagePassing(model | i) - (model | i.target))
+    val loss = doubles.sumSeq(for (i <- train) yield Max.ByMessagePassing(lam(chunk,model | i)) - (model | i.target))
 
     //find a weight vector that minimizes this loss and assign it to the weight variable.
     val learned = state(weights -> GradientBasedMinimizer.minimize(loss, new OnlineTrainer(_, new Perceptron, 10)))
 
     //a predictor is a mapping from a state to the argument that maximizes the model score conditioned on this state.
-    val predict = (s: State) => Max.ByMessagePassing(model | s).argmax.value(learned)
+    val predict = (s: State) => Max.ByMessagePassing(lam(chunk,model | s)).argmax.value(learned)
 
     //a generic evaluation routine that applies the predictor to a set of states and compares the results
     //to target values stored in the state.

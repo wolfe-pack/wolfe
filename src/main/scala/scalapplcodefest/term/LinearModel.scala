@@ -15,7 +15,7 @@ object Linear {
         case t@vectors.dot.Applied2(v@Var(_,_),f) => t -> (f,v)
       }
       featWeight match {
-        case Some((t,(f,v))) => Some(f,v,dsum(SeqTerm(args.filter( _ != t))))
+        case Some((t,(f,v))) => Some(f,v,doubles.sumSeq(SeqTerm(args.filter( _ != t))))
         case _ => None
       }
     case vectors.dot.Applied2(f,w@Var(_,_)) => Some(f,w,Constant(0.0))

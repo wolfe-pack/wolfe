@@ -74,13 +74,6 @@ object TermDSL extends ValueDSL {
   def I(term: Term[Boolean]) = FunApp(bools.iverson, term)
   def log(term: Term[Double]) = FunApp(doubles.log, term)
 
-
-  def dsum(args: Term[Seq[Double]]) = Reduce(doubles.add, args)
-  def dsum(args: Term[Double]*) = Reduce(doubles.add, SeqTerm(args))
-  def vsum(args: Term[Seq[Vector]]) = Reduce(vectors.add, args)
-  def vsum(args: Term[Vector]*) = Reduce(vectors.add, SeqTerm(args))
-
-
   implicit def toImageSeq[A, B](f: FunTerm[A, B]) = ImageSeq1(f)
   implicit def toImageSeqCurried2[A1, A2, B](f: FunTerm[A1, Fun[A2, B]]) = ImageSeq2(f)
 
@@ -164,13 +157,6 @@ object TermDSL extends ValueDSL {
       val variable1 = Var(Symbol(variableName1()), term.a1)
       val variable2 = Var(Symbol(variableName2()), term.a2)
       val applied = f(variable1, variable2)
-      //todo: replace variables with arg1 && arg2 of tuple
-      //      val tupleVar = Var(Symbol(s"${variable1.name}_${variable2.name}"), term)
-      //      val arg1 = FunApp(ArgTerm(term, term.a1, 0), tupleVar)
-      //      val arg2 = FunApp(ArgTerm(term, term.a1, 1), tupleVar)
-      //      val substituted1 = TermConverter.substituteTerm(applied, variable1, arg1)
-      //      val substituted2 = TermConverter.substituteTerm(substituted1, variable2, arg2)
-      //      LambdaAbstraction(tupleVar, substituted2)
       LambdaAbstraction(TupleSig2(VarSig(variable1), VarSig(variable2)), applied)
     }
 
@@ -317,6 +303,7 @@ object TermDSL extends ValueDSL {
     def add: ConstantOperator[T]
     def sum(args: Term[T]*) = Reduce(add, SeqTerm(args))
     def sumSeq(args: Seq[Term[T]]) = Reduce(add, SeqTerm(args))
+    def sumSeq(args: Term[Seq[T]]) = Reduce(add, args)
     def sum[A](args: Term[Fun[A, T]]) = Reduce(add, ImageSeq1(args))
   }
 
@@ -379,8 +366,11 @@ object TermDSL extends ValueDSL {
 
 
   implicit def toSig[T](variable: Variable[T]) = VarSig(variable)
+  implicit def toSig[A,B](predicate: Predicate[A,B]) = PredSig(predicate)
+
   def sig[T1, T2](sig1: Sig[T1], sig2: Sig[T2]) = TupleSig2(sig1, sig2)
-  def lambda[A, B](sig: Sig[A], body: Term[B]) = LambdaAbstraction(sig, body)
+  def sig[T1, T2, T3](sig1: Sig[T1], sig2: Sig[T2], sig3:Sig[T3]) = TupleSig3(sig1, sig2,sig3)
+  def lam[A, B](sig: Sig[A], body: Term[B]) = LambdaAbstraction(sig, body)
 
 }
 

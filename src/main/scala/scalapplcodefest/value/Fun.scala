@@ -6,7 +6,7 @@ import scalapplcodefest.AnyFunction
  * @author Sebastian Riedel
  */
 /**
- * Partial functions with invariant argument and result types.
+ * Partial functions with invariant argument and result types. Knows its domain and range.
  * @tparam A argument type.
  * @tparam B return type.
  */
@@ -160,13 +160,6 @@ case class AllFunctions[A, B](domain: Set[A], range: Set[B]) extends SetValue[Fu
   }
 }
 
-class AllFunctionsOp[A, B] extends Fun[(Set[A], Set[B]), Set[Fun[A, B]]] {
-  def funCandidateDom = new AllOfType[(Set[A], Set[B])]
-  override def funDom = funCandidateDom
-  def funRange = new AllOfType[Set[Fun[A, B]]]
-  def isDefinedAt(x: (Set[A], Set[B])) = true
-  def apply(v1: (Set[A], Set[B])) = AllFunctions(v1._1, v1._2)
-}
 
 
 

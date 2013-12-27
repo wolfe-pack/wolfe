@@ -10,7 +10,7 @@ import scala.Some
  *
  * @author Sebastian Riedel
  */
-object MPGraphCompilerNew {
+object MPGraphCompilerExperimental {
 
   import MPGraph._
   import TermConverter._

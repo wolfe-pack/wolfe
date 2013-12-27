@@ -231,7 +231,7 @@ object TermConverter {
       def convert[A](term: Term[A]) = {
         val dots = term match {
           case vectors.dot.Applied2(vectors.add.Reduced(ImageSeq1(LambdaAbstraction(v, t1))), a2) =>
-            Seq(dsum(ImageSeq1(LambdaAbstraction(v, t1 dot a2))))
+            Seq(doubles.sumSeq(ImageSeq1(LambdaAbstraction(v, t1 dot a2))))
           case vectors.dot.Applied2(vectors.add.Reduced(SeqTerm(args1)), vectors.add.Reduced(SeqTerm(args2))) =>
             for (a1 <- args1; a2 <- args2) yield a1 dot a2
           case vectors.dot.Applied2(a1, vectors.add.Reduced(SeqTerm(args2))) =>
@@ -245,7 +245,7 @@ object TermConverter {
 
         pushedDown match {
           case s if s.size == 1 => s(0).asInstanceOf[Term[A]]
-          case s if s.size > 1 => dsum(SeqTerm(s)).asInstanceOf[Term[A]]
+          case s if s.size > 1 => doubles.sumSeq(SeqTerm(s)).asInstanceOf[Term[A]]
           case _ => term
         }
       }
@@ -319,10 +319,10 @@ object TermConverter {
     term match {
       case vectors.add.Reduced(SeqTerm(args)) =>
         val merged = args.foldLeft(Seq.empty[Term[Vector]])(mergeOneTerm(_, _, vectors.add))
-        if (merged.size > 1) vsum(SeqTerm(merged)) else merged(0)
+        if (merged.size > 1) vectors.sumSeq(SeqTerm(merged)) else merged(0)
       case doubles.add.Reduced(SeqTerm(args)) =>
         val merged = args.foldLeft(Seq.empty[Term[Double]])(mergeOneTerm(_, _, doubles.add))
-        if (merged.size > 1) dsum(SeqTerm(merged)) else merged(0)
+        if (merged.size > 1) doubles.sumSeq(SeqTerm(merged)) else merged(0)
       case _ => term
     }
   }

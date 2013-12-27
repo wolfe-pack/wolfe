@@ -54,7 +54,7 @@ object MarkovLogicExample {
     val conditioned = mln | condition | weights -> concreteWeights
 
     //an inference result calculated through max product
-    val argmax = Max.ByMessagePassing(conditioned).argmax.value()
+    val argmax = Max.ByMessagePassing(lam(sig(smokes,cancer,friend),conditioned)).argmax.value()
 
     println(argmax)
 

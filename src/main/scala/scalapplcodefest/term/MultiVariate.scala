@@ -2,7 +2,7 @@ package scalapplcodefest.term
 
 import org.scalautils.Good
 import scalapplcodefest.TermConverter._
-import scalapplcodefest.value.Vectors
+import scalapplcodefest.value.{Fun, Vectors}
 import scalapplcodefest._
 import scala.Some
 import TermDSL._
@@ -48,35 +48,37 @@ object Max {
    * Maximizes the term by exhaustive search.
    * @param term the term to maximize.
    */
-  case class ByBruteForce(term: Term[Double]) extends Max with Composite1[Double, Double] with DoubleTerm {
-    val ForceLinear(coefficient, parameter, _) = term
+  case class ByBruteForce[T](term: LambdaAbstraction[T,Double]) extends Max with Composite1[Fun[T,Double], Double] with DoubleTerm {
+    val ForceLinear(coefficient, parameter, _) = term.body
     private var arg: State = _
     private var conditionedValue: Term[Double] = _
     private var conditionedCoefficient: Term[Vector] = _
     private val withStateDo = new WithStateDo(state => {
       val argument = state(parameter)
-      conditionedValue = term | parameter -> argument
+      conditionedValue = term.body | parameter -> argument
       conditionedCoefficient = coefficient | parameter -> argument
-      arg = State.allStates(conditionedValue.variables.toList).view.maxBy(conditionedValue.eval(_).get)
+      arg = State.allStates(term.sig.variables.toList).view.maxBy(conditionedValue.eval(_).get)
     })
     def eval(state: State) = withStateDo.get(state, conditionedValue.eval(arg))
     def gradient = VectorTerm(withStateDo.get(_, conditionedCoefficient.value(arg)), Set(parameter))
     def argmax = StateTerm(withStateDo.get(_, arg), Set(parameter))
-    def copy(t1: Term[Double]) = ByBruteForce(t1)
+    def copy(t1: Term[Fun[T,Double]]) = ByBruteForce(t1.asInstanceOf[LambdaAbstraction[T,Double]])
     def components = term
   }
+
+
 
   /**
    * Maximizing by running some message passing algorithm on the a factor graph.
    * @param term the term to maximize
    * @param algorithm applies a message passing algorithm to the message passing graph.
    */
-  case class ByMessagePassing(term: Term[Double], algorithm: MPGraph => Unit = MaxProduct.apply(_, 1)) extends Max with MultiVariateHelper{
+  case class ByMessagePassing[T](term: LambdaAbstraction[T,Double], algorithm: MPGraph => Unit = MaxProduct.apply(_, 1)) extends Max with MultiVariateHelper{
 
-    val normalized = pushDownConditions(term)
+    val normalized = pushDownConditions(term.body)
     val ForceLinear(_, parameter, _) = normalized
 
-    private val mp = MPGraphCompiler.compile(normalized)
+    private val mp = MPGraphCompiler.compile(term.sig, normalized)
 
     private val withStateDo = new WithStateDo(state => {
       mp.graph.weights = parameter.value(state)
@@ -88,9 +90,11 @@ object Max {
     def argmax = StateTerm(withStateDo.get(_, mp.currentArgmax()), Set(parameter))
   }
 
-
 }
 
+/**
+ * A Term that corresponds to a maximization.
+ */
 trait Max extends Differentiable {
   def argmax: Term[State]
 }
@@ -154,7 +158,7 @@ case class MessagePassingHint(algorithm: MPGraph => Unit = MaxProduct.apply(_, 1
   def withoutParam[T](sig: Sig[T], term: Term[Double]) = {
     require(term.variables.forall(sig.variables(_)),
       s"Unbound variable ${term.variables.find(!sig.variables(_))}")
-    val mpg = MPGraphCompilerNew.compile(sig, term)
+    val mpg = MPGraphCompilerExperimental.compile(sig, term)
     val withStateDo = new WithStateDo(state => algorithm(mpg.graph))
     val argmaxAt = Term(withStateDo.get(_, mpg.currentArgmax()), Set.empty, sig.default)
     val valueAt = Term(withStateDo.get(_, mpg.currentValue()), Set.empty, 0.0)
@@ -167,7 +171,7 @@ case class MessagePassingHint(algorithm: MPGraph => Unit = MaxProduct.apply(_, 1
   def withParam[T](sig: Sig[T], param: Variable[scalapplcodefest.Vector], term: Term[Double]) = {
     require((term.variables - param).forall(sig.variables(_)),
       s"Unbound variable ${(term.variables - param).find(!sig.variables(_))}")
-    val mpg = MPGraphCompilerNew.compile(sig, term, Some(param)) //pass signature
+    val mpg = MPGraphCompilerExperimental.compile(sig, term, Some(param)) //pass signature
     val withStateDo = new WithStateDo(state => {mpg.graph.weights = state(param); algorithm(mpg.graph)})
     val argmaxAt = Term(withStateDo.get(_, mpg.currentArgmax()), Set(param), sig.default)
     val valueAt = Term(withStateDo.get(_, mpg.currentValue()), Set(param), 0.0)

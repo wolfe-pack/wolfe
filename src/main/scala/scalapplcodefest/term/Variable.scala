@@ -11,15 +11,6 @@ import org.scalautils.Bad
 trait Variable[+T] extends Term[T] {
 
   /**
-   * The domain of the variable. This domain is dynamic, in the sense that it is a term that
-   * can evaluate to different sets in different states. This is useful because models often involve domains
-   * that depend on the size or shape of the input data. For example, the number of tokens when doing PoS tagging
-   * depends on the sentence length.
-   * @return the term that describes the domain of a variable.
-   */
-  def domain[C >: T]: Term[Set[C]]
-
-  /**
    * The denotation of a variable.
    * @param state the state object that binds variables to values.
    * @return `Good(value)` if `variable->value` in `state`, [[scalapplcodefest.term.Variable#domain]] is defined in

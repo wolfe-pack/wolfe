@@ -265,8 +265,8 @@ class Specs extends WordSpec with Matchers {
       val hidden = sig(cap, ner)
 
       val X = observed.dom
-      val Y = lambda(observed, hidden.dom)
-      val s = lambda(observed, lambda(hidden, model))
+      val Y = lam(observed, hidden.dom)
+      val s = lam(observed, lam(hidden, model))
       val h = for (x <- X) yield argmax(for (y <- Y(x)) yield s(x)(y))
       val (f1, f2) = h.value()(2, Tab(Ints, Bools, Map(0 -> false, 1 -> true)))
 
@@ -421,12 +421,12 @@ class ExperimentalSpecs extends WordSpec with Matchers {
   }
 
 
-  def maximizer(newMaximizer: => (Term[Double] => Max)) {
+  def maximizer(newMaximizer: => (LambdaAbstraction[Int, Double] => Max)) {
     "find argmax, gradient, and max value of a linear term" in {
       val w = 'w of vectors
       val i = 'i of 0 ~~ 3
       val term = (unit(i) dot w) + 4.0
-      val max = newMaximizer(term)
+      val max = newMaximizer(lam(i,term))
       val arg = state(w -> new DenseVector(Array(0.0, 0.0, 3.0)))
       max.value(arg) should be(7.0)
       max.argmax.value(arg) should be(state(i -> 2))
@@ -435,8 +435,8 @@ class ExperimentalSpecs extends WordSpec with Matchers {
 
   }
 
-  def maxProduct = Max.ByMessagePassing(_: Term[Double], MaxProduct.apply(_, 1))
-  def bruteForce = Max.ByBruteForce(_: Term[Double])
+  def maxProduct[T] = Max.ByMessagePassing(_: LambdaAbstraction[T, Double], MaxProduct.apply(_, 1))
+  def bruteForce[T] = Max.ByBruteForce(_: LambdaAbstraction[T, Double])
 
 
   "Max Product" should {
@@ -454,7 +454,7 @@ class ExperimentalSpecs extends WordSpec with Matchers {
       val weights = 'w of vectors
       val model = unit(i) dot weights
       val gold = state(i -> 2)
-      val loss = Max.ByBruteForce(model) - (model | gold)
+      val loss = Max.ByBruteForce(lam(i,model)) - (model | gold)
       val result = newMinimizer(loss)
       loss.value(state(weights -> result)) should be(0.0 +- eps)
       val resultLoss = loss.value(state(weights -> result))
@@ -565,7 +565,7 @@ class CompilerSpec extends WordSpec with Matchers {
         val y = 'y of bools
         val p = 'p of bools ||-> bools
         val s = I(p(true)) + I(p(true) |=> y) + I(y |=> !p(false))
-        val result = MPGraphCompilerNew.compile(sig(y, p), s)
+        val result = MPGraphCompilerExperimental.compile(sig(y, p), s)
         MaxProduct(result.graph, 1)
         val argmax = result.currentArgmaxState()
         y.value(argmax) should be(true)
@@ -580,7 +580,7 @@ class CompilerSpec extends WordSpec with Matchers {
         val w = 'w of vectors
         val f = unit(key('bias, p(0))) + unit(key('bias, p(1))) + unit(key('pair, p(0), p(1)))
         val s = f dot w
-        val result = MPGraphCompilerNew.compile(p, s, Some(w))
+        val result = MPGraphCompilerExperimental.compile(p, s, Some(w))
         result.graph.factors.size should be(3)
         result.graph.nodes.size should be(2)
         result.graph.edges.size should be(4)
@@ -603,7 +603,7 @@ class CompilerSpec extends WordSpec with Matchers {
         val y = 'y of bools
         val p = 'p of bools ||-> bools
         val s = (I(p(true)) + I(p(true) |=> y) + I(y |=> p(false))) hint MessagePassingHint(MaxProduct(_, 1))
-        val optimal = argmax(lambda(sig(y, p), s))
+        val optimal = argmax(lam(sig(y, p), s))
         val compiled = Compiler.compile(optimal)
         compiled should not be optimal
         compiled.value() should be(optimal.value())
@@ -618,7 +618,7 @@ class CompilerSpec extends WordSpec with Matchers {
         val model = (unit(key(x, y)) + unit(key(y))) dot weights
         val data = Seq(state(x -> true, y -> 1), state(x -> false, y -> 0))
         val train = data.map(_.asTargets(Set[Any](y)))
-        val loss = doubles.sumSeq(train.map(i => max(lambda(y,model | i)) - model | i.target)) hint GradientBasedArgminHint()
+        val loss = doubles.sumSeq(train.map(i => max(lam(y,model | i)) - model | i.target)) hint GradientBasedArgminHint()
 //        val learned = argmin(lambda(weights,loss))
 
 //        val s = lambda(weights, lambda(x, lambda(y, model)))

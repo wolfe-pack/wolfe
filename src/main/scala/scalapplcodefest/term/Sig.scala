@@ -1,5 +1,7 @@
 package scalapplcodefest.term
 
+import scalapplcodefest.value.Fun
+
 
 /**
  * A signature for lambda abstractions. A signature is a nested tuple of variables.
@@ -25,6 +27,15 @@ case class VarSig[T](variable: Variable[T]) extends Sig[T] with Composite1[T, T]
   override def toString = variable.toString
 }
 
+case class PredSig[A,B](predicate: Predicate[A,B]) extends Sig[Fun[A,B]] with Composite1[Fun[A,B], Fun[A,B]] {
+  def eval(state: State) = for (v1 <- predicate.eval(state)) yield v1
+  def default = predicate.default
+  def toState(value: Fun[A,B]) = State(value.funDom.map(arg => GroundAtom(predicate,arg) -> value(arg)).toMap)
+  def dom = predicate.domain
+  def components = predicate
+  def copy(t1: Term[Fun[A,B]]) = PredSig(t1.asInstanceOf[Predicate[A,B]])
+  override def toString = predicate.toString
+}
 
 case class TupleSig2[T1, T2](sig1: Sig[T1], sig2: Sig[T2]) extends Sig[(T1, T2)] with Composite2[T1, T2, (T1, T2)] {
   def eval(state: State) = for (v1 <- sig1.eval(state); v2 <- sig2.eval(state)) yield (v1, v2)
