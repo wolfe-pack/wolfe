@@ -136,7 +136,7 @@ trait ProxyTerm[T] extends Term[T] {
  * @param self the term this term is representing.
  * @tparam T type of term.
  */
-case class Bracketed[T](self: Term[T]) extends ProxyTerm[T] with Composite1[T,T] {
+case class Bracketed[T](self: Term[T]) extends ProxyTerm[T] with Composite1[T, T] {
   def components = self
   def copy(t1: Term[T]) = Bracketed(t1)
   override def variables = super[ProxyTerm].variables
@@ -169,13 +169,24 @@ case class Constant[T](value: T) extends Term[T] {
 }
 
 
-trait Composite[T] extends Term[T] {
-  def componentSeq:Seq[Term[Any]]
-  def copySeq(args:Seq[Term[Any]]):Term[T]
-  def variables:Set[Variable[Any]] = SetUnion(componentSeq.toList.map(_.variables))
-}
 /**
- * Term that is composed of other terms.
+ * Generic term that is composed of other terms.
+ * @tparam T type of this term.
+ */
+trait Composite[T] extends Term[T] {
+  def componentSeq: Seq[Term[Any]]
+  def copySeq(args: Seq[Term[Any]]): Term[T]
+  def variables: Set[Variable[Any]] = {
+    val flat = componentSeq.toList.flatMap(_.variables match {
+      case SetUnion(sets) => sets
+      case set => List(set)
+    })
+    SetUnion(flat)
+  }
+}
+
+/**
+ * Term that is composed of exactly one other term.
  * @tparam T1 the type of the first argument term.
  * @tparam C the type of this term.
  */
@@ -191,7 +202,7 @@ trait Composite2[T1, T2, C] extends Composite[C] {
   def components: (Term[T1], Term[T2])
   def copy(t1: Term[T1], t2: Term[T2]): Term[C]
   def asAny = asInstanceOf[Composite2[Any, Any, Any]]
-  def componentSeq = Seq(components._1,components._2)
+  def componentSeq = Seq(components._1, components._2)
   def copySeq(args: Seq[Term[Any]]) = copy(
     args(0).asInstanceOf[Term[T1]],
     args(1).asInstanceOf[Term[T2]])
@@ -202,7 +213,7 @@ trait Composite3[T1, T2, T3, C] extends Composite[C] {
   def components: (Term[T1], Term[T2], Term[T3])
   def copy(t1: Term[T1], t2: Term[T2], t3: Term[T3]): Term[C]
   def asAny = asInstanceOf[Composite3[Any, Any, Any, Any]]
-  def componentSeq = Seq(components._1,components._2,components._3)
+  def componentSeq = Seq(components._1, components._2, components._3)
   def copySeq(args: Seq[Term[Any]]) = copy(
     args(0).asInstanceOf[Term[T1]],
     args(1).asInstanceOf[Term[T2]],
