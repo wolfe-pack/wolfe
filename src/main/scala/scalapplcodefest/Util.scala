@@ -1,7 +1,7 @@
 package scalapplcodefest
 
 import java.io.{FileInputStream, InputStream}
-import scalapplcodefest.value.{Fun, SetValue}
+import scalapplcodefest.value.SetValue
 import scalapplcodefest.term._
 import cc.factorie.maths.ArrayOps
 import java.util
@@ -31,24 +31,6 @@ object Util {
   }
 
   /**
-   * Set (possibly infinite in size) that requires a complex implementation,
-   * and which implementation is not immediately needed.
-   */
-  class SetToBeImplementedLater[T] extends Set[T] {
-    def contains(elem: T) = ???
-    def +(elem: T) = ???
-    def -(elem: T) = ???
-    def iterator = ???
-  }
-
-  /**
-   * Creates a set class that is not yet implemented
-   * @tparam T type of set elements
-   * @return the set.
-   */
-  def setToBeImplementedLater[T] = new SetToBeImplementedLater[T]
-
-  /**
    * Loads a resource as stream. This returns either a resource in the classpath,
    * or in case no such named resource exists, from the file system.
    */
@@ -71,6 +53,17 @@ object Util {
     }
   }
 
+  /**
+   * Loads a CoNLL style file in tab separated format.
+   * @param lines iterator over CoNLL style lines.
+   * @param predicates predicates mapping from token index to string.
+   * @param length a sentence length variable.
+   * @return an iterator over state objects where each state corresponds to one sentence, and each of the
+   *         given predicates is associated with a column corresponding to the predicate's order in
+   *         `predicates`. The state will also have an integer variable `length` that stores the sentence
+   *         length.
+   *
+   */
   def loadCoNLL(lines: Iterator[String], predicates: Seq[Predicate[Int, String]], length: Var[Int]) =
     groupLines(lines).map(conllToState(_, predicates, length))
 

@@ -18,6 +18,7 @@ trait SetValue[T] extends Set[T] {
   def ++(that: Set[T]): Set[T] = SetUtil.SetUnion(List(this, that))
 }
 
+
 /**
  * Helper to build SetValue objects.
  */

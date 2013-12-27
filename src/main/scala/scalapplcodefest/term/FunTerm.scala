@@ -165,7 +165,7 @@ case object BinaryFunApp {
 case class Image[A, B](fun: Term[Fun[A, B]], dom: Term[Set[A]]) extends Term[Set[B]] {
   def eval(state: State) = for (f <- fun.eval(state); d <- dom.eval(state)) yield SetUtil.SetMap(d, f)
   def variables = SetUtil.SetUnion(List(fun.variables, dom.variables))
-  def domain[C >: Set[B]] = Constant(Util.setToBeImplementedLater[C])
+  def domain[C >: Set[B]] = TermDSL.all[C]
   def default = fun.default.funRange
 }
 
@@ -231,7 +231,7 @@ case class UncurriedLambdaAbstraction2[A1, A2, R](lambda1: LambdaAbstraction[A1,
   def eval(state: State) = for (f <- lambda1.eval(state)) yield Fun({
     case (a1, a2) => f(a1)(a2)
   })
-  def domain[C >: Fun[(A1, A2), R]] = Constant(Util.setToBeImplementedLater)
+  def domain[C >: Fun[(A1, A2), R]] = TermDSL.all[C]
   def default = Fun({
     case (a1, a2) => lambda1.default(a1)(a2)
   })
