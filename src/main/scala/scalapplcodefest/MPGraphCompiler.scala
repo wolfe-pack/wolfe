@@ -62,7 +62,7 @@ object MPGraphCompiler {
      * Chooses a state by picking the maximizer of the node beliefs on each node.
      * @return a state based on maximizing the node beliefs.
      */
-    def currentArgmax():State = {
+    def currentArgmaxState():State = {
       val map = for (m <- metaNodes.forNode.values) yield {
         val winner = ArrayOps.maxIndex(m.node.b)
         val value = m.values(winner)
@@ -70,6 +70,8 @@ object MPGraphCompiler {
       }
       State(map.toMap)
     }
+
+    def currentArgmax() = sig.value(currentArgmaxState())
 
     /**
      * Returns a state where beliefs of variables are stored, according to the current node beliefs.

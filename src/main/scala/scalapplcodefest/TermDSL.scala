@@ -1,6 +1,7 @@
 package scalapplcodefest
 
 import scala.language.implicitConversions
+import scala.language.reflectiveCalls
 import scalapplcodefest.value._
 import scalapplcodefest.term._
 import scalapplcodefest.value.RangeSet
@@ -11,6 +12,8 @@ import scalapplcodefest.term.DynFunTerm
 import scalapplcodefest.value.SeqSet
 import scalapplcodefest.term.FunApp
 import cc.factorie.la.SingletonTensor1
+import cc.factorie.WeightsSet
+import cc.factorie.optimize.{Perceptron, OnlineTrainer, Trainer}
 
 /**
  * This object provides a set of implicit conversions that allow users
@@ -359,11 +362,29 @@ object TermDSL extends ValueDSL {
 
 
   def dynFun[A, B](f: PartialFunction[A, B], dom: Term[Set[A]] = all[Set[A]], range: Term[Set[B]] = all[Set[B]]) = DynFunTerm(f, dom, range)
-  def argmax[T](f: Term[Fun[T, Double]]) = FunApp(RestrictedFun(Argmax,all[Fun[T,Double]],all[T]), f)
-  def argmin[T](f: Term[Fun[T, Double]]) = FunApp(RestrictedFun(Argmin,all[Fun[T,Double]],all[T]), f)
-  def max[T](f:Term[Fun[T,Double]]) = FunApp(RestrictedFun(MaxValue,all[Fun[T,Double]],doubles), f)
-  def min[T](f:Term[Fun[T,Double]]) = FunApp(RestrictedFun(MinValue,all[Fun[T,Double]],doubles), f)
 
+  def max[T](f:LambdaAbstraction[T,Double]) = RichMax(f)
+
+  def arg[T](max:Max[T]) = max.argmax
+  def arg[T](helper:MaxHelper[T]) = helper.argmax
+  def argState[T](max:Max[T]) = max.argmaxState
+  def argState[T](max:MaxHelper[T]) = max.argmaxState
+
+  case class RichMax[T](f:LambdaAbstraction[T,Double]){
+    def byBruteForce = Max.ByBruteForce(f)
+    def byMessagePassing(algorithm: MPGraph => Unit = MaxProduct.apply(_, 1)) = Max.ByMessagePassing(f,algorithm)
+    def byTrainer(trainerFor: WeightsSet => Trainer = new OnlineTrainer(_, new Perceptron, 5)) = {
+      f match {
+        case LambdaAbstraction(VarSig(param),objective) if param.domain == vectors =>
+          val learned = TrainerBasedMaximization.maximize(param.asInstanceOf[Variable[Vector]],objective,trainerFor).asInstanceOf[T]
+          MaxHelper(
+            Term[T]( state => learned, Set.empty, param.default),
+            StateTerm(state => State(Map(param -> learned)),Set.empty))
+        case _ => sys.error("We only support gradient-based maximization for vector arguments")
+      }
+    }
+  }
+  case class MaxHelper[T](argmax:Term[T], argmaxState:Term[State])
 
   implicit def toSig[T](variable: Variable[T]) = VarSig(variable)
   implicit def toSig[A,B](predicate: Predicate[A,B]) = PredSig(predicate)
@@ -371,6 +392,12 @@ object TermDSL extends ValueDSL {
   def sig[T1, T2](sig1: Sig[T1], sig2: Sig[T2]) = TupleSig2(sig1, sig2)
   def sig[T1, T2, T3](sig1: Sig[T1], sig2: Sig[T2], sig3:Sig[T3]) = TupleSig3(sig1, sig2,sig3)
   def lam[A, B](sig: Sig[A], body: Term[B]) = LambdaAbstraction(sig, body)
+
+
+  def argmax[T](f: Term[Fun[T, Double]]) = FunApp(RestrictedFun(Argmax,all[Fun[T,Double]],all[T]), f)
+  def argmin[T](f: Term[Fun[T, Double]]) = FunApp(RestrictedFun(Argmin,all[Fun[T,Double]],all[T]), f)
+  def maxExperimental[T](f:Term[Fun[T,Double]]) = FunApp(RestrictedFun(MaxValue,all[Fun[T,Double]],doubles), f)
+  def minExperimental[T](f:Term[Fun[T,Double]]) = FunApp(RestrictedFun(MinValue,all[Fun[T,Double]],doubles), f)
 
 }
 

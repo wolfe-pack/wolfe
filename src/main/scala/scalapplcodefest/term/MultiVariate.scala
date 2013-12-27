@@ -40,7 +40,7 @@ trait Differentiable extends MultiVariate {
 
 object Max {
   def unapply(term: Term[Double]): Option[(Variable[Vector], Term[Vector], Term[State])] = term match {
-    case m: Max => Some(m.parameter, m.gradient, m.argmax)
+    case m: Max[_] => Some(m.parameter, m.gradient, m.argmaxState)
     case _ => None
   }
 
@@ -48,32 +48,34 @@ object Max {
    * Maximizes the term by exhaustive search.
    * @param term the term to maximize.
    */
-  case class ByBruteForce[T](term: LambdaAbstraction[T,Double]) extends Max with Composite1[Fun[T,Double], Double] with DoubleTerm {
+  case class ByBruteForce[T](term: LambdaAbstraction[T,Double]) extends Max[T] with Composite1[Fun[T,Double], Double] with DoubleTerm {
     val ForceLinear(coefficient, parameter, _) = term.body
-    private var arg: State = _
+    private var argState: State = _
+    private var arg:T = _
     private var conditionedValue: Term[Double] = _
     private var conditionedCoefficient: Term[Vector] = _
     private val withStateDo = new WithStateDo(state => {
       val argument = state(parameter)
       conditionedValue = term.body | parameter -> argument
       conditionedCoefficient = coefficient | parameter -> argument
-      arg = State.allStates(term.sig.variables.toList).view.maxBy(conditionedValue.eval(_).get)
+      argState = State.allStates(term.sig.variables.toList).view.maxBy(conditionedValue.eval(_).get)
+      arg = term.sig.value(argState)
     })
-    def eval(state: State) = withStateDo.get(state, conditionedValue.eval(arg))
-    def gradient = VectorTerm(withStateDo.get(_, conditionedCoefficient.value(arg)), Set(parameter))
-    def argmax = StateTerm(withStateDo.get(_, arg), Set(parameter))
+    def eval(state: State) = withStateDo.get(state, conditionedValue.eval(argState))
+    def gradient = VectorTerm(withStateDo.get(_, conditionedCoefficient.value(argState)), Set(parameter))
+    def argmaxState = StateTerm(withStateDo.get(_, argState), Set(parameter))
+    def argmax = Term(withStateDo.get(_, arg), Set(parameter), term.sig.default)
     def copy(t1: Term[Fun[T,Double]]) = ByBruteForce(t1.asInstanceOf[LambdaAbstraction[T,Double]])
     def components = term
   }
-
-
 
   /**
    * Maximizing by running some message passing algorithm on the a factor graph.
    * @param term the term to maximize
    * @param algorithm applies a message passing algorithm to the message passing graph.
    */
-  case class ByMessagePassing[T](term: LambdaAbstraction[T,Double], algorithm: MPGraph => Unit = MaxProduct.apply(_, 1)) extends Max with MultiVariateHelper{
+  case class ByMessagePassing[T](term: LambdaAbstraction[T,Double], algorithm: MPGraph => Unit = MaxProduct.apply(_, 1))
+    extends Max[T] with MultiVariateHelper{
 
     val normalized = pushDownConditions(term.body)
     val ForceLinear(_, parameter, _) = normalized
@@ -87,7 +89,9 @@ object Max {
     })
     def eval(state: State) = withStateDo.get(state, Good(mp.currentValue()))
     def gradient = VectorTerm(withStateDo.get(_, mp.currentGradient()), Set(parameter))
-    def argmax = StateTerm(withStateDo.get(_, mp.currentArgmax()), Set(parameter))
+    def argmaxState = StateTerm(withStateDo.get(_, mp.currentArgmaxState()), Set(parameter))
+    def argmax = Term(withStateDo.get(_, mp.currentArgmax()), Set(parameter), term.sig.default)
+
   }
 
 }
@@ -95,8 +99,9 @@ object Max {
 /**
  * A Term that corresponds to a maximization.
  */
-trait Max extends Differentiable {
-  def argmax: Term[State]
+trait Max[T] extends Differentiable {
+  def argmaxState: Term[State]
+  def argmax:Term[T]
 }
 
 trait Max2[T] extends Term[Double] {

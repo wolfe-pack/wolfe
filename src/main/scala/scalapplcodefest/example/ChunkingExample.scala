@@ -1,7 +1,7 @@
 package scalapplcodefest.example
 
 import scala.io.Source
-import cc.factorie.optimize.{Perceptron, OnlineTrainer}
+import cc.factorie.optimize.{AdaGrad, AveragedPerceptron, Perceptron, OnlineTrainer}
 import scalapplcodefest.value.Vectors
 import scalapplcodefest.term.{State, Max, SeqTerm}
 import scalapplcodefest._
@@ -74,20 +74,19 @@ object ChunkingExample {
     //convert assignments to the chunk predicate to assignments that indicate that chunk variable is the target of prediction.
     val train = sentences.map(_.asTargets(chunk))
 
-    //this is the perceptron loss: maximize over hidden variables in each instance (but condition first on observation)
+    //this is the perceptron loss/reward: maximize over hidden variables in each instance (but condition first on observation)
     //and subtract the model score of the target solution.
-    val loss = doubles.sumSeq(for (i <- train) yield Max.ByMessagePassing(lam(chunk,model | i)) - (model | i.target))
+    val obj = doubles.sumSeq(for (i <- train) yield (model | i.target) - max(lam(chunk, model | i)).byMessagePassing())
 
     //find a weight vector that minimizes this loss and assign it to the weight variable.
-    val learned = state(weights -> GradientBasedMinimizer.minimize(loss, new OnlineTrainer(_, new Perceptron, 10)))
+    val learned = argState(max(lam(weights, obj)).byTrainer(new OnlineTrainer(_, new AdaGrad(), 6))).value()
 
     //a predictor is a mapping from a state to the argument that maximizes the model score conditioned on this state.
-    val predict = (s: State) => Max.ByMessagePassing(lam(chunk,model | s)).argmax.value(learned)
+    val predict = (s: State) => argState(max(lam(chunk, model | s)).byMessagePassing()).value(learned)
 
     //a generic evaluation routine that applies the predictor to a set of states and compares the results
     //to target values stored in the state.
     val eval = Evaluator.evaluate(train, predict)
-
 
     println(eval)
 
