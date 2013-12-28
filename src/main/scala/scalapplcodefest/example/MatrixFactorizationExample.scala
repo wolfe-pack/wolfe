@@ -9,10 +9,11 @@ import scalapplcodefest.value.{Ints, Vectors}
  * Time: 4:56 PM
  */
 
-class MatrixFactorizationExample {
+object MatrixFactorizationExample extends App {
   import TermDSL._
 
   val key = new Index()
+
   //embedding dimension
   val k = 'k of ints
 
@@ -22,13 +23,14 @@ class MatrixFactorizationExample {
   //fetch ith value in v and put it into an basis vector with the value at the ith state and zeros otherwise
   val project = for ((v,i) <- c(vectors, ints)) yield unit(i) * (unit(i) dot v)
 
-  val Rels = set("r1", "r2") //TODO: need to read that from data
+  //TODO: need to read that from data
+  val Ents = set("e1", "e2", "e3")
+  //TODO: these guys should be "real" relations, e.g., a predicate depending on relation name and two entities
+  val Rels = set("r1", "r2")
 
   val a = for (r <- Rels) yield vectors.sum(for (i <- 0 ~~ k) yield project(w, key(r, i)))
 
-  //val v = for ((x,y) <- Ents x Ents) yield vsum(for (i <- 0 ~~ 50) yield (unit(x,y,i) dot w) * unit(x,y,i))
+  val v = for ((x,y) <- c(Ents,Ents)) yield vectors.sum(for (i <- 0 ~~ k) yield unit(key(x,y,i)) * (unit(key(x,y,i)) dot w))
 
-  //val model = for ((r,x,y) <- C(…)) yield (a(r) dot v(x,y)) * I (r(x,y))
-
-  //for (r,x,y) yield vsum( for (i <- 0 ~~ 50) unit(r,i)
+  val model = for ((r,x,y) <- c(Rels, Ents, Ents)) yield (a(r) dot v(x,y)) * I(r(x,y)) //FIXME
 }

@@ -107,7 +107,8 @@ object TermDSL extends ValueDSL {
     def dot(that: Term[Vector]) = FunApp(vectors.dot, TupleTerm2(term, that))
     def +(that: Term[Vector]) = FunApp(vectors.add, TupleTerm2(term, that))
     def -(that: Term[Vector]) = FunApp(vectors.minus, TupleTerm2(term, that))
-    def *(that: Term[Double]) = FunApp(vectors.add, TupleTerm2(term, that)) //TODO: rockt: needs to return a vector!
+    //rockt: needs to return a vector!
+    def *(that: Term[Double]): FunApp[(Vector, Any), Vector] = ??? //TODO
   }
 
   private var anonVarCount = 0
