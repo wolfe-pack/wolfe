@@ -29,13 +29,13 @@ case class GibbsSampling[T](term: LambdaAbstraction[T, Double])(implicit random:
     val currValue = curr(variable)
     // iterate through the values
     val values = variable.domain.value(curr).toSeq
-    val scores = new ArrayBuffer[Double](values.length)
+    val scores = Array.ofDim[Double](values.length)
     for ((v, i) <- values.zipWithIndex) {
       val newState = if (currValue == v) curr else State.single(variable, v) + curr
       scores(i) = normalized.value(newState)
     }
     // sample
-    val nv = scores.zip(values).sampleExpProportionally(_._1)
+    val nv = scores.toSeq.zip(values).sampleExpProportionally(_._1)._2
     if (currValue == nv) curr else State.single(variable, nv) + curr
   }
 
@@ -43,7 +43,7 @@ case class GibbsSampling[T](term: LambdaAbstraction[T, Double])(implicit random:
     assert(thinning >= 1, "Thinning %d should be > 0" format (thinning))
     assert(numSamples >= 1, "Num Samples %d should be > 0" format (numSamples))
     assert(burn >= 0, "Burn-in %d should be >= 0" format (burn))
-    var curr = init
+    var curr = if(init == State.empty) State(vars.map(v => (v, v.default)).toMap) else init
     for (i <- 0 until burn) {
       curr = sample(curr)
     }
