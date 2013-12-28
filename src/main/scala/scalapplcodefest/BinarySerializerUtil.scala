@@ -10,7 +10,7 @@ import java.util.zip.{GZIPOutputStream, GZIPInputStream}
  */
 
 //todo: add Factorie header
-// feature vector (de)serialization is adapted from cc.factorie.util.BinarySerializer
+// todo: feature vector (de)serialization is adapted from cc.factorie.util.BinarySerializer
 object BinarySerializerUtil {
 
 
