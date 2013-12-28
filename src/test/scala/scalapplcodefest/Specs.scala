@@ -447,15 +447,15 @@ class ExperimentalSpecs extends WordSpec with Matchers {
     behave like maximizer(bruteForce)
   }
 
-  def gradientBasedMaximizer(newMaximizer: => (LambdaAbstraction[Vector,Double] => Term[State])) {
+  def gradientBasedMinimizer(newMinimizer: => (LambdaAbstraction[Vector,Double] => Term[State])) {
 
-    "find a maximum of a perceptron objective" in {
+    "find a minimum of a perceptron loss" in {
       val i = 'i of 0 ~~ 3
       val weights = 'w of vectors
       val model = unit(i) dot weights
       val gold = state(i -> 2)
-      val objective = (model | gold) - max(lam(i, model)).byBruteForce
-      val result = newMaximizer(lam(weights,objective))
+      val objective = max(lam(i, model)).byBruteForce - (model | gold)  
+      val result = newMinimizer(lam(weights,objective))
       objective.value(result.value()) should be(0.0 +- eps)
       val resultLoss = objective.value(result.value())
       println(result.value())
@@ -464,11 +464,10 @@ class ExperimentalSpecs extends WordSpec with Matchers {
     }
   }
 
-//  def perceptronMinimizer = GradientBasedMinimizer.minimize(_: Term[Double], new OnlineTrainer(_, new Perceptron, 5))
-  def perceptronMinimizer = max(_: LambdaAbstraction[Vector,Double]).byTrainer(new OnlineTrainer(_, new Perceptron, 5)).argmaxState
+  def perceptronMinimizer = min(_: LambdaAbstraction[Vector,Double]).byTrainer(new OnlineTrainer(_, new Perceptron, 5)).argminState
 
   "Perceptron Minimizer" should {
-    behave like gradientBasedMaximizer(perceptronMinimizer)
+    behave like gradientBasedMinimizer(perceptronMinimizer)
   }
 
   "Pushing down conditions" should {

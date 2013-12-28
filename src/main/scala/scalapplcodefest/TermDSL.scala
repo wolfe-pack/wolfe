@@ -364,27 +364,33 @@ object TermDSL extends ValueDSL {
   def dynFun[A, B](f: PartialFunction[A, B], dom: Term[Set[A]] = all[Set[A]], range: Term[Set[B]] = all[Set[B]]) = DynFunTerm(f, dom, range)
 
   def max[T](f:LambdaAbstraction[T,Double]) = RichMax(f)
+  def min(f:LambdaAbstraction[Vector,Double]) = RichMin(f)
+
 
   def arg[T](max:Max[T]) = max.argmax
-  def arg[T](helper:MaxHelper[T]) = helper.argmax
+  def arg[T](helper:MinHelper[T]) = helper.argmin
   def argState[T](max:Max[T]) = max.argmaxState
-  def argState[T](max:MaxHelper[T]) = max.argmaxState
+  def argState[T](max:MinHelper[T]) = max.argminState
 
-  case class RichMax[T](f:LambdaAbstraction[T,Double]){
-    def byBruteForce = Max.ByBruteForce(f)
-    def byMessagePassing(algorithm: MPGraph => Unit = MaxProduct.apply(_, 1)) = Max.ByMessagePassing(f,algorithm)
+  case class RichMin(f:LambdaAbstraction[Vector,Double]) {
     def byTrainer(trainerFor: WeightsSet => Trainer = new OnlineTrainer(_, new Perceptron, 5)) = {
       f match {
         case LambdaAbstraction(VarSig(param),objective) if param.domain == vectors =>
-          val learned = TrainerBasedMaximization.maximize(param.asInstanceOf[Variable[Vector]],objective,trainerFor).asInstanceOf[T]
-          MaxHelper(
-            Term[T]( state => learned, Set.empty, param.default),
+          val learned = TrainerBasedMaximization.minimize(param.asInstanceOf[Variable[Vector]],objective,trainerFor)
+          MinHelper(
+            Term[Vector]( state => learned, Set.empty, param.default),
             StateTerm(state => State(Map(param -> learned)),Set.empty))
-        case _ => sys.error("We only support gradient-based maximization for vector arguments")
+        case _ => sys.error("We only support gradient-based minimization for vector arguments")
       }
     }
   }
-  case class MaxHelper[T](argmax:Term[T], argmaxState:Term[State])
+  
+  case class RichMax[T](f:LambdaAbstraction[T,Double]){
+    def byBruteForce = Max.ByBruteForce(f)
+    def byMessagePassing(algorithm: MPGraph => Unit = MaxProduct.apply(_, 1)) = Max.ByMessagePassing(f,algorithm)
+  }
+
+  case class MinHelper[T](argmin:Term[T], argminState:Term[State])
 
   implicit def toSig[T](variable: Variable[T]) = VarSig(variable)
   implicit def toSig[A,B](predicate: Predicate[A,B]) = PredSig(predicate)

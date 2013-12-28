@@ -14,7 +14,7 @@ import scalapplcodefest.term._
  */
 object TrainerBasedMaximization {
 
-  def maximize(weightVar:Variable[Vector], objective: Term[Double], trainerFor: WeightsSet => Trainer = new OnlineTrainer(_, new Perceptron, 5)) = {
+  def minimize(weightVar:Variable[Vector], objective: Term[Double], trainerFor: WeightsSet => Trainer = new OnlineTrainer(_, new Perceptron, 5)) = {
     val weightsSet = new WeightsSet
     val key = weightsSet.newWeights(new DenseVector(10000))
     val instances = TermConverter.asSeq(objective, doubles.add)
@@ -28,7 +28,7 @@ object TrainerBasedMaximization {
               val v = instance.value(state)
               val g = gradientTerm.value(state)
               value.accumulate(v)
-              gradient.accumulate(key, g, 1.0)
+              gradient.accumulate(key, g, -1.0)
             }
           }
         case _ => sys.error("Can't differentiate " + instance)
