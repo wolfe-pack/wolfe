@@ -9,6 +9,7 @@ import scalapplcodefest.term.LambdaAbstraction
 import scala.collection.mutable
 import scalapplcodefest.value.{Doubles, Fun}
 import scala.collection.immutable.HashMap
+import scalapplcodefest.TermDSL.doubles
 
 /**
  * Perform basic gibbs sampling on a term double
@@ -18,9 +19,33 @@ case class GibbsSampling[T](term: LambdaAbstraction[T, Double])(implicit random:
 
   import scalapplcodefest.InferenceUtils.Counts
 
-  val normalized = pushDownConditions(term.body)
+  val varTermMap = new mutable.HashMap[Variable[Any], ArrayBuffer[Term[Double]]]
+  val normalized = normalizeTerm(term.body)
   val sigVars = term.sig.variables
   val vars = sigVars.toSeq.sorted(VariableOrdering)
+
+  def normalizeTerm(t: Term[Double]): Term[Double] = {
+    val conditionsPushed = pushDownConditions(t)
+    val flat = flatten(conditionsPushed, doubles.add)
+    val dotsPushed = pushDownDotProducts(flat)
+    val grouped = groupLambdas(dotsPushed)
+    val brackets = bracketInsideLambda(grouped)
+    val unrolled = unrollLambdaImages(brackets)
+    val result = flatten(unrolled, doubles.add)
+    val unbracketed = unbracket(result)
+    val terms = asSeq(unbracketed, doubles.add)
+    for(t <- terms) {
+      for(v <- t.variables) {
+        varTermMap.getOrElseUpdate(v, new ArrayBuffer) += t
+      }
+    }
+    unbracketed
+  }
+
+  def score(s: State, changed: Variable[Any]): Double = {
+    varTermMap(changed).map(_.value(s)).sum
+    //normalized.value(s)
+  }
 
   def sample(curr: State): State = {
     // pick a random variable
@@ -31,7 +56,7 @@ case class GibbsSampling[T](term: LambdaAbstraction[T, Double])(implicit random:
     val scores = Array.ofDim[Double](values.length)
     for ((v, i) <- values.zipWithIndex) {
       val newState = if (currValue == v) curr else State.single(variable, v) + curr
-      scores(i) = normalized.value(newState)
+      scores(i) = score(newState, variable)
     }
     // sample
     val nv = scores.toSeq.zip(values).sampleExpProportionally(_._1)._2
