@@ -4,5 +4,5 @@ scala:
 jdk:
    - oraclejdk7
 
-sbt_args: -Djava.io.tmpdir=target
+sbt_args: -Djava.io.tmpdir=.
 
