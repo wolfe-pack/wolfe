@@ -64,6 +64,8 @@ object TermDSL extends ValueDSL {
   def state(assignments: Assign[_]*) =
     if (assignments.isEmpty) State.empty else State(assignments.map(a => a.variable -> a.value).toMap)
 
+//  def state[T](map: Map[Variable[T],T]) = State(map.asInstanceOf[Map[Variable[Any],Any]])
+
   def funTerm[A, B](f: PartialFunction[A, B]) = Constant(value.Fun(f, new AllOfType[A], new AllOfType[B]))
 
   //create bracketed terms

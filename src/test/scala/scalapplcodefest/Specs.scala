@@ -171,8 +171,8 @@ class Specs extends WordSpec with Matchers {
       term.variables should be(Set(p.atom(true)))
     }
     "return no free variables if the function is a predicate and the application is conditioned to have all variables set" in {
-      val p = 'p of bools |-> bools
-      val term = p(true) | p.atom(true) -> true
+      val p = 'p of ints |-> bools
+      val term = p(0) | p.atom(0) -> true
       term.variables should be(Set.empty)
     }
     "provide the domain of the result of the function application" in {
