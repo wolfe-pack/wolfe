@@ -26,6 +26,8 @@ class InferenceSpecs extends WordSpec with Matchers {
       val t = fun(Map(true -> posWeight, false -> negWeight), Bools, Doubles)(x)
       val beliefs = newInferencer(lam(x, t))
       val margs = beliefs(Belief(x)).asInstanceOf[Fun[Boolean, Double]]
+      println("margsX(true) -> %f\t(%f)" format(margs(true), e(posWeight) / (e(posWeight) + e(negWeight))))
+      println("margsX(false) -> %f\t(%f)" format(margs(false), e(negWeight) / (e(posWeight) + e(negWeight))))
       margs(true) should be(e(posWeight) / (e(posWeight) + e(negWeight)) +- 0.02)
       margs(false) should be(e(negWeight) / (e(posWeight) + e(negWeight)) +- 0.02)
     }
@@ -140,7 +142,7 @@ class InferenceSpecs extends WordSpec with Matchers {
   }
 
   def gibbs[T]: LambdaAbstraction[T, Double] => State = l => GibbsSampling(l).infer(State.empty, 5000, 100, 100)
-  def bruteForce[T] : LambdaAbstraction[T, Double] => State = l => BruteForceMarginalInference(l).infer
+  def bruteForce[T]: LambdaAbstraction[T, Double] => State = l => BruteForceMarginalInference(l).infer
 
   "Gibbs Sampling (single)" should {
     behave like singleTermMarginals(gibbs)
