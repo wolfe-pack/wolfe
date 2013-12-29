@@ -2,7 +2,8 @@ package scalapplcodefest.example
 
 import scalapplcodefest.{Index, TermDSL}
 import scalapplcodefest.value.{Strings, Ints, Vectors}
-import scalapplcodefest.term.Predicate
+import scalapplcodefest.term.{State, Predicate}
+import cc.factorie.la.{DenseTensor1, Tensor1}
 
 /**
  * User: rockt
@@ -43,8 +44,21 @@ object MatrixFactorizationExample extends App {
 
   println(model)
 
-  //let's set some weights
-  //TODO
+
+
+  state(
+    rPredicate.atom("r1", "e1", "e2") -> true
+  )
+
+  val learned = state(
+    k -> 2, //embeddings are vectors with two components
+    w -> new DenseTensor1(Array(1.0, 2.0, 0.0, 1.0)) //setting weights; later these will get learned from data
+  )
+
+  //val predict = (s: State) => lam(sig(), model | s).value(learned)
+
+  //predict("e1", "e3", "r2") //TODO
+
 
   //TODO: objective
   //TODO: learning
