@@ -17,9 +17,8 @@ import scala.collection.immutable.HashMap
 case class GibbsSampling[T](term: LambdaAbstraction[T, Double])(implicit random: Random) {
 
   val normalized = pushDownConditions(term.body)
-  val ForceLinear(coefficient, parameters, base) = normalized
   val sigVars = term.sig.variables
-  val vars = (coefficient.variables ++ base.variables).filter(sigVars).toSeq.sorted(VariableOrdering)
+  val vars = sigVars.toSeq.sorted(VariableOrdering)
 
   type Counts = mutable.HashMap[Variable[Any], mutable.HashMap[Any, Double]]
 
