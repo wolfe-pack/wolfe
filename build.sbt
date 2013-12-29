@@ -20,3 +20,4 @@ libraryDependencies ++= Seq(
 
 testFrameworks += new TestFramework("org.scalameter.ScalaMeterFramework")
 
+

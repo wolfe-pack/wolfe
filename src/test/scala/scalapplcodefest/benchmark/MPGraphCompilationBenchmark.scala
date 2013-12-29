@@ -3,15 +3,27 @@ package scalapplcodefest.benchmark
 import org.scalameter.api._
 import scalapplcodefest.{TermConverter, MPGraphCompiler, Index}
 import scalapplcodefest.term.{Variable, State}
-import org.scalameter.{History, Context}
+import org.scalameter._
+import org.scalameter.execution.SeparateJvmsExecutor
+import org.scalameter.api.Executor
+import org.scalameter.api.Persistor
+import org.scalameter.api.Executor
+import org.scalameter.Executor
+import org.scalameter.Setup
+import org.scalameter.api.Gen
+import org.scalameter.api.PerformanceTest
+import org.scalameter.api.Reporter
+import java.io.File
+import java.security.AccessController
+import sun.security.action.GetPropertyAction
 
 
 object MPGraphCompilationBenchmark extends PerformanceTest.Regression {
 
   import scalapplcodefest.TermDSL._
 
-//  def persistor = new SerializationPersistor("target")
-  def persistor = new DummyPersistor
+  def persistor = new SerializationPersistor("target")
+  //  def persistor = new DummyPersistor
 
 
   override def reporter = Reporter.Composite(
@@ -20,6 +32,11 @@ object MPGraphCompilationBenchmark extends PerformanceTest.Regression {
       RegressionReporter.Historian.ExponentialBackoff()),
     HtmlReporter(true)
   )
+
+  override def executor: Executor =
+    new MySeperateJVMExecutor(SeparateJvmsExecutor(warmer, aggregator, measurer))
+
+
   val lengths: Gen[Int] = Gen.range("length")(5, 10, 5)
 
   val models = for (l <- lengths) yield linearChain(l, 5)
@@ -27,9 +44,9 @@ object MPGraphCompilationBenchmark extends PerformanceTest.Regression {
   performance of "MPGraph compilation" in {
     measure method "compile" in {
       using(models) config(
-        exec.maxWarmupRuns -> 10,
-        exec.benchRuns -> 10,
-        exec.independentSamples -> 10
+        exec.maxWarmupRuns -> 2,
+        exec.benchRuns -> 2,
+        exec.independentSamples -> 2
         ) in {
         model =>
           MPGraphCompiler.compile(model.sig, TermConverter.pushDownConditions(model.body))
@@ -61,6 +78,7 @@ object MPGraphCompilationBenchmark extends PerformanceTest.Regression {
 
 class DummyPersistor extends Persistor {
   def load(context: Context) = {
+    println(System.getProperty("java.io.tmpdir"))
     println("Loading...")
     println(context.curve)
     println(context.scope)
@@ -74,3 +92,14 @@ class DummyPersistor extends Persistor {
   }
 }
 
+class MySeperateJVMExecutor(executor: SeparateJvmsExecutor) extends Executor {
+  def runSetup[T](setup: Setup[T]) = {
+    //System.setProperty("java.io.tmpdir", "target/")
+    val tmpdir = new File(AccessController.doPrivileged(new GetPropertyAction("java.io.tmpdir")))
+    println(System.getProperty("java.io.tmpdir"))
+    println(tmpdir.getAbsolutePath)
+    val tmp = File.createTempFile("blah", "blub")
+    println(tmp.getAbsolutePath)
+    executor.runSetup(setup)
+  }
+}
