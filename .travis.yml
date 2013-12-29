@@ -10,5 +10,5 @@ before_script
    - mkdir tmp
 
 after_script
-   - ls -lh tmp
+   - "ls -lh tmp"
 
