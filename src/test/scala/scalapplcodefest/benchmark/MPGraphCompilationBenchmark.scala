@@ -3,13 +3,15 @@ package scalapplcodefest.benchmark
 import org.scalameter.api._
 import scalapplcodefest.{TermConverter, MPGraphCompiler, Index}
 import scalapplcodefest.term.{Variable, State}
+import org.scalameter.{History, Context}
 
 
 object MPGraphCompilationBenchmark extends PerformanceTest.Regression {
 
   import scalapplcodefest.TermDSL._
 
-  def persistor = new SerializationPersistor("target")
+//  def persistor = new SerializationPersistor("target")
+  def persistor = new DummyPersistor
 
 
   override def reporter = Reporter.Composite(
@@ -55,5 +57,20 @@ object MPGraphCompilationBenchmark extends PerformanceTest.Regression {
   }
 
 
+}
+
+class DummyPersistor extends Persistor {
+  def load(context: Context) = {
+    println("Loading...")
+    println(context.curve)
+    println(context.scope)
+    History(Seq.empty)
+  }
+  def save(context: Context, h: History) = {
+    println("Saving...")
+    println(context.curve)
+    println(context.scope)
+    println(h.toString())
+  }
 }
 
