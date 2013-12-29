@@ -161,6 +161,7 @@ object TermDSL extends ValueDSL {
                                                variableName1: () => String = () => freshName(),
                                                variableName2: () => String = () => freshName()) {
     def as(name1: String, name2: String) = RichCartesianProductTerm2(term, () => name1, () => name2)
+    def as(symbol1: Symbol, symbol2: Symbol) = RichCartesianProductTerm2(term, () => symbol1.name, () => symbol2.name)
 
     def map[R](f: ((Variable[T1], Variable[T2])) => Term[R]): LambdaAbstraction[(T1, T2), R] = {
       val variable1 = Var(Symbol(variableName1()), term.a1)
@@ -178,6 +179,8 @@ object TermDSL extends ValueDSL {
                                                variableName2: () => String = () => freshName(),
                                                variableName3: () => String = () => freshName()) {
     def as(name1: String, name2: String, name3: String) = RichCartesianProductTerm3(term, () => name1, () => name2, () => name3)
+    def as(symbol1: Symbol, symbol2: Symbol, symbol3: Symbol) =
+      RichCartesianProductTerm3(term, () => symbol1.name, () => symbol2.name, () => symbol3.name)
 
     def map[R](f: ((Variable[T1], Variable[T2], Variable[T3])) => Term[R]): LambdaAbstraction[(T1, T2, T3), R] = {
       val variable1 = Var(Symbol(variableName1()), term.a1)
