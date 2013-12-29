@@ -6,9 +6,9 @@ jdk:
 
 sbt_args: -Djava.io.tmpdir=tmp
 
-before_script
+before_script:
    - mkdir tmp
 
-after_script
+after_script:
    - "ls -lh tmp"
 
