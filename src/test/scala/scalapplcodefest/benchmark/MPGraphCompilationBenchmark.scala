@@ -1,28 +1,9 @@
 package scalapplcodefest.benchmark
 
 import org.scalameter.api._
-import scalapplcodefest.example.ChunkingExample
 import scalapplcodefest.{TermConverter, MPGraphCompiler, Index}
 import scalapplcodefest.term.{Variable, State}
 
-
-///**
-// * @author Sebastian Riedel
-// */
-//object ChunkingBenchmark extends PerformanceTest.Quickbenchmark {
-//  //def persistor = new SerializationPersistor
-//
-//  val problems = Gen.unit("problem")
-//
-//  performance of "End-To-End Chunking" in {
-//    measure method "main" in {
-//      using(problems) in {
-//        (xs) => ChunkingExample.main(Array.empty)
-//      }
-//    }
-//  }
-//
-//}
 
 object MPGraphCompilationBenchmark extends PerformanceTest.Regression {
 
