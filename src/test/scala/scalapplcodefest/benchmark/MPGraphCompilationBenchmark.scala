@@ -33,17 +33,6 @@ object MPGraphCompilationBenchmark extends PerformanceTest.Regression {
           MPGraphCompiler.compile(model.sig, TermConverter.pushDownConditions(model.body))
       }
     }
-    measure method "blah" in {
-      using(models) config(
-        exec.maxWarmupRuns -> 2,
-        exec.benchRuns -> 2,
-        exec.independentSamples -> 2
-        ) in {
-        model =>
-          MPGraphCompiler.compile(model.sig, TermConverter.pushDownConditions(model.body))
-      }
-    }
-
 
   }
 
