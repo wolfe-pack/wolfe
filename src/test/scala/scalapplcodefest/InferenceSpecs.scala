@@ -25,11 +25,11 @@ class InferenceSpecs extends WordSpec with Matchers {
       val negWeight = random.nextGaussian()
       val t = fun(Map(true -> posWeight, false -> negWeight), Bools, Doubles)(x)
       val beliefs = newInferencer(lam(x, t))
-      val margs = beliefs(Belief(x)).asInstanceOf[Fun[Boolean, Double]]
+      val margs = beliefs(Belief(x))
       println("margsX(true) -> %f\t(%f)" format(margs(true), e(posWeight) / (e(posWeight) + e(negWeight))))
       println("margsX(false) -> %f\t(%f)" format(margs(false), e(negWeight) / (e(posWeight) + e(negWeight))))
-      margs(true) should be(e(posWeight) / (e(posWeight) + e(negWeight)) +- 0.02)
-      margs(false) should be(e(negWeight) / (e(posWeight) + e(negWeight)) +- 0.02)
+      margs(true) should be(e(posWeight) / (e(posWeight) + e(negWeight)) +- 0.015)
+      margs(false) should be(e(negWeight) / (e(posWeight) + e(negWeight)) +- 0.015)
     }
   }
 
@@ -62,15 +62,15 @@ class InferenceSpecs extends WordSpec with Matchers {
       }
 
       val beliefs = newInferencer(lam(sig(x, y), model))
-      val margsX = beliefs(Belief(x)).asInstanceOf[Fun[Boolean, Double]]
+      val margsX = beliefs(Belief(x))
       for (xv <- x.domain.value()) {
         println("margsX(%s) -> %f\t(%f)" format(xv, margsX(xv), tmargsX(xv) / Z))
-        margsX(xv) should be(tmargsX(xv) / Z +- 0.02)
+        margsX(xv) should be(tmargsX(xv) / Z +- 0.01)
       }
-      val margsY = beliefs(Belief(y)).asInstanceOf[Fun[Boolean, Double]]
+      val margsY = beliefs(Belief(y))
       for (yv <- y.domain.value()) {
         println("margsY(%s) -> %f\t(%f)" format(yv, margsY(yv), tmargsY(yv) / Z))
-        margsY(yv) should be(tmargsY(yv) / Z +- 0.02)
+        margsY(yv) should be(tmargsY(yv) / Z +- 0.01)
       }
     }
   }
@@ -123,17 +123,17 @@ class InferenceSpecs extends WordSpec with Matchers {
       }
 
       val beliefs = newInferencer(lam(sig(x, y, z), model))
-      val margsX = beliefs(Belief(x)).asInstanceOf[Fun[Boolean, Double]]
+      val margsX = beliefs(Belief(x))
       for (xv <- x.domain.value()) {
         println("margsX(%s) -> %f\t(%f)" format(xv, margsX(xv), tmargsX(xv) / Z))
         margsX(xv) should be(tmargsX(xv) / Z +- 0.01)
       }
-      val margsY = beliefs(Belief(y)).asInstanceOf[Fun[Boolean, Double]]
+      val margsY = beliefs(Belief(y))
       for (yv <- y.domain.value()) {
         println("margsY(%s) -> %f\t(%f)" format(yv, margsY(yv), tmargsY(yv) / Z))
         margsY(yv) should be(tmargsY(yv) / Z +- 0.01)
       }
-      val margsZ = beliefs(Belief(z)).asInstanceOf[Fun[Boolean, Double]]
+      val margsZ = beliefs(Belief(z))
       for (zv <- z.domain.value()) {
         println("margsZ(%s) -> %f\t(%f)" format(zv, margsZ(zv), tmargsZ(zv) / Z))
         margsZ(zv) should be(tmargsZ(zv) / Z +- 0.01)
