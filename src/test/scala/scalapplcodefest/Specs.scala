@@ -15,6 +15,7 @@ import scalapplcodefest.term.FunctionNotDefinedAt
 import scalapplcodefest.term.Constant
 import org.scalautils.Bad
 import scalapplcodefest.term.VariableUndefined
+import cc.factorie.la.Tensor1
 
 /**
  * Set of specs.
@@ -436,15 +437,33 @@ class ExperimentalSpecs extends WordSpec with Matchers {
   }
 
   def maxProduct[T] = max(_: LambdaAbstraction[T, Double]).byMessagePassing(MaxProduct.apply(_, 1))
-  def bruteForce[T] = max(_: LambdaAbstraction[T, Double]).byBruteForce
+  def bruteForceMax[T] = max(_: LambdaAbstraction[T, Double]).byBruteForce
 
 
   "Max Product" should {
     behave like maximizer(maxProduct)
   }
 
-  "Brute Force" should {
-    behave like maximizer(bruteForce)
+  "Max Brute Force" should {
+    behave like maximizer(bruteForceMax)
+  }
+
+  def logZTester(newLogZ: => (LambdaAbstraction[Int, Double] => LogZ[Int])) {
+    "find gradient and logZ of a linear term" in {
+      val w = 'w of vectors
+      val i = 'i of 0 ~~ 3
+      val term = (unit(i) dot w)
+      val logZ = newLogZ(lam(i, term))
+      val arg = state(w -> new DenseVector(Array(-1.0, 1.0, 0.0)))
+      logZ.value(arg) should be(1.40760596 +- 1e-5)
+      logZ.gradient.value(arg) should equal(Tensor1(0.0900305, 0.6652409, 0.244728))(decided by vectorEqIgnoreLength)
+    }
+  }
+
+  def bruteForceLogZ[T] = logZ(_: LambdaAbstraction[T, Double]).byBruteForce
+
+  "LogZ Brute Force" should {
+    behave like logZTester(bruteForceLogZ)
   }
 
   def gradientBasedMinimizer(newMinimizer: => (LambdaAbstraction[Vector,Double] => Term[State])) {
@@ -643,6 +662,13 @@ object CustomEqualities {
     def areEqual(a: Vector, b: Any): Boolean = (a, b) match {
       case (v1: SparseVector, v2: SingletonVector) => v1.activeDomain.forall(i => v1(i) === v2(i) +- eps)
       case (v1: Vector, v2: Vector) => v1.length == v2.length && v1.activeDomain.forall(i => a(i) === v1(i) +- eps)
+      case _ => false
+    }
+  }
+
+  implicit val vectorEqIgnoreLength = new Equality[Vector] {
+    def areEqual(a: Vector, b: Any): Boolean = (a, b) match {
+      case (v1: Vector, v2: Vector) => v1.activeDomain.forall(i => a(i) === v1(i) +- eps)
       case _ => false
     }
   }
