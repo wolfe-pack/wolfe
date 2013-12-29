@@ -50,6 +50,7 @@ object TermDSL extends ValueDSL {
   implicit def toRichPredicate[A, B](p: Predicate[A, B]) = RichPredicate(p)
   implicit def toRichPredicate2[A1, A2, B](p: Predicate[(A1, A2), B]) = RichPredicate2(p)
   implicit def toRichCartesianProductTerm2[T1, T2](term: CartesianProductTerm2[T1, T2]) = RichCartesianProductTerm2(term)
+  implicit def toRichCartesianProductTerm3[T1, T2, T3](term: CartesianProductTerm3[T1, T2, T3]) = RichCartesianProductTerm3(term)
   implicit def toRichSetTerm[T](s: Term[Set[T]]) = RichSetTerm(s)
   implicit def toRichVec(term: Term[Vector]) = RichVecTerm(term)
   implicit def toRichVarSymbol(symbol: Symbol) = RichVarSymbol(symbol)
@@ -168,7 +169,24 @@ object TermDSL extends ValueDSL {
 
     def filter(f: ((Variable[T1], Variable[T2])) => Boolean) = this
     def withFilter(f: ((Variable[T1], Variable[T2])) => Boolean) = this
+  }
 
+  case class RichCartesianProductTerm3[T1, T2, T3](term: CartesianProductTerm3[T1, T2, T3],
+                                               variableName1: () => String = () => freshName(),
+                                               variableName2: () => String = () => freshName(),
+                                               variableName3: () => String = () => freshName()) {
+    def as(name1: String, name2: String, name3: String) = RichCartesianProductTerm3(term, () => name1, () => name2, () => name3)
+
+    def map[R](f: ((Variable[T1], Variable[T2], Variable[T3])) => Term[R]): LambdaAbstraction[(T1, T2, T3), R] = {
+      val variable1 = Var(Symbol(variableName1()), term.a1)
+      val variable2 = Var(Symbol(variableName2()), term.a2)
+      val variable3 = Var(Symbol(variableName3()), term.a3)
+      val applied = f(variable1, variable2, variable3)
+      LambdaAbstraction(TupleSig3(VarSig(variable1), VarSig(variable2), VarSig(variable3)), applied)
+    }
+
+    def filter(f: ((Variable[T1], Variable[T2], Variable[T3])) => Boolean) = this
+    def withFilter(f: ((Variable[T1], Variable[T2], Variable[T3])) => Boolean) = this
   }
 
 

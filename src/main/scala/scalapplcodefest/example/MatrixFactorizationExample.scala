@@ -35,8 +35,7 @@ object MatrixFactorizationExample extends App {
 
   val v = for ((e1, e2) <- c(Entities, Entities)) yield vectors.sum(for (i <- 0 ~~ k) yield project(w, key(e1, e2, i)))
 
-  val model = for ((rName, e1, e2) <- c(Relations, Entities, Entities)) yield
-    (a(rName) dot v(e1, e2)) * I(r(rName, e1, e2))
+  val model = for ((rName, e1, e2) <- c(Relations, Entities, Entities)) yield (a(rName) dot v(e1, e2)) * I(r(rName, e1, e2))
 
   //TODO: objective
   //TODO: learning
