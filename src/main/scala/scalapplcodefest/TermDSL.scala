@@ -45,8 +45,8 @@ object TermDSL extends ValueDSL {
 
   implicit def toRichFunTerm[A, B](term: Term[Fun[A, B]]): RichFunTerm[A, B] = RichFunTerm(term)
   implicit def toRichFunctionSeq[A, B](f: FunTerm[Seq[A], B]) = RichFunctionTermSeq(f)
-  implicit def toRichFunction2[A1, A2, B](f: FunTerm[(A1, A2), B]) = RichFunctionTerm2(f)
-  implicit def toRichFunction3[A1, A2, A3, B](f: FunTerm[(A1, A2, A3), B]) = RichFunctionTerm3(f)
+  implicit def toRichFunction2[A1, A2, B](f: Term[Fun[(A1, A2), B]]) = RichFunctionTerm2(f)
+  implicit def toRichFunction3[A1, A2, A3, B](f: Term[Fun[(A1, A2, A3), B]]) = RichFunctionTerm3(f)
   implicit def toRichPredicate[A, B](p: Predicate[A, B]) = RichPredicate(p)
   implicit def toRichPredicate2[A1, A2, B](p: Predicate[(A1, A2), B]) = RichPredicate2(p)
   implicit def toRichCartesianProductTerm2[T1, T2](term: CartesianProductTerm2[T1, T2]) = RichCartesianProductTerm2(term)
@@ -247,12 +247,12 @@ object TermDSL extends ValueDSL {
 
   }
 
-  case class RichFunctionTerm2[A1, A2, B](f: FunTerm[(A1, A2), B]) {
+  case class RichFunctionTerm2[A1, A2, B](f: Term[Fun[(A1, A2), B]]) {
     def apply(a1: Term[A1], a2: Term[A2]) = FunApp(f, TupleTerm2(a1, a2))
     def apply(a1: Term[(A1, A2)]) = FunApp(f, a1)
   }
 
-  case class RichFunctionTerm3[A1, A2, A3, B](f: FunTerm[(A1, A2, A3), B]) {
+  case class RichFunctionTerm3[A1, A2, A3, B](f: Term[Fun[(A1, A2, A3), B]]) {
     def apply(a1: Term[A1], a2: Term[A2], a3: Term[A3]) = FunApp(f, TupleTerm3(a1, a2, a3))
     def apply(a1: Term[(A1, A2, A3)]) = FunApp(f, a1)
   }

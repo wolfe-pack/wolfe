@@ -151,11 +151,10 @@ class Specs extends WordSpec with Matchers {
       val p3 = 'p of c(strings, strings, doubles) |-> bools
       val f3 = p3.value(state(
         p3.atom("two times", "two is", 4) -> true,
-        p3.atom("two times", "three is", 5) -> false
+        p3.atom("two times", "three is", 5.1) -> false
       ))
       f3("two times", "two is", 4) should be(true)
-      f3("two times", "three is", 5) should be(false)
-
+      f3("two times", "three is", 5.1) should be(false)
     }
     "return as variables all ground atoms of the predicate" in {
       val p = 'p of 0 ~~ 2 |-> bools

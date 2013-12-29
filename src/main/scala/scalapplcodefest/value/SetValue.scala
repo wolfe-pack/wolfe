@@ -196,7 +196,7 @@ case object Vectors extends AllObjectsLarge[Vector] {
     def dom1 = Vectors
     def dom2 = Doubles
     def funRange = Vectors
-    def apply(pair: (Vector, Double)) = pair._1 * pair._2
+    def apply(pair: (Vector, Double)) = pair._1 * pair._2 //FIXME
   }
 }
 
