@@ -274,7 +274,7 @@ object TermDSL extends ValueDSL {
 
     object Applied2 {
       def unapply(term: Term[Any]): Option[(Term[A1], Term[A2])] = term match {
-        case FunApp(op, TupleTerm2(arg1, arg2)) if op == self => Some(arg1.asInstanceOf[Term[A1]], arg2.asInstanceOf[Term[A2]])
+        case FunApp(op, TupleTerm2(arg1, arg2)) if self == op => Some(arg1.asInstanceOf[Term[A1]], arg2.asInstanceOf[Term[A2]])
         case _ => None
       }
     }
