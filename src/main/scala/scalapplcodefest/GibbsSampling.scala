@@ -16,11 +16,11 @@ import scala.collection.immutable.HashMap
  */
 case class GibbsSampling[T](term: LambdaAbstraction[T, Double])(implicit random: Random) {
 
+  import scalapplcodefest.InferenceUtils.Counts
+
   val normalized = pushDownConditions(term.body)
   val sigVars = term.sig.variables
   val vars = sigVars.toSeq.sorted(VariableOrdering)
-
-  type Counts = mutable.HashMap[Variable[Any], mutable.HashMap[Any, Double]]
 
   def sample(curr: State): State = {
     // pick a random variable
@@ -42,7 +42,7 @@ case class GibbsSampling[T](term: LambdaAbstraction[T, Double])(implicit random:
     assert(thinning >= 1, "Thinning %d should be > 0" format (thinning))
     assert(numSamples >= 1, "Num Samples %d should be > 0" format (numSamples))
     assert(burn >= 0, "Burn-in %d should be >= 0" format (burn))
-    var curr = if(init == State.empty) State(vars.map(v => (v, v.default)).toMap) else init
+    var curr = if (init == State.empty) State(vars.map(v => (v, v.default)).toMap) else init
     for (i <- 0 until burn) {
       curr = sample(curr)
     }
@@ -55,7 +55,7 @@ case class GibbsSampling[T](term: LambdaAbstraction[T, Double])(implicit random:
       }
     }
     // convert counts to state
-    convertCountsToState(counts)
+    InferenceUtils.convertCountsToState(counts)
   }
 
   def accumulate(state: State, counts: Counts) {
@@ -71,8 +71,13 @@ case class GibbsSampling[T](term: LambdaAbstraction[T, Double])(implicit random:
     State(map)
   }
 
+}
+
+object InferenceUtils {
+  type Counts = mutable.HashMap[Variable[Any], mutable.HashMap[Any, Double]]
+
   def convertCountsToState(counts: Counts): State = {
-    val map = for (variable <- vars) yield {
+    val map = for (variable <- counts.keysIterator) yield {
       val cs = counts(variable)
       val norm = cs.map(_._2).sum
       val margs = cs.map(p => (p._1 -> p._2 / norm))
@@ -80,5 +85,38 @@ case class GibbsSampling[T](term: LambdaAbstraction[T, Double])(implicit random:
       Belief(variable) -> fun
     }
     State(map.toMap)
+  }
+
+  def valuesIterator(vars: Iterable[Variable[_]]): Iterator[State] = State.allStates(vars.toList).iterator
+}
+
+case class BruteForceMarginalInference[T](term: LambdaAbstraction[T, Double]) {
+
+  import scalapplcodefest.InferenceUtils.Counts
+
+  val normalized = pushDownConditions(term.body)
+  val sigVars = term.sig.variables
+  val vars = sigVars.toSeq.sorted(VariableOrdering)
+
+  def infer: State = {
+    val margs = new Counts
+    var Z = 0.0
+    for (s <- InferenceUtils.valuesIterator(vars)) {
+      val score = normalized.value(s)
+      val escore = StrictMath.exp(score)
+      Z += escore
+      for (v <- vars) {
+        val m = margs.getOrElseUpdate(v, new mutable.HashMap)
+        val value = s(v)
+        m(value) = m.getOrElse(value, 0.0) + escore
+      }
+    }
+    // normalize the marginals
+    for ((v, m) <- margs) {
+      for (value <- m.keysIterator) {
+        m(value) = m(value) / Z
+      }
+    }
+    InferenceUtils.convertCountsToState(margs)
   }
 }

@@ -140,7 +140,7 @@ class InferenceSpecs extends WordSpec with Matchers {
   }
 
   def gibbs[T]: LambdaAbstraction[T, Double] => State = l => GibbsSampling(l).infer(State.empty, 5000, 100, 100)
-  //def bruteForce[T] = max(_: LambdaAbstraction[T, Double]).byBruteForce
+  def bruteForce[T] : LambdaAbstraction[T, Double] => State = l => BruteForceMarginalInference(l).infer
 
   "Gibbs Sampling (single)" should {
     behave like singleTermMarginals(gibbs)
@@ -156,5 +156,21 @@ class InferenceSpecs extends WordSpec with Matchers {
 
   "Gibbs Sampling (loop3)" should {
     behave like threeVariableMarginals(true, gibbs)
+  }
+
+  "Brute Force (single)" should {
+    behave like singleTermMarginals(bruteForce)
+  }
+
+  "Brute Force (double)" should {
+    behave like twoVariableMarginals(bruteForce)
+  }
+
+  "Brute Force (chain3)" should {
+    behave like threeVariableMarginals(false, bruteForce)
+  }
+
+  "Brute Force (loop3)" should {
+    behave like threeVariableMarginals(true, bruteForce)
   }
 }
