@@ -29,16 +29,14 @@ object MatrixFactorizationExample extends App {
   val Entities = set("e1", "e2", "e3")
   val Relations = set("r1", "r2")
 
-  val r = 'r of c(strings, Entities, Entities) |-> bools
+  val rPredicate = 'r of c(strings, Entities, Entities) |-> bools
 
-  val a = for (rName <- Relations) yield vectors.sum(for (i <- 0 ~~ k) yield project(w, key(rName, i)))
+  val a = for (r <- Relations) yield vectors.sum(for (i <- 0 ~~ k) yield project(w, key(r, i)))
 
   val v = for ((e1, e2) <- c(Entities, Entities)) yield vectors.sum(for (i <- 0 ~~ k) yield project(w, key(e1, e2, i)))
 
-  val model = for ((rName, e1, e2) <- c(Relations, Entities, Entities)) yield (a(rName) dot v(e1, e2)) * I(r(rName, e1, e2))
+  val model = for ((r, e1, e2) <- c(Relations, Entities, Entities)) yield (a(r) dot v(e1, e2)) * I(rPredicate(r, e1, e2))
 
   //TODO: objective
   //TODO: learning
-
-
 }

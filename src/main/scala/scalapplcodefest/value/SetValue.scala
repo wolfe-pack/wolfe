@@ -185,13 +185,19 @@ case object Vectors extends AllObjectsLarge[Vector] {
     def dom = Vectors
   }
 
+  //rockt: this could be changed to BinaryOperator[Int, Double, Vector]
   case object UnitVector extends Operator[(Int,Double),Vector] {
     def funCandidateDom = CartesianProduct2(Ints,Doubles)
     def funRange = Vectors
     def apply(indexValue:(Int,Double)) = new SingletonTensor1(1, indexValue._1, indexValue._2)
   }
 
-
+  case object ScalarTimes extends BinaryOperator[Vector, Double, Vector]{
+    def dom1 = Vectors
+    def dom2 = Doubles
+    def funRange = Vectors
+    def apply(pair: (Vector, Double)) = pair._1 * pair._2
+  }
 }
 
 

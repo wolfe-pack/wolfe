@@ -110,7 +110,9 @@ object TermDSL extends ValueDSL {
     def +(that: Term[Vector]) = FunApp(vectors.add, TupleTerm2(term, that))
     def -(that: Term[Vector]) = FunApp(vectors.minus, TupleTerm2(term, that))
     //rockt: needs to return a vector!
-    def *(that: Term[Double]): FunApp[(Vector, Any), Vector] = ??? //TODO
+    //def *(that: Term[Double]): FunApp[(Vector, Any), Vector] = ??? //TODO
+    
+    def *(that: Term[Double]) = FunApp(vectors.scalarTimes, TupleTerm2(term, that))
   }
 
   private var anonVarCount = 0
@@ -366,6 +368,7 @@ object TermDSL extends ValueDSL {
     val add = new Constant(Vectors.VecAdd) with ConstantOperator[Vector]
     val minus = new Constant(Vectors.VecMinus) with ConstantOperator[Vector]
     val unit = new Constant(Vectors.UnitVector) with ConstantFun2[Int, Double, Vector]
+    val scalarTimes = new Constant(Vectors.ScalarTimes) with ConstantFun2[Vector, Double, Vector]
   }
 
   object strings extends Constant(Strings) with ConstantSet[String] {
