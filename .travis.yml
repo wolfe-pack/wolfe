@@ -4,5 +4,11 @@ scala:
 jdk:
    - oraclejdk7
 
-sbt_args: -Djava.io.tmpdir=.
+sbt_args: -Djava.io.tmpdir=tmp
+
+before_script
+   - mkdir tmp
+
+after_script
+   - ls -lh tmp
 
