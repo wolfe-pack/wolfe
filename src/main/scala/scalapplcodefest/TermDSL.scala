@@ -28,6 +28,7 @@ object TermDSL extends ValueDSL {
   implicit def doubleToConstant(x: Double) = Constant(x)
   implicit def booleanToConstant(x: Boolean) = Constant(x)
   implicit def symbolToConstant(x: Symbol) = Constant(x)
+  implicit def stringToConstant(x: String) = Constant(x)
   //implicit def predicateToAllAtoms[A,B](p:Predicate[A,B]) = AllGroundAtoms(p)
 
   //implicit def setToConstant[T](x: Set[T]) = Constant(x)
