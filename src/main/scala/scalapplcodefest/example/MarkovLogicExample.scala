@@ -37,7 +37,7 @@ object MarkovLogicExample {
     I(smokes(p) |=> cancer(p))))
 
   //friends make friends smoke / not smoke
-  val f2 = vectors.sum(for ((p1,p2) <- c(persons, persons)) yield unit(key('peerPressure),
+  val f2 = vectors.sum(for ((p1, p2) <- c(persons, persons)) yield unit(key('peerPressure),
     I(friend(p1, p2) |=> (smokes(p1) <=> smokes(p2)))))
 
   //The MLN without assigned weights
@@ -54,7 +54,7 @@ object MarkovLogicExample {
     val conditioned = mln | condition | weights -> concreteWeights
 
     //an inference result calculated through max product
-    val argmax = argState(max(lam(sig(smokes,cancer,friend),conditioned)).byMessagePassing()).value()
+    val argmax = argState(max(lam(sig(smokes, cancer, friend), conditioned)).byMessagePassing()).value()
 
     println(argmax)
 

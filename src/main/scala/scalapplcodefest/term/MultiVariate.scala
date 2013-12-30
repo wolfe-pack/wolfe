@@ -55,7 +55,7 @@ object Max {
     private var conditionedValue: Term[Double] = _
     private var conditionedCoefficient: Term[Vector] = _
     private val withStateDo = new WithStateDo(state => {
-      val argument = state(parameter)
+      val argument = parameter.value(state)
       conditionedValue = term.body | parameter -> argument
       conditionedCoefficient = coefficient | parameter -> argument
       argState = State.allStates(term.sig.variables.toList).view.maxBy(conditionedValue.eval(_).get)

@@ -1,0 +1,11 @@
+Friends(Ivan, John)
+Friends(John, Ivan)
+Friends(Katherine, Lars)
+Friends(Lars, Katherine)
+Friends(Michael, Nick)
+Friends(Nick, Michael)
+Friends(Ivan, Michael)
+Friends(Michael, Ivan)
+
+Smokes(Ivan)
+Smokes(Nick)
