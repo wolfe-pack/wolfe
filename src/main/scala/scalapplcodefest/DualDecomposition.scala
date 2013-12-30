@@ -9,8 +9,21 @@ import scalapplcodefest.MPGraph.{Node, Factor}
  */
 object DualDecomposition {
 
+  /**
+   * The default step size for a given dual decomposition iteration.
+   * @param i The iteration
+   * @return
+   */
   def defaultStepSize(i: Int) = 1 / math.sqrt(i + 1)
 
+  /**
+   * Run dual decomposition on a factor graph and sets the MAP assignment to the belief variable of each node in the
+   * graph
+   * @param fg The message passing factor graph
+   * @param maxIteration The maximum number of iterations after which the algorithm gives up
+   * @param stepSize A function that gives the step size at each iteration. Defaults to defaultStepSize
+   * @param parallelize A flag that indicates that each factor's inference can be run in parallel. Defaults to true
+   */
   def apply(fg: MPGraph, maxIteration: Int, stepSize: Int => Double = defaultStepSize, parallelize: Boolean = true):
   Unit = {
 
@@ -40,7 +53,12 @@ object DualDecomposition {
   }
 
 
-  def initializeN2FMessages(fg: MPGraph): Unit = {
+  /**
+   * Initializes the messages from each node to a factor to true. These variables store the values of the dual
+   * variables.
+   * @param fg The factor graph
+   */
+  private def initializeN2FMessages(fg: MPGraph): Unit = {
     for (factor <- fg.factors;
          edge <- factor.edges) {
       for (i <- 0 until edge.n2f.size)
@@ -50,31 +68,28 @@ object DualDecomposition {
 
   /**
    * Find the score-maximizing assignment to the nodes associated with a factor, accounting for the score penalties
-   * @param factor
+   * @param factor The factor
    */
   def solveFactorWithPenalty(factor: MPGraph.Factor): Unit = {
     factor.typ match {
-      case MPGraph.FactorType.TABLE => {
+      case MPGraph.FactorType.TABLE =>
         val best = (0 until factor.table.size).maxBy(i => penalizedScore(factor, i))
         propagateSettingInformation(factor, factor.settings(best))
-      }
-      case MPGraph.FactorType.LINEAR => {
+      case MPGraph.FactorType.LINEAR =>
         val best = (0 until factor.table.size).maxBy(i => penalizedScore(factor, i))
         propagateSettingInformation(factor, factor.settings(best))
-      }
-      case MPGraph.FactorType.STRUCTURED => {
+      case MPGraph.FactorType.STRUCTURED =>
         // TODO: How does one mandate that this uses the penalties
         val argmax = factor.structured.argmaxMarginal2AllNodes(factor)
 
         propagateSettingInformation(factor, argmax)
-      }
     }
   }
 
   /**
    * For each node associated with the factor, send a message that identifies its best setting as a one-hot vector
-   * @param factor
-   * @param setting
+   * @param factor The factor graph
+   * @param setting The best setting for the nodes connected to this factor
    */
   def propagateSettingInformation(factor: MPGraph.Factor, setting: Array[Int]) = {
 
