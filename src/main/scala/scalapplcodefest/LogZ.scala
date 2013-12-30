@@ -25,7 +25,7 @@ object LogZ {
     private var logZ: Term[Double] = _
     private var marginals: Term[Vector] = _
     private val withStateDo = new WithStateDo(state => {
-      val argument = state(parameter)
+      val argument = parameter.value(state)
       val body = term.body | parameter -> argument
       val coeffs = coefficient | parameter -> argument
       val (lZ, ms) = compute(body, coeffs)
