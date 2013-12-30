@@ -9,6 +9,8 @@ resolvers ++= Seq(
   Resolver.sonatypeRepo("snapshots")
 )
 
+publishTo := Some(Resolver.file("file",  new File(Path.userHome.absolutePath+"/.m2/repository")))
+
 libraryDependencies ++= Seq(
   "net.sf.trove4j" % "trove4j" % "3.0.3",
   "org.scalautils" % "scalautils_2.10" % "2.0",
@@ -16,4 +18,3 @@ libraryDependencies ++= Seq(
   "com.nativelibs4java" %% "scalaxy-loops" % "0.3-SNAPSHOT" % "provided",
   "cc.factorie" % "factorie" % "1.0.0-M7"
 )
-
