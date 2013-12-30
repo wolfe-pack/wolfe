@@ -2,7 +2,6 @@ package scalapplcodefest
 
 import scalapplcodefest.term._
 import scalapplcodefest.term.LambdaAbstraction
-import scalapplcodefest.value.Reduce
 import scalapplcodefest.term.Var
 import scalapplcodefest.term.TupleTerm2
 import scalapplcodefest.term.Conditioned

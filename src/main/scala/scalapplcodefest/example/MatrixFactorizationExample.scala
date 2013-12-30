@@ -55,14 +55,11 @@ object MatrixFactorizationExample extends App {
 
   val predict = model | learned | kb
 
-  //rockt: working
-  //val query = predict(Constant("r1"), Constant("e1"), Constant("e2"))
+  val query = predict(Constant("r1"), Constant("e1"), Constant("e2"))
   //println("score of r1(e1,e2): " + query.value())
 
-
-  val query = predict(Constant("r2"), Constant("e1"), Constant("e2"))
-
-  debugTerm(query)
+  val queryWithError = predict(Constant("r2"), Constant("e1"), Constant("e2"))
+  debugTerm(queryWithError)
 
   //TODO: objective
   // || I(kbPred(r,e1,e2)) - (model | learned | kb(r,e1,e2) -> true) ||^2
