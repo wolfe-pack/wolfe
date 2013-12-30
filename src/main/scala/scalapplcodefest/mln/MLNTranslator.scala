@@ -118,6 +118,7 @@ class MLNTranslator {
     val mln: FunApp[(Vector, Vector), Double] = vectors.sumSeq(features) dot weights
     mln
 
+    // the code below is just an example
     //    val feats: Seq[(Seq[Symbol], Double)] = folf map (f => (Seq(Symbol(f._1)), f._2))
     //    val concreteWeights = index.createDenseVector(feats.toList: _*)()
     //
