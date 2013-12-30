@@ -56,10 +56,9 @@ class MAPInferenceSpecs extends WordSpec with Matchers {
       for (nodeId <- 0 until fg.nodes.size) {
         val node = fg.nodes(nodeId)
         val assignment = solution(nodeId)
-        (0 until node.b.size).maxBy(node.b(_)) should be(assignment)
+        val prediction =  (0 until node.b.size).maxBy(node.b(_))
+        prediction should be(assignment)
       }
-
-
     }
   }
 
