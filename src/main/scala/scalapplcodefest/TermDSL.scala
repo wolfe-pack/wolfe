@@ -6,7 +6,6 @@ import scalapplcodefest.value._
 import scalapplcodefest.term._
 import scalapplcodefest.value.RangeSet
 import scala.Some
-import scalapplcodefest.value.Reduce
 import scalapplcodefest.term.RestrictedFun
 import scalapplcodefest.term.DynFunTerm
 import scalapplcodefest.value.SeqSet
