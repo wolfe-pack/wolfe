@@ -1,0 +1,65 @@
+package scalapplcodefest.mln
+
+import org.scalatest.{Matchers, FlatSpec}
+import scalapplcodefest.term.State
+
+
+/**
+ * Created by larysa  04.12.13
+ */
+class MLNTest extends FlatSpec with Matchers {
+
+  "MLN parsing" should "work" in {
+
+    val mln_file = "scalapplcodefest/mln/social/network/smoking.mln"
+    val db_file = "scalapplcodefest/mln/social/network/smoking-train.db"
+    val result_file = "scalapplcodefest/mln/social/network/smoking.result"
+
+    val mln = new MLNTranslator
+    mln.mln(mln_file).db(db_file) /*.query("Cancer", "Friends", "Smokes")*/ .getModel
+    val state: State = mln.getState
+    println("state = " + state)
+
+    // the code below is just an example
+    //    val feats: Seq[(Seq[Symbol], Double)] = folf map (f => (Seq(Symbol(f._1)), f._2))
+    //    val concreteWeights = index.createDenseVector(feats.toList: _*)()
+    //
+    //    val condition = getState
+    //
+    //    val conditioned = mln | condition | weights -> concreteWeights
+    //
+    //    val queryPredicates: Set[Predicate[_, Boolean]] = queryPredicate map (q => predicates.get(Symbol(q)).get)
+    //    val signature: Sig[_] = queryPredicates.toList match {
+    //      case List(x) => throw new scala.Error("error: we do not provide sig for a one argument " + x)
+    //      case List(x, y) => sig(x.asInstanceOf[Predicate[Any, Boolean]], y.asInstanceOf[Predicate[Any, Boolean]])
+    //      case List(x, y, z) => sig(x.asInstanceOf[Predicate[Any, Boolean]], y.asInstanceOf[Predicate[Any, Boolean]], z.asInstanceOf[Predicate[Any, Boolean]])
+    //    }
+    //
+
+    //    val lambda: LambdaAbstraction[_, Double] = lam(signature, conditioned)
+    //    val maxi: RichMax[_] = max(lambda)
+    //    val argmax = argState(maxi.byMessagePassing()).value()
+    //
+
+    //    println(argmax)
+
+
+  }
+
+}
+
+object Test {
+  def main(args: Array[String]) {
+    val x = Test(5)
+    println(x)
+    x match {
+      case Test(num) => println(x + " is bigger two times than " + num)
+      //unapply is invoked
+      case _ => println("i cannot calculate")
+    }
+  }
+
+  def apply(x: Int) = x * 2
+
+  def unapply(z: Int): Option[Int] = if (z % 2 == 0) Some(z / 2) else None
+}
