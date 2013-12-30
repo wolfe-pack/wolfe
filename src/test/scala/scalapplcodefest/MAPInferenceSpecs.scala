@@ -15,25 +15,50 @@ import scalapplcodefest.value.{Doubles, Bools}
 class MAPInferenceSpecs extends WordSpec with Matchers {
   implicit val random = new Random(0)
 
-  def handBuiltSingleTableFactorMAP(algorithm: MPGraph => Unit) = {
-    "find argmax for a hand-built factor graph" in {
-      val fg = new MPGraph
+  def buildFactorTable(states: Array[Array[Int]]): MPGraph = {
+    val table = states.map {_ => random.nextGaussian()}.toArray
 
-      val table = Array(random.nextGaussian(), random.nextGaussian())
+    val numNodes = states(0).length
 
-      val f = fg.addTableFactor(table, Array(Array(0), Array(1)), Array(2))
-      val node = fg.addNode(2)
+    val fg = new MPGraph
+    val f = fg.addTableFactor(table, states, (0 until numNodes).map {_ => 2}.toArray)
 
-      val e = fg.addEdge(f, node, 0)
+    val edges = (0 until numNodes).map {
+      n => {
+        val node = fg.addNode(2)
 
-      f.edges = Array(e)
-      node.edges = Array(e)
+        val e = fg.addEdge(f, node, n)
 
-      val solution = if (table(0) > table(1)) 0 else 1
+        // TODO this is ugly! fg.addEdge should have registered the edge with the node
+        node.edges = Array(e)
+        e
+      }
+    }.toArray
+
+    // TODO this is ugly! fg.addEdge should have registered the edges with the factor
+    f.edges = edges
+
+    fg
+  }
+
+
+  def handBuiltSingleTableFactorMAP(algorithm: MPGraph => Unit, allStates: Array[Array[Int]]) = {
+    s"find argmax for a hand-built factor graph with ${allStates(0).length} nodes" in {
+      val fg = buildFactorTable(allStates)
+
+      val table = fg.factors(0).table
+
+      val solutionId = (0 until table.size).maxBy(i => table(i))
+      val solution = allStates(solutionId)
 
       algorithm(fg)
 
-      (0 until node.b.size).maxBy(node.b(_)) should be(solution)
+      for (nodeId <- 0 until fg.nodes.size) {
+        val node = fg.nodes(nodeId)
+        val assignment = solution(nodeId)
+        (0 until node.b.size).maxBy(node.b(_)) should be(assignment)
+      }
+
 
     }
   }
@@ -106,9 +131,17 @@ class MAPInferenceSpecs extends WordSpec with Matchers {
 
   def maxProduct(fg: MPGraph) = MaxProduct(fg, 100)
 
+  val oneNodeStates = Array(Array(0), Array(1))
+  val twoNodeStates = Array(Array(0, 0), Array(0, 1), Array(1, 0), Array(1, 1))
+  val threeNodeStates = Array(Array(0, 0, 0), Array(0, 0, 1), Array(0, 1, 0), Array(0, 1, 1), Array(1, 0, 0),
+    Array(1, 0, 1), Array(1, 1, 0), Array(1, 1, 1))
+
+
   "Table maxer" when {
     "given a single binomial factor" should {
-      behave like handBuiltSingleTableFactorMAP(tableMaxer)
+      behave like handBuiltSingleTableFactorMAP(tableMaxer, oneNodeStates)
+      behave like handBuiltSingleTableFactorMAP(tableMaxer, twoNodeStates)
+      behave like handBuiltSingleTableFactorMAP(tableMaxer, threeNodeStates)
 
       behave like compiledSingleTableFactorMAP(tableMaxer)
     }
@@ -116,18 +149,23 @@ class MAPInferenceSpecs extends WordSpec with Matchers {
 
   "MaxProduct" when {
     "given single a binomial factor" should {
-      behave like handBuiltSingleTableFactorMAP(maxProduct)
+      behave like handBuiltSingleTableFactorMAP(maxProduct, oneNodeStates)
+      behave like handBuiltSingleTableFactorMAP(maxProduct, twoNodeStates)
+      behave like handBuiltSingleTableFactorMAP(maxProduct, threeNodeStates)
 
       behave like compiledSingleTableFactorMAP(maxProduct)
     }
     "given a single variable with two factors" should {
+
       behave like compiledTwoTableFactorMAP(maxProduct)
     }
   }
 
   "Dual decomposition" when {
     "given given a single binomial factor" should {
-      behave like handBuiltSingleTableFactorMAP(dualDecomposition)
+      behave like handBuiltSingleTableFactorMAP(dualDecomposition, oneNodeStates)
+      behave like handBuiltSingleTableFactorMAP(dualDecomposition, twoNodeStates)
+      behave like handBuiltSingleTableFactorMAP(dualDecomposition, threeNodeStates)
 
       behave like compiledSingleTableFactorMAP(dualDecomposition)
     }
