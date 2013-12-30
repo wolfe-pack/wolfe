@@ -49,8 +49,6 @@ object MatrixFactorizationExample extends App {
   val model = for ((r, e1, e2) <- c(Relations, Entities, Entities) as ('r, 'e1, 'e2)) yield
     (relE(r) dot tupE(e1, e2)) * I(kbPred(r, e1, e2))
 
-  println(TermToDebugString(model))
-
   val learned = state(
     k -> 2, //embeddings are vectors with two components
     w -> new DenseTensor1(Array(1.0, 2.0, 0.0, 1.0)) //setting weights, later these will get learned from data
@@ -58,8 +56,17 @@ object MatrixFactorizationExample extends App {
 
   val predict = model | learned | kb
 
+  //val query = predict(Constant("r1"), Constant("e1"), Constant("e2")) //rockt: working
+
   val query = predict(Constant("r2"), Constant("e1"), Constant("e2"))
 
+  //println(TermToDebugString(query))
+
+  TermDebugger(query)
+
+  println("score of r2(e1,e2): " + query.value())
+
+  //println("score of r1(e1,e2): " + query.value())
   println("score of r2(e1,e2): " + query.value()) //FIXME
 
   //TODO: objective
@@ -69,12 +76,24 @@ object MatrixFactorizationExample extends App {
   //TODO: learning
 }
 
+object TermDebugger {
+  def apply(term: Term[_]) = {
+    println("trying")
+
+    try term.value() catch {
+      case e: NoSuchElementException => {
+        println("woops!")
+      }
+    }
+  }
+}
+
 object TermToDebugString {
   def apply(term: Term[_], indent: Int = 0): String = {
     def tabs = "\t" * indent
 
     term match {
-      case t: LambdaAbstraction[_, _] => s"\n$tabs lam ${t.sig} {${apply(t.body, indent + 1)}}"
+      case t: LambdaAbstraction[_, _] => s"\n${tabs}lam ${t.sig} { ${apply(t.body, indent + 1)} }"
       case t: FunApp[_, _] => s"${apply(t.function, indent)}(${apply(t.arg, indent)})"
       case t: TupleTerm2[_, _] => s"(${apply(t.a1, indent)}, ${apply(t.a2, indent)})"
       case t: TupleTerm3[_, _, _] => s"(${apply(t.a1, indent)}, ${apply(t.a2, indent)}, ${apply(t.a3, indent)})"
@@ -82,10 +101,12 @@ object TermToDebugString {
       case t: Reduce[_] => s"Reduce(${apply(t.op, indent)})(${apply(t.arguments, indent)})"
       case t: SeqTerm[_] => s"${t.seq.map(apply(_, indent)).mkString("[",",","]")}"
       case t: Predicate[_, _] => s"${t.toString}"
+      case t: Conditioned[_] => s"C:${t.componentSeq.map(apply(_, indent)).mkString(",")} \n| ${t.condition}"
       case t: Composite[_] => s"${t.getClass.getSimpleName} ${t.componentSeq.map(apply(_, indent)).mkString(",")}"
-      case _ =>
+      case t: Term[_] =>
         //println("TODO: " + term.getClass)
         term.toString
+      case _ => throw new NotImplementedError(s"I don't know yet how to debug a $term")
     }
   }
 }
