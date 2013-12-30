@@ -33,7 +33,8 @@ class MAPInferenceSpecs extends WordSpec with Matchers {
 
       algorithm(fg)
 
-      node.b(solution) should be(1.0)
+      (0 until node.b.size).maxBy(node.b(_)) should be(solution)
+
     }
   }
 
@@ -51,7 +52,37 @@ class MAPInferenceSpecs extends WordSpec with Matchers {
 
       algorithm(fg)
 
-      fg.nodes(0).b(solution) should be(1.0)
+      val node = fg.nodes(0)
+      (0 until node.b.size).maxBy(node.b(_)) should be(solution)
+    }
+  }
+
+  def compiledTwoTableFactorMAP(algorithm: MPGraph => Unit) = {
+    "find argmax for a compiled factor graph" in {
+      val x = 'x of bools
+      val p1 = random.nextGaussian()
+      val n1 = random.nextGaussian()
+
+      val f1 = fun(Map(true -> p1, false -> n1), Bools, Doubles)(x)
+
+      val p2 = random.nextGaussian()
+      val n2 = random.nextGaussian()
+
+      val f2 = fun(Map(true -> p2, false -> n2), Bools, Doubles)(x)
+
+      val model = f1 + f2
+
+      val compiled = MPGraphCompiler.compile(x, model)
+
+      val fg = compiled.graph
+
+      val posWeight = p1 + p2
+      val negWeight = p1 + p2
+      val solution = if (posWeight > negWeight) 1 else 0
+
+      algorithm(fg)
+      val node = fg.nodes(0)
+      (0 until node.b.size).maxBy(node.b(_)) should be(solution)
     }
   }
 
@@ -73,21 +104,35 @@ class MAPInferenceSpecs extends WordSpec with Matchers {
 
   def dualDecomposition(fg: MPGraph) = DualDecomposition(fg, 100)
 
-  "Dual decomposition" when {
-    "given a single binomial factor" should {
-      behave like handBuiltSingleTableFactorMAP(dualDecomposition)
-
-      behave like compiledSingleTableFactorMAP(dualDecomposition)
-    }
-  }
+  def maxProduct(fg: MPGraph) = MaxProduct(fg, 100)
 
   "Table maxer" when {
-    "single binomial factor" should {
+    "given a single binomial factor" should {
       behave like handBuiltSingleTableFactorMAP(tableMaxer)
 
       behave like compiledSingleTableFactorMAP(tableMaxer)
     }
   }
 
+  "MaxProduct" when {
+    "given single a binomial factor" should {
+      behave like handBuiltSingleTableFactorMAP(maxProduct)
 
+      behave like compiledSingleTableFactorMAP(maxProduct)
+    }
+    "given a single variable with two factors" should {
+      behave like compvedTwoTableFactorMAP(maxProduct)
+    }
+  }
+
+  "Dual decomposition" when {
+    "given given a single binomial factor" should {
+      behave like handBuiltSingleTableFactorMAP(dualDecomposition)
+
+      behave like compiledSingleTableFactorMAP(dualDecomposition)
+    }
+    "given a single variable with two factors" should {
+      behave like compiledTwoTableFactorMAP(dualDecomposition)
+    }
+  }
 }
