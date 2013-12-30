@@ -6,7 +6,6 @@ import scalapplcodefest.value._
 import scalapplcodefest.term._
 import scalapplcodefest.value.RangeSet
 import scala.Some
-import scalapplcodefest.value.Reduce
 import scalapplcodefest.term.RestrictedFun
 import scalapplcodefest.term.DynFunTerm
 import scalapplcodefest.value.SeqSet
@@ -66,6 +65,8 @@ object TermDSL extends ValueDSL {
 
   def state(assignments: Assign[_]*) =
     if (assignments.isEmpty) State.empty else State(assignments.map(a => a.variable -> a.value).toMap)
+
+//  def state[T](map: Map[Variable[T],T]) = State(map.asInstanceOf[Map[Variable[Any],Any]])
 
   def funTerm[A, B](f: PartialFunction[A, B]) = Constant(value.Fun(f, new AllOfType[A], new AllOfType[B]))
 
@@ -306,7 +307,7 @@ object TermDSL extends ValueDSL {
 
     object Applied2 {
       def unapply(term: Term[Any]): Option[(Term[A1], Term[A2])] = term match {
-        case FunApp(op, TupleTerm2(arg1, arg2)) if op == self => Some(arg1.asInstanceOf[Term[A1]], arg2.asInstanceOf[Term[A2]])
+        case FunApp(op, TupleTerm2(arg1, arg2)) if self == op => Some(arg1.asInstanceOf[Term[A1]], arg2.asInstanceOf[Term[A2]])
         case _ => None
       }
     }
