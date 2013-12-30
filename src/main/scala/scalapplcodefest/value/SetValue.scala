@@ -146,6 +146,7 @@ case object Vectors extends AllObjectsLarge[Vector] {
 
   val Zero = new ScalarTensor(0.0)
 
+  //rockt: could be a case object?
   object Dot extends BinaryOperatorSameDomain[Vector, Double] {
     def funRange = Doubles
     def apply(v1: (Vector, Vector)) = v1._1 dot v1._2
@@ -177,7 +178,7 @@ case object Vectors extends AllObjectsLarge[Vector] {
           result += s1
           result -= s2
           result
-        case (singleton: SingletonVector, other) =>singleton - other
+        case (singleton: SingletonVector, other) => singleton - other
         case (other, singleton: SingletonVector) => singleton - other
         case (v1, v2) => v1 - v2
       }
@@ -196,7 +197,11 @@ case object Vectors extends AllObjectsLarge[Vector] {
     def dom1 = Vectors
     def dom2 = Doubles
     def funRange = Vectors
-    def apply(pair: (Vector, Double)) = pair._1 * pair._2 //FIXME
+    def apply(pair: (Vector, Double)) = {
+      val result = new SparseVector(pair._1.dim1)
+      result * pair._2
+      result
+    }
   }
 }
 

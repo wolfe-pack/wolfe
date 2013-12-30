@@ -1,9 +1,10 @@
 package scalapplcodefest.example
 
 import scalapplcodefest.{Index, TermDSL}
-import scalapplcodefest.value.{Strings, Ints, Vectors}
-import scalapplcodefest.term.{Constant, State, Predicate}
+import scalapplcodefest.value.{Reduce, Strings, Ints, Vectors}
+import scalapplcodefest.term._
 import cc.factorie.la.{DenseTensor1, Tensor1}
+import scalapplcodefest.term.Constant
 
 /**
  * User: rockt
@@ -48,7 +49,7 @@ object MatrixFactorizationExample extends App {
   val model = for ((r, e1, e2) <- c(Relations, Entities, Entities) as ('r, 'e1, 'e2)) yield
     (relE(r) dot tupE(e1, e2)) * I(kbPred(r, e1, e2))
 
-  println(model)
+  println(TermToDebugString(model))
 
   val learned = state(
     k -> 2, //embeddings are vectors with two components
@@ -66,4 +67,25 @@ object MatrixFactorizationExample extends App {
 
 
   //TODO: learning
+}
+
+object TermToDebugString {
+  def apply(term: Term[_], indent: Int = 0): String = {
+    def tabs = "\t" * indent
+
+    term match {
+      case t: LambdaAbstraction[_, _] => s"\n$tabs lam ${t.sig} {${apply(t.body, indent + 1)}}"
+      case t: FunApp[_, _] => s"${apply(t.function, indent)}(${apply(t.arg, indent)})"
+      case t: TupleTerm2[_, _] => s"(${apply(t.a1, indent)}, ${apply(t.a2, indent)})"
+      case t: TupleTerm3[_, _, _] => s"(${apply(t.a1, indent)}, ${apply(t.a2, indent)}, ${apply(t.a3, indent)})"
+      case t: Var[_] => t.toString
+      case t: Reduce[_] => s"Reduce(${apply(t.op, indent)})(${apply(t.arguments, indent)})"
+      case t: SeqTerm[_] => s"${t.seq.map(apply(_, indent)).mkString("[",",","]")}"
+      case t: Predicate[_, _] => s"${t.toString}"
+      case t: Composite[_] => s"${t.getClass.getSimpleName} ${t.componentSeq.map(apply(_, indent)).mkString(",")}"
+      case _ =>
+        //println("TODO: " + term.getClass)
+        term.toString
+    }
+  }
 }
