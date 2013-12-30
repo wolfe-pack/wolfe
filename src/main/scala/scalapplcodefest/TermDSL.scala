@@ -221,6 +221,7 @@ object TermDSL extends ValueDSL {
     def +(that: Term[Int]) = FunApp(ints.add, TupleTerm2(i, that))
     def -(that: Term[Int]) = FunApp(ints.minus, TupleTerm2(i, that))
     def /(that: Term[Int]) = FunApp(ints.divide, TupleTerm2(i, that))
+    def *(that: Term[Int]) = FunApp(ints.times, TupleTerm2(i, that))
 
     def ~~(that: Term[Int]) = RangeSet(i, that) // FunApp(ints.range, TupleTerm2(i, that)) doesn't work because funapp can't guess reasonable default
   }
@@ -348,6 +349,7 @@ object TermDSL extends ValueDSL {
     val minus = new Constant(Ints.Minus) with ConstantOperator[Int]
     val range = new Constant(Ints.Range) with ConstantFun2[Int, Int, Set[Int]]
     val divide = new Constant(Ints.Divide) with ConstantOperator[Int]
+    val times = new Constant(Ints.Times) with ConstantOperator[Int]
 
   }
 

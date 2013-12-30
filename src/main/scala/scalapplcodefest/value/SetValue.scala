@@ -114,6 +114,10 @@ case object Ints extends AllObjects[Int] {
     def funRange = Ints
   }
 
+  case object Times extends BinaryOperatorSameDomainAndRange[Int] {
+    def apply(x:(Int,Int)) = x._1 * x._2
+    def dom = Ints
+  }
 }
 
 trait AllObjectsLarge[T] extends AllObjects[T] {
