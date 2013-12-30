@@ -36,6 +36,14 @@ object Untyped {
     }
   }
 
+  object LambdaAbstraction {
+    def apply(sig:Sig[Any], body:Term[Any]) = term.LambdaAbstraction(sig,body)
+
+    def unapply(t:Term[Any]) = t match {
+      case term.LambdaAbstraction(s,body) => Some(s,body)
+    }
+  }
+
   def main(args: Array[String]) {
     import TermDSL._
     val b = 'b of bools
@@ -46,8 +54,12 @@ object Untyped {
           TupleTerm2(
             FunApp(bools.implies, TupleTerm2(l, r)),
             FunApp(bools.implies, TupleTerm2(r, l))))
+      case Reduce(bools.or, ImageSeq1(LambdaAbstraction(sig,body))) =>
+        val grounded = sig.domain.value().toSeq.map(v => TermConverter.groundSig(body,sig,v))
+        grounded.reduce[Term[Any]]({ case (l,r) => FunApp(bools.or,TupleTerm2(l,r))})
       case _ => t
     }
+
   }
 
 }
