@@ -38,22 +38,6 @@ case class Gen[T](set: Set[T]) extends SetProxy[Any] {
 }
 
 /**
- * A Term that represents the reduce operation applied to a sequence of values.
- * @param op the binary operator used to reduce elements.
- * @param arguments the elements to be reduced.
- * @tparam T the type of elements to reduce.
- */
-case class Reduce[T](op: Term[Fun[(T, T), T]], arguments: Term[Seq[T]]) extends Composite2[Fun[(T, T), T],Seq[T], T] {
-  val FunTerm(_, funRange) = op
-  def eval(state: State) = for (f <- op.eval(state); set <- arguments.eval(state)) yield
-    set.reduce((a1, a2) => f(a1 -> a2))
-  def domain[C >: T] = funRange.asInstanceOf[Term[Set[C]]]
-  def default = funRange.default.head
-  def components = (op,arguments)
-  def copy(t1: Term[Fun[(T, T), T]], t2: Term[Seq[T]]) = Reduce(t1,t2)
-}
-
-/**
  * A term that is evaluated to a range of integers.
  * @param from starting integer (included)
  * @param to end integer (excluded)
