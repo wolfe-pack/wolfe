@@ -65,8 +65,8 @@ class MAPInferenceSpecs extends WordSpec with Matchers {
 
       val f1 = fun(Map(true -> p1, false -> n1), Bools, Doubles)(x)
 
-      val p2 = random.nextGaussian()
       val n2 = random.nextGaussian()
+      val p2 = random.nextGaussian()
 
       val f2 = fun(Map(true -> p2, false -> n2), Bools, Doubles)(x)
 
@@ -77,7 +77,7 @@ class MAPInferenceSpecs extends WordSpec with Matchers {
       val fg = compiled.graph
 
       val posWeight = p1 + p2
-      val negWeight = p1 + p2
+      val negWeight = n1 + n2
       val solution = if (posWeight > negWeight) 1 else 0
 
       algorithm(fg)
@@ -121,7 +121,7 @@ class MAPInferenceSpecs extends WordSpec with Matchers {
       behave like compiledSingleTableFactorMAP(maxProduct)
     }
     "given a single variable with two factors" should {
-      behave like compvedTwoTableFactorMAP(maxProduct)
+      behave like compiledTwoTableFactorMAP(maxProduct)
     }
   }
 

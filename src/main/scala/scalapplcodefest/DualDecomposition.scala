@@ -55,11 +55,11 @@ object DualDecomposition {
   def solveFactorWithPenalty(factor: MPGraph.Factor): Unit = {
     factor.typ match {
       case MPGraph.FactorType.TABLE => {
-        val best = (0 until factor.table.size).maxBy(i => factor.table(i))
+        val best = (0 until factor.table.size).maxBy(i => penalizedScore(factor, i))
         propagateSettingInformation(factor, factor.settings(best))
       }
       case MPGraph.FactorType.LINEAR => {
-        val best = (0 until factor.table.size).maxBy(i => factor.table(i))
+        val best = (0 until factor.table.size).maxBy(i => penalizedScore(factor, i))
         propagateSettingInformation(factor, factor.settings(best))
       }
       case MPGraph.FactorType.STRUCTURED => {
