@@ -15,16 +15,13 @@ object MathDSL {
   import TermDSL._
   import TermDebugger._
 
-  object λ {
-    def apply[A, B](sig: Sig[A])(body: Term[B]) = LambdaAbstraction(sig, body)
-  }
+  def λ[A, B](sig: Sig[A])(body: Term[B]) = LambdaAbstraction(sig, body)
 
   implicit def toRichVecPimped(term: Term[Vector]) = RichVecTermPimped(RichVecTerm(term))
 
   case class RichVecTermPimped(richVecTerm: RichVecTerm) {
     def ∘(that: Term[Vector]) = richVecTerm.dot(that)
   }
-
 
   import reflect._
   /**
@@ -53,14 +50,16 @@ object MathDSL {
   def main(args: Array[String]) {
     val n = 'n of ints
 
+
+
     val f1 = λ(n){
       val tmp = n + 1
       tmp * tmp
     }
 
+    println(f1.value()(3))
+
     val vecSum = Σ(for (i <- 0 ~~ n) yield unit(i))
-
-
 
     println("vecSum: " + vecSum)
 
@@ -73,5 +72,8 @@ object MathDSL {
 
     println("intSum: " + intSum)
     println(intSum.value(n -> 10) + 5)
+
+    val lam = λ(n)(Σ(for (i <- 0 ~~ n) yield i) + n)
+    println(lam.value()(5))
  }
 }
