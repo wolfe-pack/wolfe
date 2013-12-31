@@ -400,6 +400,7 @@ object TermDSL extends ValueDSL {
   def max[T](f:LambdaAbstraction[T,Double]) = RichMax(f)
   def min(f:LambdaAbstraction[Vector,Double]) = RichMin(f)
 
+  def logZ[T](f:LambdaAbstraction[T,Double]) = RichLogZ(f)
 
   def arg[T](max:Max[T]) = max.argmax
   def arg[T](helper:MinHelper[T]) = helper.argmin
@@ -422,6 +423,10 @@ object TermDSL extends ValueDSL {
   case class RichMax[T](f:LambdaAbstraction[T,Double]){
     def byBruteForce = Max.ByBruteForce(f)
     def byMessagePassing(algorithm: MPGraph => Unit = MaxProduct.apply(_, 1)) = Max.ByMessagePassing(f,algorithm)
+  }
+
+  case class RichLogZ[T](f:LambdaAbstraction[T,Double]){
+    def byBruteForce = LogZ.ByBruteForce(f)
   }
 
   case class MinHelper[T](argmin:Term[T], argminState:Term[State])
