@@ -4,11 +4,6 @@ scala:
 jdk:
    - oraclejdk7
 
-sbt_args: -Djava.io.tmpdir=target/tmp
-
-before_script:
-   - mkdir -p target/tmp
-
 after_script:
-   - "ls -lh target/tmp"
+   - sbt 'test:runMain scalapplcodefest.benchmark.SimpleBenchmarkRunner'
 
