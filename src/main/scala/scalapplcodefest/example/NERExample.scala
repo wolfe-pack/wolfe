@@ -30,10 +30,10 @@ object NERExample extends App {
   val weights = 'weights of vectors //weights that will get learned
 
   //connections
-  val bias = vectors.sum(for (i <- 0 ~~ n) yield unit(key('bias, label(i))))
-  val zeroOrder = vectors.sum(for (i <- 0 ~~ n) yield unit(key('zeroOrder, label(i), token(i))))
-  val firstOrder = vectors.sum(for (i <- 1 ~~ n) yield unit(key('firstOrder, label(i-1), label(i), token(i))))
-  val secondOrder = vectors.sum(for (i <- 2 ~~ n) yield unit(key('secondOrder, label(i-2), label(i-1), label(i), token(i))))
+  val bias = vectors.sum(for (i <- 1 ~~ n) yield unit(key('bias, label(i))))
+  val zeroOrder = vectors.sum(for (i <- 1 ~~ n) yield unit(key('zeroOrder, label(i), token(i))))
+  val firstOrder = vectors.sum(for (i <- 2 ~~ n) yield unit(key('firstOrder, label(i-1), label(i), token(i))))
+  val secondOrder = vectors.sum(for (i <- 3 ~~ n) yield unit(key('secondOrder, label(i-2), label(i-1), label(i), token(i))))
 
   val features = bias //+ zeroOrder //+ firstOrder //+ secondOrder
   val model = features dot weights
@@ -47,10 +47,12 @@ object NERExample extends App {
 
   //this is the perceptron loss/reward: maximize over hidden variables in each instance (but condition first on observation)
   //and subtract the model score of the target solution.
-  val obj = Σ(for (i <- train) yield max(lam(label, model | i)).byMessagePassing() - (model | i.target))
+  val obj = doubles.sumSeq(for (i <- train) yield max(lam(label, model | i)).byMessagePassing() - (model | i.target))
 
   //find a weight vector that minimizes this loss and assign it to the weight variable.
   val learned = argState(min(lam(weights, obj)).byTrainer(new OnlineTrainer(_, new AdaGrad(), 6))).value()
+
+  println("learned weights:\n" + weights.value(learned))
 
   //a predictor is a mapping from a state to the argument that maximizes the model score conditioned on this state.
   val predict = (s: State) => argState(max(lam(label, model | s)).byMessagePassing()).value(learned)
@@ -67,9 +69,9 @@ object NERExample extends App {
 
 object SCAI {
   val train = io.Source.fromInputStream(
-    Util.getStreamFromClassPathOrFile("scalapplcodefest/datasets/scai/train.iob"), "iso-8859-1").getLines().take(100)
+    Util.getStreamFromClassPathOrFile("scalapplcodefest/datasets/scai/train.iob"), "iso-8859-1").getLines().take(4)
   val test = io.Source.fromInputStream(
-    Util.getStreamFromClassPathOrFile("scalapplcodefest/datasets/scai/test.iob"), "iso-8859-1").getLines().take(50)
+    Util.getStreamFromClassPathOrFile("scalapplcodefest/datasets/scai/test.iob"), "iso-8859-1").getLines().take(4)
 
   def groupLines(lines: Iterator[String], delim:String = "") = {
     lines.foldLeft(Seq(Seq.empty[String])) {

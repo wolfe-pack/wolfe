@@ -111,13 +111,13 @@ trait Max2[T] extends Term[Double] {
 
 
 /**
- * Takes terms and returns the the gradient, if possible.
+ * Takes terms and returns the gradient, if possible.
  */
 object Differentiator {
 
   def differentiate(param: Variable[Vector], term: Term[Double]): Option[Term[Vector]] = {
     term match {
-      case d: Differentiable => Some(d.gradient) //TODO: check correct prameter?
+      case d: Differentiable => Some(d.gradient) //TODO: check correct parameter?
       case Conditioned(t, c) => c.domain(param) match {
         case true => Some(Constant(new SparseVector(0)))
         case false => differentiate(param, t).map(v => Conditioned(v, c))
