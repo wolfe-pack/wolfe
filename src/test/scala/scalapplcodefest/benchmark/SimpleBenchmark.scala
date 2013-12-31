@@ -74,6 +74,8 @@ trait BenchmarkSuite {
 
   def main(args: Array[String]) {
     if (args.size > 0) System.setProperty("benchmark.runid", args(0))
+    if (args.size > 1) System.setProperty("benchmark.context", args(1))
+
     for (benchmarkClass <- benchmarks) {
       val benchmark = benchmarkClass.newInstance().asInstanceOf[SimpleBenchmark]
       println("Running " + benchmark.getClass.getName)
@@ -95,6 +97,7 @@ object BenchmarkTools {
   def upload(warmUp: Int, times: Int, value: Double, variance: Double, className: String, args: (String, String)*) {
     val runId = System.getProperty("benchmark.runid", "run-" + UUID.randomUUID().toString)
     val host = hostname()
+    val context = System.getProperty("benchmark.context", host)
     println(runId)
     println(host)
     val map = args.toMap
@@ -108,8 +111,8 @@ object BenchmarkTools {
         s"entry.1434152040=$variance&" +
         s"entry.1244078660=Meta&" +
         s"entry.715429054=$runId&" +
-        s"entry.2109936603=$host"
-
+        s"entry.2109936603=$host&" +
+        s"entry.1214140969=$context"
     val url = pre + params
     try {
       val source = scala.io.Source.fromURL(url)
