@@ -10,21 +10,21 @@ import scala.collection.mutable.ArrayBuffer
  */
 object SimpleBenchmarkRunner {
 
-//  def main(args: Array[String]) {
-//    import scala.collection.JavaConversions._
-//    if (args.size > 0) System.setProperty("benchmark.runid", args(0))
-//    val reflections = new Reflections("scalapplcodefest.benchmark")
-//    val subtypes = reflections.getSubTypesOf(classOf[SimpleBenchmark])
-//    val benchmarks = for (t <- subtypes) yield {
-//      val instance = t.newInstance()
-//      instance
-//    }
-//    for (benchmark <- benchmarks) {
-//      println("Running " + benchmark.getClass.getName)
-//      benchmark.task()
-//    }
-//
-//  }
+  //  def main(args: Array[String]) {
+  //    import scala.collection.JavaConversions._
+  //    if (args.size > 0) System.setProperty("benchmark.runid", args(0))
+  //    val reflections = new Reflections("scalapplcodefest.benchmark")
+  //    val subtypes = reflections.getSubTypesOf(classOf[SimpleBenchmark])
+  //    val benchmarks = for (t <- subtypes) yield {
+  //      val instance = t.newInstance()
+  //      instance
+  //    }
+  //    for (benchmark <- benchmarks) {
+  //      println("Running " + benchmark.getClass.getName)
+  //      benchmark.task()
+  //    }
+  //
+  //  }
 }
 
 trait SimpleBenchmark {
@@ -73,6 +73,7 @@ trait BenchmarkSuite {
   }
 
   def main(args: Array[String]) {
+    if (args.size > 0) System.setProperty("benchmark.runid", args(0))
     for (benchmarkClass <- benchmarks) {
       val benchmark = benchmarkClass.newInstance().asInstanceOf[SimpleBenchmark]
       println("Running " + benchmark.getClass.getName)
