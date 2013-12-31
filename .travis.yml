@@ -5,5 +5,5 @@ jdk:
    - oraclejdk7
 
 after_script:
-   - sbt 'test:runMain scalapplcodefest.benchmark.SimpleBenchmarkRunner'
+   - sbt 'test:runMain scalapplcodefest.benchmark.AllBenchmarks'
 
