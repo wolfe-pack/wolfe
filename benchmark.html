@@ -1,0 +1,72 @@
+<html>
+<head>
+    <!--Load the AJAX API-->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <script type="text/javascript">
+
+            // Load the Visualization API and the piechart package.
+            google.load('visualization', '1.0', {'packages':['corechart']});
+
+            // Set a callback to run when the Google Visualization API is loaded.
+            google.setOnLoadCallback(drawChart);
+
+            // Callback that creates and populates a data table,
+            // instantiates the pie chart, passes in the data and
+            // draws it.
+            function drawChart() {
+
+              var URL = "https://docs.google.com/spreadsheet/ccc?key=0Aq-51446MAr1dHg1NU5xekFYbFJTNldBd3NqRnBTWWc#gid=0"
+              var query = new google.visualization.Query(URL);
+
+              query.setQuery('SELECT A,D WHERE J = "travis"');
+
+              query.send(handleQueryResponse);
+            }
+            function handleQueryResponse(response) {
+
+              var data = response.getDataTable();
+              console.log(data)
+
+               var options = {
+                    //title: 'Age of sugar maples vs. trunk diameter, in inches',
+                    vAxis: {title: 'time in ms'},
+                    hAxis: {title: 'date'},
+                    legend: 'none',
+                    trendlines: { 0: {} }    // Draw a trendline for data series 0.
+                  };
+  
+              //var chart = new google.visualization.LineChart(document.getElementById('chart_div'));
+              var chart = new google.visualization.ScatterChart(document.getElementById('chart_div'));  
+
+              chart.draw(data, options);
+            }
+
+    </script>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="page-header">
+        <h1>PPL Benchmarks</h1>
+
+        <p class="lead">Measuring progress since 2014</p>
+    </div>
+
+
+    <h3>Message Passing Graph Compiler</h3>
+
+    <div class="row">
+        <div id="chart_div"></div>
+    </div>
+
+</div>
+
+<!--Div that will hold the pie chart-->
+<div id="">
+
+</div>
+</body>
+</html>
