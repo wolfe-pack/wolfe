@@ -56,14 +56,14 @@ class MAPInferenceSpecs extends WordSpec with Matchers {
       for (nodeId <- 0 until fg.nodes.size) {
         val node = fg.nodes(nodeId)
         val assignment = solution(nodeId)
-        val prediction =  (0 until node.b.size).maxBy(node.b(_))
+        val prediction = (0 until node.b.size).maxBy(node.b(_))
         prediction should be(assignment)
       }
     }
   }
 
   def compiledSingleTableFactorMAP(algorithm: MPGraph => Unit) = {
-    "find argmax for a compiled factor graph" in {
+    "find argmax for a compiled factor graph with one factor and one variable" in {
       val x = 'x of bools
       val posWeight = random.nextGaussian()
       val negWeight = random.nextGaussian()
@@ -82,7 +82,7 @@ class MAPInferenceSpecs extends WordSpec with Matchers {
   }
 
   def compiledTwoTableFactorMAP(algorithm: MPGraph => Unit) = {
-    "find argmax for a compiled factor graph" in {
+    "find argmax for a compiled factor graph with two factors and one variable" in {
       val x = 'x of bools
       val p1 = random.nextGaussian()
       val n1 = random.nextGaussian()
@@ -107,6 +107,69 @@ class MAPInferenceSpecs extends WordSpec with Matchers {
       algorithm(fg)
       val node = fg.nodes(0)
       (0 until node.b.size).maxBy(node.b(_)) should be(solution)
+    }
+  }
+
+  def compiledTwoTableTwoNodeFactorMAP(algorithm: MPGraph => Unit) = {
+    "find argmax for a compiled factor graph with two factors and two variables" in {
+      val x = 'x of bools
+      val p1 = random.nextGaussian()
+      val n1 = random.nextGaussian()
+
+      val f1 = fun(Map(true -> p1, false -> n1), Bools, Doubles)(x)
+
+      val y = 'y of bools
+      val xyMap = Map(
+        (true, true) -> random.nextGaussian(),
+        (true, false) -> random.nextGaussian(),
+        (false, true) -> random.nextGaussian(),
+        (false, false) -> random.nextGaussian())
+      val f2 = fun(xyMap, xyMap.keySet)((x, y))
+
+      val model = f1 + f2
+
+      val compiled = MPGraphCompiler.compile(sig(x, y), model)
+
+      val fg = compiled.graph
+
+      println(fg.toVerboseString())
+
+
+      // what follows is stream of consciousness code that finds the highest scoring assignment for this factor graph.
+      val partition = fg.factors.partition {factor => factor.edges.size == 2}
+      val xyFactor = partition._1.head
+      val xFactor = partition._2.head
+
+
+      val xNode = xFactor.edges(0).n
+      val xNodeId = xyFactor.edges.zipWithIndex.filter(_._1.n == xNode).head._2
+      val yNodeId = 1 - xNodeId // hackity hack
+
+      val yNode = xyFactor.edges(yNodeId).n
+
+      val bestSettingId = (0 until xyFactor.settings.size).maxBy {
+        settingId => {
+          val setting = xyFactor.settings(settingId)
+
+          val xSetting = setting(xNodeId)
+          val ySetting = setting(yNodeId)
+
+          xyFactor.table(xSetting) + xyFactor.table(ySetting) + xFactor.table(xSetting)
+
+        }
+      }
+
+      algorithm(fg)
+
+      val bestSetting = xyFactor.settings(bestSettingId)
+
+      val xPrediction = (0 until xNode.b.size).maxBy(xNode.b(_))
+      val yPrediction = (0 until yNode.b.size).maxBy(yNode.b(_))
+
+      bestSetting(xNodeId) should be(xPrediction)
+
+      bestSetting(yNodeId) should be(yPrediction)
+
     }
   }
 
@@ -158,6 +221,9 @@ class MAPInferenceSpecs extends WordSpec with Matchers {
 
       behave like compiledTwoTableFactorMAP(maxProduct)
     }
+    "given a model with two variables and two factors" should {
+      behave like compiledTwoTableTwoNodeFactorMAP(maxProduct)
+    }
   }
 
   "Dual decomposition" when {
@@ -171,5 +237,9 @@ class MAPInferenceSpecs extends WordSpec with Matchers {
     "given a single variable with two factors" should {
       behave like compiledTwoTableFactorMAP(dualDecomposition)
     }
+    "given a model with two variables and two factors" should {
+      behave like compiledTwoTableTwoNodeFactorMAP(dualDecomposition)
+    }
   }
+
 }
