@@ -8,6 +8,7 @@ import scalapplcodefest.term.Conditioned
 import scalapplcodefest.term.TupleTerm3
 import scalapplcodefest.term.Predicate
 import scalapplcodefest.term.FunApp
+import scalapplcodefest.term.Max.ByMessagePassing
 
 /**
  * User: rockt
@@ -51,7 +52,7 @@ object TermDebugger {
       if (verbose && crashes(probe)) println("problem: " + problem)
     }
 
-    try term.value() catch {
+    try term.value(state) catch {
       case e: NoSuchElementException =>
         diagnose(term)
         System.err.println(e)
@@ -64,7 +65,7 @@ object TermDebugger {
   }
 
   def termToPrettyString(term: Term[_], indent: Int = 0): String = {
-    def tabs = "\t" * indent
+    lazy val tabs = "\t" * indent
     term match {
       case t: LambdaAbstraction[_, _] => s"\n${tabs}lam ${t.sig} { ${termToPrettyString(t.body, indent + 1)} }"
       case t: FunApp[_, _] =>
@@ -78,6 +79,7 @@ object TermDebugger {
       case t: Predicate[_, _] => s"${t.toString}"
       case t: Conditioned[_] => s"${t.componentSeq.map(termToPrettyString(_, indent)).mkString(",")}\n- conditioned on\n\t${t.condition}"
       case t: Composite[_] => s"${t.getClass.getSimpleName} ${t.componentSeq.map(termToPrettyString(_, indent)).mkString(",")}"
+      case t: MultiVariate => s"${t.getClass.getSimpleName}(${termToPrettyString(t.parameter, indent)})" //FIXME: somehow indent doesn't get increased here
       case t: Term[_] =>
         //println("TODO: " + term.getClass)
         term.toString
