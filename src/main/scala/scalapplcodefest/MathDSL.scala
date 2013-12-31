@@ -43,11 +43,11 @@ object MathDSL {
     val TermFunToDouble = new Def[Term[Fun[F, Double]]]
     val TermFunToInt = new Def[Term[Fun[F, Int]]]
 
-    fun match {
+    (fun match {
       case TermFunToVector(t) => vectors.sum(t)
       case TermFunToDouble(t) => doubles.sum(t)
       case TermFunToInt(t) => ints.sum(t)
-    }
+    }).asInstanceOf[Term[T]]
   }
 
   def main(args: Array[String]) {
@@ -60,6 +60,8 @@ object MathDSL {
 
     val vecSum = Σ(for (i <- 0 ~~ n) yield unit(i))
 
+
+
     println("vecSum: " + vecSum)
 
     val θ = 'θ of vectors
@@ -69,8 +71,7 @@ object MathDSL {
 
     val intSum = Σ(for (i <- 0 ~~ n) yield i)
 
-
     println("intSum: " + intSum)
-    println(intSum.value(n -> 10))
+    println(intSum.value(n -> 10) + 5)
  }
 }
