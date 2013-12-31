@@ -35,15 +35,27 @@ object MathDSL {
     }
   }
 
+  def Σ[F: Manifest, T: Manifest](seq: Seq[FunApp[F,T]]) = {
+    val SeqToVector = new Def[Seq[FunApp[F, Vector]]]
+    val SeqToDouble = new Def[Seq[FunApp[F, Double]]]
+    val SeqToInt = new Def[Seq[FunApp[F, Int]]]
+    (seq match {
+      case SeqToVector(s) => vectors.sumSeq(s)
+      case SeqToDouble(s) => doubles.sumSeq(s)
+      case SeqToInt(s) => ints.sumSeq(s)
+      //case _ => throw new NotImplementedError(s"I don't know yet how sum over a $seq")
+    }).asInstanceOf[Term[T]]
+  }
+
   def Σ[F: Manifest, T: Manifest](fun: Term[Fun[F,T]]) = {
     val TermFunToVector = new Def[Term[Fun[F, Vector]]]
     val TermFunToDouble = new Def[Term[Fun[F, Double]]]
     val TermFunToInt = new Def[Term[Fun[F, Int]]]
-
     (fun match {
       case TermFunToVector(t) => vectors.sum(t)
       case TermFunToDouble(t) => doubles.sum(t)
       case TermFunToInt(t) => ints.sum(t)
+      //case _ => throw new NotImplementedError(s"I don't know yet how sum over a $fun")
     }).asInstanceOf[Term[T]]
   }
 

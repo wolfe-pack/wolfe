@@ -16,11 +16,13 @@ import scalapplcodefest.term.FunApp
  */
 
 object TermDebugger {
-  def debugTerm(term: Term[_], verbose: Boolean = false) = {
+  import TermDSL._
+
+  def debugTerm(term: Term[_], state: State = State.empty, verbose: Boolean = false) = {
     var problem: Term[_] = term
 
     def crashes(probe: Term[_]): Boolean = {
-      try probe.value() catch {
+      try probe.value(state) catch {
         case e: Exception => return true
       }
       false
@@ -66,7 +68,7 @@ object TermDebugger {
     term match {
       case t: LambdaAbstraction[_, _] => s"\n${tabs}lam ${t.sig} { ${termToPrettyString(t.body, indent + 1)} }"
       case t: FunApp[_, _] =>
-        if (indent == 0) s"- function application of\n\t${termToPrettyString(t.arg, indent + 1)}\n- applied to${termToPrettyString(t.function, indent + 1)}"
+        if (indent == 0) s"- function application of\n\t${termToPrettyString(t.arg, indent + 1)}\n- applied to ${termToPrettyString(t.function, indent + 1)}"
         else s"${termToPrettyString(t.function, indent)}(${termToPrettyString(t.arg, indent)})"
       case t: TupleTerm2[_, _] => s"(${termToPrettyString(t.a1, indent)}, ${termToPrettyString(t.a2, indent)})"
       case t: TupleTerm3[_, _, _] => s"TupleTerm3(${termToPrettyString(t.a1, indent)},${termToPrettyString(t.a2, indent)},${termToPrettyString(t.a3, indent)})"

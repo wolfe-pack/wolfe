@@ -4,7 +4,7 @@ import scalapplcodefest._
 import scalapplcodefest.TermDSL._
 import java.util.zip.GZIPInputStream
 import scalapplcodefest.term.{Max, State, Var, Predicate}
-import cc.factorie.optimize.{Perceptron, OnlineTrainer}
+import cc.factorie.optimize.{AdaGrad, Perceptron, OnlineTrainer}
 import scalapplcodefest.term.Var
 import scalapplcodefest.term.Predicate
 
@@ -15,6 +15,8 @@ import scalapplcodefest.term.Predicate
  *         16/12/13
  */
 object NERExample extends App {
+  import MathDSL._
+
   val key = new Index()
   Index.toDebug = Some(key) //for debug output
 
@@ -43,33 +45,31 @@ object NERExample extends App {
   val train = trainSentences.map(_.asTargets(label))
   val test = testSentences.map(_.asTargets(label))
 
-  //FIXME: update to most recent core functions
-
-  /*
-  //this is the perceptron loss: maximize over hidden variables in each instance (but condition first on observation)
+  //this is the perceptron loss/reward: maximize over hidden variables in each instance (but condition first on observation)
   //and subtract the model score of the target solution.
-  val loss = doubles.sumSeq(for (i <- train) yield Max.ByMessagePassing(model | i) - (model | i.target))
+  val obj = Σ(for (i <- train) yield max(lam(label, model | i)).byMessagePassing() - (model | i.target))
 
   //find a weight vector that minimizes this loss and assign it to the weight variable.
-  val learned = state(weights -> GradientBasedMinimizer.minimize(loss, new OnlineTrainer(_, new Perceptron, 10)))
+  val learned = argState(min(lam(weights, obj)).byTrainer(new OnlineTrainer(_, new AdaGrad(), 6))).value()
 
   //a predictor is a mapping from a state to the argument that maximizes the model score conditioned on this state.
-  val predict = (s: State) => Max.ByMessagePassing(model | s).argmax.value(learned)
+  val predict = (s: State) => argState(max(lam(label, model | s)).byMessagePassing()).value(learned)
 
-  //a generic evaluation routine that applies the predictor to a set of states and compares the results to target values stored in the state.
+  //a generic evaluation routine that applies the predictor to a set of states and compares the results
+  //to target values stored in the state.
   val eval = Evaluator.evaluate(train, predict)
 
   println(eval)
-  */
 
   //TODO: evaluate on test set
   //TODO: switch to LBFGS
-
 }
 
 object SCAI {
-  val train = io.Source.fromInputStream(Util.getStreamFromClassPathOrFile("scalapplcodefest/datasets/scai/train.iob"), "iso-8859-1").getLines().take(100)
-  val test = io.Source.fromInputStream(Util.getStreamFromClassPathOrFile("scalapplcodefest/datasets/scai/test.iob"), "iso-8859-1").getLines().take(50)
+  val train = io.Source.fromInputStream(
+    Util.getStreamFromClassPathOrFile("scalapplcodefest/datasets/scai/train.iob"), "iso-8859-1").getLines().take(100)
+  val test = io.Source.fromInputStream(
+    Util.getStreamFromClassPathOrFile("scalapplcodefest/datasets/scai/test.iob"), "iso-8859-1").getLines().take(50)
 
   def groupLines(lines: Iterator[String], delim:String = "") = {
     lines.foldLeft(Seq(Seq.empty[String])) {
