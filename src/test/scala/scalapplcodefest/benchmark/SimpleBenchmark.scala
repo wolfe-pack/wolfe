@@ -3,6 +3,7 @@ package scalapplcodefest.benchmark
 import org.reflections.Reflections
 import java.util.UUID
 import java.net.InetAddress
+import scala.collection.mutable.ArrayBuffer
 
 /**
  * @author Sebastian Riedel
@@ -11,7 +12,7 @@ object SimpleBenchmarkRunner {
 
   def main(args: Array[String]) {
     import scala.collection.JavaConversions._
-    if (args.size > 0) System.setProperty("benchmark.runid",args(0))
+    if (args.size > 0) System.setProperty("benchmark.runid", args(0))
     val reflections = new Reflections("scalapplcodefest.benchmark")
     val subtypes = reflections.getSubTypesOf(classOf[SimpleBenchmark])
     val benchmarks = for (t <- subtypes) yield {
@@ -63,12 +64,30 @@ trait SimpleBenchmark {
 
 }
 
+trait BenchmarkSuite {
+
+  private val benchmarks = new ArrayBuffer[Class[Any]]
+
+  def add[B <: SimpleBenchmark](benchmarkClass: Class[B]) {
+    benchmarks += benchmarkClass.asInstanceOf[Class[Any]]
+  }
+
+  def main(args: Array[String]) {
+    for (benchmarkClass <- benchmarks) {
+      val benchmark = benchmarkClass.newInstance().asInstanceOf[SimpleBenchmark]
+      println("Running " + benchmark.getClass.getName)
+      benchmark.task()
+    }
+  }
+
+}
+
 object BenchmarkTools {
   def hostname() = {
     try {
       InetAddress.getLocalHost.getHostName.split("\\.").head.toLowerCase
     } catch {
-      case e:Exception => "localhost"
+      case e: Exception => "localhost"
     }
   }
 
