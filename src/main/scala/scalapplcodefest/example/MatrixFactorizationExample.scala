@@ -60,6 +60,7 @@ object MatrixFactorizationExample extends App {
 
   val queryWithError = predict(Constant("r2"), Constant("e1"), Constant("e2"))
   debugTerm(queryWithError)
+  //queryWithError.value()
 
   //TODO: objective
   // || I(kbPred(r,e1,e2)) - (model | learned | kb(r,e1,e2) -> true) ||^2
