@@ -114,6 +114,10 @@ case object Ints extends AllObjects[Int] {
     def funRange = Ints
   }
 
+  case object Times extends BinaryOperatorSameDomainAndRange[Int] {
+    def apply(x:(Int,Int)) = x._1 * x._2
+    def dom = Ints
+  }
 }
 
 trait AllObjectsLarge[T] extends AllObjects[T] {
@@ -130,6 +134,7 @@ case object Vectors extends AllObjectsLarge[Vector] {
 
   val Zero = new ScalarTensor(0.0)
 
+  //rockt: could be a case object?
   object Dot extends BinaryOperatorSameDomain[Vector, Double] {
     def funRange = Doubles
     def apply(v1: (Vector, Vector)) = v1._1 dot v1._2
@@ -161,7 +166,7 @@ case object Vectors extends AllObjectsLarge[Vector] {
           result += s1
           result -= s2
           result
-        case (singleton: SingletonVector, other) =>singleton - other
+        case (singleton: SingletonVector, other) => singleton - other
         case (other, singleton: SingletonVector) => singleton - other
         case (v1, v2) => v1 - v2
       }
@@ -169,13 +174,23 @@ case object Vectors extends AllObjectsLarge[Vector] {
     def dom = Vectors
   }
 
+  //rockt: this could be changed to BinaryOperator[Int, Double, Vector]
   case object UnitVector extends Operator[(Int,Double),Vector] {
     def funCandidateDom = CartesianProduct2(Ints,Doubles)
     def funRange = Vectors
     def apply(indexValue:(Int,Double)) = new SingletonTensor1(1, indexValue._1, indexValue._2)
   }
 
-
+  case object ScalarTimes extends BinaryOperator[Vector, Double, Vector]{
+    def dom1 = Vectors
+    def dom2 = Doubles
+    def funRange = Vectors
+    def apply(pair: (Vector, Double)) = {
+      val result = new SparseVector(pair._1.dim1)
+      result * pair._2
+      result
+    }
+  }
 }
 
 
