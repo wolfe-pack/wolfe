@@ -30,14 +30,12 @@ object WolfePlayground extends App {
 
   val x1 = compiler.newUnitParser(
     """
-      |package com.xxx.abc
-      |
-      |class AAA {
-      |  val a = ""
-      |}
+      | val x = 1
     """.stripMargin)
 
-  x1.smartParse().foreach { t =>
+  val x1parsed = x1.smartParse()
+
+  x1parsed.foreach { t =>
     t.shortClass match {
       case "PackageDef" =>
         println("PackageDef")
