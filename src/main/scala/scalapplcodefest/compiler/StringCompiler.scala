@@ -2,13 +2,15 @@ package scalapplcodefest.compiler
 
 import scala.tools.nsc.{Global, Settings}
 import scala.tools.nsc.reporters.ConsoleReporter
+import scala.reflect.io.VirtualDirectory
 
 /**
  * @author sameer
  */
 class StringCompiler {
   val settings = new Settings
-  settings.outdir.value = "/tmp"
+  settings.nowarnings.value = true // warnings are exceptions, so disable
+  settings.outputDirs.setSingleOutput(new VirtualDirectory("(memory)", None))
 
   val compilerPath = try {
     jarPathOfClass("scala.tools.nsc.Interpreter")
@@ -33,14 +35,12 @@ class StringCompiler {
 
   val reporter = new ConsoleReporter(settings)
 
-  def compileCode(code: String): Tree = {
+  def compileCode(code: String): (CompilationUnit, Global) = {
     val compiler = new Global(settings, reporter)
     val run = new compiler.Run
 
     val x1 = compiler.newUnitParser(code)
-
-    val x1Parsed = x1.smartParse()
-    x1Parsed
+    (x1.unit, compiler)
   }
 
   /*
