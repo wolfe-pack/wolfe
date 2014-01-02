@@ -2,6 +2,7 @@ package scalapplcodefest.compiler
 
 import scala.tools.nsc.{Global, Settings}
 import scala.tools.nsc.reporters.ConsoleReporter
+import scala.tools.nsc.ast.TreeBrowsers
 
 /**
  * User: rockt
@@ -30,20 +31,25 @@ object WolfePlayground extends App {
 
   val x1 = compiler.newUnitParser(
     """
-      | val x = 1
+      | package wolfe
+      | object A {
+      |   val x = 1
+      | }
     """.stripMargin)
 
-  val x1parsed = x1.smartParse()
+  val x1Parsed = x1.smartParse()
 
-  x1parsed.foreach { t =>
+
+  compiler.treeBrowser.browse(x1Parsed)
+
+  x1Parsed.foreach { t =>
     t.shortClass match {
       case "PackageDef" =>
         println("PackageDef")
         t.foreach { p =>
           p.shortClass match {
-            case "Select" => {
+            case "Select" =>
               println("Select:" + p)
-            }
             case _ =>
           }
         }
