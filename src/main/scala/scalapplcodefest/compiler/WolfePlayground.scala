@@ -10,7 +10,6 @@ import scala.tools.nsc.reporters.ConsoleReporter
  */
 
 object WolfePlayground extends App {
-
   val settings = new Settings
   settings.outdir.value = "/tmp"
 
@@ -39,14 +38,10 @@ object WolfePlayground extends App {
     List(path.substring(indexOfFile, indexOfSeparator))
   }
 
-
-  (
-    libPath ::: compilerPath ::: List("./lib/scala-2.10.3/scala-reflect.jar")
-    ).foreach {
+  (libPath ::: compilerPath ::: List("./lib/scala-2.10.3/scala-reflect.jar")).foreach {
     each =>
       settings.classpath.append(each)
       settings.bootclasspath.append(each)
-
   }
 
   val reporter = new ConsoleReporter(settings)
@@ -57,14 +52,16 @@ object WolfePlayground extends App {
     """
       | package Wolfe
       | object Foo {
-      |   val x = 1
+      |   val a = 1
+      |   val b = 2
+      |
+      |   def add(x: Int, y: Int) = x + y
+      |
+      |   add(a, b)
       | }
     """.stripMargin)
 
   val x1Parsed = x1.smartParse()
 
   compiler.treeBrowser.browse(x1Parsed)
-
-  def f(x: Int) = x + 1
-
 }
