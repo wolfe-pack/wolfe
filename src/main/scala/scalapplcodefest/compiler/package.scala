@@ -1,6 +1,6 @@
 package scalapplcodefest
 
-import scala.tools.nsc.Global
+import scala.tools.nsc.{CompilationUnits, Global}
 
 /**
  * User: rockt
@@ -8,5 +8,5 @@ import scala.tools.nsc.Global
  * Time: 3:36 PM
  */
 package object compiler {
-  type Tree = Global#Tree
+  type CompilationUnit = CompilationUnits#CompilationUnit
 }
