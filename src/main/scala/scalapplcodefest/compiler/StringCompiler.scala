@@ -8,7 +8,7 @@ import scala.reflect.internal.util.BatchSourceFile
 /**
  * @author sameer
  */
-class StringCompiler(val transformer: Option[WolfeTransformer] = None) {
+class StringCompiler(val transformer: Option[WolfeTransformer] = None,additionalClassPath:List[String] = Nil) {
   val settings = new Settings
   settings.nowarnings.value = true // warnings are exceptions, so disable
   settings.outputDirs.setSingleOutput(new VirtualDirectory("(memory)", None))
@@ -27,7 +27,7 @@ class StringCompiler(val transformer: Option[WolfeTransformer] = None) {
       throw new RuntimeException("Unable to load scala base object from classpath (scala-library jar is missing?)", e)
   }
 
-  (libPath ::: compilerPath)
+  (libPath ::: compilerPath ::: additionalClassPath)
     .foreach {
     each =>
       settings.classpath.append(each)
@@ -69,4 +69,4 @@ class StringCompiler(val transformer: Option[WolfeTransformer] = None) {
   }
 }
 
-object StringCompiler extends StringCompiler(None)
+object StringCompiler extends StringCompiler(None,Nil)
