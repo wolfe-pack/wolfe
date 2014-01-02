@@ -14,11 +14,9 @@ object WolfePlayground extends App {
                | }
              """.stripMargin
 
-  val compiled = StringCompiler.compileCode(code)
+  val (global, unit) = StringCompiler.compileCode(code)
 
-  val global = compiled._2
-
-  val tree = compiled._1.body.asInstanceOf[global.Tree]
+  val tree = unit.body.asInstanceOf[global.Tree]
 
   global.treeBrowser.browse(tree)
 
