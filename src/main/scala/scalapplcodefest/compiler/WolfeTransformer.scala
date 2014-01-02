@@ -17,7 +17,6 @@ trait WolfeTransformer {
 class DummyTransformer extends WolfeTransformer {
   def transform[T <: CompilationUnit](unit: T, global: Global) = {
     unit.body match {
-      //case ???  => ???
       case _ => println("Can't compile")
     }
   }
@@ -28,8 +27,14 @@ object TransformerApp extends App {
 
   val code =
     """
-      | object A {
-      |   val x = 1
+      | package Wolfe
+      | object Foo {
+      |   val a = 1
+      |   val b = 2
+      |
+      |   def add(x: Int, y: Int) = x + y
+      |
+      |   add(a, b)
       | }
     """.stripMargin
 
