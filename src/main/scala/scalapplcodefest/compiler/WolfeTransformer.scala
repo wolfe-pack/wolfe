@@ -27,7 +27,8 @@ class DummyTransformer extends WolfeTransformer {
 }
 
 object TransformerApp extends App {
-  val compiler = new StringCompiler
+  val dummyTransformer = new DummyTransformer
+  val compiler = new StringCompiler(Some(dummyTransformer))
 
   val code =
     """
@@ -43,10 +44,6 @@ object TransformerApp extends App {
     """.stripMargin
 
   val (global, unit) = compiler.compileCode(code)
-  val t = new global.ForeachTreeTraverser(t => println(t))
-  t.traverse(unit.asInstanceOf[global.CompilationUnit].body)
-  val transformer = new DummyTransformer
-  transformer.transform(global)(unit.asInstanceOf[global.CompilationUnit])
 }
 
 
