@@ -7,7 +7,7 @@ import scala.reflect.io.VirtualDirectory
 /**
  * @author sameer
  */
-class StringCompiler {
+class StringCompiler(val transformer: Option[WolfeTransformer] = None) {
   val settings = new Settings
   settings.nowarnings.value = true // warnings are exceptions, so disable
   settings.outputDirs.setSingleOutput(new VirtualDirectory("(memory)", None))
@@ -36,7 +36,16 @@ class StringCompiler {
   val reporter = new ConsoleReporter(settings)
 
   def compileCode(code: String): (Global, CompilationUnit) = {
-    val compiler = new Global(settings, reporter)
+    val compiler : Global = if (transformer.isDefined) {
+      new Global(settings, reporter) {
+        self =>
+        override protected def computeInternalPhases() {
+          super.computeInternalPhases
+          for (phase <- new WolfeCompilerPlugin(self, transformer.get).components)
+            phasesSet += phase
+        }
+      }
+    } else new Global(settings, reporter)
     val run = new compiler.Run
 
     val x1 = compiler.newUnitParser(code)
@@ -58,4 +67,4 @@ class StringCompiler {
   }
 }
 
-object StringCompiler extends StringCompiler
+object StringCompiler extends StringCompiler(None)
