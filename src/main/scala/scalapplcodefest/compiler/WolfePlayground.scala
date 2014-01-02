@@ -55,9 +55,8 @@ object WolfePlayground extends App {
 
   val x1 = compiler.newUnitParser(
     """
-      | package Wolfe
-      | object Foo {
-      |   val x = 1
+      |object A {
+      | type Person = String
       | }
     """.stripMargin)
 
