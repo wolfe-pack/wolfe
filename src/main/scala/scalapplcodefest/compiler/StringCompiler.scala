@@ -3,6 +3,7 @@ package scalapplcodefest.compiler
 import scala.tools.nsc.{Global, Settings}
 import scala.tools.nsc.reporters.ConsoleReporter
 import scala.reflect.io.VirtualDirectory
+import scala.reflect.internal.util.BatchSourceFile
 
 /**
  * @author sameer
@@ -48,6 +49,7 @@ class StringCompiler(val transformer: Option[WolfeTransformer] = None) {
     } else new Global(settings, reporter)
     val run = new compiler.Run
 
+    run.compileSources(List(new BatchSourceFile("(inline)", code)))
     val x1 = compiler.newUnitParser(code)
 
     x1.unit.body = x1.smartParse

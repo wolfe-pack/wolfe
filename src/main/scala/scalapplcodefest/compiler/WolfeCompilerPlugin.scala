@@ -10,6 +10,7 @@ import nsc.plugins.PluginComponent
  * @author sameer
  */
 class WolfeCompilerPlugin(val global: Global, transform: WolfeTransformer) extends Plugin {
+
   import global._
 
   val name = "wolfecompiler"
@@ -34,8 +35,10 @@ class WolfeCompilerPlugin(val global: Global, transform: WolfeTransformer) exten
           {
             unit.error(tree.pos, "definitely division by zero")
           }
-          */
+        */
       }
     }
+
   }
+
 }

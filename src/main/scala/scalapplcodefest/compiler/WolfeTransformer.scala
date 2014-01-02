@@ -17,7 +17,12 @@ trait WolfeTransformer {
 class DummyTransformer extends WolfeTransformer {
 
   def transform(global: Global)(unit: global.type#CompilationUnit): Unit = {
-    unit.body match {
+    for (tree <- unit.body) {
+      transformTree(global)(tree)
+    }
+  }
+  def transformTree(global: Global)(tree: global.Tree): Unit = {
+    tree match {
       case global.PackageDef(pid, stats) => println("found PackageDef " + pid.name)
       case global.ModuleDef(mods, name, impl) => println("found Module: " + name)
       case global.TypeDef(_, name, _, rhs) => println(name)
