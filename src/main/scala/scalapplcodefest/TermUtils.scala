@@ -15,7 +15,7 @@ import scalapplcodefest.term.FunApp
  * Time: 4:55 PM
  */
 
-object TermDebugger {
+object TermUtils {
   def debugTerm(term: Term[_], verbose: Boolean = false) = {
     var problem: Term[_] = term
 
