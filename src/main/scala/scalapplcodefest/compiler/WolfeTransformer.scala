@@ -2,25 +2,24 @@ package scalapplcodefest.compiler
 
 import scala.reflect.internal.Trees
 import scalapplcodefest.compiler._
+import scala.tools.nsc.Global
 
 /**
  * @author sameer
  */
 trait WolfeTransformer {
-  def transform[T <: CompilationUnit](unit: T): Unit
+  def transform[T <: CompilationUnit](unit: T, global: Global): Unit
 }
 
 /**
  * Prints the abstract syntax tree
  */
 class DummyTransformer extends WolfeTransformer {
-  def transform[T <: CompilationUnit](unit: T) = {
+  def transform[T <: CompilationUnit](unit: T, global: Global) = {
     unit.body match {
-      case ???  => ???
+      //case ???  => ???
       case _ => println("Can't compile")
     }
-
-    unit
   }
 }
 
@@ -34,10 +33,10 @@ object TransformerApp extends App {
       | }
     """.stripMargin
 
-  val tree = compiler.compileCode(code)
+  val (tree, global) = compiler.compileCode(code)
 
   val transformer = new DummyTransformer
-  transformer.transform(tree)
+  transformer.transform(tree, global)
 }
 
 
