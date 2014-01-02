@@ -27,7 +27,7 @@ class WolfeCompilerPlugin(val global: Global, transformer: WolfeTransformer) ext
     class WolfePhase(prev: Phase) extends StdPhase(prev) {
       override def name = WolfeCompilerPlugin.this.name
       def apply(unit: CompilationUnit) {
-        unit.body = transformer.transform(unit.body)
+        transformer.transform(unit, global)
         /*
         for ( tree @ Apply(Select(rcvr, nme.DIV), List(Literal(Constant(0)))) <- unit.body;
              if rcvr.tpe <:< definitions.IntClass.tpe) 
