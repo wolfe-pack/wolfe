@@ -2,7 +2,6 @@ package scalapplcodefest.compiler
 
 import scala.tools.nsc.{Global, Settings}
 import scala.tools.nsc.reporters.ConsoleReporter
-import scala.tools.nsc.ast.TreeBrowsers
 
 /**
  * User: rockt
