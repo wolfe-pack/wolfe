@@ -64,29 +64,4 @@ object WolfePlayground extends App {
   val x1Parsed = x1.smartParse()
 
   compiler.treeBrowser.browse(x1Parsed)
-
-  x1Parsed.foreach {
-    t =>
-      t.shortClass match {
-        case "PackageDef" =>
-          println("PackageDef")
-          t.foreach {
-            p =>
-              p.shortClass match {
-                case "Select" => {
-                  println("Select:" + p)
-                }
-                case _ =>
-              }
-          }
-        case "ClassDef" =>
-          println("ClassDef:" + t)
-          t.foreach {
-            c =>
-              println(c.shortClass)
-              println("\n")
-          }
-        case _ =>
-      }
-  }
 }
