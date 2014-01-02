@@ -17,5 +17,7 @@ libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "2.0" % "test",
   "com.nativelibs4java" %% "scalaxy-loops" % "0.3-SNAPSHOT" % "provided",
   "cc.factorie" % "factorie" % "1.0.0-M7",
-  "com.github.axel22" %% "scalameter" % "0.4"
+  "com.github.axel22" %% "scalameter" % "0.4",
+  "org.scala-lang" % "scala-compiler" % "2.10.3",
+  "org.scala-lang" % "scala-library" % "2.10.3"
 )
