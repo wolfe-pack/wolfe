@@ -40,6 +40,9 @@ class StringCompiler {
     val run = new compiler.Run
 
     val x1 = compiler.newUnitParser(code)
+
+    x1.unit.body = x1.smartParse
+
     (x1.unit, compiler)
   }
 
