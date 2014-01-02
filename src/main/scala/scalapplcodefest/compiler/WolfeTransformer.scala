@@ -1,5 +1,8 @@
 package scalapplcodefest.compiler
 
+import scala.reflect.internal.Trees
+import scalapplcodefest.compiler._
+
 /**
  * @author sameer
  */
@@ -11,13 +14,13 @@ trait WolfeTransformer {
  * Prints the abstract syntax tree
  */
 class DummyTransformer extends WolfeTransformer {
-  def transform[Tree](tree: Tree): Tree = {
-    tree match {
-      case ??? => println(tree)
+  def transform[T <: CompilationUnit](unit: T) = {
+    unit.body match {
+      case ???  => ???
       case _ => println("Can't compile")
     }
 
-    tree
+    unit
   }
 }
 
