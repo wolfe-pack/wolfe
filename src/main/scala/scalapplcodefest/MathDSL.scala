@@ -13,7 +13,7 @@ import scalapplcodefest.term.Reduce
 
 object MathDSL {
   import TermDSL._
-  import TermDebugger._
+  import TermUtils._
 
   def λ[A, B](sig: Sig[A])(body: Term[B]) = LambdaAbstraction(sig, body)
 
