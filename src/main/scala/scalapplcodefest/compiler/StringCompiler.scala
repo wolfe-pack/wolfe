@@ -35,7 +35,7 @@ class StringCompiler {
 
   val reporter = new ConsoleReporter(settings)
 
-  def compileCode(code: String): (CompilationUnit, Global) = {
+  def compileCode(code: String): (Global, CompilationUnit) = {
     val compiler = new Global(settings, reporter)
     val run = new compiler.Run
 
@@ -43,7 +43,7 @@ class StringCompiler {
 
     x1.unit.body = x1.smartParse
 
-    (x1.unit, compiler)
+    (compiler, x1.unit)
   }
 
   /*

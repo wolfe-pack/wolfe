@@ -8,14 +8,15 @@ import scala.tools.nsc.Global
  * @author sameer
  */
 trait WolfeTransformer {
-  def transform[T <: CompilationUnit](unit: T, global: Global): Unit
+  def transform(global: Global)(unit: global.type#CompilationUnit): Unit
 }
 
 /**
  * Prints the abstract syntax tree
  */
 class DummyTransformer extends WolfeTransformer {
-  def transform[T <: CompilationUnit](unit: T, global: Global) = {
+
+  def transform(global: Global)(unit: global.type#CompilationUnit): Unit = {
     unit.body match {
       case _ => println("Can't compile")
     }
@@ -38,10 +39,10 @@ object TransformerApp extends App {
       | }
     """.stripMargin
 
-  val (tree, global) = compiler.compileCode(code)
+  val (global, unit) = compiler.compileCode(code)
 
   val transformer = new DummyTransformer
-  transformer.transform(tree, global)
+  transformer.transform(global)(unit.asInstanceOf[global.CompilationUnit])
 }
 
 
