@@ -14,13 +14,38 @@ object WolfePlayground extends App {
   val settings = new Settings
   settings.outdir.value = "/tmp"
 
-  List[String](
-    "./lib/scala-2.10.3/scala-library.jar",
-    "./lib/scala-2.10.3/scala-compiler.jar",
-    "./lib/scala-2.10.3/scala-reflect.jar"
-  ).foreach { each =>
-    settings.classpath.append(each)
-    settings.bootclasspath.append(each)
+  val compilerPath = try {
+    jarPathOfClass("scala.tools.nsc.Interpreter")
+  } catch {
+    case e: Throwable =>
+      throw new RuntimeException("Unable lo load scala interpreter from classpath (scala-compiler jar is missing?)", e)
+  }
+
+  val libPath = try {
+    jarPathOfClass("scala.ScalaObject")
+  } catch {
+    case e: Throwable =>
+      throw new RuntimeException("Unable to load scala base object from classpath (scala-library jar is missing?)", e)
+  }
+
+  /*
+ * For a given FQ classname, trick the resource finder into telling us the containing jar.
+ */
+  private def jarPathOfClass(className: String) = try {
+    val resource = className.split('.').mkString("/", "/", ".class")
+    val path = getClass.getResource(resource).getPath
+    val indexOfFile = path.indexOf("file:") + 5
+    val indexOfSeparator = path.lastIndexOf('!')
+    List(path.substring(indexOfFile, indexOfSeparator))
+  }
+
+
+  (
+    libPath ::: compilerPath ::: List("./lib/scala-2.10.3/scala-reflect.jar")
+    ).foreach {
+    each =>
+      settings.classpath.append(each)
+      settings.bootclasspath.append(each)
 
   }
 
@@ -35,25 +60,28 @@ object WolfePlayground extends App {
 
   val x1parsed = x1.smartParse()
 
-  x1parsed.foreach { t =>
-    t.shortClass match {
-      case "PackageDef" =>
-        println("PackageDef")
-        t.foreach { p =>
-          p.shortClass match {
-            case "Select" => {
-              println("Select:" + p)
-            }
-            case _ =>
+  x1parsed.foreach {
+    t =>
+      t.shortClass match {
+        case "PackageDef" =>
+          println("PackageDef")
+          t.foreach {
+            p =>
+              p.shortClass match {
+                case "Select" => {
+                  println("Select:" + p)
+                }
+                case _ =>
+              }
           }
-        }
-      case "ClassDef" =>
-        println("ClassDef:" + t)
-        t.foreach { c =>
-          println(c.shortClass)
-          println("\n")
-       }
-      case _ =>
-    }
+        case "ClassDef" =>
+          println("ClassDef:" + t)
+          t.foreach {
+            c =>
+              println(c.shortClass)
+              println("\n")
+          }
+        case _ =>
+      }
   }
 }
