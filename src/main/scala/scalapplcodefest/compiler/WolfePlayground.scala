@@ -28,9 +28,9 @@ object WolfePlayground extends App {
       throw new RuntimeException("Unable to load scala base object from classpath (scala-library jar is missing?)", e)
   }
 
-  /*
- * For a given FQ classname, trick the resource finder into telling us the containing jar.
- */
+  /**
+   * For a given FQ classname, trick the resource finder into telling us the containing jar.
+   */
   private def jarPathOfClass(className: String) = try {
     val resource = className.split('.').mkString("/", "/", ".class")
     val path = getClass.getResource(resource).getPath
@@ -64,4 +64,7 @@ object WolfePlayground extends App {
   val x1Parsed = x1.smartParse()
 
   compiler.treeBrowser.browse(x1Parsed)
+
+  def f(x: Int) = x + 1
+
 }

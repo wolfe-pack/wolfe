@@ -1,7 +1,5 @@
 package scalapplcodefest.compiler
 
-
-
 /**
  * User: rockt
  * Date: 1/2/14
@@ -10,5 +8,7 @@ package scalapplcodefest.compiler
 
 object WolfeParserSandbox extends App {
   val f = (i: Int, j: Int) => (i + j) * 2
+
+
 
 }
