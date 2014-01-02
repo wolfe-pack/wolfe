@@ -3,7 +3,6 @@ package scalapplcodefest.compiler
 import scala.reflect.internal.Trees
 import scalapplcodefest.compiler._
 import scala.tools.nsc.Global
-import scala.tools.nsc.transform.Transform
 
 /**
  * @author sameer
@@ -43,15 +42,9 @@ object TransformerApp extends App {
       | }
     """.stripMargin
 
-  val mln =
-    """
-      | object Foo {
-      |   type Persons = String
-      | }
-    """.stripMargin
-
-  val (global, unit) = compiler.compileCode(mln)
-
+  val (global, unit) = compiler.compileCode(code)
+  val t = new global.ForeachTreeTraverser(t => println(t))
+  t.traverse(unit.asInstanceOf[global.CompilationUnit].body)
   val transformer = new DummyTransformer
   transformer.transform(global)(unit.asInstanceOf[global.CompilationUnit])
 }
