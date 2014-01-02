@@ -9,7 +9,7 @@ import nsc.plugins.PluginComponent
 /**
  * @author sameer
  */
-class WolfeCompilerPlugin(val global: Global) extends Plugin {
+class WolfeCompilerPlugin(val global: Global, transformer: WolfeTransformer) extends Plugin {
   import global._
 
   val name = "wolfecompiler"
@@ -27,11 +27,14 @@ class WolfeCompilerPlugin(val global: Global) extends Plugin {
     class WolfePhase(prev: Phase) extends StdPhase(prev) {
       override def name = WolfeCompilerPlugin.this.name
       def apply(unit: CompilationUnit) {
+        unit.body = transformer.transform(unit.body)
+        /*
         for ( tree @ Apply(Select(rcvr, nme.DIV), List(Literal(Constant(0)))) <- unit.body;
              if rcvr.tpe <:< definitions.IntClass.tpe) 
           {
             unit.error(tree.pos, "definitely division by zero")
           }
+          */
       }
     }
   }
