@@ -4,7 +4,7 @@ package scalapplcodefest.compiler
  * @author sameer
  */
 trait WolfeTransformer {
-  def transform[T <: CompilationUnit](unit: T): T
+  def transform[T <: CompilationUnit](unit: T): Unit
 }
 
 /**
