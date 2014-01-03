@@ -72,6 +72,23 @@ object MLEExampleWithLinearModel extends App {
 
 }
 
+object BayesianNetworkExample extends App {
+
+  import WolfeEnv._
+
+  case class Data(sprinkler: Boolean, wet: Boolean, rain: Boolean)
+
+  val sampleSpace = for (s <- bools; w <- bools; r <- bools) yield Data(s, w, r)
+
+  def stats(data: Data) = {
+    import data._
+    feat('r, rain) + feat('rs, rain, sprinkler) + feat('srw, sprinkler, rain, wet)
+  }
+
+  def bn(w:Vector)(data:Data) = stats(data) dot w
+
+}
+
 object LanguageModel extends App {
 
   import WolfeEnv._
@@ -95,18 +112,6 @@ object LanguageModel extends App {
 
 }
 
-object MarginalsExample extends App {
-
-  import WolfeEnv._
-
-  case class Token(word: String, tag: String)
-
-  type Sentence = Seq[Token]
-
-  val tags = Set("NN", "DT")
-
-
-}
 
 object ConditioningExample extends App {
 
