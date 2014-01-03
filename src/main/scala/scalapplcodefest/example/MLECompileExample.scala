@@ -226,6 +226,7 @@ object Objective {
   trait GradientBasedOptimizerSetting
 
   case class Adagrad(rate:Double) extends GradientBasedOptimizerSetting
+
   class JointLoglikelihood extends StaticAnnotation
 
   case class MaxProduct(iterations:Int) extends InferenceSetting
@@ -237,6 +238,8 @@ object Objective {
 
 
   class LinearModel(setting:InferenceSetting = MaxProduct(1)) extends StaticAnnotation
+
+  class Categorical extends StaticAnnotation
 
   class Atomic extends StaticAnnotation
 
