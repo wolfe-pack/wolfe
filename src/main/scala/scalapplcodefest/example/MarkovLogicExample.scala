@@ -11,7 +11,7 @@ object MarkovLogicExample extends App {
 
   type Person = Symbol
 
-  case class Data(smokes: Person => Boolean, cancer: Person => Boolean, friends: ((Person, Person)) => Boolean)
+  case class Data(smokes: Person => Boolean, cancer: Person => Boolean, friends: Map[(Person, Person), Boolean])
 
   val persons = Set('Anna, 'Bob)
   val bools = Set(true, false)
@@ -35,12 +35,16 @@ object MarkovLogicExample extends App {
   val weights = Vector('smokingIsBad -> 2.0, 'peerPressure -> 0.0)
 
   val hidden = for (smokes <- maps(persons, bools);
-                    cancer <- maps(persons, bools))
-  yield Data(smokes, cancer, map(false, ('Anna, 'Bob) -> true))
+                    cancer <- maps(persons, bools);
+                    friends <- maps(c(persons, persons), bools))
+  yield Data(smokes, cancer, friends)
 
   //val prediction1 = argmax(hidden) {y => mln(y, weights)}
 
-  val prediction2 = argmax(hidden filter {h => h.smokes('Anna) && h.cancer('Anna)})(y => mln(y, weights))
+  val fr = Map(('Anna, 'Bob)-> true, ('Bob, 'Anna)-> false, ('Bob, 'Bob)-> false, ('Anna, 'Anna)-> false)
+  println(fr == map(false, ('Anna, 'Bob) -> true))
+
+  val prediction2 = argmax(hidden filter {h => h.smokes('Anna) && h.cancer('Anna) && h.friends == map(false, ('Anna, 'Bob) -> true)})(y => mln(y, weights))
 
   println(prediction2)
 
