@@ -9,11 +9,12 @@ import scala.tools.nsc.Global
  * @author svivek
  */
 object ASTExplorer extends App {
-  def printAST(code: String) = {
+
+  def printAST(code: String, showBrowser: Boolean = false) = {
 
     val wrappedCode = "object TestObject { " + code + "}"
 
-    val compiler = new StringCompiler(Some(new WolfeTransformer {
+    val compiler = new StringCompiler(transformer = Some(new WolfeTransformer {
       def transform(global: Global)(unit: global.type#CompilationUnit) = {
 
         val tree = unit.body
@@ -21,21 +22,26 @@ object ASTExplorer extends App {
         // ignore the package, the object and the first element of the object, which is always the constructor
         val codeAST = tree.asInstanceOf[global.PackageDef].stats(0).asInstanceOf[global.ClassDef].impl.body.tail
 
-        codeAST.foreach {c => global.newRawTreePrinter().print(c)}
+        codeAST.foreach {
+          c => {
+            global.newRawTreePrinter().print(c);
+            if (showBrowser) global.treeBrowser.browse(tree)
+          }
+        }
       }
-    }))
+    }), runsAfter = List("refchecks"))
     compiler.compileCode(wrappedCode)
   }
 
-  def explore(codeExamples: collection.mutable.Map[String, List[String]], name: String) = {
+  def explore(codeExamples: collection.mutable.Map[String, List[String]], name: String, showTrees: Boolean = false) = {
     println(name)
     println()
     println("| Original code | AST after type inference |")
     println("| --- |:--- |")
     codeExamples(name).foreach {
       c => {
-        print("| `" + c +"` | `")
-        printAST(c)
+        print("| `" + c + "` | `")
+        printAST(c, showTrees)
         println("`|")
       }
     }
@@ -69,10 +75,11 @@ object ASTExplorer extends App {
                       |1.3
                       |true
                       |(1, 2)
-                      |new Foo
-                      |new Foo(a, b)
-                      |new some.where.Foo
-                      |new some.where.Foo(a, b)
+                      |new String
+                      |new Set(1, 2)
+                      |new scala.util.Random()
+                      |new scala.util.Random(3)
+                      |new HashSet[String]()
                       |'Anna
                     """.stripMargin)
 
@@ -120,6 +127,7 @@ object ASTExplorer extends App {
                       |val h = {x: Int => y: Int => x + y}
                     """.stripMargin)
 
+
   val classes = "Classes and objects"
   register(classes, """
                       |class A { val a = 1; def f = 20 }
@@ -149,6 +157,6 @@ object ASTExplorer extends App {
                           |@deprecated def f(a: Int) = a + 1
                         """.stripMargin)
 
-  explore(code, types)
+  explore(code, objects)
 }
 
