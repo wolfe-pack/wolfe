@@ -8,11 +8,12 @@ import scala.tools.nsc.Global
 * Time: 11:44 AM
 */
 
-class TreeOperations {
-  def template(global: Global)(transformer: global.Transformer, tree: global.Tree): global.Tree = {
+object TreeOperations {
+  def noopTemplate(global: Global)(transformer: global.Transformer, tree: global.Tree): global.Tree = {
+    def mclass(sym: global.Symbol) = sym map (_.asModule.moduleClass)
+
     import transformer._
     import global._
-
     val currentOwner: global.Symbol = definitions.RootClass
 
     tree match {
@@ -126,8 +127,7 @@ class TreeOperations {
         ApplyDynamic(transform(qual), transformTrees(args))
       case ReferenceToBoxed(idt) =>
         ReferenceToBoxed(transform(idt) match { case idt1: Ident => idt1 })
-      case _ =>
-        //xtransform(transformer, tree) //FIXME
+      case _ => ??? //xtransform(transformer, tree) //FIXME
     }
   }
 
@@ -370,8 +370,7 @@ class TreeOperations {
         treeCopy.ApplyDynamic(tree, transform(qual), transformTrees(args))
       case ReferenceToBoxed(idt) =>
         treeCopy.ReferenceToBoxed(tree, transform(idt) match { case idt1: Ident => idt1 })
-      case _ =>
-        //xtransform(transformer, tree) //FIXME
+      case _ => ??? //xtransform(transformer, tree) //FIXME
     }
   }
 
