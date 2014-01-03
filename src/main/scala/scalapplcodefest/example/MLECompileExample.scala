@@ -22,32 +22,52 @@ object MLECompileExample {
       | */
       |object MLEExample extends App {
       |
-      | import WolfeEnv._
+      |  import WolfeEnv._
       |
-      |  //training data
-      |  val data = Seq('H, 'T, 'T, 'T)
+      |  type Coin = Symbol
       |
       |  //elements of the domain
       |  val coins = Set('H, 'T)
       |
-      |  //log-likelihood objective
-      |  @Objective.LogLikelihood
-      |  def ll(data: Seq[Symbol])(prob: Symbol => Double) = sum(data) {x => log(prob(x))}
+      |  //training data
+      |  val data = Seq('H, 'T, 'T, 'T)
       |
-      |  //the ML estimate
-      |  val p = argmax(simplex(coins,Set(0.0, 0.2, 1.0))) {p => ll(data)(p)}
+      |  @Objective.Categorical
+      |  def s(params: Vector)(coin: Coin) = ft(coin) dot params
       |
-      |  println(p('T))     |
+      |  @Objective.JointLoglikelihood
+      |  def ll(data: Seq[Coin])(w: Vector) = sum(data) {c => logZ(coins)(s(w)) - s(w)(c)}
+      |
+      |  //a subset of possible weights to make brute force search tractable
+      |  val myReals = Set(0.0, 0.25, 0.75, 1.0).map(math.exp)
+      |
+      |  //val w = argmin(vectors)(ll(data)) //this won't run without compilation
+      |  val w = argmin(vectors(coins, myReals)) {ll(data)} //this should run w/o compilation
+      |
+      |  val compiled = (data map (ft(_))).sum.mapValues(w => log(w / data.size))
+      |
+      |
+      |  println(w)
       |}
     """.stripMargin
 
   def main(args: Array[String]) {
     val path = dirPathOfClass(getClass.getName)
-    val compiler = new StringCompiler(additionalClassPath = List(path), runsAfter = List("typer"), transformer = Some(new WolfeTransformer {
-      def transformTree[T <: Global#Tree](global: Global, tree: T) = {
-        global.treeBrowser.browse(tree.asInstanceOf[global.Tree]); tree
-      }
-    }))
+    var browsed = false
+    val compiler = new StringCompiler(
+      additionalClassPath = List(path),
+      runsAfter = List("typer"),
+      transformer = Some(new WolfeTransformer {
+
+        def transformTree[T <: Global#Tree](global: Global, tree: T) = {
+          tree match {
+            case t @ global.PackageDef(_,_) =>
+              global.treeBrowser.browse(t.asInstanceOf[global.Tree])
+            case _ =>
+          }
+          tree
+        }
+      }))
     compiler.compileCode(source)
   }
 
@@ -71,213 +91,7 @@ object MLECompileExample {
 }
 
 
-object WolfeEnv {
-  @Domain.Maps
-  def maps[A, B](dom: Set[A], range: Set[B]): Set[Map[A,B]] = {
-    def recurse(d: List[A], r: List[B], funs: List[Map[A,B]] = List(Map.empty)):List[Map[A,B]] = d match {
-      case Nil => funs
-      case head :: tail =>
-        val newFunctions = for (value <- r; f <- funs.view) yield f + (head -> value)
-        recurse(tail,r,newFunctions)
-    }
-    recurse(dom.toList,range.toList).toSet
-  }
 
-  def map[A, B](default: B, vals: (A, B)*): Map[A,B] = Map(vals:_*).withDefaultValue(default)
 
-  def vectors[A, B](dom: Set[A], range: Set[B]): Set[Map[Any,B]] = {
-    def recurse(d: List[A], r: List[B], funs: List[Map[Any,B]] = List(Map.empty)):List[Map[Any,B]] = d match {
-      case Nil => funs
-      case head :: tail =>
-        val newFunctions = for (value <- r; f <- funs.view) yield f + (head -> value)
-        recurse(tail,r,newFunctions)
-    }
-    recurse(dom.toList,range.toList).toSet
-  }
-
-
-  def seqs[A](dom: Set[A], length: Int): Set[Seq[A]] = ???
-
-  @Operator.Sum
-  def vsum[T](elems: Seq[T])(f: T => Vector) = elems.map(f).sum(VectorNumeric)
-
-  @Operator.Sum
-  def sum[T](elems: Seq[T])(f: T => Double) = elems.map(f).sum
-
-  @Operator.Max
-  def max[T](elems: Set[T])(f: T => Double) = elems.map(f).max
-
-  @Operator.Argmax
-  def argmax[T](dom: Set[T])(obj: T => Double): T = {
-    dom.maxBy(obj)
-  }
-
-  @Operator.Argmin
-  def argmin[T](dom: Set[T])(obj: T => Double): T = {
-    dom.minBy(obj)
-  }
-
-
-  class All[T] extends Set[T] {
-    def +(elem: T) = this
-    def -(elem: T) = sys.error("Can't remove element from all objects")
-    def contains(elem: T) = true
-    def iterator = sys.error("Can't iterate over all objects")
-  }
-
-  @Domain.Simplex
-  def simplex[T](domain: Set[T], range: Set[Double] = doubles) =
-    for (p <- maps(domain,range); if sum(domain.toSeq) {p(_)} == 1.0 && domain.forall(p(_) >= 0.0)) yield p
-
-  def expect[T](dom:Set[T],stats:T=>Vector)(obj:T=>Double) = dom.view.map(x => stats(x) * obj(x))
-
-  @Objective.LogZ
-  def logZ[T](dom:Set[T])(model:T=>Double) = math.log(dom.view.map(x => math.exp(model(x))).sum)
-
-  def forall[T](dom: Set[T])(pred: T => Boolean) = dom.forall(pred)
-
-  def all[T] = new All[T]
-
-  val bools = Set(false,true)
-
-  val doubles: Set[Double] = new All[Double]
-
-  val strings: Set[String] = new All[String]
-
-  case class RichSet[T](set: Set[T]) {
-    def ->[B](that: Set[B]) = maps(set, that)
-  }
-
-  implicit def toRichSet[T](set: Set[T]) = RichSet(set)
-
-  implicit def toSeq[T](seq: Set[T]) = seq.toSeq
-
-  case class RichCurried[A1, A2, B](f: A1 => A2 => B) {
-    def apply(pair: (A2, A1)) = f(pair._2)(pair._1)
-  }
-
-  implicit def toRichCurried[A1, A2, B](f: A1 => A2 => B) = new RichCurried(f)
-
-  implicit class BarBuilder[T](t: T) {
-    def |[A](that: A) = t -> that
-  }
-
-  case class RichBoolean(b: Boolean) {
-    def ->(that:Boolean) = !b || that
-    def <->(that:Boolean) = b == that
-  }
-
-  implicit def toRichBoolean(b: Boolean) = RichBoolean(b)
-
-  type Vector = Map[Any,Double]
-
-  object Vector {
-    def apply(elems:(Any, Double)*) = Map(elems:_*)
-  }
-
-  val vectors = new All[Vector]
-
-  def ft(key:Any,value:Double = 1.0): Vector = Map(key -> value)
-  def ft(key:Any,value:Boolean): Vector = ft(key,if(value) 1.0 else 0.0)
-  def feat(key:Any*) = Map(key.toSeq.asInstanceOf[Any] -> 1.0)
-
-  implicit object VectorNumeric extends Numeric[Vector] {
-    def plus(x: WolfeEnv.Vector, y: WolfeEnv.Vector) = {
-        val keys = x.keySet ++ y.keySet
-        val result =  keys map (k => k -> (x.getOrElse(k,0.0) + y.getOrElse(k, 0.0)))
-        result.toMap
-    }
-    def minus(x: WolfeEnv.Vector, y: WolfeEnv.Vector) = ???
-    def times(x: WolfeEnv.Vector, y: WolfeEnv.Vector) = ???
-    def negate(x: WolfeEnv.Vector) = ???
-    def fromInt(x: Int) = ???
-    def toInt(x: WolfeEnv.Vector) = ???
-    def toLong(x: WolfeEnv.Vector) = ???
-    def toFloat(x: WolfeEnv.Vector) = ???
-    def toDouble(x: WolfeEnv.Vector) = ???
-    def compare(x: WolfeEnv.Vector, y: WolfeEnv.Vector) = ???
-    def dot(x:Vector,y:Vector) = {
-      x.keys.view.map(k => x(k) * y(k)).sum
-    }
-    override def zero = Map.empty
-    def norm(x:Vector) = {
-      val sum = x.values.sum
-      x mapValues (_ / sum)
-    }
-  }
-
-  implicit class RichVector(vector:Vector) {
-    import WolfeEnv.{VectorNumeric => num}
-    def +(that:Vector) = num.plus(vector,that)
-    def dot(that:Vector) = num.dot(vector,that)
-    def norm = num.norm(vector)
-    def *(scale:Double) = vector.mapValues(_ * scale)
-  }
-
-  def c[A,B](set1:Set[A], set2:Set[B]) = for(i <- set1; j <- set2) yield (i,j)
-
-}
-
-
-import scala.annotation._
-
-
-object Operator {
-
-  class Argmax extends StaticAnnotation
-
-  class Argmin extends StaticAnnotation
-
-  class Sum extends StaticAnnotation
-
-  class Max extends StaticAnnotation
-
-
-}
-
-object Objective {
-
-  case class OptimizerSetting(algoritm:String)
-
-  trait InferenceSetting
-
-  trait GradientBasedOptimizerSetting
-
-  case class Adagrad(rate:Double) extends GradientBasedOptimizerSetting
-
-  class JointLoglikelihood extends StaticAnnotation
-
-  case class MaxProduct(iterations:Int) extends InferenceSetting
-
-  class LogLikelihood extends StaticAnnotation
-
-  class Differentiable(setting:GradientBasedOptimizerSetting = Adagrad(1.0)) extends StaticAnnotation
-
-
-
-  class LinearModel(setting:InferenceSetting = MaxProduct(1)) extends StaticAnnotation
-
-  class Categorical extends StaticAnnotation
-
-  class Atomic extends StaticAnnotation
-
-  class LogZ extends StaticAnnotation
-
-
-}
-
-object Domain {
-
-  class PMF extends StaticAnnotation
-
-  class Maps extends StaticAnnotation
-
-  class Seqs extends StaticAnnotation
-
-  class Simplex extends StaticAnnotation
-
-  class Marginals extends StaticAnnotation
-
-}
 
 
