@@ -77,6 +77,7 @@ object MLECompileExample {
             case s @ Select(_,name) if name.encoded == "argmin" =>
               val symbol = s.symbol
               println(symbol)
+              val sig = symbol.owner.typeSignature.members
               val members = symbol.owner.tpe.members
               val children = symbol.owner.children
               println(members)

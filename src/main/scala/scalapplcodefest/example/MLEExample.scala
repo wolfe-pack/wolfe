@@ -54,6 +54,8 @@ object MLEExampleWithLinearModel extends App {
 
   //this is how the compiled expression should look like
   val compiled = (data map (ft(_))).sum.mapValues(w => log(w / data.size))
+  val compiled2 = sum (data) {ft(_)} mapValues(w => log(w / data.size))
+
 
   println(w)
   println(compiled)
