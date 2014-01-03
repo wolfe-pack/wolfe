@@ -9,6 +9,7 @@ trait ILPConnector [+T]{
   def addVar(variable : Var[T]):this.type
 
   def solve():Map[T,Double]
+
 }
 
 case class Var[T] (name:T){
