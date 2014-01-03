@@ -17,8 +17,8 @@ object Wolfe {
     recurse(dom.toList, range.toList).toSet
   }
 
-  def map[A, B](default: B, vals: (A, B)*): Map[A,B] = Map(vals:_*).withDefaultValue(default)
-  def map[A, B](keys: Set[A], default: B, vals: (A, B)*): Map[A,B] = (keys -- vals.map(_._1)).map(_ -> default).toMap ++ Map(vals:_*)
+  def map[A, B](default: B, vals: (A, B)*): Map[A, B] = Map(vals: _*).withDefaultValue(default)
+  def map[A, B](keys: Set[A], default: B, vals: (A, B)*): Map[A, B] = (keys -- vals.map(_._1)).map(_ -> default).toMap ++ Map(vals: _*)
 
   def vectors[A, B](dom: Set[A], range: Set[B]): Set[Map[Any, B]] = {
     def recurse(d: List[A], r: List[B], funs: List[Map[Any, B]] = List(Map.empty)): List[Map[Any, B]] = d match {
@@ -97,34 +97,35 @@ object Wolfe {
   }
 
   type Vector = Map[Any, Double]
+
   implicit class RichBoolean(b: Boolean) {
-    def ->(that:Boolean) = !b || that
-    def <->(that:Boolean) = b == that
+    def ->(that: Boolean) = !b || that
+    def <->(that: Boolean) = b == that
   }
 
-  implicit class RichPredicate[T](pred:Map[T,Boolean]) {
-    def only(trueAtoms:T*) = {
+  implicit class RichPredicate[T](pred: Map[T, Boolean]) {
+    def only(trueAtoms: T*) = {
       val set = trueAtoms.toSet
       pred forall {
-        case (a,t) => set(a) == t
+        case (a, t) => set(a) == t
       }
     }
   }
 
   object Vector {
-    def apply(elems:(Any, Double)*) = Map(elems:_*)
+    def apply(elems: (Any, Double)*) = Map(elems: _*)
   }
 
   val vectors = new All[Vector]
 
-  def ft(key:Any,value:Double = 1.0): Vector = Map(key -> value)
-  def ft(key:Any,value:Boolean): Vector = ft(key,if(value) 1.0 else 0.0)
-  def feat(key:Any*) = Map(key.toSeq.asInstanceOf[Any] -> 1.0)
+  def ft(key: Any, value: Double = 1.0): Vector = Map(key -> value)
+  def ft(key: Any, value: Boolean): Vector = ft(key, if (value) 1.0 else 0.0)
+  def feat(key: Any*) = Map(key.toSeq.asInstanceOf[Any] -> 1.0)
 
   implicit object VectorNumeric extends Numeric[Vector] {
     def plus(x: Wolfe.Vector, y: Wolfe.Vector) = {
       val keys = x.keySet ++ y.keySet
-      val result =  keys map (k => k -> (x.getOrElse(k,0.0) + y.getOrElse(k, 0.0)))
+      val result = keys map (k => k -> (x.getOrElse(k, 0.0) + y.getOrElse(k, 0.0)))
       result.toMap
     }
     def minus(x: Wolfe.Vector, y: Wolfe.Vector) = ???
@@ -136,85 +137,68 @@ object Wolfe {
     def toFloat(x: Wolfe.Vector) = ???
     def toDouble(x: Wolfe.Vector) = ???
     def compare(x: Wolfe.Vector, y: Wolfe.Vector) = ???
-    def dot(x:Vector,y:Vector) = {
+    def dot(x: Vector, y: Vector) = {
       x.keys.view.map(k => x(k) * y(k)).sum
     }
     override def zero = Map.empty
-    def norm(x:Vector) = {
+    def norm(x: Vector) = {
       val sum = x.values.sum
       x mapValues (_ / sum)
     }
   }
 
-  implicit class RichVector(vector:Vector) {
+  implicit class RichVector(vector: Vector) {
+
     import Wolfe.{VectorNumeric => num}
-    def +(that:Vector) = num.plus(vector,that)
-    def dot(that:Vector) = num.dot(vector,that)
+
+    def +(that: Vector) = num.plus(vector, that)
+    def dot(that: Vector) = num.dot(vector, that)
     def norm = num.norm(vector)
-    def *(scale:Double) = vector.mapValues(_ * scale)
+    def *(scale: Double) = vector.mapValues(_ * scale)
   }
 
-  def c[A,B](set1:Set[A], set2:Set[B]) = for(i <- set1; j <- set2) yield (i,j)
+  def c[A, B](set1: Set[A], set2: Set[B]) = for (i <- set1; j <- set2) yield (i, j)
 
-}
-
-
-import scala.annotation._
+  import scala.annotation._
 
 
-object Operator {
+  object Operator {
 
-  class Argmax extends StaticAnnotation
+    class Argmax extends StaticAnnotation
+    class Argmin extends StaticAnnotation
+    class Sum extends StaticAnnotation
+    class Max extends StaticAnnotation
 
-  class Argmin extends StaticAnnotation
+  }
+  object Objective {
 
-  class Sum extends StaticAnnotation
+    trait InferenceSetting
+    trait GradientBasedOptimizerSetting
 
-  class Max extends StaticAnnotation
+    case class Adagrad(rate: Double) extends GradientBasedOptimizerSetting
+    case class MaxProduct(iterations: Int) extends InferenceSetting
 
+    class LogLikelihood extends StaticAnnotation
+    class JointLoglikelihood extends StaticAnnotation
+    class Differentiable(setting: GradientBasedOptimizerSetting = Adagrad(1.0)) extends StaticAnnotation
+    class LinearModel(setting: InferenceSetting = MaxProduct(1)) extends StaticAnnotation
+    class Categorical extends StaticAnnotation
+    class LogZ extends StaticAnnotation
 
-}
+  }
 
-object Objective {
+  object Domain {
 
-  case class OptimizerSetting(algoritm: String)
+    class PMF extends StaticAnnotation
+    class Maps extends StaticAnnotation
+    class Seqs extends StaticAnnotation
+    class Simplex extends StaticAnnotation
+    class Marginals extends StaticAnnotation
 
-  trait InferenceSetting
-
-  trait GradientBasedOptimizerSetting
-
-  case class Adagrad(rate: Double) extends GradientBasedOptimizerSetting
-
-  class JointLoglikelihood extends StaticAnnotation
-
-  case class MaxProduct(iterations: Int) extends InferenceSetting
-
-  class LogLikelihood extends StaticAnnotation
-
-  class Differentiable(setting: GradientBasedOptimizerSetting = Adagrad(1.0)) extends StaticAnnotation
-
-
-  class LinearModel(setting: InferenceSetting = MaxProduct(1)) extends StaticAnnotation
-
-  class Categorical extends StaticAnnotation
-
-  class Atomic extends StaticAnnotation
-
-  class LogZ extends StaticAnnotation
+  }
 
 
 }
 
-object Domain {
 
-  class PMF extends StaticAnnotation
 
-  class Maps extends StaticAnnotation
-
-  class Seqs extends StaticAnnotation
-
-  class Simplex extends StaticAnnotation
-
-  class Marginals extends StaticAnnotation
-
-}
