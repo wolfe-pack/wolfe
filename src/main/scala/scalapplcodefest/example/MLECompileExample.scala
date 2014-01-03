@@ -73,8 +73,8 @@ object MLECompileExample {
 
 
 object WolfeEnv {
-  @Domain.Functions
-  def funs[A, B](dom: Set[A], range: Set[B]): Set[Map[A,B]] = {
+  @Domain.Maps
+  def maps[A, B](dom: Set[A], range: Set[B]): Set[Map[A,B]] = {
     def recurse(d: List[A], r: List[B], funs: List[Map[A,B]] = List(Map.empty)):List[Map[A,B]] = d match {
       case Nil => funs
       case head :: tail =>
@@ -83,6 +83,17 @@ object WolfeEnv {
     }
     recurse(dom.toList,range.toList).toSet
   }
+
+  def vectors[A, B](dom: Set[A], range: Set[B]): Set[Map[Any,B]] = {
+    def recurse(d: List[A], r: List[B], funs: List[Map[Any,B]] = List(Map.empty)):List[Map[Any,B]] = d match {
+      case Nil => funs
+      case head :: tail =>
+        val newFunctions = for (value <- r; f <- funs.view) yield f + (head -> value)
+        recurse(tail,r,newFunctions)
+    }
+    recurse(dom.toList,range.toList).toSet
+  }
+
 
   def seqs[A](dom: Set[A], length: Int): Set[Seq[A]] = ???
 
@@ -97,6 +108,12 @@ object WolfeEnv {
     dom.maxBy(obj)
   }
 
+  @Operator.Argmin
+  def argmin[T](dom: Set[T])(obj: T => Double): T = {
+    dom.minBy(obj)
+  }
+
+
   class All[T] extends Set[T] {
     def +(elem: T) = this
     def -(elem: T) = sys.error("Can't remove element from all objects")
@@ -106,7 +123,7 @@ object WolfeEnv {
 
   @Domain.Simplex
   def simplex[T](domain: Set[T], range: Set[Double] = doubles) =
-    for (p <- funs(domain,range); if sum(domain.toSeq) {p(_)} == 1.0 && domain.forall(p(_) >= 0.0)) yield p
+    for (p <- maps(domain,range); if sum(domain.toSeq) {p(_)} == 1.0 && domain.forall(p(_) >= 0.0)) yield p
 
   type Query[T, M] = (T => M, Set[M])
 
@@ -114,6 +131,9 @@ object WolfeEnv {
     type Marg = Seq[M => T]
     ???
   }
+
+  @Objective.LogZ
+  def logZ[T](dom:Set[T])(model:T=>Double) = math.log(dom.view.map(x => math.exp(model(x))).sum)
 
   def forall[T](dom: Set[T])(pred: T => Boolean) = dom.forall(pred)
 
@@ -124,7 +144,7 @@ object WolfeEnv {
   val strings: Set[String] = new All[String]
 
   case class RichSet[T](set: Set[T]) {
-    def ->[B](that: Set[B]) = funs(set, that)
+    def ->[B](that: Set[B]) = maps(set, that)
   }
 
   implicit def toRichSet[T](set: Set[T]) = RichSet(set)
@@ -143,15 +163,40 @@ object WolfeEnv {
 
   type Vector = Map[Any,Double]
 
+  val vectors = new All[Vector]
+
+  def ft(key:Any,value:Double = 1.0) = Map(key -> value)
+
+  implicit object VectorNumeric extends Numeric[Vector] {
+    def plus(x: WolfeEnv.Vector, y: WolfeEnv.Vector) = {
+        val keys = x.keySet ++ y.keySet
+        val result =  keys map (k => k -> (x.getOrElse(k,0.0) + y.getOrElse(k, 0.0)))
+        result.toMap
+    }
+    def minus(x: WolfeEnv.Vector, y: WolfeEnv.Vector) = ???
+    def times(x: WolfeEnv.Vector, y: WolfeEnv.Vector) = ???
+    def negate(x: WolfeEnv.Vector) = ???
+    def fromInt(x: Int) = ???
+    def toInt(x: WolfeEnv.Vector) = ???
+    def toLong(x: WolfeEnv.Vector) = ???
+    def toFloat(x: WolfeEnv.Vector) = ???
+    def toDouble(x: WolfeEnv.Vector) = ???
+    def compare(x: WolfeEnv.Vector, y: WolfeEnv.Vector) = ???
+    def dot(x:Vector,y:Vector) = {
+      x.keys.view.map(k => x(k) * y(k)).sum
+    }
+    override def zero = Map.empty
+    def norm(x:Vector) = {
+      val sum = x.values.sum
+      x mapValues (_ / sum)
+    }
+  }
+
   implicit class RichVector(vector:Vector) {
-    def dot(that:Vector) = {
-      vector.keys.map(k => vector(k) * that(k)).sum
-    }
-    def +(that:Vector) = {
-      val keys = vector.keySet ++ that.keySet
-      val result =  keys map (k => k -> (vector.getOrElse(k,0.0) + that.getOrElse(k, 0.0)))
-      result.toMap
-    }
+    import WolfeEnv.{VectorNumeric => num}
+    def +(that:Vector) = num.plus(vector,that)
+    def dot(that:Vector) = num.dot(vector,that)
+    def norm = num.norm(vector)
   }
 
 
@@ -165,6 +210,8 @@ object Operator {
 
   class Argmax extends StaticAnnotation
 
+  class Argmin extends StaticAnnotation
+
   class Sum extends StaticAnnotation
 
   class Max extends StaticAnnotation
@@ -174,9 +221,24 @@ object Operator {
 
 object Objective {
 
+  case class OptimizerSetting(algoritm:String)
+
+  trait InferenceSetting
+
+  trait GradientBasedOptimizerSetting
+
+  case class Adagrad(rate:Double) extends GradientBasedOptimizerSetting
+
+  case class MaxProduct(iterations:Int) extends InferenceSetting
+
   class LogLikelihood extends StaticAnnotation
 
-  class MaxProduct(iterations: Int) extends StaticAnnotation
+  class Differentiable(setting:GradientBasedOptimizerSetting = Adagrad(1.0)) extends StaticAnnotation
+
+  class LinearModel(setting:InferenceSetting = MaxProduct(1)) extends StaticAnnotation
+
+  class LogZ extends StaticAnnotation
+
 
 }
 
@@ -184,7 +246,7 @@ object Domain {
 
   class PMF extends StaticAnnotation
 
-  class Functions extends StaticAnnotation
+  class Maps extends StaticAnnotation
 
   class Seqs extends StaticAnnotation
 
