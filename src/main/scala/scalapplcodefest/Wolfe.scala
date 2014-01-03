@@ -18,6 +18,7 @@ object Wolfe {
   }
 
   def map[A, B](default: B, vals: (A, B)*): Map[A,B] = Map(vals:_*).withDefaultValue(default)
+  def map[A, B](keys: Set[A], default: B, vals: (A, B)*): Map[A,B] = (keys -- vals.map(_._1)).map(_ -> default).toMap ++ Map(vals:_*)
 
   def vectors[A, B](dom: Set[A], range: Set[B]): Set[Map[Any, B]] = {
     def recurse(d: List[A], r: List[B], funs: List[Map[Any, B]] = List(Map.empty)): List[Map[Any, B]] = d match {

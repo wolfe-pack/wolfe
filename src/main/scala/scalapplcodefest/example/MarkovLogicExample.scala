@@ -40,12 +40,7 @@ object MarkovLogicExample extends App {
                     friends <- maps(c(persons, persons), bools))
   yield Data(smokes, cancer, friends)
 
-  //val prediction1 = argmax(hidden) {y => mln(y, weights)}
-
-  val fr = Map(('Anna, 'Bob)-> true, ('Bob, 'Anna)-> false, ('Bob, 'Bob)-> false, ('Anna, 'Anna)-> false)
-  println(fr == map(false, ('Anna, 'Bob) -> true))
-
-  val prediction2 = argmax(hidden filter {h => h.smokes('Anna) && h.cancer('Anna) && h.friends == map(false, ('Anna, 'Bob) -> true)})(y => mln(y, weights))
+  val prediction2 = argmax(hidden filter {h => h.smokes('Anna) && h.cancer('Anna) && h.friends == map(c(persons,persons), false, ('Anna, 'Bob) -> true)})(y => mln(y, weights))
 
   println(prediction2)
 
