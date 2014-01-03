@@ -2,16 +2,18 @@ package scalapplcodefest.compiler
 
 import scala.tools.nsc.{Global, Settings}
 import scala.tools.nsc.reporters.ConsoleReporter
-import scala.reflect.io.VirtualDirectory
+import scala.reflect.io.{AbstractFile, VirtualDirectory}
 import scala.reflect.internal.util.BatchSourceFile
 
 /**
  * @author sameer
  */
-class StringCompiler(val transformer: Option[WolfeTransformer] = None,additionalClassPath:List[String] = Nil) {
+class StringCompiler(val transformer: Option[WolfeTransformer] = None,
+                     additionalClassPath:List[String] = Nil,
+                     outputDir:AbstractFile = new VirtualDirectory("(memory)", None)) {
   val settings = new Settings
   settings.nowarnings.value = true // warnings are exceptions, so disable
-  settings.outputDirs.setSingleOutput(new VirtualDirectory("(memory)", None))
+  settings.outputDirs.setSingleOutput(outputDir)
 
   val compilerPath = try {
     jarPathOfClass("scala.tools.nsc.Interpreter")
@@ -69,4 +71,4 @@ class StringCompiler(val transformer: Option[WolfeTransformer] = None,additional
   }
 }
 
-object StringCompiler extends StringCompiler(None,Nil)
+object StringCompiler extends StringCompiler(None,Nil,new VirtualDirectory("(memory)", None))
