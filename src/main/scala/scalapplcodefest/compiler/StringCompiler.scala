@@ -9,8 +9,9 @@ import scala.reflect.internal.util.BatchSourceFile
  * @author sameer
  */
 class StringCompiler(val transformer: Option[WolfeTransformer] = None,
-                     additionalClassPath:List[String] = Nil,
-                     outputDir:AbstractFile = new VirtualDirectory("(memory)", None)) {
+                     additionalClassPath: List[String] = Nil,
+                     outputDir: AbstractFile = new VirtualDirectory("(memory)", None),
+                     runsAfter: List[String] = List("refchecks")) {
   val settings = new Settings
   settings.nowarnings.value = true // warnings are exceptions, so disable
   settings.outputDirs.setSingleOutput(outputDir)
@@ -39,12 +40,12 @@ class StringCompiler(val transformer: Option[WolfeTransformer] = None,
   val reporter = new ConsoleReporter(settings)
 
   def compileCode(code: String): (Global, CompilationUnit) = {
-    val compiler : Global = if (transformer.isDefined) {
+    val compiler: Global = if (transformer.isDefined) {
       new Global(settings, reporter) {
         self =>
         override protected def computeInternalPhases() {
           super.computeInternalPhases
-          for (phase <- new WolfeCompilerPlugin(self, transformer.get).components)
+          for (phase <- new WolfeCompilerPlugin(self, transformer.get, runsAfter).components)
             phasesSet += phase
         }
       }
@@ -71,4 +72,4 @@ class StringCompiler(val transformer: Option[WolfeTransformer] = None,
   }
 }
 
-object StringCompiler extends StringCompiler(None,Nil,new VirtualDirectory("(memory)", None))
+object StringCompiler extends StringCompiler(None, Nil, new VirtualDirectory("(memory)", None),List("refchecks"))

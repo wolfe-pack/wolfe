@@ -10,7 +10,7 @@ import scala.tools.nsc.transform.Transform
 /**
  * @author sameer
  */
-class WolfeCompilerPlugin(val global: Global, t: WolfeTransformer) extends Plugin {
+class WolfeCompilerPlugin(val global: Global, transformer: WolfeTransformer, val runsAfter: List[String] = List("refchecks")) extends Plugin {
 
   import global._
 
@@ -25,7 +25,7 @@ class WolfeCompilerPlugin(val global: Global, t: WolfeTransformer) extends Plugi
 
     protected def newTransformer(unit: global.CompilationUnit): global.Transformer = new global.Transformer {
       override def transform(tree: global.Tree) = {
-        t.transformTree[global.Tree](global, super.transform(tree))
+        transformer.transformTree[global.Tree](global, super.transform(tree))
       }
     }
   }
