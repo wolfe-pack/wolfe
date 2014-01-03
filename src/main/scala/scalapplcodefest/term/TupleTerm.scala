@@ -61,7 +61,7 @@ case class CartesianProductTerm3[A1,A2,A3](a1:Term[Set[A1]],a2:Term[Set[A2]],a3:
     for (b1 <- a1.eval(state);
          b2 <- a2.eval(state);
          b3 <- a3.eval(state)) yield CartesianProduct3(b1,b2,b3)
-  def variables = a1.variables ++ a2.variables
+  def variables = a1.variables ++ a2.variables ++ a3.variables
   def default = Set((a1.default.head,a2.default.head,a3.default.head))
   def domain[C >: Set[(A1, A2, A3)]] = TermDSL.all[C]
 }

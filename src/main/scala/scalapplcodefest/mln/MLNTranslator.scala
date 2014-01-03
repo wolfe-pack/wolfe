@@ -334,6 +334,7 @@ object FormulaDeclaration {
               TupleTerm2(var1.asInstanceOf[scalapplcodefest.term.Variable[_]],
                 var2.asInstanceOf[scalapplcodefest.term.Variable[_]]))
           }
+
         }
         funApp
       }
