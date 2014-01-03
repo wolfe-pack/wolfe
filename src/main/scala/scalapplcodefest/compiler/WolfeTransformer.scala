@@ -31,7 +31,7 @@ class DummyTransformer extends WolfeTransformer {
 
   def transformTest(global: Global)(unit: global.type#CompilationUnit): Unit = {
     //testing AST transformer template
-    val transformed = TreeOperations.noopTemplate(global)(global.noopTransformer, unit.body)
+    val transformed = TreeOperations.noopTemplate(global)(unit.body)
     for (tree <- transformed) {
       transformTree(global)(tree)
     }
