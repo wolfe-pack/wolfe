@@ -43,8 +43,7 @@ object LanguageModel extends App {
   def ll(data: Seq[Sentence])(p: BiGramModel) = sum(data) {x => log(prob(x)(p))}
 
   @Domain.PMF
-  def models = (vocab -> (vocab -> doubles)) filter (
-    p => vocab.forall(context => sum(vocab) {p(context)(_)} == 1.0 && forall(vocab) {p(context)(_) >= 0.0}))
+  def models = vocab -> simplex(vocab)
 
   val p = argmax(models) {ll(data)}
 
