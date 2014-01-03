@@ -4,7 +4,6 @@ import scalapplcodefest.TermDSL._
 import scalapplcodefest.term._
 import scalapplcodefest.MPGraphCompiler.factorize
 import scalapplcodefest.value.Fun
-import scalapplcodefest.value.Reduce
 import scalapplcodefest.term.Var
 import scalapplcodefest.term.TupleTerm2
 import scalapplcodefest.term.FunApp
@@ -95,8 +94,8 @@ object CNFNormalizer {
         case conpred@(Constant(_) | Predicate(_, _, _)) => term
         case FunApp(conpred, _) => term
         // If φ has the form ~A for some constant A, then return φ.
-        case FunApp(bools.neg, conpred) =>
-          term
+        //case FunApp(bools.neg, conpred) =>
+        //  term
         case _ =>
           println("not yet covered " + term + " class " + term.getClass)
           term
