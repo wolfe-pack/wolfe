@@ -9,6 +9,8 @@ import scalapplcodefest.TermDSL._
 
 object ILPExample {
 
+  val list = List("a","b")
+
   //this gives us syntactic sugar
 
   import TermDSL._
@@ -31,7 +33,7 @@ object ILPExample {
 
   //Smoking can lead to cancer
   val f1 = vectors.sum(for (p <- persons) yield unit(key('smokingIsBad),
-    I(smokes(p) |=> cancer(p))))
+    I(! smokes(p) |=> cancer(p))))
 
   //friends make friends smoke / not smoke
   val f2 = vectors.sum(for ((p1,p2) <- c(persons, persons)) yield unit(key('peerPressure),
@@ -45,7 +47,7 @@ object ILPExample {
     println(mln)
     val normalizedMLN = CNFNormalizer(mln, doubles.add)
 
-    println("Head:")
+    println("Normalized:")
     println(normalizedMLN)
 
     //an actual weight vector that can be plugged into the mln. todo: this should be created by terms
@@ -58,7 +60,7 @@ object ILPExample {
     val conditioned = normalizedMLN | condition | weights -> concreteWeights
 
     //an inference result calculated through max product
-    val argmax = argState(max(lam(sig(smokes,cancer,friend),conditioned)).byMessagePassing()).value()
+    //val argmax = argState(max(lam(sig(smokes,cancer,friend),conditioned)).byMessagePassing()).value()
 
     //println(argmax)
 

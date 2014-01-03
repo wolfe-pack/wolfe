@@ -59,41 +59,41 @@ object CNFNormalizer {
         //If φ has the form P -> Q, then:
         //Return CONVERT(~P v Q). // equivalent
         case FunApp(bools.implies, TupleTerm2(left, right)) =>
-          normalize(FunApp(myOr, TupleTerm2(FunApp(myNeg, left), right)))
+          normalizeFormula(FunApp(myOr, TupleTerm2(FunApp(myNeg, left), right)))
         //If φ has the form P <-> Q, then: return CONVERT((P ^ Q) v (~P ^ ~Q)).
         case FunApp(bools.equiv, TupleTerm2(left, right)) =>
-          normalize(FunApp(myAnd, TupleTerm2(
+          normalizeFormula(FunApp(myAnd, TupleTerm2(
             FunApp(myImplies, TupleTerm2(left, right)),
             FunApp(myImplies, TupleTerm2(right, left))
           )))
         // If φ has the form ~(~P), then return CONVERT(P). // double negation
         case FunApp(bools.neg, FunApp(bools.neg, expr)) =>
-          normalize(expr)
+          normalizeFormula(expr)
         // If φ has the form ~(P ^ Q), then return CONVERT(~P v ~Q). // de Morgan's Law
         case FunApp(bools.neg, FunApp(bools.and, TupleTerm2(left, right))) =>
-          normalize(FunApp(myOr, TupleTerm2(FunApp(myNeg, left), FunApp(myNeg, right))))
+          normalizeFormula(FunApp(myOr, TupleTerm2(FunApp(myNeg, left), FunApp(myNeg, right))))
         // If φ has the form ~(P v Q), then return CONVERT(~P ^ ~Q). // de Morgan's Law
         case FunApp(bools.neg, FunApp(bools.or, TupleTerm2(left, right))) =>
-          normalize(FunApp(myAnd, TupleTerm2(FunApp(myNeg, left), FunApp(myNeg, right))))
+          normalizeFormula(FunApp(myAnd, TupleTerm2(FunApp(myNeg, left), FunApp(myNeg, right))))
         //  If φ has the form (P1 ^ P2)  v Q, then:
         //  return CONVERT((P1 v Q) ^ (P2 v Q))
         case FunApp(bools.or, TupleTerm2(FunApp(bools.and, TupleTerm2(left, right)), expr)) =>
-          normalize(FunApp(myAnd, TupleTerm2(FunApp(myOr, TupleTerm2(left, expr)), FunApp(myOr, TupleTerm2(right, expr)))))
+          normalizeFormula(FunApp(myAnd, TupleTerm2(FunApp(myOr, TupleTerm2(left, expr)), FunApp(myOr, TupleTerm2(right, expr)))))
         //  If φ has the form P v (Q1 ^ Q2), then:
         //  return CONVERT((P v Q1) ^ (P v Q2))
         case FunApp(bools.or, TupleTerm2(expr, FunApp(bools.and, TupleTerm2(left, right)))) =>
-          normalize(FunApp(myAnd, TupleTerm2(FunApp(myOr, TupleTerm2(expr, left)), FunApp(myOr, TupleTerm2(expr, right)))))
+          normalizeFormula(FunApp(myAnd, TupleTerm2(FunApp(myOr, TupleTerm2(expr, left)), FunApp(myOr, TupleTerm2(expr, right)))))
         //  If φ has the form P v Q, then:
         //  return CONVERT(P) v CONVERT(Q)
         case FunApp(bools.or, TupleTerm2(left, right)) =>
-          FunApp(myOr, TupleTerm2(normalize(left), normalize(right)))
+          FunApp(myOr, TupleTerm2(normalizeFormula(left), normalizeFormula(right)))
         //  If φ has the form P ^ Q, then:
         //  return CONVERT(P) ^ CONVERT(Q)
         case FunApp(bools.and, TupleTerm2(left, right)) =>
-          FunApp(myAnd, TupleTerm2(normalize(left), normalize(right)))
+          FunApp(myAnd, TupleTerm2(normalizeFormula(left), normalizeFormula(right)))
         // If φ is a constant, then: return φ.
-        case conpred@(Constant(_) | Predicate(_, _, _)) =>
-          term
+        case conpred@(Constant(_) | Predicate(_, _, _)) => term
+        case FunApp(conpred, _) => term
         // If φ has the form ~A for some constant A, then return φ.
         case FunApp(bools.neg, conpred) =>
           term
@@ -101,25 +101,27 @@ object CNFNormalizer {
           println("not yet covered " + term + " class " + term.getClass)
           term
       }
-      term match {
+      term match{
         // dig to the actual formulas
         case Reduce(operator, arguments) =>
           Reduce(operator.asInstanceOf[Term[Fun[(Any, Any), Any]]], normalize(arguments).asInstanceOf[Term[Seq[Any]]])
         case SeqTerm(seq) => SeqTerm(seq map normalize)
         case Var(_, _) => term
-        // TODO How can I ensure that this is only called once per formula?
-        case FunApp(ops@(bools.equiv | bools.implies | bools.or | bools.and | bools.neg), _) =>
-          var normalizedTerm = normalizeFormula(term)
+        case FunApp(ops @(bools.equiv | bools.implies | bools.or | bools.and | bools.neg),_) =>
+        var normalizedTerm = normalizeFormula(term)
           //println("normalized " + normalizedTerm + " isNormalized " + checkIfNormalized(normalizedTerm))
-          while (!checkIfNormalized(normalizedTerm)) {
+          while(!checkIfNormalized(normalizedTerm)){
             normalizedTerm = normalizeFormula(normalizedTerm)
+            //println("normalized " + normalizedTerm + " isNormalized " + checkIfNormalized(normalizedTerm))
           }
           normalizedTerm
-        case FunApp(operator, TupleTerm2(left, right)) if ((operator != bools.equiv) && (operator != bools.implies) && (operator != bools.or) && (operator != bools.and) && (operator != bools.neg)) =>
-          FunApp(operator, TupleTerm2(normalize(left), normalize(right)))
-        case FunApp(operator, inner) if ((operator != bools.equiv) && (operator != bools.implies) && (operator != bools.or) && (operator != bools.and) && (operator != bools.neg)) =>
-          FunApp(operator, normalize(inner))
-        case Constant(_) => term
+        case Predicate(_,_,_) => term
+        case Constant(_) =>  term
+        case FunApp(operator, inner) => //if ((operator != bools.equiv) && (operator != bools.implies) && (operator != bools.or) && (operator != bools.and) && (operator != bools.neg))
+          inner match {
+            case TupleTerm2(left, right) => FunApp(operator, TupleTerm2(normalize(left), normalize(right)))
+            case _ => FunApp(operator, normalize(inner))
+          }
         case _ =>
           println("not yet covered: " + term + " class " + term.getClass)
           term
