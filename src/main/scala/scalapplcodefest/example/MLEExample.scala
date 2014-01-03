@@ -1,7 +1,7 @@
 package scalapplcodefest.example
 
 import math.log
-import scalapplcodefest.example.Objective.{Adagrad, MaxProduct}
+import scalapplcodefest.example.Objective.{JointLoglikelihood, Adagrad, MaxProduct}
 
 
 /**
@@ -33,16 +33,17 @@ object MLEExampleWithLinearModel extends App {
   import WolfeEnv._
 
   type Coin = Symbol
-  //training data
-  val data = Seq('H, 'T, 'T, 'T)
 
   //elements of the domain
   val coins = Set('H, 'T)
 
-  @Objective.LinearModel(MaxProduct(10))
+  //training data
+  val data = Seq('H, 'T, 'T, 'T)
+
+  @Objective.LinearModel
   def s(params: Vector)(coin: Coin) = ft(coin) dot params
 
-  @Objective.Differentiable(Adagrad(1.0))
+  @Objective.JointLoglikelihood
   def ll(data: Seq[Coin])(w: Vector) = sum(data) {c => logZ(coins)(w) - s(w)(c)}
 
   //a subset of possible weights to make brute force search tractable
@@ -51,19 +52,13 @@ object MLEExampleWithLinearModel extends App {
   //val w = argmin(vectors)(ll(data)) //this won't run without compilation
   val w = argmin(vectors(coins,small)) (ll(data))  //this should run w/o compilation
 
+  println(w)
+
+  //weight vector would not need to be normalized
   val probs = (w mapValues math.exp).norm
 
-  println(w)
   println(probs)
-  println(w('T))
-  println(w('H))
-  println(ll(data)(w))
-  println(ll(data)(Map('H -> math.exp(0.75), 'T -> math.exp(0.25))))
-  println(ll(data)(Map('H -> -1.0, 'T -> 1.0)))
 
-
-
-  Seq(ft(1), ft(2)).sum
 
 
 }
