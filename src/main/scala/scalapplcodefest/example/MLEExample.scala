@@ -21,9 +21,22 @@ object MLEExample extends App {
   def ll(data: Seq[Symbol])(prob: Symbol => Double) = sum(data) {x => log(prob(x))}
 
   //the ML estimate
-  val p = argmax(simplex(coins)) {ll(data)}
+  val p = argmax(simplex(coins,Set(0.0, 0.25, 0.75, 1.0))) {p => ll(data)(p)}
 
   println(p('T))
+
+}
+
+object MLEExampleWithGLM extends App {
+
+  import WolfeEnv._
+
+  //training data
+  val data = Seq('H, 'T, 'T, 'T)
+
+  //elements of the domain
+  val coins = Set('H, 'T)
+
 
 }
 
@@ -42,10 +55,7 @@ object LanguageModel extends App {
   @Objective.LogLikelihood
   def ll(data: Seq[Sentence])(p: BiGramModel) = sum(data) {x => log(prob(x)(p))}
 
-  @Domain.PMF
-  def models = vocab -> simplex(vocab)
-
-  val p = argmax(models) {ll(data)}
+  val p = argmax(vocab -> simplex(vocab)) {ll(data)}
 
   println(p("cat")("the"))
 
