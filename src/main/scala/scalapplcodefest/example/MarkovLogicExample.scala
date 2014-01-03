@@ -23,9 +23,9 @@ object MarkovLogicExample extends App {
     val cancer = data.cancer
     val friends = data.friends
 
-    def f1 = vsum(persons) {p => ft('smokingIsBad, smokes(p) -> cancer(p))}
+    def f1 = sum(persons) {p => ft('smokingIsBad, smokes(p) -> cancer(p))}
 
-    def f2 = vsum(c(persons, persons)) {
+    def f2 = sum(c(persons, persons)) {
       p =>
         ft('peerPressure, friends(p) -> (smokes(p._1) <-> smokes(p._2)))
     }
