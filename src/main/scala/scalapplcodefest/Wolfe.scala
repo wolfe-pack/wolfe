@@ -34,9 +34,7 @@ object Wolfe {
   def seqs[A](dom: Set[A], length: Int): Set[Seq[A]] = ???
 
   @Operator.Sum
-  def sum[T](elems: Seq[T])(f: T => Double) = elems.map(f).sum
-
-  def vsum[T](elems:Seq[T])(f: T => Vector) = elems.map(f).sum(VectorNumeric)
+  def sum[T, S](elems: Seq[T])(f: T => S)(implicit num: Numeric[S]) = elems.map(f).sum(num)
 
   @Operator.Max
   def max[T](elems: Set[T])(f: T => Double) = elems.map(f).max
