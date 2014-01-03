@@ -1,90 +1,17 @@
 package scalapplcodefest.benchmark
 
-import org.scalameter.api._
 import scalapplcodefest.{TermConverter, MPGraphCompiler, Index}
 import scalapplcodefest.term.{Variable, State}
-import org.scalameter._
-import org.scalameter.execution.SeparateJvmsExecutor
-import org.scalameter.api.Persistor
-import org.scalameter.Executor
-import org.scalameter.api.Gen
-import org.scalameter.api.PerformanceTest
-import org.scalameter.api.Reporter
-import java.io.File
-import java.security.AccessController
-import sun.security.action.GetPropertyAction
-import com.google.caliper.{Param, Benchmark}
 import scalapplcodefest.TermDSL._
-import org.scalameter.Setup
-import com.google.caliper.api.Macrobenchmark
 
+class MPGraphCompilationBenchmark extends SimpleBenchmark {
 
-object MPGraphCompilationBenchmark extends PerformanceTest.Regression {
+  register(measurement(1000, 50)("name" -> "compiler", "unit" -> "ms") {
+    val model = Fixture.linearChain(10, 5)
+    val time = BenchmarkTools.time(MPGraphCompiler.compile(model.sig, TermConverter.pushDownConditions(model.body)))
+    time / 1000.0
+  })
 
-
-  def persistor = new SerializationPersistor("target")
-  //  def persistor = new DummyPersistor
-
-
-  override def reporter = Reporter.Composite(
-    new RegressionReporter(
-      RegressionReporter.Tester.OverlapIntervals(),
-      RegressionReporter.Historian.ExponentialBackoff()),
-    HtmlReporter(true)
-  )
-
-  override def executor: Executor =
-    new MySeperateJVMExecutor(SeparateJvmsExecutor(warmer, aggregator, measurer))
-
-
-  val lengths: Gen[Int] = Gen.range("length")(5, 10, 5)
-
-  val models = for (l <- lengths) yield Fixture.linearChain(l, 5)
-
-  performance of "MPGraph compilation" in {
-    measure method "compile" in {
-      using(models) config(
-        exec.maxWarmupRuns -> 2,
-        exec.benchRuns -> 2,
-        exec.independentSamples -> 2
-        ) in {
-        model =>
-          MPGraphCompiler.compile(model.sig, TermConverter.pushDownConditions(model.body))
-      }
-    }
-
-  }
-
-
-
-}
-
-class DummyPersistor extends Persistor {
-  def load(context: Context) = {
-    println(System.getProperty("java.io.tmpdir"))
-    println("Loading...")
-    println(context.curve)
-    println(context.scope)
-    History(Seq.empty)
-  }
-  def save(context: Context, h: History) = {
-    println("Saving...")
-    println(context.curve)
-    println(context.scope)
-    println(h.toString())
-  }
-}
-
-class MySeperateJVMExecutor(executor: SeparateJvmsExecutor) extends Executor {
-  def runSetup[T](setup: Setup[T]) = {
-    //System.setProperty("java.io.tmpdir", "target/")
-    val tmpdir = new File(AccessController.doPrivileged(new GetPropertyAction("java.io.tmpdir")))
-    println(System.getProperty("java.io.tmpdir"))
-    println(tmpdir.getAbsolutePath)
-    val tmp = File.createTempFile("blah", "blub")
-    println(tmp.getAbsolutePath)
-    executor.runSetup(setup)
-  }
 }
 
 object Fixture {
@@ -108,21 +35,8 @@ object Fixture {
 
 }
 
-class CaliperBenchmark extends Benchmark {
 
-  @Param(Array("5", "10"))
-  var length = 0
 
-  @Macrobenchmark
-  def timeMyOperation = {
-    val model = Fixture.linearChain(length, 5)
-    MPGraphCompiler.compile(model.sig, TermConverter.pushDownConditions(model.body))
-  }
-}
 
-object RunBenchmark {
 
-  def main(args: Array[String]) {
-    com.google.caliper.runner.CaliperMain.main(classOf[CaliperBenchmark], Array("-imacro", "-p","-t1", "-v"))
-  }
-}
+

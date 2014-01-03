@@ -40,7 +40,7 @@ object MPGraphCompiler {
    * @param forVariable find the meta node for a given variable.
    */
   case class MetaNodeInfo(forNode: Map[Node, MetaNode], forVariable: Map[Variable[Any], MetaNode]) {
-    def variables(term:Term[Any]) = term.variables.filter(forVariable.isDefinedAt)
+    def variables(term: Term[Any]) = term.variables.filter(forVariable.isDefinedAt)
   }
 
   /**
@@ -48,7 +48,7 @@ object MPGraphCompiler {
    * @param forCoeff get the term for a coeff factor.
    * @param forBase get the term for a base factor.
    */
-  case class MetaFactorInfo(forCoeff: Map[Factor,Term[Vector]], forBase: Map[Factor,Term[Double]])
+  case class MetaFactorInfo(forCoeff: Map[Factor, Term[Vector]], forBase: Map[Factor, Term[Double]])
 
   /**
    * The result of a compilation is the graph itself and meta information about how variables are aligned with nodes.
@@ -56,13 +56,13 @@ object MPGraphCompiler {
    * @param metaNodes meta information about nodes
    * @param metaFactors meta information about factors.
    */
-  case class Result[T](sig:Sig[T], graph: MPGraph, metaNodes: MetaNodeInfo, metaFactors:MetaFactorInfo) {
+  case class Result[T](sig: Sig[T], graph: MPGraph, metaNodes: MetaNodeInfo, metaFactors: MetaFactorInfo) {
 
     /**
      * Chooses a state by picking the maximizer of the node beliefs on each node.
      * @return a state based on maximizing the node beliefs.
      */
-    def currentArgmaxState():State = {
+    def currentArgmaxState(): State = {
       val map = for (m <- metaNodes.forNode.values) yield {
         val winner = ArrayOps.maxIndex(m.node.b)
         val value = m.values(winner)
@@ -78,9 +78,9 @@ object MPGraphCompiler {
      * @return a state in which each variable `x` of the term has a `Belief(x)` variable that is associated with
      *         a belief (function to doubles over values of the domain).
      */
-    def currentBeliefs():State = {
+    def currentBeliefs(): State = {
       val map = for (m <- metaNodes.forNode.values) yield {
-        val beliefs = for ((value,belief) <- m.values.view zip m.node.b.view) yield value -> belief
+        val beliefs = for ((value, belief) <- m.values.view zip m.node.b.view) yield value -> belief
         val fun = Fun(beliefs.toMap, m.variable.domain[Any].value(), Doubles)
         Belief(m.variable) -> fun
       }
@@ -91,24 +91,26 @@ object MPGraphCompiler {
      * Returns the current gradient as stored in the graph.
      * @return current gradient.
      */
-    def currentGradient():Vector = graph.gradient
+    def currentGradient(): Vector = graph.gradient
 
     /**
      * Returns the current value as stored in the graph. This usually is some objective or expectation
      * message passing algorithms are calculating.
      * @return current value.
      */
-    def currentValue():Double = graph.value
+    def currentValue(): Double = graph.value
 
     /**
      * Creates a custom printer for the factor graph in this result.
      * @param index an index to use when printing the feature vectors.
      * @return a printer for a factor graph.
      */
-    def printer(index:Option[Index] = Index.toDebug) = new MPGraph.FGPrinter {
+    def printer(index: Option[Index] = Index.toDebug) = new MPGraph.FGPrinter {
       def node2String(node: Node) = metaNodes.forNode(node).variable.toString
-      def factor2String(factor: Factor) = metaFactors.forCoeff.get(factor).orElse(metaFactors.forBase.get(factor)).get.toString
-      def vector2String(vector: scalapplcodefest.Vector) = index.map(_.vectorToString(vector, " ")).getOrElse(vector.toString())
+      def factor2String(factor: Factor) = metaFactors.forCoeff.get(factor).orElse(metaFactors.forBase.get(factor))
+        .get.toString
+      def vector2String(vector: scalapplcodefest.Vector) = index.map(_.vectorToString(vector,
+        " ")).getOrElse(vector.toString())
     }
 
     /**
@@ -160,9 +162,17 @@ object MPGraphCompiler {
    * @param term the term to turn into a message passing graph.
    * @return an MPGraph aligned to the terms, variables and values of the provided term.
    */
-  def compile[T](sig:Sig[T], term: Term[Double], dispatcher: PartialFunction[Term[Any], Recipe] = Map.empty): Result[T] = {
+  def compile[T](sig: Sig[T], term: Term[Double],
+                 dispatcher: PartialFunction[Term[Any], Recipe] = Map.empty): Result[T] = {
 
     val ForceLinear(coefficient, _, base) = term
+
+    // hack alert!
+    val isZero = coefficient match {
+      case Constant(z) => true
+      case _ => false
+    }
+
     val sigVars = sig.variables
     val vars = (coefficient.variables ++ base.variables).filter(sigVars).toSeq.sorted(VariableOrdering)
     val mpGraph = new MPGraph()
@@ -175,12 +185,15 @@ object MPGraphCompiler {
       case None => compileBaseTerm(baseTerm, metaNodes, mpGraph) -> baseTerm
     }
 
-    val coeffFactors = for (coeffTerm <- factorizedCoefficient) yield dispatcher.lift(coeffTerm) match {
-      case Some(recipe) => compileStructuredDouble(coeffTerm, recipe, metaNodes, mpGraph) -> coeffTerm
-      case None => compileCoefficientTerm(coeffTerm, metaNodes, mpGraph) ->coeffTerm
-    }
+    val coeffFactors =
+      if (isZero)
+        new Array[(Factor, Term[Vector])](0)
+      else for (coeffTerm <- factorizedCoefficient) yield dispatcher.lift(coeffTerm) match {
+        case Some(recipe) => compileStructuredDouble(coeffTerm, recipe, metaNodes, mpGraph) -> coeffTerm
+        case None => compileCoefficientTerm(coeffTerm, metaNodes, mpGraph) -> coeffTerm
+      }
     mpGraph.build()
-    Result(sig, mpGraph, metaNodes, MetaFactorInfo(coeffFactors.toMap,baseFactors.toMap))
+    Result(sig, mpGraph, metaNodes, MetaFactorInfo(coeffFactors.toMap, baseFactors.toMap))
   }
 
   /**
@@ -190,7 +203,7 @@ object MPGraphCompiler {
    * @param metaNodes meta information about the graph.
    * @param mpGraph the graph to build.
    */
-  def compileStructuredDouble(term: Term[Any], recipe: Recipe, metaNodes: MetaNodeInfo, mpGraph: MPGraph):Factor = {
+  def compileStructuredDouble(term: Term[Any], recipe: Recipe, metaNodes: MetaNodeInfo, mpGraph: MPGraph): Factor = {
     val factorVars = metaNodes.variables(term).toList.sorted(VariableOrdering)
     val factorMeta = factorVars.map(metaNodes.forVariable)
     val potential = recipe.potential(term, factorMeta)
@@ -205,7 +218,7 @@ object MPGraphCompiler {
    * @param metaNodes information about how nodes and indices are aligned with variables and values.
    * @param mpGraph the graph to add to.
    */
-  def compileBaseTerm(baseTerm: Term[Double], metaNodes: MPGraphCompiler.MetaNodeInfo, mpGraph: MPGraph):Factor = {
+  def compileBaseTerm(baseTerm: Term[Double], metaNodes: MPGraphCompiler.MetaNodeInfo, mpGraph: MPGraph): Factor = {
     val factorVars = metaNodes.variables(baseTerm).toList.sorted(VariableOrdering)
     val factorMeta = factorVars.map(metaNodes.forVariable)
     val dims = factorMeta.view.map(_.values.size).toArray
@@ -227,7 +240,8 @@ object MPGraphCompiler {
    * @param metaNodes information about how nodes and indices are aligned with variables and values.
    * @param mpGraph the graph to add to.
    */
-  def compileCoefficientTerm(baseTerm: Term[Vector], metaNodes: MPGraphCompiler.MetaNodeInfo, mpGraph: MPGraph):Factor = {
+  def compileCoefficientTerm(baseTerm: Term[Vector], metaNodes: MPGraphCompiler.MetaNodeInfo,
+                             mpGraph: MPGraph): Factor = {
     val factorVars = metaNodes.variables(baseTerm).toList.sorted(VariableOrdering)
     val factorMeta = factorVars.map(metaNodes.forVariable)
     val dims = factorMeta.view.map(_.values.size).toArray

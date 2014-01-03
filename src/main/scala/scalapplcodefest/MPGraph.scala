@@ -21,6 +21,12 @@ final class MPGraph {
   val nodes = new ArrayBuffer[Node]
   val factors = new ArrayBuffer[Factor]
 
+
+  /**
+   * A flag that indicates whether the algorithm that uses this graph to find a solution has converged
+   */
+  var converged: Boolean = false
+
   /**
    * Linear factors can depend on a weight vector to calculate their scores.
    */
@@ -35,7 +41,7 @@ final class MPGraph {
   /**
    * Algorithms that calculate gradients (or sub-gradients) can store their results here.
    */
-  var gradient:Vector = null
+  var gradient: Vector = null
 
   /**
    * Adds a node for a variable of domain size `dim`
@@ -97,7 +103,7 @@ final class MPGraph {
    * @param potential the potential the factor should have.
    * @return the created factor.
    */
-  def addStructuredFactor(potential:StructuredPotential) = {
+  def addStructuredFactor(potential: StructuredPotential) = {
     val f = new Factor(this, factors.size, null, null, STRUCTURED, null, structured = potential)
     factors += f
     f
@@ -322,9 +328,10 @@ object MPGraph {
    * inference algorithms.
    */
   trait StructuredPotential {
-    def score(factor: Factor, setting: Array[Int], weights:Vector): Double
+    def score(factor: Factor, setting: Array[Int], weights: Vector): Double
     def maxMarginal2Node(edge: Edge)
     def maxMarginal2AllNodes(factor: Factor)
+    def argmaxMarginal2AllNodes(factor: Factor): Array[Int]
     def maxScoreAndFeatures(factor: Factor, featureDest: Vector)
   }
 
@@ -333,7 +340,7 @@ object MPGraph {
    * edge order resembles forward-backward.
    */
   object EdgeOrdering extends Ordering[Edge] {
-    def compare(x1: Edge, x2: Edge):Int = {
+    def compare(x1: Edge, x2: Edge): Int = {
       if (x1.f.rank != x2.f.rank) return x1.f.rank - x2.f.rank
       if (x1.indexInFactor != x2.indexInFactor) return x2.indexInFactor - x1.indexInFactor
       val sign = -1 + (x1.indexInFactor % 2) * 2
@@ -341,7 +348,7 @@ object MPGraph {
       x1.f.index - x2.f.index
     }
   }
-  
+
 
   /**
    * Printer of nodes, factors and edges. Helps debugging (as the graph itself is
