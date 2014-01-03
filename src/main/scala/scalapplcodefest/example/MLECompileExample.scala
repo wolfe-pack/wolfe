@@ -1,6 +1,8 @@
 package scalapplcodefest.example
 
-import scalapplcodefest.compiler.StringCompiler
+import scalapplcodefest.compiler.{WolfeTransformer, StringCompiler}
+import scala.language.implicitConversions
+import scala.tools.nsc.Global
 
 /**
  * @author Sebastian Riedel
@@ -18,46 +20,27 @@ object MLECompileExample {
       |/**
       | * @author Sebastian Riedel
       | */
-      |object MLEExample {
+      |object MLEExample extends App {
       |
-      |  def funs[A, B](dom: Set[A], range: Set[B]): Set[A => B] = ???
+      |  import WolfeEnv._
       |
-      |  def sum[T](elems: Seq[T])(f: T => Double) = elems.map(f).sum
+      |  //training data
+      |  val data = Seq('H, 'T, 'T, 'T)
       |
-      |  def max[T](elems: Set[T])(f: T => Double) = elems.map(f).max
+      |  //elements of the domain
+      |  val coins = Set('H, 'T)
       |
-      |  def argmax[T](dom: Set[T])(obj: T => Double): T = {
-      |    dom.maxBy(obj)
-      |  }
+      |  //log-likelihood objective
+      |  @Objective.LogLikelihood
+      |  def ll(data: Seq[Symbol])(prob: Symbol => Double) = sum(data) {x => log(prob(x))}
       |
-      |  val doubles: Set[Double] = Iterator.continually(math.random).toSet
-      |  implicit def toRichSet[T](set: Set[T]) = new AnyRef {
-      |    def ->[B](that: Set[B]) = funs(set, that)
-      |  }
+      |  @Domain.PMF
+      |  def distributions = for (p <- coins -> doubles; if sum(coins) {p(_)} == 1.0 && coins.forall(p(_) >= 0.0)) yield p
       |
-      |  implicit def toSeq[T](seq: Set[T]) = seq.toSeq
+      |  //the ML estimate
+      |  val p = argmax (distributions) {ll(data)(_)}
       |
-      |  def main(args: Array[String]) {
-      |
-      |    //training data
-      |    val data = Seq('H, 'T, 'T, 'T)
-      |
-      |    //elements of the domain
-      |    val coins = Set('H, 'T)
-      |
-      |    //log-likelihood objective
-      |    @Objective.LogLikelihood
-      |    def ll(data: Seq[Symbol])(prob: Symbol => Double) = sum(data) {x => log(prob(x))}
-      |
-      |    @Domain.PMF
-      |    def distributions = for (p <- coins -> doubles; if sum(coins) {p(_)} == 1.0 && coins.forall(p(_) >= 0.0)) yield p
-      |
-      |    //the ML estimate
-      |    val p = argmax (distributions) {ll(data)(_)}
-      |
-      |    println(p('T))
-      |
-      |  }
+      |  println(p('T))
       |
       |}
     """.stripMargin
@@ -75,6 +58,14 @@ object MLECompileExample {
 //    println(path)
   }
 
+  object MLETransformer extends WolfeTransformer {
+    def transform(global: Global)(unit: global.CompilationUnit) = {
+      unit.body match {
+        case global.Ident(name) =>
+      }
+    }
+  }
+
   private def dirPathOfClass(className:String) = try {
     val resource = className.split('.').mkString("/", "/", ".class")
     val path = getClass.getResource(resource).getPath
@@ -82,12 +73,55 @@ object MLECompileExample {
     root
   }
 
-  private def jarPathOfClass(className: String) = try {
-    val resource = className.split('.').mkString("/", "/", ".class")
-    val path = getClass.getResource(resource).getPath
-    val indexOfFile = path.indexOf("file:") + 5
-    val indexOfSeparator = path.lastIndexOf('!')
-    List(path.substring(indexOfFile, indexOfSeparator))
+}
+
+
+
+object WolfeEnv {
+  def funs[A, B](dom: Set[A], range: Set[B]): Set[A => B] = ???
+  def seqs[A](dom:Set[A],length:Int):Set[Seq[A]] = ???
+
+  @Operator.Sum
+  def sum[T](elems: Seq[T])(f: T => Double) = elems.map(f).sum
+
+  @Operator.Max
+  def max[T](elems: Set[T])(f: T => Double) = elems.map(f).max
+
+  @Operator.Argmax
+  def argmax[T](dom: Set[T])(obj: T => Double): T = {
+    dom.maxBy(obj)
   }
+
+  type Query[T,M] = (T=>M,Set[M])
+
+  def expect[K,M,T](dom:Set[T],queries:Map[K,Query[T,M]])(obj: T => Double): Map[K,M=>Double] = {
+    type Marg = Seq[M => T]
+    ???
+  }
+
+  def forall[T](dom: Set[T])(pred: T => Boolean) = dom.forall(pred)
+
+  val doubles: Set[Double] = Iterator.continually(math.random).toSet
+
+  val strings: Set[String] = Iterator.continually(math.random.toString).toSet
+
+  case class RichSet[T](set:Set[T]) {
+    def ->[B](that: Set[B]) = funs(set, that)
+  }
+  implicit def toRichSet[T](set: Set[T]) = RichSet(set)
+
+  implicit def toSeq[T](seq: Set[T]) = seq.toSeq
+
+  case class RichCurried[A1,A2,B](f: A1 => A2 => B) {
+    def apply(pair:(A2,A1)) = f(pair._2)(pair._1)
+  }
+  implicit def toRichCurried[A1,A2,B](f: A1 => A2 => B)= new RichCurried(f)
+
+  implicit class BarBuilder[T](t:T) {
+    def |[A](that:A) = t -> that
+  }
+
+
+
 
 }
