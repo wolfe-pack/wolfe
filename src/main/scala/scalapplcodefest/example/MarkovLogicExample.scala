@@ -40,12 +40,10 @@ object MarkovLogicExample extends App {
 
   //h.friends only ("Anna","Bob")
   val prediction2 = argmax(hidden filter {h => h.smokes('Anna) && h.cancer('Anna) && h.friends == map(c(persons, persons), false, ('Anna, 'Bob) -> true)})(y => mln(y, weights))
-  val prediction3 = argmax(hidden filter {
-    h =>
-      h.smokes('Anna) &&
-      h.cancer('Anna) &&
-      (h.friends only (('Anna, 'Bob)))
-  }) {y => mln(y, weights)}
+
+  def observed(h: Data) = h.smokes('Anna) && h.cancer('Anna) && (h.friends only (('Anna, 'Bob)))
+
+  val prediction3 = argmax(hidden filter observed) {y => mln(y, weights)}
 
   println(prediction2)
 
