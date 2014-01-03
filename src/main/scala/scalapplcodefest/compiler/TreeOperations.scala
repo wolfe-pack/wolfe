@@ -9,6 +9,128 @@ import scala.tools.nsc.Global
 */
 
 class TreeOperations {
+  def template(global: Global)(transformer: global.Transformer, tree: global.Tree): global.Tree = {
+    import transformer._
+    import global._
+
+    val currentOwner: global.Symbol = definitions.RootClass
+
+    tree match {
+      case Ident(name) =>
+        Ident(name)
+      case Select(qualifier, selector) =>
+        Select(qualifier, selector)
+      case Apply(fun, args) =>
+        Apply(transform(fun), transformTrees(args))
+      case TypeTree() =>
+        TypeTree() //???
+      case Literal(value) =>
+        Literal(value)
+      case This(qual) =>
+        This(qual)
+      case ValDef(mods, name, tpt, rhs) =>
+        atOwner(tree.symbol) {
+          ValDef(transformModifiers(mods), name, transform(tpt), transform(rhs))
+        }
+      case DefDef(mods, name, tparams, vparamss, tpt, rhs) =>
+        atOwner(tree.symbol) {
+          DefDef(transformModifiers(mods), name,
+                          transformTypeDefs(tparams), transformValDefss(vparamss),
+                          transform(tpt), transform(rhs))
+        }
+      case Block(stats, expr) =>
+        Block(transformStats(stats, currentOwner), transform(expr))
+      case If(cond, thenp, elsep) =>
+        If(transform(cond), transform(thenp), transform(elsep))
+      case CaseDef(pat, guard, body) =>
+        CaseDef(transform(pat), transform(guard), transform(body))
+      case TypeApply(fun, args) =>
+        TypeApply(transform(fun), transformTrees(args))
+      case AppliedTypeTree(tpt, args) =>
+        AppliedTypeTree(transform(tpt), transformTrees(args))
+      case Bind(name, body) =>
+        Bind(name, transform(body))
+      case Function(vparams, body) =>
+        atOwner(tree.symbol) {
+          Function(transformValDefs(vparams), transform(body))
+        }
+      case Match(selector, cases) =>
+        Match(transform(selector), transformCaseDefs(cases))
+      case New(tpt) =>
+        New(transform(tpt))
+      case Assign(lhs, rhs) =>
+        Assign(transform(lhs), transform(rhs))
+      case AssignOrNamedArg(lhs, rhs) =>
+        AssignOrNamedArg(transform(lhs), transform(rhs))
+      case Try(block, catches, finalizer) =>
+        Try(transform(block), transformCaseDefs(catches), transform(finalizer))
+      case EmptyTree =>
+        tree
+      case Throw(expr) =>
+        Throw(transform(expr))
+      case Super(qual, mix) =>
+        Super(transform(qual), mix)
+      case TypeBoundsTree(lo, hi) =>
+        TypeBoundsTree(transform(lo), transform(hi))
+      case Typed(expr, tpt) =>
+        Typed(transform(expr), transform(tpt))
+      case Import(expr, selectors) =>
+        Import(transform(expr), selectors)
+      case Template(parents, self, body) =>
+        Template(transformTrees(parents), transformValDef(self), transformStats(body, tree.symbol))
+      case ClassDef(mods, name, tparams, impl) =>
+        atOwner(tree.symbol) {
+          ClassDef(transformModifiers(mods), name,
+                            transformTypeDefs(tparams), transformTemplate(impl))
+        }
+      case ModuleDef(mods, name, impl) =>
+        atOwner(mclass(tree.symbol)) {
+          ModuleDef(transformModifiers(mods),
+                             name, transformTemplate(impl))
+        }
+      case TypeDef(mods, name, tparams, rhs) =>
+        atOwner(tree.symbol) {
+          TypeDef(transformModifiers(mods), name,
+                           transformTypeDefs(tparams), transform(rhs))
+        }
+      case LabelDef(name, params, rhs) =>
+        LabelDef(name, transformIdents(params), transform(rhs)) //bq: Martin, once, atOwner(...) works, also change `LamdaLifter.proxy'
+      case PackageDef(pid, stats) =>
+        PackageDef(
+          transform(pid).asInstanceOf[RefTree],
+          atOwner(mclass(tree.symbol)) {
+            transformStats(stats, currentOwner)
+          }
+        )
+      case Annotated(annot, arg) =>
+        Annotated(transform(annot), transform(arg))
+      case SingletonTypeTree(ref) =>
+        SingletonTypeTree(transform(ref))
+      case SelectFromTypeTree(qualifier, selector) =>
+        SelectFromTypeTree(transform(qualifier), selector)
+      case CompoundTypeTree(templ) =>
+        CompoundTypeTree(transformTemplate(templ))
+      case ExistentialTypeTree(tpt, whereClauses) =>
+        ExistentialTypeTree(transform(tpt), transformTrees(whereClauses))
+      case Return(expr) =>
+        Return(transform(expr))
+      case Alternative(trees) =>
+        Alternative(transformTrees(trees))
+      case Star(elem) =>
+        Star(transform(elem))
+      case UnApply(fun, args) =>
+        UnApply(fun, transformTrees(args)) // bq: see test/.../unapplyContexts2.scala
+      case ArrayValue(elemtpt, trees) =>
+        ArrayValue(transform(elemtpt), transformTrees(trees))
+      case ApplyDynamic(qual, args) =>
+        ApplyDynamic(transform(qual), transformTrees(args))
+      case ReferenceToBoxed(idt) =>
+        ReferenceToBoxed(transform(idt) match { case idt1: Ident => idt1 })
+      case _ =>
+        //xtransform(transformer, tree) //FIXME
+    }
+  }
+
   //traversing
   def itraverse(global: Global)(traverser: global.Traverser, tree: global.Tree): Unit = {
     def mclass(sym: global.Symbol) = sym map (_.asModule.moduleClass)
@@ -131,7 +253,7 @@ class TreeOperations {
     import transformer._
     import global._
 
-    val currentOwner = ??? //FIXME
+    val currentOwner: global.Symbol = definitions.RootClass
 
     val treeCopy = transformer.treeCopy
 
@@ -253,4 +375,20 @@ class TreeOperations {
     }
   }
 
+  def xtransform(global: Global)(transformer: global.Transformer, tree: global.Tree): global.Tree = {
+    import global._
+
+    tree match {
+      case DocDef(comment, definition) =>
+        transformer.treeCopy.DocDef(tree, comment, transformer.transform(definition))
+      case SelectFromArray(qualifier, selector, erasure) =>
+        transformer.treeCopy.SelectFromArray(
+          tree, transformer.transform(qualifier), selector, erasure)
+      case InjectDerivedValue(arg) =>
+        transformer.treeCopy.InjectDerivedValue(
+          tree, transformer.transform(arg))
+      case TypeTreeWithDeferredRefCheck() =>
+        transformer.treeCopy.TypeTreeWithDeferredRefCheck(tree)
+    }
+  }
 }
