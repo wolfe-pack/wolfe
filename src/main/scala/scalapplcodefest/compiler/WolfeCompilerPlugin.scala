@@ -9,7 +9,7 @@ import nsc.plugins.PluginComponent
 /**
  * @author sameer
  */
-class WolfeCompilerPlugin(val global: Global, transform: WolfeTransformer) extends Plugin {
+class WolfeCompilerPlugin(val global: Global, transform: WolfeTransformer, val runsAfter: List[String] = List("refchecks")) extends Plugin {
 
   import global._
 
