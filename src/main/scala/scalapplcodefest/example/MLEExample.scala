@@ -40,25 +40,34 @@ object MLEExampleWithLinearModel extends App {
   //training data
   val data = Seq('H, 'T, 'T, 'T)
 
-  @Objective.LinearModel
+  @Objective.Categorical
   def s(params: Vector)(coin: Coin) = ft(coin) dot params
 
   @Objective.JointLoglikelihood
-  def ll(data: Seq[Coin])(w: Vector) = sum(data) {c => logZ(coins)(w) - s(w)(c)}
+  def ll(data: Seq[Coin])(w: Vector) = sum(data) {c => logZ(coins)(s(w)) - s(w)(c)}
 
   //a subset of possible weights to make brute force search tractable
-  val small = Set(0.0, 0.25, 0.75, 1.0).map(math.exp)
+  val myReals = Set(0.0, 0.25, 0.75, 1.0).map(math.exp)
 
   //val w = argmin(vectors)(ll(data)) //this won't run without compilation
-  val w = argmin(vectors(coins,small)) (ll(data))  //this should run w/o compilation
+  val w = argmin(vectors(coins, myReals)) {ll(data)} //this should run w/o compilation
+
+  //this is how the compiled expression should look like
+  val compiled = (data map (ft(_))).sum.mapValues(w => log(w / data.size))
 
   println(w)
+  println(compiled)
+
+  println(ll(data)(w))
+  println(ll(data)(compiled))
 
   //weight vector would not need to be normalized
   val probs = (w mapValues math.exp).norm
+  val probs2 = (compiled mapValues math.exp).norm
+
 
   println(probs)
-
+  println(probs2)
 
 
 }
