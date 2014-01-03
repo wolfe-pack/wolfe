@@ -1,4 +1,5 @@
 package scalapplcodefest.example
+
 import scalapplcodefest._
 
 /**
@@ -19,15 +20,12 @@ object MarkovLogicExample extends App {
 
   def mln(data: Data, weights: Vector) = {
 
-    val smokes = data.smokes
-    val cancer = data.cancer
-    val friends = data.friends
+    import data._
 
     def f1 = sum(persons) {p => ft('smokingIsBad, smokes(p) -> cancer(p))}
 
     def f2 = sum(c(persons, persons)) {
-      p =>
-        ft('peerPressure, friends(p) -> (smokes(p._1) <-> smokes(p._2)))
+      case (p1, p2) => ft('peerPressure, friends(p1, p2) -> (smokes(p1) <-> smokes(p2)))
     }
 
     (f1 + f2) dot weights
@@ -40,7 +38,9 @@ object MarkovLogicExample extends App {
                     friends <- maps(c(persons, persons), bools))
   yield Data(smokes, cancer, friends)
 
-  val prediction2 = argmax(hidden filter {h => h.smokes('Anna) && h.cancer('Anna) && h.friends == map(c(persons,persons), false, ('Anna, 'Bob) -> true)})(y => mln(y, weights))
+  //h.friends only ("Anna","Bob")
+  val prediction2 = argmax(hidden filter {h => h.smokes('Anna) && h.cancer('Anna) && h.friends == map(c(persons, persons), false, ('Anna, 'Bob) -> true)})(y => mln(y, weights))
+  val prediction3 = argmax(hidden filter {h => h.smokes('Anna) && h.cancer('Anna) && (h.friends only (('Anna,'Bob)))})(y => mln(y, weights))
 
   println(prediction2)
 

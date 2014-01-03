@@ -97,12 +97,19 @@ object Wolfe {
   }
 
   type Vector = Map[Any, Double]
-  case class RichBoolean(b: Boolean) {
+  implicit class RichBoolean(b: Boolean) {
     def ->(that:Boolean) = !b || that
     def <->(that:Boolean) = b == that
   }
 
-  implicit def toRichBoolean(b: Boolean) = RichBoolean(b)
+  implicit class RichPredicate[T](pred:Map[T,Boolean]) {
+    def only(trueAtoms:T*) = {
+      val set = trueAtoms.toSet
+      pred forall {
+        case (a,t) => set(a) == t
+      }
+    }
+  }
 
   object Vector {
     def apply(elems:(Any, Double)*) = Map(elems:_*)
