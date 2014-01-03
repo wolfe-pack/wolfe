@@ -35,7 +35,7 @@ object MarkovLogicExample extends App {
 
   val weights = Vector('smokingIsBad -> 2.0, 'peerPressure -> 0.0)
 
-  val hidden = for (smokes <- maps(persons, bools);
+  def hidden = for (smokes <- maps(persons, bools);
                     cancer <- maps(persons, bools);
                     friends <- maps(c(persons, persons), bools))
   yield Data(smokes, cancer, friends)

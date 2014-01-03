@@ -14,15 +14,16 @@ object MLECompileExample {
       |package scalapplcodefest.example
       |
       |import math.log
+      |import scalapplcodefest._
       |import scala.language.reflectiveCalls
       |import scala.language.implicitConversions
       |
       |/**
       | * @author Sebastian Riedel
       | */
-      |object MLEExample extends App {
+      |object MLEExampleWithLinearModel extends App {
       |
-      |  import WolfeEnv._
+      |  import Wolfe._
       |
       |  type Coin = Symbol
       |
@@ -44,12 +45,19 @@ object MLECompileExample {
       |  //val w = argmin(vectors)(ll(data)) //this won't run without compilation
       |  val w = argmin(vectors(coins, myReals)) {ll(data)} //this should run w/o compilation
       |
+      |  //this is how the compiled expression should look like
       |  val compiled = (data map (ft(_))).sum.mapValues(w => log(w / data.size))
       |
-      |
+      |  println(compiled)
       |  println(w)
+      |
+      |  def fun = {
+      |     val x = 5
+      |     x
+      |  }
+      |
       |}
-    """.stripMargin
+      |    """.stripMargin
 
   def main(args: Array[String]) {
     val path = dirPathOfClass(getClass.getName)
@@ -60,9 +68,18 @@ object MLECompileExample {
       transformer = Some(new WolfeTransformer {
 
         def transformTree[T <: Global#Tree](global: Global, tree: T) = {
+          import global._
           tree match {
-            case t @ global.PackageDef(_,_) =>
+            case t @ PackageDef(_,_) =>
               global.treeBrowser.browse(t.asInstanceOf[global.Tree])
+            case i @ Ident(name) =>
+              println(i)
+            case s @ Select(_,name) if name.encoded == "argmin" =>
+              val symbol = s.symbol
+              println(symbol)
+              val members = symbol.owner.tpe.members
+              val children = symbol.owner.children
+              println(members)
             case _ =>
           }
           tree
