@@ -125,12 +125,7 @@ object WolfeEnv {
   def simplex[T](domain: Set[T], range: Set[Double] = doubles) =
     for (p <- maps(domain,range); if sum(domain.toSeq) {p(_)} == 1.0 && domain.forall(p(_) >= 0.0)) yield p
 
-  type Query[T, M] = (T => M, Set[M])
-
-  def expect[K, M, T](dom: Set[T], queries: Map[K, Query[T, M]])(obj: T => Double): Map[K, M => Double] = {
-    type Marg = Seq[M => T]
-    ???
-  }
+  def expect[T](dom:Set[T],stats:T=>Vector)(obj:T=>Double) = dom.view.map(x => stats(x) * obj(x))
 
   @Objective.LogZ
   def logZ[T](dom:Set[T])(model:T=>Double) = math.log(dom.view.map(x => math.exp(model(x))).sum)
@@ -197,6 +192,7 @@ object WolfeEnv {
     def +(that:Vector) = num.plus(vector,that)
     def dot(that:Vector) = num.dot(vector,that)
     def norm = num.norm(vector)
+    def *(scale:Double) = vector.mapValues(_ * scale)
   }
 
 
@@ -228,6 +224,7 @@ object Objective {
   trait GradientBasedOptimizerSetting
 
   case class Adagrad(rate:Double) extends GradientBasedOptimizerSetting
+  class JointLoglikelihood extends StaticAnnotation
 
   case class MaxProduct(iterations:Int) extends InferenceSetting
 
@@ -235,7 +232,11 @@ object Objective {
 
   class Differentiable(setting:GradientBasedOptimizerSetting = Adagrad(1.0)) extends StaticAnnotation
 
+
+
   class LinearModel(setting:InferenceSetting = MaxProduct(1)) extends StaticAnnotation
+
+  class Atomic extends StaticAnnotation
 
   class LogZ extends StaticAnnotation
 

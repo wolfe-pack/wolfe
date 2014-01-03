@@ -72,4 +72,4 @@ class StringCompiler(val transformer: Option[WolfeTransformer] = None,
   }
 }
 
-object StringCompiler extends StringCompiler(None, Nil, new VirtualDirectory("(memory)", None))
+object StringCompiler extends StringCompiler(None, Nil, new VirtualDirectory("(memory)", None),List("refchecks"))
