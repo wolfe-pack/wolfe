@@ -3,18 +3,14 @@ package scalapplcodefest.compiler
 import scala.tools.nsc.Global
 
 /**
-* User: rockt
-* Date: 1/3/14
-* Time: 11:44 AM
-*/
+ * User: rockt
+ * Date: 1/3/14
+ * Time: 11:44 AM
+ */
 
 object TreeOperations {
-  def noopTemplate(global: Global)(transformer: global.Transformer, tree: global.Tree): global.Tree = {
-    def mclass(sym: global.Symbol) = sym map (_.asModule.moduleClass)
-
-    import transformer._
+  def noopTemplate(global: Global)(tree: global.Tree): global.Tree = {
     import global._
-    val currentOwner: global.Symbol = definitions.RootClass
 
     tree match {
       case Ident(name) =>
@@ -22,7 +18,7 @@ object TreeOperations {
       case Select(qualifier, selector) =>
         Select(qualifier, selector)
       case Apply(fun, args) =>
-        Apply(transform(fun), transformTrees(args))
+        Apply(fun, args)
       case TypeTree() =>
         TypeTree() //???
       case Literal(value) =>
@@ -30,104 +26,82 @@ object TreeOperations {
       case This(qual) =>
         This(qual)
       case ValDef(mods, name, tpt, rhs) =>
-        atOwner(tree.symbol) {
-          ValDef(transformModifiers(mods), name, transform(tpt), transform(rhs))
-        }
+        ValDef(mods, name, tpt, rhs)
       case DefDef(mods, name, tparams, vparamss, tpt, rhs) =>
-        atOwner(tree.symbol) {
-          DefDef(transformModifiers(mods), name,
-                          transformTypeDefs(tparams), transformValDefss(vparamss),
-                          transform(tpt), transform(rhs))
-        }
+        DefDef(mods, name, tparams, vparamss, tpt, rhs)
       case Block(stats, expr) =>
-        Block(transformStats(stats, currentOwner), transform(expr))
+        Block(stats, expr)
       case If(cond, thenp, elsep) =>
-        If(transform(cond), transform(thenp), transform(elsep))
+        If(cond, thenp, elsep)
       case CaseDef(pat, guard, body) =>
-        CaseDef(transform(pat), transform(guard), transform(body))
+        CaseDef(pat, guard, body)
       case TypeApply(fun, args) =>
-        TypeApply(transform(fun), transformTrees(args))
+        TypeApply(fun, args)
       case AppliedTypeTree(tpt, args) =>
-        AppliedTypeTree(transform(tpt), transformTrees(args))
+        AppliedTypeTree(tpt, args)
       case Bind(name, body) =>
-        Bind(name, transform(body))
+        Bind(name, body)
       case Function(vparams, body) =>
-        atOwner(tree.symbol) {
-          Function(transformValDefs(vparams), transform(body))
-        }
+        Function(vparams, body)
       case Match(selector, cases) =>
-        Match(transform(selector), transformCaseDefs(cases))
+        Match(selector, cases)
       case New(tpt) =>
-        New(transform(tpt))
+        New(tpt)
       case Assign(lhs, rhs) =>
-        Assign(transform(lhs), transform(rhs))
+        Assign(lhs, rhs)
       case AssignOrNamedArg(lhs, rhs) =>
-        AssignOrNamedArg(transform(lhs), transform(rhs))
+        AssignOrNamedArg(lhs, rhs)
       case Try(block, catches, finalizer) =>
-        Try(transform(block), transformCaseDefs(catches), transform(finalizer))
+        Try(block, catches, finalizer)
       case EmptyTree =>
         tree
       case Throw(expr) =>
-        Throw(transform(expr))
+        Throw(expr)
       case Super(qual, mix) =>
-        Super(transform(qual), mix)
+        Super(qual, mix)
       case TypeBoundsTree(lo, hi) =>
-        TypeBoundsTree(transform(lo), transform(hi))
+        TypeBoundsTree(lo, hi)
       case Typed(expr, tpt) =>
-        Typed(transform(expr), transform(tpt))
+        Typed(expr, tpt)
       case Import(expr, selectors) =>
-        Import(transform(expr), selectors)
+        Import(expr, selectors)
       case Template(parents, self, body) =>
-        Template(transformTrees(parents), transformValDef(self), transformStats(body, tree.symbol))
+        Template(parents, self, body)
       case ClassDef(mods, name, tparams, impl) =>
-        atOwner(tree.symbol) {
-          ClassDef(transformModifiers(mods), name,
-                            transformTypeDefs(tparams), transformTemplate(impl))
-        }
+        ClassDef(mods, name, tparams, impl)
       case ModuleDef(mods, name, impl) =>
-        atOwner(mclass(tree.symbol)) {
-          ModuleDef(transformModifiers(mods),
-                             name, transformTemplate(impl))
-        }
+        ModuleDef(mods, name, impl)
       case TypeDef(mods, name, tparams, rhs) =>
-        atOwner(tree.symbol) {
-          TypeDef(transformModifiers(mods), name,
-                           transformTypeDefs(tparams), transform(rhs))
-        }
+        TypeDef(mods, name, tparams, rhs)
       case LabelDef(name, params, rhs) =>
-        LabelDef(name, transformIdents(params), transform(rhs)) //bq: Martin, once, atOwner(...) works, also change `LamdaLifter.proxy'
+        LabelDef(name, params, rhs)
       case PackageDef(pid, stats) =>
-        PackageDef(
-          transform(pid).asInstanceOf[RefTree],
-          atOwner(mclass(tree.symbol)) {
-            transformStats(stats, currentOwner)
-          }
-        )
+        PackageDef(pid, stats)
       case Annotated(annot, arg) =>
-        Annotated(transform(annot), transform(arg))
+        Annotated(annot, arg)
       case SingletonTypeTree(ref) =>
-        SingletonTypeTree(transform(ref))
+        SingletonTypeTree(ref)
       case SelectFromTypeTree(qualifier, selector) =>
-        SelectFromTypeTree(transform(qualifier), selector)
+        SelectFromTypeTree(qualifier, selector)
       case CompoundTypeTree(templ) =>
-        CompoundTypeTree(transformTemplate(templ))
+        CompoundTypeTree(templ)
       case ExistentialTypeTree(tpt, whereClauses) =>
-        ExistentialTypeTree(transform(tpt), transformTrees(whereClauses))
+        ExistentialTypeTree(tpt, whereClauses)
       case Return(expr) =>
-        Return(transform(expr))
+        Return(expr)
       case Alternative(trees) =>
-        Alternative(transformTrees(trees))
+        Alternative(trees)
       case Star(elem) =>
-        Star(transform(elem))
+        Star(elem)
       case UnApply(fun, args) =>
-        UnApply(fun, transformTrees(args)) // bq: see test/.../unapplyContexts2.scala
+        UnApply(fun, args)
       case ArrayValue(elemtpt, trees) =>
-        ArrayValue(transform(elemtpt), transformTrees(trees))
+        ArrayValue(elemtpt, trees)
       case ApplyDynamic(qual, args) =>
-        ApplyDynamic(transform(qual), transformTrees(args))
+        ApplyDynamic(qual, args)
       case ReferenceToBoxed(idt) =>
-        ReferenceToBoxed(transform(idt) match { case idt1: Ident => idt1 })
-      case _ => ??? //xtransform(transformer, tree) //FIXME
+        ReferenceToBoxed(idt)
+      case _ => _
     }
   }
 
@@ -274,13 +248,13 @@ object TreeOperations {
       case ValDef(mods, name, tpt, rhs) =>
         atOwner(tree.symbol) {
           treeCopy.ValDef(tree, transformModifiers(mods),
-                          name, transform(tpt), transform(rhs))
+            name, transform(tpt), transform(rhs))
         }
       case DefDef(mods, name, tparams, vparamss, tpt, rhs) =>
         atOwner(tree.symbol) {
           treeCopy.DefDef(tree, transformModifiers(mods), name,
-                          transformTypeDefs(tparams), transformValDefss(vparamss),
-                          transform(tpt), transform(rhs))
+            transformTypeDefs(tparams), transformValDefss(vparamss),
+            transform(tpt), transform(rhs))
         }
       case Block(stats, expr) =>
         treeCopy.Block(tree, transformStats(stats, currentOwner), transform(expr))
@@ -325,17 +299,17 @@ object TreeOperations {
       case ClassDef(mods, name, tparams, impl) =>
         atOwner(tree.symbol) {
           treeCopy.ClassDef(tree, transformModifiers(mods), name,
-                            transformTypeDefs(tparams), transformTemplate(impl))
+            transformTypeDefs(tparams), transformTemplate(impl))
         }
       case ModuleDef(mods, name, impl) =>
         atOwner(mclass(tree.symbol)) {
           treeCopy.ModuleDef(tree, transformModifiers(mods),
-                             name, transformTemplate(impl))
+            name, transformTemplate(impl))
         }
       case TypeDef(mods, name, tparams, rhs) =>
         atOwner(tree.symbol) {
           treeCopy.TypeDef(tree, transformModifiers(mods), name,
-                           transformTypeDefs(tparams), transform(rhs))
+            transformTypeDefs(tparams), transform(rhs))
         }
       case LabelDef(name, params, rhs) =>
         treeCopy.LabelDef(tree, name, transformIdents(params), transform(rhs)) //bq: Martin, once, atOwner(...) works, also change `LamdaLifter.proxy'
