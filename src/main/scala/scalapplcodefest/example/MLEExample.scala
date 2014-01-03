@@ -1,7 +1,7 @@
 package scalapplcodefest.example
 
 import math.log
-import scalapplcodefest.example.Objective.{JointLoglikelihood, Adagrad, MaxProduct}
+import scalapplcodefest._
 
 
 /**
@@ -9,7 +9,7 @@ import scalapplcodefest.example.Objective.{JointLoglikelihood, Adagrad, MaxProdu
  */
 object MLEExample extends App {
 
-  import WolfeEnv._
+  import Wolfe._
 
   //training data
   val data = Seq('H, 'T, 'T, 'T)
@@ -30,7 +30,7 @@ object MLEExample extends App {
 
 object MLEExampleWithLinearModel extends App {
 
-  import WolfeEnv._
+  import Wolfe._
 
   type Coin = Symbol
 
@@ -74,7 +74,7 @@ object MLEExampleWithLinearModel extends App {
 
 object BayesianNetworkExample extends App {
 
-  import WolfeEnv._
+  import Wolfe._
 
   case class Data(sprinkler: Boolean, wet: Boolean, rain: Boolean)
 
@@ -87,11 +87,14 @@ object BayesianNetworkExample extends App {
 
   def bn(w:Vector)(data:Data) = stats(data) dot w
 
+  def learn(data:Seq[Data]):Data => String = ??? //"feat('r, rain) + feat('rs, rain, sprinkler) + feat('srw, sprinkler, rain, wet)"
+
+
 }
 
 object LanguageModel extends App {
 
-  import WolfeEnv._
+  import Wolfe._
 
   type Sentence = Seq[String]
   type BiGramModel = String => String => Double
@@ -115,7 +118,7 @@ object LanguageModel extends App {
 
 object ConditioningExample extends App {
 
-  import WolfeEnv._
+  import Wolfe._
 
   //idea: do the conditioning in the domain, not the function
   case class Data(x: Double, y: Double)

@@ -1,4 +1,5 @@
 package scalapplcodefest.example
+import scalapplcodefest._
 
 /**
  * The smokes & cancer MLN.
@@ -7,7 +8,7 @@ package scalapplcodefest.example
  */
 object MarkovLogicExample extends App {
 
-  import WolfeEnv._
+  import Wolfe._
 
   type Person = Symbol
 
