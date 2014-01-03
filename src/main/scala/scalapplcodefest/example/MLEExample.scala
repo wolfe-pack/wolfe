@@ -20,12 +20,8 @@ object MLEExample extends App {
   @Objective.LogLikelihood
   def ll(data: Seq[Symbol])(prob: Symbol => Double) = sum(data) {x => log(prob(x))}
 
-  @Domain.PMF
-  def models = for (p <- coins -> doubles
-                    if sum(coins) {p(_)} == 1.0 && coins.forall(p(_) >= 0.0)) yield p
-
   //the ML estimate
-  val p = argmax(models) {ll(data)}
+  val p = argmax(simplex(coins)) {ll(data)}
 
   println(p('T))
 
@@ -82,34 +78,4 @@ object ConditioningExample extends App {
 
 
 }
-
-
-
-object Operator {
-
-  class Argmax extends scala.annotation.StaticAnnotation
-
-  class Sum extends scala.annotation.StaticAnnotation
-
-  class Max extends scala.annotation.StaticAnnotation
-
-
-}
-
-object Objective {
-
-  class LogLikelihood extends scala.annotation.StaticAnnotation
-
-  class MaxProduct(iterations: Int) extends scala.annotation.StaticAnnotation
-
-}
-
-object Domain {
-
-  class PMF extends scala.annotation.StaticAnnotation
-
-  class Marginals extends scala.annotation.StaticAnnotation
-
-}
-
 
