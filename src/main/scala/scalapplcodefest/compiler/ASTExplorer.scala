@@ -15,9 +15,8 @@ object ASTExplorer extends App {
     val wrappedCode = "object TestObject { " + code + "}"
 
     val compiler = new StringCompiler(transformer = Some(new WolfeTransformer {
-      def transform(global: Global)(unit: global.type#CompilationUnit) = {
 
-        val tree = unit.body
+      def transformTree[T <: Global#Tree](global: Global, tree: T) = {
 
         // ignore the package, the object and the first element of the object, which is always the constructor
         val codeAST = tree.asInstanceOf[global.PackageDef].stats(0).asInstanceOf[global.ClassDef].impl.body.tail
@@ -25,9 +24,10 @@ object ASTExplorer extends App {
         codeAST.foreach {
           c => {
             global.newRawTreePrinter().print(c);
-            if (showBrowser) global.treeBrowser.browse(tree)
+            if (showBrowser) global.treeBrowser.browse(tree.asInstanceOf[global.Tree])
           }
         }
+        tree
       }
     }), runsAfter = List("refchecks"))
     compiler.compileCode(wrappedCode)

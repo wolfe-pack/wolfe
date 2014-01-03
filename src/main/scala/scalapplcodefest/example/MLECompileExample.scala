@@ -55,10 +55,12 @@ object MLECompileExample {
   }
 
   object MLETransformer extends WolfeTransformer {
-    def transform(global: Global)(unit: global.CompilationUnit) = {
-      unit.body match {
+
+    def transformTree[T <: Global#Tree](global: Global, tree: T) = {
+      tree match {
         case global.Ident(name) =>
       }
+      tree
     }
   }
 
