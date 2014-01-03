@@ -22,7 +22,7 @@ object MLECompileExample {
       | */
       |object MLEExample extends App {
       |
-      |  import WolfeEnv._
+      | import WolfeEnv._
       |
       |  //training data
       |  val data = Seq('H, 'T, 'T, 'T)
@@ -34,14 +34,10 @@ object MLECompileExample {
       |  @Objective.LogLikelihood
       |  def ll(data: Seq[Symbol])(prob: Symbol => Double) = sum(data) {x => log(prob(x))}
       |
-      |  @Domain.PMF
-      |  def distributions = for (p <- coins -> doubles; if sum(coins) {p(_)} == 1.0 && coins.forall(p(_) >= 0.0)) yield p
-      |
       |  //the ML estimate
-      |  val p = argmax (distributions) {ll(data)(_)}
+      |  val p = argmax(simplex(coins,Set(0.0, 0.2, 1.0))) {p => ll(data)(p)}
       |
-      |  println(p('T))
-      |
+      |  println(p('T))     |
       |}
     """.stripMargin
 
@@ -77,7 +73,17 @@ object MLECompileExample {
 
 
 object WolfeEnv {
-  def funs[A, B](dom: Set[A], range: Set[B]): Set[A => B] = ???
+  @Domain.Functions
+  def funs[A, B](dom: Set[A], range: Set[B]): Set[Map[A,B]] = {
+    def recurse(d: List[A], r: List[B], funs: List[Map[A,B]] = List(Map.empty)):List[Map[A,B]] = d match {
+      case Nil => funs
+      case head :: tail =>
+        val newFunctions = for (value <- r; f <- funs.view) yield f + (head -> value)
+        recurse(tail,r,newFunctions)
+    }
+    recurse(dom.toList,range.toList).toSet
+  }
+
   def seqs[A](dom: Set[A], length: Int): Set[Seq[A]] = ???
 
   @Operator.Sum
@@ -91,10 +97,16 @@ object WolfeEnv {
     dom.maxBy(obj)
   }
 
+  class All[T] extends Set[T] {
+    def +(elem: T) = this
+    def -(elem: T) = sys.error("Can't remove element from all objects")
+    def contains(elem: T) = true
+    def iterator = sys.error("Can't iterate over all objects")
+  }
+
   @Domain.Simplex
   def simplex[T](domain: Set[T], range: Set[Double] = doubles) =
     for (p <- funs(domain,range); if sum(domain.toSeq) {p(_)} == 1.0 && domain.forall(p(_) >= 0.0)) yield p
-
 
   type Query[T, M] = (T => M, Set[M])
 
@@ -105,9 +117,11 @@ object WolfeEnv {
 
   def forall[T](dom: Set[T])(pred: T => Boolean) = dom.forall(pred)
 
-  val doubles: Set[Double] = Iterator.continually(math.random).toSet
+  def all[T] = new All[T]
 
-  val strings: Set[String] = Iterator.continually(math.random.toString).toSet
+  val doubles: Set[Double] = new All[Double]
+
+  val strings: Set[String] = new All[String]
 
   case class RichSet[T](set: Set[T]) {
     def ->[B](that: Set[B]) = funs(set, that)
@@ -127,37 +141,56 @@ object WolfeEnv {
     def |[A](that: A) = t -> that
   }
 
+  type Vector = Map[Any,Double]
+
+  implicit class RichVector(vector:Vector) {
+    def dot(that:Vector) = {
+      vector.keys.map(k => vector(k) * that(k)).sum
+    }
+    def +(that:Vector) = {
+      val keys = vector.keySet ++ that.keySet
+      val result =  keys map (k => k -> (vector.getOrElse(k,0.0) + that.getOrElse(k, 0.0)))
+      result.toMap
+    }
+  }
+
 
 }
 
 
+import scala.annotation._
+
 
 object Operator {
 
-  class Argmax extends scala.annotation.StaticAnnotation
+  class Argmax extends StaticAnnotation
 
-  class Sum extends scala.annotation.StaticAnnotation
+  class Sum extends StaticAnnotation
 
-  class Max extends scala.annotation.StaticAnnotation
+  class Max extends StaticAnnotation
 
 
 }
 
 object Objective {
 
-  class LogLikelihood extends scala.annotation.StaticAnnotation
+  class LogLikelihood extends StaticAnnotation
 
-  class MaxProduct(iterations: Int) extends scala.annotation.StaticAnnotation
+  class MaxProduct(iterations: Int) extends StaticAnnotation
 
 }
 
 object Domain {
 
-  class PMF extends scala.annotation.StaticAnnotation
+  class PMF extends StaticAnnotation
 
-  class Simplex extends scala.annotation.StaticAnnotation
+  class Functions extends StaticAnnotation
 
-  class Marginals extends scala.annotation.StaticAnnotation
+  class Seqs extends StaticAnnotation
+
+  class Simplex extends StaticAnnotation
+
+  class Marginals extends StaticAnnotation
 
 }
 
