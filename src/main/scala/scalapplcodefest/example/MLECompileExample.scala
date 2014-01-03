@@ -43,15 +43,12 @@ object MLECompileExample {
 
   def main(args: Array[String]) {
     val path = dirPathOfClass(getClass.getName)
-    val compiler = new StringCompiler(additionalClassPath = List(path))
-    val (global, unit) = compiler.compileCode(source)
-    //
-    val tree = unit.body.asInstanceOf[global.Tree]
-
-    //    println(jarPathOfClass("scalapplcodefest.example.MLECompileExample"))
-    global.treeBrowser.browse(tree)
-    //    val path = dirPathOfClass(getClass.getName)
-    //    println(path)
+    val compiler = new StringCompiler(additionalClassPath = List(path), transformer = Some(new WolfeTransformer {
+      def transformTree[T <: Global#Tree](global: Global, tree: T) = {
+        global.treeBrowser.browse(tree.asInstanceOf[global.Tree]); tree
+      }
+    }))
+    compiler.compileCode(source)
   }
 
   object MLETransformer extends WolfeTransformer {

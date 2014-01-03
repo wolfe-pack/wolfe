@@ -38,7 +38,7 @@ object TransformerApp extends App {
       | }
     """.stripMargin
 
-  val (global, unit) = compiler.compileCode(code)
+  compiler.compileCode(code)
 
 
 }
