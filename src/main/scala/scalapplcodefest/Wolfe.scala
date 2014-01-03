@@ -66,6 +66,7 @@ object Wolfe {
   @Objective.LogZ
   def logZ[T](dom: Set[T])(model: T => Double) = math.log(dom.view.map(x => math.exp(model(x))).sum)
 
+  @Operator.Forall
   def forall[T](dom: Set[T])(pred: T => Boolean) = dom.forall(pred)
 
   def all[T] = new All[T]
@@ -168,6 +169,8 @@ object Wolfe {
     class Argmin extends StaticAnnotation
     class Sum extends StaticAnnotation
     class Max extends StaticAnnotation
+    class Forall extends StaticAnnotation
+
 
   }
   object Objective {
