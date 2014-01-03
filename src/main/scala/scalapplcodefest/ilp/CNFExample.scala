@@ -7,7 +7,7 @@ import scalapplcodefest.TermDSL._
  * Created by Jan on 28.12.13.
  */
 
-object ILPExample {
+object CNFExample {
 
   val list = List("a","b")
 
@@ -49,20 +49,6 @@ object ILPExample {
 
     println("Normalized:")
     println(normalizedMLN)
-
-    //an actual weight vector that can be plugged into the mln. todo: this should be created by terms
-    val concreteWeights = key.createDenseVector(Seq('smokingIsBad) -> 1.0, Seq('peerPressure) -> 1.0)()
-
-    //some observations
-    val condition = state(friend.atom('Anna, 'Bob) -> true, smokes.atom('Anna) -> true)
-
-    //the mln with weights and some ground atoms set to some observation
-    val conditioned = normalizedMLN | condition | weights -> concreteWeights
-
-    //an inference result calculated through max product
-    //val argmax = argState(max(lam(sig(smokes,cancer,friend),conditioned)).byMessagePassing()).value()
-
-    //println(argmax)
 
   }
 }
