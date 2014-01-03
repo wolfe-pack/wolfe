@@ -19,7 +19,7 @@ class WolfeCompilerPlugin(val global: Global, transform: WolfeTransformer, val r
 
   private object Component extends PluginComponent {
     val global: WolfeCompilerPlugin.this.global.type = WolfeCompilerPlugin.this.global
-    val runsAfter = List("refchecks")
+    //    val runsAfter = List("refchecks")
     // Using the Scala Compiler 2.8.x the runsAfter should be written as below
     // val runsAfter = List[String]("refchecks");
     val phaseName = WolfeCompilerPlugin.this.name
