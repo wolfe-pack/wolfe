@@ -6,7 +6,6 @@ import scalapplcodefest.value._
 import scalapplcodefest.term._
 import scalapplcodefest.value.RangeSet
 import scala.Some
-import scalapplcodefest.value.Reduce
 import scalapplcodefest.term.RestrictedFun
 import scalapplcodefest.term.DynFunTerm
 import scalapplcodefest.value.SeqSet
@@ -28,6 +27,7 @@ object TermDSL extends ValueDSL {
   implicit def doubleToConstant(x: Double) = Constant(x)
   implicit def booleanToConstant(x: Boolean) = Constant(x)
   implicit def symbolToConstant(x: Symbol) = Constant(x)
+  implicit def stringToConstant(x: String) = Constant(x)
   //implicit def predicateToAllAtoms[A,B](p:Predicate[A,B]) = AllGroundAtoms(p)
 
   //implicit def setToConstant[T](x: Set[T]) = Constant(x)
@@ -45,10 +45,12 @@ object TermDSL extends ValueDSL {
 
   implicit def toRichFunTerm[A, B](term: Term[Fun[A, B]]): RichFunTerm[A, B] = RichFunTerm(term)
   implicit def toRichFunctionSeq[A, B](f: FunTerm[Seq[A], B]) = RichFunctionTermSeq(f)
-  implicit def toRichFunction2[A1, A2, B](f: FunTerm[(A1, A2), B]) = RichFunctionTerm2(f)
+  implicit def toRichFunction2[A1, A2, B](f: Term[Fun[(A1, A2), B]]) = RichFunctionTerm2(f)
+  implicit def toRichFunction3[A1, A2, A3, B](f: Term[Fun[(A1, A2, A3), B]]) = RichFunctionTerm3(f)
   implicit def toRichPredicate[A, B](p: Predicate[A, B]) = RichPredicate(p)
   implicit def toRichPredicate2[A1, A2, B](p: Predicate[(A1, A2), B]) = RichPredicate2(p)
   implicit def toRichCartesianProductTerm2[T1, T2](term: CartesianProductTerm2[T1, T2]) = RichCartesianProductTerm2(term)
+  implicit def toRichCartesianProductTerm3[T1, T2, T3](term: CartesianProductTerm3[T1, T2, T3]) = RichCartesianProductTerm3(term)
   implicit def toRichSetTerm[T](s: Term[Set[T]]) = RichSetTerm(s)
   implicit def toRichVec(term: Term[Vector]) = RichVecTerm(term)
   implicit def toRichVarSymbol(symbol: Symbol) = RichVarSymbol(symbol)
@@ -63,6 +65,8 @@ object TermDSL extends ValueDSL {
 
   def state(assignments: Assign[_]*) =
     if (assignments.isEmpty) State.empty else State(assignments.map(a => a.variable -> a.value).toMap)
+
+//  def state[T](map: Map[Variable[T],T]) = State(map.asInstanceOf[Map[Variable[Any],Any]])
 
   def funTerm[A, B](f: PartialFunction[A, B]) = Constant(value.Fun(f, new AllOfType[A], new AllOfType[B]))
 
@@ -107,6 +111,10 @@ object TermDSL extends ValueDSL {
     def dot(that: Term[Vector]) = FunApp(vectors.dot, TupleTerm2(term, that))
     def +(that: Term[Vector]) = FunApp(vectors.add, TupleTerm2(term, that))
     def -(that: Term[Vector]) = FunApp(vectors.minus, TupleTerm2(term, that))
+    //rockt: needs to return a vector!
+    //def *(that: Term[Double]): FunApp[(Vector, Any), Vector] = ??? //TODO
+    
+    def *(that: Term[Double]) = FunApp(vectors.scalarTimes, TupleTerm2(term, that))
   }
 
   private var anonVarCount = 0
@@ -155,6 +163,7 @@ object TermDSL extends ValueDSL {
                                                variableName1: () => String = () => freshName(),
                                                variableName2: () => String = () => freshName()) {
     def as(name1: String, name2: String) = RichCartesianProductTerm2(term, () => name1, () => name2)
+    def as(symbol1: Symbol, symbol2: Symbol) = RichCartesianProductTerm2(term, () => symbol1.name, () => symbol2.name)
 
     def map[R](f: ((Variable[T1], Variable[T2])) => Term[R]): LambdaAbstraction[(T1, T2), R] = {
       val variable1 = Var(Symbol(variableName1()), term.a1)
@@ -165,7 +174,26 @@ object TermDSL extends ValueDSL {
 
     def filter(f: ((Variable[T1], Variable[T2])) => Boolean) = this
     def withFilter(f: ((Variable[T1], Variable[T2])) => Boolean) = this
+  }
 
+  case class RichCartesianProductTerm3[T1, T2, T3](term: CartesianProductTerm3[T1, T2, T3],
+                                               variableName1: () => String = () => freshName(),
+                                               variableName2: () => String = () => freshName(),
+                                               variableName3: () => String = () => freshName()) {
+    def as(name1: String, name2: String, name3: String) = RichCartesianProductTerm3(term, () => name1, () => name2, () => name3)
+    def as(symbol1: Symbol, symbol2: Symbol, symbol3: Symbol) =
+      RichCartesianProductTerm3(term, () => symbol1.name, () => symbol2.name, () => symbol3.name)
+
+    def map[R](f: ((Variable[T1], Variable[T2], Variable[T3])) => Term[R]): LambdaAbstraction[(T1, T2, T3), R] = {
+      val variable1 = Var(Symbol(variableName1()), term.a1)
+      val variable2 = Var(Symbol(variableName2()), term.a2)
+      val variable3 = Var(Symbol(variableName3()), term.a3)
+      val applied = f(variable1, variable2, variable3)
+      LambdaAbstraction(TupleSig3(VarSig(variable1), VarSig(variable2), VarSig(variable3)), applied)
+    }
+
+    def filter(f: ((Variable[T1], Variable[T2], Variable[T3])) => Boolean) = this
+    def withFilter(f: ((Variable[T1], Variable[T2], Variable[T3])) => Boolean) = this
   }
 
 
@@ -193,6 +221,7 @@ object TermDSL extends ValueDSL {
     def +(that: Term[Int]) = FunApp(ints.add, TupleTerm2(i, that))
     def -(that: Term[Int]) = FunApp(ints.minus, TupleTerm2(i, that))
     def /(that: Term[Int]) = FunApp(ints.divide, TupleTerm2(i, that))
+    def *(that: Term[Int]) = FunApp(ints.times, TupleTerm2(i, that))
 
     def ~~(that: Term[Int]) = RangeSet(i, that) // FunApp(ints.range, TupleTerm2(i, that)) doesn't work because funapp can't guess reasonable default
   }
@@ -221,9 +250,14 @@ object TermDSL extends ValueDSL {
 
   }
 
-  case class RichFunctionTerm2[A1, A2, B](f: FunTerm[(A1, A2), B]) {
+  case class RichFunctionTerm2[A1, A2, B](f: Term[Fun[(A1, A2), B]]) {
     def apply(a1: Term[A1], a2: Term[A2]) = FunApp(f, TupleTerm2(a1, a2))
     def apply(a1: Term[(A1, A2)]) = FunApp(f, a1)
+  }
+
+  case class RichFunctionTerm3[A1, A2, A3, B](f: Term[Fun[(A1, A2, A3), B]]) {
+    def apply(a1: Term[A1], a2: Term[A2], a3: Term[A3]) = FunApp(f, TupleTerm3(a1, a2, a3))
+    def apply(a1: Term[(A1, A2, A3)]) = FunApp(f, a1)
   }
 
   case class RichFunctionTermSeq[A, B](f: FunTerm[Seq[A], B]) {
@@ -274,7 +308,7 @@ object TermDSL extends ValueDSL {
 
     object Applied2 {
       def unapply(term: Term[Any]): Option[(Term[A1], Term[A2])] = term match {
-        case FunApp(op, TupleTerm2(arg1, arg2)) if op == self => Some(arg1.asInstanceOf[Term[A1]], arg2.asInstanceOf[Term[A2]])
+        case FunApp(op, TupleTerm2(arg1, arg2)) if self == op => Some(arg1.asInstanceOf[Term[A1]], arg2.asInstanceOf[Term[A2]])
         case _ => None
       }
     }
@@ -315,6 +349,7 @@ object TermDSL extends ValueDSL {
     val minus = new Constant(Ints.Minus) with ConstantOperator[Int]
     val range = new Constant(Ints.Range) with ConstantFun2[Int, Int, Set[Int]]
     val divide = new Constant(Ints.Divide) with ConstantOperator[Int]
+    val times = new Constant(Ints.Times) with ConstantOperator[Int]
 
   }
 
@@ -340,6 +375,7 @@ object TermDSL extends ValueDSL {
     val add = new Constant(Vectors.VecAdd) with ConstantOperator[Vector]
     val minus = new Constant(Vectors.VecMinus) with ConstantOperator[Vector]
     val unit = new Constant(Vectors.UnitVector) with ConstantFun2[Int, Double, Vector]
+    val scalarTimes = new Constant(Vectors.ScalarTimes) with ConstantFun2[Vector, Double, Vector]
   }
 
   object strings extends Constant(Strings) with ConstantSet[String] {
@@ -366,6 +402,7 @@ object TermDSL extends ValueDSL {
   def max[T](f:LambdaAbstraction[T,Double]) = RichMax(f)
   def min(f:LambdaAbstraction[Vector,Double]) = RichMin(f)
 
+  def logZ[T](f:LambdaAbstraction[T,Double]) = RichLogZ(f)
 
   def arg[T](max:Max[T]) = max.argmax
   def arg[T](helper:MinHelper[T]) = helper.argmin
@@ -388,6 +425,10 @@ object TermDSL extends ValueDSL {
   case class RichMax[T](f:LambdaAbstraction[T,Double]){
     def byBruteForce = Max.ByBruteForce(f)
     def byMessagePassing(algorithm: MPGraph => Unit = MaxProduct.apply(_, 1)) = Max.ByMessagePassing(f,algorithm)
+  }
+
+  case class RichLogZ[T](f:LambdaAbstraction[T,Double]){
+    def byBruteForce = LogZ.ByBruteForce(f)
   }
 
   case class MinHelper[T](argmin:Term[T], argminState:Term[State])

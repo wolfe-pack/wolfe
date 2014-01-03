@@ -138,6 +138,7 @@ object State {
     override def +(state: State) = state
   }
 
+  def single[T](variable: Variable[T], value: T): State = SingletonState(variable, value)
 
   def allStates(vars: List[Variable[Any]], toConjoinWith: Seq[State] = Seq(State.empty).view): Seq[State] = {
     vars match {
