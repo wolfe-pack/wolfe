@@ -20,7 +20,21 @@ class DummyTransformer extends WolfeTransformer {
     }
 
     //for debugging
-    global.treeBrowser.browse(unit.body)
+    //global.treeBrowser.browse(unit.body)
+
+    println()
+    println("after transformation:")
+    println()
+
+    transformTest(global)(unit)
+  }
+
+  def transformTest(global: Global)(unit: global.type#CompilationUnit): Unit = {
+    //testing AST transformer template
+    val transformed = TreeOperations.noopTemplate(global)(global.noopTransformer, unit.body)
+    for (tree <- transformed) {
+      transformTree(global)(tree)
+    }
   }
 
   def transformTree(global: Global)(tree: global.Tree): Unit = {
