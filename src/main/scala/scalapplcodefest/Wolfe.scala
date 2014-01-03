@@ -76,7 +76,7 @@ object Wolfe {
 
   val doubles: Set[Double] = new All[Double]
 
-  val ints: Set[Int] = new All(Int)
+  val ints: Set[Int] = new All[Int]
 
   val strings: Set[String] = new All[String]
 
