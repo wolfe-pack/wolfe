@@ -48,12 +48,6 @@ inlineExceptionHandlers  26  optimization: inline exception handlers
 
    */
 
-  val compilerPhases = List("parser", "namer", "packageobjects", "typer", "patmat", "superaccessors",
-    "extmethods", "pickler", "refchecks", "selectiveanf", "selectivecps", "uncurry", "tailcalls",
-    "specialize", "explicitouter", "erasure", "posterasure", "lazyvals", "lambdalift",
-    "constructors", "flatten", "mixin", "cleanup", "icode", "inliner",
-    "inlineExceptionHandlers", "closelim", "dce", "jvm", "terminal")
-
 
   def exploreAST(code: String, runsAfter: List[String], showBrowser: Boolean = false) = {
 
@@ -62,29 +56,53 @@ inlineExceptionHandlers  26  optimization: inline exception handlers
     val compiler = new StringCompiler(transformer = Some(new WolfeTransformer {
 
       def transformTree[T <: Global#Tree](global: Global, tree: T) = {
-
         // ignore the package, the object and the first element of the object, which is always the constructor
-        val codeAST = tree.asInstanceOf[global.PackageDef].stats(0).asInstanceOf[global.ClassDef].impl.body.tail
+        tree match {
+          case p: global.PackageDef => {
 
-        codeAST.foreach {
-          c => {
-            global.newRawTreePrinter().print(c);
-            if (showBrowser) global.treeBrowser.browse(tree.asInstanceOf[global.Tree])
+            val codeAST: List[global.Tree] = p.stats(0) match {
+              case c: global.ClassDef => c.impl.body.tail
+              case m: global.ModuleDef => m.impl.body.tail
+              case x => List(x)
+            }
+            if (showBrowser)
+              global.treeBrowser.browse(tree.asInstanceOf[global.Tree])
+
+
+            codeAST.foreach {
+              c => {
+                global.newRawTreePrinter().withTypes.print(c)
+                println()
+              }
+            }
           }
+          case _ =>
         }
+
+
         tree
+
       }
     }), runsAfter = runsAfter)
     compiler.compileCode(wrappedCode)
   }
 
+  val compilerPhases = List("parser", "namer", "packageobjects", "typer", "patmat", "superaccessors",
+    "extmethods", "pickler", "refchecks", "selectiveanf", "selectivecps", "uncurry", "tailcalls",
+    "specialize", "explicitouter", "erasure", "posterasure", "lazyvals", "lambdalift",
+    "constructors", "flatten", "mixin", "cleanup", "icode", "inliner",
+    "inlineExceptionHandlers", "closelim", "dce")
+  // we will not look at the last two phases
+  //"jvm", "terminal")
+
   def trackTransformations(code: String) = {
     compilerPhases.foreach {
       phase
       => {
-        print(s"| $phase | `")
-        exploreAST(code, List(phase))
-        println("` |")
+        println("Phase: " + phase)
+        exploreAST(code, List(phase), showBrowser = true)
+
+        println()
       }
     }
   }
@@ -94,14 +112,11 @@ inlineExceptionHandlers  26  optimization: inline exception handlers
               runsAfter: List[String],
               showTrees: Boolean = false) = {
     println(name)
-    println()
-    println("| Original code | AST after type inference |")
-    println("| --- |:--- |")
     codeExamples(name).foreach {
       c => {
-        print("| `" + c + "` | `")
+        print("| `" + c + "` | <code>")
         exploreAST(c, runsAfter, showTrees)
-        println("`|")
+        println("`</code>")
       }
     }
   }
@@ -217,6 +232,16 @@ inlineExceptionHandlers  26  optimization: inline exception handlers
 
   //  explore(code, List("refchecks") objects)
 
-  trackTransformations("val a = new scala.util.Random(1)")
+  trackTransformations(
+    """
+      |val x = 1
+      |val y = 2
+      |val z = x + y
+      |
+      |def f(x: Int, y: Double) = z
+      |
+      |val z1 = f(1, 3.1)
+      |
+    """.stripMargin)
 
 }

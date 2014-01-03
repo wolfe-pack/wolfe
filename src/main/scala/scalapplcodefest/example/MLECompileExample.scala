@@ -43,7 +43,7 @@ object MLECompileExample {
 
   def main(args: Array[String]) {
     val path = dirPathOfClass(getClass.getName)
-    val compiler = new StringCompiler(additionalClassPath = List(path), transformer = Some(new WolfeTransformer {
+    val compiler = new StringCompiler(additionalClassPath = List(path), runsAfter = List("typer"), transformer = Some(new WolfeTransformer {
       def transformTree[T <: Global#Tree](global: Global, tree: T) = {
         global.treeBrowser.browse(tree.asInstanceOf[global.Tree]); tree
       }
@@ -138,6 +138,8 @@ object WolfeEnv {
 
   def all[T] = new All[T]
 
+  val bools = Set(false,true)
+
   val doubles: Set[Double] = new All[Double]
 
   val strings: Set[String] = new All[String]
@@ -177,6 +179,7 @@ object WolfeEnv {
 
   def ft(key:Any,value:Double = 1.0): Vector = Map(key -> value)
   def ft(key:Any,value:Boolean): Vector = ft(key,if(value) 1.0 else 0.0)
+  def feat(key:Any*) = Map(key.toSeq.asInstanceOf[Any] -> 1.0)
 
   implicit object VectorNumeric extends Numeric[Vector] {
     def plus(x: WolfeEnv.Vector, y: WolfeEnv.Vector) = {
