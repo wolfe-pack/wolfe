@@ -1,63 +1,47 @@
 package scalapplcodefest.example
 
-import scalapplcodefest.value.Vectors
-import scalapplcodefest.term.Max
-import scalapplcodefest.{Index, TermDSL}
-import scalapplcodefest.TermDSL._
-
 /**
  * The smokes & cancer MLN.
  *
  * @author Sebastian Riedel
  */
-object MarkovLogicExample {
+object MarkovLogicExample extends App {
 
-  //this gives us syntactic sugar
+  import WolfeEnv._
 
-  import TermDSL._
+  type Person = Symbol
 
-  //index for indexing feature vectors
-  val key = new Index()
+  case class Data(smokes: Person => Boolean, cancer: Person => Boolean, friends: ((Person, Person)) => Boolean)
 
-  //domain objects. Note that this set itself is a term (a constant evaluating to the given set, but it could be dynamic too).
-  val persons = set('Anna, 'Bob)
+  val persons = Set('Anna, 'Bob)
+  val bools = Set(true, false)
 
-  //Unary predicates
-  val smokes = 'smokes of persons |-> bools
-  val cancer = 'cancer of persons |-> bools
+  def mln(data: Data, weights: Vector) = {
 
-  //Binary predicate
-  val friend = 'friend of c(persons, persons) |-> bools
+    val smokes = data.smokes
+    val cancer = data.cancer
+    val friends = data.friends
 
-  //Weight vector variable.
-  val weights = 'weights of vectors
+    def f1 = vsum(persons) {p => ft('smokingIsBad, smokes(p) -> cancer(p))}
 
-  //Smoking can lead to cancer
-  val f1 = vectors.sum(for (p <- persons) yield unit(key('smokingIsBad),
-    I(smokes(p) |=> cancer(p))))
+    def f2 = vsum(c(persons, persons)) {
+      p =>
+        ft('peerPressure, friends(p) -> (smokes(p._1) <-> smokes(p._2)))
+    }
 
-  //friends make friends smoke / not smoke
-  val f2 = vectors.sum(for ((p1, p2) <- c(persons, persons)) yield unit(key('peerPressure),
-    I(friend(p1, p2) |=> (smokes(p1) <=> smokes(p2)))))
-
-  //The MLN without assigned weights
-  val mln = (f1 + f2) dot weights
-
-  def main(args: Array[String]) {
-    //an actual weight vector that can be plugged into the mln. todo: this should be created by terms
-    val concreteWeights = key.createDenseVector(Seq('smokingIsBad) -> 1.0, Seq('peerPressure) -> 1.0)()
-
-    //some observations
-    val condition = state(friend.atom('Anna, 'Bob) -> true, smokes.atom('Anna) -> true)
-
-    //the mln with weights and some ground atoms set to some observation
-    val conditioned = mln | condition | weights -> concreteWeights
-
-    //an inference result calculated through max product
-    val argmax = argState(max(lam(sig(smokes, cancer, friend), conditioned)).byMessagePassing()).value()
-
-    println(argmax)
-
+    (f1 + f2) dot weights
   }
+
+  val weights = Vector('smokingIsBad -> 2.0, 'peerPressure -> 0.0)
+
+  val hidden = for (smokes <- maps(persons, bools);
+                    cancer <- maps(persons, bools))
+  yield Data(smokes, cancer, map(false, ('Anna, 'Bob) -> true))
+
+  //val prediction1 = argmax(hidden) {y => mln(y, weights)}
+
+  val prediction2 = argmax(hidden filter {h => h.smokes('Anna) && h.cancer('Anna)})(y => mln(y, weights))
+
+  println(prediction2)
 
 }

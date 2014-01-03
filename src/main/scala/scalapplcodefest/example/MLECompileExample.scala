@@ -83,6 +83,8 @@ object WolfeEnv {
     recurse(dom.toList,range.toList).toSet
   }
 
+  def map[A, B](default: B, vals: (A, B)*): Map[A,B] = Map(vals:_*).withDefaultValue(default)
+
   def vectors[A, B](dom: Set[A], range: Set[B]): Set[Map[Any,B]] = {
     def recurse(d: List[A], r: List[B], funs: List[Map[Any,B]] = List(Map.empty)):List[Map[Any,B]] = d match {
       case Nil => funs
@@ -95,6 +97,9 @@ object WolfeEnv {
 
 
   def seqs[A](dom: Set[A], length: Int): Set[Seq[A]] = ???
+
+  @Operator.Sum
+  def vsum[T](elems: Seq[T])(f: T => Vector) = elems.map(f).sum(VectorNumeric)
 
   @Operator.Sum
   def sum[T](elems: Seq[T])(f: T => Double) = elems.map(f).sum
@@ -155,11 +160,23 @@ object WolfeEnv {
     def |[A](that: A) = t -> that
   }
 
+  case class RichBoolean(b: Boolean) {
+    def ->(that:Boolean) = !b || that
+    def <->(that:Boolean) = b == that
+  }
+
+  implicit def toRichBoolean(b: Boolean) = RichBoolean(b)
+
   type Vector = Map[Any,Double]
+
+  object Vector {
+    def apply(elems:(Any, Double)*) = Map(elems:_*)
+  }
 
   val vectors = new All[Vector]
 
-  def ft(key:Any,value:Double = 1.0) = Map(key -> value)
+  def ft(key:Any,value:Double = 1.0): Vector = Map(key -> value)
+  def ft(key:Any,value:Boolean): Vector = ft(key,if(value) 1.0 else 0.0)
 
   implicit object VectorNumeric extends Numeric[Vector] {
     def plus(x: WolfeEnv.Vector, y: WolfeEnv.Vector) = {
@@ -194,6 +211,7 @@ object WolfeEnv {
     def *(scale:Double) = vector.mapValues(_ * scale)
   }
 
+  def c[A,B](set1:Set[A], set2:Set[B]) = for(i <- set1; j <- set2) yield (i,j)
 
 }
 
