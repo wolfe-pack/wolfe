@@ -39,7 +39,7 @@ class StringCompiler(val transformer: Option[WolfeTransformer] = None,
 
   val reporter = new ConsoleReporter(settings)
 
-  def compileCode(code: String): Unit = {
+  def compileCode(code: String) = {
     val compiler: Global = if (transformer.isDefined) {
       new Global(settings, reporter) {
         self =>
