@@ -6,7 +6,6 @@ scalaVersion := "2.10.3"
 
 resolvers ++= Seq(
   "IESL Release" at "https://dev-iesl.cs.umass.edu/nexus/content/groups/public",
-  "clojars" at "http://clojars.org/repo/",
   Resolver.sonatypeRepo("snapshots")
 )
 
@@ -19,7 +18,6 @@ libraryDependencies ++= Seq(
   "com.nativelibs4java" %% "scalaxy-loops" % "0.3-SNAPSHOT" % "provided",
   "cc.factorie" % "factorie" % "1.0.0-M7",
   "com.github.axel22" %% "scalameter" % "0.4",
-  "deriva" % "deriva" % "0.1.0-SNAPSHOT",
   "org.scala-lang" % "scala-compiler" % "2.10.3",
   "org.scala-lang" % "scala-library" % "2.10.3"
 )

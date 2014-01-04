@@ -1,6 +1,7 @@
 package scalapplcodefest.compiler
 
 import scala.tools.nsc.Global
+import java.io.{PrintStream, ByteArrayOutputStream, FileWriter}
 
 /**
  * User: rockt
@@ -18,20 +19,56 @@ class DerivativeTransformer extends WolfeTransformer {
 }
 
 object DerivativeTransformerPlayground extends App {
-  //http://developers.opengamma.com/blog/2013/10/28/deriva-automating-algorithmic-differentiation
+  //TODO
 
-  import com.lambder.deriva.Deriva._
-  import com.lambder.deriva.Expression
+  //from AST
+  val symbol = "x"
+  val function = "x ** 2 + 1"
+  println(s"f: $function")
 
-  val sigmoid = div(1.0, add(1.0, exp(mul(-1.0, "z"))))
-  val func = sigmoid.function("z")
+  val sympy = SymPyDerivator(symbol, function)
 
-  println(s"sigmoid:        $sigmoid")
-  println(s"sigmoid at 0.5: ${func.execute(0.5)}")
+  val derivative = sympy.execute()
 
-  val result = d[Expression](sigmoid, "z")
-  println(s"sigmoid dz:     $result")
+  println(s"f d$symbol: $derivative")
+  //build AST
 
-  println(result.describe())
+  //TODO
+}
 
+case class SymPyDerivator(symbol: String, function: String) {
+  import scala.sys.process.Process
+
+  val pathToScript = "/home/trocktae/test.py"
+
+  val program =
+  s"""
+    |from sympy import *
+    |import numpy as np
+    |
+    |x = Symbol("$symbol")
+    |f = $function
+    |
+    |fprime = f.diff(x)
+    |print fprime
+  """.stripMargin
+
+  def generateScript(): Unit = {
+    val writer = new FileWriter(pathToScript)
+    program foreach (writer.write(_))
+    writer.close()
+  }
+
+  def execute(): String = {
+    generateScript()
+    val baos = new ByteArrayOutputStream()
+    val ps = new PrintStream(baos)
+
+    val tmpOut = Console.out
+    Console.setOut(ps)
+    Process("python", Seq(pathToScript)).!
+    Console.setOut(tmpOut)
+    
+    baos.toString
+  }
 }
