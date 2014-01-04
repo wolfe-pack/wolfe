@@ -4,6 +4,7 @@ import scalapplcodefest.compiler.{WolfeCompilerPlugin2, WolfeTransformer, String
 import scala.language.implicitConversions
 import scala.tools.nsc.Global
 import scala.reflect.internal.Symbols
+import scalapplcodefest.Wolfe
 
 /**
  * @author Sebastian Riedel
@@ -72,18 +73,37 @@ object MLECompileExample {
           import global._
           tree match {
             case t @ PackageDef(_,_) =>
-              //global.treeBrowser.browse(t.asInstanceOf[global.Tree])
+              global.treeBrowser.browse(t.asInstanceOf[global.Tree])
+              println(env.implementations)
             case i @ Ident(name) =>
-              println(i)
+//              println(i)
+            case valdef @ ValDef(_,_,_,app@Apply(f,_)) =>
+//              println(f.getClass)
+            case app @ Apply(Apply(TypeApply(s@Select(_,name),_),_),a) =>
+              println(name)
+              println(s.symbol)
+              println(s.symbol.annotations)
+              println(env.implementations.get(s.symbol))
+              for (annotation <- s.symbol.annotations) {
+                if (annotation.atp.toString() == "scalapplcodefest.Wolfe.Operator.Argmin") {
+                  println("Translating...")
+                }
+                //if (annotation.symbol.name)
+              }
+//              println("Fun: " + f)
+//              println("Arg: " + a)
+//              println(name.encoded)
+//              println(name2.encoded)
             case s @ Select(_,name) if name.encoded == "argmin" =>
               val symbol = s.symbol
-              println(symbol)
+//              println(symbol)
               val sig = symbol.owner.typeSignature.members
               val members = symbol.owner.tpe.members
               val children = symbol.owner.children
-              println(members)
-              println(env.implementations)
-              println(env.implementations.get(s.symbol))
+//              println(members)
+//              println(env.implementations)
+              val map = env.implementations
+//              println(env.implementations.get(s.symbol))
 
             case _ =>
           }
