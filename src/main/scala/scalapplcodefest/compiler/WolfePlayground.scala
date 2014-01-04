@@ -27,7 +27,8 @@ object WolfePlayground extends App {
 
   compiler.compileCode(code)
 
-  ObjectRunner.run(List(compiler.outputDir.toURL), "A", "tmp" :: compiler.additionalClassPath ::: compiler.libPath ::: compiler.compilerPath)
+  //ObjectRunner.run(List(compiler.outputDir.toURL), "A", "tmp" :: compiler.additionalClassPath ::: compiler.libPath ::: compiler.compilerPath)
+
 
   class PlaygroundTransformer extends WolfeTransformer {
     def transformTree[T <: Global#Tree](global: Global, env: WolfeCompilerPlugin2#Environment, tree: T): T = {
