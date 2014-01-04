@@ -1,6 +1,7 @@
 package scalapplcodefest
 
 import scala.language.implicitConversions
+import scala.util.Random
 
 /**
  * @author Sebastian Riedel
@@ -44,6 +45,14 @@ object Wolfe {
     dom.maxBy(obj)
   }
 
+  implicit val random = new Random(0)
+
+  @Operator.Sample
+  def sample[T](dom: Set[T])(obj: T => Double)(implicit r: Random): T = {
+    import cc.factorie._
+    dom.view.sampleExpProportionally(obj)(r)
+  }
+
   @Operator.Argmin
   def argmin[T](dom: Set[T])(obj: T => Double): T = {
     dom.minBy(obj)
@@ -61,7 +70,8 @@ object Wolfe {
   def simplex[T](domain: Set[T], range: Set[Double] = doubles) =
     for (p <- maps(domain, range); if sum(domain.toSeq) {p(_)} == 1.0 && domain.forall(p(_) >= 0.0)) yield p
 
-  def expect[T](dom: Set[T], stats: T => Vector)(obj: T => Double) = sum (dom.toSeq) {x => stats(x) * obj(x)} (VectorNumeric)
+  def wsum[T](dom: Set[T], stats: T => Vector)(obj: T => Double) = sum (dom.toSeq) {x => stats(x) * obj(x)} (VectorNumeric)
+  def expect[T](dom: Set[T], stats: T => Vector)(obj: T => Double) = wsum(dom, stats)(t => math.exp(obj(t) - logZ(dom)(obj)))
 
   @Objective.LogZ
   def logZ[T](dom: Set[T])(model: T => Double) = math.log(dom.view.map(x => math.exp(model(x))).sum)
@@ -103,6 +113,8 @@ object Wolfe {
     def ->(that: Boolean) = !b || that
     def <->(that: Boolean) = b == that
   }
+
+  def I(b: Boolean) = if(b) 1.0 else 0.0
 
   implicit class RichPredicate[T](pred: Map[T, Boolean]) {
     def only(trueAtoms: T*) = {
@@ -170,6 +182,7 @@ object Wolfe {
     class Sum extends StaticAnnotation
     class Max extends StaticAnnotation
     class Forall extends StaticAnnotation
+    class Sample extends StaticAnnotation
 
 
   }
