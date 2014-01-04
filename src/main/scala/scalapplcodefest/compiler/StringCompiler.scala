@@ -9,8 +9,8 @@ import scala.reflect.internal.util.BatchSourceFile
  * @author sameer
  */
 class StringCompiler(val transformer: Option[WolfeTransformer] = None,
-                     additionalClassPath: List[String] = Nil,
-                     outputDir: AbstractFile = new VirtualDirectory("(memory)", None),
+                     val additionalClassPath: List[String] = Nil,
+                     val outputDir: AbstractFile = new VirtualDirectory("(memory)", None),
                      runsAfter: List[String] = List("refchecks")) {
   val settings = new Settings
   settings.nowarnings.value = true // warnings are exceptions, so disable
@@ -53,9 +53,10 @@ class StringCompiler(val transformer: Option[WolfeTransformer] = None,
     val run = new compiler.Run
 
     run.compileSources(List(new BatchSourceFile("(inline)", code)))
-    val x1 = compiler.newUnitParser(code)
 
+    val x1 = compiler.newUnitParser(code)
     x1.unit.body = x1.smartParse
+
 
     (compiler, x1.unit)
   }
