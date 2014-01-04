@@ -2,8 +2,6 @@ package scalapplcodefest.compiler
 
 import scala.tools.nsc.Global
 
-import scala.reflect.internal._
-
 /**
  * @author sameer
  */
@@ -19,6 +17,13 @@ class DummyTransformer extends WolfeTransformer {
     println(tree)
     tree.asInstanceOf[T]
   }
+}
+
+/**
+ * Returns the identical tree (no copy!)
+ */
+class IdentityTransformer extends WolfeTransformer {
+  def transformTree[T <: Global#Tree](global: Global, env: WolfeCompilerPlugin2#Environment, tree: T) = tree
 }
 
 object TransformerApp extends App {
@@ -41,8 +46,7 @@ object TransformerApp extends App {
     """.stripMargin
 
   compiler.compileCode(code)
-
-
 }
+
 
 
