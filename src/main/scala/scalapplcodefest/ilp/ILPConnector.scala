@@ -1,6 +1,7 @@
 package scalapplcodefest.ILP
 
 import scala.collection.mutable
+import org.scalautils.Or
 
 /**
  * This trait has to be implemented by every ILP implementation.
@@ -29,7 +30,7 @@ trait ILPConnector [T]{
    *
    * @return
    */
-  def solve():mutable.HashMap[T,Double]
+  def solve():scala.collection.Set[Var[T]] Or ILPState.Value
 }
 
 /**
@@ -41,6 +42,8 @@ trait ILPConnector [T]{
  * @tparam T
  */
 class Var[T] (val name:T, val value: Double = 0, val range: Type.Value = Type.int){
+
+  var result:Double =0
 
   def canEqual(other: Any): Boolean = other.isInstanceOf[Var[T]]
 
@@ -75,9 +78,28 @@ class Var[T] (val name:T, val value: Double = 0, val range: Type.Value = Type.in
  * @param lhs
  * @param op
  * @param rhs
+ * @param cpi Defines if Cutting plane inference is used (=true) or if the constraint is added to the ilp immediately (=false)
  * @tparam T
  */
-case class LPConstraint[T] (lhs: List[(Double,T)],op: Operator.Value = Operator.leq,rhs:Double)
+case class LPConstraint[T] (lhs: List[(Double,Var[T])],op: Operator.Value = Operator.leq,rhs:Double, cpi:Boolean = false){
+
+  /**
+   * Checks if a current constraint is violated (dependent on the actual solution stored in the node.
+   * @return
+   */
+  def isViolated():Boolean = {
+    val lhsSum = (for {
+      (value, variable) <- lhs
+    }yield value*variable.result) reduceLeft(_+_)
+    if(Operator.leq == op){
+      //println(lhsSum+ " <= " + rhs + " : " + (lhsSum>rhs))
+      lhsSum > rhs
+    }else{
+      //println(lhsSum+ " >= " + rhs + " : " + (lhsSum>rhs))
+      lhsSum < rhs
+    }
+  }
+}
 
 /**
  * Operators of a linear inequality constraint.
@@ -85,8 +107,6 @@ case class LPConstraint[T] (lhs: List[(Double,T)],op: Operator.Value = Operator.
 object Operator extends Enumeration {
   val geq = Value("geq")
   val leq = Value("leq")
-  val <= = Value("leq")
-  val >= = Value("geq")
 }
 
 /**
@@ -96,4 +116,19 @@ object Type extends Enumeration {
   val int = Value("int")
   val binary = Value("binary")
   val real = Value("real")
+}
+
+object ILPState extends Enumeration {
+  /**
+   * The ILP has been solved correctly and the solution is within the given bound.
+   */
+  val optimal = Value("optimal")
+  /**
+   * One or more variables are unbounded (not restricted). This leads to an infinitive objective and no (or no useful) result.
+   */
+  val unbounded = Value("unbounded")
+  /**
+   * Model has constraints which lead to an unsolvable model (e.g. x>5 and x<2).
+   */
+  val infeasible = Value("infeasible")
 }
