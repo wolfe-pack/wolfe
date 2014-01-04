@@ -1,7 +1,8 @@
 package scalapplcodefest.compiler
 
 import scala.tools.nsc.Global
-import java.io.{PrintStream, ByteArrayOutputStream, FileWriter}
+import java.io._
+import scala.Console
 
 /**
  * User: rockt
@@ -23,7 +24,7 @@ object DerivativeTransformerPlayground extends App {
 
   //from AST
   val symbol = "x"
-  val function = "x ** 2 + 1"
+  val function = "x**3 + 4 * x**2 + 1" //TODO: we can have more than one symbol x
   println(s"f: $function")
 
   val sympy = SymPyDerivator(symbol, function)
@@ -39,9 +40,9 @@ object DerivativeTransformerPlayground extends App {
 case class SymPyDerivator(symbol: String, function: String) {
   import scala.sys.process.Process
 
-  val pathToScript = "/home/trocktae/test.py"
+  val pathToScript = "/tmp/test.py"
 
-  val program =
+  val code =
   s"""
     |from sympy import *
     |import numpy as np
@@ -55,20 +56,12 @@ case class SymPyDerivator(symbol: String, function: String) {
 
   def generateScript(): Unit = {
     val writer = new FileWriter(pathToScript)
-    program foreach (writer.write(_))
+    code foreach (writer.write(_))
     writer.close()
   }
 
   def execute(): String = {
     generateScript()
-    val baos = new ByteArrayOutputStream()
-    val ps = new PrintStream(baos)
-
-    val tmpOut = Console.out
-    Console.setOut(ps)
-    Process("python", Seq(pathToScript)).!
-    Console.setOut(tmpOut)
-    
-    baos.toString
+    Process("python", Seq(pathToScript)).!!
   }
 }
