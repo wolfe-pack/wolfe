@@ -1,6 +1,6 @@
 package scalapplcodefest.example
 
-import scalapplcodefest.compiler.{WolfeTransformer, StringCompiler}
+import scalapplcodefest.compiler.{WolfeCompilerPlugin2, WolfeTransformer, StringCompiler}
 import scala.language.implicitConversions
 import scala.tools.nsc.Global
 import scala.reflect.internal.Symbols
@@ -68,11 +68,11 @@ object MLECompileExample {
       runsAfter = List("typer"),
       transformer = Some(new WolfeTransformer {
 
-        def transformTree[T <: Global#Tree](global: Global,map:Map[Symbols#Symbol,Global#Tree], tree: T) = {
+        def transformTree[T <: Global#Tree](global: Global,env:WolfeCompilerPlugin2#Environment, tree: T) = {
           import global._
           tree match {
             case t @ PackageDef(_,_) =>
-              global.treeBrowser.browse(t.asInstanceOf[global.Tree])
+              //global.treeBrowser.browse(t.asInstanceOf[global.Tree])
             case i @ Ident(name) =>
               println(i)
             case s @ Select(_,name) if name.encoded == "argmin" =>
@@ -82,7 +82,8 @@ object MLECompileExample {
               val members = symbol.owner.tpe.members
               val children = symbol.owner.children
               println(members)
-              println(map)
+              println(env.implementations)
+              println(env.implementations.get(s.symbol))
 
             case _ =>
           }
@@ -94,7 +95,7 @@ object MLECompileExample {
 
   object MLETransformer extends WolfeTransformer {
 
-    def transformTree[T <: Global#Tree](global: Global,map:Map[Symbols#Symbol,Global#Tree], tree: T) = {
+    def transformTree[T <: Global#Tree](global: Global,env:WolfeCompilerPlugin2#Environment, tree: T) = {
       tree match {
         case global.Ident(name) =>
       }
