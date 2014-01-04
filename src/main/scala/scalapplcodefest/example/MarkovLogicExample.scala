@@ -18,7 +18,6 @@ object MarkovLogicExample extends App {
   case class Data(smokes: Person => Boolean, cancer: Person => Boolean, friends: Map[(Person, Person), Boolean])
 
   val persons = Set('Anna, 'Bob)
-  val bools = Set(true, false)
 
   def mln(data: Data, weights: Vector) = {
 
