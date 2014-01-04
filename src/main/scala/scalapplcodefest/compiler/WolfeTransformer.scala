@@ -11,19 +11,19 @@ trait WolfeTransformer {
 }
 
 object WolfeTransformers extends WolfeTransformer {
-  private val ops = scala.mutable.collection.LinkedList[WolfeTransformer]()
+  private val ops = scala.collection.mutable.ListBuffer[WolfeTransformer]()
 
   /**
    * Register a operator. This is package private to ensure that bad things don't happen inadvertently
    *
    * @param operator
    */
-  private[compiler] def register(operator: WolfeTransformer): Unit = { ops += operator }
+  private[compiler] def register(operator: WolfeTransformer): Unit = {  ops += operator }
 
   def transformTree[T <: Global#Tree](global: Global, env: WolfeCompilerPlugin2#Environment, tree: T): T = {
     ops.foldLeft(tree) {
-      (t: global.Tree, op: WolfeTransformer) => op.transformTree(global, env, tree)
-    }.asInstanceOf[T]
+      (t: T, op: WolfeTransformer) => op.transformTree(global, env, tree)
+    }
   }
 
 }
