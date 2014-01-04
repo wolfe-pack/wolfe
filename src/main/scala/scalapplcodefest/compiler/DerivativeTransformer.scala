@@ -1,7 +1,7 @@
 package scalapplcodefest.compiler
 
 import scala.tools.nsc.Global
-import java.io._
+import java.io.FileWriter
 
 /**
  * User: rockt
@@ -23,7 +23,8 @@ object DerivativeTransformerPlayground extends App {
 
   //from AST
   val symbol = "x"
-  val function = "x**3 + 4 * x**2 + 1" //TODO: we can have more than one symbol x
+  val function = "x**3 + 4 * x**2 + 1 + 3 * y**4 * x"
+
   println(s"f: $function")
 
   val sympy = SymPyDerivator(symbol, function)
@@ -39,6 +40,10 @@ object DerivativeTransformerPlayground extends App {
 case class SymPyDerivator(symbol: String, function: String) {
   import scala.sys.process.Process
 
+  val symbols = function.split("[^a-zA-Z]").toSet.filterNot(_.isEmpty)
+  val symbolsDef = symbols.map((s: String) => s"""$s = Symbol("$s")""").mkString("\n")
+
+
   val pathToScript = "/tmp/test.py"
 
   val code =
@@ -46,10 +51,10 @@ case class SymPyDerivator(symbol: String, function: String) {
     |from sympy import *
     |import numpy as np
     |
-    |x = Symbol("$symbol")
+    |$symbolsDef
     |f = $function
     |
-    |fprime = f.diff(x)
+    |fprime = f.diff($symbol)
     |print fprime
   """.stripMargin
 
