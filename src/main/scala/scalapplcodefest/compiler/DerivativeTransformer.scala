@@ -2,7 +2,6 @@ package scalapplcodefest.compiler
 
 import scala.tools.nsc.Global
 import java.io._
-import scala.Console
 
 /**
  * User: rockt
