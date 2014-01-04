@@ -2,6 +2,7 @@ package scalapplcodefest.compiler
 
 import scala.tools.nsc.Global
 import java.io.FileWriter
+import scalapplcodefest.Wolfe.Objective
 
 /**
  * User: rockt
@@ -10,7 +11,7 @@ import java.io.FileWriter
  */
 
 /**
- * Searches for @Differentiable annotation and generates an AST for gradient calculation
+ * Searches for @Objective.Differentiable annotation and generates an AST for gradient calculation
  */
 class DerivativeTransformer extends WolfeTransformer {
   def transformTree[T <: Global#Tree](global: Global, env: WolfeCompilerPlugin2#Environment, tree: T) = tree match {
@@ -94,7 +95,31 @@ object MathASTSandbox extends App {
   import SymPyDSL._
 
   import math._
-  val sigmoid = "1 / (1 + exp(-z))"
+  val sigmoidPython = "1 / (1 + exp(-z))"
+  println(sigmoidPython.diff('z))
+  //vectors: http://docs.sympy.org/dev/modules/physics/mechanics/vectors.html
+  //tensors: http://docs.sympy.org/0.7.0/modules/tensor.html
 
-  println(sigmoid.diff('z))
+  @Objective.Differentiable
+  def sigmoidScala(z: Double) = 1 / (1 + exp(-z))
+
+  val sigmoidScalaCode =
+    """
+      |import math._
+      |import scalapplcodefest.Wolfe.Objective
+      |
+      |@Objective.Differentiable
+      |def sigmoidScala(z: Double) = 1 / (1 + exp(-z))
+    """.stripMargin
+
+  private def dirPathOfClass(className: String) = try {
+    val resource = className.split('.').mkString("/", "/", ".class")
+    val path = getClass.getResource(resource).getPath
+    val root = path.dropRight(resource.length)
+    root
+  }
+
+  val additionalClassPath = List(dirPathOfClass(getClass.getName))
+
+  ASTExplorer.exploreAST(sigmoidScalaCode, List("typer"), showBrowser = true, additionalClassPath)
 }
