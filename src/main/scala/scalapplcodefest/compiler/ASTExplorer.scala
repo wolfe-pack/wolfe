@@ -50,11 +50,12 @@ inlineExceptionHandlers  26  optimization: inline exception handlers
    */
 
 
-  def exploreAST(code: String, runsAfter: List[String], showBrowser: Boolean = false) = {
+  def exploreAST(code: String, runsAfter: List[String], showBrowser: Boolean = false,
+                 additionalClassPath: List[String] = Nil) = {
 
     val wrappedCode = "object TestObject { " + code + "}"
 
-    val compiler = new StringCompiler(transformer = Some(new WolfeTransformer {
+    val compiler = new StringCompiler(additionalClassPath = additionalClassPath, transformer = Some(new WolfeTransformer {
 
       def transformTree[T <: Global#Tree](global: Global, env:WolfeCompilerPlugin2#Environment, tree: T) = {
         // ignore the package, the object and the first element of the object, which is always the constructor
