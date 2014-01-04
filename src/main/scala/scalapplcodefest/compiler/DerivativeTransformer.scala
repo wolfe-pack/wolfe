@@ -2,7 +2,6 @@ package scalapplcodefest.compiler
 
 import scala.tools.nsc.Global
 import java.io.FileWriter
-import scalapplcodefest.Wolfe.Objective
 
 /**
  * User: rockt
@@ -51,7 +50,7 @@ case class SymPyDerivator(function: String) {
   )
 
   private val symbols = function.split("[^a-zA-Z]").toSet.filterNot(_.isEmpty).filterNot(functionNames.contains)
-  private val symbolsDef = symbols.map((s: String) => s"""$s = Symbol("$s")""").mkString("\n")
+  private val symbolsPythonDefString = symbols.map((s: String) => s"""$s = Symbol("$s")""").mkString("\n")
 
 
   private val pathToScript = "/tmp/test.py" //TODO: can we keep that in virtual memory?
@@ -61,7 +60,7 @@ case class SymPyDerivator(function: String) {
     |from sympy import *
     |import numpy as np
     |
-    |$symbolsDef
+    |$symbolsPythonDefString
     |f = $function
   """.stripMargin
 
@@ -94,14 +93,19 @@ case class SymPyDerivator(function: String) {
 object MathASTSandbox extends App {
   import SymPyDSL._
 
-  import math._
   val sigmoidPython = "1 / (1 + exp(-z))"
   println(sigmoidPython.diff('z))
+
   //vectors: http://docs.sympy.org/dev/modules/physics/mechanics/vectors.html
   //tensors: http://docs.sympy.org/0.7.0/modules/tensor.html
 
+  //BEGIN SCALA CODE
+  import math._
+  import scalapplcodefest.Wolfe.Objective
+
   @Objective.Differentiable
   def sigmoidScala(z: Double) = 1 / (1 + exp(-z))
+  //END
 
   val sigmoidScalaCode =
     """
@@ -121,5 +125,6 @@ object MathASTSandbox extends App {
 
   val additionalClassPath = List(dirPathOfClass(getClass.getName))
 
-  ASTExplorer.exploreAST(sigmoidScalaCode, List("typer"), showBrowser = true, additionalClassPath)
+  ASTExplorer.exploreAST(sigmoidScalaCode, List("parser"), showBrowser = true,
+    additionalClassPath = additionalClassPath, transformers = List(new DerivativeTransformer))
 }
