@@ -19,53 +19,82 @@ class DerivativeTransformer extends WolfeTransformer {
 }
 
 object DerivativeTransformerPlayground extends App {
+  import SymPyDSL._
   //TODO
 
   //from AST
-  val symbol = "x"
-  val function = "x**3 + 4 * x**2 + 1 + 3 * y**4 * x"
+  val f = "x**3 + 4 * x**2 + 1 + 3 * y**4 * x"
 
-  println(s"f: $function")
+  println(s"f:    ${f.function}")
+  println(s"f dx: ${f.diff('x)}")
+  println(s"f dy: ${f.diff('y)}")
+  println()
 
-  val sympy = SymPyDerivator(symbol, function)
-
-  val derivative = sympy.execute()
-
-  println(s"f d$symbol: $derivative")
+  val g = "1 / (1 + exp(z))"
+  println(s"g:    ${g.function}")
+  println(s"g dz: ${g.diff('z)}")
   //build AST
 
   //TODO
 }
 
-case class SymPyDerivator(symbol: String, function: String) {
+object SymPyDSL {
+  implicit def stringToSymPyDerivator(function: String): SymPyDerivator = SymPyDerivator(function)
+}
+
+case class SymPyDerivator(function: String) {
   import scala.sys.process.Process
 
-  val symbols = function.split("[^a-zA-Z]").toSet.filterNot(_.isEmpty)
-  val symbolsDef = symbols.map((s: String) => s"""$s = Symbol("$s")""").mkString("\n")
+  val functionNames = Set(
+    "exp", "log", "min", "max"
+  )
+
+  private val symbols = function.split("[^a-zA-Z]").toSet.filterNot(_.isEmpty).filterNot(functionNames.contains)
+  private val symbolsDef = symbols.map((s: String) => s"""$s = Symbol("$s")""").mkString("\n")
 
 
-  val pathToScript = "/tmp/test.py"
+  private val pathToScript = "/tmp/test.py" //TODO: can we keep that in virtual memory?
 
-  val code =
+  private val stub =
   s"""
     |from sympy import *
     |import numpy as np
     |
     |$symbolsDef
     |f = $function
-    |
-    |fprime = f.diff($symbol)
-    |print fprime
   """.stripMargin
 
-  def generateScript(): Unit = {
+
+  private def generateScript(symbol: String): Unit = {
+    val code = stub +
+    s"""
+        |fprime = f.diff($symbol)
+        |print fprime
+      """.stripMargin
+
     val writer = new FileWriter(pathToScript)
     code foreach (writer.write(_))
     writer.close()
   }
 
-  def execute(): String = {
-    generateScript()
-    Process("python", Seq(pathToScript)).!!
+  private def run = {
+    //last character is linebreak
+    Process("python", Seq(pathToScript)).!!.init
   }
+
+  def diff(symbol: String): String = {
+    generateScript(symbol)
+    run
+  }
+
+  def diff(symbol: Symbol): String = diff(symbol.name)
+}
+
+object MathASTSandbox extends App {
+  import SymPyDSL._
+
+  import math._
+  val sigmoid = "1 / (1 + exp(-z))"
+
+  println(sigmoid.diff('z))
 }
