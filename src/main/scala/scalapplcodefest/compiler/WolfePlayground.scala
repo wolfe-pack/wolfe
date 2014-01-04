@@ -1,7 +1,9 @@
 package scalapplcodefest.compiler
 
-import scala.tools.nsc.{ObjectRunner, Global}
-import scala.reflect.io.{Path, AbstractFile, VirtualDirectory}
+import scala.tools.nsc.Global
+import scala.tools.nsc.interpreter.AbstractFileClassLoader
+import scala.tools.nsc.io.VirtualDirectory
+import scala.tools.nsc.ast.TreeDSL
 
 
 /**
@@ -12,7 +14,7 @@ import scala.reflect.io.{Path, AbstractFile, VirtualDirectory}
 
 object WolfePlayground extends App {
   val code = """
-               |object A extends App {
+               |class A extends App {
                |  val x = 1
                |
                |  println(x)
@@ -20,27 +22,83 @@ object WolfePlayground extends App {
              """.stripMargin
 
 
-  val outputDir = AbstractFile.getDirectory(Path("tmp"))
+  val compiler = new StringCompiler(Some(new PlaygroundTransformer), runsAfter = List("typer"))
 
-  val compiler = new StringCompiler(Some(new PlaygroundTransformer), Nil, outputDir, runsAfter = List("typer"))
+  val virtualDir = compiler.outputDir
 
 
   compiler.compileCode(code)
 
-  ObjectRunner.run(List(compiler.outputDir.toURL), "A", "tmp" :: compiler.additionalClassPath ::: compiler.libPath ::: compiler.compilerPath)
+  val classLoader = new AbstractFileClassLoader(new VirtualDirectory("(memory)", None), this.getClass.getClassLoader)
+  val cls = classLoader.loadClass("test.A") // where className is the name of the class/object in the code
+  cls.getConstructor().newInstance().asInstanceOf[() => Any].apply()
 
   class PlaygroundTransformer extends WolfeTransformer {
-    def transformTree[T <: Global#Tree](global: Global, env: WolfeCompilerPlugin2#Environment, tree: T): T = {
-      import global._
-      tree match {
-        case v@ValDef(mods, name, tpt, r) => {
-          println("Before: " + v)
-          val newRHS = treeCopy.Literal(r, Constant(41))
-          val newName = newTermName("newX")
+    def transformTree[T <: Global#Tree](g: Global, env: WolfeCompilerPlugin2#Environment, tree: T): T = {
+      import g._
+      import definitions._
 
-          val newVal = treeCopy.ValDef(v, mods, newName, tpt, newRHS)
+      val dsl = new TreeDSL {
+        val global = g
+      }
+
+      import dsl.CODE._
+
+      tree match {
+        case v@ValDef(mods, name, tpt, r@Literal(value)) => {
+          println("Before: " + v)
+
+          val newType = StringClass.tpe
+
+          val newRHS = treeCopy.Literal(r, Constant("Hello world. Old value = " + value.intValue))
+          newRHS.setType(newType)
+
+          val newName = newTermName("newX ")
+          val newTPT = treeCopy.Ident(tpt, newTypeName("String"))
+          newTPT.setType(newType)
+
+          val oldSymbol = v.symbol
+          val oldOwner = oldSymbol.owner
+
+          val newSymbol = oldSymbol.cloneSymbol(oldOwner)
+          newSymbol.name = newName
+          newSymbol.setTypeSignature(newType)
+          oldOwner.info.decls enter newSymbol
+
+          val newVal = treeCopy.ValDef(v, mods, newName, newTPT, newRHS)
+          newVal.setSymbol(newSymbol)
+
           println("After: " + newVal)
+
           newVal.asInstanceOf[T]
+
+        }
+        case d@DefDef(mods, name, tparams, vparamss, tpt, rhs@Select(qualifier, _)) => {
+          println("Before: " + d)
+          val mySymbol = d.symbol
+          val owner = mySymbol.owner
+
+
+          val newType = StringClass.tpe
+
+          val newTPT = treeCopy.TypeTree(tpt).defineType(newType)
+          newTPT.setType(newType)
+
+          val newRHS = treeCopy.Select(rhs, qualifier, newTermName("newX "))
+          newRHS.setType(newType)
+          newRHS.symbol = owner.tpe.member(newTermName("newX "))
+
+          val newDef = treeCopy.DefDef(d, mods, name, tparams, vparamss, newTPT, newRHS)
+
+          val newSymbol = mySymbol.cloneSymbol(owner)
+          newSymbol.setTypeSignature(newType)
+          owner.info.decls.unlink(mySymbol)
+          owner.info.decls.unlink(newSymbol)
+          newDef.setSymbol(newSymbol)
+
+          println("After: " + newDef)
+
+          newDef.asInstanceOf[T]
         }
         case t => t
       }
