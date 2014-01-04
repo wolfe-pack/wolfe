@@ -26,7 +26,7 @@ class WolfeCompilerPlugin(val global: Global, transformer: WolfeTransformer, val
 
     protected def newTransformer(unit: global.CompilationUnit): global.Transformer = new global.Transformer {
       override def transform(tree: global.Tree) = {
-        transformer.transformTree[global.Tree](global, super.transform(tree))
+        transformer.transformTree[global.Tree](global, null, super.transform(tree))
       }
     }
   }

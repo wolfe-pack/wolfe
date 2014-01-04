@@ -3,6 +3,7 @@ package scalapplcodefest.example
 import scalapplcodefest.compiler.{WolfeTransformer, StringCompiler}
 import scala.language.implicitConversions
 import scala.tools.nsc.Global
+import scala.reflect.internal.Symbols
 
 /**
  * @author Sebastian Riedel
@@ -67,7 +68,7 @@ object MLECompileExample {
       runsAfter = List("typer"),
       transformer = Some(new WolfeTransformer {
 
-        def transformTree[T <: Global#Tree](global: Global, tree: T) = {
+        def transformTree[T <: Global#Tree](global: Global,map:Map[Symbols#Symbol,Global#Tree], tree: T) = {
           import global._
           tree match {
             case t @ PackageDef(_,_) =>
@@ -81,6 +82,8 @@ object MLECompileExample {
               val members = symbol.owner.tpe.members
               val children = symbol.owner.children
               println(members)
+              println(map)
+
             case _ =>
           }
           tree
@@ -91,7 +94,7 @@ object MLECompileExample {
 
   object MLETransformer extends WolfeTransformer {
 
-    def transformTree[T <: Global#Tree](global: Global, tree: T) = {
+    def transformTree[T <: Global#Tree](global: Global,map:Map[Symbols#Symbol,Global#Tree], tree: T) = {
       tree match {
         case global.Ident(name) =>
       }

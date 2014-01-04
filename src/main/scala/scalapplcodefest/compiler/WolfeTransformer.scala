@@ -2,18 +2,20 @@ package scalapplcodefest.compiler
 
 import scala.tools.nsc.Global
 
+import scala.reflect.internal._
+
 /**
  * @author sameer
  */
 trait WolfeTransformer {
-  def transformTree[T <: Global#Tree](global: Global, tree: T): T
+  def transformTree[T <: Global#Tree](global: Global, map:Map[Symbols#Symbol,Global#Tree], tree:T): T
 }
 
 /**
  * Prints the abstract syntax tree
  */
 class DummyTransformer extends WolfeTransformer {
-  override def transformTree[T <: Global#Tree](g2: Global, tree: T) = {
+  override def transformTree[T <: Global#Tree](g2: Global, map:Map[Symbols#Symbol,Global#Tree], tree: T) = {
     println(tree)
     tree.asInstanceOf[T]
   }
