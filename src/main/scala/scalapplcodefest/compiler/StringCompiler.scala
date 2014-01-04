@@ -45,7 +45,7 @@ class StringCompiler(val transformer: Option[WolfeTransformer] = None,
         self =>
         override protected def computeInternalPhases() {
           super.computeInternalPhases
-          for (phase <- new WolfeCompilerPlugin(self, transformer.get, runsAfter).components)
+          for (phase <- new WolfeCompilerPlugin2(self, transformer.get, runsAfter).components)
             phasesSet += phase
         }
       }

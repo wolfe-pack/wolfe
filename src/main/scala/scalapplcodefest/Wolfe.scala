@@ -61,7 +61,7 @@ object Wolfe {
   def simplex[T](domain: Set[T], range: Set[Double] = doubles) =
     for (p <- maps(domain, range); if sum(domain.toSeq) {p(_)} == 1.0 && domain.forall(p(_) >= 0.0)) yield p
 
-  def expect[T](dom: Set[T], stats: T => Vector)(obj: T => Double) = dom.view.map(x => stats(x) * obj(x))
+  def expect[T](dom: Set[T], stats: T => Vector)(obj: T => Double) = sum (dom.toSeq) {x => stats(x) * obj(x)} (VectorNumeric)
 
   @Objective.LogZ
   def logZ[T](dom: Set[T])(model: T => Double) = math.log(dom.view.map(x => math.exp(model(x))).sum)

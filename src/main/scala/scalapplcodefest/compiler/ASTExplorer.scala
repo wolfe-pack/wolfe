@@ -1,6 +1,7 @@
 package scalapplcodefest.compiler
 
 import scala.tools.nsc.Global
+import scala.reflect.internal.Symbols
 
 
 /**
@@ -55,7 +56,7 @@ inlineExceptionHandlers  26  optimization: inline exception handlers
 
     val compiler = new StringCompiler(transformer = Some(new WolfeTransformer {
 
-      def transformTree[T <: Global#Tree](global: Global, tree: T) = {
+      def transformTree[T <: Global#Tree](global: Global, map:Map[Symbols#Symbol,Global#Tree], tree: T) = {
         // ignore the package, the object and the first element of the object, which is always the constructor
         tree match {
           case p: global.PackageDef => {
