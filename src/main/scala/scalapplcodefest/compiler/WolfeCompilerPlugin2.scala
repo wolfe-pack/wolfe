@@ -4,7 +4,7 @@ import scala.tools.nsc.Global
 import scala.tools.nsc.plugins.{PluginComponent, Plugin}
 import scala.tools.nsc.transform.Transform
 import scala.collection.mutable
-import scala.reflect.internal.Phase
+import scala.reflect.internal.{Symbols, Phase}
 
 /**
  * @author sameer
@@ -18,7 +18,11 @@ class WolfeCompilerPlugin2(val global: Global, transformer: WolfeTransformer, va
   val description = "compiles and transforms wolfe code"
   val components = List[PluginComponent](Collector, Transformer)
 
-  private val implementations = new mutable.HashMap[Symbol,Tree]
+  class Environment {
+    val implementations = new mutable.HashMap[Symbols#Symbol,Tree]
+  }
+
+  private val env = new Environment
 
   private object Transformer extends PluginComponent with Transform {
     val global: WolfeCompilerPlugin2.this.global.type = WolfeCompilerPlugin2.this.global
@@ -27,7 +31,7 @@ class WolfeCompilerPlugin2(val global: Global, transformer: WolfeTransformer, va
 
     protected def newTransformer(unit: global.CompilationUnit): global.Transformer = new global.Transformer {
       override def transform(tree: global.Tree) = {
-        transformer.transformTree[global.Tree](global, implementations.toMap, super.transform(tree))
+        transformer.transformTree[global.Tree](global, env, super.transform(tree))
       }
     }
   }
@@ -43,9 +47,9 @@ class WolfeCompilerPlugin2(val global: Global, transformer: WolfeTransformer, va
         import global._
         unit.body.foreach {
           case d@DefDef(_, _, _, _, _, rhs) =>
-            implementations(d.symbol) = rhs
+            env.implementations(d.symbol) = rhs
           case d@ValDef(_, _, _, rhs) =>
-            implementations(d.symbol) = rhs
+            env.implementations(d.symbol) = rhs
           case _ =>
         }
       }
@@ -58,5 +62,5 @@ class WolfeCompilerPlugin2(val global: Global, transformer: WolfeTransformer, va
 
   }
 
-
 }
+
