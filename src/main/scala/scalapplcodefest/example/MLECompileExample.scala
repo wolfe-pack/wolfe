@@ -70,23 +70,45 @@ object MLECompileExample {
       transformer = Some(new WolfeTransformer {
 
         def transformTree[T <: Global#Tree](global: Global,env:WolfeCompilerPlugin2#Environment, tree: T) = {
+          val pat = new Extractors(global)
           import global._
           tree match {
             case t @ PackageDef(_,_) =>
-              global.treeBrowser.browse(t.asInstanceOf[global.Tree])
+              //global.treeBrowser.browse(t.asInstanceOf[global.Tree])
               println(env.implementations)
             case i @ Ident(name) =>
 //              println(i)
-            case valdef @ ValDef(_,_,_,app@Apply(f,_)) =>
+            case valdef @ global.ValDef(_,_,_,app@Apply(f,_)) =>
 //              println(f.getClass)
-            case app @ Apply(Apply(TypeApply(s@Select(_,name),_),_),a) =>
+            case pat.ApplyOperator("scalapplcodefest.Wolfe.Operator.Argmin",op,dom,obj) =>
+              println("Yeah!")
+              println(dom)
+              println(obj)
+              //now analyze the objective
+              //todo: remove need for type cast
+              obj.asInstanceOf[global.Tree] match {
+                case global.Block(_,Function(valDef,body@Apply(Apply(fun,arg1),arg2))) =>
+                  println(valDef)
+                  println(body)
+                  println(fun)
+                  println(arg1)
+                  println(arg2)
+                  val sym = fun.symbol
+                  val imps = env.implementations
+                  val hack = imps.find(_._1.rawname == sym.rawname).get._1
+                  println(env.implementations.get(fun.symbol))
+                case _ => println("No idea how to transform " + obj)
+              }
+            case app @ Apply(Apply(TypeApply(s@Select(_,name),_),dom),obj) =>
               println(name)
               println(s.symbol)
               println(s.symbol.annotations)
               println(env.implementations.get(s.symbol))
               for (annotation <- s.symbol.annotations) {
                 if (annotation.atp.toString() == "scalapplcodefest.Wolfe.Operator.Argmin") {
-                  println("Translating...")
+                  println("Translating Argmin...")
+                  println(dom)
+                  println(obj)
                 }
                 //if (annotation.symbol.name)
               }
@@ -111,6 +133,22 @@ object MLECompileExample {
         }
       }))
     compiler.compileCode(source)
+  }
+
+
+
+  class Extractors(val global:Global) {
+
+    object ApplyOperator {
+      import global._
+      def unapply(tree:global.Tree):Option[(String,global.Tree,global.Tree,global.Tree)] = tree match {
+        case Apply(Apply(TypeApply(s@Select(_,name),_),List(dom)),List(obj))
+          if s.symbol.annotations.exists(_.atp.toString().startsWith("scalapplcodefest.Wolfe.Operator")) =>
+          val annotation = s.symbol.annotations.find(_.atp.toString().startsWith("scalapplcodefest.Wolfe.Operator")).get
+          Some(annotation.atp.toString(),s,dom,obj)
+        case _=> None
+      }
+    }
   }
 
   object MLETransformer extends WolfeTransformer {
