@@ -85,7 +85,10 @@ object TheWolferine {
         typed(atPos(tree.pos)(
           Apply(Select(Literal(Constant(2)), method), List(arg))
         )).asInstanceOf[T]
-      case _ => tree
+      case _ => {
+        println(s"Wolferine does not know yet how to differentiate: $tree")
+        tree
+      }
     }
   }
 }
@@ -191,7 +194,7 @@ object MathASTSandbox extends App {
     """
       |  @Objective.Differentiable(differentiator = Some(Wolferine))
       |  @Output.LaTeX
-      |  def simple(z: Double) = z * z
+      |  def simple(z: Double) = z * z + z
     """.stripMargin
 
   val additionalClassPath = List(dirPathOfClass(getClass.getName))
