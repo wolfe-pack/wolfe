@@ -2,9 +2,9 @@ package scalapplcodefest.compiler
 
 import scala.tools.nsc.Global
 import java.io.FileWriter
-import scalapplcodefest.Wolfe.{Objective, Output}
+import scalapplcodefest.Wolfe.Output
 import scala.annotation.StaticAnnotation
-import scalapplcodefest.Wolfe.Objective.Differentiable
+import scalapplcodefest.Wolfe.Objective.{Wolferine, Differentiable}
 
 /**
  * User: rockt
@@ -18,7 +18,7 @@ import scalapplcodefest.Wolfe.Objective.Differentiable
 class DerivativeTransformer extends WolfeTransformer {
   import SymPyDSL._
 
-  private def checkAnnotation[T <: Global#Tree](fun: Global#DefDef, annotation: StaticAnnotation): Boolean =
+  private def isDifferentiable[T <: Global#Tree](fun: Global#DefDef, annotation: StaticAnnotation): Boolean =
     fun.symbol.annotations.map(_.toString).exists(s => s.startsWith(annotation.getClass.getName.replace('$','.')))
 
   def transformTree[T <: Global#Tree](global: Global, env: WolfeCompilerPlugin2#Environment, tree: T) = {
@@ -26,7 +26,7 @@ class DerivativeTransformer extends WolfeTransformer {
 
     tree match {
       //we are interested in function definitions with annotations
-      case fun @ DefDef(_, _, _, _, _, rhs) if checkAnnotation(fun, new Differentiable) =>
+      case fun @ DefDef(_, _, _, _, _, rhs) if isDifferentiable(fun, new Differentiable) =>
         val python = pythify(rhs.toString())
         println(
           s"""
@@ -42,6 +42,7 @@ class DerivativeTransformer extends WolfeTransformer {
     tree
   }
 
+  //rockt: this could be generalized (e.g. for toLaTeX, toPython etc.)
   private def scalaToPython[T <: Global#Tree](global: Global, env: WolfeCompilerPlugin2#Environment, tree: T): String = {
     import global._
     def toPython(tree: T, python: String): String = tree match {
@@ -144,22 +145,25 @@ object MathASTSandbox extends App {
 
   //BEGIN SCALA CODE
   import math._
+  import scalapplcodefest.Wolfe.Output
   import scalapplcodefest.Wolfe.Objective
+  import scalapplcodefest.Wolfe.Objective.Wolferine
 
-  @Objective.Differentiable
+  @Objective.Differentiable(differentiator = Some(Wolferine))
   @Output.LaTeX
   def sigmoid(z: Double) = 1 / (1 + exp(-z))
   //END
 
   val sigmoidCode =
     """
-      |import math._
-      |import scalapplcodefest.Wolfe.Objective
-      |import scalapplcodefest.Wolfe.Output
+      |  import math._
+      |  import scalapplcodefest.Wolfe.Output
+      |  import scalapplcodefest.Wolfe.Objective
+      |  import scalapplcodefest.Wolfe.Objective.Wolferine
       |
-      |@Objective.Differentiable
-      |@Output.LaTeX
-      |def sigmoid(z: Double) = 1 / (1 + exp(-z))
+      |  @Objective.Differentiable(differentiator = Some(Wolferine))
+      |  @Output.LaTeX
+      |  def sigmoid(z: Double) = 1 / (1 + exp(-z))
     """.stripMargin
 
   private def dirPathOfClass(className: String) = try {
