@@ -16,6 +16,7 @@ object MarkovLogicExample extends App {
   type Person = Symbol
 
   case class Data(smokes: Person => Boolean, cancer: Person => Boolean, friends: Map[(Person, Person), Boolean])
+  def hidden2 = c(preds(persons), preds(persons), preds(c(persons, persons))) map Data
 
   val persons = Set('Anna, 'Bob)
 
@@ -37,6 +38,7 @@ object MarkovLogicExample extends App {
                     cancer <- maps(persons, bools);
                     friends <- maps(c(persons, persons), bools))
   yield Data(smokes, cancer, friends)
+
 
   def observed(h: Data) = h.smokes('Anna) && h.cancer('Anna) && (h.friends only (('Anna, 'Bob)))
 
