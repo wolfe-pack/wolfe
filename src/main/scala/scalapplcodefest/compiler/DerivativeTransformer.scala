@@ -2,9 +2,8 @@ package scalapplcodefest.compiler
 
 import scala.tools.nsc.Global
 import java.io.FileWriter
-import scalapplcodefest.Wolfe.Output
-import scala.annotation.StaticAnnotation
-import scalapplcodefest.Wolfe.Objective.{Wolferine, Differentiable}
+import scalapplcodefest.Wolfe.Objective._
+import scala.Some
 
 /**
  * User: rockt
@@ -12,37 +11,49 @@ import scalapplcodefest.Wolfe.Objective.{Wolferine, Differentiable}
  * Time: 10:27 AM
  */
 
+//example code: http://lampsvn.epfl.ch/svn-repos/scala/scala/branches/scala-unique/src/unique/plugin/SwapTransform.scala
+
 /**
  * Searches for @Objective.Differentiable annotation and generates an AST for gradient calculation
  */
-class DerivativeTransformer extends WolfeTransformer {
+class DerivativeTransformer extends WolfeTransformer {                   
   import SymPyDSL._
-
-  private def isDifferentiable[T <: Global#Tree](fun: Global#DefDef, annotation: StaticAnnotation): Boolean =
-    fun.symbol.annotations.map(_.toString).exists(s => s.startsWith(annotation.getClass.getName.replace('$','.')))
+  
+  def checkDifferentiatorType(tpe: String, diff: Differentiator): Boolean =
+    tpe.startsWith("Some["+ diff.getClass.getName.replace('$','.'))
+  
+  val Diff = new Differentiable
 
   def transformTree[T <: Global#Tree](global: Global, env: WolfeCompilerPlugin2#Environment, tree: T) = {
     import global._
 
     tree match {
       //we are interested in function definitions with annotations
-      case fun @ DefDef(_, _, _, _, _, rhs) if isDifferentiable(fun, new Differentiable) =>
-        val python = pythify(rhs.toString())
-        println(
-          s"""
-            |===== Found differentiable function: ${fun.name} =====
-            | scala objective:     $rhs
-            | python objective:    $python
-            | python differential: ${python.differential()}
-          """.stripMargin)
-        //TODO: replace rhs with scala function that represents the differential
-      case _ => //
-    }
+      case fun @ DefDef(a, b, c, d, e, rhs) if existsAnnotation(fun, Diff) =>
+        val annotationInfo = fun.symbol.annotations.find(a => sameAnnotation(a, Diff)).get
 
-    tree
+        if (checkDifferentiatorType(annotationInfo.args(1).tpe.toString(), Wolferine)) {
+          treeCopy.DefDef(tree.asInstanceOf[global.Tree], a, b, c, d, e,
+            TheWolferine(global, env, rhs)
+          ).asInstanceOf[T]
+        } else if (checkDifferentiatorType(annotationInfo.args(1).tpe.toString(), SymPy)) {
+          val python = pythify(rhs.toString())
+          println(
+            s"""
+              |===== Differentiating '${fun.name}' using SymPy =====
+              | scala objective:     $rhs
+              | python objective:    $python
+              | python differential: ${python.differential()}
+          """.stripMargin)
+          tree //TODO: replace rhs with scala function that represents the differential
+        } else {
+          tree //nothing to do
+        }
+      case _ => tree
+    }
   }
 
-  //rockt: this could be generalized (e.g. for toLaTeX, toPython etc.)
+  //rockt: this should be generalized (e.g. for toLaTeX, toPython etc.)
   private def scalaToPython[T <: Global#Tree](global: Global, env: WolfeCompilerPlugin2#Environment, tree: T): String = {
     import global._
     def toPython(tree: T, python: String): String = tree match {
@@ -60,6 +71,26 @@ class DerivativeTransformer extends WolfeTransformer {
     .replace("scala.math.`package`.", "")
     .replace(".unary_-", "*(-1)")
     .replace(".", "")
+}
+
+object TheWolferine {
+  def apply[T <: Global#Tree](global: Global, env: WolfeCompilerPlugin2#Environment, tree: T): T = {
+    import global._
+    import definitions._
+    import typer.{typed}
+
+    tree match {
+      case Apply(Select(arg @ Ident(a), method), List(Ident(b)))
+        if method.decoded == "*" && a.decoded == b.decoded =>
+        typed(atPos(tree.pos)(
+          Apply(Select(Literal(Constant(2)), method), List(arg))
+        )).asInstanceOf[T]
+      case _ => {
+        println(s"Wolferine does not know yet how to differentiate: $tree")
+        tree
+      }
+    }
+  }
 }
 
 object DerivativeTransformerPlayground extends App {
@@ -143,38 +174,31 @@ object MathASTSandbox extends App {
   //vectors: http://docs.sympy.org/dev/modules/physics/mechanics/vectors.html
   //tensors: http://docs.sympy.org/0.7.0/modules/tensor.html
 
-  //BEGIN SCALA CODE
-  import math._
-  import scalapplcodefest.Wolfe.Output
-  import scalapplcodefest.Wolfe.Objective
-  import scalapplcodefest.Wolfe.Objective.Wolferine
-
-  @Objective.Differentiable(differentiator = Some(Wolferine))
-  @Output.LaTeX
-  def sigmoid(z: Double) = 1 / (1 + exp(-z))
-  //END
-
-  val sigmoidCode =
+  val Imports =
     """
       |  import math._
       |  import scalapplcodefest.Wolfe.Output
       |  import scalapplcodefest.Wolfe.Objective
       |  import scalapplcodefest.Wolfe.Objective.Wolferine
-      |
-      |  @Objective.Differentiable(differentiator = Some(Wolferine))
+      |  import scalapplcodefest.Wolfe.Objective.SymPy
+    """.stripMargin
+  
+  val sigmoidCode = Imports +
+    """
+      |  @Objective.Differentiable(differentiator = Some(SymPy))
       |  @Output.LaTeX
       |  def sigmoid(z: Double) = 1 / (1 + exp(-z))
     """.stripMargin
 
-  private def dirPathOfClass(className: String) = try {
-    val resource = className.split('.').mkString("/", "/", ".class")
-    val path = getClass.getResource(resource).getPath
-    val root = path.dropRight(resource.length)
-    root
-  }
+  val simpleCode = Imports +
+    """
+      |  @Objective.Differentiable(differentiator = Some(Wolferine))
+      |  @Output.LaTeX
+      |  def simple(z: Double) = z * z + z
+    """.stripMargin
 
   val additionalClassPath = List(dirPathOfClass(getClass.getName))
 
-  ASTExplorer.exploreAST(sigmoidCode, List("parser"), showBrowser = true,
+  ASTExplorer.exploreAST(simpleCode, List("typer"), showBrowser = true,
     additionalClassPath = additionalClassPath, transformers = List(new DerivativeTransformer))
 }
