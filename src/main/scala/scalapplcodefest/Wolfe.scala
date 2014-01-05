@@ -188,6 +188,12 @@ object Wolfe {
   def c[A, B, C](set1: Set[A], set2: Set[B], set3:Set[C]) = for (i <- set1; j <- set2; k <- set3) yield (i, j, k)
 
 
+  def all[A,B](mapper:A=>B)(implicit dom:Set[A]):Set[B] = dom map mapper
+  implicit def Pred[A](implicit dom:Set[A]):Set[Pred[A]] = preds(dom)
+  implicit def Cross2[A1,A2](implicit dom1:Set[A1],dom2:Set[A2]):Set[(A1,A2)] = c(dom1,dom2)
+  implicit def Cross3[A1,A2,A3](implicit dom1:Set[A1],dom2:Set[A2],dom3:Set[A3]):Set[(A1,A2,A3)] = c(dom1,dom2,dom3)
+
+
   import scala.annotation._
 
 
