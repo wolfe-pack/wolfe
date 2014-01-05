@@ -80,7 +80,7 @@ object MLECompileExample {
 //              global.treeBrowser.browse(t.asInstanceOf[global.Tree])
 //              println(env.implementations)
               tree
-            case pat.ApplyOperator("scalapplcodefest.Wolfe.Operator.Argmin", argmin, dom, obj) =>
+            case pat.ApplyOperator("scalapplcodefest.Wolfe.Operator.Argmin", argmin, dom, obj,List(argminDomainType)) =>
               println("Yeah!")
               println(dom)
               println(obj)
@@ -113,9 +113,17 @@ object MLECompileExample {
                               println("Got the feature function: " + feat)
                               //let's build the new term which is a sum
 
+                              import global.rootMirror._
 
                               val sumData = data
                               val sumFunction = feat
+                              val wolfeSym = getModuleByName(newTermName("scalapplcodefest.Wolfe"))
+                              val sumSym = global.definitions.getMember(wolfeSym,newTermName("sum"))
+                              //val sumSelect = typed(Select(Ident(wolfeSym)))
+
+                              //val sumForVector = typer.typed(TypeApply(Select()))
+
+
                               val scalapplfestTerm = newTermName("scalapplcodefest")
                               //todo: ugly hack
                               val vectorType = vectorResult.tpe
@@ -126,6 +134,7 @@ object MLECompileExample {
                               //val test2 = global.rootMirror.findMemberFromRoot("")
                               //global.rootMirror.sta
                               println(test)
+
 
                               val ident = Ident(scalapplfestTerm)
                               //todo: ugly hack
@@ -150,6 +159,9 @@ object MLECompileExample {
                                 sumOp.asInstanceOf[pat.global.Tree],
                                 sumData.asInstanceOf[pat.global.Tree],
                                 sumFunction.asInstanceOf[pat.global.Tree], sumNum.asInstanceOf[pat.global.Tree])
+
+
+                              val typedSum = global.typer.typed(newSum.asInstanceOf[global.Tree])
 
                               println(newSum)
                               printer.print(newSum)
@@ -187,15 +199,15 @@ object MLECompileExample {
 
       import global._
 
-      def unapply(tree: Any): Option[(String, global.Tree, global.Tree, global.Tree)] = tree match {
-        case Apply(Apply(TypeApply(s@Select(_, name), _), List(dom)), List(obj))
+      def unapply(tree: Any): Option[(String, global.Tree, global.Tree, global.Tree,List[global.Tree])] = tree match {
+        case Apply(Apply(TypeApply(s@Select(_, name), types), List(dom)), List(obj))
           if s.symbol.annotations.exists(_.atp.toString().startsWith("scalapplcodefest.Wolfe.Operator")) =>
           val annotation = s.symbol.annotations.find(_.atp.toString().startsWith("scalapplcodefest.Wolfe.Operator")).get
-          Some(annotation.atp.toString(), s, dom, obj)
-        case Apply(Apply(Apply(TypeApply(s@Select(_, name), _), List(dom)), List(obj)), List(num))
+          Some(annotation.atp.toString(), s, dom, obj,types)
+        case Apply(Apply(Apply(TypeApply(s@Select(_, name), types), List(dom)), List(obj)), List(num))
           if s.symbol.annotations.exists(_.atp.toString().startsWith("scalapplcodefest.Wolfe.Operator")) =>
           val annotation = s.symbol.annotations.find(_.atp.toString().startsWith("scalapplcodefest.Wolfe.Operator")).get
-          Some(annotation.atp.toString(), s, dom, obj)
+          Some(annotation.atp.toString(), s, dom, obj,types)
         case _ => None
       }
     }

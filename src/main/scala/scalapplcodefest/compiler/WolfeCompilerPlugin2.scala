@@ -30,7 +30,9 @@ class WolfeCompilerPlugin2(val global: Global, transformer: WolfeTransformer, va
     val phaseName = WolfeCompilerPlugin2.this.name
 
     protected def newTransformer(unit: global.CompilationUnit): global.Transformer = new global.Transformer {
+
       override def transform(tree: global.Tree) = {
+
         transformer.transformTree[global.Tree](global, env, super.transform(tree))
       }
     }
