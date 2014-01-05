@@ -28,18 +28,34 @@ class DerivativeTransformer extends WolfeTransformer {
       //we are interested in function definitions with annotations
       case fun @ DefDef(_, _, _, _, _, rhs) if checkAnnotation(fun, new Differentiable) =>
         val python = pythify(rhs.toString())
-        println("Found differentiable objective!")
-        println(s"scala objective:      $rhs")
-        println(s"python objective:     $python")
-        println(s"python differential:  ${python.differentiate()}")
-        //TODO: replace rhs with scala function that calculates the differential
+        println(
+          s"""
+            |===== Found differentiable function: ${fun.name} =====
+            | scala objective:     $rhs
+            | python objective:    $python
+            | python differential: ${python.differential()}
+          """.stripMargin)
+        //TODO: replace rhs with scala function that represents the differential
       case _ => //
     }
 
     tree
   }
 
-  def pythify(code: String): String = code
+  private def scalaToPython[T <: Global#Tree](global: Global, env: WolfeCompilerPlugin2#Environment, tree: T): String = {
+    import global._
+    def toPython(tree: T, python: String): String = tree match {
+      case Apply(fun, args) => "" //TODO
+      case _ => ""
+    }
+    toPython(tree, "")
+  }
+
+  /**
+   * Shallow conversion from Scala to Python
+   */
+  @deprecated
+  private def pythify(code: String): String = code
     .replace("scala.math.`package`.", "")
     .replace(".unary_-", "*(-1)")
     .replace(".", "")
@@ -53,13 +69,13 @@ object DerivativeTransformerPlayground extends App {
   val f = "x**3 + 4 * x**2 + 1 + 3 * y**4 * x"
 
   println(s"f:    ${f.function}")
-  println(s"f dx: ${f.diff('x)}")
-  println(s"f dy: ${f.diff('y)}")
+  println(s"f dx: ${f.differential('x)}")
+  println(s"f dy: ${f.differential('y)}")
   println()
 
   val g = "1 / (1 + exp(z))"
   println(s"g:    ${g.function}")
-  println(s"g dz: ${g.differentiate()}")
+  println(s"g dz: ${g.differential()}")
   //build AST
 
   //TODO
@@ -95,9 +111,9 @@ case class SymPyDerivator(function: String) {
   private def generateScript(symbol: String): Unit = {
     val code = stub +
     s"""
-        |fprime = f.diff($symbol)
-        |print fprime
-      """.stripMargin
+      |fprime = f.diff($symbol)
+      |print fprime
+    """.stripMargin
 
     val writer = new FileWriter(pathToScript)
     code foreach (writer.write(_))
@@ -109,16 +125,16 @@ case class SymPyDerivator(function: String) {
     Process("python", Seq(pathToScript)).!!.init
   }
 
-  def diff(symbol: String): String = {
+  def differential(symbol: String): String = {
     generateScript(symbol)
     run
   }
 
-  def diff(symbol: Symbol): String = diff(symbol.name)
+  def differential(symbol: Symbol): String = differential(symbol.name)
 
-  def differentiate(): String = {
+  def differential(): String = {
     require(symbols.size == 1)
-    diff(symbols.head)
+    differential(symbols.head)
   }
 }
 
@@ -132,10 +148,10 @@ object MathASTSandbox extends App {
 
   @Objective.Differentiable
   @Output.LaTeX
-  def sigmoidScala(z: Double) = 1 / (1 + exp(-z))
+  def sigmoid(z: Double) = 1 / (1 + exp(-z))
   //END
 
-  val sigmoidScalaCode =
+  val sigmoidCode =
     """
       |import math._
       |import scalapplcodefest.Wolfe.Objective
@@ -143,7 +159,7 @@ object MathASTSandbox extends App {
       |
       |@Objective.Differentiable
       |@Output.LaTeX
-      |def sigmoidScala(z: Double) = 1 / (1 + exp(-z))
+      |def sigmoid(z: Double) = 1 / (1 + exp(-z))
     """.stripMargin
 
   private def dirPathOfClass(className: String) = try {
@@ -155,6 +171,6 @@ object MathASTSandbox extends App {
 
   val additionalClassPath = List(dirPathOfClass(getClass.getName))
 
-  ASTExplorer.exploreAST(sigmoidScalaCode, List("parser"), showBrowser = true,
+  ASTExplorer.exploreAST(sigmoidCode, List("parser"), showBrowser = true,
     additionalClassPath = additionalClassPath, transformers = List(new DerivativeTransformer))
 }
