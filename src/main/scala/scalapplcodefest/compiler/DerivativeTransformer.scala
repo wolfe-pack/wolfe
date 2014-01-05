@@ -2,6 +2,9 @@ package scalapplcodefest.compiler
 
 import scala.tools.nsc.Global
 import java.io.FileWriter
+import scalapplcodefest.Wolfe.{Objective, Output}
+import scala.annotation.StaticAnnotation
+import scalapplcodefest.Wolfe.Objective.Differentiable
 
 /**
  * User: rockt
@@ -13,9 +16,33 @@ import java.io.FileWriter
  * Searches for @Objective.Differentiable annotation and generates an AST for gradient calculation
  */
 class DerivativeTransformer extends WolfeTransformer {
-  def transformTree[T <: Global#Tree](global: Global, env: WolfeCompilerPlugin2#Environment, tree: T) = tree match {
-    case _ => tree //TODO
+  import SymPyDSL._
+
+  private def checkAnnotation[T <: Global#Tree](fun: Global#DefDef, annotation: StaticAnnotation): Boolean =
+    fun.symbol.annotations.map(_.toString).exists(s => s.startsWith(annotation.getClass.getName.replace('$','.')))
+
+  def transformTree[T <: Global#Tree](global: Global, env: WolfeCompilerPlugin2#Environment, tree: T) = {
+    import global._
+
+    tree match {
+      //we are interested in function definitions with annotations
+      case fun @ DefDef(_, _, _, _, _, rhs) if checkAnnotation(fun, new Differentiable) =>
+        val python = pythify(rhs.toString())
+        println("Found differentiable objective!")
+        println(s"scala objective:      $rhs")
+        println(s"python objective:     $python")
+        println(s"python differential:  ${python.differentiate()}")
+        //TODO: replace rhs with scala function that calculates the differential
+      case _ => //
+    }
+
+    tree
   }
+
+  def pythify(code: String): String = code
+    .replace("scala.math.`package`.", "")
+    .replace(".unary_-", "*(-1)")
+    .replace(".", "")
 }
 
 object DerivativeTransformerPlayground extends App {
@@ -32,7 +59,7 @@ object DerivativeTransformerPlayground extends App {
 
   val g = "1 / (1 + exp(z))"
   println(s"g:    ${g.function}")
-  println(s"g dz: ${g.diff('z)}")
+  println(s"g dz: ${g.differentiate()}")
   //build AST
 
   //TODO
@@ -88,14 +115,14 @@ case class SymPyDerivator(function: String) {
   }
 
   def diff(symbol: Symbol): String = diff(symbol.name)
+
+  def differentiate(): String = {
+    require(symbols.size == 1)
+    diff(symbols.head)
+  }
 }
 
 object MathASTSandbox extends App {
-  import SymPyDSL._
-
-  val sigmoidPython = "1 / (1 + exp(-z))"
-  println(sigmoidPython.diff('z))
-
   //vectors: http://docs.sympy.org/dev/modules/physics/mechanics/vectors.html
   //tensors: http://docs.sympy.org/0.7.0/modules/tensor.html
 
@@ -104,6 +131,7 @@ object MathASTSandbox extends App {
   import scalapplcodefest.Wolfe.Objective
 
   @Objective.Differentiable
+  @Output.LaTeX
   def sigmoidScala(z: Double) = 1 / (1 + exp(-z))
   //END
 
@@ -111,8 +139,10 @@ object MathASTSandbox extends App {
     """
       |import math._
       |import scalapplcodefest.Wolfe.Objective
+      |import scalapplcodefest.Wolfe.Output
       |
       |@Objective.Differentiable
+      |@Output.LaTeX
       |def sigmoidScala(z: Double) = 1 / (1 + exp(-z))
     """.stripMargin
 

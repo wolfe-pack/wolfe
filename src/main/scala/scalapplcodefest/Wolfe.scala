@@ -60,6 +60,12 @@ object Wolfe {
     dom.minBy(obj)
   }
 
+  /**
+   * Body will get replaced by Frankenwolfe with its LaTeX representation
+   */
+  @Output.LaTeX
+  def toLaTeX(body: () => Unit) = """\LaTeX"""
+
 
   class All[T] extends Set[T] {
     def +(elem: T) = this
@@ -226,6 +232,10 @@ object Wolfe {
     class Categorial extends StaticAnnotation
   }
 
+  object Output {
+    class LaTeX extends StaticAnnotation
+    class SymPy extends StaticAnnotation
+  }
 
 }
 
