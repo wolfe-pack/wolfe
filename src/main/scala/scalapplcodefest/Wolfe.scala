@@ -127,6 +127,8 @@ object Wolfe {
     }
   }
 
+  type Pred[A] = Map[A,Boolean]
+
   implicit def unwrap2[A1, A2, B](f: (A1, A2) => B): ((A1, A2)) => B = p => f(p._1, p._2)
   implicit def unwrap3[A1, A2, A3, B](f: (A1, A2, A3) => B): ((A1, A2, A3)) => B = p => f(p._1, p._2,p._3)
 

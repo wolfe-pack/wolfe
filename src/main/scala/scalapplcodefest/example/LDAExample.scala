@@ -34,8 +34,6 @@ object LDAExample {
 
   val test = c(bools, bools) map Test
 
-  implicit def unwrap2[A1, A2, B](f: (A1, A2) => B): ((A1, A2)) => B = p => f(p._1, p._2)
-
   def story(stats: Double*) = sum(stats)(identity)
 
   def allIn[T](elems: Seq[T])(stats: T => Double) = sum(elems)(stats)
@@ -58,10 +56,6 @@ object LDAExample {
 
   case class Multinomial[T](prior: T => Double) extends Distribution[T] {
     def score(value: T) = log(prior(value))
-  }
-
-  case class Categorical[T](id: Any, condition: Any)(implicit w: Vector) extends Distribution[T] {
-    def score(value: T) = w dot ft(id ->(value, condition), 1.0)
   }
 
 
