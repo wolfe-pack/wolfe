@@ -20,12 +20,6 @@ class DerivativeTransformer extends WolfeTransformer {
   
   val Diff = new Differentiable
 
-  private def sameAnnotation[T <: Global#Tree](a1: Global#AnnotationInfo, a2: StaticAnnotation): Boolean =
-    a1.toString.startsWith(a2.getClass.getName.replace('$','.'))  
-  
-  private def existsAnnotation[T <: Global#Tree](fun: Global#DefDef, annotation: StaticAnnotation): Boolean =
-    fun.symbol.annotations.exists(a => sameAnnotation(a, annotation))
-
   def transformTree[T <: Global#Tree](global: Global, env: WolfeCompilerPlugin2#Environment, tree: T) = {
     import global._
 
@@ -172,13 +166,6 @@ object MathASTSandbox extends App {
       |  @Output.LaTeX
       |  def sigmoid(z: Double) = 1 / (1 + exp(-z))
     """.stripMargin
-
-  private def dirPathOfClass(className: String) = try {
-    val resource = className.split('.').mkString("/", "/", ".class")
-    val path = getClass.getResource(resource).getPath
-    val root = path.dropRight(resource.length)
-    root
-  }
 
   val additionalClassPath = List(dirPathOfClass(getClass.getName))
 
