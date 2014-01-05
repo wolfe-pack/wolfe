@@ -2,9 +2,8 @@ package scalapplcodefest.compiler
 
 import scala.tools.nsc.Global
 import java.io.FileWriter
-import scalapplcodefest.Wolfe.Output
-import scala.annotation.StaticAnnotation
-import scalapplcodefest.Wolfe.Objective.{Wolferine, Differentiable}
+import scalapplcodefest.Wolfe.Objective._
+import scala.Some
 
 /**
  * User: rockt
@@ -12,11 +11,16 @@ import scalapplcodefest.Wolfe.Objective.{Wolferine, Differentiable}
  * Time: 10:27 AM
  */
 
+//example code: http://lampsvn.epfl.ch/svn-repos/scala/scala/branches/scala-unique/src/unique/plugin/SwapTransform.scala
+
 /**
  * Searches for @Objective.Differentiable annotation and generates an AST for gradient calculation
  */
 class DerivativeTransformer extends WolfeTransformer {                   
   import SymPyDSL._
+  
+  def checkDifferentiatorType(tpe: String, diff: Differentiator): Boolean =
+    tpe.startsWith("Some["+ diff.getClass.getName.replace('$','.'))
   
   val Diff = new Differentiable
 
@@ -26,16 +30,21 @@ class DerivativeTransformer extends WolfeTransformer {
     tree match {
       //we are interested in function definitions with annotations
       case fun @ DefDef(_, _, _, _, _, rhs) if existsAnnotation(fun, Diff) =>
-        val annotation = fun.symbol.annotations.find(a => sameAnnotation(a, Diff)).get
-        
-        val python = pythify(rhs.toString())
-        println(
-          s"""
-            |===== Found differentiable function: ${fun.name} =====
-            | scala objective:     $rhs
-            | python objective:    $python
-            | python differential: ${python.differential()}
+        val annotationInfo = fun.symbol.annotations.find(a => sameAnnotation(a, Diff)).get
+
+        if (checkDifferentiatorType(annotationInfo.args(1).tpe.toString(), Wolferine)) {
+          println("Wolferine currently doesn't do anything")
+        } else if (checkDifferentiatorType(annotationInfo.args(1).tpe.toString(), SymPy)) {
+          val python = pythify(rhs.toString())
+          println(
+            s"""
+              |===== Differentiating ${fun.name} using NumPy =====
+              | scala objective:     $rhs
+              | python objective:    $python
+              | python differential: ${python.differential()}
           """.stripMargin)
+        } else {} //nothing to do
+
         //TODO: replace rhs with scala function that represents the differential
       case _ => //
     }
@@ -149,6 +158,7 @@ object MathASTSandbox extends App {
   import scalapplcodefest.Wolfe.Output
   import scalapplcodefest.Wolfe.Objective
   import scalapplcodefest.Wolfe.Objective.Wolferine
+  import scalapplcodefest.Wolfe.Objective.SymPy
 
   @Objective.Differentiable(differentiator = Some(Wolferine))
   @Output.LaTeX
@@ -161,14 +171,15 @@ object MathASTSandbox extends App {
       |  import scalapplcodefest.Wolfe.Output
       |  import scalapplcodefest.Wolfe.Objective
       |  import scalapplcodefest.Wolfe.Objective.Wolferine
+      |  import scalapplcodefest.Wolfe.Objective.SymPy
       |
-      |  @Objective.Differentiable(differentiator = Some(Wolferine))
+      |  @Objective.Differentiable(differentiator = Some(SymPy))
       |  @Output.LaTeX
       |  def sigmoid(z: Double) = 1 / (1 + exp(-z))
     """.stripMargin
 
   val additionalClassPath = List(dirPathOfClass(getClass.getName))
 
-  ASTExplorer.exploreAST(sigmoidCode, List("parser"), showBrowser = true,
+  ASTExplorer.exploreAST(sigmoidCode, List("typer"), showBrowser = false,
     additionalClassPath = additionalClassPath, transformers = List(new DerivativeTransformer))
 }
