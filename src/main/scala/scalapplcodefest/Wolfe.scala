@@ -18,6 +18,8 @@ object Wolfe {
     recurse(dom.toList, range.toList).toSet
   }
 
+  def preds[A](dom:Set[A]) = maps(dom,bools)
+
   def map[A, B](default: B, vals: (A, B)*): Map[A, B] = Map(vals: _*).withDefaultValue(default)
   def map[A, B](keys: Set[A], default: B, vals: (A, B)*): Map[A, B] = (keys -- vals.map(_._1)).map(_ -> default).toMap ++ Map(vals: _*)
 
@@ -125,6 +127,10 @@ object Wolfe {
     }
   }
 
+  implicit def unwrap2[A1, A2, B](f: (A1, A2) => B): ((A1, A2)) => B = p => f(p._1, p._2)
+  implicit def unwrap3[A1, A2, A3, B](f: (A1, A2, A3) => B): ((A1, A2, A3)) => B = p => f(p._1, p._2,p._3)
+
+
   object Vector {
     def apply(elems: (Any, Double)*) = Map(elems: _*)
   }
@@ -171,6 +177,8 @@ object Wolfe {
   }
 
   def c[A, B](set1: Set[A], set2: Set[B]) = for (i <- set1; j <- set2) yield (i, j)
+  def c[A, B, C](set1: Set[A], set2: Set[B], set3:Set[C]) = for (i <- set1; j <- set2; k <- set3) yield (i, j, k)
+
 
   import scala.annotation._
 
@@ -199,6 +207,7 @@ object Wolfe {
     class Differentiable(setting: GradientBasedOptimizerSetting = Adagrad(1.0)) extends StaticAnnotation
     class LinearModel(setting: InferenceSetting = MaxProduct(1)) extends StaticAnnotation
     class Categorical extends StaticAnnotation
+    class GLM extends StaticAnnotation
     class LogZ extends StaticAnnotation
 
   }
@@ -211,6 +220,10 @@ object Wolfe {
     class Simplex extends StaticAnnotation
     class Marginals extends StaticAnnotation
 
+  }
+
+  object Stats {
+    class Categorial extends StaticAnnotation
   }
 
 
