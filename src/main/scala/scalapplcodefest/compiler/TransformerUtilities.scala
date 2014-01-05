@@ -17,10 +17,11 @@ object TransformerUtilities {
 
   def getMemberByName(global: Global, fullClassName: String, methodName: String): global.type#Symbol = {
     val clazz = getClassByName(global, fullClassName)
-    global.definitions.getMember(clazz, methodName)
+    global.definitions.getMember(clazz, global.newTermName(methodName))
   }
 
   def getMemberTypeByName(global: Global, fullClassName: String, memberName: String): Global#Type =
     getMemberByName(global, fullClassName, memberName).tpe
 
 }
+
