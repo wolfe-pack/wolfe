@@ -15,18 +15,25 @@ import scalapplcodefest.Wolfe.Objective.{Wolferine, Differentiable}
 /**
  * Searches for @Objective.Differentiable annotation and generates an AST for gradient calculation
  */
-class DerivativeTransformer extends WolfeTransformer {
+class DerivativeTransformer extends WolfeTransformer {                   
   import SymPyDSL._
+  
+  val Diff = new Differentiable
 
-  private def isDifferentiable[T <: Global#Tree](fun: Global#DefDef, annotation: StaticAnnotation): Boolean =
-    fun.symbol.annotations.map(_.toString).exists(s => s.startsWith(annotation.getClass.getName.replace('$','.')))
+  private def sameAnnotation[T <: Global#Tree](a1: Global#AnnotationInfo, a2: StaticAnnotation): Boolean =
+    a1.toString.startsWith(a2.getClass.getName.replace('$','.'))  
+  
+  private def existsAnnotation[T <: Global#Tree](fun: Global#DefDef, annotation: StaticAnnotation): Boolean =
+    fun.symbol.annotations.exists(a => sameAnnotation(a, annotation))
 
   def transformTree[T <: Global#Tree](global: Global, env: WolfeCompilerPlugin2#Environment, tree: T) = {
     import global._
 
     tree match {
       //we are interested in function definitions with annotations
-      case fun @ DefDef(_, _, _, _, _, rhs) if isDifferentiable(fun, new Differentiable) =>
+      case fun @ DefDef(_, _, _, _, _, rhs) if existsAnnotation(fun, Diff) =>
+        val annotation = fun.symbol.annotations.find(a => sameAnnotation(a, Diff)).get
+        
         val python = pythify(rhs.toString())
         println(
           s"""
@@ -42,7 +49,7 @@ class DerivativeTransformer extends WolfeTransformer {
     tree
   }
 
-  //rockt: this could be generalized (e.g. for toLaTeX, toPython etc.)
+  //rockt: this should be generalized (e.g. for toLaTeX, toPython etc.)
   private def scalaToPython[T <: Global#Tree](global: Global, env: WolfeCompilerPlugin2#Environment, tree: T): String = {
     import global._
     def toPython(tree: T, python: String): String = tree match {
