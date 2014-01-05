@@ -16,7 +16,7 @@ object TransformerUtilities {
 
 
   def getMemberByName(global: Global, fullClassName: String, methodName: String): global.type#Symbol = {
-    val clazz = getClassByName(global, fullClassName)
+    val clazz = getClassByName(global, fullClassName).asInstanceOf[global.Symbol]
     global.definitions.getMember(clazz, global.newTermName(methodName))
   }
 
