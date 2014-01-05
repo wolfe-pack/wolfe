@@ -206,13 +206,18 @@ object Wolfe {
 
     trait InferenceSetting
     trait GradientBasedOptimizerSetting
+    trait Differentiator
 
     case class Adagrad(rate: Double) extends GradientBasedOptimizerSetting
     case class MaxProduct(iterations: Int) extends InferenceSetting
 
+    case object SymPy extends Differentiator
+    case object Wolferine extends Differentiator
+
     class LogLikelihood extends StaticAnnotation
     class JointLoglikelihood extends StaticAnnotation
-    class Differentiable(setting: GradientBasedOptimizerSetting = Adagrad(1.0)) extends StaticAnnotation
+    class Differentiable(setting: GradientBasedOptimizerSetting = Adagrad(1.0),
+                         differentiator: Option[Differentiator] = None) extends StaticAnnotation
     class LinearModel(setting: InferenceSetting = MaxProduct(1)) extends StaticAnnotation
     class Categorical extends StaticAnnotation
     class GLM extends StaticAnnotation
