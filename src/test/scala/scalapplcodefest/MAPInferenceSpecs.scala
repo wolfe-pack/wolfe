@@ -232,7 +232,7 @@ class MAPInferenceSpecs extends WordSpec with Matchers {
       behave like compiledTwoTableTwoNodeFactorMAP(maxProduct)
     }
   }
-  /* TODO Enable, if Gurobi is installed.
+  /* TODO Enable, if Gurobi installed!
   "MP graph solving with ILP (MPwithILP) " when {
     "given single a binomial factor" should {
       behave like handBuiltSingleTableFactorMAP(mpWithILP, oneNodeStates)
