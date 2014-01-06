@@ -13,6 +13,7 @@ import scalapplcodefest.term.FunApp
 import cc.factorie.la.SingletonTensor1
 import cc.factorie.WeightsSet
 import cc.factorie.optimize.{Perceptron, OnlineTrainer, Trainer}
+import scalapplcodefest.ilp.MPwithILP
 
 /**
  * This object provides a set of implicit conversions that allow users
@@ -425,6 +426,7 @@ object TermDSL extends ValueDSL {
   case class RichMax[T](f:LambdaAbstraction[T,Double]){
     def byBruteForce = Max.ByBruteForce(f)
     def byMessagePassing(algorithm: MPGraph => Unit = MaxProduct.apply(_, 1)) = Max.ByMessagePassing(f,algorithm)
+    def byILP(algorithm: MPGraph => Unit = MPwithILP.apply(_)) = Max.ByILP(f,algorithm)
   }
 
   case class RichLogZ[T](f:LambdaAbstraction[T,Double]){
