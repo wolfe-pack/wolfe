@@ -194,6 +194,11 @@ object Wolfe {
   implicit def Cross3[A1,A2,A3](implicit dom1:Set[A1],dom2:Set[A2],dom3:Set[A3]):Set[(A1,A2,A3)] = c(dom1,dom2,dom3)
 
 
+  @Objective.LinearModel
+  def linearModel[T](featureGenerator: T => List[Vector]) = {
+    (example: T, weights: Vector) => weights dot featureGenerator(example).sum
+  }
+
   import scala.annotation._
 
 

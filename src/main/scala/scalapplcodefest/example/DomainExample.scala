@@ -21,16 +21,14 @@ object DomainExample extends App {
     }
   }
 
-  @Objective.LinearModel
-  def linearModel[T](featureGenerator: T => List[Vector]) = {
-    (example: T, weights: Vector) => weights dot featureGenerator(example).sum
-  }
 
   // MLN Starts here
   case class Person(name: Symbol)
+
   implicit val allPersons = Set(Person('Anna), Person('Bob), Person('Carlos))
 
   case class Data(smokes: Pred[Person], cancer: Pred[Person], friend: Pred[(Person, Person)])
+
   implicit val allData = all(Data)
 
   def mln = linearModel {
