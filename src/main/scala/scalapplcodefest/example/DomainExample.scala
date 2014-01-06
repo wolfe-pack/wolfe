@@ -21,42 +21,52 @@ object DomainExample extends App {
     }
   }
 
-  def score(features: List[Vector], weights: Vector) = weights dot features.sum
+  @Objective.LinearModel
+  def linearModel[T](featureGenerator: T => List[Vector]) = {
+    (example: T, weights: Vector) => weights dot featureGenerator(example).sum
+  }
 
   // MLN Starts here
   case class Person(name: Symbol)
+  implicit val allPersons = Set(Person('Anna), Person('Bob), Person('Carlos))
 
   case class Data(smokes: Pred[Person], cancer: Pred[Person], friend: Pred[(Person, Person)])
-
-  implicit val allPersons = Set(Person('Anna), Person('Bob))
   implicit val allData = all(Data)
 
-  def mln(data: Data, weights: Vector) = {
-
-    import data._
-    val f1 = 'smokingIsBad := {p: Person => smokes(p) -> cancer(p)}
-    val f2 = 'peerPressure := {
-      persons: (Person, Person) =>
-        friend(persons._1, persons._2) -> (smokes(persons._1) <-> smokes(persons._2))
+  def mln = linearModel {
+    data: Data => {
+      import data._
+      val f1 = 'smokingIsBad := {p: Person => smokes(p) -> cancer(p)}
+      val f2 = 'peerPressure := {
+        persons: (Person, Person) =>
+          friend(persons._1, persons._2) -> (smokes(persons._1) <-> smokes(persons._2))
+      }
+      List(f1, f2)
     }
-
-    score(List(f1, f2), weights)
   }
 
-  val weights = Vector('smokingIsBad -> 2.0, 'peerPressure -> 0.0)
+  val weights = Vector('smokingIsBad -> 2.0, 'peerPressure -> 0.01)
 
-  val best = argmax((d: Data) => d.smokes(Person('Anna)))((d: Data) => mln(d, weights))
-  val best2 = argmax[Data](d => d.smokes(Person('Anna)))(d => mln(d, weights))
-  val best3 = argmax[Data](_.smokes(Person('Anna)))(mln(_, weights))
+  def observation(d: Data) = {
+    import d._
+    val anna = Person('Anna)
+    val bob = Person('Bob)
+    val carlos = Person('Carlos)
 
-  //
-  //  val best2 = argmax (allData filter (d => d.smokes(Person('Anna)))) (d => 1.0)
-  //  val best3 = argmax2 ((d:Data) => 1.0) (allData filter (d => d.smokes(Person('Anna))))
+    smokes(anna) && smokes(bob) &&
+      cancer(carlos) && !cancer(bob) &&
+      friend(anna, bob) && friend(bob, anna) &&
+      friend(anna, carlos) && friend(carlos, anna)
+  }
 
-  //  println(allData.mkString("\n"))
+  //  val best = argmax((d: Data) => d.smokes(Person('Anna)))((d: Data) => mln(d, weights))
+  //  val best2 = argmax[Data](d => d.smokes(Person('Anna)))(d => mln(d, weights))
+  //  val best3 = argmax[Data](_.smokes(Person('Anna)))(mln(_, weights))
 
-  println(best.smokes)
-  println(best.cancer)
-  println(best.friend)
+  val best = argmax(observation)(mln(_, weights))
+
+  println("Smokes: " + allPersons.filter {best.smokes(_)}.map(_.name))
+  println("Cancer: " + allPersons.filter {best.cancer(_)}.map(_.name))
+  println("Friends: " + c(allPersons, allPersons).filter {p => best.friend(p._1, p._2)}.map(p => (p._1.name, p._2.name)))
 
 }
