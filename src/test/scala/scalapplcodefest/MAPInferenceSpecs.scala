@@ -6,6 +6,7 @@ import scalapplcodefest.MPGraph.FactorType
 import scalapplcodefest.TermDSL._
 import scala.Unit
 import scalapplcodefest.value.{Doubles, Bools}
+import scalapplcodefest.ilp.MPwithILP
 
 /**
  *
@@ -38,6 +39,8 @@ class MAPInferenceSpecs extends WordSpec with Matchers {
     // TODO this is ugly! fg.addEdge should have registered the edges with the factor
     f.edges = edges
 
+    //fg.toVerboseString()
+
     fg
   }
 
@@ -50,6 +53,7 @@ class MAPInferenceSpecs extends WordSpec with Matchers {
 
       val solutionId = (0 until table.size).maxBy(i => table(i))
       val solution = allStates(solutionId)
+
 
       algorithm(fg)
 
@@ -132,7 +136,6 @@ class MAPInferenceSpecs extends WordSpec with Matchers {
 
       val fg = compiled.graph
 
-      println(fg.toVerboseString())
 
 
       // what follows is stream of consciousness code that finds the highest scoring assignment for this factor graph.
@@ -193,6 +196,10 @@ class MAPInferenceSpecs extends WordSpec with Matchers {
 
   def maxProduct(fg: MPGraph) = MaxProduct(fg, 100)
 
+  // TODO Enable, if Gurobi installed!
+  //def mpWithILP(fg: MPGraph) = MPwithILP(fg)
+
+
   val oneNodeStates = Array(Array(0), Array(1))
   val twoNodeStates = Array(Array(0, 0), Array(0, 1), Array(1, 0), Array(1, 1))
   val threeNodeStates = Array(Array(0, 0, 0), Array(0, 0, 1), Array(0, 1, 0), Array(0, 1, 1), Array(1, 0, 0),
@@ -225,6 +232,25 @@ class MAPInferenceSpecs extends WordSpec with Matchers {
       behave like compiledTwoTableTwoNodeFactorMAP(maxProduct)
     }
   }
+  /* TODO Enable, if Gurobi is installed.
+  "MP graph solving with ILP (MPwithILP) " when {
+    "given single a binomial factor" should {
+      behave like handBuiltSingleTableFactorMAP(mpWithILP, oneNodeStates)
+      behave like handBuiltSingleTableFactorMAP(mpWithILP, twoNodeStates)
+      behave like handBuiltSingleTableFactorMAP(mpWithILP, threeNodeStates)
+
+      behave like compiledSingleTableFactorMAP(mpWithILP)
+    }
+    "given a single variable with two factors" should {
+
+      behave like compiledTwoTableFactorMAP(mpWithILP)
+    }
+    "given a model with two variables and two factors" should {
+      behave like compiledTwoTableTwoNodeFactorMAP(mpWithILP)
+    }
+  }
+  */
+
 
   "Dual decomposition" when {
     "given given a single binomial factor" should {

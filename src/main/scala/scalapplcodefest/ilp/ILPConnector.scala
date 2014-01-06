@@ -1,6 +1,5 @@
-package scalapplcodefest.ILP
+package scalapplcodefest.ilp
 
-import scala.collection.mutable
 import org.scalautils.Or
 
 /**
@@ -15,7 +14,7 @@ trait ILPConnector [T]{
    * @param constraint
    * @return
    */
-  def addConstraint(constraint: LPConstraint[T]):ILPConnector[T]
+  def addConstraint(constraint: ILPConstraint[T]):ILPConnector[T]
 
   /**
    * Adds a variable and its objective value to the ILP.
@@ -23,14 +22,14 @@ trait ILPConnector [T]{
    * @param variable
    * @return
    */
-  def addVar(variable : Var[T]):ILPConnector[T]
+  def addVar(variable : ILPVar[T]):ILPConnector[T]
 
   /**
    * Solves the ILP.
    *
    * @return
    */
-  def solve():scala.collection.Set[Var[T]] Or ILPState.Value
+  def solve():scala.collection.Set[ILPVar[T]] Or ILPState.Value
 }
 
 /**
@@ -41,14 +40,14 @@ trait ILPConnector [T]{
  * @param range Defines if the variable is boolean, integer, or any double range.
  * @tparam T
  */
-class Var[T] (val name:T, val value: Double = 0, val range: Type.Value = Type.int){
+class ILPVar[T] (val name:T, val value: Double = 0, val range: ILPType.Value = ILPType.int){
 
   var result:Double =0
 
-  def canEqual(other: Any): Boolean = other.isInstanceOf[Var[T]]
+  def canEqual(other: Any): Boolean = other.isInstanceOf[ILPVar[T]]
 
   override def equals(other: Any): Boolean = other match {
-    case that: Var[T] =>
+    case that: ILPVar[T] =>
       (that canEqual this) &&
         name == that.name
     case _ => false
@@ -81,7 +80,7 @@ class Var[T] (val name:T, val value: Double = 0, val range: Type.Value = Type.in
  * @param cpi Defines if Cutting plane inference is used (=true) or if the constraint is added to the ilp immediately (=false)
  * @tparam T
  */
-case class LPConstraint[T] (lhs: List[(Double,Var[T])],op: Operator.Value = Operator.leq,rhs:Double, cpi:Boolean = false){
+case class ILPConstraint[T] (lhs: List[(Double,ILPVar[T])],op: ILPOperator.Value = ILPOperator.leq,rhs:Double, cpi:Boolean = false){
 
   /**
    * Checks if a current constraint is violated (dependent on the actual solution stored in the node.
@@ -91,7 +90,7 @@ case class LPConstraint[T] (lhs: List[(Double,Var[T])],op: Operator.Value = Oper
     val lhsSum = (for {
       (value, variable) <- lhs
     }yield value*variable.result) reduceLeft(_+_)
-    if(Operator.leq == op){
+    if(ILPOperator.leq == op){
       //println(lhsSum+ " <= " + rhs + " : " + (lhsSum>rhs))
       lhsSum > rhs
     }else{
@@ -104,7 +103,7 @@ case class LPConstraint[T] (lhs: List[(Double,Var[T])],op: Operator.Value = Oper
 /**
  * Operators of a linear inequality constraint.
  */
-object Operator extends Enumeration {
+object ILPOperator extends Enumeration {
   val geq = Value("geq")
   val leq = Value("leq")
 }
@@ -112,7 +111,7 @@ object Operator extends Enumeration {
 /**
  * Types of an ILP variable.
  */
-object Type extends Enumeration {
+object ILPType extends Enumeration {
   val int = Value("int")
   val binary = Value("binary")
   val real = Value("real")
