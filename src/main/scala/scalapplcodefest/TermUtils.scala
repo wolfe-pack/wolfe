@@ -15,12 +15,14 @@ import scalapplcodefest.term.FunApp
  * Time: 4:55 PM
  */
 
-object TermUtils {
-  def debugTerm(term: Term[_], verbose: Boolean = false) = {
+object TermDebugger {
+  import TermDSL._
+
+  def debugTerm(term: Term[_], state: State = State.empty, verbose: Boolean = false) = {
     var problem: Term[_] = term
 
     def crashes(probe: Term[_]): Boolean = {
-      try probe.value() catch {
+      try probe.value(state) catch {
         case e: Exception => return true
       }
       false
@@ -49,7 +51,7 @@ object TermUtils {
       if (verbose && crashes(probe)) println("problem: " + problem)
     }
 
-    try term.value() catch {
+    try term.value(state) catch {
       case e: NoSuchElementException =>
         diagnose(term)
         System.err.println(e)
@@ -62,11 +64,11 @@ object TermUtils {
   }
 
   def termToPrettyString(term: Term[_], indent: Int = 0): String = {
-    def tabs = "\t" * indent
+    lazy val tabs = "\t" * indent
     term match {
       case t: LambdaAbstraction[_, _] => s"\n${tabs}lam ${t.sig} { ${termToPrettyString(t.body, indent + 1)} }"
       case t: FunApp[_, _] =>
-        if (indent == 0) s"- function application of\n\t${termToPrettyString(t.arg, indent + 1)}\n- applied to${termToPrettyString(t.function, indent + 1)}"
+        if (indent == 0) s"- function application of\n\t${termToPrettyString(t.arg, indent + 1)}\n- applied to ${termToPrettyString(t.function, indent + 1)}"
         else s"${termToPrettyString(t.function, indent)}(${termToPrettyString(t.arg, indent)})"
       case t: TupleTerm2[_, _] => s"(${termToPrettyString(t.a1, indent)}, ${termToPrettyString(t.a2, indent)})"
       case t: TupleTerm3[_, _, _] => s"TupleTerm3(${termToPrettyString(t.a1, indent)},${termToPrettyString(t.a2, indent)},${termToPrettyString(t.a3, indent)})"
@@ -76,6 +78,7 @@ object TermUtils {
       case t: Predicate[_, _] => s"${t.toString}"
       case t: Conditioned[_] => s"${t.componentSeq.map(termToPrettyString(_, indent)).mkString(",")}\n- conditioned on\n\t${t.condition}"
       case t: Composite[_] => s"${t.getClass.getSimpleName} ${t.componentSeq.map(termToPrettyString(_, indent)).mkString(",")}"
+      case t: MultiVariate => s"${t.getClass.getSimpleName}(${termToPrettyString(t.parameter, indent)})" //FIXME: somehow indent doesn't get increased here
       case t: Term[_] =>
         //println("TODO: " + term.getClass)
         term.toString
