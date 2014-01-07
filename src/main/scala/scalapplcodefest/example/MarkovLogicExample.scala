@@ -1,63 +1,60 @@
 package scalapplcodefest.example
 
-import scalapplcodefest.value.Vectors
-import scalapplcodefest.term.Max
-import scalapplcodefest.{Index, TermDSL}
-import scalapplcodefest.TermDSL._
+import scalapplcodefest._
+import scala.collection.mutable
+import scala.util.Random
 
 /**
  * The smokes & cancer MLN.
  *
  * @author Sebastian Riedel
  */
-object MarkovLogicExample {
+object MarkovLogicExample extends App {
 
-  //this gives us syntactic sugar
+  import Wolfe._
 
-  import TermDSL._
+  type Person = Symbol
 
-  //index for indexing feature vectors
-  val key = new Index()
+  case class Data(smokes: Person => Boolean, cancer: Person => Boolean, friends: Map[(Person, Person), Boolean])
+  def hidden2 = c(preds(persons), preds(persons), preds(c(persons, persons))) map Data
 
-  //domain objects. Note that this set itself is a term (a constant evaluating to the given set, but it could be dynamic too).
-  val persons = set('Anna, 'Bob)
+  val persons = Set('Anna, 'Bob)
 
-  //Unary predicates
-  val smokes = 'smokes of persons |-> bools
-  val cancer = 'cancer of persons |-> bools
+  def mln(data: Data, weights: Vector) = {
 
-  //Binary predicate
-  val friend = 'friend of c(persons, persons) |-> bools
+    import data._
 
-  //Weight vector variable.
-  val weights = 'weights of vectors
+    def f1 = sum(persons) {p => ft('smokingIsBad, smokes(p) -> cancer(p))}
 
-  //Smoking can lead to cancer
-  val f1 = vectors.sum(for (p <- persons) yield unit(key('smokingIsBad),
-    I(smokes(p) |=> cancer(p))))
-
-  //friends make friends smoke / not smoke
-  val f2 = vectors.sum(for ((p1, p2) <- c(persons, persons)) yield unit(key('peerPressure),
-    I(friend(p1, p2) |=> (smokes(p1) <=> smokes(p2)))))
-
-  //The MLN without assigned weights
-  val mln = (f1 + f2) dot weights
-
-  def main(args: Array[String]) {
-    //an actual weight vector that can be plugged into the mln. todo: this should be created by terms
-    val concreteWeights = key.createDenseVector(Seq('smokingIsBad) -> 1.0, Seq('peerPressure) -> 1.0)()
-
-    //some observations
-    val condition = state(friend.atom('Anna, 'Bob) -> true, smokes.atom('Anna) -> true)
-
-    //the mln with weights and some ground atoms set to some observation
-    val conditioned = mln | condition | weights -> concreteWeights
-
-    //an inference result calculated through max product
-    val argmax = argState(max(lam(sig(smokes, cancer, friend), conditioned)).byMessagePassing()).value()
-
-    println(argmax)
-
+    def f2 = sum(c(persons, persons)) {
+      case (p1, p2) => ft('peerPressure, friends(p1, p2) -> (smokes(p1) <-> smokes(p2)))
+    }
+    (f1 + f2) dot weights
   }
 
+  val weights = Vector('smokingIsBad -> 2.0, 'peerPressure -> 0.0)
+
+  def hidden = for (smokes <- maps(persons, bools);
+                    cancer <- maps(persons, bools);
+                    friends <- maps(c(persons, persons), bools))
+  yield Data(smokes, cancer, friends)
+
+
+  def observed(h: Data) = h.smokes('Anna) && h.cancer('Anna) && (h.friends only (('Anna, 'Bob)))
+
+  val prediction3 = argmax(hidden filter observed) {y => mln(y, weights)}
+  println(s"smokes: ${prediction3.smokes}, cancer: ${prediction3.cancer}")
+
+  val smokeCounts = new mutable.HashMap[Person, Int]
+  val cancerCounts = new mutable.HashMap[Person, Int]
+  for (i <- 0 until 1000) {
+    implicit val random = new Random()
+    val s = sample(hidden filter observed) {y => mln(y, weights)}
+    for (p <- persons) {
+      if (s.smokes(p)) smokeCounts(p) = smokeCounts.getOrElse(p, 0) + 1
+      if (s.cancer(p)) cancerCounts(p) = cancerCounts.getOrElse(p, 0) + 1
+    }
+  }
+  println("smokes: " + smokeCounts)
+  println("cancer: " + cancerCounts)
 }

@@ -1,3 +1,9 @@
+import sbt._
+import Build._
+import Keys._
+
+sbtPlugin := true
+
 name := "scalapplcodefest"
 
 version := "0.1.0"
@@ -17,8 +23,13 @@ libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "2.0" % "test",
   "com.nativelibs4java" %% "scalaxy-loops" % "0.3-SNAPSHOT" % "provided",
   "cc.factorie" % "factorie" % "1.0.0-M7",
-  "org.clapper" % "classutil_2.10" % "1.0.2",
   "com.github.axel22" %% "scalameter" % "0.4",
-  "org.reflections" % "reflections" % "0.9.9-RC1")
+  "org.scala-lang" % "scala-compiler" % "2.10.3",
+  "org.scala-lang" % "scala-library" % "2.10.3"
+)
+
+generateWolfeSource := Seq.empty
+
+sourceGenerators in Compile <+= generateWolfeSource
 
 
