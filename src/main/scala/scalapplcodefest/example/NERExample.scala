@@ -65,6 +65,8 @@ object NERExample extends App {
   //TODO: evaluate on test set
   //TODO: switch to LBFGS
 
+  //Test renaming of repository
+
 }
 
 object SCAI {
