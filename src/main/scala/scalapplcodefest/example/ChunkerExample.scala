@@ -22,6 +22,7 @@ object ChunkerExample {
 
   implicit val allData = all[Sentence]
 
+  @Objective.LinearModel
   def model(sentence: Sentence, weights: Vector) = {
     import sentence._
 
@@ -36,7 +37,6 @@ object ChunkerExample {
   def observation(sentence: Sentence) = (sentence.words, sentence.tags)
 
   @Operator.Argmax
-  @Objective.LinearModel
   def predict(weights: Vector)(sentence: Sentence): Sentence =
     argmax {allData filter {s => observation(s) == observation(sentence)}} {s => model(s, weights)}
 
@@ -47,7 +47,7 @@ object ChunkerExample {
   def loss(data: Seq[Sentence])(weights: Vector): Double =
     sum(data) {sentence => predictionScore(sentence, weights) - model(sentence, weights)}
 
-  @Objective.Adagrad(0.1)
+  //@Objective.Adagrad(0.1)
   def learn(data: Seq[Sentence]): Vector =
     argmin(vectors)(loss(data))
 
