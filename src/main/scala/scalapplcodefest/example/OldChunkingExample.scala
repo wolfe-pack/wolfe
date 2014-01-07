@@ -17,7 +17,7 @@ import scala.Some
  *
  * @author Sebastian Riedel
  */
-object ChunkingExample {
+object OldChunkingExample {
 
   import TermDSL._
 
