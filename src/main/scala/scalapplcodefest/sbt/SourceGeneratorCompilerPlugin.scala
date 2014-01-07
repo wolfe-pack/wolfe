@@ -79,7 +79,6 @@ class SourceGeneratorCompilerPlugin(val global: Global,
         val out = new PrintWriter(modifiedFile)
         out.println(modified.current())
         out.close()
-
       }
     }
 
