@@ -6,10 +6,15 @@ import scala.reflect.internal.Phase
 import scala.io.Source
 import scala.collection.mutable
 import java.io.{PrintWriter, File}
+import scala.annotation.StaticAnnotation
 
 object SourceGeneratorCompilerPlugin {
   val name = "Wolfe Source Generator"
   val phase = "wolfe generation"
+
+  def compiledTag(originalName:String) = s"""@${classOf[Compiled].getName}("$originalName")"""
+  def compiledShortTag(originalName:String) = s"""@${classOf[Compiled].getSimpleName}("$originalName")"""
+
 }
 
 /**
@@ -17,6 +22,8 @@ object SourceGeneratorCompilerPlugin {
  */
 class SourceGeneratorCompilerPlugin(val global: Global, targetDir:File) extends Plugin {
   plugin =>
+
+  import SourceGeneratorCompilerPlugin._
 
   val name = SourceGeneratorCompilerPlugin.name
   val components = List(GenerationComponent)
@@ -36,14 +43,18 @@ class SourceGeneratorCompilerPlugin(val global: Global, targetDir:File) extends 
         val sourceText = Source.fromFile(sourceFile).getLines().mkString("\n")
         val modified = new ModifiedSourceText(sourceText)
 
+        //global.treeBrowser.browse(unit.body)
         for (tree <- unit.body) tree match {
           case PackageDef(ref, _) =>
             val packageName = sourceText.substring(ref.pos.start, ref.pos.end)
             modified.replace(ref.pos.start, ref.pos.end, packageName + ".compiled")
+            modified.insert(ref.pos.end, s"\n\nimport ${classOf[Compiled].getName}")
+
+          case md:ModuleDef => {
+            modified.insert(md.pos.start,compiledShortTag(md.symbol.fullName('.')) + " ")
+          }
           case dd:DefDef if dd.pos.isRange =>
-            println(sourceText.substring(dd.pos.start,dd.pos.end))
-            modified.replace(dd.pos.start,dd.pos.end,s"""def ${dd.name.toString}() = ${dd.rhs.toString()} """)
-            println(dd)
+            modified.replace(dd.pos.start,dd.pos.end,s"""${compiledShortTag(dd.symbol.fullName('.'))} def ${dd.name.toString}() = ${dd.rhs.toString()} """)
           case _ =>
         }
 
@@ -59,8 +70,13 @@ class SourceGeneratorCompilerPlugin(val global: Global, targetDir:File) extends 
     }
 
   }
+}
+
+class Compiled(original:String) extends StaticAnnotation {
 
 }
+
+
 
 /**
  * Maintains a mapping from original character offsets to offsets in a modified string.
