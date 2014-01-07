@@ -1,3 +1,3 @@
 ==============
-[![Build Status](https://travis-ci.org/uclmr/scalapplcodefest.png)](https://travis-ci.org/uclmr/scalapplcodefest)
+[![Build Status](https://travis-ci.org/uclmr/wolfe.png)](https://travis-ci.org/uclmr/wolfe)
 ==============
