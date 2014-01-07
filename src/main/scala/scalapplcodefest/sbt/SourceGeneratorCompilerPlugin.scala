@@ -15,7 +15,7 @@ object SourceGeneratorCompilerPlugin {
 /**
  * @author Sebastian Riedel
  */
-class SourceGeneratorCompilerPlugin(val global: Global) extends Plugin {
+class SourceGeneratorCompilerPlugin(val global: Global, targetDir:File) extends Plugin {
   plugin =>
 
   val name = SourceGeneratorCompilerPlugin.name
@@ -32,13 +32,9 @@ class SourceGeneratorCompilerPlugin(val global: Global) extends Plugin {
       override def name = plugin.name
       def apply(unit: global.CompilationUnit) = {
         import global._
-        println(unit.source.file.file)
         val sourceFile = unit.source.file.file
         val sourceText = Source.fromFile(sourceFile).getLines().mkString("\n")
         val modified = new ModifiedSourceText(sourceText)
-
-        println(sourceText)
-        println("Generating")
 
         for (tree <- unit.body) tree match {
           case PackageDef(ref, _) =>
@@ -46,12 +42,13 @@ class SourceGeneratorCompilerPlugin(val global: Global) extends Plugin {
             modified.replace(ref.pos.start, ref.pos.end, packageName + ".compiled")
           case dd:DefDef if dd.pos.isRange =>
             println(sourceText.substring(dd.pos.start,dd.pos.end))
-            modified.replace(dd.pos.start,dd.pos.end,"""def run() = "Blah" """)
+            modified.replace(dd.pos.start,dd.pos.end,s"""def ${dd.name.toString}() = ${dd.rhs.toString()} """)
+            println(dd)
           case _ =>
         }
 
         println(modified.current())
-        val modifiedDir = new File("target/scala-2.10/sbt-0.13/src_managed/main/scala/scalapplcodefest/sbt")
+        val modifiedDir = new File(targetDir, "scalapplcodefest/sbt/compiled")
         println(modifiedDir.mkdirs())
         val modifiedFile = new File(modifiedDir, sourceFile.getName)
         val out = new PrintWriter(modifiedFile)
@@ -65,6 +62,10 @@ class SourceGeneratorCompilerPlugin(val global: Global) extends Plugin {
 
 }
 
+/**
+ * Maintains a mapping from original character offsets to offsets in a modified string.
+ * @param original the string to modify.
+ */
 class ModifiedSourceText(original: String) {
   private val source = new StringBuilder(original)
   private val originalToModified = new mutable.HashMap[Int, Int]()
@@ -83,5 +84,6 @@ class ModifiedSourceText(original: String) {
 
   def current() = source.toString()
 
-
 }
+
+
