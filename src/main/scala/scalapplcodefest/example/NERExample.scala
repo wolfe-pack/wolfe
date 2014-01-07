@@ -59,7 +59,7 @@ object NERExample extends App {
 
   //a generic evaluation routine that applies the predictor to a set of states and compares the results
   //to target values stored in the state.
-  val eval = Evaluator.evaluate(train, predict)
+  val eval = Evaluator.evaluate(train, predict) //FIXME
 
   println(eval)
 
