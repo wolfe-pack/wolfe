@@ -4,6 +4,7 @@ import sbt.{InputKey, Plugin}
 import scala.tools.nsc.Settings
 import scala.reflect.internal.util.BatchSourceFile
 import scala.reflect.io.{File, AbstractFile}
+import scalapplcodefest.compiler
 
 /**
  * @author Sebastian Riedel
@@ -20,13 +21,17 @@ class SourceGeneratorSbtPlugin extends Plugin {
 
 object GenerateSources {
 
-  def generate() = {
-    val targetDir = new java.io.File("target/scala-2.10/sbt-0.13/src_managed/main/scala/")
+  def generate(sourcePath:String = "src/main/scala/scalapplcodefest/sbt/ExampleTemplate.scala",
+               targetPath:String = "target/scala-2.10/sbt-0.13/src_managed/main/scala/",
+               replacers:List[CodeStringReplacer] = Nil) = {
+    val targetDir = new java.io.File(targetPath)
     val settings = new Settings()
     settings.nowarnings.value = true
     settings.stopAfter.value = List(SourceGeneratorCompilerPlugin.phase)
-    val source = new BatchSourceFile(AbstractFile.getFile(File("src/main/scala/scalapplcodefest/sbt/ExampleTemplate.scala")))
-    SimpleCompiler.compile(settings,List(source),List(new SourceGeneratorCompilerPlugin(_,targetDir)))
+    settings.classpath.append(compiler.dirPathOfClass(getClass.getName))
+    settings.bootclasspath.append(compiler.dirPathOfClass(getClass.getName))
+    val source = new BatchSourceFile(AbstractFile.getFile(File(sourcePath)))
+    SimpleCompiler.compile(settings,List(source),List(new SourceGeneratorCompilerPlugin(_,targetDir,replacers)))
   }
 
   def main(args: Array[String]) {

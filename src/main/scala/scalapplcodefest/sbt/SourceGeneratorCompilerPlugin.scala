@@ -22,7 +22,7 @@ object SourceGeneratorCompilerPlugin {
  */
 class SourceGeneratorCompilerPlugin(val global: Global,
                                     targetDir: File,
-                                    generators: List[CodeStringReplacer] = Nil) extends Plugin {
+                                    replacers: List[CodeStringReplacer] = Nil) extends Plugin {
   plugin =>
 
   import SourceGeneratorCompilerPlugin._
@@ -69,9 +69,9 @@ class SourceGeneratorCompilerPlugin(val global: Global,
               //modified.replace(dd.pos.start, dd.pos.end, s"""${compiledShortTag(dd.symbol.fullName('.'))} def ${dd.name.toString}() = ${dd.rhs.toString()} """)
               modified.replace(dd.pos.start, dd.pos.end, s"""${compiledShortTag(dd.symbol.fullName('.'))} ${dd.toString()} """)
               //rockt: we still need to be able to pattern match on DefDefs within generators
-              applyFirstMatchingGenerator(generators)
+              applyFirstMatchingGenerator(replacers)
             case other =>
-              applyFirstMatchingGenerator(generators)
+              applyFirstMatchingGenerator(replacers)
           }
         }
 
