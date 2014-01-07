@@ -149,6 +149,8 @@ object Wolfe {
   def ft(key: Any, value: Boolean): Vector = ft(key, if (value) 1.0 else 0.0)
   def feat(key: Any*) = Map(key.toSeq.asInstanceOf[Any] -> 1.0)
 
+  val VectorZero = Map.empty[Any,Double]
+
   implicit object VectorNumeric extends Numeric[Vector] {
     def plus(x: Wolfe.Vector, y: Wolfe.Vector) = {
       val keys = x.keySet ++ y.keySet

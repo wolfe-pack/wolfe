@@ -17,6 +17,8 @@ class StringCompiler(val transformer: Option[WolfeTransformer] = None,
   settings.nowarnings.value = true // warnings are exceptions, so disable
   settings.outputDirs.setSingleOutput(outputDir)
 
+  import CompilerHelpers._
+
   val compilerPath = try {
     jarPathOfClass("scala.tools.nsc.Interpreter")
   } catch {
@@ -49,6 +51,7 @@ class StringCompiler(val transformer: Option[WolfeTransformer] = None,
             self =>
             override protected def computeInternalPhases() {
               super.computeInternalPhases
+
               for (phase <- new WolfeCompilerPlugin2(self, transformer.get, runsAfter).components)
                 phasesSet += phase
             }
@@ -67,16 +70,21 @@ class StringCompiler(val transformer: Option[WolfeTransformer] = None,
     (compiler, x1.unit)
   }
 
+
+}
+
+object CompilerHelpers {
   /*
-   * For a given FQ classname, trick the resource finder into telling us the containing jar.
-  */
-  private def jarPathOfClass(className: String) = try {
+    * For a given FQ classname, trick the resource finder into telling us the containing jar.
+   */
+  def jarPathOfClass(className: String) = try {
     val resource = className.split('.').mkString("/", "/", ".class")
     val path = getClass.getResource(resource).getPath
     val indexOfFile = path.indexOf("file:") + 5
     val indexOfSeparator = path.lastIndexOf('!')
     List(path.substring(indexOfFile, indexOfSeparator))
   }
+
 }
 
 object StringCompiler extends StringCompiler(None, Nil, new VirtualDirectory("(memory)", None),List("refchecks"), None)
