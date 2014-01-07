@@ -22,7 +22,7 @@ object SourceGeneratorCompilerPlugin {
  */
 class SourceGeneratorCompilerPlugin(val global: Global,
                                     targetDir: File,
-                                    generators: List[CodeStringGenerator] = Nil) extends Plugin {
+                                    generators: List[CodeStringReplacer] = Nil) extends Plugin {
   plugin =>
 
   import SourceGeneratorCompilerPlugin._
@@ -60,12 +60,12 @@ class SourceGeneratorCompilerPlugin(val global: Global,
             modified.replace(dd.pos.start, dd.pos.end, s"""${compiledShortTag(dd.symbol.fullName('.'))} def ${dd.name.toString}() = ${dd.rhs.toString()} """)
 
           case other =>
-            def applyFirstMatchingGenerator(gen:List[CodeStringGenerator]) {
+            def applyFirstMatchingGenerator(gen:List[CodeStringReplacer]) {
               generators match {
                 case Nil =>
                 case head::tail =>
-                  val result = head(global)(other)
-                  if (result.isDefined) modified.replace(other.pos.start,other.pos.end,result.get) else applyFirstMatchingGenerator(tail)
+                  val changed = head.replace(global)(other,modified)
+                  if (!changed) applyFirstMatchingGenerator(tail)
               }
             }
             applyFirstMatchingGenerator(generators)
@@ -87,8 +87,8 @@ class SourceGeneratorCompilerPlugin(val global: Global,
 
 }
 
-trait CodeStringGenerator {
-  def apply(global: Global)(tree: global.Tree): Option[String]
+trait CodeStringReplacer {
+  def replace(global: Global)(tree: global.Tree, modification:ModifiedSourceText): Boolean
 }
 
 class Compiled(original: String) extends StaticAnnotation
@@ -98,11 +98,11 @@ class Compiled(original: String) extends StaticAnnotation
  * Maintains a mapping from original character offsets to offsets in a modified string.
  * @param original the string to modify.
  */
-class ModifiedSourceText(original: String) {
+class ModifiedSourceText(original: String, offset:Int = 0) {
   private val source = new StringBuilder(original)
   private val originalToModified = new mutable.HashMap[Int, Int]()
 
-  for (i <- 0 until original.length) originalToModified(i) = i
+  for (i <- 0 until original.length) originalToModified(i) = i - offset
 
   def insert(start: Int, text: String) {
     source.insert(originalToModified(start), text)
@@ -115,6 +115,14 @@ class ModifiedSourceText(original: String) {
   }
 
   def current() = source.toString()
+
+}
+
+object ModifiedSourceText {
+
+  def fromTree(tree:Global#Tree) = {
+
+  }
 
 }
 
