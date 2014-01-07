@@ -7,10 +7,10 @@ import scala.reflect.io.{File, AbstractFile}
 /**
  * Created by rockt on 07/01/2014.
  */
-class DerivativeStringReplacer extends CodeStringReplacer {
+class DerivativeStringReplacer(val global:Global) extends CodeStringReplacer {
   var debug = false
 
-  def replace(global: Global)(tree: global.type#Tree, modification: ModifiedSourceText): Boolean = {
+  def replace(tree: global.type#Tree, modification: ModifiedSourceText): Boolean = {
     import global._
 
     if (debug && tree.toString().startsWith("scala.AnyRef {")) {
@@ -42,7 +42,7 @@ object GeneratedDifferentialSourcesPlayground extends App {
     settings.stopAfter.value = List(SourceGeneratorCompilerPlugin.phase)
     val source = new BatchSourceFile(AbstractFile.getFile(File("src/main/scala/scalapplcodefest/sbt/ExampleDifferentiableTemplate.scala")))
     SimpleCompiler.compile(settings, List(source),
-      List(new SourceGeneratorCompilerPlugin(_, targetDir, List(new DerivativeStringReplacer))))
+      List(global => new SourceGeneratorCompilerPlugin(global, targetDir, List(new DerivativeStringReplacer(global)))))
   }
 
   generate()

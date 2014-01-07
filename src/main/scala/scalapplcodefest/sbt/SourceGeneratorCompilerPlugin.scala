@@ -51,7 +51,7 @@ class SourceGeneratorCompilerPlugin(val global: Global,
             gen match {
               case Nil =>
               case head::tail =>
-                val changed = head.replace(global)(tree, modified)
+                val changed = head.replace(tree.asInstanceOf[head.global.Tree], modified)
                 if (!changed) applyFirstMatchingGenerator(tail)
             }
           }
@@ -90,7 +90,10 @@ class SourceGeneratorCompilerPlugin(val global: Global,
 }
 
 trait CodeStringReplacer {
-  def replace(global: Global)(tree: global.Tree, modification:ModifiedSourceText): Boolean
+  val global:Global
+//  def replace(global: Global)(tree: global.Tree, modification:ModifiedSourceText): Boolean
+  def replace(tree: global.Tree, modification:ModifiedSourceText): Boolean
+
 }
 
 class Compiled(original: String) extends StaticAnnotation
