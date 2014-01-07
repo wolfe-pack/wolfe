@@ -1,7 +1,7 @@
 package scalapplcodefest.sbt
 
 import sbt.{InputKey, Plugin}
-import scala.tools.nsc.Settings
+import scala.tools.nsc.{Global, Settings}
 import scala.reflect.internal.util.BatchSourceFile
 import scala.reflect.io.{File, AbstractFile}
 import scalapplcodefest.compiler
@@ -21,9 +21,9 @@ class SourceGeneratorSbtPlugin extends Plugin {
 
 object GenerateSources {
 
-  def generate(sourcePath:String = "src/main/scala/scalapplcodefest/sbt/ExampleTemplate.scala",
-               targetPath:String = "target/scala-2.10/sbt-0.13/src_managed/main/scala/",
-               replacers:List[CodeStringReplacer] = Nil) = {
+  def generate(sourcePath: String = "src/main/scala/scalapplcodefest/sbt/ExampleTemplate.scala",
+               targetPath: String = "target/scala-2.10/sbt-0.13/src_managed/main/scala/",
+               replacers: List[Global => CodeStringReplacer] = Nil) = {
     val targetDir = new java.io.File(targetPath)
     val settings = new Settings()
     settings.nowarnings.value = true
@@ -31,7 +31,10 @@ object GenerateSources {
     settings.classpath.append(compiler.dirPathOfClass(getClass.getName))
     settings.bootclasspath.append(compiler.dirPathOfClass(getClass.getName))
     val source = new BatchSourceFile(AbstractFile.getFile(File(sourcePath)))
-    SimpleCompiler.compile(settings,List(source),List(new SourceGeneratorCompilerPlugin(_,targetDir,replacers)))
+    SimpleCompiler.compile(
+      settings,
+      List(source),
+      List(global => new SourceGeneratorCompilerPlugin(global, targetDir, replacers.map(_.apply(global)))))
   }
 
   def main(args: Array[String]) {
