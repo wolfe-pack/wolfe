@@ -46,30 +46,33 @@ class SourceGeneratorCompilerPlugin(val global: Global,
         val modified = new ModifiedSourceText(sourceText)
 
         //global.treeBrowser.browse(unit.body)
-        for (tree <- unit.body) tree match {
-
-          case PackageDef(ref, _) =>
-            val packageName = sourceText.substring(ref.pos.start, ref.pos.end)
-            modified.replace(ref.pos.start, ref.pos.end, packageName + ".compiled")
-            modified.insert(ref.pos.end, s"\n\nimport ${classOf[Compiled].getName}")
-
-          case md: ModuleDef =>
-            modified.insert(md.pos.start, compiledShortTag(md.symbol.fullName('.')) + " ")
-
-          case dd: DefDef if dd.pos.isRange =>
-            modified.replace(dd.pos.start, dd.pos.end, s"""${compiledShortTag(dd.symbol.fullName('.'))} def ${dd.name.toString}() = ${dd.rhs.toString()} """)
-
-          case other =>
-            def applyFirstMatchingGenerator(gen:List[CodeStringReplacer]) {
-              generators match {
-                case Nil =>
-                case head::tail =>
-                  val changed = head.replace(global)(other,modified)
-                  if (!changed) applyFirstMatchingGenerator(tail)
-              }
+        for (tree <- unit.body) {
+          def applyFirstMatchingGenerator(gen:List[CodeStringReplacer]) {
+            gen match {
+              case Nil =>
+              case head::tail =>
+                val changed = head.replace(global)(tree, modified)
+                if (!changed) applyFirstMatchingGenerator(tail)
             }
-            applyFirstMatchingGenerator(generators)
+          }
 
+          tree match {
+            case PackageDef(ref, _) =>
+              val packageName = sourceText.substring(ref.pos.start, ref.pos.end)
+              modified.replace(ref.pos.start, ref.pos.end, packageName + ".compiled")
+              modified.insert(ref.pos.end, s"\n\nimport ${classOf[Compiled].getName}")
+
+            case md: ModuleDef =>
+              modified.insert(md.pos.start, compiledShortTag(md.symbol.fullName('.')) + " ")
+
+            case dd: DefDef if dd.pos.isRange =>
+              //modified.replace(dd.pos.start, dd.pos.end, s"""${compiledShortTag(dd.symbol.fullName('.'))} def ${dd.name.toString}() = ${dd.rhs.toString()} """)
+              modified.replace(dd.pos.start, dd.pos.end, s"""${compiledShortTag(dd.symbol.fullName('.'))} ${dd.toString()} """)
+              //rockt: we still need to be able to pattern match on DefDefs within generators
+              applyFirstMatchingGenerator(generators)
+            case other =>
+              applyFirstMatchingGenerator(generators)
+          }
         }
 
         println(modified.current())
