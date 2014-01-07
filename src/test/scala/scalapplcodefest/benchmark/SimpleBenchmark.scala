@@ -1,6 +1,6 @@
 package scalapplcodefest.benchmark
 
-import org.reflections.Reflections
+//import org.reflections.Reflections //rockt: not used and results in a compilation error in my IntelliJ
 import java.util.UUID
 import java.net.InetAddress
 import scala.collection.mutable.ArrayBuffer
