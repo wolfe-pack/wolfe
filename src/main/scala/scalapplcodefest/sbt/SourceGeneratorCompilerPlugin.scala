@@ -12,15 +12,17 @@ object SourceGeneratorCompilerPlugin {
   val name = "Wolfe Source Generator"
   val phase = "wolfe generation"
 
-  def compiledTag(originalName:String) = s"""@${classOf[Compiled].getName}("$originalName")"""
-  def compiledShortTag(originalName:String) = s"""@${classOf[Compiled].getSimpleName}("$originalName")"""
+  def compiledTag(originalName: String) = s"""@${classOf[Compiled].getName}("$originalName")"""
+  def compiledShortTag(originalName: String) = s"""@${classOf[Compiled].getSimpleName}("$originalName")"""
 
 }
 
 /**
  * @author Sebastian Riedel
  */
-class SourceGeneratorCompilerPlugin(val global: Global, targetDir:File) extends Plugin {
+class SourceGeneratorCompilerPlugin(val global: Global,
+                                    targetDir: File,
+                                    generators: List[CodeStringGenerator] = Nil) extends Plugin {
   plugin =>
 
   import SourceGeneratorCompilerPlugin._
@@ -45,17 +47,29 @@ class SourceGeneratorCompilerPlugin(val global: Global, targetDir:File) extends 
 
         //global.treeBrowser.browse(unit.body)
         for (tree <- unit.body) tree match {
+
           case PackageDef(ref, _) =>
             val packageName = sourceText.substring(ref.pos.start, ref.pos.end)
             modified.replace(ref.pos.start, ref.pos.end, packageName + ".compiled")
             modified.insert(ref.pos.end, s"\n\nimport ${classOf[Compiled].getName}")
 
-          case md:ModuleDef => {
-            modified.insert(md.pos.start,compiledShortTag(md.symbol.fullName('.')) + " ")
-          }
-          case dd:DefDef if dd.pos.isRange =>
-            modified.replace(dd.pos.start,dd.pos.end,s"""${compiledShortTag(dd.symbol.fullName('.'))} def ${dd.name.toString}() = ${dd.rhs.toString()} """)
-          case _ =>
+          case md: ModuleDef =>
+            modified.insert(md.pos.start, compiledShortTag(md.symbol.fullName('.')) + " ")
+
+          case dd: DefDef if dd.pos.isRange =>
+            modified.replace(dd.pos.start, dd.pos.end, s"""${compiledShortTag(dd.symbol.fullName('.'))} def ${dd.name.toString}() = ${dd.rhs.toString()} """)
+
+          case other =>
+            def applyFirstMatchingGenerator(gen:List[CodeStringGenerator]) {
+              generators match {
+                case Nil =>
+                case head::tail =>
+                  val result = head(global)(other)
+                  if (result.isDefined) modified.replace(other.pos.start,other.pos.end,result.get) else applyFirstMatchingGenerator(tail)
+              }
+            }
+            applyFirstMatchingGenerator(generators)
+
         }
 
         println(modified.current())
@@ -70,12 +84,14 @@ class SourceGeneratorCompilerPlugin(val global: Global, targetDir:File) extends 
     }
 
   }
-}
-
-class Compiled(original:String) extends StaticAnnotation {
 
 }
 
+trait CodeStringGenerator {
+  def apply(global: Global)(tree: global.Tree): Option[String]
+}
+
+class Compiled(original: String) extends StaticAnnotation
 
 
 /**
