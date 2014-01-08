@@ -184,6 +184,7 @@ object Wolfe {
     def dot(that: Vector) = num.dot(vector, that)
     def norm = num.norm(vector)
     def *(scale: Double) = vector.mapValues(_ * scale)
+    def *(vector:Vector) = vector.map( {case (k,v) => k -> v * vector.getOrElse(k,0.0)})
   }
 
   def c[A, B](set1: Set[A], set2: Set[B]) = for (i <- set1; j <- set2) yield (i, j)
