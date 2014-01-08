@@ -1,12 +1,12 @@
 package scalapplcodefest.sbt
 
-import scala.tools.nsc.Global
 
 /**
  * @author Sebastian Riedel
  */
 trait WolfePatterns {
-  val global:Global
+
+  this: HasGlobal =>
 
   import global._
 
@@ -39,12 +39,16 @@ trait WolfePatterns {
       case ApplyCurried2(se, types, dom, obj) if se.symbol == sym => Some(types, dom, obj)
       case _ => None
     }
+    def apply(types:List[Tree],dom:Tree,obj:Tree) = null
+
   }
   class ApplyOperator3(val sym: Symbol) {
     def unapply(tree: Tree) = tree match {
       case ApplyCurried3(se, types, dom, obj, num) if se.symbol == sym => Some(types, dom, obj, num)
       case _ => None
     }
+    def apply(types:List[Tree],dom:Tree,obj:Tree,num:Tree) = null
+
   }
 
   object DotProduct {
