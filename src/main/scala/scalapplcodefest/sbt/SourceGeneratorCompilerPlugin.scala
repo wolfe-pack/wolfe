@@ -89,9 +89,11 @@ class SourceGeneratorCompilerPlugin(val global: Global,
 
 }
 
-trait CodeStringReplacer {
+trait HasGlobal {
   val global:Global
-//  def replace(global: Global)(tree: global.Tree, modification:ModifiedSourceText): Boolean
+}
+
+trait CodeStringReplacer extends HasGlobal{
   def replace(tree: global.Tree, modification:ModifiedSourceText): Boolean
 
 }
