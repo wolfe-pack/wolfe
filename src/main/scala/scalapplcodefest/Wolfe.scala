@@ -47,11 +47,13 @@ object Wolfe {
 
   implicit val random = new Random(0)
 
-  @Operator.Sample
-  def sample[T](dom: Set[T])(obj: T => Double)(implicit r: Random): T = {
+  def sample[T](dom: Set[T])(obj: T => Double)(implicit r: Random = random): T = {
     import cc.factorie._
     dom.view.sampleExpProportionally(obj)(r)
   }
+
+  @Operator.Sample
+  def samples[T](num: Int)(dom: Set[T])(obj: T => Double)(implicit r: Random = random): Seq[T] = (0 until num).map(x => sample(dom)(obj)(r))
 
   @Operator.Argmin
   def argmin[T](dom: Set[T])(obj: T => Double): T = {
