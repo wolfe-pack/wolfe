@@ -29,8 +29,7 @@ class ArgminByFactorieTrainerReplacer(val global: Global)
               data.symbol.name.toString, y_i.symbol.name.toString, indexId, weightsId, gradientValue)
             modification.replace(tree.pos.start, tree.pos.end, replacement)
             true
-          case _ =>
-            false
+          case _ => false
         }
 
       case _ => false

@@ -5,7 +5,7 @@ import scalapplcodefest.Wolfe
 /**
  * @author Sebastian Riedel
  */
-object CoinTossingToBeCompiled extends App {
+class CoinTossingToBeCompiled extends (() => Any) {
 
   import Wolfe._
 
@@ -23,5 +23,5 @@ object CoinTossingToBeCompiled extends App {
 
   val w = argmin(vectors(coins, myReals)) {w => sum(data) {gold => logZ(coins)(c => ft(c) dot w) - (ft(gold) dot w)} } //this should run w/o compilation
 
-
+  def apply() = w
 }
