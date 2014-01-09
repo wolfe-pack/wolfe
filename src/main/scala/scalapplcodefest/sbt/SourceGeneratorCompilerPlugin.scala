@@ -61,6 +61,8 @@ class SourceGeneratorCompilerPlugin(val global: Global,
               val packageName = sourceText.substring(ref.pos.start, ref.pos.end)
               modified.replace(ref.pos.start, ref.pos.end, packageName + ".compiled")
               modified.insert(ref.pos.end, s"\n\nimport ${classOf[Compiled].getName}")
+              modified.insert(ref.pos.end, s"\n\nimport $packageName._")
+
 
             case md: ModuleDef =>
               modified.insert(md.pos.start, compiledShortTag(md.symbol.fullName('.')) + " ")
