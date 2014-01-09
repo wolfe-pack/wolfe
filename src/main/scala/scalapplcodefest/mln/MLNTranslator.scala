@@ -64,8 +64,18 @@ class MLNTranslator {
   def getState: State = state(StateCollector(groundAtoms, predicates).toList: _*)
   def getPredicates = predicates
   def getFunctions = functions
+  def getDomains = domains
 
   def getRawState: List[GroundAtom[_, Boolean]] = RawStateCollector(groundAtoms, predicates).rawState.toList
+
+  def getPredicatesDictionary= {
+    val predDictionary: ListBuffer[(Symbol, Seq[Term])] = predDeclarations map (p => {
+      val atom: Atom = p.asInstanceOf[Atom]
+      Symbol(atom.predicate)->atom.args
+    })
+
+    predDictionary.toMap
+  }
 
 
   def mln(file: String): this.type = {
