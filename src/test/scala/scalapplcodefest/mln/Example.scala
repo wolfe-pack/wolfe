@@ -2,6 +2,7 @@ package scalapplcodefest.mln
 
 import org.scalatest.{Matchers, FlatSpec}
 import scalapplcodefest.term.{GroundAtom, State}
+import scalapplcodefest.learning.structure.StructLearner
 
 
 /**
@@ -55,8 +56,13 @@ class MLNTest extends FlatSpec with Matchers {
     val mln = new MLNTranslator
     mln.mln(mln_file).db(db_file).justTransform
     val rawState: List[GroundAtom[_, Boolean]] = mln.getRawState
-    println("rawState = " + rawState)
 
+    // todo: to many args
+    StructLearner(mln.getDomains,
+    /*do we need mln.getPredicates here? consider to remove*/
+      mln.getPredicates,
+      mln.getRawState,
+      mln.getPredicatesDictionary).getGraph
   }
 
 }
