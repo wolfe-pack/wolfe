@@ -50,41 +50,49 @@ inlineExceptionHandlers  26  optimization: inline exception handlers
    */
 
 
-  def exploreAST(code: String, runsAfter: List[String], showBrowser: Boolean = false) = {
+
+  class ExplorerTransformer(showBrowser: Boolean = false) extends WolfeTransformer {
+
+        def transformTree[T <: Global#Tree](global: Global, env:WolfeCompilerPlugin2#Environment, tree: T) = {
+          // ignore the package, the object and the first element of the object, which is always the constructor
+          tree match {
+            case p: global.PackageDef => {
+
+              val codeAST: List[global.Tree] = p.stats(0) match {
+                case c: global.ClassDef => c.impl.body.tail
+                case m: global.ModuleDef => m.impl.body.tail
+                case x => List(x)
+              }
+              if (showBrowser)
+                global.treeBrowser.browse(tree.asInstanceOf[global.Tree])
+
+
+              codeAST.foreach {
+                c => {
+                  global.newRawTreePrinter().withTypes.print(c)
+                  println()
+                }
+              }
+            }
+            case _ =>
+          }
+
+
+          tree
+
+        }
+      }
+
+  def exploreAST(code: String, runsAfter: List[String], showBrowser: Boolean = false,
+                 additionalClassPath: List[String] = Nil, transformers: List[WolfeTransformer] = Nil) = {
 
     val wrappedCode = "object TestObject { " + code + "}"
 
-    val compiler = new StringCompiler(transformer = Some(new WolfeTransformer {
+    WolfeTransformers.register(new ExplorerTransformer(showBrowser))
+    transformers.foreach(WolfeTransformers.register)
 
-      def transformTree[T <: Global#Tree](global: Global, env:WolfeCompilerPlugin2#Environment, tree: T) = {
-        // ignore the package, the object and the first element of the object, which is always the constructor
-        tree match {
-          case p: global.PackageDef => {
-
-            val codeAST: List[global.Tree] = p.stats(0) match {
-              case c: global.ClassDef => c.impl.body.tail
-              case m: global.ModuleDef => m.impl.body.tail
-              case x => List(x)
-            }
-            if (showBrowser)
-              global.treeBrowser.browse(tree.asInstanceOf[global.Tree])
-
-
-            codeAST.foreach {
-              c => {
-                global.newRawTreePrinter().withTypes.print(c)
-                println()
-              }
-            }
-          }
-          case _ =>
-        }
-
-
-        tree
-
-      }
-    }), runsAfter = runsAfter)
+    val compiler = new StringCompiler(additionalClassPath = additionalClassPath,
+      transformer = Some(WolfeTransformers), runsAfter = runsAfter)
     compiler.compileCode(wrappedCode)
   }
 

@@ -1,6 +1,12 @@
-name := "scalapplcodefest"
+import sbt._
+import Build._
+import Keys._
 
-version := "0.1.0"
+sbtPlugin := true
+
+name := "wolfe"
+
+version := "0.0.1"
 
 scalaVersion := "2.10.3"
 
@@ -21,3 +27,9 @@ libraryDependencies ++= Seq(
   "org.scala-lang" % "scala-compiler" % "2.10.3",
   "org.scala-lang" % "scala-library" % "2.10.3"
 )
+
+generateWolfeSource := Seq.empty
+
+sourceGenerators in Compile <+= generateWolfeSource
+
+
