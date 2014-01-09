@@ -18,6 +18,8 @@ object Wolfe {
     recurse(dom.toList, range.toList).toSet
   }
 
+  def preds[A](dom:Set[A]) = maps(dom,bools)
+
   def map[A, B](default: B, vals: (A, B)*): Map[A, B] = Map(vals: _*).withDefaultValue(default)
   def map[A, B](keys: Set[A], default: B, vals: (A, B)*): Map[A, B] = (keys -- vals.map(_._1)).map(_ -> default).toMap ++ Map(vals: _*)
 
@@ -59,6 +61,12 @@ object Wolfe {
   def argmin[T](dom: Set[T])(obj: T => Double): T = {
     dom.minBy(obj)
   }
+
+  /**
+   * Body will get replaced by Frankenwolfe with its LaTeX representation
+   */
+  @Output.LaTeX
+  def toLaTeX(body: () => Unit) = """\LaTeX"""
 
 
   class All[T] extends Set[T] {
@@ -127,6 +135,12 @@ object Wolfe {
     }
   }
 
+  type Pred[A] = Map[A,Boolean]
+
+  implicit def unwrap2[A1, A2, B](f: (A1, A2) => B): ((A1, A2)) => B = p => f(p._1, p._2)
+  implicit def unwrap3[A1, A2, A3, B](f: (A1, A2, A3) => B): ((A1, A2, A3)) => B = p => f(p._1, p._2,p._3)
+
+
   object Vector {
     def apply(elems: (Any, Double)*) = Map(elems: _*)
   }
@@ -136,6 +150,8 @@ object Wolfe {
   def ft(key: Any, value: Double = 1.0): Vector = Map(key -> value)
   def ft(key: Any, value: Boolean): Vector = ft(key, if (value) 1.0 else 0.0)
   def feat(key: Any*) = Map(key.toSeq.asInstanceOf[Any] -> 1.0)
+
+  val VectorZero = Map.empty[Any,Double]
 
   implicit object VectorNumeric extends Numeric[Vector] {
     def plus(x: Wolfe.Vector, y: Wolfe.Vector) = {
@@ -170,9 +186,23 @@ object Wolfe {
     def dot(that: Vector) = num.dot(vector, that)
     def norm = num.norm(vector)
     def *(scale: Double) = vector.mapValues(_ * scale)
+    def *(vector:Vector) = vector.map( {case (k,v) => k -> v * vector.getOrElse(k,0.0)})
   }
 
   def c[A, B](set1: Set[A], set2: Set[B]) = for (i <- set1; j <- set2) yield (i, j)
+  def c[A, B, C](set1: Set[A], set2: Set[B], set3:Set[C]) = for (i <- set1; j <- set2; k <- set3) yield (i, j, k)
+
+
+  def all[A,B](mapper:A=>B)(implicit dom:Set[A]):Set[B] = dom map mapper
+  implicit def Pred[A](implicit dom:Set[A]):Set[Pred[A]] = preds(dom)
+  implicit def Cross2[A1,A2](implicit dom1:Set[A1],dom2:Set[A2]):Set[(A1,A2)] = c(dom1,dom2)
+  implicit def Cross3[A1,A2,A3](implicit dom1:Set[A1],dom2:Set[A2],dom3:Set[A3]):Set[(A1,A2,A3)] = c(dom1,dom2,dom3)
+
+
+  @Objective.LinearModel
+  def linearModel[T](featureGenerator: T => List[Vector]) = {
+    (example: T, weights: Vector) => weights dot featureGenerator(example).sum
+  }
 
   import scala.annotation._
 
@@ -192,15 +222,21 @@ object Wolfe {
 
     trait InferenceSetting
     trait GradientBasedOptimizerSetting
+    trait Differentiator
 
     case class Adagrad(rate: Double) extends GradientBasedOptimizerSetting
     case class MaxProduct(iterations: Int) extends InferenceSetting
 
+    case object SymPy extends Differentiator
+    case object Wolferine extends Differentiator
+
     class LogLikelihood extends StaticAnnotation
     class JointLoglikelihood extends StaticAnnotation
-    class Differentiable(setting: GradientBasedOptimizerSetting = Adagrad(1.0)) extends StaticAnnotation
+    class Differentiable(setting: GradientBasedOptimizerSetting = Adagrad(1.0),
+                         differentiator: Option[Differentiator] = None) extends StaticAnnotation
     class LinearModel(setting: InferenceSetting = MaxProduct(1)) extends StaticAnnotation
     class Categorical extends StaticAnnotation
+    class GLM extends StaticAnnotation
     class LogZ extends StaticAnnotation
 
   }
@@ -215,6 +251,14 @@ object Wolfe {
 
   }
 
+  object Stats {
+    class Categorial extends StaticAnnotation
+  }
+
+  object Output {
+    class LaTeX extends StaticAnnotation
+    class SymPy extends StaticAnnotation
+  }
 
 }
 

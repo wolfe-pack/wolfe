@@ -2,7 +2,6 @@ package scalapplcodefest.compiler
 
 import scala.tools.nsc.Global
 import scala.tools.nsc.interpreter.AbstractFileClassLoader
-import scala.tools.nsc.io.VirtualDirectory
 import scala.tools.nsc.ast.TreeDSL
 
 
@@ -14,24 +13,25 @@ import scala.tools.nsc.ast.TreeDSL
 
 object WolfePlayground extends App {
   val code = """
-               |class A extends App {
+               | class A extends (() => Any) {
                |  val x = 1
                |
-               |  println(x)
-               | }
+               |  def apply() = { println(x)}
+               |  }
              """.stripMargin
 
-
-  val compiler = new StringCompiler(Some(new PlaygroundTransformer), runsAfter = List("typer"))
+  val compiler = new StringCompiler(Some(new PlaygroundTransformer), runsAfter = List("parser"))
 
   val virtualDir = compiler.outputDir
 
 
   compiler.compileCode(code)
 
-  val classLoader = new AbstractFileClassLoader(new VirtualDirectory("(memory)", None), this.getClass.getClassLoader)
-  val cls = classLoader.loadClass("test.A") // where className is the name of the class/object in the code
+  val classLoader = new AbstractFileClassLoader(virtualDir, this.getClass.getClassLoader)
+  val cls = classLoader.loadClass("A") // where className is the name of the class/object in the code
+
   cls.getConstructor().newInstance().asInstanceOf[() => Any].apply()
+
 
   class PlaygroundTransformer extends WolfeTransformer {
     def transformTree[T <: Global#Tree](g: Global, env: WolfeCompilerPlugin2#Environment, tree: T): T = {

@@ -40,8 +40,11 @@ object MLEExampleWithLinearModel extends App {
   //training data
   val data = Seq('H, 'T, 'T, 'T)
 
-  @Objective.Categorical
-  def s(params: Vector)(coin: Coin) = ft(coin) dot params
+  @Stats.Categorial
+  def f(coin:Coin) = ft(coin)
+
+  @Objective.GLM
+  def s(params: Vector)(coin: Coin) = f(coin) dot params
 
   @Objective.JointLoglikelihood
   def ll(data: Seq[Coin])(w: Vector) = sum(data) {c => logZ(coins)(s(w)) - s(w)(c)}
@@ -54,7 +57,7 @@ object MLEExampleWithLinearModel extends App {
 
   //this is how the compiled expression should look like
   val compiled = (data map (ft(_))).sum.mapValues(w => log(w / data.size))
-  val compiled2 = sum (data) {ft(_)} mapValues(w => log(w / data.size))
+  val compiled2 = sum (data) {f} mapValues(w => log(w / data.size))
 
 
   println(w)

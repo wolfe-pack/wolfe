@@ -56,10 +56,10 @@ object MatrixFactorizationExample extends App {
   val predict = model | learned | kb
 
   val query = predict(Constant("r1"), Constant("e1"), Constant("e2"))
-  //println("score of r1(e1,e2): " + query.value())
+  println("score of r1(e1,e2): " + query.value())
 
   val queryWithError = predict(Constant("r2"), Constant("e1"), Constant("e2"))
-  debugTerm(queryWithError)
+  //debugTerm(queryWithError)
   //queryWithError.value()
 
   //TODO: objective
