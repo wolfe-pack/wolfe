@@ -5,18 +5,19 @@ import scalapplcodefest.compiler
 import scala.reflect.internal.util.BatchSourceFile
 import scala.reflect.io.{VirtualDirectory, AbstractFile}
 import scala.tools.nsc.interpreter.AbstractFileClassLoader
+import scalapplcodefest.newExamples.CoinTossing
 
 /**
  * @author Sebastian Riedel
  */
-object WolfeAppTest {
+object WolfeObjectOptimizer {
 
   /**
    * This method takes an object, searches for the source code of the object's class, generates
    * optimized code for this class, and then instantiates an object of the optimized class.
    * It hence returns an optimized version of the uncompiled input.
    */
-  def compileAndCreate[T](uncompiled: Any, replacers: List[Global => CodeStringReplacer]): T = {
+  def optimizeObject[T](uncompiled: Any, replacers: List[Global => CodeStringReplacer]): T = {
     //first generate optimized/replaced source code
     val packageName = uncompiled.getClass.getPackage.getName
     val className = uncompiled.getClass.getSimpleName
@@ -47,20 +48,14 @@ object WolfeAppTest {
     instance.asInstanceOf[T]
   }
 
-  def compareCompiled() {
-    val uncompiled = new CoinTossingToBeCompiled
-    val compiled = compileAndCreate[() => Any](uncompiled, List(new MLECodeReplacer(_)))
-    println(uncompiled())
+}
+
+object MLETest {
+  def main(args: Array[String]) {
+    val uncompiled = new CoinTossing
+    val compiled = WolfeObjectOptimizer.optimizeObject[() => Any](uncompiled, List(new MLECodeReplacer(_)))
     println(compiled())
 
   }
-
-  def main(args: Array[String]) {
-    compareCompiled()
-  }
-
 }
 
-trait WolfeApp {
-  def apply(): Any
-}

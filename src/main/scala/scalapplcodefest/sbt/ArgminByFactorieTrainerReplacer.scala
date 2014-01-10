@@ -6,6 +6,7 @@ import cc.factorie.WeightsSet
 import cc.factorie.optimize.{Example, Trainer}
 import cc.factorie.la.WeightsMapAccumulator
 import cc.factorie.util.DoubleAccumulator
+import scalapplcodefest.newExamples.SumOfQuadraticFunctions
 
 /**
  * @author Sebastian Riedel
@@ -41,8 +42,9 @@ class ArgminByFactorieTrainerReplacer(val global: Global)
 
 object ArgminByFactorieTrainerReplacer {
   def main(args: Array[String]) {
+    val className = classOf[SumOfQuadraticFunctions].getName.replaceAll("\\.","/")
     GenerateSources.generate(
-      sourcePath = "src/main/scala/scalapplcodefest/sbt/SumOfQuadraticFunctionsExample.scala",
+      sourcePath = s"src/main/scala/$className.scala",
       replacers = List(g => new ArgminByFactorieTrainerReplacer(g) with SimpleDifferentiator))
   }
 }
