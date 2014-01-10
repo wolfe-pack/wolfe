@@ -35,6 +35,7 @@ class SourceGeneratorCompilerPlugin(val global: Global,
     val global = plugin.global
     val phaseName = SourceGeneratorCompilerPlugin.phase
     val runsAfter = List("namer")
+    var packageName: String = "root"
     def newPhase(prev: scala.tools.nsc.Phase) = new GenerationPhase(prev)
 
     class GenerationPhase(prev: Phase) extends StdPhase(prev) {
@@ -47,10 +48,10 @@ class SourceGeneratorCompilerPlugin(val global: Global,
 
         //global.treeBrowser.browse(unit.body)
         for (tree <- unit.body) {
-          def applyFirstMatchingGenerator(gen:List[CodeStringReplacer]) {
+          def applyFirstMatchingGenerator(gen: List[CodeStringReplacer]) {
             gen match {
               case Nil =>
-              case head::tail =>
+              case head :: tail =>
                 val changed = head.replace(tree.asInstanceOf[head.global.Tree], modified)
                 if (!changed) applyFirstMatchingGenerator(tail)
             }
@@ -58,7 +59,7 @@ class SourceGeneratorCompilerPlugin(val global: Global,
 
           tree match {
             case PackageDef(ref, _) =>
-              val packageName = sourceText.substring(ref.pos.start, ref.pos.end)
+              packageName = sourceText.substring(ref.pos.start, ref.pos.end)
               modified.replace(ref.pos.start, ref.pos.end, packageName + ".compiled")
               modified.insert(ref.pos.end, s"\n\nimport ${classOf[Compiled].getName}")
               modified.insert(ref.pos.end, s"\n\nimport $packageName._")
@@ -67,19 +68,15 @@ class SourceGeneratorCompilerPlugin(val global: Global,
             case md: ModuleDef =>
               modified.insert(md.pos.start, compiledShortTag(md.symbol.fullName('.')) + " ")
 
-            case dd: DefDef if dd.pos.isRange =>
-              //modified.replace(dd.pos.start, dd.pos.end, s"""${compiledShortTag(dd.symbol.fullName('.'))} def ${dd.name.toString}() = ${dd.rhs.toString()} """)
-              modified.replace(dd.pos.start, dd.pos.end, s"""${compiledShortTag(dd.symbol.fullName('.'))} ${dd.toString()} """)
-              //rockt: we still need to be able to pattern match on DefDefs within generators
-              applyFirstMatchingGenerator(replacers)
             case other =>
               applyFirstMatchingGenerator(replacers)
           }
         }
 
         println(modified.current())
-        val modifiedDir = new File(targetDir, "scalapplcodefest/sbt/compiled")
-        println(modifiedDir.mkdirs())
+        val modifiedDirName = packageName.replaceAll("\\.", "/") + "/compiled"
+        val modifiedDir = new File(targetDir, modifiedDirName)
+        modifiedDir.mkdirs()
         val modifiedFile = new File(modifiedDir, sourceFile.getName)
         val out = new PrintWriter(modifiedFile)
         out.println(modified.current())
@@ -92,11 +89,11 @@ class SourceGeneratorCompilerPlugin(val global: Global,
 }
 
 trait HasGlobal {
-  val global:Global
+  val global: Global
 }
 
-trait CodeStringReplacer extends HasGlobal{
-  def replace(tree: global.Tree, modification:ModifiedSourceText): Boolean
+trait CodeStringReplacer extends HasGlobal {
+  def replace(tree: global.Tree, modification: ModifiedSourceText): Boolean
 
 }
 
@@ -107,7 +104,7 @@ class Compiled(original: String) extends StaticAnnotation
  * Maintains a mapping from original character offsets to offsets in a modified string.
  * @param original the string to modify.
  */
-class ModifiedSourceText(original: String, offset:Int = 0) {
+class ModifiedSourceText(original: String, offset: Int = 0) {
   private val source = new StringBuilder(original)
   private val originalToModified = new mutable.HashMap[Int, Int]()
 
@@ -129,7 +126,7 @@ class ModifiedSourceText(original: String, offset:Int = 0) {
 
 object ModifiedSourceText {
 
-  def fromTree(tree:Global#Tree) = {
+  def fromTree(tree: Global#Tree) = {
 
   }
 
