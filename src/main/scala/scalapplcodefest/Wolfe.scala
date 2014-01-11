@@ -2,11 +2,38 @@ package scalapplcodefest
 
 import scala.language.implicitConversions
 import scala.util.Random
+import scala.annotation.StaticAnnotation
+import scalapplcodefest.sbt.Collect
 
 /**
  * @author Sebastian Riedel
  */
+@Collect
 object Wolfe {
+
+  //core operators
+
+  @Operator.Sum
+  def sum2[T,N](data:Iterable[T])(predicate:T => Boolean)(obj:T => N)(implicit num:Numeric[N]):N = {
+    data.filter(predicate).map(obj).sum(num)
+  }
+
+  @Operator.Argmax
+  def argmax2[T,N](data:Iterable[T])(predicate:T => Boolean)(obj:T => N)(implicit ord:Ordering[N]):T = {
+    data.filter(predicate).maxBy(obj)(ord)
+  }
+
+  //derived operators
+
+  def argmin2[T,N](data:Iterable[T])(predicate:T => Boolean)(obj:T => N)(implicit ord:Ordering[N]):T = {
+    argmax2(data)(predicate)(obj)(ord.reverse)
+  }
+
+  def max2[T,N](data:Iterable[T])(predicate:T => Boolean)(obj:T => N)(implicit ord:Ordering[N]):N = {
+    obj(argmax2(data)(predicate)(obj)(ord))
+  }
+
+
   @Domain.Maps
   def maps[A, B](dom: Set[A], range: Set[B]): Set[Map[A, B]] = {
     def recurse(d: List[A], r: List[B], funs: List[Map[A, B]] = List(Map.empty)): List[Map[A, B]] = d match {

@@ -1,13 +1,11 @@
 package scalapplcodefest.sbt
 
-import scala.tools.nsc.Global
-
 
 /**
  * @author Sebastian Riedel
  */
-class MLECodeReplacer(val global:Global) extends CodeStringReplacer with WolfePatterns {
-  def replace(tree: global.Tree, modification: ModifiedSourceText): Boolean = {
+class MLECodeReplacer(val env:GeneratorEnvironment) extends CodeStringReplacer with WolfePatterns {
+  def replace(tree: env.global.Tree, modification: ModifiedSourceText): Boolean = {
 
     tree match {
       case ApplyArgmin(_, vectors, LogLikelihood(data, domain, f, w)) =>
@@ -25,7 +23,7 @@ class MLECodeReplacer(val global:Global) extends CodeStringReplacer with WolfePa
 object MLECodeReplacer {
   def main(args: Array[String]) {
     GenerateSources.generate(
-      sourcePath = "src/main/scala/scalapplcodefest/sbt/CoinTossingToBeCompiled.scala",
+      sourcePath = "src/main/scala/scalapplcodefest/newExamples/CoinTossing.scala",
       replacers = List(new MLECodeReplacer(_)))
   }
 }

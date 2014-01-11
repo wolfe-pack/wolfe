@@ -10,7 +10,8 @@ import scala.annotation.StaticAnnotation
 
 object SourceGeneratorCompilerPlugin {
   val name = "Wolfe Source Generator"
-  val phase = "wolfe generation"
+  val generationPhase = "wolfe generation"
+  val collectionPhase = "wolfe collection"
 
   def compiledTag(originalName: String) = s"""@${classOf[Compiled].getName}("$originalName")"""
   def compiledShortTag(originalName: String) = s"""@${classOf[Compiled].getSimpleName}("$originalName")"""
@@ -20,7 +21,7 @@ object SourceGeneratorCompilerPlugin {
 /**
  * @author Sebastian Riedel
  */
-class SourceGeneratorCompilerPlugin(val global: Global,
+class SourceGeneratorCompilerPlugin(val env: GeneratorEnvironment,
                                     targetDir: File,
                                     replacers: List[CodeStringReplacer] = Nil) extends Plugin {
   plugin =>
@@ -28,13 +29,55 @@ class SourceGeneratorCompilerPlugin(val global: Global,
   import SourceGeneratorCompilerPlugin._
 
   val name = SourceGeneratorCompilerPlugin.name
-  val components = List(GenerationComponent)
+  val components = List(DefCollectionComponent, GenerationComponent)
   val description = "Generates optimized scala code"
+  val global = env.global
+
+  object DefCollectionComponent extends PluginComponent {
+    val global:plugin.env.global.type = env.global
+    val phaseName = collectionPhase
+    val runsAfter = List("namer")
+    def newPhase(prev: Phase) = new CollectionPhase(prev)
+
+    class CollectionPhase(prev:Phase) extends StdPhase(prev) {
+
+      import global._
+      import env._
+
+      val traverser = new Traverser {
+        override def traverse(tree: Tree) = tree match {
+          case p:PackageDef => super.traverse(tree)
+
+          case md@ModuleDef(_,_,_) =>
+            if (md.symbol.hasAnnotation(MarkerCollect) || md.symbol.hasAnnotation(MarkerCompile)) super.traverse(tree)
+
+          case cd@ClassDef(_,_,_,_) =>
+            if (cd.symbol.hasAnnotation(MarkerCollect) || cd.symbol.hasAnnotation(MarkerCompile)) super.traverse(tree)
+
+          case dd@DefDef(_,_,_,_,_,rhs) =>
+            env.implementations(dd.symbol) = rhs
+
+          case vd@ValDef(_,_,_,rhs) =>
+            env.implementations(vd.symbol) = rhs
+
+          case pd:PackageDef =>
+            super.traverse(tree)
+
+
+          case _ =>
+        }
+      }
+
+      def apply(unit: CompilationUnit) = {
+        traverser traverse unit.body
+      }
+    }
+  }
 
   object GenerationComponent extends PluginComponent {
-    val global = plugin.global
-    val phaseName = SourceGeneratorCompilerPlugin.phase
-    val runsAfter = List("namer")
+    val global = env.global
+    val phaseName = SourceGeneratorCompilerPlugin.generationPhase
+    val runsAfter = List(DefCollectionComponent.phaseName)
     var packageName: String = "root"
     def newPhase(prev: scala.tools.nsc.Phase) = new GenerationPhase(prev)
 
@@ -52,11 +95,12 @@ class SourceGeneratorCompilerPlugin(val global: Global,
             gen match {
               case Nil =>
               case head :: tail =>
-                val changed = head.replace(tree.asInstanceOf[head.global.Tree], modified)
+                val changed = head.replace(tree.asInstanceOf[head.env.global.Tree], modified)
                 if (!changed) applyFirstMatchingGenerator(tail)
             }
           }
 
+          val t = plugin.env
           tree match {
             case PackageDef(ref, _) =>
               packageName = sourceText.substring(ref.pos.start, ref.pos.end)
@@ -88,16 +132,45 @@ class SourceGeneratorCompilerPlugin(val global: Global,
 
 }
 
-trait HasGlobal {
+trait InCompilerPlugin {
   val global: Global
+  def definitionOf(sym:global.Symbol):Option[global.Tree] = None
 }
 
-trait CodeStringReplacer extends HasGlobal {
-  def replace(tree: global.Tree, modification: ModifiedSourceText): Boolean
+trait InGeneratorEnvironment {
+  val env:GeneratorEnvironment
+}
+
+class GeneratorEnvironment(val global:Global) {
+  import global._
+
+  val implementations = new mutable.HashMap[Any,Tree]()
+  val MarkerCollect = rootMirror.getClassByName(newTermName(classOf[Collect].getName))
+  val MarkerCompile = rootMirror.getClassByName(newTermName(classOf[Compile].getName))
 
 }
 
+trait CodeStringReplacer extends InGeneratorEnvironment {
+  def replace(tree: env.global.Tree, modification: ModifiedSourceText): Boolean
+
+}
+
+/**
+ * Indicates wolfe compiled code.
+ * @param original the original symbol the annotated symbol is a compilation of.
+ */
 class Compiled(original: String) extends StaticAnnotation
+
+/**
+ * Annotates classes that should be wolfe-compiled
+ */
+class Compile extends StaticAnnotation
+
+/**
+ * Annotates classes from which we should collect definitions that will be wolfe-compiled
+ * when part of classes with @Compile annotation.
+ */
+class Collect extends StaticAnnotation
 
 
 /**

@@ -11,14 +11,14 @@ import scalapplcodefest.newExamples.SumOfQuadraticFunctions
 /**
  * @author Sebastian Riedel
  */
-class ArgminByFactorieTrainerReplacer(val global: Global)
+class ArgminByFactorieTrainerReplacer(val env: GeneratorEnvironment)
   extends CodeStringReplacer with WolfePatterns {
 
   this: Differentiator =>
 
-  import global._
+  import env.global._
 
-  def replace(tree: global.Tree, modification: ModifiedSourceText) = {
+  def replace(tree: env.global.Tree, modification: ModifiedSourceText) = {
     //assume a sum
     tree match {
       case ApplyArgmin(_, _, Function(List(w), ApplySum(_, data, Function(List(y_i), perInstance), _))) =>
@@ -42,7 +42,7 @@ class ArgminByFactorieTrainerReplacer(val global: Global)
 
 object ArgminByFactorieTrainerReplacer {
   def main(args: Array[String]) {
-    val className = classOf[SumOfQuadraticFunctions].getName.replaceAll("\\.","/")
+    val className = classOf[SumOfQuadraticFunctions].getName.replaceAll("\\.", "/")
     GenerateSources.generate(
       sourcePath = s"src/main/scala/$className.scala",
       replacers = List(g => new ArgminByFactorieTrainerReplacer(g) with SimpleDifferentiator))
@@ -50,10 +50,12 @@ object ArgminByFactorieTrainerReplacer {
 }
 
 
-trait Differentiator extends HasGlobal {
+trait Differentiator extends InGeneratorEnvironment {
+
+  import env.global._
 
   //this should return a string representation of (factorie gradient vector, objective value)
-  def differentiate(objective: global.Tree, variable: global.Symbol,
+  def differentiate(objective: Tree, variable: Symbol,
                     indexIdentifier: String, weightIdentifier: String): Option[String]
 
 }
@@ -61,7 +63,7 @@ trait Differentiator extends HasGlobal {
 trait SimpleDifferentiator extends Differentiator {
 
   //this should return a string representation of (factorie gradient vector, objective value)
-  def differentiate(objective: global.Tree, variable: global.Symbol,
+  def differentiate(objective: env.global.Tree, variable: env.global.Symbol,
                     indexIdentifier: String, weightIdentifier: String) = {
     println(s"Differentiating $objective wrt $variable")
     val toSparseFVector = "scalapplcodefest.sbt.FactorieConverter.toFactorieSparseVector"
