@@ -34,37 +34,42 @@ class SourceGeneratorCompilerPlugin(val env: GeneratorEnvironment,
   val global = env.global
 
   object DefCollectionComponent extends PluginComponent {
-    val global:plugin.env.global.type = env.global
+    val global: plugin.env.global.type = env.global
     val phaseName = collectionPhase
     val runsAfter = List("namer")
     def newPhase(prev: Phase) = new CollectionPhase(prev)
 
-    class CollectionPhase(prev:Phase) extends StdPhase(prev) {
+    class CollectionPhase(prev: Phase) extends StdPhase(prev) {
 
       import global._
       import env._
 
       val traverser = new Traverser {
+
+        private var toCollect = true
+
         override def traverse(tree: Tree) = tree match {
-          case p:PackageDef => super.traverse(tree)
-
-          case md@ModuleDef(_,_,_) =>
-            if (md.symbol.hasAnnotation(MarkerCollect) || md.symbol.hasAnnotation(MarkerCompile)) super.traverse(tree)
-
-          case cd@ClassDef(_,_,_,_) =>
-            if (cd.symbol.hasAnnotation(MarkerCollect) || cd.symbol.hasAnnotation(MarkerCompile)) super.traverse(tree)
-
-          case dd@DefDef(_,_,_,_,_,rhs) =>
-            env.implementations(dd.symbol) = rhs
-
-          case vd@ValDef(_,_,_,rhs) =>
-            env.implementations(vd.symbol) = rhs
-
-          case pd:PackageDef =>
+          case p: PackageDef =>
+            toCollect = true
             super.traverse(tree)
 
+          case md@ModuleDef(_, _, _) =>
+            if (!md.symbol.hasAnnotation(MarkerCollect) && !md.symbol.hasAnnotation(MarkerCompile)) toCollect = false
+            if (toCollect) super.traverse(tree)
 
-          case _ =>
+          case cd@ClassDef(_, _, _, _) =>
+            if (!cd.symbol.hasAnnotation(MarkerCollect) && !cd.symbol.hasAnnotation(MarkerCompile)) toCollect = false
+            if (toCollect) super.traverse(tree)
+
+          case dd@DefDef(_, _, _, _, _, rhs) =>
+            env.implementations(dd.symbol) = rhs
+            if (toCollect) super.traverse(tree)
+
+          case vd@ValDef(_, _, _, rhs) =>
+            env.implementations(vd.symbol) = rhs
+            if (toCollect) super.traverse(tree)
+
+          case _ => if (toCollect) super.traverse(tree)
         }
       }
 
@@ -72,6 +77,7 @@ class SourceGeneratorCompilerPlugin(val env: GeneratorEnvironment,
         traverser traverse unit.body
       }
     }
+
   }
 
   object GenerationComponent extends PluginComponent {
@@ -100,7 +106,6 @@ class SourceGeneratorCompilerPlugin(val env: GeneratorEnvironment,
             }
           }
 
-          val t = plugin.env
           tree match {
             case PackageDef(ref, _) =>
               packageName = sourceText.substring(ref.pos.start, ref.pos.end)
@@ -134,17 +139,18 @@ class SourceGeneratorCompilerPlugin(val env: GeneratorEnvironment,
 
 trait InCompilerPlugin {
   val global: Global
-  def definitionOf(sym:global.Symbol):Option[global.Tree] = None
+  def definitionOf(sym: global.Symbol): Option[global.Tree] = None
 }
 
 trait InGeneratorEnvironment {
-  val env:GeneratorEnvironment
+  val env: GeneratorEnvironment
 }
 
-class GeneratorEnvironment(val global:Global) {
+class GeneratorEnvironment(val global: Global) {
+
   import global._
 
-  val implementations = new mutable.HashMap[Any,Tree]()
+  val implementations = new mutable.HashMap[Any, Tree]()
   val MarkerCollect = rootMirror.getClassByName(newTermName(classOf[Collect].getName))
   val MarkerCompile = rootMirror.getClassByName(newTermName(classOf[Compile].getName))
 
