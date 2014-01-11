@@ -1,10 +1,12 @@
 package scalapplcodefest.newExamples
 
 import scalapplcodefest.Wolfe
+import scalapplcodefest.sbt.Compile
 
 /**
  * @author Sebastian Riedel
  */
+@Compile
 class CoinTossing extends (() => Wolfe.Vector) {
 
   import Wolfe._

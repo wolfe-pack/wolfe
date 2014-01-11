@@ -41,7 +41,7 @@ object SimpleCompiler {
 
   def inlineFile(code:String) = new BatchSourceFile("(inline)", code)
 
-  def compile(settings: Settings, sources:List[SourceFile], pluginConstructors: List[Global => scala.tools.nsc.plugins.Plugin] = Nil) {
+  def compile(settings: Settings, sources:List[SourceFile], pluginConstructors: List[GeneratorEnvironment => scala.tools.nsc.plugins.Plugin] = Nil) {
     val reporter = new ConsoleReporter(settings)
     setDefaultClasspath(settings)
     val compiler: Global =
@@ -49,8 +49,9 @@ object SimpleCompiler {
         self =>
         override protected def computeInternalPhases() {
           super.computeInternalPhases()
+          val env = new GeneratorEnvironment(self)
 
-          for (constructor <- pluginConstructors; phase <- constructor(self).components)
+          for (constructor <- pluginConstructors; phase <- constructor(env).components)
             phasesSet += phase
         }
       }

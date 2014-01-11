@@ -17,7 +17,7 @@ object WolfeObjectOptimizer {
    * optimized code for this class, and then instantiates an object of the optimized class.
    * It hence returns an optimized version of the uncompiled input.
    */
-  def optimizeObject[T](uncompiled: Any, replacers: List[Global => CodeStringReplacer]): T = {
+  def optimizeObject[T](uncompiled: Any, replacers: List[GeneratorEnvironment => CodeStringReplacer]): T = {
     //first generate optimized/replaced source code
     val packageName = uncompiled.getClass.getPackage.getName
     val className = uncompiled.getClass.getSimpleName

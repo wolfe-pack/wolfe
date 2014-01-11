@@ -1,20 +1,20 @@
 package scalapplcodefest.sbt
 
-import scala.tools.nsc.{Global, Settings}
+import scala.tools.nsc.Settings
 import scala.reflect.internal.util.BatchSourceFile
 import scala.reflect.io.{File, AbstractFile}
 
 /**
  * Created by rockt on 07/01/2014.
  */
-class DerivativeStringReplacer(val global:Global) extends CodeStringReplacer {
+class DerivativeStringReplacer(val env:GeneratorEnvironment) extends CodeStringReplacer {
   var debug = false
+  import env.global._
 
-  def replace(tree: global.type#Tree, modification: ModifiedSourceText): Boolean = {
-    import global._
+  def replace(tree: Tree, modification: ModifiedSourceText): Boolean = {
 
     if (debug && tree.toString().startsWith("scala.AnyRef {")) {
-      global.treeBrowser.browse(tree)
+      treeBrowser.browse(tree)
       debug = false
     }
 
@@ -39,7 +39,7 @@ object GeneratedDifferentialSourcesPlayground extends App {
     val targetDir = new java.io.File("target/scala-2.10/sbt-0.13/src_managed/main/scala/")
     val settings = new Settings()
     settings.nowarnings.value = true
-    settings.stopAfter.value = List(SourceGeneratorCompilerPlugin.phase)
+    settings.stopAfter.value = List(SourceGeneratorCompilerPlugin.generationPhase)
     val source = new BatchSourceFile(AbstractFile.getFile(File("src/main/scala/scalapplcodefest/sbt/ExampleDifferentiableTemplate.scala")))
     SimpleCompiler.compile(settings, List(source),
       List(global => new SourceGeneratorCompilerPlugin(global, targetDir, List(new DerivativeStringReplacer(global)))))
