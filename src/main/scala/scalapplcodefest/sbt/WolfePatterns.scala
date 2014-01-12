@@ -15,9 +15,6 @@ trait WolfePatterns {
   val sum = definitions.getMember(wolfe, newTermName("sum"))
   val logZ = definitions.getMember(wolfe, newTermName("logZ"))
 
-  //new core operators
-  val sum2 = definitions.getMember(wolfe, newTermName("sum2"))
-  val argmax2 = definitions.getMember(wolfe, newTermName("argmax2"))
 
   object ApplyCurried2 {
     def unapply(tree: Tree) = tree match {
@@ -110,10 +107,37 @@ trait WolfePatterns {
   }
 
   object ApplyArgmin extends ApplyOperator2(argmin)
-
   object ApplySum extends ApplyOperator3(sum)
-
   object ApplyLogZ extends ApplyOperator2(logZ)
+
+  //new core operators
+  val sum2 = definitions.getMember(wolfe, newTermName("sum2"))
+  val argmax2 = definitions.getMember(wolfe, newTermName("argmax2"))
+
+  //new derived operators
+  val logZ2 = definitions.getMember(wolfe, newTermName("logZ2"))
+  val argmin2 = definitions.getMember(wolfe, newTermName("argmin2"))
+
+  object ApplyArgmin2 extends ApplyOperator4(argmin2)
+  object ApplyLogZ2 extends ApplyOperator3(logZ2)
+
+  object PerInstanceLogLikelihood2 {
+    def unapply(tree: Tree) = tree match {
+      case Function(y_i, Apply(Select(ApplyLogZ2(_, domain, condition, Function(y, LinearModel(f1, _, w1))), minus), List(LinearModel(f2, _, w2))))
+        if f1.symbol.name == f2.symbol.name =>
+        //todo: should check model
+        Some(domain, f1, w1)
+      case _ => None
+    }
+  }
+
+  object LogLikelihood2 {
+    def unapply(tree: Tree) = tree match {
+      case Function(weight1, ApplySum(_, data, PerInstanceLogLikelihood2(domain, f, w), _)) => Some(data, domain, f, w)
+      case _ => None
+    }
+  }
+
 
 
 }

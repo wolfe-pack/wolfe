@@ -33,6 +33,11 @@ object Wolfe {
     obj(argmax2(data)(predicate)(obj)(ord))
   }
 
+  def logZ2[T](data:Iterable[T])(predicate:T => Boolean)(obj:T => Double): Double = {
+    math.log(sum2(data)(predicate)(t => math.exp(obj(t))))
+  }
+
+
 
   @Domain.Maps
   def maps[A, B](dom: Set[A], range: Set[B]): Set[Map[A, B]] = {
