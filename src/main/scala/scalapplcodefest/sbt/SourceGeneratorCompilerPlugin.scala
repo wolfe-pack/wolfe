@@ -61,11 +61,11 @@ class SourceGeneratorCompilerPlugin(val env: GeneratorEnvironment,
             if (!cd.symbol.hasAnnotation(MarkerCollect) && !cd.symbol.hasAnnotation(MarkerCompile)) toCollect = false
             if (toCollect) super.traverse(tree)
 
-          case dd@DefDef(_, _, _, _, _, rhs) =>
+          case dd@DefDef(_,methodName, _, _, _, rhs) =>
             env.implementations(dd.symbol) = rhs
             if (toCollect) super.traverse(tree)
 
-          case vd@ValDef(_, _, _, rhs) =>
+          case vd@ValDef(_, valueName, _, rhs) =>
             env.implementations(vd.symbol) = rhs
             if (toCollect) super.traverse(tree)
 
@@ -151,8 +151,23 @@ class GeneratorEnvironment(val global: Global) {
   import global._
 
   val implementations = new mutable.HashMap[Any, Tree]()
+
   val MarkerCollect = rootMirror.getClassByName(newTermName(classOf[Collect].getName))
   val MarkerCompile = rootMirror.getClassByName(newTermName(classOf[Compile].getName))
+
+  val inliner = new Inliner
+
+  def inline(tree:Tree) = inliner.transform(tree)
+
+  class Inliner extends Transformer {
+    override def transform(tree: Tree) = tree match {
+      case Ident(name) => implementations.get(name) match {
+        case Some(imp) => imp
+        case _ => tree
+      }
+      case _ => tree
+    }
+  }
 
 }
 
