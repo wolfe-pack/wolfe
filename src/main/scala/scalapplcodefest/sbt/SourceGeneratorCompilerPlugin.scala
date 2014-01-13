@@ -214,6 +214,7 @@ class Compiled(original: String) extends StaticAnnotation
  */
 class Compile extends StaticAnnotation
 
+
 /**
  * Annotates classes from which we should collect definitions that will be wolfe-compiled
  * when part of classes with @Compile annotation.
