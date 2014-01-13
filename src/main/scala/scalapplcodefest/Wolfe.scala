@@ -2,8 +2,8 @@ package scalapplcodefest
 
 import scala.language.implicitConversions
 import scala.util.Random
-import scala.annotation.StaticAnnotation
 import scalapplcodefest.sbt.Collect
+import scalapplcodefest.Wolfe.Stats.OneHot
 
 /**
  * @author Sebastian Riedel
@@ -36,6 +36,11 @@ object Wolfe {
   def logZ2[T](data:Iterable[T])(predicate:T => Boolean)(obj:T => Double): Double = {
     math.log(sum2(data)(predicate)(t => math.exp(obj(t))))
   }
+
+  //sufficient statistics
+
+  @OneHot
+  def oneHot(key:Any):Vector = Map(key -> 1.0)
 
 
 
@@ -285,6 +290,8 @@ object Wolfe {
 
   object Stats {
     class Categorial extends StaticAnnotation
+    class OneHot extends StaticAnnotation
+
   }
 
   object Output {

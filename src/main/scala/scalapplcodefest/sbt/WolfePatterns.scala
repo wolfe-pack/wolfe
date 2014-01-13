@@ -1,5 +1,7 @@
 package scalapplcodefest.sbt
 
+import scalapplcodefest.Wolfe.Stats.OneHot
+
 
 /**
  * @author Sebastian Riedel
@@ -14,6 +16,8 @@ trait WolfePatterns {
   val argmin = definitions.getMember(wolfe, newTermName("argmin"))
   val sum = definitions.getMember(wolfe, newTermName("sum"))
   val logZ = definitions.getMember(wolfe, newTermName("logZ"))
+  val stats = definitions.getMemberModule(wolfe, newTermName("Stats"))
+  val MarkerOneHot = definitions.getMemberClass(stats, newTermName("OneHot"))
 
 
   object ApplyCurried2 {
@@ -117,6 +121,10 @@ trait WolfePatterns {
   //new derived operators
   val logZ2 = definitions.getMember(wolfe, newTermName("logZ2"))
   val argmin2 = definitions.getMember(wolfe, newTermName("argmin2"))
+
+  //sufficient stats
+  val oneHot = definitions.getMember(wolfe, newTermName("oneHot"))
+
 
   object ApplyArgmin2 extends ApplyOperator4(argmin2)
   object ApplyLogZ2 extends ApplyOperator3(logZ2)
