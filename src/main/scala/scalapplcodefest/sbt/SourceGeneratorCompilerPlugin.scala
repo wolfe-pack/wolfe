@@ -61,12 +61,12 @@ class SourceGeneratorCompilerPlugin(val env: GeneratorEnvironment,
             if (!cd.symbol.hasAnnotation(MarkerCollect) && !cd.symbol.hasAnnotation(MarkerCompile)) toCollect = false
             if (toCollect) super.traverse(tree)
 
-          case dd@DefDef(_,methodName, _, _, _, rhs) =>
-            env.implementations(dd.symbol) = rhs
+          case dd:DefDef =>
+            env.implementations(dd.symbol) = dd
             if (toCollect) super.traverse(tree)
 
-          case vd@ValDef(_, valueName, _, rhs) =>
-            env.implementations(vd.symbol) = rhs
+          case vd:ValDef =>
+            env.implementations(vd.symbol) = vd
             if (toCollect) super.traverse(tree)
 
           case _ => if (toCollect) super.traverse(tree)
@@ -150,22 +150,49 @@ class GeneratorEnvironment(val global: Global) {
 
   import global._
 
-  val implementations = new mutable.HashMap[Any, Tree]()
+  val implementations = new mutable.HashMap[Any, ValOrDefDef]()
 
   val MarkerCollect = rootMirror.getClassByName(newTermName(classOf[Collect].getName))
   val MarkerCompile = rootMirror.getClassByName(newTermName(classOf[Compile].getName))
 
-  val inliner = new Inliner
+  val betaReducer = new BetaReducer
+  val valInliner = new ValInliner
 
-  def inline(tree:Tree) = inliner.transform(tree)
+  def betaReduce(tree:Tree) = betaReducer.transform(tree)
+  def inlineVals(tree:Tree) = valInliner.transform(tree)
 
-  class Inliner extends Transformer {
+  class ValInliner extends Transformer {
     override def transform(tree: Tree) = tree match {
-      case Ident(name) => implementations.get(name) match {
-        case Some(imp) => imp
-        case _ => tree
+      case i@Ident(name) => implementations.get(i.symbol) match {
+        case Some(ValDef(_,_,_,rhs)) => rhs
+        case _ => super.transform(tree)
       }
-      case _ => tree
+      case _ => super.transform(tree)
+    }
+  }
+
+  class BetaReducer extends Transformer {
+    override def transform(tree: Tree) = tree match {
+      case Apply(f,args) => implementations.get(f.symbol) match {
+        case Some(DefDef(_,_,_,List(defArgs),_,rhs)) =>
+          //replace arguments of defdef with arguments of apply
+          val binding = (defArgs.map(_.symbol) zip args).toMap
+          val substituter = new Substituter(binding)
+          val result = substituter transform rhs
+          result
+        case _ => super.transform(tree)
+      }
+      case _ => super.transform(tree)
+    }
+  }
+
+  class Substituter(binding:Map[Symbol,Tree]) extends Transformer {
+    override def transform(tree: Tree) = tree match {
+      case i:Ident => binding.get(i.symbol) match {
+        case Some(value) => value
+        case _ => super.transform(tree)
+      }
+      case _ => super.transform(tree)
     }
   }
 

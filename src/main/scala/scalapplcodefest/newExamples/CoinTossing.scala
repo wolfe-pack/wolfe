@@ -21,7 +21,13 @@ class CoinTossing extends (() => Wolfe.Vector) {
     //training data
     val data = Seq('H, 'T, 'T, 'T)
 
+    def model(c:Coin, w:Vector) = ft(c) dot w
+
     //MLE estimate
-    argmin(vectors) {w => sum(data) {t => logZ(coins)(c => ft(c) dot w) - (ft(t) dot w)}}
+    //argmin2(vectors)(_ => true) {w => sum(data) {t => logZ2(coins)(_ => true)(c => ft(c) dot w) - (ft(t) dot w)}}
+
+    argmin2(vectors)(_ => true) {w => sum(data) {t => logZ2(coins)(_ => true)(c => model(c,w)) - model(t, w)}}
+
+
   }
 }
