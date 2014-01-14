@@ -54,19 +54,21 @@ class SourceGeneratorCompilerPlugin(val env: GeneratorEnvironment,
             super.traverse(tree)
 
           case md@ModuleDef(_, _, _) =>
+            env.moduleDefs(md.symbol) = md
             if (!md.symbol.hasAnnotation(MarkerCollect) && !md.symbol.hasAnnotation(MarkerCompile)) toCollect = false
             if (toCollect) super.traverse(tree)
 
           case cd@ClassDef(_, _, _, _) =>
+            env.classDefs(cd.symbol) = cd
             if (!cd.symbol.hasAnnotation(MarkerCollect) && !cd.symbol.hasAnnotation(MarkerCompile)) toCollect = false
             if (toCollect) super.traverse(tree)
 
           case dd:DefDef =>
-            env.implementations(dd.symbol) = dd
+            env.valOrDefDefs(dd.symbol) = dd
             if (toCollect) super.traverse(tree)
 
           case vd:ValDef =>
-            env.implementations(vd.symbol) = vd
+            env.valOrDefDefs(vd.symbol) = vd
             if (toCollect) super.traverse(tree)
 
           case _ => if (toCollect) super.traverse(tree)
@@ -81,7 +83,7 @@ class SourceGeneratorCompilerPlugin(val env: GeneratorEnvironment,
   }
 
   object GenerationComponent extends PluginComponent {
-    val global = env.global
+    val global:env.global.type = env.global
     val phaseName = SourceGeneratorCompilerPlugin.generationPhase
     val runsAfter = List(DefCollectionComponent.phaseName)
     var packageName: String = "root"
@@ -90,7 +92,7 @@ class SourceGeneratorCompilerPlugin(val env: GeneratorEnvironment,
     class GenerationPhase(prev: Phase) extends StdPhase(prev) {
       override def name = plugin.name
       def apply(unit: global.CompilationUnit) = {
-        import global._
+        import env.global._
         val sourceFile = unit.source.file.file
         val sourceText = Source.fromFile(sourceFile).getLines().mkString("\n")
         val modified = new ModifiedSourceText(sourceText)
@@ -113,8 +115,10 @@ class SourceGeneratorCompilerPlugin(val env: GeneratorEnvironment,
               modified.insert(ref.pos.end, s"\n\nimport ${classOf[Compiled].getName}")
               modified.insert(ref.pos.end, s"\n\nimport $packageName._")
 
+            case cd: ClassDef if cd.symbol.hasAnnotation(env.MarkerCompile) =>
+              modified.insert(cd.pos.start, compiledShortTag(cd.symbol.fullName('.')) + " ")
 
-            case md: ModuleDef =>
+            case md: ModuleDef if md.symbol.hasAnnotation(env.MarkerCompile) =>
               modified.insert(md.pos.start, compiledShortTag(md.symbol.fullName('.')) + " ")
 
             case other =>
@@ -150,7 +154,10 @@ class GeneratorEnvironment(val global: Global) {
 
   import global._
 
-  val implementations = new mutable.HashMap[Any, ValOrDefDef]()
+  val valOrDefDefs = new mutable.HashMap[Symbol, ValOrDefDef]()
+  val moduleDefs = new mutable.HashMap[Symbol, ModuleDef]()
+  val classDefs = new mutable.HashMap[Symbol, ClassDef]()
+
 
   val MarkerCollect = rootMirror.getClassByName(newTermName(classOf[Collect].getName))
   val MarkerCompile = rootMirror.getClassByName(newTermName(classOf[Compile].getName))
@@ -163,7 +170,7 @@ class GeneratorEnvironment(val global: Global) {
 
   class ValInliner extends Transformer {
     override def transform(tree: Tree) = tree match {
-      case i@Ident(name) => implementations.get(i.symbol) match {
+      case i@Ident(name) => valOrDefDefs.get(i.symbol) match {
         case Some(ValDef(_,_,_,rhs)) => rhs
         case _ => super.transform(tree)
       }
@@ -173,7 +180,7 @@ class GeneratorEnvironment(val global: Global) {
 
   class BetaReducer extends Transformer {
     override def transform(tree: Tree) = tree match {
-      case Apply(f,args) => implementations.get(f.symbol) match {
+      case Apply(f,args) => valOrDefDefs.get(f.symbol) match {
         case Some(DefDef(_,_,_,List(defArgs),_,rhs)) =>
           //replace arguments of defdef with arguments of apply
           val binding = (defArgs.map(_.symbol) zip args).toMap
