@@ -17,7 +17,29 @@ trait WolfePatterns {
   val sum = definitions.getMember(wolfe, newTermName("sum"))
   val logZ = definitions.getMember(wolfe, newTermName("logZ"))
   val stats = definitions.getMemberModule(wolfe, newTermName("Stats"))
+
+  //search space generators
+  val all = definitions.getMember(wolfe, newTermName("all"))
+  val cross2 = definitions.getMember(wolfe, newTermName("c"))
+  val unwrap2 = definitions.getMember(wolfe, newTermName("unwrap2"))
+  val bools = definitions.getMember(wolfe, newTermName("bools"))
+  val doubles = definitions.getMember(wolfe, newTermName("doubles"))
+
+
+  //new core operators
+  val sum2 = definitions.getMember(wolfe, newTermName("sum2"))
+  val argmax2 = definitions.getMember(wolfe, newTermName("argmax2"))
+
+  //new derived operators
+  val logZ2 = definitions.getMember(wolfe, newTermName("logZ2"))
+  val argmin2 = definitions.getMember(wolfe, newTermName("argmin2"))
+
+  //sufficient stats
+  val oneHot = definitions.getMember(wolfe, newTermName("oneHot"))
+
+  //Annotations
   val MarkerOneHot = definitions.getMemberClass(stats, newTermName("OneHot"))
+
 
 
   object ApplyCurried2 {
@@ -114,19 +136,11 @@ trait WolfePatterns {
   object ApplySum extends ApplyOperator3(sum)
   object ApplyLogZ extends ApplyOperator2(logZ)
 
-  //new core operators
-  val sum2 = definitions.getMember(wolfe, newTermName("sum2"))
-  val argmax2 = definitions.getMember(wolfe, newTermName("argmax2"))
 
-  //new derived operators
-  val logZ2 = definitions.getMember(wolfe, newTermName("logZ2"))
-  val argmin2 = definitions.getMember(wolfe, newTermName("argmin2"))
-
-  //sufficient stats
-  val oneHot = definitions.getMember(wolfe, newTermName("oneHot"))
 
 
   object ApplyArgmin2 extends ApplyOperator4(argmin2)
+  object ApplyArgmax2 extends ApplyOperator4(argmax2)
   object ApplyLogZ2 extends ApplyOperator3(logZ2)
 
   object PerInstanceLogLikelihood2 {
