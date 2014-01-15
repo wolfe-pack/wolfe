@@ -161,5 +161,39 @@ trait WolfePatterns {
   }
 
 
+  /**
+   * Extracts whether a set expression corresponds to a set of case class objects, and
+   * returns the fields of the case class and the sets that make up the arguments
+   * of the cartesian product that forms the set of case class objects.
+   */
+  object CaseClassDomain {
+    def unapply(tree: Tree) = tree match {
+      case Apply(Apply(TypeApply(allTuples, _), List(Apply(unwrap, List(constructor)))), List(Apply(TypeApply(cross, _), sets))) =>
+        env.moduleDefs.get(constructor.symbol) match {
+          case Some(cdef) =>
+            val fields = cdef.impl.body.collectFirst({
+              case DefDef(_, name, _, List(params), _, _) if name.encoded == "apply" => params
+            })
+            Some(constructor, fields.get, sets)
+          case _ => None
+        }
+      case _ => None
+    }
+    def apply(constructor: Tree, fields: List[ValDef], sets: List[Tree]) = ???
+  }
+
+  /**
+   * Detects tests for field equality with a specific value.
+   */
+  object FieldEquality {
+    def unapply(tree: Tree) = tree match {
+      case Apply(Select(Select(data, fieldName), eqeq), List(rhs)) =>
+        //todo: check whether eqeq is an equals method
+        Some(data, fieldName, rhs)
+      case _ => None
+    }
+    def apply(dataObject:Tree, fieldName:Name, rhs:Tree) = ???
+  }
+
 
 }
