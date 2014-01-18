@@ -12,9 +12,10 @@ object SourceGeneratorCompilerPlugin {
   val name = "Wolfe Source Generator"
   val generationPhase = "wolfe generation"
   val collectionPhase = "wolfe collection"
+  val namePostfix = "Compiled"
 
-  def compiledTag(originalName: String) = s"""@${classOf[Compiled].getName}("$originalName")"""
-  def compiledShortTag(originalName: String) = s"""@${classOf[Compiled].getSimpleName}("$originalName")"""
+  def compiledTag(originalName: String) = s"""${classOf[Compiled].getName}("$originalName")"""
+  def compiledShortTag(originalName: String) = s"""${classOf[Compiled].getSimpleName}("$originalName")"""
 
 }
 
@@ -44,7 +45,7 @@ class SourceGeneratorCompilerPlugin(val env: GeneratorEnvironment,
       import global._
       import env._
 
-      val traverser = new Traverser {
+      val collector = new Traverser {
 
         private var toCollect = true
 
@@ -55,19 +56,19 @@ class SourceGeneratorCompilerPlugin(val env: GeneratorEnvironment,
 
           case md@ModuleDef(_, _, _) =>
             env.moduleDefs(md.symbol) = md
-            if (!md.symbol.hasAnnotation(MarkerCollect) && !md.symbol.hasAnnotation(MarkerCompile)) toCollect = false
+            if (!md.symbol.hasAnnotation(MarkerAnalyze) && !md.symbol.hasAnnotation(MarkerCompile)) toCollect = false
             if (toCollect) super.traverse(tree)
 
           case cd@ClassDef(_, _, _, _) =>
             env.classDefs(cd.symbol) = cd
-            if (!cd.symbol.hasAnnotation(MarkerCollect) && !cd.symbol.hasAnnotation(MarkerCompile)) toCollect = false
+            if (!cd.symbol.hasAnnotation(MarkerAnalyze) && !cd.symbol.hasAnnotation(MarkerCompile)) toCollect = false
             if (toCollect) super.traverse(tree)
 
-          case dd:DefDef =>
+          case dd: DefDef =>
             env.valOrDefDefs(dd.symbol) = dd
             if (toCollect) super.traverse(tree)
 
-          case vd:ValDef =>
+          case vd: ValDef =>
             env.valOrDefDefs(vd.symbol) = vd
             if (toCollect) super.traverse(tree)
 
@@ -76,14 +77,14 @@ class SourceGeneratorCompilerPlugin(val env: GeneratorEnvironment,
       }
 
       def apply(unit: CompilationUnit) = {
-        traverser traverse unit.body
+        collector traverse unit.body
       }
     }
 
   }
 
   object GenerationComponent extends PluginComponent {
-    val global:env.global.type = env.global
+    val global: env.global.type = env.global
     val phaseName = SourceGeneratorCompilerPlugin.generationPhase
     val runsAfter = List(DefCollectionComponent.phaseName)
     var packageName: String = "root"
@@ -97,40 +98,69 @@ class SourceGeneratorCompilerPlugin(val env: GeneratorEnvironment,
         val sourceText = Source.fromFile(sourceFile).getLines().mkString("\n")
         val modified = new ModifiedSourceText(sourceText)
 
-        //global.treeBrowser.browse(unit.body)
-        for (tree <- unit.body) {
-          def applyFirstMatchingGenerator(gen: List[CodeStringReplacer]) {
-            gen match {
-              case Nil =>
-              case head :: tail =>
-                val changed = head.replace(tree.asInstanceOf[head.env.global.Tree], modified)
-                if (!changed) applyFirstMatchingGenerator(tail)
+        val modifier = new Traverser {
+
+          override def traverse(tree: Tree) = {
+            def applyFirstMatchingGenerator(gen: List[CodeStringReplacer]) {
+              gen match {
+                case Nil =>
+                case head :: tail =>
+                  val changed = head.replace(tree.asInstanceOf[head.env.global.Tree], modified)
+                  if (!changed) applyFirstMatchingGenerator(tail)
+              }
             }
-          }
-
-          tree match {
-            case PackageDef(ref, _) =>
-              packageName = sourceText.substring(ref.pos.start, ref.pos.end)
-              modified.replace(ref.pos.start, ref.pos.end, packageName + ".compiled")
-              modified.insert(ref.pos.end, s"\n\nimport ${classOf[Compiled].getName}")
-              modified.insert(ref.pos.end, s"\n\nimport $packageName._")
-
-            case cd: ClassDef if cd.symbol.hasAnnotation(env.MarkerCompile) =>
-              modified.insert(cd.pos.start, compiledShortTag(cd.symbol.fullName('.')) + " ")
-
-            case md: ModuleDef if md.symbol.hasAnnotation(env.MarkerCompile) =>
-              modified.insert(md.pos.start, compiledShortTag(md.symbol.fullName('.')) + " ")
-
-            case other =>
-              applyFirstMatchingGenerator(replacers)
+            applyFirstMatchingGenerator(replacers)
+            super.traverse(tree)
           }
         }
 
+        val selector = new Traverser {
+          override def traverse(tree: Tree) = tree match {
+            case PackageDef(ref, _) =>
+              packageName = sourceText.substring(ref.pos.start, ref.pos.end)
+              modified.insert(ref.pos.end, s"\n\nimport ${classOf[Compiled].getName}")
+              super.traverse(tree)
+
+            case cd: ClassDef =>
+              if (cd.symbol.hasAnnotation(env.MarkerCompile)) {
+                for (ann <- cd.symbol.annotations; if ann.matches(env.MarkerCompile))
+                  modified.replace(ann.pos.start, ann.pos.end, compiledShortTag(cd.symbol.fullName('.')))
+                modified.insert(cd.impl.pos.start - 1, namePostfix)
+                modifier traverse cd
+              }
+              else {
+                for (ann <- cd.symbol.annotations) modified.delete(ann.pos.start - 1, ann.pos.end)
+                modified.delete(cd.pos.start, cd.pos.end)
+              }
+
+
+            case md: ModuleDef =>
+              if (md.symbol.hasAnnotation(env.MarkerCompile)) {
+                for (ann <- md.symbol.annotations; if ann.matches(env.MarkerCompile))
+                  modified.replace(ann.pos.start, ann.pos.end, compiledShortTag(md.symbol.fullName('.')))
+                modified.insert(md.pos.end, namePostfix)
+                modifier traverse md
+              }
+              else {
+                for (ann <- md.symbol.annotations) modified.delete(ann.pos.start - 1, ann.pos.end)
+                modified.delete(md.pos.start, md.pos.end)
+              }
+
+            case _ => super.traverse(tree)
+          }
+
+        }
+
+
+        //global.treeBrowser.browse(unit.body)
+        selector traverse unit.body
+
         println(modified.current())
-        val modifiedDirName = packageName.replaceAll("\\.", "/") + "/compiled"
+        val modifiedDirName = packageName.replaceAll("\\.", "/")
         val modifiedDir = new File(targetDir, modifiedDirName)
         modifiedDir.mkdirs()
-        val modifiedFile = new File(modifiedDir, sourceFile.getName)
+        val sourceFileName = sourceFile.getName
+        val modifiedFile = new File(modifiedDir, sourceFileName.substring(0, sourceFileName.lastIndexOf('.')) + "Compiled.scala")
         val out = new PrintWriter(modifiedFile)
         out.println(modified.current())
         out.close()
@@ -159,19 +189,19 @@ class GeneratorEnvironment(val global: Global) {
   val classDefs = new mutable.HashMap[Symbol, ClassDef]()
 
 
-  val MarkerCollect = rootMirror.getClassByName(newTermName(classOf[Collect].getName))
+  val MarkerAnalyze = rootMirror.getClassByName(newTermName(classOf[Analyze].getName))
   val MarkerCompile = rootMirror.getClassByName(newTermName(classOf[Compile].getName))
 
   val betaReducer = new BetaReducer
   val valInliner = new ValInliner
 
-  def betaReduce(tree:Tree) = betaReducer.transform(tree)
-  def inlineVals(tree:Tree) = valInliner.transform(tree)
+  def betaReduce(tree: Tree) = betaReducer.transform(tree)
+  def inlineVals(tree: Tree) = valInliner.transform(tree)
 
   class ValInliner extends Transformer {
     override def transform(tree: Tree) = tree match {
       case i@Ident(name) => valOrDefDefs.get(i.symbol) match {
-        case Some(ValDef(_,_,_,rhs)) => rhs
+        case Some(ValDef(_, _, _, rhs)) => rhs
         case _ => super.transform(tree)
       }
       case _ => super.transform(tree)
@@ -180,8 +210,8 @@ class GeneratorEnvironment(val global: Global) {
 
   class BetaReducer extends Transformer {
     override def transform(tree: Tree) = tree match {
-      case Apply(f,args) => valOrDefDefs.get(f.symbol) match {
-        case Some(DefDef(_,_,_,List(defArgs),_,rhs)) =>
+      case Apply(f, args) => valOrDefDefs.get(f.symbol) match {
+        case Some(DefDef(_, _, _, List(defArgs), _, rhs)) =>
           //replace arguments of defdef with arguments of apply
           val binding = (defArgs.map(_.symbol) zip args).toMap
           val substituter = new Substituter(binding)
@@ -193,9 +223,9 @@ class GeneratorEnvironment(val global: Global) {
     }
   }
 
-  class Substituter(binding:Map[Symbol,Tree]) extends Transformer {
+  class Substituter(binding: Map[Symbol, Tree]) extends Transformer {
     override def transform(tree: Tree) = tree match {
-      case i:Ident => binding.get(i.symbol) match {
+      case i: Ident => binding.get(i.symbol) match {
         case Some(value) => value
         case _ => super.transform(tree)
       }
@@ -226,7 +256,7 @@ class Compile extends StaticAnnotation
  * Annotates classes from which we should collect definitions that will be wolfe-compiled
  * when part of classes with @Compile annotation.
  */
-class Collect extends StaticAnnotation
+class Analyze extends StaticAnnotation
 
 
 /**
@@ -237,17 +267,19 @@ class ModifiedSourceText(original: String, offset: Int = 0) {
   private val source = new StringBuilder(original)
   private val originalToModified = new mutable.HashMap[Int, Int]()
 
-  for (i <- 0 until original.length) originalToModified(i) = i - offset
+  for (i <- 0 to original.length) originalToModified(i) = i - offset
 
   def insert(start: Int, text: String) {
     source.insert(originalToModified(start), text)
-    for (i <- start until original.length) originalToModified(i) += text.length
+    for (i <- start to original.length) originalToModified(i) += text.length
   }
   def replace(start: Int, end: Int, text: String) {
     source.replace(originalToModified(start), originalToModified(end), text)
     val offset = -(end - start) + text.length
-    for (i <- start until original.length) originalToModified(i) += offset
+    for (i <- start to original.length) originalToModified(i) += offset
   }
+
+  def delete(start: Int, end: Int) = replace(start, end, "")
 
   def current() = source.toString()
 
