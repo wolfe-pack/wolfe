@@ -20,11 +20,15 @@ class ArgminByFactorieTrainerReplacer(val env: GeneratorEnvironment)
 
   def replace(tree: env.global.Tree, modification: ModifiedSourceText) = {
     //assume a sum
-    val replaced = env.replaceMethods(tree)
+    val replaced = env.replaceMethods(env.simplifyBlocks(tree))
     val reduced = env.betaReduce(replaced)
 
     reduced match {
-      case ApplyArgmin2(_, _, _, Function(List(w), ApplySum2(_, data, _, Block(_, Function(List(y_i), perInstance)), _)), _) =>
+//      case ApplyArgmin2(_, _, _, _, _) =>
+//        println(replaced)
+//        println(reduced)
+//        false
+      case ApplyArgmin2(_, _, _, Function(List(w), ApplySum2(_, data, _, Function(List(y_i), perInstance), _)), _) =>
         val indexId = "index"
         val weightsId = "weights"
         differentiate(perInstance, w.symbol, indexId, weightsId) match {
@@ -74,10 +78,10 @@ trait SimpleDifferentiator extends Differentiator with WolfePatterns {
 
     println(s"Differentiating $objective wrt $variable")
     objective match {
-        //case Minus(t1,t2) => differentiate(t1,variable) + differentiate(t2,variable)
-        //case Dot(f,w) if f is wolfeVector independent of w => toSparseFVector(f)
-        //case Max(dom, pred, y => f(w)(y)) => differentiate(f(w)(argmax))
-//      case ApplyArgmax2()
+      //case Minus(t1,t2) => differentiate(t1,variable) + differentiate(t2,variable)
+      //case Dot(f,w) if f is wolfeVector independent of w => toSparseFVector(f)
+      //case Max(dom, pred, y => f(w)(y)) => differentiate(f(w)(argmax))
+      //      case ApplyArgmax2()
 
       case _ =>
         val toSparseFVector = "scalapplcodefest.sbt.FactorieConverter.toFactorieSparseVector"

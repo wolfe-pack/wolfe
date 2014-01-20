@@ -28,7 +28,7 @@ import scala.io.Source
 
     def loss(weights:Vector)(data: Data) = max2(sampleSpace)(_.x == data.x)(model(weights)) - model(weights)(data)
 
-    val learned = argmin2(vectors)(_ => true)(w => sum2(train)(_ => true)(loss(w)))
+    val learned = argmin2(vectors)(_ => true)(w => sum2(train)(_ => true)({data => loss(w)(data)}))
 
     def predict(data:Data) = argmax2(sampleSpace)(_.x == data.x)(model(learned))
 
