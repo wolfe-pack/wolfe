@@ -7,6 +7,8 @@ import scala.io.Source
 import scala.collection.mutable
 import java.io.{PrintWriter, File}
 import scala.annotation.StaticAnnotation
+import scala.Predef._
+import scala.Some
 
 object SourceGeneratorCompilerPlugin {
   val name = "Wolfe Source Generator"
@@ -201,6 +203,10 @@ class GeneratorEnvironment(val global: Global) {
   def betaReduce(tree: Tree) = betaReducer.transform(tree)
   def inlineVals(tree: Tree) = valInliner.transform(tree)
   def replaceMethods(tree: Tree) = methodReplacer.transform(tree)
+  def substitute(tree:Tree, binding:Map[Symbol, Tree]) = {
+    val substituter = new Substituter(binding)
+    substituter transform tree
+  }
 
   class BlockSimplifier extends Transformer {
     override def transform(tree: Tree) = tree match {
