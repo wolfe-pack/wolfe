@@ -142,6 +142,8 @@ trait WolfePatterns {
   object ApplyArgmin2 extends ApplyOperator4(argmin2)
   object ApplyArgmax2 extends ApplyOperator4(argmax2)
   object ApplyLogZ2 extends ApplyOperator3(logZ2)
+  object ApplySum2 extends ApplyOperator4(sum2)
+
 
   object PerInstanceLogLikelihood2 {
     def unapply(tree: Tree) = tree match {

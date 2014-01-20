@@ -194,9 +194,11 @@ class GeneratorEnvironment(val global: Global) {
 
   val betaReducer = new BetaReducer
   val valInliner = new ValInliner
+  val methodReplacer = new ReplaceMethodsWithFunctions
 
   def betaReduce(tree: Tree) = betaReducer.transform(tree)
   def inlineVals(tree: Tree) = valInliner.transform(tree)
+  def replaceMethods(tree: Tree) = methodReplacer.transform(tree)
 
   class ValInliner extends Transformer {
     override def transform(tree: Tree) = tree match {
@@ -208,17 +210,47 @@ class GeneratorEnvironment(val global: Global) {
     }
   }
 
-  class BetaReducer extends Transformer {
+  class ReplaceMethodsWithFunctions extends Transformer {
+    def getDef(f: Tree) = f match {
+      case TypeApply(templateFun, _) => valOrDefDefs.get(templateFun.symbol)
+      case _ => valOrDefDefs.get(f.symbol)
+    }
+
+    def createFunction(defArgs: List[List[ValDef]], rhs: Tree): Function = defArgs match {
+      case Nil => Function(Nil, rhs)
+      case headArgs :: Nil => Function(headArgs, rhs)
+      case headArgs :: tail => Function(headArgs, createFunction(tail, rhs))
+    }
+
     override def transform(tree: Tree) = tree match {
-      case Apply(f, args) => valOrDefDefs.get(f.symbol) match {
-        case Some(DefDef(_, _, _, List(defArgs), _, rhs)) =>
-          //replace arguments of defdef with arguments of apply
-          val binding = (defArgs.map(_.symbol) zip args).toMap
-          val substituter = new Substituter(binding)
-          val result = substituter transform rhs
-          result
+      case Apply(f, a) => getDef(f) match {
+        case Some(DefDef(_, _, _, defArgs, _, rhs)) => Apply(createFunction(defArgs, rhs), a)
         case _ => super.transform(tree)
       }
+      case _ => super.transform(tree)
+    }
+  }
+
+  //max[Double,T] = ... becomes Function(  
+
+  class BetaReducer extends Transformer {
+
+    def substitute(defArgs: List[ValDef], args: List[Tree], tree: Tree): Tree = {
+      val binding = (defArgs.map(_.symbol) zip args).toMap
+      val substituter = new Substituter(binding)
+      val result = substituter transform tree
+      result
+    }
+
+    def getDefDef(f: Tree) = f match {
+      case TypeApply(templateFun, _) => valOrDefDefs.get(templateFun.symbol)
+      case _ => valOrDefDefs.get(f.symbol)
+    }
+
+    override def transform(tree: Tree): Tree = tree match {
+      case Apply(Function(defArgs, rhs), args) =>
+        substitute(defArgs, args, rhs)
+
       case _ => super.transform(tree)
     }
   }
@@ -280,6 +312,16 @@ class ModifiedSourceText(original: String, offset: Int = 0) {
   }
 
   def delete(start: Int, end: Int) = replace(start, end, "")
+
+  def indentationOfLineAt(position: Int) = {
+    var current = originalToModified(position)
+    var lastNonWhiteSpace = current
+    while (current > 0 && source.charAt(current) != '\n') {
+      current = current - 1
+      if (!source.charAt(current).isWhitespace) lastNonWhiteSpace = current
+    }
+    lastNonWhiteSpace - current - 1
+  }
 
   def current() = source.toString()
 
