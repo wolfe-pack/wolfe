@@ -192,13 +192,22 @@ class GeneratorEnvironment(val global: Global) {
   val MarkerAnalyze = rootMirror.getClassByName(newTermName(classOf[Analyze].getName))
   val MarkerCompile = rootMirror.getClassByName(newTermName(classOf[Compile].getName))
 
+  val blockSimplifier = new BlockSimplifier
   val betaReducer = new BetaReducer
   val valInliner = new ValInliner
   val methodReplacer = new ReplaceMethodsWithFunctions
 
+  def simplifyBlocks(tree:Tree) = blockSimplifier.transform(tree)
   def betaReduce(tree: Tree) = betaReducer.transform(tree)
   def inlineVals(tree: Tree) = valInliner.transform(tree)
   def replaceMethods(tree: Tree) = methodReplacer.transform(tree)
+
+  class BlockSimplifier extends Transformer {
+    override def transform(tree: Tree) = tree match {
+      case Block(Nil,expr) => super.transform(expr)
+      case _ => super.transform(tree)
+    }
+  }
 
   class ValInliner extends Transformer {
     override def transform(tree: Tree) = tree match {
@@ -222,9 +231,13 @@ class GeneratorEnvironment(val global: Global) {
       case headArgs :: tail => Function(headArgs, createFunction(tail, rhs))
     }
 
-    override def transform(tree: Tree) = tree match {
-      case Apply(f, a) => getDef(f) match {
-        case Some(DefDef(_, _, _, defArgs, _, rhs)) => Apply(createFunction(defArgs, rhs), a)
+    override def transform(tree: Tree): Tree = tree match {
+      case TypeApply(f@Ident(_), _) => getDef(f) match {
+        case Some(DefDef(_, _, _, defArgs, _, rhs)) => createFunction(defArgs, transform(rhs))
+        case _ => super.transform(tree)
+      }
+      case f@Ident(_) => getDef(f) match {
+        case Some(DefDef(_, _, _, defArgs, _, rhs)) => createFunction(defArgs, transform(rhs))
         case _ => super.transform(tree)
       }
       case _ => super.transform(tree)
@@ -247,11 +260,12 @@ class GeneratorEnvironment(val global: Global) {
       case _ => valOrDefDefs.get(f.symbol)
     }
 
-    override def transform(tree: Tree): Tree = tree match {
-      case Apply(Function(defArgs, rhs), args) =>
-        substitute(defArgs, args, rhs)
-
-      case _ => super.transform(tree)
+    override def transform(tree: Tree): Tree = {
+      val transformed = super.transform(tree)
+      transformed match {
+        case Apply(Function(defArgs, rhs), args) => substitute(defArgs, args, rhs)
+        case other => other
+      }
     }
   }
 
