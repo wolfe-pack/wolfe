@@ -1,6 +1,6 @@
 package scalapplcodefest.newExamples
 
-import scalapplcodefest.sbt.{Analyze, ConditionReplacer, GenerateSources, Compile}
+import scalapplcodefest.sbt._
 import scalapplcodefest.{Wolfe, Util}
 import scala.io.Source
 
@@ -63,7 +63,7 @@ import scala.io.Source
   def main(args: Array[String]) {
     GenerateSources.generate(
       sourcePath = "src/main/scala/scalapplcodefest/newExamples/Iris.scala",
-      replacers = List())
+      replacers = List(env => new ArgminByFactorieTrainerReplacer(env) with SimpleDifferentiator))
 
   }
 
