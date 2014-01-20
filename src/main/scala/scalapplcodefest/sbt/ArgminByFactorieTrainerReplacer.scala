@@ -7,6 +7,7 @@ import cc.factorie.optimize.{Example, Trainer}
 import cc.factorie.la.WeightsMapAccumulator
 import cc.factorie.util.DoubleAccumulator
 import scalapplcodefest.newExamples.SumOfQuadraticFunctions
+import scala.reflect.internal.Flags
 
 /**
  * @author Sebastian Riedel
@@ -20,15 +21,15 @@ class ArgminByFactorieTrainerReplacer(val env: GeneratorEnvironment)
 
   def replace(tree: env.global.Tree, modification: ModifiedSourceText) = {
     //assume a sum
-    val replaced = env.replaceMethods(env.simplifyBlocks(tree))
-    val reduced = env.betaReduce(replaced)
+    val replaced = env.replaceMethods(tree)
+    val reduced = env.simplifyBlocks(env.betaReduce(replaced))
 
     reduced match {
-//      case ApplyArgmin2(_, _, _, _, _) =>
-//        println(replaced)
-//        println(reduced)
-//        false
-      case ApplyArgmin2(_, _, _, Function(List(w), ApplySum2(_, data, _, Function(List(y_i), perInstance), _)), _) =>
+      //      case ApplyArgmin2(_, _, _, _, _) =>
+      //        println(replaced)
+      //        println(reduced)
+      //        false
+      case ApplyArgmin2(_, _, _, _, Function(List(w), ApplySum2(_, _, data, _, Function(List(y_i), perInstance), _)), _) =>
         val indexId = "index"
         val weightsId = "weights"
         differentiate(perInstance, w.symbol, indexId, weightsId) match {
@@ -77,11 +78,32 @@ trait SimpleDifferentiator extends Differentiator with WolfePatterns {
                     indexIdentifier: String, weightIdentifier: String) = {
 
     println(s"Differentiating $objective wrt $variable")
+    import env.global._
+    val DoubleSymbol = definitions.DoubleClass
+    val minus = definitions.getMemberMethod(definitions.DoubleClass, newTermName("$minus"))
+
     objective match {
-      //case Minus(t1,t2) => differentiate(t1,variable) + differentiate(t2,variable)
-      //case Dot(f,w) if f is wolfeVector independent of w => toSparseFVector(f)
-      //case Max(dom, pred, y => f(w)(y)) => differentiate(f(w)(argmax))
-      //      case ApplyArgmax2()
+      case ApplyDoubleMinus(arg1, arg2) =>
+        for (g1 <- differentiate(arg1, variable, indexIdentifier, weightIdentifier);
+             g2 <- differentiate(arg2, variable, indexIdentifier, weightIdentifier)) yield
+          s"{val (g1,v1) = $g1; val (g2,v2) = $g2; (g1 - g2, v1 - v2)}"
+
+      case ApplyMax2(se, types, dom, pred, obj@Function(List(y), body), num) =>
+        //todo: this should be an optimized version of the argmax
+        //todo: need to create appropriate select
+        println(se)
+        val argmax = ApplyArgmax2(Select(Select(Ident(scalapplcodefest),wolfe),argmax2), types, dom, pred, obj, num)
+        val argmaxSymbol = objective.symbol.owner.newValue(newTermName("_best"))
+        val binding = Map(y.symbol -> Ident(argmaxSymbol))
+        val atOptimum = env.substitute(body, binding)
+        for (g <- differentiate(atOptimum, variable, indexIdentifier, weightIdentifier)) yield {
+          s"{val ${argmaxSymbol.encodedName} = $argmax; $g}"
+        }
+
+      case DotProduct(arg1, arg2) if !arg1.exists(_.symbol == variable) && arg2.symbol == variable =>
+        val toSparseFVector = "scalapplcodefest.sbt.FactorieConverter.toFactorieSparseVector"
+        Some(s"($toSparseFVector($arg1,$indexIdentifier),$objective)")
+        Some(s"($toSparseFVector(Wolfe.VectorZero,$indexIdentifier),0.0)")
 
       case _ =>
         val toSparseFVector = "scalapplcodefest.sbt.FactorieConverter.toFactorieSparseVector"

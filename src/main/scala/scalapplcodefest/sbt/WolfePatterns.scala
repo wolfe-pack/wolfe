@@ -12,6 +12,7 @@ trait WolfePatterns {
 
   import env.global._
 
+  val scalapplcodefest = rootMirror.getPackage(newTermName("scalapplcodefest"))
   val wolfe = rootMirror.getModuleByName(newTermName("scalapplcodefest.Wolfe"))
   val argmin = definitions.getMember(wolfe, newTermName("argmin"))
   val sum = definitions.getMember(wolfe, newTermName("sum"))
@@ -33,6 +34,8 @@ trait WolfePatterns {
   //new derived operators
   val logZ2 = definitions.getMember(wolfe, newTermName("logZ2"))
   val argmin2 = definitions.getMember(wolfe, newTermName("argmin2"))
+  val max2 = definitions.getMember(wolfe, newTermName("max2"))
+
 
   //sufficient stats
   val oneHot = definitions.getMember(wolfe, newTermName("oneHot"))
@@ -40,6 +43,16 @@ trait WolfePatterns {
   //Annotations
   val MarkerOneHot = definitions.getMemberClass(stats, newTermName("OneHot"))
 
+
+  class ApplyDoubleOperator(name: String) {
+    def unapply(tree: Tree) = tree match {
+      case Apply(s@Select(arg1, opName), List(arg2))
+        if s.symbol.owner == definitions.DoubleClass && opName.encoded == name => Some(arg1, arg2)
+      case _ => None
+    }
+  }
+
+  object ApplyDoubleMinus extends ApplyDoubleOperator("$minus")
 
 
   object ApplyCurried2 {
@@ -91,18 +104,17 @@ trait WolfePatterns {
 
   class ApplyOperator4(val sym: Symbol) {
     def unapply(tree: Tree) = tree match {
-      case ApplyCurried4(se, types, dom, pred, obj, meta) if se.symbol == sym => Some(types, dom, pred, obj, meta)
+      case ApplyCurried4(se, types, dom, pred, obj, meta) if se.symbol == sym => Some(se, types, dom, pred, obj, meta)
       case _ => None
     }
-    def apply(types: List[Tree], dom: Tree, pred: Tree, obj: Tree, num: Tree) =
-      ApplyCurried4(Select(???, sym), types, dom, pred, obj, num)
-
+    def apply(select:Tree, types: List[Tree], dom: Tree, pred: Tree, obj: Tree, num: Tree) =
+      ApplyCurried4(select, types, dom, pred, obj, num)
   }
 
 
   object DotProduct {
     def unapply(tree: Tree) = tree match {
-      case Apply(Select(Apply(_, List(arg1)), _), arg2) => Some(arg1, arg2)
+      case Apply(Select(Apply(_, List(arg1)), _), List(arg2)) => Some(arg1, arg2)
       case _ => None
     }
   }
@@ -133,15 +145,21 @@ trait WolfePatterns {
   }
 
   object ApplyArgmin extends ApplyOperator2(argmin)
+
   object ApplySum extends ApplyOperator3(sum)
+
   object ApplyLogZ extends ApplyOperator2(logZ)
 
 
-
-
   object ApplyArgmin2 extends ApplyOperator4(argmin2)
+
   object ApplyArgmax2 extends ApplyOperator4(argmax2)
+
+  object ApplyMax2 extends ApplyOperator4(max2)
+
+
   object ApplyLogZ2 extends ApplyOperator3(logZ2)
+
   object ApplySum2 extends ApplyOperator4(sum2)
 
 
@@ -194,7 +212,7 @@ trait WolfePatterns {
         Some(data, fieldName, rhs)
       case _ => None
     }
-    def apply(dataObject:Tree, fieldName:Name, rhs:Tree) = ???
+    def apply(dataObject: Tree, fieldName: Name, rhs: Tree) = ???
   }
 
 

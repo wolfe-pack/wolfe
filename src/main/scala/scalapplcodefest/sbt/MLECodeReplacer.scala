@@ -11,14 +11,14 @@ class MLECodeReplacer(val env: GeneratorEnvironment) extends CodeStringReplacer 
     val reduced = env.betaReduce(replaced)
 
     reduced match {
-      case ApplyArgmin2(_, vectors, _, LogLikelihood2(data, domain, f, w), _)
+      case ApplyArgmin2(_,_, vectors, _, LogLikelihood2(data, domain, f, w), _)
         if f.symbol.hasAnnotation(MarkerOneHot) =>
 
         val featName = f.symbol.name.toString
         val sum = s"""sum2 ($data) (_ => true) { y_i => $featName(y_i) } mapValues(w => math.log(w / $data.size)) """
         modification.replace(tree.pos.start, tree.pos.end, sum)
         true
-      case ApplyArgmin2(_,_,_,_,_) =>
+      case ApplyArgmin2(_,_,_,_,_,_) =>
         println(replaced)
         println(reduced)
         false
@@ -44,7 +44,7 @@ class ConditionReplacer(val env: GeneratorEnvironment) extends CodeStringReplace
 
 
   def replace(tree: Tree, modification: ModifiedSourceText) = env.betaReduce(tree) match {
-    case ApplyArgmax2(_, dom, pred, obj, num) =>
+    case ApplyArgmax2(_,_, dom, pred, obj, num) =>
       val data = env.inlineVals(dom)
       data match {
         case CaseClassDomain(constructor, dataFields, sets) =>
