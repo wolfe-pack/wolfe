@@ -6,6 +6,7 @@ import cc.factorie.optimize.{Example, Trainer}
 import cc.factorie.la.WeightsMapAccumulator
 import cc.factorie.util.DoubleAccumulator
 import scalapplcodefest.newExamples.SumOfQuadraticFunctions
+import java.io.PrintWriter
 
 /**
  * @author Sebastian Riedel
@@ -16,6 +17,8 @@ class ArgminByFactorieTrainerReplacer(val env: GeneratorEnvironment)
   this: Differentiator =>
 
   import env.global._
+
+  def normalize(text:String) = text.replaceAll("\\.this\\.",".")
 
   def replace(tree: env.global.Tree, modification: ModifiedSourceText) = {
     //assume a sum
@@ -35,8 +38,8 @@ class ArgminByFactorieTrainerReplacer(val env: GeneratorEnvironment)
             val indentation = modification.indentationOfLineAt(tree.pos.start)
             println(indentation)
             val replacement = ArgminByFactorieTrainer.generateCode(
-              data.symbol.name.toString, y_i.symbol.name.toString, indexId, weightsId, gradientValue, indentation + 2)
-            modification.replace(tree.pos.start, tree.pos.end, replacement)
+              data.symbol.name.toString, y_i.symbol.name.toString, indexId, weightsId, gradientValue, true, indentation + 2)
+            modification.replace(tree.pos.start, tree.pos.end, normalize(replacement))
             true
           case _ => false
         }
@@ -74,6 +77,9 @@ trait SimpleDifferentiator extends Differentiator with WolfePatterns {
   import env.global._
 
   val toSparseFVector = "scalapplcodefest.sbt.FactorieConverter.toFactorieSparseVector"
+  val compactPrinter = newCompactTreePrinter()
+  val printer = new env.SimplePrinter(new PrintWriter(ConsoleWriter))
+
 
   def toFactorieObjective(tree: Tree, variable: Symbol, indexIdentifier: String, weightIdentifier: String): String = {
 
@@ -91,8 +97,6 @@ trait SimpleDifferentiator extends Differentiator with WolfePatterns {
                     indexIdentifier: String, weightIdentifier: String) = {
 
     println(s"Differentiating $objective wrt $variable")
-    val DoubleSymbol = definitions.DoubleClass
-    val minus = definitions.getMemberMethod(definitions.DoubleClass, newTermName("$minus"))
 
     objective match {
       case ApplyDoubleMinus(arg1, arg2) =>
@@ -109,6 +113,8 @@ trait SimpleDifferentiator extends Differentiator with WolfePatterns {
             s"argmax2($optDom)($optPred)($fObj)($optNum)"
           case _ => sys.error("Can't be")
         }
+//        println("Now: " + asCompactString(obj))
+        printer.print(obj)
         val argmaxSymbol = objective.symbol.owner.newValue(newTermName("_best"))
         val binding = Map(y.symbol -> Ident(argmaxSymbol))
         val atOptimum = env.substitute(body, binding)
@@ -169,8 +175,8 @@ object ArgminByFactorieTrainer {
   }
 
   def generateCode(data: String, instanceVar: String, indexId: String, weightId: String, gradientValue: String,
-                   indent: Int = 6) =
-    s"""{ //this code calls the factorie learner
+                   newLines:Boolean = false, indent: Int = 6) = {
+    val raw = s"""{ //this code calls the factorie learner
       |import cc.factorie.WeightsSet
       |import cc.factorie.optimize.{Example, Trainer}
       |import cc.factorie.la.WeightsMapAccumulator
@@ -192,7 +198,10 @@ object ArgminByFactorieTrainer {
       | _trainer.trainFromExamples(examples)
       |val fweights = _weightsSet(_key).asInstanceOf[Vector]
       |scalapplcodefest.sbt.FactorieConverter.toWolfeVector(fweights,$indexId)}
-    """.replaceAll("\\|", Array.fill(indent)(" ").mkString("|", "", "")).stripMargin
+    """
+    val withNewLines = if (newLines) raw.replaceAll(";",";\n\\|") else raw
+    withNewLines.replaceAll("\\|", Array.fill(indent)(" ").mkString("|", "", "")).stripMargin
 
+  }
 }
 
