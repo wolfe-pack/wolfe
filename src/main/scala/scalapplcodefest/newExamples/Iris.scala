@@ -18,11 +18,13 @@ import scala.io.Source
 
     val sampleSpace = all(Data)(c(all(Observed)(c(doubles, doubles, doubles, doubles)), classes))
 
-    def features(data: Data) = {
-      import data._
-      import data.x._
-      oneHot('sl -> y, sepalLength) + oneHot('sw -> y, sepalWidth) + oneHot('pl -> y, petalLength) + oneHot('pw -> y, petalWidth)
-    }
+//    def features(data: Data) = {
+//      import data._
+//      import data.x._
+//      oneHot('sl -> y, sepalLength) + oneHot('sw -> y, sepalWidth) + oneHot('pl -> y, petalLength) + oneHot('pw -> y, petalWidth)
+//    }
+
+    def features(data: Data) = oneHot('sl -> data.y, data.x.sepalLength)
 
     def model(weights: Vector)(data: Data) = features(data) dot weights
 

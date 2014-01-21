@@ -1,13 +1,11 @@
 package scalapplcodefest.sbt
 
-import scala.tools.nsc.Global
 import scalapplcodefest._
 import cc.factorie.WeightsSet
 import cc.factorie.optimize.{Example, Trainer}
 import cc.factorie.la.WeightsMapAccumulator
 import cc.factorie.util.DoubleAccumulator
 import scalapplcodefest.newExamples.SumOfQuadraticFunctions
-import scala.reflect.internal.Flags
 
 /**
  * @author Sebastian Riedel
@@ -73,12 +71,26 @@ trait Differentiator extends InGeneratorEnvironment {
 
 trait SimpleDifferentiator extends Differentiator with WolfePatterns {
 
+  import env.global._
+
+  val toSparseFVector = "scalapplcodefest.sbt.FactorieConverter.toFactorieSparseVector"
+
+  def toFactorieObjective(tree: Tree, variable: Symbol, indexIdentifier: String, weightIdentifier: String): String = {
+
+    def dotProductWithWeights(y:Symbol, arg: Tree) = s"${y.encodedName} => $weightIdentifier.dot($toSparseFVector($arg,$indexIdentifier))"
+
+    tree match {
+      case Function(List(y),DotProduct(arg1, arg2)) if arg1.symbol == variable => dotProductWithWeights(y.symbol, arg2)
+      case Function(List(y),DotProduct(arg1, arg2)) if arg2.symbol == variable => dotProductWithWeights(y.symbol, arg1)
+      case _ => sys.error(s"Can't convert $tree to factorie objective")
+    }
+  }
+
   //this should return a string representation of (factorie gradient vector, objective value)
   def differentiate(objective: env.global.Tree, variable: env.global.Symbol,
                     indexIdentifier: String, weightIdentifier: String) = {
 
     println(s"Differentiating $objective wrt $variable")
-    import env.global._
     val DoubleSymbol = definitions.DoubleClass
     val minus = definitions.getMemberMethod(definitions.DoubleClass, newTermName("$minus"))
 
@@ -89,24 +101,25 @@ trait SimpleDifferentiator extends Differentiator with WolfePatterns {
           s"{val (g1,v1) = $g1; val (g2,v2) = $g2; (g1 - g2, v1 - v2)}"
 
       case ApplyMax2(se, types, dom, pred, obj@Function(List(y), body), num) =>
+        val argmax = ApplyArgmax2(Select(Select(Ident(scalapplcodefest), wolfe), argmax2), types, dom, pred, obj, num)
         //todo: this should be an optimized version of the argmax
-        //todo: need to create appropriate select
-        println(se)
-        val argmax = ApplyArgmax2(Select(Select(Ident(scalapplcodefest),wolfe),argmax2), types, dom, pred, obj, num)
+        val argmaxString = argmax match {
+          case ApplyArgmax2(_, _, optDom, optPred, optObj, optNum) =>
+            val fObj = toFactorieObjective(optObj, variable, indexIdentifier, weightIdentifier)
+            s"argmax2($optDom)($optPred)($fObj)($optNum)"
+          case _ => sys.error("Can't be")
+        }
         val argmaxSymbol = objective.symbol.owner.newValue(newTermName("_best"))
         val binding = Map(y.symbol -> Ident(argmaxSymbol))
         val atOptimum = env.substitute(body, binding)
         for (g <- differentiate(atOptimum, variable, indexIdentifier, weightIdentifier)) yield {
-          s"{val ${argmaxSymbol.encodedName} = $argmax; $g}"
+          s"{val ${argmaxSymbol.encodedName} = $argmaxString; $g}"
         }
 
       case DotProduct(arg1, arg2) if !arg1.exists(_.symbol == variable) && arg2.symbol == variable =>
-        val toSparseFVector = "scalapplcodefest.sbt.FactorieConverter.toFactorieSparseVector"
-        Some(s"($toSparseFVector($arg1,$indexIdentifier),$objective)")
-        Some(s"($toSparseFVector(Wolfe.VectorZero,$indexIdentifier),0.0)")
+        Some(s"{val _f = $toSparseFVector($arg1,$indexIdentifier); (_f,_f dot $weightIdentifier)}")
 
       case _ =>
-        val toSparseFVector = "scalapplcodefest.sbt.FactorieConverter.toFactorieSparseVector"
         Some(s"($toSparseFVector(Wolfe.VectorZero,$indexIdentifier),0.0)")
     }
 
