@@ -40,18 +40,18 @@ class Iris extends (() => Unit) {
     def model(weights: Vector)(data: Data) = features(data) dot weights
 
     //a per-instance perceptron loss; it's gradient are the perceptron updates
-    def loss(weights: Vector)(data: Data) = max2(sampleSpace)(_.x == data.x)(model(weights)) - model(weights)(data)
+    def loss(weights: Vector)(data: Data) = max(sampleSpace)(_.x == data.x)(model(weights)) - model(weights)(data)
 
     //the learned weights that minimize the perceptron loss
-    val learned = argmin2(vectors)(_ => true)(w => sum2(train)(_ => true)({data => loss(w)(data)}))
+    val learned = argmin(vectors)(_ => true)(w => sum(train)(_ => true)({data => loss(w)(data)}))
 
     //the predictor using the learned weights
-    def predict(data: Data) = argmax2(sampleSpace)(_.x == data.x)(model(learned))
+    def predict(data: Data) = argmax(sampleSpace)(_.x == data.x)(model(learned))
 
-    println(learned)
-
+    //apply the predictor to each instance of the test set.
     val predicted = test.map(predict)
 
+    println(learned)
     println(test.head)
     println(predicted.head)
 

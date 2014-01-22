@@ -24,7 +24,7 @@ class CoinTossing extends (() => Wolfe.Vector) {
     def model(c:Coin, w:Vector) = oneHot(c) dot w
 
     //MLE estimate
-    argmin2(vectors)(_ => true) {w => sum(data) {t => logZ2(coins)(_ => true)(c => model(c,w)) - model(t, w)}}
+    argmin(vectors)(_ => true) {w => sumOld(data) {t => logZ(coins)(_ => true)(c => model(c,w)) - model(t, w)}}
 
 
   }

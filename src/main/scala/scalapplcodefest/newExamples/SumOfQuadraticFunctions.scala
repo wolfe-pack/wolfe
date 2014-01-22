@@ -11,7 +11,7 @@ class SumOfQuadraticFunctions extends (() => Wolfe.Vector) {
 
   def apply() = {
     val offsets = Seq[Vector](Map('x1 -> 2.0, 'x2 -> -2.0))
-    argmin(vectors) {w => sum(offsets) {o => w dot (w + o)}}
+    argminOld(vectors) {w => sumOld(offsets) {o => w dot (w + o)}}
   }
 
 }

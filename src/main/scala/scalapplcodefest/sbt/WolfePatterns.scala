@@ -1,7 +1,5 @@
 package scalapplcodefest.sbt
 
-import scalapplcodefest.Wolfe.Stats.OneHot
-
 
 /**
  * @author Sebastian Riedel
@@ -14,9 +12,7 @@ trait WolfePatterns {
 
   val scalapplcodefest = rootMirror.getPackage(newTermName("scalapplcodefest"))
   val wolfe = rootMirror.getModuleByName(newTermName("scalapplcodefest.Wolfe"))
-  val argmin = definitions.getMember(wolfe, newTermName("argmin"))
-  val sum = definitions.getMember(wolfe, newTermName("sum"))
-  val logZ = definitions.getMember(wolfe, newTermName("logZ"))
+
   val stats = definitions.getMemberModule(wolfe, newTermName("Stats"))
 
   //search space generators
@@ -28,13 +24,13 @@ trait WolfePatterns {
 
 
   //new core operators
-  val sum2 = definitions.getMember(wolfe, newTermName("sum2"))
-  val argmax2 = definitions.getMember(wolfe, newTermName("argmax2"))
+  val sum = definitions.getMember(wolfe, newTermName("sum"))
+  val argmax = definitions.getMember(wolfe, newTermName("argmax"))
 
   //new derived operators
-  val logZ2 = definitions.getMember(wolfe, newTermName("logZ2"))
-  val argmin2 = definitions.getMember(wolfe, newTermName("argmin2"))
-  val max2 = definitions.getMember(wolfe, newTermName("max2"))
+  val logZ = definitions.getMember(wolfe, newTermName("logZ"))
+  val argmin = definitions.getMember(wolfe, newTermName("argmin"))
+  val max = definitions.getMember(wolfe, newTermName("max"))
 
 
   //sufficient stats
@@ -119,22 +115,6 @@ trait WolfePatterns {
     }
   }
 
-  object PerInstanceLogLikelihood {
-    def unapply(tree: Tree) = tree match {
-      case Function(y_i, Apply(Select(ApplyLogZ(_, domain, Function(y, LinearModel(f1, _, w1))), minus), List(LinearModel(f2, _, w2))))
-        if f1.symbol.name == f2.symbol.name =>
-        //todo: should check model
-        Some(domain, f1, w1)
-      case _ => None
-    }
-  }
-
-  object LogLikelihood {
-    def unapply(tree: Tree) = tree match {
-      case Function(weight1, ApplySum(_, data, PerInstanceLogLikelihood(domain, f, w), _)) => Some(data, domain, f, w)
-      case _ => None
-    }
-  }
 
 
   object LinearModel {
@@ -144,28 +124,21 @@ trait WolfePatterns {
     }
   }
 
-  object ApplyArgmin extends ApplyOperator2(argmin)
+  object ApplyArgmin extends ApplyOperator4(argmin)
 
-  object ApplySum extends ApplyOperator3(sum)
+  object ApplyArgmax extends ApplyOperator4(argmax)
 
-  object ApplyLogZ extends ApplyOperator2(logZ)
-
-
-  object ApplyArgmin2 extends ApplyOperator4(argmin2)
-
-  object ApplyArgmax2 extends ApplyOperator4(argmax2)
-
-  object ApplyMax2 extends ApplyOperator4(max2)
+  object ApplyMax extends ApplyOperator4(max)
 
 
-  object ApplyLogZ2 extends ApplyOperator3(logZ2)
+  object ApplyLogZ extends ApplyOperator3(logZ)
 
-  object ApplySum2 extends ApplyOperator4(sum2)
+  object ApplySum extends ApplyOperator4(sum)
 
 
-  object PerInstanceLogLikelihood2 {
+  object PerInstanceLogLikelihood {
     def unapply(tree: Tree) = tree match {
-      case Function(y_i, Apply(Select(ApplyLogZ2(_, domain, condition, Function(y, LinearModel(f1, _, w1))), minus), List(LinearModel(f2, _, w2))))
+      case Function(y_i, Apply(Select(ApplyLogZ(_, domain, condition, Function(y, LinearModel(f1, _, w1))), minus), List(LinearModel(f2, _, w2))))
         if f1.symbol.name == f2.symbol.name =>
         //todo: should check model
         Some(domain, f1, w1)
@@ -173,9 +146,9 @@ trait WolfePatterns {
     }
   }
 
-  object LogLikelihood2 {
+  object LogLikelihood {
     def unapply(tree: Tree) = tree match {
-      case Function(weight1, ApplySum(_, data, PerInstanceLogLikelihood2(domain, f, w), _)) => Some(data, domain, f, w)
+      case Function(weight1, ApplySum(_,_, data, _, PerInstanceLogLikelihood(domain, f, w), _)) => Some(data, domain, f, w)
       case _ => None
     }
   }
