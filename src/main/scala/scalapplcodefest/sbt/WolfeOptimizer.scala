@@ -32,6 +32,7 @@ object WolfeOptimizer {
     //now compile and run the generated code
     val outputDir = new VirtualDirectory("(memory)", None)
     val compiledSourceFile = new java.io.File(s"$managedSourceDir${packageName.replaceAll("\\.", "/")}/${className}Compiled.scala")
+    val compiledClassName = s"$packageName.${className}Compiled"
     val source = new BatchSourceFile(AbstractFile.getFile(compiledSourceFile))
 
     //compiler settings
@@ -39,16 +40,18 @@ object WolfeOptimizer {
     settings.nowarnings.value = true
     settings.classpath.append(compiler.dirPathOfClass(getClass.getName))
     println(CompilerHelpers.jarPathOfClass("cc.factorie.WeightsSet"))
-    CompilerHelpers.jarPathOfClass("cc.factorie.WeightsSet").foreach(settings.classpath.append(_))
+//    CompilerHelpers.jarPathOfClass("cc.factorie.WeightsSet").foreach(settings.classpath.append(_))
+    CompilerHelpers.jarPathOfClass("cc.factorie.WeightsSet").foreach(settings.bootclasspath.append(_))
+    CompilerHelpers.jarPathOfClass("gnu.trove.map.custom_hash.TObjectIntCustomHashMap").foreach(settings.bootclasspath.append(_))
     settings.bootclasspath.append(compiler.dirPathOfClass(getClass.getName))
     settings.outputDirs.setSingleOutput(outputDir)
 
     SimpleCompiler.compile(settings, List(source), Nil)
 
     //creating an instance of the generated class
-//    val classLoader = new AbstractFileClassLoader(outputDir, this.getClass.getClassLoader)
-    val classLoader = new AbstractFileClassLoader(outputDir, ArgminByFactorieTrainer.getClass.getClassLoader)
-    val cls = classLoader.loadClass(s"$packageName.compiled.$className")
+    val classLoader = new AbstractFileClassLoader(outputDir, this.getClass.getClassLoader)
+//    val classLoader = new AbstractFileClassLoader(outputDir, ArgminByFactorieTrainer.getClass.getClassLoader)
+    val cls = classLoader.loadClass(compiledClassName)
     cls.asInstanceOf[Class[T]]
   }
 
