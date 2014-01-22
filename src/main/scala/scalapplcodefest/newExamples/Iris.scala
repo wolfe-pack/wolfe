@@ -6,34 +6,46 @@ import scala.io.Source
 import scala.util.Random
 
 /**
-* @author Sebastian Riedel
-*/
-@Compile class Iris extends (() => Unit) {
+ * This example shows how to train and run a linear classifier on the IRIS dataset. This example intentionally uses
+ * very little syntactic sugar or DSL code. Its purpose is to show the math behind a classifier.
+ *
+ * @author Sebastian Riedel
+ */
+@Compile
+class Iris extends (() => Unit) {
 
   import Wolfe._
   import Iris._
 
   def apply() {
+    //random generator for shuffling the data
     val random = new Random(0l)
+
+    //the IRIS dataset
     val dataset = random.shuffle(Iris.loadIris())
+
+    //train/test set split
     val (train, test) = dataset.splitAt(dataset.size / 2)
 
+    //the set of all possible dates
     def sampleSpace = all(Data)(c(all(Observed)(c(doubles, doubles, doubles, doubles)), classes))
 
-    //    def features(data: Data) = {
-    //      import data._
-    //      import data.x._
-    //      oneHot('sl -> y, sepalLength) + oneHot('sw -> y, sepalWidth) + oneHot('pl -> y, petalLength) + oneHot('pw -> y, petalWidth)
-    //    }
+    //joint feature function on data (x,y)
+    def features(data: Data) = oneHot('sl -> data.y, data.x.sepalLength) +
+      oneHot('sw -> data.y, data.x.sepalWidth) +
+      oneHot('pl -> data.y, data.x.petalLength) +
+      oneHot('pw -> data.y, data.x.petalWidth)
 
-    def features(data: Data) = oneHot('sl -> data.y, data.x.sepalLength)
-
+    //the linear model
     def model(weights: Vector)(data: Data) = features(data) dot weights
 
+    //a per-instance perceptron loss; it's gradient are the perceptron updates
     def loss(weights: Vector)(data: Data) = max2(sampleSpace)(_.x == data.x)(model(weights)) - model(weights)(data)
 
+    //the learned weights that minimize the perceptron loss
     val learned = argmin2(vectors)(_ => true)(w => sum2(train)(_ => true)({data => loss(w)(data)}))
 
+    //the predictor using the learned weights
     def predict(data: Data) = argmax2(sampleSpace)(_.x == data.x)(model(learned))
 
     println(learned)
@@ -47,6 +59,7 @@ import scala.util.Random
 
 
 }
+
 @Analyze object Iris {
 
   type IrisClass = String
@@ -75,4 +88,5 @@ import scala.util.Random
   }
 
 }
+
 //
