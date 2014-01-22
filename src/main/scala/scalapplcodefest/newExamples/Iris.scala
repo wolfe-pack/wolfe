@@ -3,6 +3,7 @@ package scalapplcodefest.newExamples
 import scalapplcodefest.sbt._
 import scalapplcodefest.{Wolfe, Util}
 import scala.io.Source
+import scala.util.Random
 
 /**
 * @author Sebastian Riedel
@@ -13,7 +14,8 @@ import scala.io.Source
   import Iris._
 
   def apply() {
-    val dataset = Iris.loadIris()
+    val random = new Random(0l)
+    val dataset = random.shuffle(Iris.loadIris())
     val (train, test) = dataset.splitAt(dataset.size / 2)
 
     def sampleSpace = all(Data)(c(all(Observed)(c(doubles, doubles, doubles, doubles)), classes))
@@ -38,6 +40,7 @@ import scala.io.Source
 
     val predicted = test.map(predict)
 
+    println(test.head)
     println(predicted.head)
 
   }
@@ -47,7 +50,7 @@ import scala.io.Source
 @Analyze object Iris {
 
   type IrisClass = String
-  val classes = Set("Setosa", "Versicolour", "Virginica")
+  val classes = Set("Iris-setosa", "Iris-versicolor", "Iris-virginica")
 
   case class Observed(sepalLength: Double, sepalWidth: Double, petalLength: Double, petalWidth: Double)
 
