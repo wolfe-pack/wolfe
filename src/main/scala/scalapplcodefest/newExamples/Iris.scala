@@ -54,10 +54,10 @@ import scala.io.Source
 
   def loadIris() = {
     val stream = Util.getStreamFromClassPathOrFile("scalapplcodefest/datasets/iris/iris.data")
-    val data = (for (line <- Source.fromInputStream(stream).getLines()) yield {
+    val data = (for (line <- Source.fromInputStream(stream).getLines() if line.trim != "") yield {
       val Array(sl, sw, pl, pw, ic) = line.split(",")
       Data(Observed(sl.toDouble, sw.toDouble, pl.toDouble, pw.toDouble), ic)
-    }).toSeq
+    }).toArray
     stream.close()
     data
   }
@@ -78,6 +78,7 @@ object RunOptimizedIris {
       List(env => new ArgminByFactorieTrainerReplacer(env) with SimpleDifferentiator))
     val iris = optimizedClass.newInstance()
     println(iris)
+    iris()
 
   }
 }
