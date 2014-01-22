@@ -77,9 +77,9 @@ trait SimpleDifferentiator extends Differentiator with WolfePatterns {
   import env.global._
 
   val toSparseFVector = "scalapplcodefest.sbt.FactorieConverter.toFactorieSparseVector"
-  val compactPrinter = newCompactTreePrinter()
   val printer = new env.SimplePrinter(new PrintWriter(ConsoleWriter))
 
+  val conditionReplacer = new ConditionReplacer(env)
 
   def toFactorieObjective(tree: Tree, variable: Symbol, indexIdentifier: String, weightIdentifier: String): String = {
 
@@ -105,16 +105,12 @@ trait SimpleDifferentiator extends Differentiator with WolfePatterns {
           s"{val (g1,v1) = $g1; val (g2,v2) = $g2; (g1 - g2, v1 - v2)}"
 
       case ApplyMax2(se, types, dom, pred, obj@Function(List(y), body), num) =>
-        val argmax = ApplyArgmax2(Select(Select(Ident(scalapplcodefest), wolfe), argmax2), types, dom, pred, obj, num)
-        //todo: this should be an optimized version of the argmax
-        val argmaxString = argmax match {
-          case ApplyArgmax2(_, _, optDom, optPred, optObj, optNum) =>
-            val fObj = toFactorieObjective(optObj, variable, indexIdentifier, weightIdentifier)
-            s"argmax2($optDom)($optPred)($fObj)($optNum)"
-          case _ => sys.error("Can't be")
+        val newDomPred = conditionReplacer.newDomainAndPredicate(dom.asInstanceOf[conditionReplacer.env.global.Tree],pred.asInstanceOf[conditionReplacer.env.global.Tree])
+        val fObj = toFactorieObjective(obj, variable, indexIdentifier, weightIdentifier)
+        val argmaxString = newDomPred match {
+          case Some((newDom,newPred)) => s"argmax2($newDom)($newPred)($fObj)($num)"
+          case _ => s"argmax2($dom)($pred)($fObj)($num)"
         }
-//        println("Now: " + asCompactString(obj))
-        printer.print(obj)
         val argmaxSymbol = objective.symbol.owner.newValue(newTermName("_best"))
         val binding = Map(y.symbol -> Ident(argmaxSymbol))
         val atOptimum = env.substitute(body, binding)
