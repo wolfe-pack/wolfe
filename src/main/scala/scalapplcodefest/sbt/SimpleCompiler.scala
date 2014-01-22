@@ -16,7 +16,7 @@ object SimpleCompiler {
    * Adds reasonable default classpath
    * @param settings settings to change.
    */
-  def setDefaultClasspath(settings: Settings) {
+  def appendDefaultClasspath(settings: Settings) {
     val compilerPath = try {
       jarPathOfClass("scala.tools.nsc.Interpreter")
     } catch {
@@ -43,7 +43,7 @@ object SimpleCompiler {
 
   def compile(settings: Settings, sources:List[SourceFile], pluginConstructors: List[GeneratorEnvironment => scala.tools.nsc.plugins.Plugin] = Nil) {
     val reporter = new ConsoleReporter(settings)
-    setDefaultClasspath(settings)
+    appendDefaultClasspath(settings)
     val compiler: Global =
       new Global(settings, reporter) with RangePositions {
         self =>
