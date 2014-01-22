@@ -66,6 +66,12 @@ class SourceGeneratorCompilerPlugin(val env: GeneratorEnvironment,
             if (!cd.symbol.hasAnnotation(MarkerAnalyze) && !cd.symbol.hasAnnotation(MarkerCompile)) toCollect = false
             if (toCollect) super.traverse(tree)
 
+          case dd: DefDef if dd.vparamss.isEmpty =>
+            //we treat methods without parameters as values
+            val vd = ValDef(dd.symbol,dd.rhs)
+            env.valOrDefDefs(dd.symbol) = vd
+            if (toCollect) super.traverse(tree)
+
           case dd: DefDef =>
             env.valOrDefDefs(dd.symbol) = dd
             if (toCollect) super.traverse(tree)
@@ -198,6 +204,8 @@ class GeneratorEnvironment(val global: Global) {
   val betaReducer = new BetaReducer
   val valInliner = new ValInliner
   val methodReplacer = new ReplaceMethodsWithFunctions
+
+  def normalize(text: String) = text.replaceAll("\\.this\\.", ".")
 
   def simplifyBlocks(tree: Tree) = blockSimplifier.transform(tree)
   def betaReduce(tree: Tree) = betaReducer.transform(tree)

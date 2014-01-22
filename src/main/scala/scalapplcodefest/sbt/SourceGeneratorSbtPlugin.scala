@@ -26,7 +26,7 @@ object GenerateSources {
                replacers: List[GeneratorEnvironment => CodeStringReplacer] = Nil) = {
     val targetDir = new java.io.File(targetPath)
     val settings = new Settings()
-    settings.nowarnings.value = true
+    settings.nowarnings.value = false
     settings.stopAfter.value = List(SourceGeneratorCompilerPlugin.generationPhase)
     settings.classpath.append(compiler.dirPathOfClass(getClass.getName))
     settings.bootclasspath.append(compiler.dirPathOfClass(getClass.getName))

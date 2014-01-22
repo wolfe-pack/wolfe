@@ -73,7 +73,7 @@ class ConditionReplacer(val env: GeneratorEnvironment) extends CodeStringReplace
 
   def replace(tree: Tree, modification: ModifiedSourceText) = {
     replacementText(tree) match {
-      case Some(text) => modification.replace(tree.pos.start, tree.pos.end, text); true
+      case Some(text) => modification.replace(tree.pos.start, tree.pos.end, env.normalize(text)); true
       case None => false
     }
   }
@@ -83,7 +83,7 @@ class ConditionReplacer(val env: GeneratorEnvironment) extends CodeStringReplace
 object ConditionReplacer {
   def main(args: Array[String]) {
     GenerateSources.generate(
-      sourcePath = "src/main/scala/scalapplcodefest/newExamples/Conditioning.scala",
+      sourcePath = "src/main/scala/scalapplcodefest/newExamples/Iris.scala",
       replacers = List(new ConditionReplacer(_)))
   }
 }

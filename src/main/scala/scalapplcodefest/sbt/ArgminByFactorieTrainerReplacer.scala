@@ -5,7 +5,6 @@ import cc.factorie.WeightsSet
 import cc.factorie.optimize.{Example, Trainer}
 import cc.factorie.la.WeightsMapAccumulator
 import cc.factorie.util.DoubleAccumulator
-import scalapplcodefest.newExamples.SumOfQuadraticFunctions
 import java.io.PrintWriter
 
 /**
@@ -18,7 +17,6 @@ class ArgminByFactorieTrainerReplacer(val env: GeneratorEnvironment)
 
   import env.global._
 
-  def normalize(text:String) = text.replaceAll("\\.this\\.",".")
 
   def replace(tree: env.global.Tree, modification: ModifiedSourceText) = {
     //assume a sum
@@ -39,7 +37,7 @@ class ArgminByFactorieTrainerReplacer(val env: GeneratorEnvironment)
             println(indentation)
             val replacement = ArgminByFactorieTrainer.generateCode(
               data.symbol.name.toString, y_i.symbol.name.toString, indexId, weightsId, gradientValue, true, indentation + 2)
-            modification.replace(tree.pos.start, tree.pos.end, normalize(replacement))
+            modification.replace(tree.pos.start, tree.pos.end, env.normalize(replacement))
             true
           case _ => false
         }
@@ -53,6 +51,7 @@ class ArgminByFactorieTrainerReplacer(val env: GeneratorEnvironment)
 
 
 object ArgminByFactorieTrainerReplacer {
+  import scalapplcodefest.newExamples._
   def main(args: Array[String]) {
     val className = classOf[SumOfQuadraticFunctions].getName.replaceAll("\\.", "/")
     GenerateSources.generate(
@@ -83,11 +82,11 @@ trait SimpleDifferentiator extends Differentiator with WolfePatterns {
 
   def toFactorieObjective(tree: Tree, variable: Symbol, indexIdentifier: String, weightIdentifier: String): String = {
 
-    def dotProductWithWeights(y:Symbol, arg: Tree) = s"${y.encodedName} => $weightIdentifier.dot($toSparseFVector($arg,$indexIdentifier))"
+    def dotProductWithWeights(y: Symbol, arg: Tree) = s"${y.encodedName} => $weightIdentifier.dot($toSparseFVector($arg,$indexIdentifier))"
 
     tree match {
-      case Function(List(y),DotProduct(arg1, arg2)) if arg1.symbol == variable => dotProductWithWeights(y.symbol, arg2)
-      case Function(List(y),DotProduct(arg1, arg2)) if arg2.symbol == variable => dotProductWithWeights(y.symbol, arg1)
+      case Function(List(y), DotProduct(arg1, arg2)) if arg1.symbol == variable => dotProductWithWeights(y.symbol, arg2)
+      case Function(List(y), DotProduct(arg1, arg2)) if arg2.symbol == variable => dotProductWithWeights(y.symbol, arg1)
       case _ => sys.error(s"Can't convert $tree to factorie objective")
     }
   }
@@ -105,10 +104,10 @@ trait SimpleDifferentiator extends Differentiator with WolfePatterns {
           s"{val (g1,v1) = $g1; val (g2,v2) = $g2; (g1 - g2, v1 - v2)}"
 
       case ApplyMax2(se, types, dom, pred, obj@Function(List(y), body), num) =>
-        val newDomPred = conditionReplacer.newDomainAndPredicate(dom.asInstanceOf[conditionReplacer.env.global.Tree],pred.asInstanceOf[conditionReplacer.env.global.Tree])
+        val newDomPred = conditionReplacer.newDomainAndPredicate(dom.asInstanceOf[conditionReplacer.env.global.Tree], pred.asInstanceOf[conditionReplacer.env.global.Tree])
         val fObj = toFactorieObjective(obj, variable, indexIdentifier, weightIdentifier)
         val argmaxString = newDomPred match {
-          case Some((newDom,newPred)) => s"argmax2($newDom)($newPred)($fObj)($num)"
+          case Some((newDom, newPred)) => s"argmax2($newDom)($newPred)($fObj)($num)"
           case _ => s"argmax2($dom)($pred)($fObj)($num)"
         }
         val argmaxSymbol = objective.symbol.owner.newValue(newTermName("_best"))
@@ -140,7 +139,7 @@ object FactorieConverter {
   }
   def toWolfeVector(fvector: FVector, index: Index): WVector = {
     val inverse = index.inverse()
-    val map = for ((key, value) <- fvector.activeElements) yield inverse(key)(0) -> value
+    val map = for ((key, value) <- fvector.activeElements; inv <- inverse.get(key)) yield inv(0) -> value
     map.toMap
   }
 
@@ -171,7 +170,7 @@ object ArgminByFactorieTrainer {
   }
 
   def generateCode(data: String, instanceVar: String, indexId: String, weightId: String, gradientValue: String,
-                   newLines:Boolean = false, indent: Int = 6) = {
+                   newLines: Boolean = false, indent: Int = 6) = {
     val raw = s"""{ //this code calls the factorie learner
       |import cc.factorie.WeightsSet
       |import cc.factorie.optimize.{Example, Trainer}
@@ -195,9 +194,23 @@ object ArgminByFactorieTrainer {
       |val fweights = _weightsSet(_key).asInstanceOf[Vector]
       |scalapplcodefest.sbt.FactorieConverter.toWolfeVector(fweights,$indexId)}
     """
-    val withNewLines = if (newLines) raw.replaceAll(";",";\n\\|") else raw
+    val withNewLines = if (newLines) raw.replaceAll(";", ";\n\\|") else raw
     withNewLines.replaceAll("\\|", Array.fill(indent)(" ").mkString("|", "", "")).stripMargin
 
   }
 }
 
+object RunOptimizedIris {
+  import scalapplcodefest.newExamples._
+
+  def main(args: Array[String]) {
+    val optimizedClass = WolfeOptimizer.optimizeClass[() => Unit](
+      classOf[Iris], List(
+        env => new ArgminByFactorieTrainerReplacer(env) with SimpleDifferentiator,
+        env => new ConditionReplacer(env)))
+    val iris = optimizedClass.newInstance()
+    println(iris)
+    iris()
+
+  }
+}
