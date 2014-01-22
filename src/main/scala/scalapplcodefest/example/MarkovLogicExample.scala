@@ -24,9 +24,9 @@ object MarkovLogicExample extends App {
 
     import data._
 
-    def f1 = sum(persons) {p => ft('smokingIsBad, smokes(p) -> cancer(p))}
+    def f1 = sumOld(persons) {p => ft('smokingIsBad, smokes(p) -> cancer(p))}
 
-    def f2 = sum(c(persons, persons)) {
+    def f2 = sumOld(c(persons, persons)) {
       case (p1, p2) => ft('peerPressure, friends(p1, p2) -> (smokes(p1) <-> smokes(p2)))
     }
     (f1 + f2) dot weights
@@ -42,7 +42,7 @@ object MarkovLogicExample extends App {
 
   def observed(h: Data) = h.smokes('Anna) && h.cancer('Anna) && (h.friends only (('Anna, 'Bob)))
 
-  val prediction3 = argmax(hidden filter observed) {y => mln(y, weights)}
+  val prediction3 = argmaxOld(hidden filter observed) {y => mln(y, weights)}
   println(s"smokes: ${prediction3.smokes}, cancer: ${prediction3.cancer}")
 
   val smokeCounts = new mutable.HashMap[Person, Int]

@@ -19,7 +19,7 @@ class Conditioning extends (() => Boolean) {
 
     val allData = all(Data)(c(doubles, bools))
 
-    val best = argmax2(allData)(_.x == 1.0)(_ => 1.0)
+    val best = argmax(allData)(_.x == 1.0)(_ => 1.0)
 
     best.y
   }

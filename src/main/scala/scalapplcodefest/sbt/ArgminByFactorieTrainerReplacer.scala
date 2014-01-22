@@ -28,7 +28,7 @@ class ArgminByFactorieTrainerReplacer(val env: GeneratorEnvironment)
       //        println(replaced)
       //        println(reduced)
       //        false
-      case ApplyArgmin2(_, _, _, _, Function(List(w), ApplySum2(_, _, data, _, Function(List(y_i), perInstance), _)), _) =>
+      case ApplyArgmin(_, _, _, _, Function(List(w), ApplySum(_, _, data, _, Function(List(y_i), perInstance), _)), _) =>
         val indexId = "index"
         val weightsId = "weights"
         differentiate(perInstance, w.symbol, indexId, weightsId) match {
@@ -103,12 +103,12 @@ trait SimpleDifferentiator extends Differentiator with WolfePatterns {
              g2 <- differentiate(arg2, variable, indexIdentifier, weightIdentifier)) yield
           s"{val (g1,v1) = $g1; val (g2,v2) = $g2; (g1 - g2, v1 - v2)}"
 
-      case ApplyMax2(se, types, dom, pred, obj@Function(List(y), body), num) =>
+      case ApplyMax(se, types, dom, pred, obj@Function(List(y), body), num) =>
         val newDomPred = conditionReplacer.newDomainAndPredicate(dom.asInstanceOf[conditionReplacer.env.global.Tree], pred.asInstanceOf[conditionReplacer.env.global.Tree])
         val fObj = toFactorieObjective(obj, variable, indexIdentifier, weightIdentifier)
         val argmaxString = newDomPred match {
-          case Some((newDom, newPred)) => s"argmax2($newDom)($newPred)($fObj)($num)"
-          case _ => s"argmax2($dom)($pred)($fObj)($num)"
+          case Some((newDom, newPred)) => s"argmax($newDom)($newPred)($fObj)($num)"
+          case _ => s"argmax($dom)($pred)($fObj)($num)"
         }
         val argmaxSymbol = objective.symbol.owner.newValue(newTermName("_best"))
         val binding = Map(y.symbol -> Ident(argmaxSymbol))

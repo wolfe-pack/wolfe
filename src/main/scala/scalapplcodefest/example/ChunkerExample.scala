@@ -26,10 +26,10 @@ object ChunkerExample {
   def model(sentence: Sentence, weights: Vector) = {
     import sentence._
 
-    val f1 = sum(0 until size) {i => ft(chunks(i))}
-    val f2 = sum(0 until size) {i => ft((words(i), chunks(i)))}
-    val f3 = sum(0 until size) {i => ft((tags(i), chunks(i)))}
-    val f4 = sum(0 until (size - 1)) {i => ft((chunks(i), chunks(i + 1)))}
+    val f1 = sumOld(0 until size) {i => ft(chunks(i))}
+    val f2 = sumOld(0 until size) {i => ft((words(i), chunks(i)))}
+    val f3 = sumOld(0 until size) {i => ft((tags(i), chunks(i)))}
+    val f4 = sumOld(0 until (size - 1)) {i => ft((chunks(i), chunks(i + 1)))}
 
     (f1 + f2 + f3 + f4) dot weights
   }
@@ -38,18 +38,18 @@ object ChunkerExample {
 
   @Operator.Argmax
   def predict(weights: Vector)(sentence: Sentence): Sentence =
-    argmax {allData filter {s => observation(s) == observation(sentence)}} {s => model(s, weights)}
+    argmaxOld {allData filter {s => observation(s) == observation(sentence)}} {s => model(s, weights)}
 
   @Operator.Max
   def predictionScore(sentence: Sentence, weights: Vector): Double =
-    max {allData filter {s => observation(s) == observation(sentence)}} {s => model(s, weights)}
+    maxOld {allData filter {s => observation(s) == observation(sentence)}} {s => model(s, weights)}
 
   def loss(data: Seq[Sentence])(weights: Vector): Double =
-    sum(data) {sentence => predictionScore(sentence, weights) - model(sentence, weights)}
+    sumOld(data) {sentence => predictionScore(sentence, weights) - model(sentence, weights)}
 
   //@Objective.Adagrad(0.1)
   def learn(data: Seq[Sentence]): Vector =
-    argmin(vectors)(loss(data))
+    argminOld(vectors)(loss(data))
 
   def predictor(data: Seq[Sentence]) = predict(learn(data)) _
 

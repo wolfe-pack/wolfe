@@ -16,17 +16,17 @@ object LPExample extends App {
 
   def constraints(data: Data) = {
     import data._
-    forall (tokens) {m => sum(tokens) {h => 1.0 * edge(h, m)} == 1.0}
+    forall (tokens) {m => sumOld(tokens) {h => 1.0 * edge(h, m)} == 1.0}
   }
 
   def obj(coeff: Map[(Int, Int), Double])(data:Data) = {
     import data._
-    sum (c(tokens,tokens)) {case (h,m) => edge(h,m) * coeff(h,m)}
+    sumOld (c(tokens,tokens)) {case (h,m) => edge(h,m) * coeff(h,m)}
   }
 
   val coeffs = Map((1,3) -> 0.3) withDefaultValue 0.0
 
-  val solution = argmax(edges filter constraints) { obj(coeffs)}
+  val solution = argmaxOld(edges filter constraints) { obj(coeffs)}
 
 
 }

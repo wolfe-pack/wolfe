@@ -14,27 +14,27 @@ object Wolfe {
   //core operators
 
   @Operator.Sum
-  def sum2[T, N](data: Iterable[T])(predicate: T => Boolean)(obj: T => N)(implicit num: Numeric[N]): N = {
+  def sum[T, N](data: Iterable[T])(predicate: T => Boolean)(obj: T => N)(implicit num: Numeric[N]): N = {
     data.filter(predicate).map(obj).sum(num)
   }
 
   @Operator.Argmax
-  def argmax2[T, N](data: Iterable[T])(predicate: T => Boolean)(obj: T => N)(implicit ord: Ordering[N]): T = {
+  def argmax[T, N](data: Iterable[T])(predicate: T => Boolean)(obj: T => N)(implicit ord: Ordering[N]): T = {
     data.filter(predicate).maxBy(obj)(ord)
   }
 
   //derived operators
 
-  def argmin2[T, N](data: Iterable[T])(predicate: T => Boolean)(obj: T => N)(implicit ord: Ordering[N]): T = {
-    argmax2(data)(predicate)(obj)(ord.reverse)
+  def argmin[T, N](data: Iterable[T])(predicate: T => Boolean)(obj: T => N)(implicit ord: Ordering[N]): T = {
+    argmax(data)(predicate)(obj)(ord.reverse)
   }
 
-  def max2[T, N](data: Iterable[T])(predicate: T => Boolean)(obj: T => N)(implicit ord: Ordering[N]): N = {
-    obj(argmax2(data)(predicate)(obj)(ord))
+  def max[T, N](data: Iterable[T])(predicate: T => Boolean)(obj: T => N)(implicit ord: Ordering[N]): N = {
+    obj(argmax(data)(predicate)(obj)(ord))
   }
 
-  def logZ2[T](data: Iterable[T])(predicate: T => Boolean)(obj: T => Double): Double = {
-    math.log(sum2(data)(predicate)(t => math.exp(obj(t))))
+  def logZ[T](data: Iterable[T])(predicate: T => Boolean)(obj: T => Double): Double = {
+    math.log(sum(data)(predicate)(t => math.exp(obj(t))))
   }
 
   //sufficient statistics
@@ -71,14 +71,14 @@ object Wolfe {
 
   def seqs[A](dom: Set[A], length: Int): Set[Seq[A]] = ???
 
-  @Operator.Sum
-  def sum[T, S](elems: Seq[T])(f: T => S)(implicit num: Numeric[S]) = elems.map(f).sum(num)
+  @deprecated("Use the new operators","now")
+  def sumOld[T, S](elems: Seq[T])(f: T => S)(implicit num: Numeric[S]) = elems.map(f).sum(num)
 
-  @Operator.Max
-  def max[T](elems: Set[T])(f: T => Double) = elems.map(f).max
+  @deprecated("Use the new operators","now")
+  def maxOld[T](elems: Set[T])(f: T => Double) = elems.map(f).max
 
-  @Operator.Argmax
-  def argmax[T](dom: Set[T])(obj: T => Double): T = {
+  @deprecated("Use the new operators","now")
+  def argmaxOld[T](dom: Set[T])(obj: T => Double): T = {
     dom.maxBy(obj)
   }
 
@@ -92,8 +92,8 @@ object Wolfe {
   @Operator.Sample
   def samples[T](num: Int)(dom: Set[T])(obj: T => Double)(implicit r: Random = random): Seq[T] = (0 until num).map(x => sample(dom)(obj)(r))
 
-  @Operator.Argmin
-  def argmin[T](dom: Set[T])(obj: T => Double): T = {
+  @deprecated("Use the new operators","now")
+  def argminOld[T](dom: Set[T])(obj: T => Double): T = {
     dom.minBy(obj)
   }
 
@@ -113,13 +113,13 @@ object Wolfe {
 
   @Domain.Simplex
   def simplex[T](domain: Set[T], range: Set[Double] = doubles) =
-    for (p <- maps(domain, range); if sum(domain.toSeq) {p(_)} == 1.0 && domain.forall(p(_) >= 0.0)) yield p
+    for (p <- maps(domain, range); if sumOld(domain.toSeq) {p(_)} == 1.0 && domain.forall(p(_) >= 0.0)) yield p
 
-  def wsum[T](dom: Set[T], stats: T => Vector)(obj: T => Double) = sum(dom.toSeq) {x => stats(x) * obj(x)}(VectorNumeric)
-  def expect[T](dom: Set[T], stats: T => Vector)(obj: T => Double) = wsum(dom, stats)(t => math.exp(obj(t) - logZ(dom)(obj)))
+  def wsum[T](dom: Set[T], stats: T => Vector)(obj: T => Double) = sumOld(dom.toSeq) {x => stats(x) * obj(x)}(VectorNumeric)
+  def expect[T](dom: Set[T], stats: T => Vector)(obj: T => Double) = wsum(dom, stats)(t => math.exp(obj(t) - logZOld(dom)(obj)))
 
-  @Objective.LogZ
-  def logZ[T](dom: Set[T])(model: T => Double) = math.log(dom.view.map(x => math.exp(model(x))).sum)
+  @deprecated("Use the new operators","now")
+  def logZOld[T](dom: Set[T])(model: T => Double) = math.log(dom.view.map(x => math.exp(model(x))).sum)
 
   @Operator.Forall
   def forall[T](dom: Set[T])(pred: T => Boolean) = dom.forall(pred)

@@ -11,14 +11,14 @@ class MLECodeReplacer(val env: GeneratorEnvironment) extends CodeStringReplacer 
     val reduced = env.betaReduce(replaced)
 
     reduced match {
-      case ApplyArgmin2(_, _, vectors, _, LogLikelihood2(data, domain, f, w), _)
+      case ApplyArgmin(_, _, vectors, _, LogLikelihood(data, domain, f, w), _)
         if f.symbol.hasAnnotation(MarkerOneHot) =>
 
         val featName = f.symbol.name.toString
         val sum = s"""sum2 ($data) (_ => true) { y_i => $featName(y_i) } mapValues(w => math.log(w / $data.size)) """
         modification.replace(tree.pos.start, tree.pos.end, sum)
         true
-      case ApplyArgmin2(_, _, _, _, _, _) =>
+      case ApplyArgmin(_, _, _, _, _, _) =>
         println(replaced)
         println(reduced)
         false
@@ -51,6 +51,7 @@ class ConditionReplacer(val env: GeneratorEnvironment) extends CodeStringReplace
             val indexOfField = dataFields.indexWhere(_.name == fieldName)
             val crossProductArgs = for ((set, index) <- sets.zipWithIndex) yield
               if (index == indexOfField) s"Set($conditionValue)" else set.toString()
+            //todo: this only works for case classes with two fields
             val newDomain = s"""all(unwrap2($constructor))(c(${crossProductArgs.mkString(",")}))"""
             val newPredicate = """_ => true"""
             //find out argument index of fieldName
@@ -63,8 +64,8 @@ class ConditionReplacer(val env: GeneratorEnvironment) extends CodeStringReplace
 
 
   def replacementText(tree: Tree): Option[String] = env.betaReduce(tree) match {
-    case ApplyArgmax2(_, _, dom, pred, obj, num) => newDomainAndPredicate(dom,pred) match {
-      case Some((newDomain,newPredicate)) => Some(s"""argmax2 ($newDomain)($newPredicate)($obj)($num)""")
+    case ApplyArgmax(_, _, dom, pred, obj, num) => newDomainAndPredicate(dom,pred) match {
+      case Some((newDomain,newPredicate)) => Some(s"""argmax ($newDomain)($newPredicate)($obj)($num)""")
       case _ => None
     }
     case _ => None
