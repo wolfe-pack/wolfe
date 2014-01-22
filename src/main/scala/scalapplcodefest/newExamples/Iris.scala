@@ -70,3 +70,14 @@ import scala.io.Source
   }
 
 }
+
+object RunOptimizedIris {
+  def main(args: Array[String]) {
+    val optimizedClass = WolfeOptimizer.optimizeClass[() => Unit](
+      classOf[Iris],
+      List(env => new ArgminByFactorieTrainerReplacer(env) with SimpleDifferentiator))
+    val iris = optimizedClass.newInstance()
+    println(iris)
+
+  }
+}
