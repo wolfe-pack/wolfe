@@ -334,5 +334,15 @@ object Wolfe {
 
 }
 
+object ShortMathDSL {
+
+//  def sum[T, N](obj: T => N)(implicit over: Iterable[T], where:T => Boolean = _ => true, num: Numeric[N]): N =
+//    Wolfe.sum(over)(where)(obj)(num)
+//
+//  def argmax[T, N](obj: T => N)(implicit over: Iterable[T], where:T => Boolean = _ => true, num: Numeric[N]): T =
+//    Wolfe.argmax(over)(where)(obj)(num)
+
+
+}
 
 
