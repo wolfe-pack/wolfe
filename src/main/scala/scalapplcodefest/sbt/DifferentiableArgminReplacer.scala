@@ -6,57 +6,79 @@ import cc.factorie.optimize.{Example, Trainer}
 import cc.factorie.la.WeightsMapAccumulator
 import cc.factorie.util.DoubleAccumulator
 import java.io.PrintWriter
+import scalapplcodefest.Wolfe.Objective.Adagrad
 
 /**
  * @author Sebastian Riedel
  */
-class ArgminByFactorieTrainerReplacer(val env: GeneratorEnvironment)
+class DifferentiableArgminReplacer(val env: GeneratorEnvironment)
   extends CodeStringReplacer with WolfePatterns {
 
   this: Differentiator =>
 
+  import env._
   import env.global._
+
+  def differentiableAnnotationToFactorieLearningCall(annotation: AnnotationInfo, weightsSetId: String) = {
+    val iterations = annotation.args(1) match {
+      case Literal(Constant(i)) => i
+      case _ => 5
+    }
+    println(annotation.args(0).tpe.safeToString)
+    println(classOf[Adagrad].getName.replaceAll("\\$","."))
+
+    val optimizer = annotation.args(0) match {
+      case arg@Apply(adaGrad,List(Literal(Constant(rate))))
+        if arg.tpe.safeToString == classOf[Adagrad].getName.replaceAll("\\$",".") =>
+        s"new cc.factorie.optimize.AdaGrad($rate)"
+      case _ => "new Perceptron"
+    }
+    s"new OnlineTrainer($weightsSetId, $optimizer, $iterations)"
+  }
 
 
   def replace(tree: env.global.Tree, modification: ModifiedSourceText) = {
-    //assume a sum
-    val replaced = env.replaceMethods(tree)
-    val reduced = env.simplifyBlocks(env.betaReduce(replaced))
-
-    reduced match {
-      //      case ApplyArgmin2(_, _, _, _, _) =>
-      //        println(replaced)
-      //        println(reduced)
-      //        false
-      case ApplyArgmin(_, _, _, _, Function(List(w), ApplySum(_, _, data, _, Function(List(y_i), perInstance), _)), _) =>
-        val indexId = "index"
-        val weightsId = "weights"
-        differentiate(perInstance, w.symbol, indexId, weightsId) match {
-          case Some(gradientValue) =>
-            val indentation = modification.indentationOfLineAt(tree.pos.start)
-            println(indentation)
-            val replacement = ArgminByFactorieTrainer.generateCode(
-              data.symbol.name.toString, y_i.symbol.name.toString, indexId, weightsId, gradientValue, true, indentation + 2)
-            modification.replace(tree.pos.start, tree.pos.end, env.normalize(replacement))
-            true
+    val simplified = simplifyBlocks(tree)
+    simplified match {
+      case ApplyArgmin(_, _, _, _, Function(List(w1), Apply(obj, List(w2))), _)
+        if w1.symbol == w2.symbol && obj.symbol.hasAnnotation(MarkerDifferentiable) =>
+        val unrolled = simplifyBlocks(betaReduce(replaceMethods(obj)))
+        unrolled match {
+          case Function(List(w), ApplySum(_, _, data, _, Function(List(y_i), perInstance), _)) =>
+            val indexId = "index"
+            val weightsId = "weights"
+            differentiate(perInstance, w.symbol, indexId, weightsId) match {
+              case Some(gradientValue) =>
+                val indentation = modification.indentationOfLineAt(tree.pos.start)
+                val diffAnnotation = obj.symbol.getAnnotation(MarkerDifferentiable)
+                val learnerConstructor = differentiableAnnotationToFactorieLearningCall(diffAnnotation.get, "_weightsSet")
+                val replacement = ArgminByFactorieTrainer.generateCode(
+                  data.symbol.name.toString, y_i.symbol.name.toString, indexId,
+                  weightsId, gradientValue, true, learnerConstructor, indentation + 2)
+                modification.replace(tree.pos.start, tree.pos.end, env.normalize(replacement))
+                true
+              case _ => false
+            }
           case _ => false
         }
-
       case other =>
         false
 
     }
   }
+
 }
 
 
-object ArgminByFactorieTrainerReplacer {
+object DifferentiableArgminReplacer {
+
   import scalapplcodefest.newExamples._
+
   def main(args: Array[String]) {
     val className = classOf[SumOfQuadraticFunctions].getName.replaceAll("\\.", "/")
     GenerateSources.generate(
       sourcePath = s"src/main/scala/$className.scala",
-      replacers = List(g => new ArgminByFactorieTrainerReplacer(g) with SimpleDifferentiator))
+      replacers = List(g => new DifferentiableArgminReplacer(g) with SimpleDifferentiator))
   }
 }
 
@@ -170,7 +192,9 @@ object ArgminByFactorieTrainer {
   }
 
   def generateCode(data: String, instanceVar: String, indexId: String, weightId: String, gradientValue: String,
-                   newLines: Boolean = false, indent: Int = 6) = {
+                   newLines: Boolean = false,
+                   learnerConstructor: String = "new OnlineTrainer(_weightsSet, new Perceptron, 5)",
+                   indent: Int = 6) = {
     val raw = s"""{ //this code calls the factorie learner
       |import cc.factorie.WeightsSet
       |import cc.factorie.optimize.{Example, Trainer}
@@ -189,7 +213,7 @@ object ArgminByFactorieTrainer {
       |    gradient.accumulate(_key, g, -1.0)
       |  }
       |}
-      |val _trainer = new OnlineTrainer(_weightsSet, new Perceptron, 5)
+      |val _trainer = $learnerConstructor
       | _trainer.trainFromExamples(examples)
       |val fweights = _weightsSet(_key).asInstanceOf[Vector]
       |scalapplcodefest.sbt.FactorieConverter.toWolfeVector(fweights,$indexId)}
@@ -201,12 +225,13 @@ object ArgminByFactorieTrainer {
 }
 
 object RunOptimizedIris {
+
   import scalapplcodefest.newExamples._
 
   def main(args: Array[String]) {
     val optimizedClass = WolfeOptimizer.optimizeClass[() => Unit](
       classOf[Iris], List(
-        env => new ArgminByFactorieTrainerReplacer(env) with SimpleDifferentiator,
+        env => new DifferentiableArgminReplacer(env) with SimpleDifferentiator,
         env => new ConditionReplacer(env)))
     val iris = optimizedClass.newInstance()
     println(iris)

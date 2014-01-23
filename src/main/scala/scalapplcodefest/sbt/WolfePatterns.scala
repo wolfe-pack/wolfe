@@ -14,6 +14,8 @@ trait WolfePatterns {
   val wolfe = rootMirror.getModuleByName(newTermName("scalapplcodefest.Wolfe"))
 
   val stats = definitions.getMemberModule(wolfe, newTermName("Stats"))
+  val objective = definitions.getMemberModule(wolfe, newTermName("Objective"))
+
 
   //search space generators
   val all = definitions.getMember(wolfe, newTermName("all"))
@@ -38,7 +40,7 @@ trait WolfePatterns {
 
   //Annotations
   val MarkerOneHot = definitions.getMemberClass(stats, newTermName("OneHot"))
-
+  val MarkerDifferentiable = definitions.getMemberClass(objective, newTermName("Differentiable"))
 
   class ApplyDoubleOperator(name: String) {
     def unapply(tree: Tree) = tree match {
