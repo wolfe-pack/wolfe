@@ -1,7 +1,7 @@
 package scalapplcodefest.newExamples
 
 import scalapplcodefest.sbt._
-import scalapplcodefest.{Wolfe, Util}
+import scalapplcodefest._
 import scala.io.Source
 import scala.util.Random
 
@@ -55,6 +55,8 @@ class Iris extends (() => Unit) {
     println(test.head)
     println(predicted.head)
 
+    println(evaluate[Data](test,predicted)(_.y))
+
   }
 
 
@@ -78,6 +80,15 @@ class Iris extends (() => Unit) {
     stream.close()
     data
   }
+
+  def evaluate[T](target: Seq[T], guess: Seq[T])(attribute: T => Any):Evaluation = {
+    val evaluations = for ((t,g) <- target.view zip guess.view) yield evaluate(t, g)(attribute)
+    val reduced = evaluations.foldLeft(Evaluation())(_ + _)
+    reduced
+  }
+
+  def evaluate[T](target: T, guess: T)(attribute: T => Any):Evaluation =
+    if (attribute(target) == attribute(guess)) Evaluation(tp = 1, tn = 1) else Evaluation(fp = 1, fn = 1)
 
   def main(args: Array[String]) {
     GenerateSources.generate(
