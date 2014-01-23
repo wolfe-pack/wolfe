@@ -4,6 +4,7 @@ import scalapplcodefest.sbt._
 import scalapplcodefest._
 import scala.io.Source
 import scala.util.Random
+import scalapplcodefest.Wolfe.Objective.{Perceptron, Adagrad, Differentiable}
 
 /**
  * This example shows how to train and run a linear classifier on the IRIS dataset. This example intentionally uses
@@ -39,11 +40,12 @@ class Iris extends (() => Unit) {
     //the linear model
     def model(weights: Vector)(data: Data) = features(data) dot weights
 
-    //a per-instance perceptron loss; it's gradient are the perceptron updates
-    def loss(weights: Vector)(data: Data) = max(sampleSpace)(_.x == data.x)(model(weights)) - model(weights)(data)
+    //the total training perceptron loss of the model given the weights
+    @Differentiable(Perceptron, 5)
+    def loss(weights: Vector) = sum(train)(_ => true)(data => max(sampleSpace)(_.x == data.x)(model(weights)) - model(weights)(data))
 
     //the learned weights that minimize the perceptron loss
-    val learned = argmin(vectors)(_ => true)(w => sum(train)(_ => true)({data => loss(w)(data)}))
+    val learned = argmin(vectors)(_ => true)(loss)
 
     //the predictor using the learned weights
     def predict(data: Data) = argmax(sampleSpace)(_.x == data.x)(model(learned))
@@ -52,10 +54,8 @@ class Iris extends (() => Unit) {
     val predicted = test.map(predict)
 
     println(learned)
-    println(test.head)
-    println(predicted.head)
 
-    println(evaluate[Data](test,predicted)(_.y))
+    println(evaluate(test, predicted)(_.y))
 
   }
 
@@ -81,20 +81,20 @@ class Iris extends (() => Unit) {
     data
   }
 
-  def evaluate[T](target: Seq[T], guess: Seq[T])(attribute: T => Any):Evaluation = {
-    val evaluations = for ((t,g) <- target.view zip guess.view) yield evaluate(t, g)(attribute)
+  def evaluate[T](target: Seq[T], guess: Seq[T])(attribute: T => Any): Evaluation = {
+    val evaluations = for ((t, g) <- target.view zip guess.view) yield evaluate(t, g)(attribute)
     val reduced = evaluations.foldLeft(Evaluation())(_ + _)
     reduced
   }
 
-  def evaluate[T](target: T, guess: T)(attribute: T => Any):Evaluation =
+  def evaluate[T](target: T, guess: T)(attribute: T => Any): Evaluation =
     if (attribute(target) == attribute(guess)) Evaluation(tp = 1, tn = 1) else Evaluation(fp = 1, fn = 1)
 
   def main(args: Array[String]) {
     GenerateSources.generate(
       sourcePath = "src/main/scala/scalapplcodefest/newExamples/Iris.scala",
       replacers = List(
-        env => new ArgminByFactorieTrainerReplacer(env) with SimpleDifferentiator))
+        env => new DifferentiableArgminReplacer(env) with SimpleDifferentiator))
 
   }
 

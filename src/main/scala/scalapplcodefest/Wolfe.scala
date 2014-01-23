@@ -278,6 +278,8 @@ object Wolfe {
     trait Differentiator
 
     case class Adagrad(rate: Double) extends GradientBasedOptimizerSetting
+    case object Perceptron extends GradientBasedOptimizerSetting
+
 
     case class MaxProduct(iterations: Int) extends InferenceSetting
 
@@ -289,8 +291,7 @@ object Wolfe {
 
     class JointLoglikelihood extends StaticAnnotation
 
-    class Differentiable(setting: GradientBasedOptimizerSetting = Adagrad(1.0),
-                         differentiator: Option[Differentiator] = None) extends StaticAnnotation
+    class Differentiable(setting: GradientBasedOptimizerSetting = Adagrad(1.0), iterations:Int = 5) extends StaticAnnotation
 
     class LinearModel(setting: InferenceSetting = MaxProduct(1)) extends StaticAnnotation
 
