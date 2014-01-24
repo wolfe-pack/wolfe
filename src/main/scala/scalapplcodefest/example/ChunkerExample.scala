@@ -20,7 +20,7 @@ object ChunkerExample {
     val size = words.size
   }
 
-  implicit val allData = all[Sentence]
+  implicit val allData = allOld[Sentence]
 
   @Objective.LinearModel
   def model(sentence: Sentence, weights: Vector) = {
