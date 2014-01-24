@@ -21,8 +21,9 @@ import scalapplcodefest.sbt.Analyze
 
   def argmax[T, N](pred: T => Boolean)(obj: T => N)(implicit over: Iterable[T], num: Numeric[N]): T =
     Wolfe.argmax(over)(pred)(obj)(num)
-  def argmax[T, N](obj: T => N)(pred: T => Boolean)(implicit over: Iterable[T], num: Numeric[N]): T =
-    Wolfe.argmax(over)(pred)(obj)(num)
+
+//  def argmax[T, N](obj: T => N)(pred: T => Boolean)(implicit over: Iterable[T], num: Numeric[N]): T =
+//    Wolfe.argmax(over)(pred)(obj)(num)
 
   def argmax[T, N](over: Iterable[T])(obj: T => N)(implicit num: Numeric[N]): T =
     Wolfe.argmax(over)(_ => true)(obj)(num)
