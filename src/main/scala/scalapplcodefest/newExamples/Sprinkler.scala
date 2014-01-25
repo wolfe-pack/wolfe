@@ -54,3 +54,16 @@ object Sprinkler {
   }
 
 }
+
+object RunSprinkler {
+  def main(args: Array[String]) {
+    val optimizedClass = WolfeOptimizer.optimizeClass[() => Unit](
+      classOf[Sprinkler], List(env => new MPGraphReplacer(env)))
+    val sprinkler1 = new Sprinkler()
+    val sprinkler2 = optimizedClass.newInstance()
+
+    sprinkler1()
+    sprinkler2()
+
+  }
+}

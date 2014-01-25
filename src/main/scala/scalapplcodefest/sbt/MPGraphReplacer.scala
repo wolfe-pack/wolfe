@@ -156,6 +156,7 @@ class MPGraphReplacer(val env: GeneratorEnvironment) extends CodeStringReplacer 
 
         //run inference
         val inference = Seq(
+          s"$mpGraphName.build()",
           s"MaxProduct($mpGraphName,4)"
         )
 
