@@ -46,13 +46,6 @@ class MPGraphReplacer(val env: GeneratorEnvironment) extends CodeStringReplacer 
   }
 
 
-  object EqualityConditions {
-    def unapply(tree: Tree) = tree match {
-      case Function(List(dataArgDef), FieldEquality(dataArgUse, fieldName, conditionValue)) =>
-        Some(List(fieldName -> conditionValue))
-      case _ => None
-    }
-  }
 
   case class NodeDefField(field: ValDef, dom: Tree, nodeName: String, domName: String, condition: Option[Tree] = None) {
     val fieldName = field.name.encoded

@@ -137,6 +137,15 @@ trait WolfePatterns {
     }
   }
 
+  object EqualityConditions {
+    def unapply(tree: Tree) = tree match {
+      case Function(List(dataArgDef), FieldEquality(dataArgUse, fieldName, conditionValue)) =>
+        Some(List(fieldName -> conditionValue))
+      case _ => None
+    }
+  }
+
+
   object ApplyArgmin extends ApplyOperator4(argmin)
 
   object ApplyArgmax extends ApplyOperator4(argmax)
