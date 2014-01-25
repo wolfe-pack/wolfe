@@ -34,10 +34,10 @@ object DomainExample extends App {
   def mln = linearModel {
     data: Data => {
       import data._
-      val f1 = 'smokingIsBad := {p: Person => smokes(p) -> cancer(p)}
+      val f1 = 'smokingIsBad := {p: Person => smokes(p) --> cancer(p)}
       val f2 = 'peerPressure := {
         persons: (Person, Person) =>
-          friend(persons._1, persons._2) -> (smokes(persons._1) <-> smokes(persons._2))
+          friend(persons._1, persons._2) --> (smokes(persons._1) <-> smokes(persons._2))
       }
       List(f1, f2)
     }

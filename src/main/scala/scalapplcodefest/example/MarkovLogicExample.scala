@@ -24,10 +24,10 @@ object MarkovLogicExample extends App {
 
     import data._
 
-    def f1 = sumOld(persons) {p => ft('smokingIsBad, smokes(p) -> cancer(p))}
+    def f1 = sumOld(persons) {p => ft('smokingIsBad, smokes(p) --> cancer(p))}
 
     def f2 = sumOld(c(persons, persons)) {
-      case (p1, p2) => ft('peerPressure, friends(p1, p2) -> (smokes(p1) <-> smokes(p2)))
+      case (p1, p2) => ft('peerPressure, friends(p1, p2) --> (smokes(p1) <-> smokes(p2)))
     }
     (f1 + f2) dot weights
   }

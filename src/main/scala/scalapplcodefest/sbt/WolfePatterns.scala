@@ -51,6 +51,17 @@ trait WolfePatterns {
   }
 
   object ApplyDoubleMinus extends ApplyDoubleOperator("$minus")
+  object ApplyDoubleTimes extends ApplyDoubleOperator("$times")
+
+  object FlatDoubleProduct {
+    def unapply(tree:Tree):Option[List[Tree]] = tree match {
+      case ApplyDoubleTimes(FlatDoubleProduct(args1),FlatDoubleProduct(args2)) => Some(args1 ::: args2)
+      case ApplyDoubleTimes(arg1,FlatDoubleProduct(args2)) => Some(arg1 :: args2)
+      case ApplyDoubleTimes(FlatDoubleProduct(args1),arg2) => Some(arg2 :: args1)
+      case ApplyDoubleTimes(arg1,arg2) => Some(List(arg1,arg2))
+      case _ => None
+    }
+  }
 
 
   object ApplyCurried2 {
@@ -185,6 +196,9 @@ trait WolfePatterns {
       case Apply(Select(Select(data, fieldName), eqeq), List(rhs)) =>
         //todo: check whether eqeq is an equals method
         Some(data, fieldName, rhs)
+      case Select(data, fieldName) =>
+        //we assume that this select is used in a context where a boolean is expected
+        Some(data, fieldName, Literal(Constant(true)))
       case _ => None
     }
     def apply(dataObject: Tree, fieldName: Name, rhs: Tree) = ???
