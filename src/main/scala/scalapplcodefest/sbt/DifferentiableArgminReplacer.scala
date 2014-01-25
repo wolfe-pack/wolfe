@@ -6,7 +6,7 @@ import cc.factorie.optimize.{Example, Trainer}
 import cc.factorie.la.WeightsMapAccumulator
 import cc.factorie.util.DoubleAccumulator
 import java.io.PrintWriter
-import scalapplcodefest.Wolfe.Objective.Adagrad
+import scalapplcodefest.Wolfe.Objective.{Learner, Adagrad}
 
 /**
  * @author Sebastian Riedel

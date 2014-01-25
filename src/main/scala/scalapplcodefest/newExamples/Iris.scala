@@ -32,7 +32,8 @@ class Iris extends (() => Unit) {
     def sampleSpace = all(Data)(c(all(Observed)(c(doubles, doubles, doubles, doubles)), classes))
 
     //joint feature function on data (x,y)
-    def features(data: Data) = oneHot('sl -> data.y, data.x.sepalLength) +
+    def features(data: Data) =
+      oneHot('sl -> data.y, data.x.sepalLength) +
       oneHot('sw -> data.y, data.x.sepalWidth) +
       oneHot('pl -> data.y, data.x.petalLength) +
       oneHot('pw -> data.y, data.x.petalWidth)

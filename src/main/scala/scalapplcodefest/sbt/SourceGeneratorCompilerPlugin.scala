@@ -11,10 +11,10 @@ import scala.Predef._
 import scala.Some
 
 object SourceGeneratorCompilerPlugin {
-  val name = "Wolfe Source Generator"
+  val name            = "Wolfe Source Generator"
   val generationPhase = "wolfe generation"
   val collectionPhase = "wolfe collection"
-  val namePostfix = "Compiled"
+  val namePostfix     = "Compiled"
 
   def compiledTag(originalName: String) = s"""${classOf[Compiled].getName}("$originalName")"""
   def compiledShortTag(originalName: String) = s"""${classOf[Compiled].getSimpleName}("$originalName")"""
@@ -25,21 +25,21 @@ object SourceGeneratorCompilerPlugin {
  * @author Sebastian Riedel
  */
 class SourceGeneratorCompilerPlugin(val env: GeneratorEnvironment,
-                                    targetDir: File,
-                                    replacers: List[CodeStringReplacer] = Nil) extends Plugin {
+targetDir: File,
+replacers: List[CodeStringReplacer] = Nil) extends Plugin {
   plugin =>
 
   import SourceGeneratorCompilerPlugin._
 
-  val name = SourceGeneratorCompilerPlugin.name
-  val components = List(DefCollectionComponent, GenerationComponent)
+  val name        = SourceGeneratorCompilerPlugin.name
+  val components  = List(DefCollectionComponent, GenerationComponent)
   val description = "Generates optimized scala code"
-  val global = env.global
+  val global      = env.global
 
   object DefCollectionComponent extends PluginComponent {
     val global: plugin.env.global.type = env.global
-    val phaseName = collectionPhase
-    val runsAfter = List("namer")
+    val phaseName                      = collectionPhase
+    val runsAfter                      = List("namer")
     def newPhase(prev: Phase) = new CollectionPhase(prev)
 
     class CollectionPhase(prev: Phase) extends StdPhase(prev) {
@@ -68,7 +68,7 @@ class SourceGeneratorCompilerPlugin(val env: GeneratorEnvironment,
 
           case dd: DefDef if dd.vparamss.isEmpty =>
             //we treat methods without parameters as values
-            val vd = ValDef(dd.symbol,dd.rhs)
+            val vd = ValDef(dd.symbol, dd.rhs)
             env.valOrDefDefs(dd.symbol) = vd
             if (toCollect) super.traverse(tree)
 
@@ -92,10 +92,10 @@ class SourceGeneratorCompilerPlugin(val env: GeneratorEnvironment,
   }
 
   object GenerationComponent extends PluginComponent {
-    val global: env.global.type = env.global
-    val phaseName = SourceGeneratorCompilerPlugin.generationPhase
-    val runsAfter = List(DefCollectionComponent.phaseName)
-    var packageName: String = "root"
+    val global     : env.global.type = env.global
+    val phaseName                    = SourceGeneratorCompilerPlugin.generationPhase
+    val runsAfter                    = List(DefCollectionComponent.phaseName)
+    var packageName: String          = "root"
     def newPhase(prev: scala.tools.nsc.Phase) = new GenerationPhase(prev)
 
     class GenerationPhase(prev: Phase) extends StdPhase(prev) {
@@ -193,17 +193,17 @@ class GeneratorEnvironment(val global: Global) {
   import global._
 
   val valOrDefDefs = new mutable.HashMap[Symbol, ValOrDefDef]()
-  val moduleDefs = new mutable.HashMap[Symbol, ModuleDef]()
-  val classDefs = new mutable.HashMap[Symbol, ClassDef]()
+  val moduleDefs   = new mutable.HashMap[Symbol, ModuleDef]()
+  val classDefs    = new mutable.HashMap[Symbol, ClassDef]()
 
 
   val MarkerAnalyze = rootMirror.getClassByName(newTermName(classOf[Analyze].getName))
   val MarkerCompile = rootMirror.getClassByName(newTermName(classOf[Compile].getName))
 
   val blockSimplifier = new BlockSimplifier
-  val betaReducer = new BetaReducer
-  val valInliner = new ValInliner
-  val methodReplacer = new ReplaceMethodsWithFunctions
+  val betaReducer     = new BetaReducer
+  val valInliner      = new ValInliner
+  val methodReplacer  = new ReplaceMethodsWithFunctions
 
   def normalize(text: String) = text.replaceAll("\\.this\\.", ".")
 
@@ -211,6 +211,7 @@ class GeneratorEnvironment(val global: Global) {
   def betaReduce(tree: Tree) = betaReducer.transform(tree)
   def inlineVals(tree: Tree) = valInliner.transform(tree)
   def replaceMethods(tree: Tree) = methodReplacer.transform(tree)
+  def transform(tree: Tree, pf: PartialFunction[Tree, Tree]) = new TransformWithPartialFunction(pf).transform(tree)
   def substitute(tree: Tree, binding: Map[Symbol, Tree]) = {
     val substituter = new Substituter(binding)
     substituter transform tree
@@ -293,10 +294,16 @@ class GeneratorEnvironment(val global: Global) {
     }
   }
 
+  class TransformWithPartialFunction(pf: PartialFunction[Tree, Tree]) extends Transformer {
+    override def transform(tree: Tree) = if (pf.isDefinedAt(tree)) pf(tree) else super.transform(tree)
+
+  }
+
+
   class SimplePrinter(out: PrintWriter) extends TreePrinter(out) {
     override def printTree(tree: Tree) = tree match {
-      case s@Select(qualifier,name) =>
-//        System.out.println(s"Select: ${s.toString()}")
+      case s@Select(qualifier, name) =>
+        //        System.out.println(s"Select: ${s.toString()}")
         super.printTree(tree)
       case _ => super.printTree(tree)
     }
@@ -334,7 +341,7 @@ class Analyze extends StaticAnnotation
  * @param original the string to modify.
  */
 class ModifiedSourceText(original: String, offset: Int = 0) {
-  private val source = new StringBuilder(original)
+  private val source             = new StringBuilder(original)
   private val originalToModified = new mutable.HashMap[Int, Int]()
 
   for (i <- 0 to original.length) originalToModified(i) = i - offset

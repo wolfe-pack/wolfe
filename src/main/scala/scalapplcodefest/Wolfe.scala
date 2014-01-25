@@ -4,6 +4,8 @@ import scala.language.implicitConversions
 import scala.util.Random
 import scalapplcodefest.sbt.Analyze
 import scalapplcodefest.Wolfe.Stats.OneHot
+import cc.factorie.WeightsSet
+import cc.factorie.optimize.{Trainer, OnlineTrainer}
 
 /**
  * @author Sebastian Riedel
@@ -100,7 +102,7 @@ object Wolfe extends SampleSpaceDefs with StatsDefs with VectorDefs {
 
 
   implicit class RichBoolean(b: Boolean) {
-    def ->(that: Boolean) = !b || that
+    def -->(that: Boolean) = !b || that
     def <->(that: Boolean) = b == that
   }
 
@@ -150,6 +152,7 @@ object Wolfe extends SampleSpaceDefs with StatsDefs with VectorDefs {
     trait Differentiator
 
     case class Adagrad(rate: Double) extends GradientBasedOptimizerSetting
+    case class Learner(learner:WeightsSet => Trainer) extends GradientBasedOptimizerSetting
 
     case object Perceptron extends GradientBasedOptimizerSetting
 
