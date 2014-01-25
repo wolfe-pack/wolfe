@@ -11,7 +11,6 @@ class Sprinkler extends (() => Unit) {
 
   import Wolfe._
   import math._
-  import Sprinkler._
 
   def apply() = {
 
@@ -39,6 +38,8 @@ class Sprinkler extends (() => Unit) {
 
     //most likely explanation if the grass is wet
     val mpe = argmax(sampleSpace)(_.wet)(x => log(p(x)))
+
+    println(mpe)
 
 
   }

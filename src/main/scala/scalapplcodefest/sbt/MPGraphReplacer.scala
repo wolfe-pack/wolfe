@@ -26,7 +26,10 @@ class MPGraphReplacer(val env: GeneratorEnvironment) extends CodeStringReplacer 
         val substituted = transform(factor.potential, {
           case s@Select(i@Ident(_), _) if i.symbol == dataArg =>
             val node = fieldName2nodeDef(s.name)
-            Ident(node.valueName)
+            node.condition match {
+              case Some(value) => value
+              case _ => Ident(node.valueName)
+            }
         })
         val scoreDef = s"val _score = math.log($substituted)"
         val updateTable = s"$tableName($settingIndexName) = _score"
@@ -51,7 +54,7 @@ class MPGraphReplacer(val env: GeneratorEnvironment) extends CodeStringReplacer 
     }
   }
 
-  case class NodeDefField(field: ValDef, dom: Tree, nodeName: String, domName: String) {
+  case class NodeDefField(field: ValDef, dom: Tree, nodeName: String, domName: String, condition: Option[Tree] = None) {
     val fieldName = field.name.encoded
     val indexName = s"_index_$fieldName"
     val valueName = s"_value_$fieldName"
@@ -59,7 +62,8 @@ class MPGraphReplacer(val env: GeneratorEnvironment) extends CodeStringReplacer 
     val nodeDef   = s"val $nodeName = $mpGraphName.addNode($domName.size)"
   }
 
-  case class FactorDef(factorIndex: Int, potential: Tree, nodes: List[NodeDefField]) {
+  case class FactorDef(factorIndex: Int, potential: Tree, origNodes: List[NodeDefField]) {
+    val nodes             = origNodes.filter(_.condition.isEmpty)
     val settingsName      = s"_settings_$factorIndex"
     val tableName         = s"_table_$factorIndex"
     val dimName           = s"_dim_$factorIndex"
@@ -83,6 +87,7 @@ class MPGraphReplacer(val env: GeneratorEnvironment) extends CodeStringReplacer 
 
         //get equality conditions
         val EqualityConditions(conditions) = pred
+        val fieldName2Condition = conditions.toMap
 
         //normalize the domain for pattern matching
         val normalizedDom = betaReduce(replaceMethods(inlineVals(dom)))
@@ -97,7 +102,8 @@ class MPGraphReplacer(val env: GeneratorEnvironment) extends CodeStringReplacer 
               val domName = s"_dom_${field.name.encoded}"
               val nodeName = s"_node_${field.name.encoded}"
               println(constructor)
-              NodeDefField(field, set, nodeName, domName)
+              val condition = fieldName2Condition.get(field.name)
+              NodeDefField(field, set, nodeName, domName, condition)
             }
           case _ => Nil
         }
@@ -127,7 +133,8 @@ class MPGraphReplacer(val env: GeneratorEnvironment) extends CodeStringReplacer 
         }
 
         //the generated string corresponding to the node and domain definitions
-        val nodeDefStrings = for (nodeDef <- nodeDefs) yield Seq(nodeDef.domDef, nodeDef.nodeDef).mkString(";\n")
+        val nodeDefStrings = for (nodeDef <- nodeDefs if nodeDef.condition.isEmpty) yield
+          Seq(nodeDef.domDef, nodeDef.nodeDef).mkString(";\n")
 
         //the generated string corresponding to the factor definitions
         val factorDefStrings = for (factorDef <- factorDefs) yield {
@@ -135,7 +142,7 @@ class MPGraphReplacer(val env: GeneratorEnvironment) extends CodeStringReplacer 
 
           val setupTables = s"{ var $settingIndexName = 0; ${settingsLoop(nodes, factorDef, objArg.symbol, fieldName2nodeDef)} }"
           val createFactor = s"val $factorName = $mpGraphName.addTableFactor($tableName, $settingsName, $dimsName)"
-          val addEdges = nodeDefs.zipWithIndex.map({
+          val addEdges = factorDef.nodes.zipWithIndex.map({
             case (n, i) => s"$mpGraphName.addEdge($factorName,${n.nodeName},$i)"
           }).mkString(";\n")
           Seq(dimsDef, settingsCountDef, tableDef, settingsDef, setupTables, createFactor, addEdges).mkString(";\n")
@@ -156,7 +163,10 @@ class MPGraphReplacer(val env: GeneratorEnvironment) extends CodeStringReplacer 
         val result = {
           val setWinners = (for (node <- nodeDefs) yield {
             import node._
-            Seq(s"val $indexName = MoreArrayOps.maxIndex(${node.nodeName}.b)", s"val $valueName = $domName($indexName)")
+            condition match {
+              case Some(value) => Seq(s"val $valueName = $value")
+              case _ => Seq(s"val $indexName = MoreArrayOps.maxIndex(${node.nodeName}.b)", s"val $valueName = $domName($indexName)")
+            }
           }).flatMap(identity)
           val create = s"$constructor(${nodeDefs.map(_.valueName).mkString(",")})"
           s"{${(setWinners :+ create).mkString(";\n")}}"
