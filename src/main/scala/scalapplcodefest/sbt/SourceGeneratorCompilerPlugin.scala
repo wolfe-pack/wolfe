@@ -295,7 +295,10 @@ class GeneratorEnvironment(val global: Global) {
   }
 
   class TransformWithPartialFunction(pf: PartialFunction[Tree, Tree]) extends Transformer {
-    override def transform(tree: Tree) = if (pf.isDefinedAt(tree)) pf(tree) else super.transform(tree)
+    override def transform(tree: Tree) = {
+      val transformed = super.transform(tree)
+      if (pf.isDefinedAt(transformed)) pf(transformed) else transformed
+    }
 
   }
 
