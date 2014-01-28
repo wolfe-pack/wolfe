@@ -183,8 +183,8 @@ class MPGraphReplacerNew(val env: GeneratorEnvironment) extends CodeStringReplac
 
     }
 
-    case class NodeInfo(selector: Tree, domain: Tree, condition: Option[Tree] = None) {
-      val prefix    = selector.toString().replaceAll("\\.", "_")
+    case class NodeInfo(nodeSelector: Tree, matcher:Tree, domain: Tree, condition: Option[Tree] = None) {
+      val prefix    = nodeSelector.toString().replaceAll("\\.", "_")
       val indexName = prefix + "_index"
       val valueName = prefix + "_value"
       val domName   = DomainArrayIdent(domain).toString()
@@ -244,7 +244,7 @@ class MPGraphReplacerNew(val env: GeneratorEnvironment) extends CodeStringReplac
         var result: List[NodeInfo] = Nil
         val traverser = new Traverser {
           override def traverse(tree: Tree) = {
-            for (n <- selector(tree)) result ::= NodeInfo(n, domain)
+            for (n <- selector(tree)) result ::= NodeInfo(n, tree, domain)
             super.traverse(tree)
           }
         }
@@ -313,7 +313,7 @@ class MPGraphReplacerNew(val env: GeneratorEnvironment) extends CodeStringReplac
       val factorGroupType   = "Factor"
       val prefix            = parentPrefix + "_factor"
       val nodes             = rootNodeGroup.nodeInfos(potential, objVarMatch)
-      val tree2node         = nodes.map(n => n.selector -> n).toMap
+      val treeString2node   = nodes.map(n => n.matcher.toString() -> n).toMap
       val hidden            = nodes.filter(_.condition.isEmpty)
       val tableName         = prefix + "_table"
       val settingsName      = prefix + "_settings"
@@ -327,7 +327,9 @@ class MPGraphReplacerNew(val env: GeneratorEnvironment) extends CodeStringReplac
         s"val $dimsName = Array(${hidden.map(n => s"${n.domName}.length").mkString(",")})",
         s"var $settingsIndexName = 0",
         generateSettings(hidden, this),
-        s"$mpGraphName.addTableFactor($tableName, $settingsName, $dimsName)"
+        s"val _tmp = $mpGraphName.addTableFactor($tableName, $settingsName, $dimsName)",
+        block(hidden.zipWithIndex.map({case (n,i) => s"$mpGraphName.addEdge(_tmp,${n.nodeSelector},$i)"})),
+        "_tmp"
       ))
       def init = Seq.empty
       def allGroups = List(this)
@@ -379,9 +381,13 @@ class MPGraphReplacerNew(val env: GeneratorEnvironment) extends CodeStringReplac
           val settingDef = s"val _setting = ${hidden.map(n => s"${n.indexName}").mkString("Array(", ",", ")")}"
           val updateSetting = s"$settingsName($settingsIndexName) = _setting"
           val substituted = transform(potential, {
-            case tree => tree2node.get(tree) match {
-              case Some(node) => node.condition.getOrElse(Ident(node.valueName))
-              case _ => tree
+            case Import(_,_) => EmptyTree  //todo: this should only remove imports for the objective arg
+            case tree => {
+              treeString2node.get(tree.toString()) match {
+                case Some(node) =>
+                  node.condition.getOrElse(Ident(node.valueName))
+                case _ => tree
+              }
             }
           })
           val scoreDef = s"$tableName($settingsIndexName) = $substituted"
