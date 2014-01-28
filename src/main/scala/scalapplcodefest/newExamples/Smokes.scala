@@ -1,6 +1,6 @@
 package scalapplcodefest.newExamples
 
-import scalapplcodefest.sbt.Compile
+import scalapplcodefest.sbt.{MPGraphReplacerNew, GenerateSources, Compile}
 import scalapplcodefest.Wolfe
 
 /**
@@ -30,5 +30,13 @@ class Smokes extends (() => Unit) {
 
     println(mpe)
 
+  }
+}
+
+object Smokes {
+  def main(args: Array[String]) {
+    GenerateSources.generate(
+      sourcePath = "src/main/scala/scalapplcodefest/newExamples/Smokes.scala",
+      replacers = List(env => new MPGraphReplacerNew(env)))
   }
 }
