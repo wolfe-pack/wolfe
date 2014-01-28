@@ -17,8 +17,8 @@ final class MPGraph {
   import MPGraph.FactorType._
   import MPGraph._
 
-  val edges = new ArrayBuffer[Edge]
-  val nodes = new ArrayBuffer[Node]
+  val edges   = new ArrayBuffer[Edge]
+  val nodes   = new ArrayBuffer[Node]
   val factors = new ArrayBuffer[Factor]
 
 
@@ -46,10 +46,12 @@ final class MPGraph {
   /**
    * Adds a node for a variable of domain size `dim`
    * @param dim size of domain of corresponding variable
+   * @param observation the index of the observed value for this node, -1 if no observation is present
    * @return the added node.
    */
-  def addNode(dim: Int) = {
+  def addNode(dim: Int, observation: Int = -1) = {
     val n = new Node(nodes.size, dim)
+    n.observation = observation
     nodes += n
     n
   }
@@ -206,6 +208,9 @@ object MPGraph {
     /* external message for this node. Will usually not be updated during inference */
     val in = Array.ofDim[Double](dim)
 
+    /* an observed value, -1 if no observation is present */
+    var observation = -1
+
     def toVerboseString(nodePrinter: Node => String = n => "") = {
       f"""-----------------
         |Node:   $index%3d ${nodePrinter(this)}
@@ -216,7 +221,7 @@ object MPGraph {
 
     override def toString = index.toString
 
-    private[MPGraph] var edgeCount: Int = 0
+    private[MPGraph] var edgeCount : Int = 0
     private[MPGraph] var edgeFilled: Int = 0
 
   }
@@ -228,12 +233,12 @@ object MPGraph {
    * @param dim dimension of the node's variable.
    */
   final class Edge(val n: Node, val f: Factor, val dim: Int) {
-    val n2f = Array.ofDim[Double](dim)
-    val f2n = Array.ofDim[Double](dim)
+    val n2f     = Array.ofDim[Double](dim)
+    val f2n     = Array.ofDim[Double](dim)
     val f2nLast = Array.ofDim[Double](dim)
 
     var indexInFactor = -1
-    var indexInNode = -1
+    var indexInNode   = -1
 
     def toVerboseString(fgPrinter: FGPrinter) =
       f"""----------
@@ -318,7 +323,7 @@ object MPGraph {
       //for (i <-0 until settings.length) table(i) = stats(i).dot(fg.weights)
     }
 
-    private[MPGraph] var edgeCount: Int = 0
+    private[MPGraph] var edgeCount : Int = 0
     private[MPGraph] var edgeFilled: Int = 0
 
   }
