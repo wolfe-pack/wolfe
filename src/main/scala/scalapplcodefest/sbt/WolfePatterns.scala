@@ -11,38 +11,42 @@ trait WolfePatterns {
   import env.global._
 
   val scalapplcodefest = rootMirror.getPackage(newTermName("scalapplcodefest"))
-  val wolfe = rootMirror.getModuleByName(newTermName("scalapplcodefest.Wolfe"))
+  val wolfe            = rootMirror.getModuleByName(newTermName("scalapplcodefest.Wolfe"))
 
-  val stats = definitions.getMemberModule(wolfe, newTermName("Stats"))
+  val stats     = definitions.getMemberModule(wolfe, newTermName("Stats"))
   val objective = definitions.getMemberModule(wolfe, newTermName("Objective"))
 
 
   //search space generators
-  val all = definitions.getMember(wolfe, newTermName("all"))
-  val cross2 = definitions.getMember(wolfe, newTermName("c"))
+  val all     = definitions.getMember(wolfe, newTermName("all"))
+  val cross2  = definitions.getMember(wolfe, newTermName("c"))
   val unwrap2 = definitions.getMember(wolfe, newTermName("unwrap2"))
-  val bools = definitions.getMember(wolfe, newTermName("bools"))
+  val bools   = definitions.getMember(wolfe, newTermName("bools"))
   val doubles = definitions.getMember(wolfe, newTermName("doubles"))
 
 
   //new core operators
-  val sum = definitions.getMember(wolfe, newTermName("sum"))
+  val sum    = definitions.getMember(wolfe, newTermName("sum"))
   val argmax = definitions.getMember(wolfe, newTermName("argmax"))
 
   //new derived operators
-  val logZ = definitions.getMember(wolfe, newTermName("logZ"))
+  val logZ   = definitions.getMember(wolfe, newTermName("logZ"))
   val argmin = definitions.getMember(wolfe, newTermName("argmin"))
-  val max = definitions.getMember(wolfe, newTermName("max"))
+  val max    = definitions.getMember(wolfe, newTermName("max"))
 
 
   //sufficient stats
   val oneHot = definitions.getMember(wolfe, newTermName("oneHot"))
 
   //Annotations
-  val MarkerOneHot = definitions.getMemberClass(stats, newTermName("OneHot"))
+  val MarkerOneHot         = definitions.getMemberClass(stats, newTermName("OneHot"))
   val MarkerDifferentiable = definitions.getMemberClass(objective, newTermName("Differentiable"))
 
-  class ApplyDoubleOperator(name: String) {
+  trait ApplyBinaryOperator {
+    def unapply(tree: Tree): Option[(Tree, Tree)]
+  }
+
+  class ApplyDoubleOperator(name: String) extends ApplyBinaryOperator {
     def unapply(tree: Tree) = tree match {
       case Apply(s@Select(arg1, opName), List(arg2))
         if s.symbol.owner == definitions.DoubleClass && opName.encoded == name => Some(arg1, arg2)
@@ -51,14 +55,28 @@ trait WolfePatterns {
   }
 
   object ApplyDoubleMinus extends ApplyDoubleOperator("$minus")
+  object ApplyDoublePlus extends ApplyDoubleOperator("$plus")
   object ApplyDoubleTimes extends ApplyDoubleOperator("$times")
 
+  class Flattened(operator: ApplyBinaryOperator) {
+    val Match = this
+    def unapply(tree: Tree): Option[List[Tree]] = tree match {
+      case operator(Match(args1), Match(args2)) => Some(args1 ::: args2)
+      case operator(arg1, Match(args2)) => Some(arg1 :: args2)
+      case operator(Match(args1), arg2) => Some(arg2 :: args1)
+      case operator(arg1, arg2) => Some(List(arg1, arg2))
+      case _ => None
+    }
+  }
+
+  object FlatDoubleSum extends Flattened(ApplyDoublePlus)
+
   object FlatDoubleProduct {
-    def unapply(tree:Tree):Option[List[Tree]] = tree match {
-      case ApplyDoubleTimes(FlatDoubleProduct(args1),FlatDoubleProduct(args2)) => Some(args1 ::: args2)
-      case ApplyDoubleTimes(arg1,FlatDoubleProduct(args2)) => Some(arg1 :: args2)
-      case ApplyDoubleTimes(FlatDoubleProduct(args1),arg2) => Some(arg2 :: args1)
-      case ApplyDoubleTimes(arg1,arg2) => Some(List(arg1,arg2))
+    def unapply(tree: Tree): Option[List[Tree]] = tree match {
+      case ApplyDoubleTimes(FlatDoubleProduct(args1), FlatDoubleProduct(args2)) => Some(args1 ::: args2)
+      case ApplyDoubleTimes(arg1, FlatDoubleProduct(args2)) => Some(arg1 :: args2)
+      case ApplyDoubleTimes(FlatDoubleProduct(args1), arg2) => Some(arg2 :: args1)
+      case ApplyDoubleTimes(arg1, arg2) => Some(List(arg1, arg2))
       case _ => None
     }
   }
@@ -116,7 +134,7 @@ trait WolfePatterns {
       case ApplyCurried4(se, types, dom, pred, obj, meta) if se.symbol == sym => Some(se, types, dom, pred, obj, meta)
       case _ => None
     }
-    def apply(select:Tree, types: List[Tree], dom: Tree, pred: Tree, obj: Tree, num: Tree) =
+    def apply(select: Tree, types: List[Tree], dom: Tree, pred: Tree, obj: Tree, num: Tree) =
       ApplyCurried4(select, types, dom, pred, obj, num)
   }
 
@@ -127,7 +145,6 @@ trait WolfePatterns {
       case _ => None
     }
   }
-
 
 
   object LinearModel {
@@ -147,14 +164,9 @@ trait WolfePatterns {
 
 
   object ApplyArgmin extends ApplyOperator4(argmin)
-
   object ApplyArgmax extends ApplyOperator4(argmax)
-
   object ApplyMax extends ApplyOperator4(max)
-
-
   object ApplyLogZ extends ApplyOperator3(logZ)
-
   object ApplySum extends ApplyOperator4(sum)
 
 
@@ -170,7 +182,7 @@ trait WolfePatterns {
 
   object LogLikelihood {
     def unapply(tree: Tree) = tree match {
-      case Function(weight1, ApplySum(_,_, data, _, PerInstanceLogLikelihood(domain, f, w), _)) => Some(data, domain, f, w)
+      case Function(weight1, ApplySum(_, _, data, _, PerInstanceLogLikelihood(domain, f, w), _)) => Some(data, domain, f, w)
       case _ => None
     }
   }

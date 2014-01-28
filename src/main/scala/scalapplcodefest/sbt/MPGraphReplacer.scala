@@ -13,6 +13,12 @@ class MPGraphReplacer(val env: GeneratorEnvironment) extends CodeStringReplacer 
   val mpGraphName = "_mpGraph"
 
 
+  def whileLoopRange(indexName: String, to: String, from: String = "0")(body: String) = {
+    s"{ var $indexName = 0;\n while ($indexName < $to) \n{ $body;\n $indexName += 1}}"
+  }
+  def block(statements: Seq[String]) = statements.mkString("{\n", ";\n", "\n}")
+
+
   //iterate over domains to create settings and table values
   def settingsLoop(nodeDefs: List[NodeDefField], factor: FactorDef,
                    dataArg: Symbol, fieldName2nodeDef: Map[TermName, NodeDefField]): String = {
@@ -46,13 +52,12 @@ class MPGraphReplacer(val env: GeneratorEnvironment) extends CodeStringReplacer 
   }
 
 
-
   case class NodeDefField(field: ValDef, dom: Tree, nodeName: String, domName: String, condition: Option[Tree] = None) {
     val fieldName = field.name.encoded
     val indexName = s"_index_$fieldName"
     val valueName = s"_value_$fieldName"
     val domDef    = s"val $domName = $dom.toArray"
-    val nodeDef   = s"val $nodeName = $mpGraphName.addNode($domName.size)"
+    val nodeDef   = s"val $nodeName = $mpGraphName.addNode($domName.length)"
   }
 
   case class FactorDef(factorIndex: Int, potential: Tree, origNodes: List[NodeDefField]) {
@@ -70,9 +75,9 @@ class MPGraphReplacer(val env: GeneratorEnvironment) extends CodeStringReplacer 
     val dimsDef           = s"val $dimsName = $dims"
     val settingIndexName  = s"_settingIndex_$factorIndex"
     val factorName        = s"_factor_$factorIndex"
-
-
   }
+
+
 
   def replace(tree: Tree, modification: ModifiedSourceText) = {
     tree match {
@@ -173,6 +178,7 @@ class MPGraphReplacer(val env: GeneratorEnvironment) extends CodeStringReplacer 
       case _ => false
 
     }
-    false
   }
+
+
 }
