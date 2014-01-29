@@ -115,6 +115,11 @@ final class MPGraph {
    * Connecting nodes and factors to the edges between them.
    */
   def build() {
+    for (node <- nodes) {
+      if (node.domain == null) node.domain = Array.range(0,node.dim)
+      if (node.b == null) node.b = Array.ofDim[Double](node.dim)
+      if (node.in == null) node.in = Array.ofDim[Double](node.dim)
+    }
     for (edge <- edges) {
       if (edge.f.edges.length != edge.f.edgeCount) edge.f.edges = Array.ofDim[Edge](edge.f.edgeCount)
       if (edge.n.edges.length != edge.n.edgeCount) edge.n.edges = Array.ofDim[Edge](edge.n.edgeCount)
@@ -198,18 +203,18 @@ object MPGraph {
    * @param index the index of the node.
    * @param dim the dimension of the variable the node is representing.
    */
-  final class Node(val index: Int, val dim: Int) {
+  final class Node(val index: Int, var dim: Int) {
     /* all edges to factors that this node is connected to */
     var edges: Array[Edge] = Array.ofDim(0)
 
     /* node belief */
-    val b = Array.ofDim[Double](dim)
+    var b = Array.ofDim[Double](dim)
 
     /* external message for this node. Will usually not be updated during inference */
-    val in = Array.ofDim[Double](dim)
+    var in = Array.ofDim[Double](dim)
 
-    /* an observed value, -1 if no observation is present */
-    var observation = -1
+    /* the domain of values. By default this corresponds to [0,dim) but can be a subset if observations are given */
+    var domain:Array[Int] = _
 
     def toVerboseString(nodePrinter: Node => String = n => "") = {
       f"""-----------------
