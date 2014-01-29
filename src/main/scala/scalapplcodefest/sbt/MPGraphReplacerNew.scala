@@ -274,6 +274,7 @@ class MPGraphReplacerNew(val env: GeneratorEnvironment) extends CodeStringReplac
       val settingsCountName = prefix + "_settingsCount"
       val dimsName          = prefix + "_dims"
       val constructor       = block(Seq(
+        //todo: get domain from each node. This may have been set through conditions
         s"val $settingsCountName = ${("1" +: hidden.map(n => s"${n.domName}.length")).mkString(" * ")}",
         s"val $tableName = Array.ofDim[Double]($settingsCountName)",
         s"val $settingsName = Array.ofDim[Array[Int]]($settingsCountName)",
