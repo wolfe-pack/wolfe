@@ -12,8 +12,11 @@ scalaVersion := "2.10.3"
 
 resolvers ++= Seq(
   "IESL Release" at "https://dev-iesl.cs.umass.edu/nexus/content/groups/public",
-  Resolver.sonatypeRepo("snapshots")
+  Resolver.sonatypeRepo("snapshots"),
+  Resolver.sonatypeRepo("releases")
 )
+
+addCompilerPlugin("org.scalamacros" % "paradise" % "2.0.0-M3" cross CrossVersion.full)
 
 publishTo := Some(Resolver.file("file",  new File(Path.userHome.absolutePath+"/.m2/repository")))
 
@@ -25,7 +28,8 @@ libraryDependencies ++= Seq(
   "cc.factorie" % "factorie" % "1.0.0-M7",
   "com.github.axel22" %% "scalameter" % "0.4",
   "org.scala-lang" % "scala-compiler" % "2.10.3",
-  "org.scala-lang" % "scala-library" % "2.10.3"
+  "org.scala-lang" % "scala-library" % "2.10.3",
+  "org.scalamacros" % "quasiquotes" % "2.0.0-M3" cross CrossVersion.full
 )
 
 generateWolfeSource := Seq.empty

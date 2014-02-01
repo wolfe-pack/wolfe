@@ -46,12 +46,10 @@ final class MPGraph {
   /**
    * Adds a node for a variable of domain size `dim`
    * @param dim size of domain of corresponding variable
-   * @param observation the index of the observed value for this node, -1 if no observation is present
    * @return the added node.
    */
-  def addNode(dim: Int, observation: Int = -1) = {
+  def addNode(dim: Int) = {
     val n = new Node(nodes.size, dim)
-    n.observation = observation
     nodes += n
     n
   }
@@ -112,14 +110,21 @@ final class MPGraph {
   }
 
   /**
-   * Connecting nodes and factors to the edges between them.
+   * creates node message buffers and domains if necessary.
    */
-  def build() {
+  def setupNodes() {
     for (node <- nodes) {
       if (node.domain == null) node.domain = Array.range(0,node.dim)
       if (node.b == null) node.b = Array.ofDim[Double](node.dim)
       if (node.in == null) node.in = Array.ofDim[Double](node.dim)
     }
+  }
+
+  /**
+   * Connecting nodes and factors to the edges between them.
+   */
+  def build() {
+    setupNodes()
     for (edge <- edges) {
       if (edge.f.edges.length != edge.f.edgeCount) edge.f.edges = Array.ofDim[Edge](edge.f.edgeCount)
       if (edge.n.edges.length != edge.n.edgeCount) edge.n.edges = Array.ofDim[Edge](edge.n.edgeCount)
@@ -215,6 +220,12 @@ object MPGraph {
 
     /* the domain of values. By default this corresponds to [0,dim) but can be a subset if observations are given */
     var domain:Array[Int] = _
+
+    /* indicates that variable is in a certain state */
+    var setting: Int = 0
+
+    /* indicates the value corresponding to the setting of the node */
+    var value:Int = 0
 
     def toVerboseString(nodePrinter: Node => String = n => "") = {
       f"""-----------------

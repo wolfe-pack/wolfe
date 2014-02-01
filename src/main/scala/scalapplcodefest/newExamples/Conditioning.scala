@@ -17,7 +17,7 @@ class Conditioning extends (() => Boolean) {
 
     case class Data(x: Double, y: Boolean)
 
-    val allData = all(Data)(c(doubles, bools))
+    val allData = all2(Data)(c(doubles, bools))
 
     val best = argmax(allData)(_.x == 1.0)(_ => 1.0)
 
