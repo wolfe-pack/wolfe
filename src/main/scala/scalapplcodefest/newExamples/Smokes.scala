@@ -19,7 +19,7 @@ class Smokes extends (() => Unit) {
     val bob = Person("Bob", "B.")
 
     implicit val allPersons = Set(anna, bob)
-    implicit val allData = all(Data)
+    implicit val allData = all2(Data)
 
     def model(data: Data) = {
       import data._

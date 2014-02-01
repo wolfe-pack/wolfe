@@ -28,7 +28,7 @@ class IrisShort extends (() => Unit) {
     val (train, test) = dataset.splitAt(dataset.size / 2)
 
     //the set of all possible dates
-    implicit def sampleSpace = all(Data)(c(all(Observed)(c(doubles, doubles, doubles, doubles)), classes))
+    implicit def sampleSpace = all2(Data)(c(all2(Observed)(c(doubles, doubles, doubles, doubles)), classes))
 
     //joint feature function on data (x,y)
     def features(data: Data) = oneHot('sl -> data.y, data.x.sepalLength) +

@@ -16,7 +16,7 @@ class Sprinkler extends (() => Unit) {
 
     case class Data(rain: Boolean, sprinkler: Boolean, wet: Boolean)
 
-    def sampleSpace = all(Data)
+    def sampleSpace = all2(Data)
 
     val p_rain =
       Map(true -> 0.2, false -> 0.8)

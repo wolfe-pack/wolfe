@@ -25,8 +25,8 @@ object SourceGeneratorCompilerPlugin {
  * @author Sebastian Riedel
  */
 class SourceGeneratorCompilerPlugin(val env: GeneratorEnvironment,
-targetDir: File,
-replacers: List[CodeStringReplacer] = Nil) extends Plugin {
+                                    targetDir: File,
+                                    replacers: List[CodeStringReplacer] = Nil) extends Plugin {
   plugin =>
 
   import SourceGeneratorCompilerPlugin._
@@ -205,7 +205,7 @@ class GeneratorEnvironment(val global: Global) {
   val valInliner      = new ValInliner
   val methodReplacer  = new ReplaceMethodsWithFunctions
 
-  def normalize(text: String) = text.replaceAll("\\.this\\.", ".")
+  def normalize(text: String) = text.replaceAll("\\.this\\.", ".").replaceAll("`package`.", "").replaceAll("\\(Predef\\.implicitly\\)", "")
 
   def simplifyBlocks(tree: Tree) = blockSimplifier.transform(tree)
   def betaReduce(tree: Tree) = betaReducer.transform(tree)

@@ -275,7 +275,7 @@ trait SampleSpaceDefs {
 
   import Wolfe._
 
-  def all[A, B](mapper: A => B)(implicit dom: Set[A]): Set[B] = dom map mapper
+  def all2[A, B](mapper: A => B)(implicit dom: Set[A]): Set[B] = dom map mapper
 
   def c[A, B](set1: Set[A], set2: Set[B]) = for (i <- set1; j <- set2) yield (i, j)
   def c[A, B, C](set1: Set[A], set2: Set[B], set3: Set[C]) = for (i <- set1; j <- set2; k <- set3) yield (i, j, k)
@@ -359,3 +359,4 @@ trait SampleSpaceDefs {
 }
 
 
+object WolfeEnv extends SampleSpaceDefs with StatsDefs with VectorDefs
