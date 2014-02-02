@@ -33,11 +33,7 @@ object OptimizedWolfe extends WolfeAPI {
     import c.universe._
 
     val helper = new MacroHelper[c.type](c)
-
     import helper._
-
-    val Function(List(objVarDef@ValDef(_, objVarName, _, _)), rootObj) = obj.tree
-    val Function(List(predVarDef@ValDef(_, predVarName, _, _)), rootPred) = where.tree
 
     //mapping from val names to definitions (we use methods with no arguments as vals too)
     val vals = c.enclosingUnit.body.collect({
@@ -49,6 +45,20 @@ object OptimizedWolfe extends WolfeAPI {
     val defs = c.enclosingUnit.body.collect({
       case d: DefDef => d.symbol -> d
     }).toMap
+
+    val normalizedObj = betaReduce(replaceMethods(simplifyBlocks(obj.tree), defs))
+    val normalizedPred= betaReduce(replaceMethods(simplifyBlocks(where.tree), defs))
+
+
+    println(normalizedObj)
+    println(normalizedPred)
+
+    val Function(List(objVarDef@ValDef(_, objVarName, _, _)), rootObj) = normalizedObj
+    val Function(List(predVarDef@ValDef(_, predVarName, _, _)), rootPred) = normalizedPred
+
+    println("Blub")
+
+
 
     val normalized = betaReduce(replaceMethods(rootObj, defs))
 
@@ -90,7 +100,7 @@ object OptimizedWolfe extends WolfeAPI {
     //turn the predicate into an objective
     val predObj = predObservationSetup.remainder match {
       case EmptyTree => EmptyTree
-      case setup => q"log(I($setup))"
+      case setup => q"math.log(I($setup))"
     }
 
     //setting up the factors from the predicate
@@ -166,14 +176,23 @@ trait TransformHelper[C <: Context] {
   }
 
   val betaReducer = new BetaReducer
+  val blockSimplifier = new BlockSimplifier
 
   def betaReduce(tree: Tree) = betaReducer transform tree
+  def simplifyBlocks(tree:Tree) = blockSimplifier transform tree
 
   def distinctTrees(trees: List[Tree], result: List[Tree] = Nil): List[Tree] = trees match {
     case Nil => result
     case head :: tail =>
       val distinct = if (result.exists(_.equalsStructure(head))) result else head :: result
       distinctTrees(tail, distinct)
+  }
+
+  class BlockSimplifier extends Transformer {
+    override def transform(tree: Tree) = tree match {
+      case Block(Nil, expr) => super.transform(expr)
+      case _ => super.transform(tree)
+    }
   }
 
   class ReplaceMethodsWithFunctions(defDefs: Map[Symbol, DefDef]) extends Transformer {
