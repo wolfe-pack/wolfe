@@ -45,6 +45,15 @@ object OptimizedWolfe extends WolfeAPI {
       case DefDef(_, name, _, Nil, _, rhs) => name -> rhs
     }).toMap
 
+    //mapping from symbols to methods
+    val defs = c.enclosingUnit.body.collect({
+      case d: DefDef => d.symbol -> d
+    }).toMap
+
+    val normalized = betaReduce(replaceMethods(rootObj, defs))
+
+    val checked = context.typeCheck(replaceMethods(rootObj, defs))
+
     //classes in context
     val classes = c.enclosingUnit.body.collect({
       case cd@ClassDef(_, name, _, _) => name -> cd
@@ -73,9 +82,9 @@ object OptimizedWolfe extends WolfeAPI {
     val predArgMatcher = createRootMatcher(predVarName, Ident(metaData.rootName))(_)
 
     //this builds the factors
-    val objFactorsSetup = factorSetup(metaData, rootObj, root.matcher(objArgMatcher, objArgMatcher))
+    val objFactorsSetup = factorSetup(metaData, normalized, root.matcher(objArgMatcher, objArgMatcher))
 
-    //
+    //setting observed nodes and reduce their domains
     val predObservationSetup = observationSetup(metaData, rootPred, root.matcher(predArgMatcher, predArgMatcher))
 
     //turn the predicate into an objective
@@ -150,6 +159,109 @@ trait TransformHelper[C <: Context] {
       if (pf.isDefinedAt(transformed)) pf(transformed) else transformed
     }
   }
+
+  def replaceMethods(tree: Tree, defDefs: Map[Symbol, DefDef]) = {
+    val transformer = new ReplaceMethodsWithFunctions(defDefs)
+    transformer transform tree
+  }
+
+  val betaReducer = new BetaReducer
+
+  def betaReduce(tree: Tree) = betaReducer transform tree
+
+  def distinctTrees(trees: List[Tree], result: List[Tree] = Nil): List[Tree] = trees match {
+    case Nil => result
+    case head :: tail =>
+      val distinct = if (result.exists(_.equalsStructure(head))) result else head :: result
+      distinctTrees(tail, distinct)
+  }
+
+  class ReplaceMethodsWithFunctions(defDefs: Map[Symbol, DefDef]) extends Transformer {
+    def getDef(f: Tree) = f match {
+      case TypeApply(templateFun, _) => defDefs.get(templateFun.symbol)
+      case _ => defDefs.get(f.symbol)
+    }
+
+    def createFunction(defArgs: List[List[ValDef]], rhs: Tree): Function = defArgs match {
+      case Nil => Function(Nil, rhs)
+      case headArgs :: Nil => Function(headArgs, rhs)
+      case headArgs :: tail => Function(headArgs, createFunction(tail, rhs))
+    }
+
+    override def transform(tree: Tree): Tree = tree match {
+      case TypeApply(f@Ident(_), _) => getDef(f) match {
+        case Some(DefDef(_, _, _, defArgs, _, rhs)) => createFunction(defArgs, transform(rhs))
+        case _ => super.transform(tree)
+      }
+      case f@Ident(_) => getDef(f) match {
+        case Some(DefDef(_, _, _, defArgs, _, rhs)) => createFunction(defArgs, transform(rhs))
+        case _ => super.transform(tree)
+      }
+      case _ => super.transform(tree)
+    }
+  }
+
+  class Substituter(binding: Map[Symbol, Tree]) extends Transformer {
+    override def transform(tree: Tree) = tree match {
+      case i: Ident => binding.get(i.symbol) match {
+        case Some(value) => value
+        case _ => super.transform(tree)
+      }
+      case _ => super.transform(tree)
+    }
+  }
+
+  class BetaReducer extends Transformer {
+
+    def substitute(defArgs: List[ValDef], args: List[Tree], tree: Tree): Tree = {
+      val binding = (defArgs.map(_.symbol) zip args).toMap
+      val substituter = new Substituter(binding)
+      val result = substituter transform tree
+      result
+    }
+
+
+    override def transform(tree: Tree): Tree = {
+      val transformed = super.transform(tree)
+      transformed match {
+        case Apply(Function(defArgs, rhs), args) => substitute(defArgs, args, rhs)
+        case other => other
+      }
+    }
+  }
+
+
+  trait ApplyBinaryOperator {
+    def unapply(tree: Tree): Option[(Tree, Tree)]
+  }
+
+  class ApplyDoubleOperator(name: String) extends ApplyBinaryOperator {
+    def unapply(tree: Tree) = tree match {
+      //      case Apply(s@Select(arg1, opName), List(arg2))
+      //        if s.symbol.owner == definitions.DoubleClass && opName.encoded == name => Some(arg1, arg2)
+      case Apply(s@Select(arg1, opName), List(arg2)) if opName.encoded == name => Some(arg1, arg2)
+      case _ => None
+    }
+  }
+
+  object ApplyDoubleMinus extends ApplyDoubleOperator("$minus")
+  object ApplyDoublePlus extends ApplyDoubleOperator("$plus")
+  object ApplyDoubleTimes extends ApplyDoubleOperator("$times")
+
+  class Flattened(operator: ApplyBinaryOperator) {
+    val Match = this
+    def unapply(tree: Tree): Option[List[Tree]] = tree match {
+      case operator(Match(args1), Match(args2)) => Some(args1 ::: args2)
+      case operator(arg1, Match(args2)) => Some(arg1 :: args2)
+      case operator(Match(args1), arg2) => Some(arg2 :: args1)
+      case operator(arg1, arg2) => Some(List(arg1, arg2))
+      case _ => None
+    }
+  }
+
+  object FlatDoubleSum extends Flattened(ApplyDoublePlus)
+  object FlatDoubleProduct extends Flattened(ApplyDoubleTimes)
+
 }
 
 trait StructureHelper[C <: Context] {
@@ -302,8 +414,11 @@ trait StructureHelper[C <: Context] {
 
   def factorSetup(metadata: Metadata, potential: Tree, matchStructure: Tree => Option[Tree]): Tree = potential match {
     case EmptyTree => EmptyTree
+    case q"${_}.log(${FlatDoubleProduct(args)})" =>
+      val block: List[Tree] = args.map(a => factorSetup(metadata, q"log($a)", matchStructure))
+      q"{..$block}"
     case _ =>
-      val arguments = structures(potential, matchStructure)
+      val arguments = distinctTrees(structures(potential, matchStructure))
       val nodesPerArg = arguments.map(a => q"$a.nodes()")
       val nodes = q"""Iterator(..$nodesPerArg).flatMap(identity)"""
       val cleaned = context.resetAllAttrs(potential)
@@ -350,6 +465,14 @@ trait StructureHelper[C <: Context] {
   def injectStructure(tree: Tree, matcher: Tree => Option[Tree]) = {
     val transformer = new Transformer {
       override def transform(tree: Tree) = {
+        //todo: replace imports of structure by new temp variable import
+        //        tree match {
+        //          case Import(expr,_) => matcher(tree) match {
+        //            case Some(structure) =>
+        //              val name = newTermName(context.fresh("forImport"))
+        //              q"val $name = $structure.value(); im "
+        //          }
+        //        }
         matcher(tree) match {
           case Some(structure) => q"$structure.value()"
           case _ => super.transform(tree)
