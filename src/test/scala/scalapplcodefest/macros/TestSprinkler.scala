@@ -13,7 +13,7 @@ object TestSprinkler {
 
     case class Data(rain: Boolean, sprinkler: Boolean, wet: Boolean)
 
-    val sampleSpace = all(Data)(c(bools,bools,bools))
+    val sampleSpace = all(Data)(c(bools, bools, bools))
 
     val p_rain =
       Map(true -> 0.2, false -> 0.8)
@@ -28,13 +28,10 @@ object TestSprinkler {
       (true, false) -> Map(true -> 0.9, false -> 0.1),
       (true, true) -> Map(true -> 0.99, false -> 0.01))
 
-    def p(data: Data) = {
-      import data._
-      p_rain(rain) * p_sprinkler(rain)(sprinkler) * p_wet(sprinkler, rain)(wet)
-    }
+    def p(x: Data) = p_rain(x.rain) * p_sprinkler(x.rain)(x.sprinkler) * p_wet(x.sprinkler, x.rain)(x.wet)
 
 
-    println(sampleSpace)
+    println(sampleSpace.size)
 
     //most likely explanation if the grass is wet
     val expected = BruteForceWolfe.argmax(sampleSpace)(_.wet)(x => log(p(x)))
