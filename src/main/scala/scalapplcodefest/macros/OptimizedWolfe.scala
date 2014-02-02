@@ -4,6 +4,7 @@ import scala.reflect.macros.Context
 import scala.language.experimental.macros
 import scala.collection.mutable
 import scalapplcodefest.MPGraph
+import scala.util.parsing.input.OffsetPosition
 
 //import scalapplcodefest.Wolfe._
 
@@ -35,8 +36,8 @@ object OptimizedWolfe extends WolfeAPI {
 
     import helper._
 
-    val Function(List(objVarDef@ValDef(_,objVarName,_,_)),rootObj) = obj.tree
-    val Function(List(predVarDef@ValDef(_,predVarName,_,_)),rootPred) = where.tree
+    val Function(List(objVarDef@ValDef(_, objVarName, _, _)), rootObj) = obj.tree
+    val Function(List(predVarDef@ValDef(_, predVarName, _, _)), rootPred) = where.tree
 
     //mapping from val names to definitions (we use methods with no arguments as vals too)
     val vals = c.enclosingUnit.body.collect({
@@ -82,10 +83,10 @@ object OptimizedWolfe extends WolfeAPI {
 
     import metaData._
 
-    val optimized = q"""
+    val optimized: Tree = q"""
       ..$imports
       ..$init
-      ..${root.domainDefs}
+      ..${root.allDomainDefs}
       ..$classDefs
       val $rootName = new ${root.className}
       $mpGraphName.setupNodes()
@@ -96,24 +97,6 @@ object OptimizedWolfe extends WolfeAPI {
       $rootName.setToArgmax()
       $rootName.value()
     """
-
-    rootDom match {
-      case q"${_}($unwrap[..$types]($constructor))($dom)" =>
-        val t: c.Tree = constructor.asInstanceOf[c.Tree]
-        val name: TypeName = t.tpe.typeSymbol.name.toTypeName
-        val caseClass = classes(name)
-        val q"case class $className(..$fields)" = caseClass
-        val newFields = fields.collect({
-          case q"$mods val $fieldName: $fieldType = ${_}" => q"$mods val $fieldName:Any = _ "
-        })
-        val newName = newTypeName(className.encoded + "Structure")
-        val structureClass = q"""case class $newName(..$newFields) { def test = 1.0} """
-        println(newFields)
-        println(fields)
-
-        List(unwrap, types, constructor, dom) foreach println
-      case _ =>
-    }
 
     c.Expr[T](optimized)
 
@@ -182,8 +165,16 @@ trait StructureHelper[C <: Context] {
     }
   }
 
-  def createStructureType(metadata: Metadata, domain: Tree) = {
+  def createStructureType(metadata: Metadata, domain: Tree): StructureType = {
     domain match {
+      case q"$all[..${_}]($unwrap[..${_}]($constructor))($cross(..$sets))"
+        if all.symbol.name.encoded == "all" && unwrap.symbol.name.encoded.startsWith("unwrap") =>
+        val tpe = constructor.tpe
+        val caseClassName = tpe.typeSymbol.name.toTypeName
+        val caseClass = metadata.classes(caseClassName)
+        val q"case class $className(..$fields)" = caseClass
+        val subtypes = sets.map(createStructureType(metadata, _))
+        CaseClassType(tpe, fields, subtypes)
       case _ => AtomicStructureType(domain, metadata)
     }
   }
@@ -191,6 +182,7 @@ trait StructureHelper[C <: Context] {
   trait StructureType {
     def className: TypeName
     def domainDefs: List[ValDef]
+    def allDomainDefs = allTypes.flatMap(_.domainDefs)
     def classDef: ClassDef
     def argType: Type
     def children: List[StructureType]
@@ -199,13 +191,38 @@ trait StructureHelper[C <: Context] {
     def nodes(selector: Tree) = q"$selector.nodes()"
   }
 
-  case class CaseClassType(tpe: Type, fields: List[ValDef], types: List[StructureType]) {
+  case class CaseClassType(tpe: Type, fields: List[ValDef], types: List[StructureType]) extends StructureType {
+    val argTypeName     = tpe.typeSymbol.name.toTypeName
+    val className       = newTypeName(context.fresh(tpe.typeSymbol.name.encoded + "Structure"))
+    val structureFields = for ((ValDef(mods, name, _, _), t) <- fields zip types) yield
+      q"val $name = new ${t.className}"
+    val fieldIds        = fields.map(f => Ident(f.name))
+    val fieldValues     = fieldIds.map(i => q"$i.value()")
+    val classDef        = q"""
+      class $className extends Structure[$argTypeName] {
+        ..$structureFields
+        private var iterator:Iterator[Unit] = _
+        def fields:Iterator[Structure[Any]] = Iterator(..$fieldIds)
+        def value():$argTypeName = new $argTypeName(..$fieldValues)
+        def nodes():Iterator[Node] = fields.flatMap(_.nodes())
+        def resetSetting() { iterator = Structure.settingsIterator(List(..$fieldIds).reverse)()}
+        def hasNextSetting = iterator.hasNext
+        def nextSetting = iterator.next
+        def setToArgmax() {fields.foreach(_.setToArgmax())}
+      }
+    """
+
+    def allTypes = this :: types.flatMap(_.allTypes)
+    def children = types
+    def argType = tpe
+    def domainDefs = Nil
+
 
   }
 
   case class AtomicStructureType(domain: Tree, meta: Metadata) extends StructureType {
     val domName                      = newTermName(context.fresh("atomDom"))
-    val className                    = newTypeName(context.fresh("AtomClass"))
+    val className                    = newTypeName(context.fresh("AtomicStructure"))
     val TypeRef(_, _, List(argType)) = domain.tpe
     val argTypeName                  = argType.typeSymbol.name.toTypeName
     val domainDefs                   = List(q"val $domName = $domain.toArray")
@@ -214,22 +231,21 @@ trait StructureHelper[C <: Context] {
     val classDef = q"""
       class $className extends Structure[$argType] {
         val node = ${meta.mpGraphName}.addNode($domName.length)
-        def updateValue() {node.value = node.domain(node.setting)}
+        private def updateValue() {node.value = node.domain(node.setting)}
         def value() = $domName(node.value)
         def nodes() = Iterator(node)
-        def setting() = Iterator(node.setting)
         def resetSetting() {node.setting = -1}
-        def hasNextSetting() = node.setting < node.dim - 1
+        def hasNextSetting = node.setting < node.dim - 1
         def nextSetting() = {node.setting += 1; updateValue()}
-        def settingsCount = $domName.length
         def setToArgmax() { node.setting = MoreArrayOps.maxIndex(node.b); updateValue()}
       }
     """
+
   }
 
   def createRootMatcher(name: TermName, rootStructure: Tree)(tree: Tree): Option[Tree] = tree match {
-//    case id: Ident if id.tpe =:= typ => Some(rootStructure)
-    case Ident(n) if (n == name) => Some(rootStructure)
+    //    case id: Ident if id.tpe =:= typ => Some(rootStructure)
+    case Ident(n) if n == name => Some(rootStructure)
     case _ => None
   }
 
@@ -253,6 +269,7 @@ trait StructureHelper[C <: Context] {
       //iterate over settings and values
 
       val perSetting = q"""
+        println(nodes.map(_.setting).mkString(","))
         settings(settingIndex) = nodes.map(_.setting)
         scores(settingIndex) = $injected
         settingIndex += 1
@@ -315,15 +332,52 @@ trait StructureHelper[C <: Context] {
 
 }
 
-trait Structure[T] {
+trait Structure[+T] {
   def nodes(): Iterator[MPGraph.Node]
   def value(): T
-  def setting(): Iterator[Int]
   def setToArgmax()
   def resetSetting()
   def hasNextSetting: Boolean
   def nextSetting()
-  def settingsCount: Int
 }
 
+object Structure {
+  def loopSettings(structures: List[Structure[Any]])(loop: () => Unit): () => Unit = structures match {
+    case Nil => loop
+    case head :: tail =>
+      def newLoop() {
+        head.resetSetting()
+        while (head.hasNextSetting) {
+          head.nextSetting()
+          loop()
+        }
+      }
+      loopSettings(tail)(newLoop)
+  }
+
+  def settingsIterator(structures: List[Structure[Any]],
+                       iterator: () => Iterator[Unit] = () => Iterator.empty): () => Iterator[Unit] = structures match {
+    case Nil => iterator
+    case head :: tail =>
+      def newIterator() = new Iterator[Unit] {
+        head.resetSetting()
+        var inner = iterator()
+        if (inner.hasNext) {
+          head.nextSetting() //this may not work if head has empty domain
+        }
+        override def next() = {
+          if (inner.hasNext) inner.next()
+          else {
+            head.nextSetting()
+            inner = iterator()
+            if (inner.hasNext) inner.next()
+          }
+        }
+        override def hasNext = inner.hasNext || head.hasNextSetting
+      }
+      settingsIterator(tail, newIterator)
+  }
+
+
+}
 
