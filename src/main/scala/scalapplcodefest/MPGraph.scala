@@ -114,9 +114,9 @@ final class MPGraph {
    */
   def setupNodes() {
     for (node <- nodes) {
-      if (node.domain == null) node.domain = Array.range(0,node.dim)
-      if (node.b == null) node.b = Array.ofDim[Double](node.dim)
-      if (node.in == null) node.in = Array.ofDim[Double](node.dim)
+      if (node.domain == null || node.domain.length != node.dim) node.domain = Array.range(0, node.dim)
+      if (node.b == null || node.b.length != node.dim) node.b = Array.ofDim[Double](node.dim)
+      if (node.in == null || node.in.length != node.dim) node.in = Array.ofDim[Double](node.dim)
     }
   }
 
@@ -219,13 +219,13 @@ object MPGraph {
     var in = Array.ofDim[Double](dim)
 
     /* the domain of values. By default this corresponds to [0,dim) but can be a subset if observations are given */
-    var domain:Array[Int] = _
+    var domain: Array[Int] = _
 
     /* indicates that variable is in a certain state */
     var setting: Int = 0
 
     /* indicates the value corresponding to the setting of the node */
-    var value:Int = 0
+    var value: Int = 0
 
     def toVerboseString(nodePrinter: Node => String = n => "") = {
       f"""-----------------

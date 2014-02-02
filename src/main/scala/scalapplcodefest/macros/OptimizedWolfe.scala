@@ -69,14 +69,23 @@ object OptimizedWolfe extends WolfeAPI {
     //meta information about the root structure class.
     val root = createStructureType(metaData, rootDom)
 
+    val objArgMatcher = createRootMatcher(objVarName, Ident(metaData.rootName))(_)
+    val predArgMatcher = createRootMatcher(predVarName, Ident(metaData.rootName))(_)
+
     //this builds the factors
-    val objFactorsSetup = createFactors(metaData, rootObj, createRootMatcher(objVarName, Ident(metaData.rootName)))
+    val objFactorsSetup = factorSetup(metaData, rootObj, root.matcher(objArgMatcher, objArgMatcher))
+
+    //
+    val predObservationSetup = observationSetup(metaData, rootPred, root.matcher(predArgMatcher, predArgMatcher))
 
     //turn the predicate into an objective
-    val predObj = q"log(I($rootPred))"
+    val predObj = predObservationSetup.remainder match {
+      case EmptyTree => EmptyTree
+      case setup => q"log(I($setup))"
+    }
 
     //setting up the factors from the predicate
-    val predFactorsSetup = createFactors(metaData, predObj, createRootMatcher(predVarName, Ident(metaData.rootName)))
+    val predFactorsSetup = factorSetup(metaData, predObj, root.matcher(predArgMatcher, predArgMatcher))
 
     //all structure class definitions
     val classDefs = root.allTypes.map(_.classDef)
@@ -89,6 +98,7 @@ object OptimizedWolfe extends WolfeAPI {
       ..${root.allDomainDefs}
       ..$classDefs
       val $rootName = new ${root.className}
+      ${predObservationSetup.setup}
       $mpGraphName.setupNodes()
       $objFactorsSetup
       $predFactorsSetup
@@ -187,19 +197,21 @@ trait StructureHelper[C <: Context] {
     def argType: Type
     def children: List[StructureType]
     def allTypes: List[StructureType]
-    def value(selector: Tree) = q"$selector.value()"
-    def nodes(selector: Tree) = q"$selector.nodes()"
+    def matcher(parent: Tree => Option[Tree], result: Tree => Option[Tree]): Tree => Option[Tree]
+
   }
 
   case class CaseClassType(tpe: Type, fields: List[ValDef], types: List[StructureType]) extends StructureType {
+    val fieldsAndTypes  = fields zip types
     val argTypeName     = tpe.typeSymbol.name.toTypeName
     val className       = newTypeName(context.fresh(tpe.typeSymbol.name.encoded + "Structure"))
     val structureFields = for ((ValDef(mods, name, _, _), t) <- fields zip types) yield
       q"val $name = new ${t.className}"
     val fieldIds        = fields.map(f => Ident(f.name))
     val fieldValues     = fieldIds.map(i => q"$i.value()")
+    val observeFields   = fields.map(f => q"${f.name}.observe(value.${f.name})")
     val classDef        = q"""
-      class $className extends Structure[$argTypeName] {
+      final class $className extends Structure[$argTypeName] {
         ..$structureFields
         private var iterator:Iterator[Unit] = _
         def fields:Iterator[Structure[Any]] = Iterator(..$fieldIds)
@@ -209,6 +221,7 @@ trait StructureHelper[C <: Context] {
         def hasNextSetting = iterator.hasNext
         def nextSetting = iterator.next
         def setToArgmax() {fields.foreach(_.setToArgmax())}
+        def observe(value:$argTypeName) { ..$observeFields }
       }
     """
 
@@ -217,19 +230,35 @@ trait StructureHelper[C <: Context] {
     def argType = tpe
     def domainDefs = Nil
 
+    def matcher(parent: Tree => Option[Tree], result: Tree => Option[Tree]): Tree => Option[Tree] = {
+      def matchField(field: ValDef)(tree: Tree): Option[Tree] = tree match {
+        case q"$data.$f" if field.name == f => for (s <- parent(data)) yield q"$s.$f"
+        case _ => None
+      }
+      val fieldMatchers = fieldsAndTypes.map({case (f, t) => t.matcher(matchField(f), matchField(f))})
+      def firstMatch(matchers: List[Tree => Option[Tree]]): Tree => Option[Tree] = matchers match {
+        case Nil => result
+        case head :: tail => (t: Tree) => head(t).orElse(firstMatch(tail)(t))
+      }
+      firstMatch(fieldMatchers)
+    }
+
 
   }
 
   case class AtomicStructureType(domain: Tree, meta: Metadata) extends StructureType {
     val domName                      = newTermName(context.fresh("atomDom"))
+    val indexName                    = newTermName(context.fresh("atomIndex"))
     val className                    = newTypeName(context.fresh("AtomicStructure"))
     val TypeRef(_, _, List(argType)) = domain.tpe
     val argTypeName                  = argType.typeSymbol.name.toTypeName
-    val domainDefs                   = List(q"val $domName = $domain.toArray")
+    val domainDefs                   = List(
+      q"val $domName = $domain.toArray",
+      q"val $indexName = $domName.zipWithIndex.toMap")
     def children = Nil
     def allTypes = List(this)
     val classDef = q"""
-      class $className extends Structure[$argType] {
+      final class $className extends Structure[$argType] {
         val node = ${meta.mpGraphName}.addNode($domName.length)
         private def updateValue() {node.value = node.domain(node.setting)}
         def value() = $domName(node.value)
@@ -238,8 +267,16 @@ trait StructureHelper[C <: Context] {
         def hasNextSetting = node.setting < node.dim - 1
         def nextSetting() = {node.setting += 1; updateValue()}
         def setToArgmax() { node.setting = MoreArrayOps.maxIndex(node.b); updateValue()}
+        final def observe(value:$argType) {
+          val index = $indexName(value)
+          node.domain = Array(index)
+          node.dim = 1
+        }
       }
     """
+
+    def matcher(parent: Tree => Option[Tree], result: Tree => Option[Tree]): Tree => Option[Tree] = result
+
 
   }
 
@@ -249,34 +286,35 @@ trait StructureHelper[C <: Context] {
     case _ => None
   }
 
+  case class ObservationSetup(setup: Tree, remainder: Tree)
 
-  def createFactors(metadata: Metadata, potential: Tree, matchStructure: Tree => Option[Tree]): Tree = potential match {
+  def observationSetup(metadata: Metadata, pred: Tree, matchStructure: Tree => Option[Tree]): ObservationSetup = pred match {
+    case q"$x == $value" => matchStructure(x) match {
+      case Some(structure) => ObservationSetup(q"$structure.observe($value)", EmptyTree)
+      case _ => ObservationSetup(EmptyTree, pred)
+    }
+    case q"$x" => matchStructure(x) match {
+      case Some(structure) => ObservationSetup(q"$structure.observe(true)", EmptyTree)
+      case _ => ObservationSetup(EmptyTree, pred)
+    }
+    case _ => ObservationSetup(EmptyTree, pred)
+  }
+
+  def factorSetup(metadata: Metadata, potential: Tree, matchStructure: Tree => Option[Tree]): Tree = potential match {
+    case EmptyTree => EmptyTree
     case _ =>
-      //get sub-structures using matcher
       val arguments = structures(potential, matchStructure)
-
       val nodesPerArg = arguments.map(a => q"$a.nodes()")
-
       val nodes = q"""Iterator(..$nodesPerArg).flatMap(identity)"""
-
-      //the potential may be partly typed and untyped. This creates problems and hence we remove all type information here
       val cleaned = context.resetAllAttrs(potential)
-
-      //transform potential to use structure values
       val injected = injectStructure(cleaned, matchStructure)
-
-      //val typed = context.typeCheck(injected)
-      //iterate over settings and values
-
       val perSetting = q"""
         println(nodes.map(_.setting).mkString(","))
         settings(settingIndex) = nodes.map(_.setting)
         scores(settingIndex) = $injected
         settingIndex += 1
       """
-
       val loop = loopSettings(arguments) {perSetting}
-
       val setup = q"""
       {
         val nodes = $nodes.toArray
@@ -290,7 +328,6 @@ trait StructureHelper[C <: Context] {
         nodes.view.zipWithIndex.foreach(p => ${metadata.mpGraphName}.addEdge(factor,p._1,p._2))
       }
       """
-
       setup
   }
 
