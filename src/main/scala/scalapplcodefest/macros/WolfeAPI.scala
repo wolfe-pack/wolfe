@@ -5,8 +5,8 @@ package scalapplcodefest.macros
  */
 trait WolfeAPI {
 
-  def argmax[T,N](data:Iterable[T])(where:T => Boolean)(obj:T => N)(implicit num:Ordering[N]): T = {
-    data.filter(where).maxBy(obj)(num)
+  def argmax[T](data:Iterable[T])(where:T => Boolean)(obj:T => Double): T = {
+    data.filter(where).maxBy(obj)
   }
 
 }
