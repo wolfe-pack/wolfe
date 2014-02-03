@@ -11,7 +11,7 @@ object TestSmokes {
 
   def main(args: Array[String]) {
     case class Person(first: String, last: String)
-    case class Data(smokes: Pred[Person], cancer: Pred[Person])
+    case class Data(smokes: Pred[Person], cancer: Pred[Person], friends: Pred[(Person,Person)])
 
     val anna = Person("Anna", "F.")
     val bob = Person("Bob", "B.")

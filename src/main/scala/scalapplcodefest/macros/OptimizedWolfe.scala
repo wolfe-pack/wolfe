@@ -47,7 +47,7 @@ object OptimizedWolfe extends WolfeAPI {
     }).toMap
 
     val normalizedObj = betaReduce(replaceMethods(simplifyBlocks(obj.tree), defs))
-    val normalizedPred= betaReduce(replaceMethods(simplifyBlocks(where.tree), defs))
+    val normalizedPred = betaReduce(replaceMethods(simplifyBlocks(where.tree), defs))
 
 
     println(normalizedObj)
@@ -80,7 +80,6 @@ object OptimizedWolfe extends WolfeAPI {
       case Some(expansion) => expansion.term.tree.asInstanceOf[Tree]
       case other => inlinedData
     }
-
 
     //information from the enclosing context
     val metaData = Metadata(classes)
@@ -175,11 +174,11 @@ trait TransformHelper[C <: Context] {
     transformer transform tree
   }
 
-  val betaReducer = new BetaReducer
+  val betaReducer     = new BetaReducer
   val blockSimplifier = new BlockSimplifier
 
   def betaReduce(tree: Tree) = betaReducer transform tree
-  def simplifyBlocks(tree:Tree) = blockSimplifier transform tree
+  def simplifyBlocks(tree: Tree) = blockSimplifier transform tree
 
   def distinctTrees(trees: List[Tree], result: List[Tree] = Nil): List[Tree] = trees match {
     case Nil => result
@@ -316,6 +315,9 @@ trait StructureHelper[C <: Context] {
         val q"case class $className(..$fields)" = caseClass
         val subtypes = sets.map(createStructureType(metadata, _))
         CaseClassType(tpe, fields, subtypes)
+      case q"scalapplcodefest.Wolfe.Pred[${_}]($keyDom)" =>
+
+        AtomicStructureType(domain, metadata)
       case _ => AtomicStructureType(domain, metadata)
     }
   }
@@ -329,6 +331,46 @@ trait StructureHelper[C <: Context] {
     def children: List[StructureType]
     def allTypes: List[StructureType]
     def matcher(parent: Tree => Option[Tree], result: Tree => Option[Tree]): Tree => Option[Tree]
+
+  }
+
+  case class FunStructureType(keyDoms: List[Tree], valueDom: Tree, valueType: StructureType) {
+    val keyDomNames   = Seq.fill(keyDoms.size)(newTermName(context.fresh("funKeyDom")))
+    val keyIndexNames = Seq.fill(keyDoms.size)(newTermName(context.fresh("funKeyIndex")))
+    val tmpNames    = Range(0, keyDoms.size).map(i => newTermName("i" + i)).toList
+    val tmpIds        = tmpNames.map(Ident(_))
+
+    val currentTuple = for ((i, k) <- tmpNames zip keyDomNames) yield q"$k($i)"
+    val keyDomSizes  = keyDomNames.map(k => q"$k.length")
+    val className    = newTypeName(context.fresh("FunStructure"))
+    val domDefs      = for ((d, n) <- keyDoms zip keyDomNames) yield q"val $n = $d.toArray"
+    val indexDefs    = for ((d, i) <- keyDomNames zip keyIndexNames) yield q"val $i = $d.zipWithIndex.toMap"
+    val domainDefs   = domDefs ++ indexDefs
+
+    def valueAtTuple(indices: List[(TermName, TermName)], result: Tree = q"_.value()"): Tree = indices match {
+      case Nil => result
+      case (i, dom) :: tail => valueAtTuple(tail, q"($i) => $result($dom($i))")
+    }
+
+    def substructureIterator(count: Int, result: Tree = q"_.iterator"): Tree = count match {
+      case 1 => q"$result"
+      case n => substructureIterator(n - 1, q"_.iterator.flatMap($result)")
+    }
+
+    def mappingIterator(count: Int, result: Tree = q"(..$tmpIds)")  = ???
+
+    val classDef = q"""
+      final class $className {
+        private var iterator:Iterator[Unit] = _
+        val subStructures = Array.fill(..$keyDomSizes)(new ${valueType.className})
+        def subStructureIterator() = ${substructureIterator(keyDoms.size)}(subStructures)
+        def nodes() = subStructureIterator().flatMap(_.nodes())
+        def resetSetting() { iterator = Structure.settingsIterator(subStructureIterator())()}
+        def hasNextSetting = iterator.hasNext
+        def nextSetting = iterator.next
+        def setToArgmax() {subStructureIterator().foreach(_.setToArgmax())}
+      }
+    """
 
   }
 
