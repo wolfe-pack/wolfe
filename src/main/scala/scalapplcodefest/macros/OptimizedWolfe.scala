@@ -334,41 +334,57 @@ trait StructureHelper[C <: Context] {
 
   }
 
-  case class FunStructureType(keyDoms: List[Tree], valueDom: Tree, valueType: StructureType) {
-    val keyDomNames   = Seq.fill(keyDoms.size)(newTermName(context.fresh("funKeyDom")))
-    val keyIndexNames = Seq.fill(keyDoms.size)(newTermName(context.fresh("funKeyIndex")))
-    val tmpNames    = Range(0, keyDoms.size).map(i => newTermName("i" + i)).toList
+  case class FunStructureType(tpe: Type, keyDoms: List[Tree], valueDom: Tree, valueType: StructureType) {
+    val keyDomNames   = List.fill(keyDoms.size)(newTermName(context.fresh("funKeyDom")))
+    val keyIndexNames = List.fill(keyDoms.size)(newTermName(context.fresh("funKeyIndex")))
+    val tmpNames      = Range(0, keyDoms.size).map(i => newTermName("i" + i)).toList
     val tmpIds        = tmpNames.map(Ident(_))
+    val argTypeName   = tpe.typeSymbol.name.toTypeName
+    val tupleArgs     = for ((i, k) <- tmpNames zip keyDomNames) yield q"$k($i)"
+    val tuple         = q"(..$tupleArgs)"
+    val keyDomSizes   = keyDomNames.map(k => q"$k.length")
+    val className     = newTypeName(context.fresh("FunStructure"))
+    val domDefs       = for ((d, n) <- keyDoms zip keyDomNames) yield q"val $n = $d.toArray"
+    val indexDefs     = for ((d, i) <- keyDomNames zip keyIndexNames) yield q"val $i = $d.zipWithIndex.toMap"
+    val domainDefs    = domDefs ++ indexDefs
 
-    val currentTuple = for ((i, k) <- tmpNames zip keyDomNames) yield q"$k($i)"
-    val keyDomSizes  = keyDomNames.map(k => q"$k.length")
-    val className    = newTypeName(context.fresh("FunStructure"))
-    val domDefs      = for ((d, n) <- keyDoms zip keyDomNames) yield q"val $n = $d.toArray"
-    val indexDefs    = for ((d, i) <- keyDomNames zip keyIndexNames) yield q"val $i = $d.zipWithIndex.toMap"
-    val domainDefs   = domDefs ++ indexDefs
 
-    def valueAtTuple(indices: List[(TermName, TermName)], result: Tree = q"_.value()"): Tree = indices match {
-      case Nil => result
-      case (i, dom) :: tail => valueAtTuple(tail, q"($i) => $result($dom($i))")
+    def structureAtTuple(indices: List[TermName], result: Tree = q"subStructures"): Tree = indices match {
+      case Nil => q"$result.value"
+      case i :: tail => structureAtTuple(tail, q"$result($i)")
     }
 
-    def substructureIterator(count: Int, result: Tree = q"_.iterator"): Tree = count match {
-      case 1 => q"$result"
-      case n => substructureIterator(n - 1, q"_.iterator.flatMap($result)")
+
+    def substructureIterator(count: Int, result: Tree = q"subStructures.iterator"): Tree = count match {
+      case 0 => q"$result"
+      case n => substructureIterator(n - 1, q"$result.flatMap(identity)")
     }
 
-    def mappingIterator(count: Int, result: Tree = q"(..$tmpIds)")  = ???
+    def tupleProcessor(domainIds: List[TermName], tmpIds: List[TermName], result: Tree, op: TermName = newTermName("flatmap")): Tree =
+      (domainIds, tmpIds) match {
+        case (Nil, Nil) => result
+        case (dom :: domTail, id :: idTail) =>
+          tupleProcessor(domTail, idTail, q"Range(0,$dom.length).$op($id => $result)", op)
+      }
+
+    val mappings = tupleProcessor(keyDomNames, tmpNames, q"$tuple -> ${structureAtTuple(tmpNames)}.value")
+
+    val observeSubStructure = q"${structureAtTuple(tmpNames)}.observe(value($tuple))"
 
     val classDef = q"""
-      final class $className {
+      final class $className extends Structure[$argTypeName] {
         private var iterator:Iterator[Unit] = _
         val subStructures = Array.fill(..$keyDomSizes)(new ${valueType.className})
-        def subStructureIterator() = ${substructureIterator(keyDoms.size)}(subStructures)
+        def subStructureIterator() = ${substructureIterator(keyDoms.size)}
         def nodes() = subStructureIterator().flatMap(_.nodes())
         def resetSetting() { iterator = Structure.settingsIterator(subStructureIterator())()}
         def hasNextSetting = iterator.hasNext
         def nextSetting = iterator.next
         def setToArgmax() {subStructureIterator().foreach(_.setToArgmax())}
+        def value() = $mappings.toMap
+        def observe(value:$argTypeName) {
+          ${tupleProcessor(keyDomNames, tmpNames, observeSubStructure, newTermName("foreach"))}
+        }
       }
     """
 
@@ -526,7 +542,7 @@ trait StructureHelper[C <: Context] {
   def injectStructure(tree: Tree, matcher: Tree => Option[Tree]) = {
     val transformer = new Transformer {
       override def transform(tree: Tree) = {
-        //todo: replace imports of structure by new temp variable import
+        //todo: replace imports of structure by new temp variable import (or preprocess trees to get rid of imports)
         //        tree match {
         //          case Import(expr,_) => matcher(tree) match {
         //            case Some(structure) =>
@@ -535,6 +551,7 @@ trait StructureHelper[C <: Context] {
         //          }
         //        }
         matcher(tree) match {
+          //todo: only allow a replacement if tree doesn't contain unstable variables created by anon functions parents.
           case Some(structure) => q"$structure.value()"
           case _ => super.transform(tree)
         }
