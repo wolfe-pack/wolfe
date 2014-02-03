@@ -362,7 +362,7 @@ trait StructureHelper[C <: Context] {
 
     def tupleProcessor(domainIds: List[TermName], tmpIds: List[TermName], result: Tree, op: TermName = newTermName("flatmap")): Tree =
       (domainIds, tmpIds) match {
-        case (Nil, Nil) => result
+        case (Nil, _) | (_, Nil) => result
         case (dom :: domTail, id :: idTail) =>
           tupleProcessor(domTail, idTail, q"Range(0,$dom.length).$op($id => $result)", op)
       }
@@ -482,11 +482,10 @@ trait StructureHelper[C <: Context] {
       case Some(structure) => ObservationSetup(q"$structure.observe($value)", EmptyTree)
       case _ => ObservationSetup(EmptyTree, pred)
     }
-    case q"$x" => matchStructure(x) match {
+    case x => matchStructure(x) match {
       case Some(structure) => ObservationSetup(q"$structure.observe(true)", EmptyTree)
       case _ => ObservationSetup(EmptyTree, pred)
     }
-    case _ => ObservationSetup(EmptyTree, pred)
   }
 
   def factorSetup(metadata: Metadata, potential: Tree, matchStructure: Tree => Option[Tree]): Tree = potential match {
@@ -541,7 +540,12 @@ trait StructureHelper[C <: Context] {
 
   def injectStructure(tree: Tree, matcher: Tree => Option[Tree]) = {
     val transformer = new Transformer {
+      val functionStack = new mutable.Stack[Function]()
       override def transform(tree: Tree) = {
+        for (f@Function(_, _) <- tree) functionStack.push(f)
+        //        tree match {
+        //          case
+        //        }
         //todo: replace imports of structure by new temp variable import (or preprocess trees to get rid of imports)
         //        tree match {
         //          case Import(expr,_) => matcher(tree) match {
@@ -550,11 +554,13 @@ trait StructureHelper[C <: Context] {
         //              q"val $name = $structure.value(); im "
         //          }
         //        }
-        matcher(tree) match {
+        val result = matcher(tree) match {
           //todo: only allow a replacement if tree doesn't contain unstable variables created by anon functions parents.
           case Some(structure) => q"$structure.value()"
           case _ => super.transform(tree)
         }
+        for (Function(_, _) <- tree) functionStack.pop()
+        result
       }
     }
     transformer transform tree
