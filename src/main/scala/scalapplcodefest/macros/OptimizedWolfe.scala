@@ -316,8 +316,8 @@ trait StructureHelper[C <: Context] {
         val subtypes = sets.map(createStructureType(metadata, _))
         CaseClassType(tpe, fields, subtypes)
       case q"scalapplcodefest.Wolfe.Pred[${_}]($keyDom)" =>
-
-        AtomicStructureType(domain, metadata)
+        val valueDom = q"scalapplcodefest.Wolfe.bools"
+        FunStructureType(???, List(keyDom), createStructureType(metadata, valueDom))
       case _ => AtomicStructureType(domain, metadata)
     }
   }
@@ -334,13 +334,15 @@ trait StructureHelper[C <: Context] {
 
   }
 
-  case class FunStructureType(tpe: Type, keyDoms: List[Tree], valueDom: Tree, valueType: StructureType) {
+  case class FunStructureType(tpe: Type, keyDoms: List[Tree], valueType: StructureType) extends StructureType {
     val keyDomNames   = List.fill(keyDoms.size)(newTermName(context.fresh("funKeyDom")))
     val keyIndexNames = List.fill(keyDoms.size)(newTermName(context.fresh("funKeyIndex")))
     val tmpNames      = Range(0, keyDoms.size).map(i => newTermName("i" + i)).toList
     val tmpIds        = tmpNames.map(Ident(_))
+    val argType       = tpe
     val argTypeName   = tpe.typeSymbol.name.toTypeName
     val tupleArgs     = for ((i, k) <- tmpNames zip keyDomNames) yield q"$k($i)"
+    val invTupleArgs  = for ((i, k) <- tmpNames zip keyIndexNames) yield q"$k($i)"
     val tuple         = q"(..$tupleArgs)"
     val keyDomSizes   = keyDomNames.map(k => q"$k.length")
     val className     = newTypeName(context.fresh("FunStructure"))
@@ -349,8 +351,25 @@ trait StructureHelper[C <: Context] {
     val domainDefs    = domDefs ++ indexDefs
 
 
-    def structureAtTuple(indices: List[TermName], result: Tree = q"subStructures"): Tree = indices match {
-      case Nil => q"$result.value"
+    def allTypes = this :: valueType.allTypes
+    def children = List(valueType)
+
+    def matcher(parent: Tree => Option[Tree], result: Tree => Option[Tree]): Tree => Option[Tree] = {
+      def matchApp(tree: Tree) = tree match {
+        case Apply(f, args) => parent(f) match {
+          case Some(parentStructure) =>
+            val asIndices = for ((a, i) <- args zip keyIndexNames) yield q"$i($a)"
+            val substructure = structureAtTuple(asIndices)
+            Some(substructure)
+          case _ => None
+        }
+      }
+      matcher(matchApp, (t: Tree) => matchApp(t).orElse(result(t)))
+    }
+
+
+    def structureAtTuple(indices: List[Tree], result: Tree = q"subStructures"): Tree = indices match {
+      case Nil => result
       case i :: tail => structureAtTuple(tail, q"$result($i)")
     }
 
@@ -367,9 +386,9 @@ trait StructureHelper[C <: Context] {
           tupleProcessor(domTail, idTail, q"Range(0,$dom.length).$op($id => $result)", op)
       }
 
-    val mappings = tupleProcessor(keyDomNames, tmpNames, q"$tuple -> ${structureAtTuple(tmpNames)}.value")
+    val mappings = tupleProcessor(keyDomNames, tmpNames, q"$tuple -> ${structureAtTuple(tmpIds)}.value")
 
-    val observeSubStructure = q"${structureAtTuple(tmpNames)}.observe(value($tuple))"
+    val observeSubStructure = q"${structureAtTuple(tmpIds)}.observe(value($tuple))"
 
     val classDef = q"""
       final class $className extends Structure[$argTypeName] {
