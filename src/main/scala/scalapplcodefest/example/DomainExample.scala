@@ -10,13 +10,13 @@ object DomainExample extends App {
 
   import Wolfe._
 
-  def argmax[T](condition: T => Boolean)(obj: T => Double)(implicit domain: Set[T]) = domain.filter(condition).maxBy(obj)
-  def sum[T, D](obj: T => D)(implicit domain: Set[T], num: Numeric[D]) = domain.view.map(obj).sum(num)
+  def argmax[T](condition: T => Boolean)(obj: T => Double)(implicit domain: Iterable[T]) = domain.filter(condition).maxBy(obj)
+  def sum[T, D](obj: T => D)(implicit domain: Iterable[T], num: Numeric[D]) = domain.view.map(obj).sum(num)
 
-  def formula[T, D](obj: T => D)(implicit domain: Set[T], num: Numeric[D]) = sum(obj)(domain, num)
+  def formula[T, D](obj: T => D)(implicit domain: Iterable[T], num: Numeric[D]) = sum(obj)(domain, num)
 
   implicit class RichAny(s: Any) {
-    def :=[T](formula: T => Boolean)(implicit domain: Set[T]): Vector = {
+    def :=[T](formula: T => Boolean)(implicit domain: Iterable[T]): Vector = {
       sum {p: T => ft(s, formula(p))}
     }
   }
