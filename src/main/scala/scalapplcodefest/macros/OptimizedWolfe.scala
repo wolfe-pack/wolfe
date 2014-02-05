@@ -549,38 +549,46 @@ trait StructureHelper[C <: Context] {
 
   def structures(tree: Tree, matchStructure: Tree => Option[Tree]): List[Tree] = {
     var result: List[Tree] = Nil
-    val traverser = new Traverser {
+    val traverser = new Traverser with WithFunctionStack {
       override def traverse(tree: Tree) = {
-        matchStructure(tree) match {
-          case Some(structure) =>
+        pushIfFunction(tree)
+        val tmp = matchStructure(tree) match {
+          case Some(structure) if !hasFunctionArgument(tree) =>
             result ::= structure
           case _ =>
             super.traverse(tree)
         }
+        popIfFunction(tree)
+        tmp
       }
     }
     traverser traverse tree
     result
   }
 
-  abstract class WithFunctionStack extends Transformer {
+  trait WithFunctionStack  {
 
-    def withFunctionStack(stack:mutable.Stack[Function]):Tree
     private val functionStack = new mutable.Stack[Function]()
-    override def transform(tree: Tree) = {
+
+    def pushIfFunction(tree:Tree) {
       tree match {
         case f: Function => functionStack.push(f)
         case _ =>
       }
+    }
 
-      val result = withFunctionStack(functionStack)
-
+    def popIfFunction(tree:Tree) {
       tree match {
         case _: Function => functionStack.pop
         case _ =>
       }
-      result
     }
+
+    def hasFunctionArgument(tree:Tree) = {
+      val symbols = tree.collect({case i: Ident => i}).map(_.name).toSet //todo: this shouldn't just be by name
+      functionStack.exists(_.vparams.exists(p => symbols(p.name)))
+    }
+
 
   }
 
