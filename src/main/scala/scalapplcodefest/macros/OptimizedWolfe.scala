@@ -35,100 +35,22 @@ object OptimizedWolfe extends WolfeAPI {
     val helper = new MacroHelper[c.type](c)
     import helper._
 
-    //mapping from val names to definitions (we use methods with no arguments as vals too)
-    val vals = c.enclosingUnit.body.collect({
-      case ValDef(_, name, _, rhs) => name -> rhs
-      case DefDef(_, name, _, Nil, _, rhs) => name -> rhs
-    }).toMap
-
-    //mapping from symbols to methods
-    val defs = c.enclosingUnit.body.collect({
-      case d: DefDef => d.symbol -> d
-    }).toMap
-
-    val normalizedObj = betaReduce(replaceMethods(simplifyBlocks(obj.tree), defs))
-    val normalizedPred = betaReduce(replaceMethods(simplifyBlocks(where.tree), defs))
-
-
-    println(normalizedObj)
-    println(normalizedPred)
-
-    val Function(List(objVarDef@ValDef(_, objVarName, _, _)), rootObj) = normalizedObj
-    val Function(List(predVarDef@ValDef(_, predVarName, _, _)), rootPred) = normalizedPred
-
-    println("Blub")
-
-
-
-    val normalized = betaReduce(replaceMethods(rootObj, defs))
-
-
-    //classes in context
-    val classes = c.enclosingUnit.body.collect({
-      case cd@ClassDef(_, name, _, _) => name -> cd
-    }).toMap
-
-    //inline the data tree
-    val inlinedData = helper.transform(data.tree, {
-      case i@Ident(name) => vals.getOrElse(name, i)
-      case t => t
-    })
-
-    val checked = context.typeCheck(data.tree)
-
-
-    //the domain/sample space. May expand the domain if implicits were involved.
-    val rootDom = DomainExpansions.findByPosition(inlinedData.pos.startOrPoint, inlinedData.pos.source) match {
-      case Some(expansion) => expansion.term.tree.asInstanceOf[Tree]
-      case other => inlinedData
-    }
-
     //information from the enclosing context
-    val metaData = Metadata(classes)
+    val metaData = MetaStructuredGraph(data.tree, where.tree, obj.tree)
+    val graphName = newTermName(c.fresh("graph"))
 
-    //meta information about the root structure class.
-    val root = createStructureType(metaData, rootDom)
+    val result = q"""
+      import scalapplcodefest._
+      import scalapplcodefest.MPGraph._
 
-    val objArgMatcher = createRootMatcher(objVarName, Ident(metaData.rootName))(_)
-    val predArgMatcher = createRootMatcher(predVarName, Ident(metaData.rootName))(_)
-
-    //this builds the factors
-    val objFactorsSetup = factorSetup(metaData, normalized, root.matcher(objArgMatcher, objArgMatcher))
-
-    //setting observed nodes and reduce their domains
-    val predObservationSetup = observationSetup(metaData, rootPred, root.matcher(predArgMatcher, predArgMatcher))
-
-    //turn the predicate into an objective
-    val predObj = predObservationSetup.remainder match {
-      case EmptyTree => EmptyTree
-      case setup => q"math.log(I($setup))"
-    }
-
-    //setting up the factors from the predicate
-    val predFactorsSetup = factorSetup(metaData, predObj, root.matcher(predArgMatcher, predArgMatcher))
-
-    //all structure class definitions
-    val classDefs = root.allTypes.map(_.classDef)
-
-    import metaData._
-
-    val optimized: Tree = q"""
-      ..$imports
-      ..$init
-      ..${root.allDomainDefs}
-      ..$classDefs
-      val $rootName = new ${root.className}
-      ${predObservationSetup.setup}
-      $mpGraphName.setupNodes()
-      $objFactorsSetup
-      $predFactorsSetup
-      $mpGraphName.build()
-      MaxProduct($mpGraphName,1)
-      $rootName.setToArgmax()
-      $rootName.value()
+      ${metaData.classDef}
+      val $graphName = new ${metaData.graphClassName}
+      MaxProduct($graphName.${metaData.mpGraphName},1)
+      $graphName.${metaData.rootName}.setToArgmax()
+      $graphName.${metaData.rootName}.value()
     """
 
-    c.Expr[T](optimized)
+    c.Expr[T](result)
 
   }
 }
@@ -290,24 +212,114 @@ trait StructureHelper[C <: Context] {
   import context.universe._
 
 
-  case class Metadata(classes: Map[TypeName, ClassDef]) {
-    val mpGraphName   = newTermName(context.fresh("mpGraph"))
-    val rootName      = newTermName(context.fresh("root"))
-    val nodeCountName = newTermName(context.fresh("nodeCount"))
-    val nextNodeIndex = newTermName(context.fresh("nextNodeIndex"))
-    val init          = List(q"val $mpGraphName = new MPGraph()")
+  case class MetaStructuredGraph(data: Tree, where: Tree, obj: Tree) {
 
-    val imports = reify({
+    val graphClassName = newTypeName(context.fresh("StructuredGraph"))
+    val mpGraphName    = newTermName(context.fresh("mpGraph"))
+    val rootName       = newTermName(context.fresh("root"))
+    val nodeCountName  = newTermName(context.fresh("nodeCount"))
+    val nextNodeIndex  = newTermName(context.fresh("nextNodeIndex"))
+    val init           = List(q"val $mpGraphName = new MPGraph()")
+
+    //mapping from val names to definitions (we use methods with no arguments as vals too)
+    val vals = context.enclosingUnit.body.collect({
+      case ValDef(_, name, _, rhs) => name -> rhs
+      case DefDef(_, name, _, Nil, _, rhs) => name -> rhs
+    }).toMap
+
+    //mapping from symbols to methods
+    val defs = context.enclosingUnit.body.collect({
+      case d: DefDef => d.symbol -> d
+    }).toMap
+
+    val classes = context.enclosingUnit.body.collect({
+      case cd@ClassDef(_, name, _, _) => name -> cd
+    }).toMap
+
+    val normalizedObj  = betaReduce(replaceMethods(simplifyBlocks(obj), defs))
+    val normalizedPred = betaReduce(replaceMethods(simplifyBlocks(where), defs))
+
+    val Function(List(objVarDef@ValDef(_, objVarName, _, _)), rootObj)    = normalizedObj
+    val Function(List(predVarDef@ValDef(_, predVarName, _, _)), rootPred) = normalizedPred
+
+    //inline the data tree
+    val inlinedData = transform(data, {
+      case i@Ident(name) => vals.getOrElse(name, i)
+      case t => t
+    })
+
+    val checked = context.typeCheck(inlinedData)
+
+
+    //the domain/sample space. May expand the domain if implicits were involved.
+    //todo: this may be possible without the domain expansion trick by using context.typeCheck
+    val rootDom = DomainExpansions.findByPosition(inlinedData.pos.startOrPoint, inlinedData.pos.source) match {
+      case Some(expansion) => expansion.term.tree.asInstanceOf[Tree]
+      case other => inlinedData
+    }
+
+    //meta information about the root structure class.
+    val root = createStructureType(this, rootDom)
+
+    val objArgMatcher  = createRootMatcher(objVarName, Ident(rootName))(_)
+    val predArgMatcher = createRootMatcher(predVarName, Ident(rootName))(_)
+
+    val normalized = betaReduce(replaceMethods(rootObj, defs))
+
+    //this builds the factors
+    val objFactorsSetup = factorSetup(this, normalized, root.matcher(objArgMatcher, objArgMatcher))
+
+    //setting observed nodes and reduce their domains
+    val predObservationSetup = observationSetup(this, rootPred, root.matcher(predArgMatcher, predArgMatcher))
+
+    //turn the predicate into an objective
+    val predObj = predObservationSetup.remainder match {
+      case EmptyTree => EmptyTree
+      case setup => q"math.log(I($setup))"
+    }
+
+    //setting up the factors from the predicate
+    val predFactorsSetup = factorSetup(this, predObj, root.matcher(predArgMatcher, predArgMatcher))
+
+    //all structure class definitions
+    val classDefs = root.allTypes.map(_.classDef)
+
+    val classDef = q"""
+      class $graphClassName {
+        import scalapplcodefest._
+        import scalapplcodefest.Wolfe._
+        import scalapplcodefest.MPGraph._
+        import scalapplcodefest.macros._
+
+        ..${root.allDomainDefs}
+        ..$classDefs
+
+        val $mpGraphName = new MPGraph()
+
+        val $rootName = new ${root.className}
+
+        ${predObservationSetup.setup}
+        $mpGraphName.setupNodes()
+        $objFactorsSetup
+        $predFactorsSetup
+        $mpGraphName.build()
+      }
+    """
+
+
+    val imports = q"""
       import scalapplcodefest._
       import scalapplcodefest.Wolfe._
       import scalapplcodefest.MPGraph._
       import scalapplcodefest.macros._
-    }).tree match {
+    """ match {
       case Block(i, _) => i
     }
+
+
   }
 
-  def createStructureType(metadata: Metadata, domain: Tree): StructureType = {
+  def createStructureType(metadata: MetaStructuredGraph, domain: Tree): MetaStructure = {
     domain match {
       case q"$all[..${_}]($unwrap[..${_}]($constructor))($cross(..$sets))"
         if all.symbol.name.encoded == "all" && unwrap.symbol.name.encoded.startsWith("unwrap") =>
@@ -316,29 +328,29 @@ trait StructureHelper[C <: Context] {
         val caseClass = metadata.classes(caseClassName)
         val q"case class $className(..$fields)" = caseClass
         val subtypes = sets.map(createStructureType(metadata, _))
-        CaseClassType(tpe, fields, subtypes)
+        MetaCaseClassStructure(tpe, fields, subtypes)
       case q"scalapplcodefest.Wolfe.Pred[${_}]($keyDom)" =>
         val valueDom = q"scalapplcodefest.Wolfe.bools"
         val tped = context.typeCheck(valueDom)
         val TypeRef(_, _, List(argType)) = domain.tpe
-        FunStructureType(argType, List(keyDom), createStructureType(metadata, tped))
-      case _ => AtomicStructureType(domain, metadata)
+        MetaFunStructure(argType, List(keyDom), createStructureType(metadata, tped))
+      case _ => MetaAtomicStructure(domain, metadata)
     }
   }
 
-  trait StructureType {
+  trait MetaStructure {
     def className: TypeName
     def domainDefs: List[ValDef]
     def allDomainDefs = allTypes.flatMap(_.domainDefs)
     def classDef: ClassDef
     def argType: Type
-    def children: List[StructureType]
-    def allTypes: List[StructureType]
+    def children: List[MetaStructure]
+    def allTypes: List[MetaStructure]
     def matcher(parent: Tree => Option[Tree], result: Tree => Option[Tree]): Tree => Option[Tree]
 
   }
 
-  case class FunStructureType(tpe: Type, keyDoms: List[Tree], valueType: StructureType) extends StructureType {
+  case class MetaFunStructure(tpe: Type, keyDoms: List[Tree], valueType: MetaStructure) extends MetaStructure {
     val keyDomNames   = List.fill(keyDoms.size)(newTermName(context.fresh("funKeyDom")))
     val keyIndexNames = List.fill(keyDoms.size)(newTermName(context.fresh("funKeyIndex")))
     val tmpNames      = Range(0, keyDoms.size).map(i => newTermName("i" + i)).toList
@@ -361,7 +373,7 @@ trait StructureHelper[C <: Context] {
     def matcher(parent: Tree => Option[Tree], result: Tree => Option[Tree]): Tree => Option[Tree] = {
       def matchApp(tree: Tree) = tree match {
         case q"$f.apply(..$args)" => parent(f) match {
-//        case Apply(f, args) => parent(f) match {
+          //        case Apply(f, args) => parent(f) match {
           case Some(parentStructure) =>
             val asIndices = for ((a, i) <- args zip keyIndexNames) yield q"$i($a)"
             val substructure = structureAtTuple(asIndices, q"$parentStructure.subStructures")
@@ -416,7 +428,7 @@ trait StructureHelper[C <: Context] {
 
   }
 
-  case class CaseClassType(tpe: Type, fields: List[ValDef], types: List[StructureType]) extends StructureType {
+  case class MetaCaseClassStructure(tpe: Type, fields: List[ValDef], types: List[MetaStructure]) extends MetaStructure {
     val fieldsAndTypes  = fields zip types
     val argTypeName     = tpe.typeSymbol.name.toTypeName
     val className       = newTypeName(context.fresh(tpe.typeSymbol.name.encoded + "Structure"))
@@ -461,7 +473,7 @@ trait StructureHelper[C <: Context] {
 
   }
 
-  case class AtomicStructureType(domain: Tree, meta: Metadata) extends StructureType {
+  case class MetaAtomicStructure(domain: Tree, meta: MetaStructuredGraph) extends MetaStructure {
     val domName                      = newTermName(context.fresh("atomDom"))
     val indexName                    = newTermName(context.fresh("atomIndex"))
     val className                    = newTypeName(context.fresh("AtomicStructure"))
@@ -503,7 +515,7 @@ trait StructureHelper[C <: Context] {
 
   case class ObservationSetup(setup: Tree, remainder: Tree)
 
-  def observationSetup(metadata: Metadata, pred: Tree, matchStructure: Tree => Option[Tree]): ObservationSetup = pred match {
+  def observationSetup(metadata: MetaStructuredGraph, pred: Tree, matchStructure: Tree => Option[Tree]): ObservationSetup = pred match {
     case q"$x == $value" => matchStructure(x) match {
       case Some(structure) => ObservationSetup(q"$structure.observe($value)", EmptyTree)
       case _ => ObservationSetup(EmptyTree, pred)
@@ -516,7 +528,7 @@ trait StructureHelper[C <: Context] {
     }
   }
 
-  def factorSetup(metadata: Metadata, potential: Tree, matchStructure: Tree => Option[Tree]): Tree = potential match {
+  def factorSetup(metadata: MetaStructuredGraph, potential: Tree, matchStructure: Tree => Option[Tree]): Tree = potential match {
     case EmptyTree => EmptyTree
     case q"${_}.log(${FlatDoubleProduct(args)})" =>
       val block: List[Tree] = args.map(a => factorSetup(metadata, q"log($a)", matchStructure))
@@ -569,25 +581,25 @@ trait StructureHelper[C <: Context] {
     result
   }
 
-  trait WithFunctionStack  {
+  trait WithFunctionStack {
 
     private val functionStack = new mutable.Stack[Function]()
 
-    def pushIfFunction(tree:Tree) {
+    def pushIfFunction(tree: Tree) {
       tree match {
         case f: Function => functionStack.push(f)
         case _ =>
       }
     }
 
-    def popIfFunction(tree:Tree) {
+    def popIfFunction(tree: Tree) {
       tree match {
         case _: Function => functionStack.pop
         case _ =>
       }
     }
 
-    def hasFunctionArgument(tree:Tree) = {
+    def hasFunctionArgument(tree: Tree) = {
       val symbols = tree.collect({case i: Ident => i}).map(_.name).toSet //todo: this shouldn't just be by name
       functionStack.exists(_.vparams.exists(p => symbols(p.name)))
     }
