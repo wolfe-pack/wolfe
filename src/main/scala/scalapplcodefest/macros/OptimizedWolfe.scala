@@ -62,7 +62,6 @@ object OptimizedWolfe extends WolfeAPI {
 
     val normalized = betaReduce(replaceMethods(rootObj, defs))
 
-    val checked = context.typeCheck(replaceMethods(rootObj, defs))
 
     //classes in context
     val classes = c.enclosingUnit.body.collect({
@@ -74,6 +73,9 @@ object OptimizedWolfe extends WolfeAPI {
       case i@Ident(name) => vals.getOrElse(name, i)
       case t => t
     })
+
+    val checked = context.typeCheck(data.tree)
+
 
     //the domain/sample space. May expand the domain if implicits were involved.
     val rootDom = DomainExpansions.findByPosition(inlinedData.pos.startOrPoint, inlinedData.pos.source) match {
@@ -317,7 +319,9 @@ trait StructureHelper[C <: Context] {
         CaseClassType(tpe, fields, subtypes)
       case q"scalapplcodefest.Wolfe.Pred[${_}]($keyDom)" =>
         val valueDom = q"scalapplcodefest.Wolfe.bools"
-        FunStructureType(???, List(keyDom), createStructureType(metadata, valueDom))
+        val tped = context.typeCheck(valueDom)
+        val TypeRef(_, _, List(argType)) = domain.tpe
+        FunStructureType(argType, List(keyDom), createStructureType(metadata, tped))
       case _ => AtomicStructureType(domain, metadata)
     }
   }
@@ -343,7 +347,7 @@ trait StructureHelper[C <: Context] {
     val argTypeName   = tpe.typeSymbol.name.toTypeName
     val tupleArgs     = for ((i, k) <- tmpNames zip keyDomNames) yield q"$k($i)"
     val invTupleArgs  = for ((i, k) <- tmpNames zip keyIndexNames) yield q"$k($i)"
-    val tuple         = q"(..$tupleArgs)"
+    val tuple         = if (tupleArgs.size == 1) tupleArgs.head else q"(..$tupleArgs)"
     val keyDomSizes   = keyDomNames.map(k => q"$k.length")
     val className     = newTypeName(context.fresh("FunStructure"))
     val domDefs       = for ((d, n) <- keyDoms zip keyDomNames) yield q"val $n = $d.toArray"
@@ -359,12 +363,13 @@ trait StructureHelper[C <: Context] {
         case Apply(f, args) => parent(f) match {
           case Some(parentStructure) =>
             val asIndices = for ((a, i) <- args zip keyIndexNames) yield q"$i($a)"
-            val substructure = structureAtTuple(asIndices)
+            val substructure = structureAtTuple(asIndices, q"$parentStructure")
             Some(substructure)
           case _ => None
         }
+        case _ => None
       }
-      matcher(matchApp, (t: Tree) => matchApp(t).orElse(result(t)))
+      valueType.matcher(matchApp, (t: Tree) => matchApp(t).orElse(result(t)))
     }
 
 
@@ -375,15 +380,16 @@ trait StructureHelper[C <: Context] {
 
 
     def substructureIterator(count: Int, result: Tree = q"subStructures.iterator"): Tree = count match {
-      case 0 => q"$result"
+      case 1 => q"$result"
       case n => substructureIterator(n - 1, q"$result.flatMap(identity)")
     }
 
-    def tupleProcessor(domainIds: List[TermName], tmpIds: List[TermName], result: Tree, op: TermName = newTermName("flatmap")): Tree =
+    def tupleProcessor(domainIds: List[TermName], tmpIds: List[TermName], result: Tree, op: TermName = newTermName("flatMap")): Tree =
       (domainIds, tmpIds) match {
-        case (Nil, _) | (_, Nil) => result
+        case (dom :: Nil, id :: Nil) => q"Range(0,$dom.length).map($id => $result)"
         case (dom :: domTail, id :: idTail) =>
           tupleProcessor(domTail, idTail, q"Range(0,$dom.length).$op($id => $result)", op)
+        case _ => sys.error("shouldn't happen")
       }
 
     val mappings = tupleProcessor(keyDomNames, tmpNames, q"$tuple -> ${structureAtTuple(tmpIds)}.value")
@@ -391,17 +397,17 @@ trait StructureHelper[C <: Context] {
     val observeSubStructure = q"${structureAtTuple(tmpIds)}.observe(value($tuple))"
 
     val classDef = q"""
-      final class $className extends Structure[$argTypeName] {
+      final class $className extends Structure[$argType] {
         private var iterator:Iterator[Unit] = _
         val subStructures = Array.fill(..$keyDomSizes)(new ${valueType.className})
         def subStructureIterator() = ${substructureIterator(keyDoms.size)}
         def nodes() = subStructureIterator().flatMap(_.nodes())
-        def resetSetting() { iterator = Structure.settingsIterator(subStructureIterator())()}
+        def resetSetting() { iterator = Structure.settingsIterator(subStructureIterator().toList)()}
         def hasNextSetting = iterator.hasNext
         def nextSetting = iterator.next
         def setToArgmax() {subStructureIterator().foreach(_.setToArgmax())}
         def value() = $mappings.toMap
-        def observe(value:$argTypeName) {
+        def observe(value:$argType) {
           ${tupleProcessor(keyDomNames, tmpNames, observeSubStructure, newTermName("foreach"))}
         }
       }
@@ -557,11 +563,35 @@ trait StructureHelper[C <: Context] {
     result
   }
 
+  abstract class WithFunctionStack extends Transformer {
+
+    def withFunctionStack(stack:mutable.Stack[Function]):Tree
+    private val functionStack = new mutable.Stack[Function]()
+    override def transform(tree: Tree) = {
+      tree match {
+        case f: Function => functionStack.push(f)
+        case _ =>
+      }
+
+      val result = withFunctionStack(functionStack)
+
+      tree match {
+        case _: Function => functionStack.pop
+        case _ =>
+      }
+      result
+    }
+
+  }
+
   def injectStructure(tree: Tree, matcher: Tree => Option[Tree]) = {
     val transformer = new Transformer {
       val functionStack = new mutable.Stack[Function]()
       override def transform(tree: Tree) = {
-        for (f@Function(_, _) <- tree) functionStack.push(f)
+        tree match {
+          case f: Function => functionStack.push(f)
+          case _ =>
+        }
         //        tree match {
         //          case
         //        }
@@ -575,10 +605,21 @@ trait StructureHelper[C <: Context] {
         //        }
         val result = matcher(tree) match {
           //todo: only allow a replacement if tree doesn't contain unstable variables created by anon functions parents.
-          case Some(structure) => q"$structure.value()"
+          case Some(structure) => {
+            //get symbols in tree
+            val symbols = tree.collect({case i: Ident => i}).map(_.name).toSet //todo: this shouldn't just be by name
+            val hasFunctionArg = functionStack.exists(_.vparams.exists(p => symbols(p.name)))
+            if (hasFunctionArg)
+              super.transform(tree)
+            else
+              q"$structure.value()"
+          }
           case _ => super.transform(tree)
         }
-        for (Function(_, _) <- tree) functionStack.pop()
+        tree match {
+          case _: Function => functionStack.pop
+          case _ =>
+        }
         result
       }
     }
