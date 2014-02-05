@@ -16,7 +16,7 @@ object TestSmokes {
     val anna = Person("Anna", "F.")
     val bob = Person("Bob", "B.")
 
-    implicit val allPersons = Set(anna, bob)
+    implicit val allPersons = Seq(anna, bob)
     implicit val allData = all(Data)
 
     println(allData)

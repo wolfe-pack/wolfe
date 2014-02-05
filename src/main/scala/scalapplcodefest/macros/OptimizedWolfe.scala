@@ -17,9 +17,9 @@ object OptimizedWolfe extends WolfeAPI {
                         (where: (T) => Boolean)
                         (obj: (T) => Double) = macro implArgmax[T]
 
-  def all[A, B](mapper: A => B)(implicit dom: Set[A]): Set[B] = macro implAll[A, B]
+  def all[A, B](mapper: A => B)(implicit dom: Iterable[A]): Iterable[B] = macro implAll[A, B]
 
-  def implAll[A: c.WeakTypeTag, B: c.WeakTypeTag](c: Context)(mapper: c.Expr[A => B])(dom: c.Expr[Set[A]]) = {
+  def implAll[A: c.WeakTypeTag, B: c.WeakTypeTag](c: Context)(mapper: c.Expr[A => B])(dom: c.Expr[Iterable[A]]) = {
     import c.universe._
     DomainExpansions.register(c.Expr(c.macroApplication), mapper, dom)
     reify(dom.splice map mapper.splice)

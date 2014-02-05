@@ -42,28 +42,28 @@ object Wolfe extends SampleSpaceDefs with StatsDefs with VectorDefs {
   //sufficient statistics
 
   @deprecated("Use the new operators", "now")
-  def sumOld[T, S](elems: Seq[T])(f: T => S)(implicit num: Numeric[S]) = elems.map(f).sum(num)
+  def sumOld[T, S](elems: Iterable[T])(f: T => S)(implicit num: Numeric[S]) = elems.map(f).sum(num)
 
   @deprecated("Use the new operators", "now")
-  def maxOld[T](elems: Set[T])(f: T => Double) = elems.map(f).max
+  def maxOld[T](elems: Iterable[T])(f: T => Double) = elems.map(f).max
 
   @deprecated("Use the new operators", "now")
-  def argmaxOld[T](dom: Set[T])(obj: T => Double): T = {
+  def argmaxOld[T](dom: Iterable[T])(obj: T => Double): T = {
     dom.maxBy(obj)
   }
 
   implicit val random = new Random(0)
 
-  def sample[T](dom: Set[T])(obj: T => Double)(implicit r: Random = random): T = {
+  def sample[T](dom: Iterable[T])(obj: T => Double)(implicit r: Random = random): T = {
     import cc.factorie._
     dom.view.sampleExpProportionally(obj)(r)
   }
 
   @Operator.Sample
-  def samples[T](num: Int)(dom: Set[T])(obj: T => Double)(implicit r: Random = random): Seq[T] = (0 until num).map(x => sample(dom)(obj)(r))
+  def samples[T](num: Int)(dom: Iterable[T])(obj: T => Double)(implicit r: Random = random): Seq[T] = (0 until num).map(x => sample(dom)(obj)(r))
 
   @deprecated("Use the new operators", "now")
-  def argminOld[T](dom: Set[T])(obj: T => Double): T = {
+  def argminOld[T](dom: Iterable[T])(obj: T => Double): T = {
     dom.minBy(obj)
   }
 
@@ -75,17 +75,17 @@ object Wolfe extends SampleSpaceDefs with StatsDefs with VectorDefs {
 
 
   @Domain.Simplex
-  def simplex[T](domain: Set[T], range: Set[Double] = doubles) =
+  def simplex[T](domain: Iterable[T], range: Iterable[Double] = doubles) =
     for (p <- maps(domain, range); if sumOld(domain.toSeq) {p(_)} == 1.0 && domain.forall(p(_) >= 0.0)) yield p
 
-  def wsum[T](dom: Set[T], stats: T => Vector)(obj: T => Double) = sumOld(dom.toSeq) {x => stats(x) * obj(x)}(VectorNumeric)
-  def expect[T](dom: Set[T], stats: T => Vector)(obj: T => Double) = wsum(dom, stats)(t => math.exp(obj(t) - logZOld(dom)(obj)))
+  def wsum[T](dom: Iterable[T], stats: T => Vector)(obj: T => Double) = sumOld(dom.toSeq) {x => stats(x) * obj(x)}(VectorNumeric)
+  def expect[T](dom: Iterable[T], stats: T => Vector)(obj: T => Double) = wsum(dom, stats)(t => math.exp(obj(t) - logZOld(dom)(obj)))
 
   @deprecated("Use the new operators", "now")
-  def logZOld[T](dom: Set[T])(model: T => Double) = math.log(dom.view.map(x => math.exp(model(x))).sum)
+  def logZOld[T](dom: Iterable[T])(model: T => Double) = math.log(dom.view.map(x => math.exp(model(x))).sum)
 
   @Operator.Forall
-  def forall[T](dom: Set[T])(pred: T => Boolean) = dom.forall(pred)
+  def forall[T](dom: Iterable[T])(pred: T => Boolean) = dom.forall(pred)
 
   def allOld[T] = new All[T]
 
@@ -275,71 +275,71 @@ trait SampleSpaceDefs {
 
   import Wolfe._
 
-  def all2[A, B](mapper: A => B)(implicit dom: Set[A]): Set[B] = dom map mapper
+  def all2[A, B](mapper: A => B)(implicit dom: Iterable[A]): Iterable[B] = dom map mapper
 
-  def c[A, B](set1: Set[A], set2: Set[B]) = for (i <- set1; j <- set2) yield (i, j)
-  def c[A, B, C](set1: Set[A], set2: Set[B], set3: Set[C]) = for (i <- set1; j <- set2; k <- set3) yield (i, j, k)
-  def c[A1, A2, A3, A4](set1: Set[A1], set2: Set[A2], set3: Set[A3], set4: Set[A4]) =
+  def c[A, B](set1: Iterable[A], set2: Iterable[B]) = for (i <- set1; j <- set2) yield (i, j)
+  def c[A, B, C](set1: Iterable[A], set2: Iterable[B], set3: Iterable[C]) = for (i <- set1; j <- set2; k <- set3) yield (i, j, k)
+  def c[A1, A2, A3, A4](set1: Iterable[A1], set2: Iterable[A2], set3: Iterable[A3], set4: Iterable[A4]) =
     for (a1 <- set1; a2 <- set2; a3 <- set3; a4 <- set4) yield (a1, a2, a3, a4)
-  def c[A1, A2, A3, A4, A5](set1: Set[A1], set2: Set[A2], set3: Set[A3], set4: Set[A4], set5: Set[A5]) =
+  def c[A1, A2, A3, A4, A5](set1: Iterable[A1], set2: Iterable[A2], set3: Iterable[A3], set4: Iterable[A4], set5: Iterable[A5]) =
     for (a1 <- set1; a2 <- set2; a3 <- set3; a4 <- set4; a5 <- set5) yield (a1, a2, a3, a4, a5)
 
 
   type Pred[A] = Map[A, Boolean]
 
-  implicit def Pred[A](implicit dom: Set[A]): Set[Pred[A]] = preds(dom)
-  implicit def Cross2[A1, A2](implicit dom1: Set[A1], dom2: Set[A2]): Set[(A1, A2)] = c(dom1, dom2)
-  implicit def Cross3[A1, A2, A3](implicit dom1: Set[A1], dom2: Set[A2], dom3: Set[A3]): Set[(A1, A2, A3)] = c(dom1, dom2, dom3)
+  implicit def Pred[A](implicit dom: Iterable[A]): Iterable[Pred[A]] = preds(dom)
+  implicit def Cross2[A1, A2](implicit dom1: Iterable[A1], dom2: Iterable[A2]): Iterable[(A1, A2)] = c(dom1, dom2)
+  implicit def Cross3[A1, A2, A3](implicit dom1: Iterable[A1], dom2: Iterable[A2], dom3: Iterable[A3]): Iterable[(A1, A2, A3)] = c(dom1, dom2, dom3)
 
   @Domain.Maps
-  def maps[A, B](dom: Set[A], range: Set[B]): Set[Map[A, B]] = {
+  def maps[A, B](dom: Iterable[A], range: Iterable[B]): Iterable[Map[A, B]] = {
     def recurse(d: List[A], r: List[B], funs: List[Map[A, B]] = List(Map.empty)): List[Map[A, B]] = d match {
       case Nil => funs
       case head :: tail =>
         val newFunctions = for (value <- r; f <- funs.view) yield f + (head -> value)
         recurse(tail, r, newFunctions)
     }
-    recurse(dom.toList, range.toList).toSet
+    recurse(dom.toList, range.toList).toIterable
   }
 
-  def preds[A](dom: Set[A]) = maps(dom, bools)
+  def preds[A](dom: Iterable[A]) = maps(dom, bools)
 
   def map[A, B](default: B, vals: (A, B)*): Map[A, B] = Map(vals: _*).withDefaultValue(default)
   def map[A, B](keys: Set[A], default: B, vals: (A, B)*): Map[A, B] = (keys -- vals.map(_._1)).map(_ -> default).toMap ++ Map(vals: _*)
 
-  def vectors[A, B](dom: Set[A], range: Set[B]): Set[Map[Any, B]] = {
+  def vectors[A, B](dom: Iterable[A], range: Iterable[B]): Iterable[Map[Any, B]] = {
     def recurse(d: List[A], r: List[B], funs: List[Map[Any, B]] = List(Map.empty)): List[Map[Any, B]] = d match {
       case Nil => funs
       case head :: tail =>
         val newFunctions = for (value <- r; f <- funs.view) yield f + (head -> value)
         recurse(tail, r, newFunctions)
     }
-    recurse(dom.toList, range.toList).toSet
+    recurse(dom.toList, range.toList).toIterable
   }
 
 
-  def seqs[A](dom: Set[A], length: Int): Set[Seq[A]] = ???
+  def seqs[A](dom: Iterable[A], length: Int): Iterable[Seq[A]] = ???
 
-  implicit val bools = Set(false, true)
+  implicit val bools = Iterable(false, true)
 
-  implicit val doubles: Set[Double] = new All[Double]
+  implicit val doubles: Iterable[Double] = new All[Double]
 
-  implicit val ints: Set[Int] = new All[Int]
+  implicit val ints: Iterable[Int] = new All[Int]
 
-  val strings: Set[String] = new All[String]
+  val strings: Iterable[String] = new All[String]
 
   implicit val vectors = new All[Wolfe.Vector]
 
 
-  case class RichSet[T](set: Set[T]) {
-    def ->[B](that: Set[B]) = maps(set, that)
+  case class RichIterable[T](set: Iterable[T]) {
+    def ->[B](that: Iterable[B]) = maps(set, that)
   }
 
-  implicit def toRichSet[T](set: Set[T]) = RichSet(set)
+  implicit def toRichIterable[T](set: Iterable[T]) = RichIterable(set)
 
-  implicit def toSeq[T](seq: Set[T]) = seq.toSeq
+  implicit def toSeq[T](seq: Iterable[T]) = seq.toSeq
 
-  class All[T] extends Set[T] {
+  class All[T] extends Iterable[T] {
     def +(elem: T) = this
     def -(elem: T) = sys.error("Can't remove element from all objects")
     def contains(elem: T) = true
