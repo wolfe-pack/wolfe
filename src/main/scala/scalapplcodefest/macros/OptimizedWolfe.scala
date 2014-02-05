@@ -360,10 +360,11 @@ trait StructureHelper[C <: Context] {
 
     def matcher(parent: Tree => Option[Tree], result: Tree => Option[Tree]): Tree => Option[Tree] = {
       def matchApp(tree: Tree) = tree match {
-        case Apply(f, args) => parent(f) match {
+        case q"$f.apply(..$args)" => parent(f) match {
+//        case Apply(f, args) => parent(f) match {
           case Some(parentStructure) =>
             val asIndices = for ((a, i) <- args zip keyIndexNames) yield q"$i($a)"
-            val substructure = structureAtTuple(asIndices, q"$parentStructure")
+            val substructure = structureAtTuple(asIndices, q"$parentStructure.subStructures")
             Some(substructure)
           case _ => None
         }
@@ -508,8 +509,10 @@ trait StructureHelper[C <: Context] {
       case _ => ObservationSetup(EmptyTree, pred)
     }
     case x => matchStructure(x) match {
-      case Some(structure) => ObservationSetup(q"$structure.observe(true)", EmptyTree)
-      case _ => ObservationSetup(EmptyTree, pred)
+      case Some(structure) =>
+        ObservationSetup(q"$structure.observe(true)", EmptyTree)
+      case _ =>
+        ObservationSetup(EmptyTree, pred)
     }
   }
 
