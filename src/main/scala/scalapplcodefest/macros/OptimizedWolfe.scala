@@ -330,6 +330,9 @@ trait StructureHelper[C <: Context] {
       case q"${_}.log(${FlatDoubleProduct(args)})" =>
         val children = args.map(a => createMetaFactorTree(q"log($a)", matchStructure))
         MetaPropositionalSum(args, children)
+      case q"sum[..${_}]($qdom)($qpred)($qobj)" =>
+        val q"(..$x) => $rhs" = qobj
+        MetaQuantifiedSum(x, List(qdom), qpred, rhs, matchStructure)
       case _ => MetaFactorLeaf(potential, matchStructure)
     }
 
@@ -348,7 +351,6 @@ trait StructureHelper[C <: Context] {
 
     case class MetaQuantifiedSum(args: List[ValDef], doms: List[Tree], pred: Tree, obj: Tree, matchStructure: Tree => Option[Tree]) extends MetaFactorTree {
       val keyDomNames    = List.fill(doms.size)(newTermName(context.fresh("qSumDom")))
-      val domDefs        = for ((d, n) <- doms zip keyDomNames) yield q"val $n = $d.toArray"
       val keyDomSizes    = keyDomNames.map(k => q"$k.length")
       val tmpNames       = Range(0, doms.size).map(i => newTermName("i" + i)).toList
       val tmpIds         = tmpNames.map(Ident(_))
@@ -359,11 +361,14 @@ trait StructureHelper[C <: Context] {
           replacement
       })
 
-      val child         = createMetaFactorTree(obj, matchStructure)
+      val child         = createMetaFactorTree(substitutedObj, matchStructure)
       val setupChild    = q"${child.setup}"
       val setupChildren = tupleProcessor(keyDomNames, tmpNames, setupChild, newTermName("foreach"), newTermName("foreach"))
       val setup         = q"{$setupChildren}"
       def children = List(child)
+
+      override val domainDefs = for ((d, n) <- doms zip keyDomNames) yield q"val $n = $d.toArray"
+
 
     }
 
@@ -471,8 +476,8 @@ trait StructureHelper[C <: Context] {
     def children = List(valueType)
 
     def matcher(parent: Tree => Option[Tree], result: Tree => Option[Tree]): Tree => Option[Tree] = {
-      def matchApp(tree: Tree) = tree match {
-        case q"$f.apply(..$args)" => parent(f) match {
+      def matchApp(tree: Tree) = {
+        def replace(f:Tree,args:List[Tree]) = parent(f) match {
           //        case Apply(f, args) => parent(f) match {
           case Some(parentStructure) =>
             val asIndices = for ((a, i) <- args zip keyIndexNames) yield q"$i($a)"
@@ -480,7 +485,11 @@ trait StructureHelper[C <: Context] {
             Some(substructure)
           case _ => None
         }
-        case _ => None
+        tree match {
+          case q"$f.apply(..$args)" => replace(f,args)
+          case q"$f(..$args)" => replace(f,args)
+          case _ => None
+        }
       }
       valueType.matcher(matchApp, (t: Tree) => matchApp(t).orElse(result(t)))
     }
