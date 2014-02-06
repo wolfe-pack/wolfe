@@ -344,7 +344,7 @@ trait StructureHelper[C <: Context] {
     case class MetaPropositionalSum(args: List[Tree], children: List[MetaFactorTree]) extends MetaFactorTree {
       val className = newTypeName(context.fresh("PropositionalSum"))
       val fields    = for ((c, i) <- children.zipWithIndex) yield q"val ${newTermName("arg" + i)} = new ${c.className}"
-      val fieldIds  = for (i <- children.indices) yield q"${"arg" + i}"
+      val fieldIds  = for (i <- children.indices) yield q"${newTermName("arg" + i)}"
       val classDef  = q"""
         class $className extends FactorTree {
           ..$fields

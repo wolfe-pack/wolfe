@@ -31,7 +31,7 @@ object TestSprinkler {
     def p(x: Data) = p_rain(x.rain) * p_sprinkler(x.rain)(x.sprinkler) * p_wet(x.sprinkler, x.rain)(x.wet)
 
 
-    println(sampleSpace.size)
+    println(sampleSpace)
 
     //most likely explanation if the grass is wet
     val expected = BruteForceWolfe.argmax(sampleSpace)(_.wet)(x => log(p(x)))
