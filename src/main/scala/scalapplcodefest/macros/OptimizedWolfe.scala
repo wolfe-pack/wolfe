@@ -4,7 +4,7 @@ import scala.reflect.macros.Context
 import scala.language.experimental.macros
 import scala.collection.mutable
 import scalapplcodefest.MPGraph
-import scala.util.parsing.input.OffsetPosition
+import scalapplcodefest.MPGraph.Factor
 
 //import scalapplcodefest.Wolfe._
 
@@ -46,8 +46,8 @@ object OptimizedWolfe extends WolfeAPI {
       ${metaData.classDef}
       val $graphName = new ${metaData.graphClassName}
       MaxProduct($graphName.${metaData.mpGraphName},1)
-      $graphName.${metaData.rootName}.setToArgmax()
-      $graphName.${metaData.rootName}.value()
+      $graphName.${metaData.structureName}.setToArgmax()
+      $graphName.${metaData.structureName}.value()
     """
 
     c.Expr[T](result)
@@ -216,7 +216,9 @@ trait StructureHelper[C <: Context] {
 
     val graphClassName = newTypeName(context.fresh("StructuredGraph"))
     val mpGraphName    = newTermName(context.fresh("mpGraph"))
-    val rootName       = newTermName(context.fresh("root"))
+    val structureName  = newTermName(context.fresh("structure"))
+    val objTreeName    = newTermName(context.fresh("objTree"))
+    val predTreeName   = newTermName(context.fresh("predTree"))
     val nodeCountName  = newTermName(context.fresh("nodeCount"))
     val nextNodeIndex  = newTermName(context.fresh("nextNodeIndex"))
     val init           = List(q"val $mpGraphName = new MPGraph()")
@@ -259,18 +261,18 @@ trait StructureHelper[C <: Context] {
     }
 
     //meta information about the root structure class.
-    val root = createStructureType(this, rootDom)
+    val metaStructure = createMetaStructure(this, rootDom)
 
-    val objArgMatcher  = createRootMatcher(objVarName, Ident(rootName))(_)
-    val predArgMatcher = createRootMatcher(predVarName, Ident(rootName))(_)
+    val objArgMatcher  = createRootMatcher(objVarName, Ident(structureName))(_)
+    val predArgMatcher = createRootMatcher(predVarName, Ident(structureName))(_)
 
     val normalized = betaReduce(replaceMethods(rootObj, defs))
 
-    //this builds the factors
-    val objFactorsSetup = factorSetup(this, normalized, root.matcher(objArgMatcher, objArgMatcher))
+    val objFactorTree = createMetaFactorTree(normalized, metaStructure.matcher(objArgMatcher, objArgMatcher))
+
 
     //setting observed nodes and reduce their domains
-    val predObservationSetup = observationSetup(this, rootPred, root.matcher(predArgMatcher, predArgMatcher))
+    val predObservationSetup = observationSetup(this, rootPred, metaStructure.matcher(predArgMatcher, predArgMatcher))
 
     //turn the predicate into an objective
     val predObj = predObservationSetup.remainder match {
@@ -279,10 +281,14 @@ trait StructureHelper[C <: Context] {
     }
 
     //setting up the factors from the predicate
-    val predFactorsSetup = factorSetup(this, predObj, root.matcher(predArgMatcher, predArgMatcher))
+    val predFactorTree = createMetaFactorTree(predObj, metaStructure.matcher(predArgMatcher, predArgMatcher))
 
     //all structure class definitions
-    val classDefs = root.allTypes.map(_.classDef)
+    val classDefs =
+      metaStructure.all.map(_.classDef) ++
+      objFactorTree.all.map(_.classDef) ++
+      predFactorTree.all.map(_.classDef)
+
 
     val classDef = q"""
       class $graphClassName {
@@ -291,35 +297,99 @@ trait StructureHelper[C <: Context] {
         import scalapplcodefest.MPGraph._
         import scalapplcodefest.macros._
 
-        ..${root.allDomainDefs}
+        ..${metaStructure.allDomainDefs}
         ..$classDefs
 
         val $mpGraphName = new MPGraph()
 
-        val $rootName = new ${root.className}
+        val $structureName = new ${metaStructure.className}
 
         ${predObservationSetup.setup}
+
         $mpGraphName.setupNodes()
-        $objFactorsSetup
-        $predFactorsSetup
+
+        val $objTreeName = new ${objFactorTree.className}
+        val $predTreeName = new ${predFactorTree.className}
+
         $mpGraphName.build()
       }
     """
 
-
-    val imports = q"""
-      import scalapplcodefest._
-      import scalapplcodefest.Wolfe._
-      import scalapplcodefest.MPGraph._
-      import scalapplcodefest.macros._
-    """ match {
-      case Block(i, _) => i
+    trait MetaFactorTree {
+      def children: List[MetaFactorTree]
+      def all:List[MetaFactorTree] = this :: children.flatMap(_.all)
+      def classDef: Tree
+      def className: TypeName
+      def domainDefs: List[ValDef] = Nil
     }
 
+    def createMetaFactorTree(potential: Tree, matchStructure: Tree => Option[Tree]): MetaFactorTree = potential match {
+      case EmptyTree => MetaEmptyFactor
+      case q"${_}.log(${FlatDoubleProduct(args)})" =>
+        val children = args.map(a => createMetaFactorTree(q"log($a)", matchStructure))
+        MetaPropositionalSum(args, children)
+      case _ => MetaFactorLeaf(potential, matchStructure)
+    }
+
+    case object MetaEmptyFactor extends MetaFactorTree {
+      def children = Nil
+      val className = newTypeName(context.fresh("EmptyFactor"))
+      val classDef  = q"""
+        class $className extends FactorTree {
+          def factors = Iterator.empty
+        }
+      """
+    }
+
+    case class MetaPropositionalSum(args: List[Tree], children: List[MetaFactorTree]) extends MetaFactorTree {
+      val className = newTypeName(context.fresh("PropositionalSum"))
+      val fields    = for ((c, i) <- children.zipWithIndex) yield q"val ${newTermName("arg" + i)} = new ${c.className}"
+      val fieldIds  = for (i <- children.indices) yield q"${"arg" + i}"
+      val classDef  = q"""
+        class $className extends FactorTree {
+          ..$fields
+          def factors = Iterator(..$fieldIds).flatMap(_.factors)
+        }
+      """
+    }
+
+    case class MetaFactorLeaf(potential: Tree, matchStructure: Tree => Option[Tree]) extends MetaFactorTree {
+      val arguments   = distinctTrees(structures(potential, matchStructure))
+      val nodesPerArg = arguments.map(a => q"$a.nodes()")
+      val nodes       = q"""Iterator(..$nodesPerArg).flatMap(identity)"""
+      val cleaned     = context.resetAllAttrs(potential)
+      val injected    = injectStructure(cleaned, matchStructure)
+      val className   = newTypeName(context.fresh("FactorLeaf"))
+      val perSetting  = q"""
+        println(nodes.map(_.setting).mkString(","))
+        settings(settingIndex) = nodes.map(_.setting)
+        scores(settingIndex) = $injected
+        settingIndex += 1
+      """
+      val loop        = loopSettings(arguments) {perSetting}
+
+      def children = Nil
+
+      val classDef = q"""
+        class $className extends FactorTree {
+          val nodes = $nodes.toArray
+          val dims = nodes.map(_.dim)
+          val settingsCount = dims.product
+          val settings = Array.ofDim[Array[Int]](settingsCount)
+          val scores = Array.ofDim[Double](settingsCount)
+          var settingIndex = 0
+          $loop
+          val factor = $mpGraphName.addTableFactor(scores, settings, dims)
+          def factors = Iterator(factor)
+          nodes.view.zipWithIndex.foreach(p => $mpGraphName.addEdge(factor,p._1,p._2))
+        }
+      """
+
+    }
 
   }
 
-  def createStructureType(metadata: MetaStructuredGraph, domain: Tree): MetaStructure = {
+  def createMetaStructure(metadata: MetaStructuredGraph, domain: Tree): MetaStructure = {
     domain match {
       case q"$all[..${_}]($unwrap[..${_}]($constructor))($cross(..$sets))"
         if all.symbol.name.encoded == "all" && unwrap.symbol.name.encoded.startsWith("unwrap") =>
@@ -327,13 +397,13 @@ trait StructureHelper[C <: Context] {
         val caseClassName = tpe.typeSymbol.name.toTypeName
         val caseClass = metadata.classes(caseClassName)
         val q"case class $className(..$fields)" = caseClass
-        val subtypes = sets.map(createStructureType(metadata, _))
+        val subtypes = sets.map(createMetaStructure(metadata, _))
         MetaCaseClassStructure(tpe, fields, subtypes)
       case q"scalapplcodefest.Wolfe.Pred[${_}]($keyDom)" =>
         val valueDom = q"scalapplcodefest.Wolfe.bools"
         val tped = context.typeCheck(valueDom)
         val TypeRef(_, _, List(argType)) = domain.tpe
-        MetaFunStructure(argType, List(keyDom), createStructureType(metadata, tped))
+        MetaFunStructure(argType, List(keyDom), createMetaStructure(metadata, tped))
       case _ => MetaAtomicStructure(domain, metadata)
     }
   }
@@ -341,11 +411,11 @@ trait StructureHelper[C <: Context] {
   trait MetaStructure {
     def className: TypeName
     def domainDefs: List[ValDef]
-    def allDomainDefs = allTypes.flatMap(_.domainDefs)
+    def allDomainDefs = all.flatMap(_.domainDefs)
     def classDef: ClassDef
     def argType: Type
     def children: List[MetaStructure]
-    def allTypes: List[MetaStructure]
+    def all: List[MetaStructure]
     def matcher(parent: Tree => Option[Tree], result: Tree => Option[Tree]): Tree => Option[Tree]
 
   }
@@ -367,7 +437,7 @@ trait StructureHelper[C <: Context] {
     val domainDefs    = domDefs ++ indexDefs
 
 
-    def allTypes = this :: valueType.allTypes
+    def all = this :: valueType.all
     def children = List(valueType)
 
     def matcher(parent: Tree => Option[Tree], result: Tree => Option[Tree]): Tree => Option[Tree] = {
@@ -452,7 +522,7 @@ trait StructureHelper[C <: Context] {
       }
     """
 
-    def allTypes = this :: types.flatMap(_.allTypes)
+    def all = this :: types.flatMap(_.all)
     def children = types
     def argType = tpe
     def domainDefs = Nil
@@ -483,7 +553,7 @@ trait StructureHelper[C <: Context] {
       q"val $domName = $domain.toArray",
       q"val $indexName = $domName.zipWithIndex.toMap")
     def children = Nil
-    def allTypes = List(this)
+    def all = List(this)
     val classDef = q"""
       final class $className extends Structure[$argType] {
         val node = ${meta.mpGraphName}.addNode($domName.length)
@@ -528,39 +598,7 @@ trait StructureHelper[C <: Context] {
     }
   }
 
-  def factorSetup(metadata: MetaStructuredGraph, potential: Tree, matchStructure: Tree => Option[Tree]): Tree = potential match {
-    case EmptyTree => EmptyTree
-    case q"${_}.log(${FlatDoubleProduct(args)})" =>
-      val block: List[Tree] = args.map(a => factorSetup(metadata, q"log($a)", matchStructure))
-      q"{..$block}"
-    case _ =>
-      val arguments = distinctTrees(structures(potential, matchStructure))
-      val nodesPerArg = arguments.map(a => q"$a.nodes()")
-      val nodes = q"""Iterator(..$nodesPerArg).flatMap(identity)"""
-      val cleaned = context.resetAllAttrs(potential)
-      val injected = injectStructure(cleaned, matchStructure)
-      val perSetting = q"""
-        println(nodes.map(_.setting).mkString(","))
-        settings(settingIndex) = nodes.map(_.setting)
-        scores(settingIndex) = $injected
-        settingIndex += 1
-      """
-      val loop = loopSettings(arguments) {perSetting}
-      val setup = q"""
-      {
-        val nodes = $nodes.toArray
-        val dims = nodes.map(_.dim)
-        val settingsCount = dims.product
-        val settings = Array.ofDim[Array[Int]](settingsCount)
-        val scores = Array.ofDim[Double](settingsCount)
-        var settingIndex = 0
-        $loop
-        val factor = ${metadata.mpGraphName}.addTableFactor(scores, settings, dims)
-        nodes.view.zipWithIndex.foreach(p => ${metadata.mpGraphName}.addEdge(factor,p._1,p._2))
-      }
-      """
-      setup
-  }
+
 
   def structures(tree: Tree, matchStructure: Tree => Option[Tree]): List[Tree] = {
     var result: List[Tree] = Nil
@@ -627,7 +665,6 @@ trait StructureHelper[C <: Context] {
         //          }
         //        }
         val result = matcher(tree) match {
-          //todo: only allow a replacement if tree doesn't contain unstable variables created by anon functions parents.
           case Some(structure) => {
             //get symbols in tree
             val symbols = tree.collect({case i: Ident => i}).map(_.name).toSet //todo: this shouldn't just be by name
@@ -666,6 +703,10 @@ trait Structure[+T] {
   def resetSetting()
   def hasNextSetting: Boolean
   def nextSetting()
+}
+
+trait FactorTree {
+  def factors: Iterator[Factor]
 }
 
 object Structure {
