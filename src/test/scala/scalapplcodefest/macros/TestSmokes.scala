@@ -19,7 +19,7 @@ object TestSmokes {
     implicit val allPersons = Seq(anna, bob)
     implicit val allData = all(Data)
 
-    println(allData.size)
+    println(allData)
 
     def model(x: Data) =
       sum(allPersons)(_ => true) {p => I(x.smokes(p) --> x.cancer(p))}
