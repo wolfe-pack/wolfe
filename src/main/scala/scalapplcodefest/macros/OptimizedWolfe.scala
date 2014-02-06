@@ -317,7 +317,7 @@ trait StructureHelper[C <: Context] {
 
     trait MetaFactorTree {
       def children: List[MetaFactorTree]
-      def all:List[MetaFactorTree] = this :: children.flatMap(_.all)
+      def all: List[MetaFactorTree] = this :: children.flatMap(_.all)
       def classDef: Tree
       def className: TypeName
       def domainDefs: List[ValDef] = Nil
@@ -400,10 +400,14 @@ trait StructureHelper[C <: Context] {
         val subtypes = sets.map(createMetaStructure(metadata, _))
         MetaCaseClassStructure(tpe, fields, subtypes)
       case q"scalapplcodefest.Wolfe.Pred[${_}]($keyDom)" =>
+        val keyDoms = keyDom match {
+          case q"scalapplcodefest.Wolfe.$cross[..${_}](..$doms)" => doms
+          case _ => List(keyDom)
+        }
         val valueDom = q"scalapplcodefest.Wolfe.bools"
         val tped = context.typeCheck(valueDom)
         val TypeRef(_, _, List(argType)) = domain.tpe
-        MetaFunStructure(argType, List(keyDom), createMetaStructure(metadata, tped))
+        MetaFunStructure(argType, keyDoms, createMetaStructure(metadata, tped))
       case _ => MetaAtomicStructure(domain, metadata)
     }
   }
@@ -464,16 +468,20 @@ trait StructureHelper[C <: Context] {
 
     def substructureIterator(count: Int, result: Tree = q"subStructures.iterator"): Tree = count match {
       case 1 => q"$result"
-      case n => substructureIterator(n - 1, q"$result.flatMap(identity)")
+      case n => substructureIterator(n - 1, q"$result.flatMap(_.iterator)")
     }
 
-    def tupleProcessor(domainIds: List[TermName], tmpIds: List[TermName], result: Tree, op: TermName = newTermName("flatMap")): Tree =
+    //todo: make tail recursive
+    def tupleProcessor(domainIds: List[TermName], tmpIds: List[TermName], body: Tree,
+                       op: TermName = newTermName("flatMap"), lastOp: TermName = newTermName("map")): Tree =
       (domainIds, tmpIds) match {
-        case (dom :: Nil, id :: Nil) => q"Range(0,$dom.length).map($id => $result)"
+        case (dom :: Nil, id :: Nil) => q"Range(0,$dom.length).$lastOp($id => $body)"
         case (dom :: domTail, id :: idTail) =>
-          tupleProcessor(domTail, idTail, q"Range(0,$dom.length).$op($id => $result)", op)
+          val inner = tupleProcessor(domTail, idTail, body, op)
+          q"Range(0,$dom.length).$op($id => $inner)"
         case _ => sys.error("shouldn't happen")
       }
+
 
     val mappings = tupleProcessor(keyDomNames, tmpNames, q"$tuple -> ${structureAtTuple(tmpIds)}.value")
 
@@ -491,7 +499,7 @@ trait StructureHelper[C <: Context] {
         def setToArgmax() {subStructureIterator().foreach(_.setToArgmax())}
         def value() = $mappings.toMap
         def observe(value:$argType) {
-          ${tupleProcessor(keyDomNames, tmpNames, observeSubStructure, newTermName("foreach"))}
+          ${tupleProcessor(keyDomNames, tmpNames, observeSubStructure, newTermName("foreach"), newTermName("foreach"))}
         }
       }
     """
@@ -597,7 +605,6 @@ trait StructureHelper[C <: Context] {
         ObservationSetup(EmptyTree, pred)
     }
   }
-
 
 
   def structures(tree: Tree, matchStructure: Tree => Option[Tree]): List[Tree] = {
