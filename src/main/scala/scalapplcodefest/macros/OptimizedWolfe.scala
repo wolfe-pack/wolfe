@@ -284,10 +284,12 @@ trait StructureHelper[C <: Context] {
     val predFactorTree = createMetaFactorTree(predObj, metaStructure.matcher(predArgMatcher, predArgMatcher))
 
     //all structure class definitions
-    val classDefs =
-      metaStructure.all.map(_.classDef) ++
-      objFactorTree.all.map(_.classDef) ++
-      predFactorTree.all.map(_.classDef)
+    val classDefs = metaStructure.all.map(_.classDef)
+
+    val domDefs =
+      metaStructure.allDomainDefs ++
+      objFactorTree.all.flatMap(_.domainDefs) ++
+      predFactorTree.all.flatMap(_.domainDefs)
 
 
     val classDef = q"""
@@ -297,7 +299,8 @@ trait StructureHelper[C <: Context] {
         import scalapplcodefest.MPGraph._
         import scalapplcodefest.macros._
 
-        ..${metaStructure.allDomainDefs}
+        ..$domDefs
+
         ..$classDefs
 
         val $mpGraphName = new MPGraph()
@@ -308,8 +311,8 @@ trait StructureHelper[C <: Context] {
 
         $mpGraphName.setupNodes()
 
-        val $objTreeName = new ${objFactorTree.className}
-        val $predTreeName = new ${predFactorTree.className}
+        ${objFactorTree.setup}
+        ${predFactorTree.setup}
 
         $mpGraphName.build()
       }
@@ -318,8 +321,7 @@ trait StructureHelper[C <: Context] {
     trait MetaFactorTree {
       def children: List[MetaFactorTree]
       def all: List[MetaFactorTree] = this :: children.flatMap(_.all)
-      def classDef: Tree
-      def className: TypeName
+      def setup: Tree
       def domainDefs: List[ValDef] = Nil
     }
 
@@ -333,24 +335,36 @@ trait StructureHelper[C <: Context] {
 
     case object MetaEmptyFactor extends MetaFactorTree {
       def children = Nil
-      val className = newTypeName(context.fresh("EmptyFactor"))
-      val classDef  = q"""
-        class $className extends FactorTree {
-          def factors = Iterator.empty
-        }
-      """
+      val setup = EmptyTree
+
     }
 
     case class MetaPropositionalSum(args: List[Tree], children: List[MetaFactorTree]) extends MetaFactorTree {
-      val className = newTypeName(context.fresh("PropositionalSum"))
-      val fields    = for ((c, i) <- children.zipWithIndex) yield q"val ${newTermName("arg" + i)} = new ${c.className}"
-      val fieldIds  = for (i <- children.indices) yield q"${newTermName("arg" + i)}"
-      val classDef  = q"""
-        class $className extends FactorTree {
-          ..$fields
-          def factors = Iterator(..$fieldIds).flatMap(_.factors)
-        }
-      """
+      val setupChildren = for (c <- children) yield q"${c.setup}"
+      val fieldIds      = for (i <- children.indices) yield q"${newTermName("arg" + i)}"
+      val setup         = q"{..$setupChildren}"
+
+    }
+
+    case class MetaQuantifiedSum(args: List[ValDef], doms: List[Tree], pred: Tree, obj: Tree, matchStructure: Tree => Option[Tree]) extends MetaFactorTree {
+      val keyDomNames    = List.fill(doms.size)(newTermName(context.fresh("qSumDom")))
+      val domDefs        = for ((d, n) <- doms zip keyDomNames) yield q"val $n = $d.toArray"
+      val keyDomSizes    = keyDomNames.map(k => q"$k.length")
+      val tmpNames       = Range(0, doms.size).map(i => newTermName("i" + i)).toList
+      val tmpIds         = tmpNames.map(Ident(_))
+      val substitutedObj = transform(obj, {
+        case Ident(name) if args.exists(_.name == name) =>
+          val index = args.indexWhere(_.name == name)
+          val replacement = q"${keyDomNames(index)}(${tmpIds(index)})"
+          replacement
+      })
+
+      val child         = createMetaFactorTree(obj, matchStructure)
+      val setupChild    = q"${child.setup}"
+      val setupChildren = tupleProcessor(keyDomNames, tmpNames, setupChild, newTermName("foreach"), newTermName("foreach"))
+      val setup         = q"{$setupChildren}"
+      def children = List(child)
+
     }
 
     case class MetaFactorLeaf(potential: Tree, matchStructure: Tree => Option[Tree]) extends MetaFactorTree {
@@ -359,7 +373,6 @@ trait StructureHelper[C <: Context] {
       val nodes       = q"""Iterator(..$nodesPerArg).flatMap(identity)"""
       val cleaned     = context.resetAllAttrs(potential)
       val injected    = injectStructure(cleaned, matchStructure)
-      val className   = newTypeName(context.fresh("FactorLeaf"))
       val perSetting  = q"""
         println(nodes.map(_.setting).mkString(","))
         settings(settingIndex) = nodes.map(_.setting)
@@ -369,21 +382,18 @@ trait StructureHelper[C <: Context] {
       val loop        = loopSettings(arguments) {perSetting}
 
       def children = Nil
-
-      val classDef = q"""
-        class $className extends FactorTree {
-          val nodes = $nodes.toArray
-          val dims = nodes.map(_.dim)
-          val settingsCount = dims.product
-          val settings = Array.ofDim[Array[Int]](settingsCount)
-          val scores = Array.ofDim[Double](settingsCount)
-          var settingIndex = 0
-          $loop
-          val factor = $mpGraphName.addTableFactor(scores, settings, dims)
-          def factors = Iterator(factor)
-          nodes.view.zipWithIndex.foreach(p => $mpGraphName.addEdge(factor,p._1,p._2))
-        }
+      val setup = q"""
+        val nodes = $nodes.toArray
+        val dims = nodes.map(_.dim)
+        val settingsCount = dims.product
+        val settings = Array.ofDim[Array[Int]](settingsCount)
+        val scores = Array.ofDim[Double](settingsCount)
+        var settingIndex = 0
+        $loop
+        val factor = $mpGraphName.addTableFactor(scores, settings, dims)
+        nodes.view.zipWithIndex.foreach(p => $mpGraphName.addEdge(factor,p._1,p._2))
       """
+
 
     }
 
@@ -423,6 +433,22 @@ trait StructureHelper[C <: Context] {
     def matcher(parent: Tree => Option[Tree], result: Tree => Option[Tree]): Tree => Option[Tree]
 
   }
+  //todo: make tail recursive
+  def tupleProcessor(domainIds: List[TermName], tmpIds: List[TermName], body: Tree,
+                     op: TermName = newTermName("flatMap"), lastOp: TermName = newTermName("map")): Tree =
+    (domainIds, tmpIds) match {
+      case (dom :: Nil, id :: Nil) => q"Range(0,$dom.length).$lastOp($id => $body)"
+      case (dom :: domTail, id :: idTail) =>
+        val inner = tupleProcessor(domTail, idTail, body, op)
+        q"Range(0,$dom.length).$op($id => $inner)"
+      case _ => sys.error("shouldn't happen")
+    }
+
+  def curriedArguments(indices: List[Tree], result: Tree = q"subStructures"): Tree = indices match {
+    case Nil => result
+    case i :: tail => curriedArguments(tail, q"$result($i)")
+  }
+
 
   case class MetaFunStructure(tpe: Type, keyDoms: List[Tree], valueType: MetaStructure) extends MetaStructure {
     val keyDomNames   = List.fill(keyDoms.size)(newTermName(context.fresh("funKeyDom")))
@@ -450,7 +476,7 @@ trait StructureHelper[C <: Context] {
           //        case Apply(f, args) => parent(f) match {
           case Some(parentStructure) =>
             val asIndices = for ((a, i) <- args zip keyIndexNames) yield q"$i($a)"
-            val substructure = structureAtTuple(asIndices, q"$parentStructure.subStructures")
+            val substructure = curriedArguments(asIndices, q"$parentStructure.subStructures")
             Some(substructure)
           case _ => None
         }
@@ -460,32 +486,15 @@ trait StructureHelper[C <: Context] {
     }
 
 
-    def structureAtTuple(indices: List[Tree], result: Tree = q"subStructures"): Tree = indices match {
-      case Nil => result
-      case i :: tail => structureAtTuple(tail, q"$result($i)")
-    }
-
-
     def substructureIterator(count: Int, result: Tree = q"subStructures.iterator"): Tree = count match {
       case 1 => q"$result"
       case n => substructureIterator(n - 1, q"$result.flatMap(_.iterator)")
     }
 
-    //todo: make tail recursive
-    def tupleProcessor(domainIds: List[TermName], tmpIds: List[TermName], body: Tree,
-                       op: TermName = newTermName("flatMap"), lastOp: TermName = newTermName("map")): Tree =
-      (domainIds, tmpIds) match {
-        case (dom :: Nil, id :: Nil) => q"Range(0,$dom.length).$lastOp($id => $body)"
-        case (dom :: domTail, id :: idTail) =>
-          val inner = tupleProcessor(domTail, idTail, body, op)
-          q"Range(0,$dom.length).$op($id => $inner)"
-        case _ => sys.error("shouldn't happen")
-      }
 
+    val mappings = tupleProcessor(keyDomNames, tmpNames, q"$tuple -> ${curriedArguments(tmpIds)}.value")
 
-    val mappings = tupleProcessor(keyDomNames, tmpNames, q"$tuple -> ${structureAtTuple(tmpIds)}.value")
-
-    val observeSubStructure = q"${structureAtTuple(tmpIds)}.observe(value($tuple))"
+    val observeSubStructure = q"${curriedArguments(tmpIds)}.observe(value($tuple))"
 
     val classDef = q"""
       final class $className extends Structure[$argType] {
