@@ -330,6 +330,9 @@ trait StructureHelper[C <: Context] {
       case q"${_}.log(${FlatDoubleProduct(args)})" =>
         val children = args.map(a => createMetaFactorTree(q"log($a)", matchStructure))
         MetaPropositionalSum(args, children)
+      case FlatDoubleSum(args) =>
+        val children = args.map(a => createMetaFactorTree(a, matchStructure))
+        MetaPropositionalSum(args, children)
       case q"sum[..${_}]($qdom)($qpred)($qobj)" =>
         val q"(..$x) => $rhs" = qobj
         MetaQuantifiedSum(x, List(qdom), qpred, rhs, matchStructure)
