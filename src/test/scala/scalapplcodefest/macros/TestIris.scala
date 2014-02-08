@@ -45,7 +45,7 @@ object TestIris {
     val (train, test) = dataset.splitAt(dataset.size / 2)
 
     //the set of all possible dates for a given observation
-    def Y(data:Data) = all2(Data)(c(Seq(data.x), classes))
+    def S(data:Data) = all2(Data)(c(Seq(data.x), classes))
 
     //joint feature function on data (x,y)
     def features(data: Data) =
@@ -59,7 +59,7 @@ object TestIris {
 
     //the total training perceptron loss of the model given the weights
     @MinByDescent(new OnlineTrainer(_, new Perceptron, 10))
-    def loss(weights: Vector) = sum(train)(_ => true)(i => max(Y(i))(_ => true)(model(weights)) - model(weights)(i))
+    def loss(weights: Vector) = sum(train)(_ => true)(i => max(S(i))(_ => true)(model(weights)) - model(weights)(i))
 
     //the learned weights that minimize the perceptron loss
     val learned = argmin(vectors)(_ => true)(loss)
@@ -67,7 +67,7 @@ object TestIris {
     println("Learned:")
     println(learned)
 
-    def predict(i: Data) = argmax(Y(i))(_ => true)(model(learned))
+    def predict(i: Data) = argmax(S(i))(_ => true)(model(learned))
 
     //apply the predictor to each instance of the test set.
     val predicted = test.map(predict)

@@ -126,9 +126,10 @@ trait TransformHelper[C <: Context] {
 
 
   object DotProduct {
-    def unapply(tree: Tree) = tree match {
-        //todo: this doesn't check if there is an actual dot product!
-      case Apply(Select(Apply(_, List(arg1)), _), List(arg2)) => Some(arg1, arg2)
+    def unapply(tree: Tree):Option[(Tree,Tree)] = tree match {
+      //todo: make this type-safe
+      case q"$arg1.dot($arg2)" => Some(arg1,arg2)
+//      case Apply(Select(Apply(_, List(arg1)), _), List(arg2)) => Some(arg1, arg2)
       case _ => None
     }
   }
