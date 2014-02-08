@@ -7,6 +7,8 @@ import scalapplcodefest.Wolfe.Objective.{Perceptron, Differentiable}
 import scalapplcodefest.newExamples.Iris
 import scala.io.Source
 import scalapplcodefest.util.Evaluator
+import cc.factorie.optimize.{Perceptron, OnlineTrainer}
+import cc.factorie.WeightsSet
 
 /**
  * @author Sebastian Riedel
@@ -56,13 +58,13 @@ object TestIris {
     def model(weights: Vector)(data: Data) = features(data) dot weights
 
     //the total training perceptron loss of the model given the weights
-    @Differentiable(Perceptron, 5)
+    @MinByDescent(new OnlineTrainer(_, new Perceptron, 10))
     def loss(weights: Vector) = sum(train)(_ => true)(i => max(Y(i))(_ => true)(model(weights)) - model(weights)(i))
 
     //the learned weights that minimize the perceptron loss
     val learned = argmin(vectors)(_ => true)(loss)
 
-    println("Learned: ")
+    println("Learned:")
     println(learned)
 
     def predict(i: Data) = argmax(Y(i))(_ => true)(model(learned))
