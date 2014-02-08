@@ -171,7 +171,7 @@ trait GradientBasedMinimizationHelper[C <: Context] {
     //    val trainingCode = for (gradientCalculator <- None) yield {
     val trainingCode = for (gradientCalculator <- generateGradientCalculatorClass(replaced, weights, indexVariableName)) yield {
       val generator = context.Expr[GradientCalculator](context.resetAllAttrs(gradientCalculator))
-      val trainerFor = reify((w: WeightsSet) => new OnlineTrainer(w, new Perceptron, 10))
+      val trainerFor = reify((w: WeightsSet) => new OnlineTrainer(w, new Perceptron, 5))
       val trainingData = context.Expr[Iterable[Any]](data)
       val code = generateFactorieCode(generator, trainerFor, trainingData)
       code
@@ -196,6 +196,7 @@ trait GradientBasedMinimizationHelper[C <: Context] {
       val examples = for (_instance <- trainingData.splice) yield new Example {
         val gradientCalculator = gradientCalculatorGenerator.splice
         def accumulateValueAndGradient(value: DoubleAccumulator, gradient: WeightsMapAccumulator) = {
+          println("Instance: " + _instance)
           val weights = weightsSet(key).asInstanceOf[Vector]
           val (v, g) = gradientCalculator.valueAndGradient(weights)
           value.accumulate(v)
@@ -227,6 +228,8 @@ trait GradientBasedMinimizationHelper[C <: Context] {
                 def valueAndGradient(param: scalapplcodefest.Vector): (Double, scalapplcodefest.Vector) = {
                   val (v1,g1) = arg1.valueAndGradient(param)
                   val (v2,g2) = arg2.valueAndGradient(param)
+                  println("g1:" + FactorieConverter.toWolfeVector(g1,$indexName))
+                  println("g2:" + FactorieConverter.toWolfeVector(g2,$indexName))
                   (v1 - v2, g1 - g2)
                 }
               }
