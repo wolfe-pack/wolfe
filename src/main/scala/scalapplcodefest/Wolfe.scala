@@ -249,7 +249,7 @@ trait VectorDefs {
     def toDouble(x: Wolfe.Vector) = ???
     def compare(x: Wolfe.Vector, y: Wolfe.Vector) = ???
     def dot(x: Vector, y: Vector) = {
-      x.keys.view.map(k => x(k) * y(k)).sum
+      x.keys.view.map(k => x(k) * y.getOrElse(k,0.0)).sum
     }
     override def zero = Map.empty
     def norm(x: Vector) = {

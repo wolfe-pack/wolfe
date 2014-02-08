@@ -36,10 +36,11 @@ trait StructureHelper[C <: Context] {
     val Function(List(predVarDef@ValDef(_, predVarName, _, _)), rootPred) = normalizedPred
 
     //inline the data tree
-    val inlinedData = transform(data, {
-      case i@Ident(name) => vals.getOrElse(name, i)
-      case t => t
-    })
+//    val inlinedData = transform(data, {
+//      case i@Ident(name) => vals.getOrElse(name, i)
+//      case t => t
+//    })
+    val inlinedData = replaceVals(data,valDefs)
 
     val checked = context.typeCheck(inlinedData)
 
@@ -130,7 +131,7 @@ trait StructureHelper[C <: Context] {
         val q"(..$x) => $rhs" = qobj
         MetaQuantifiedSum(x, List(qdom), qpred, rhs, matchStructure)
       case DotProduct(arg1, arg2) if weightMatcher(arg2) && arg1.forAll(!weightMatcher(_)) =>
-        MetaEmptyFactor // MetaLinearFactorLeaf(arg1, matchStructure)
+        MetaLinearFactorLeaf(arg1, matchStructure)
       case _ => MetaFactorLeaf(potential, matchStructure)
     }
 
@@ -233,10 +234,11 @@ trait StructureHelper[C <: Context] {
     domain match {
       case q"$all[..${_}]($unwrap[..${_}]($constructor))($cross(..$sets))"
         if all.symbol.name.encoded.startsWith("all") && unwrap.symbol.name.encoded.startsWith("unwrap") =>
-        val tpe = constructor.tpe
+        val tpe:Type = constructor.tpe
         //todo: we should find the structure of the case class based on the type information, not collected definitions
+        val members = tpe.members
         val caseClassName = tpe.typeSymbol.name.toTypeName
-        val caseClass = classes(caseClassName)
+        val caseClass = classes.getOrElse(caseClassName,null)
         val q"case class $className(..$fields)" = caseClass
         val subtypes = sets.map(createMetaStructure(metadata, _))
         MetaCaseClassStructure(tpe, fields, subtypes)

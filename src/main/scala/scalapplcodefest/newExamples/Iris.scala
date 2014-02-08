@@ -56,7 +56,7 @@ class Iris extends (() => Unit) {
 
     println(learned)
 
-    println(evaluate(test, predicted)(_.y))
+    println(util.Evaluator.evaluate(test, predicted)(_.y))
 
   }
 
@@ -82,14 +82,6 @@ class Iris extends (() => Unit) {
     data
   }
 
-  def evaluate[T](target: Seq[T], guess: Seq[T])(attribute: T => Any): Evaluation = {
-    val evaluations = for ((t, g) <- target.view zip guess.view) yield evaluate(t, g)(attribute)
-    val reduced = evaluations.foldLeft(Evaluation())(_ + _)
-    reduced
-  }
-
-  def evaluate[T](target: T, guess: T)(attribute: T => Any): Evaluation =
-    if (attribute(target) == attribute(guess)) Evaluation(tp = 1, tn = 1) else Evaluation(fp = 1, fn = 1)
 
   def main(args: Array[String]) {
     GenerateSources.generate(

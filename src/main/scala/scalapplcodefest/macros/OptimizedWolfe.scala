@@ -127,9 +127,13 @@ class MacroHelper[C <: Context](val context: C) extends TransformHelper[C] with 
   }).toMap
 
   //todo: should this be looking up by symbol?
-  val classes = context.enclosingRun.units.flatMap(_.body.collect({
+  val classes = context.enclosingUnit.body.collect({
     case cd@ClassDef(_, name, _, _) => name -> cd
-  })).toMap
+  }).toMap
+  //todo: should this be looking up by symbol?
+//  val classes = context.enclosingRun.units.flatMap(_.body.collect({
+//    case cd@ClassDef(_, name, _, _) => name -> cd
+//  })).toMap
 
 
 }

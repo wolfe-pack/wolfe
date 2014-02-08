@@ -4,6 +4,7 @@ import scalapplcodefest.sbt.Compile
 import scalapplcodefest.Wolfe
 import scala.util.Random
 import scalapplcodefest.Wolfe.Objective.{Perceptron, Differentiable}
+import scalapplcodefest.util.Evaluator
 
 /**
  * This example shows how to train and run a linear classifier on the IRIS dataset. This example intentionally uses
@@ -54,7 +55,7 @@ class IrisShort extends (() => Unit) {
 
     println(learned)
 
-    println(evaluate(test, predicted)(_.y))
+    println(Evaluator.evaluate(test, predicted)(_.y))
 
   }
 
