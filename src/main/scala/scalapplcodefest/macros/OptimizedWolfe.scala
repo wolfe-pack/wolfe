@@ -3,8 +3,10 @@ package scalapplcodefest.macros
 import scala.reflect.macros.Context
 import scala.language.experimental.macros
 import scala.collection.mutable
-import scalapplcodefest.MPGraph
-import scalapplcodefest.MPGraph.Factor
+import scalapplcodefest._
+import cc.factorie.WeightsSet
+import cc.factorie.optimize.{Perceptron, OnlineTrainer, Trainer}
+import scalapplcodefest.sbt.FactorieConverter
 
 //import scalapplcodefest.Wolfe._
 
@@ -16,6 +18,10 @@ object OptimizedWolfe extends WolfeAPI {
   override def argmax[T](data: Iterable[T])
                         (where: (T) => Boolean)
                         (obj: (T) => Double) = macro implArgmax[T]
+
+  override def argmin[T](dom: Iterable[T])
+                        (where: (T) => Boolean)
+                        (obj: (T) => Double) = macro implArgmin[T]
 
   def all[A, B](mapper: A => B)(implicit dom: Iterable[A]): Iterable[B] = macro implAll[A, B]
 
@@ -53,7 +59,29 @@ object OptimizedWolfe extends WolfeAPI {
     c.Expr[T](result)
 
   }
+
+  def implArgmin[T: c.WeakTypeTag](c: Context)
+                                  (dom: c.Expr[Iterable[T]])
+                                  (where: c.Expr[T => Boolean])
+                                  (obj: c.Expr[T => Double]) = {
+
+    import c.universe._
+
+    val helper = new MacroHelper[c.type](c)
+    import helper._
+
+    //todo: check that domain dom is vector domain
+
+    val gradientBased = MetaGradientBasedMinimizer(dom.tree, obj.tree)
+
+    gradientBased.trainingCode match {
+      case Some(code) => c.Expr[T](code.tree)
+      case _ => reify(BruteForceWolfe.argmin(dom.splice)(where.splice)(obj.splice))
+    }
+  }
+
 }
+
 
 object DomainExpansions {
 
@@ -76,134 +104,160 @@ object DomainExpansions {
 
 }
 
-class MacroHelper[C <: Context](val context: C) extends TransformHelper[C] with StructureHelper[C] {
+class MacroHelper[C <: Context](val context: C) extends TransformHelper[C] with StructureHelper[C] with GradientBasedMinimizationHelper[C] {
+
+  import context.universe._
+
+  //mapping from val names to definitions (we use methods with no arguments as vals too)
+  val vals = context.enclosingUnit.body.collect({
+    case ValDef(_, name, _, rhs) => name -> rhs
+    case DefDef(_, name, _, Nil, _, rhs) => name -> rhs
+  }).toMap
+
+  //mapping from val names to definitions (we use methods with no arguments as vals too)
+  val valDefs = context.enclosingUnit.body.collect({
+    case v: ValDef if !v.rhs.isEmpty => v.symbol -> v.rhs
+    case d: DefDef if d.vparamss == Nil => d.symbol -> d.rhs
+  }).toMap
+
+
+  //mapping from symbols to methods
+  val defs = context.enclosingUnit.body.collect({
+    case d: DefDef if d.vparamss != Nil => d.symbol -> d
+  }).toMap
+
+  //todo: should this be looking up by symbol?
+  val classes = context.enclosingRun.units.flatMap(_.body.collect({
+    case cd@ClassDef(_, name, _, _) => name -> cd
+  })).toMap
+
+
 }
 
-trait TransformHelper[C <: Context] {
+
+trait GradientBasedMinimizationHelper[C <: Context] {
   this: MacroHelper[C] =>
 
   import context.universe._
 
-  def transform(tree: Tree, pf: PartialFunction[Tree, Tree]): context.Tree = new TransformWithPartialFunction(pf).transform(tree)
+  case class MetaGradientBasedMinimizer(dom: Tree, obj: Tree) {
 
-  class TransformWithPartialFunction(pf: PartialFunction[Tree, Tree]) extends Transformer {
-    override def transform(tree: Tree) = {
-      val transformed = super.transform(tree)
-      if (pf.isDefinedAt(transformed)) pf(transformed) else transformed
-    }
-  }
+    //todo: do something with dom
+    val instanceVariableName = newTermName("_instance")
+    val indexVariableName    = newTermName("_index")
 
-  def replaceMethods(tree: Tree, defDefs: Map[Symbol, DefDef]) = {
-    val transformer = new ReplaceMethodsWithFunctions(defDefs)
-    transformer transform tree
-  }
+    val normalizedObj = replaceVals(betaReduce(replaceMethods(simplifyBlocks(obj), defs)), valDefs)
 
-  val betaReducer     = new BetaReducer
-  val blockSimplifier = new BlockSimplifier
-
-  def betaReduce(tree: Tree) = betaReducer transform tree
-  def simplifyBlocks(tree: Tree) = blockSimplifier transform tree
-
-  def distinctTrees(trees: List[Tree], result: List[Tree] = Nil): List[Tree] = trees match {
-    case Nil => result
-    case head :: tail =>
-      val distinct = if (result.exists(_.equalsStructure(head))) result else head :: result
-      distinctTrees(tail, distinct)
-  }
-
-  class BlockSimplifier extends Transformer {
-    override def transform(tree: Tree) = tree match {
-      case Block(Nil, expr) => super.transform(expr)
-      case _ => super.transform(tree)
-    }
-  }
-
-  class ReplaceMethodsWithFunctions(defDefs: Map[Symbol, DefDef]) extends Transformer {
-    def getDef(f: Tree) = f match {
-      case TypeApply(templateFun, _) => defDefs.get(templateFun.symbol)
-      case _ => defDefs.get(f.symbol)
+    //convert objective into sum if not already a sum
+    val sum: Tree = normalizedObj match {
+      case s@q"(${_}) => sum(${_})(${_})(${_})" => s
+      case q"($weights) => $rhs" => q"($weights) => sum(Seq(0))(_ => true)($rhs)" //todo: add numeric
     }
 
-    def createFunction(defArgs: List[List[ValDef]], rhs: Tree): Function = defArgs match {
-      case Nil => Function(Nil, rhs)
-      case headArgs :: Nil => Function(headArgs, rhs)
-      case headArgs :: tail => Function(headArgs, createFunction(tail, rhs))
+    //now get per-instance objective and function argument
+    val q"($weights) => sum($data)($pred)(($arg) => $perInstance)" = sum
+
+    //replace instance variable in client code with instance variable that we use in factorie code
+    val replaced: Tree = transform(perInstance, {
+      case i: Ident if i.symbol == arg.symbol => Ident(instanceVariableName)
+    })
+
+    println(replaced)
+
+    //    val trainingCode = for (gradientCalculator <- None) yield {
+    val trainingCode = for (gradientCalculator <- generateGradientCalculatorClass(replaced, weights, indexVariableName)) yield {
+      val generator = context.Expr[GradientCalculator](context.resetAllAttrs(gradientCalculator))
+      val trainerFor = reify((w: WeightsSet) => new OnlineTrainer(w, new Perceptron, 10))
+      val trainingData = context.Expr[Iterable[Any]](data)
+      val code = generateFactorieCode(generator, trainerFor, trainingData)
+      code
     }
 
-    override def transform(tree: Tree): Tree = tree match {
-      case TypeApply(f@Ident(_), _) => getDef(f) match {
-        case Some(DefDef(_, _, _, defArgs, _, rhs)) => createFunction(defArgs, transform(rhs))
-        case _ => super.transform(tree)
+
+    //generate gradient calculator for arguments in the sum
+
+    def generateFactorieCode[T](gradientCalculatorGenerator: Expr[GradientCalculator],
+                                trainerFor: Expr[WeightsSet => Trainer],
+                                trainingData: Expr[Iterable[T]]) = reify({
+      import cc.factorie.WeightsSet
+      import cc.factorie.la.WeightsMapAccumulator
+      import cc.factorie.util.DoubleAccumulator
+      import cc.factorie.optimize._
+      import scalapplcodefest.sbt._
+      import scalapplcodefest._
+
+      val _index = new Index
+      val weightsSet = new WeightsSet
+      val key = weightsSet.newWeights(new DenseVector(10000))
+      val examples = for (_instance <- trainingData.splice) yield new Example {
+        val gradientCalculator = gradientCalculatorGenerator.splice
+        def accumulateValueAndGradient(value: DoubleAccumulator, gradient: WeightsMapAccumulator) = {
+          val weights = weightsSet(key).asInstanceOf[Vector]
+          val (v, g) = gradientCalculator.valueAndGradient(weights)
+          value.accumulate(v)
+          gradient.accumulate(key, g, -1.0)
+        }
       }
-      case f@Ident(_) => getDef(f) match {
-        case Some(DefDef(_, _, _, defArgs, _, rhs)) => createFunction(defArgs, transform(rhs))
-        case _ => super.transform(tree)
-      }
-      case _ => super.transform(tree)
-    }
+      val trainer = trainerFor.splice(weightsSet)
+      trainer.trainFromExamples(examples)
+      FactorieConverter.toWolfeVector(weightsSet(key).asInstanceOf[Vector], _index)
+    })
+
   }
 
-  class Substituter(binding: Map[Symbol, Tree]) extends Transformer {
-    override def transform(tree: Tree) = tree match {
-      case i: Ident => binding.get(i.symbol) match {
-        case Some(value) => value
-        case _ => super.transform(tree)
-      }
-      case _ => super.transform(tree)
-    }
+  trait MetaGradientCalculator {
+    def className: TypeName
+    def construct: Tree
   }
 
-  class BetaReducer extends Transformer {
+  //now create a gradient calculator class
+  def generateGradientCalculatorClass(term: Tree, weightVar: ValDef,
+                                      indexName: TermName): Option[Tree] = {
+    term match {
+      case ApplyDoubleMinus(arg1, arg2) =>
+        for (g1 <- generateGradientCalculatorClass(arg1, weightVar, indexName);
+             g2 <- generateGradientCalculatorClass(arg2, weightVar, indexName)) yield
+          q"""new GradientCalculator {
+                val arg1 = $g1
+                val arg2 = $g2
+                def valueAndGradient(param: scalapplcodefest.Vector): (Double, scalapplcodefest.Vector) = {
+                  val (v1,g1) = arg1.valueAndGradient(param)
+                  val (v2,g2) = arg2.valueAndGradient(param)
+                  (v1 - v2, g1 - g2)
+                }
+              }
+          """
 
-    def substitute(defArgs: List[ValDef], args: List[Tree], tree: Tree): Tree = {
-      val binding = (defArgs.map(_.symbol) zip args).toMap
-      val substituter = new Substituter(binding)
-      val result = substituter transform tree
-      result
-    }
+      case DotProduct(arg1, arg2) if !arg1.exists(_.symbol == weightVar.symbol) && arg2.symbol == weightVar.symbol =>
+        Some( q"""new GradientCalculator {
+          val coefficient = FactorieConverter.toFactorieSparseVector($arg1,$indexName)
+          def valueAndGradient(param: scalapplcodefest.Vector): (Double, scalapplcodefest.Vector) = {
+            (coefficient dot param,coefficient)
+        }}""")
+      case q"max($sampleSpace)($pred)($obj)" =>
+        //create MPGraph
+        val typed = context.typeCheck(sampleSpace)
+        val metaData = MetaStructuredGraph(typed, pred, obj, {
+          case i: Ident => i.symbol == weightVar.symbol
+          case _ => false
+        })
 
-
-    override def transform(tree: Tree): Tree = {
-      val transformed = super.transform(tree)
-      transformed match {
-        case Apply(Function(defArgs, rhs), args) => substitute(defArgs, args, rhs)
-        case other => other
-      }
-    }
-  }
-
-
-  trait ApplyBinaryOperator {
-    def unapply(tree: Tree): Option[(Tree, Tree)]
-  }
-
-  class ApplyDoubleOperator(name: String) extends ApplyBinaryOperator {
-    def unapply(tree: Tree) = tree match {
-      //      case Apply(s@Select(arg1, opName), List(arg2))
-      //        if s.symbol.owner == definitions.DoubleClass && opName.encoded == name => Some(arg1, arg2)
-      case Apply(s@Select(arg1, opName), List(arg2)) if opName.encoded == name => Some(arg1, arg2)
+        //need to replace occurences of weightVariable in objective with toWolfeVector(param)
+        Some( q"""new GradientCalculator {
+          ${metaData.classDef}
+          val _graph = new ${metaData.graphClassName}($indexName)
+          def valueAndGradient(param: scalapplcodefest.Vector): (Double, scalapplcodefest.Vector) = {
+            _graph.${metaData.mpGraphName}.weights = param
+            MaxProduct(_graph.${metaData.mpGraphName},1)
+            (_graph.${metaData.mpGraphName}.value,_graph.${metaData.mpGraphName}.gradient)
+        }}""")
+//        Some(q"???")
       case _ => None
     }
   }
-
-  object ApplyDoubleMinus extends ApplyDoubleOperator("$minus")
-  object ApplyDoublePlus extends ApplyDoubleOperator("$plus")
-  object ApplyDoubleTimes extends ApplyDoubleOperator("$times")
-
-  class Flattened(operator: ApplyBinaryOperator) {
-    val Match = this
-    def unapply(tree: Tree): Option[List[Tree]] = tree match {
-      case operator(Match(args1), Match(args2)) => Some(args1 ::: args2)
-      case operator(arg1, Match(args2)) => Some(arg1 :: args2)
-      case operator(Match(args1), arg2) => Some(arg2 :: args1)
-      case operator(arg1, arg2) => Some(List(arg1, arg2))
-      case _ => None
-    }
-  }
-
-  object FlatDoubleSum extends Flattened(ApplyDoublePlus)
-  object FlatDoubleProduct extends Flattened(ApplyDoubleTimes)
 
 }
 
-
+trait GradientCalculator {
+  def valueAndGradient(param: scalapplcodefest.Vector): (Double, scalapplcodefest.Vector)
+}
