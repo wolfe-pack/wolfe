@@ -66,7 +66,7 @@ class Iris extends (() => Unit) {
 @Analyze object Iris {
 
   type IrisClass = String
-  val classes = Set("Iris-setosa", "Iris-versicolor", "Iris-virginica")
+  val classes = Seq("Iris-setosa", "Iris-versicolor", "Iris-virginica")
 
   case class Observed(sepalLength: Double, sepalWidth: Double, petalLength: Double, petalWidth: Double)
 

@@ -28,20 +28,6 @@ trait StructureHelper[C <: Context] {
 
     val factorieConverter = q"scalapplcodefest.sbt.FactorieConverter"
 
-    //mapping from val names to definitions (we use methods with no arguments as vals too)
-    val vals = context.enclosingUnit.body.collect({
-      case ValDef(_, name, _, rhs) => name -> rhs
-      case DefDef(_, name, _, Nil, _, rhs) => name -> rhs
-    }).toMap
-
-    //mapping from symbols to methods
-    val defs = context.enclosingUnit.body.collect({
-      case d: DefDef => d.symbol -> d
-    }).toMap
-
-    val classes = context.enclosingUnit.body.collect({
-      case cd@ClassDef(_, name, _, _) => name -> cd
-    }).toMap
 
     val normalizedObj  = betaReduce(replaceMethods(simplifyBlocks(obj), defs))
     val normalizedPred = betaReduce(replaceMethods(simplifyBlocks(where), defs))
@@ -143,13 +129,14 @@ trait StructureHelper[C <: Context] {
       case q"sum[..${_}]($qdom)($qpred)($qobj)" =>
         val q"(..$x) => $rhs" = qobj
         MetaQuantifiedSum(x, List(qdom), qpred, rhs, matchStructure)
+      case DotProduct(arg1, arg2) if weightMatcher(arg2) && arg1.forAll(!weightMatcher(_)) =>
+        MetaEmptyFactor // MetaLinearFactorLeaf(arg1, matchStructure)
       case _ => MetaFactorLeaf(potential, matchStructure)
     }
 
     case object MetaEmptyFactor extends MetaFactorTree {
       def children = Nil
       val setup = EmptyTree
-
     }
 
     case class MetaPropositionalSum(args: List[Tree], children: List[MetaFactorTree]) extends MetaFactorTree {
@@ -204,7 +191,7 @@ trait StructureHelper[C <: Context] {
       val loop = loopSettings(arguments) {perSetting}
 
       val setup = q"""
-        val nodes = $nodes.toArray
+        val nodes:Array[Node] = $nodes.toArray
         val dims = nodes.map(_.dim)
         val settingsCount = dims.product
         val settings = Array.ofDim[Array[Int]](settingsCount)
@@ -245,10 +232,11 @@ trait StructureHelper[C <: Context] {
   def createMetaStructure(metadata: MetaStructuredGraph, domain: Tree): MetaStructure = {
     domain match {
       case q"$all[..${_}]($unwrap[..${_}]($constructor))($cross(..$sets))"
-        if all.symbol.name.encoded == "all" && unwrap.symbol.name.encoded.startsWith("unwrap") =>
+        if all.symbol.name.encoded.startsWith("all") && unwrap.symbol.name.encoded.startsWith("unwrap") =>
         val tpe = constructor.tpe
+        //todo: we should find the structure of the case class based on the type information, not collected definitions
         val caseClassName = tpe.typeSymbol.name.toTypeName
-        val caseClass = metadata.classes(caseClassName)
+        val caseClass = classes(caseClassName)
         val q"case class $className(..$fields)" = caseClass
         val subtypes = sets.map(createMetaStructure(metadata, _))
         MetaCaseClassStructure(tpe, fields, subtypes)

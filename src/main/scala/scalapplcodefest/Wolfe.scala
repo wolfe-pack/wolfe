@@ -340,9 +340,6 @@ trait SampleSpaceDefs {
   implicit def toSeq[T](seq: Iterable[T]) = seq.toSeq
 
   class All[T] extends Iterable[T] {
-    def +(elem: T) = this
-    def -(elem: T) = sys.error("Can't remove element from all objects")
-    def contains(elem: T) = true
     def iterator = sys.error("Can't iterate over all objects")
   }
 

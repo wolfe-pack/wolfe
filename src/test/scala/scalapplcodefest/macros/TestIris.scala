@@ -12,6 +12,7 @@ import scalapplcodefest.newExamples.Iris
 object TestIris {
 
   import Iris._
+  import OptimizedWolfe._
 
   def main(args: Array[String]) {
     //random generator for shuffling the data
@@ -23,8 +24,8 @@ object TestIris {
     //train/test set split
     val (train, test) = dataset.splitAt(dataset.size / 2)
 
-    //the set of all possible dates
-    def sampleSpace = all2(Data)(c(all2(Observed)(c(doubles, doubles, doubles, doubles)), classes))
+    //the set of all possible dates for a given observation
+    def Y(data:Data) = all2(Data)(c(Seq(data.x), classes))
 
     //joint feature function on data (x,y)
     def features(data: Data) =
@@ -38,7 +39,7 @@ object TestIris {
 
     //the total training perceptron loss of the model given the weights
     @Differentiable(Perceptron, 5)
-    def loss(weights: Vector) = sum(train)(_ => true)(data => max(sampleSpace)(_.x == data.x)(model(weights)) - model(weights)(data))
+    def loss(weights: Vector) = sum(train)(_ => true)(i => max(Y(i))(_ => true)(model(weights)) - model(weights)(i))
 
     //the learned weights that minimize the perceptron loss
     val learned = argmin(vectors)(_ => true)(loss)
