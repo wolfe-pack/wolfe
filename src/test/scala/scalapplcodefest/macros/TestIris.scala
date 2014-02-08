@@ -1,6 +1,6 @@
 package scalapplcodefest.macros
 
-import scalapplcodefest.{Util, Wolfe}
+import scalapplcodefest.{MaxProduct, Util, Wolfe}
 import Wolfe._
 import scala.util.Random
 import scalapplcodefest.Wolfe.Objective.{Perceptron, Differentiable}
@@ -55,6 +55,7 @@ object TestIris {
       oneHot('pw -> data.y, data.x.petalWidth)
 
     //the linear model
+    @MaxByInference(MaxProduct(_,1))
     def model(weights: Vector)(data: Data) = features(data) dot weights
 
     //the total training perceptron loss of the model given the weights

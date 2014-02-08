@@ -3,6 +3,7 @@ package scalapplcodefest.macros
 import cc.factorie.WeightsSet
 import cc.factorie.optimize.Trainer
 import scala.annotation.StaticAnnotation
+import scalapplcodefest.MPGraph
 
 /**
  * @author Sebastian Riedel
@@ -10,6 +11,7 @@ import scala.annotation.StaticAnnotation
 trait WolfeAPI {
 
   class MinByDescent(trainer: WeightsSet => Trainer) extends StaticAnnotation
+  class MaxByInference(inference: MPGraph => Unit) extends StaticAnnotation
 
   def argmax[T](data:Iterable[T])(where:T => Boolean)(obj:T => Double): T = {
     data.filter(where).maxBy(obj)
