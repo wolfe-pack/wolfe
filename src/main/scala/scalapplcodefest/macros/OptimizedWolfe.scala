@@ -166,16 +166,33 @@ trait GradientBasedMinimizationHelper[C <: Context] {
       case i: Ident if i.symbol == arg.symbol => Ident(instanceVariableName)
     })
 
-    println(replaced)
+    //val wolfe = rootMirror.getModuleByName(newTermName("scalapplcodefest.Wolfe"))
+
+    //check annotation on original objective
+    val trainer = simplifyBlocks(obj) match {
+      case q"(${_}) => $rhs(${_})" =>
+        println(rhs)
+        val t: Tree = rhs
+        t.symbol.annotations.collectFirst({
+          //todo: use tpe symbol and check against MinByDescent symbol
+          case Annotation(tpe, List(arg), _) if tpe.typeSymbol.name.encoded == "MinByDescent" => arg
+        }) match {
+          case Some(arg) => context.Expr[WeightsSet => Trainer](arg)
+          case _ => reify((w: WeightsSet) => new OnlineTrainer(w, new Perceptron, 5))
+        }
+      case _ => reify((w: WeightsSet) => new OnlineTrainer(w, new Perceptron, 5))
+    }
 
     //    val trainingCode = for (gradientCalculator <- None) yield {
     val trainingCode = for (gradientCalculator <- generateGradientCalculatorClass(replaced, weights, indexVariableName)) yield {
       val generator = context.Expr[GradientCalculator](context.resetAllAttrs(gradientCalculator))
-      val trainerFor = reify((w: WeightsSet) => new OnlineTrainer(w, new Perceptron, 5))
+      //      val trainerFor = reify((w: WeightsSet) => new OnlineTrainer(w, new Perceptron, 5))
       val trainingData = context.Expr[Iterable[Any]](data)
-      val code = generateFactorieCode(generator, trainerFor, trainingData)
+      val code = generateFactorieCode(generator, trainer, trainingData)
       code
     }
+
+    //todo: we might want to replace _instance in the code with a fresh variable name
 
 
     //generate gradient calculator for arguments in the sum
