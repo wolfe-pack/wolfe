@@ -1,14 +1,12 @@
 package scalapplcodefest
 
 import gnu.trove.strategy.HashingStrategy
-import java.util
 import gnu.trove.map.custom_hash.TObjectIntCustomHashMap
 import scala.collection.mutable
 import gnu.trove.procedure.TObjectIntProcedure
-import scala.collection.convert.decorateAsScala
 import scalapplcodefest.value.{Fun, AllOfType, Ints}
 import scalapplcodefest.term.{Constant, Term, SeqTerm, FunApp}
-import java.io.{ObjectInputStream, ObjectOutputStream, DataOutputStream}
+import java.io.{ObjectInputStream, ObjectOutputStream}
 
 /**
  * @author Sebastian Riedel
