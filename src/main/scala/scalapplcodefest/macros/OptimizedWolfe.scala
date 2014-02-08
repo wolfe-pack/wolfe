@@ -131,9 +131,9 @@ class MacroHelper[C <: Context](val context: C) extends TransformHelper[C] with 
     case cd@ClassDef(_, name, _, _) => name -> cd
   }).toMap
   //todo: should this be looking up by symbol?
-//  val classes = context.enclosingRun.units.flatMap(_.body.collect({
-//    case cd@ClassDef(_, name, _, _) => name -> cd
-//  })).toMap
+  //  val classes = context.enclosingRun.units.flatMap(_.body.collect({
+  //    case cd@ClassDef(_, name, _, _) => name -> cd
+  //  })).toMap
 
 
 }
@@ -182,7 +182,7 @@ trait GradientBasedMinimizationHelper[C <: Context] {
 
     def generateFactorieCode[T](gradientCalculatorGenerator: Expr[GradientCalculator],
                                 trainerFor: Expr[WeightsSet => Trainer],
-                                trainingData: Expr[Iterable[T]]) = reify({
+                                trainingData: Expr[Iterable[T]], scale: Expr[Double] = context.literal(-1.0)) = reify({
       import cc.factorie.WeightsSet
       import cc.factorie.la.WeightsMapAccumulator
       import cc.factorie.util.DoubleAccumulator
@@ -199,7 +199,7 @@ trait GradientBasedMinimizationHelper[C <: Context] {
           val weights = weightsSet(key).asInstanceOf[Vector]
           val (v, g) = gradientCalculator.valueAndGradient(weights)
           value.accumulate(v)
-          gradient.accumulate(key, g, -1.0)
+          gradient.accumulate(key, g, scale.splice)
         }
       }
       val trainer = trainerFor.splice(weightsSet)
@@ -255,7 +255,7 @@ trait GradientBasedMinimizationHelper[C <: Context] {
             MaxProduct(_graph.${metaData.mpGraphName},1)
             (_graph.${metaData.mpGraphName}.value,_graph.${metaData.mpGraphName}.gradient)
         }}""")
-//        Some(q"???")
+      //        Some(q"???")
       case _ => None
     }
   }

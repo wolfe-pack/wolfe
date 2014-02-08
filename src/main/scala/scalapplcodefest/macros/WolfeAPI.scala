@@ -1,9 +1,15 @@
 package scalapplcodefest.macros
 
+import cc.factorie.WeightsSet
+import cc.factorie.optimize.Trainer
+import scala.annotation.StaticAnnotation
+
 /**
  * @author Sebastian Riedel
  */
 trait WolfeAPI {
+
+  class MinByDescent(trainer: WeightsSet => Trainer) extends StaticAnnotation
 
   def argmax[T](data:Iterable[T])(where:T => Boolean)(obj:T => Double): T = {
     data.filter(where).maxBy(obj)
