@@ -4,7 +4,6 @@ import java.io.{FileInputStream, InputStream}
 import scalapplcodefest.value.SetValue
 import scalapplcodefest.term._
 import cc.factorie.maths.ArrayOps
-import java.util
 import org.scalautils.{Bad, Good, Or}
 import scalapplcodefest.term.Var
 import scalapplcodefest.term.Predicate
@@ -148,7 +147,7 @@ class WithStateDo(doSomething: State => Unit) {
 object MoreArrayOps extends ArrayOps {
   def maxValue(s: A): Double = { var result = s(0); var i = 0; while (i < s.length) {if (s(i) > result) result = s(i); i += 1}; result }
   def maxNormalize(s: A) { val norm = maxValue(s); this -=(s, norm) }
-  def fill(s: A, v: Double) { util.Arrays.fill(s, v) }
+  def fill(s: A, v: Double) { java.util.Arrays.fill(s, v) }
 }
 
 
