@@ -36,11 +36,11 @@ trait StructureHelper[C <: Context] {
     val Function(List(predVarDef@ValDef(_, predVarName, _, _)), rootPred) = normalizedPred
 
     //inline the data tree
-//    val inlinedData = transform(data, {
-//      case i@Ident(name) => vals.getOrElse(name, i)
-//      case t => t
-//    })
-    val inlinedData = replaceVals(data,valDefs)
+    //    val inlinedData = transform(data, {
+    //      case i@Ident(name) => vals.getOrElse(name, i)
+    //      case t => t
+    //    })
+    val inlinedData = replaceVals(betaReduce(replaceMethods(simplifyBlocks(data), defs)), valDefs)
 
     val checked = context.typeCheck(inlinedData)
 
@@ -53,7 +53,7 @@ trait StructureHelper[C <: Context] {
     }
 
     //meta information about the root structure class.
-    val metaStructure = createMetaStructure(this, rootDom)
+    val metaStructure = createMetaStructure(this, checked)
 
     val objArgMatcher  = createRootMatcher(objVarName, Ident(structureName))(_)
     val predArgMatcher = createRootMatcher(predVarName, Ident(structureName))(_)
@@ -79,14 +79,11 @@ trait StructureHelper[C <: Context] {
     val classDefs = metaStructure.all.map(_.classDef)
 
     val domDefs =
-      metaStructure.allDomainDefs ++
+//      metaStructure.allDomainDefs ++
       objFactorTree.all.flatMap(_.domainDefs) ++
       predFactorTree.all.flatMap(_.domainDefs)
 
-
-    //scalapplcodefest.sbt.FactorieConverter.toWolfeVector(fweights,$indexId)}
-
-    val classDef = q"""
+    val classDef = context.resetAllAttrs( q"""
       class $graphClassName(val $vectorIndexName: scalapplcodefest.Index) {
         import scalapplcodefest._
         import scalapplcodefest.Wolfe._
@@ -95,7 +92,7 @@ trait StructureHelper[C <: Context] {
 
         ..$domDefs
 
-        ..$classDefs
+        ${metaStructure.classDef}
 
         val $mpGraphName = new MPGraph()
 
@@ -110,7 +107,7 @@ trait StructureHelper[C <: Context] {
 
         $mpGraphName.build()
       }
-    """
+    """)
 
     trait MetaFactorTree {
       def children: List[MetaFactorTree]
@@ -121,13 +118,13 @@ trait StructureHelper[C <: Context] {
 
     def createMetaFactorTree(potential: Tree, matchStructure: Tree => Option[Tree]): MetaFactorTree = potential match {
       case EmptyTree => MetaEmptyFactor
-      case q"${_}.log(${FlatDoubleProduct(args)})" =>
+      case q"${_}.log(${FlatProduct(args)})" =>
         val children = args.map(a => createMetaFactorTree(q"log($a)", matchStructure))
         MetaPropositionalSum(args, children)
-      case FlatDoubleSum(args) =>
+      case FlatSum(args) =>
         val children = args.map(a => createMetaFactorTree(a, matchStructure))
         MetaPropositionalSum(args, children)
-      case q"sum[..${_}]($qdom)($qpred)($qobj)" =>
+      case QuantifiedSum(qdom,qpred,qobj) =>
         val q"(..$x) => $rhs" = qobj
         MetaQuantifiedSum(x, List(qdom), qpred, rhs, matchStructure)
       case DotProduct(arg1, arg2) if weightMatcher(arg2) && arg1.forAll(!weightMatcher(_)) =>
@@ -231,17 +228,29 @@ trait StructureHelper[C <: Context] {
   }
 
   def createMetaStructure(metadata: MetaStructuredGraph, domain: Tree): MetaStructure = {
+
+    def caseClassStructure(constructor: Tree, sets: List[Tree]) = {
+      val tpe: Type = constructor.tpe
+      //todo: we should find the structure of the case class based on the type information, not collected definitions
+      val members = tpe.members
+      val caseClassName = tpe.typeSymbol.name.toTypeName
+      val caseClass = classes.getOrElse(caseClassName, null)
+      val q"case class $className(..$fields)" = caseClass
+      val subtypes = sets.map(createMetaStructure(metadata, _))
+      MetaCaseClassStructure(tpe, fields, subtypes)
+    }
+
     domain match {
+      //todo: after typeCheck there may be a different structure here, need to catch it.
       case q"$all[..${_}]($unwrap[..${_}]($constructor))($cross(..$sets))"
         if all.symbol.name.encoded.startsWith("all") && unwrap.symbol.name.encoded.startsWith("unwrap") =>
-        val tpe:Type = constructor.tpe
-        //todo: we should find the structure of the case class based on the type information, not collected definitions
-        val members = tpe.members
-        val caseClassName = tpe.typeSymbol.name.toTypeName
-        val caseClass = classes.getOrElse(caseClassName,null)
-        val q"case class $className(..$fields)" = caseClass
-        val subtypes = sets.map(createMetaStructure(metadata, _))
-        MetaCaseClassStructure(tpe, fields, subtypes)
+        caseClassStructure(constructor, sets)
+      case q"$all[..${_}]($constructor)($set)"
+        if all.symbol.name.encoded.startsWith("all") =>
+        caseClassStructure(constructor, List(set))
+      case q"${_}.seqs[..${_}]($srcSeq.map[..${_}](($arg) => $argDom)(${_}))" =>
+        val TypeRef(_, _, List(argType)) = domain.tpe
+        MetaSeqVarDomStructure(argType,srcSeq,arg.name,createMetaStructure(metadata, argDom))
       case q"scalapplcodefest.Wolfe.Pred[${_}]($keyDom)" =>
         val keyDoms = keyDom match {
           case q"scalapplcodefest.Wolfe.$cross[..${_}](..$doms)" => doms
@@ -262,7 +271,7 @@ trait StructureHelper[C <: Context] {
     def classDef: ClassDef
     def argType: Type
     def children: List[MetaStructure]
-    def all: List[MetaStructure]
+    def all: List[MetaStructure] = this :: children.flatMap(_.all)
     def matcher(parent: Tree => Option[Tree], result: Tree => Option[Tree]): Tree => Option[Tree]
 
   }
@@ -283,6 +292,48 @@ trait StructureHelper[C <: Context] {
   }
 
 
+  case class MetaSeqVarDomStructure(argType:Type, domSeqSrc: Tree, argName: TermName, elementStructure: MetaStructure) extends MetaStructure {
+    def children = List(elementStructure)
+    def domainDefs = Nil
+
+    def matcher(parent: Tree => Option[Tree], result: Tree => Option[Tree]): Tree => Option[Tree] = {
+      def matchApp(tree: Tree) = {
+        def replace(f: Tree, arg: Tree) = parent(f) match {
+          case Some(parentStructure) =>
+            val substructure = q"$parentStructure.subStructures($arg)"
+            Some(substructure)
+          case _ => None
+        }
+        tree match {
+          case q"$f.apply($arg)" => replace(f, arg)
+          case q"$f($arg)" => replace(f, arg)
+          case _ => None
+        }
+      }
+      elementStructure.matcher(matchApp, (t: Tree) => matchApp(t).orElse(result(t)))
+    }
+
+    //todo: get rid of reflective call by allowing/requiring constructors for structures that take the domain as argument
+    val className = newTypeName(context.fresh("SeqStructure"))
+    val classDef  = q"""
+      final class $className extends Structure[$argType] with HasSettingIterator[$argType]{
+        val subStructures = $domSeqSrc.map($argName => {
+          ${elementStructure.classDef}
+          new ${elementStructure.className}
+        }).toArray
+        def nodes() = subStructures.iterator.flatMap(_.nodes())
+        def newIterator() = Structure.settingsIterator(subStructures.toList)()
+        def value() = subStructures.view.map(_.value()).force.toSeq
+        def setToArgmax() {subStructures.foreach(_.setToArgmax())}
+        def observe(s:$argType) {
+          import scala.language.reflectiveCalls
+          Range(0,s.size).foreach( i => subStructures(i).observe(s(i)))
+        }
+      }
+    """
+
+  }
+
   case class MetaFunStructure(tpe: Type, keyDoms: List[Tree], valueType: MetaStructure) extends MetaStructure {
     val keyDomNames   = List.fill(keyDoms.size)(newTermName(context.fresh("funKeyDom")))
     val keyIndexNames = List.fill(keyDoms.size)(newTermName(context.fresh("funKeyIndex")))
@@ -300,7 +351,6 @@ trait StructureHelper[C <: Context] {
     val domainDefs    = domDefs ++ indexDefs
 
 
-    def all = this :: valueType.all
     def children = List(valueType)
 
     def matcher(parent: Tree => Option[Tree], result: Tree => Option[Tree]): Tree => Option[Tree] = {
@@ -334,7 +384,9 @@ trait StructureHelper[C <: Context] {
     val observeSubStructure = q"${curriedArguments(tmpIds)}.observe(value($tuple))"
 
     val classDef = q"""
-      final class $className extends Structure[$argType] {
+      final class $className extends Structure[$argType]{
+        ${valueType.classDef}
+        ..$domainDefs
         private var iterator:Iterator[Unit] = _
         val subStructures = Array.fill(..$keyDomSizes)(new ${valueType.className})
         def subStructureIterator() = ${substructureIterator(keyDoms.size)}
@@ -354,6 +406,7 @@ trait StructureHelper[C <: Context] {
 
   case class MetaCaseClassStructure(tpe: Type, fields: List[ValDef], types: List[MetaStructure]) extends MetaStructure {
     val fieldsAndTypes  = fields zip types
+    val subClassDefs    = types.map(_.classDef)
     val argTypeName     = tpe.typeSymbol.name.toTypeName
     val className       = newTypeName(context.fresh(tpe.typeSymbol.name.encoded + "Structure"))
     val structureFields = for ((ValDef(mods, name, _, _), t) <- fields zip types) yield
@@ -363,6 +416,7 @@ trait StructureHelper[C <: Context] {
     val observeFields   = fields.map(f => q"${f.name}.observe(value.${f.name})")
     val classDef        = q"""
       final class $className extends Structure[$argTypeName] {
+        ..$subClassDefs
         ..$structureFields
         private var iterator:Iterator[Unit] = _
         def fields:Iterator[Structure[Any]] = Iterator(..$fieldIds)
@@ -375,8 +429,6 @@ trait StructureHelper[C <: Context] {
         def observe(value:$argTypeName) { ..$observeFields }
       }
     """
-
-    def all = this :: types.flatMap(_.all)
     def children = types
     def argType = tpe
     def domainDefs = Nil
@@ -407,9 +459,9 @@ trait StructureHelper[C <: Context] {
       q"val $domName = $domain.toArray",
       q"val $indexName = $domName.zipWithIndex.toMap")
     def children = Nil
-    def all = List(this)
     val classDef = q"""
       final class $className extends Structure[$argType] {
+        ..$domainDefs
         val node = ${meta.mpGraphName}.addNode($domName.length)
         private def updateValue() {node.value = node.domain(node.setting)}
         def value() = $domName(node.value)
@@ -549,7 +601,6 @@ trait StructureHelper[C <: Context] {
 
 }
 
-
 trait Structure[+T] {
   def nodes(): Iterator[MPGraph.Node]
   def value(): T
@@ -557,6 +608,18 @@ trait Structure[+T] {
   def resetSetting()
   def hasNextSetting: Boolean
   def nextSetting()
+}
+
+trait Observable[T] {
+  def observe(t:T)
+}
+
+trait HasSettingIterator[T] extends Structure[T] {
+  private var iterator: Iterator[Unit] = _
+  def newIterator(): Iterator[Unit]
+  def hasNextSetting = iterator.hasNext
+  def nextSetting() = iterator.next()
+  override def resetSetting() = { iterator = newIterator }
 }
 
 trait FactorTree {

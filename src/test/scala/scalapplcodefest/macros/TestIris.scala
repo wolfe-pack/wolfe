@@ -1,14 +1,11 @@
 package scalapplcodefest.macros
 
-import scalapplcodefest.{MaxProduct, Util, Wolfe}
+import scalapplcodefest.{MaxProduct, Wolfe}
 import Wolfe._
 import scala.util.Random
-import scalapplcodefest.Wolfe.Objective.{Perceptron, Differentiable}
-import scalapplcodefest.newExamples.Iris
 import scala.io.Source
-import scalapplcodefest.util.Evaluator
+import scalapplcodefest.util.{Util, Evaluator}
 import cc.factorie.optimize.{Perceptron, OnlineTrainer}
-import cc.factorie.WeightsSet
 
 /**
  * @author Sebastian Riedel

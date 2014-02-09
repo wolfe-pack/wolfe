@@ -81,8 +81,8 @@ trait AllObjects[T] extends SetValue[T] {
  * Set of all integers.
  */
 case object Ints extends AllObjects[Int] {
-  def iterator = Util.tooLargeToIterate
-  override def size = Util.tooLargeToCount
+  def iterator = UtilOld.tooLargeToIterate
+  override def size = UtilOld.tooLargeToCount
   override def head = 0
 
   case object Range extends BinaryOperatorSameDomain[Int,Set[Int]] {
@@ -121,7 +121,7 @@ case object Ints extends AllObjects[Int] {
 }
 
 trait AllObjectsLarge[T] extends AllObjects[T] {
-  def iterator = Util.tooLargeToIterate
+  def iterator = UtilOld.tooLargeToIterate
   override def toString() = getClass.getSimpleName
 }
 
@@ -129,7 +129,7 @@ trait AllObjectsLarge[T] extends AllObjects[T] {
  * Set of all vectors.
  */
 case object Vectors extends AllObjectsLarge[Vector] {
-  override def size = Util.tooLargeToCount
+  override def size = UtilOld.tooLargeToCount
   override def head = Zero
 
   val Zero = new ScalarTensor(0.0)

@@ -236,7 +236,7 @@ trait GradientBasedMinimizationHelper[C <: Context] {
   def generateGradientCalculatorClass(term: Tree, weightVar: ValDef,
                                       indexName: TermName): Option[Tree] = {
     term match {
-      case ApplyDoubleMinus(arg1, arg2) =>
+      case ApplyMinus(arg1, arg2) =>
         for (g1 <- generateGradientCalculatorClass(arg1, weightVar, indexName);
              g2 <- generateGradientCalculatorClass(arg2, weightVar, indexName)) yield
           q"""new GradientCalculator {
