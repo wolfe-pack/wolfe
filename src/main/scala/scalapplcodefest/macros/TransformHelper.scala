@@ -24,9 +24,9 @@ trait TransformHelper[C <: Context] {
     transformer transform tree
   }
 
-  def replaceVals(tree:Tree, defs:Map[Symbol,Tree]) = {
+  def replaceVals(tree: Tree, defs: Map[Symbol, Tree]) = {
     transform(tree, {
-      case i:Ident => defs.getOrElse(i.symbol, i)
+      case i: Ident => defs.getOrElse(i.symbol, i)
       case t => t
     })
   }
@@ -106,30 +106,56 @@ trait TransformHelper[C <: Context] {
     }
   }
 
+  class DotDistributor extends Transformer {
+
+    def applyRecursively(args: List[Tree], op: TermName = newTermName("+"), result: Tree = EmptyTree): Tree = args match {
+      case Nil => result
+      case head :: tail =>
+        val select = if (result.isEmpty) head else q"$result.$op($head)"
+        applyRecursively(tail, op, select)
+    }
+
+    def distributeDots(args1: List[Tree], args2: List[Tree]): List[Tree] =
+      for (a1 <- args1; a2 <- args2) yield q"$a1.dot($a2)"
+
+    override def transform(tree: Tree): Tree = {
+      val transformed = tree match {
+        case DotProduct(QuantifiedSum(qdom,qpred,qobj),arg2) => ???
+        case DotProduct(FlatSum(args1), FlatSum(args2)) => applyRecursively(distributeDots(args1, args2))
+        case DotProduct(FlatSum(args1), arg2) => applyRecursively(distributeDots(args1, List(arg2)))
+        case DotProduct(arg1, FlatSum(args2)) => applyRecursively(distributeDots(List(arg1), args2))
+        case other => other
+      }
+      super.transform(transformed)
+    }
+
+  }
 
   trait ApplyBinaryOperator {
     def unapply(tree: Tree): Option[(Tree, Tree)]
+    def apply(arg1: Tree, arg2: Tree): Tree
   }
 
-  class ApplyDoubleOperator(name: String) extends ApplyBinaryOperator {
+  class ApplyOperatorWithName(name: String) extends ApplyBinaryOperator {
     def unapply(tree: Tree) = tree match {
       //      case Apply(s@Select(arg1, opName), List(arg2))
       //        if s.symbol.owner == definitions.DoubleClass && opName.encoded == name => Some(arg1, arg2)
       case Apply(s@Select(arg1, opName), List(arg2)) if opName.encoded == name => Some(arg1, arg2)
       case _ => None
     }
+    def apply(arg1: Tree, arg2: Tree): Tree = ???
   }
 
-  object ApplyDoubleMinus extends ApplyDoubleOperator("$minus")
-  object ApplyDoublePlus extends ApplyDoubleOperator("$plus")
-  object ApplyDoubleTimes extends ApplyDoubleOperator("$times")
+  object ApplyMinus extends ApplyOperatorWithName("$minus")
+  object ApplyPlus extends ApplyOperatorWithName("$plus")
+  object ApplyTimes extends ApplyOperatorWithName("$times")
 
 
   object DotProduct {
-    def unapply(tree: Tree):Option[(Tree,Tree)] = tree match {
+    def unapply(tree: Tree): Option[(Tree, Tree)] = tree match {
       //todo: make this type-safe
-      case q"$arg1.dot($arg2)" => Some(arg1,arg2)
-//      case Apply(Select(Apply(_, List(arg1)), _), List(arg2)) => Some(arg1, arg2)
+      case q"$arg1.dot($arg2)" => Some(arg1, arg2)
+      //      case Apply(Select(Apply(_, List(arg1)), _), List(arg2)) => Some(arg1, arg2)
       case _ => None
     }
   }
@@ -144,9 +170,16 @@ trait TransformHelper[C <: Context] {
       case operator(arg1, arg2) => Some(List(arg1, arg2))
       case _ => None
     }
+
   }
 
-  object FlatDoubleSum extends Flattened(ApplyDoublePlus)
-  object FlatDoubleProduct extends Flattened(ApplyDoubleTimes)
+  object FlatSum extends Flattened(ApplyPlus)
+  object FlatProduct extends Flattened(ApplyTimes)
+  object QuantifiedSum {
+    def unapply(tree:Tree):Option[(Tree,Tree,Tree)] = tree match {
+      case q"sum[..${_}]($qdom)($qpred)($qobj)" => Some(qdom,qpred,qobj)
+      case _ => None
+    }
+  }
 
 }

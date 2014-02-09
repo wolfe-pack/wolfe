@@ -11,7 +11,7 @@ import scalapplcodefest.term.Predicate
 /**
  * @author Sebastian Riedel
  */
-object Util {
+object UtilOld {
 
   def tooLargeToIterate = sys.error("Data structure too large to iterate over")
   def tooLargeToCount = sys.error("Data structure too large to count")
@@ -29,28 +29,8 @@ object Util {
     def apply(idx: Int) = pointlessToAccessElement
   }
 
-  /**
-   * Loads a resource as stream. This returns either a resource in the classpath,
-   * or in case no such named resource exists, from the file system.
-   */
-  def getStreamFromClassPathOrFile(name: String): InputStream = {
-    val is: InputStream = getClass.getClassLoader.getResourceAsStream(name)
-    if (is == null) {
-      new FileInputStream(name)
-    }
-    else {
-      is
-    }
-  }
 
-  /**
-   * Takes an iterator over lines and groups this according to a delimiter line.
-   */
-  def groupLines(lines: Iterator[String], delim: String = "") = {
-    lines.foldLeft(Seq(Seq.empty[String])) {
-      (result, line) => if (line == delim) result :+ Seq.empty else result.init :+ (result.last :+ line)
-    }
-  }
+
 
   /**
    * Loads a CoNLL style file in tab separated format.
@@ -64,7 +44,7 @@ object Util {
    *
    */
   def loadCoNLL(lines: Iterator[String], predicates: Seq[Predicate[Int, String]], length: Var[Int]) =
-    groupLines(lines).map(conllToState(_, predicates, length))
+    util.Util.groupLines(lines).map(conllToState(_, predicates, length))
 
   def conllToState(lines: Seq[String], predicates: Seq[Predicate[Int, String]], length: Var[Int]) = {
     import TermDSL._

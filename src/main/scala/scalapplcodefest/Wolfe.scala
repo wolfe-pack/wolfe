@@ -152,7 +152,7 @@ object Wolfe extends SampleSpaceDefs with StatsDefs with VectorDefs {
     trait Differentiator
 
     case class Adagrad(rate: Double) extends GradientBasedOptimizerSetting
-    case class Learner(learner:WeightsSet => Trainer) extends GradientBasedOptimizerSetting
+    case class Learner(learner: WeightsSet => Trainer) extends GradientBasedOptimizerSetting
 
     case object Perceptron extends GradientBasedOptimizerSetting
 
@@ -249,7 +249,7 @@ trait VectorDefs {
     def toDouble(x: Wolfe.Vector) = ???
     def compare(x: Wolfe.Vector, y: Wolfe.Vector) = ???
     def dot(x: Vector, y: Vector) = {
-      x.keys.view.map(k => x(k) * y.getOrElse(k,0.0)).sum
+      x.keys.view.map(k => x(k) * y.getOrElse(k, 0.0)).sum
     }
     override def zero = Map.empty
     def norm(x: Vector) = {
@@ -319,6 +319,16 @@ trait SampleSpaceDefs {
 
 
   def seqs[A](dom: Iterable[A], length: Int): Iterable[Seq[A]] = ???
+
+  def seqs[A](doms: Seq[Iterable[A]]): Iterable[Seq[A]] = {
+    def recurse(list: List[Iterable[A]], result: Iterable[List[A]] = Iterable(Nil)): Iterable[List[A]] = list match {
+      case Nil => result
+      case head :: tail =>
+        val current = for (r <- result; h <- head) yield h :: r
+        recurse(tail, current)
+    }
+    recurse(doms.toList).map(_.toSeq)
+  }
 
   implicit val bools = Iterable(false, true)
 

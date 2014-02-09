@@ -68,8 +68,8 @@ object NERExample extends App {
 }
 
 object SCAI {
-  val train = io.Source.fromInputStream(Util.getStreamFromClassPathOrFile("scalapplcodefest/datasets/scai/train.iob"), "iso-8859-1").getLines().take(100)
-  val test = io.Source.fromInputStream(Util.getStreamFromClassPathOrFile("scalapplcodefest/datasets/scai/test.iob"), "iso-8859-1").getLines().take(50)
+  val train = io.Source.fromInputStream(util.Util.getStreamFromClassPathOrFile("scalapplcodefest/datasets/scai/train.iob"), "iso-8859-1").getLines().take(100)
+  val test = io.Source.fromInputStream(util.Util.getStreamFromClassPathOrFile("scalapplcodefest/datasets/scai/test.iob"), "iso-8859-1").getLines().take(50)
 
   def groupLines(lines: Iterator[String], delim:String = "") = {
     lines.foldLeft(Seq(Seq.empty[String])) {
