@@ -79,7 +79,7 @@ trait StructureHelper[C <: Context] {
     val classDefs = metaStructure.all.map(_.classDef)
 
     val domDefs =
-//      metaStructure.allDomainDefs ++
+    //      metaStructure.allDomainDefs ++
       objFactorTree.all.flatMap(_.domainDefs) ++
       predFactorTree.all.flatMap(_.domainDefs)
 
@@ -89,6 +89,7 @@ trait StructureHelper[C <: Context] {
         import scalapplcodefest.Wolfe._
         import scalapplcodefest.MPGraph._
         import scalapplcodefest.macros._
+        import scala.language.reflectiveCalls
 
         ..$domDefs
 
@@ -124,11 +125,15 @@ trait StructureHelper[C <: Context] {
       case FlatSum(args) =>
         val children = args.map(a => createMetaFactorTree(a, matchStructure))
         MetaPropositionalSum(args, children)
-      case QuantifiedSum(qdom,qpred,qobj) =>
+      case QuantifiedSum(qdom, qpred, qobj) =>
         val q"(..$x) => $rhs" = qobj
         MetaQuantifiedSum(x, List(qdom), qpred, rhs, matchStructure)
+      //todo: should allow weight on arg1 as well
       case DotProduct(arg1, arg2) if weightMatcher(arg2) && arg1.forAll(!weightMatcher(_)) =>
         MetaLinearFactorLeaf(arg1, matchStructure)
+      case DotProduct(_, _) =>
+        val dist = distributeDots(potential)
+        if (dist == potential) MetaFactorLeaf(potential, matchStructure) else createMetaFactorTree(dist, matchStructure)
       case _ => MetaFactorLeaf(potential, matchStructure)
     }
 
@@ -250,7 +255,7 @@ trait StructureHelper[C <: Context] {
         caseClassStructure(constructor, List(set))
       case q"${_}.seqs[..${_}]($srcSeq.map[..${_}](($arg) => $argDom)(${_}))" =>
         val TypeRef(_, _, List(argType)) = domain.tpe
-        MetaSeqVarDomStructure(argType,srcSeq,arg.name,createMetaStructure(metadata, argDom))
+        MetaSeqVarDomStructure(argType, srcSeq, arg.name, createMetaStructure(metadata, argDom))
       case q"scalapplcodefest.Wolfe.Pred[${_}]($keyDom)" =>
         val keyDoms = keyDom match {
           case q"scalapplcodefest.Wolfe.$cross[..${_}](..$doms)" => doms
@@ -292,7 +297,7 @@ trait StructureHelper[C <: Context] {
   }
 
 
-  case class MetaSeqVarDomStructure(argType:Type, domSeqSrc: Tree, argName: TermName, elementStructure: MetaStructure) extends MetaStructure {
+  case class MetaSeqVarDomStructure(argType: Type, domSeqSrc: Tree, argName: TermName, elementStructure: MetaStructure) extends MetaStructure {
     def children = List(elementStructure)
     def domainDefs = Nil
 
@@ -326,7 +331,6 @@ trait StructureHelper[C <: Context] {
         def value() = subStructures.view.map(_.value()).force.toSeq
         def setToArgmax() {subStructures.foreach(_.setToArgmax())}
         def observe(s:$argType) {
-          import scala.language.reflectiveCalls
           Range(0,s.size).foreach( i => subStructures(i).observe(s(i)))
         }
       }
@@ -611,7 +615,7 @@ trait Structure[+T] {
 }
 
 trait Observable[T] {
-  def observe(t:T)
+  def observe(t: T)
 }
 
 trait HasSettingIterator[T] extends Structure[T] {
