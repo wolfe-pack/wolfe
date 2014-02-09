@@ -34,9 +34,11 @@ trait TransformHelper[C <: Context] {
 
   val betaReducer     = new BetaReducer
   val blockSimplifier = new BlockSimplifier
+  val dotDistributor = new DotDistributor
 
   def betaReduce(tree: Tree) = betaReducer transform tree
   def simplifyBlocks(tree: Tree) = blockSimplifier transform tree
+  def distributeDots(tree:Tree) = dotDistributor transform tree
 
   def distinctTrees(trees: List[Tree], result: List[Tree] = Nil): List[Tree] = trees match {
     case Nil => result
@@ -120,7 +122,7 @@ trait TransformHelper[C <: Context] {
 
     override def transform(tree: Tree): Tree = {
       val transformed = tree match {
-        case DotProduct(QuantifiedSum(qdom,qpred,qobj),arg2) => ???
+        case DotProduct(QuantifiedSum(qdom,qpred,Function(args,body)),arg2) => q"sum($qdom)($qpred)((..$args) => $body.dot($arg2))"
         case DotProduct(FlatSum(args1), FlatSum(args2)) => applyRecursively(distributeDots(args1, args2))
         case DotProduct(FlatSum(args1), arg2) => applyRecursively(distributeDots(args1, List(arg2)))
         case DotProduct(arg1, FlatSum(args2)) => applyRecursively(distributeDots(List(arg1), args2))
