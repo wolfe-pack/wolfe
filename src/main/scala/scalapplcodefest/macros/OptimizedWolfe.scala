@@ -74,10 +74,12 @@ object OptimizedWolfe extends WolfeAPI {
 
     val gradientBased = MetaGradientBasedMinimizer(dom.tree, obj.tree)
 
+    println(gradientBased.trainingCode)
     gradientBased.trainingCode match {
-      case Some(code) => c.Expr[T](code.tree)
+      case Some(code) => c.Expr[T](context.resetLocalAttrs(code.tree))
       case _ => reify(BruteForceWolfe.argmin(dom.splice)(where.splice)(obj.splice))
     }
+//    reify(BruteForceWolfe.argmin(dom.splice)(where.splice)(obj.splice))
   }
 
 }
@@ -120,6 +122,10 @@ class MacroHelper[C <: Context](val context: C) extends TransformHelper[C] with 
     case d: DefDef if d.vparamss == Nil => d.symbol -> d.rhs
   }).toMap
 
+  //mapping from val names to definitions (we use methods with no arguments as vals too)
+  val noArgDefDefs = context.enclosingUnit.body.collect({
+    case d: DefDef if d.vparamss == Nil => d.symbol -> d.rhs
+  }).toMap
 
   //mapping from symbols to methods
   val defs = context.enclosingUnit.body.collect({
@@ -150,7 +156,7 @@ trait GradientBasedMinimizationHelper[C <: Context] {
     val instanceVariableName = newTermName("_instance")
     val indexVariableName    = newTermName("_index")
 
-    val normalizedObj = replaceVals(betaReduce(replaceMethods(simplifyBlocks(obj), defs)), valDefs)
+    val normalizedObj = replaceVals(betaReduce(replaceMethods(simplifyBlocks(obj), defs)), noArgDefDefs)
 
     //convert objective into sum if not already a sum
     val sum: Tree = normalizedObj match {
@@ -232,6 +238,7 @@ trait GradientBasedMinimizationHelper[C <: Context] {
     def construct: Tree
   }
 
+  //todo: currently derivation happens on the untyped tree. This creates issues in the presence of implicits
   //now create a gradient calculator class
   def generateGradientCalculatorClass(term: Tree, weightVar: ValDef,
                                       indexName: TermName): Option[Tree] = {
@@ -253,8 +260,9 @@ trait GradientBasedMinimizationHelper[C <: Context] {
           """
 
       case DotProduct(arg1, arg2) if !arg1.exists(_.symbol == weightVar.symbol) && arg2.symbol == weightVar.symbol =>
+        val cleaned = arg1 // context.typeCheck(context.resetAllAttrs(arg1))
         Some( q"""new GradientCalculator {
-          val coefficient = FactorieConverter.toFactorieSparseVector($arg1,$indexName)
+          val coefficient = FactorieConverter.toFactorieSparseVector($cleaned,$indexName)
           def valueAndGradient(param: scalapplcodefest.Vector): (Double, scalapplcodefest.Vector) = {
             (coefficient dot param,coefficient)
         }}""")
