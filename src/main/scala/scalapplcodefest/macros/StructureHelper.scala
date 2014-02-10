@@ -108,6 +108,10 @@ trait StructureHelper[C <: Context] {
         ${predFactorTree.setup}
 
         $mpGraphName.build()
+
+        println("Nodes:   " + $mpGraphName.nodes.size)
+        println("Factors: " + $mpGraphName.factors.size)
+
       }
     """)
 
@@ -191,7 +195,7 @@ trait StructureHelper[C <: Context] {
 
     case class MetaFactorLeaf(term: Tree, matchStructure: Tree => Option[Tree]) extends MetaFactorTree with Leaf {
       val perSetting = q"""
-        println(nodes.map(_.setting).mkString(","))
+        //println(nodes.map(_.setting).mkString(","))
         settings(settingIndex) = nodes.map(_.setting)
         scores(settingIndex) = $injected
         settingIndex += 1
@@ -214,7 +218,7 @@ trait StructureHelper[C <: Context] {
 
     case class MetaLinearFactorLeaf(term: Tree, matchStructure: Tree => Option[Tree]) extends MetaFactorTree with Leaf {
       val perSetting = q"""
-        println(nodes.map(_.setting).mkString(","))
+        //println(nodes.map(_.setting).mkString(","))
         settings(settingIndex) = nodes.map(_.setting)
         vectors(settingIndex) = $factorieConverter.toFactorieSparseVector($injected,$vectorIndexName)
         settingIndex += 1

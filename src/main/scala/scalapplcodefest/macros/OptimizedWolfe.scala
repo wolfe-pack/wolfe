@@ -51,7 +51,7 @@ object OptimizedWolfe extends WolfeAPI {
 
       ${metaData.classDef}
       val $graphName = new ${metaData.graphClassName}(null)
-      MaxProduct($graphName.${metaData.mpGraphName},1)
+      MaxProduct($graphName.${metaData.mpGraphName},5)
       $graphName.${metaData.structureName}.setToArgmax()
       $graphName.${metaData.structureName}.value()
     """
@@ -280,7 +280,7 @@ trait GradientBasedMinimizationHelper[C <: Context] {
           val _graph = new ${metaData.graphClassName}($indexName)
           def valueAndGradient(param: scalapplcodefest.Vector): (Double, scalapplcodefest.Vector) = {
             _graph.${metaData.mpGraphName}.weights = param
-            MaxProduct(_graph.${metaData.mpGraphName},1)
+            MaxProduct(_graph.${metaData.mpGraphName},5)
             (_graph.${metaData.mpGraphName}.value,_graph.${metaData.mpGraphName}.gradient)
         }}""")
       //        Some(q"???")
