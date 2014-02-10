@@ -24,9 +24,11 @@ object TestChunking {
     import Util._
     import Source._
 
+    println("Chunking ..")
+
     //get CoNLL data
     val stream = getStreamFromClassPathOrFile("scalapplcodefest/datasets/conll2000/train.txt")
-    val train = loadCoNLL(fromInputStream(stream).getLines(), {
+    val train = loadCoNLL(fromInputStream(stream).getLines().take(100), {
       case Array(word, tag, chunk) => Token(word, tag, chunk)
     }).map(Sentence)
 
@@ -40,22 +42,17 @@ object TestChunking {
 
     def model(w: Vector)(s: Sentence) = features(s) dot w
 
-//    def predict(w: Vector)(s: Sentence) = argmax(S(s))(_ => true) {model(w)}
+    //    def predict(w: Vector)(s: Sentence) = argmax(S(s))(_ => true) {model(w)}
 
-//    //the total training perceptron loss of the model given the weights
-//    @MinByDescent(new OnlineTrainer(_, new Perceptron, 4))
-//    def loss(weights: Vector) = sum(train)(_ => true)(s => max(S(s))(_ => true)(model(weights)) - model(weights)(s))
     @MinByDescent(new OnlineTrainer(_, new Perceptron, 4))
-    def loss(weights: Vector) = sum(train)(_ => true)(s => max(S(s))(_ => true)(model(weights)) - model(weights)(s))
+    def loss(weights: Vector) = sum(train.take(1))(_ => true)(s => max(S(s))(_ => true)(model(weights)) - model(weights)(s))
 
     val learned = argmin(vectors)(_ => true)(loss)
-//
-//    println(learned)
 
+    def predict(s:Sentence) = argmax(S(s))(_ => true)(model(learned))
 
-    //the IRIS dataset
-    //val train = random.shuffle(loadCoNLL())
-
+    //use a generic def wildcard[T](implicit provider: WildcardProvider[T]) = provider.wildcard
+    def observed(s:Sentence) = s.copy(tokens = s.tokens.map(_.copy(chunk = "")))
 
   }
 }
