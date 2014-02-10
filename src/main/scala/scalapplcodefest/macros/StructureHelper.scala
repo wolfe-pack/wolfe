@@ -117,24 +117,26 @@ trait StructureHelper[C <: Context] {
       def domainDefs: List[ValDef] = Nil
     }
 
-    def createMetaFactorTree(potential: Tree, matchStructure: Tree => Option[Tree]): MetaFactorTree = potential match {
+    def createMetaFactorTree(potential: Tree, matchStructure: Tree => Option[Tree], linear:Boolean = false): MetaFactorTree = potential match {
       case EmptyTree => MetaEmptyFactor
       case q"${_}.log(${FlatProduct(args)})" =>
-        val children = args.map(a => createMetaFactorTree(q"log($a)", matchStructure))
+        val children = args.map(a => createMetaFactorTree(q"log($a)", matchStructure, linear))
         MetaPropositionalSum(args, children)
       case FlatSum(args) =>
-        val children = args.map(a => createMetaFactorTree(a, matchStructure))
+        val children = args.map(a => createMetaFactorTree(a, matchStructure, linear))
         MetaPropositionalSum(args, children)
       case QuantifiedSum(qdom, qpred, qobj) =>
         val q"(..$x) => $rhs" = qobj
-        MetaQuantifiedSum(x, List(qdom), qpred, rhs, matchStructure)
+        MetaQuantifiedSum(x, List(qdom), qpred, rhs, matchStructure, linear)
       //todo: should allow weight on arg1 as well
       case DotProduct(arg1, arg2) if weightMatcher(arg2) && arg1.forAll(!weightMatcher(_)) =>
-        MetaLinearFactorLeaf(arg1, matchStructure)
+        createMetaFactorTree(arg1, matchStructure, true)
+//        MetaLinearFactorLeaf(arg1, matchStructure)
       case DotProduct(_, _) =>
         val dist = distributeDots(potential)
-        if (dist == potential) MetaFactorLeaf(potential, matchStructure) else createMetaFactorTree(dist, matchStructure)
-      case _ => MetaFactorLeaf(potential, matchStructure)
+        if (dist == potential) MetaFactorLeaf(potential, matchStructure) else createMetaFactorTree(dist, matchStructure, linear)
+      case _ =>
+        if (linear) MetaLinearFactorLeaf(potential, matchStructure) else MetaFactorLeaf(potential, matchStructure)
     }
 
     case object MetaEmptyFactor extends MetaFactorTree {
@@ -149,7 +151,9 @@ trait StructureHelper[C <: Context] {
 
     }
 
-    case class MetaQuantifiedSum(args: List[ValDef], doms: List[Tree], pred: Tree, obj: Tree, matchStructure: Tree => Option[Tree]) extends MetaFactorTree {
+    case class MetaQuantifiedSum(args: List[ValDef], doms: List[Tree], pred: Tree, obj: Tree,
+                                 matchStructure: Tree => Option[Tree], linear:Boolean) extends MetaFactorTree {
+      val injectedDoms   = doms.map(injectStructure(_,matchStructure))
       val keyDomNames    = List.fill(doms.size)(newTermName(context.fresh("qSumDom")))
       val keyDomSizes    = keyDomNames.map(k => q"$k.length")
       val tmpNames       = Range(0, doms.size).map(i => newTermName("i" + i)).toList
@@ -161,13 +165,13 @@ trait StructureHelper[C <: Context] {
           replacement
       })
 
-      val child         = createMetaFactorTree(substitutedObj, matchStructure)
+      val child         = createMetaFactorTree(substitutedObj, matchStructure, linear)
       val setupChild    = q"${child.setup}"
       val setupChildren = tupleProcessor(keyDomNames, tmpNames, setupChild, newTermName("foreach"), newTermName("foreach"))
       val setup         = q"{$setupChildren}"
       def children = List(child)
 
-      override val domainDefs = for ((d, n) <- doms zip keyDomNames) yield q"val $n = $d.toArray"
+      override val domainDefs = for ((d, n) <- injectedDoms zip keyDomNames) yield q"val $n = $d.toArray"
 
 
     }
@@ -217,7 +221,7 @@ trait StructureHelper[C <: Context] {
       val loop = loopSettings(arguments) {perSetting}
 
       val setup = q"""
-        val nodes = $nodes.toArray
+        val nodes:Array[Node] = $nodes.toArray
         val dims = nodes.map(_.dim)
         val settingsCount = dims.product
         val settings = Array.ofDim[Array[Int]](settingsCount)

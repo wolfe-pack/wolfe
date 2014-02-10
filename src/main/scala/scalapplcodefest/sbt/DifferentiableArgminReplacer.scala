@@ -154,7 +154,7 @@ object FactorieConverter {
   import Wolfe.{Vector => WVector}
   import scalapplcodefest.{Vector => FVector}
 
-  def toFactorieSparseVector(vector: WVector, index: Index): FVector = {
+  def toFactorieSparseVector[T](vector: WVector, index: Index): FVector = {
     val sparse = new SparseVector(vector.size)
     for ((key, value) <- vector) sparse(index(Seq(key))) = value
     sparse
