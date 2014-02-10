@@ -3,10 +3,8 @@ package scalapplcodefest.macros
 import scala.reflect.macros.Context
 import scala.language.experimental.macros
 import scala.collection.mutable
-import scalapplcodefest._
 import cc.factorie.WeightsSet
 import cc.factorie.optimize.{Perceptron, OnlineTrainer, Trainer}
-import scalapplcodefest.sbt.FactorieConverter
 
 //import scalapplcodefest.Wolfe._
 
@@ -45,13 +43,16 @@ object OptimizedWolfe extends WolfeAPI {
     val metaData = MetaStructuredGraph(data.tree, where.tree, obj.tree)
     val graphName = newTermName(c.fresh("graph"))
 
+    //find annotation on objective
+    val maxBy:Tree = getMaxByProcedure(obj.tree)
+
     val result = q"""
       import scalapplcodefest._
       import scalapplcodefest.MPGraph._
 
       ${metaData.classDef}
       val $graphName = new ${metaData.graphClassName}(null)
-      MaxProduct($graphName.${metaData.mpGraphName},5)
+      $maxBy($graphName.${metaData.mpGraphName})
       $graphName.${metaData.structureName}.setToArgmax()
       $graphName.${metaData.structureName}.value()
     """
@@ -74,12 +75,12 @@ object OptimizedWolfe extends WolfeAPI {
 
     val gradientBased = MetaGradientBasedMinimizer(dom.tree, obj.tree)
 
-//    println(gradientBased.trainingCode)
+    //    println(gradientBased.trainingCode)
     gradientBased.trainingCode match {
       case Some(code) => c.Expr[T](context.resetLocalAttrs(code.tree))
       case _ => reify(BruteForceWolfe.argmin(dom.splice)(where.splice)(obj.splice))
     }
-//    reify(BruteForceWolfe.argmin(dom.splice)(where.splice)(obj.splice))
+    //    reify(BruteForceWolfe.argmin(dom.splice)(where.splice)(obj.splice))
   }
 
 }
@@ -140,6 +141,21 @@ class MacroHelper[C <: Context](val context: C) extends TransformHelper[C] with 
   //  val classes = context.enclosingRun.units.flatMap(_.body.collect({
   //    case cd@ClassDef(_, name, _, _) => name -> cd
   //  })).toMap
+
+  def getAnnotationArgs(tree: Tree, name: String): Option[List[Tree]] = {
+    tree.symbol.annotations.collectFirst({
+      //todo: use tpe symbol and check against symbol
+      case Annotation(tpe, args, _) if tpe.typeSymbol.name.encoded == name => args
+    })
+  }
+
+  def getMaxByProcedure(tree:Tree) = simplifyBlocks(tree) match {
+    case q"(${_}) => $f1(${_})(${_})" => getAnnotationArgs(f1, "MaxByInference") match {
+      case Some(List(arg)) => arg
+      case _ => q"MaxProduct(_:MPGraph,1)"
+    }
+    case _ => q"MaxProduct(_:MPGraph,1)"
+  }
 
 
 }
@@ -274,13 +290,15 @@ trait GradientBasedMinimizationHelper[C <: Context] {
           case _ => false
         })
 
+        val maxBy:Tree = getMaxByProcedure(obj)
+
         //need to replace occurences of weightVariable in objective with toWolfeVector(param)
         Some( q"""new GradientCalculator {
           ${metaData.classDef}
           val _graph = new ${metaData.graphClassName}($indexName)
           def valueAndGradient(param: scalapplcodefest.Vector): (Double, scalapplcodefest.Vector) = {
             _graph.${metaData.mpGraphName}.weights = param
-            MaxProduct(_graph.${metaData.mpGraphName},5)
+            $maxBy(_graph.${metaData.mpGraphName})
             (_graph.${metaData.mpGraphName}.value,_graph.${metaData.mpGraphName}.gradient)
         }}""")
       //        Some(q"???")

@@ -52,7 +52,7 @@ object TestIris {
       oneHot('pw -> data.y, data.x.petalWidth)
 
     //the linear model
-    @MaxByInference(MaxProduct(_,1))
+    @MaxByInference(MaxProduct(_,3))
     def model(weights: Vector)(data: Data) = features(data) dot weights
 
     //the total training perceptron loss of the model given the weights
