@@ -83,6 +83,8 @@ trait StructureHelper[C <: Context] {
       objFactorTree.all.flatMap(_.domainDefs) ++
       predFactorTree.all.flatMap(_.domainDefs)
 
+    //        ..$domDefs
+
     val classDef = context.resetAllAttrs( q"""
       class $graphClassName(val $vectorIndexName: scalapplcodefest.Index) {
         import scalapplcodefest._
@@ -91,7 +93,6 @@ trait StructureHelper[C <: Context] {
         import scalapplcodefest.macros._
         import scala.language.reflectiveCalls
 
-        ..$domDefs
 
         ${metaStructure.classDef}
 
@@ -165,13 +166,14 @@ trait StructureHelper[C <: Context] {
           replacement
       })
 
+      override val domainDefs = for ((d, n) <- injectedDoms zip keyDomNames) yield q"val $n = $d.toArray"
+
       val child         = createMetaFactorTree(substitutedObj, matchStructure, linear)
       val setupChild    = q"${child.setup}"
       val setupChildren = tupleProcessor(keyDomNames, tmpNames, setupChild, newTermName("foreach"), newTermName("foreach"))
-      val setup         = q"{$setupChildren}"
+      val setup         = q"{ ..$domainDefs; $setupChildren}"
       def children = List(child)
 
-      override val domainDefs = for ((d, n) <- injectedDoms zip keyDomNames) yield q"val $n = $d.toArray"
 
 
     }

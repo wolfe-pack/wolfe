@@ -180,6 +180,7 @@ trait TransformHelper[C <: Context] {
   object QuantifiedSum {
     def unapply(tree:Tree):Option[(Tree,Tree,Tree)] = tree match {
       case q"sum[..${_}]($qdom)($qpred)($qobj)" => Some(qdom,qpred,qobj)
+      case q"sum[..${_}]($qdom)($qpred)($qobj)(${_})" => Some(qdom,qpred,qobj)
       case _ => None
     }
   }

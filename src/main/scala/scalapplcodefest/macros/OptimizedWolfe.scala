@@ -74,7 +74,7 @@ object OptimizedWolfe extends WolfeAPI {
 
     val gradientBased = MetaGradientBasedMinimizer(dom.tree, obj.tree)
 
-    println(gradientBased.trainingCode)
+//    println(gradientBased.trainingCode)
     gradientBased.trainingCode match {
       case Some(code) => c.Expr[T](context.resetLocalAttrs(code.tree))
       case _ => reify(BruteForceWolfe.argmin(dom.splice)(where.splice)(obj.splice))
