@@ -52,11 +52,11 @@ object TestIris {
       oneHot('pw -> data.y, data.x.petalWidth)
 
     //the linear model
-    @MaxByInference(MaxProduct(_,3))
+    @MaxByInference(MaxProduct(_,1))
     def model(weights: Vector)(data: Data) = features(data) dot weights
 
     //the total training perceptron loss of the model given the weights
-    @MinByDescent(new OnlineTrainer(_, new Perceptron, 4))
+    @MinByDescent(new OnlineTrainer(_, new Perceptron, 10))
     def loss(weights: Vector) = sum(train)(_ => true)(i => max(S(i))(_ => true)(model(weights)) - model(weights)(i))
 
     //the learned weights that minimize the perceptron loss
@@ -68,12 +68,14 @@ object TestIris {
     def predict(i: Data) = argmax(S(i))(_ => true)(model(learned))
 
     //apply the predictor to each instance of the test set.
-    val predicted = test.map(predict)
+    val predictedTest = test.map(predict)
+    val predictedTrain = train.map(predict)
 
-    println(predicted.head)
 
-    println(Evaluator.evaluate(test,predicted)(_.y))
+    println(predictedTest.head)
 
+    println(Evaluator.evaluate(train,predictedTrain)(_.y))
+    println(Evaluator.evaluate(test,predictedTest)(_.y))
 
 
   }
