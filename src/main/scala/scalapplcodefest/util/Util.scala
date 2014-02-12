@@ -25,12 +25,16 @@ object Util {
    * Takes an iterator over lines and groups this according to a delimiter line.
    */
   def groupLines(lines: Iterator[String], delim: String = ""): Seq[Seq[String]] = {
-    lines.foldLeft(Seq(Seq.empty[String])) {
-      (result, line) => if (line == delim) result :+ Seq.empty else result.init :+ (result.last :+ line)
+    groupLinesList(lines,delim).reverse.map(_.reverse)
+  }
+
+  def groupLinesList(lines: Iterator[String], delim: String = ""): List[List[String]] = {
+    lines.foldLeft(List(List.empty[String])) {
+      (result, line) => if (line == delim) Nil :: result else (line :: result.head) :: result.tail
     }
   }
 
   def loadCoNLL[T](lines: Iterator[String], mapper: PartialFunction[Array[String], T]) =
-    groupLines(lines).map(_.map(_.split("\\s+")).map(mapper))
+    groupLinesList(lines).reverse.map(_.reverse.map(_.split("\\s+")).map(mapper))
 
 }

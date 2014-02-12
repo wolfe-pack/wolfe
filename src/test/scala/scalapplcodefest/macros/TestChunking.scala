@@ -24,13 +24,14 @@ object TestChunking {
     import Util._
     import Source._
 
-    println("Chunking ...")
 
     //get CoNLL data
     val stream = getStreamFromClassPathOrFile("scalapplcodefest/datasets/conll2000/train.txt")
-    val train = loadCoNLL(fromInputStream(stream).getLines().take(100), {
+    val train = loadCoNLL(fromInputStream(stream).getLines(), {
       case Array(word, tag, chunk) => Token(word, tag, chunk)
-    }).map(Sentence).take(1)
+    }).map(Sentence).take(10)
+
+    println("Chunking ..")
 
     def S(s: Sentence) = all2(Sentence)(seqs(s.tokens.map(t => all2(Token)(c(Seq(t.word), Seq(t.tag), chunks)))))
 
@@ -42,7 +43,7 @@ object TestChunking {
 
     def model(w: Vector)(s: Sentence) = features(s) dot w
 
-    @MinByDescent(new OnlineTrainer(_, new Perceptron, 10))
+    @MinByDescent(new OnlineTrainer(_, new Perceptron, 5))
     def loss(weights: Vector) = sum(train)(_ => true)(s => max(S(s))(_ => true)(model(weights)) - model(weights)(s))
 
     val learned = argmin(vectors)(_ => true)(loss)
@@ -55,11 +56,6 @@ object TestChunking {
 
     println(Evaluator.evaluate(train.flatMap(_.tokens),predicted.flatMap(_.tokens))(_.chunk))
 
-
-
-
-    //use a generic def wildcard[T](implicit provider: WildcardProvider[T]) = provider.wildcard
-    //def observed(s:Sentence) = s.copy(tokens = s.tokens.map(_.copy(chunk = "")))
 
   }
 }
