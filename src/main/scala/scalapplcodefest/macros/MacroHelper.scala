@@ -8,7 +8,7 @@ import scala.reflect.macros.Context
  *
  * @author Sebastian Riedel
  */
-class MacroHelper[C <: Context](val context: C) extends TransformHelper[C] with StructureHelper[C] with GradientBasedMinimizationHelper[C] {
+class MacroHelper[C <: Context](val context: C) extends TransformHelper[C] with StructuredGraphHelper[C] with GradientBasedMinimizationHelper[C] {
 
   import context.universe._
 

@@ -8,12 +8,21 @@ import scalapplcodefest.MPGraph.Factor
 /**
  * @author Sebastian Riedel
  */
-trait StructureHelper[C <: Context] {
+trait StructuredGraphHelper[C <: Context] {
   this: MacroHelper[C] =>
 
   import context.universe._
 
 
+  /**
+   * This class creates meta information (such as a class definition) for building "structured graph" representations
+   * of optimization problems. A structured graph is a factor graph for which each assignment of the nodes correspond
+   * to some structured object.
+   * @param data the domain/search space.
+   * @param where the predicate.
+   * @param obj the objective.
+   * @param weightMatcher a predicate that tests whether a particular AST corresponds to a weight vector in the model.
+   */
   case class MetaStructuredGraph(data: Tree, where: Tree, obj: Tree, weightMatcher: Tree => Boolean = _ => false) {
 
     val graphClassName  = newTypeName(context.fresh("StructuredGraph"))
@@ -122,7 +131,7 @@ trait StructureHelper[C <: Context] {
       def domainDefs: List[ValDef] = Nil
     }
 
-    def createMetaFactorTree(potential: Tree, matchStructure: Tree => Option[Tree], linear:Boolean = false): MetaFactorTree = potential match {
+    def createMetaFactorTree(potential: Tree, matchStructure: Tree => Option[Tree], linear: Boolean = false): MetaFactorTree = potential match {
       case EmptyTree => MetaEmptyFactor
       case q"${_}.log(${FlatProduct(args)})" =>
         val children = args.map(a => createMetaFactorTree(q"log($a)", matchStructure, linear))
@@ -136,7 +145,7 @@ trait StructureHelper[C <: Context] {
       //todo: should allow weight on arg1 as well
       case DotProduct(arg1, arg2) if weightMatcher(arg2) && arg1.forAll(!weightMatcher(_)) =>
         createMetaFactorTree(arg1, matchStructure, true)
-//        MetaLinearFactorLeaf(arg1, matchStructure)
+      //        MetaLinearFactorLeaf(arg1, matchStructure)
       case DotProduct(_, _) =>
         val dist = distributeDots(potential)
         if (dist == potential) MetaFactorLeaf(potential, matchStructure) else createMetaFactorTree(dist, matchStructure, linear)
@@ -157,8 +166,8 @@ trait StructureHelper[C <: Context] {
     }
 
     case class MetaQuantifiedSum(args: List[ValDef], doms: List[Tree], pred: Tree, obj: Tree,
-                                 matchStructure: Tree => Option[Tree], linear:Boolean) extends MetaFactorTree {
-      val injectedDoms   = doms.map(injectStructure(_,matchStructure))
+                                 matchStructure: Tree => Option[Tree], linear: Boolean) extends MetaFactorTree {
+      val injectedDoms   = doms.map(injectStructure(_, matchStructure))
       val keyDomNames    = List.fill(doms.size)(newTermName(context.fresh("qSumDom")))
       val keyDomSizes    = keyDomNames.map(k => q"$k.length")
       val tmpNames       = Range(0, doms.size).map(i => newTermName("i" + i)).toList
@@ -177,7 +186,6 @@ trait StructureHelper[C <: Context] {
       val setupChildren = tupleProcessor(keyDomNames, tmpNames, setupChild, newTermName("foreach"), newTermName("foreach"))
       val setup         = q"{ ..$domainDefs; $setupChildren}"
       def children = List(child)
-
 
 
     }
@@ -615,12 +623,34 @@ trait StructureHelper[C <: Context] {
 
 }
 
+/**
+ * A structure is a collection of MPGraph nodes whose assignments correspond to values of type `T`.
+ * @tparam T the type of the values this structure can generate.
+ */
 trait Structure[+T] {
+  /**
+   * @return all nodes in this structure (including nodes of substructures)
+   */
   def nodes(): Iterator[MPGraph.Node]
+  /**
+   * @return the value that the current assignment to all nodes is representing.
+   */
   def value(): T
+  /**
+   * Sets all nodes to their argmax belief. todo: this could be generically implemented using nodes().
+   */
   def setToArgmax()
+  /**
+   * resets the state of all nodes.
+   */
   def resetSetting()
+  /**
+   * @return is there a next state that the structure can take on or have we iterated over all its states.
+   */
   def hasNextSetting: Boolean
+  /**
+   * set the structure to its next state by changing one or more of its nodes assignments.
+   */
   def nextSetting()
 }
 
