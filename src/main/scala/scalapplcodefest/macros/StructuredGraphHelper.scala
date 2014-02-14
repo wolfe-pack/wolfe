@@ -78,7 +78,8 @@ trait StructuredGraphHelper[C <: Context] {
     //turn the predicate into an objective
     val predObj = predObservationSetup.remainder match {
       case EmptyTree => EmptyTree
-      case setup => q"math.log(I($setup))"
+      case q"true" => EmptyTree
+      case tree => q"math.log(I($tree))"
     }
 
     //setting up the factors from the predicate
