@@ -36,7 +36,7 @@ object TestIris {
     val random = new Random(0l)
 
     //the IRIS dataset
-    val dataset = random.shuffle(loadIris()).take(4)
+    val dataset = random.shuffle(loadIris())
 
     //train/test set split
     val (train, test) = dataset.splitAt(dataset.size / 2)
@@ -52,17 +52,17 @@ object TestIris {
       oneHot('pw -> data.y, data.x.petalWidth)
 
     //the linear model
-    @MaxByInference(MaxProduct(_,3))
+    @MaxByInference(MaxProduct(_,1))
     def model(weights: Vector)(data: Data) = features(data) dot weights
 
     //the total training perceptron loss of the model given the weights
-    @MinByDescent(new OnlineTrainer(_, new Perceptron, 10))
+    @MinByDescent(new OnlineTrainer(_, new Perceptron, 4))
     def loss(weights: Vector) = sum(train)(_ => true)(i => max(S(i))(_ => true)(model(weights)) - model(weights)(i))
 
     //the learned weights that minimize the perceptron loss
     val learned = argmin(vectors)(_ => true)(loss)
 
-    println("Learned: ")
+    println("Learned:")
     println(learned)
 
     def predict(i: Data) = argmax(S(i))(_ => true)(model(learned))
