@@ -1,6 +1,6 @@
 package scalapplcodefest.macros
 
-import scalapplcodefest.Wolfe
+import scalapplcodefest.{MaxProduct, Wolfe}
 import Wolfe._
 import scalapplcodefest.Wolfe.Objective.Perceptron
 import scala.io.Source
@@ -41,6 +41,7 @@ object TestChunking {
       sum(0 until s.tokens.size)(_ => true)(i => oneHot('obs -> s.tokens(i).chunk -> s.tokens(i).word))(VectorNumeric) +
       sum(0 until s.tokens.size - 1)(_ => true)(i => oneHot('trans -> s.tokens(i).chunk -> s.tokens(i + 1).chunk))(VectorNumeric)
 
+    @MaxByInference(MaxProduct(_,1))
     def model(w: Vector)(s: Sentence) = features(s) dot w
 
     @MinByDescent(new OnlineTrainer(_, new Perceptron, 5))
