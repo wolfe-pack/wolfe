@@ -29,6 +29,7 @@ libraryDependencies ++= Seq(
   "com.github.axel22" %% "scalameter" % "0.4",
   "org.scala-lang" % "scala-compiler" % "2.10.3",
   "org.scala-lang" % "scala-library" % "2.10.3",
+  "org.scala-lang" %% "scala-pickling" % "0.8.0-SNAPSHOT",
   "org.scalamacros" % "quasiquotes" % "2.0.0-M3" cross CrossVersion.full
 )
 
