@@ -207,3 +207,79 @@ object BinarySerializerUtil {
 
 }
 
+object JsonSerializer {
+
+  import java.io.{InputStream, File}
+  import scala.io.{ Source}
+  import scala.pickling.io.TextFileOutput
+  import scala.pickling._
+  import json._
+
+  def serialize[T: SPickler : FastTypeTag](t: T) = t.pickle
+
+  def serializeToFile[T: SPickler : FastTypeTag](t: T, filePath: String) = {
+    val tempFile: File = new File(filePath)
+    val file: TextFileOutput = new TextFileOutput(tempFile)
+    t.pickleTo(file)
+    file.close()
+  }
+
+  def deserializeFromFile[T: Unpickler : FastTypeTag](fileName: String) = {
+    val file: InputStream = util.Util.getStreamFromClassPathOrFile(fileName)
+    val objAsString: String = Source.fromInputStream(file).getLines().mkString("")
+    val unpickler: JSONPickle = JSONPickle(objAsString)
+    unpickler.unpickle[T]
+  }
+
+  def deserialize[T: Unpickler : FastTypeTag](obj: JSONPickleFormat#PickleType) = obj.unpickle[T]
+}
+
+object BinarySerializer {
+
+  import scala.pickling._
+  import binary._
+  import java.io.{FileInputStream, IOException, FileOutputStream}
+
+  def serialize[T: SPickler : FastTypeTag](t: T) = t.pickle
+
+  def serializeToFile[T: SPickler : FastTypeTag](t: T, fileName: String) = {
+    var out = None: Option[FileOutputStream]
+    try {
+      val buffer = new ByteArrayBuffer()
+      t.pickleTo(buffer)
+      out = Some(new FileOutputStream(fileName))
+      out.get.write(buffer.toArray)
+    } catch {
+      case e: IOException => e.printStackTrace
+    } finally {
+      if (out.isDefined) out.get.close
+    }
+  }
+  //
+  def deserializeFromFile[T: Unpickler : FastTypeTag](fileName: String) = {
+    var value = None: Option[T]
+    var in = None: Option[FileInputStream]
+    try {
+      in = Some(new FileInputStream(fileName))
+
+      val inBuffer = new Array[Byte](in.get.available())
+      in.get.read(inBuffer)
+      val unpicklerArray: BinaryPickle = BinaryPickle(inBuffer)
+      value = Some(unpicklerArray.unpickle[T])
+
+    }
+    catch {
+      case e: IOException => e.printStackTrace
+    }
+    finally {
+      if (in.isDefined) in.get.close
+    }
+    value.get
+  }
+
+  def deserialize[T: Unpickler : FastTypeTag](bytes: Array[Byte]) = bytes.unpickle[T]
+}
+
+
+
+
