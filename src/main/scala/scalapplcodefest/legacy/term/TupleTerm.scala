@@ -2,7 +2,7 @@ package scalapplcodefest.legacy.term
 
 import org.scalautils.{Bad, Good}
 import scalapplcodefest.legacy.value._
-import scalapplcodefest.{TermDSL, UtilOld, SetUtil}
+import scalapplcodefest.legacy.{TermDSL, UtilOld, SetUtil}
 
 /**
  * @author Sebastian Riedel

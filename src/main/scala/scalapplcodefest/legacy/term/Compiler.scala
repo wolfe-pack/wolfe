@@ -1,7 +1,7 @@
 package scalapplcodefest.legacy.term
 
 import scala.language.implicitConversions
-import scalapplcodefest.GradientBasedArgminHint
+import scalapplcodefest.legacy.GradientBasedArgminHint
 import scalapplcodefest.legacy.value.{MaxValue, Argmin, Argmax}
 
 /**

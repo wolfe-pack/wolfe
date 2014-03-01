@@ -3,8 +3,8 @@ package scalapplcodefest.legacy.term
 import scala.language.implicitConversions
 import org.scalautils.{Bad, Good, Or}
 import scalapplcodefest.legacy.value.{AllOfType, OOV}
-import scalapplcodefest.TermDSL
-import scalapplcodefest.SetUtil.SetUnion
+import scalapplcodefest.legacy.TermDSL
+import scalapplcodefest.legacy.SetUtil.SetUnion
 
 
 /**

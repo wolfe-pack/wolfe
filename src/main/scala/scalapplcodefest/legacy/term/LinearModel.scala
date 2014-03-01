@@ -6,7 +6,7 @@ import scala.Some
 
 object Linear {
 
-  import TermDSL._
+  import legacy.TermDSL._
 
   def unapply(term:Term[Double]):Option[(Term[Vector],Variable[Vector],Term[Double])] = term match {
     case doubles.add.Reduced(SeqTerm(args)) =>

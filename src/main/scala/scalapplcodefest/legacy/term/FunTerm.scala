@@ -6,6 +6,7 @@ import scalapplcodefest._
 import scala.Some
 import scalapplcodefest.legacy.value.AllFunctions
 import org.scalautils.Bad
+import legacy._
 
 /**
  * FunTerms evaluate to partial functions. The function candidate domain where the function is defined for

@@ -1,6 +1,6 @@
 package scalapplcodefest.legacy.term
 
-import scalapplcodefest._
+import scalapplcodefest.legacy._
 
 /**
  * The Conditioned term add a "condition" to each state its evaluates against. This can serve as

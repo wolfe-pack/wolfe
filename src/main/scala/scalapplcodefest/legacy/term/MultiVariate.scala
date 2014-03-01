@@ -1,10 +1,11 @@
 package scalapplcodefest.legacy.term
 
 import org.scalautils.Good
-import scalapplcodefest.TermConverter._
+import scalapplcodefest.legacy.TermConverter._
 import scalapplcodefest.legacy.value.{Fun, Vectors}
-import scalapplcodefest._
+import scalapplcodefest.legacy._
 import scala.Some
+import scalapplcodefest.{MaxProduct, Vector, SparseVector, DenseVector, MPGraph}
 import TermDSL._
 
 object MultiVariate {
