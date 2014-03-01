@@ -2,7 +2,7 @@ package scalapplcodefest.legacy.term
 
 import org.scalautils.Good
 import scalapplcodefest.legacy.value._
-import scalapplcodefest._
+import scalapplcodefest.legacy._
 import org.scalautils.Bad
 
 /**

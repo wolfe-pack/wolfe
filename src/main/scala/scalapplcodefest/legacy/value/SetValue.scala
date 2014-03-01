@@ -6,6 +6,7 @@ import scala.collection.SetProxy
 import scalapplcodefest._
 import scalapplcodefest.legacy.term._
 import scalapplcodefest.legacy.term.Constant
+import scalapplcodefest.legacy.{UtilOld, SetUtil}
 
 /**
  * A set that performs lazy set union and set minus

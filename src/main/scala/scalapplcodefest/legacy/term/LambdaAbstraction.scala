@@ -1,7 +1,7 @@
 package scalapplcodefest.legacy.term
 
 import scalapplcodefest.legacy.value.{AllFunctions, AllOfType, Fun}
-import scalapplcodefest.SetUtil
+import scalapplcodefest.legacy.SetUtil
 
 /**
  * A Lambda Abstraction corresponds to a function and consists of a variable and a term.

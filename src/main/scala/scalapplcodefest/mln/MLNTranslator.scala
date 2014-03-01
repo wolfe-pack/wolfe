@@ -10,7 +10,7 @@ import scala.collection.immutable.HashMap
 import scala.Predef._
 import scalapplcodefest.legacy.value._
 import scalapplcodefest.legacy.term._
-import scalapplcodefest.TermDSL._
+import scalapplcodefest.legacy.TermDSL._
 import scalapplcodefest.mln.MLNParser.IntegerTypeDefinition
 import scalapplcodefest.mln.MLNParser.Atom
 import scalapplcodefest.mln.MLNParser.HardFormula

@@ -2,7 +2,7 @@ package scalapplcodefest.legacy.term
 
 import scalapplcodefest.legacy.value.Fun
 import scala.Some
-import scalapplcodefest.SetUtil
+import scalapplcodefest.legacy.SetUtil
 
 /**
  * A state maps variables to values.
