@@ -1,7 +1,8 @@
 package scalapplcodefest.mln
 
 import org.scalatest.{Matchers, FlatSpec}
-import scalapplcodefest.legacy.term.State
+import scalapplcodefest.legacy.term.{GroundAtom, State}
+import scalapplcodefest.legacy.structure.StructLearner
 
 
 /**

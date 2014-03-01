@@ -1,9 +1,10 @@
 package scalapplcodefest.benchmark
 
 import java.util.concurrent.TimeUnit
-import scalapplcodefest.{TermConverter, MPGraphCompiler, Index}
-import scalapplcodefest.TermDSL._
-import scalapplcodefest.term.{Variable, State}
+import scalapplcodefest.legacy.{TermConverter, MPGraphCompiler}
+import scalapplcodefest.legacy.TermDSL._
+import scalapplcodefest.legacy.term.{Variable, State}
+import scalapplcodefest.Index
 
 /**
  * Created by larysa  30.12.13

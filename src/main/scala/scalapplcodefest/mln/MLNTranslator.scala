@@ -63,6 +63,18 @@ class MLNTranslator {
   def getState: State = state(StateCollector(groundAtoms, predicates).toList: _*)
   def getPredicates = predicates
   def getFunctions = functions
+  def getDomains = domains
+
+  def getRawState: List[GroundAtom[_, Boolean]] = RawStateCollector(groundAtoms, predicates).rawState.toList
+
+  def getPredicatesDictionary= {
+    val predDictionary: ListBuffer[(Symbol, Seq[Term])] = predDeclarations map (p => {
+      val atom: Atom = p.asInstanceOf[Atom]
+      Symbol(atom.predicate)->atom.args
+    })
+
+    predDictionary.toMap
+  }
 
 
   def mln(file: String): this.type = {
@@ -92,12 +104,21 @@ class MLNTranslator {
     this
   }
 
-  def getModel: FunApp[(Vector, Vector), Double] = {
+  def justTransform = {
     domains ++= typeDeclaration.map(t => TypeDeclaration(t).convert).toMap
     domains ++= DomainDeclaration(groundAtoms, predDeclarations).allDomains
 
     predicates ++= predDeclarations.map(p => PredicateDeclaration(p, domains).convert).toMap
     functions ++= funDeclarations.map(f => FunctionDeclaration(f, domains).convert).toMap
+  }
+
+  def getModel: FunApp[(Vector, Vector), Double] = {
+    //    domains ++= typeDeclaration.map(t => TypeDeclaration(t).convert).toMap
+    //    domains ++= DomainDeclaration(groundAtoms, predDeclarations).allDomains
+    //
+    //    predicates ++= predDeclarations.map(p => PredicateDeclaration(p, domains).convert).toMap
+    //    functions ++= funDeclarations.map(f => FunctionDeclaration(f, domains).convert).toMap
+    justTransform
 
     val folf = mlnFormulae.map(formula => FormulaDeclaration(formula, predicates).convert).flatten.toSeq
 
@@ -440,7 +461,36 @@ object LambdaAbstractionFactory {
       case List(x, y) => LambdaAbstraction(sig(VarSig(x), VarSig(y)), body)
       //      case head :: tail => LambdaAbstraction(head, apply(body, tail.toSet)).asInstanceOf[FunTerm[Any, _]]
     }
+  }
+}
 
+trait RawStateCollector {
+  def rawState: Set[GroundAtom[_, Boolean]]
+}
+
+object RawStateCollector {
+  def apply(groundAtoms: ListBuffer[DatabaseAtom], predicates: Map[Symbol, Predicate[_, Boolean]]) = new RawStateCollector {
+    def rawState: Set[GroundAtom[_, Boolean]] = {
+      val grouped: Map[String, ListBuffer[DatabaseAtom]] = groundAtoms.groupBy(_.predicate)
+
+      val groundedAtoms = predicates map (predicate => {
+        val atoms: ListBuffer[DatabaseAtom] = grouped.get(predicate._1.name).get
+
+        val predDefinition: Predicate[Any, Boolean] = predicate._2.asInstanceOf[Predicate[Any, Boolean]]
+        predDefinition.funCandidateDom match {
+          case s: scalapplcodefest.legacy.term.Constant[_] => {
+            atoms map (a => predDefinition.atom(Symbol(a.args(0).asInstanceOf[MLNParser.Constant].value)))
+          }
+          case c: CartesianProductTerm2[_, _] =>
+            atoms map (a =>
+              predDefinition.atom(
+                Symbol(a.args(0).asInstanceOf[MLNParser.Constant].value),
+                Symbol(a.args(1).asInstanceOf[MLNParser.Constant].value)))
+          case _ => Set()
+        }
+      })
+      groundedAtoms.flatten.toSet
+    }
   }
 }
 

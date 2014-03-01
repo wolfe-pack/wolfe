@@ -1,9 +1,9 @@
-package scalapplcodefest.learning.structure
+package scalapplcodefest.legacy.structure
 
 import scala.collection.mutable
 import scalapplcodefest.mln.MLNParser.Term
 import scala._
-import scalapplcodefest.term._
+import scalapplcodefest.legacy.term._
 
 /**
  * Created by larysa  03.01.14
@@ -15,7 +15,7 @@ trait StructLearner {
 
 object StructLearner {
 
-  def apply(domains: Map[Symbol, scalapplcodefest.term.Term[Any]],
+  def apply(domains: Map[Symbol, scalapplcodefest.legacy.term.Term[Any]],
             predicates: Map[Symbol, Predicate[_, Boolean]],
             rawState: List[GroundAtom[_, Boolean]],
             predDict: Map[Symbol, Seq[Term]]) = new StructLearner {
