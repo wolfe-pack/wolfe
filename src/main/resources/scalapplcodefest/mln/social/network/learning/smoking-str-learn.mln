@@ -1,0 +1,7 @@
+// MLN for social networks section in tutorial
+age = {18, ..., 22}
+Smokes(person)
+Cancer(person)
+Friends(person, person)
+
+
