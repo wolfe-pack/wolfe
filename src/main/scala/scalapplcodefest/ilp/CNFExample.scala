@@ -1,7 +1,7 @@
 package scalapplcodefest.ilp
 
-import scalapplcodefest.{Index, TermDSL}
-import scalapplcodefest.TermDSL._
+import scalapplcodefest.Index
+import scalapplcodefest.legacy.TermDSL._
 
 /**
  * Created by Jan on 28.12.13.
@@ -12,8 +12,6 @@ object CNFExample {
   val list = List("a","b")
 
   //this gives us syntactic sugar
-
-  import TermDSL._
 
   //index for indexing feature vectors
   val key = new Index()

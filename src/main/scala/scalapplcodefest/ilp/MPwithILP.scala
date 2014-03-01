@@ -1,6 +1,7 @@
 package scalapplcodefest.ilp
 
-import scalapplcodefest._
+import scalapplcodefest.legacy._
+import scalapplcodefest.MPGraph
 import scalapplcodefest.MPGraph.{Factor, Node}
 import scalapplcodefest.ilp._
 
@@ -120,7 +121,7 @@ object MPwithILPExample{
     import TermDSL._
 
     //index for indexing feature vectors
-    val key = new Index()
+    val key = new scalapplcodefest.Index()
 
     //domain objects. Note that this set itself is a term (a constant evaluating to the given set, but it could be dynamic too).
     val persons = set('Anna, 'Bob)
