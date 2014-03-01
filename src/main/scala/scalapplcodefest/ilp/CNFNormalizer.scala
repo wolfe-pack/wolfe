@@ -1,12 +1,9 @@
 package scalapplcodefest.ilp
 
-import scalapplcodefest.TermDSL._
-import scalapplcodefest.term._
-import scalapplcodefest.MPGraphCompiler.factorize
-import scalapplcodefest.value.Fun
-import scalapplcodefest.term.Var
-import scalapplcodefest.term.TupleTerm2
-import scalapplcodefest.term.FunApp
+import scalapplcodefest.legacy._
+import term._
+import scalapplcodefest.legacy.TermDSL._
+import scalapplcodefest.legacy.value.Fun
 
 /**
  * Transformes all formulae to CNF by factorizing (unrolling) them beforehand.
@@ -127,7 +124,7 @@ object CNFNormalizer {
       }
     }
     // factorize term
-    val factorizedTerm = factorize[T](base, op)
+    val factorizedTerm = MPGraphCompiler.factorize[T](base, op)
     // normalize term
     val normalized = factorizedTerm map normalize
     normalized.head.asInstanceOf[Term[T]]

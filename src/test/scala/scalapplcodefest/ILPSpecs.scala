@@ -1,6 +1,6 @@
 package scalapplcodefest
 
-import scalapplcodefest.TermDSL._
+import scalapplcodefest.legacy.TermDSL._
 import org.scalatest.{Matchers, WordSpec}
 import scalapplcodefest.ilp._
 import scalapplcodefest.ilp.ILPConstraint
