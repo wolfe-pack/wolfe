@@ -11,6 +11,8 @@ import scalaxy.loops._
  * (1) simple dense table based;
  * (2) based on a feature vector for each state that is multiplied with a shared weight vector
  * (3) generic (calls a function to be evaluated at a particular state)
+ *
+ *
  */
 final class MPGraph {
 
@@ -240,6 +242,15 @@ object MPGraph {
     private[MPGraph] var edgeCount : Int = 0
     private[MPGraph] var edgeFilled: Int = 0
 
+    override def equals(other: Any): Boolean = other match {
+      case that: Node =>
+        index == that.index
+      case _ => false
+    }
+    override def hashCode(): Int = {
+      val state = Seq(index)
+      state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
+    }
   }
 
   /**
@@ -267,6 +278,21 @@ object MPGraph {
 
   /**
    * A factor in a message passing factor graph.
+   *
+   * Some hints for the usage of Factors of MPGraph
+   * f.Settings    | f. table
+   * 0 0 0         | 0.5
+   * 0 0 1         | 0.8
+   * 0 0 2         | 0.9
+   * 0 1 0         | 1.0
+   * 0 1 1         | 0.1
+   * 0 1 2         | 0.2
+   * print(index) = 3
+   * print(dims)  = 1,2,3
+   * Node 0:  factor.edges(0).n
+   * Node 1:  factor.edges(1).n
+   * Node 2:  factor.edges(1).n
+   *
    * @param fg the factor graph.
    * @param index the index/id of the factor
    * @param dims array with dimensions of the participating variables, in the order of the `edges` array of edges.
@@ -342,6 +368,15 @@ object MPGraph {
     private[MPGraph] var edgeCount : Int = 0
     private[MPGraph] var edgeFilled: Int = 0
 
+    override def equals(other: Any): Boolean = other match {
+      case that: Factor =>
+        index == that.index
+      case _ => false
+    }
+    override def hashCode(): Int = {
+      val state = Seq(index)
+      state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
+    }
   }
 
   /**
