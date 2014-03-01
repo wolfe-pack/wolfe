@@ -2,7 +2,6 @@ package scalapplcodefest
 
 import scala.language.implicitConversions
 import scala.util.Random
-import scalapplcodefest.sbt.Analyze
 import scalapplcodefest.Wolfe.Stats.OneHot
 import cc.factorie.WeightsSet
 import cc.factorie.optimize.{Trainer, OnlineTrainer}
@@ -10,7 +9,6 @@ import cc.factorie.optimize.{Trainer, OnlineTrainer}
 /**
  * @author Sebastian Riedel
  */
-@Analyze
 object Wolfe extends SampleSpaceDefs with StatsDefs with VectorDefs {
 
   //core operators

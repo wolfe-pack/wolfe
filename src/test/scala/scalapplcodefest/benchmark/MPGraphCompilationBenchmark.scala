@@ -1,7 +1,7 @@
 package scalapplcodefest.benchmark
 
 import scalapplcodefest.{TermConverter, MPGraphCompiler, Index}
-import scalapplcodefest.term.{Variable, State}
+import scalapplcodefest.legacy.term.{Variable, State}
 import scalapplcodefest.TermDSL._
 
 class MPGraphCompilationBenchmark extends SimpleBenchmark {

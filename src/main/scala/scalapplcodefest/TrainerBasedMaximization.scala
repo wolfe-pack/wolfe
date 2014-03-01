@@ -5,12 +5,12 @@ import cc.factorie.util.DoubleAccumulator
 import cc.factorie.la.WeightsMapAccumulator
 import cc.factorie.WeightsSet
 import TermDSL._
-import scalapplcodefest.term._
+import scalapplcodefest.legacy.term._
 
 
 /**
  * A minimizer of a differentiable real valued function. Uses factorie optimization package and
- * the [[scalapplcodefest.term.Differentiable]] pattern.
+ * the [[scalapplcodefest.legacy.term.Differentiable]] pattern.
  */
 object TrainerBasedMaximization {
 

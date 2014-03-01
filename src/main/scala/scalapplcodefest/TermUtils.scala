@@ -1,13 +1,13 @@
 package scalapplcodefest
 
-import scalapplcodefest.term._
-import scalapplcodefest.term.LambdaAbstraction
-import scalapplcodefest.term.Var
-import scalapplcodefest.term.TupleTerm2
-import scalapplcodefest.term.Conditioned
-import scalapplcodefest.term.TupleTerm3
-import scalapplcodefest.term.Predicate
-import scalapplcodefest.term.FunApp
+import scalapplcodefest.legacy.term._
+import scalapplcodefest.legacy.term.LambdaAbstraction
+import scalapplcodefest.legacy.term.Var
+import scalapplcodefest.legacy.term.TupleTerm2
+import scalapplcodefest.legacy.term.Conditioned
+import scalapplcodefest.legacy.term.TupleTerm3
+import scalapplcodefest.legacy.term.Predicate
+import scalapplcodefest.legacy.term.FunApp
 
 /**
  * User: rockt

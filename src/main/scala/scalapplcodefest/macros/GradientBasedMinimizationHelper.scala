@@ -71,7 +71,6 @@ trait GradientBasedMinimizationHelper[C <: Context] {
       import cc.factorie.la.WeightsMapAccumulator
       import cc.factorie.util.DoubleAccumulator
       import cc.factorie.optimize._
-      import scalapplcodefest.sbt._
       import scalapplcodefest._
 
       val _index = new Index

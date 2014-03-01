@@ -35,7 +35,7 @@ trait StructuredGraphHelper[C <: Context] {
     val vectorIndexName = newTermName(context.fresh("vectorIndex"))
     val init            = List(q"val $mpGraphName = new MPGraph()")
 
-    val factorieConverter = q"scalapplcodefest.sbt.FactorieConverter"
+    val factorieConverter = q"scalapplcodefest.FactorieConverter"
 
 
     val normalizedObj  = betaReduce(replaceMethods(simplifyBlocks(obj), defs))

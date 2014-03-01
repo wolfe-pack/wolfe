@@ -1,12 +1,12 @@
 package scalapplcodefest
 
 import java.io.{FileInputStream, InputStream}
-import scalapplcodefest.value.SetValue
-import scalapplcodefest.term._
+import scalapplcodefest.legacy.value.SetValue
+import scalapplcodefest.legacy.term._
 import cc.factorie.maths.ArrayOps
 import org.scalautils.{Bad, Good, Or}
-import scalapplcodefest.term.Var
-import scalapplcodefest.term.Predicate
+import scalapplcodefest.legacy.term.Var
+import scalapplcodefest.legacy.term.Predicate
 
 /**
  * @author Sebastian Riedel

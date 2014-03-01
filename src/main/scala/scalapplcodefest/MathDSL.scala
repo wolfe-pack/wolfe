@@ -1,9 +1,9 @@
 package scalapplcodefest
 
-import scalapplcodefest.term._
-import scalapplcodefest.value.{Vectors, Fun}
-import scalapplcodefest.term.LambdaAbstraction
-import scalapplcodefest.term.Reduce
+import scalapplcodefest.legacy.term._
+import scalapplcodefest.legacy.value.{Vectors, Fun}
+import scalapplcodefest.legacy.term.LambdaAbstraction
+import scalapplcodefest.legacy.term.Reduce
 
 /**
  * User: rockt

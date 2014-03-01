@@ -1,6 +1,6 @@
 package scalapplcodefest
 
-import scalapplcodefest.term._
+import scalapplcodefest.legacy.term._
 import scalapplcodefest.util.{Evaluation, EvaluationSummary}
 
 /**

@@ -2,7 +2,7 @@ package scalapplcodefest.example
 
 import scalapplcodefest.{Index, TermDSL}
 import cc.factorie.la.DenseTensor1
-import scalapplcodefest.term.{Term, State, Constant}
+import scalapplcodefest.legacy.term.{Term, State, Constant}
 import scalapplcodefest.TermUtils._
 
 /**

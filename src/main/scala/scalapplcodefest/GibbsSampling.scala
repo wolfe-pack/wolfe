@@ -1,13 +1,13 @@
 package scalapplcodefest
 
 import cc.factorie._
-import scalapplcodefest.term._
+import scalapplcodefest.legacy.term._
 import scalapplcodefest.TermConverter._
 import scala.util.Random
 import scala.collection.mutable.ArrayBuffer
-import scalapplcodefest.term.LambdaAbstraction
+import scalapplcodefest.legacy.term.LambdaAbstraction
 import scala.collection.mutable
-import scalapplcodefest.value.{Doubles, Fun}
+import scalapplcodefest.legacy.value.{Doubles, Fun}
 import scala.collection.immutable.HashMap
 import scalapplcodefest.TermDSL.doubles
 
