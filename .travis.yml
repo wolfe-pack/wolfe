@@ -5,5 +5,5 @@ jdk:
    - oraclejdk7
 
 after_script:
-   - sbt 'test:runMain scalapplcodefest.benchmark.AllBenchmarks '$TRAVIS_BUILD_NUMBER' travis '$TRAVIS_BRANCH
+   - sbt 'test:runMain ml.wolfe.benchmark.AllBenchmarks '$TRAVIS_BUILD_NUMBER' travis '$TRAVIS_BRANCH
 
