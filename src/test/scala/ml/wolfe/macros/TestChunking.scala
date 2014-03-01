@@ -26,7 +26,7 @@ object TestChunking {
 
 
     //get CoNLL data
-    val stream = getStreamFromClassPathOrFile("ml/scalapplcodefest/datasets/conll2000/train.txt")
+    val stream = getStreamFromClassPathOrFile("ml/wolfe/datasets/conll2000/train.txt")
     val train = loadCoNLL(fromInputStream(stream).getLines(), {
       case Array(word, tag, chunk) => Token(word, tag, chunk)
     }).map(Sentence).take(10)

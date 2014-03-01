@@ -22,7 +22,7 @@ object TestIris {
   case class Data(x: Observed, y: IrisClass)
 
   def loadIris() = {
-    val stream = Util.getStreamFromClassPathOrFile("ml/scalapplcodefest/datasets/iris/iris.data")
+    val stream = Util.getStreamFromClassPathOrFile("ml/wolfe/datasets/iris/iris.data")
     val data = for (line <- Source.fromInputStream(stream).getLines().toBuffer if line.trim != "") yield {
       val Array(sl, sw, pl, pw, ic) = line.split(",")
       Data(Observed(sl.toDouble, sw.toDouble, pl.toDouble, pw.toDouble), ic)
