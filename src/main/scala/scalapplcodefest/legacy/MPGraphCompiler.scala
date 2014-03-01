@@ -121,6 +121,7 @@ object MPGraphCompiler {
     override def toString = graph.toVerboseString(printer())
   }
 
+  //rockt: I feel this method is not MPGraph specific and could be placed to TermConverter
   /**
    * Flattens and unroll a term into a propositional factorization.
    * @param base the term to factorize.

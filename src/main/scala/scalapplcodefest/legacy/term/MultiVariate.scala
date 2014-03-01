@@ -7,6 +7,7 @@ import scalapplcodefest.legacy._
 import scala.Some
 import scalapplcodefest.{MaxProduct, Vector, SparseVector, DenseVector, MPGraph}
 import TermDSL._
+import scalapplcodefest.ilp.MPwithILP
 
 object MultiVariate {
   def unapply(term: Term[Double]): Option[Variable[Vector]] = term match {
@@ -94,6 +95,33 @@ object Max {
     def argmax = Term(withStateDo.get(_, mp.currentArgmax()), Set(parameter), term.sig.default)
 
   }
+
+  /**
+   * Maximizing by transforming the message passing graph into an ILP and solving the ILP.
+   * @param term the term to maximize
+   * @param algorithm applies an ILP algorithm to the message passing graph.
+   */
+  case class ByILP[T](term: LambdaAbstraction[T,Double], algorithm: MPGraph => Unit = MPwithILP.apply(_))
+    extends Max[T] with MultiVariateHelper{
+
+    val normalized = pushDownConditions(term.body)
+    val ForceLinear(_, parameter, _) = normalized
+
+    private val mp = MPGraphCompiler.compile(term.sig, normalized)
+
+    private val withStateDo = new WithStateDo(state => {
+      mp.graph.weights = parameter.value(state)
+      //println(mp.graph.toVerboseString(mp.printer()))
+      algorithm(mp.graph)
+    })
+
+    def eval(state: State) = withStateDo.get(state, Good(mp.currentValue()))
+    def gradient = VectorTerm(withStateDo.get(_, mp.currentGradient()), Set(parameter))
+    def argmaxState = StateTerm(withStateDo.get(_, mp.currentArgmaxState()), Set(parameter))
+    def argmax = Term(withStateDo.get(_, mp.currentArgmax()), Set(parameter), term.sig.default)
+
+  }
+
 
 }
 
