@@ -1,8 +1,8 @@
 package scalapplcodefest
 
-import scalapplcodefest.term._
-import scalapplcodefest.value.Fun
-import scalapplcodefest.term.LambdaAbstraction
+import scalapplcodefest.legacy.term._
+import scalapplcodefest.legacy.value.Fun
+import scalapplcodefest.legacy.term.LambdaAbstraction
 import scala.Some
 import org.scalautils.{Bad, Good, Or}
 import TermDSL._

@@ -1,10 +1,10 @@
 package scalapplcodefest
 
 import cc.factorie.maths.ArrayOps
-import scalapplcodefest.value.{Fun, Doubles}
+import scalapplcodefest.legacy.value.{Fun, Doubles}
 import TermDSL._
-import scalapplcodefest.term._
-import scalapplcodefest.term.Belief
+import scalapplcodefest.legacy.term._
+import scalapplcodefest.legacy.term.Belief
 import scala.Some
 
 /**

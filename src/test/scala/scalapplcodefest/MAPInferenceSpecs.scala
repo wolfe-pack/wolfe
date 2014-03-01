@@ -5,7 +5,7 @@ import scala.util.Random
 import scalapplcodefest.MPGraph.FactorType
 import scalapplcodefest.TermDSL._
 import scala.Unit
-import scalapplcodefest.value.{Doubles, Bools}
+import scalapplcodefest.legacy.value.{Doubles, Bools}
 
 /**
  *

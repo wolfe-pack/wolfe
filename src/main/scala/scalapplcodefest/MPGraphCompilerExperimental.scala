@@ -2,7 +2,7 @@ package scalapplcodefest
 
 import cc.factorie.maths.ArrayOps
 import TermDSL._
-import scalapplcodefest.term._
+import scalapplcodefest.legacy.term._
 import scala.Some
 
 /**

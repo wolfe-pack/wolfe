@@ -2,17 +2,18 @@ package scalapplcodefest
 
 import scala.language.implicitConversions
 import scala.language.reflectiveCalls
-import scalapplcodefest.value._
-import scalapplcodefest.term._
-import scalapplcodefest.value.RangeSet
+import scalapplcodefest.legacy.value._
+import scalapplcodefest.legacy.term._
+import scalapplcodefest.legacy.value.RangeSet
 import scala.Some
-import scalapplcodefest.term.RestrictedFun
-import scalapplcodefest.term.DynFunTerm
-import scalapplcodefest.value.SeqSet
-import scalapplcodefest.term.FunApp
+import scalapplcodefest.legacy.term.RestrictedFun
+import scalapplcodefest.legacy.term.DynFunTerm
+import scalapplcodefest.legacy.value.SeqSet
+import scalapplcodefest.legacy.term.FunApp
 import cc.factorie.la.SingletonTensor1
 import cc.factorie.WeightsSet
 import cc.factorie.optimize.{Perceptron, OnlineTrainer, Trainer}
+import legacy._
 
 /**
  * This object provides a set of implicit conversions that allow users

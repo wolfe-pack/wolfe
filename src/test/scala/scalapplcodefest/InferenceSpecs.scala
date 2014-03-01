@@ -1,9 +1,9 @@
 package scalapplcodefest
 
-import scalapplcodefest.term._
+import scalapplcodefest.legacy.term._
 import org.scalatest.{Matchers, WordSpec}
-import scalapplcodefest.value.{Fun, Bools, Doubles}
-import scalapplcodefest.term.LambdaAbstraction
+import scalapplcodefest.legacy.value.{Fun, Bools, Doubles}
+import scalapplcodefest.legacy.term.LambdaAbstraction
 import scala.util.Random
 
 /**

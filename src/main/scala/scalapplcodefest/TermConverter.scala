@@ -1,12 +1,12 @@
 package scalapplcodefest
 
 import scala.language.implicitConversions
-import scalapplcodefest.term._
+import scalapplcodefest.legacy.term._
 import scala.Some
-import scalapplcodefest.term.ImageSeq1
-import scalapplcodefest.term.LambdaAbstraction
-import scalapplcodefest.term.SeqTerm
-import scalapplcodefest.term.FunApp
+import scalapplcodefest.legacy.term.ImageSeq1
+import scalapplcodefest.legacy.term.LambdaAbstraction
+import scalapplcodefest.legacy.term.SeqTerm
+import scalapplcodefest.legacy.term.FunApp
 
 /**
  * A set of methods to convert one term into another.

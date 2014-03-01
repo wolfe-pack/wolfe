@@ -1,7 +1,7 @@
 package scalapplcodefest.mln
 
 import org.scalatest.{Matchers, FlatSpec}
-import scalapplcodefest.term.State
+import scalapplcodefest.legacy.term.State
 
 
 /**

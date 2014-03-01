@@ -5,16 +5,16 @@ import org.scalautils._
 import Tolerance._
 import org.scalautils._
 import cc.factorie.optimize.{Perceptron, OnlineTrainer}
-import scalapplcodefest.value._
-import scalapplcodefest.term._
-import scalapplcodefest.term.Target
-import scalapplcodefest.term.ValueOutsideOfDomain
+import scalapplcodefest.legacy.value._
+import scalapplcodefest.legacy.term._
+import scalapplcodefest.legacy.term.Target
+import scalapplcodefest.legacy.term.ValueOutsideOfDomain
 import scala.Some
-import scalapplcodefest.value.Gen
-import scalapplcodefest.term.FunctionNotDefinedAt
-import scalapplcodefest.term.Constant
+import scalapplcodefest.legacy.value.Gen
+import scalapplcodefest.legacy.term.FunctionNotDefinedAt
+import scalapplcodefest.legacy.term.Constant
 import org.scalautils.Bad
-import scalapplcodefest.term.VariableUndefined
+import scalapplcodefest.legacy.term.VariableUndefined
 import cc.factorie.la.Tensor1
 
 /**

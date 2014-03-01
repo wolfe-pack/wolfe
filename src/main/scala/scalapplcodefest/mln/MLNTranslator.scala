@@ -8,34 +8,35 @@ import scala.collection.mutable.ListBuffer
 import scala.Symbol
 import scala.collection.immutable.HashMap
 import scala.Predef._
-import scalapplcodefest.value._
-import scalapplcodefest.term._
+import scalapplcodefest.legacy.value._
+import scalapplcodefest.legacy.term._
 import scalapplcodefest.TermDSL._
 import scalapplcodefest.mln.MLNParser.IntegerTypeDefinition
 import scalapplcodefest.mln.MLNParser.Atom
 import scalapplcodefest.mln.MLNParser.HardFormula
-import scalapplcodefest.value.RangeSet
+import scalapplcodefest.legacy.value.RangeSet
 import scalapplcodefest.mln.MLNParser.AsteriskFormula
 import scalapplcodefest.mln.MLNParser.AsteriskAtom
 import scalapplcodefest.mln.MLNParser.WeightedFormula
 import scalapplcodefest.mln.MLNParser.And
 import scalapplcodefest.mln.MLNParser.DatabaseAtom
 import scalapplcodefest.mln.MLNParser.ConstantTypeDefinition
-import scalapplcodefest.term.Predicate
+import scalapplcodefest.legacy.term.Predicate
 import scalapplcodefest.mln.MLNParser.Equivalence
 import scalapplcodefest.mln.MLNParser.PlusVariable
 import scalapplcodefest.mln.MLNParser.Or
-import scalapplcodefest.term.LambdaAbstraction
+import scalapplcodefest.legacy.term.LambdaAbstraction
 import scalapplcodefest.mln.MLNParser.PlusAtom
-import scalapplcodefest.term.Var
+import scalapplcodefest.legacy.term.Var
 import scalapplcodefest.mln.MLNParser.Not
-import scalapplcodefest.term.TupleTerm2
-import scalapplcodefest.term.CartesianProductTerm2
+import scalapplcodefest.legacy.term.TupleTerm2
+import scalapplcodefest.legacy.term.CartesianProductTerm2
 import scalapplcodefest.mln.MLNParser.ExclamationVariable
 import scalapplcodefest.mln.MLNParser.VariableOrType
-import scalapplcodefest.term.FunApp
+import scalapplcodefest.legacy.term.FunApp
 import scalapplcodefest.mln.MLNParser.FunctionDefinition
 import scalapplcodefest.mln.MLNParser.Implies
+import scalapplcodefest.legacy._
 
 /**
  * Created by larysa  05.12.13
@@ -53,7 +54,7 @@ class MLNTranslator {
   private val groundAtoms = new ListBuffer[DatabaseAtom]
   private val dbFunctions = new ListBuffer[DatabaseFunction]
 
-  private var domains = new HashMap[Symbol, scalapplcodefest.term.Term[Any]]
+  private var domains = new HashMap[Symbol, scalapplcodefest.legacy.term.Term[Any]]
   private var predicates = new HashMap[Symbol, Predicate[_, Boolean]]
   private var functions = new HashMap[Symbol, Predicate[_, _]]
 
@@ -104,7 +105,7 @@ class MLNTranslator {
 
     val features: Seq[Reduce[Vector]] = folf map (formula => {
       val name: String = formula._1
-      val function: scalapplcodefest.term.Term[Boolean] = formula._3
+      val function: scalapplcodefest.legacy.term.Term[Boolean] = formula._3
 
       val unitVec = unit(index(Symbol(name)), I(function))
       val vars: Set[Var[Any]] = VarsCollector.collect(function.asInstanceOf[FunApp[Any, Boolean]])
@@ -166,7 +167,7 @@ class MLNTranslator {
 trait MLN
 
 trait TypeDeclaration extends MLN {
-  def convert: (Symbol, scalapplcodefest.term.Term[Set[Any]])
+  def convert: (Symbol, scalapplcodefest.legacy.term.Term[Set[Any]])
 }
 
 object TypeDeclaration {
@@ -174,7 +175,7 @@ object TypeDeclaration {
 
   def apply(expression: Expression) = expression match {
     case expr@IntegerTypeDefinition(_, _, _) => new TypeDeclaration {
-      def convert = (Symbol(expr.name), RangeSet(expr.from, expr.to).asInstanceOf[scalapplcodefest.term.Term[Set[Any]]])
+      def convert = (Symbol(expr.name), RangeSet(expr.from, expr.to).asInstanceOf[scalapplcodefest.legacy.term.Term[Set[Any]]])
     }
     case expr@ConstantTypeDefinition(_, _) => new TypeDeclaration {
       def convert = (Symbol(expr.name), set(expr.constants))
@@ -184,7 +185,7 @@ object TypeDeclaration {
 }
 
 trait DomainDeclaration {
-  def allDomains: Map[Symbol, scalapplcodefest.term.Term[Any]]
+  def allDomains: Map[Symbol, scalapplcodefest.legacy.term.Term[Any]]
 }
 
 object DomainDeclaration {
@@ -192,7 +193,7 @@ object DomainDeclaration {
   import MLNParser.Constant
 
   def apply(groundAtoms: ListBuffer[DatabaseAtom], predicates: ListBuffer[Expression]) = new DomainDeclaration {
-    def allDomains: Map[Symbol, scalapplcodefest.term.Term[Any]] = {
+    def allDomains: Map[Symbol, scalapplcodefest.legacy.term.Term[Any]] = {
       val allDomainsFromDb = for (p <- predicates; atom <- groundAtoms; if atom.predicate == p.asInstanceOf[Atom].predicate) yield {
         val args = p.asInstanceOf[Atom].args
         args match {
@@ -209,7 +210,7 @@ object DomainDeclaration {
       // tearing my hair out!!! this:  SetTerm(d._2.toList:_*) took me 2h to figure out;
       // still have no idea why the casting here
       // def apply[T](elems:T*) = Constant(SetValue(elems:_*)) does not have any effect ?!
-      val map: Map[Symbol, scalapplcodefest.term.Term[Any]] = doms.map(d => (Symbol(d._1) -> set(d._2.toList: _*)))
+      val map: Map[Symbol, scalapplcodefest.legacy.term.Term[Any]] = doms.map(d => (Symbol(d._1) -> set(d._2.toList: _*)))
       map
     }
   }
@@ -221,7 +222,7 @@ trait PredicateDeclaration extends MLN {
 }
 
 object PredicateDeclaration {
-  def apply(expression: Expression, domains: Map[Symbol, scalapplcodefest.term.Term[Any]]) = new PredicateDeclaration {
+  def apply(expression: Expression, domains: Map[Symbol, scalapplcodefest.legacy.term.Term[Any]]) = new PredicateDeclaration {
     def convert = {
       expression match {
         case expr@Atom(_, _) =>
@@ -230,15 +231,15 @@ object PredicateDeclaration {
           val predicate = Symbol(expr.predicate)
           //todo: exclamation arguments: mutualy exclusive predicate
           dom match {
-            case Seq(d1) => (predicate, Predicate(predicate, d1.asInstanceOf[scalapplcodefest.term.Term[Set[Any]]], bools))
-            case Seq(d1, d2) => (predicate, Predicate(predicate, c(d1.asInstanceOf[scalapplcodefest.term.Term[Set[Any]]], d2.asInstanceOf[scalapplcodefest.term.Term[Set[Any]]]), bools /*scalapplcodefest.Constant(Bools)*/))
+            case Seq(d1) => (predicate, Predicate(predicate, d1.asInstanceOf[scalapplcodefest.legacy.term.Term[Set[Any]]], bools))
+            case Seq(d1, d2) => (predicate, Predicate(predicate, c(d1.asInstanceOf[scalapplcodefest.legacy.term.Term[Set[Any]]], d2.asInstanceOf[scalapplcodefest.legacy.term.Term[Set[Any]]]), bools /*scalapplcodefest.Constant(Bools)*/))
           }
       }
     }
   }
 
   private def deriveDomain(variable: List[MLNParser.Variable],
-                           domains: Map[Symbol, scalapplcodefest.term.Term[Any]]): Seq[scalapplcodefest.term.Term[Any]] = {
+                           domains: Map[Symbol, scalapplcodefest.legacy.term.Term[Any]]): Seq[scalapplcodefest.legacy.term.Term[Any]] = {
     variable match {
       case List(a1) => Seq(domains.get(Symbol(a1.name)).get)
       case List(a1, a2) => Seq(domains.get(Symbol(a1.name)).get, domains.get(Symbol(a2.name)).get)
@@ -251,7 +252,7 @@ trait FunctionDeclaration extends MLN {
 }
 
 object FunctionDeclaration {
-  def apply(expression: Expression, domains: Map[Symbol, scalapplcodefest.term.Term[Any]]) = new FunctionDeclaration {
+  def apply(expression: Expression, domains: Map[Symbol, scalapplcodefest.legacy.term.Term[Any]]) = new FunctionDeclaration {
     def convert: (Symbol, Predicate[_, _]) = expression match {
       case expr@FunctionDefinition(_, _, _) => {
         val returnType = expr.returnType
@@ -260,15 +261,15 @@ object FunctionDeclaration {
         val outputDom = deriveDomain(List(returnType), domains)
         val funcName = Symbol(expr.name)
         inputDom match {
-          case Seq(d1) => (funcName, Predicate(funcName, d1.asInstanceOf[scalapplcodefest.term.Term[Set[Any]]], outputDom.head.asInstanceOf[scalapplcodefest.term.Term[Set[Any]]]))
-          case Seq(d1, d2) => (funcName, Predicate(funcName, c(d1.asInstanceOf[scalapplcodefest.term.Term[Set[Any]]], d2.asInstanceOf[scalapplcodefest.term.Term[Set[Any]]]), outputDom.head.asInstanceOf[scalapplcodefest.term.Term[Set[Any]]]))
+          case Seq(d1) => (funcName, Predicate(funcName, d1.asInstanceOf[scalapplcodefest.legacy.term.Term[Set[Any]]], outputDom.head.asInstanceOf[scalapplcodefest.legacy.term.Term[Set[Any]]]))
+          case Seq(d1, d2) => (funcName, Predicate(funcName, c(d1.asInstanceOf[scalapplcodefest.legacy.term.Term[Set[Any]]], d2.asInstanceOf[scalapplcodefest.legacy.term.Term[Set[Any]]]), outputDom.head.asInstanceOf[scalapplcodefest.legacy.term.Term[Set[Any]]]))
         }
       }
     }
   }
 
   private def deriveDomain(variable: List[MLNParser.Variable],
-                           domains: Map[Symbol, scalapplcodefest.term.Term[Any]]): Seq[scalapplcodefest.term.Term[Any]] = {
+                           domains: Map[Symbol, scalapplcodefest.legacy.term.Term[Any]]): Seq[scalapplcodefest.legacy.term.Term[Any]] = {
     variable match {
       case List(a1) => Seq(domains.get(Symbol(a1.name)).get)
       case List(a1, a2) => Seq(domains.get(Symbol(a1.name)).get, domains.get(Symbol(a2.name)).get)
@@ -277,17 +278,17 @@ object FunctionDeclaration {
 }
 
 trait FormulaDeclaration extends MLN {
-  def convert: Set[(String, Double, scalapplcodefest.term.Term[Boolean])]
+  def convert: Set[(String, Double, scalapplcodefest.legacy.term.Term[Boolean])]
 }
 
 object FormulaDeclaration {
-  def apply(expression: Expression, predicates: Map[Symbol, scalapplcodefest.term.Predicate[_, Boolean]]) = new FormulaDeclaration {
-    def convert: Set[(String, Double, scalapplcodefest.term.Term[Boolean])] = {
+  def apply(expression: Expression, predicates: Map[Symbol, scalapplcodefest.legacy.term.Predicate[_, Boolean]]) = new FormulaDeclaration {
+    def convert: Set[(String, Double, scalapplcodefest.legacy.term.Term[Boolean])] = {
       expression match {
         case exp@WeightedFormula(_, _) => Set((exp.formula.toString, exp.weight, formula(exp.formula, predicates)))
         case exp@HardFormula(_) => Set((exp.formula.toString, Double.PositiveInfinity, formula(exp.formula, predicates)))
         case exp@AsteriskFormula(_) => {
-          val asterisks: List[(String, Double, scalapplcodefest.term.Term[Boolean])] = for (f <- expandAsterisk(exp.formula)) yield (exp.formula.toString, 0.0, formula(f, predicates))
+          val asterisks: List[(String, Double, scalapplcodefest.legacy.term.Term[Boolean])] = for (f <- expandAsterisk(exp.formula)) yield (exp.formula.toString, 0.0, formula(f, predicates))
           asterisks.toSet
         }
         case Implies(_, _) | Equivalence(_, _) | And(_, _) | Or(_, _) | Not(_) => Set((expression.toString, 0.0, formula(expression.asInstanceOf[Formula], predicates)))
@@ -298,7 +299,7 @@ object FormulaDeclaration {
   }
 
 
-  private def formula(f: Formula, predicates: Map[Symbol, Predicate[_, Boolean]]): scalapplcodefest.term.Term[Boolean] = {
+  private def formula(f: Formula, predicates: Map[Symbol, Predicate[_, Boolean]]): scalapplcodefest.legacy.term.Term[Boolean] = {
     if (f.allPlusVariables.size != 0) {
       expandPlusVariable(f, predicates) foreach (expanded => formula(expanded, predicates))
     }
@@ -309,9 +310,9 @@ object FormulaDeclaration {
 
         val funApp: FunApp[Any, Boolean] = args match {
           case List(a1) => {
-            val variable: scalapplcodefest.term.Term[Any] = a1 match {
+            val variable: scalapplcodefest.legacy.term.Term[Any] = a1 match {
               case VariableOrType(name) => Var(Symbol(name), predDefinition.funCandidateDom)
-              case MLNParser.Constant(value) => scalapplcodefest.term.Constant(value)
+              case MLNParser.Constant(value) => scalapplcodefest.legacy.term.Constant(value)
               case ExclamationVariable(name) => throw new UnsupportedOperationException("Exclamation variable processing is not supported for now..")
             }
             FunApp(predDefinition.asInstanceOf[FunTerm[Any, Boolean]], variable)
@@ -319,20 +320,20 @@ object FormulaDeclaration {
 
           case List(a1, a2) => {
             val domains = predDefinition.funCandidateDom.asInstanceOf[CartesianProductTerm2[_, _]]
-            val var1: scalapplcodefest.term.Term[Any] = a1 match {
+            val var1: scalapplcodefest.legacy.term.Term[Any] = a1 match {
 
               case VariableOrType(name) => Var(Symbol(name), domains.a1)
-              case MLNParser.Constant(value) => scalapplcodefest.term.Constant(value)
+              case MLNParser.Constant(value) => scalapplcodefest.legacy.term.Constant(value)
               case ExclamationVariable(name) => throw new UnsupportedOperationException("Exclamation variable processing is not supported for now..")
             }
-            val var2: scalapplcodefest.term.Term[Any] = a2 match {
+            val var2: scalapplcodefest.legacy.term.Term[Any] = a2 match {
               case VariableOrType(name) => Var(Symbol(name), domains.a2)
-              case MLNParser.Constant(value) => scalapplcodefest.term.Constant(value)
+              case MLNParser.Constant(value) => scalapplcodefest.legacy.term.Constant(value)
               case ExclamationVariable(name) => throw new UnsupportedOperationException("Exclamation variable processing is not supported for now..")
             }
             FunApp(predDefinition.asInstanceOf[FunTerm[Any, Boolean]],
-              TupleTerm2(var1.asInstanceOf[scalapplcodefest.term.Variable[_]],
-                var2.asInstanceOf[scalapplcodefest.term.Variable[_]]))
+              TupleTerm2(var1.asInstanceOf[scalapplcodefest.legacy.term.Variable[_]],
+                var2.asInstanceOf[scalapplcodefest.legacy.term.Variable[_]]))
           }
 
         }
@@ -376,7 +377,7 @@ object FormulaDeclaration {
         val predicateDef: Predicate[_, Boolean] = predicates.get(Symbol(name)).get
         args match {
           case List(a1) => {
-            val domain = predicateDef.funCandidateDom.asInstanceOf[scalapplcodefest.term.Constant[SetValue[_]]].value
+            val domain = predicateDef.funCandidateDom.asInstanceOf[scalapplcodefest.legacy.term.Constant[SetValue[_]]].value
             val instantiated = domain.map(v => Atom(name, List(MLNParser.Constant(v.toString))).asInstanceOf[Formula])
             instantiated.toList
           }
@@ -384,14 +385,14 @@ object FormulaDeclaration {
             val domains = predicateDef.funCandidateDom.asInstanceOf[CartesianProductTerm2[_, _]]
             val firstArgument = a1 match {
               case PlusVariable(a) => {
-                val dom1 = domains.a1.asInstanceOf[scalapplcodefest.term.Constant[SetValue[_]]].value
+                val dom1 = domains.a1.asInstanceOf[scalapplcodefest.legacy.term.Constant[SetValue[_]]].value
                 dom1.map(v => MLNParser.Constant(v.toString))
               }
               case _ => Seq(a1)
             }
             val secondArgument = a2 match {
               case PlusVariable(a) => {
-                val dom2 = domains.a2.asInstanceOf[scalapplcodefest.term.Constant[SetValue[_]]].value
+                val dom2 = domains.a2.asInstanceOf[scalapplcodefest.legacy.term.Constant[SetValue[_]]].value
                 dom2.map(v => MLNParser.Constant(v.toString))
               }
               case _ => Seq(a2)
@@ -433,7 +434,7 @@ object VarsCollector {
 }
 
 object LambdaAbstractionFactory {
-  def apply(body: scalapplcodefest.term.Term[Vector], variables: Set[Var[Any]]): FunTerm[_, Vector] = {
+  def apply(body: scalapplcodefest.legacy.term.Term[Vector], variables: Set[Var[Any]]): FunTerm[_, Vector] = {
     variables.toList match {
       case x :: Nil => LambdaAbstraction(x, body)
       case List(x, y) => LambdaAbstraction(sig(VarSig(x), VarSig(y)), body)
@@ -451,7 +452,7 @@ object StateCollector {
       val atoms: ListBuffer[DatabaseAtom] = grouped.get(predicate._1.name).get
       val predDefinition = predicate._2.asInstanceOf[Predicate[Any, Boolean]]
       val assign = predDefinition.funCandidateDom match {
-        case s: scalapplcodefest.term.Constant[_] => {
+        case s: scalapplcodefest.legacy.term.Constant[_] => {
           atoms map (a => Assign(predDefinition.atom(Symbol(a.args(0).asInstanceOf[MLNParser.Constant].value)), true))
         }
         case c: CartesianProductTerm2[_, _] =>

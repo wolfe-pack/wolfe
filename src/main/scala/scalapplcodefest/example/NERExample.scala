@@ -3,10 +3,10 @@ package scalapplcodefest.example
 import scalapplcodefest._
 import scalapplcodefest.TermDSL._
 import java.util.zip.GZIPInputStream
-import scalapplcodefest.term.{Max, State, Var, Predicate}
+import scalapplcodefest.legacy.term.{Max, State, Var, Predicate}
 import cc.factorie.optimize.{AdaGrad, Perceptron, OnlineTrainer}
-import scalapplcodefest.term.Var
-import scalapplcodefest.term.Predicate
+import scalapplcodefest.legacy.term.Var
+import scalapplcodefest.legacy.term.Predicate
 
 /**
  * A 2nd-order linear-chain CRF for named entity recognition

@@ -1,5 +1,5 @@
 import cc.factorie.la.{SingletonTensor1, DenseTensor1, SparseTensor1, Tensor1}
-import scalapplcodefest.value.Fun
+import scalapplcodefest.legacy.value.Fun
 
 /**
  * @author Sebastian Riedel

@@ -4,8 +4,8 @@ import gnu.trove.strategy.HashingStrategy
 import gnu.trove.map.custom_hash.TObjectIntCustomHashMap
 import scala.collection.mutable
 import gnu.trove.procedure.TObjectIntProcedure
-import scalapplcodefest.value.{Fun, AllOfType, Ints}
-import scalapplcodefest.term.{Constant, Term, SeqTerm, FunApp}
+import scalapplcodefest.legacy.value.{Fun, AllOfType, Ints}
+import scalapplcodefest.legacy.term.{Constant, Term, SeqTerm, FunApp}
 import java.io.{ObjectInputStream, ObjectOutputStream}
 
 /**
