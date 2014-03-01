@@ -34,9 +34,9 @@ object LDAExample {
 
   val test = c(bools, bools) map Test
 
-  def story(stats: Double*) = sum(stats)(identity)
+  def story(stats: Double*) = sumOld(stats)(identity)
 
-  def allIn[T](elems: Seq[T])(stats: T => Double) = sum(elems)(stats)
+  def allIn[T](elems: Seq[T])(stats: T => Double) = sumOld(elems)(stats)
 
   def hyper(id: Any)(implicit w: Vector) = (v: Any) => w dot ft(id -> v, 1.0)
 
@@ -61,13 +61,13 @@ object LDAExample {
 
   implicit class GeneratedSeq[T](seq: Seq[T]) {
     def ~(generator: MultivariateDistribution[T]) = {
-      sum(seq.indices) {i => generator.score(seq(i), i)}
+      sumOld(seq.indices) {i => generator.score(seq(i), i)}
     }
   }
 
   implicit class GeneratedMap[K, T](seq: Map[K, T]) {
     def ~(generator: MultivariateDistribution[T]) = {
-      sum(seq.keys.toSeq) {i => generator.score(seq(i), i)}
+      sumOld(seq.keys.toSeq) {i => generator.score(seq(i), i)}
     }
   }
 

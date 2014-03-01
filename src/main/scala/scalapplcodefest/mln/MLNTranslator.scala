@@ -473,7 +473,7 @@ object StateCollector {
 object LoanResourceManager {
   /* File resource management, tailored for an (Alchemy) MLN file*/
   def withFileIteratorForMLN(file: String)(process: String => Unit) {
-    val stream = Util.getStreamFromClassPathOrFile(file)
+    val stream = util.Util.getStreamFromClassPathOrFile(file)
     try {
       val lines = Source.fromInputStream(stream).getLines().filter(nonMLNElements(_))
       lines foreach (line => process(line))

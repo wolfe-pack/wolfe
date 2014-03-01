@@ -16,7 +16,7 @@ object SimpleCompiler {
    * Adds reasonable default classpath
    * @param settings settings to change.
    */
-  def setDefaultClasspath(settings: Settings) {
+  def appendDefaultClasspath(settings: Settings) {
     val compilerPath = try {
       jarPathOfClass("scala.tools.nsc.Interpreter")
     } catch {
@@ -41,16 +41,17 @@ object SimpleCompiler {
 
   def inlineFile(code:String) = new BatchSourceFile("(inline)", code)
 
-  def compile(settings: Settings, sources:List[SourceFile], pluginConstructors: List[Global => scala.tools.nsc.plugins.Plugin] = Nil) {
+  def compile(settings: Settings, sources:List[SourceFile], pluginConstructors: List[GeneratorEnvironment => scala.tools.nsc.plugins.Plugin] = Nil) {
     val reporter = new ConsoleReporter(settings)
-    setDefaultClasspath(settings)
+    appendDefaultClasspath(settings)
     val compiler: Global =
       new Global(settings, reporter) with RangePositions {
         self =>
         override protected def computeInternalPhases() {
           super.computeInternalPhases()
+          val env = new GeneratorEnvironment(self)
 
-          for (constructor <- pluginConstructors; phase <- constructor(self).components)
+          for (constructor <- pluginConstructors; phase <- constructor(env).components)
             phasesSet += phase
         }
       }

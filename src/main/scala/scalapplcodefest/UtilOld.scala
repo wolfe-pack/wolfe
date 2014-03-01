@@ -4,7 +4,6 @@ import java.io.{FileInputStream, InputStream}
 import scalapplcodefest.value.SetValue
 import scalapplcodefest.term._
 import cc.factorie.maths.ArrayOps
-import java.util
 import org.scalautils.{Bad, Good, Or}
 import scalapplcodefest.term.Var
 import scalapplcodefest.term.Predicate
@@ -12,7 +11,7 @@ import scalapplcodefest.term.Predicate
 /**
  * @author Sebastian Riedel
  */
-object Util {
+object UtilOld {
 
   def tooLargeToIterate = sys.error("Data structure too large to iterate over")
   def tooLargeToCount = sys.error("Data structure too large to count")
@@ -30,28 +29,8 @@ object Util {
     def apply(idx: Int) = pointlessToAccessElement
   }
 
-  /**
-   * Loads a resource as stream. This returns either a resource in the classpath,
-   * or in case no such named resource exists, from the file system.
-   */
-  def getStreamFromClassPathOrFile(name: String): InputStream = {
-    val is: InputStream = getClass.getClassLoader.getResourceAsStream(name)
-    if (is == null) {
-      new FileInputStream(name)
-    }
-    else {
-      is
-    }
-  }
 
-  /**
-   * Takes an iterator over lines and groups this according to a delimiter line.
-   */
-  def groupLines(lines: Iterator[String], delim: String = "") = {
-    lines.foldLeft(Seq(Seq.empty[String])) {
-      (result, line) => if (line == delim) result :+ Seq.empty else result.init :+ (result.last :+ line)
-    }
-  }
+
 
   /**
    * Loads a CoNLL style file in tab separated format.
@@ -65,7 +44,7 @@ object Util {
    *
    */
   def loadCoNLL(lines: Iterator[String], predicates: Seq[Predicate[Int, String]], length: Var[Int]) =
-    groupLines(lines).map(conllToState(_, predicates, length))
+    util.Util.groupLines(lines).map(conllToState(_, predicates, length))
 
   def conllToState(lines: Seq[String], predicates: Seq[Predicate[Int, String]], length: Var[Int]) = {
     import TermDSL._
@@ -148,7 +127,7 @@ class WithStateDo(doSomething: State => Unit) {
 object MoreArrayOps extends ArrayOps {
   def maxValue(s: A): Double = { var result = s(0); var i = 0; while (i < s.length) {if (s(i) > result) result = s(i); i += 1}; result }
   def maxNormalize(s: A) { val norm = maxValue(s); this -=(s, norm) }
-  def fill(s: A, v: Double) { util.Arrays.fill(s, v) }
+  def fill(s: A, v: Double) { java.util.Arrays.fill(s, v) }
 }
 
 

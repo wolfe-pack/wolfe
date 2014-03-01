@@ -5,6 +5,8 @@ package scalapplcodefest.sbt
  */
 object ExampleTemplate {
 
-  def run() = "Test"
+  def test() = "Test"
+
+  def run() = test()
 
 }
