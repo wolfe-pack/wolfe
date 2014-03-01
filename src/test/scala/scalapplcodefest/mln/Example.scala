@@ -46,6 +46,24 @@ class MLNTest extends FlatSpec with Matchers {
 
   }
 
+
+  "MLN structure learning" should "work" in {
+
+    val mln_file = "scalapplcodefest/mln/social/network/learning/smoking-str-learn.mln"
+    val db_file = "scalapplcodefest/mln/social/network/learning/smoking-train-str-learn.db"
+
+    val mln = new MLNTranslator
+    mln.mln(mln_file).db(db_file).justTransform
+    val rawState: List[GroundAtom[_, Boolean]] = mln.getRawState
+
+    // todo: to many args
+    StructLearner(mln.getDomains,
+    /*do we need mln.getPredicates here? consider to remove*/
+      mln.getPredicates,
+      mln.getRawState,
+      mln.getPredicatesDictionary).getGraph
+  }
+
 }
 
 
