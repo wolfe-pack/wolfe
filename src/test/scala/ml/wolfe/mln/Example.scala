@@ -12,9 +12,9 @@ class MLNTest extends FlatSpec with Matchers {
 
   "MLN parsing" should "work" in {
 
-    val mln_file = "wolfe/mln/social/network/smoking.mln"
-    val db_file = "wolfe/mln/social/network/smoking-train.db"
-    val result_file = "wolfe/mln/social/network/smoking.result"
+    val mln_file = "ml/wolfe/mln/social/network/smoking.mln"
+    val db_file = "ml/wolfe/mln/social/network/smoking-train.db"
+    val result_file = "ml/wolfe/mln/social/network/smoking.result"
 
     val mln = new MLNTranslator
     mln.mln(mln_file).db(db_file) /*.query("Cancer", "Friends", "Smokes")*/ .getModel
@@ -50,8 +50,8 @@ class MLNTest extends FlatSpec with Matchers {
 
   "MLN structure learning" should "work" in {
 
-    val mln_file = "wolfe/mln/social/network/learning/smoking-str-learn.mln"
-    val db_file = "wolfe/mln/social/network/learning/smoking-train-str-learn.db"
+    val mln_file = "ml/wolfe/mln/social/network/learning/smoking-str-learn.mln"
+    val db_file = "ml/wolfe/mln/social/network/learning/smoking-train-str-learn.db"
 
     val mln = new MLNTranslator
     mln.mln(mln_file).db(db_file).justTransform
