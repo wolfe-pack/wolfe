@@ -2,7 +2,7 @@ package scalapplcodefest.term
 
 import org.scalautils.{Bad, Good}
 import scalapplcodefest.value._
-import scalapplcodefest.{TermDSL, Util, SetUtil}
+import scalapplcodefest.{TermDSL, UtilOld, SetUtil}
 
 /**
  * @author Sebastian Riedel

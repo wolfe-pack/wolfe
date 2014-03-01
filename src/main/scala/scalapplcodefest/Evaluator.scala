@@ -1,6 +1,7 @@
 package scalapplcodefest
 
 import scalapplcodefest.term._
+import scalapplcodefest.util.{Evaluation, EvaluationSummary}
 
 /**
  * State-based generic evaluators.
@@ -65,34 +66,5 @@ object Evaluator {
 
 }
 
-case class EvaluationSummary(evaluations:Map[Any,Evaluation]) {
-  override def toString = {
-    val keys = evaluations.keys.toSeq.sortBy(_.toString)
-    val lines = for (key <- keys.view) yield
-      f"""
-        |------------
-        |Key:         $key
-        |${evaluations(key)}
-      """.stripMargin
-    lines.mkString("\n")
-
-  }
-}
-
-case class Evaluation(tp: Int = 0, tn: Int = 0, fp: Int = 0, fn: Int = 0) {
-  def totalGold = tp + fn
-  def totalGuess = tp + fp
-  def precision = tp.toDouble / totalGuess
-  def recall = tp.toDouble / totalGold
-  def f1 = 2.0 * precision * recall / (precision + recall)
-  def +(that: Evaluation) = Evaluation(tp + that.tp, tn + that.tn, fp + that.fp, fn + that.fn)
-  override def toString =
-    f"""Total Gold:  $totalGold
-      |Total Guess: $totalGuess
-      |Precision:   $precision%f
-      |Recall:      $recall%f
-      |F1:          $f1%f
-    """.stripMargin
-}
 
 

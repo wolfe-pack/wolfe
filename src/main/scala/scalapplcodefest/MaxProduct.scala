@@ -26,6 +26,7 @@ object MaxProduct {
     for (node <- fg.nodes) updateBelief(node)
 
     //calculate gradient and objective
+    //todo this is not needed if we don't have linear factors. Maybe initial size should depend on number of linear factors
     fg.gradient = new SparseVector(1000)
     fg.value = featureExpectationsAndObjective(fg,fg.gradient)
 

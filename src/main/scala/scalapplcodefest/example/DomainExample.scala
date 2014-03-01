@@ -10,13 +10,13 @@ object DomainExample extends App {
 
   import Wolfe._
 
-  def argmax[T](condition: T => Boolean)(obj: T => Double)(implicit domain: Set[T]) = domain.filter(condition).maxBy(obj)
-  def sum[T, D](obj: T => D)(implicit domain: Set[T], num: Numeric[D]) = domain.view.map(obj).sum(num)
+  def argmax[T](condition: T => Boolean)(obj: T => Double)(implicit domain: Iterable[T]) = domain.filter(condition).maxBy(obj)
+  def sum[T, D](obj: T => D)(implicit domain: Iterable[T], num: Numeric[D]) = domain.view.map(obj).sum(num)
 
-  def formula[T, D](obj: T => D)(implicit domain: Set[T], num: Numeric[D]) = sum(obj)(domain, num)
+  def formula[T, D](obj: T => D)(implicit domain: Iterable[T], num: Numeric[D]) = sum(obj)(domain, num)
 
   implicit class RichAny(s: Any) {
-    def :=[T](formula: T => Boolean)(implicit domain: Set[T]): Vector = {
+    def :=[T](formula: T => Boolean)(implicit domain: Iterable[T]): Vector = {
       sum {p: T => ft(s, formula(p))}
     }
   }
@@ -29,15 +29,15 @@ object DomainExample extends App {
 
   case class Data(smokes: Pred[Person], cancer: Pred[Person], friend: Pred[(Person, Person)])
 
-  implicit val allData = all(Data)
+  implicit val allData = all2(Data)
 
   def mln = linearModel {
     data: Data => {
       import data._
-      val f1 = 'smokingIsBad := {p: Person => smokes(p) -> cancer(p)}
+      val f1 = 'smokingIsBad := {p: Person => smokes(p) --> cancer(p)}
       val f2 = 'peerPressure := {
         persons: (Person, Person) =>
-          friend(persons._1, persons._2) -> (smokes(persons._1) <-> smokes(persons._2))
+          friend(persons._1, persons._2) --> (smokes(persons._1) <-> smokes(persons._2))
       }
       List(f1, f2)
     }

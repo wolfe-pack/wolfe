@@ -19,10 +19,10 @@ object MLEExample extends App {
 
   //log-likelihood objective
   @Objective.LogLikelihood
-  def ll(data: Seq[Symbol])(prob: Symbol => Double) = sum(data) {x => log(prob(x))}
+  def ll(data: Seq[Symbol])(prob: Symbol => Double) = sumOld(data) {x => log(prob(x))}
 
   //the ML estimate
-  val p = argmax(simplex(coins, Set(0.0, 0.25, 0.75, 1.0))) {p => ll(data)(p)}
+  val p = argmaxOld(simplex(coins, Set(0.0, 0.25, 0.75, 1.0))) {p => ll(data)(p)}
 
   println(p('T))
 
@@ -47,17 +47,17 @@ object MLEExampleWithLinearModel extends App {
   def s(params: Vector)(coin: Coin) = f(coin) dot params
 
   @Objective.JointLoglikelihood
-  def ll(data: Seq[Coin])(w: Vector) = sum(data) {c => logZ(coins)(s(w)) - s(w)(c)}
+  def ll(data: Seq[Coin])(w: Vector) = sumOld(data) {c => logZOld(coins)(s(w)) - s(w)(c)}
 
   //a subset of possible weights to make brute force search tractable
   val myReals = Set(0.0, 0.25, 0.75, 1.0).map(math.exp)
 
   //val w = argmin(vectors)(ll(data)) //this won't run without compilation
-  val w = argmin(vectors(coins, myReals)) {ll(data)} //this should run w/o compilation
+  val w = argminOld(vectors(coins, myReals)) {ll(data)} //this should run w/o compilation
 
   //this is how the compiled expression should look like
   val compiled = (data map (ft(_))).sum.mapValues(w => log(w / data.size))
-  val compiled2 = sum (data) {f} mapValues(w => log(w / data.size))
+  val compiled2 = sumOld (data) {f} mapValues(w => log(w / data.size))
 
 
   println(w)
@@ -110,9 +110,9 @@ object LanguageModel extends App {
   def prob(s: Sentence)(p: BiGramModel) = Range(1, s.size).map(i => p(s(i - 1))(s(i))).product
 
   @Objective.LogLikelihood
-  def ll(data: Seq[Sentence])(p: BiGramModel) = sum(data) {x => log(prob(x)(p))}
+  def ll(data: Seq[Sentence])(p: BiGramModel) = sumOld(data) {x => log(prob(x)(p))}
 
-  val p = argmax(vocab -> simplex(vocab)) {ll(data)}
+  val p = argmaxOld(vocab -> simplex(vocab)) {ll(data)}
 
   println(p("cat")("the"))
 
@@ -130,7 +130,7 @@ object ConditioningExample extends App {
 
   def space = for (x <- Set(0.0, 1.0, 2.0); y <- Set(0.0, 1.0, 2.0)) yield Data(x, y)
 
-  val result = argmax(space filter (_.x == 5))(data => -data.x * (data.y - 2))
+  val result = argmaxOld(space filter (_.x == 5))(data => -data.x * (data.y - 2))
 
 
 }
