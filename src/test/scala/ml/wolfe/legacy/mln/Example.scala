@@ -49,8 +49,8 @@ class MLNTest extends FlatSpec with Matchers {
 
   "MLN structure learning" should "work" in {
 
-    val mln_file = "ml/wolfe/mln/social/network/learning/smoking-str-learn.mln"
-    val db_file = "ml/wolfe/mln/social/network/learning/smoking-train-str-learn.db"
+    val mln_file = "ml/wolfe/legacy/mln/social/network/learning/smoking-str-learn.mln"
+    val db_file = "ml/wolfe/legacy/mln/social/network/learning/smoking-train-str-learn.db"
 
     val mln = new MLNTranslator
     mln.mln(mln_file).db(db_file).justTransform
