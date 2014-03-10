@@ -1,7 +1,7 @@
 package ml.wolfe.legacy.structure
 
 import scala.collection.mutable
-import ml.wolfe.mln.MLNParser.Term
+import ml.wolfe.legacy.mln.MLNParser.Term
 import scala._
 import ml.wolfe.legacy.term._
 

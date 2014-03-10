@@ -1,4 +1,4 @@
-package ml.wolfe.mln
+package ml.wolfe.legacy.mln
 
 import org.scalatest.{Matchers, FlatSpec}
 import ml.wolfe.legacy.term.{GroundAtom, State}
@@ -12,9 +12,8 @@ class MLNTest extends FlatSpec with Matchers {
 
   "MLN parsing" should "work" in {
 
-    val mln_file = "ml/wolfe/mln/social/network/smoking.mln"
-    val db_file = "ml/wolfe/mln/social/network/smoking-train.db"
-    val result_file = "ml/wolfe/mln/social/network/smoking.result"
+    val mln_file = "ml/wolfe/legacy/mln/social/network/smoking.mln"
+    val db_file = "ml/wolfe/legacy/mln/social/network/smoking-train.db"
 
     val mln = new MLNTranslator
     mln.mln(mln_file).db(db_file) /*.query("Cancer", "Friends", "Smokes")*/ .getModel
