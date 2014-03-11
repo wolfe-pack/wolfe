@@ -4,6 +4,8 @@ import scala.reflect.macros.Context
 import scala.language.experimental.macros
 import scala.collection.mutable
 import cc.factorie.optimize.Trainer
+import cc.factorie.util
+import ml.wolfe.util.LoggerUtil
 
 //import ml.wolfe.Wolfe._
 
@@ -36,7 +38,7 @@ object OptimizedWolfe extends WolfeAPI {
     val graphName = newTermName(c.fresh("graph"))
 
     //find annotation on objective
-    val maxBy:Tree = getMaxByProcedure(obj.tree)
+    val maxBy: Tree = getMaxByProcedure(obj.tree)
 
     val result = q"""
       import ml.wolfe._

@@ -5,6 +5,7 @@ import scala.collection.mutable
 import ml.wolfe.MPGraph
 import ml.wolfe.MPGraph.Factor
 
+
 /**
  * @author Sebastian Riedel
  */
@@ -102,6 +103,7 @@ trait StructuredGraphHelper[C <: Context] {
         import ml.wolfe.MPGraph._
         import ml.wolfe.macros._
         import scala.language.reflectiveCalls
+        import ml.wolfe.util.LoggerUtil
 
 
         ${metaStructure.classDef}
@@ -119,8 +121,8 @@ trait StructuredGraphHelper[C <: Context] {
 
         $mpGraphName.build()
 
-        println("Nodes:   " + $mpGraphName.nodes.size)
-        println("Factors: " + $mpGraphName.factors.size)
+        LoggerUtil.debug("Nodes logger:   " + $mpGraphName.nodes.size)
+        LoggerUtil.debug("Factors logger: " + $mpGraphName.factors.size)
 
       }
     """)

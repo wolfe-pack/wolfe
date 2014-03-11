@@ -4,7 +4,7 @@ import ml.wolfe.{MaxProduct, Wolfe}
 import Wolfe._
 import scala.util.Random
 import scala.io.Source
-import ml.wolfe.util.{Util, Evaluator}
+import ml.wolfe.util.{LoggerUtil, Util, Evaluator}
 import cc.factorie.optimize.{Perceptron, OnlineTrainer}
 
 /**
@@ -62,8 +62,7 @@ object TestIris {
     //the learned weights that minimize the perceptron loss
     val learned = argmin(vectors)(_ => true)(loss)
 
-    println("Learned:")
-    println(learned)
+    LoggerUtil.info("learned:" + learned.toString)
 
     def predict(i: Data) = argmax(S(i))(_ => true)(model(learned))
 
@@ -72,10 +71,10 @@ object TestIris {
     val predictedTrain = train.map(predict)
 
 
-    println(predictedTest.head)
+    LoggerUtil.info(predictedTest.head.toString)
 
-    println(Evaluator.evaluate(train,predictedTrain)(_.y))
-    println(Evaluator.evaluate(test,predictedTest)(_.y))
+    LoggerUtil.info(Evaluator.evaluate(train,predictedTrain)(_.y).toString)
+    LoggerUtil.info(Evaluator.evaluate(test,predictedTest)(_.y).toString)
 
 
   }
