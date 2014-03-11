@@ -3,7 +3,7 @@ package ml.wolfe.macros
 import scala.reflect.macros.Context
 import cc.factorie.WeightsSet
 import cc.factorie.optimize.{Perceptron, OnlineTrainer, Trainer}
-import ml.wolfe.util.LoggerUtil
+
 
 /**
  * @author Sebastian Riedel
@@ -72,6 +72,7 @@ trait GradientBasedMinimizationHelper[C <: Context] {
       import cc.factorie.la.WeightsMapAccumulator
       import cc.factorie.util.DoubleAccumulator
       import cc.factorie.optimize._
+      import ml.wolfe.util.LoggerUtil
       import ml.wolfe._
 
       val _index = new Index
