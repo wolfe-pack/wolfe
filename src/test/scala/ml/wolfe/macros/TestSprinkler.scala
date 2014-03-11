@@ -3,6 +3,7 @@ package ml.wolfe.macros
 import ml.wolfe.WolfeEnv._
 import OptimizedWolfe._
 import scala.math._
+import ml.wolfe.util.LoggerUtil
 
 /**
  * @author Sebastian Riedel
@@ -31,14 +32,14 @@ object TestSprinkler {
     def p(x: Data) = p_rain(x.rain) * p_sprinkler(x.rain)(x.sprinkler) * p_wet(x.sprinkler, x.rain)(x.wet)
 
 
-    println(sampleSpace.size)
+    LoggerUtil.info("Sample space: " + sampleSpace.size)
 
     //most likely explanation if the grass is wet
     val expected = BruteForceWolfe.argmax(sampleSpace)(_.wet)(x => log(p(x)))
     val actual = OptimizedWolfe.argmax(sampleSpace)(_.wet)(x => log(p(x)))
 
-    println(expected)
-    println(actual)
+    LoggerUtil.info("Expected: " + expected)
+    LoggerUtil.info("Actual: " + actual)
 
 
   }

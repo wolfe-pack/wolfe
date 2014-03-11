@@ -30,7 +30,10 @@ libraryDependencies ++= Seq(
   "org.scala-lang" % "scala-compiler" % "2.10.3",
   "org.scala-lang" % "scala-library" % "2.10.3",
   "org.scala-lang" %% "scala-pickling" % "0.8.0-SNAPSHOT",
-  "org.scalamacros" % "quasiquotes" % "2.0.0-M3" cross CrossVersion.full
+  "org.slf4j" % "slf4j-api" % "1.7.6",
+  "org.slf4j" % "slf4j-simple" % "1.7.6",
+  "com.typesafe" % "scalalogging-slf4j_2.10" % "1.1.0",
+"org.scalamacros" % "quasiquotes" % "2.0.0-M3" cross CrossVersion.full
 )
 
 generateWolfeSource := Seq.empty

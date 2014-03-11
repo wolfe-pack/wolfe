@@ -3,6 +3,7 @@ package ml.wolfe.macros
 import scala.reflect.macros.Context
 import cc.factorie.WeightsSet
 import cc.factorie.optimize.{Perceptron, OnlineTrainer, Trainer}
+import ml.wolfe.util.LoggerUtil
 
 /**
  * @author Sebastian Riedel
@@ -79,7 +80,7 @@ trait GradientBasedMinimizationHelper[C <: Context] {
       val examples = for (_instance <- trainingData.splice) yield new Example {
         val gradientCalculator = gradientCalculatorGenerator.splice
         def accumulateValueAndGradient(value: DoubleAccumulator, gradient: WeightsMapAccumulator) = {
-          println("Instance: " + _instance)
+          LoggerUtil.debug("Instance: " + _instance)
           val weights = weightsSet(key).asInstanceOf[FactorieVector]
           val (v, g) = gradientCalculator.valueAndGradient(weights)
           value.accumulate(v)
@@ -112,8 +113,8 @@ trait GradientBasedMinimizationHelper[C <: Context] {
                 def valueAndGradient(param: ml.wolfe.FactorieVector): (Double, ml.wolfe.FactorieVector) = {
                   val (v1,g1) = arg1.valueAndGradient(param)
                   val (v2,g2) = arg2.valueAndGradient(param)
-                  println("g1:" + FactorieConverter.toWolfeVector(g1,$indexName))
-                  println("g2:" + FactorieConverter.toWolfeVector(g2,$indexName))
+                  ml.wolfe.util.LoggerUtil.debug("g1:" + FactorieConverter.toWolfeVector(g1,$indexName))
+                  ml.wolfe.util.LoggerUtil.debug("g2:" + FactorieConverter.toWolfeVector(g2,$indexName))
                   (v1 - v2, g1 - g2)
                 }
               }
@@ -135,7 +136,7 @@ trait GradientBasedMinimizationHelper[C <: Context] {
         })
 
         //todo: this should be
-        val maxBy:Tree = getMaxByProcedure(obj)
+        val maxBy: Tree = getMaxByProcedure(obj)
 
         //need to replace occurences of weightVariable in objective with toWolfeVector(param)
         Some( q"""new GradientCalculator {
