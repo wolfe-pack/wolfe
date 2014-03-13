@@ -62,7 +62,7 @@ object TestIris {
     //the learned weights that minimize the perceptron loss
     val learned = argmin(vectors)(_ => true)(loss)
 
-    LoggerUtil.info("learned:" + learned.toString)
+    LoggerUtil.info("learned: t" + learned.toString)
 
     def predict(i: Data) = argmax(S(i))(_ => true)(model(learned))
 

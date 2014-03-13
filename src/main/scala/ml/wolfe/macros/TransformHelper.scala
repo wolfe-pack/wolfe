@@ -1,14 +1,18 @@
 package ml.wolfe.macros
 
 import scala.reflect.macros.Context
+import scala.reflect.api.Universe
 
 /**
  * @author Sebastian Riedel
  */
-trait TransformHelper[C <: Context] {
+trait TransformHelper[C <: Context] extends InUniverse with Transformers {
   this: MacroHelper[C] =>
 
   import context.universe._
+
+  type U = context.universe.type
+  val universe: U = context.universe
 
   def transform(tree: Tree, pf: PartialFunction[Tree, Tree]): context.Tree = new TransformWithPartialFunction(pf).transform(tree)
 
@@ -31,14 +35,9 @@ trait TransformHelper[C <: Context] {
     })
   }
 
-
-  val betaReducer     = new BetaReducer
-  val blockSimplifier = new BlockSimplifier
   val dotDistributor = new DotDistributor
 
-  def betaReduce(tree: Tree) = betaReducer transform tree
-  def simplifyBlocks(tree: Tree) = blockSimplifier transform tree
-  def distributeDots(tree:Tree) = dotDistributor transform tree
+  def distributeDots(tree: Tree) = dotDistributor transform tree
 
   def distinctTrees(trees: List[Tree], result: List[Tree] = Nil): List[Tree] = trees match {
     case Nil => result
@@ -47,12 +46,6 @@ trait TransformHelper[C <: Context] {
       distinctTrees(tail, distinct)
   }
 
-  class BlockSimplifier extends Transformer {
-    override def transform(tree: Tree) = tree match {
-      case Block(Nil, expr) => super.transform(expr)
-      case _ => super.transform(tree)
-    }
-  }
 
   class ReplaceMethodsWithFunctions(defDefs: Map[Symbol, DefDef]) extends Transformer {
     def getDef(f: Tree) = f match {
@@ -79,34 +72,6 @@ trait TransformHelper[C <: Context] {
     }
   }
 
-  class Substituter(binding: Map[Symbol, Tree]) extends Transformer {
-    override def transform(tree: Tree) = tree match {
-      case i: Ident => binding.get(i.symbol) match {
-        case Some(value) => value
-        case _ => super.transform(tree)
-      }
-      case _ => super.transform(tree)
-    }
-  }
-
-  class BetaReducer extends Transformer {
-
-    def substitute(defArgs: List[ValDef], args: List[Tree], tree: Tree): Tree = {
-      val binding = (defArgs.map(_.symbol) zip args).toMap
-      val substituter = new Substituter(binding)
-      val result = substituter transform tree
-      result
-    }
-
-
-    override def transform(tree: Tree): Tree = {
-      val transformed = super.transform(tree)
-      transformed match {
-        case Apply(Function(defArgs, rhs), args) => substitute(defArgs, args, rhs)
-        case other => other
-      }
-    }
-  }
 
   class DotDistributor extends Transformer {
 
@@ -122,7 +87,7 @@ trait TransformHelper[C <: Context] {
 
     override def transform(tree: Tree): Tree = {
       val transformed = tree match {
-        case DotProduct(QuantifiedSum(qdom,qpred,Function(args,body)),arg2) => q"sum($qdom)($qpred)((..$args) => $body.dot($arg2))"
+        case DotProduct(QuantifiedSum(qdom, qpred, Function(args, body)), arg2) => q"sum($qdom)($qpred)((..$args) => $body.dot($arg2))"
         case DotProduct(FlatSum(args1), FlatSum(args2)) => applyRecursively(distributeDots(args1, args2))
         case DotProduct(FlatSum(args1), arg2) => applyRecursively(distributeDots(args1, List(arg2)))
         case DotProduct(arg1, FlatSum(args2)) => applyRecursively(distributeDots(List(arg1), args2))
@@ -178,11 +143,66 @@ trait TransformHelper[C <: Context] {
   object FlatSum extends Flattened(ApplyPlus)
   object FlatProduct extends Flattened(ApplyTimes)
   object QuantifiedSum {
-    def unapply(tree:Tree):Option[(Tree,Tree,Tree)] = tree match {
-      case q"sum[..${_}]($qdom)($qpred)($qobj)" => Some(qdom,qpred,qobj)
-      case q"sum[..${_}]($qdom)($qpred)($qobj)(${_})" => Some(qdom,qpred,qobj)
+    def unapply(tree: Tree): Option[(Tree, Tree, Tree)] = tree match {
+      case q"sum[..${_}]($qdom)($qpred)($qobj)" => Some(qdom, qpred, qobj)
+      case q"sum[..${_}]($qdom)($qpred)($qobj)(${_})" => Some(qdom, qpred, qobj)
       case _ => None
     }
   }
+
+}
+
+
+/**
+ * A group of general purpose transformers defined with respect to some universe.
+ */
+trait Transformers {
+
+  this: InUniverse =>
+
+  import universe._
+
+  lazy val betaReducer     = new BetaReducer
+  lazy val blockSimplifier = new BlockSimplifier
+
+  def betaReduce(tree: Tree) = betaReducer transform tree
+  def simplifyBlocks(tree: Tree) = blockSimplifier transform tree
+
+  class Substituter(binding: Map[Symbol, Tree]) extends Transformer {
+    override def transform(tree: Tree) = tree match {
+      case i: Ident => binding.get(i.symbol) match {
+        case Some(value) => value
+        case _ => super.transform(tree)
+      }
+      case _ => super.transform(tree)
+    }
+  }
+
+  class BetaReducer extends Transformer {
+
+    def substitute(defArgs: List[ValDef], args: List[Tree], tree: Tree): Tree = {
+      val binding = (defArgs.map(_.symbol) zip args).toMap
+      val substituter = new Substituter(binding)
+      val result = substituter transform tree
+      result
+    }
+
+
+    override def transform(tree: Tree): Tree = {
+      val transformed = super.transform(tree)
+      transformed match {
+        case Apply(Function(defArgs, rhs), args) => substitute(defArgs, args, rhs)
+        case other => other
+      }
+    }
+  }
+
+  class BlockSimplifier extends Transformer {
+    override def transform(tree: Tree) = tree match {
+      case Block(Nil, expr) => super.transform(expr)
+      case _ => super.transform(tree)
+    }
+  }
+
 
 }

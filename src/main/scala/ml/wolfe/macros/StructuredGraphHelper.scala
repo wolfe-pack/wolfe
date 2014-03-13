@@ -54,14 +54,6 @@ trait StructuredGraphHelper[C <: Context] {
 
     val checked = context.typeCheck(inlinedData)
 
-
-    //the domain/sample space. May expand the domain if implicits were involved.
-    //todo: this may be possible without the domain expansion trick by using context.typeCheck
-    val rootDom = DomainExpansions.findByPosition(inlinedData.pos.startOrPoint, inlinedData.pos.source) match {
-      case Some(expansion) => expansion.term.tree.asInstanceOf[Tree]
-      case other => inlinedData
-    }
-
     //meta information about the root structure class.
     val metaStructure = createMetaStructure(this, checked)
 
