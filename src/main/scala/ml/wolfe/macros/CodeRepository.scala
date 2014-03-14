@@ -13,7 +13,7 @@ import scala.reflect.macros.Context
  * replaced with the function application arguments.
  * @tparam Uni
  */
-trait Inliner[Uni <: Universe] extends InUniverse with Transformers {
+trait CodeRepository[Uni <: Universe] extends InUniverse with Transformers {
 
   type U = Uni
   val universe: U
@@ -35,7 +35,7 @@ trait Inliner[Uni <: Universe] extends InUniverse with Transformers {
     if (reduced == tree) None else Some(reduced)
   }
 
-  def typeCheck(tree: Tree): Tree
+  def typeCheckIfNeeded(tree: Tree): Tree
 
   class ReplaceMethodsWithFunctions(recursive: Boolean = true) extends Transformer {
     def getDef(f: Tree) = f match {
@@ -54,15 +54,15 @@ trait Inliner[Uni <: Universe] extends InUniverse with Transformers {
     override def transform(tree: Tree): Tree = tree match {
       case TypeApply(f@Ident(_), _) => getDef(f) match {
         case Some(DefDef(_, _, _, defArgs, _, rhs)) => defArgs match {
-          case Nil => recurse(typeCheck(rhs))
-          case _ => createFunction(defArgs, recurse(typeCheck(rhs)))
+          case Nil => recurse(typeCheckIfNeeded(rhs))
+          case _ => createFunction(defArgs, recurse(typeCheckIfNeeded(rhs)))
         }
         case _ => super.transform(tree)
       }
       case f@Ident(_) => getDef(f) match {
         case Some(DefDef(_, _, _, defArgs, _, rhs)) => defArgs match {
-          case Nil => recurse(typeCheck(rhs))
-          case _ => createFunction(defArgs, recurse(typeCheck(rhs)))
+          case Nil => recurse(typeCheckIfNeeded(rhs))
+          case _ => createFunction(defArgs, recurse(typeCheckIfNeeded(rhs)))
         }
         case _ => super.transform(tree)
       }
@@ -72,8 +72,11 @@ trait Inliner[Uni <: Universe] extends InUniverse with Transformers {
 
 }
 
+trait ToolboxCodeRepository[Uni <: Universe] extends CodeRepository[Uni] {
+  def addCode(code: String): universe.Tree
+}
 
-object Inliner {
+object CodeRepository {
 
   /**
    * Creates an inliner that uses the symbols of the provided macro context for inlining.
@@ -81,8 +84,8 @@ object Inliner {
    * @tparam C context type.
    * @return Inliner that can inline expressions that use symbols of the context.
    */
-  def fromContext[C <: Context](context: C): Inliner[context.universe.type] =
-    new Inliner[context.universe.type] {
+  def fromContext[C <: Context](context: C): CodeRepository[context.universe.type] =
+    new CodeRepository[context.universe.type] {
       val universe: context.universe.type = context.universe
 
       import universe._
@@ -93,27 +96,33 @@ object Inliner {
       }).toMap
 
       def get(symbol: universe.Symbol) = definitions.get(symbol)
-      def typeCheck(tree: Tree) = context.typeCheck(tree)
+      def typeCheckIfNeeded(tree: Tree) = context.typeCheck(tree)
     }
 
-  def fromCode[U <: Universe](toolbox: ToolBox[U], code: String*): Inliner[toolbox.u.type] = {
-    new Inliner[toolbox.u.type] {
+  def fromToolbox[U <: Universe](toolbox: ToolBox[U]): ToolboxCodeRepository[toolbox.u.type] = {
+    new ToolboxCodeRepository[toolbox.u.type] {
       val universe: toolbox.u.type = toolbox.u
 
       import universe._
 
-      //parsed and type checked code
-      val trees = code.toList.map(c => toolbox.typeCheck(toolbox.parse(c)))
+      var defs : Map[Symbol, DefDef] = Map.empty
+      var codes: List[Tree]          = Nil
 
-      //find inlineable definitions
-      val definitions = trees.flatMap(_.collect({
-        case d: DefDef => d.symbol -> d
-      })).toMap
-
-      println(definitions)
-
-      def get(symbol: universe.Symbol) = definitions.get(symbol)
-      def typeCheck(tree: Tree) = toolbox.typeCheck(tree)
+      def get(symbol: universe.Symbol) = defs.get(symbol)
+      def typeCheckIfNeeded(tree: Tree) = tree
+      // not needed as trees are already typed in the definition map.
+      def addCode(code: String) = {
+        val parsed = toolbox.parse(code)
+        codes = codes :+ parsed
+        val block = Block(codes, EmptyTree)
+        val typed = toolbox.typeCheck(block)
+        defs = typed.collect({
+          case d: DefDef => d.symbol -> d //toolbox.resetAllAttrs(d).asInstanceOf[DefDef]
+        }).toMap
+        println(defs)
+        val Block(result, _) = typed
+        result.last
+      }
     }
   }
 
@@ -129,7 +138,7 @@ object Inliner {
   def inlineMacro[T](t: T, times: Int = 1): String = macro inlineMacroImpl[T]
 
   def inlineMacroImpl[T: c.WeakTypeTag](c: Context)(t: c.Expr[T], times: c.Expr[Int]): c.Expr[String] = {
-    val inliner = Inliner.fromContext(c)
+    val inliner = CodeRepository.fromContext(c)
     def inline(t: Int, tree: inliner.universe.Tree): Option[inliner.universe.Tree] = t match {
       case 1 => inliner.inlineOnce(tree)
       case n => inliner.inlineOnce(tree).flatMap(i => inline(n - 1, i))
@@ -140,3 +149,11 @@ object Inliner {
   }
 }
 
+/**
+ * Shared toolbox because they are expensive to create.
+ */
+object GlobalToolbox {
+
+  val toolBox = scala.reflect.runtime.currentMirror.mkToolBox()
+
+}
