@@ -6,7 +6,7 @@ import scala.reflect.api.Universe
 /**
  * @author Sebastian Riedel
  */
-trait TransformHelper[C <: Context] extends InUniverse with Transformers {
+trait TransformHelper[C <: Context] extends HasUniverse with Transformers {
   this: MacroHelper[C] =>
 
   import context.universe._
@@ -158,7 +158,7 @@ trait TransformHelper[C <: Context] extends InUniverse with Transformers {
  */
 trait Transformers {
 
-  this: InUniverse =>
+  this: HasUniverse =>
 
   import universe._
 

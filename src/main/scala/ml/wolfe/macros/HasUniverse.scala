@@ -9,7 +9,7 @@ import scala.reflect.api.Universe
  *
  * @author Sebastian Riedel
  */
-trait InUniverse {
+trait HasUniverse {
   type U<:Universe
   val universe:U
 }
