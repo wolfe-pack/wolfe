@@ -15,6 +15,7 @@ trait StructuredGraphHelper[C <: Context] {
   import context.universe._
 
 
+
   /**
    * This class creates meta information (such as a class definition) for building "structured graph" representations
    * of optimization problems. A structured graph is a factor graph for which each assignment of the nodes correspond
