@@ -33,7 +33,7 @@ object TestChunking {
 
     println("Chunking ...")
 
-    def S(s: Sentence) = all2(Sentence)(seqs(s.tokens.map(t => all2(Token)(c(Seq(t.word), Seq(t.tag), chunks)))))
+    def S(s: Sentence) = all(Sentence)(seqs(s.tokens.map(t => all(Token)(c(Seq(t.word), Seq(t.tag), chunks)))))
 
     //todo: the VectorNumeric is currently needed in the macro, remove this.
     def features(s: Sentence) =

@@ -75,11 +75,9 @@ object MetaStructure {
     import repo.universe._
     //get symbol for all, unwrap ...
     val symbols = WolfeSymbols(repo.universe)
-    println(symbols.all)
-    println(symbols.unwrap)
     sampleSpace match {
       case q"$all[..${_}]($unwrap[..${_}]($constructor))($cross(..$sets))"
-        if all.symbol == symbols.all && unwrap.symbol == symbols.unwrap =>
+        if all.symbol == symbols.all && symbols.unwraps(unwrap.symbol) && symbols.crosses(cross.symbol) =>
         val t: Type = constructor.tpe
         val scope = t.declarations
         val applySymbol = t.member(newTermName("apply")).asMethod
@@ -112,9 +110,9 @@ object MetaStructure {
    * @tparam T type of objects in sample space.
    * @return a structure corresponding to the given sample space.
    */
-  def createStructureMacro[T](sampleSpace: Iterable[T]): Structure[T] = macro createStructureMacroImpl[T]
+  def createStructure[T](sampleSpace: Iterable[T]): Structure[T] = macro createStructureImpl[T]
 
-  def createStructureMacroImpl[T: c.WeakTypeTag](c: Context)(sampleSpace: c.Expr[Iterable[T]]): c.Expr[Structure[T]] = {
+  def createStructureImpl[T: c.WeakTypeTag](c: Context)(sampleSpace: c.Expr[Iterable[T]]): c.Expr[Structure[T]] = {
     import c.universe._
     val repo = CodeRepository.fromContext(c)
     val meta = MetaStructure(repo)(sampleSpace.tree)

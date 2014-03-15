@@ -17,7 +17,7 @@ object TestSmokes {
     val bob = Person("Bob", "B.")
 
     implicit val allPersons = Seq(anna, bob)
-    implicit val allData = all2(Data)
+    implicit val allData = all(Data)
 
     println(allData.size)
 

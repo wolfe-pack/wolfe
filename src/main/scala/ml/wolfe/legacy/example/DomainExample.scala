@@ -29,7 +29,7 @@ object DomainExample extends App {
 
   case class Data(smokes: Pred[Person], cancer: Pred[Person], friend: Pred[(Person, Person)])
 
-  implicit val allData = all2(Data)
+  implicit val allData = all(Data)
 
   def mln = linearModel {
     data: Data => {
