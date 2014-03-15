@@ -11,16 +11,14 @@ import scala.reflect.macros.Context
  * An inliner takes a tree, inlines functions to anonymous functions and performs beta reduction (i.e. replaces
  * function calls of anonymous functions with the right hand side of the anonymous function where parameters are
  * replaced with the function application arguments.
- * @tparam Uni
  */
-trait CodeRepository[Uni <: Universe] extends InUniverse with Transformers {
-
-  type U = Uni
-  val universe: U
+trait CodeRepository extends HasUniverse with Transformers {
 
   import universe._
 
   def get(symbol: Symbol): Option[DefDef]
+
+  def fresh(name: String): String
 
   /**
    * Inlines a tree once. That is, it replaces and inlines all occurrences of methods defined in the scope of the inliner
@@ -72,8 +70,12 @@ trait CodeRepository[Uni <: Universe] extends InUniverse with Transformers {
 
 }
 
-trait ToolboxCodeRepository[Uni <: Universe] extends CodeRepository[Uni] {
-  def addCode(code: String): universe.Tree
+trait ToolboxCodeRepository extends CodeRepository {
+  def addCodeString(code: String): universe.Tree
+  def addCodeTree(code: universe.Tree): universe.Tree
+  def addCodeTrees(codes: Seq[universe.Tree]) = for (c <- codes) addCodeTree(c)
+  def pop: universe.Tree
+  def eval[T]: T
 }
 
 object CodeRepository {
@@ -81,12 +83,12 @@ object CodeRepository {
   /**
    * Creates an inliner that uses the symbols of the provided macro context for inlining.
    * @param context the context to use symbol definition froms.
-   * @tparam C context type.
    * @return Inliner that can inline expressions that use symbols of the context.
    */
-  def fromContext[C <: Context](context: C): CodeRepository[context.universe.type] =
-    new CodeRepository[context.universe.type] {
+  def fromContext(context: Context): CodeRepository {type U = context.universe.type} =
+    new CodeRepository {
       val universe: context.universe.type = context.universe
+      type U = context.universe.type
 
       import universe._
 
@@ -96,32 +98,62 @@ object CodeRepository {
       }).toMap
 
       def get(symbol: universe.Symbol) = definitions.get(symbol)
+
+      def fresh(name: String) = context.fresh(name)
       def typeCheckIfNeeded(tree: Tree) = context.typeCheck(tree)
     }
 
-  def fromToolbox[U <: Universe](toolbox: ToolBox[U]): ToolboxCodeRepository[toolbox.u.type] = {
-    new ToolboxCodeRepository[toolbox.u.type] {
+  def fromToolbox(toolbox: ToolBox[_ <: Universe]): ToolboxCodeRepository {type U = toolbox.u.type} = {
+    new ToolboxCodeRepository {
+      type U = toolbox.u.type
       val universe: toolbox.u.type = toolbox.u
 
       import universe._
 
-      var defs : Map[Symbol, DefDef] = Map.empty
-      var codes: List[Tree]          = Nil
+      var defs      : Map[Symbol, DefDef] = Map.empty
+      var codes     : List[Tree]          = Nil
+      var typedCodes: List[Tree]          = Nil
 
       def get(symbol: universe.Symbol) = defs.get(symbol)
+
+      def fresh(name: String) = name
+      //todo: should be unique
       def typeCheckIfNeeded(tree: Tree) = tree
+
+      def pop = {
+        val result = typedCodes.last
+        typedCodes = typedCodes.dropRight(1)
+        codes = codes.dropRight(1)
+        result
+      }
       // not needed as trees are already typed in the definition map.
-      def addCode(code: String) = {
-        val parsed = toolbox.parse(code)
+
+      def eval[T] = {
+        val block = Block(codes.dropRight(1), codes.last)
+        val reset = toolbox.resetAllAttrs(block)
+        println(reset)
+        val result = toolbox.eval(reset)
+        result.asInstanceOf[T]
+      }
+
+      def addCodeTree(code: Tree): Tree = {
+        val parsed = toolbox.resetLocalAttrs(code)
         codes = codes :+ parsed
         val block = Block(codes, EmptyTree)
+        println(block)
         val typed = toolbox.typeCheck(block)
         defs = typed.collect({
           case d: DefDef => d.symbol -> d //toolbox.resetAllAttrs(d).asInstanceOf[DefDef]
         }).toMap
-        println(defs)
+        //        println(defs)
         val Block(result, _) = typed
+        typedCodes = result
         result.last
+      }
+
+      def addCodeString(code: String): Tree = {
+        val parsed = toolbox.parse(code)
+        addCodeTree(parsed)
       }
     }
   }
@@ -138,10 +170,10 @@ object CodeRepository {
   def inlineMacro[T](t: T, times: Int = 1): String = macro inlineMacroImpl[T]
 
   def inlineMacroImpl[T: c.WeakTypeTag](c: Context)(t: c.Expr[T], times: c.Expr[Int]): c.Expr[String] = {
-    val inliner = CodeRepository.fromContext(c)
-    def inline(t: Int, tree: inliner.universe.Tree): Option[inliner.universe.Tree] = t match {
-      case 1 => inliner.inlineOnce(tree)
-      case n => inliner.inlineOnce(tree).flatMap(i => inline(n - 1, i))
+    val repo = CodeRepository.fromContext(c)
+    def inline(t: Int, tree: repo.universe.Tree): Option[repo.universe.Tree] = t match {
+      case 1 => repo.inlineOnce(tree)
+      case n => repo.inlineOnce(tree).flatMap(i => inline(n - 1, i))
     }
     val evalTimes = c.eval(c.Expr[Int](c.resetAllAttrs(times.tree)))
     val result = for (inlined <- inline(evalTimes, t.tree)) yield inlined.toString()

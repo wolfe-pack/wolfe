@@ -1,13 +1,14 @@
 package ml.wolfe.macros
 
-import org.scalatest.{Matchers, WordSpec}
+import org.scalatest.Matchers
+import ml.wolfe.WolfeSpec
 
 /**
  * @author Sebastian Riedel
  */
-class CodeRepositorySpecs extends WordSpec with Matchers  {
+class CodeRepositorySpecs extends WolfeSpec {
 
-  "An inliner" should {
+  "A code repository" should {
     "inline functions in the scope" in {
       def f(x:Int) = x
       val actual = CodeRepository.inlineMacro(f(5),1)
@@ -55,11 +56,11 @@ class CodeRepositorySpecs extends WordSpec with Matchers  {
 
     "should work with a toolbox" in {
       val repository = CodeRepository.fromToolbox(GlobalToolbox.toolBox)
-      repository.addCode("def k(x:Int) = x")
-      repository.addCode("def f(x:Int) = k(x)")
-      val tree = repository.addCode("f(5)")
+      repository.addCodeString("def k(x:Int) = x")
+      repository.addCodeString("def f(x:Int) = k(x)")
+      val tree = repository.addCodeString("f(5)")
       val actual = repository.inlineOnce(tree)
-      val expected = repository.addCode("k(5)")
+      val expected = repository.addCodeString("k(5)")
       expected.equalsStructure(actual.get) should be (true)
       println(tree)
       println(actual)
