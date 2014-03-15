@@ -158,11 +158,12 @@ object MetaStructure {
     val cls = meta.classDef(graphName)
     val q"($arg) => $rhs" = projection.tree
     val root = (tree: Tree) => tree match {
-      case i: Ident if i.symbol == arg.symbol => Some(Ident(structArgName))
+      case i: Ident if i.symbol == arg.symbol => Some(q"$structArgName.asInstanceOf[${meta.className}]")
       case _ => None
     }
     val injectedRhs = meta.injectStructure(rhs, root)
-    val injectedProj = q"($structArgName:ml.wolfe.macros.Structure[${meta.argType}]) => $injectedRhs"
+
+    val injectedProj = q"($structArgName:ml.wolfe.macros.Structure[${meta.argType.typeSymbol.name.toTypeName}]) => $injectedRhs"
     val code = q"""
       val $graphName = new ml.wolfe.MPGraph
       $cls
