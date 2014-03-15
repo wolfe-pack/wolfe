@@ -11,7 +11,7 @@ object TestMacro {
      import OptimizedWolfe._
      case class Data(rain: Boolean)
 
-     val allData = all2(Data)
+     val allData = all(Data)
 
      //val best = argmax(allData)(_ => true)(_ => 1.0)
 

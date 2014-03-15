@@ -42,7 +42,7 @@ object TestIris {
     val (train, test) = dataset.splitAt(dataset.size / 2)
 
     //the set of all possible dates for a given observation
-    def S(data:Data) = all2(Data)(c(Seq(data.x), classes))
+    def S(data:Data) = all(Data)(c(Seq(data.x), classes))
 
     //joint feature function on data (x,y)
     def features(data: Data) =

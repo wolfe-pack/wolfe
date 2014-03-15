@@ -14,7 +14,7 @@ object TestSprinkler {
 
     case class Data(rain: Boolean, sprinkler: Boolean, wet: Boolean)
 
-    val sampleSpace = all2(Data)(c(bools, bools, bools))
+    val sampleSpace = all(Data)(c(bools, bools, bools))
 
     val p_rain =
       Map(true -> 0.2, false -> 0.8)

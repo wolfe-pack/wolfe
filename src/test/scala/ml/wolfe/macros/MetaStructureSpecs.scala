@@ -24,21 +24,20 @@ class MetaStructureSpecs extends WolfeSpec {
   }
 
   "A structure generator" should {
-    "generate a structure for an atomic sequence of values " in {
+    "generate a structure for an atomic sequence of values" in {
       val space = Seq(false,true)
-      val structure = MetaStructure.createStructureMacro(space)
+      val structure = MetaStructure.createStructure(space)
       structure mustBeIsomorphicTo space
       structure.nodes().size should be (1)
     }
     "generate a structure for all case class objects within a cartesian product of arguments" in {
       import Wolfe._
       case class Data(x:Boolean,y:Boolean)
-      val space = Wolfe.all2(Data)
-      val structure = MetaStructure.createStructureMacro(space)
+      val space = Wolfe.all(Data)
+      val structure = MetaStructure.createStructure(space)
       structure mustBeIsomorphicTo space
       structure.nodes().size should be (2)
     }
-
   }
 
 }

@@ -273,7 +273,7 @@ trait SampleSpaceDefs {
 
   import Wolfe._
 
-  def all2[A, B](mapper: A => B)(implicit dom: Iterable[A]): Iterable[B] = dom map mapper
+  def all[A, B](mapper: A => B)(implicit dom: Iterable[A]): Iterable[B] = dom map mapper
 
   def c[A, B](set1: Iterable[A], set2: Iterable[B]) = for (i <- set1; j <- set2) yield (i, j)
   def c[A, B, C](set1: Iterable[A], set2: Iterable[B], set3: Iterable[C]) = for (i <- set1; j <- set2; k <- set3) yield (i, j, k)
