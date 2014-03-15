@@ -65,17 +65,13 @@ class MetaStructureSpecs extends WolfeSpec {
       structure.nodes().size should be (2)
     }
 
-//    "generate a structure for all case class objects within a cartesian product of arguments blah " in {
-//      import Wolfe._
-//      case class Data(x:Boolean,y:Boolean)
-//      val space = Wolfe.all(Data)
-//      val (structure,projection) = MetaStructure.createStructureAndProjection[Data,Boolean](space, d => d.x)
-//      (structure,projection) mustBeIsomorphicTo (space,_.x)
-//
-//
-////      structure mustBeIsomorphicTo space
-////      structure.nodes().size should be (2)
-//    }
+    "generate a structure for all case class objects within a cartesian product of arguments blah " in {
+      import Wolfe._
+      case class Data(a1:Boolean,a2:Boolean)
+      val space = Wolfe.all(Data)
+      val (structure,projection) = MetaStructure.createStructureAndProjection[Data,Boolean](space, d => d.a1)
+      (structure,projection) mustBeIsomorphicTo (space,_.a1)
+    }
 
   }
 
