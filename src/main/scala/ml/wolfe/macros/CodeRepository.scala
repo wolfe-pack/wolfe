@@ -95,6 +95,7 @@ object CodeRepository {
       //find inlineable definitions
       val definitions = context.enclosingUnit.body.collect({
         case d: DefDef => d.symbol -> d
+        case v: ValDef => v.symbol -> DefDef(v.mods,v.name, Nil, Nil, v.tpt, v.rhs)
       }).toMap
 
       def get(symbol: universe.Symbol) = definitions.get(symbol)
