@@ -1,6 +1,7 @@
 package ml.wolfe.macros
 
 import ml.wolfe.{Wolfe, WolfeSpec}
+import scala.collection.mutable
 
 /**
  * @author Sebastian Riedel
@@ -8,38 +9,50 @@ import ml.wolfe.{Wolfe, WolfeSpec}
 class MetaStructureSpecs extends WolfeSpec {
 
   implicit class StructureTest[T](structure:Structure[T]) {
-    def mustBeIsomorphicTo(iterable:Iterable[T]) {
-      val expectedSize = iterable.size
-      val expectedSet = iterable.toSet
-      var count = 0
+    def mustBeIsomorphicTo(expected:Iterable[T]) {
+      val actual = new mutable.ArrayBuffer[T]()
       structure.resetSetting()
       while (structure.hasNextSetting) {
         structure.nextSetting()
         val value = structure.value()
-        expectedSet should contain (value)
-        count += 1
+        actual += value
       }
-      count should be (expectedSize)
+      actual.size should be (expected.size)
+      actual.toSet should be (expected.toSet)
+
+      for (t <- expected) {
+        structure.observe(t)
+        structure.resetSetting()
+        structure.nextSetting()
+        structure.value() should be (t)
+      }
+
     }
   }
   implicit class StructureProjectionTest[T1,T2](pair:(Structure[T1],Structure[T1] => T2)) {
     def mustBeIsomorphicTo(that:(Iterable[T1],T1=>T2)) = {
-      val iterable = that._1
+      val expected = that._1
       val structure = pair._1
-      val expectedSize = iterable.size
-      val expectedSet = iterable.toSet
-      var count = 0
+      val actual = new mutable.ArrayBuffer[T1]()
       structure.resetSetting()
       while (structure.hasNextSetting) {
         structure.nextSetting()
         val value = structure.value()
         val expectedProjection = that._2(value)
         val actualProjection = pair._2(structure)
-        expectedSet should contain (value)
         actualProjection should be (expectedProjection)
-        count += 1
+        actual += value
       }
-      count should be (expectedSize)
+      actual.size should be (expected.size)
+      actual.toSet should be (expected.toSet)
+
+      for (t <- expected) {
+        structure.observe(t)
+        structure.resetSetting()
+        structure.nextSetting()
+        structure.value() should be (t)
+      }
+
     }
   }
 

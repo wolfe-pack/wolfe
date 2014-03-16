@@ -437,7 +437,7 @@ trait StructuredGraphHelper[C <: Context] {
         ..$subClassDefs
         ..$structureFields
         private var iterator:Iterator[Unit] = _
-        def fields:Iterator[Structure[Any]] = Iterator(..$fieldIds)
+        def fields:Iterator[Structure[_]] = Iterator(..$fieldIds)
         def value():$argTypeName = new $argTypeName(..$fieldValues)
         def nodes():Iterator[Node] = fields.flatMap(_.nodes())
         def resetSetting() { iterator = Structure.settingsIterator(List(..$fieldIds).reverse)()}

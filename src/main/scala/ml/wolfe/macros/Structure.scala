@@ -7,7 +7,7 @@ import ml.wolfe.MPGraph
  * @tparam T the type of the values this structure can generate.
  * @author Sebastian Riedel
  */
-trait Structure[+T] {
+trait Structure[T] {
   /**
    * @return all nodes in this structure (including nodes of substructures)
    */
@@ -16,6 +16,13 @@ trait Structure[+T] {
    * @return the value that the current assignment to all nodes is representing.
    */
   def value(): T
+
+  /**
+   * Modifies the assignment to the nodes of the structure to represent the given value.
+   * @param value the value the nodes should represent.
+   */
+  def observe(value: T)
+
   /**
    * Sets all nodes to their argmax belief. todo: this could be generically implemented using nodes().
    */
@@ -35,7 +42,7 @@ trait Structure[+T] {
 }
 
 object Structure {
-  def loopSettings(structures: List[Structure[Any]])(loop: () => Unit): () => Unit = structures match {
+  def loopSettings(structures: List[Structure[_]])(loop: () => Unit): () => Unit = structures match {
     case Nil => loop
     case head :: tail =>
       def newLoop() {
@@ -48,7 +55,7 @@ object Structure {
       loopSettings(tail)(newLoop)
   }
 
-  def settingsIterator(structures: List[Structure[Any]],
+  def settingsIterator(structures: List[Structure[_]],
                        iterator: () => Iterator[Unit] = () => Iterator.empty): () => Iterator[Unit] = structures match {
     case Nil => iterator
     case head :: tail =>
