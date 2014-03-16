@@ -78,7 +78,7 @@ class MetaStructureSpecs extends WolfeSpec {
       structure.nodes().size should be (2)
     }
 
-    "generate a structure for all case class objects within a cartesian product of arguments blah " in {
+    "generate a structure and projection for case class spaces" in {
       import Wolfe._
       case class Data(a1:Boolean,a2:Boolean)
       val space = Wolfe.all(Data)
