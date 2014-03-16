@@ -31,7 +31,7 @@ object TestChunking {
       case Array(word, tag, chunk) => Token(word, tag, chunk)
     }).map(Sentence).take(10)
 
-    println("Chunking ...")
+    println("Chunking ... ")
 
     def S(s: Sentence) = all(Sentence)(seqs(s.tokens.map(t => all(Token)(c(Seq(t.word), Seq(t.tag), chunks)))))
 
