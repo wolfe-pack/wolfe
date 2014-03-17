@@ -121,6 +121,22 @@ object MetaStructure {
           val fields                       = args
           def repository = repo
         }
+      case q"$pred[${_}]($keyDom)" if pred.symbol == symbols.Pred =>
+        val keyDomains = keyDom match {
+          case q"$cross[..${_}](..$doms)" if symbols.crosses(cross.symbol) => doms
+          case _ => List(keyDom)
+        }
+        val valueDom = q"ml.wolfe.Wolfe.bools"
+        val TypeRef(_, _, List(argType)) = sampleSpace.tpe
+        val valueStructure = apply(repo)(valueDom)
+        new MetaFunStructure {
+          type U = repo.universe.type
+          val universe: repo.universe.type = repo.universe
+          def tpe = argType
+          def valueMetaStructure = valueStructure
+          def repository = repo
+          def keyDoms = keyDomains
+        }
       case _ =>
         repo.inlineOnce(sampleSpace) match {
           case Some(inlined) => apply(repo)(inlined)

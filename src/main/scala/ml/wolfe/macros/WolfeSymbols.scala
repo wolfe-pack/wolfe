@@ -15,6 +15,8 @@ trait WolfeSymbols extends HasUniverse {
   lazy val unwrap2 = wolfeType.member(newTermName("unwrap2"))
   lazy val unwraps = Range(2, 6).map(i => wolfeType.member(newTermName("unwrap" + i))).toSet
   lazy val crosses = Range(2, 4).map(i => wolfeType.member(newTermName("Cross" + i))).toSet
+  lazy val Pred     = wolfeType.member(newTermName("Pred"))
+
 
   //println("Blah: " + wolfe)
 }
