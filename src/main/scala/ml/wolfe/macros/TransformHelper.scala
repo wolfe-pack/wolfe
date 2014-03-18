@@ -6,13 +6,10 @@ import scala.reflect.api.Universe
 /**
  * @author Sebastian Riedel
  */
-trait TransformHelper[C <: Context] extends HasUniverse with Transformers {
+trait TransformHelper[C <: Context] extends Transformers[C] {
   this: MacroHelper[C] =>
 
   import context.universe._
-
-  type U = context.universe.type
-  val universe: U = context.universe
 
   def transform(tree: Tree, pf: PartialFunction[Tree, Tree]): context.Tree = new TransformWithPartialFunction(pf).transform(tree)
 
@@ -156,11 +153,11 @@ trait TransformHelper[C <: Context] extends HasUniverse with Transformers {
 /**
  * A group of general purpose transformers defined with respect to some universe.
  */
-trait Transformers {
+trait Transformers[C<:Context] {
 
-  this: HasUniverse =>
+  this: HasContext[C] =>
 
-  import universe._
+  import context.universe._
 
   lazy val betaReducer     = new BetaReducer
   lazy val blockSimplifier = new BlockSimplifier

@@ -11,17 +11,679 @@
           <option name="BLANK_LINES_AROUND_METHOD" value="0" />
           <option name="BLANK_LINES_AROUND_METHOD_IN_INTERFACE" value="0" />
           <option name="ALIGN_MULTILINE_CHAINED_METHODS" value="true" />
+          <option name="ALIGN_MULTILINE_EXTENDS_LIST" value="true" />
           <option name="ALIGN_GROUP_FIELD_DECLARATIONS" value="true" />
           <option name="KEEP_SIMPLE_BLOCKS_IN_ONE_LINE" value="true" />
           <option name="KEEP_SIMPLE_METHODS_IN_ONE_LINE" value="true" />
           <indentOptions>
             <option name="CONTINUATION_INDENT_SIZE" value="0" />
           </indentOptions>
+          <arrangement>
+            <groups>
+              <group>
+                <type>DEPENDENT_METHODS</type>
+                <order>DEPTH_FIRST</order>
+              </group>
+              <group>
+                <type>Keep_java-style_getters_and_setters_together</type>
+                <order>KEEP</order>
+              </group>
+              <group>
+                <type>Keep_scala-style_getters_and_setters_together</type>
+                <order>KEEP</order>
+              </group>
+            </groups>
+            <rules>
+              <rule>
+                <match>
+                  <AND>
+                    <FINAL />
+                    <PUBLIC />
+                    <TYPE />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <FINAL />
+                    <PROTECTED />
+                    <TYPE />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <FINAL />
+                    <PRIVATE />
+                    <TYPE />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <PUBLIC />
+                    <TYPE />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <PROTECTED />
+                    <TYPE />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <PRIVATE />
+                    <TYPE />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <TYPE />
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <FINAL />
+                    <LAZY />
+                    <PUBLIC />
+                    <VAL />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <FINAL />
+                    <LAZY />
+                    <PROTECTED />
+                    <VAL />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <FINAL />
+                    <LAZY />
+                    <PRIVATE />
+                    <VAL />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <FINAL />
+                    <PUBLIC />
+                    <VAL />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <FINAL />
+                    <PROTECTED />
+                    <VAL />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <FINAL />
+                    <PRIVATE />
+                    <VAL />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <LAZY />
+                    <PUBLIC />
+                    <VAL />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <LAZY />
+                    <PROTECTED />
+                    <VAL />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <LAZY />
+                    <PRIVATE />
+                    <VAL />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <ABSTRACT />
+                    <VAL />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <OVERRIDE />
+                    <VAL />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <PUBLIC />
+                    <VAL />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <PROTECTED />
+                    <VAL />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <PRIVATE />
+                    <VAL />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <VAL />
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <OVERRIDE />
+                    <PUBLIC />
+                    <VAR />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <OVERRIDE />
+                    <PROTECTED />
+                    <VAR />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <OVERRIDE />
+                    <PRIVATE />
+                    <VAR />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <PUBLIC />
+                    <VAR />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <PROTECTED />
+                    <VAR />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <PRIVATE />
+                    <VAR />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <VAR />
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <CONSTRUCTOR />
+                    <PUBLIC />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <CONSTRUCTOR />
+                    <PROTECTED />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <CONSTRUCTOR />
+                    <PRIVATE />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <CONSTRUCTOR />
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <FINAL />
+                    <FUNCTION />
+                    <IMPLICIT />
+                    <OVERRIDE />
+                    <PUBLIC />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <FINAL />
+                    <FUNCTION />
+                    <IMPLICIT />
+                    <OVERRIDE />
+                    <PROTECTED />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <FINAL />
+                    <FUNCTION />
+                    <IMPLICIT />
+                    <PUBLIC />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <FINAL />
+                    <FUNCTION />
+                    <IMPLICIT />
+                    <PUBLIC />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <FINAL />
+                    <FUNCTION />
+                    <IMPLICIT />
+                    <PUBLIC />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <FINAL />
+                    <FUNCTION />
+                    <OVERRIDE />
+                    <PUBLIC />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <FINAL />
+                    <FUNCTION />
+                    <OVERRIDE />
+                    <PROTECTED />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <FUNCTION />
+                    <PUBLIC />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <FUNCTION />
+                    <PROTECTED />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <FUNCTION />
+                    <PRIVATE />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <FUNCTION />
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <MACRO />
+                    <OVERRIDE />
+                    <PUBLIC />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <MACRO />
+                    <OVERRIDE />
+                    <PROTECTED />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <MACRO />
+                    <PUBLIC />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <MACRO />
+                    <PROTECTED />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <MACRO />
+                    <PRIVATE />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <MACRO />
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <ABSTRACT />
+                    <PUBLIC />
+                    <SEALED />
+                    <TRAIT />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <ABSTRACT />
+                    <PROTECTED />
+                    <SEALED />
+                    <TRAIT />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <ABSTRACT />
+                    <PRIVATE />
+                    <SEALED />
+                    <TRAIT />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <ABSTRACT />
+                    <PUBLIC />
+                    <TRAIT />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <ABSTRACT />
+                    <PROTECTED />
+                    <TRAIT />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <ABSTRACT />
+                    <PRIVATE />
+                    <TRAIT />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <PUBLIC />
+                    <SEALED />
+                    <TRAIT />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <PROTECTED />
+                    <SEALED />
+                    <TRAIT />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <PRIVATE />
+                    <SEALED />
+                    <TRAIT />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <PUBLIC />
+                    <TRAIT />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <PROTECTED />
+                    <TRAIT />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <PRIVATE />
+                    <TRAIT />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <TRAIT />
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <ABSTRACT />
+                    <CLASS />
+                    <PUBLIC />
+                    <SEALED />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <ABSTRACT />
+                    <CLASS />
+                    <PROTECTED />
+                    <SEALED />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <ABSTRACT />
+                    <CLASS />
+                    <PRIVATE />
+                    <SEALED />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <ABSTRACT />
+                    <CLASS />
+                    <PUBLIC />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <ABSTRACT />
+                    <CLASS />
+                    <PROTECTED />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <ABSTRACT />
+                    <CLASS />
+                    <PRIVATE />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <CLASS />
+                    <PUBLIC />
+                    <SEALED />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <CLASS />
+                    <PROTECTED />
+                    <SEALED />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <CLASS />
+                    <PRIVATE />
+                    <SEALED />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <CLASS />
+                    <PUBLIC />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <CLASS />
+                    <PROTECTED />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <AND>
+                    <CLASS />
+                    <PRIVATE />
+                  </AND>
+                </match>
+              </rule>
+              <rule>
+                <match>
+                  <CLASS />
+                </match>
+              </rule>
+            </rules>
+          </arrangement>
         </codeStyleSettings>
       </value>
     </option>
     <option name="USE_PER_PROJECT_SETTINGS" value="true" />
-    <option name="PREFERRED_PROJECT_CODE_STYLE" value="Default (1)" />
   </component>
 </project>
 
