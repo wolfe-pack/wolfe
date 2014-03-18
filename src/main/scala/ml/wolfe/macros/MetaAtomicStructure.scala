@@ -12,12 +12,12 @@ trait MetaAtomicStructure extends MetaStructure {
   def repository: CodeRepository
   def domain: Tree
 
-  lazy val domName                      = newTermName(repository.fresh("atomDom"))
-  lazy val indexName                    = newTermName(repository.fresh("atomIndex"))
-  lazy val className                    = newTypeName(repository.fresh("AtomicStructure"))
-  lazy val TypeRef(_, _, List(argType)) = domain.tpe
-  lazy val argTypeName                  = argType.typeSymbol.name.toTypeName
-  lazy val domainDefs                   = List(
+  lazy val domName     = newTermName(repository.fresh("atomDom"))
+  lazy val indexName   = newTermName(repository.fresh("atomIndex"))
+  lazy val className   = newTypeName(repository.fresh("AtomicStructure"))
+  lazy val argType     = {val TypeRef(_, _, List(argType)) = domain.tpe; argType}
+  lazy val argTypeName = argType.typeSymbol.name.toTypeName
+  lazy val domainDefs  = List(
     q"val $domName = $domain.toArray",
     q"val $indexName = $domName.zipWithIndex.toMap")
   def children = Nil

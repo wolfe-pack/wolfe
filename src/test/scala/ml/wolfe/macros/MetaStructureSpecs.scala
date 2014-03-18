@@ -2,6 +2,8 @@ package ml.wolfe.macros
 
 import ml.wolfe.{Wolfe, WolfeSpec}
 import scala.collection.mutable
+import Wolfe._
+
 
 /**
  * @author Sebastian Riedel
@@ -70,7 +72,6 @@ class MetaStructureSpecs extends WolfeSpec {
       (structure,projection) mustBeIsomorphicTo (space,x => x)
     }
     "generate a structure for all case class objects within a cartesian product of arguments" in {
-      import Wolfe._
       case class Data(x:Boolean,y:Boolean)
       val space = Wolfe.all(Data)
       val structure = MetaStructure.createStructure(space)
@@ -78,12 +79,19 @@ class MetaStructureSpecs extends WolfeSpec {
       structure.nodes().size should be (2)
     }
 
-    "generate a structure and projection for case class spaces" in {
-      import Wolfe._
+    "generate isomorphic structure and projection for case class spaces" in {
       case class Data(a1:Boolean,a2:Boolean)
       val space = Wolfe.all(Data)
       val (structure,projection) = MetaStructure.createStructureAndProjection[Data,Boolean](space, d => d.a1)
       (structure,projection) mustBeIsomorphicTo (space,_.a1)
+    }
+
+    "generate isomorphic structure and projection for predicate spaces" in {
+      implicit val ints = Range(0,2)
+      val space = Wolfe.Pred[(Int,Int)]
+      val (structure,projection) = MetaStructure.createStructureAndProjection[Pred[(Int,Int)],Boolean](space, d => d(1,1))
+      (structure,projection) mustBeIsomorphicTo (space,d => d(1,1))
+
     }
 
   }

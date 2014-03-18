@@ -23,6 +23,7 @@ trait MetaCaseClassStructure extends MetaStructure {
   lazy val fieldIds        = fields.map(f => Ident(f.name))
   lazy val fieldValues     = fieldIds.map(i => q"$i.value()")
   lazy val observeFields   = fields.map(f => q"${f.name}.observe(value.${f.name})")
+  lazy val argType         = tpe.widen
   def classDef(graphName: TermName) = q"""
       final class $className extends Structure[$argTypeName] {
         import ml.wolfe.MPGraph._
@@ -40,7 +41,6 @@ trait MetaCaseClassStructure extends MetaStructure {
       }
     """
   def children = fieldStructures
-  def argType = tpe
   def domainDefs = Nil
 
   def matcher(parent: Tree => Option[Tree], result: Tree => Option[Tree]): Tree => Option[Tree] = {
