@@ -107,16 +107,15 @@ object MetaStructure {
     //get symbol for all, unwrap ...
     val symbols = WolfeSymbols(repo.universe)
     sampleSpace match {
-      case q"$all[..${_}]($unwrap[..${_}]($constructor))($cross(..$sets))"
+      case q"$all[${_},$caseClassType]($unwrap[..${_}]($constructor))($cross(..$sets))"
         if all.symbol == symbols.all && symbols.unwraps(unwrap.symbol) && symbols.crosses(cross.symbol) =>
         val t: Type = constructor.tpe
-        val scope = t.declarations
         val applySymbol = t.member(newTermName("apply")).asMethod
         val args = applySymbol.paramss.head
         new MetaCaseClassStructure {
           type U = repo.universe.type
           val universe: repo.universe.type = repo.universe
-          val tpe                          = constructor.tpe
+          val tpe                          = caseClassType.tpe
           val fieldStructures              = sets.map(apply(repo)(_))
           val fields                       = args
           def repository = repo
@@ -126,13 +125,16 @@ object MetaStructure {
           case q"$cross[..${_}](..$doms)" if symbols.crosses(cross.symbol) => doms
           case _ => List(keyDom)
         }
-        val valueDom = q"ml.wolfe.Wolfe.bools"
-        val TypeRef(_, _, List(argType)) = sampleSpace.tpe
+        val rawDom = q"ml.wolfe.Wolfe.bools"
+        println("Raw: " + rawDom.symbol)
+        val valueDom = repo.typeCheck(rawDom)
+        println("typed: " + valueDom.symbol)
+        val TypeRef(_, _, List(typeOfArg)) = sampleSpace.tpe
         val valueStructure = apply(repo)(valueDom)
         new MetaFunStructure {
           type U = repo.universe.type
           val universe: repo.universe.type = repo.universe
-          def tpe = argType
+          def argType = typeOfArg
           def valueMetaStructure = valueStructure
           def repository = repo
           def keyDoms = keyDomains
@@ -179,7 +181,11 @@ object MetaStructure {
     }
     val injectedRhs = meta.injectStructure(rhs, root)
 
-    val injectedProj = q"($structArgName:ml.wolfe.macros.Structure[${meta.argType.typeSymbol.name.toTypeName}]) => $injectedRhs"
+    println("Type: " + meta.argType)
+    println("Widen: " + meta.argType.widen)
+
+
+    val injectedProj = q"($structArgName:ml.wolfe.macros.Structure[${meta.argType}]) => $injectedRhs"
     val code = q"""
       val $graphName = new ml.wolfe.MPGraph
       $cls

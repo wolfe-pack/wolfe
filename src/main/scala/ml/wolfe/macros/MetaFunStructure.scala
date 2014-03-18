@@ -10,7 +10,6 @@ trait MetaFunStructure extends MetaStructure {
 
   import universe._
 
-  def tpe:Type
   def keyDoms:List[Tree]
   def valueMetaStructure:MetaStructure {type U = self.universe.type}
   def repository: CodeRepository
@@ -19,8 +18,7 @@ trait MetaFunStructure extends MetaStructure {
   lazy val keyIndexNames = List.fill(keyDoms.size)(newTermName(repository.fresh("funKeyIndex")))
   lazy val tmpNames      = Range(0, keyDoms.size).map(i => newTermName("i" + i)).toList
   lazy val tmpIds        = tmpNames.map(Ident(_))
-  lazy val argType       = tpe
-  lazy val argTypeName   = tpe.typeSymbol.name.toTypeName
+  lazy val argTypeName   = argType.typeSymbol.name.toTypeName
   lazy val tupleArgs     = for ((i, k) <- tmpNames zip keyDomNames) yield q"$k($i)"
   lazy val invTupleArgs  = for ((i, k) <- tmpNames zip keyIndexNames) yield q"$k($i)"
   lazy val tuple         = if (tupleArgs.size == 1) tupleArgs.head else q"(..$tupleArgs)"
@@ -30,6 +28,7 @@ trait MetaFunStructure extends MetaStructure {
   lazy val indexDefs     = for ((d, i) <- keyDomNames zip keyIndexNames) yield q"val $i = $d.zipWithIndex.toMap"
   lazy val domainDefs    = domDefs ++ indexDefs
 
+  lazy val symbols = WolfeSymbols(universe)
 
   def children = List(valueMetaStructure)
 
@@ -38,14 +37,16 @@ trait MetaFunStructure extends MetaStructure {
       def replace(f: Tree, args: List[Tree]) = parent(f) match {
         //        case Apply(f, args) => parent(f) match {
         case Some(parentStructure) =>
-          val asIndices = for ((a, i) <- args zip keyIndexNames) yield q"$i($a)"
+          val asIndices = for ((a, i) <- args zip keyIndexNames) yield q"$parentStructure.$i($a)"
           val substructure = curriedArguments(asIndices, q"$parentStructure.subStructures")
           Some(substructure)
         case _ => None
       }
       tree match {
-        case q"$f.apply(..$args)" => replace(f, args)
-        case q"$f(..$args)" => replace(f, args)
+        case q"$f.apply($tuple.apply[..${_}](..$args))" if symbols.TupleCompanions(tuple.symbol) =>
+          replace(f, args)
+        case q"$f.apply(..$args)" =>
+          replace(f, args)
         case _ => None
       }
     }
@@ -59,17 +60,20 @@ trait MetaFunStructure extends MetaStructure {
   }
 
 
-  val mappings = tupleProcessor(keyDomNames, tmpNames, q"$tuple -> ${curriedArguments(tmpIds)}.value")
+  lazy val mappings = tupleProcessor(keyDomNames, tmpNames, q"$tuple -> ${curriedArguments(tmpIds)}.value")
 
-  val observeSubStructure = q"${curriedArguments(tmpIds)}.observe(value($tuple))"
+  lazy val observeSubStructure = q"${curriedArguments(tmpIds)}.observe(value($tuple))"
 
-  def classDef(graphName:TermName) = q"""
+  def classDef(graphName:TermName) = {
+    val iterator = substructureIterator(keyDoms.size)
+    val valueDef = valueMetaStructure.classDef(graphName)
+    q"""
       final class $className extends Structure[$argType]{
-        ${valueMetaStructure.classDef(graphName)}
+        $valueDef
         ..$domainDefs
         private var iterator:Iterator[Unit] = _
         val subStructures = Array.fill(..$keyDomSizes)(new ${valueMetaStructure.className})
-        def subStructureIterator() = ${substructureIterator(keyDoms.size)}
+        def subStructureIterator() = $iterator
         def nodes() = subStructureIterator().flatMap(_.nodes())
         def resetSetting() { iterator = Structure.settingsIterator(subStructureIterator().toList)()}
         def hasNextSetting = iterator.hasNext
@@ -81,6 +85,7 @@ trait MetaFunStructure extends MetaStructure {
         }
       }
     """
+  }
 
   def curriedArguments(indices: List[Tree], result: Tree = q"subStructures"): Tree = indices match {
     case Nil => result

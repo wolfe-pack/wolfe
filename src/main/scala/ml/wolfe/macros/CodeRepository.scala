@@ -33,7 +33,7 @@ trait CodeRepository extends HasUniverse with Transformers {
     if (reduced == tree) None else Some(reduced)
   }
 
-  def typeCheckIfNeeded(tree: Tree): Tree
+  def typeCheck(tree: Tree): Tree
 
   class ReplaceMethodsWithFunctions(recursive: Boolean = true) extends Transformer {
     def getDef(f: Tree) = f match {
@@ -52,15 +52,15 @@ trait CodeRepository extends HasUniverse with Transformers {
     override def transform(tree: Tree): Tree = tree match {
       case TypeApply(f@Ident(_), _) => getDef(f) match {
         case Some(DefDef(_, _, _, defArgs, _, rhs)) => defArgs match {
-          case Nil => recurse(typeCheckIfNeeded(rhs))
-          case _ => createFunction(defArgs, recurse(typeCheckIfNeeded(rhs)))
+          case Nil => recurse(typeCheck(rhs))
+          case _ => createFunction(defArgs, recurse(typeCheck(rhs)))
         }
         case _ => super.transform(tree)
       }
       case f@Ident(_) => getDef(f) match {
         case Some(DefDef(_, _, _, defArgs, _, rhs)) => defArgs match {
-          case Nil => recurse(typeCheckIfNeeded(rhs))
-          case _ => createFunction(defArgs, recurse(typeCheckIfNeeded(rhs)))
+          case Nil => recurse(typeCheck(rhs))
+          case _ => createFunction(defArgs, recurse(typeCheck(rhs)))
         }
         case _ => super.transform(tree)
       }
@@ -101,7 +101,12 @@ object CodeRepository {
       def get(symbol: universe.Symbol) = definitions.get(symbol)
 
       def fresh(name: String) = context.fresh(name)
-      def typeCheckIfNeeded(tree: Tree) = context.typeCheck(tree)
+      def typeCheck(tree: Tree) = {
+        println("Type checking tree: " + tree)
+        val result = context.typeCheck(tree)
+        println(result)
+        result
+      }
     }
 
   def fromToolbox(toolbox: ToolBox[_ <: Universe]): ToolboxCodeRepository {type U = toolbox.u.type} = {
@@ -119,7 +124,7 @@ object CodeRepository {
 
       def fresh(name: String) = name
       //todo: should be unique
-      def typeCheckIfNeeded(tree: Tree) = tree
+      def typeCheck(tree: Tree) = tree
 
       def pop = {
         val result = typedCodes.last
