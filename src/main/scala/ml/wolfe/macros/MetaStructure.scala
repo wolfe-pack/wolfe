@@ -3,97 +3,101 @@ package ml.wolfe.macros
 import scala.reflect.macros.Context
 import scala.reflect.api.Universe
 import scala.collection.mutable
+import scala.language.experimental.macros
 
-/**
- * Represents code that generates structures for a given sample space.
- *
- * @author Sebastian Riedel
- */
-trait MetaStructure extends HasUniverse {
 
-  import universe._
+trait MetaStructureHelper[C <: Context] extends CodeRepository[C]
+                                                with MetaCaseClassStructureHelper[C]
+                                                with MetaFunStructureHelper[C]
+                                                with MetaAtomicStructureHelper[C]
+                                                with WolfeSymbols[C] {
 
-  /**
-   * @return The name of the structure class.
-   */
-  def className: TypeName
+  import context.universe._
 
   /**
-   * @return A list of definitions of domain values needed in the structure generation code.
+   * Represents code that generates structures for a given sample space.
+   *
+   * @author Sebastian Riedel
    */
-  def domainDefs: List[ValDef]
+  trait MetaStructure {
 
-  /**
-   * Creates the code the defines the structure class.
-   * @param graphName the structure class needs an underlying factor graph, and this parameter provides its name.
-   *                  This means that when instantiating the structure class a factor graph with the given name needs
-   *                  to be in scope.
-   * @return code that defines the structure class.
-   */
-  def classDef(graphName: TermName): ClassDef
+    /**
+     * @return The name of the structure class.
+     */
+    def className: TypeName
 
-  /**
-   * @return the type of objects this structure represents (i.e. the type of objects in the sample space).
-   */
-  def argType: Type
+    /**
+     * @return A list of definitions of domain values needed in the structure generation code.
+     */
+    def domainDefs: List[ValDef]
 
-  /**
-   * @return any meta structure used within this meta structure.
-   */
-  def children: List[MetaStructure]
+    /**
+     * Creates the code the defines the structure class.
+     * @param graphName the structure class needs an underlying factor graph, and this parameter provides its name.
+     *                  This means that when instantiating the structure class a factor graph with the given name needs
+     *                  to be in scope.
+     * @return code that defines the structure class.
+     */
+    def classDef(graphName: TermName): ClassDef
 
-  /**
-   * @return this and all descendant metastructures.
-   */
-  def all: List[MetaStructure] = this :: children.flatMap(_.all)
+    /**
+     * @return the type of objects this structure represents (i.e. the type of objects in the sample space).
+     */
+    def argType: Type
 
-  /**
-   * A matcher takes a tree and returns a tree that represents the sub-structure that corresponds to the
-   * tree, if any. This method creates matchers for the structures of this meta-structure.
-   * @param parent a matcher for the parent structure.
-   * @param result the current result matcher.
-   * @return a matcher...
-   */
-  def matcher(parent: Tree => Option[Tree], result: Tree => Option[Tree]): Tree => Option[Tree]
+    /**
+     * @return any meta structure used within this meta structure.
+     */
+    def children: List[MetaStructure]
 
-  def injectStructure(tree: Tree, root: Tree => Option[Tree]) = {
-    val matcher = this.matcher(root, root)
-    val transformer = new Transformer {
-      val functionStack = new mutable.Stack[Function]()
-      override def transform(tree: Tree) = {
-        tree match {
-          case f: Function => functionStack.push(f)
-          case _ =>
-        }
-        val result = matcher(tree) match {
-          case Some(structure) => {
-            //get symbols in tree
-            val symbols = tree.collect({case i: Ident => i}).map(_.name).toSet //todo: this shouldn't just be by name
-            val hasFunctionArg = functionStack.exists(_.vparams.exists(p => symbols(p.name)))
-            if (hasFunctionArg)
-              super.transform(tree)
-            else
-              q"$structure.value()"
+    /**
+     * @return this and all descendant metastructures.
+     */
+    def all: List[MetaStructure] = this :: children.flatMap(_.all)
+
+    /**
+     * A matcher takes a tree and returns a tree that represents the sub-structure that corresponds to the
+     * tree, if any. This method creates matchers for the structures of this meta-structure.
+     * @param parent a matcher for the parent structure.
+     * @param result the current result matcher.
+     * @return a matcher...
+     */
+    def matcher(parent: Tree => Option[Tree], result: Tree => Option[Tree]): Tree => Option[Tree]
+
+    def injectStructure(tree: Tree, root: Tree => Option[Tree]) = {
+      val matcher = this.matcher(root, root)
+      val transformer = new Transformer {
+        val functionStack = new mutable.Stack[Function]()
+        override def transform(tree: Tree) = {
+          tree match {
+            case f: Function => functionStack.push(f)
+            case _ =>
           }
-          case _ => super.transform(tree)
+          val result = matcher(tree) match {
+            case Some(structure) => {
+              //get symbols in tree
+              val symbols = tree.collect({case i: Ident => i}).map(_.name).toSet //todo: this shouldn't just be by name
+              val hasFunctionArg = functionStack.exists(_.vparams.exists(p => symbols(p.name)))
+              if (hasFunctionArg)
+                super.transform(tree)
+              else
+                q"$structure.value()"
+            }
+            case _ => super.transform(tree)
+          }
+          tree match {
+            case _: Function => functionStack.pop
+            case _ =>
+          }
+          result
         }
-        tree match {
-          case _: Function => functionStack.pop
-          case _ =>
-        }
-        result
       }
+      transformer transform tree
     }
-    transformer transform tree
+
+
   }
 
-
-}
-
-
-object MetaStructure {
-
-  import scala.language.experimental.macros
 
   /**
    * Creates a meta structure for the given code repository and sample space.
@@ -101,11 +105,9 @@ object MetaStructure {
    * @param sampleSpace the sample space to create a meta structure for.
    * @return the meta structure for the given sample space.
    */
-  def apply(repo: CodeRepository)(sampleSpace: repo.universe.Tree): MetaStructure {type U = repo.universe.type} = {
+  def metaStructure(sampleSpace: Tree): MetaStructure = {
     //todo: assert that domain is an iterable
-    import repo.universe._
     //get symbol for all, unwrap ...
-    val symbols = WolfeSymbols(repo.universe)
     sampleSpace match {
       case q"$all[${_},$caseClassType]($unwrap[..${_}]($constructor))($cross(..$sets))"
         if all.symbol == symbols.all && symbols.unwraps(unwrap.symbol) && symbols.crosses(cross.symbol) =>
@@ -113,12 +115,9 @@ object MetaStructure {
         val applySymbol = t.member(newTermName("apply")).asMethod
         val args = applySymbol.paramss.head
         new MetaCaseClassStructure {
-          type U = repo.universe.type
-          val universe: repo.universe.type = repo.universe
-          val tpe                          = caseClassType.tpe
-          val fieldStructures              = sets.map(apply(repo)(_))
-          val fields                       = args
-          def repository = repo
+          val tpe             = caseClassType.tpe
+          val fieldStructures = sets.map(metaStructure(_))
+          val fields          = args
         }
       case q"$pred[${_}]($keyDom)" if pred.symbol == symbols.Pred =>
         val keyDomains = keyDom match {
@@ -127,31 +126,30 @@ object MetaStructure {
         }
         val rawDom = q"ml.wolfe.Wolfe.bools"
         println("Raw: " + rawDom.symbol)
-        val valueDom = repo.typeCheck(rawDom)
+        val valueDom = context.typeCheck(rawDom)
         println("typed: " + valueDom.symbol)
         val TypeRef(_, _, List(typeOfArg)) = sampleSpace.tpe
-        val valueStructure = apply(repo)(valueDom)
+        val valueStructure = metaStructure(valueDom)
         new MetaFunStructure {
-          type U = repo.universe.type
-          val universe: repo.universe.type = repo.universe
           def argType = typeOfArg
           def valueMetaStructure = valueStructure
-          def repository = repo
           def keyDoms = keyDomains
         }
       case _ =>
-        repo.inlineOnce(sampleSpace) match {
-          case Some(inlined) => apply(repo)(inlined)
+        inlineOnce(sampleSpace) match {
+          case Some(inlined) => metaStructure(inlined)
           case None =>
             new MetaAtomicStructure {
-              type U = repo.universe.type
-              val universe: repo.universe.type = repo.universe
-              def repository = repo
               def domain = sampleSpace
             }
         }
     }
   }
+}
+
+
+object MetaStructure {
+
 
   /**
    * Useful for unit tests.
@@ -168,8 +166,8 @@ object MetaStructure {
                                                                             (sampleSpace: c.Expr[Iterable[T1]],
                                                                              projection: c.Expr[T1 => T2]) = {
     import c.universe._
-    val repo = CodeRepository.fromContext(c)
-    val meta = MetaStructure(repo)(sampleSpace.tree)
+    val helper = new MetaStructureHelper[c.type] {val context:c.type = c}
+    val meta = helper.metaStructure(sampleSpace.tree)
     val graphName = newTermName("_graph")
     val structName = newTermName("structure")
     val structArgName = newTermName("structArg")
@@ -181,10 +179,6 @@ object MetaStructure {
     }
     val injectedRhs = meta.injectStructure(rhs, root)
 
-    println("Type: " + meta.argType)
-    println("Widen: " + meta.argType.widen)
-
-
     val injectedProj = q"($structArgName:ml.wolfe.macros.Structure[${meta.argType}]) => $injectedRhs"
     val code = q"""
       val $graphName = new ml.wolfe.MPGraph
@@ -194,15 +188,15 @@ object MetaStructure {
       ($structName,$injectedProj)
     """
     c.Expr[(Structure[T1], Structure[T1] => T2)](code)
-//    println(code)
-//    c.Expr[(Structure[T1], Structure[T1] => T2)](q"(null,???)")
+    //    println(code)
+    //    c.Expr[(Structure[T1], Structure[T1] => T2)](q"(null,???)")
   }
 
 
   def createStructureImpl[T: c.WeakTypeTag](c: Context)(sampleSpace: c.Expr[Iterable[T]]): c.Expr[Structure[T]] = {
     import c.universe._
-    val repo = CodeRepository.fromContext(c)
-    val meta = MetaStructure(repo)(sampleSpace.tree)
+    val helper = new MetaStructureHelper[c.type] {val context:c.type = c;}
+    val meta = helper.metaStructure(sampleSpace.tree)
     val graphName = newTermName("_graph")
     val cls = meta.classDef(graphName)
     val code = q"""

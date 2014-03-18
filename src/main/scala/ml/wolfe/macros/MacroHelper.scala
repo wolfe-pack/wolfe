@@ -8,7 +8,10 @@ import scala.reflect.macros.Context
  *
  * @author Sebastian Riedel
  */
-class MacroHelper[C <: Context](val context: C) extends TransformHelper[C] with StructuredGraphHelper[C] with GradientBasedMinimizationHelper[C] {
+class MacroHelper[C <: Context](val context: C) extends TransformHelper[C]
+                                                        with StructuredGraphHelper[C]
+                                                        with GradientBasedMinimizationHelper[C]
+                                                        with HasContext[C] {
 
   import context.universe._
 
@@ -50,7 +53,7 @@ class MacroHelper[C <: Context](val context: C) extends TransformHelper[C] with 
     })
   }
 
-  def getMaxByProcedure(tree:Tree) = simplifyBlocks(tree) match {
+  def getMaxByProcedure(tree: Tree) = simplifyBlocks(tree) match {
     case q"(${_}) => $f1(${_})(${_})" => getAnnotationArgs(f1, "MaxByInference") match {
       case Some(List(arg)) => arg
       case _ => q"MaxProduct(_:MPGraph,1)"

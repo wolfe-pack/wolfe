@@ -54,33 +54,6 @@ class CodeRepositorySpecs extends WolfeSpec {
       actual2 should be ("Some(5)")
     }
 
-    "should work with a toolbox" in {
-      val repository = CodeRepository.fromToolbox(GlobalToolbox.toolBox)
-      repository.addCodeString("def k(x:Int) = x")
-      repository.addCodeString("def f(x:Int) = k(x)")
-      val tree = repository.addCodeString("f(5)")
-      val actual = repository.inlineOnce(tree)
-      val expected = repository.addCodeString("k(5)")
-      expected.equalsStructure(actual.get) should be (true)
-      println(tree)
-      println(actual)
-      println(expected)
-      println(expected.equalsStructure(actual.get))
-      println(expected.equalsStructure(actual.get))
-
-    }
-
-
-    //    "blah" in {
-//      import ml.wolfe.Wolfe._
-//      case class Data(value:Boolean)
-//      def features(data:Data) = oneHot(data.value, 1.0)
-//      def model(weights:Vector)(data:Data) = features(data) dot weights
-//      def sampleSpace = all2(Data)(bools)
-//
-//      val actual = Inliner.inlineMacro(sampleSpace,1)
-//      println(actual)
-//    }
 
   }
 

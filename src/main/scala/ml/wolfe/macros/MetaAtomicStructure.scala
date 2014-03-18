@@ -1,27 +1,32 @@
 package ml.wolfe.macros
 
-/**
- * For sample spaces that have no sub-structure.
- * @author Sebastian Riedel
- */
-trait MetaAtomicStructure extends MetaStructure {
-  self =>
+import scala.reflect.macros.Context
 
-  import universe._
 
-  def repository: CodeRepository
-  def domain: Tree
+trait MetaAtomicStructureHelper[C<:Context] {
+  this: MetaStructureHelper[C] =>
 
-  lazy val domName     = newTermName(repository.fresh("atomDom"))
-  lazy val indexName   = newTermName(repository.fresh("atomIndex"))
-  lazy val className   = newTypeName(repository.fresh("AtomicStructure"))
-  lazy val argType     = {val TypeRef(_, _, List(argType)) = domain.tpe; argType}
-  lazy val argTypeName = argType.typeSymbol.name.toTypeName
-  lazy val domainDefs  = List(
-    q"val $domName = $domain.toArray",
-    q"val $indexName = $domName.zipWithIndex.toMap")
-  def children = Nil
-  def classDef(graphName: TermName) = q"""
+  import context.universe._
+
+  /**
+   * For sample spaces that have no sub-structure.
+   * @author Sebastian Riedel
+   */
+  trait MetaAtomicStructure extends MetaStructure {
+    self =>
+
+    def domain: Tree
+
+    lazy val domName     = newTermName(context.fresh("atomDom"))
+    lazy val indexName   = newTermName(context.fresh("atomIndex"))
+    lazy val className   = newTypeName(context.fresh("AtomicStructure"))
+    lazy val argType     = {val TypeRef(_, _, List(argType)) = domain.tpe; argType}
+    lazy val argTypeName = argType.typeSymbol.name.toTypeName
+    lazy val domainDefs  = List(
+      q"val $domName = $domain.toArray",
+      q"val $indexName = $domName.zipWithIndex.toMap")
+    def children = Nil
+    def classDef(graphName: TermName) = q"""
       final class $className extends ml.wolfe.macros.Structure[$argType] {
         ..$domainDefs
         val node = $graphName.addNode($domName.length)
@@ -40,6 +45,8 @@ trait MetaAtomicStructure extends MetaStructure {
       }
     """
 
-  def matcher(parent: Tree => Option[Tree], result: Tree => Option[Tree]): Tree => Option[Tree] = result
+    def matcher(parent: Tree => Option[Tree], result: Tree => Option[Tree]): Tree => Option[Tree] = result
+
+  }
 
 }

@@ -1,6 +1,7 @@
 package ml.wolfe.macros
 
 import scala.reflect.api.Universe
+import scala.reflect.macros.Context
 
 /**
  * This trait represents classes that work with respect to a specific universe. If you have generic functionality
@@ -13,3 +14,9 @@ trait HasUniverse {
   type U<:Universe
   val universe:U
 }
+
+
+trait HasContext[C<:Context]{
+  val context:C
+}
+
