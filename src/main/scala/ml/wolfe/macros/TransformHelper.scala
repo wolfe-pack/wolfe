@@ -37,12 +37,12 @@ trait TransformHelper[C <: Context] extends Transformers[C] {
 
   def distributeDots(tree: Tree) = dotDistributor transform tree
 
-  def distinctTrees(trees: List[Tree], result: List[Tree] = Nil): List[Tree] = trees match {
-    case Nil => result
-    case head :: tail =>
-      val distinct = if (result.exists(_.equalsStructure(head))) result else head :: result
-      distinctTrees(tail, distinct)
-  }
+//  def distinctTrees(trees: List[Tree], result: List[Tree] = Nil): List[Tree] = trees match {
+//    case Nil => result
+//    case head :: tail =>
+//      val distinct = if (result.exists(_.equalsStructure(head))) result else head :: result
+//      distinctTrees(tail, distinct)
+//  }
 
 
   class ReplaceMethodsWithFunctions(defDefs: Map[Symbol, DefDef]) extends Transformer {

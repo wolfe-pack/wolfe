@@ -114,6 +114,7 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] {
   def metaStructuredFactor(potential: Tree, structure: MetaStructure, matcher: Tree => Option[Tree]): MetaStructuredFactor = {
     println(scalaSymbols.doublePlus)
     potential match {
+//      case Apply(f,args) if f.symbol.annotations.exists(_.tpe)
       case ApplyPlus(arg1,arg2) =>
         val f1 = metaStructuredFactor(arg1, structure, matcher)
         val f2 = metaStructuredFactor(arg2, structure, matcher)
