@@ -14,8 +14,6 @@ trait StructuredGraphHelper[C <: Context] {
 
   import context.universe._
 
-
-
   /**
    * This class creates meta information (such as a class definition) for building "structured graph" representations
    * of optimization problems. A structured graph is a factor graph for which each assignment of the nodes correspond
@@ -336,6 +334,7 @@ trait StructuredGraphHelper[C <: Context] {
     val className = newTypeName(context.fresh("SeqStructure"))
     val classDef  = q"""
       final class $className extends Structure[$argType] with HasSettingIterator[$argType]{
+        def graph = ???
         val subStructures = $domSeqSrc.map($argName => {
           ${elementStructure.classDef}
           new ${elementStructure.className}
@@ -406,6 +405,7 @@ trait StructuredGraphHelper[C <: Context] {
         ${valueType.classDef}
         ..$domainDefs
         private var iterator:Iterator[Unit] = _
+        def graph = ???
         val subStructures = Array.fill(..$keyDomSizes)(new ${valueType.className})
         def subStructureIterator() = ${substructureIterator(keyDoms.size)}
         def nodes() = subStructureIterator().flatMap(_.nodes())
@@ -437,6 +437,7 @@ trait StructuredGraphHelper[C <: Context] {
         ..$subClassDefs
         ..$structureFields
         private var iterator:Iterator[Unit] = _
+        def graph = ???
         def fields:Iterator[Structure[_]] = Iterator(..$fieldIds)
         def value():$argTypeName = new $argTypeName(..$fieldValues)
         def nodes():Iterator[Node] = fields.flatMap(_.nodes())
@@ -482,6 +483,7 @@ trait StructuredGraphHelper[C <: Context] {
         ..$domainDefs
         val node = ${meta.mpGraphName}.addNode($domName.length)
         private def updateValue() {node.value = node.domain(node.setting)}
+        def graph = ${meta.mpGraphName}
         def value() = $domName(node.value)
         def nodes() = Iterator(node)
         def resetSetting() {node.setting = -1}

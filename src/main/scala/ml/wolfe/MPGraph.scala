@@ -332,6 +332,16 @@ object MPGraph {
     }
 
     /**
+     * Evaluates the score based on the current setting of the neighboring nodes.
+     * @return the score under current setting.
+     */
+    def scoreCurrentSetting = {
+      val setting = edges.map(_.n.setting)
+      val entry = MPGraph.settingToEntry(setting, dims)
+      score(entry)
+    }
+
+    /**
      * More verbose string representation that shows that potential table depending on factor type.
      * @param fgPrinter a printer that can print nodes and factors.
      * @return A verbose string representation of this factor.
