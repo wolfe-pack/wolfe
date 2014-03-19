@@ -91,6 +91,7 @@ class MetaStructureSpecs extends WolfeSpec {
       val space = Wolfe.Pred[(Int,Int)]
       val (structure,projection) = MetaStructure.createStructureAndProjection[Pred[(Int,Int)],Boolean](space, d => d(1,1))
       (structure,projection) mustBeIsomorphicTo (space,d => d(1,1))
+      structure.nodes().size should be (4)
 
     }
 
