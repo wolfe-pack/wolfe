@@ -1,9 +1,5 @@
 package ml.wolfe.macros
 
-import cc.factorie.WeightsSet
-import cc.factorie.optimize.Trainer
-import scala.annotation.StaticAnnotation
-import ml.wolfe.MPGraph
 import com.typesafe.scalalogging.slf4j.Logging
 
 /**
@@ -12,9 +8,6 @@ import com.typesafe.scalalogging.slf4j.Logging
  * @author Sebastian Riedel
  */
 trait WolfeAPI extends Logging {
-
-  class MinByDescent(trainer: WeightsSet => Trainer) extends StaticAnnotation
-  class MaxByInference(inference: MPGraph => Unit) extends StaticAnnotation
 
   def argmax[T](data: Iterable[T])(where: T => Boolean)(obj: T => Double): T = {
     data.filter(where).maxBy(obj)

@@ -3,6 +3,10 @@ package ml.wolfe.macros
 import scala.reflect.macros.Context
 import scala.language.experimental.macros
 import scala.collection.mutable
+import cc.factorie.WeightsSet
+import cc.factorie.optimize.Trainer
+import scala.annotation.StaticAnnotation
+import ml.wolfe.MPGraph
 
 //import ml.wolfe.Wolfe._
 
@@ -10,6 +14,10 @@ import scala.collection.mutable
  * @author Sebastian Riedel
  */
 object OptimizedWolfe extends WolfeAPI {
+
+  class MinByDescent(trainer: WeightsSet => Trainer) extends StaticAnnotation
+  class MaxByInference(inference: MPGraph => Unit) extends StaticAnnotation
+  class Atomic extends StaticAnnotation
 
   override def argmax[T](data: Iterable[T])
                         (where: (T) => Boolean)
