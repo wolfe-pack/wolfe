@@ -20,7 +20,7 @@ class ConditionerSpecs extends StructureIsomorphisms {
       val structure = Conditioner.conditioned(space, (x: Boolean) => x)
       structure mustBeIsomorphicTo (space filter (x => x))
     }
-    "condition a complex sample space" in {
+    "condition a complex sample space " in {
       implicit val persons = Seq("Sameer", "Vivek")
       case class Data(smokes: Pred[String])
       val space = Wolfe.all(Data)

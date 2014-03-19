@@ -35,6 +35,7 @@ trait MetaCaseClassStructures[C<:Context] {
         ..$structureFields
         private var iterator:Iterator[Unit] = _
         def fields:Iterator[Structure[_]] = Iterator(..$fieldIds)
+        def graph = $graphName
         def value():$argTypeName = new $argTypeName(..$fieldValues)
         def nodes():Iterator[Node] = fields.flatMap(_.nodes())
         def resetSetting() { iterator = Structure.settingsIterator(List(..$fieldIds).reverse)()}

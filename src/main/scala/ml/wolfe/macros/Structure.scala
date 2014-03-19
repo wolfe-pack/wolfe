@@ -12,6 +12,12 @@ trait Structure[T] {
    * @return all nodes in this structure (including nodes of substructures)
    */
   def nodes(): Iterator[MPGraph.Node]
+
+  /**
+   * @return the underling factor graph that owns the nodes of this structure.
+   */
+  def graph: MPGraph
+
   /**
    * @return the value that the current assignment to all nodes is representing.
    */

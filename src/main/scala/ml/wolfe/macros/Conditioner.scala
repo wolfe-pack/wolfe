@@ -11,8 +11,6 @@ trait Conditioner[C <: Context] extends MetaStructures[C] {
 
   case class ConditioningCode(code: Tree, remainderOfCondition: Tree)
 
-
-
   def conditioning(condition: Tree, matchStructure: Tree => Option[Tree]): ConditioningCode = condition match {
     case q"$x == $value" => matchStructure(x) match {
       case Some(structure) => ConditioningCode(q"$structure.observe($value)", EmptyTree)

@@ -32,6 +32,7 @@ trait MetaAtomicStructures[C <: Context] {
         val node = $graphName.addNode($domName.length)
         private def updateValue() {node.value = node.domain(node.setting)}
         def value():$argType = $domName(node.value)
+        def graph = $graphName
         def nodes() = Iterator(node)
         def resetSetting() {node.setting = -1}
         def hasNextSetting = node.setting < node.dim - 1
