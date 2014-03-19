@@ -544,31 +544,6 @@ trait StructuredGraphHelper[C <: Context] {
     result
   }
 
-  trait WithFunctionStack {
-
-    private val functionStack = new mutable.Stack[Function]()
-
-    def pushIfFunction(tree: Tree) {
-      tree match {
-        case f: Function => functionStack.push(f)
-        case _ =>
-      }
-    }
-
-    def popIfFunction(tree: Tree) {
-      tree match {
-        case _: Function => functionStack.pop
-        case _ =>
-      }
-    }
-
-    def hasFunctionArgument(tree: Tree) = {
-      val symbols = tree.collect({case i: Ident => i}).map(_.name).toSet //todo: this shouldn't just be by name
-      functionStack.exists(_.vparams.exists(p => symbols(p.name)))
-    }
-
-
-  }
 
   def injectStructure(tree: Tree, matcher: Tree => Option[Tree]) = {
     val transformer = new Transformer {

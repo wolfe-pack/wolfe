@@ -9,9 +9,9 @@ trait PatternRepository[C<:Context] extends SymbolRepository[C] {
 
   import context.universe._
 
-  class InfixApply(op:Symbol) {
+  class InfixApply(ops:Set[Symbol]) {
     def unapply(tree:Tree):Option[(Tree,Tree)] = tree match {
-      case q"$arg1Op($arg2)" if arg1Op.symbol == op => arg1Op match {
+      case q"$arg1Op($arg2)" if ops(arg1Op.symbol) => arg1Op match {
         case q"$arg1.${_}" => Some(arg1,arg2)
         case _ => None
       }
@@ -19,6 +19,7 @@ trait PatternRepository[C<:Context] extends SymbolRepository[C] {
     }
   }
 
-  object AndApply extends InfixApply(scalaSymbols.and)
+  object ApplyAnd extends InfixApply(Set(scalaSymbols.and))
+  object ApplyPlus extends InfixApply(scalaSymbols.doublePluses)
 
 }
