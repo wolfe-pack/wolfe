@@ -55,6 +55,15 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
     def all: List[MetaStructure] = this :: children.flatMap(_.all)
 
     /**
+     * A matcher takes a tree and checks whether the tree corresponds to any sub-structure within this
+     * structure.
+     * @param root the root matcher determines matching of the top-level structure.
+     * @return a matcher.
+     */
+    def matcher(root:Tree => Option[Tree]):Tree => Option[Tree] = matcher(root,root)
+
+
+    /**
      * A matcher takes a tree and returns a tree that represents the sub-structure that corresponds to the
      * tree, if any. This method creates matchers for the structures of this meta-structure.
      * @param parent a matcher for the parent structure.
@@ -62,6 +71,7 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
      * @return a matcher...
      */
     def matcher(parent: Tree => Option[Tree], result: Tree => Option[Tree]): Tree => Option[Tree]
+
 
     def injectStructure(tree: Tree, root: Tree => Option[Tree]) = {
       val matcher = this.matcher(root, root)
@@ -93,10 +103,22 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
       }
       transformer transform tree
     }
-
-
   }
 
+  /**
+   * Creates a matcher that checks for an identifier matching the given symbol, and then returns the
+   * given root structure.
+   * @param rootArgument the symbol of the variable to replace.
+   * @param rootStructure the structure to replace the variable with.
+   * @return a matcher.
+   */
+  def rootMatcher(rootArgument:Symbol,rootStructure:Tree): Tree => Option[Tree] = {
+    val root = (tree: Tree) => tree match {
+      case i: Ident if i.symbol == rootArgument => Some(rootStructure)
+      case _ => None
+    }
+    root
+  }
 
 
 
@@ -112,9 +134,12 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
       case q"$all[${_},$caseClassType]($unwrap[..${_}]($constructor))($cross(..$sets))"
         if all.symbol == symbols.all && symbols.unwraps(unwrap.symbol) && symbols.crosses(cross.symbol) =>
         metaCaseClassStructure(constructor, sets, caseClassType)
+      case q"$all[${_},$caseClassType]($constructor)(..$sets)"
+        if all.symbol == symbols.all =>
+        metaCaseClassStructure(constructor, sets, caseClassType)
       case q"$pred[${_}]($keyDom)" if pred.symbol == symbols.Pred =>
         val valueDom = context.typeCheck(q"ml.wolfe.Wolfe.bools")
-        metaFunStructure(sampleSpace,keyDom,valueDom)
+        metaFunStructure(sampleSpace, keyDom, valueDom)
       case _ =>
         inlineOnce(sampleSpace) match {
           case Some(inlined) => metaStructure(inlined)
@@ -126,7 +151,7 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
     }
   }
 
-  def metaCaseClassStructure(constructor:Tree, sets:List[Tree], caseClassType:Tree) = {
+  def metaCaseClassStructure(constructor: Tree, sets: List[Tree], caseClassType: Tree) = {
     val applySymbol = constructor.tpe.member(newTermName("apply")).asMethod
     val args = applySymbol.paramss.head
     new MetaCaseClassStructure {
@@ -136,7 +161,7 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
     }
   }
 
-  def metaFunStructure(sampleSpace:Tree, keyDom:Tree, valueDom:Tree) = {
+  def metaFunStructure(sampleSpace: Tree, keyDom: Tree, valueDom: Tree) = {
     val keyDomains = keyDom match {
       case q"$cross[..${_}](..$doms)" if symbols.crosses(cross.symbol) => doms
       case _ => List(keyDom)
@@ -163,14 +188,14 @@ object MetaStructure {
    * @tparam T type of objects in sample space.
    * @return a structure corresponding to the given sample space.
    */
-  def createStructure[T](sampleSpace: Iterable[T]): Structure[T] = macro createStructureImpl[T]
+  def structure[T](sampleSpace: Iterable[T]): Structure[T] = macro structureImpl[T]
 
-  def createStructureAndProjection[T1, T2](sampleSpace: Iterable[T1],
-                                           projection: T1 => T2): (Structure[T1], Structure[T1] => T2) = macro createStructureAndProjectionImpl[T1, T2]
+  def projection[T1, T2](sampleSpace: Iterable[T1],
+                         projection: T1 => T2): (Structure[T1], Structure[T1] => T2) = macro projectionImpl[T1, T2]
 
-  def createStructureAndProjectionImpl[T1: c.WeakTypeTag, T2: c.WeakTypeTag](c: Context)
-                                                                            (sampleSpace: c.Expr[Iterable[T1]],
-                                                                             projection: c.Expr[T1 => T2]) = {
+  def projectionImpl[T1: c.WeakTypeTag, T2: c.WeakTypeTag](c: Context)
+                                                          (sampleSpace: c.Expr[Iterable[T1]],
+                                                           projection: c.Expr[T1 => T2]) = {
     import c.universe._
     val helper = new ContextHelper[c.type](c) with MetaStructures[c.type]
     val meta = helper.metaStructure(sampleSpace.tree)
@@ -179,10 +204,7 @@ object MetaStructure {
     val structArgName = newTermName("structArg")
     val cls = meta.classDef(graphName)
     val q"($arg) => $rhs" = projection.tree
-    val root = (tree: Tree) => tree match {
-      case i: Ident if i.symbol == arg.symbol => Some(q"$structArgName.asInstanceOf[${meta.className}]")
-      case _ => None
-    }
+    val root = helper.rootMatcher(arg.symbol, q"$structArgName.asInstanceOf[${meta.className}]")
     val injectedRhs = meta.injectStructure(rhs, root)
 
     val injectedProj = q"($structArgName:ml.wolfe.macros.Structure[${meta.argType}]) => $injectedRhs"
@@ -194,12 +216,10 @@ object MetaStructure {
       ($structName,$injectedProj)
     """
     c.Expr[(Structure[T1], Structure[T1] => T2)](code)
-    //    println(code)
-    //    c.Expr[(Structure[T1], Structure[T1] => T2)](q"(null,???)")
   }
 
 
-  def createStructureImpl[T: c.WeakTypeTag](c: Context)(sampleSpace: c.Expr[Iterable[T]]): c.Expr[Structure[T]] = {
+  def structureImpl[T: c.WeakTypeTag](c: Context)(sampleSpace: c.Expr[Iterable[T]]): c.Expr[Structure[T]] = {
     import c.universe._
     val helper = new ContextHelper[c.type](c) with MetaStructures[c.type]
     val meta = helper.metaStructure(sampleSpace.tree)
