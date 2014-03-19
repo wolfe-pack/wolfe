@@ -2,8 +2,8 @@ package ml.wolfe.macros
 
 import scala.reflect.macros.Context
 
-trait MetaCaseClassStructureHelper[C<:Context] {
-  this: MetaStructureHelper[C] =>
+trait MetaCaseClassStructures[C<:Context] {
+  this: MetaStructures[C] =>
 
   import context.universe._
 

@@ -3,8 +3,8 @@ package ml.wolfe.macros
 import scala.reflect.macros.Context
 
 
-trait MetaAtomicStructureHelper[C<:Context] {
-  this: MetaStructureHelper[C] =>
+trait MetaAtomicStructures[C <: Context] {
+  this: MetaStructures[C] =>
 
   import context.universe._
 

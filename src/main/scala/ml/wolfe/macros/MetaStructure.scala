@@ -6,11 +6,11 @@ import scala.collection.mutable
 import scala.language.experimental.macros
 
 
-trait MetaStructureHelper[C <: Context] extends CodeRepository[C]
-                                                with MetaCaseClassStructureHelper[C]
-                                                with MetaFunStructureHelper[C]
-                                                with MetaAtomicStructureHelper[C]
-                                                with WolfeSymbols[C] {
+trait MetaStructures[C <: Context] extends CodeRepository[C]
+                                           with MetaCaseClassStructures[C]
+                                           with MetaFunStructures[C]
+                                           with MetaAtomicStructures[C]
+                                           with WolfeSymbols[C] {
 
   import context.universe._
 
@@ -166,7 +166,7 @@ object MetaStructure {
                                                                             (sampleSpace: c.Expr[Iterable[T1]],
                                                                              projection: c.Expr[T1 => T2]) = {
     import c.universe._
-    val helper = new MetaStructureHelper[c.type] {val context:c.type = c}
+    val helper = new ContextHelper[c.type](c) with MetaStructures[c.type]
     val meta = helper.metaStructure(sampleSpace.tree)
     val graphName = newTermName("_graph")
     val structName = newTermName("structure")
@@ -195,7 +195,7 @@ object MetaStructure {
 
   def createStructureImpl[T: c.WeakTypeTag](c: Context)(sampleSpace: c.Expr[Iterable[T]]): c.Expr[Structure[T]] = {
     import c.universe._
-    val helper = new MetaStructureHelper[c.type] {val context:c.type = c;}
+    val helper = new ContextHelper[c.type](c) with MetaStructures[c.type]
     val meta = helper.metaStructure(sampleSpace.tree)
     val graphName = newTermName("_graph")
     val cls = meta.classDef(graphName)
