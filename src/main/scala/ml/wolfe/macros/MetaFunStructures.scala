@@ -45,7 +45,7 @@ trait MetaFunStructures[C<:Context] {
           case _ => None
         }
         tree match {
-          case q"$f.apply($tuple.apply[..${_}](..$args))" if symbols.TupleCompanions(tuple.symbol) =>
+          case q"$f.apply($tuple.apply[..${_}](..$args))" if scalaSymbols.TupleCompanions(tuple.symbol) =>
             replace(f, args)
           case q"$f.apply(..$args)" =>
             replace(f, args)
