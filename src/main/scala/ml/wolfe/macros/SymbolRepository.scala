@@ -20,6 +20,8 @@ trait SymbolRepository[C <: Context] extends HasContext[C] {
     lazy val Pred      = wolfeType.member(newTermName("Pred"))
     lazy val preds     = wolfeType.member(newTermName("preds"))
 
+    lazy val atomic = rootMirror.staticClass("ml.wolfe.macros.OptimizedWolfe.Atomic")
+
   }
 
   object scalaSymbols {
