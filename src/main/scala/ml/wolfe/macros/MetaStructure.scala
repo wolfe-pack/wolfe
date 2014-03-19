@@ -1,7 +1,6 @@
 package ml.wolfe.macros
 
 import scala.reflect.macros.Context
-import scala.reflect.api.Universe
 import scala.collection.mutable
 import scala.language.experimental.macros
 
@@ -99,9 +98,10 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
   }
 
 
+
+
   /**
-   * Creates a meta structure for the given code repository and sample space.
-   * @param repo the code repository to use when inlining.
+   * Creates a meta structure for the given sample space.
    * @param sampleSpace the sample space to create a meta structure for.
    * @return the meta structure for the given sample space.
    */
@@ -111,30 +111,10 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
     sampleSpace match {
       case q"$all[${_},$caseClassType]($unwrap[..${_}]($constructor))($cross(..$sets))"
         if all.symbol == symbols.all && symbols.unwraps(unwrap.symbol) && symbols.crosses(cross.symbol) =>
-        val t: Type = constructor.tpe
-        val applySymbol = t.member(newTermName("apply")).asMethod
-        val args = applySymbol.paramss.head
-        new MetaCaseClassStructure {
-          val tpe             = caseClassType.tpe
-          val fieldStructures = sets.map(metaStructure(_))
-          val fields          = args
-        }
+        metaCaseClassStructure(constructor, sets, caseClassType)
       case q"$pred[${_}]($keyDom)" if pred.symbol == symbols.Pred =>
-        val keyDomains = keyDom match {
-          case q"$cross[..${_}](..$doms)" if symbols.crosses(cross.symbol) => doms
-          case _ => List(keyDom)
-        }
-        val rawDom = q"ml.wolfe.Wolfe.bools"
-        println("Raw: " + rawDom.symbol)
-        val valueDom = context.typeCheck(rawDom)
-        println("typed: " + valueDom.symbol)
-        val TypeRef(_, _, List(typeOfArg)) = sampleSpace.tpe
-        val valueStructure = metaStructure(valueDom)
-        new MetaFunStructure {
-          def argType = typeOfArg
-          def valueMetaStructure = valueStructure
-          def keyDoms = keyDomains
-        }
+        val valueDom = context.typeCheck(q"ml.wolfe.Wolfe.bools")
+        metaFunStructure(sampleSpace,keyDom,valueDom)
       case _ =>
         inlineOnce(sampleSpace) match {
           case Some(inlined) => metaStructure(inlined)
@@ -145,6 +125,32 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
         }
     }
   }
+
+  def metaCaseClassStructure(constructor:Tree, sets:List[Tree], caseClassType:Tree) = {
+    val applySymbol = constructor.tpe.member(newTermName("apply")).asMethod
+    val args = applySymbol.paramss.head
+    new MetaCaseClassStructure {
+      val tpe             = caseClassType.tpe
+      val fieldStructures = sets.map(metaStructure(_))
+      val fields          = args
+    }
+  }
+
+  def metaFunStructure(sampleSpace:Tree, keyDom:Tree, valueDom:Tree) = {
+    val keyDomains = keyDom match {
+      case q"$cross[..${_}](..$doms)" if symbols.crosses(cross.symbol) => doms
+      case _ => List(keyDom)
+    }
+    println("typed: " + valueDom.symbol)
+    val TypeRef(_, _, List(typeOfArg)) = sampleSpace.tpe
+    val valueStructure = metaStructure(valueDom)
+    new MetaFunStructure {
+      def argType = typeOfArg
+      def valueMetaStructure = valueStructure
+      def keyDoms = keyDomains
+    }
+  }
+
 }
 
 
