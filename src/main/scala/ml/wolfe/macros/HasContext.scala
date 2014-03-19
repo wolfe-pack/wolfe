@@ -9,8 +9,23 @@ import scala.reflect.macros.Context
  *
  * @author Sebastian Riedel
  */
-trait HasContext[C<:Context]{
-  val context:C
+trait HasContext[C <: Context] {
+  val context: C
+
+  import context.universe._
+
+  /**
+   * @param trees list of trees to get distinct version of.
+   * @param result result list.
+   * @return distinct list of trees using `equalsStructure`.
+   */
+  def distinctTrees(trees: List[Tree], result: List[Tree] = Nil): List[Tree] = trees match {
+    case Nil => result
+    case head :: tail =>
+      val distinct = if (result.exists(_.equalsStructure(head))) result else head :: result
+      distinctTrees(tail, distinct)
+  }
+
 }
 
 /**
@@ -18,4 +33,4 @@ trait HasContext[C<:Context]{
  * @param context the context to use.
  * @tparam C type of the context.
  */
-class ContextHelper[C<:Context](val context:C) extends HasContext[C]
+class ContextHelper[C <: Context](val context: C) extends HasContext[C]

@@ -17,7 +17,7 @@ trait CodeRepository[C<:Context] extends HasContext[C] with Transformers[C] {
   //find inlineable definitions
   lazy val definitions = context.enclosingUnit.body.collect({
     case d: DefDef => d.symbol -> d
-    case v: ValDef => v.symbol -> DefDef(v.mods, v.name, Nil, Nil, v.tpt, v.rhs)
+    case v: ValDef if !v.symbol.isParameter => v.symbol -> DefDef(v.mods, v.name, Nil, Nil, v.tpt, v.rhs)
   }).toMap
 
   def get(symbol: Symbol) = definitions.get(symbol)

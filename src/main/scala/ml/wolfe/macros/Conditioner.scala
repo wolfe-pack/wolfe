@@ -16,7 +16,7 @@ trait Conditioner[C <: Context] extends MetaStructures[C] {
       case Some(structure) => ConditioningCode(q"$structure.observe($value)", EmptyTree)
       case _ => ConditioningCode(EmptyTree, condition)
     }
-    case AndApply(arg1,arg2) =>
+    case ApplyAnd(arg1,arg2) =>
       val c1 = conditioning(arg1,matchStructure)
       val c2 = conditioning(arg2,matchStructure)
       ConditioningCode(q"{${c1.code};${c2.code}}",q"${c1.remainderOfCondition} && ${c2.remainderOfCondition}")

@@ -60,7 +60,7 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
      * @param root the root matcher determines matching of the top-level structure.
      * @return a matcher.
      */
-    def matcher(root:Tree => Option[Tree]):Tree => Option[Tree] = matcher(root,root)
+    def matcher(root: Tree => Option[Tree]): Tree => Option[Tree] = matcher(root, root)
 
 
     /**
@@ -73,37 +73,82 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
     def matcher(parent: Tree => Option[Tree], result: Tree => Option[Tree]): Tree => Option[Tree]
 
 
-    def injectStructure(tree: Tree, root: Tree => Option[Tree]) = {
-      val matcher = this.matcher(root, root)
-      val transformer = new Transformer {
-        val functionStack = new mutable.Stack[Function]()
-        override def transform(tree: Tree) = {
-          tree match {
-            case f: Function => functionStack.push(f)
-            case _ =>
-          }
-          val result = matcher(tree) match {
-            case Some(structure) => {
-              //get symbols in tree
-              val symbols = tree.collect({case i: Ident => i}).map(_.name).toSet //todo: this shouldn't just be by name
-              val hasFunctionArg = functionStack.exists(_.vparams.exists(p => symbols(p.name)))
-              if (hasFunctionArg)
-                super.transform(tree)
-              else
-                q"$structure.value()"
-            }
-            case _ => super.transform(tree)
-          }
-          tree match {
-            case _: Function => functionStack.pop
-            case _ =>
-          }
-          result
-        }
-      }
-      transformer transform tree
-    }
   }
+
+  /**
+   * get all structures in expression.
+   * @param tree the expression to search for structures in.
+   * @param matchStructure the matcher to apply on sub-trees to
+   * @return all structures in expression `tree`.
+   */
+  def structures(tree: Tree, matchStructure: Tree => Option[Tree]): List[Tree] = {
+    var result: List[Tree] = Nil
+    val traverser = new Traverser with WithFunctionStack {
+      override def traverse(tree: Tree) = {
+        pushIfFunction(tree)
+        val tmp = matchStructure(tree) match {
+          case Some(structure) if !hasFunctionArgument(tree) =>
+            result ::= structure
+          case _ =>
+            super.traverse(tree)
+        }
+        popIfFunction(tree)
+        tmp
+      }
+    }
+    traverser traverse tree
+    result
+  }
+
+  /**
+   * Takes an expression and replaces internal expressions `expr` with
+   * `structure.value` if `expr` corresponds to `structure`.
+   * @param tree the expression to inject structure into.
+   * @param matcher the matcher to look for structure with.
+   * @return the tree with injected structure.
+   */
+  def injectStructure(tree: Tree, matcher: Tree => Option[Tree]) = {
+    val transformer = new Transformer {
+      val functionStack = new mutable.Stack[Function]()
+      override def transform(tree: Tree) = {
+        tree match {
+          case f: Function => functionStack.push(f)
+          case _ =>
+        }
+        val result = matcher(tree) match {
+          case Some(structure) => {
+            //get symbols in tree
+            val symbols = tree.collect({case i: Ident => i}).map(_.name).toSet //todo: this shouldn't just be by name
+            val hasFunctionArg = functionStack.exists(_.vparams.exists(p => symbols(p.name)))
+            if (hasFunctionArg)
+              super.transform(tree)
+            else
+              q"$structure.value()"
+          }
+          case _ => super.transform(tree)
+        }
+        tree match {
+          case _: Function => functionStack.pop
+          case _ =>
+        }
+        result
+      }
+    }
+    transformer transform tree
+  }
+
+  /**
+   * @param args a list of expressions corresponding to structures.
+   * @param block the code that should be executed in the loop.
+   * @return a code block that executes `block` for every setting of the given structure `args`.
+   */
+  def loopSettings(args: List[Tree])(block: Tree): Tree = args match {
+    case Nil => block
+    case head :: tail =>
+      val inner = loopSettings(tail)(block)
+      q"{ $head.resetSetting();  while ($head.hasNextSetting) {  $head.nextSetting(); $inner } }"
+  }
+
 
   /**
    * Creates a matcher that checks for an identifier matching the given symbol, and then returns the
@@ -112,14 +157,13 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
    * @param rootStructure the structure to replace the variable with.
    * @return a matcher.
    */
-  def rootMatcher(rootArgument:Symbol,rootStructure:Tree): Tree => Option[Tree] = {
+  def rootMatcher(rootArgument: Symbol, rootStructure: Tree): Tree => Option[Tree] = {
     val root = (tree: Tree) => tree match {
       case i: Ident if i.symbol == rootArgument => Some(rootStructure)
       case _ => None
     }
     root
   }
-
 
 
   /**
@@ -205,7 +249,7 @@ object MetaStructure {
     val cls = meta.classDef(graphName)
     val q"($arg) => $rhs" = projection.tree
     val root = helper.rootMatcher(arg.symbol, q"$structArgName.asInstanceOf[${meta.className}]")
-    val injectedRhs = meta.injectStructure(rhs, root)
+    val injectedRhs = helper.injectStructure(rhs, meta.matcher(root))
 
     val injectedProj = q"($structArgName:ml.wolfe.macros.Structure[${meta.argType}]) => $injectedRhs"
     val code = q"""

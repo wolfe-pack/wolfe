@@ -2,6 +2,7 @@ package ml.wolfe.macros
 
 import scala.reflect.macros.Context
 import scala.reflect.api.Universe
+import scala.collection.mutable
 
 /**
  * @author Sebastian Riedel
@@ -200,6 +201,31 @@ trait Transformers[C<:Context] {
       case _ => super.transform(tree)
     }
   }
+
+  trait WithFunctionStack {
+
+    private val functionStack = new mutable.Stack[Function]()
+
+    def pushIfFunction(tree: Tree) {
+      tree match {
+        case f: Function => functionStack.push(f)
+        case _ =>
+      }
+    }
+
+    def popIfFunction(tree: Tree) {
+      tree match {
+        case _: Function => functionStack.pop
+        case _ =>
+      }
+    }
+
+    def hasFunctionArgument(tree: Tree) = {
+      val symbols = tree.collect({case i: Ident => i}).map(_.name).toSet //todo: this shouldn't just be by name
+      functionStack.exists(_.vparams.exists(p => symbols(p.name)))
+    }
+  }
+
 
 
 }

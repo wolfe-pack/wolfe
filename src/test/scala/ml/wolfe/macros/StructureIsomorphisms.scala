@@ -52,7 +52,21 @@ trait StructureIsomorphisms extends WolfeSpec {
         structure.nextSetting()
         structure.value() should be (t)
       }
-
     }
   }
+
+  implicit class StructuredFactorTest[T](factor:StructuredFactor[T]) {
+    def mustBeIsomorphicTo(potential:T => Double) = {
+      val structure = factor.structure
+      structure.resetSetting()
+      while (structure.hasNextSetting) {
+        structure.nextSetting()
+        val value = structure.value()
+        val expected = potential(value)
+        val actual = factor.potential()
+        actual should be (expected)
+      }
+    }
+  }
+
 }
