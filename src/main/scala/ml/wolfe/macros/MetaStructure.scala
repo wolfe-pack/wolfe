@@ -9,7 +9,7 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
                                            with MetaCaseClassStructures[C]
                                            with MetaFunStructures[C]
                                            with MetaAtomicStructures[C]
-                                           with WolfeSymbols[C] {
+                                           with PatternRepository[C] {
 
   import context.universe._
 
@@ -132,12 +132,12 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
     //get symbol for all, unwrap ...
     sampleSpace match {
       case q"$all[${_},$caseClassType]($unwrap[..${_}]($constructor))($cross(..$sets))"
-        if all.symbol == symbols.all && symbols.unwraps(unwrap.symbol) && symbols.crosses(cross.symbol) =>
+        if all.symbol == wolfeSymbols.all && wolfeSymbols.unwraps(unwrap.symbol) && wolfeSymbols.crosses(cross.symbol) =>
         metaCaseClassStructure(constructor, sets, caseClassType)
       case q"$all[${_},$caseClassType]($constructor)(..$sets)"
-        if all.symbol == symbols.all =>
+        if all.symbol == wolfeSymbols.all =>
         metaCaseClassStructure(constructor, sets, caseClassType)
-      case q"$pred[${_}]($keyDom)" if pred.symbol == symbols.Pred =>
+      case q"$pred[${_}]($keyDom)" if pred.symbol == wolfeSymbols.Pred =>
         val valueDom = context.typeCheck(q"ml.wolfe.Wolfe.bools")
         metaFunStructure(sampleSpace, keyDom, valueDom)
       case _ =>
@@ -163,7 +163,7 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
 
   def metaFunStructure(sampleSpace: Tree, keyDom: Tree, valueDom: Tree) = {
     val keyDomains = keyDom match {
-      case q"$cross[..${_}](..$doms)" if symbols.crosses(cross.symbol) => doms
+      case q"$cross[..${_}](..$doms)" if wolfeSymbols.crosses(cross.symbol) => doms
       case _ => List(keyDom)
     }
     println("typed: " + valueDom.symbol)
