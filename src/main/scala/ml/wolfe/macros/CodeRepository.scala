@@ -91,7 +91,7 @@ object CodeRepository {
 
   def inlineMacroImpl[T: c.WeakTypeTag](c: Context)(t: c.Expr[T], times: c.Expr[Int]): c.Expr[String] = {
 
-    val repo = new CodeRepository[c.type] {val context:c.type = c}
+    val repo = new ContextHelper[c.type](c) with CodeRepository[c.type] //{val context:c.type = c}
     val evalTimes = c.eval(c.Expr[Int](c.resetAllAttrs(times.tree)))
     val result = for (inlined <- repo.inlineN(evalTimes, t.tree)) yield inlined.toString()
     c.literal(result.toString)
