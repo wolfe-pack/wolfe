@@ -36,7 +36,7 @@ class MetaStructuredFactorSpecs extends StructureIsomorphisms {
       factor mustBeIsomorphicTo potential
       factor.factors.size should be(2)
     }
-    "generate a first order sum factor " in {
+    "generate a first order sum factor" in {
       implicit val ints = Range(0,5)
       val space = Wolfe.Pred[Int]
       def potential(pred:Pred[Int]) = ints.map(i => I(pred(i))).sum

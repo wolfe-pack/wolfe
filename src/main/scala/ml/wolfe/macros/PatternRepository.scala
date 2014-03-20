@@ -20,10 +20,16 @@ trait PatternRepository[C<:Context] extends SymbolRepository[C] {
   }
 
   class Sum(classes:Set[Symbol]) {
-    def unapply(tree:Tree):Option[(Tree,Tree,Tree)] = tree match {
-      case q"$dom.map[..${_}]($obj)(${_}).sum[$sumType](${_})" if classes(sumType.symbol) =>
-        Some((dom,obj,sumType))
-      case _ => None
+    def unapply(tree:Tree):Option[(Tree,Tree,Tree)] = {
+      tree match {
+        case q"$sum[$sumType](${_})" if sum.symbol == scalaSymbols.sum && classes(sumType.symbol) => sum match {
+          case q"$map[..${_}]($obj)(${_}).sum" if map.symbol == scalaSymbols.map  =>
+            val q"$dom.map" = map
+            Some((dom,obj,sumType))
+          case _ => None
+        }
+        case _ => None
+      }
     }
   }
 
