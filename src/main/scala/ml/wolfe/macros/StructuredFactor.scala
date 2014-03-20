@@ -1,7 +1,6 @@
 package ml.wolfe.macros
 
 import ml.wolfe.MPGraph
-import scala.reflect.macros.Context
 
 /**
  * Represents a factor that decomposes into sub-factors, and provides a potential over
