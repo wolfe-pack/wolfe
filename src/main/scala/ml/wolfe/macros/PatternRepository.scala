@@ -19,7 +19,16 @@ trait PatternRepository[C<:Context] extends SymbolRepository[C] {
     }
   }
 
+  class Sum(classes:Set[Symbol]) {
+    def unapply(tree:Tree):Option[(Tree,Tree,Tree)] = tree match {
+      case q"$dom.map[..${_}]($obj)(${_}).sum[$sumType](${_})" if classes(sumType.symbol) =>
+        Some((dom,obj,sumType))
+      case _ => None
+    }
+  }
+
   object ApplyAnd extends InfixApply(Set(scalaSymbols.and))
   object ApplyPlus extends InfixApply(scalaSymbols.doublePluses)
+  object DoubleSum extends Sum(Set(scalaSymbols.doubleClass))
 
 }
