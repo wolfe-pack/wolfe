@@ -16,6 +16,7 @@ class MetaStructuredFactorSpecs extends StructureIsomorphisms {
       factor.factors.size should be(1)
       factor.arguments.size should be(1)
     }
+
     "factorize a sum" in {
       case class Data(x: Boolean, y: Boolean, z: Boolean)
       val space = Wolfe.all(Data)
@@ -34,6 +35,16 @@ class MetaStructuredFactorSpecs extends StructureIsomorphisms {
       val factor = MetaStructuredFactor.structuredFactor[Data](space, potential)
       factor mustBeIsomorphicTo potential
       factor.factors.size should be(2)
+    }
+    "generate a first order sum factor" in {
+      implicit val ints = Range(0,5)
+      val space = Wolfe.Pred[Int]
+      def potential(pred:Pred[Int]) = ints.map(i => I(pred(i))).sum
+      val factor = MetaStructuredFactor.structuredFactor[
+      Pred[Int]](space, potential)
+      factor mustBeIsomorphicTo potential
+      println(factor.factors.size)
+
     }
 
 

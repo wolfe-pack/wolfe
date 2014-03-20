@@ -12,14 +12,8 @@ trait TransformHelper[C <: Context] extends Transformers[C] {
 
   import context.universe._
 
-  def transform(tree: Tree, pf: PartialFunction[Tree, Tree]): context.Tree = new TransformWithPartialFunction(pf).transform(tree)
 
-  class TransformWithPartialFunction(pf: PartialFunction[Tree, Tree]) extends Transformer {
-    override def transform(tree: Tree) = {
-      val transformed = super.transform(tree)
-      if (pf.isDefinedAt(transformed)) pf(transformed) else transformed
-    }
-  }
+
 
   def replaceMethods(tree: Tree, defDefs: Map[Symbol, DefDef]) = {
     val transformer = new ReplaceMethodsWithFunctions(defDefs)
@@ -166,6 +160,9 @@ trait Transformers[C<:Context] {
   def betaReduce(tree: Tree) = betaReducer transform tree
   def simplifyBlocks(tree: Tree) = blockSimplifier transform tree
 
+  def transform(tree: Tree, pf: PartialFunction[Tree, Tree]): context.Tree =
+    new TransformWithPartialFunction(pf).transform(tree)
+
   class Substituter(binding: Map[Symbol, Tree]) extends Transformer {
     override def transform(tree: Tree) = tree match {
       case i: Ident => binding.get(i.symbol) match {
@@ -173,6 +170,13 @@ trait Transformers[C<:Context] {
         case _ => super.transform(tree)
       }
       case _ => super.transform(tree)
+    }
+  }
+
+  class TransformWithPartialFunction(pf: PartialFunction[Tree, Tree]) extends Transformer {
+    override def transform(tree: Tree) = {
+      val transformed = super.transform(tree)
+      if (pf.isDefinedAt(transformed)) pf(transformed) else transformed
     }
   }
 
