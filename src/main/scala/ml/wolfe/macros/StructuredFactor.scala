@@ -90,18 +90,18 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] {
 
   case class MetaFirstOrderSumFactor(domains: List[Tree], obj: Tree,
                                      matchStructure: Tree => Option[Tree], structure: MetaStructure,
-                                     args: List[ValDef] = Nil) {
+                                     args: List[ValDef] = Nil) extends MetaStructuredFactor {
     val className                  = newTypeName(context.fresh("FirstOrderSumFactor"))
     val q"(..$objArgs) => $objRhs" = obj
     //domains may contain references to values in the sample space.
     val injectedDoms               = domains.map(injectStructure(_, matchStructure))
     val keyDomNames                = List.fill(domains.size)(newTermName(context.fresh("qSumDom")))
     val keyDomSizes                = keyDomNames.map(k => q"$k.length")
-    val tmpNames                   = Range(0, domains.size).map(i => newTermName("i" + i)).toList
+    val tmpNames                   = Range(0, domains.size).map(i => newTermName(context.fresh("i" + i))).toList
     val tmpIds                     = tmpNames.map(Ident(_))
     val domainDefs                 = for ((d, n) <- injectedDoms zip keyDomNames) yield q"val $n = $d.toArray"
     val ownParams                  = q"val structure:${structure.className}" :: args
-    val childParams                = ownParams ::: tmpNames.map(id => q"val $id:Int")
+    val childParams                = args ::: tmpNames.map(id => q"val $id:Int")
     val childArgs                  = (q"structure" :: args.map(a => q"${a.name}")) ::: tmpIds
     val substitutedObj             = transform(objRhs, {
       case i: Ident if objArgs.exists(_.symbol == i.symbol) =>
@@ -168,8 +168,9 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] {
   def metaStructuredFactor(potential: Tree, structure: MetaStructure,
                            matcher: Tree => Option[Tree],
                            constructorArgs: List[ValDef] = Nil): MetaStructuredFactor = {
-    println(wolfeSymbols.atomic)
     potential match {
+      case DoubleSum(dom,obj,_) =>
+        MetaFirstOrderSumFactor(List(dom),obj,matcher, structure, constructorArgs)
       case Apply(f, args) if f.symbol.annotations.exists(_.tpe.typeSymbol == wolfeSymbols.atomic) =>
         MetaAtomicStructuredFactor(potential, structure, matcher, constructorArgs)
       case ApplyPlus(arg1, arg2) =>
