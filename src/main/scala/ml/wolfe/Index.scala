@@ -4,15 +4,13 @@ import gnu.trove.strategy.HashingStrategy
 import gnu.trove.map.custom_hash.TObjectIntCustomHashMap
 import scala.collection.mutable
 import gnu.trove.procedure.TObjectIntProcedure
-import ml.wolfe.legacy.value.{Fun, AllOfType, Ints}
-import ml.wolfe.legacy.term.{Constant, Term, SeqTerm, FunApp}
 import java.io.{ObjectInputStream, ObjectOutputStream}
 
 /**
  * @author Sebastian Riedel
  */
 @SerialVersionUID(100L)
-class Index extends Fun[Seq[Any], Int] with Serializable {
+class Index extends Serializable {
 
   class ArrayHashing extends HashingStrategy[Array[AnyRef]] {
     def computeHashCode(arg: Array[AnyRef]) = java.util.Arrays.deepHashCode(arg)
@@ -21,11 +19,8 @@ class Index extends Fun[Seq[Any], Int] with Serializable {
 
   private var map = new TObjectIntCustomHashMap[Array[AnyRef]](new ArrayHashing)
 
-  def funCandidateDom = new AllOfType[Seq[Any]]
   //map.keySet().asScala
-  def funRange = Ints
   def apply(v1: Seq[Any]) = index(v1.map(_.asInstanceOf[AnyRef]).toArray)
-  def apply(v1: Term[Any]*) = FunApp(Constant(this), SeqTerm(v1))
   def isDefinedAt(x: Seq[Any]) = true
   //map.containsKey(x.toArray)
   def index(args: Array[AnyRef]): Int = {

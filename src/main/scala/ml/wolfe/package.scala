@@ -2,7 +2,6 @@ package ml
 
 import cc.factorie.la.{SingletonTensor1, DenseTensor1, SparseTensor1, Tensor1}
 import cc.factorie.maths.ArrayOps
-import ml.wolfe.legacy.value.Fun
 
 /**
  * @author Sebastian Riedel
@@ -13,7 +12,6 @@ package object wolfe {
   type DenseVector = DenseTensor1
   type SingletonVector = SingletonTensor1
   type AnyFunction = PartialFunction[Nothing,Any]
-  type AnyFun = Fun[Nothing,Any]
 
   object MoreArrayOps extends ArrayOps {
     def maxValue(s: A): Double = { var result = s(0); var i = 0; while (i < s.length) {if (s(i) > result) result = s(i); i += 1}; result }

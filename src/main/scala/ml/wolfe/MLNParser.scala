@@ -1,4 +1,4 @@
-package ml.wolfe.legacy.mln
+package ml.wolfe
 
 import _root_.scala.util.parsing.combinator.{RegexParsers, JavaTokenParsers}
 
