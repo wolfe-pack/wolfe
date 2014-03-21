@@ -25,6 +25,11 @@ trait SymbolRepository[C <: Context] extends HasContext[C] {
   }
 
   object scalaSymbols {
+    lazy val booleanClass         = rootMirror.staticClass("scala.Boolean")
+    lazy val doubleClass          = rootMirror.staticClass("scala.Double")
+    lazy val traversableOnceClass = rootMirror.staticClass("scala.collection.TraversableOnce")
+    lazy val traversableLikeClass = rootMirror.staticClass("scala.collection.TraversableLike")
+
     lazy val scalaSymbol     = rootMirror.staticPackage("scala")
     lazy val scalaType       = scalaSymbol.typeSignature
     lazy val TupleCompanions = Range(2, 6).map(i => scalaType.member(newTermName("Tuple" + i))).toSet
@@ -32,11 +37,6 @@ trait SymbolRepository[C <: Context] extends HasContext[C] {
     lazy val and          = booleanClass.typeSignature.member(newTermName("$amp$amp"))
     lazy val doublePlus   = doubleClass.typeSignature.member(newTermName("$plus"))
     lazy val doublePluses = doublePlus.asTerm.alternatives.toSet
-
-    lazy val booleanClass         = rootMirror.staticClass("scala.Boolean")
-    lazy val doubleClass          = rootMirror.staticClass("scala.Double")
-    lazy val traversableOnceClass = rootMirror.staticClass("scala.collection.TraversableOnce")
-    lazy val traversableLikeClass = rootMirror.staticClass("scala.collection.TraversableLike")
 
     lazy val sum = traversableOnceClass.typeSignature.member(newTermName("sum"))
     lazy val map = traversableLikeClass.typeSignature.member(newTermName("map"))

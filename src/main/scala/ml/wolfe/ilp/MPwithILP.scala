@@ -1,6 +1,5 @@
 package ml.wolfe.ilp
 
-import ml.wolfe.legacy._
 import ml.wolfe.MPGraph
 import ml.wolfe.MPGraph.{Factor, Node}
 import ml.wolfe.ilp._
@@ -113,56 +112,3 @@ object MPwithILP{
 
 
 
-object MPwithILPExample{
-  def main(args: Array[String]) {
-
-    //this gives us syntactic sugar
-
-    import TermDSL._
-
-    //index for indexing feature vectors
-    val key = new ml.wolfe.Index()
-
-    //domain objects. Note that this set itself is a term (a constant evaluating to the given set, but it could be dynamic too).
-    val persons = set('Anna, 'Bob)
-
-    //Unary predicates
-    val smokes = 'smokes of persons |-> bools
-    val cancer = 'cancer of persons |-> bools
-
-    //Binary predicate
-    val friend = 'friend of c(persons, persons) |-> bools
-
-    //Weight vector variable.
-    val weights = 'weights of vectors
-
-    //Smoking can lead to cancer
-    val f1 = vectors.sum(for (p <- persons) yield unit(key('smokingIsBad),
-      I(smokes(p) |=> cancer(p))))
-
-    //friends make friends smoke / not smoke
-    val f2 = vectors.sum(for ((p1, p2) <- c(persons, persons)) yield unit(key('peerPressure),
-      I(friend(p1, p2) |=> (smokes(p1) <=> smokes(p2)))))
-
-    //The MLN without assigned weights
-    val mln = (f1 + f2) dot weights
-
-    //an actual weight vector that can be plugged into the mln. todo: this should be created by terms
-    val concreteWeights = key.createDenseVector(Seq('smokingIsBad) -> 1.0, Seq('peerPressure) -> 1.0)()
-
-    //some observations
-    val condition = state(friend.atom('Anna, 'Bob) -> true, smokes.atom('Anna) -> true)
-
-    //the mln with weights and some ground atoms set to some observation
-    val conditioned = mln | condition | weights -> concreteWeights
-
-    //an inference result calculated through converting a message passing graph to an ILP
-    val argmax = argState(max(lam(sig(smokes, cancer, friend), conditioned)).byILP()).value()
-
-    println(argmax)
-
-    val argmax2 = argState(max(lam(sig(smokes, cancer, friend), conditioned)).byMessagePassing()).value()
-
-    println(argmax2)
-  }
-}
