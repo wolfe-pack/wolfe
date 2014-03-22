@@ -2,6 +2,7 @@ package ml.wolfe.macros
 
 import ml.wolfe.Wolfe
 import scala.reflect.macros.Context
+import org.scalautils.{Bad, Good, Or}
 
 /**
  * Calculates gradients and values of a function at a particular argument.
@@ -17,9 +18,9 @@ trait MetaGradientCalculators[C <: Context] extends CodeRepository[C] with Patte
 
   case class MetaGradientCalculator(className: TypeName, classDef: Tree)
 
+  case class CantDifferentiate(term:Tree)
 
-
-  def metaGradientCalculator(rhs: Tree, weightVar: Symbol, indexTree: Tree): Option[MetaGradientCalculator] = {
+  def metaGradientCalculator(rhs: Tree, weightVar: Symbol, indexTree: Tree): MetaGradientCalculator Or CantDifferentiate = {
     rhs match {
       case x if !x.exists(_.symbol == weightVar) =>
         val className = newTypeName(context.fresh("ZeroGradientCalculator"))
@@ -30,7 +31,18 @@ trait MetaGradientCalculators[C <: Context] extends CodeRepository[C] with Patte
             }
           }
         """
-        Some(MetaGradientCalculator(className,classDef))
+        Good(MetaGradientCalculator(className,classDef))
+      case Dot(arg1,arg2) if arg1.symbol == weightVar && !arg2.exists(_.symbol == weightVar) =>
+        val className = newTypeName(context.fresh("DotGradientCalculator"))
+        val classDef = q"""
+          final class $className extends ml.wolfe.macros.GradientCalculator {
+            val coefficient = ml.wolfe.FactorieConverter.toFactorieSparseVector($arg2,$indexTree)
+            def valueAndGradient(param: ml.wolfe.FactorieVector): (Double, ml.wolfe.FactorieVector) = {
+              (param dot coefficient, coefficient)
+            }
+          }
+        """
+        Good(MetaGradientCalculator(className,classDef))
       case ApplyMinus(arg1, arg2) =>
         for (g1 <- metaGradientCalculator(arg1, weightVar, indexTree);
              g2 <- metaGradientCalculator(arg2, weightVar, indexTree)) yield {
@@ -53,7 +65,7 @@ trait MetaGradientCalculators[C <: Context] extends CodeRepository[C] with Patte
         }
       case x => inlineOnce(x) match {
         case Some(inlined) => metaGradientCalculator(inlined,weightVar,indexTree)
-        case None => None
+        case None => Bad(CantDifferentiate(x))
       }
 
     }
@@ -74,7 +86,7 @@ object GradientCalculator {
     val q"($x) => $rhs" = helper.simplifyBlocks(function.tree)
     val index = q"_index"
     helper.metaGradientCalculator(rhs,x.symbol,index) match {
-      case Some(calculator) =>
+      case Good(calculator) =>
         val code = q"""
           val _index = new ml.wolfe.Index()
           ${calculator.classDef}
@@ -85,9 +97,9 @@ object GradientCalculator {
           (value,wolfeResult)
         """
         c.Expr[(Double,Wolfe.Vector)](code)
-      case None =>
-        c.error(rhs.pos,"Can't calculate gradient for " + rhs)
-        ???
+      case Bad(helper.CantDifferentiate(term)) =>
+        c.error(c.enclosingPosition,"Can't calculate gradient for " + term)
+        ??? //todo: I don't know what should be returned here---doesn't the compiler quit at this point?
     }
   }
 

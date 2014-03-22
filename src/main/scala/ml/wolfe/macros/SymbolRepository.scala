@@ -20,6 +20,9 @@ trait SymbolRepository[C <: Context] extends HasContext[C] {
     lazy val Pred      = wolfeType.member(newTermName("Pred"))
     lazy val preds     = wolfeType.member(newTermName("preds"))
 
+    lazy val richVectorClass = rootMirror.staticClass("ml.wolfe.Wolfe.RichVector")
+    lazy val dot = richVectorClass.typeSignature.member(newTermName("dot"))
+
     lazy val atomic = rootMirror.staticClass("ml.wolfe.macros.OptimizedWolfe.Atomic")
 
   }
