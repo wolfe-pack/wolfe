@@ -35,6 +35,7 @@ trait PatternRepository[C<:Context] extends SymbolRepository[C] {
 
   object ApplyAnd extends InfixApply(Set(scalaSymbols.and))
   object ApplyPlus extends InfixApply(scalaSymbols.doublePluses)
+  object ApplyMinus extends InfixApply(scalaSymbols.doubleMinuses)
   object DoubleSum extends Sum(Set(scalaSymbols.doubleClass))
 
 }

@@ -155,7 +155,3 @@ trait GradientBasedMinimizationHelper[C <: Context] {
 
 }
 
-trait GradientCalculator {
-  def valueAndGradient(param: ml.wolfe.FactorieVector): (Double, ml.wolfe.FactorieVector)
-}
-

@@ -34,9 +34,11 @@ trait SymbolRepository[C <: Context] extends HasContext[C] {
     lazy val scalaType       = scalaSymbol.typeSignature
     lazy val TupleCompanions = Range(2, 6).map(i => scalaType.member(newTermName("Tuple" + i))).toSet
 
-    lazy val and          = booleanClass.typeSignature.member(newTermName("$amp$amp"))
-    lazy val doublePlus   = doubleClass.typeSignature.member(newTermName("$plus"))
-    lazy val doublePluses = doublePlus.asTerm.alternatives.toSet
+    lazy val and           = booleanClass.typeSignature.member(newTermName("$amp$amp"))
+    lazy val doublePlus    = doubleClass.typeSignature.member(newTermName("$plus"))
+    lazy val doubleMinus   = doubleClass.typeSignature.member(newTermName("$minus"))
+    lazy val doublePluses  = doublePlus.asTerm.alternatives.toSet
+    lazy val doubleMinuses = doubleMinus.asTerm.alternatives.toSet
 
     lazy val sum = traversableOnceClass.typeSignature.member(newTermName("sum"))
     lazy val map = traversableLikeClass.typeSignature.member(newTermName("map"))
