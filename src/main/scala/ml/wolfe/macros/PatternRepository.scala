@@ -32,6 +32,13 @@ trait PatternRepository[C<:Context] extends SymbolRepository[C] {
       }
     }
   }
+  object Dot {
+    def unapply(tree:Tree):Option[(Tree,Tree)] = tree match {
+      case q"ml.wolfe.Wolfe.RichVector($arg1).dot($arg2)" =>
+        Some(arg1,arg2)
+      case _ => None
+    }
+  }
 
   object ApplyAnd extends InfixApply(Set(scalaSymbols.and))
   object ApplyPlus extends InfixApply(scalaSymbols.doublePluses)
