@@ -83,9 +83,9 @@ trait MetaGradientCalculators[C <: Context] extends MetaStructures[C]
         Good(linearGradientCalculator(arg2,indexTree))
       case Dot(arg1,arg2) if arg2.symbol == weightVar && !arg1.exists(_.symbol == weightVar) =>
         Good(linearGradientCalculator(arg1,indexTree))
-      case ApplyMinus(arg1, arg2) =>
+      case ApplyDoubleMinus(arg1, arg2) =>
         binaryOperatorGradientCalculator(arg1,arg2,weightVar,indexTree, (v1,v2) => q"$v1 - $v2", (g1,g2) => q"$g1 - $g2")
-      case ApplyPlus(arg1, arg2) =>
+      case ApplyDoublePlus(arg1, arg2) =>
         binaryOperatorGradientCalculator(arg1,arg2,weightVar,indexTree, (v1,v2) => q"$v1 + $v2", (g1,g2) => q"$g1 + $g2")
       case DoubleMax(dom,where,obj,_) =>
         val structName = newTermName(context.fresh("structure"))
