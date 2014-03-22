@@ -99,11 +99,10 @@ object GradientCalculator {
 
   import scala.language.experimental.macros
 
-
   def valueAndgradientAt(function: Wolfe.Vector => Double, argument: Wolfe.Vector): (Double,Wolfe.Vector) = macro valueAndgradientAtImpl
 
   def valueAndgradientAtImpl(c: Context)(function: c.Expr[Wolfe.Vector => Double], argument: c.Expr[Wolfe.Vector]) = {
-    import c.universe._
+    import c.universe._ //todo: needed here for q"" expressions, but gets optimized away by Intellij
     val helper = new ContextHelper[c.type](c) with MetaGradientCalculators[c.type]
     val q"($x) => $rhs" = helper.simplifyBlocks(function.tree)
     val index = q"_index"

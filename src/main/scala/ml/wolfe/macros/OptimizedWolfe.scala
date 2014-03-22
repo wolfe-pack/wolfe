@@ -28,6 +28,22 @@ object OptimizedWolfe extends WolfeAPI {
                         (obj: (T) => Double) = macro implArgmin[T]
 
 
+  override def max[T](data: Iterable[T])(where: (T) => Boolean)(obj: (T) => Double):Double = macro implMax[T]
+
+  def implMax[T: c.WeakTypeTag](c: Context)
+                               (data: c.Expr[Iterable[T]])
+                               (where: c.Expr[T => Boolean])
+                               (obj: c.Expr[T => Double]) = {
+
+    import c.universe._
+    if (c.enclosingMacros.size > 0) {
+      c.info(c.enclosingPosition, "Max macro not expanded in nested macro",true)
+      reify[Double](data.splice.filter(where.splice).map(obj.splice).max)
+    } else
+      reify[Double](data.splice.filter(where.splice).map(obj.splice).max)
+
+  }
+
   def implArgmax[T: c.WeakTypeTag](c: Context)
                                   (data: c.Expr[Iterable[T]])
                                   (where: c.Expr[T => Boolean])
