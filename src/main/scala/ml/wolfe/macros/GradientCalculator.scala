@@ -12,7 +12,9 @@ trait GradientCalculator {
   def valueAndGradient(param: ml.wolfe.FactorieVector): (Double, ml.wolfe.FactorieVector)
 }
 
-trait MetaGradientCalculators[C <: Context] extends CodeRepository[C] with PatternRepository[C] {
+trait MetaGradientCalculators[C <: Context] extends MetaStructures[C]
+                                                    with Conditioner[C]
+                                                    with MetaStructuredFactors[C] {
 
   import context.universe._
 
@@ -86,6 +88,34 @@ trait MetaGradientCalculators[C <: Context] extends CodeRepository[C] with Patte
       case ApplyPlus(arg1, arg2) =>
         binaryOperatorGradientCalculator(arg1,arg2,weightVar,indexTree, (v1,v2) => q"$v1 + $v2", (g1,g2) => q"$g1 + $g2")
       case DoubleMax(dom,where,obj,_) =>
+        val structName = newTermName(context.fresh("structure"))
+        val Function(List(whereArg),whereRhs) = where
+        val Function(List(objArg),objRhs) = obj
+        val structure = metaStructure(dom)
+        val whereMatcher = structure.matcher(rootMatcher(whereArg.symbol,q"$structName"))
+        val objMatcher = structure.matcher(rootMatcher(objArg.symbol,q"$structName"))
+        val conditioner = conditioning(whereRhs,whereMatcher)
+        val factors = metaStructuredFactor(objRhs,structure,objMatcher)
+        val structureDef = structure.classDef(newTermName("graph"))
+        val className = newTypeName(context.fresh("MaxGradientCalculator"))
+        val classDef = q"""
+          final class $className extends ml.wolfe.macros.GradientCalculator {
+            val graph = new ml.wolfe.MPGraph
+            $structureDef
+            val $structName = new ${structure.className}
+            ${conditioner.code}
+            graph.setupNodes()
+            ${factors.classDef}
+            val factors = new ${factors.className}($structName)
+            graph.build()
+            def valueAndGradient(param: ml.wolfe.FactorieVector): (Double, ml.wolfe.FactorieVector) = {
+              (???,???)
+            }
+          }
+        """
+
+        //val whereMatcher = structure.matcher(rootMatcher())
+        //val conditioner = conditioning()
         Bad(CantDifferentiate(rhs))
       case x => inlineOnce(x) match {
         case Some(inlined) => metaGradientCalculator(inlined,weightVar,indexTree)

@@ -62,7 +62,6 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
      */
     def matcher(root: Tree => Option[Tree]): Tree => Option[Tree] = matcher(root, root)
 
-
     /**
      * A matcher takes a tree and returns a tree that represents the sub-structure that corresponds to the
      * tree, if any. This method creates matchers for the structures of this meta-structure.
@@ -72,8 +71,9 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
      */
     def matcher(parent: Tree => Option[Tree], result: Tree => Option[Tree]): Tree => Option[Tree]
 
-
   }
+
+
 
   /**
    * get all structures in expression.
@@ -164,7 +164,6 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
     }
     root
   }
-
 
   /**
    * Creates a meta structure for the given sample space.

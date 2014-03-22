@@ -50,7 +50,6 @@ trait PatternRepository[C <: Context] extends SymbolRepository[C] {
     }
   }
 
-
   object Dot {
     def unapply(tree: Tree): Option[(Tree, Tree)] = tree match {
       case q"ml.wolfe.Wolfe.RichVector($arg1).dot($arg2)" =>
