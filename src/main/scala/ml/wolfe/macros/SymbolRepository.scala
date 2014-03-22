@@ -21,7 +21,7 @@ trait SymbolRepository[C <: Context] extends HasContext[C] {
     lazy val preds     = wolfeType.member(newTermName("preds"))
 
     lazy val richVectorClass = rootMirror.staticClass("ml.wolfe.Wolfe.RichVector")
-    lazy val dot = richVectorClass.typeSignature.member(newTermName("dot"))
+    lazy val dot             = richVectorClass.typeSignature.member(newTermName("dot"))
 
     lazy val atomic = rootMirror.staticClass("ml.wolfe.macros.OptimizedWolfe.Atomic")
 
@@ -43,8 +43,11 @@ trait SymbolRepository[C <: Context] extends HasContext[C] {
     lazy val doublePluses  = doublePlus.asTerm.alternatives.toSet
     lazy val doubleMinuses = doubleMinus.asTerm.alternatives.toSet
 
-    lazy val sum = traversableOnceClass.typeSignature.member(newTermName("sum"))
-    lazy val map = traversableLikeClass.typeSignature.member(newTermName("map"))
+    lazy val sum    = traversableOnceClass.typeSignature.member(newTermName("sum"))
+    lazy val max    = traversableOnceClass.typeSignature.member(newTermName("max"))
+    lazy val map    = traversableLikeClass.typeSignature.member(newTermName("map"))
+    lazy val filter = traversableLikeClass.typeSignature.member(newTermName("filter"))
+
 
   }
 
