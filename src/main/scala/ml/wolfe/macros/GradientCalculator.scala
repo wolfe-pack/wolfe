@@ -85,6 +85,8 @@ trait MetaGradientCalculators[C <: Context] extends CodeRepository[C] with Patte
         binaryOperatorGradientCalculator(arg1,arg2,weightVar,indexTree, (v1,v2) => q"$v1 - $v2", (g1,g2) => q"$g1 - $g2")
       case ApplyPlus(arg1, arg2) =>
         binaryOperatorGradientCalculator(arg1,arg2,weightVar,indexTree, (v1,v2) => q"$v1 + $v2", (g1,g2) => q"$g1 + $g2")
+      case DoubleMax(dom,where,obj,_) =>
+        Bad(CantDifferentiate(rhs))
       case x => inlineOnce(x) match {
         case Some(inlined) => metaGradientCalculator(inlined,weightVar,indexTree)
         case None => Bad(CantDifferentiate(x))
