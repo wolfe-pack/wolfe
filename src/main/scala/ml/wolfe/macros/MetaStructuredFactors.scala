@@ -146,7 +146,8 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] {
         MetaSumFactor(List(arg1, arg2), List(f1, f2), structure, constructorArgs)
       case _ => inlineOnce(potential) match {
         case Some(inlined) => metaStructuredFactor(inlined, structure, matcher)
-        case None => MetaAtomicStructuredFactor(potential, structure, matcher, constructorArgs)
+        case None =>
+          MetaAtomicStructuredFactor(potential, structure, matcher, constructorArgs)
       }
     }
   }

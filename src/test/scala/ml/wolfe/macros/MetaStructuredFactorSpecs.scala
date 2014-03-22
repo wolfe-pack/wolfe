@@ -37,13 +37,19 @@ class MetaStructuredFactorSpecs extends StructureIsomorphisms {
       factor.factors.size should be(2)
     }
     "generate a first order sum factor" in {
-      implicit val ints = Range(0,5)
+      implicit val ints = Range(0, 5)
       val space = Wolfe.Pred[Int]
-      def potential(pred:Pred[Int]) = ints.map(i => I(pred(i))).sum
-      val factor = MetaStructuredFactor.structuredFactor[
-      Pred[Int]](space, potential)
+      def potential(pred: Pred[Int]) = ints.map(i => I(pred(i))).sum
+      val factor = MetaStructuredFactor.structuredFactor[Pred[Int]](space, potential)
       factor mustBeIsomorphicTo potential
-      factor.factors.size should be (5)
+      factor.factors.size should be(5)
+    }
+
+    "generate a linear factor" in {
+      val space = Range(0,5)
+//      val weights = oneHot(1,2.0)
+//      def potential(y:Int) = oneHot(y) dot weights
+//      val factor = MetaStructuredFactor.structuredFactor[Int](space, potential)
     }
 
 
