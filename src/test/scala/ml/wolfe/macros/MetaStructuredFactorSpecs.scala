@@ -47,12 +47,12 @@ class MetaStructuredFactorSpecs extends StructureIsomorphisms {
 
     "generate a linear factor" in {
       val space = Range(0,5)
-//      val weights = oneHot(1,2.0)
-//      def potential(y:Int) = oneHot(y) dot weights
-//      val factor = MetaStructuredFactor.structuredFactor[Int](space, potential)
+      val weights = oneHot(1,2.0)
+      def potential(y:Int) = oneHot(y) dot weights
     }
 
 
   }
 
 }
+
