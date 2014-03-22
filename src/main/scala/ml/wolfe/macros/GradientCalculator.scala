@@ -20,34 +20,40 @@ trait MetaGradientCalculators[C <: Context] extends CodeRepository[C] with Patte
 
   case class CantDifferentiate(term:Tree)
 
-  def metaGradientCalculator(rhs: Tree, weightVar: Symbol, indexTree: Tree): MetaGradientCalculator Or CantDifferentiate = {
-    rhs match {
-      case x if !x.exists(_.symbol == weightVar) =>
-        val className = newTypeName(context.fresh("ZeroGradientCalculator"))
-        val classDef = q"""
+  def constantGradientCalculator(term:Tree) = {
+    val className = newTypeName(context.fresh("ZeroGradientCalculator"))
+    val classDef = q"""
           final class $className extends ml.wolfe.macros.GradientCalculator {
             def valueAndGradient(param: ml.wolfe.FactorieVector): (Double, ml.wolfe.FactorieVector) = {
-              ($x,new ml.wolfe.SparseVector(0))
+              ($term,new ml.wolfe.SparseVector(0))
             }
           }
         """
-        Good(MetaGradientCalculator(className,classDef))
-      case Dot(arg1,arg2) if arg1.symbol == weightVar && !arg2.exists(_.symbol == weightVar) =>
-        val className = newTypeName(context.fresh("DotGradientCalculator"))
-        val classDef = q"""
+    MetaGradientCalculator(className,classDef)
+
+  }
+  def linearGradientCalculator(coefficient:Tree, indexTree:Tree) = {
+    val className = newTypeName(context.fresh("DotGradientCalculator"))
+    val classDef = q"""
           final class $className extends ml.wolfe.macros.GradientCalculator {
-            val coefficient = ml.wolfe.FactorieConverter.toFactorieSparseVector($arg2,$indexTree)
+            val coefficient = ml.wolfe.FactorieConverter.toFactorieSparseVector($coefficient,$indexTree)
             def valueAndGradient(param: ml.wolfe.FactorieVector): (Double, ml.wolfe.FactorieVector) = {
               (param dot coefficient, coefficient)
             }
           }
         """
-        Good(MetaGradientCalculator(className,classDef))
-      case ApplyMinus(arg1, arg2) =>
-        for (g1 <- metaGradientCalculator(arg1, weightVar, indexTree);
-             g2 <- metaGradientCalculator(arg2, weightVar, indexTree)) yield {
-          val className = newTypeName(context.fresh("PlusGradientCalculator"))
-          val classDef = q"""
+    MetaGradientCalculator(className,classDef)
+  }
+
+  def binaryOperatorGradientCalculator(arg1:Tree,arg2:Tree, weightVar:Symbol, indexTree:Tree,
+                                       valueCombiner:(Tree,Tree) => Tree,
+                                       gradientCombiner:(Tree,Tree) => Tree) = {
+    for (g1 <- metaGradientCalculator(arg1, weightVar, indexTree);
+         g2 <- metaGradientCalculator(arg2, weightVar, indexTree)) yield {
+      val className = newTypeName(context.fresh("BinaryOperatorGradientCalculator"))
+      val value = valueCombiner(q"v1",q"v2")
+      val gradient = gradientCombiner(q"g1",q"g2")
+      val classDef = q"""
           final class $className extends ml.wolfe.macros.GradientCalculator {
                 ${g1.classDef}
                 ${g2.classDef}
@@ -58,11 +64,27 @@ trait MetaGradientCalculators[C <: Context] extends CodeRepository[C] with Patte
                   val (v2,g2) = arg2.valueAndGradient(param)
                   ml.wolfe.util.LoggerUtil.debug("g1:" + ml.wolfe.FactorieConverter.toWolfeVector(g1,$indexTree))
                   ml.wolfe.util.LoggerUtil.debug("g2:" + ml.wolfe.FactorieConverter.toWolfeVector(g2,$indexTree))
-                  (v1 - v2, g1 - g2)
+                  ($value, $gradient)
                 }}
           """
-          MetaGradientCalculator(className, classDef)
-        }
+      MetaGradientCalculator(className, classDef)
+    }
+  }
+
+
+
+  def metaGradientCalculator(rhs: Tree, weightVar: Symbol, indexTree: Tree): MetaGradientCalculator Or CantDifferentiate = {
+    rhs match {
+      case x if !x.exists(_.symbol == weightVar) =>
+        Good(constantGradientCalculator(x))
+      case Dot(arg1,arg2) if arg1.symbol == weightVar && !arg2.exists(_.symbol == weightVar) =>
+        Good(linearGradientCalculator(arg2,indexTree))
+      case Dot(arg1,arg2) if arg2.symbol == weightVar && !arg1.exists(_.symbol == weightVar) =>
+        Good(linearGradientCalculator(arg1,indexTree))
+      case ApplyMinus(arg1, arg2) =>
+        binaryOperatorGradientCalculator(arg1,arg2,weightVar,indexTree, (v1,v2) => q"$v1 - $v2", (g1,g2) => q"$g1 - $g2")
+      case ApplyPlus(arg1, arg2) =>
+        binaryOperatorGradientCalculator(arg1,arg2,weightVar,indexTree, (v1,v2) => q"$v1 + $v2", (g1,g2) => q"$g1 + $g2")
       case x => inlineOnce(x) match {
         case Some(inlined) => metaGradientCalculator(inlined,weightVar,indexTree)
         case None => Bad(CantDifferentiate(x))
