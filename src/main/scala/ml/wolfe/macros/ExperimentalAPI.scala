@@ -6,20 +6,17 @@ package ml.wolfe.macros
 object ExperimentalAPI {
 
   case class Argmax[T](data: Iterable[T], where: T => Boolean = (_: T) => true) {
-    def in[A: Iterable] = Argmax[A](implicitly[Iterable[A]])
+    def over[A: Iterable] = Argmax[A](implicitly[Iterable[A]])
     def where(pred: T => Boolean) = copy(where = pred)
     def apply(obj: T => Double) = data.filter(where).maxBy(obj)
     def wrt(obj: T => Double) = data.filter(where).maxBy(obj)
-    def max(obj: T => Double) = data.filter(where).maxBy(obj)
+    def of(obj: T => Double) = data.filter(where).maxBy(obj)
   }
 
   def argmax2 = Argmax(Nil)
 
   def argmax[T: Iterable]: Argmax[T] = Argmax(implicitly[Iterable[T]])
 
-  def arg[T: Iterable]: Argmax[T] = Argmax(implicitly[Iterable[T]])
-
-  def arg2 = Argmax(Nil)
 
 
   def argmax2[T](data: Iterable[T])(obj: T => Double, where: T => Boolean = (_: T) => true): T = {
@@ -44,9 +41,8 @@ object ExperimentalAPI {
     val t1 = argmax2(bools)(Wolfe.I(_))
     val t2 = (argmax(bools) where (x => x)) {Wolfe.I(_)}
     val t3 = argmax(bools) {x => -Wolfe.I(x)}
-    val t4 = argmax[Boolean] max (x => 1.0)
-    val t5 = arg(bools) where (x => true) max (x => 1.0)
-    val t6 = arg2 in bools where (x => true) max obj
+    val t4 = argmax[Boolean] of (x => 1.0)
+    val t6 = argmax2 over bools where (x => true) of obj
     println(t2)
     println(t3)
     println(t4)
