@@ -23,13 +23,13 @@ class GradientCalculatorSpecs extends WolfeSpec {
     }
     "return the difference of gradients for a difference of functions" in {
       def f(w: Wolfe.Vector) = (w dot oneHot(1, 2.0)) - (w dot oneHot(1, 1.0))
-      val (v, g) = GradientCalculator.valueAndgradientAt(f, Wolfe.oneHot(1, 5.0))
+      val (v, g) = GradientCalculator.valueAndgradientAt(f, oneHot(1, 5.0))
       v should be(5.0)
       g should be(oneHot(1, 1.0))
     }
     "return the sum of gradients for a sum of functions" in {
       def f(w: Wolfe.Vector) = (w dot oneHot(1, 2.0)) + (w dot oneHot(1, 1.0))
-      val (v, g) = GradientCalculator.valueAndgradientAt(f, Wolfe.oneHot(1, 5.0))
+      val (v, g) = GradientCalculator.valueAndgradientAt(f, oneHot(1, 5.0))
       v should be(15.0)
       g should be(oneHot(1, 3.0))
     }
@@ -38,7 +38,7 @@ class GradientCalculatorSpecs extends WolfeSpec {
       case class Data(x: Symbol, y: Symbol)
       val space = Wolfe.all(Data)(c(Seq('X1, 'X2), Seq('Y1, 'Y2, 'Y3)))
       def f(w: Vector) = max(space)(_.x == 'X2)(d => oneHot(d.x -> d.y, 1.0) dot w)
-      val (v, g) = GradientCalculator.valueAndgradientAt(f, Wolfe.oneHot('X2 -> 'Y3, 2.0))
+      val (v, g) = GradientCalculator.valueAndgradientAt(f, oneHot('X2 -> 'Y3, 2.0))
       g should be(oneHot('X2 -> 'Y3,1.0))
       v should be(2.0)
 
