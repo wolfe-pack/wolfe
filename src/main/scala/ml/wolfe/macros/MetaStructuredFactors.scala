@@ -180,8 +180,10 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] {
         val f1 = metaStructuredFactor(arg1, structure, matcher, constructorArgs, differentiatorInfo, linear)
         val f2 = metaStructuredFactor(arg2, structure, matcher, constructorArgs, differentiatorInfo, linear)
         MetaSumFactor(List(arg1, arg2), List(f1, f2), structure, constructorArgs)
-      case Dot(arg1, arg2) if differentiatorInfo.exists(i => i.param == arg1.symbol && !arg2.exists(_.symbol == i.param)) =>
-        metaStructuredFactor(arg2, structure, matcher, constructorArgs, differentiatorInfo, true)
+      case Dot(arg1, arg2) if differentiatorInfo.exists(i => i.param == arg2.symbol && !arg1.exists(_.symbol == i.param)) =>
+        metaStructuredFactor(arg1, structure, matcher, constructorArgs, differentiatorInfo, true)
+      case Dot(arg2, arg1) if differentiatorInfo.exists(i => i.param == arg2.symbol && !arg1.exists(_.symbol == i.param)) =>
+        metaStructuredFactor(arg1, structure, matcher, constructorArgs, differentiatorInfo, true)
       case _ => inlineOnce(potential) match {
         case Some(inlined) =>
           metaStructuredFactor(inlined, structure, matcher, constructorArgs, differentiatorInfo, linear)

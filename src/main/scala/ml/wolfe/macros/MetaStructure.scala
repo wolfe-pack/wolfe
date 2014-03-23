@@ -165,6 +165,17 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
     root
   }
 
+
+  /**
+   * @param iterable a tree representing an iterable object
+   * @return the argument type of the iterable, e.g. for Seq(1,2,3) it would be Int.
+   */
+  def iterableArgumentType(iterable:Tree):Type = {
+    val iterableType = iterable.tpe.baseType(scalaSymbols.iterableClass)
+    val TypeRef(_, _, List(argType)) = iterableType
+    argType
+  }
+
   /**
    * Creates a meta structure for the given sample space.
    * @param sampleSpace the sample space to create a meta structure for.
@@ -173,6 +184,10 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
   def metaStructure(sampleSpace: Tree): MetaStructure = {
     //todo: assert that domain is an iterable
     //get symbol for all, unwrap ...
+    val b = sampleSpace.tpe.baseClasses
+    val iterableType = sampleSpace.tpe.baseType(scalaSymbols.iterableClass)
+    val argType = iterableArgumentType(sampleSpace)
+    println(argType)
     sampleSpace match {
       case q"$all[${_},$caseClassType]($unwrap[..${_}]($constructor))($cross(..$sets))"
         if all.symbol == wolfeSymbols.all && wolfeSymbols.unwraps(unwrap.symbol) && wolfeSymbols.crosses(cross.symbol) =>
@@ -210,7 +225,7 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
       case _ => List(keyDom)
     }
     println("typed: " + valueDom.symbol)
-    val TypeRef(_, _, List(typeOfArg)) = sampleSpace.tpe
+    val typeOfArg = iterableArgumentType(sampleSpace)
     val valueStructure = metaStructure(valueDom)
     new MetaFunStructure {
       def argType = typeOfArg
