@@ -184,10 +184,6 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
   def metaStructure(sampleSpace: Tree): MetaStructure = {
     //todo: assert that domain is an iterable
     //get symbol for all, unwrap ...
-    val b = sampleSpace.tpe.baseClasses
-    val iterableType = sampleSpace.tpe.baseType(scalaSymbols.iterableClass)
-    val argType = iterableArgumentType(sampleSpace)
-    println(argType)
     sampleSpace match {
       case q"$all[${_},$caseClassType]($unwrap[..${_}]($constructor))($cross(..$sets))"
         if all.symbol == wolfeSymbols.all && wolfeSymbols.unwraps(unwrap.symbol) && wolfeSymbols.crossProducts(cross.symbol) =>
@@ -224,7 +220,6 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
       case q"$cross[..${_}](..$doms)" if wolfeSymbols.crosses(cross.symbol) => doms
       case _ => List(keyDom)
     }
-    println("typed: " + valueDom.symbol)
     val typeOfArg = iterableArgumentType(sampleSpace)
     val valueStructure = metaStructure(valueDom)
     new MetaFunStructure {

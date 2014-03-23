@@ -39,17 +39,6 @@ object Wolfe extends SampleSpaceDefs with StatsDefs with VectorDefs {
 
   //sufficient statistics
 
-  @deprecated("Use the new operators", "now")
-  def sumOld[T, S](elems: Iterable[T])(f: T => S)(implicit num: Numeric[S]) = elems.map(f).sum(num)
-
-  @deprecated("Use the new operators", "now")
-  def maxOld[T](elems: Iterable[T])(f: T => Double) = elems.map(f).max
-
-  @deprecated("Use the new operators", "now")
-  def argmaxOld[T](dom: Iterable[T])(obj: T => Double): T = {
-    dom.maxBy(obj)
-  }
-
   implicit val random = new Random(0)
 
   def sample[T](dom: Iterable[T])(obj: T => Double)(implicit r: Random = random): T = {
@@ -72,12 +61,12 @@ object Wolfe extends SampleSpaceDefs with StatsDefs with VectorDefs {
   def toLaTeX(body: () => Unit) = """\LaTeX"""
 
 
-  @Domain.Simplex
-  def simplex[T](domain: Iterable[T], range: Iterable[Double] = doubles) =
-    for (p <- maps(domain, range); if sumOld(domain.toSeq) {p(_)} == 1.0 && domain.forall(p(_) >= 0.0)) yield p
-
-  def wsum[T](dom: Iterable[T], stats: T => Vector)(obj: T => Double) = sumOld(dom.toSeq) {x => stats(x) * obj(x)}(VectorNumeric)
-  def expect[T](dom: Iterable[T], stats: T => Vector)(obj: T => Double) = wsum(dom, stats)(t => math.exp(obj(t) - logZOld(dom)(obj)))
+//  @Domain.Simplex
+//  def simplex[T](domain: Iterable[T], range: Iterable[Double] = doubles) =
+//    for (p <- maps(domain, range); if sumOld(domain.toSeq) {p(_)} == 1.0 && domain.forall(p(_) >= 0.0)) yield p
+//
+//  def wsum[T](dom: Iterable[T], stats: T => Vector)(obj: T => Double) = sumOld(dom.toSeq) {x => stats(x) * obj(x)}(VectorNumeric)
+//  def expect[T](dom: Iterable[T], stats: T => Vector)(obj: T => Double) = wsum(dom, stats)(t => math.exp(obj(t) - logZOld(dom)(obj)))
 
   @deprecated("Use the new operators", "now")
   def logZOld[T](dom: Iterable[T])(model: T => Double) = math.log(dom.view.map(x => math.exp(model(x))).sum)
