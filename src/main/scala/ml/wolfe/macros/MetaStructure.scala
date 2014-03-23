@@ -190,7 +190,7 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
     println(argType)
     sampleSpace match {
       case q"$all[${_},$caseClassType]($unwrap[..${_}]($constructor))($cross(..$sets))"
-        if all.symbol == wolfeSymbols.all && wolfeSymbols.unwraps(unwrap.symbol) && wolfeSymbols.crosses(cross.symbol) =>
+        if all.symbol == wolfeSymbols.all && wolfeSymbols.unwraps(unwrap.symbol) && wolfeSymbols.crossProducts(cross.symbol) =>
         metaCaseClassStructure(constructor, sets, caseClassType)
       case q"$all[${_},$caseClassType]($constructor)(..$sets)"
         if all.symbol == wolfeSymbols.all =>

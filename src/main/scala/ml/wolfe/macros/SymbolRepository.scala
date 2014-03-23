@@ -11,14 +11,16 @@ trait SymbolRepository[C <: Context] extends HasContext[C] {
 
   object wolfeSymbols {
 
-    lazy val wolfe     = rootMirror.staticModule("ml.wolfe.Wolfe")
-    lazy val wolfeType = wolfe.typeSignature
-    lazy val all       = wolfeType.member(newTermName("all"))
-    lazy val unwrap2   = wolfeType.member(newTermName("unwrap2"))
-    lazy val unwraps   = Range(2, 6).map(i => wolfeType.member(newTermName("unwrap" + i))).toSet
-    lazy val crosses   = Range(2, 4).map(i => wolfeType.member(newTermName("Cross" + i))).toSet
-    lazy val Pred      = wolfeType.member(newTermName("Pred"))
-    lazy val preds     = wolfeType.member(newTermName("preds"))
+    lazy val wolfe         = rootMirror.staticModule("ml.wolfe.Wolfe")
+    lazy val wolfeType     = wolfe.typeSignature
+    lazy val all           = wolfeType.member(newTermName("all"))
+    lazy val unwrap2       = wolfeType.member(newTermName("unwrap2"))
+    lazy val unwraps       = Range(2, 6).map(i => wolfeType.member(newTermName("unwrap" + i))).toSet
+    lazy val crosses       = Range(2, 4).map(i => wolfeType.member(newTermName("Cross" + i))).toSet
+    lazy val cs            = wolfeType.member(newTermName("c")).asTerm.alternatives.toSet
+    lazy val crossProducts = crosses ++ cs
+    lazy val Pred          = wolfeType.member(newTermName("Pred"))
+    lazy val preds         = wolfeType.member(newTermName("preds"))
 
     lazy val richVectorClass = rootMirror.staticClass("ml.wolfe.Wolfe.RichVector")
     lazy val dot             = richVectorClass.typeSignature.member(newTermName("dot"))

@@ -95,28 +95,29 @@ trait MetaGradientCalculators[C <: Context] extends MetaStructures[C]
         val whereMatcher = structure.matcher(rootMatcher(whereArg.symbol,q"$structName"))
         val objMatcher = structure.matcher(rootMatcher(objArg.symbol,q"$structName"))
         val conditioner = conditioning(whereRhs,whereMatcher)
-        val factors = metaStructuredFactor(objRhs,structure,objMatcher)
-        val structureDef = structure.classDef(newTermName("graph"))
+        val diffInfo = DifferentiatorInfo(weightVar,indexTree)
+        val factors = metaStructuredFactor(objRhs,structure,objMatcher,differentiatorInfo = Some(diffInfo))
+        val structureDef = structure.classDef(newTermName("_graph"))
         val className = newTypeName(context.fresh("MaxGradientCalculator"))
         val classDef = q"""
           final class $className extends ml.wolfe.macros.GradientCalculator {
-            val graph = new ml.wolfe.MPGraph
+            val _graph = new ml.wolfe.MPGraph
             $structureDef
             val $structName = new ${structure.className}
             ${conditioner.code}
-            graph.setupNodes()
+            _graph.setupNodes()
             ${factors.classDef}
             val factors = new ${factors.className}($structName)
-            graph.build()
+            _graph.build()
             def valueAndGradient(param: ml.wolfe.FactorieVector): (Double, ml.wolfe.FactorieVector) = {
-              (???,???)
+              _graph.weights = param
+              ml.wolfe.MaxProduct(_graph,5)
+              (_graph.value,_graph.gradient)
             }
           }
         """
-
-        //val whereMatcher = structure.matcher(rootMatcher())
-        //val conditioner = conditioning()
-        Bad(CantDifferentiate(rhs))
+        Good(MetaGradientCalculator(className,classDef))
+        //Bad(CantDifferentiate(rhs))
       case x => inlineOnce(x) match {
         case Some(inlined) => metaGradientCalculator(inlined,weightVar,indexTree)
         case None => Bad(CantDifferentiate(x))
