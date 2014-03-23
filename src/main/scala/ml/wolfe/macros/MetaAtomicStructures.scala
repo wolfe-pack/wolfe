@@ -20,7 +20,7 @@ trait MetaAtomicStructures[C <: Context] {
     lazy val domName     = newTermName(context.fresh("atomDom"))
     lazy val indexName   = newTermName(context.fresh("atomIndex"))
     lazy val className   = newTypeName(context.fresh("AtomicStructure"))
-    lazy val argType     = {val TypeRef(_, _, List(argType)) = domain.tpe; argType}
+    lazy val argType     = iterableArgumentType(domain) //{val TypeRef(_, _, List(argType)) = domain.tpe; argType}
     lazy val argTypeName = argType.typeSymbol.name.toTypeName
     lazy val domainDefs  = List(
       q"val $domName = $domain.toArray",
