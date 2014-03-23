@@ -1,9 +1,9 @@
 package ml.wolfe.macros
 
-import ml.wolfe.WolfeEnv._
-import OptimizedWolfe._
 import scala.math._
 import ml.wolfe.util.LoggerUtil
+import ml.wolfe.Wolfe._
+
 
 /**
  * @author Sebastian Riedel

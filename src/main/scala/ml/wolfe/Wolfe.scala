@@ -9,7 +9,7 @@ import cc.factorie.optimize.{Trainer, OnlineTrainer}
 /**
  * @author Sebastian Riedel
  */
-object Wolfe extends SampleSpaceDefs with StatsDefs with VectorDefs {
+object Wolfe extends SampleSpaceDefs with StatsDefs with VectorDefs with Conditioning {
 
   //core operators
 
@@ -352,5 +352,14 @@ trait SampleSpaceDefs {
 
 }
 
+trait Conditioning {
+  class Maskable[T](val mask:T)
 
-object WolfeEnv extends SampleSpaceDefs with StatsDefs with VectorDefs
+  implicit object MaskableInt extends Maskable(-1)
+  implicit object MaskableBoolean extends Maskable(false)
+  implicit object MaskableAnyRef extends Maskable[AnyRef](null)
+
+  def mask[T : Maskable] = implicitly[Maskable[T]].mask
+
+}
+
