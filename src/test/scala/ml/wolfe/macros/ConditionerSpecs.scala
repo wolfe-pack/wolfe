@@ -28,10 +28,18 @@ class ConditionerSpecs extends StructureIsomorphisms {
       structure mustBeIsomorphicTo (space filter (_.smokes("Sameer")))
     }
     "condition a complex sample space with a conjunction" in {
-      implicit val ints = Range(0,4)
+      implicit val ints = Range(0, 4)
       val space = Wolfe.Pred[Int]
-      val structure = Conditioner.conditioned(space, (x:Pred[Int]) => x(0) && x(2) && x(3))
+      val structure = Conditioner.conditioned(space, (x: Pred[Int]) => x(0) && x(2) && x(3))
       structure mustBeIsomorphicTo (space filter (x => x(0) && x(2) && x(3)))
+    }
+    "condition using masks" in {
+      case class Data(x: Boolean, y: Boolean, z: Boolean)
+      val space = Wolfe.all(Data)
+      def observed(d: Data) = d.copy(y = mask[Boolean])
+      val observation = Data(true, true, false)
+      val conditioned = space filter (observed(_) == observed(observation))
+      println(conditioned)
 
     }
 
