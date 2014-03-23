@@ -22,9 +22,9 @@ trait WolfeAPI extends Logging {
   }
 
   //
-  def sum[T, N](data: Iterable[T])(obj: T => N)(implicit num: Numeric[N]): N = {
-    data.map(obj).sum(num)
-  }
+//  def sum[T, N](data: Iterable[T])(obj: T => N)(implicit num: Numeric[N]): N = {
+//    data.map(obj).sum(num)
+//  }
 
 }
 
