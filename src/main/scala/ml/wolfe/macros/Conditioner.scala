@@ -11,6 +11,22 @@ trait Conditioner[C <: Context] extends MetaStructures[C] {
 
   case class ConditioningCode(code: Tree, remainderOfCondition: Tree)
 
+  def conditioningPair(expr1:Tree,expr2:Tree,matcher:Tree => Option[Tree]):Option[ConditioningCode] = {
+    (expr1,expr2) match {
+      case (q"$select1.copy(..$arg1)",q"$select2.copy(..$arg2)") => matcher(select1) match {
+        case Some(structure) =>
+          //todo: assert that each field is either in both arg1 and arg2, or in neither
+          //todo: for fields not in arg1 and arg2, create observe statements
+          //todo: for fields in arg1 and arg2, call conditioningPair recursively
+          None
+        case _ => None
+      }
+//      case (q"$select1.map(${_} => $arg1)",q"$select2.map(${_} => $arg2)") => None
+      case _ =>
+        None
+    }
+  }
+
   def conditioning(condition: Tree, matchStructure: Tree => Option[Tree]): ConditioningCode = condition match {
     case q"$x == $value" => matchStructure(x) match {
       case Some(structure) => ConditioningCode(q"$structure.observe($value)", EmptyTree)
