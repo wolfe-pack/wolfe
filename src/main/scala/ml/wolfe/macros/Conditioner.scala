@@ -22,16 +22,36 @@ trait Conditioner[C <: Context] extends MetaStructures[C] {
     }
   }
 
+  class SimpleCondition(matcher: Tree => Option[StructurePointer]) {
+    def unapply(tree: Tree) = tree match {
+      case q"$x == $value" => matcher(x) match {
+        case Some(structure) => Some(q"${structure.structure}.observe($value)")
+        case _ => None
+      }
+      case _ => None
+    }
+  }
+
   def conditioningPair(expr1: Tree, expr2: Tree, matcher: Tree => Option[StructurePointer]): Option[Tree] = {
     (expr1, expr2) match {
-      case (q"$select1.copy(..$arg1)", q"$select2.copy(..$arg2)") => matcher(select1) match {
-        case Some(structure) =>
-          println(arg1)
-          println(arg2)
-          //todo: assert that each field is either in both arg1 and arg2, or in neither
-          //todo: for fields not in arg1 and arg2, create observe statements
-          //todo: for fields in arg1 and arg2, call conditioningPair recursively
-          None
+      case (CaseClassCopy(select1, args1), CaseClassCopy(select2, args2)) => matcher(select1) match {
+        case Some(StructurePointer(structure,meta:MetaCaseClassStructure)) =>
+          val statements = ((args1 zip args2) zip meta.fields).map({
+            case ((arg1, arg2),field)
+              if arg1.symbol == wolfeSymbols.hide && arg2.symbol == wolfeSymbols.hide =>
+              Some(EmptyTree)
+            case ((q"${_}.$copyDefault1", q"${_}.$copyDefault2"),field)
+              if copyDefault1.encoded.startsWith("copy$default$") && copyDefault2.encoded.startsWith("copy$default$") =>
+              //observe!
+              val code = q"$structure.${field.name}.observe($select2.${field.name})"
+              Some(code)
+            case _ =>
+              None
+          })
+          if (statements.exists(_.isEmpty)) None else {
+            val unwrapped = statements.map(s => s.get)
+            Some(Block(unwrapped.dropRight(1),unwrapped.last))
+          }
         case _ => None
       }
       case (q"$select1.map($arg1 => $value1)", q"$select2.map($arg2 => $value2)") => matcher(select1) match {
@@ -58,12 +78,15 @@ trait Conditioner[C <: Context] extends MetaStructures[C] {
   }
 
   def conditioning(condition: Tree, matchStructure: Tree => Option[StructurePointer]): ConditioningCode = {
+    val simpleCondition = new SimpleCondition(matchStructure)
     val pairMatcher = new PairMatcher(matchStructure)
     condition match {
-      case q"$x == $value" => matchStructure(x) match {
-        case Some(structure) => ConditioningCode(q"${structure.structure}.observe($value)", EmptyTree)
-        case _ => ConditioningCode(EmptyTree, condition)
-      }
+      //      case q"$x == $value" => matchStructure(x) match {
+      //        case Some(structure) =>
+      //          ConditioningCode(q"${structure.structure}.observe($value)", EmptyTree)
+      //        case _ => ConditioningCode(EmptyTree, condition)
+      //      }
+      case simpleCondition(code) => ConditioningCode(code, EmptyTree)
       case pairMatcher(code) => ConditioningCode(code, EmptyTree)
       case ApplyAnd(arg1, arg2) =>
         val c1 = conditioning(arg1, matchStructure)
