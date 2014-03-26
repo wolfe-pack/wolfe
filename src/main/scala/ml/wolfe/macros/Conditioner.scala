@@ -45,8 +45,8 @@ trait Conditioner[C <: Context] extends MetaStructures[C] {
               //observe!
               val code = q"$structure.${field.name}.observe($select2.${field.name})"
               Some(code)
-            case _ =>
-              None
+            case ((arg1,arg2),field) =>
+              conditioningPair(arg1,arg2,matcher)
           })
           if (statements.exists(_.isEmpty)) None else {
             val unwrapped = statements.map(s => s.get)
