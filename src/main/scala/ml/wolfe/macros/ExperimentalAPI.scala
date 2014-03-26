@@ -53,6 +53,17 @@ object ExperimentalAPI {
     implicitly[Iterable[T]].filter(where).maxBy(of)
   }
 
+  def argmax7[T](data:Iterable[T], where:T => Boolean = (_:T) => true)(obj:T => Double) = {
+    data.filter(where).maxBy(obj)
+  }
+
+  def argmax7[T:Iterable](where:T => Boolean = (_:T) => true)(obj:T => Double) = {
+    implicitly[Iterable[T]].filter(where).maxBy(obj)
+  }
+  def argmax7[T:Iterable](obj:T => Double) = {
+    implicitly[Iterable[T]].maxBy(obj)
+  }
+
   //  def argmax5[T: Iterable](obj: T => Double): T = {
 //    implicitly[Iterable[T]].maxBy(obj)
 //  }
@@ -79,6 +90,7 @@ object ExperimentalAPI {
 
   def main(args: Array[String]) {
     import ml.wolfe.Wolfe
+    import scala.language.implicitConversions
 
     implicit val bools = Seq(true, false)
     implicit val symbols = Seq('A, 'B)
@@ -101,6 +113,11 @@ object ExperimentalAPI {
     val t16 = argmax6(symbols)(x => 1.0,x => true)
     val t17 = argmax6((x:Symbol) => 1.0, (x:Symbol) => true)
     val t18 = argmax6((x:Symbol) => 1.0, (x:Symbol) => true)
+    val t19 = argmax7(symbols, (x:Symbol) => true)(x => 1.0)
+    val t20 = argmax7((x:Symbol) => 1.0)
+    val t21 = argmax7((x:Symbol) => true)((x:Symbol) => 1.0)
+
+    implicit def convert1[A](a:A):Set[A] = Set(a)
 
     println(t2)
     println(t3)

@@ -46,7 +46,8 @@ trait MetaAtomicStructures[C <: Context] {
       }
     """
 
-    def matcher(parent: Tree => Option[Tree], result: Tree => Option[Tree]): Tree => Option[Tree] = result
+    def matcher(parent: Tree => Option[StructurePointer],
+                result: Tree => Option[StructurePointer]): Tree => Option[StructurePointer] = result
 
   }
 

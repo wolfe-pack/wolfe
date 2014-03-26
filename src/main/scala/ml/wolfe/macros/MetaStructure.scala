@@ -14,6 +14,13 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
   import context.universe._
 
   /**
+   * An expression pointing to a structure.
+   * @param structure the expression that refers to a structure.
+   * @param meta the meta structure corresponding to the structure pointed to.
+   */
+  case class StructurePointer(structure:Tree, meta:MetaStructure)
+
+  /**
    * Represents code that generates structures for a given sample space.
    *
    * @author Sebastian Riedel
@@ -60,7 +67,7 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
      * @param root the root matcher determines matching of the top-level structure.
      * @return a matcher.
      */
-    def matcher(root: Tree => Option[Tree]): Tree => Option[Tree] = matcher(root, root)
+    def matcher(root: Tree => Option[StructurePointer]): Tree => Option[StructurePointer] = matcher(root, root)
 
     /**
      * A matcher takes a tree and returns a tree that represents the sub-structure that corresponds to the
@@ -69,7 +76,7 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
      * @param result the current result matcher.
      * @return a matcher...
      */
-    def matcher(parent: Tree => Option[Tree], result: Tree => Option[Tree]): Tree => Option[Tree]
+    def matcher(parent: Tree => Option[StructurePointer], result: Tree => Option[StructurePointer]): Tree => Option[StructurePointer]
 
   }
 
@@ -81,14 +88,14 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
    * @param matchStructure the matcher to apply on sub-trees to
    * @return all structures in expression `tree`.
    */
-  def structures(tree: Tree, matchStructure: Tree => Option[Tree]): List[Tree] = {
+  def structures(tree: Tree, matchStructure: Tree => Option[StructurePointer]): List[Tree] = {
     var result: List[Tree] = Nil
     val traverser = new Traverser with WithFunctionStack {
       override def traverse(tree: Tree) = {
         pushIfFunction(tree)
         val tmp = matchStructure(tree) match {
           case Some(structure) if !hasFunctionArgument(tree) =>
-            result ::= structure
+            result ::= structure.structure
           case _ =>
             super.traverse(tree)
         }
@@ -107,7 +114,7 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
    * @param matcher the matcher to look for structure with.
    * @return the tree with injected structure.
    */
-  def injectStructure(tree: Tree, matcher: Tree => Option[Tree]) = {
+  def injectStructure(tree: Tree, matcher: Tree => Option[StructurePointer]) = {
     val transformer = new Transformer {
       val functionStack = new mutable.Stack[Function]()
       override def transform(tree: Tree) = {
@@ -123,7 +130,7 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
             if (hasFunctionArg)
               super.transform(tree)
             else
-              q"$structure.value()"
+              q"${structure.structure}.value()"
           }
           case _ => super.transform(tree)
         }
@@ -157,9 +164,9 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
    * @param rootStructure the structure to replace the variable with.
    * @return a matcher.
    */
-  def rootMatcher(rootArgument: Symbol, rootStructure: Tree): Tree => Option[Tree] = {
+  def rootMatcher(rootArgument: Symbol, rootStructure: Tree, rootMetaStructure:MetaStructure): Tree => Option[StructurePointer] = {
     val root = (tree: Tree) => tree match {
-      case i: Ident if i.symbol == rootArgument => Some(rootStructure)
+      case i: Ident if i.symbol == rootArgument => Some(StructurePointer(rootStructure,rootMetaStructure))
       case _ => None
     }
     root
@@ -257,7 +264,7 @@ object MetaStructure {
     val structArgName = newTermName("structArg")
     val cls = meta.classDef(graphName)
     val q"($arg) => $rhs" = projection.tree
-    val root = helper.rootMatcher(arg.symbol, q"$structArgName.asInstanceOf[${meta.className}]")
+    val root = helper.rootMatcher(arg.symbol, q"$structArgName.asInstanceOf[${meta.className}]",meta)
     val injectedRhs = helper.injectStructure(rhs, meta.matcher(root))
 
     val injectedProj = q"($structArgName:ml.wolfe.macros.Structure[${meta.argType}]) => $injectedRhs"

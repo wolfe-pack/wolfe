@@ -55,7 +55,7 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] {
 
 
   case class MetaFirstOrderSumFactor(domains: List[Tree], obj: Tree,
-                                     matchStructure: Tree => Option[Tree], structure: MetaStructure,
+                                     matchStructure: Tree => Option[StructurePointer], structure: MetaStructure,
                                      args: List[ValDef] = Nil,
                                      differentiatorInfo: Option[DifferentiatorInfo],
                                      linear: Boolean) extends MetaStructuredFactor {
@@ -97,7 +97,7 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] {
   trait MetaAtomicStructuredFactor extends MetaStructuredFactor {
     def potential: Tree
     def structure: MetaStructure
-    def matcher: Tree => Option[Tree]
+    def matcher: Tree => Option[StructurePointer]
     def args: List[ValDef]
     def perSettingArrayName: TermName
     def perSettingArrayInitializer: Tree
@@ -138,7 +138,7 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] {
   }
   case class MetaAtomicStructuredFactorTable(potential: Tree,
                                              structure: MetaStructure,
-                                             matcher: Tree => Option[Tree], args: List[ValDef] = Nil)
+                                             matcher: Tree => Option[StructurePointer], args: List[ValDef] = Nil)
   extends MetaAtomicStructuredFactor {
 
     def createFactor = q"graph.addTableFactor(scores, settings, dims)"
@@ -149,7 +149,7 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] {
 
   case class MetaAtomicStructuredFactorLinear(potential: Tree,
                                               structure: MetaStructure,
-                                              matcher: Tree => Option[Tree],
+                                              matcher: Tree => Option[StructurePointer],
                                               diffInfo: DifferentiatorInfo,
                                               args: List[ValDef] = Nil)
   extends MetaAtomicStructuredFactor {
@@ -160,14 +160,14 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] {
     def perSettingArrayName = newTermName("vectors")
   }
 
-  def atomic(potential: Tree, structure: MetaStructure, matcher: Tree => Option[Tree], constructorArgs: List[ValDef],
+  def atomic(potential: Tree, structure: MetaStructure, matcher: Tree => Option[StructurePointer], constructorArgs: List[ValDef],
              differentiatorInfo: Option[DifferentiatorInfo], linear: Boolean) = linear match {
     case true => MetaAtomicStructuredFactorLinear(potential, structure, matcher, differentiatorInfo.get, constructorArgs)
     case false => MetaAtomicStructuredFactorTable(potential, structure, matcher, constructorArgs)
   }
 
   def metaStructuredFactor(potential: Tree, structure: MetaStructure,
-                           matcher: Tree => Option[Tree],
+                           matcher: Tree => Option[StructurePointer],
                            constructorArgs: List[ValDef] = Nil,
                            differentiatorInfo: Option[DifferentiatorInfo] = None,
                            linear: Boolean = false): MetaStructuredFactor = {
@@ -221,7 +221,7 @@ object MetaStructuredFactor {
     val structName = newTermName("structure")
     val meta = helper.metaStructure(sampleSpace.tree)
     val q"($arg) => $rhs" = helper.simplifyBlocks(potential.tree)
-    val root = helper.rootMatcher(arg.symbol, q"$structName")
+    val root = helper.rootMatcher(arg.symbol, q"$structName",meta)
     val matcher = meta.matcher(root)
     val metaFactor = helper.metaStructuredFactor(rhs, meta, matcher)
     val structureClass = meta.classDef(graphName)
@@ -247,7 +247,7 @@ object MetaStructuredFactor {
     val structName = newTermName("structure")
     val meta = helper.metaStructure(sampleSpace.tree)
     val q"($param) => ($arg) => $rhs" = helper.simplifyBlocks(potential.tree)
-    val root = helper.rootMatcher(arg.symbol, q"$structName")
+    val root = helper.rootMatcher(arg.symbol, q"$structName",meta)
     val matcher = meta.matcher(root)
     val diffInfo = helper.DifferentiatorInfo(param.symbol,q"_index")
     val metaFactor = helper.metaStructuredFactor(rhs, meta, matcher,differentiatorInfo = Some(diffInfo))

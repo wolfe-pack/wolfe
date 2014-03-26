@@ -11,39 +11,73 @@ trait Conditioner[C <: Context] extends MetaStructures[C] {
 
   case class ConditioningCode(code: Tree, remainderOfCondition: Tree)
 
-  def conditioningPair(expr1:Tree,expr2:Tree,matcher:Tree => Option[Tree]):Option[ConditioningCode] = {
-    (expr1,expr2) match {
-      case (q"$select1.copy(..$arg1)",q"$select2.copy(..$arg2)") => matcher(select1) match {
+  class PairMatcher(matcher: Tree => Option[StructurePointer]) {
+    def unapply(tree: Tree) = tree match {
+      case q"$expr1 == $expr2" =>
+        conditioningPair(expr1, expr2, matcher) match {
+          case Some(code) => Some(code)
+          case _ => None
+        }
+      case _ => None
+    }
+  }
+
+  def conditioningPair(expr1: Tree, expr2: Tree, matcher: Tree => Option[StructurePointer]): Option[Tree] = {
+    (expr1, expr2) match {
+      case (q"$select1.copy(..$arg1)", q"$select2.copy(..$arg2)") => matcher(select1) match {
         case Some(structure) =>
+          println(arg1)
+          println(arg2)
           //todo: assert that each field is either in both arg1 and arg2, or in neither
           //todo: for fields not in arg1 and arg2, create observe statements
           //todo: for fields in arg1 and arg2, call conditioningPair recursively
           None
         case _ => None
       }
-//      case (q"$select1.map(${_} => $arg1)",q"$select2.map(${_} => $arg2)") => None
+      case (q"$select1.map($arg1 => $value1)", q"$select2.map($arg2 => $value2)") => matcher(select1) match {
+        case Some(structure) =>
+          //todo: check if $select1 is a Seq
+          //todo: we should get the matcher by calling structure.meta.matcher
+          val newMatcher = rootMatcher(arg1.symbol, q"${structure.structure}(argIndex)", structure.meta)
+
+          val newValue2 = transform(value2, {
+            case i: Ident if i.symbol == arg2.symbol => q"$select2(argIndex)"
+          })
+          for (innerLoop <- conditioningPair(value1, newValue2, newMatcher)) yield
+            q"""
+              ${structure.structure}.setSize($select2.size)
+              for (argIndex <- $select2.indices) {
+                $innerLoop
+              }
+            """
+        case _ => None
+      }
       case _ =>
         None
     }
   }
 
-  def conditioning(condition: Tree, matchStructure: Tree => Option[Tree]): ConditioningCode = condition match {
-    case q"$x == $value" => matchStructure(x) match {
-      case Some(structure) => ConditioningCode(q"$structure.observe($value)", EmptyTree)
-      case _ => ConditioningCode(EmptyTree, condition)
-    }
-    case ApplyAnd(arg1,arg2) =>
-      val c1 = conditioning(arg1,matchStructure)
-      val c2 = conditioning(arg2,matchStructure)
-      ConditioningCode(q"{${c1.code};${c2.code}}",q"${c1.remainderOfCondition} && ${c2.remainderOfCondition}")
-    case x => matchStructure(x) match {
-      case Some(structure) => ConditioningCode(q"$structure.observe(true)", EmptyTree)
-      case None => {
-        inlineOnce(x) match {
-          case Some(inlined) => conditioning(inlined, matchStructure)
-          case None =>
-            context.warning(x.pos, s"No specialized conditioning for $x")
-            ConditioningCode(EmptyTree, condition)
+  def conditioning(condition: Tree, matchStructure: Tree => Option[StructurePointer]): ConditioningCode = {
+    val pairMatcher = new PairMatcher(matchStructure)
+    condition match {
+      case q"$x == $value" => matchStructure(x) match {
+        case Some(structure) => ConditioningCode(q"${structure.structure}.observe($value)", EmptyTree)
+        case _ => ConditioningCode(EmptyTree, condition)
+      }
+      case pairMatcher(code) => ConditioningCode(code, EmptyTree)
+      case ApplyAnd(arg1, arg2) =>
+        val c1 = conditioning(arg1, matchStructure)
+        val c2 = conditioning(arg2, matchStructure)
+        ConditioningCode(q"{${c1.code};${c2.code}}", q"${c1.remainderOfCondition} && ${c2.remainderOfCondition}")
+      case x => matchStructure(x) match {
+        case Some(structure) => ConditioningCode(q"${structure.structure}.observe(true)", EmptyTree)
+        case None => {
+          inlineOnce(x) match {
+            case Some(inlined) => conditioning(inlined, matchStructure)
+            case None =>
+              context.warning(x.pos, s"No specialized conditioning for $x")
+              ConditioningCode(EmptyTree, condition)
+          }
         }
       }
     }
@@ -56,10 +90,10 @@ object Conditioner {
 
   import scala.language.experimental.macros
 
-  def conditioned[T](sampleSpace: Iterable[T], condition: T => Boolean) = macro conditionedImpl[T]
+  def conditioned[T](sampleSpace: Iterable[T])(condition: T => Boolean) = macro conditionedImpl[T]
 
-  def conditionedImpl[T: c.WeakTypeTag](c: Context)(sampleSpace: c.Expr[Iterable[T]],
-                                                    condition: c.Expr[T => Boolean]) = {
+  def conditionedImpl[T: c.WeakTypeTag](c: Context)(sampleSpace: c.Expr[Iterable[T]])
+                                       (condition: c.Expr[T => Boolean]) = {
     import c.universe._
     val graphName = newTermName("_graph")
     val structName = newTermName("structure")
@@ -68,7 +102,7 @@ object Conditioner {
     println(helper.scalaSymbols.and)
     val meta = helper.metaStructure(sampleSpace.tree)
     val q"($arg) => $rhs" = condition.tree
-    val root = helper.rootMatcher(arg.symbol, q"$structName.asInstanceOf[${meta.className}]")
+    val root = helper.rootMatcher(arg.symbol, q"$structName.asInstanceOf[${meta.className}]", meta)
     val matcher = meta.matcher(root)
     val conditionCode = helper.conditioning(rhs, matcher)
     val cls = meta.classDef(graphName)

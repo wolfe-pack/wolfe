@@ -48,13 +48,14 @@ trait MetaCaseClassStructures[C<:Context] {
     def children = fieldStructures
     def domainDefs = Nil
 
-    def matcher(parent: Tree => Option[Tree], result: Tree => Option[Tree]): Tree => Option[Tree] = {
-      def matchField(field: Symbol)(tree: Tree): Option[Tree] = tree match {
-        case q"$data.$f" if field.name == f => for (s <- parent(data)) yield q"$s.$f"
+    def matcher(parent: Tree => Option[StructurePointer],
+                result: Tree => Option[StructurePointer]): Tree => Option[StructurePointer] = {
+      def matchField(field: Symbol)(tree: Tree): Option[StructurePointer] = tree match {
+        case q"$data.$f" if field.name == f => for (s <- parent(data)) yield StructurePointer(q"${s.structure}.$f",this)
         case _ => None
       }
       val fieldMatchers = fieldsAndTypes.map({case (f, t) => t.matcher(matchField(f), matchField(f))})
-      def firstMatch(matchers: List[Tree => Option[Tree]]): Tree => Option[Tree] = matchers match {
+      def firstMatch(matchers: List[Tree => Option[StructurePointer]]): Tree => Option[StructurePointer] = matchers match {
         case Nil => result
         case head :: tail => (t: Tree) => head(t).orElse(firstMatch(tail)(t))
       }
