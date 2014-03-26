@@ -34,14 +34,15 @@ trait MetaFunStructures[C<:Context] {
 
     def children = List(valueMetaStructure)
 
-    def matcher(parent: Tree => Option[Tree], result: Tree => Option[Tree]): Tree => Option[Tree] = {
+    def matcher(parent: Tree => Option[StructurePointer],
+                result: Tree => Option[StructurePointer]): Tree => Option[StructurePointer] = {
       def matchApp(tree: Tree) = {
         def replace(f: Tree, args: List[Tree]) = parent(f) match {
           //        case Apply(f, args) => parent(f) match {
           case Some(parentStructure) =>
-            val asIndices = for ((a, i) <- args zip keyIndexNames) yield q"$parentStructure.$i($a)"
-            val substructure = curriedArguments(asIndices, q"$parentStructure.subStructures")
-            Some(substructure)
+            val asIndices = for ((a, i) <- args zip keyIndexNames) yield q"${parentStructure.structure}.$i($a)"
+            val substructure = curriedArguments(asIndices, q"${parentStructure.structure}.subStructures")
+            Some(StructurePointer(substructure,this))
           case _ => None
         }
         tree match {

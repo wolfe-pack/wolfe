@@ -91,19 +91,19 @@ trait MetaGradientCalculators[C <: Context] extends MetaStructures[C]
         val structName = newTermName(context.fresh("structure"))
         val Function(List(whereArg),whereRhs) = where
         val Function(List(objArg),objRhs) = obj
-        val structure = metaStructure(dom)
-        val whereMatcher = structure.matcher(rootMatcher(whereArg.symbol,q"$structName"))
-        val objMatcher = structure.matcher(rootMatcher(objArg.symbol,q"$structName"))
+        val meta = metaStructure(dom)
+        val whereMatcher = meta.matcher(rootMatcher(whereArg.symbol,q"$structName",meta))
+        val objMatcher = meta.matcher(rootMatcher(objArg.symbol,q"$structName",meta))
         val conditioner = conditioning(whereRhs,whereMatcher)
         val diffInfo = DifferentiatorInfo(weightVar,indexTree)
-        val factors = metaStructuredFactor(objRhs,structure,objMatcher,differentiatorInfo = Some(diffInfo))
-        val structureDef = structure.classDef(newTermName("_graph"))
+        val factors = metaStructuredFactor(objRhs,meta,objMatcher,differentiatorInfo = Some(diffInfo))
+        val structureDef = meta.classDef(newTermName("_graph"))
         val className = newTypeName(context.fresh("MaxGradientCalculator"))
         val classDef = q"""
           final class $className extends ml.wolfe.macros.GradientCalculator {
             val _graph = new ml.wolfe.MPGraph
             $structureDef
-            val $structName = new ${structure.className}
+            val $structName = new ${meta.className}
             ${conditioner.code}
             _graph.setupNodes()
             ${factors.classDef}
