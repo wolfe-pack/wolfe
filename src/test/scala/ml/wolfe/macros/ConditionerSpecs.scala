@@ -12,12 +12,12 @@ class ConditionerSpecs extends StructureIsomorphisms {
   "A conditioner" should {
     "condition an atomic sample space" in {
       val space = Seq(1, 2, 3, 4)
-      val structure = Conditioner.conditioned(space)( x => x == 1)
+      val structure = Conditioner.conditioned(space)(x => x == 1)
       structure mustBeIsomorphicTo (space filter (_ == 1))
     }
     "condition an atomic boolean sample space" in {
       val space = Seq(true, false)
-      val structure = Conditioner.conditioned(space)( x => x)
+      val structure = Conditioner.conditioned(space)(x => x)
       structure mustBeIsomorphicTo (space filter (x => x))
     }
     "condition a complex sample space " in {
@@ -33,7 +33,7 @@ class ConditionerSpecs extends StructureIsomorphisms {
       val structure = Conditioner.conditioned(space)(x => x(0) && x(2) && x(3))
       structure mustBeIsomorphicTo (space filter (x => x(0) && x(2) && x(3)))
     }
-    "condition by specifying hidden variables" in {
+    "condition by specifying hidden variables in flat case class" in {
       case class Data(x: Boolean, y: Boolean, z: Boolean)
       val space = Wolfe.all(Data)
       def observed(d: Data) = d.copy(y = hide[Boolean])
@@ -42,6 +42,18 @@ class ConditionerSpecs extends StructureIsomorphisms {
       val actual = Conditioner.conditioned(space)(observed(_) == observed(observation))
       actual mustBeIsomorphicTo expected
     }
+    "condition by specifying hidden variables in nested case class" in {
+      case class Nested(a: Boolean, b: Boolean)
+      case class Data(x: Nested, y: Boolean, z: Boolean)
+      implicit val nested = Wolfe.all(Nested)
+      val space = Wolfe.all(Data)
+      def observed(d: Data) = d.copy(x = d.x.copy(a = hide[Boolean]))
+      val observation = Data(Nested(false, false), true, false)
+      val expected = space filter (observed(_) == observed(observation))
+      val actual = Conditioner.conditioned(space)(observed(_) == observed(observation))
+      actual mustBeIsomorphicTo expected
+    }
+
 
   }
 
