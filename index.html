@@ -25,7 +25,7 @@
         
            <section id="downloads" class="clearfix">
 
-          <a href="https://github.com/wolfe-pack/wolfe" id="view-on-github" class="button"><span>GitHub Source</span></a>
+          <a href="https://github.com/wolfe-pack/wolfe" id="view-on-github" class="button"><span>GitHub Source</span></a>&nbsp;&nbsp;
           <a href="https://github.com/wolfe-pack/wolfe/wiki" id="view-on-github" class="button"><span>GitHub Wiki</span></a>
         </section>
 
@@ -35,7 +35,20 @@
           <h3>
 <a name="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages"><span class="octicon octicon-link"></span></a>Welcome</h3>
 
-<p>This workshop's goal is to develop the next generation probabilistic programming platform, inspired by (more undirected) predecessors such as <a href="http://alchemy.cs.washington.edu/">alchemy</a>, <a href="https://code.google.com/p/thebeast/">thebeast</a> and <a href="http://factorie.cs.umass.edu/">FACTORIE</a>.</p>
+<p>Wolfe acknowledges that at the heart of most machine learning (ML) applications are two concepts: 
+mathematical models that assign probabilities or scores to hypotheses (or possible worlds), 
+and mathematical operators that interact with these models---most prominently maximization and summation. 
+In Wolfe these operations are primitives, and the practitioner can rely on the Wolfe interpreter 
+to implement these in optimized, and generally approximate, fashion. 
+This enables declarative and concise  development of ML applications, which allows the practitioner to 
+focus on mathematical modelling of her problem as opposed to machine learning implementation details. 
+With these primitives, existing probabilistic programming and Statistical Relational Learning approaches 
+(e.g. Factorie or Markov Logic) can be used and extended. Wolfe supports (or will support) most objectives 
+and operations used in learning and inference: convex learning risks functions, linear programs for MAP 
+inference, integer linear programming solvers,  message passing, nested min max objectives, 
+dual decomposition etc. Wolfe’s host language is Scala.</p>
+
+
 
 
 <h3>
