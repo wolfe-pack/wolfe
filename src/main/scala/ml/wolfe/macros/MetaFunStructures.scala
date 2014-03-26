@@ -42,7 +42,7 @@ trait MetaFunStructures[C<:Context] {
           case Some(parentStructure) =>
             val asIndices = for ((a, i) <- args zip keyIndexNames) yield q"${parentStructure.structure}.$i($a)"
             val substructure = curriedArguments(asIndices, q"${parentStructure.structure}.subStructures")
-            Some(StructurePointer(substructure,this))
+            Some(StructurePointer(substructure,valueMetaStructure))
           case _ => None
         }
         tree match {
