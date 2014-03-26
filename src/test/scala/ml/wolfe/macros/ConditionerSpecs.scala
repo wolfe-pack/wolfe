@@ -33,15 +33,15 @@ class ConditionerSpecs extends StructureIsomorphisms {
       val structure = Conditioner.conditioned(space)((x: Pred[Int]) => x(0) && x(2) && x(3))
       structure mustBeIsomorphicTo (space filter (x => x(0) && x(2) && x(3)))
     }
-//    "condition using masks" in {
-//      case class Data(x: Boolean, y: Boolean, z: Boolean)
-//      val space = Wolfe.all(Data)
-//      def observed(d: Data) = d.copy(y = mask[Boolean])
-//      val observation = Data(true, true, false)
-//      val conditioned = space filter (observed(_) == observed(observation))
-//      val structure = Conditioner.conditioned(space)(observed(_) == observed(observation))
-//      println(conditioned)
-//    }
+    "condition by specifying hidden variables" in {
+      case class Data(x: Boolean, y: Boolean, z: Boolean)
+      val space = Wolfe.all(Data)
+      def observed(d: Data) = d.copy(y = hide[Boolean])
+      val observation = Data(true, true, false)
+      val expected = space filter (observed(_) == observed(observation))
+      val actual = Conditioner.conditioned(space)(observed(_) == observed(observation))
+      actual mustBeIsomorphicTo expected
+    }
 
   }
 

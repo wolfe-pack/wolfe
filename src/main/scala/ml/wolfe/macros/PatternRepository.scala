@@ -58,6 +58,20 @@ trait PatternRepository[C <: Context] extends SymbolRepository[C] {
     }
   }
 
+  object CaseClassCopy {
+    def unapply(tree: Tree): Option[(Tree, List[Tree])] = tree match {
+      case Block(argDefs, q"$caseObject.copy(..$args)") if caseObject.tpe.typeSymbol.asClass.isCaseClass =>
+        val mapping = argDefs.flatMap(_.collect {case vd: ValDef => vd.symbol -> vd.rhs}).toMap
+        val mappedArgs = args.map((a: Tree) => mapping.get(a.symbol))
+        if (mappedArgs.exists(_.isEmpty))
+          None
+        else
+          Some((caseObject, mappedArgs.map(_.get)))
+      case _ =>
+        None
+    }
+  }
+
   object ApplyAnd extends InfixApply(Set(scalaSymbols.and))
   object ApplyDoublePlus extends InfixApply(scalaSymbols.doublePluses)
   object ApplyDoubleMinus extends InfixApply(scalaSymbols.doubleMinuses)

@@ -359,7 +359,7 @@ trait Conditioning {
   implicit object MaskableBoolean extends Maskable(false)
   implicit object MaskableAnyRef extends Maskable[AnyRef](null)
 
-  def mask[T : Maskable] = implicitly[Maskable[T]].mask
+  def hide[T : Maskable] = implicitly[Maskable[T]].mask
 
 }
 
