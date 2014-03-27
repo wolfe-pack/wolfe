@@ -12,6 +12,11 @@ trait Structure[T] {
   //todo: a lot of functionality in the current implementations can be lifted into this trait
   //todo: by introducting a generic "children:List[Structure]" method and implementing nodes etc. using this.
 
+//  /**
+//   * @return direct child structures of this structure.
+//   */
+//  def children():Iterator[Structure[_]]
+
   /**
    * @return all nodes in this structure (including nodes of substructures)
    */

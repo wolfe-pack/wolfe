@@ -34,6 +34,7 @@ trait MetaCaseClassStructures[C<:Context] {
         ..${subClassDefs(graphName)}
         ..$structureFields
         private var iterator:Iterator[Unit] = _
+        def children() = fields
         def fields:Iterator[Structure[_]] = Iterator(..$fieldIds)
         def graph = $graphName
         def value():$argTypeName = new $argTypeName(..$fieldValues)

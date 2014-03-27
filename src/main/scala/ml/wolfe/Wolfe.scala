@@ -313,11 +313,11 @@ trait SampleSpaceDefs {
           val newPrefix = for (head <- dom; tail <- postfix) yield head :: tail
           recurse(n - 1, newPrefix)
       }
-    recurse(length)
+    recurse(length).map(_.toIndexedSeq)
   }
 
   def seqs[A](dom:Iterable[A], maxLength:Int = 1000):Iterable[Seq[A]] = {
-    Range(0,maxLength).flatMap(seqs(_,dom))
+    Range(0,maxLength).view.flatMap(seqs(_,dom))
   }
 
   def seqs[A](doms: Seq[Iterable[A]]): Iterable[Seq[A]] = {
@@ -327,7 +327,7 @@ trait SampleSpaceDefs {
         val current = for (r <- result; h <- head) yield h :: r
         recurse(tail, current)
     }
-    recurse(doms.toList).map(_.toSeq)
+    recurse(doms.toList).map(_.toIndexedSeq)
   }
 
   implicit val bools = Iterable(false, true)
