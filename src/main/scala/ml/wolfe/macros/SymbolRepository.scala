@@ -23,6 +23,7 @@ trait SymbolRepository[C <: Context] extends HasContext[C] {
     lazy val Pred            = wolfeType.member(newTermName("Pred"))
     lazy val preds           = wolfeType.member(newTermName("preds"))
     lazy val seqs            = wolfeType.member(newTermName("seqs")).asTerm.alternatives.toSet
+    //todo: this should be based on the types, not on the names
     lazy val fixedLengthSeqs = seqs.find(_.asMethod.paramss.head.head.name.encoded == "length").get
     lazy val signature2seqs  = seqs.map(s => s.typeSignature -> s).toMap
 
