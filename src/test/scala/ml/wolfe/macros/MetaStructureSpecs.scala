@@ -56,12 +56,8 @@ class MetaStructureSpecs extends StructureIsomorphisms{
     "generate isomorphic structure and projection for sequence spaces" in {
       implicit val ints = Range(0,2)
       val space = Wolfe.seqs(4,ints)
-      val structure = MetaStructure.structure(space)
-//      (structure,projection) mustBeIsomorphicTo (space,s => s(1))
-
-
-      println(space)
-
+      val (structure,projection) = MetaStructure.projection[Seq[Int],Int](space,s => s(1))
+      (structure,projection) mustBeIsomorphicTo (space,s => s(1))
     }
 
   }

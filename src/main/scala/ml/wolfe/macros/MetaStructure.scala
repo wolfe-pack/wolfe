@@ -9,6 +9,7 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
                                            with MetaCaseClassStructures[C]
                                            with MetaFunStructures[C]
                                            with MetaAtomicStructures[C]
+                                           with MetaSeqStructures[C]
                                            with PatternRepository[C] {
 
   import context.universe._
@@ -189,7 +190,7 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
    */
   def metaStructure(sampleSpace: Tree): MetaStructure = {
     //todo: assert that domain is an iterable
-    //get symbol for all, unwrap ...
+    //require(sampleSpace.tpe <:< scalaSymbols.iterableClass.typeSignature)
     sampleSpace match {
       case q"$all[${_},$caseClassType]($unwrap[..${_}]($constructor))($cross(..$sets))"
         if all.symbol == wolfeSymbols.all && wolfeSymbols.unwraps(unwrap.symbol) && wolfeSymbols.crossProducts(cross.symbol) =>
@@ -201,8 +202,12 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
         val valueDom = context.typeCheck(q"ml.wolfe.Wolfe.bools")
         metaFunStructure(sampleSpace, keyDom, valueDom)
       case q"$seq($size,$dom)" if wolfeSymbols.fixedLengthSeqs == seq.symbol =>
-        new MetaAtomicStructure {
-          def domain = sampleSpace
+        val typeOfArg = iterableArgumentType(sampleSpace)
+        val elementMeta = metaStructure(dom)
+        new MetaSeqStructure {
+          def elementMetaStructure = elementMeta
+          def argType = typeOfArg
+          def lengthInitializer = q"setLength($size)"
         }
       case _ =>
         inlineOnce(sampleSpace) match {
