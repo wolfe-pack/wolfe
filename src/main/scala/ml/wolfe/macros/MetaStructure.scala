@@ -274,6 +274,10 @@ object MetaStructure {
   def projection[T1, T2](sampleSpace: Iterable[T1],
                          projection: T1 => T2): (Structure[T1], Structure[T1] => T2) = macro projectionImpl[T1, T2]
 
+  def projectionNoSetup[T1, T2](sampleSpace: Iterable[T1],
+                                projection: T1 => T2): (Structure[T1], Structure[T1] => T2) = macro projectionNoSetupImpl[T1, T2]
+
+
   def projectionImpl[T1: c.WeakTypeTag, T2: c.WeakTypeTag](c: Context)
                                                           (sampleSpace: c.Expr[Iterable[T1]],
                                                            projection: c.Expr[T1 => T2]) = {
@@ -294,6 +298,33 @@ object MetaStructure {
       $cls
       val $structName = new ${meta.className}
       $graphName.setupNodes()
+      ($structName,$injectedProj)
+    """
+    c.Expr[(Structure[T1], Structure[T1] => T2)](code)
+  }
+
+
+
+  //todo: generalize the code to avoid duplication
+  def projectionNoSetupImpl[T1: c.WeakTypeTag, T2: c.WeakTypeTag](c: Context)
+                                                                 (sampleSpace: c.Expr[Iterable[T1]],
+                                                                  projection: c.Expr[T1 => T2]) = {
+    import c.universe._
+    val helper = new ContextHelper[c.type](c) with MetaStructures[c.type]
+    val meta = helper.metaStructure(sampleSpace.tree)
+    val graphName = newTermName("_graph")
+    val structName = newTermName("structure")
+    val structArgName = newTermName("structArg")
+    val cls = meta.classDef(graphName)
+    val q"($arg) => $rhs" = projection.tree
+    val root = helper.rootMatcher(arg.symbol, q"$structArgName.asInstanceOf[${meta.className}]", meta)
+    val injectedRhs = helper.injectStructure(rhs, meta.matcher(root))
+
+    val injectedProj = q"($structArgName:ml.wolfe.macros.Structure[${meta.argType}]) => $injectedRhs"
+    val code = q"""
+      val $graphName = new ml.wolfe.MPGraph
+      $cls
+      val $structName = new ${meta.className}
       ($structName,$injectedProj)
     """
     c.Expr[(Structure[T1], Structure[T1] => T2)](code)

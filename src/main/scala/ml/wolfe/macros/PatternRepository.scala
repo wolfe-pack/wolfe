@@ -61,7 +61,8 @@ trait PatternRepository[C <: Context] extends SymbolRepository[C] {
   object CaseClassCopy {
 
     def unapply(tree: Tree): Option[(Tree, List[Tree])] = tree match {
-      case Block(argDefs, q"$caseObject.copy(..$args)") if caseObject.tpe.typeSymbol.asClass.isCaseClass =>
+        //todo: caseObject should be checked to be a case class, but in some contexts the tree we get is untyped
+      case Block(argDefs, q"$caseObject.copy(..$args)") => //if caseObject.tpe.typeSymbol.asClass.isCaseClass =>
         val mapping = argDefs.flatMap(_.collect {case vd: ValDef => vd.symbol -> vd.rhs}).toMap
         val mappedArgs = args.map((a: Tree) => mapping.get(a.symbol))
         if (mappedArgs.exists(_.isEmpty))

@@ -53,7 +53,7 @@ class MetaStructureSpecs extends StructureIsomorphisms{
       structure.nodes().size should be (4)
     }
 
-    "generate isomorphic structure and projection for sequence spaces" in {
+    "generate isomorphic structure and projection for fixed length sequence spaces" in {
       implicit val ints = Range(0,2)
       val space = Wolfe.seqs(4,ints)
       val (structure,projection) = MetaStructure.projection[Seq[Int],Int](space,s => s(1))
@@ -61,6 +61,18 @@ class MetaStructureSpecs extends StructureIsomorphisms{
       structure.nodes().size should be (4)
       structure.isInstanceOf[SeqStructure[Seq[Int]]] should be (true)
     }
+
+    "generate structure and projection for max length length sequence spaces" in {
+      implicit val ints = Range(0,2)
+      val space = Wolfe.seqs(ints,4)
+      val (structure,projection) = MetaStructure.projectionNoSetup[Seq[Int],Int](space,s => s(1))
+      structure.isInstanceOf[SeqStructure[Seq[Int]]] should be (true)
+      structure.asInstanceOf[SeqStructure[Seq[Int]]].setLength(3)
+      structure.graph.setupNodes()
+      (structure,projection) mustBeIsomorphicTo (space filter (_.size == 3),s => s(1))
+      structure.nodes().size should be (3)
+    }
+
 
   }
 

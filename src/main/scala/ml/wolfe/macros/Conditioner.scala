@@ -77,8 +77,9 @@ trait Conditioner[C <: Context] extends MetaStructures[C] {
           })
           if (statements.exists(_.isEmpty)) None
           else {
-            val unwrapped = statements.map(s => s.get)
-            Some(Block(unwrapped.dropRight(1), unwrapped.last))
+            val unwrapped = statements.map(s => s.get).filter(_ != EmptyTree)
+            //todo: what if all statements are empty?
+            if (unwrapped.size > 1) Some(Block(unwrapped.dropRight(1), unwrapped.last)) else Some(unwrapped.head)
           }
         case _ => None
       }
@@ -89,23 +90,32 @@ trait Conditioner[C <: Context] extends MetaStructures[C] {
         matcher(select1) match {
           case Some(StructurePointer(structure, meta: MetaSeqStructure)) =>
             //todo: we should get the matcher by calling structure.meta.matcher
-            val newMatcher = rootMatcher(arg1.symbol, q"$structure(argIndex)", meta)
-
-            val newValue2 = transform(value2, {
-              case i: Ident if i.symbol == arg2.symbol => q"$select2(argIndex)"
+            val newArg1:Tree = q"$select1.apply(argIndex)"
+            val newArg2:Tree = q"$select2.apply(argIndex)"
+//            val t = iterableArgumentType(select1)
+//            println(t)
+//            newArg1.tpe = t
+//            newArg2.tpe = t
+            val newValue1 = transform(value1, {
+              case i: Ident if i.symbol == arg2.symbol => newArg1
             })
-            for (innerLoop <- conditioningPair(value1, newValue2, newMatcher)) yield
-              q"""
-              $structure.setLength($select2.size)
-              for (argIndex <- $select2.indices) {
-                $innerLoop
-              }
-            """
+            val newValue2 = transform(value2, {
+              case i: Ident if i.symbol == arg2.symbol => newArg2
+            })
+            for (innerLoop <- conditioningPair(newValue1, newValue2, matcher)) yield {
+              val code = q"""
+                $structure.setLength($select2.size)
+                $select2.indices.foreach((argIndex:Int) => {
+                  $innerLoop
+                 })
+              """
+              code
+            }
           case _ => None
         }
-        println(select1)
-        println(select2)
-        None
+//        println(select1)
+//        println(select2)
+//        None
       case _ =>
         None
     }
