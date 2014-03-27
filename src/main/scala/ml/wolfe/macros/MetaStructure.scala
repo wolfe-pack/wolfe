@@ -18,7 +18,7 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
    * @param structure the expression that refers to a structure.
    * @param meta the meta structure corresponding to the structure pointed to.
    */
-  case class StructurePointer(structure:Tree, meta:MetaStructure)
+  case class StructurePointer(structure: Tree, meta: MetaStructure)
 
   /**
    * Represents code that generates structures for a given sample space.
@@ -79,7 +79,6 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
     def matcher(parent: Tree => Option[StructurePointer], result: Tree => Option[StructurePointer]): Tree => Option[StructurePointer]
 
   }
-
 
 
   /**
@@ -164,9 +163,9 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
    * @param rootStructure the structure to replace the variable with.
    * @return a matcher.
    */
-  def rootMatcher(rootArgument: Symbol, rootStructure: Tree, rootMetaStructure:MetaStructure): Tree => Option[StructurePointer] = {
+  def rootMatcher(rootArgument: Symbol, rootStructure: Tree, rootMetaStructure: MetaStructure): Tree => Option[StructurePointer] = {
     val root = (tree: Tree) => tree match {
-      case i: Ident if i.symbol == rootArgument => Some(StructurePointer(rootStructure,rootMetaStructure))
+      case i: Ident if i.symbol == rootArgument => Some(StructurePointer(rootStructure, rootMetaStructure))
       case _ => None
     }
     root
@@ -177,7 +176,7 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
    * @param iterable a tree representing an iterable object
    * @return the argument type of the iterable, e.g. for Seq(1,2,3) it would be Int.
    */
-  def iterableArgumentType(iterable:Tree):Type = {
+  def iterableArgumentType(iterable: Tree): Type = {
     val iterableType = iterable.tpe.baseType(scalaSymbols.iterableClass)
     val TypeRef(_, _, List(argType)) = iterableType
     argType
@@ -201,6 +200,10 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
       case q"$pred[${_}]($keyDom)" if pred.symbol == wolfeSymbols.Pred =>
         val valueDom = context.typeCheck(q"ml.wolfe.Wolfe.bools")
         metaFunStructure(sampleSpace, keyDom, valueDom)
+      case q"$seq($size,$dom)" if wolfeSymbols.fixedLengthSeqs == seq.symbol =>
+        new MetaAtomicStructure {
+          def domain = sampleSpace
+        }
       case _ =>
         inlineOnce(sampleSpace) match {
           case Some(inlined) => metaStructure(inlined)
@@ -264,7 +267,7 @@ object MetaStructure {
     val structArgName = newTermName("structArg")
     val cls = meta.classDef(graphName)
     val q"($arg) => $rhs" = projection.tree
-    val root = helper.rootMatcher(arg.symbol, q"$structArgName.asInstanceOf[${meta.className}]",meta)
+    val root = helper.rootMatcher(arg.symbol, q"$structArgName.asInstanceOf[${meta.className}]", meta)
     val injectedRhs = helper.injectStructure(rhs, meta.matcher(root))
 
     val injectedProj = q"($structArgName:ml.wolfe.macros.Structure[${meta.argType}]) => $injectedRhs"
