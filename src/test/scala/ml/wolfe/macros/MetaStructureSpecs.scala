@@ -53,6 +53,13 @@ class MetaStructureSpecs extends StructureIsomorphisms{
       structure.nodes().size should be (4)
     }
 
+    "generate isomorphic structure and projection for sequence spaces" in {
+      implicit val ints = Range(0,2)
+      val space = Wolfe.seqs(ints,4)
+      println(space)
+
+    }
+
   }
 
 }
