@@ -11,83 +11,106 @@ trait Conditioner[C <: Context] extends MetaStructures[C] {
 
   case class ConditioningCode(code: Tree, remainderOfCondition: Tree)
 
-  class PairMatcher(matcher: Tree => Option[StructurePointer]) {
-    def unapply(tree: Tree) = tree match {
-      case q"$expr1 == $expr2" =>
-        conditioningPair(expr1, expr2, matcher) match {
-          case Some(code) => Some(code)
-          case _ => None
-        }
-      case _ => None
-    }
-  }
+  class Matchers(matcher: Tree => Option[StructurePointer]) {
 
-  class SimpleCondition(matcher: Tree => Option[StructurePointer]) {
-    def unapply(tree: Tree) = tree match {
-      case q"$x == $value" => matcher(x) match {
-        case Some(structure) => Some(q"${structure.structure}.observe($value)")
+    object PairMatcher {
+      def unapply(tree: Tree) = tree match {
+        case q"$expr1 == $expr2" =>
+          conditioningPair(expr1, expr2, matcher) match {
+            case Some(code) => Some(code)
+            case _ => None
+          }
         case _ => None
       }
-      case _ => None
     }
+
+    object SimpleCondition {
+      def unapply(tree: Tree) = tree match {
+        case q"$x == $value" => matcher(x) match {
+          case Some(structure) => Some(q"${structure.structure}.observe($value)")
+          case _ => None
+        }
+        case _ => None
+      }
+    }
+
+    object SeqSetLength {
+      def unapply(tree: Tree) = tree match {
+        case q"$x.size == $value" => matcher(x) match {
+          case Some(StructurePointer(structure, meta: MetaSeqStructure)) => Some(q"$structure.setLength($value)")
+          case _ => None
+        }
+        case _ => None
+      }
+    }
+
   }
+
 
   def conditioningPair(expr1: Tree, expr2: Tree, matcher: Tree => Option[StructurePointer]): Option[Tree] = {
     (expr1, expr2) match {
       case (CaseClassCopy(select1, args1), CaseClassCopy(select2, args2)) => matcher(select1) match {
-        case Some(StructurePointer(structure,meta:MetaCaseClassStructure)) =>
+        case Some(StructurePointer(structure, meta: MetaCaseClassStructure)) =>
           val statements = ((args1 zip args2) zip meta.fields).map({
-            case ((arg1, arg2),field)
+            case ((arg1, arg2), field)
               if arg1.symbol == wolfeSymbols.hide && arg2.symbol == wolfeSymbols.hide =>
               Some(EmptyTree)
-            case ((q"${_}.$copyDefault1", q"${_}.$copyDefault2"),field)
+            case ((q"${_}.$copyDefault1", q"${_}.$copyDefault2"), field)
               if copyDefault1.encoded.startsWith("copy$default$") && copyDefault2.encoded.startsWith("copy$default$") =>
               //observe!
               val code = q"$structure.${field.name}.observe($select2.${field.name})"
               Some(code)
-            case ((arg1,arg2),field) =>
-              conditioningPair(arg1,arg2,matcher)
+            case ((arg1, arg2), field) =>
+              conditioningPair(arg1, arg2, matcher)
           })
-          if (statements.exists(_.isEmpty)) None else {
+          if (statements.exists(_.isEmpty)) None
+          else {
             val unwrapped = statements.map(s => s.get)
-            Some(Block(unwrapped.dropRight(1),unwrapped.last))
+            Some(Block(unwrapped.dropRight(1), unwrapped.last))
           }
         case _ => None
       }
-      case (q"$select1.map($arg1 => $value1)", q"$select2.map($arg2 => $value2)") => matcher(select1) match {
-        case Some(structure) =>
-          //todo: check if $select1 is a Seq
-          //todo: we should get the matcher by calling structure.meta.matcher
-          val newMatcher = rootMatcher(arg1.symbol, q"${structure.structure}(argIndex)", structure.meta)
+      case (q"$map1[..${_}]($arg1 => $value1)(${_})", q"$map2[..${_}]($arg2 => $value2)(${_})")
+        if map1.symbol == scalaSymbols.map && map2.symbol == scalaSymbols.map =>
+        val q"$select1.map" = map1
+        val q"$select2.map" = map2
+        matcher(select1) match {
+          case Some(StructurePointer(structure, meta: MetaSeqStructure)) =>
+            //todo: we should get the matcher by calling structure.meta.matcher
+            val newMatcher = rootMatcher(arg1.symbol, q"$structure(argIndex)", meta)
 
-          val newValue2 = transform(value2, {
-            case i: Ident if i.symbol == arg2.symbol => q"$select2(argIndex)"
-          })
-          for (innerLoop <- conditioningPair(value1, newValue2, newMatcher)) yield
-            q"""
-              ${structure.structure}.setSize($select2.size)
+            val newValue2 = transform(value2, {
+              case i: Ident if i.symbol == arg2.symbol => q"$select2(argIndex)"
+            })
+            for (innerLoop <- conditioningPair(value1, newValue2, newMatcher)) yield
+              q"""
+              $structure.setLength($select2.size)
               for (argIndex <- $select2.indices) {
                 $innerLoop
               }
             """
-        case _ => None
-      }
+          case _ => None
+        }
+        println(select1)
+        println(select2)
+        None
       case _ =>
         None
     }
   }
 
   def conditioning(condition: Tree, matchStructure: Tree => Option[StructurePointer]): ConditioningCode = {
-    val simpleCondition = new SimpleCondition(matchStructure)
-    val pairMatcher = new PairMatcher(matchStructure)
+    val matchers = new Matchers(matchStructure)
+    import matchers._
     condition match {
       //      case q"$x == $value" => matchStructure(x) match {
       //        case Some(structure) =>
       //          ConditioningCode(q"${structure.structure}.observe($value)", EmptyTree)
       //        case _ => ConditioningCode(EmptyTree, condition)
       //      }
-      case simpleCondition(code) => ConditioningCode(code, EmptyTree)
-      case pairMatcher(code) => ConditioningCode(code, EmptyTree)
+      case SimpleCondition(code) => ConditioningCode(code, EmptyTree)
+      case PairMatcher(code) => ConditioningCode(code, EmptyTree)
+      case SeqSetLength(code) => ConditioningCode(code, EmptyTree)
       case ApplyAnd(arg1, arg2) =>
         val c1 = conditioning(arg1, matchStructure)
         val c2 = conditioning(arg2, matchStructure)

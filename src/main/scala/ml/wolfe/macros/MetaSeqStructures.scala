@@ -14,6 +14,8 @@ trait MetaSeqStructures[C<:Context] {
     def elementMetaStructure:MetaStructure
     def lengthInitializer:Tree
 
+    var lengthInitialized = lengthInitializer != EmptyTree
+
     lazy val className = newTypeName(context.fresh("SeqStructure"))
     def classDef(graphName:TermName) = {
       val elementDef = elementMetaStructure.classDef(graphName)
@@ -30,6 +32,7 @@ trait MetaSeqStructures[C<:Context] {
             _elements = Array.fill(length)(new ${elementMetaStructure.className})
           }
           def elements = _elements
+          def children() = elements.iterator
           def nodes = _elements.iterator.flatMap(_.nodes)
           def graph = $graphName
 

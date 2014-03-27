@@ -79,6 +79,10 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
      */
     def matcher(parent: Tree => Option[StructurePointer], result: Tree => Option[StructurePointer]): Tree => Option[StructurePointer]
 
+    //todo: after conditioning some structures may still not be initialized/configured properly. We should check for this
+    //todo: at compile time using a validate method on the meta structure. Probably requires stateful meta structure to
+    //todo: be affected during conditioning.
+
   }
 
 
