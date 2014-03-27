@@ -317,7 +317,7 @@ trait SampleSpaceDefs {
   }
 
   def seqs[A](dom:Iterable[A], maxLength:Int = 1000):Iterable[Seq[A]] = {
-    Range(0,maxLength).view.flatMap(seqs(_,dom))
+    Range(0,maxLength + 1).view.flatMap(seqs(_,dom))
   }
 
   def seqs[A](doms: Seq[Iterable[A]]): Iterable[Seq[A]] = {

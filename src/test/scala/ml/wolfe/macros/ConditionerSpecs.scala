@@ -53,14 +53,15 @@ class ConditionerSpecs extends StructureIsomorphisms {
       val actual = Conditioner.conditioned(space)(observed(_) == observed(instance))
       actual mustBeIsomorphicTo expected
     }
-    "condition by specifying hidden variables in case classes nested in a sequence" in {
+    "condition by specifying hidden variables in case classes nested in a sequence " in {
       case class Element(a: Boolean, b: Boolean)
       val elements = Wolfe.all(Element)
-      val space = seqs(elements,10)
+      val space = seqs(elements,4)
       val instance = Seq.fill(3)(Element(true,false))
       def observed(s:Seq[Element]) = s.map(_.copy(b = hide[Boolean]))
-//      val expected = space filter (observed(_) == observed(instance))
-//      val actual = Conditioner.conditioned(space)(observed(_) == observed(instance))
+      val expected = space filter (observed(_) == observed(instance))
+      val actual = Conditioner.conditioned(space)(observed(_) == observed(instance))
+      actual mustBeIsomorphicTo expected
 //      println(expected.mkString("\n"))
 
     }
