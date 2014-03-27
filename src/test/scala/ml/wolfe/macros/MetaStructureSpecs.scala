@@ -58,6 +58,8 @@ class MetaStructureSpecs extends StructureIsomorphisms{
       val space = Wolfe.seqs(4,ints)
       val (structure,projection) = MetaStructure.projection[Seq[Int],Int](space,s => s(1))
       (structure,projection) mustBeIsomorphicTo (space,s => s(1))
+      structure.nodes().size should be (4)
+      structure.isInstanceOf[SeqStructure[Seq[Int]]] should be (true)
     }
 
   }

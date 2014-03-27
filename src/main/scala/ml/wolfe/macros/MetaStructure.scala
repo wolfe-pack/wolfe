@@ -213,6 +213,15 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
           def argType = typeOfArg
           def lengthInitializer = q"setLength($size)"
         }
+      case q"$seq($dom,$maxSize)" if wolfeSymbols.maxLengthSeqs == seq.symbol =>
+        //todo: do something with maxSize!
+        val typeOfArg = iterableArgumentType(sampleSpace)
+        val elementMeta = metaStructure(dom)
+        new MetaSeqStructure {
+          def elementMetaStructure = elementMeta
+          def argType = typeOfArg
+          def lengthInitializer = EmptyTree
+        }
       case _ =>
         inlineOnce(sampleSpace) match {
           case Some(inlined) => metaStructure(inlined)
