@@ -21,7 +21,7 @@ trait MetaSeqStructures[C<:Context] {
       val elementDef = elementMetaStructure.classDef(graphName)
 
       q"""
-        final class $className extends Structure[$argType]{
+        final class $className extends Structure[$argType] with SeqStructure[$argType] {
 
           $elementDef
 
@@ -73,4 +73,11 @@ trait MetaSeqStructures[C<:Context] {
     }
   }
 
+}
+
+/**
+ * Structures that represent fixed length sequences.
+ */
+trait SeqStructure[T] extends Structure[T] {
+  def setLength(length:Int)
 }

@@ -18,7 +18,10 @@ trait Conditioner[C <: Context] extends MetaStructures[C] {
         case q"$expr1 == $expr2" =>
           conditioningPair(expr1, expr2, matcher) match {
             case Some(code) => Some(code)
-            case _ => None
+            case _ => conditioningPair(expr2, expr1, matcher) match {
+              case Some(code) => Some(code)
+              case _ => None
+            }
           }
         case _ => None
       }
@@ -30,6 +33,10 @@ trait Conditioner[C <: Context] extends MetaStructures[C] {
           case Some(structure) => Some(q"${structure.structure}.observe($value)")
           case _ => None
         }
+        case q"$value == $x" => matcher(x) match {
+          case Some(structure) => Some(q"${structure.structure}.observe($value)")
+          case _ => None
+        }
         case _ => None
       }
     }
@@ -37,6 +44,10 @@ trait Conditioner[C <: Context] extends MetaStructures[C] {
     object SeqSetLength {
       def unapply(tree: Tree) = tree match {
         case q"$x.size == $value" => matcher(x) match {
+          case Some(StructurePointer(structure, meta: MetaSeqStructure)) => Some(q"$structure.setLength($value)")
+          case _ => None
+        }
+        case q"$value == $x.size" => matcher(x) match {
           case Some(StructurePointer(structure, meta: MetaSeqStructure)) => Some(q"$structure.setLength($value)")
           case _ => None
         }
@@ -54,6 +65,7 @@ trait Conditioner[C <: Context] extends MetaStructures[C] {
           val statements = ((args1 zip args2) zip meta.fields).map({
             case ((arg1, arg2), field)
               if arg1.symbol == wolfeSymbols.hide && arg2.symbol == wolfeSymbols.hide =>
+              //todo: should also fire if it can be shown that both arguments evaluate to the same thing
               Some(EmptyTree)
             case ((q"${_}.$copyDefault1", q"${_}.$copyDefault2"), field)
               if copyDefault1.encoded.startsWith("copy$default$") && copyDefault2.encoded.startsWith("copy$default$") =>

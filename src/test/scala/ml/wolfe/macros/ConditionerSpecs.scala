@@ -37,9 +37,9 @@ class ConditionerSpecs extends StructureIsomorphisms {
       case class Data(x: Boolean, y: Boolean, z: Boolean)
       val space = Wolfe.all(Data)
       def observed(d: Data) = d.copy(y = hide[Boolean])
-      val observation = Data(true, true, false)
-      val expected = space filter (observed(_) == observed(observation))
-      val actual = Conditioner.conditioned(space)(observed(_) == observed(observation))
+      val instance = Data(true, true, false)
+      val expected = space filter (observed(_) == observed(instance))
+      val actual = Conditioner.conditioned(space)(observed(_) == observed(instance))
       actual mustBeIsomorphicTo expected
     }
     "condition by specifying hidden variables in nested case class" in {
@@ -47,10 +47,10 @@ class ConditionerSpecs extends StructureIsomorphisms {
       case class Data(x: Nested, y: Boolean, z: Boolean)
       implicit val nested = Wolfe.all(Nested)
       val space = Wolfe.all(Data)
-      val observation = Data(Nested(false, false), true, false)
+      val instance = Data(Nested(false, false), true, false)
       def observed(d: Data) = d.copy(x = d.x.copy(a = hide[Boolean]))
-      val expected = space filter (observed(_) == observed(observation))
-      val actual = Conditioner.conditioned(space)(observed(_) == observed(observation))
+      val expected = space filter (observed(_) == observed(instance))
+      val actual = Conditioner.conditioned(space)(observed(_) == observed(instance))
       actual mustBeIsomorphicTo expected
     }
     "condition by specifying hidden variables in case classes nested in a sequence" in {
