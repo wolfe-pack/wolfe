@@ -61,12 +61,12 @@ object Wolfe extends SampleSpaceDefs with StatsDefs with VectorDefs with Conditi
   def toLaTeX(body: () => Unit) = """\LaTeX"""
 
 
-//  @Domain.Simplex
-//  def simplex[T](domain: Iterable[T], range: Iterable[Double] = doubles) =
-//    for (p <- maps(domain, range); if sumOld(domain.toSeq) {p(_)} == 1.0 && domain.forall(p(_) >= 0.0)) yield p
-//
-//  def wsum[T](dom: Iterable[T], stats: T => Vector)(obj: T => Double) = sumOld(dom.toSeq) {x => stats(x) * obj(x)}(VectorNumeric)
-//  def expect[T](dom: Iterable[T], stats: T => Vector)(obj: T => Double) = wsum(dom, stats)(t => math.exp(obj(t) - logZOld(dom)(obj)))
+  //  @Domain.Simplex
+  //  def simplex[T](domain: Iterable[T], range: Iterable[Double] = doubles) =
+  //    for (p <- maps(domain, range); if sumOld(domain.toSeq) {p(_)} == 1.0 && domain.forall(p(_) >= 0.0)) yield p
+  //
+  //  def wsum[T](dom: Iterable[T], stats: T => Vector)(obj: T => Double) = sumOld(dom.toSeq) {x => stats(x) * obj(x)}(VectorNumeric)
+  //  def expect[T](dom: Iterable[T], stats: T => Vector)(obj: T => Double) = wsum(dom, stats)(t => math.exp(obj(t) - logZOld(dom)(obj)))
 
   @deprecated("Use the new operators", "now")
   def logZOld[T](dom: Iterable[T])(model: T => Double) = math.log(dom.view.map(x => math.exp(model(x))).sum)
@@ -305,7 +305,20 @@ trait SampleSpaceDefs {
   }
 
 
-  def seqs[A](dom: Iterable[A], length: Int): Iterable[Seq[A]] = ???
+  def seqs[A](length: Int, dom: Iterable[A]): Iterable[Seq[A]] = {
+    def recurse(l: Int, postfix: Iterable[List[A]] = Iterable(Nil)): Iterable[List[A]] =
+      l match {
+        case 0 => postfix
+        case n =>
+          val newPrefix = for (head <- dom; tail <- postfix) yield head :: tail
+          recurse(n - 1, newPrefix)
+      }
+    recurse(length)
+  }
+
+  def seqs[A](dom:Iterable[A], maxLength:Int = 1000):Iterable[Seq[A]] = {
+    Range(0,maxLength).flatMap(seqs(_,dom))
+  }
 
   def seqs[A](doms: Seq[Iterable[A]]): Iterable[Seq[A]] = {
     def recurse(list: List[Iterable[A]], result: Iterable[List[A]] = Iterable(Nil)): Iterable[List[A]] = list match {
@@ -353,13 +366,13 @@ trait SampleSpaceDefs {
 }
 
 trait Conditioning {
-  class Maskable[T](val mask:T)
+  class Maskable[T](val mask: T)
 
   implicit object MaskableInt extends Maskable(-1)
   implicit object MaskableBoolean extends Maskable(false)
   implicit object MaskableAnyRef extends Maskable[AnyRef](null)
 
-  def hide[T : Maskable] = implicitly[Maskable[T]].mask
+  def hide[T: Maskable] = implicitly[Maskable[T]].mask
 
 }
 
