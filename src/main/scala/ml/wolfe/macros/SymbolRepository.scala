@@ -19,7 +19,7 @@ trait SymbolRepository[C <: Context] extends HasContext[C] {
     lazy val strings         = wolfeType.member(newTermName("strings"))
     lazy val doubles         = wolfeType.member(newTermName("doubles"))
     lazy val unwraps         = Range(2, 6).map(i => wolfeType.member(newTermName("unwrap" + i))).toSet
-    lazy val crosses         = Range(2, 4).map(i => wolfeType.member(newTermName("Cross" + i))).toSet
+    lazy val crosses         = Range(2, 6).map(i => wolfeType.member(newTermName("Cross" + i))).toSet
     lazy val cs              = wolfeType.member(newTermName("c")).asTerm.alternatives.toSet
     lazy val crossProducts   = crosses ++ cs
     lazy val Pred            = wolfeType.member(newTermName("Pred"))
