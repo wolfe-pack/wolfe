@@ -326,7 +326,7 @@ object MPGraph {
     def score(settingIndex: Int): Double = {
       typ match {
         case TABLE => table(settingIndex)
-        case LINEAR => stats(settingIndex).dot(fg.weights)
+        case LINEAR =>  stats(settingIndex).dot(fg.weights)
         case STRUCTURED => structured.score(this, entryToSetting(settingIndex, dims), fg.weights)
       }
     }

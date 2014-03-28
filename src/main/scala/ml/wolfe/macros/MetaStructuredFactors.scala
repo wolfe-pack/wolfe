@@ -262,7 +262,7 @@ object MetaStructuredFactor {
         ${metaFactor.classDef}
         val result:StructuredFactor[${meta.argType}] = new ${metaFactor.className}($structName)
         $graphName.build()
-        val factorieWeights = ml.wolfe.FactorieConverter.toFactorieSparseVector(weights,_index)
+        val factorieWeights = ml.wolfe.FactorieConverter.toFactorieDenseVector(weights,_index)
         $graphName.weights = factorieWeights
         result
       }
