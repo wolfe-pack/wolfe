@@ -5,11 +5,17 @@ import scala.util.Random
 import ml.wolfe.Wolfe.Stats.OneHot
 import cc.factorie.WeightsSet
 import cc.factorie.optimize.{Trainer, OnlineTrainer}
+import scala.annotation.StaticAnnotation
 
 /**
  * @author Sebastian Riedel
  */
-object Wolfe extends SampleSpaceDefs with StatsDefs with VectorDefs with Conditioning with ProblemBuilder {
+object Wolfe extends SampleSpaceDefs
+                     with StatsDefs
+                     with VectorDefs
+                     with Conditioning
+                     with ProblemBuilder
+                     with Annotations {
 
   //core operators
 
@@ -253,7 +259,7 @@ trait VectorDefs {
     def dot(that: Vector) = num.dot(vector, that)
     def norm = num.norm(vector)
     def *(scale: Double) = vector.mapValues(_ * scale)
-    def *(vector: Vector) = vector.map({case (k, v) => k -> v * vector.getOrElse(k, 0.0)})
+    def *(vector: Vector) = vector.map({ case (k, v) => k -> v * vector.getOrElse(k, 0.0) })
   }
 
 }
@@ -280,8 +286,8 @@ trait SampleSpaceDefs {
   implicit def Cross4[A1, A2, A3, A4](implicit dom1: Iterable[A1], dom2: Iterable[A2],
                                       dom3: Iterable[A3], dom4: Iterable[A4]): Iterable[(A1, A2, A3, A4)] = c(dom1, dom2, dom3, dom4)
   implicit def Cross5[A1, A2, A3, A4, A5](implicit dom1: Iterable[A1], dom2: Iterable[A2],
-                                      dom3: Iterable[A3], dom4: Iterable[A4],
-                                      dom5: Iterable[A5]): Iterable[(A1, A2, A3, A4, A5)] = c(dom1, dom2, dom3, dom4,dom5)
+                                          dom3: Iterable[A3], dom4: Iterable[A4],
+                                          dom5: Iterable[A5]): Iterable[(A1, A2, A3, A4, A5)] = c(dom1, dom2, dom3, dom4, dom5)
 
 
   @Domain.Maps
@@ -376,33 +382,38 @@ trait Conditioning {
 
   implicit object MaskableInt extends Maskable(-1)
   implicit object MaskableBoolean extends Maskable(false)
-  implicit def maskableAnyRef[T<:AnyRef] = new Maskable[T](null.asInstanceOf[T])
-//  implicit def maskableInt = new Maskable(-1)
-//  implicit def maskableBoolean = new Maskable(false)
+  implicit def maskableAnyRef[T <: AnyRef] = new Maskable[T](null.asInstanceOf[T])
+  //  implicit def maskableInt = new Maskable(-1)
+  //  implicit def maskableBoolean = new Maskable(false)
 
   def hide[T: Maskable] = implicitly[Maskable[T]].mask
 
 }
 
+trait Annotations {
+  class MinByDescent(trainer: WeightsSet => Trainer) extends StaticAnnotation
+  class MaxByInference(inference: MPGraph => Unit) extends StaticAnnotation
+}
+
 trait ProblemBuilder {
-  case class OverWhereOf[T,N](dom: Iterable[T], filter: T => Boolean = (_: T) => true, obj: T => N) {
+  case class OverWhereOf[T, N](dom: Iterable[T], filter: T => Boolean = (_: T) => true, obj: T => N) {
     def where(where: T => Boolean) = copy(filter = where)
-    def subjectTo(st:T => Boolean) = where(st)
-    def st(st:T => Boolean) = where(st)
-    def over(over:Iterable[T]) = copy(dom = over)
-    def of(of: T => N) = OverWhereOf[T,N](dom,filter,of)
-    def apply(of: T => N) = OverWhereOf[T,N](dom,filter,of)
+    def subjectTo(st: T => Boolean) = where(st)
+    def st(st: T => Boolean) = where(st)
+    def over(over: Iterable[T]) = copy(dom = over)
+    def of(of: T => N) = OverWhereOf[T, N](dom, filter, of)
+    def apply(of: T => N) = OverWhereOf[T, N](dom, filter, of)
   }
 
 
-  implicit def toOverWhereOf[T,N](obj: T => N) = OverWhereOf[T,N](Nil, obj = obj)
-  implicit def toOverWhereOf[T](dom: Iterable[T]) = OverWhereOf[T,Double](dom, obj = (_:T) => 0.0)
+  implicit def toOverWhereOf[T, N](obj: T => N) = OverWhereOf[T, N](Nil, obj = obj)
+  implicit def toOverWhereOf[T](dom: Iterable[T]) = OverWhereOf[T, Double](dom, obj = (_: T) => 0.0)
   //  implicit def toOverWhereOf[T](obj: T => Double) = OverWhereOf[T,Double](Nil, obj = obj)
 
   def over[T](implicit over: Iterable[T]) = OverWhereOf(over, (_: T) => true, (_: T) => 0.0)
   def where[T: Iterable](where: T => Boolean) = OverWhereOf(implicitly[Iterable[T]], where, (_: T) => 0.0)
-  def obj[T,N](of: T => N) = OverWhereOf[T,N](Nil, (_: T) => true, of)
+  def obj[T, N](of: T => N) = OverWhereOf[T, N](Nil, (_: T) => true, of)
 
-//  def of[T: Iterable](of: T => Double) = OverWhereOf(implicitly[Iterable[T]], (_: T) => true, of)
+  //  def of[T: Iterable](of: T => Double) = OverWhereOf(implicitly[Iterable[T]], (_: T) => true, of)
 
 }
