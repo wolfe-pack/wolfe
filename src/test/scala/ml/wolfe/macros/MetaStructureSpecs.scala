@@ -12,19 +12,19 @@ class MetaStructureSpecs extends StructureIsomorphisms{
 
   "A meta structure" should {
     "generate a structure for an atomic sequence of values" in {
-      val space = Seq(false,true)
+      def space = Seq(false,true)
       val structure = MetaStructure.structure(space)
       structure mustBeIsomorphicTo space
       structure.nodes().size should be (1)
     }
     "generate a matching projection for an atomic sequence" in {
-      val space = Seq(false,true)
+      def space = Seq(false,true)
       val (structure,projection) = MetaStructure.projection[Boolean,Boolean](space, x => x)
       (structure,projection) mustBeIsomorphicTo (space,x => x)
     }
     "generate a structure for all case class objects within a cartesian product of arguments " in {
       case class Data(x:Boolean,y:Boolean)
-      val space = Wolfe.all(Data)
+      def space = Wolfe.all(Data)
       val structure = MetaStructure.structure(space)
       structure mustBeIsomorphicTo space
       structure.nodes().size should be (2)
@@ -32,14 +32,14 @@ class MetaStructureSpecs extends StructureIsomorphisms{
 
     "generate isomorphic structure and projection for case class spaces" in {
       case class Data(a1:Boolean,a2:Boolean)
-      val space = Wolfe.all(Data)
+      def space = Wolfe.all(Data)
       val (structure,projection) = MetaStructure.projection[Data,Boolean](space, d => d.a1)
       (structure,projection) mustBeIsomorphicTo (space,_.a1)
     }
 
     "generate isomorphic structure and projection for predicate spaces with one argument" in {
       implicit val ints = Range(0,2)
-      val space = Wolfe.Pred[Int]
+      def space = Wolfe.Pred[Int]
       val (structure,projection) = MetaStructure.projection[Pred[Int],Boolean](space, d => d(1))
       (structure,projection) mustBeIsomorphicTo (space,d => d(1))
       structure.nodes().size should be (2)
@@ -47,7 +47,7 @@ class MetaStructureSpecs extends StructureIsomorphisms{
 
     "generate isomorphic structure and projection for predicate spaces with more than 1 argument" in {
       implicit val ints = Range(0,2)
-      val space = Wolfe.Pred[(Int,Int)]
+      def space = Wolfe.Pred[(Int,Int)]
       val (structure,projection) = MetaStructure.projection[Pred[(Int,Int)],Boolean](space, d => d(1,1))
       (structure,projection) mustBeIsomorphicTo (space,d => d(1,1))
       structure.nodes().size should be (4)
@@ -55,7 +55,7 @@ class MetaStructureSpecs extends StructureIsomorphisms{
 
     "generate isomorphic structure and projection for fixed length sequence spaces" in {
       implicit val ints = Range(0,2)
-      val space = Wolfe.seqs(4,ints)
+      def space = Wolfe.seqs(4,ints)
       val (structure,projection) = MetaStructure.projection[Seq[Int],Int](space,s => s(1))
       (structure,projection) mustBeIsomorphicTo (space,s => s(1))
       structure.nodes().size should be (4)
@@ -64,7 +64,7 @@ class MetaStructureSpecs extends StructureIsomorphisms{
 
     "generate structure and projection for max length length sequence spaces" in {
       implicit val ints = Range(0,2)
-      val space = Wolfe.seqs(ints,4)
+      def space = Wolfe.seqs(ints,4)
       val (structure,projection) = MetaStructure.projectionNoSetup[Seq[Int],Int](space,s => s(1))
       structure.isInstanceOf[SeqStructure[Seq[Int]]] should be (true)
       structure.asInstanceOf[SeqStructure[Seq[Int]]].setLength(3)
