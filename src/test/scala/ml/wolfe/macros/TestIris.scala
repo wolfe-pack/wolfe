@@ -57,24 +57,24 @@ object TestIris {
 
     //the total training perceptron loss of the model given the weights
     @MinByDescent(new OnlineTrainer(_, new Perceptron, 4))
-    def loss(weights: Vector) = sum(train)(_ => true)(i => max(S(i))(_ => true)(model(weights)) - model(weights)(i))
+    def loss(weights: Vector) = sumOld(train)(_ => true)(i => max(S(i))(_ => true)(model(weights)) - model(weights)(i))
 
     //the learned weights that minimize the perceptron loss
-    val learned = argmin(vectors)(_ => true)(loss)
-
-    LoggerUtil.info("learned: t" + learned.toString)
-
-    def predict(i: Data) = argmax(S(i))(_ => true)(model(learned))
-
-    //apply the predictor to each instance of the test set.
-    val predictedTest = test.map(predict)
-    val predictedTrain = train.map(predict)
-
-
-    LoggerUtil.info(predictedTest.head.toString)
-
-    LoggerUtil.info(Evaluator.evaluate(train,predictedTrain)(_.y).toString)
-    LoggerUtil.info(Evaluator.evaluate(test,predictedTest)(_.y).toString)
+//    val learned = argmin(vectors)(_ => true)(loss)
+//
+//    LoggerUtil.info("learned: t" + learned.toString)
+//
+//    def predict(i: Data) = argmax(S(i))(_ => true)(model(learned))
+//
+//    //apply the predictor to each instance of the test set.
+//    val predictedTest = test.map(predict)
+//    val predictedTrain = train.map(predict)
+//
+//
+//    LoggerUtil.info(predictedTest.head.toString)
+//
+//    LoggerUtil.info(Evaluator.evaluate(train,predictedTrain)(_.y).toString)
+//    LoggerUtil.info(Evaluator.evaluate(test,predictedTest)(_.y).toString)
 
 
   }

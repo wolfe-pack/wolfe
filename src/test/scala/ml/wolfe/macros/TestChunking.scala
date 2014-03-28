@@ -38,24 +38,24 @@ object TestChunking {
     //todo: the VectorNumeric is currently needed in the macro, remove this.
     def features(s: Sentence) =
 //      sum(0 until s.tokens.size)(_ => true)(i => oneHot('bias -> s.tokens(i).chunk))(VectorNumeric) +
-      sum(0 until s.tokens.size)(_ => true)(i => oneHot('obs -> s.tokens(i).chunk -> s.tokens(i).word))(VectorNumeric) +
-      sum(0 until s.tokens.size - 1)(_ => true)(i => oneHot('trans -> s.tokens(i).chunk -> s.tokens(i + 1).chunk))(VectorNumeric)
+      sumOld(0 until s.tokens.size)(_ => true)(i => oneHot('obs -> s.tokens(i).chunk -> s.tokens(i).word))(VectorNumeric) +
+      sumOld(0 until s.tokens.size - 1)(_ => true)(i => oneHot('trans -> s.tokens(i).chunk -> s.tokens(i + 1).chunk))(VectorNumeric)
 
     @MaxByInference(MaxProduct(_,1))
     def model(w: Vector)(s: Sentence) = features(s) dot w
 
     @MinByDescent(new OnlineTrainer(_, new Perceptron, 5))
-    def loss(weights: Vector) = sum(train)(_ => true)(s => max(S(s))(_ => true)(model(weights)) - model(weights)(s))
+    def loss(weights: Vector) = sumOld(train)(_ => true)(s => max(S(s))(_ => true)(model(weights)) - model(weights)(s))
 
-    val learned = argmin(vectors)(_ => true)(loss)
-
-    def predict(s:Sentence) = argmax(S(s))(_ => true)(model(learned))
-
-    val predicted = train.map(predict)
-
-    println(predicted.mkString("\n"))
-
-    println(Evaluator.evaluate(train.flatMap(_.tokens),predicted.flatMap(_.tokens))(_.chunk))
+//    val learned = argmin(vectors)(_ => true)(loss)
+//
+//    def predict(s:Sentence) = argmax(S(s))(_ => true)(model(learned))
+//
+//    val predicted = train.map(predict)
+//
+//    println(predicted.mkString("\n"))
+//
+//    println(Evaluator.evaluate(train.flatMap(_.tokens),predicted.flatMap(_.tokens))(_.chunk))
 
 
   }
