@@ -10,7 +10,7 @@ import ml.wolfe.macros.OptimizedWolfe.MaxByInference
 class IrisSpecs extends WolfeSpec {
 
   "A Iris Model" should {
-    "give reasonable performance on the IRIS dataset" in {
+    "give reasonable performance on the IRIS dataset " in {
       import ml.wolfe.util.Iris._
       import Wolfe._
 
@@ -40,6 +40,9 @@ class IrisSpecs extends WolfeSpec {
       @MaxByInference(MaxProduct(_,1))
       def model(weights: Vector)(data: IrisData) = features(data) dot weights
 
+      val structure = MetaStructure.structure(space)
+
+      println(structure.nodes().size)
 
     }
 
