@@ -166,20 +166,27 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] {
     case false => MetaAtomicStructuredFactorTable(potential, structure, matcher, constructorArgs)
   }
 
+  def unwrapIfRichVector(arg1:Tree) = arg1 match {
+    case q"ml.wolfe.Wolfe.RichVector($actualArg1)" => actualArg1
+    case _ => arg1
+  }
+
+
   def metaStructuredFactor(potential: Tree, structure: MetaStructure,
                            matcher: Tree => Option[StructurePointer],
                            constructorArgs: List[ValDef] = Nil,
                            differentiatorInfo: Option[DifferentiatorInfo] = None,
                            linear: Boolean = false): MetaStructuredFactor = {
     potential match {
-      case DoubleSum(dom, obj, _) =>
+      case Sum(dom, obj, _) =>
         MetaFirstOrderSumFactor(List(dom), obj, matcher, structure, constructorArgs, differentiatorInfo, linear)
       case Apply(f, args) if f.symbol.annotations.exists(_.tpe.typeSymbol == wolfeSymbols.atomic) =>
         atomic(potential, structure, matcher, constructorArgs, differentiatorInfo, linear)
-      case ApplyDoublePlus(arg1, arg2) =>
-        val f1 = metaStructuredFactor(arg1, structure, matcher, constructorArgs, differentiatorInfo, linear)
+      case ApplyPlus(arg1, arg2) =>
+        val unwrapped1 = unwrapIfRichVector(arg1)
+        val f1 = metaStructuredFactor(unwrapped1, structure, matcher, constructorArgs, differentiatorInfo, linear)
         val f2 = metaStructuredFactor(arg2, structure, matcher, constructorArgs, differentiatorInfo, linear)
-        MetaSumFactor(List(arg1, arg2), List(f1, f2), structure, constructorArgs)
+        MetaSumFactor(List(unwrapped1, arg2), List(f1, f2), structure, constructorArgs)
       case Dot(arg1, arg2) if differentiatorInfo.exists(i => i.param == arg2.symbol && !arg1.exists(_.symbol == i.param)) =>
         metaStructuredFactor(arg1, structure, matcher, constructorArgs, differentiatorInfo, true)
       case Dot(arg2, arg1) if differentiatorInfo.exists(i => i.param == arg2.symbol && !arg1.exists(_.symbol == i.param)) =>
