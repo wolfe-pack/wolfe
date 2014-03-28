@@ -21,8 +21,6 @@ object OptimizedOperators extends Operators {
     val helper = new ContextHelper[c.type](c) with OptimizedOperators[c.type]
     val result = helper.argmax(overWhereOf.tree)
     c.Expr[T](result)
-//    println(overWhereOf.tree)
-//    reify[T](BruteForceOperators.argmax(overWhereOf.splice)(ord.splice))
   }
 
 }
@@ -47,7 +45,12 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
       overWhereOfTrees(owo).copy(where = filter)
     case q"$over($dom)" if over.symbol == wolfeSymbols.over =>
       OverWhereOfTrees(dom)
-    case _ => OverWhereOfTrees()
+    case _ => inlineOnce(tree) match {
+      case Some(inlined) => overWhereOfTrees(tree)
+      case None =>
+        context.error(context.enclosingPosition ,"Can't analyze over-where-of clause " + tree)
+        OverWhereOfTrees()
+    }
 
   }
 
