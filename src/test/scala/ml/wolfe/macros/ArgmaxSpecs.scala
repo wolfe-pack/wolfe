@@ -1,6 +1,6 @@
 package ml.wolfe.macros
 
-import ml.wolfe.{BruteForceOperators, Wolfe, WolfeSpec}
+import ml.wolfe.{MaxProduct, BruteForceOperators, Wolfe, WolfeSpec}
 
 /**
  * @author Sebastian Riedel
@@ -29,6 +29,16 @@ class ArgmaxSpecs extends WolfeSpec {
       case class Data(x: Boolean, y: Boolean)
       val actual = argmax { over(Wolfe.all(Data)) of (d => I(!d.x || d.y)) st (_.x) }
       val expected = BruteForceOperators.argmax { over(Wolfe.all(Data)) of (d => I(!d.x || d.y)) st (_.x) }
+      actual should be(expected)
+    }
+    "use the algorithm in the maxBy annotation " in {
+      import Wolfe._
+      case class Data(x: Boolean, y: Boolean, z: Boolean)
+      implicit def data = Wolfe.all(Data)
+      @MaxByInference(MaxProduct(_,10))
+      def score(d:Data) = I(d.x && d.y) + I(d.y && !d.z) + I(d.z && !d.x)
+      val actual = argmax { over[Data] of score }
+      val expected = BruteForceOperators.argmax { over[Data] of score }
       actual should be(expected)
     }
   }

@@ -47,7 +47,8 @@ trait SymbolRepository[C <: Context] extends HasContext[C] {
     lazy val vectorPlus = richVectorClass.typeSignature.member(newTermName("$plus"))
 
 
-    lazy val atomic = rootMirror.staticClass("ml.wolfe.macros.OptimizedWolfe.Atomic")
+    lazy val atomic         = rootMirror.staticClass("ml.wolfe.macros.OptimizedWolfe.Atomic")
+    lazy val maxByInference = rootMirror.staticClass("ml.wolfe.Wolfe.MaxByInference")
 
 
   }

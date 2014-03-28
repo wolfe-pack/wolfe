@@ -15,8 +15,6 @@ import ml.wolfe.MPGraph
  */
 object OptimizedWolfe extends WolfeAPI {
 
-  class MinByDescent(trainer: WeightsSet => Trainer) extends StaticAnnotation
-  class MaxByInference(inference: MPGraph => Unit) extends StaticAnnotation
   class Atomic extends StaticAnnotation
 
   override def argmax[T](data: Iterable[T])
