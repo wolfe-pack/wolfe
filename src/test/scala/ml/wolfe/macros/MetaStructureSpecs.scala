@@ -11,18 +11,26 @@ import Wolfe._
 class MetaStructureSpecs extends StructureIsomorphisms{
 
   "A meta structure" should {
-    "generate a structure for an atomic sequence of values" in {
-      def space = Seq(false,true)
-      val structure = MetaStructure.structure(space)
-      structure mustBeIsomorphicTo space
-      structure.nodes().size should be (1)
-    }
-    "generate a matching projection for an atomic sequence" in {
+    "generate a isomorphic structure and projection for an atomic sequence of values" in {
       def space = Seq(false,true)
       val (structure,projection) = MetaStructure.projection[Boolean,Boolean](space, x => x)
       (structure,projection) mustBeIsomorphicTo (space,x => x)
+      structure.nodes().size should be (1)
     }
-    "generate a structure for all case class objects within a cartesian product of arguments " in {
+
+    "generate a structure for a double space that will be observed" in {
+      val structure = MetaStructure.structure(doubles)
+      structure.observe(1.0)
+      structure.value() should be (1.0)
+    }
+
+    "generate a structure for a string space that will be observed" in {
+      val structure = MetaStructure.structure(strings)
+      structure.observe("Test")
+      structure.value() should be ("Test")
+    }
+
+    "generate a structure for all case class objects within a cartesian product of arguments" in {
       case class Data(x:Boolean,y:Boolean)
       def space = Wolfe.all(Data)
       val structure = MetaStructure.structure(space)
