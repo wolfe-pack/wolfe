@@ -21,6 +21,8 @@ trait Operators {
     over.filter(where).map(of).max
   }
 
+
+
 }
 
 object BruteForceOperators extends Operators

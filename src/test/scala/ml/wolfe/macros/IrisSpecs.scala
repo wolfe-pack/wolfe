@@ -46,9 +46,12 @@ class IrisSpecs extends WolfeSpec {
       @MaxByInference(MaxProduct(_, 1))
       def model(weights: Vector)(data: IrisData) = features(data) dot weights
 
+      //the training loss function
       @MinByDescent(new OnlineTrainer(_, new Perceptron, 4))
       def loss(weights: Vector) = sum(train)(i => max(space)(model(weights), evidence(i)) - model(weights)(i))
 
+      //the predictor given some observed instance
+      def predict(weights: Vector)(instance: IrisData) = argmax(space)(model(weights), evidence(instance))
 
       val structure = MetaStructure.structure(space)
 

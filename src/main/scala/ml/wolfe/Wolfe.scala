@@ -19,18 +19,18 @@ object Wolfe extends SampleSpaceDefs with StatsDefs with VectorDefs with Conditi
   }
 
   @Operator.Argmax
-  def argmax[T, N](data: Iterable[T])(predicate: T => Boolean)(obj: T => N)(implicit ord: Ordering[N]): T = {
+  def argmaxOld[T, N](data: Iterable[T])(predicate: T => Boolean)(obj: T => N)(implicit ord: Ordering[N]): T = {
     data.filter(predicate).maxBy(obj)(ord)
   }
 
   //derived operators
 
   def argmin[T, N](data: Iterable[T])(predicate: T => Boolean)(obj: T => N)(implicit ord: Ordering[N]): T = {
-    argmax(data)(predicate)(obj)(ord.reverse)
+    argmaxOld(data)(predicate)(obj)(ord.reverse)
   }
 
   def maxOld[T, N](data: Iterable[T])(predicate: T => Boolean)(obj: T => N)(implicit ord: Ordering[N]): N = {
-    obj(argmax(data)(predicate)(obj)(ord))
+    obj(argmaxOld(data)(predicate)(obj)(ord))
   }
 
   def logZ[T](data: Iterable[T])(predicate: T => Boolean)(obj: T => Double): Double = {
