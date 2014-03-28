@@ -11,8 +11,13 @@ trait SymbolRepository[C <: Context] extends HasContext[C] {
 
   object wolfeSymbols {
 
-    lazy val wolfe           = rootMirror.staticModule("ml.wolfe.Wolfe")
-    lazy val wolfeType       = wolfe.typeSignature
+    lazy val wolfe     = rootMirror.staticModule("ml.wolfe.Wolfe")
+    lazy val wolfeType = wolfe.typeSignature
+
+    lazy val richVectorClass  = rootMirror.staticClass("ml.wolfe.Wolfe.RichVector")
+    lazy val overWhereOfClass = rootMirror.staticClass("ml.wolfe.Wolfe.OverWhereOf")
+
+
     lazy val all             = wolfeType.member(newTermName("all"))
     lazy val unwrap2         = wolfeType.member(newTermName("unwrap2"))
     lazy val hide            = wolfeType.member(newTermName("hide"))
@@ -30,14 +35,20 @@ trait SymbolRepository[C <: Context] extends HasContext[C] {
     lazy val maxLengthSeqs   = seqs.find(_.asMethod.paramss.head.head.name.encoded == "dom").get
     lazy val signature2seqs  = seqs.map(s => s.typeSignature -> s).toMap
 
+    //problem builder
+    lazy val over  = wolfeType.member(newTermName("over"))
+    lazy val of    = overWhereOfClass.typeSignature.member(newTermName("of"))
+    lazy val where = overWhereOfClass.typeSignature.member(newTermName("where"))
+    lazy val st    = overWhereOfClass.typeSignature.member(newTermName("st"))
 
-    lazy val richVectorClass = rootMirror.staticClass("ml.wolfe.Wolfe.RichVector")
-    lazy val vectorType      = rootMirror.staticClass("ml.wolfe.Wolfe.Vector")
-    lazy val dot             = richVectorClass.typeSignature.member(newTermName("dot"))
-    lazy val vectorPlus      = richVectorClass.typeSignature.member(newTermName("$plus"))
+
+    lazy val vectorType = rootMirror.staticClass("ml.wolfe.Wolfe.Vector")
+    lazy val dot        = richVectorClass.typeSignature.member(newTermName("dot"))
+    lazy val vectorPlus = richVectorClass.typeSignature.member(newTermName("$plus"))
 
 
     lazy val atomic = rootMirror.staticClass("ml.wolfe.macros.OptimizedWolfe.Atomic")
+
 
   }
 

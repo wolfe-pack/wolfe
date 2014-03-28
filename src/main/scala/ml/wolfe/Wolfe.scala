@@ -9,7 +9,7 @@ import cc.factorie.optimize.{Trainer, OnlineTrainer}
 /**
  * @author Sebastian Riedel
  */
-object Wolfe extends SampleSpaceDefs with StatsDefs with VectorDefs with Conditioning {
+object Wolfe extends SampleSpaceDefs with StatsDefs with VectorDefs with Conditioning with ProblemBuilder {
 
   //core operators
 
@@ -384,3 +384,25 @@ trait Conditioning {
 
 }
 
+trait ProblemBuilder {
+  case class OverWhereOf[T,N](dom: Iterable[T], filter: T => Boolean = (_: T) => true, obj: T => N) {
+    def where(where: T => Boolean) = copy(filter = where)
+    def subjectTo(st:T => Boolean) = where(st)
+    def st(st:T => Boolean) = where(st)
+    def over(over:Iterable[T]) = copy(dom = over)
+    def of(of: T => N) = OverWhereOf[T,N](dom,filter,of)
+    def apply(of: T => N) = OverWhereOf[T,N](dom,filter,of)
+  }
+
+
+  implicit def toOverWhereOf[T,N](obj: T => N) = OverWhereOf[T,N](Nil, obj = obj)
+  implicit def toOverWhereOf[T](dom: Iterable[T]) = OverWhereOf[T,Double](dom, obj = (_:T) => 0.0)
+  //  implicit def toOverWhereOf[T](obj: T => Double) = OverWhereOf[T,Double](Nil, obj = obj)
+
+  def over[T](implicit over: Iterable[T]) = OverWhereOf(over, (_: T) => true, (_: T) => 0.0)
+  def where[T: Iterable](where: T => Boolean) = OverWhereOf(implicitly[Iterable[T]], where, (_: T) => 0.0)
+  def obj[T,N](of: T => N) = OverWhereOf[T,N](Nil, (_: T) => true, of)
+
+//  def of[T: Iterable](of: T => Double) = OverWhereOf(implicitly[Iterable[T]], (_: T) => true, of)
+
+}
