@@ -37,6 +37,13 @@ class MetaStructureSpecs extends StructureIsomorphisms{
       (structure,projection) mustBeIsomorphicTo (space,_.a1)
     }
 
+    "generate isomorphic structure and projection for case class spaces in different files " in {
+      def space = Wolfe.all(DifferentCompilationUnit.Data)
+      val (structure,projection) = MetaStructure.projection[DifferentCompilationUnit.Data,Boolean](space, d => d.x)
+      (structure,projection) mustBeIsomorphicTo (space,_.x)
+    }
+
+
     "generate isomorphic structure and projection for predicate spaces with one argument" in {
       implicit val ints = Range(0,2)
       def space = Wolfe.Pred[Int]

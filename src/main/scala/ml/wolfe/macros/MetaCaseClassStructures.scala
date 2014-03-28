@@ -20,7 +20,6 @@ trait MetaCaseClassStructures[C<:Context] {
     def subClassDefs(graphName: TermName): List[Tree] = fieldStructures.map(_.classDef(graphName))
 
     lazy val fieldsAndTypes  = fields zip fieldStructures
-    lazy val argTypeName     = tpe.typeSymbol.name.toTypeName
     lazy val className       = newTypeName(context.fresh(tpe.typeSymbol.name.encoded + "Structure"))
     lazy val structureFields = for ((f, t) <- fields zip fieldStructures) yield
       q"val ${newTermName(f.name.encoded)} = new ${t.className}"
@@ -29,7 +28,7 @@ trait MetaCaseClassStructures[C<:Context] {
     lazy val observeFields   = fields.map(f => q"${f.name}.observe(value.${f.name})")
     lazy val argType         = tpe.widen
     def classDef(graphName: TermName) = q"""
-      final class $className extends Structure[$argTypeName] {
+      final class $className extends Structure[$tpe] {
         import ml.wolfe.MPGraph._
         ..${subClassDefs(graphName)}
         ..$structureFields
@@ -37,13 +36,13 @@ trait MetaCaseClassStructures[C<:Context] {
         def children() = fields
         def fields:Iterator[Structure[_]] = Iterator(..$fieldIds)
         def graph = $graphName
-        def value():$argTypeName = new $argTypeName(..$fieldValues)
+        def value():$argType = new $argType(..$fieldValues)
         def nodes():Iterator[Node] = fields.flatMap(_.nodes())
         def resetSetting() { iterator = Structure.settingsIterator(List(..$fieldIds).reverse)()}
         def hasNextSetting = iterator.hasNext
         def nextSetting = iterator.next
         def setToArgmax() {fields.foreach(_.setToArgmax())}
-        def observe(value:$argTypeName) { ..$observeFields }
+        def observe(value:$argType) { ..$observeFields }
       }
     """
     def children = fieldStructures
