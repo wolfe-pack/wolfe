@@ -29,5 +29,4 @@ trait WolfeAPI extends Logging {
 }
 
 
-
 object BruteForceWolfe extends WolfeAPI
