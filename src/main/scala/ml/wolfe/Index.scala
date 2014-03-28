@@ -21,6 +21,7 @@ class Index extends Serializable {
 
   //map.keySet().asScala
   def apply(v1: Seq[Any]) = index(v1.map(_.asInstanceOf[AnyRef]).toArray)
+  def size = map.size()
   def isDefinedAt(x: Seq[Any]) = true
   //map.containsKey(x.toArray)
   def index(args: Array[AnyRef]): Int = {

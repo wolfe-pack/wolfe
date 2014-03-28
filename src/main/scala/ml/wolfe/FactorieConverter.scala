@@ -13,6 +13,12 @@ object FactorieConverter {
     for ((key, value) <- vector) sparse(index(Seq(key))) = value
     sparse
   }
+  def toFactorieDenseVector[T](vector: WVector, index: Index): FVector = {
+    val sparse = new DenseVector(index.size)
+    for ((key, value) <- vector) sparse(index(Seq(key))) = value
+    sparse
+  }
+
   def toWolfeVector(fvector: FVector, index: Index): WVector = {
     val inverse = index.inverse()
     val map = for ((key, value) <- fvector.activeElements; inv <- inverse.get(key)) yield inv(0) -> value
