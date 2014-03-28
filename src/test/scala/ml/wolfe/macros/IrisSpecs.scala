@@ -13,6 +13,7 @@ class IrisSpecs extends WolfeSpec {
     "give reasonable performance on the IRIS dataset " in {
       import ml.wolfe.util.Iris._
       import Wolfe._
+      import OptimizedOperators._
 
       //random generator for shuffling the data
       val random = new Random(0l)
