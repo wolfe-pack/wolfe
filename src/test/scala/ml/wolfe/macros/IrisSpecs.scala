@@ -24,13 +24,13 @@ class IrisSpecs extends WolfeSpec {
       val (train, test) = dataset.splitAt(dataset.size / 2)
 
       //sample space of all possible Iris data values
-      def space = Wolfe.all(Data)
+      def space = Wolfe.all(IrisData)
 
       //define what the observed part of the data is
-      def observed(d:Data) = d.copy(irisClass = hide[String])
+      def observed(d:IrisData) = d.copy(irisClass = hide[Label])
 
       //feature function on data
-      def features(data: Data) =
+      def features(data: IrisData) =
         oneHot('sl -> data.irisClass, data.sepalLength) +
         oneHot('sw -> data.irisClass, data.sepalWidth) +
         oneHot('pl -> data.irisClass, data.petalLength) +
@@ -38,7 +38,7 @@ class IrisSpecs extends WolfeSpec {
 
       //the linear model
       @MaxByInference(MaxProduct(_,1))
-      def model(weights: Vector)(data: Data) = features(data) dot weights
+      def model(weights: Vector)(data: IrisData) = features(data) dot weights
 
 
     }
