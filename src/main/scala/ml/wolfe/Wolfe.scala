@@ -277,6 +277,12 @@ trait SampleSpaceDefs {
   implicit def Pred[A](implicit dom: Iterable[A]): Iterable[Pred[A]] = preds(dom)
   implicit def Cross2[A1, A2](implicit dom1: Iterable[A1], dom2: Iterable[A2]): Iterable[(A1, A2)] = c(dom1, dom2)
   implicit def Cross3[A1, A2, A3](implicit dom1: Iterable[A1], dom2: Iterable[A2], dom3: Iterable[A3]): Iterable[(A1, A2, A3)] = c(dom1, dom2, dom3)
+  implicit def Cross4[A1, A2, A3, A4](implicit dom1: Iterable[A1], dom2: Iterable[A2],
+                                      dom3: Iterable[A3], dom4: Iterable[A4]): Iterable[(A1, A2, A3, A4)] = c(dom1, dom2, dom3, dom4)
+  implicit def Cross5[A1, A2, A3, A4, A5](implicit dom1: Iterable[A1], dom2: Iterable[A2],
+                                      dom3: Iterable[A3], dom4: Iterable[A4],
+                                      dom5: Iterable[A5]): Iterable[(A1, A2, A3, A4, A5)] = c(dom1, dom2, dom3, dom4,dom5)
+
 
   @Domain.Maps
   def maps[A, B](dom: Iterable[A], range: Iterable[B]): Iterable[Map[A, B]] = {
@@ -316,8 +322,8 @@ trait SampleSpaceDefs {
     recurse(length).map(_.toIndexedSeq)
   }
 
-  def seqs[A](dom:Iterable[A], maxLength:Int = 1000):Iterable[Seq[A]] = {
-    Range(0,maxLength + 1).view.flatMap(seqs(_,dom))
+  def seqs[A](dom: Iterable[A], maxLength: Int = 1000): Iterable[Seq[A]] = {
+    Range(0, maxLength + 1).view.flatMap(seqs(_, dom))
   }
 
   def seqs[A](doms: Seq[Iterable[A]]): Iterable[Seq[A]] = {
@@ -336,7 +342,7 @@ trait SampleSpaceDefs {
 
   implicit val ints: Iterable[Int] = new All[Int]
 
-  val strings: Iterable[String] = new All[String]
+  implicit val strings: Iterable[String] = new All[String]
 
   implicit val vectors = new All[Wolfe.Vector]
 
@@ -370,7 +376,9 @@ trait Conditioning {
 
   implicit object MaskableInt extends Maskable(-1)
   implicit object MaskableBoolean extends Maskable(false)
-  implicit object MaskableAnyRef extends Maskable[AnyRef](null)
+  implicit def maskableAnyRef[T<:AnyRef] = new Maskable[T](null.asInstanceOf[T])
+//  implicit def maskableInt = new Maskable(-1)
+//  implicit def maskableBoolean = new Maskable(false)
 
   def hide[T: Maskable] = implicitly[Maskable[T]].mask
 
