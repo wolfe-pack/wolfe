@@ -2,14 +2,14 @@ package ml.wolfe.macros
 
 import ml.wolfe.{MaxProduct, Wolfe, WolfeSpec}
 import scala.util.Random
-import ml.wolfe.macros.OptimizedWolfe._
 import cc.factorie.optimize.{Perceptron, OnlineTrainer}
-import ml.wolfe.Wolfe._
+import ml.wolfe.macros.OptimizedWolfe.{MinByDescent, MaxByInference}
 
 /**
  * @author Sebastian Riedel
  */
 class IrisSpecs extends WolfeSpec {
+
 
   "A Iris Model" should {
     "give reasonable performance on the IRIS dataset " in {
@@ -44,14 +44,17 @@ class IrisSpecs extends WolfeSpec {
 
       //the linear model
       @MaxByInference(MaxProduct(_, 1))
-      def model(weights: Vector)(data: IrisData) = features(data) dot weights
+      def model(w: Vector)(i: IrisData) = features(i) dot w
 
-      //the training loss function
+      //the per instance training loss
+      def perceptronLoss(w: Vector)(i: IrisData): Double = max {over(space) of model(w) st evidence(i)} - model(w)(i)
+
+      //the training loss
       @MinByDescent(new OnlineTrainer(_, new Perceptron, 4))
-      def loss(weights: Vector) = sum(train)(i => max(space)(model(weights), evidence(i)) - model(weights)(i))
+      def loss(w: Vector) = sum {over(train) of perceptronLoss(w)}
 
       //the predictor given some observed instance
-      def predict(weights: Vector)(instance: IrisData) = argmax(space)(model(weights), evidence(instance))
+      def predict(w: Vector)(i: IrisData) = argmax(over(space) of model(w) st evidence(i))
 
       val structure = MetaStructure.structure(space)
 
