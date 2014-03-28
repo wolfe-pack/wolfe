@@ -22,7 +22,7 @@ object TestSmokes {
     println(allData.size)
 
     def model(x: Data) =
-      sum(allPersons)(_ => true) {p => I(x.smokes(p) --> x.cancer(p))}
+      sumOld(allPersons)(_ => true) {p => I(x.smokes(p) --> x.cancer(p))}
 
     //todo: not sure why this doesn't work
     //val actual = OptimizedWolfe.argmax(allData)(x => x.smokes(anna))(model)

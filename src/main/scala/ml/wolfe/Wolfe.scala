@@ -14,7 +14,7 @@ object Wolfe extends SampleSpaceDefs with StatsDefs with VectorDefs with Conditi
   //core operators
 
   @Operator.Sum
-  def sum[T, N](data: Iterable[T])(predicate: T => Boolean)(obj: T => N)(implicit num: Numeric[N]): N = {
+  def sumOld[T, N](data: Iterable[T])(predicate: T => Boolean)(obj: T => N)(implicit num: Numeric[N]): N = {
     data.filter(predicate).map(obj).sum(num)
   }
 
@@ -29,12 +29,12 @@ object Wolfe extends SampleSpaceDefs with StatsDefs with VectorDefs with Conditi
     argmax(data)(predicate)(obj)(ord.reverse)
   }
 
-  def max[T, N](data: Iterable[T])(predicate: T => Boolean)(obj: T => N)(implicit ord: Ordering[N]): N = {
+  def maxOld[T, N](data: Iterable[T])(predicate: T => Boolean)(obj: T => N)(implicit ord: Ordering[N]): N = {
     obj(argmax(data)(predicate)(obj)(ord))
   }
 
   def logZ[T](data: Iterable[T])(predicate: T => Boolean)(obj: T => Double): Double = {
-    math.log(sum(data)(predicate)(t => math.exp(obj(t))))
+    math.log(sumOld(data)(predicate)(t => math.exp(obj(t))))
   }
 
   //sufficient statistics

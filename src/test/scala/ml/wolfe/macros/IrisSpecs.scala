@@ -2,7 +2,9 @@ package ml.wolfe.macros
 
 import ml.wolfe.{MaxProduct, Wolfe, WolfeSpec}
 import scala.util.Random
-import ml.wolfe.macros.OptimizedWolfe.MaxByInference
+import ml.wolfe.macros.OptimizedWolfe._
+import cc.factorie.optimize.{Perceptron, OnlineTrainer}
+import ml.wolfe.Wolfe._
 
 /**
  * @author Sebastian Riedel
@@ -28,7 +30,10 @@ class IrisSpecs extends WolfeSpec {
       def space = Wolfe.all(IrisData)
 
       //define what the observed part of the data is
-      def observed(d:IrisData) = d.copy(irisClass = hide[Label])
+      def observed(d: IrisData) = d.copy(irisClass = hide[Label])
+
+      //conditioning on the observation of given training instance
+      def evidence(instance: IrisData)(sample: IrisData) = observed(sample) == observed(instance)
 
       //feature function on data
       def features(data: IrisData) =
@@ -38,8 +43,12 @@ class IrisSpecs extends WolfeSpec {
         oneHot('pw -> data.irisClass, data.petalWidth)
 
       //the linear model
-      @MaxByInference(MaxProduct(_,1))
+      @MaxByInference(MaxProduct(_, 1))
       def model(weights: Vector)(data: IrisData) = features(data) dot weights
+
+      @MinByDescent(new OnlineTrainer(_, new Perceptron, 4))
+      def loss(weights: Vector) = sum(train)(i => max(space)(model(weights), evidence(i)) - model(weights)(i))
+
 
       val structure = MetaStructure.structure(space)
 
