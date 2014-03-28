@@ -25,12 +25,15 @@ trait SymbolRepository[C <: Context] extends HasContext[C] {
     lazy val seqs            = wolfeType.member(newTermName("seqs")).asTerm.alternatives.toSet
     //todo: this should be based on the types, not on the names
     lazy val fixedLengthSeqs = seqs.find(_.asMethod.paramss.head.head.name.encoded == "length").get
-    lazy val maxLengthSeqs = seqs.find(_.asMethod.paramss.head.head.name.encoded == "dom").get
+    lazy val maxLengthSeqs   = seqs.find(_.asMethod.paramss.head.head.name.encoded == "dom").get
     lazy val signature2seqs  = seqs.map(s => s.typeSignature -> s).toMap
 
 
     lazy val richVectorClass = rootMirror.staticClass("ml.wolfe.Wolfe.RichVector")
+    lazy val vectorType      = rootMirror.staticClass("ml.wolfe.Wolfe.Vector")
     lazy val dot             = richVectorClass.typeSignature.member(newTermName("dot"))
+    lazy val vectorPlus      = richVectorClass.typeSignature.member(newTermName("$plus"))
+
 
     lazy val atomic = rootMirror.staticClass("ml.wolfe.macros.OptimizedWolfe.Atomic")
 

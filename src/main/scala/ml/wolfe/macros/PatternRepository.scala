@@ -78,8 +78,10 @@ trait PatternRepository[C <: Context] extends SymbolRepository[C] {
 
   object ApplyAnd extends InfixApply(Set(scalaSymbols.and))
   object ApplyDoublePlus extends InfixApply(scalaSymbols.doublePluses)
+  object ApplyPlus extends InfixApply(scalaSymbols.doublePluses + wolfeSymbols.vectorPlus)
   object ApplyDoubleMinus extends InfixApply(scalaSymbols.doubleMinuses)
   object DoubleSum extends Sum(Set(scalaSymbols.doubleClass))
+  object Sum extends Sum(Set(scalaSymbols.doubleClass,wolfeSymbols.vectorType))
   object DoubleMax extends Max(Set(scalaSymbols.doubleClass))
 
 }
