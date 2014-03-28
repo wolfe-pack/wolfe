@@ -3,7 +3,6 @@ package ml.wolfe.macros
 import ml.wolfe.{MaxProduct, Wolfe, WolfeSpec}
 import scala.util.Random
 import cc.factorie.optimize.{Perceptron, OnlineTrainer}
-import ml.wolfe.macros.OptimizedWolfe.{MinByDescent, MaxByInference}
 
 /**
  * @author Sebastian Riedel
