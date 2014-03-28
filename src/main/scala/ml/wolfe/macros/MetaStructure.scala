@@ -225,10 +225,12 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
       case _ =>
         inlineOnce(sampleSpace) match {
           case Some(inlined) => metaStructure(inlined)
-          case None =>
-            new MetaAtomicStructure {
-              def domain = sampleSpace
-            }
+          case None => sampleSpace.symbol match {
+            case s if s == wolfeSymbols.doubles || s == wolfeSymbols.strings =>
+              new MetaObservedAtomicStructure {def domain = sampleSpace}
+            case _ =>
+              new MetaAtomicStructure {def domain = sampleSpace}
+          }
         }
     }
   }
@@ -302,7 +304,6 @@ object MetaStructure {
     """
     c.Expr[(Structure[T1], Structure[T1] => T2)](code)
   }
-
 
 
   //todo: generalize the code to avoid duplication
