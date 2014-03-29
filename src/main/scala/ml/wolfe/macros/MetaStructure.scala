@@ -195,6 +195,7 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
           Some(args :+ iter2)
         case q"ml.wolfe.Wolfe.CartesianProductBuilder[${_}]($root)" =>
           Some(List(root,iter2))
+        case _ => None
       }
       case _ => None
     }
@@ -209,9 +210,6 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
     //todo: assert that domain is an iterable
     //require(sampleSpace.tpe <:< scalaSymbols.iterableClass.typeSignature)
     sampleSpace match {
-      case q"$all[${_},$caseClassType]($unwrap[..${_}]($constructor))($cross(..$sets))"
-        if all.symbol == wolfeSymbols.all && wolfeSymbols.unwraps(unwrap.symbol) && wolfeSymbols.crossProducts(cross.symbol) =>
-        metaCaseClassStructure(constructor, sets, caseClassType)
       case q"$all[${_},$caseClassType]($unwrap[..${_}]($constructor))(${CartesianProduct(sets)})"
         if all.symbol == wolfeSymbols.all && wolfeSymbols.unwraps(unwrap.symbol)  =>
         metaCaseClassStructure(constructor, sets, caseClassType)
