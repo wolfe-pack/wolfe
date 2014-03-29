@@ -11,8 +11,11 @@ trait SymbolRepository[C <: Context] extends HasContext[C] {
 
   object wolfeSymbols {
 
-    lazy val wolfe     = rootMirror.staticModule("ml.wolfe.Wolfe")
-    lazy val wolfeType = wolfe.typeSignature
+    lazy val wolfe        = rootMirror.staticModule("ml.wolfe.Wolfe")
+    lazy val optimizedOps = rootMirror.staticModule("ml.wolfe.macros.OptimizedOperators")
+
+    lazy val wolfeType        = wolfe.typeSignature
+    lazy val optimizedOpsType = optimizedOps.typeSignature
 
     lazy val richVectorClass  = rootMirror.staticClass("ml.wolfe.Wolfe.RichVector")
     lazy val overWhereOfClass = rootMirror.staticClass("ml.wolfe.Wolfe.OverWhereOf")
@@ -40,6 +43,11 @@ trait SymbolRepository[C <: Context] extends HasContext[C] {
     lazy val of    = overWhereOfClass.typeSignature.member(newTermName("of"))
     lazy val where = overWhereOfClass.typeSignature.member(newTermName("where"))
     lazy val st    = overWhereOfClass.typeSignature.member(newTermName("st"))
+
+    //optimized operators
+    lazy val sum    = optimizedOpsType.member(newTermName("sum"))
+    lazy val argmax = optimizedOpsType.member(newTermName("argmax"))
+    lazy val max    = optimizedOpsType.member(newTermName("max"))
 
 
     lazy val vectorType = rootMirror.staticClass("ml.wolfe.Wolfe.Vector")

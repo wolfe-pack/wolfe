@@ -178,7 +178,8 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] {
                            differentiatorInfo: Option[DifferentiatorInfo] = None,
                            linear: Boolean = false): MetaStructuredFactor = {
     potential match {
-      case Sum(dom, obj, _) =>
+      case Sum(dom, filter, obj, _) =>
+        require(filter == EmptyTree)
         MetaFirstOrderSumFactor(List(dom), obj, matcher, structure, constructorArgs, differentiatorInfo, linear)
       case Apply(f, args) if f.symbol.annotations.exists(_.tpe.typeSymbol == wolfeSymbols.atomic) =>
         atomic(potential, structure, matcher, constructorArgs, differentiatorInfo, linear)
