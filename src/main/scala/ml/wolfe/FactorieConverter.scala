@@ -14,9 +14,9 @@ object FactorieConverter {
     sparse
   }
   def toFactorieDenseVector[T](vector: WVector, index: Index): FVector = {
-    val sparse = new DenseVector(index.size)
-    for ((key, value) <- vector) sparse(index(Seq(key))) = value
-    sparse
+    val dense = new DenseVector(vector.size + 1000)
+    for ((key, value) <- vector) dense(index(Seq(key))) = value
+    dense
   }
 
   def toWolfeVector(fvector: FVector, index: Index): WVector = {

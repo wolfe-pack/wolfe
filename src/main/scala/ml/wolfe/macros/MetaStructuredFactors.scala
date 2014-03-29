@@ -16,6 +16,20 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] {
   trait MetaStructuredFactor {
     def className: TypeName
     def classDef: Tree
+    def weightVector: Option[Tree] = {
+      val childVectors = children.map(_.weightVector).collect({case Some(w) => w})
+      val allEqual = childVectors.forall(w => childVectors.forall( _.equalsStructure(w)))
+      if (!allEqual) context.error(context.enclosingPosition, "Different weight vectors appear in model: " + childVectors)
+      childVectors.headOption
+    }
+    def children: List[MetaStructuredFactor]
+  }
+
+  case class WithWeightVector(self: MetaStructuredFactor, weight: Tree) extends MetaStructuredFactor {
+    def className = self.className
+    def classDef = self.classDef
+    override def weightVector = Some(weight)
+    def children = self.children
   }
 
   case class MetaSumFactor(potentials: List[Tree],
@@ -26,20 +40,21 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] {
     lazy val argClasses      = factors.map(_.classDef)
     lazy val fieldNames      = for (i <- factors.indices) yield newTermName("arg" + i)
     lazy val fieldIds        = fieldNames.map(name => q"$name")
-    lazy val constructorArgs = q"val structure:${structure.className}" :: args
-    lazy val childArgs       = q"structure" :: args.map(a => q"${a.name}")
+    lazy val constructorArgs = q"val structure:${ structure.className }" :: args
+    lazy val childArgs       = q"structure" :: args.map(a => q"${ a.name }")
 
     lazy val setupChildren = for (i <- factors.indices) yield
-      q"val ${fieldNames(i)} = new ${factors(i).className}(..$childArgs)"
+      q"val ${ fieldNames(i) } = new ${ factors(i).className }(..$childArgs)"
 
     lazy val classDef = q"""
-      final class $className(..$constructorArgs) extends ml.wolfe.macros.StructuredFactor[${structure.argType}] {
+      final class $className(..$constructorArgs) extends ml.wolfe.macros.StructuredFactor[${ structure.argType }] {
         ..$argClasses
         ..$setupChildren
         def arguments = ???
         def factors = Iterator(..$fieldIds).flatMap(_.factors)
       }
     """
+    def children = factors
   }
 
   //todo: make tail recursive
@@ -57,7 +72,7 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] {
   case class MetaFirstOrderSumFactor(domains: List[Tree], obj: Tree,
                                      matchStructure: Tree => Option[StructurePointer], structure: MetaStructure,
                                      args: List[ValDef] = Nil,
-                                     differentiatorInfo: Option[DifferentiatorInfo],
+                                     linearModelInfo: LinearModelInfo,
                                      linear: Boolean) extends MetaStructuredFactor {
     val className                  = newTypeName(context.fresh("FirstOrderSumFactor"))
     val q"(..$objArgs) => $objRhs" = obj
@@ -68,31 +83,32 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] {
     val tmpNames                   = Range(0, domains.size).map(i => newTermName(context.fresh("i" + i))).toList
     val tmpIds                     = tmpNames.map(Ident(_))
     val domainDefs                 = for ((d, n) <- injectedDoms zip keyDomNames) yield q"val $n = $d.toArray"
-    val ownParams                  = q"val structure:${structure.className}" :: args
+    val ownParams                  = q"val structure:${ structure.className }" :: args
     val childParams                = args ::: tmpNames.map(id => q"val $id:Int")
-    val childArgs                  = (q"structure" :: args.map(a => q"${a.name}")) ::: tmpIds
+    val childArgs                  = (q"structure" :: args.map(a => q"${ a.name }")) ::: tmpIds
     val substitutedObj             = transform(objRhs, {
       case i: Ident if objArgs.exists(_.symbol == i.symbol) =>
         val index = objArgs.indexWhere(_.symbol == i.symbol)
-        val replacement = q"${keyDomNames(index)}(${tmpIds(index)})"
+        val replacement = q"${ keyDomNames(index) }(${ tmpIds(index) })"
         replacement
     })
 
-    val child         = metaStructuredFactor(substitutedObj, structure, matchStructure, childParams, differentiatorInfo, linear)
-    val setupChildren = tupleProcessor(keyDomNames, tmpNames, q"new ${child.className}(..$childArgs)")
+    val child         = metaStructuredFactor(substitutedObj, structure, matchStructure, childParams, linearModelInfo, linear)
+    val setupChildren = tupleProcessor(keyDomNames, tmpNames, q"new ${ child.className }(..$childArgs)")
 
     val classDef = q"""
-      final class $className(..$ownParams) extends ml.wolfe.macros.StructuredFactor[${structure.argType}] {
+      final class $className(..$ownParams) extends ml.wolfe.macros.StructuredFactor[${ structure.argType }] {
         ..$domainDefs
-        ${child.classDef}
+        ${ child.classDef }
         val factorArray = $setupChildren.toArray
         def arguments = ???
         def factors = factorArray.iterator.flatMap(_.factors)
       }
     """
+    def children = List(child)
   }
 
-  case class DifferentiatorInfo(param: Symbol, indexTree: Tree)
+  case class LinearModelInfo(indexTree: Tree)
 
   trait MetaAtomicStructuredFactor extends MetaStructuredFactor {
     def potential: Tree
@@ -103,13 +119,15 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] {
     def perSettingArrayInitializer: Tree
     def perSettingValue: Tree
     def createFactor: Tree
+    def children = Nil
+    override def weightVector = None
 
     lazy val className       = newTypeName(context.fresh("AtomicStructuredFactor"))
     lazy val arguments       = distinctTrees(structures(potential, matcher))
     lazy val nodesPerArg     = arguments.map(a => q"$a.nodes()")
     lazy val nodes           = q"""Iterator(..$nodesPerArg).flatMap(identity)"""
     lazy val injected        = context.resetLocalAttrs(injectStructure(potential, matcher))
-    lazy val constructorArgs = q"val structure:${structure.className}" :: args
+    lazy val constructorArgs = q"val structure:${ structure.className }" :: args
 
     lazy val perSetting = q"""
         //println(nodes.map(_.setting).mkString(","))
@@ -117,10 +135,10 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] {
         $perSettingArrayName(settingIndex) = $perSettingValue
         settingIndex += 1
       """
-    lazy val loop       = loopSettings(arguments) {perSetting}
+    lazy val loop       = loopSettings(arguments) { perSetting }
 
     lazy val classDef = q"""
-      final class $className(..$constructorArgs) extends ml.wolfe.macros.StructuredFactor[${structure.argType}] {
+      final class $className(..$constructorArgs) extends ml.wolfe.macros.StructuredFactor[${ structure.argType }] {
         import ml.wolfe.MPGraph._
         val nodes:Array[Node] = $nodes.toArray
         val dims = nodes.map(_.dim)
@@ -150,23 +168,23 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] {
   case class MetaAtomicStructuredFactorLinear(potential: Tree,
                                               structure: MetaStructure,
                                               matcher: Tree => Option[StructurePointer],
-                                              diffInfo: DifferentiatorInfo,
+                                              diffInfo: LinearModelInfo,
                                               args: List[ValDef] = Nil)
   extends MetaAtomicStructuredFactor {
 
     def createFactor = q"graph.addLinearFactor(vectors, settings, dims)"
-    def perSettingValue = q"ml.wolfe.FactorieConverter.toFactorieSparseVector($injected,${diffInfo.indexTree})"
+    def perSettingValue = q"ml.wolfe.FactorieConverter.toFactorieSparseVector($injected,${ diffInfo.indexTree })"
     def perSettingArrayInitializer = q"Array.ofDim[ml.wolfe.FactorieVector](settingsCount)"
     def perSettingArrayName = newTermName("vectors")
   }
 
   def atomic(potential: Tree, structure: MetaStructure, matcher: Tree => Option[StructurePointer], constructorArgs: List[ValDef],
-             differentiatorInfo: Option[DifferentiatorInfo], linear: Boolean) = linear match {
-    case true => MetaAtomicStructuredFactorLinear(potential, structure, matcher, differentiatorInfo.get, constructorArgs)
+             linearModelInfo: LinearModelInfo, linear: Boolean) = linear match {
+    case true => MetaAtomicStructuredFactorLinear(potential, structure, matcher, linearModelInfo, constructorArgs)
     case false => MetaAtomicStructuredFactorTable(potential, structure, matcher, constructorArgs)
   }
 
-  def unwrapIfRichVector(arg1:Tree) = arg1 match {
+  def unwrapIfRichVector(arg1: Tree) = arg1 match {
     case q"ml.wolfe.Wolfe.RichVector($actualArg1)" => actualArg1
     case _ => arg1
   }
@@ -175,32 +193,60 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] {
   def metaStructuredFactor(potential: Tree, structure: MetaStructure,
                            matcher: Tree => Option[StructurePointer],
                            constructorArgs: List[ValDef] = Nil,
-                           differentiatorInfo: Option[DifferentiatorInfo] = None,
+                           linearModelInfo: LinearModelInfo,
                            linear: Boolean = false): MetaStructuredFactor = {
     potential match {
       case Sum(dom, filter, obj, _) =>
         require(filter == EmptyTree)
-        MetaFirstOrderSumFactor(List(dom), obj, matcher, structure, constructorArgs, differentiatorInfo, linear)
+        MetaFirstOrderSumFactor(List(dom), obj, matcher, structure, constructorArgs, linearModelInfo, linear)
       case Apply(f, args) if f.symbol.annotations.exists(_.tpe.typeSymbol == wolfeSymbols.atomic) =>
-        atomic(potential, structure, matcher, constructorArgs, differentiatorInfo, linear)
+        atomic(potential, structure, matcher, constructorArgs, linearModelInfo, linear)
       case ApplyPlus(arg1, arg2) =>
         val unwrapped1 = unwrapIfRichVector(arg1)
-        val f1 = metaStructuredFactor(unwrapped1, structure, matcher, constructorArgs, differentiatorInfo, linear)
-        val f2 = metaStructuredFactor(arg2, structure, matcher, constructorArgs, differentiatorInfo, linear)
+        val f1 = metaStructuredFactor(unwrapped1, structure, matcher, constructorArgs, linearModelInfo, linear)
+        val f2 = metaStructuredFactor(arg2, structure, matcher, constructorArgs, linearModelInfo, linear)
         MetaSumFactor(List(unwrapped1, arg2), List(f1, f2), structure, constructorArgs)
-      case Dot(arg1, arg2) if differentiatorInfo.exists(i => i.param == arg2.symbol && !arg1.exists(_.symbol == i.param)) =>
-        metaStructuredFactor(arg1, structure, matcher, constructorArgs, differentiatorInfo, true)
-      case Dot(arg2, arg1) if differentiatorInfo.exists(i => i.param == arg2.symbol && !arg1.exists(_.symbol == i.param)) =>
-        metaStructuredFactor(arg1, structure, matcher, constructorArgs, differentiatorInfo, true)
+      case Dot(arg1, arg2) if structures(arg1, matcher).isEmpty =>
+        val linearFactor = metaStructuredFactor(arg2, structure, matcher, constructorArgs, linearModelInfo, true)
+        WithWeightVector(linearFactor,arg1)
+      case Dot(arg2, arg1) if structures(arg1, matcher).isEmpty =>
+        val linearFactor = metaStructuredFactor(arg2, structure, matcher, constructorArgs, linearModelInfo, true)
+        WithWeightVector(linearFactor,arg1)
       case _ => inlineOnce(potential) match {
         case Some(inlined) =>
-          metaStructuredFactor(inlined, structure, matcher, constructorArgs, differentiatorInfo, linear)
+          metaStructuredFactor(inlined, structure, matcher, constructorArgs, linearModelInfo, linear)
         case None =>
-          atomic(potential, structure, matcher, constructorArgs, differentiatorInfo, linear)
+          atomic(potential, structure, matcher, constructorArgs, linearModelInfo, linear)
       }
     }
   }
 
+  def structuredLinearFactorCode(sampleSpace:Tree, arg:Tree, rhs:Tree) = {
+    val structName = newTermName("structure")
+    val graphName = newTermName("_graph")
+    val meta = metaStructure(sampleSpace)
+    val root = rootMatcher(arg.symbol, q"$structName", meta)
+    val matcher = meta.matcher(root)
+    val metaFactor = metaStructuredFactor(rhs, meta, matcher,linearModelInfo = LinearModelInfo(q"_index"))
+    val factorieWeights = metaFactor.weightVector.map(
+      w => q"ml.wolfe.FactorieConverter.toFactorieDenseVector($w,_index)"
+    ).getOrElse(q"new ml.wolfe.DenseVector(0)")
+    val structureClass = meta.classDef(graphName)
+    val code = q"""
+      val _index = new ml.wolfe.Index
+      val $graphName = new ml.wolfe.MPGraph
+      $structureClass
+      val $structName = new ${ meta.className }
+      $graphName.setupNodes()
+      ${ metaFactor.classDef }
+      val result:StructuredFactor[${ meta.argType }] = new ${ metaFactor.className }($structName)
+      $graphName.build()
+      val _factorieWeights = $factorieWeights
+      $graphName.weights = _factorieWeights
+      result
+    """
+    (code,metaFactor)
+  }
 }
 
 object MetaStructuredFactor {
@@ -214,7 +260,7 @@ object MetaStructuredFactor {
    * @return a structured factor isomorphic to `potential`.
    */
   def structuredFactor[T](sampleSpace: Iterable[T],
-                          potential: T => Double): StructuredFactor[T] =  macro structuredFactorImpl[T]
+                          potential: T => Double): StructuredFactor[T] = macro structuredFactorImpl[T]
 
   def structuredLinearFactor[T](sampleSpace: Iterable[T],
                                 potential: Wolfe.Vector => T => Double): Wolfe.Vector => StructuredFactor[T] = macro structuredLinearFactorImpl[T]
@@ -225,36 +271,28 @@ object MetaStructuredFactor {
     import c.universe._
     val helper = new ContextHelper[c.type](c) with MetaStructuredFactors[c.type]
 
-    val graphName = newTermName("_graph")
-    val structName = newTermName("structure")
-    val meta = helper.metaStructure(sampleSpace.tree)
     val q"($arg) => $rhs" = helper.simplifyBlocks(potential.tree)
-    val root = helper.rootMatcher(arg.symbol, q"$structName",meta)
-    val matcher = meta.matcher(root)
-    val metaFactor = helper.metaStructuredFactor(rhs, meta, matcher)
-    val structureClass = meta.classDef(graphName)
-    val code = q"""
-      val $graphName = new ml.wolfe.MPGraph
-      $structureClass
-      val $structName = new ${meta.className}
-      $graphName.setupNodes()
-      ${metaFactor.classDef}
-      val result:StructuredFactor[${meta.argType}] = new ${metaFactor.className}($structName)
-      $graphName.build()
-      result
-    """
+    val (code,_) = helper.structuredLinearFactorCode(sampleSpace.tree, arg,rhs)
     c.Expr[StructuredFactor[T]](code)
   }
+
+
 
   def structuredLinearFactorImpl[T: c.WeakTypeTag](c: Context)(sampleSpace: c.Expr[Iterable[T]],
                                                                potential: c.Expr[Wolfe.Vector => T => Double]) = {
     import c.universe._
     val helper = new ContextHelper[c.type](c) with MetaStructuredFactors[c.type]
 
-    val graphName = newTermName("_graph")
-    val structName = newTermName("structure")
-    val meta = helper.metaStructure(sampleSpace.tree)
     val q"($param) => ($arg) => $rhs" = helper.simplifyBlocks(potential.tree)
+    val (code,meta) = helper.structuredLinearFactorCode(sampleSpace.tree,arg,rhs)
+    if (!meta.weightVector.exists(_.symbol == param.symbol))
+      c.error(c.enclosingPosition,
+        s"Weight vector of linear model doesn't match parameter: ${meta.weightVector} != ${param.symbol}")
+
+    val function = q"($param => $code)"
+    c.Expr[Wolfe.Vector => StructuredFactor[T]](function)
+    /*
+
     val root = helper.rootMatcher(arg.symbol, q"$structName",meta)
     val matcher = meta.matcher(root)
     val diffInfo = helper.DifferentiatorInfo(param.symbol,q"_index")
@@ -275,7 +313,7 @@ object MetaStructuredFactor {
         result
       }
     """
-    c.Expr[Wolfe.Vector => StructuredFactor[T]](code)
+     */
   }
 
 
