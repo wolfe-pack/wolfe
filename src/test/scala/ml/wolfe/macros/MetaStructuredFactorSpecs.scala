@@ -45,6 +45,16 @@ class MetaStructuredFactorSpecs extends StructureIsomorphisms {
       factor.factors.size should be(5)
     }
 
+    "generate a first order sum factor using the sum operator" in {
+      import OptimizedOperators._
+      implicit val ints = Range(0, 5)
+      def space = Wolfe.Pred[Int]
+      def potential(pred: Pred[Int]) = sum { over(ints) of (i => I(pred(i)))}
+      val factor = MetaStructuredFactor.structuredFactor[Pred[Int]](space, potential)
+      factor mustBeIsomorphicTo potential
+      factor.factors.size should be(5)
+    }
+
     "generate a linear factor" in {
       def space = Range(0, 5)
       def potential(w: Vector)(y: Int) = oneHot(y) dot w

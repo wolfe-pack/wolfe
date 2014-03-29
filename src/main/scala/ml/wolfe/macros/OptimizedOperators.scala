@@ -31,28 +31,6 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
 
   import context.universe._
 
-  case class OverWhereOfTrees(over: Tree = EmptyTree, where: Tree = EmptyTree, of: Tree = EmptyTree)
-
-  def overWhereOfTrees(tree: Tree): OverWhereOfTrees = tree match {
-    case q"$of($obj)" if of.symbol == wolfeSymbols.of =>
-      val q"$owo.of" = of
-      overWhereOfTrees(owo).copy(of = obj)
-    case q"$st($filter)" if st.symbol == wolfeSymbols.st =>
-      val q"$owo.st" = st
-      overWhereOfTrees(owo).copy(where = filter)
-    case q"$where($filter)" if where.symbol == wolfeSymbols.where =>
-      val q"$owo.where" = where
-      overWhereOfTrees(owo).copy(where = filter)
-    case q"$over($dom)" if over.symbol == wolfeSymbols.over =>
-      OverWhereOfTrees(dom)
-    case _ => inlineOnce(tree) match {
-      case Some(inlined) => overWhereOfTrees(tree)
-      case None =>
-        context.error(context.enclosingPosition, "Can't analyze over-where-of clause " + tree)
-        OverWhereOfTrees()
-    }
-
-  }
 
   def inferenceCode(objRhs:Tree) = objRhs match {
     case q"$f(${ _ })" =>

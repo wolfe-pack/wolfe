@@ -1,11 +1,13 @@
 package ml.wolfe.macros
 
 import scala.reflect.macros.Context
+import ml.wolfe.Wolfe._
+import scala.Some
 
 /**
  * @author Sebastian Riedel
  */
-trait PatternRepository[C <: Context] extends SymbolRepository[C] {
+trait PatternRepository[C <: Context] extends SymbolRepository[C] with CodeRepository[C] {
 
   import context.universe._
 
@@ -20,14 +22,17 @@ trait PatternRepository[C <: Context] extends SymbolRepository[C] {
   }
 
   class Sum(classes: Set[Symbol]) {
-    def unapply(tree: Tree): Option[(Tree, Tree, Tree)] = {
+    def unapply(tree: Tree): Option[(Tree, Tree, Tree, Tree)] = {
       tree match {
         case q"$sum[$sumType](${_})" if sum.symbol == scalaSymbols.sum && classes(sumType.symbol) => sum match {
           case q"$map[..${_}]($obj)(${_}).sum" if map.symbol == scalaSymbols.map =>
             val q"$dom.map" = map
-            Some((dom, obj, sumType))
+            Some((dom, EmptyTree, obj, sumType))
           case _ => None
         }
+        case q"$sum[$domType,$sumType]($overWhereOf)(${_})" if sum.symbol == wolfeSymbols.sum && classes(sumType.symbol)=>
+          val trees = overWhereOfTrees(overWhereOf)
+          Some((trees.over,trees.where,trees.of,sumType))
         case _ => None
       }
     }
@@ -45,6 +50,9 @@ trait PatternRepository[C <: Context] extends SymbolRepository[C] {
           }
           case _ => None
         }
+        case q"$max[$domType,$maxTyp]($overWhereOf)(${_})" if max.symbol == wolfeSymbols.max && classes(maxTyp.symbol) =>
+          val trees = overWhereOfTrees(overWhereOf)
+          Some((trees.over,trees.where,trees.of,maxTyp))
         case _ => None
       }
     }
@@ -83,5 +91,28 @@ trait PatternRepository[C <: Context] extends SymbolRepository[C] {
   object DoubleSum extends Sum(Set(scalaSymbols.doubleClass))
   object Sum extends Sum(Set(scalaSymbols.doubleClass,wolfeSymbols.vectorType))
   object DoubleMax extends Max(Set(scalaSymbols.doubleClass))
+
+  case class OverWhereOfTrees(over: Tree = EmptyTree, where: Tree = EmptyTree, of: Tree = EmptyTree)
+
+  def overWhereOfTrees(tree: Tree): OverWhereOfTrees = tree match {
+    case q"$of($obj)" if of.symbol == wolfeSymbols.of =>
+      val q"$owo.of" = of
+      overWhereOfTrees(owo).copy(of = obj)
+    case q"$st($filter)" if st.symbol == wolfeSymbols.st =>
+      val q"$owo.st" = st
+      overWhereOfTrees(owo).copy(where = filter)
+    case q"$where($filter)" if where.symbol == wolfeSymbols.where =>
+      val q"$owo.where" = where
+      overWhereOfTrees(owo).copy(where = filter)
+    case q"$over($dom)" if over.symbol == wolfeSymbols.over =>
+      OverWhereOfTrees(dom)
+    case _ => inlineOnce(tree) match {
+      case Some(inlined) => overWhereOfTrees(tree)
+      case None =>
+        context.error(context.enclosingPosition, "Can't analyze over-where-of clause " + tree)
+        OverWhereOfTrees()
+    }
+
+  }
 
 }
