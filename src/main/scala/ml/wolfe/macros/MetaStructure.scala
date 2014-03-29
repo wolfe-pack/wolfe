@@ -187,6 +187,19 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
     argType
   }
 
+  object CartesianProduct {
+    def unapply(tree:Tree):Option[List[Tree]] = tree match {
+      case q"$cross(..$sets)" if wolfeSymbols.crossProducts(cross.symbol) => Some(sets)
+      case q"$iter1.x[${_}]($iter2)" => iter1 match {
+        case CartesianProduct(args) =>
+          Some(args :+ iter2)
+        case q"ml.wolfe.Wolfe.CartesianProductBuilder[${_}]($root)" =>
+          Some(List(root,iter2))
+      }
+      case _ => None
+    }
+  }
+
   /**
    * Creates a meta structure for the given sample space.
    * @param sampleSpace the sample space to create a meta structure for.
@@ -198,6 +211,9 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
     sampleSpace match {
       case q"$all[${_},$caseClassType]($unwrap[..${_}]($constructor))($cross(..$sets))"
         if all.symbol == wolfeSymbols.all && wolfeSymbols.unwraps(unwrap.symbol) && wolfeSymbols.crossProducts(cross.symbol) =>
+        metaCaseClassStructure(constructor, sets, caseClassType)
+      case q"$all[${_},$caseClassType]($unwrap[..${_}]($constructor))(${CartesianProduct(sets)})"
+        if all.symbol == wolfeSymbols.all && wolfeSymbols.unwraps(unwrap.symbol)  =>
         metaCaseClassStructure(constructor, sets, caseClassType)
       case q"$all[${_},$caseClassType]($constructor)(..$sets)"
         if all.symbol == wolfeSymbols.all =>
