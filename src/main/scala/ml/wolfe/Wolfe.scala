@@ -328,7 +328,7 @@ trait SampleSpaceDefs {
   def map[A, B](default: B, vals: (A, B)*): Map[A, B] = Map(vals: _*).withDefaultValue(default)
   def map[A, B](keys: Set[A], default: B, vals: (A, B)*): Map[A, B] = (keys -- vals.map(_._1)).map(_ -> default).toMap ++ Map(vals: _*)
 
-  def vectors[A, B](dom: Iterable[A], range: Iterable[B]): Iterable[Map[Any, B]] = {
+  def buildVectors[A, B](dom: Iterable[A], range: Iterable[B]): Iterable[Map[Any, B]] = {
     def recurse(d: List[A], r: List[B], funs: List[Map[Any, B]] = List(Map.empty)): List[Map[Any, B]] = d match {
       case Nil => funs
       case head :: tail =>
@@ -413,7 +413,7 @@ trait Conditioning {
 }
 
 trait Annotations {
-  class MinByDescent(trainer: WeightsSet => Trainer) extends StaticAnnotation
+  class MinByLearning(trainer: WeightsSet => Trainer) extends StaticAnnotation
   class MaxByInference(inference: MPGraph => Unit) extends StaticAnnotation
 }
 

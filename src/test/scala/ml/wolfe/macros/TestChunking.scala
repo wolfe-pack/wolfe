@@ -44,7 +44,7 @@ object TestChunking {
     @MaxByInference(MaxProduct(_,1))
     def model(w: Vector)(s: Sentence) = features(s) dot w
 
-    @MinByDescent(new OnlineTrainer(_, new Perceptron, 5))
+    @MinByLearning(new OnlineTrainer(_, new Perceptron, 5))
     def loss(weights: Vector) = sumOld(train)(_ => true)(s => max(S(s))(_ => true)(model(weights)) - model(weights)(s))
 
 //    val learned = argmin(vectors)(_ => true)(loss)
