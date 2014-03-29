@@ -95,8 +95,7 @@ trait MetaGradientCalculators[C <: Context] extends MetaStructures[C]
         val whereMatcher = meta.matcher(rootMatcher(whereArg.symbol,q"$structName",meta))
         val objMatcher = meta.matcher(rootMatcher(objArg.symbol,q"$structName",meta))
         val conditioner = conditioning(whereRhs,whereMatcher)
-        val diffInfo = DifferentiatorInfo(weightVar,indexTree)
-        val factors = metaStructuredFactor(objRhs,meta,objMatcher,differentiatorInfo = Some(diffInfo))
+        val factors = metaStructuredFactor(objRhs,meta,objMatcher,linearModelInfo = LinearModelInfo(indexTree))
         val structureDef = meta.classDef(newTermName("_graph"))
         val className = newTypeName(context.fresh("MaxGradientCalculator"))
         val classDef = q"""

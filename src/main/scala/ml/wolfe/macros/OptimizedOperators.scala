@@ -50,7 +50,7 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
     val meta = metaStructure(trees.over)
     val Function(List(objArg), objRhs) = simplifyBlocks(trees.of)
     val objMatcher = meta.matcher(rootMatcher(objArg.symbol, q"$structName", meta))
-    val factors = metaStructuredFactor(objRhs, meta, objMatcher)
+    val factors = metaStructuredFactor(objRhs, meta, objMatcher, linearModelInfo = LinearModelInfo(q"_index"))
     val inferCode = inferenceCode(objRhs)
 
     val structureDef = meta.classDef(newTermName("_graph"))
@@ -62,9 +62,13 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
       val conditioner = conditioning(whereRhs, whereMatcher)
       conditioner.code
     }
+    val factorieWeights = factors.weightVector.map(
+      w => q"ml.wolfe.FactorieConverter.toFactorieDenseVector($w,_index)"
+    ).getOrElse(q"new ml.wolfe.DenseVector(0)")
 
 
     val code = q"""
+      val _index = new ml.wolfe.Index()
       val _graph = new ml.wolfe.MPGraph
       $structureDef
       val $structName = new ${ meta.className }
@@ -73,6 +77,8 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
       ${ factors.classDef }
       val factors = new ${ factors.className }($structName)
       _graph.build()
+      val _factorieWeights = $factorieWeights
+      _graph.weights = _factorieWeights
       $inferCode
       $structName.setToArgmax()
       $structName.value()
