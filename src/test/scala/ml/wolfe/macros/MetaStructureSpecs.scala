@@ -18,7 +18,7 @@ class MetaStructureSpecs extends StructureIsomorphisms {
       structure.nodes().size should be(1)
     }
 
-    "generate a structure for a double space that will be observed " in {
+    "generate a structure for a double space that will be observed" in {
       val structure = MetaStructure.structure(doubles)
       structure.observe(1.0)
       structure.value() should be(1.0)
