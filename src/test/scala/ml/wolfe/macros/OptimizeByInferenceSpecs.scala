@@ -5,7 +5,7 @@ import ml.wolfe.{MaxProduct, BruteForceOperators, Wolfe, WolfeSpec}
 /**
  * @author Sebastian Riedel
  */
-class ArgmaxSpecs extends WolfeSpec {
+class OptimizeByInferenceSpecs extends WolfeSpec {
 
   import OptimizedOperators._
 
@@ -31,7 +31,7 @@ class ArgmaxSpecs extends WolfeSpec {
       val expected = BruteForceOperators.argmax { over(Wolfe.all(Data)) of (d => I(!d.x || d.y)) st (_.x) }
       actual should be(expected)
     }
-    "use the algorithm in the maxBy annotation " in {
+    "use the algorithm in the maxBy annotation" in {
       import Wolfe._
       case class Data(x: Boolean, y: Boolean, z: Boolean)
       implicit def data = Wolfe.all(Data)

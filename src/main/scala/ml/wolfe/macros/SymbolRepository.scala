@@ -20,12 +20,13 @@ trait SymbolRepository[C <: Context] extends HasContext[C] {
     lazy val richVectorClass  = rootMirror.staticClass("ml.wolfe.Wolfe.RichVector")
     lazy val overWhereOfClass = rootMirror.staticClass("ml.wolfe.Wolfe.OverWhereOf")
 
+    lazy val strings = wolfeType.member(newTermName("strings"))
+    lazy val doubles = wolfeType.member(newTermName("doubles"))
+    lazy val vectors = wolfeType.member(newTermName("vectors"))
 
     lazy val all             = wolfeType.member(newTermName("all"))
     lazy val unwrap2         = wolfeType.member(newTermName("unwrap2"))
     lazy val hide            = wolfeType.member(newTermName("hide"))
-    lazy val strings         = wolfeType.member(newTermName("strings"))
-    lazy val doubles         = wolfeType.member(newTermName("doubles"))
     lazy val unwraps         = Range(2, 6).map(i => wolfeType.member(newTermName("unwrap" + i))).toSet
     lazy val crosses         = Range(2, 6).map(i => wolfeType.member(newTermName("Cross" + i))).toSet
     lazy val cs              = wolfeType.member(newTermName("c")).asTerm.alternatives.toSet

@@ -56,7 +56,7 @@ object TestIris {
     def model(weights: Vector)(data: Data) = features(data) dot weights
 
     //the total training perceptron loss of the model given the weights
-    @MinByDescent(new OnlineTrainer(_, new Perceptron, 4))
+    @MinByLearning(new OnlineTrainer(_, new Perceptron, 4))
     def loss(weights: Vector) = sumOld(train)(_ => true)(i => max(S(i))(_ => true)(model(weights)) - model(weights)(i))
 
     //the learned weights that minimize the perceptron loss

@@ -49,7 +49,7 @@ class IrisSpecs extends WolfeSpec {
       def perceptronLoss(w: Vector)(i: IrisData): Double = max {over(space) of model(w) st evidence(i)} - model(w)(i)
 
       //the training loss
-      @MinByDescent(new OnlineTrainer(_, new Perceptron, 4))
+      @MinByLearning(new OnlineTrainer(_, new Perceptron, 4))
       def loss(w: Vector) = sum {over(train) of perceptronLoss(w)}
 
       //the predictor given some observed instance
