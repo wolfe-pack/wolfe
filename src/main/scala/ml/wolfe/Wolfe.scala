@@ -277,6 +277,28 @@ trait SampleSpaceDefs {
   def c[A1, A2, A3, A4, A5](set1: Iterable[A1], set2: Iterable[A2], set3: Iterable[A3], set4: Iterable[A4], set5: Iterable[A5]) =
     for (a1 <- set1; a2 <- set2; a3 <- set3; a4 <- set4; a5 <- set5) yield (a1, a2, a3, a4, a5)
 
+  implicit class CartesianProductBuilder[T1](iter1:Iterable[T1]) {
+    def x[T2](iter2:Iterable[T2]) = CartesianProduct2(iter1,iter2)
+  }
+
+  case class CartesianProduct2[T1, T2](iter1: Iterable[T1], iter2: Iterable[T2]) extends Iterable[(T1, T2)] {
+    def iterator = for (i1 <- iter1.iterator; i2 <- iter2.iterator) yield (i1, i2)
+    def x[T3](iter3: Iterable[T3]) = CartesianProduct3(iter1, iter2, iter3)
+  }
+  case class CartesianProduct3[T1, T2, T3](iter1: Iterable[T1], iter2: Iterable[T2], iter3: Iterable[T3]) extends Iterable[(T1, T2, T3)] {
+    def iterator = for (i1 <- iter1.iterator; i2 <- iter2.iterator; i3 <- iter3.iterator) yield (i1, i2, i3)
+    def x[T4](iter4: Iterable[T4]) = CartesianProduct4(iter1, iter2, iter3, iter4)
+  }
+  case class CartesianProduct4[T1, T2, T3, T4](iter1: Iterable[T1],
+                                               iter2: Iterable[T2],
+                                               iter3: Iterable[T3],
+                                               iter4: Iterable[T4]) extends Iterable[(T1, T2, T3, T4)] {
+    def iterator = for (i1 <- iter1.iterator;
+                        i2 <- iter2.iterator;
+                        i3 <- iter3.iterator;
+                        i4 <- iter4.iterator) yield (i1, i2, i3, i4)
+  }
+
 
   type Pred[A] = Map[A, Boolean]
 

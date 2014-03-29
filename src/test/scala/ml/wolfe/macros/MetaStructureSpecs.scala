@@ -38,6 +38,15 @@ class MetaStructureSpecs extends StructureIsomorphisms {
       structure.nodes().size should be(2)
     }
 
+    "generate a structure for all case class objects with a cartesian product builder" in {
+      case class Data(x: Boolean, y: Boolean, z:Boolean)
+      def space = Wolfe.all(Data)(bools x bools x bools)
+      val structure = MetaStructure.structure(space)
+      structure mustBeIsomorphicTo space
+      structure.nodes().size should be(3)
+    }
+
+
     "generate isomorphic structure and projection for case class spaces" in {
       case class Data(a1: Boolean, a2: Boolean)
       def space = Wolfe.all(Data)
