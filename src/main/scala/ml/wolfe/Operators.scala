@@ -21,7 +21,7 @@ trait Operators {
   def sum[T, N: Numeric](overWhereOf: Builder[T, N]) =
     overWhereOf.dom.filter(overWhereOf.filter).map(overWhereOf.obj).sum
 
-  def map[T](builder:Builder[T,_]) = builder.dom.filter(builder.filter).map(builder.mapper)
+  def map[T](builder:Builder[T,_]):Iterable[T] = builder.dom.filter(builder.filter).map(builder.mapper)
 
 
 }
