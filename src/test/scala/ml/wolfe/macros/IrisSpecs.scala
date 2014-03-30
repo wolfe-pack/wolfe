@@ -3,12 +3,14 @@ package ml.wolfe.macros
 import ml.wolfe.{MaxProduct, Wolfe, WolfeSpec}
 import scala.util.Random
 import cc.factorie.optimize.{Perceptron, OnlineTrainer}
+import ml.wolfe.util.{Evaluator, LoggerUtil}
+import org.scalautils.Tolerance
+import Tolerance._
 
 /**
  * @author Sebastian Riedel
  */
 class IrisSpecs extends WolfeSpec {
-
 
   "A Iris Model" should {
     "give reasonable performance on the IRIS dataset " in {
@@ -46,18 +48,26 @@ class IrisSpecs extends WolfeSpec {
       def model(w: Vector)(i: IrisData) = features(i) dot w
 
       //the per instance training loss
-      def perceptronLoss(w: Vector)(i: IrisData): Double = max {over(space) of model(w) st evidence(i)} - model(w)(i)
+      def perceptronLoss(w: Vector)(i: IrisData): Double = max { over(space) of model(w) st evidence(i) } - model(w)(i)
 
       //the training loss
       @OptimizeByLearning(new OnlineTrainer(_, new Perceptron, 4))
-      def loss(w: Vector) = sum {over(train) of perceptronLoss(w)}
+      def loss(w: Vector) = sum { over(train) of perceptronLoss(w) }
+
+      val w = argmin { over[Vector] of loss }
 
       //the predictor given some observed instance
-      def predict(w: Vector)(i: IrisData) = argmax(over(space) of model(w) st evidence(i))
+      def predict(i: IrisData) = argmax(over(space) of model(w) st evidence(i))
 
-      val structure = MetaStructure.structure(space)
+      val predictedTest = test.map(predict)
+      val predictedTrain = train.map(predict)
 
-      println(structure.nodes().size)
+      val evalTrain = Evaluator.evaluate(train, predictedTrain)(_.irisClass)
+      val evalTest = Evaluator.evaluate(test, predictedTest)(_.irisClass)
+
+      evalTrain.f1 should be (0.93 +- 0.01)
+      evalTest.f1 should be (0.98 +- 0.01)
+
 
     }
 
