@@ -3,9 +3,7 @@ package ml.wolfe.macros
 import ml.wolfe.{MaxProduct, Wolfe, WolfeSpec}
 import scala.util.Random
 import cc.factorie.optimize.{Perceptron, OnlineTrainer}
-import ml.wolfe.util.{Evaluator, LoggerUtil}
-import org.scalautils.Tolerance
-import Tolerance._
+import ml.wolfe.util.Evaluator
 
 /**
  * @author Sebastian Riedel
@@ -65,8 +63,8 @@ class IrisSpecs extends WolfeSpec {
       val evalTrain = Evaluator.evaluate(train, predictedTrain)(_.irisClass)
       val evalTest = Evaluator.evaluate(test, predictedTest)(_.irisClass)
 
-      evalTrain.f1 should be (0.93 +- 0.01)
-      evalTest.f1 should be (0.98 +- 0.01)
+      evalTrain.f1 should be(0.93 +- 0.01)
+      evalTest.f1 should be(0.98 +- 0.01)
 
 
     }
