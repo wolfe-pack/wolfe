@@ -89,25 +89,46 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
   def argmaxByLearning(trees: OverWhereOfTrees): Tree = {
     if (trees.where != EmptyTree)
       context.error(context.enclosingPosition, "Can't learn with constraints on weights yet: " + trees.where)
-    val q"($x) => $rhs" = simplifyBlocks(trees.of)
+    val q"($arg) => $rhs" = simplifyBlocks(trees.of)
     val sum = rhs match {
       case s@Sum(over,where,of,_) => OverWhereOfTrees(over,where,of)
       case s => OverWhereOfTrees(q"List(0)",EmptyTree,q"(i:Int) => $s")
     }
+    val q"($x) => $perInstanceRhs" = simplifyBlocks(sum.of)
+    val instanceName = newTermName(context.fresh("_instance"))
+    val indexName = newTermName(context.fresh("_index"))
+    val replaced = transform(perInstanceRhs, {case i: Ident if i.symbol == x.symbol => Ident(instanceName)})
 
-    metaGradientCalculator(rhs, x.symbol, q"_index") match {
+    metaGradientCalculator(replaced, arg.symbol, Ident(indexName)) match {
       case Good(calculator) =>
+        val weightsSet = newTermName(context.fresh("_weightsSet"))
         val code = q"""
-          val _index = new ml.wolfe.Index()
-          ${ calculator.classDef }
-          val calculator = new ${ calculator.className }
-          val factorieArgument = ml.wolfe.FactorieConverter.toFactorieSparseVector(???,_index)
-          val (value,gradient) = calculator.valueAndGradient(factorieArgument)
-          val wolfeResult = ml.wolfe.FactorieConverter.toWolfeVector(gradient, _index)
-          (value,wolfeResult)
+          import cc.factorie.WeightsSet
+          import cc.factorie.la.WeightsMapAccumulator
+          import cc.factorie.util.DoubleAccumulator
+          import cc.factorie.optimize._
+          import ml.wolfe.util.LoggerUtil
+          import ml.wolfe._
+
+          val $indexName = new Index
+          val $weightsSet = new WeightsSet
+          val key = $weightsSet.newWeights(new ml.wolfe.DenseVector(10000))
+          val examples = for ($instanceName <- ${sum.over}) yield new Example {
+            ${ calculator.classDef }
+            val gradientCalculator = new ${ calculator.className }
+            def accumulateValueAndGradient(value: DoubleAccumulator, gradient: WeightsMapAccumulator) = {
+              LoggerUtil.debug("Instance: " + $indexName)
+              val weights = $weightsSet(key).asInstanceOf[FactorieVector]
+              val (v, g) = gradientCalculator.valueAndGradient(weights)
+              value.accumulate(v)
+              gradient.accumulate(key, g, 1.0)
+            }
+          }
+          val trainer = new OnlineTrainer($weightsSet, new Perceptron, 4)
+          trainer.trainFromExamples(examples)
+          ml.wolfe.FactorieConverter.toWolfeVector($weightsSet(key).asInstanceOf[FactorieVector], $indexName)
         """
         code
-        ???
       case Bad(CantDifferentiate(term)) =>
         context.error(context.enclosingPosition, "Can't calculate gradient for " + term)
         ??? //todo: I don't know what should be returned here---doesn't the compiler quit at this point?
