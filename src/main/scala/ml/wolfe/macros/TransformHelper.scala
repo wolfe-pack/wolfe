@@ -163,6 +163,12 @@ trait Transformers[C<:Context] {
   def transform(tree: Tree, pf: PartialFunction[Tree, Tree]): context.Tree =
     new TransformWithPartialFunction(pf).transform(tree)
 
+  def transformAndCollect[T](tree:Tree, pf:PartialFunction[Tree,(Tree,T)]):(Tree,List[T]) = {
+    val transformer = new CollectingTransformer[T](pf)
+    val result = transformer.transform(tree)
+    (result,transformer.collected)
+  }
+
   class Substituter(binding: Map[Symbol, Tree]) extends Transformer {
     override def transform(tree: Tree) = tree match {
       case i: Ident => binding.get(i.symbol) match {
@@ -179,6 +185,22 @@ trait Transformers[C<:Context] {
       if (pf.isDefinedAt(transformed)) pf(transformed) else transformed
     }
   }
+
+  class CollectingTransformer[T](pf: PartialFunction[Tree, (Tree,T)]) extends Transformer {
+
+    var collected:List[T] = Nil
+    override def transform(tree: Tree) = {
+      val transformed = super.transform(tree)
+      if (pf.isDefinedAt(transformed)) {
+        val (toReturn,toAdd) = pf(transformed)
+        collected ::= toAdd
+        toReturn
+      } else transformed
+    }
+  }
+
+
+
 
   class BetaReducer extends Transformer {
 

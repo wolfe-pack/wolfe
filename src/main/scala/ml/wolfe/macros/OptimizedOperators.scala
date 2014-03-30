@@ -12,19 +12,19 @@ object OptimizedOperators extends Operators {
 
   import scala.language.experimental.macros
 
-  override def argmax[T, N: Ordering](overWhereOf: OverWhereOf[T, N]) = macro argmaxImpl[T, N]
-  override def argmin[T, N: Ordering](overWhereOf: OverWhereOf[T, N]) = macro argminImpl[T, N]
+  override def argmax[T, N: Ordering](overWhereOf: Builder[T, N]) = macro argmaxImpl[T, N]
+  override def argmin[T, N: Ordering](overWhereOf: Builder[T, N]) = macro argminImpl[T, N]
 
 
   def argmaxImpl[T: c.WeakTypeTag, N: c.WeakTypeTag](c: Context)
-                                                    (overWhereOf: c.Expr[OverWhereOf[T, N]])
+                                                    (overWhereOf: c.Expr[Builder[T, N]])
                                                     (ord: c.Expr[Ordering[N]]) = {
     val helper = new ContextHelper[c.type](c) with OptimizedOperators[c.type]
     val result = helper.argmax(overWhereOf.tree)
     c.Expr[T](result)
   }
   def argminImpl[T: c.WeakTypeTag, N: c.WeakTypeTag](c: Context)
-                                                    (overWhereOf: c.Expr[OverWhereOf[T, N]])
+                                                    (overWhereOf: c.Expr[Builder[T, N]])
                                                     (ord: c.Expr[Ordering[N]]) = {
     import c.universe._
     val helper = new ContextHelper[c.type](c) with OptimizedOperators[c.type]

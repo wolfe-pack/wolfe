@@ -83,7 +83,7 @@ object Wolfe extends SampleSpaceDefs
 
 trait StatsDefs {
   def oneHot(key: Any, value: Double = 1.0): Wolfe.Vector = Map(key -> value)
-  def vector(keyValue:(Any,Double)*): Wolfe.Vector = keyValue.toMap
+  def vector(keyValue: (Any, Double)*): Wolfe.Vector = keyValue.toMap
 
 }
 
@@ -153,8 +153,8 @@ trait SampleSpaceDefs {
   def c[A1, A2, A3, A4, A5](set1: Iterable[A1], set2: Iterable[A2], set3: Iterable[A3], set4: Iterable[A4], set5: Iterable[A5]) =
     for (a1 <- set1; a2 <- set2; a3 <- set3; a4 <- set4; a5 <- set5) yield (a1, a2, a3, a4, a5)
 
-  implicit class CartesianProductBuilder[T1](iter1:Iterable[T1]) {
-    def x[T2](iter2:Iterable[T2]) = CartesianProduct2(iter1,iter2)
+  implicit class CartesianProductBuilder[T1](iter1: Iterable[T1]) {
+    def x[T2](iter2: Iterable[T2]) = CartesianProduct2(iter1, iter2)
   }
 
   case class CartesianProduct2[T1, T2](iter1: Iterable[T1], iter2: Iterable[T2]) extends Iterable[(T1, T2)] {
@@ -292,23 +292,28 @@ trait Annotations {
 }
 
 trait ProblemBuilder {
-  case class OverWhereOf[T, N](dom: Iterable[T], filter: T => Boolean = (_: T) => true, obj: T => N) {
+
+  case class Builder[T, N](dom: Iterable[T],
+                           filter: T => Boolean = (_: T) => true,
+                           obj: T => N,
+                           mapper: T => T = (t: T) => t) {
     def where(where: T => Boolean) = copy(filter = where)
     def subjectTo(st: T => Boolean) = where(st)
     def st(st: T => Boolean) = where(st)
     def over(over: Iterable[T]) = copy(dom = over)
-    def of(of: T => N) = OverWhereOf[T, N](dom, filter, of)
-    def apply(of: T => N) = OverWhereOf[T, N](dom, filter, of)
+    def of(of: T => N) = Builder[T, N](dom, filter, of)
+    def apply(of: T => N) = Builder[T, N](dom, filter, of)
+    def using(using: T => T) = copy(mapper = using)
   }
 
 
-  implicit def toOverWhereOf[T, N](obj: T => N) = OverWhereOf[T, N](Nil, obj = obj)
-  implicit def toOverWhereOf[T](dom: Iterable[T]) = OverWhereOf[T, Double](dom, obj = (_: T) => 0.0)
+  implicit def toOverWhereOf[T, N](obj: T => N) = Builder[T, N](Nil, obj = obj)
+  implicit def toOverWhereOf[T](dom: Iterable[T]) = Builder[T, Double](dom, obj = (_: T) => 0.0)
   //  implicit def toOverWhereOf[T](obj: T => Double) = OverWhereOf[T,Double](Nil, obj = obj)
 
-  def over[T](implicit over: Iterable[T]) = OverWhereOf(over, (_: T) => true, (_: T) => 0.0)
-  def where[T: Iterable](where: T => Boolean) = OverWhereOf(implicitly[Iterable[T]], where, (_: T) => 0.0)
-  def obj[T, N](of: T => N) = OverWhereOf[T, N](Nil, (_: T) => true, of)
+  def over[T](implicit over: Iterable[T]) = Builder(over, (_: T) => true, (_: T) => 0.0)
+  def where[T: Iterable](where: T => Boolean) = Builder(implicitly[Iterable[T]], where, (_: T) => 0.0)
+  def obj[T, N](of: T => N) = Builder[T, N](Nil, (_: T) => true, of)
 
   //  def of[T: Iterable](of: T => Double) = OverWhereOf(implicitly[Iterable[T]], (_: T) => true, of)
 
