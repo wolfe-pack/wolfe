@@ -52,11 +52,11 @@ object TestIris {
       oneHot('pw -> data.y, data.x.petalWidth)
 
     //the linear model
-    @MaxByInference(MaxProduct(_,1))
+    @OptimizeByInference(MaxProduct(_,1))
     def model(weights: Vector)(data: Data) = features(data) dot weights
 
     //the total training perceptron loss of the model given the weights
-    @MinByLearning(new OnlineTrainer(_, new Perceptron, 4))
+    @OptimizeByLearning(new OnlineTrainer(_, new Perceptron, 4))
     def loss(weights: Vector) = sumOld(train)(_ => true)(i => max(S(i))(_ => true)(model(weights)) - model(weights)(i))
 
     //the learned weights that minimize the perceptron loss

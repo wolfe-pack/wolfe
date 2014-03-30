@@ -1,6 +1,7 @@
 package ml.wolfe.macros
 
 import ml.wolfe.{BruteForceOperators, Wolfe, WolfeSpec}
+import cc.factorie.optimize.{Perceptron, AdaGrad, OnlineTrainer}
 
 /**
  * @author Sebastian Riedel
@@ -19,6 +20,20 @@ class OptimizeByLearningSpecs extends WolfeSpec {
       val w = argmax { over[Vector] of mapLL(3) }
       w should be(vector(0 -> -0.2, 1 -> -0.2, 2 -> -0.2, 3 -> 0.8, 4 -> -0.2))
       //this solution arises from the fact that the MP solution at ties distributes scores across features.
+    }
+
+    "react to different learning annotation on the objective " in {
+      import Wolfe._
+      implicit val space = Range(0, 5)
+      def features(i: Int) = oneHot(i)
+      def model(w: Vector)(i: Int) = w dot features(i)
+      @OptimizeByLearning(new OnlineTrainer(_, new AdaGrad(),1))
+      def mapLLAda(i: Int)(w: Vector) = model(w)(i) - max { over[Int] of model(w) }
+      @OptimizeByLearning(new OnlineTrainer(_, new Perceptron,1))
+      def mapLLPerceptron(i: Int)(w: Vector) = model(w)(i) - max { over[Int] of model(w) }
+      val wAda = argmax { over[Vector] of mapLLAda(3) }
+      val wPerceptron = argmax { over[Vector] of mapLLPerceptron(3) }
+      wAda should not be wPerceptron
     }
 
     "return the argmax of a sum of MAP log-likelihoods (perceptron)" in {
