@@ -2,9 +2,8 @@ package ml.wolfe
 
 import scala.language.implicitConversions
 import scala.util.Random
-import ml.wolfe.Wolfe.Stats.OneHot
 import cc.factorie.WeightsSet
-import cc.factorie.optimize.{Trainer, OnlineTrainer}
+import cc.factorie.optimize.Trainer
 import scala.annotation.StaticAnnotation
 
 /**
@@ -19,25 +18,6 @@ object Wolfe extends SampleSpaceDefs
 
   //core operators
 
-  @Operator.Sum
-  def sumOld[T, N](data: Iterable[T])(predicate: T => Boolean)(obj: T => N)(implicit num: Numeric[N]): N = {
-    data.filter(predicate).map(obj).sum(num)
-  }
-
-  @Operator.Argmax
-  def argmaxOld[T, N](data: Iterable[T])(predicate: T => Boolean)(obj: T => N)(implicit ord: Ordering[N]): T = {
-    data.filter(predicate).maxBy(obj)(ord)
-  }
-
-  //derived operators
-
-  def maxOld[T, N](data: Iterable[T])(predicate: T => Boolean)(obj: T => N)(implicit ord: Ordering[N]): N = {
-    obj(argmaxOld(data)(predicate)(obj)(ord))
-  }
-
-  def logZ[T](data: Iterable[T])(predicate: T => Boolean)(obj: T => Double): Double = {
-    math.log(sumOld(data)(predicate)(t => math.exp(obj(t))))
-  }
 
   //sufficient statistics
 
@@ -48,18 +28,11 @@ object Wolfe extends SampleSpaceDefs
     dom.view.sampleExpProportionally(obj)(r)
   }
 
-  @Operator.Sample
   def samples[T](num: Int)(dom: Iterable[T])(obj: T => Double)(implicit r: Random = random): Seq[T] = (0 until num).map(x => sample(dom)(obj)(r))
-
-  @deprecated("Use the new operators", "now")
-  def argminOld[T](dom: Iterable[T])(obj: T => Double): T = {
-    dom.minBy(obj)
-  }
 
   /**
    * Body will get replaced by Frankenwolfe with its LaTeX representation
    */
-  @Output.LaTeX
   def toLaTeX(body: () => Unit) = """\LaTeX"""
 
 
@@ -73,11 +46,7 @@ object Wolfe extends SampleSpaceDefs
   @deprecated("Use the new operators", "now")
   def logZOld[T](dom: Iterable[T])(model: T => Double) = math.log(dom.view.map(x => math.exp(model(x))).sum)
 
-  @Operator.Forall
   def forall[T](dom: Iterable[T])(pred: T => Boolean) = dom.forall(pred)
-
-  def allOld[T] = new All[T]
-
 
   case class RichCurried[A1, A2, B](f: A1 => A2 => B) {
     def apply(pair: (A2, A1)) = f(pair._2)(pair._1)
@@ -106,102 +75,13 @@ object Wolfe extends SampleSpaceDefs
     }
   }
 
-
-  @Objective.LinearModel
   def linearModel[T](featureGenerator: T => List[Vector]) = {
     (example: T, weights: Vector) => weights dot featureGenerator(example).sum
-  }
-
-  import scala.annotation._
-
-
-  object Operator {
-
-    class Argmax extends StaticAnnotation
-
-    class Argmin extends StaticAnnotation
-
-    class Sum extends StaticAnnotation
-
-    class Max extends StaticAnnotation
-
-    class Forall extends StaticAnnotation
-
-    class Sample extends StaticAnnotation
-
-
-  }
-
-  object Objective {
-
-    trait InferenceSetting
-
-    trait GradientBasedOptimizerSetting
-
-    trait Differentiator
-
-    case class Adagrad(rate: Double) extends GradientBasedOptimizerSetting
-    case class Learner(learner: WeightsSet => Trainer) extends GradientBasedOptimizerSetting
-
-    case object Perceptron extends GradientBasedOptimizerSetting
-
-
-    case class MaxProduct(iterations: Int) extends InferenceSetting
-
-    case object SymPy extends Differentiator
-
-    case object Wolferine extends Differentiator
-
-    class LogLikelihood extends StaticAnnotation
-
-    class JointLoglikelihood extends StaticAnnotation
-
-    class Differentiable(setting: GradientBasedOptimizerSetting = Adagrad(1.0), iterations: Int = 5) extends StaticAnnotation
-
-    class LinearModel(setting: InferenceSetting = MaxProduct(1)) extends StaticAnnotation
-
-    class Categorical extends StaticAnnotation
-
-    class GLM extends StaticAnnotation
-
-    class LogZ extends StaticAnnotation
-
-  }
-
-  object Domain {
-
-    class PMF extends StaticAnnotation
-
-    class Maps extends StaticAnnotation
-
-    class Seqs extends StaticAnnotation
-
-    class Simplex extends StaticAnnotation
-
-    class Marginals extends StaticAnnotation
-
-  }
-
-  object Stats {
-
-    class Categorial extends StaticAnnotation
-
-    class OneHot extends StaticAnnotation
-
-  }
-
-  object Output {
-
-    class LaTeX extends StaticAnnotation
-
-    class SymPy extends StaticAnnotation
-
   }
 
 }
 
 trait StatsDefs {
-  @OneHot
   def oneHot(key: Any, value: Double = 1.0): Wolfe.Vector = Map(key -> value)
   def vector(keyValue:(Any,Double)*): Wolfe.Vector = keyValue.toMap
 
@@ -263,7 +143,6 @@ trait VectorDefs {
 
 trait SampleSpaceDefs {
 
-  import Wolfe._
 
   def all[A, B](mapper: A => B)(implicit dom: Iterable[A]): Iterable[B] = dom map mapper
 
@@ -308,8 +187,6 @@ trait SampleSpaceDefs {
                                           dom3: Iterable[A3], dom4: Iterable[A4],
                                           dom5: Iterable[A5]): Iterable[(A1, A2, A3, A4, A5)] = c(dom1, dom2, dom3, dom4, dom5)
 
-
-  @Domain.Maps
   def maps[A, B](dom: Iterable[A], range: Iterable[B]): Iterable[Map[A, B]] = {
     def recurse(d: List[A], r: List[B], funs: List[Map[A, B]] = List(Map.empty)): List[Map[A, B]] = d match {
       case Nil => funs
