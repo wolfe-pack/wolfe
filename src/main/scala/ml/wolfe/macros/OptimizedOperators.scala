@@ -14,6 +14,7 @@ object OptimizedOperators extends Operators {
 
   override def argmax[T, N: Ordering](overWhereOf: Builder[T, N]) = macro argmaxImpl[T, N]
   override def argmin[T, N: Ordering](overWhereOf: Builder[T, N]) = macro argminImpl[T, N]
+  override def map[T](overWhereOf: Builder[T, _]) = macro mapImpl[T]
 
 
   def argmaxImpl[T: c.WeakTypeTag, N: c.WeakTypeTag](c: Context)
@@ -23,13 +24,24 @@ object OptimizedOperators extends Operators {
     val result = helper.argmax(overWhereOf.tree)
     c.Expr[T](result)
   }
+
   def argminImpl[T: c.WeakTypeTag, N: c.WeakTypeTag](c: Context)
                                                     (overWhereOf: c.Expr[Builder[T, N]])
                                                     (ord: c.Expr[Ordering[N]]) = {
     import c.universe._
     val helper = new ContextHelper[c.type](c) with OptimizedOperators[c.type]
-    val result:Tree = helper.argmax(overWhereOf.tree, q"-1.0")
+    val result: Tree = helper.argmax(overWhereOf.tree, q"-1.0")
     c.Expr[T](result)
+  }
+
+  def mapImpl[T: c.WeakTypeTag](c: Context)
+                               (overWhereOf: c.Expr[Builder[T, _]]) = {
+    import c.universe._
+    val helper = new ContextHelper[c.type](c) with OptimizedOperators[c.type]
+//    val result: Tree = helper.argmax(overWhereOf.tree, q"-1.0")
+    val expr = reify[Iterable[T]](overWhereOf.splice.dom.filter(overWhereOf.splice.filter).map(overWhereOf.splice.mapper))
+    c.Expr[Iterable[T]](c.resetLocalAttrs(expr.tree))
+//    c.Expr[T](result)
   }
 
 
