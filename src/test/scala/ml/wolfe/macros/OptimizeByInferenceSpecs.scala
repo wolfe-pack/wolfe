@@ -35,9 +35,9 @@ class OptimizeByInferenceSpecs extends WolfeSpec {
       import Wolfe._
       case class Data(x: Boolean, y: Boolean, z: Boolean)
       implicit def data = Wolfe.all(Data)
-      @MaxByInference(MaxProduct(_, 10))
+      @OptimizeByInference(MaxProduct(_, 10))
       def tenIterations(d: Data) = I(d.x && d.y) + I(d.y && !d.z) + I(d.z && !d.x)
-      @MaxByInference(MaxProduct(_, 1))
+      @OptimizeByInference(MaxProduct(_, 1))
       def oneIteration(d: Data) = tenIterations(d)
       val actual = argmax { over[Data] of tenIterations }
       val approximate = argmax { over[Data] of oneIteration }

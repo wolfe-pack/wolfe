@@ -34,14 +34,26 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
   import context.universe._
 
 
-  def inferenceCode(objRhs: Tree) = objRhs match {
+  def inferenceCode(objRhs: Tree, graph: TermName) = objRhs match {
     case q"$f(${ _ })" =>
-      val t: Tree = f
-      t.symbol.annotations.find(_.tpe.typeSymbol == wolfeSymbols.maxByInference) match {
-        case Some(annotation) => q"${ annotation.scalaArgs.head }(_graph)"
-        case None => q"ml.wolfe.MaxProduct(_graph,1)"
+      f.symbol.annotations.find(_.tpe.typeSymbol == wolfeSymbols.optByInference) match {
+        case Some(annotation) => q"${ annotation.scalaArgs.head }($graph)"
+        case None => q"ml.wolfe.MaxProduct($graph,1)"
       }
-    case _ => q"ml.wolfe.MaxProduct(_graph,1)"
+    case _ => q"ml.wolfe.MaxProduct($graph,1)"
+  }
+
+  def learningCode(objRhs: Tree, weightsSet: TermName) = {
+    def getCodeFromAnnotation(f: Tree): Tree = {
+      f.symbol.annotations.find(_.tpe.typeSymbol == wolfeSymbols.optByLearning) match {
+        case Some(annotation) => q"${ annotation.scalaArgs.head }($weightsSet)"
+        case None => q"new OnlineTrainer($weightsSet, new Perceptron, 4)"
+      }
+    }
+    objRhs match {
+      case q"$f(${ _ })" => getCodeFromAnnotation(f)
+      case _ => q"new OnlineTrainer($weightsSet, new Perceptron, 4)"
+    }
   }
 
 
@@ -51,7 +63,7 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
     val Function(List(objArg), objRhs) = simplifyBlocks(trees.of)
     val objMatcher = meta.matcher(rootMatcher(objArg.symbol, q"$structName", meta))
     val factors = metaStructuredFactor(objRhs, meta, objMatcher, linearModelInfo = LinearModelInfo(q"_index"))
-    val inferCode = inferenceCode(objRhs)
+    val inferCode = inferenceCode(objRhs, newTermName("_graph"))
 
     val structureDef = meta.classDef(newTermName("_graph"))
 
@@ -86,15 +98,15 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
     code
   }
 
-  def argmaxByLearning(trees: OverWhereOfTrees): Tree = {
+  def argmaxByLearning(trees: OverWhereOfTrees, scaling: Tree = q"1.0"): Tree = {
     if (trees.where != EmptyTree)
       context.error(context.enclosingPosition, "Can't learn with constraints on weights yet: " + trees.where)
     val q"($arg) => $rhs" = simplifyBlocks(trees.of)
-    def toSum(tree:Tree):OverWhereOfTrees = tree match {
-      case s@Sum(over,where,of,_) => OverWhereOfTrees(over,where,of)
+    def toSum(tree: Tree): OverWhereOfTrees = tree match {
+      case s@Sum(over, where, of, _) => OverWhereOfTrees(over, where, of)
       case s => inlineOnce(tree) match {
         case Some(inlined) => toSum(inlined)
-        case None => OverWhereOfTrees(q"List(0)",EmptyTree,q"(i:Int) => $s")
+        case None => OverWhereOfTrees(q"List(0)", EmptyTree, q"(i:Int) => $s")
       }
     }
     val sum = toSum(rhs)
@@ -103,8 +115,9 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
     val indexName = newTermName(context.fresh("_index"))
     val weightsSet = newTermName(context.fresh("_weightsSet"))
     val key = newTermName(context.fresh("_key"))
+    val learner = learningCode(rhs, weightsSet)
 
-    val replaced = transform(perInstanceRhs, {case i: Ident if i.symbol == x.symbol => Ident(instanceName)})
+    val replaced = transform(perInstanceRhs, { case i: Ident if i.symbol == x.symbol => Ident(instanceName) })
 
     metaGradientCalculator(replaced, arg.symbol, Ident(indexName)) match {
       case Good(calculator) =>
@@ -119,18 +132,18 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
           val $indexName = new Index
           val $weightsSet = new WeightsSet
           val $key = $weightsSet.newWeights(new ml.wolfe.DenseVector(10000))
-          val examples = for ($instanceName <- ${sum.over}) yield new Example {
+          val examples = for ($instanceName <- ${ sum.over }) yield new Example {
             ${ calculator.classDef }
             val gradientCalculator = new ${ calculator.className }
             def accumulateValueAndGradient(value: DoubleAccumulator, gradient: WeightsMapAccumulator) = {
               LoggerUtil.debug("Instance: " + $indexName)
               val weights = $weightsSet($key).asInstanceOf[FactorieVector]
               val (v, g) = gradientCalculator.valueAndGradient(weights)
-              value.accumulate(v)
-              gradient.accumulate($key, g, 1.0)
+              value.accumulate($scaling * v)
+              gradient.accumulate($key, g, $scaling)
             }
           }
-          val trainer = new OnlineTrainer($weightsSet, new Perceptron, 4)
+          val trainer = $learner
           trainer.trainFromExamples(examples)
           ml.wolfe.FactorieConverter.toWolfeVector($weightsSet($key).asInstanceOf[FactorieVector], $indexName)
         """

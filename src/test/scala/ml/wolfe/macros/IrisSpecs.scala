@@ -42,14 +42,14 @@ class IrisSpecs extends WolfeSpec {
         oneHot('pw -> data.irisClass, data.petalWidth)
 
       //the linear model
-      @MaxByInference(MaxProduct(_, 1))
+      @OptimizeByInference(MaxProduct(_, 1))
       def model(w: Vector)(i: IrisData) = features(i) dot w
 
       //the per instance training loss
       def perceptronLoss(w: Vector)(i: IrisData): Double = max {over(space) of model(w) st evidence(i)} - model(w)(i)
 
       //the training loss
-      @MinByLearning(new OnlineTrainer(_, new Perceptron, 4))
+      @OptimizeByLearning(new OnlineTrainer(_, new Perceptron, 4))
       def loss(w: Vector) = sum {over(train) of perceptronLoss(w)}
 
       //the predictor given some observed instance

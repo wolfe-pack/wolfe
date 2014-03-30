@@ -414,8 +414,8 @@ trait Conditioning {
 }
 
 trait Annotations {
-  class MinByLearning(trainer: WeightsSet => Trainer) extends StaticAnnotation
-  class MaxByInference(inference: MPGraph => Unit) extends StaticAnnotation
+  class OptimizeByLearning(trainer: WeightsSet => Trainer) extends StaticAnnotation
+  class OptimizeByInference(inference: MPGraph => Unit) extends StaticAnnotation
 }
 
 trait ProblemBuilder {
