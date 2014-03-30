@@ -207,6 +207,7 @@ object Wolfe extends SampleSpaceDefs
 trait StatsDefs {
   @OneHot
   def oneHot(key: Any, value: Double = 1.0): Wolfe.Vector = Map(key -> value)
+  def vector(keyValue:(Any,Double)*): Wolfe.Vector = keyValue.toMap
 
 }
 

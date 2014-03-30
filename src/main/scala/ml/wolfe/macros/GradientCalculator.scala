@@ -89,12 +89,17 @@ trait MetaGradientCalculators[C <: Context] extends MetaStructures[C]
         binaryOperatorGradientCalculator(arg1,arg2,weightVar,indexTree, (v1,v2) => q"$v1 + $v2", (g1,g2) => q"$g1 + $g2")
       case DoubleMax(dom,where,obj,_) =>
         val structName = newTermName(context.fresh("structure"))
-        val Function(List(whereArg),whereRhs) = where
-        val Function(List(objArg),objRhs) = obj
         val meta = metaStructure(dom)
-        val whereMatcher = meta.matcher(rootMatcher(whereArg.symbol,q"$structName",meta))
+        val Function(List(objArg),objRhs) = simplifyBlocks(obj)
+
+        val conditionerCode = if (where != EmptyTree) {
+          val Function(List(whereArg), whereRhs) = simplifyBlocks(where)
+          val whereMatcher = meta.matcher(rootMatcher(whereArg.symbol, q"$structName", meta))
+          val conditioner = conditioning(whereRhs, whereMatcher)
+          conditioner.code
+        } else EmptyTree
+
         val objMatcher = meta.matcher(rootMatcher(objArg.symbol,q"$structName",meta))
-        val conditioner = conditioning(whereRhs,whereMatcher)
         val factors = metaStructuredFactor(objRhs,meta,objMatcher,linearModelInfo = LinearModelInfo(indexTree))
         val structureDef = meta.classDef(newTermName("_graph"))
         val className = newTypeName(context.fresh("MaxGradientCalculator"))
@@ -103,7 +108,7 @@ trait MetaGradientCalculators[C <: Context] extends MetaStructures[C]
             val _graph = new ml.wolfe.MPGraph
             $structureDef
             val $structName = new ${meta.className}
-            ${conditioner.code}
+            $conditionerCode
             _graph.setupNodes()
             ${factors.classDef}
             val factors = new ${factors.className}($structName)
