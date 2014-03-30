@@ -6,7 +6,7 @@ sbtPlugin := true
 
 name := "wolfe"
 
-version := "0.0.1"
+version := "0.1-SNAPSHOT"
 
 scalaVersion := "2.10.3"
 
@@ -18,7 +18,15 @@ resolvers ++= Seq(
 
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.0.0-M3" cross CrossVersion.full)
 
-publishTo := Some(Resolver.file("file",  new File(Path.userHome.absolutePath+"/.m2/repository")))
+publishTo <<= (version) { version: String =>
+  val homeniscient = "http://homeniscient.cs.ucl.ac.uk:8081/nexus/content/repositories/"
+  if (version.trim.endsWith("SNAPSHOT")) Some("snapshots" at homeniscient + "snapshots/")
+  else                                   Some("releases"  at homeniscient + "releases/")
+}
+
+credentials += Credentials(Path.userHome / ".ivy2" / ".credentials-homeniscient")
+
+//publishTo := Some(Resolver.file("file",  new File(Path.userHome.absolutePath+"/.m2/repository")))
 
 libraryDependencies ++= Seq(
   "net.sf.trove4j" % "trove4j" % "3.0.3",
