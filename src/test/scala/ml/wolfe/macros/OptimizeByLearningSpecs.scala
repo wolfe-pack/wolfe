@@ -9,10 +9,11 @@ import cc.factorie.optimize.{Perceptron, AdaGrad, OnlineTrainer}
 class OptimizeByLearningSpecs extends WolfeSpec {
 
   import OptimizedOperators._
+  import Wolfe._
+
 
   "An argmax operator" should {
     "return the argmax of the MAP log-likelihood (perceptron)" in {
-      import Wolfe._
       implicit val space = Range(0, 5)
       def features(i: Int) = oneHot(i)
       def model(w: Vector)(i: Int) = w dot features(i)
@@ -22,7 +23,6 @@ class OptimizeByLearningSpecs extends WolfeSpec {
       //this solution arises from the fact that the MP solution at ties distributes scores across features.
     }
     "return the argmin of the perceptron loss (MAP log-likelihood)" in {
-      import Wolfe._
       implicit val space = Range(0, 5)
       def features(i: Int) = oneHot(i)
       def model(w: Vector)(i: Int) = w dot features(i)
@@ -32,7 +32,6 @@ class OptimizeByLearningSpecs extends WolfeSpec {
     }
 
     "react to different learning annotation on the objective " in {
-      import Wolfe._
       implicit val space = Range(0, 5)
       def features(i: Int) = oneHot(i)
       def model(w: Vector)(i: Int) = w dot features(i)
@@ -46,7 +45,6 @@ class OptimizeByLearningSpecs extends WolfeSpec {
     }
 
     "return the argmax of a sum of MAP log-likelihoods (perceptron)" in {
-      import Wolfe._
       case class Data(x: Int, y: Int)
       implicit val range = Range(0, 5)
       implicit def space = Wolfe.all(Data)
