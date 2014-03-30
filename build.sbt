@@ -8,7 +8,7 @@ name := "wolfe"
 
 organization := "ml.wolfe"
 
-version := "0.1-SNAPSHOT"
+version := "0.1.0-SNAPSHOT"
 
 scalaVersion := "2.10.3"
 
@@ -20,10 +20,11 @@ resolvers ++= Seq(
 
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.0.0-M3" cross CrossVersion.full)
 
-publishTo <<= (version) { version: String =>
-  val homeniscient = "http://homeniscient.cs.ucl.ac.uk:8081/nexus/content/repositories/"
-  if (version.trim.endsWith("SNAPSHOT")) Some("snapshots" at homeniscient + "snapshots/")
-  else                                   Some("releases"  at homeniscient + "releases/")
+publishTo <<= (version) {
+  version: String =>
+    val homeniscient = "http://homeniscient.cs.ucl.ac.uk:8081/nexus/content/repositories/"
+    if (version.trim.endsWith("SNAPSHOT")) Some("snapshots" at homeniscient + "snapshots/")
+    else Some("releases" at homeniscient + "releases/")
 }
 
 credentials += Credentials(Path.userHome / ".ivy2" / ".credentials-homeniscient")
@@ -43,7 +44,7 @@ libraryDependencies ++= Seq(
   "org.slf4j" % "slf4j-api" % "1.7.6",
   "org.slf4j" % "slf4j-simple" % "1.7.6",
   "com.typesafe" % "scalalogging-slf4j_2.10" % "1.1.0",
-"org.scalamacros" % "quasiquotes" % "2.0.0-M3" cross CrossVersion.full
+  "org.scalamacros" % "quasiquotes" % "2.0.0-M3" cross CrossVersion.full
 )
 
 generateWolfeSource := Seq.empty
