@@ -31,10 +31,6 @@ object Wolfe extends SampleSpaceDefs
 
   //derived operators
 
-  def argmin[T, N](data: Iterable[T])(predicate: T => Boolean)(obj: T => N)(implicit ord: Ordering[N]): T = {
-    argmaxOld(data)(predicate)(obj)(ord.reverse)
-  }
-
   def maxOld[T, N](data: Iterable[T])(predicate: T => Boolean)(obj: T => N)(implicit ord: Ordering[N]): N = {
     obj(argmaxOld(data)(predicate)(obj)(ord))
   }
