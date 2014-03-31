@@ -199,8 +199,8 @@ trait SampleSpaceDefs {
 
   def preds[A](dom: Iterable[A]) = maps(dom, bools)
 
-  def map[A, B](default: B, vals: (A, B)*): Map[A, B] = Map(vals: _*).withDefaultValue(default)
-  def map[A, B](keys: Set[A], default: B, vals: (A, B)*): Map[A, B] = (keys -- vals.map(_._1)).map(_ -> default).toMap ++ Map(vals: _*)
+  def mapWithDefault[A, B](default: B, vals: (A, B)*): Map[A, B] = Map(vals: _*).withDefaultValue(default)
+  def mapOverDomain[A, B](keys: Set[A], default: B, vals: (A, B)*): Map[A, B] = (keys -- vals.map(_._1)).map(_ -> default).toMap ++ Map(vals: _*)
 
   def buildVectors[A, B](dom: Iterable[A], range: Iterable[B]): Iterable[Map[Any, B]] = {
     def recurse(d: List[A], r: List[B], funs: List[Map[Any, B]] = List(Map.empty)): List[Map[Any, B]] = d match {
