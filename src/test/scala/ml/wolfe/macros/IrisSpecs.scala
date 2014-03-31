@@ -57,8 +57,8 @@ class IrisSpecs extends WolfeSpec {
       //the predictor given some observed instance
       def predict(i: IrisData) = argmax(over(space) of model(w) st evidence(i))
 
-      val predictedTest = test.map(predict)
-      val predictedTrain = train.map(predict)
+      val predictedTest = map { over(test) using predict }
+      val predictedTrain = map { over(train) using predict }
 
       val evalTrain = Evaluator.evaluate(train, predictedTrain)(_.irisClass)
       val evalTest = Evaluator.evaluate(test, predictedTest)(_.irisClass)

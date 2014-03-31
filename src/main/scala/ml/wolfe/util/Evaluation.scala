@@ -31,7 +31,7 @@ case class Evaluation(tp: Int = 0, tn: Int = 0, fp: Int = 0, fn: Int = 0) {
 }
 
 object Evaluator {
-  def evaluate[T](target: Seq[T], guess: Seq[T])(attribute: T => Any): Evaluation = {
+  def evaluate[T](target: Iterable[T], guess: Iterable[T])(attribute: T => Any): Evaluation = {
     val evaluations = for ((t, g) <- target.view zip guess.view) yield evaluate(t, g)(attribute)
     val reduced = evaluations.foldLeft(Evaluation())(_ + _)
     reduced
