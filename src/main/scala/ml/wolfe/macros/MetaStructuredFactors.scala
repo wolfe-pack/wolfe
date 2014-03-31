@@ -195,7 +195,8 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] {
                            constructorArgs: List[ValDef] = Nil,
                            linearModelInfo: LinearModelInfo,
                            linear: Boolean = false): MetaStructuredFactor = {
-    potential match {
+    val simplified = simplifyBlocks(potential)
+    simplified match {
       case Sum(BuilderTrees(dom, filter, obj, _)) =>
         require(filter == EmptyTree)
         MetaFirstOrderSumFactor(List(dom), obj, matcher, structure, constructorArgs, linearModelInfo, linear)

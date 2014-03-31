@@ -12,9 +12,9 @@ object OptimizedOperators extends Operators {
 
   import scala.language.experimental.macros
 
-  override def argmax[T, N: Ordering](overWhereOf: Builder[T, N]):T = macro argmaxImpl[T, N]
-  override def argmin[T, N: Ordering](overWhereOf: Builder[T, N]):T = macro argminImpl[T, N]
-  override def map[T](overWhereOf: Builder[T, _]):Iterable[T] = macro mapImpl[T]
+  override def argmax[T, N: Ordering](overWhereOf: Builder[T, N]): T = macro argmaxImpl[T, N]
+  override def argmin[T, N: Ordering](overWhereOf: Builder[T, N]): T = macro argminImpl[T, N]
+  override def map[T](overWhereOf: Builder[T, _]): Iterable[T] = macro mapImpl[T]
 
 
   def argmaxImpl[T: c.WeakTypeTag, N: c.WeakTypeTag](c: Context)
@@ -24,7 +24,7 @@ object OptimizedOperators extends Operators {
     if (c.enclosingMacros.size > 1) {
       import c.universe._
       val trees = helper.builderTrees(overWhereOf.tree)
-      val code:Tree = q"${trees.over}.filter(${trees.where}).maxBy(${trees.of})"
+      val code: Tree = q"${ trees.over }.filter(${ trees.where }).maxBy(${ trees.of })"
       c.Expr[T](code)
     } else {
       val result = helper.argmax(overWhereOf.tree)
@@ -48,8 +48,8 @@ object OptimizedOperators extends Operators {
 
     val result: Tree = helper.map(overWhereOf.tree)
     //    val result: Tree = helper.argmax(overWhereOf.tree, q"-1.0")
-//    val expr = reify[Iterable[T]](overWhereOf.splice.dom.filter(overWhereOf.splice.filter).map(overWhereOf.splice.mapper))
-//    c.Expr[Iterable[T]](c.resetLocalAttrs(expr.tree))
+    //    val expr = reify[Iterable[T]](overWhereOf.splice.dom.filter(overWhereOf.splice.filter).map(overWhereOf.splice.mapper))
+    //    c.Expr[Iterable[T]](c.resetLocalAttrs(expr.tree))
     c.Expr[T](result)
   }
 
@@ -93,7 +93,7 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
     //we should do this until no more inlining can be done
 
     //todo: this is messy
-    def transform(using:Tree) = transformAndCollect[List[Tree]](using, {
+    def transform(using: Tree) = transformAndCollect[List[Tree]](using, {
       case ArgmaxOperator(argmaxBuilder) =>
         val codeAndInit = argmaxLinearModel2(argmaxBuilder)
         val initContainsMappingArg = codeAndInit.initialization.exists(_.exists(_.symbol == mapperArg.symbol))
@@ -109,8 +109,8 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
     }
 
     val mapCall = trees.where match {
-      case w if w == EmptyTree => q"${trees.over}.map($mapper)"
-      case w => q"${trees.over}.filter($w).map($mapper)"
+      case w if w == EmptyTree => q"${ trees.over }.map($mapper)"
+      case w => q"${ trees.over }.filter($w).map($mapper)"
     }
     val flattened = initCode.flatten
     val code = q"""
@@ -128,7 +128,7 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
   def argmaxLinearModel2(trees: BuilderTrees): CodeAndInitialization = {
     val structName = newTermName(context.fresh("structure"))
     val meta = metaStructure(trees.over)
-    val Function(List(objArg), objRhs) = simplifyBlocks(trees.of)
+    val Function(List(objArg), objRhs) = blockToFunction(simplifyBlocks(trees.of))
     val objMatcher = meta.matcher(rootMatcher(objArg.symbol, q"$structName", meta))
     val factors = metaStructuredFactor(objRhs, meta, objMatcher, linearModelInfo = LinearModelInfo(q"_index"))
     val inferCode = inferenceCode(objRhs, newTermName("_graph"))
@@ -167,11 +167,23 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
     CodeAndInitialization(code, initialization)
   }
 
+  def blockToFunction(tree: Tree): Tree = tree match {
+    case f: Function => f
+    case Block(stats, Function(args, body)) => {
+      val (newBody, newStats) = stats.foldRight(body -> List.empty[Tree]) {
+        (stat, result) => stat match {
+          case v: ValDef => transform(result._1, { case i: Ident if i.symbol == v.symbol => v.rhs }) -> result._2
+        }
+      }
+      Function(args, Block(newStats, newBody))
+    }
+    case _ => context.error(context.enclosingPosition, s"Can't turn $tree into function"); ???
+  }
 
   def argmaxLinearModel(trees: BuilderTrees): Tree = {
     val structName = newTermName(context.fresh("structure"))
     val meta = metaStructure(trees.over)
-    val Function(List(objArg), objRhs) = simplifyBlocks(trees.of)
+    val Function(List(objArg), objRhs) = blockToFunction(simplifyBlocks(trees.of))
     val objMatcher = meta.matcher(rootMatcher(objArg.symbol, q"$structName", meta))
     val factors = metaStructuredFactor(objRhs, meta, objMatcher, linearModelInfo = LinearModelInfo(q"_index"))
     val inferCode = inferenceCode(objRhs, newTermName("_graph"))
