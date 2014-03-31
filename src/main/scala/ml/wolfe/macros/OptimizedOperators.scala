@@ -28,7 +28,7 @@ object OptimizedOperators extends Operators {
       c.Expr[T](code)
     } else {
       val result = helper.argmax(overWhereOf.tree)
-      c.Expr[T](result)
+      c.Expr[T](result.combined)
     }
   }
 
@@ -37,7 +37,7 @@ object OptimizedOperators extends Operators {
                                                     (ord: c.Expr[Ordering[N]]) = {
     import c.universe._
     val helper = new ContextHelper[c.type](c) with OptimizedOperators[c.type]
-    val result: Tree = helper.argmax(overWhereOf.tree, q"-1.0")
+    val result: Tree = helper.argmax(overWhereOf.tree, q"-1.0").combined
     c.Expr[T](result)
   }
 
@@ -95,7 +95,7 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
     //todo: this is messy
     def transform(using: Tree) = transformAndCollect[List[Tree]](using, {
       case ArgmaxOperator(argmaxBuilder) =>
-        val codeAndInit = argmaxLinearModel2(argmaxBuilder)
+        val codeAndInit = argmaxLinearModel(argmaxBuilder)
         val initContainsMappingArg = codeAndInit.initialization.exists(_.exists(_.symbol == mapperArg.symbol))
         if (initContainsMappingArg) (codeAndInit.combined, Nil) else (codeAndInit.code, codeAndInit.initialization)
     })
@@ -125,7 +125,7 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
     def combined = q"{..$all}"
   }
 
-  def argmaxLinearModel2(trees: BuilderTrees): CodeAndInitialization = {
+  def argmaxLinearModel(trees: BuilderTrees): CodeAndInitialization = {
     val structName = newTermName(context.fresh("structure"))
     val meta = metaStructure(trees.over)
     val Function(List(objArg), objRhs) = blockToFunction(simplifyBlocks(trees.of))
@@ -178,47 +178,6 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
       Function(args, Block(newStats, newBody))
     }
     case _ => context.error(context.enclosingPosition, s"Can't turn $tree into function"); ???
-  }
-
-  def argmaxLinearModel(trees: BuilderTrees): Tree = {
-    val structName = newTermName(context.fresh("structure"))
-    val meta = metaStructure(trees.over)
-    val Function(List(objArg), objRhs) = blockToFunction(simplifyBlocks(trees.of))
-    val objMatcher = meta.matcher(rootMatcher(objArg.symbol, q"$structName", meta))
-    val factors = metaStructuredFactor(objRhs, meta, objMatcher, linearModelInfo = LinearModelInfo(q"_index"))
-    val inferCode = inferenceCode(objRhs, newTermName("_graph"))
-
-    val structureDef = meta.classDef(newTermName("_graph"))
-
-    val conditionCode = if (trees.where == EmptyTree) EmptyTree
-    else {
-      val Function(List(whereArg), whereRhs) = simplifyBlocks(trees.where)
-      val whereMatcher = meta.matcher(rootMatcher(whereArg.symbol, q"$structName", meta))
-      val conditioner = conditioning(whereRhs, whereMatcher)
-      conditioner.code
-    }
-    val factorieWeights = factors.weightVector.map(
-      w => q"ml.wolfe.FactorieConverter.toFactorieDenseVector($w,_index)"
-    ).getOrElse(q"new ml.wolfe.DenseVector(0)")
-
-
-    val code = q"""
-      val _index = new ml.wolfe.Index()
-      val _graph = new ml.wolfe.MPGraph
-      $structureDef
-      val $structName = new ${ meta.className }
-      $conditionCode
-      _graph.setupNodes()
-      ${ factors.classDef }
-      val factors = new ${ factors.className }($structName)
-      _graph.build()
-      val _factorieWeights = $factorieWeights
-      _graph.weights = _factorieWeights
-      $inferCode
-      $structName.setToArgmax()
-      $structName.value()
-    """
-    code
   }
 
   def argmaxByLearning(trees: BuilderTrees, scaling: Tree = q"1.0"): Tree = {
@@ -277,18 +236,13 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
     }
   }
 
-  def argmax(overWhereOf: Tree, scaling: Tree = q"1.0"): Tree = {
+  def argmax(overWhereOf: Tree, scaling: Tree = q"1.0"): CodeAndInitialization = {
 
     val trees = builderTrees(overWhereOf)
     //todo: deal with scaling in linear model as well
-    if (trees.over.symbol == wolfeSymbols.vectors) argmaxByLearning(trees, scaling) else argmaxLinearModel(trees)
-  }
-
-  def argmax2(overWhereOf: Tree, scaling: Tree = q"1.0"): CodeAndInitialization = {
-
-    val trees = builderTrees(overWhereOf)
-    //todo: deal with scaling in linear model as well
-    if (trees.over.symbol == wolfeSymbols.vectors) ??? else argmaxLinearModel2(trees)
+    if (trees.over.symbol == wolfeSymbols.vectors)
+      CodeAndInitialization(argmaxByLearning(trees, scaling),Nil)
+    else argmaxLinearModel(trees)
   }
 
 
