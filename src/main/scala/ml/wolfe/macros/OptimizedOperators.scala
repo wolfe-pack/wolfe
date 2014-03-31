@@ -12,17 +12,24 @@ object OptimizedOperators extends Operators {
 
   import scala.language.experimental.macros
 
-  override def argmax[T, N: Ordering](overWhereOf: Builder[T, N]) = macro argmaxImpl[T, N]
-  override def argmin[T, N: Ordering](overWhereOf: Builder[T, N]) = macro argminImpl[T, N]
-  override def map[T](overWhereOf: Builder[T, _]) = macro mapImpl[T]
+  override def argmax[T, N: Ordering](overWhereOf: Builder[T, N]):T = macro argmaxImpl[T, N]
+  override def argmin[T, N: Ordering](overWhereOf: Builder[T, N]):T = macro argminImpl[T, N]
+  override def map[T](overWhereOf: Builder[T, _]):Iterable[T] = macro mapImpl[T]
 
 
   def argmaxImpl[T: c.WeakTypeTag, N: c.WeakTypeTag](c: Context)
                                                     (overWhereOf: c.Expr[Builder[T, N]])
                                                     (ord: c.Expr[Ordering[N]]) = {
     val helper = new ContextHelper[c.type](c) with OptimizedOperators[c.type]
-    val result = helper.argmax(overWhereOf.tree)
-    c.Expr[T](result)
+    if (c.enclosingMacros.size > 0) {
+      import c.universe._
+      val trees = helper.builderTrees(overWhereOf.tree)
+      val code:Tree = q"${trees.over}.filter(${trees.where}).maxBy(${trees.of})"
+      c.Expr[T](code)
+    } else {
+      val result = helper.argmax(overWhereOf.tree)
+      c.Expr[T](result)
+    }
   }
 
   def argminImpl[T: c.WeakTypeTag, N: c.WeakTypeTag](c: Context)
@@ -39,11 +46,11 @@ object OptimizedOperators extends Operators {
     import c.universe._
     val helper = new ContextHelper[c.type](c) with OptimizedOperators[c.type]
 
-    val result:Tree = helper.map(overWhereOf.tree)
-//    val result: Tree = helper.argmax(overWhereOf.tree, q"-1.0")
-    val expr = reify[Iterable[T]](overWhereOf.splice.dom.filter(overWhereOf.splice.filter).map(overWhereOf.splice.mapper))
-    c.Expr[Iterable[T]](c.resetLocalAttrs(expr.tree))
-//    c.Expr[T](result)
+    val result: Tree = helper.map(overWhereOf.tree)
+    //    val result: Tree = helper.argmax(overWhereOf.tree, q"-1.0")
+//    val expr = reify[Iterable[T]](overWhereOf.splice.dom.filter(overWhereOf.splice.filter).map(overWhereOf.splice.mapper))
+//    c.Expr[Iterable[T]](c.resetLocalAttrs(expr.tree))
+    c.Expr[T](result)
   }
 
 
@@ -79,12 +86,85 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
     }
   }
 
-  def map(builder:Tree):Tree = {
+  def map(builder: Tree): Tree = {
     val trees = builderTrees(builder)
-//    val (mapper,initCode) = transformAndCollect(trees.of, {
-//      case
-//    })
-    ???
+    val Function(List(mapperArg), _) = simplifyBlocks(trees.using)
+
+    //we should do this until no more inlining can be done
+
+    //todo: this is messy
+    def transform(using:Tree) = transformAndCollect[List[Tree]](using, {
+      case ArgmaxOperator(argmaxBuilder) =>
+        val codeAndInit = argmaxLinearModel2(argmaxBuilder)
+        val initContainsMappingArg = codeAndInit.initialization.exists(_.exists(_.symbol == mapperArg.symbol))
+        if (initContainsMappingArg) (codeAndInit.combined, Nil) else (codeAndInit.code, codeAndInit.initialization)
+    })
+    var (mapper, initCode) = transform(trees.using)
+    var inlined = inlineOnce(mapper)
+    while (inlined.isDefined) {
+      val (m, i) = transform(inlined.get)
+      initCode :::= i
+      mapper = m
+      inlined = inlineOnce(m)
+    }
+
+    val mapCall = trees.where match {
+      case w if w == EmptyTree => q"${trees.over}.map($mapper)"
+      case w => q"${trees.over}.filter($w).map($mapper)"
+    }
+    val flattened = initCode.flatten
+    val code = q"""
+      ..$flattened
+      $mapCall
+    """
+    context.resetLocalAttrs(code)
+  }
+
+  case class CodeAndInitialization(code: Tree, initialization: List[Tree]) {
+    def all = initialization :+ code
+    def combined = q"{..$all}"
+  }
+
+  def argmaxLinearModel2(trees: BuilderTrees): CodeAndInitialization = {
+    val structName = newTermName(context.fresh("structure"))
+    val meta = metaStructure(trees.over)
+    val Function(List(objArg), objRhs) = simplifyBlocks(trees.of)
+    val objMatcher = meta.matcher(rootMatcher(objArg.symbol, q"$structName", meta))
+    val factors = metaStructuredFactor(objRhs, meta, objMatcher, linearModelInfo = LinearModelInfo(q"_index"))
+    val inferCode = inferenceCode(objRhs, newTermName("_graph"))
+
+    val structureDef = meta.classDef(newTermName("_graph"))
+
+    val conditionCode = if (trees.where == EmptyTree) EmptyTree
+    else {
+      val Function(List(whereArg), whereRhs) = simplifyBlocks(trees.where)
+      val whereMatcher = meta.matcher(rootMatcher(whereArg.symbol, q"$structName", meta))
+      val conditioner = conditioning(whereRhs, whereMatcher)
+      conditioner.code
+    }
+    val factorieWeights = factors.weightVector.map(
+      w => q"ml.wolfe.FactorieConverter.toFactorieDenseVector($w,_index)"
+    ).getOrElse(q"new ml.wolfe.DenseVector(0)")
+
+    val initialization = List(
+      q"val _index = new ml.wolfe.Index()",
+      q"val _factorieWeights = $factorieWeights")
+
+    val code = q"""
+      val _graph = new ml.wolfe.MPGraph
+      $structureDef
+      val $structName = new ${ meta.className }
+      $conditionCode
+      _graph.setupNodes()
+      ${ factors.classDef }
+      val factors = new ${ factors.className }($structName)
+      _graph.build()
+      _graph.weights = _factorieWeights
+      $inferCode
+      $structName.setToArgmax()
+      $structName.value()
+    """
+    CodeAndInitialization(code, initialization)
   }
 
 
@@ -190,6 +270,13 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
     val trees = builderTrees(overWhereOf)
     //todo: deal with scaling in linear model as well
     if (trees.over.symbol == wolfeSymbols.vectors) argmaxByLearning(trees, scaling) else argmaxLinearModel(trees)
+  }
+
+  def argmax2(overWhereOf: Tree, scaling: Tree = q"1.0"): CodeAndInitialization = {
+
+    val trees = builderTrees(overWhereOf)
+    //todo: deal with scaling in linear model as well
+    if (trees.over.symbol == wolfeSymbols.vectors) ??? else argmaxLinearModel2(trees)
   }
 
 
