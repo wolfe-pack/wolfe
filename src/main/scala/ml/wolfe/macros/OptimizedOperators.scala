@@ -38,6 +38,8 @@ object OptimizedOperators extends Operators {
                                (overWhereOf: c.Expr[Builder[T, _]]) = {
     import c.universe._
     val helper = new ContextHelper[c.type](c) with OptimizedOperators[c.type]
+
+    val result:Tree = helper.map(overWhereOf.tree)
 //    val result: Tree = helper.argmax(overWhereOf.tree, q"-1.0")
     val expr = reify[Iterable[T]](overWhereOf.splice.dom.filter(overWhereOf.splice.filter).map(overWhereOf.splice.mapper))
     c.Expr[Iterable[T]](c.resetLocalAttrs(expr.tree))
@@ -77,8 +79,16 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
     }
   }
 
+  def map(builder:Tree):Tree = {
+    val trees = builderTrees(builder)
+//    val (mapper,initCode) = transformAndCollect(trees.of, {
+//      case
+//    })
+    ???
+  }
 
-  def argmaxLinearModel(trees: OverWhereOfTrees): Tree = {
+
+  def argmaxLinearModel(trees: BuilderTrees): Tree = {
     val structName = newTermName(context.fresh("structure"))
     val meta = metaStructure(trees.over)
     val Function(List(objArg), objRhs) = simplifyBlocks(trees.of)
@@ -119,15 +129,15 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
     code
   }
 
-  def argmaxByLearning(trees: OverWhereOfTrees, scaling: Tree = q"1.0"): Tree = {
+  def argmaxByLearning(trees: BuilderTrees, scaling: Tree = q"1.0"): Tree = {
     if (trees.where != EmptyTree)
       context.error(context.enclosingPosition, "Can't learn with constraints on weights yet: " + trees.where)
     val q"($arg) => $rhs" = simplifyBlocks(trees.of)
-    def toSum(tree: Tree): OverWhereOfTrees = tree match {
-      case s@Sum(over, where, of, _) => OverWhereOfTrees(over, where, of)
+    def toSum(tree: Tree): BuilderTrees = tree match {
+      case s@Sum(BuilderTrees(over, where, of, _)) => BuilderTrees(over, where, of)
       case s => inlineOnce(tree) match {
         case Some(inlined) => toSum(inlined)
-        case None => OverWhereOfTrees(q"List(0)", EmptyTree, q"(i:Int) => $s")
+        case None => BuilderTrees(q"List(0)", EmptyTree, q"(i:Int) => $s")
       }
     }
     val sum = toSum(rhs)
@@ -177,7 +187,7 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
 
   def argmax(overWhereOf: Tree, scaling: Tree = q"1.0"): Tree = {
 
-    val trees = overWhereOfTrees(overWhereOf)
+    val trees = builderTrees(overWhereOf)
     //todo: deal with scaling in linear model as well
     if (trees.over.symbol == wolfeSymbols.vectors) argmaxByLearning(trees, scaling) else argmaxLinearModel(trees)
   }
