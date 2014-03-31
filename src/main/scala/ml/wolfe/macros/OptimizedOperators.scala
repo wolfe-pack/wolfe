@@ -21,7 +21,7 @@ object OptimizedOperators extends Operators {
                                                     (overWhereOf: c.Expr[Builder[T, N]])
                                                     (ord: c.Expr[Ordering[N]]) = {
     val helper = new ContextHelper[c.type](c) with OptimizedOperators[c.type]
-    if (c.enclosingMacros.size > 0) {
+    if (c.enclosingMacros.size > 1) {
       import c.universe._
       val trees = helper.builderTrees(overWhereOf.tree)
       val code:Tree = q"${trees.over}.filter(${trees.where}).maxBy(${trees.of})"
