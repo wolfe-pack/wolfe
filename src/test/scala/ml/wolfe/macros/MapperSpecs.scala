@@ -1,6 +1,6 @@
 package ml.wolfe.macros
 
-import ml.wolfe.{Wolfe, WolfeSpec}
+import ml.wolfe.{BruteForceOperators, Wolfe, WolfeSpec}
 import ml.wolfe.Wolfe._
 
 /**
@@ -18,10 +18,10 @@ class MapperSpecs extends WolfeSpec {
       def model(w: Vector)(i: Data) = w dot features(i)
       val w: Vector = Range(0, 5).map(i => (i, i) -> 1.0).toMap
       def predict(i: Data) = argmax { over(space) of model(w) st (_.x == i.x) }
-      val test = ints.map(i => Data(i,i))
-//      val actual = map { over(test) using predict }
-//      println(actual)
-
+      val test = ints.map(i => Data(i, i))
+      val actual = map { over(test) using predict }
+      val expected = BruteForceOperators.map { over(test) using predict }
+      actual should be (expected)
     }
   }
 

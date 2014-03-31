@@ -84,6 +84,7 @@ trait SymbolRepository[C <: Context] extends HasContext[C] {
 
     lazy val sum    = traversableOnceClass.typeSignature.member(newTermName("sum"))
     lazy val max    = traversableOnceClass.typeSignature.member(newTermName("max"))
+    lazy val maxBy    = traversableOnceClass.typeSignature.member(newTermName("maxBy"))
     lazy val map    = traversableLikeClass.typeSignature.member(newTermName("map"))
     lazy val filter = traversableLikeClass.typeSignature.member(newTermName("filter"))
 

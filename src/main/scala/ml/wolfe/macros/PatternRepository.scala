@@ -22,27 +22,10 @@ trait PatternRepository[C <: Context] extends SymbolRepository[C] with CodeRepos
   }
 
   class AppliedOperator(classes: Symbol => Boolean, wolfeSymbol: Symbol, scalaSymbol: Symbol) {
-    def unapply2(tree: Tree): Option[(Tree, Tree, Tree, Tree)] = {
-      tree match {
-        case q"$op[$opType](${ _ })" if op.symbol == scalaSymbol && classes(opType.symbol) => op match {
-          case q"$map[..${ _ }]($obj)(${ _ }).max" if map.symbol == scalaSymbols.map => map match {
-            case q"$filter($where).map" if filter.symbol == scalaSymbols.filter =>
-              val q"$dom.filter" = filter
-              Some(dom, where, obj, opType)
-            case _ => None
-          }
-          case _ => None
-        }
-        case q"$op[$domType,$opType]($overWhereOf)(${ _ })" if op.symbol == wolfeSymbol && classes(opType.symbol) =>
-          val trees = builderTrees(overWhereOf)
-          Some((trees.over, trees.where, trees.of, opType))
-        case _ => None
-      }
-    }
     def unapply(tree: Tree): Option[BuilderTrees] = {
       tree match {
         case q"$op[$opType](${ _ })" if op.symbol == scalaSymbol && classes(opType.symbol) => op match {
-          case q"$map[..${ _ }]($obj)(${ _ }).${_}" if map.symbol == scalaSymbols.map => map match {
+          case q"$map[..${ _ }]($obj)(${ _ }).${ _ }" if map.symbol == scalaSymbols.map => map match {
             case q"$filter($where).map" if filter.symbol == scalaSymbols.filter =>
               val q"$dom.filter" = filter
               Some(BuilderTrees(dom, where, obj))
@@ -52,15 +35,16 @@ trait PatternRepository[C <: Context] extends SymbolRepository[C] with CodeRepos
           }
           case _ => None
         }
-//        case q"$op[$opType](${ _ })" if op.symbol == scalaSymbol && classes(opType.symbol) => op match {
-//          case q"$map[..${ _ }]($obj)(${ _ }).max" if map.symbol == scalaSymbols.map => map match {
-//            case q"$filter($where).map" if filter.symbol == scalaSymbols.filter =>
-//              val q"$dom.filter" = filter
-//              Some(BuilderTrees(dom, where, obj))
-//            case _ => None
-//          }
+        //maxBy signature style
+        case q"$op[$opType]($obj)(${ _ })" if op.symbol == scalaSymbol && classes(opType.symbol) => op match {
+          case q"$filter($where).${ _ }" if filter.symbol == scalaSymbols.filter =>
+            val q"$dom.filter" = filter
+            Some(BuilderTrees(dom, where, obj))
+          case dom =>
+            Some(BuilderTrees(dom, EmptyTree, obj))
 //          case _ => None
-//        }
+
+        }
         case q"$op[$domType,$opType]($overWhereOf)(${ _ })" if op.symbol == wolfeSymbol && classes(opType.symbol) =>
           val trees = builderTrees(overWhereOf)
           Some(trees)
@@ -101,9 +85,12 @@ trait PatternRepository[C <: Context] extends SymbolRepository[C] with CodeRepos
   object ApplyDoublePlus extends InfixApply(scalaSymbols.doublePluses)
   object ApplyPlus extends InfixApply(scalaSymbols.doublePluses + wolfeSymbols.vectorPlus)
   object ApplyDoubleMinus extends InfixApply(scalaSymbols.doubleMinuses)
-  object DoubleSum extends AppliedOperator(Set(scalaSymbols.doubleClass),wolfeSymbols.sum, scalaSymbols.sum)
-  object Sum extends AppliedOperator(Set(scalaSymbols.doubleClass, wolfeSymbols.vectorType),wolfeSymbols.sum, scalaSymbols.sum)
-  object DoubleMax extends AppliedOperator(Set(scalaSymbols.doubleClass),wolfeSymbols.max, scalaSymbols.max)
+  object DoubleSum extends AppliedOperator(Set(scalaSymbols.doubleClass), wolfeSymbols.sum, scalaSymbols.sum)
+  object Sum extends AppliedOperator(Set(scalaSymbols.doubleClass, wolfeSymbols.vectorType), wolfeSymbols.sum, scalaSymbols.sum)
+  object DoubleMax extends AppliedOperator(Set(scalaSymbols.doubleClass), wolfeSymbols.max, scalaSymbols.max)
+  object ArgmaxOperator extends AppliedOperator(Set(scalaSymbols.doubleClass), wolfeSymbols.argmax, scalaSymbols.maxBy)
+  object MapOperator extends AppliedOperator(_ => true, wolfeSymbols.map, scalaSymbols.map)
+
 
   case class BuilderTrees(over: Tree = EmptyTree, where: Tree = EmptyTree, of: Tree = EmptyTree, using: Tree = EmptyTree)
 
