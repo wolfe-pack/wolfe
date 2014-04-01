@@ -64,8 +64,6 @@ trait MetaGradientCalculators[C <: Context] extends MetaStructures[C]
                 def valueAndGradient(param: ml.wolfe.FactorieVector): (Double, ml.wolfe.FactorieVector) = {
                   val (v1,g1) = arg1.valueAndGradient(param)
                   val (v2,g2) = arg2.valueAndGradient(param)
-                  ml.wolfe.util.LoggerUtil.debug("g1:" + ml.wolfe.FactorieConverter.toWolfeVector(g1,$indexTree))
-                  ml.wolfe.util.LoggerUtil.debug("g2:" + ml.wolfe.FactorieConverter.toWolfeVector(g2,$indexTree))
                   ($value, $gradient)
                 }}
           """
