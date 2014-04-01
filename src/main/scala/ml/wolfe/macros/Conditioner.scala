@@ -124,7 +124,8 @@ trait Conditioner[C <: Context] extends MetaStructures[C] {
   def conditioning(condition: Tree, matchStructure: Tree => Option[StructurePointer]): ConditioningCode = {
     val matchers = new Matchers(matchStructure)
     import matchers._
-    condition match {
+    val simplified = simplifyBlock(condition)
+    simplified match {
       //      case q"$x == $value" => matchStructure(x) match {
       //        case Some(structure) =>
       //          ConditioningCode(q"${structure.structure}.observe($value)", EmptyTree)
@@ -143,7 +144,7 @@ trait Conditioner[C <: Context] extends MetaStructures[C] {
           inlineOnce(x) match {
             case Some(inlined) => conditioning(inlined, matchStructure)
             case None =>
-              context.warning(x.pos, s"No specialized conditioning for $x")
+              context.error(x.pos, s"No specialized conditioning for $x")
               ConditioningCode(EmptyTree, condition)
           }
         }

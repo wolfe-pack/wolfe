@@ -158,7 +158,23 @@ trait Transformers[C<:Context] {
   lazy val blockSimplifier = new BlockSimplifier
 
   def betaReduce(tree: Tree) = betaReducer transform tree
-  def simplifyBlocks(tree: Tree) = blockSimplifier transform tree
+  def removeSingletonBlocks(tree: Tree) = blockSimplifier transform tree
+
+  def simplifyBlock(tree: Tree): Tree = tree match {
+    case Block(stats, expr) => {
+      val (newExpr, newStats) = stats.foldRight(expr -> List.empty[Tree]) {
+        (stat, result) => stat match {
+          //todo: we also need to replace vals in other statements in the list
+          case v: ValDef => transform(result._1, { case i: Ident if i.symbol == v.symbol => v.rhs }) -> result._2
+          case i: Import => result
+          case s => (result._1, result._2 :+ s)
+        }
+      }
+      if (newStats.isEmpty) newExpr else Block(newStats,newExpr)
+    }
+    case _ => tree
+  }
+
 
   def transform(tree: Tree, pf: PartialFunction[Tree, Tree]): context.Tree =
     new TransformWithPartialFunction(pf).transform(tree)
