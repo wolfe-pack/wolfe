@@ -38,7 +38,7 @@ trait MetaGradientCalculators[C <: Context] extends MetaStructures[C]
     val className = newTypeName(context.fresh("DotGradientCalculator"))
     val classDef = q"""
           final class $className extends ml.wolfe.macros.GradientCalculator {
-            val coefficient = ml.wolfe.FactorieConverter.toFactorieSparseVector($coefficient,$indexTree)
+            val coefficient = ml.wolfe.FactorieConverter.toFreshFactorieSparseVector($coefficient,$indexTree)
             def valueAndGradient(param: ml.wolfe.FactorieVector): (Double, ml.wolfe.FactorieVector) = {
               (param dot coefficient, coefficient)
             }
@@ -147,7 +147,7 @@ object GradientCalculator {
           val _index = new ml.wolfe.Index()
           ${calculator.classDef}
           val calculator = new ${calculator.className}
-          val factorieArgument = ml.wolfe.FactorieConverter.toFactorieSparseVector(${argument.tree},_index)
+          val factorieArgument = ml.wolfe.FactorieConverter.toFreshFactorieSparseVector(${argument.tree},_index)
           val (value,gradient) = calculator.valueAndGradient(factorieArgument)
           val wolfeResult = ml.wolfe.FactorieConverter.toWolfeVector(gradient, _index)
           (value,wolfeResult)

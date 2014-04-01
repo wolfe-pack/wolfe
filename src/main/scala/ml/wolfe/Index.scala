@@ -73,6 +73,21 @@ class Index extends Serializable {
     this
   }
 
+  private val sparseVectorCache = new mutable.HashMap[Wolfe.Vector, SparseVector]()
+
+  def toCachedFactorieSparseVector[T](vector: Wolfe.Vector): SparseVector = {
+    val result = sparseVectorCache.getOrElseUpdate(vector, toFreshFactorieSparseVector(vector))
+    result
+  }
+
+
+  def toFreshFactorieSparseVector[T](vector: Wolfe.Vector): SparseVector = {
+    val sparse = new SparseVector(vector.self.size)
+    for ((key, value) <- vector.self) sparse(this(Seq(key))) = value
+    sparse
+  }
+
+
 }
 
 object Index {

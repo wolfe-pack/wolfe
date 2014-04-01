@@ -1,5 +1,7 @@
 package ml.wolfe
 
+import scala.collection.mutable
+
 /**
  * @author Sebastian Riedel
  */
@@ -8,11 +10,20 @@ object FactorieConverter {
   import Wolfe.{Vector => WVector}
   import ml.wolfe.{FactorieVector => FVector}
 
-  def toFactorieSparseVector[T](vector: WVector, index: Index): FVector = {
+  //todo: make this thread safe
+
+  def toFreshFactorieSparseVector[T](vector: WVector, index: Index): FVector = {
     val sparse = new SparseVector(vector.self.size)
     for ((key, value) <- vector.self) sparse(index(Seq(key))) = value
     sparse
   }
+
+  def addFactorieSparseVectors(arg1: SparseVector, arg2: SparseVector) = {
+    arg1 + arg2
+    arg1 dot arg2
+    ???
+  }
+
   def toFactorieDenseVector[T](vector: WVector, index: Index): FVector = {
     val dense = new DenseVector(vector.self.size + 1000)
     for ((key, value) <- vector.self) dense(index(Seq(key))) = value
