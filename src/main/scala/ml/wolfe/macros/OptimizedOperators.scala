@@ -28,7 +28,7 @@ object OptimizedOperators extends Operators {
       c.Expr[T](code)
     } else {
       val result = helper.argmax(overWhereOf.tree)
-      c.Expr[T](result.combined)
+      c.Expr[T](c.resetLocalAttrs(result.combined))
     }
   }
 
@@ -164,7 +164,7 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
       $structName.setToArgmax()
       $structName.value()
     """
-    CodeAndInitialization(code, initialization)
+    CodeAndInitialization(context.resetLocalAttrs(code), initialization)
   }
 
   def blockToFunction(tree: Tree): Tree = tree match {
