@@ -97,7 +97,6 @@ class MetaStructureSpecs extends StructureIsomorphisms {
       structure.nodes().size should be(3)
     }
 
-
   }
 
 }
