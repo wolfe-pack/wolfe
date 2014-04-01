@@ -5,6 +5,7 @@ import scala.util.Random
 import cc.factorie.WeightsSet
 import cc.factorie.optimize.Trainer
 import scala.annotation.StaticAnnotation
+import scala.collection.MapProxy
 
 /**
  * @author Sebastian Riedel
@@ -82,15 +83,34 @@ object Wolfe extends SampleSpaceDefs
 }
 
 trait StatsDefs {
-  def oneHot(key: Any, value: Double = 1.0): Wolfe.Vector = Map(key -> value)
+  def oneHot(key: Any, value: Double = 1.0): Wolfe.Vector = Wolfe.Vector(key -> value)
   def vector(keyValue: (Any, Double)*): Wolfe.Vector = keyValue.toMap
 
 }
 
 trait VectorDefs {
 
-  type Vector = Map[Any, Double]
+  //type Vector = Map[Any, Double]
 
+  class Vector(underlying: Map[Any, Double]) extends MapProxy[Any,Double] {
+    val self = underlying withDefaultValue 0.0
+//    def apply(x: Any) = self(x)
+//    def get(x: Any) = self.get(x)
+
+    def +(that: Vector) = {
+      val keys = self.keySet ++ that.self.keySet
+      val result = keys map (k => k -> (self.getOrElse(k, 0.0) + that.self.getOrElse(k, 0.0)))
+      new Vector(result.toMap)
+    }
+    def dot(that: Vector) = VectorNumeric.dot(this, that)
+    def norm = VectorNumeric.norm(this)
+    def *(scale: Double) = new Vector(self.mapValues(_ * scale))
+    def *(vector: Vector) = new Vector(vector.self.map({ case (k, v) => k -> v * vector(k) }))
+//    override def equals(p1: scala.Any) = p1 match {
+//      case v:Vector => v.self == this.self
+//    }
+
+  }
 
   object Vector {
     def apply(elems: (Any, Double)*) = Map(elems: _*)
@@ -103,41 +123,39 @@ trait VectorDefs {
 
   val VectorZero = Map.empty[Any, Double]
 
+  implicit def toVector(map:Map[_,Double]) = new Vector(map.asInstanceOf[Map[Any,Double]])
+
   implicit object VectorNumeric extends Numeric[Vector] {
-    def plus(x: Wolfe.Vector, y: Wolfe.Vector) = {
-      val keys = x.keySet ++ y.keySet
-      val result = keys map (k => k -> (x.getOrElse(k, 0.0) + y.getOrElse(k, 0.0)))
-      result.toMap
-    }
-    def minus(x: Wolfe.Vector, y: Wolfe.Vector) = ???
-    def times(x: Wolfe.Vector, y: Wolfe.Vector) = ???
-    def negate(x: Wolfe.Vector) = ???
+    def plus(x: Vector, y: Vector) = x + y
+    def minus(x: Vector, y: Vector) = ???
+    def times(x: Vector, y: Vector) = ???
+    def negate(x: Vector) = ???
     def fromInt(x: Int) = ???
-    def toInt(x: Wolfe.Vector) = ???
-    def toLong(x: Wolfe.Vector) = ???
-    def toFloat(x: Wolfe.Vector) = ???
-    def toDouble(x: Wolfe.Vector) = ???
-    def compare(x: Wolfe.Vector, y: Wolfe.Vector) = ???
+    def toInt(x: Vector) = ???
+    def toLong(x: Vector) = ???
+    def toFloat(x: Vector) = ???
+    def toDouble(x: Vector) = ???
+    def compare(x: Vector, y: Vector) = ???
     def dot(x: Vector, y: Vector) = {
-      x.keys.view.map(k => x(k) * y.getOrElse(k, 0.0)).sum
+      x.self.keys.view.map(k => x(k) * y.self.getOrElse(k, 0.0)).sum
     }
-    override def zero = Map.empty
+    override val zero = new Vector(Map.empty)
     def norm(x: Vector) = {
-      val sum = x.values.sum
-      x mapValues (_ / sum)
+      val sum = x.self.values.sum
+      x.self.mapValues(_ / sum)
     }
   }
 
-  implicit class RichVector(vector: Vector) {
-
-    import Wolfe.{VectorNumeric => num}
-
-    def +(that: Vector) = num.plus(vector, that)
-    def dot(that: Vector) = num.dot(vector, that)
-    def norm = num.norm(vector)
-    def *(scale: Double) = vector.mapValues(_ * scale)
-    def *(vector: Vector) = vector.map({ case (k, v) => k -> v * vector.getOrElse(k, 0.0) })
-  }
+  //  implicit class RichVector(vector: Vector) {
+  //
+  //    import Wolfe.{VectorNumeric => num}
+  //
+  //    def +(that: Vector) = num.plus(vector, that)
+  //    def dot(that: Vector) = num.dot(vector, that)
+  //    def norm = num.norm(vector)
+  //    def *(scale: Double) = vector.mapValues(_ * scale)
+  //    def *(vector: Vector) = vector.map({ case (k, v) => k -> v * vector.getOrElse(k, 0.0) })
+  //  }
 
 }
 
@@ -301,7 +319,7 @@ trait ProblemBuilder {
     def subjectTo(st: T => Boolean) = where(st)
     def st(st: T => Boolean) = where(st)
     def over(over: Iterable[T]) = copy(dom = over)
-    def of(of: T => N) = Builder[T, N](dom, filter, of)
+    def of[NewN](of: T => NewN) = Builder[T, NewN](dom, filter, of)
     def apply(of: T => N) = Builder[T, N](dom, filter, of)
     def using(using: T => T) = copy(mapper = using)
   }

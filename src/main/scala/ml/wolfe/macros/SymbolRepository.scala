@@ -17,7 +17,7 @@ trait SymbolRepository[C <: Context] extends HasContext[C] {
     lazy val wolfeType        = wolfe.typeSignature
     lazy val optimizedOpsType = optimizedOps.typeSignature
 
-    lazy val richVectorClass  = rootMirror.staticClass("ml.wolfe.Wolfe.RichVector")
+    lazy val vectorClass  = rootMirror.staticClass("ml.wolfe.Wolfe.Vector")
     lazy val overWhereOfClass = rootMirror.staticClass("ml.wolfe.Wolfe.Builder")
 
     lazy val strings = wolfeType.member(newTermName("strings"))
@@ -54,8 +54,9 @@ trait SymbolRepository[C <: Context] extends HasContext[C] {
 
 
     lazy val vectorType = rootMirror.staticClass("ml.wolfe.Wolfe.Vector")
-    lazy val dot        = richVectorClass.typeSignature.member(newTermName("dot"))
-    lazy val vectorPlus = richVectorClass.typeSignature.member(newTermName("$plus"))
+    lazy val dot        = vectorClass.typeSignature.member(newTermName("dot"))
+    lazy val vectorPlus = vectorClass.typeSignature.member(newTermName("$plus"))
+    lazy val vectorPluses = vectorPlus.asTerm.alternatives.toSet
 
 
     lazy val atomic         = rootMirror.staticClass("ml.wolfe.macros.OptimizedWolfe.Atomic")

@@ -57,7 +57,7 @@ trait PatternRepository[C <: Context] extends SymbolRepository[C] with CodeRepos
 
   object Dot {
     def unapply(tree: Tree): Option[(Tree, Tree)] = tree match {
-      case q"ml.wolfe.Wolfe.RichVector($arg1).dot($arg2)" =>
+      case q"$arg1.dot($arg2)" =>
         Some(arg1, arg2)
       case _ => None
     }
@@ -83,7 +83,7 @@ trait PatternRepository[C <: Context] extends SymbolRepository[C] with CodeRepos
 
   object ApplyAnd extends InfixApply(Set(scalaSymbols.and))
   object ApplyDoublePlus extends InfixApply(scalaSymbols.doublePluses)
-  object ApplyPlus extends InfixApply(scalaSymbols.doublePluses + wolfeSymbols.vectorPlus)
+  object ApplyPlus extends InfixApply(scalaSymbols.doublePluses ++ wolfeSymbols.vectorPluses)
   object ApplyDoubleMinus extends InfixApply(scalaSymbols.doubleMinuses)
   object DoubleSum extends AppliedOperator(Set(scalaSymbols.doubleClass), wolfeSymbols.sum, scalaSymbols.sum)
   object Sum extends AppliedOperator(Set(scalaSymbols.doubleClass, wolfeSymbols.vectorType), wolfeSymbols.sum, scalaSymbols.sum)
@@ -95,7 +95,7 @@ trait PatternRepository[C <: Context] extends SymbolRepository[C] with CodeRepos
   case class BuilderTrees(over: Tree = EmptyTree, where: Tree = EmptyTree, of: Tree = EmptyTree, using: Tree = EmptyTree)
 
   def builderTrees(tree: Tree): BuilderTrees = tree match {
-    case q"$of($obj)" if of.symbol == wolfeSymbols.of =>
+    case q"$of[${_}]($obj)" if of.symbol == wolfeSymbols.of =>
       val q"$owo.of" = of
       builderTrees(owo).copy(of = obj)
     case q"$st($filter)" if st.symbol == wolfeSymbols.st =>

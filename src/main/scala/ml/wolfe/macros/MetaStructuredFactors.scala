@@ -184,10 +184,10 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] {
     case false => MetaAtomicStructuredFactorTable(potential, structure, matcher, constructorArgs)
   }
 
-  def unwrapIfRichVector(arg1: Tree) = arg1 match {
-    case q"ml.wolfe.Wolfe.RichVector($actualArg1)" => actualArg1
-    case _ => arg1
-  }
+//  def unwrapIfRichVector(arg1: Tree) = arg1 match {
+//    case q"ml.wolfe.Wolfe.RichVector($actualArg1)" => actualArg1
+//    case _ => arg1
+//  }
 
 
   def metaStructuredFactor(potential: Tree, structure: MetaStructure,
@@ -195,6 +195,7 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] {
                            constructorArgs: List[ValDef] = Nil,
                            linearModelInfo: LinearModelInfo,
                            linear: Boolean = false): MetaStructuredFactor = {
+//    val simplified = unwrapSingletonBlocks(potential)
     val simplified = simplifyBlock(unwrapSingletonBlocks(potential))
     simplified match {
       case Sum(BuilderTrees(dom, filter, obj, _)) =>
@@ -203,10 +204,9 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] {
       case Apply(f, args) if f.symbol.annotations.exists(_.tpe.typeSymbol == wolfeSymbols.atomic) =>
         atomic(potential, structure, matcher, constructorArgs, linearModelInfo, linear)
       case ApplyPlus(arg1, arg2) =>
-        val unwrapped1 = unwrapIfRichVector(arg1)
-        val f1 = metaStructuredFactor(unwrapped1, structure, matcher, constructorArgs, linearModelInfo, linear)
+        val f1 = metaStructuredFactor(arg1, structure, matcher, constructorArgs, linearModelInfo, linear)
         val f2 = metaStructuredFactor(arg2, structure, matcher, constructorArgs, linearModelInfo, linear)
-        MetaSumFactor(List(unwrapped1, arg2), List(f1, f2), structure, constructorArgs)
+        MetaSumFactor(List(arg1, arg2), List(f1, f2), structure, constructorArgs)
       case Dot(arg1, arg2) if structures(arg1, matcher).isEmpty =>
         val linearFactor = metaStructuredFactor(arg2, structure, matcher, constructorArgs, linearModelInfo, true)
         WithWeightVector(linearFactor,arg1)

@@ -32,8 +32,12 @@ trait CodeRepository[C<:Context] extends HasContext[C] with Transformers[C] {
   def inlineOnce(tree: Tree): Option[Tree] = {
     val replacer = new ReplaceMethodsWithFunctions(false)
     val replaced = replacer transform tree
+//    println("Replaced: " + replaced)
+//    val retyped = context.typeCheck(context.resetLocalAttrs(replaced))
     val reduced = betaReduce(replaced)
-    if (reduced == tree) None else Some(reduced)
+//    println(reduced)
+    if (replaced == tree) None else Some(reduced)
+//    if (reduced == tree) None else Some(reduced)
   }
 
   def inlineN(t: Int, tree: Tree): Option[Tree] = t match {

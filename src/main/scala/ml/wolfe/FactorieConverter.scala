@@ -9,20 +9,20 @@ object FactorieConverter {
   import ml.wolfe.{FactorieVector => FVector}
 
   def toFactorieSparseVector[T](vector: WVector, index: Index): FVector = {
-    val sparse = new SparseVector(vector.size)
-    for ((key, value) <- vector) sparse(index(Seq(key))) = value
+    val sparse = new SparseVector(vector.self.size)
+    for ((key, value) <- vector.self) sparse(index(Seq(key))) = value
     sparse
   }
   def toFactorieDenseVector[T](vector: WVector, index: Index): FVector = {
-    val dense = new DenseVector(vector.size + 1000)
-    for ((key, value) <- vector) dense(index(Seq(key))) = value
+    val dense = new DenseVector(vector.self.size + 1000)
+    for ((key, value) <- vector.self) dense(index(Seq(key))) = value
     dense
   }
 
   def toWolfeVector(fvector: FVector, index: Index): WVector = {
     val inverse = index.inverse()
     val map = for ((key, value) <- fvector.activeElements; inv <- inverse.get(key)) yield inv(0) -> value
-    map.toMap
+    new Wolfe.Vector(map.toMap)
   }
 
 }
