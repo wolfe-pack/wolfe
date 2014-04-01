@@ -32,7 +32,7 @@ class MetaStructuredFactorSpecs extends StructureIsomorphisms {
     "generate only one factor for atomic sub-objectives" in {
       case class Data(x: Boolean, y: Boolean, z: Boolean)
       def space = Wolfe.all(Data)
-      @OptimizedWolfe.Atomic
+      @Atomic
       def sub(d: Data) = Wolfe.I(d.x) + Wolfe.I(d.y)
       def potential(d: Data) = sub(d) + Wolfe.I(d.z)
       val factor = MetaStructuredFactor.structuredFactor[Data](space, potential)

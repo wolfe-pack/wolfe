@@ -59,7 +59,7 @@ trait SymbolRepository[C <: Context] extends HasContext[C] {
     lazy val vectorPluses = vectorPlus.asTerm.alternatives.toSet
 
 
-    lazy val atomic         = rootMirror.staticClass("ml.wolfe.macros.OptimizedWolfe.Atomic")
+    lazy val atomic         = rootMirror.staticClass("ml.wolfe.Wolfe.Atomic")
     lazy val optByInference = rootMirror.staticClass("ml.wolfe.Wolfe.OptimizeByInference")
     lazy val optByLearning  = rootMirror.staticClass("ml.wolfe.Wolfe.OptimizeByLearning")
 

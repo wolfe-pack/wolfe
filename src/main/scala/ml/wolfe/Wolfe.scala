@@ -307,6 +307,8 @@ trait Conditioning {
 trait Annotations {
   class OptimizeByLearning(trainer: WeightsSet => Trainer) extends StaticAnnotation
   class OptimizeByInference(inference: MPGraph => Unit) extends StaticAnnotation
+  class Atomic extends StaticAnnotation
+
 }
 
 trait ProblemBuilder {
