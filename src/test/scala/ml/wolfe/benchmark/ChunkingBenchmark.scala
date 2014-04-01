@@ -16,9 +16,9 @@ object ChunkingBenchmark {
     import OptimizedOperators._
     import NLP._
 
-    def toToken(conll:Array[String]) = Token(conll(0), Tag(conll(1)), Chunk(conll(2)))
+    def toToken(conll: Array[String]) = Token(conll(0), Tag(conll(1)), Chunk(conll(2)))
 
-    val train = loadCoNLL("ml/wolfe/datasets/conll2000/train.txt")(toToken).map(Sentence).take(30)
+    val train = loadCoNLL("ml/wolfe/datasets/conll2000/train.txt")(toToken).map(Sentence).take(1000)
 
     def Tokens = Wolfe.all(Token)
     def Sentences = Wolfe.all(Sentence)(seqs(Tokens))
@@ -38,7 +38,7 @@ object ChunkingBenchmark {
 
     def perceptronLoss(w: Vector)(i: Sentence): Double = max { over(Sentences) of model(w) st evidence(i) } - model(w)(i)
 
-    @OptimizeByLearning(new OnlineTrainer(_, new Perceptron, 4))
+    @OptimizeByLearning(new OnlineTrainer(_, new Perceptron, 4, 100))
     def loss(w: Vector) = sum { over(train) of perceptronLoss(w) }
 
     val w = argmin { over[Vector] of loss }
@@ -47,7 +47,7 @@ object ChunkingBenchmark {
     def predict(s: Sentence) = argmax { over(Sentences) of model(w) st evidence(s) }
 
     //            val predictedTest = map { over(test) using predict }
-    LoggerUtil.info("Prediction ...")
+    LoggerUtil.info("Prediction...")
     val predictedTrain = map { over(train) using predict }
 
     //      println(predictedTrain.mkString("\n"))
