@@ -195,7 +195,7 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] {
                            constructorArgs: List[ValDef] = Nil,
                            linearModelInfo: LinearModelInfo,
                            linear: Boolean = false): MetaStructuredFactor = {
-    val simplified = unwrapSingletonBlocks(potential)
+    val simplified = simplifyBlock(unwrapSingletonBlocks(potential))
     simplified match {
       case Sum(BuilderTrees(dom, filter, obj, _)) =>
         require(filter == EmptyTree)
