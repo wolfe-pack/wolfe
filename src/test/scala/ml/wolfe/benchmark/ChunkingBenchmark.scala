@@ -28,9 +28,9 @@ object ChunkingBenchmark {
 
     def features(s: Sentence) = {
       import s._
-      val obs = sum { over(0 until tokens.size) of (i => oneHot('o -> tokens(i).word -> tokens(i).chunk)) }
-      val pairs = sum { over(0 until tokens.size - 1) of (i => oneHot('p -> tokens(i).chunk -> tokens(i + 1).chunk)) }
-      pairs + obs
+      val f1 = sum { over(0 until tokens.size) of (i => oneHot('o -> tokens(i).word -> tokens(i).chunk)) }
+      val f2 = sum { over(0 until tokens.size - 1) of (i => oneHot('p -> tokens(i).chunk -> tokens(i + 1).chunk)) }
+      f1 + f2
     }
 
     @OptimizeByInference(MaxProduct(_, 1))

@@ -1,4 +1,7 @@
 package ml.wolfe
+import scalaxy.loops._
+import scala.language.postfixOps
+
 
 /**
  * @author Sebastian Riedel
@@ -105,11 +108,11 @@ object MaxProduct {
     fill(edge.f2n, Double.NegativeInfinity)
 
     //max over all settings
-    for (i <- 0 until factor.entryCount) {
+    for (i <- (0 until factor.entryCount).optimized) {
       val setting = factor.settings(i)
       var score = factor.score(i)
       val varValue = setting(edge.indexInFactor)
-      for (j <- 0 until factor.rank; if j != edge.indexInFactor) {
+      for (j <- (0 until factor.rank).optimized; if j != edge.indexInFactor) {
         score += factor.edges(j).n2f(setting(j))
       }
       edge.f2n(varValue) = math.max(score, edge.f2n(varValue))
@@ -126,8 +129,8 @@ object MaxProduct {
   def updateN2F(edge: Edge) {
     val node = edge.n
     System.arraycopy(node.in, 0, edge.n2f, 0, edge.n2f.length)
-    for (i <- 0 until node.dim) {
-      for (e <- 0 until node.edges.length; if e != edge.indexInNode)
+    for (i <- (0 until node.dim).optimized) {
+      for (e <- (0 until node.edges.length).optimized; if e != edge.indexInNode)
         edge.n2f(i) += node.edges(e).f2n(i)
     }
   }
