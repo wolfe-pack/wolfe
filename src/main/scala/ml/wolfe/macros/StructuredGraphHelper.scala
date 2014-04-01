@@ -38,8 +38,8 @@ trait StructuredGraphHelper[C <: Context] {
     val factorieConverter = q"ml.wolfe.FactorieConverter"
 
 
-    val normalizedObj  = betaReduce(replaceMethods(simplifyBlocks(obj), defs))
-    val normalizedPred = betaReduce(replaceMethods(simplifyBlocks(where), defs))
+    val normalizedObj  = betaReduce(replaceMethods(removeSingletonBlocks(obj), defs))
+    val normalizedPred = betaReduce(replaceMethods(removeSingletonBlocks(where), defs))
 
     val Function(List(objVarDef@ValDef(_, objVarName, _, _)), rootObj)    = normalizedObj
     val Function(List(predVarDef@ValDef(_, predVarName, _, _)), rootPred) = normalizedPred
@@ -49,7 +49,7 @@ trait StructuredGraphHelper[C <: Context] {
     //      case i@Ident(name) => vals.getOrElse(name, i)
     //      case t => t
     //    })
-    val inlinedData = replaceVals(betaReduce(replaceMethods(simplifyBlocks(data), defs)), valDefs)
+    val inlinedData = replaceVals(betaReduce(replaceMethods(removeSingletonBlocks(data), defs)), valDefs)
 
     val checked = context.typeCheck(inlinedData)
 

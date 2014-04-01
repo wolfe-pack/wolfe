@@ -90,10 +90,10 @@ trait MetaGradientCalculators[C <: Context] extends MetaStructures[C]
       case DoubleMax(BuilderTrees(dom,where,obj,_)) =>
         val structName = newTermName(context.fresh("structure"))
         val meta = metaStructure(dom)
-        val Function(List(objArg),objRhs) = simplifyBlocks(obj)
+        val Function(List(objArg),objRhs) = removeSingletonBlocks(obj)
 
         val conditionerCode = if (where != EmptyTree) {
-          val Function(List(whereArg), whereRhs) = simplifyBlocks(where)
+          val Function(List(whereArg), whereRhs) = removeSingletonBlocks(where)
           val whereMatcher = meta.matcher(rootMatcher(whereArg.symbol, q"$structName", meta))
           val conditioner = conditioning(whereRhs, whereMatcher)
           conditioner.code
@@ -141,7 +141,7 @@ object GradientCalculator {
   def valueAndgradientAtImpl(c: Context)(function: c.Expr[Wolfe.Vector => Double], argument: c.Expr[Wolfe.Vector]) = {
     import c.universe._ //todo: needed here for q"" expressions, but gets optimized away by Intellij
     val helper = new ContextHelper[c.type](c) with MetaGradientCalculators[c.type]
-    val q"($x) => $rhs" = helper.simplifyBlocks(function.tree)
+    val q"($x) => $rhs" = helper.removeSingletonBlocks(function.tree)
     val index = q"_index"
     helper.metaGradientCalculator(rhs,x.symbol,index) match {
       case Good(calculator) =>

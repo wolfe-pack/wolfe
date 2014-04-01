@@ -10,15 +10,25 @@ import Wolfe._
 class ConditionerSpecs extends StructureIsomorphisms {
 
   "A conditioner" should {
-    "condition an atomic sample space" in {
+    "condition an atomic sample space using equality" in {
       def space = Seq(1, 2, 3, 4)
       val structure = Conditioner.conditioned(space)(x => x == 1)
       structure mustBeIsomorphicTo (space filter (_ == 1))
     }
-    "condition an atomic boolean sample space" in {
+    "condition an atomic boolean sample space using the boolean value itself" in {
       def space = Seq(true, false)
       val structure = Conditioner.conditioned(space)(x => x)
       structure mustBeIsomorphicTo (space filter (x => x))
+    }
+    "support import statements" in {
+      case class Data(x:Boolean,y:Boolean)
+      def space = Wolfe.all(Data)
+      def predicate(i:Data) = {
+        import i._
+        x
+      }
+      val structure = Conditioner.conditioned(space)(predicate(_))
+      structure mustBeIsomorphicTo (space filter (predicate(_)))
     }
     "condition a complex sample space " in {
       implicit val persons = Seq("Sameer", "Vivek")
