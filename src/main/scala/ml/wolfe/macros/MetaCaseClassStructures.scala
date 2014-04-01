@@ -28,17 +28,17 @@ trait MetaCaseClassStructures[C<:Context] {
     lazy val observeFields   = fields.map(f => q"${f.name}.observe(value.${f.name})")
     lazy val argType         = tpe.widen
     def classDef(graphName: TermName) = q"""
-      final class $className extends Structure[$tpe] {
+      final class $className extends ml.wolfe.macros.Structure[$tpe] {
         import ml.wolfe.MPGraph._
         ..${subClassDefs(graphName)}
         ..$structureFields
         private var iterator:Iterator[Unit] = _
         def children() = fields
-        def fields:Iterator[Structure[_]] = Iterator(..$fieldIds)
+        def fields:Iterator[ml.wolfe.macros.Structure[_]] = Iterator(..$fieldIds)
         def graph = $graphName
         def value():$argType = new $argType(..$fieldValues)
         def nodes():Iterator[Node] = fields.flatMap(_.nodes())
-        def resetSetting() { iterator = Structure.settingsIterator(List(..$fieldIds).reverse)()}
+        def resetSetting() { iterator = ml.wolfe.macros.Structure.settingsIterator(List(..$fieldIds).reverse)()}
         def hasNextSetting = iterator.hasNext
         def nextSetting = iterator.next
         def setToArgmax() {fields.foreach(_.setToArgmax())}

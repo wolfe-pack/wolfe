@@ -21,7 +21,7 @@ trait MetaSeqStructures[C<:Context] {
       val elementDef = elementMetaStructure.classDef(graphName)
 
       q"""
-        final class $className extends Structure[$argType] with SeqStructure[$argType] {
+        final class $className extends ml.wolfe.macros.Structure[$argType] with ml.wolfe.macros.SeqStructure[$argType] {
 
           $elementDef
 
@@ -36,7 +36,7 @@ trait MetaSeqStructures[C<:Context] {
           def nodes = _elements.iterator.flatMap(_.nodes)
           def graph = $graphName
 
-          def resetSetting() { iterator = Structure.settingsIterator(_elements.toList)()}
+          def resetSetting() { iterator = ml.wolfe.macros.Structure.settingsIterator(_elements.toList)()}
           def hasNextSetting = iterator.hasNext
           def nextSetting = iterator.next
 
