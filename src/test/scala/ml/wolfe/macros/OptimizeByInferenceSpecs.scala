@@ -44,10 +44,25 @@ class OptimizeByInferenceSpecs extends WolfeSpec {
       actual should not be approximate
     }
 
-    "find the optimal solution of a linear chain" in {
-      def space = seqs(5, Range(0,3))
+    "find the optimal solution of a linear chain " in {
+      def space = seqs(5, Range(0, 3))
+      @OptimizeByInference(MaxProduct(_, 1))
+      def potential(seq: Seq[Int]) = {
+        val local = sum { over(0 until seq.size) of (i => i * I(seq(i) == i)) }
+        val pairs = sum { over(0 until seq.size - 1) of (i => I(seq(i) == seq(i + 1))) }
+        local + pairs
+      }
+      val actual = argmax { over(space) of potential }
+      val expected = BruteForceOperators.argmax { over(space) of potential }
+
+      actual should be (expected)
+      println(actual)
+      println(expected)
+
 
     }
+
+
   }
 
 }
