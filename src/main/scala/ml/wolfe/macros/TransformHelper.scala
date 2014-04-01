@@ -158,7 +158,7 @@ trait Transformers[C<:Context] {
   lazy val blockSimplifier = new BlockSimplifier
 
   def betaReduce(tree: Tree) = betaReducer transform tree
-  def removeSingletonBlocks(tree: Tree) = blockSimplifier transform tree
+  def unwrapSingletonBlocks(tree: Tree) = blockSimplifier transform tree
 
   def simplifyBlock(tree: Tree): Tree = tree match {
     case Block(stats, expr) => {

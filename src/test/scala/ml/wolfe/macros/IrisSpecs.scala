@@ -55,7 +55,7 @@ class IrisSpecs extends WolfeSpec {
       val w = argmin { over[Vector] of loss }
 
       //the predictor given some observed instance
-      def predict(i: IrisData) = argmax(over(space) of model(w) st evidence(i))
+      def predict(i: IrisData) = argmax { over(space) of model(w) st evidence(i) }
 
       val predictedTest = map { over(test) using predict }
       val predictedTrain = map { over(train) using predict }

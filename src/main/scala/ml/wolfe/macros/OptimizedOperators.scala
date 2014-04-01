@@ -88,7 +88,7 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
 
   def map(builder: Tree): Tree = {
     val trees = builderTrees(builder)
-    val Function(List(mapperArg), _) = removeSingletonBlocks(trees.using)
+    val Function(List(mapperArg), _) = unwrapSingletonBlocks(trees.using)
 
     //we should do this until no more inlining can be done
 
@@ -128,7 +128,7 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
   def argmaxLinearModel(trees: BuilderTrees): CodeAndInitialization = {
     val structName = newTermName(context.fresh("structure"))
     val meta = metaStructure(trees.over)
-    val Function(List(objArg), objRhs) = blockToFunction(removeSingletonBlocks(trees.of))
+    val Function(List(objArg), objRhs) = blockToFunction(unwrapSingletonBlocks(trees.of))
     val objMatcher = meta.matcher(rootMatcher(objArg.symbol, q"$structName", meta))
     val factors = metaStructuredFactor(objRhs, meta, objMatcher, linearModelInfo = LinearModelInfo(q"_index"))
     val inferCode = inferenceCode(objRhs, newTermName("_graph"))
@@ -137,7 +137,7 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
 
     val conditionCode = if (trees.where == EmptyTree) EmptyTree
     else {
-      val Function(List(whereArg), whereRhs) = removeSingletonBlocks(trees.where)
+      val Function(List(whereArg), whereRhs) = unwrapSingletonBlocks(trees.where)
       val whereMatcher = meta.matcher(rootMatcher(whereArg.symbol, q"$structName", meta))
       val conditioner = conditioning(whereRhs, whereMatcher)
       conditioner.code
@@ -183,7 +183,7 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
   def argmaxByLearning(trees: BuilderTrees, scaling: Tree = q"1.0"): Tree = {
     if (trees.where != EmptyTree)
       context.error(context.enclosingPosition, "Can't learn with constraints on weights yet: " + trees.where)
-    val q"($arg) => $rhs" = removeSingletonBlocks(trees.of)
+    val q"($arg) => $rhs" = unwrapSingletonBlocks(trees.of)
     def toSum(tree: Tree): BuilderTrees = tree match {
       case s@Sum(BuilderTrees(over, where, of, _)) => BuilderTrees(over, where, of)
       case s => inlineOnce(tree) match {
@@ -192,7 +192,7 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
       }
     }
     val sum = toSum(rhs)
-    val q"($x) => $perInstanceRhs" = removeSingletonBlocks(sum.of)
+    val q"($x) => $perInstanceRhs" = unwrapSingletonBlocks(sum.of)
     val instanceName = newTermName(context.fresh("_instance"))
     val indexName = newTermName(context.fresh("_index"))
     val weightsSet = newTermName(context.fresh("_weightsSet"))

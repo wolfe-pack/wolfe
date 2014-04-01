@@ -19,7 +19,7 @@ trait GradientBasedMinimizationHelper[C <: Context] {
     val instanceVariableName = newTermName("_instance")
     val indexVariableName    = newTermName("_index")
 
-    val normalizedObj = replaceVals(betaReduce(replaceMethods(removeSingletonBlocks(obj), defs)), noArgDefDefs)
+    val normalizedObj = replaceVals(betaReduce(replaceMethods(unwrapSingletonBlocks(obj), defs)), noArgDefDefs)
 
     //convert objective into sum if not already a sum
     val sum: Tree = normalizedObj match {
@@ -38,7 +38,7 @@ trait GradientBasedMinimizationHelper[C <: Context] {
     //val wolfe = rootMirror.getModuleByName(newTermName("ml.wolfe.Wolfe"))
 
     //check annotation on original objective
-    val trainer = removeSingletonBlocks(obj) match {
+    val trainer = unwrapSingletonBlocks(obj) match {
       case q"(${_}) => $rhs(${_})" =>
         println(rhs)
         val t: Tree = rhs

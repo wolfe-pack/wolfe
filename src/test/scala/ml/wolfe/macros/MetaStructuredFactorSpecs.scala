@@ -2,11 +2,14 @@ package ml.wolfe.macros
 
 import ml.wolfe.Wolfe
 import Wolfe._
+import OptimizedOperators._
+
 
 /**
  * @author Sebastian Riedel
  */
 class MetaStructuredFactorSpecs extends StructureIsomorphisms {
+
 
   "A MetaStructuredFactor" should {
     "provide an atomic table factor" in {
@@ -46,7 +49,6 @@ class MetaStructuredFactorSpecs extends StructureIsomorphisms {
     }
 
     "generate a first order sum factor using the sum operator" in {
-      import OptimizedOperators._
       implicit val ints = Range(0, 5)
       def space = Wolfe.Pred[Int]
       def potential(pred: Pred[Int]) = sum { over(ints) of (i => I(pred(i)))}
@@ -91,6 +93,14 @@ class MetaStructuredFactorSpecs extends StructureIsomorphisms {
       val factor = MetaStructuredFactor.structuredFactor[Int](space, potential)
       factor mustBeIsomorphicTo potential
       factor.factors.size should be (2)
+    }
+
+    "generate a linear chain" in {
+      def space = seqs(5,Range(0,3))
+      def potential(seq:Seq[Int]) = sum { over(0 until seq.size) of (_.toDouble)}
+      val factor = MetaStructuredFactor.structuredFactor(space,potential)
+      factor mustBeIsomorphicTo potential
+      factor.factors.size should be (5)
     }
 
 

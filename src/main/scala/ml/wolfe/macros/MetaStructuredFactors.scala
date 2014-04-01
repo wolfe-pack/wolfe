@@ -195,7 +195,7 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] {
                            constructorArgs: List[ValDef] = Nil,
                            linearModelInfo: LinearModelInfo,
                            linear: Boolean = false): MetaStructuredFactor = {
-    val simplified = removeSingletonBlocks(potential)
+    val simplified = unwrapSingletonBlocks(potential)
     simplified match {
       case Sum(BuilderTrees(dom, filter, obj, _)) =>
         require(filter == EmptyTree)
@@ -246,7 +246,7 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] {
       $graphName.weights = _factorieWeights
       result
     """
-    (code,metaFactor)
+    (context.resetLocalAttrs(code),metaFactor)
   }
 }
 
@@ -272,7 +272,7 @@ object MetaStructuredFactor {
     import c.universe._
     val helper = new ContextHelper[c.type](c) with MetaStructuredFactors[c.type]
 
-    val q"($arg) => $rhs" = helper.removeSingletonBlocks(potential.tree)
+    val q"($arg) => $rhs" = helper.unwrapSingletonBlocks(potential.tree)
     val (code,_) = helper.structuredLinearFactorCode(sampleSpace.tree, arg,rhs)
     c.Expr[StructuredFactor[T]](code)
   }
@@ -284,7 +284,7 @@ object MetaStructuredFactor {
     import c.universe._
     val helper = new ContextHelper[c.type](c) with MetaStructuredFactors[c.type]
 
-    val q"($param) => ($arg) => $rhs" = helper.removeSingletonBlocks(potential.tree)
+    val q"($param) => ($arg) => $rhs" = helper.unwrapSingletonBlocks(potential.tree)
     val (code,meta) = helper.structuredLinearFactorCode(sampleSpace.tree,arg,rhs)
     if (!meta.weightVector.exists(_.symbol == param.symbol))
       c.error(c.enclosingPosition,
