@@ -22,21 +22,6 @@ object Util {
     }
   }
 
-  /**
-   * Takes an iterator over lines and groups this according to a delimiter line.
-   */
-  def groupLines(lines: Iterator[String], delim: String = ""): Seq[Seq[String]] = {
-    groupLinesList(lines, delim).reverse.map(_.reverse)
-  }
-
-  def groupLinesList(lines: Iterator[String], delim: String = ""): List[List[String]] = {
-    lines.foldLeft(List(List.empty[String])) {
-      (result, line) => if (line == delim) Nil :: result else (line :: result.head) :: result.tail
-    }
-  }
-
-  def loadCoNLL[T](lines: Iterator[String], mapper: PartialFunction[Array[String], T]) =
-    groupLinesList(lines).reverse.map(_.reverse.map(_.split("\\s+")).map(mapper))
 
 }
 
@@ -47,7 +32,7 @@ object Iris {
 
   implicit val classes = Seq(Label("Iris-setosa"), Label("Iris-versicolor"), Label("Iris-virginica"))
 
-  case class Label(label:String)
+  case class Label(label: String)
   case class IrisData(sepalLength: Double, sepalWidth: Double, petalLength: Double, petalWidth: Double, irisClass: Label)
 
   def loadIris() = {
@@ -60,3 +45,4 @@ object Iris {
     data
   }
 }
+

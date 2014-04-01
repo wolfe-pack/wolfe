@@ -9,7 +9,7 @@ import cc.factorie.optimize.{Perceptron, OnlineTrainer}
 ///**
 // * @author Sebastian Riedel
 // */
-//object TestChunking {
+object TestChunking {
 //
 //  import OptimizedWolfe._
 //
@@ -58,4 +58,4 @@ import cc.factorie.optimize.{Perceptron, OnlineTrainer}
 //
 //
 //  }
-//}
+}

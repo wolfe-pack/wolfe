@@ -74,7 +74,7 @@ trait PatternRepository[C <: Context] extends SymbolRepository[C] with CodeRepos
           None
         else
           Some((caseObject, mappedArgs.map(_.get)))
-      case q"$caseObject.copy(..$args)" if caseObject.tpe.typeSymbol.asClass.isCaseClass =>
+      case q"$caseObject.copy(..$args)" => // if caseObject.tpe.typeSymbol.asClass.isCaseClass =>
         Some((caseObject, args))
       case _ =>
         None

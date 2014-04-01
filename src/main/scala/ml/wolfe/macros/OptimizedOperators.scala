@@ -213,7 +213,8 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
 
           val $indexName = new Index
           val $weightsSet = new WeightsSet
-          val $key = $weightsSet.newWeights(new ml.wolfe.DenseVector(10000))
+          val $key = $weightsSet.newWeights(new ml.wolfe.DenseVector(100000))
+          ml.wolfe.util.LoggerUtil.info("Creating examples ...")
           val examples = for ($instanceName <- ${ sum.over }) yield new Example {
             ${ calculator.classDef }
             val gradientCalculator = new ${ calculator.className }
@@ -226,6 +227,7 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
             }
           }
           val trainer = $learner
+          ml.wolfe.util.LoggerUtil.info("Starting to optimize ...")
           trainer.trainFromExamples(examples)
           ml.wolfe.FactorieConverter.toWolfeVector($weightsSet($key).asInstanceOf[FactorieVector], $indexName)
         """
