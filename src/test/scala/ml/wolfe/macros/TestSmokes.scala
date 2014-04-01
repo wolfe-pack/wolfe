@@ -1,8 +1,5 @@
 package ml.wolfe.macros
 
-import OptimizedWolfe._
-import ml.wolfe.Wolfe
-import Wolfe._
 
 /**
  * @author Sebastian Riedel

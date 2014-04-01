@@ -81,6 +81,18 @@ trait PatternRepository[C <: Context] extends SymbolRepository[C] with CodeRepos
     }
   }
 
+//  class Flattened(operator: ApplyBinaryOperator) {
+//    val Match = this
+//    def unapply(tree: Tree): Option[List[Tree]] = tree match {
+//      case operator(Match(args1), Match(args2)) => Some(args1 ::: args2)
+//      case operator(arg1, Match(args2)) => Some(arg1 :: args2)
+//      case operator(Match(args1), arg2) => Some(arg2 :: args1)
+//      case operator(arg1, arg2) => Some(List(arg1, arg2))
+//      case _ => None
+//    }
+//
+//  }
+
   object ApplyAnd extends InfixApply(Set(scalaSymbols.and))
   object ApplyDoublePlus extends InfixApply(scalaSymbols.doublePluses)
   object ApplyPlus extends InfixApply(scalaSymbols.doublePluses ++ wolfeSymbols.vectorPluses)

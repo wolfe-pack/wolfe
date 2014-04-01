@@ -35,11 +35,11 @@ object TestSprinkler {
     LoggerUtil.info("Sample space: " + sampleSpace.size)
 
     //most likely explanation if the grass is wet
-    val expected = BruteForceWolfe.argmax(sampleSpace)(_.wet)(x => log(p(x)))
-    val actual = OptimizedWolfe.argmax(sampleSpace)(_.wet)(x => log(p(x)))
-
-    LoggerUtil.info("Expected: " + expected)
-    LoggerUtil.info("Actual: " + actual)
+//    val expected = BruteForceWolfe.argmax(sampleSpace)(_.wet)(x => log(p(x)))
+//    val actual = OptimizedWolfe.argmax(sampleSpace)(_.wet)(x => log(p(x)))
+//
+//    LoggerUtil.info("Expected: " + expected)
+//    LoggerUtil.info("Actual: " + actual)
 
 
   }
