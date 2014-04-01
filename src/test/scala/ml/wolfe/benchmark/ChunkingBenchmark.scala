@@ -30,7 +30,7 @@ object ChunkingBenchmark {
       import s._
       val obs = sum { over(0 until tokens.size) of (i => oneHot('o -> tokens(i).word -> tokens(i).chunk)) }
       val pairs = sum { over(0 until tokens.size - 1) of (i => oneHot('p -> tokens(i).chunk -> tokens(i + 1).chunk)) }
-      obs + pairs
+      pairs + obs
     }
 
     @OptimizeByInference(MaxProduct(_, 1))
