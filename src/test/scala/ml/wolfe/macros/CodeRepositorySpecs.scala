@@ -39,19 +39,27 @@ class CodeRepositorySpecs extends WolfeSpec {
       actual should be ("None")
     }
 
-    "should inline methods without parameters " in {
+    "inline methods without parameters " in {
       def k = 5
       val actual = CodeRepository.inlineMacro(k,1)
       actual should be ("Some(5)")
     }
 
-    "should inline generic methods" in {
+    "inline generic methods" in {
       def f[T](t:T) = t
       def k[T](t:T) = f(t)
       val actual1 = CodeRepository.inlineMacro(k(5),1)
       val actual2 = CodeRepository.inlineMacro(k(5),2)
       actual1 should be ("Some(f[T](5))")
       actual2 should be ("Some(5)")
+    }
+
+    "inline functions defined in objects " in {
+      object Functions {
+        def f(i:Int) = i
+      }
+      val actual = CodeRepository.inlineMacro(Functions.f(1),1)
+      actual should be ("Some(1)")
     }
 
 
