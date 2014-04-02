@@ -36,7 +36,7 @@ object ChunkingBenchmark {
     @OptimizeByInference(MaxProduct(_, 1))
     def model(w: Vector)(s: Sentence) = w dot features(s)
 
-    def perceptronLoss(w: Vector)(i: Sentence): Double = max { over(Sentences) of model(w) st evidence(i) } - model(w)(i)
+    def perceptronLoss(w: Vector)(s: Sentence) = max { over(Sentences) of model(w) st evidence(s) } - model(w)(s)
 
     @OptimizeByLearning(new OnlineTrainer(_, new Perceptron, 10, 100))
     def loss(w: Vector) = sum { over(train) of perceptronLoss(w) }
