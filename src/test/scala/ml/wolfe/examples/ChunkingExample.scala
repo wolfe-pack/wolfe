@@ -1,14 +1,14 @@
-package ml.wolfe.benchmark
+package ml.wolfe.examples
 
 import ml.wolfe.{MaxProduct, Wolfe}
 import ml.wolfe.macros.OptimizedOperators
-import ml.wolfe.util.{Evaluator, LoggerUtil, NLP}
+import ml.wolfe.util.{Evaluator, NLP}
 import cc.factorie.optimize.{Perceptron, OnlineTrainer}
 
 /**
  * @author Sebastian Riedel
  */
-object ChunkingBenchmark {
+object ChunkingExample {
 
   import Wolfe._
   import OptimizedOperators._
@@ -36,7 +36,7 @@ object ChunkingBenchmark {
 
     def toToken(conll: Array[String]) = Token(conll(0), Tag(conll(1)), Chunk(conll(2)))
 
-    val train = loadCoNLL("ml/wolfe/datasets/conll2000/train.txt")(toToken).map(Sentence)
+    val train = loadCoNLL("ml/wolfe/datasets/conll2000/train.txt")(toToken).map(Sentence).take(1000)
     val w = learn(train)
     val predictedTrain = map { over(train) using predictor(w) }
     val evalTrain = Evaluator.evaluate(train.flatMap(_.tokens), predictedTrain.flatMap(_.tokens))(_.chunk)
