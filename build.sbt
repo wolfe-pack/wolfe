@@ -2,8 +2,6 @@ import sbt._
 import Build._
 import Keys._
 
-sbtPlugin := true
-
 name := "wolfe"
 
 organization := "ml.wolfe"
@@ -50,5 +48,10 @@ libraryDependencies ++= Seq(
 generateWolfeSource := Seq.empty
 
 sourceGenerators in Compile <+= generateWolfeSource
+
+initialCommands := """
+  import ml.wolfe.Wolfe._
+  import ml.wolfe.macros.OptimizedOperators._
+"""
 
 
