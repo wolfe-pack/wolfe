@@ -28,7 +28,7 @@ object ChunkingBenchmark {
   def model(w: Vector)(s: Sentence) = w dot features(s)
   def predictor(w: Vector)(s: Sentence) = argmax { over(Sentences) of model(w) st evidence(s) }
 
-  @OptimizeByLearning(new OnlineTrainer(_, new Perceptron, 10, 100))
+  @OptimizeByLearning(new OnlineTrainer(_, new Perceptron, 4, 100))
   def loss(data: Iterable[Sentence])(w: Vector) = sum { over(data) of (s => model(w)(predictor(w)(s)) - model(w)(s)) } ////
   def learn(data:Iterable[Sentence]) = argmin { over[Vector] of loss(data) }
 
@@ -36,7 +36,7 @@ object ChunkingBenchmark {
 
     def toToken(conll: Array[String]) = Token(conll(0), Tag(conll(1)), Chunk(conll(2)))
 
-    val train = loadCoNLL("ml/wolfe/datasets/conll2000/train.txt")(toToken).map(Sentence).take(1000)
+    val train = loadCoNLL("ml/wolfe/datasets/conll2000/train.txt")(toToken).map(Sentence)
     val w = learn(train)
     val predictedTrain = map { over(train) using predictor(w) }
     val evalTrain = Evaluator.evaluate(train.flatMap(_.tokens), predictedTrain.flatMap(_.tokens))(_.chunk)

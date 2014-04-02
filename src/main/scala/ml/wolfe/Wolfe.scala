@@ -109,7 +109,7 @@ trait VectorDefs {
 //    override def equals(p1: scala.Any) = p1 match {
 //      case v:Vector => v.self == this.self
 //    }
-    override def toString() = s"""Vector(${underlying.map(p => p._1 + " -> " + p._2 ).mkString(",")})"""
+    override def toString() = s"""Vector(${underlying.map(p => p._1 + " -> " + p._2 ).mkString(", ")})"""
 
   }
 
