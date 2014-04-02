@@ -63,6 +63,35 @@ trait PatternRepository[C <: Context] extends SymbolRepository[C] with CodeRepos
     }
   }
 
+  object DoubleMax extends AppliedOperator(Set(scalaSymbols.doubleClass), wolfeSymbols.max, scalaSymbols.max) {
+
+//    def sameFunction(f1:Tree, f2:Tree)
+
+    def collapseCurriedFunction(tree:Tree) = tree match {
+      case Function(List(arg1),Apply(f,List(arg2))) if arg1.symbol == arg2.symbol => f
+      case _ => tree
+    }
+
+    def normalizeFunction(f:Tree) = collapseCurriedFunction(unwrapSingletonBlocks(f))
+
+    def isArgMaxWithFunction(term:Tree, function:Tree):Option[BuilderTrees] = term match {
+      case ArgmaxOperator(trees) if normalizeFunction(trees.of).equalsStructure(normalizeFunction(function)) =>
+        Some(trees)
+      case _ => inlineOnce(term) match {
+        case Some(inlined) => isArgMaxWithFunction(inlined,function)
+        case _ => None
+      }
+    }
+
+    override def unapply(tree:Tree) = super.unapply(tree) match {
+      case s:Some[_] => s
+      case None => tree match {
+        case Apply(f,List(arg)) => isArgMaxWithFunction(arg,f)
+        case _ => None
+      }
+    }
+  }
+
   object CaseClassCopy {
 
     def unapply(tree: Tree): Option[(Tree, List[Tree])] = tree match {
@@ -99,7 +128,6 @@ trait PatternRepository[C <: Context] extends SymbolRepository[C] with CodeRepos
   object ApplyDoubleMinus extends InfixApply(scalaSymbols.doubleMinuses)
   object DoubleSum extends AppliedOperator(Set(scalaSymbols.doubleClass), wolfeSymbols.sum, scalaSymbols.sum)
   object Sum extends AppliedOperator(Set(scalaSymbols.doubleClass, wolfeSymbols.vectorType), wolfeSymbols.sum, scalaSymbols.sum)
-  object DoubleMax extends AppliedOperator(Set(scalaSymbols.doubleClass), wolfeSymbols.max, scalaSymbols.max)
   object ArgmaxOperator extends AppliedOperator(Set(scalaSymbols.doubleClass), wolfeSymbols.argmax, scalaSymbols.maxBy)
   object MapOperator extends AppliedOperator(_ => true, wolfeSymbols.map, scalaSymbols.map)
 

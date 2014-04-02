@@ -56,10 +56,6 @@ class OptimizeByInferenceSpecs extends WolfeSpec {
       val expected = BruteForceOperators.argmax { over(space) of potential }
 
       actual should be (expected)
-      println(actual)
-      println(expected)
-
-
     }
 
 
