@@ -38,7 +38,7 @@ object ChunkingBenchmark {
 
     def perceptronLoss(w: Vector)(i: Sentence): Double = max { over(Sentences) of model(w) st evidence(i) } - model(w)(i)
 
-    @OptimizeByLearning(new OnlineTrainer(_, new Perceptron, 4, 100))
+    @OptimizeByLearning(new OnlineTrainer(_, new Perceptron, 10, 100))
     def loss(w: Vector) = sum { over(train) of perceptronLoss(w) }
 
     val w = argmin { over[Vector] of loss }
@@ -47,7 +47,7 @@ object ChunkingBenchmark {
     def predict(s: Sentence) = argmax { over(Sentences) of model(w) st evidence(s) }
 
     //            val predictedTest = map { over(test) using predict }
-    LoggerUtil.info("Prediction...")
+    LoggerUtil.info("Prediction ...")
     val predictedTrain = map { over(train) using predict }
 
     //      println(predictedTrain.mkString("\n"))

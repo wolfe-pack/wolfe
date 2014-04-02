@@ -12,10 +12,15 @@ object FactorieConverter {
 
   //todo: make this thread safe
 
-  def toFreshFactorieSparseVector[T](vector: WVector, index: Index): FVector = {
-    val sparse = new SparseVector(vector.self.size)
-    for ((key, value) <- vector.self) sparse(index(Seq(key))) = value
-    sparse
+  def toFreshFactorieSparseVector[T](vector: WVector, index: Index, singletons:Boolean = false): FVector = {
+    if (singletons && vector.size == 1) {
+      val singleton = new SingletonVector(1,index(Seq(vector.head._1)),vector.head._2)
+      singleton
+    } else {
+      val sparse = new SparseVector(vector.self.size)
+      for ((key, value) <- vector.self) sparse(index(Seq(key))) = value
+      sparse
+    }
   }
 
   def addFactorieSparseVectors(arg1: SparseVector, arg2: SparseVector) = {

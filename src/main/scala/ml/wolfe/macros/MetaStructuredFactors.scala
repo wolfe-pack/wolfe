@@ -173,7 +173,7 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] {
   extends MetaAtomicStructuredFactor {
 
     def createFactor = q"graph.addLinearFactor(vectors, settings, dims)"
-    def perSettingValue = q"${ diffInfo.indexTree }.toCachedFactorieSparseVector($injected)"
+    def perSettingValue = q"${ diffInfo.indexTree }.toCachedFactorieSparseVector($injected,true)"
     def perSettingArrayInitializer = q"Array.ofDim[ml.wolfe.FactorieVector](settingsCount)"
     def perSettingArrayName = newTermName("vectors")
   }

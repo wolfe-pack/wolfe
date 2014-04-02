@@ -39,7 +39,7 @@ class Index extends Serializable {
   def vectorToString(vector: FactorieVector, sep: String = "\n") = {
     val inv = inverse()
     val lines = for (i <- vector.activeDomain.toSeq; if vector(i) != 0.0) yield {
-      f"${inv(i).mkString(" ")}%20s ${vector(i)}%5.2f"
+      f"${ inv(i).mkString(" ") }%20s ${ vector(i) }%5.2f"
     }
     lines.mkString(sep)
   }
@@ -73,18 +73,23 @@ class Index extends Serializable {
     this
   }
 
-  private val sparseVectorCache = new mutable.HashMap[Wolfe.Vector, SparseVector]()
+  private val sparseVectorCache = new mutable.HashMap[Wolfe.Vector, FactorieVector]()
 
-  def toCachedFactorieSparseVector[T](vector: Wolfe.Vector): SparseVector = {
-    val result = sparseVectorCache.getOrElseUpdate(vector, toFreshFactorieSparseVector(vector))
+  def toCachedFactorieSparseVector[T](vector: Wolfe.Vector, singletons: Boolean = false): FactorieVector = {
+    val result = sparseVectorCache.getOrElseUpdate(vector, toFreshFactorieSparseVector(vector, singletons))
     result
   }
 
 
-  def toFreshFactorieSparseVector[T](vector: Wolfe.Vector): SparseVector = {
-    val sparse = new SparseVector(vector.self.size)
-    for ((key, value) <- vector.self) sparse(this(Seq(key))) = value
-    sparse
+  def toFreshFactorieSparseVector[T](vector: Wolfe.Vector, singletons: Boolean = false): FactorieVector = {
+    if (singletons && vector.size == 1) {
+      val singleton = new SingletonVector(1, this(Seq(vector.head._1)), vector.head._2)
+      singleton
+    } else {
+      val sparse = new SparseVector(vector.self.size)
+      for ((key, value) <- vector.self) sparse(this(Seq(key))) = value
+      sparse
+    }
   }
 
 
