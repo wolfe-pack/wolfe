@@ -67,6 +67,7 @@ trait CodeRepository[C<:Context] extends HasContext[C] with Transformers[C] {
 
     override def transform(tree: Tree): Tree = tree match {
       case TypeApply(f@Ident(_), _) => transformIfFunction(f)
+      case TypeApply(s:Select, _) => transformIfFunction(s)
       case s:Select => transformIfFunction(s)
       case f@Ident(_) => transformIfFunction(f)
       case _ => super.transform(tree)
