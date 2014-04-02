@@ -32,12 +32,8 @@ trait CodeRepository[C<:Context] extends HasContext[C] with Transformers[C] {
   def inlineOnce(tree: Tree): Option[Tree] = {
     val replacer = new ReplaceMethodsWithFunctions(false)
     val replaced = replacer transform tree
-//    println("Replaced: " + replaced)
-//    val retyped = context.typeCheck(context.resetLocalAttrs(replaced))
     val reduced = betaReduce(replaced)
-//    println(reduced)
     if (replaced == tree) None else Some(reduced)
-//    if (reduced == tree) None else Some(reduced)
   }
 
   def inlineN(t: Int, tree: Tree): Option[Tree] = t match {
@@ -60,21 +56,19 @@ trait CodeRepository[C<:Context] extends HasContext[C] with Transformers[C] {
 
     def recurse(tree: Tree) = if (recursive) transform(tree) else tree
 
+
+    def transformIfFunction(tree:Tree) = getDef(tree) match {
+      case Some(DefDef(_, _, _, defArgs, _, rhs)) => defArgs match {
+        case Nil => recurse(context.typeCheck(rhs))
+        case _ => createFunction(defArgs, recurse(context.typeCheck(rhs)))
+      }
+      case _ => super.transform(tree)
+    }
+
     override def transform(tree: Tree): Tree = tree match {
-      case TypeApply(f@Ident(_), _) => getDef(f) match {
-        case Some(DefDef(_, _, _, defArgs, _, rhs)) => defArgs match {
-          case Nil => recurse(context.typeCheck(rhs))
-          case _ => createFunction(defArgs, recurse(context.typeCheck(rhs)))
-        }
-        case _ => super.transform(tree)
-      }
-      case f@Ident(_) => getDef(f) match {
-        case Some(DefDef(_, _, _, defArgs, _, rhs)) => defArgs match {
-          case Nil => recurse(context.typeCheck(rhs))
-          case _ => createFunction(defArgs, recurse(context.typeCheck(rhs)))
-        }
-        case _ => super.transform(tree)
-      }
+      case TypeApply(f@Ident(_), _) => transformIfFunction(f)
+      case s:Select => transformIfFunction(s)
+      case f@Ident(_) => transformIfFunction(f)
       case _ => super.transform(tree)
     }
   }
