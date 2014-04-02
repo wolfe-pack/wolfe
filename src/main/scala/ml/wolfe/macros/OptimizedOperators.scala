@@ -205,6 +205,7 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
       case Good(calculator) =>
         val code = q"""
           import cc.factorie.WeightsSet
+          import cc.factorie.Weights
           import cc.factorie.la.WeightsMapAccumulator
           import cc.factorie.util.DoubleAccumulator
           import cc.factorie.optimize._
@@ -213,19 +214,21 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
 
           val $indexName = new Index
           val $weightsSet = new WeightsSet
-          val $key = $weightsSet.newWeights(new ml.wolfe.DenseVector(100000))
           ml.wolfe.util.LoggerUtil.info("Creating examples ...")
           val examples = for ($instanceName <- ${ sum.over }) yield new Example {
             ${ calculator.classDef }
+            var _key:Weights = null
             val gradientCalculator = new ${ calculator.className }
             def accumulateValueAndGradient(value: DoubleAccumulator, gradient: WeightsMapAccumulator) = {
               LoggerUtil.debug("Instance: " + $indexName)
-              val weights = $weightsSet($key).asInstanceOf[FactorieVector]
+              val weights = $weightsSet(_key).asInstanceOf[FactorieVector]
               val (v, g) = gradientCalculator.valueAndGradient(weights)
               value.accumulate($scaling * v)
-              gradient.accumulate($key, g, $scaling)
+              gradient.accumulate(_key, g, $scaling)
             }
           }
+          val $key = $weightsSet.newWeights(new ml.wolfe.DenseVector($indexName.size))
+          for (example <- examples) example._key = $key
           val trainer = $learner
           ml.wolfe.util.LoggerUtil.info("Starting to optimize ...")
           trainer.trainFromExamples(examples)
