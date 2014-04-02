@@ -17,7 +17,7 @@ trait SymbolRepository[C <: Context] extends HasContext[C] {
     lazy val wolfeType        = wolfe.typeSignature
     lazy val optimizedOpsType = optimizedOps.typeSignature
 
-    lazy val vectorClass  = rootMirror.staticClass("ml.wolfe.Wolfe.Vector")
+    lazy val vectorClass      = rootMirror.staticClass("ml.wolfe.Wolfe.Vector")
     lazy val overWhereOfClass = rootMirror.staticClass("ml.wolfe.Wolfe.Builder")
 
     lazy val strings = wolfeType.member(newTermName("strings"))
@@ -53,10 +53,11 @@ trait SymbolRepository[C <: Context] extends HasContext[C] {
     lazy val map    = optimizedOpsType.member(newTermName("map"))
 
 
-    lazy val vectorType = rootMirror.staticClass("ml.wolfe.Wolfe.Vector")
-    lazy val dot        = vectorClass.typeSignature.member(newTermName("dot"))
-    lazy val vectorPlus = vectorClass.typeSignature.member(newTermName("$plus"))
+    lazy val vectorType   = rootMirror.staticClass("ml.wolfe.Wolfe.Vector")
+    lazy val dot          = vectorClass.typeSignature.member(newTermName("dot"))
+    lazy val vectorPlus   = vectorClass.typeSignature.member(newTermName("$plus"))
     lazy val vectorPluses = vectorPlus.asTerm.alternatives.toSet
+    lazy val oneHot       = rootMirror.staticClass("ml.wolfe.Wolfe.oneHot")
 
 
     lazy val atomic         = rootMirror.staticClass("ml.wolfe.Wolfe.Atomic")
@@ -85,7 +86,7 @@ trait SymbolRepository[C <: Context] extends HasContext[C] {
 
     lazy val sum    = traversableOnceClass.typeSignature.member(newTermName("sum"))
     lazy val max    = traversableOnceClass.typeSignature.member(newTermName("max"))
-    lazy val maxBy    = traversableOnceClass.typeSignature.member(newTermName("maxBy"))
+    lazy val maxBy  = traversableOnceClass.typeSignature.member(newTermName("maxBy"))
     lazy val map    = traversableLikeClass.typeSignature.member(newTermName("map"))
     lazy val filter = traversableLikeClass.typeSignature.member(newTermName("filter"))
 

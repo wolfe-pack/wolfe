@@ -147,13 +147,13 @@ final class MPGraph {
   def toVerboseString(fgPrinter: FGPrinter = DefaultPrinter) = {
     f"""
       |Nodes:
-      |${nodes.map(_.toVerboseString(fgPrinter.node2String)).mkString("\n")}
+      |${ nodes.map(_.toVerboseString(fgPrinter.node2String)).mkString("\n") }
       |
       |Factors:
-      |${factors.map(_.toVerboseString(fgPrinter)).mkString("\n")}
+      |${ factors.map(_.toVerboseString(fgPrinter)).mkString("\n") }
       |
       |Edges:
-      |${edges.map(_.toVerboseString(fgPrinter)).mkString("\n")}
+      |${ edges.map(_.toVerboseString(fgPrinter)).mkString("\n") }
     """.stripMargin
   }
 
@@ -231,9 +231,9 @@ object MPGraph {
 
     def toVerboseString(nodePrinter: Node => String = n => "") = {
       f"""-----------------
-        |Node:   $index%3d ${nodePrinter(this)}
+        |Node:   $index%3d ${ nodePrinter(this) }
         |Belief:
-        |${b.mkString("\n")}
+        |${ b.mkString("\n") }
       """.stripMargin
     }
 
@@ -270,10 +270,10 @@ object MPGraph {
     def toVerboseString(fgPrinter: FGPrinter) =
       f"""----------
         |Edge
-        |Node:    ${n.index} ${fgPrinter.node2String(n)}
-        |Factor:  ${f.index} ${fgPrinter.factor2String(f)}
+        |Node:    ${ n.index } ${ fgPrinter.node2String(n) }
+        |Factor:  ${ f.index } ${ fgPrinter.factor2String(f) }
       """.stripMargin
-    override def toString = s"${f.index} -> ${n.index}"
+    override def toString = s"${ f.index } -> ${ n.index }"
   }
 
   /**
@@ -326,7 +326,16 @@ object MPGraph {
     def score(settingIndex: Int): Double = {
       typ match {
         case TABLE => table(settingIndex)
-        case LINEAR =>  stats(settingIndex).dot(fg.weights)
+        case LINEAR =>
+          stats(settingIndex) match {
+            //todo: unclear why, but this manual dot product is faster than calling the singleton vector dot product
+            //tood: which is doing the same thing.
+            case singleton: SingletonVector =>
+              val index = singleton.singleIndex
+              val result = singleton(index) * fg.weights(index)
+              result
+            case vector => vector dot fg.weights
+          }
         case STRUCTURED => structured.score(this, entryToSetting(settingIndex, dims), fg.weights)
       }
     }
@@ -350,18 +359,18 @@ object MPGraph {
       val tableString = typ match {
         case TABLE =>
           for ((setting, index) <- settings.zipWithIndex) yield
-            s"${setting.mkString(" ")} | ${table(index)}"
+            s"${ setting.mkString(" ") } | ${ table(index) }"
         case LINEAR =>
           for ((setting, index) <- settings.zipWithIndex) yield
-            f"${setting.mkString(" ")}%5s | ${score(index)}%7.4f | ${fgPrinter.vector2String(stats(index))}"
+            f"${ setting.mkString(" ") }%5s | ${ score(index) }%7.4f | ${ fgPrinter.vector2String(stats(index)) }"
 
       }
       f"""-----------------
-        |Factor:  $index ${fgPrinter.factor2String(this)}
-        |Nodes:   ${edges.map(_.n.index).mkString(" ")} ${edges.map(e => fgPrinter.node2String(e.n)).mkString(" ")}
+        |Factor:  $index ${ fgPrinter.factor2String(this) }
+        |Nodes:   ${ edges.map(_.n.index).mkString(" ") } ${ edges.map(e => fgPrinter.node2String(e.n)).mkString(" ") }
         |Type:    $typ
         |Table:
-        |${tableString.mkString("\n")}
+        |${ tableString.mkString("\n") }
       """.stripMargin
     }
 
