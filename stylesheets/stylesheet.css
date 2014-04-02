@@ -165,11 +165,12 @@ a.button span {
   margin-right: 0;
 }
 
+
 code, pre {
   font-family: Monaco, "Bitstream Vera Sans Mono", "Lucida Console", Terminal;
   color: #222;
   margin-bottom: 30px;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 code {
@@ -178,19 +179,25 @@ code {
   padding: 0 3px;
 }
 
+
 pre {
-  padding: 20px;
-  background: #303030;
+  padding: 10px;
+//  background: #303030;
   color: #f2f2f2;
   text-shadow: none;
   overflow: auto;
+  padding: 20;
+
 }
+
 pre code {
   color: #f2f2f2;
-  background-color: #303030;
+//  background-color: #303030;
   border: none;
   padding: 0;
+  border-radius:5px;
 }
+
 
 ul, ol, dl {
   margin-bottom: 20px;
@@ -227,7 +234,7 @@ th {
 
 td {
   border: 1px solid #ebebeb;
-  text-align: center; 
+  text-align: center;
   font-weight: 300;
 }
 
