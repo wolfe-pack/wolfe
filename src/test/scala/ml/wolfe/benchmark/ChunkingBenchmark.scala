@@ -20,45 +20,28 @@ object ChunkingBenchmark {
 
     val train = loadCoNLL("ml/wolfe/datasets/conll2000/train.txt")(toToken).map(Sentence).take(1000)
 
-    def Tokens = Wolfe.all(Token)
-    def Sentences = Wolfe.all(Sentence)(seqs(Tokens))
+    def Sentences = Wolfe.all(Sentence)(seqs(all(Token)))
 
     def observed(s: Sentence) = s.copy(tokens = s.tokens.map(_.copy(chunk = hide[Chunk])))
     def evidence(s1: Sentence)(s2: Sentence) = observed(s1) == observed(s2)
 
     def features(s: Sentence) = {
-      import s._
-      val f1 = sum { over(0 until tokens.size) of (i => oneHot('o -> tokens(i).word -> tokens(i).chunk)) }
-      val f2 = sum { over(0 until tokens.size - 1) of (i => oneHot('p -> tokens(i).chunk -> tokens(i + 1).chunk)) }
-      f1 + f2
+      sum { over(0 until s.tokens.size) of (i => oneHot('o -> s.tokens(i).word -> s.tokens(i).chunk)) } +
+      sum { over(0 until s.tokens.size - 1) of (i => oneHot('p -> s.tokens(i).chunk -> s.tokens(i + 1).chunk)) }
     }
 
     @OptimizeByInference(MaxProduct(_, 1))
     def model(w: Vector)(s: Sentence) = w dot features(s)
-
-    def perceptronLoss(w: Vector)(s: Sentence) = max { over(Sentences) of model(w) st evidence(s) } - model(w)(s)
+    def predictor(w: Vector)(s: Sentence) = argmax { over(Sentences) of model(w) st evidence(s) }
 
     @OptimizeByLearning(new OnlineTrainer(_, new Perceptron, 10, 100))
-    def loss(w: Vector) = sum { over(train) of perceptronLoss(w) }
+    def loss(data: Iterable[Sentence])(w: Vector) = sum { over(data) of (s => model(w)(predictor(w)(s)) - model(w)(s)) } ////
+    def learn(data:Iterable[Sentence]) = argmin { over[Vector] of loss(data) }
 
-    val w = argmin { over[Vector] of loss }
-
-    //the predictor given some observed instance
-    def predict(s: Sentence) = argmax { over(Sentences) of model(w) st evidence(s) }
-
-    //            val predictedTest = map { over(test) using predict }
-    LoggerUtil.info("Prediction ...")
-    val predictedTrain = map { over(train) using predict }
-
-    //      println(predictedTrain.mkString("\n"))
-    //
+    val w = learn(train)
+    val predictedTrain = map { over(train) using predictor(w) }
     val evalTrain = Evaluator.evaluate(train.flatMap(_.tokens), predictedTrain.flatMap(_.tokens))(_.chunk)
-
     println(evalTrain)
-    //      val evalTest = Evaluator.evaluate(test, predictedTest)(_.irisClass)
-    //
-    //      evalTrain.f1 should be(0.93 +- 0.01)
-    //      evalTest.f1 should be(0.98 +- 0.01)
   }
 
 }
