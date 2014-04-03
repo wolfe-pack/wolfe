@@ -114,6 +114,19 @@ class MetaStructuredFactorSpecs extends StructureIsomorphisms {
       factor mustBeIsomorphicTo potential
       factor.factors.size should be (9)
     }
+    "generate a linear chain with local and pairwise factors where defined vals are used within a val defintion" in {
+      def space = seqs(5,Range(0,3))
+      def potential(seq:Seq[Int]) = {
+        val n = seq.size
+        val local = sum { over(0 until n) of (_.toDouble)}
+        val pairs = sum { over(0 until n - 1) of (i => I(seq(i) == seq(i+1)))}
+        local + pairs
+      }
+      val factor = MetaStructuredFactor.structuredFactor(space,potential)
+      factor mustBeIsomorphicTo potential
+      factor.factors.size should be (9)
+    }
+
 
     "generate a linear chain with local and pairwise dot-product factors" in {
       def space = seqs(5,Range(0,3))
