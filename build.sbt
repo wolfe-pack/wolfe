@@ -6,8 +6,6 @@ name := "wolfe"
 
 organization := "ml.wolfe"
 
-version := "0.1.0-SNAPSHOT"
-
 scalaVersion := "2.10.3"
 
 resolvers ++= Seq(
@@ -53,5 +51,7 @@ initialCommands := """
   import ml.wolfe.Wolfe._
   import ml.wolfe.macros.OptimizedOperators._
 """
+
+releaseSettings
 
 

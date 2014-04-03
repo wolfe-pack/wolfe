@@ -323,6 +323,7 @@ object MPGraph {
      * @param settingIndex the index of the setting to score.
      * @return score of the setting under this factor.
      */
+    @inline
     def score(settingIndex: Int): Double = {
       typ match {
         case TABLE => table(settingIndex)
