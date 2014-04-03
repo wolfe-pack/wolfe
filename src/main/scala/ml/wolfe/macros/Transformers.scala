@@ -22,9 +22,9 @@ trait Transformers[C<:Context] {
 
   def simplifyBlock(tree: Tree): Tree = tree match {
     case Block(stats, expr) => {
+      //Note that we are going right to left. This means that val definitions *can* use previous val definitions.
       val (newExpr, newStats) = stats.foldRight(expr -> List.empty[Tree]) {
         (stat, result) => stat match {
-          //todo: we also need to replace vals in other statements in the list
           case v: ValDef => transform(result._1, { case i: Ident if i.symbol == v.symbol => v.rhs }) -> result._2
           case i: Import => result
           case s => (result._1, result._2 :+ s)

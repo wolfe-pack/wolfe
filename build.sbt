@@ -30,7 +30,7 @@ credentials += Credentials(Path.userHome / ".ivy2" / ".credentials-homeniscient"
 libraryDependencies ++= Seq(
   "net.sf.trove4j" % "trove4j" % "3.0.3",
   "org.scalautils" % "scalautils_2.10" % "2.0",
-  "org.scalatest" %% "scalatest" % "2.0" % "test",
+  "org.scalatest" %% "scalatest" % "2.1.0" % "test",
   "com.nativelibs4java" %% "scalaxy-loops" % "0.3-SNAPSHOT" % "provided",
   "cc.factorie" % "factorie" % "1.0.0-M7",
   "com.github.axel22" %% "scalameter" % "0.4",
