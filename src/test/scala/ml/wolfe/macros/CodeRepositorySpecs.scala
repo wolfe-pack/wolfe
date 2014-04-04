@@ -1,7 +1,7 @@
 package ml.wolfe.macros
 
 import org.scalatest.Matchers
-import ml.wolfe.WolfeSpec
+import ml.wolfe.{Wolfe, WolfeSpec}
 
 /**
  * @author Sebastian Riedel
@@ -60,6 +60,12 @@ class CodeRepositorySpecs extends WolfeSpec {
       }
       val actual = CodeRepository.inlineMacro(Functions.f(1),1)
       actual should be ("Some(1)")
+    }
+
+    "inline functions defined through a macro mapping" in {
+      import Wolfe._
+      val actual = CodeRepository.inlineMacro(Losses.perceptronLoss(Range(0,4))(w => t => t.toDouble)(t => t)(oneHot(1)),1)
+      println(actual)
     }
 
 
