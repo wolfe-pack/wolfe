@@ -10,18 +10,53 @@ import scala.reflect.macros.Context
  * function calls of anonymous functions with the right hand side of the anonymous function where parameters are
  * replaced with the function application arguments.
  */
-trait CodeRepository[C<:Context] extends HasContext[C] with Transformers[C] {
+trait CodeRepository[C <: Context] extends HasContext[C] with Transformers[C] with SymbolRepository[C] {
 
   import context.universe._
 
   //find inlineable definitions
   lazy val definitions = context.enclosingUnit.body.filter(_.symbol != NoSymbol).collect({
     case d: DefDef => d.symbol -> d
-//    case v: ValDef if !v.symbol.isParameter =>
-//      v.symbol -> DefDef(v.mods, v.name, Nil, Nil, v.tpt, v.rhs)
+    //    case v: ValDef if !v.symbol.isParameter =>
+    //      v.symbol -> DefDef(v.mods, v.name, Nil, Nil, v.tpt, v.rhs)
   }).toMap
 
-  def get(symbol: Symbol) = definitions.get(symbol)
+  def get(symbol: Symbol) = {
+    if (symbol == NoSymbol) None else definitions.get(symbol) match {
+      case Some(d) => Some(d)
+      case None =>
+        val owner = symbol.owner
+        owner.annotations.find(_.tpe.typeSymbol == wolfeSymbols.inlinable) match {
+          case Some(inlinable) =>
+            val Literal(Constant(TypeRef(_, sym, _))) = inlinable.scalaArgs.head
+            val loader = getClass.getClassLoader
+            val loaded = loader.loadClass(sym.fullName)
+            val instance = loaded.newInstance()
+            val shortName = symbol.name.encoded
+            val methods = loaded.getDeclaredMethods
+            val method = methods.find(_.getName == shortName).get
+            val params = symbol.asMethod.paramss.map(_.map(p => {
+              val vd = ValDef(NoMods, p.name.toTermName, TypeTree(p.typeSignature), EmptyTree)
+              vd.symbol = p
+              vd
+            }))
+            val args = params.flatMap(_.map(p => {
+              val tree = Ident(p.symbol)
+              val expr = context.Expr[Any](tree)
+              expr
+            }))
+            val withContext = context :: args
+            val result = method.invoke(instance, withContext: _*).asInstanceOf[context.Expr[Any]]
+            val returnType = TypeTree(symbol.asMethod.returnType)
+            Some(DefDef(NoMods, symbol.name, Nil, params, returnType, result.tree))
+            None
+          case None => None
+        }
+
+
+      //        None
+    }
+  }
 
   /**
    * Inlines a tree once. That is, it replaces and inlines all occurrences of methods defined in the scope of the inliner
@@ -57,7 +92,7 @@ trait CodeRepository[C<:Context] extends HasContext[C] with Transformers[C] {
     def recurse(tree: Tree) = if (recursive) transform(tree) else tree
 
 
-    def transformIfFunction(tree:Tree) = getDef(tree) match {
+    def transformIfFunction(tree: Tree) = getDef(tree) match {
       case Some(DefDef(_, _, _, defArgs, _, rhs)) => defArgs match {
         case Nil => recurse(context.typeCheck(rhs))
         case _ => createFunction(defArgs, recurse(context.typeCheck(rhs)))
@@ -67,8 +102,8 @@ trait CodeRepository[C<:Context] extends HasContext[C] with Transformers[C] {
 
     override def transform(tree: Tree): Tree = tree match {
       case TypeApply(f@Ident(_), _) => transformIfFunction(f)
-//      case TypeApply(s:Select, _) => transformIfFunction(s)
-      case s:Select => transformIfFunction(s)
+      //      case TypeApply(s:Select, _) => transformIfFunction(s)
+      case s: Select => transformIfFunction(s)
       case f@Ident(_) => transformIfFunction(f)
       case _ => super.transform(tree)
     }
