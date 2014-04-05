@@ -170,7 +170,8 @@ object Conditioner {
     val helper = new ContextHelper[c.type](c) with MetaStructures[c.type] with Conditioner[c.type]
     println(helper.scalaSymbols.and)
     val meta = helper.metaStructure(sampleSpace.tree)
-    val q"($arg) => $rhs" = condition.tree
+    val normalized = helper.simplifyBlock(helper.unwrapSingletonBlocks(condition.tree))
+    val q"($arg) => $rhs" = normalized
     val root = helper.rootMatcher(arg.symbol, q"$structName.asInstanceOf[${meta.className}]", meta)
     val matcher = meta.matcher(root)
     val conditionCode = helper.conditioning(rhs, matcher)
