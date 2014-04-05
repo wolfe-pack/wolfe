@@ -10,8 +10,10 @@ object NLP {
   import scala.language.implicitConversions
 
   trait Label {def label: String }
+
   case class Chunk(label: String) extends Label
   case class Tag(label: String) extends Label
+  case class DocLabel(label: String) extends Label
 
   case class Token(word: String, tag: Tag, chunk: Chunk) {
     override def toString = s"$word/${ tag.label }/${ chunk.label }"
@@ -20,10 +22,12 @@ object NLP {
     override def toString = tokens.view.mkString(" ")
     def toSentenceString = tokens.view.map(_.word).mkString(" ")
   }
+  case class Doc(source: String, tokens: Seq[Token], label: DocLabel)
 
   implicit def labelToString(l: Label) = l.label
   implicit def stringToTag(l: String) = Tag(l)
   implicit def stringToChunk(l: String) = Chunk(l)
+  implicit def stringToDocLabel(l: String) = DocLabel(l)
 
   /**
    * Takes an iterator over lines and groups this according to a delimiter line.
@@ -51,7 +55,6 @@ object NLP {
     Seq("#", "$", "''", "(", ")", ",", ".", ":", "CC", "CD", "DT", "EX", "FW", "IN", "JJ", "JJR", "JJS",
       "MD", "NN", "NNP", "NNPS", "NNS", "PDT", "POS", "PRP", "PRP$", "RB", "RBR", "RBS", "RP", "SYM",
       "TO", "UH", "VB", "VBD", "VBG", "VBN", "VBP", "VBZ", "WDT", "WP", "WP$", "WRB", "``").map(Tag)
-
 
 
 }

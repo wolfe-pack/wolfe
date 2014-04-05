@@ -53,6 +53,7 @@ object BuildSettings {
     "org.scala-lang" %% "scala-pickling" % "0.8.0-SNAPSHOT",
     "org.slf4j" % "slf4j-api" % "1.7.6",
     "org.slf4j" % "slf4j-simple" % "1.7.6",
+    "org.apache.commons" % "commons-compress" % "1.8",
     "com.typesafe" % "scalalogging-slf4j_2.10" % "1.1.0"
   )
 
