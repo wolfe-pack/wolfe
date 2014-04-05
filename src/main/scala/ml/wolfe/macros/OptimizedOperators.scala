@@ -137,7 +137,7 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
 
     val conditionCode = if (trees.where == EmptyTree) EmptyTree
     else {
-      val Function(List(whereArg), whereRhs) = unwrapSingletonBlocks(trees.where)
+      val Function(List(whereArg), whereRhs) = simplifyBlock(unwrapSingletonBlocks(trees.where))
       val whereMatcher = meta.matcher(rootMatcher(whereArg.symbol, q"$structName", meta))
       val conditioner = conditioning(whereRhs, whereMatcher)
       conditioner.code

@@ -1,7 +1,7 @@
 package ml.wolfe.examples
 
 import ml.wolfe.{MaxProduct, Wolfe}
-import ml.wolfe.macros.OptimizedOperators
+import ml.wolfe.macros.{Library, OptimizedOperators}
 import ml.wolfe.util.{Evaluator, NLP}
 import cc.factorie.optimize.{Perceptron, OnlineTrainer}
 
@@ -13,11 +13,11 @@ object ChunkingExample {
   import Wolfe._
   import OptimizedOperators._
   import NLP._
+  import Library._
 
   def Sentences = Wolfe.all(Sentence)(seqs(all(Token)))
 
   def observed(s: Sentence) = s.copy(tokens = s.tokens.map(_.copy(chunk = hide[Chunk])))
-  def evidence(s1: Sentence)(s2: Sentence) = observed(s1) == observed(s2)
 
   def features(s: Sentence) = {
     sum { over(0 until s.tokens.size) of (i => oneHot('o -> s.tokens(i).word -> s.tokens(i).chunk)) } +
@@ -26,9 +26,9 @@ object ChunkingExample {
 
   @OptimizeByInference(MaxProduct(_, 1))
   def model(w: Vector)(s: Sentence) = w dot features(s)
-  def predictor(w: Vector)(s: Sentence) = argmax { over(Sentences) of model(w) st evidence(s) }
+  def predictor(w: Vector)(s: Sentence) = argmax { over(Sentences) of model(w) st evidence(observed)(s) }
 
-  @OptimizeByLearning(new OnlineTrainer(_, new Perceptron, 20, 100))
+  @OptimizeByLearning(new OnlineTrainer(_, new Perceptron, 4, 100))
   def loss(data: Iterable[Sentence])(w: Vector) = sum { over(data) of (s => model(w)(predictor(w)(s)) - model(w)(s)) } ////
   def learn(data:Iterable[Sentence]) = argmin { over[Vector] of loss(data) }
 
