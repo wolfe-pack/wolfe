@@ -15,24 +15,13 @@ class IrisSpecs extends WolfeSpec {
       import ml.wolfe.util.Iris._
       import Wolfe._
       import OptimizedOperators._
-
-      //random generator for shuffling the data
-      val random = new Random(0l)
-
-      //the IRIS dataset
-      val dataset = random.shuffle(loadIris())
-
-      //train/test set split
-      val (train, test) = dataset.splitAt(dataset.size / 2)
+      import Library._
 
       //sample space of all possible Iris data values
       def space = Wolfe.all(IrisData)
 
       //define what the observed part of the data is
       def observed(d: IrisData) = d.copy(irisClass = hide[Label])
-
-      //conditioning on the observation of given training instance
-      def evidence(instance: IrisData)(sample: IrisData) = observed(sample) == observed(instance)
 
       //feature function on data
       def features(data: IrisData) =
@@ -44,21 +33,26 @@ class IrisSpecs extends WolfeSpec {
       //the linear model
       @OptimizeByInference(MaxProduct(_, 1))
       def model(w: Vector)(i: IrisData) = features(i) dot w
-
-      //the per instance training loss
-      def perceptronLoss(w: Vector)(i: IrisData): Double = max { over(space) of model(w) st evidence(i) } - model(w)(i)
+      def predictor(w: Vector)(i: IrisData) = argmax { over(space) of model(w) st evidence(observed)(i) }
 
       //the training loss
       @OptimizeByLearning(new OnlineTrainer(_, new Perceptron, 4))
-      def loss(w: Vector) = sum { over(train) of perceptronLoss(w) }
+      def loss(data: Iterable[IrisData])(w: Vector) = sum { over(data) of (s => model(w)(predictor(w)(s)) - model(w)(s)) } ////
+      def learn(data: Iterable[IrisData]) = argmin { over[Vector] of loss(data) }
 
-      val w = argmin { over[Vector] of loss }
+      //random generator for shuffling the data
+      val random = new Random(0l)
 
-      //the predictor given some observed instance
-      def predict(i: IrisData) = argmax { over(space) of model(w) st evidence(i) }
+      //the IRIS dataset
+      val dataset = random.shuffle(loadIris())
 
-      val predictedTest = map { over(test) using predict }
-      val predictedTrain = map { over(train) using predict }
+      //train/test set split
+      val (train, test) = dataset.splitAt(dataset.size / 2)
+
+      val w = learn(train)
+
+      val predictedTest = map { over(test) using predictor(w) }
+      val predictedTrain = map { over(train) using predictor(w) }
 
       val evalTrain = Evaluator.evaluate(train, predictedTrain)(_.irisClass)
       val evalTest = Evaluator.evaluate(test, predictedTest)(_.irisClass)
