@@ -68,7 +68,8 @@ trait CodeRepository[C <: Context] extends HasContext[C] with Transformers[C] wi
     val replacer = new ReplaceMethodsWithFunctions(false)
     val replaced = replacer transform tree
     val reduced = betaReduce(replaced)
-    if (replaced == tree) None else Some(reduced)
+    val reduced2 = betaReduce(reduced) //todo: there are cases where after reduction there is still room for reduction. Understand why!
+    if (replaced == tree) None else Some(reduced2)
   }
 
   def inlineN(t: Int, tree: Tree): Option[Tree] = t match {

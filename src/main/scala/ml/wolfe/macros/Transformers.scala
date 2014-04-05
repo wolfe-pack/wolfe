@@ -117,6 +117,7 @@ trait Transformers[C<:Context] {
       val transformed = super.transform(tree)
       transformed match {
         case Apply(Function(defArgs, rhs), args) => substitute(defArgs, args, rhs)
+        case Apply(Select(Function(defArgs, rhs),name), args) if name.encoded == "apply" => substitute(defArgs, args, rhs)
         case Apply(TypeApply(Function(defArgs, rhs), _),args) => substitute(defArgs, args, rhs)
         case other => other
       }
