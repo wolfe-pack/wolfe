@@ -91,7 +91,7 @@ trait MetaGradientCalculators[C <: Context] extends MetaStructures[C]
         val Function(List(objArg),objRhs) = unwrapSingletonBlocks(obj)
 
         val conditionerCode = if (where != EmptyTree) {
-          val Function(List(whereArg), whereRhs) = unwrapSingletonBlocks(where)
+          val Function(List(whereArg), whereRhs) = simplifyBlock(unwrapSingletonBlocks(where))
           val whereMatcher = meta.matcher(rootMatcher(whereArg.symbol, q"$structName", meta))
           val conditioner = conditioning(whereRhs, whereMatcher)
           conditioner.code
