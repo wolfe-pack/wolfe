@@ -49,7 +49,7 @@ trait CodeRepository[C <: Context] extends HasContext[C] with Transformers[C] wi
             val result = method.invoke(instance, withContext: _*).asInstanceOf[context.Expr[Any]]
             val returnType = TypeTree(symbol.asMethod.returnType)
             Some(DefDef(NoMods, symbol.name, Nil, params, returnType, result.tree))
-            None
+//            None
           case None => None
         }
 

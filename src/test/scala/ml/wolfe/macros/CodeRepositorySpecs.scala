@@ -64,8 +64,12 @@ class CodeRepositorySpecs extends WolfeSpec {
 
     "inline functions defined through a macro mapping" in {
       import Wolfe._
-      val actual = CodeRepository.inlineMacro(Losses.perceptronLoss(Range(0,4))(w => t => t.toDouble)(t => t)(oneHot(1)),1)
-      println(actual)
+      val data = Range(0,4)
+      val model = (w:Vector) => (t:Int) => t.toDouble
+      val predictor = (t:Int) => t
+      val w = oneHot(1)
+      val actual = CodeRepository.inlineMacro(Losses.perceptronLoss(data)(model)(predictor)(w),1)
+      actual should be ("Some(OptimizedOperators.sum[T, Double](Wolfe.over[T](data).of[Double](((t: T) => model.apply(w).apply(predictor.apply(t)).-(model.apply(w).apply(t)))))(Numeric.DoubleIsFractional))")
     }
 
 
