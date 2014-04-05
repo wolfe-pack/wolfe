@@ -2,7 +2,7 @@ package ml.wolfe.macros
 
 import ml.wolfe.{MaxProduct, Wolfe, WolfeSpec}
 import cc.factorie.optimize.{Perceptron, OnlineTrainer}
-import ml.wolfe.util.{LoggerUtil, NLP, Evaluator}
+import ml.wolfe.util.{NLP, Evaluator}
 
 /**
  * @author Sebastian Riedel
