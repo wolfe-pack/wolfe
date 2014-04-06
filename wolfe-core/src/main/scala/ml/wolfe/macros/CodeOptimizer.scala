@@ -25,6 +25,16 @@ trait CodeOptimizer[C <: Context] extends HasContext[C] with CodeRepository[C] w
           context.resetAllAttrs(code)
         case _ => q"ml.wolfe.FactorieConverter.toFreshFactorieSparseVector($wolfeVector,$index)"
       }
+    case ApplyPlus(arg1,arg2) =>
+      val arg1Vector = toOptimizedFactorieVector(arg1,index)
+      val arg2Vector = toOptimizedFactorieVector(arg2,index)
+      val code = q"""
+        val result = new cc.factorie.la.SparseTensor1($arg1.size + $arg2.size)
+        result += $arg1Vector
+        result += $arg2Vector
+        result
+      """
+      code
     case q"ml.wolfe.Wolfe.oneHot($oneHotIndex,$oneHotValue)" =>
       q"$index.toCachedFactorieOneHotVector($oneHotIndex,$oneHotValue)"
 
