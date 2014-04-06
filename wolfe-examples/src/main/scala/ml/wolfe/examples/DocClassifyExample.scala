@@ -9,6 +9,7 @@ import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
 import scala.collection.mutable.ListBuffer
 import cc.factorie.app.strings.alphaSegmenter
 import cc.factorie.optimize.{Perceptron, OnlineTrainer}
+import scala.util.Random
 
 /**
  * @author Sebastian Riedel
@@ -41,8 +42,9 @@ object DocClassifyExample {
 
   }
   def main(args: Array[String]) {
+    val random = new Random(0l)
     val (train, test) = Load20NewsGroups.loadFromTarGz()
-    val sub = train.take(1000)
+    val sub = random.shuffle(train).take(100)
     val labels = train.map(_.label).distinct
     println(labels.mkString(", "))
     val model = new Model(labels)
