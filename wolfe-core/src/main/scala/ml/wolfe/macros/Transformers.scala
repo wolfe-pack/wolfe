@@ -35,6 +35,10 @@ trait Transformers[C<:Context] {
     case _ => tree
   }
 
+  def normalize(tree:Tree) = {
+    simplifyBlock(tree)
+  }
+
 
   def transform(tree: Tree, pf: PartialFunction[Tree, Tree]): context.Tree =
     new TransformWithPartialFunction(pf).transform(tree)

@@ -75,6 +75,14 @@ class Index extends Serializable {
 
   private val sparseVectorCache = new mutable.HashMap[Wolfe.Vector, FactorieVector]()
 
+  private val oneHotFactorieVectorCache = new mutable.HashMap[(Int, Double), FactorieVector]()
+
+  def toCachedFactorieOneHotVector(component: Any, value: Double) = {
+    val index = this(Seq(component))
+    val result = oneHotFactorieVectorCache.getOrElseUpdate(index -> value, new SingletonVector(1, index, value))
+    result
+  }
+
   def toCachedFactorieSparseVector[T](vector: Wolfe.Vector, singletons: Boolean = false): FactorieVector = {
     val result = sparseVectorCache.getOrElseUpdate(vector, toFreshFactorieSparseVector(vector, singletons))
     result

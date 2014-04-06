@@ -1,13 +1,14 @@
 package ml.wolfe.examples
 
 import ml.wolfe.Wolfe
-import ml.wolfe.util.{LoggerUtil, Util, NLP}
+import ml.wolfe.util.{Evaluator, LoggerUtil, Util, NLP}
 import ml.wolfe.macros.{Library, OptimizedOperators}
 import java.io.BufferedInputStream
 import org.apache.commons.compress.compressors.gzip._
-import org.apache.commons.compress.archivers.tar.{TarArchiveEntry, TarArchiveInputStream}
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
 import scala.collection.mutable.ListBuffer
 import cc.factorie.app.strings.alphaSegmenter
+import cc.factorie.optimize.{Perceptron, OnlineTrainer}
 
 /**
  * @author Sebastian Riedel
@@ -20,16 +21,20 @@ object DocClassifyExample {
   import Library._
 
   class Model(labels: Iterable[DocLabel]) {
-    def Docs = all(Doc) { strings x seqs(all(Token) { strings x infty[Tag] x infty[Chunk] }) x labels }
+    def Docs = all(Doc) { strings x infty[Seq[Token]] x labels }
 
     def observed(d: Doc) = d.copy(label = hidden)
 
+    @Atomic
     def features(d: Doc) = sum { over(0 until d.tokens.size) of (i => oneHot(d.label -> d.tokens(i).word)) }
 
     def model(w: Vector)(d: Doc) = w dot features(d)
 
     def predictor(w: Vector)(d: Doc) = argmax { over(Docs) of model(w) st evidence(observed)(d) }
 
+    def batchPredictor(w:Vector)(data:Iterable[Doc]) = map { over(data) using predictor(w)}
+
+    @OptimizeByLearning(new OnlineTrainer(_, new Perceptron, 10, 50))
     def loss(data: Iterable[Doc])(w: Vector) = sum { over(data) of (s => model(w)(predictor(w)(s)) - model(w)(s)) }
 
     def learn(data: Iterable[Doc]) = argmin { over[Vector] of loss(data) }
@@ -37,11 +42,15 @@ object DocClassifyExample {
   }
   def main(args: Array[String]) {
     val (train, test) = Load20NewsGroups.loadFromTarGz()
-    val sub = train.take(10)
+    val sub = train.take(100)
     val labels = train.map(_.label).distinct
+    println(labels.mkString(", "))
     val model = new Model(labels)
     val w = model.learn(sub)
     println(w.take(10))
+    val trainPredicted = model.batchPredictor(w)(sub)
+    val trainEval = Evaluator.evaluate(sub,trainPredicted)(_.label)
+    println(trainEval)
 
     //load 20 newsgroups data
   }
