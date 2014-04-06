@@ -7,6 +7,7 @@ import java.io.BufferedInputStream
 import org.apache.commons.compress.compressors.gzip._
 import org.apache.commons.compress.archivers.tar.{TarArchiveEntry, TarArchiveInputStream}
 import scala.collection.mutable.ListBuffer
+import cc.factorie.app.strings.alphaSegmenter
 
 /**
  * @author Sebastian Riedel
@@ -44,6 +45,7 @@ object Load20NewsGroups {
     val (train,test) = loadFromTarGz()
     println(train.size)
     println(test.size)
+    println(train.head.tokens.size)
   }
 
   def loadFromTarGz(path:String = "ml/wolfe/datasets/20news/20news-bydate.tar.gz") = {
@@ -64,8 +66,10 @@ object Load20NewsGroups {
         val content = new Array[Byte](entry.getSize.toInt)
         tarIn.read(content, 0, entry.getSize.toInt)
         val text = new String(content)
+        def toToken(string:String) = Token(string)
+        val tokens = alphaSegmenter(text).map(toToken).toIndexedSeq
         println(text.take(30))
-        val doc = Doc(text, null, DocLabel(label))
+        val doc = Doc(text, tokens, DocLabel(label))
         if (root.endsWith("train")) trainDocs += doc else testDocs += doc
         //
       }

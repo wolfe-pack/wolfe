@@ -15,7 +15,11 @@ object NLP {
   case class Tag(label: String) extends Label
   case class DocLabel(label: String) extends Label
 
-  case class Token(word: String, tag: Tag, chunk: Chunk) {
+  class Default
+  object default extends Default
+  implicit def toDefaultValue[T <: AnyRef](default:Default) = null
+
+  case class Token(word: String, tag: Tag = default, chunk: Chunk = default) {
     override def toString = s"$word/${ tag.label }/${ chunk.label }"
   }
   case class Sentence(tokens: Seq[Token]) {

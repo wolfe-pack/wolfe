@@ -211,6 +211,7 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
           import cc.factorie.optimize._
           import ml.wolfe.util.LoggerUtil
           import ml.wolfe._
+          import scala.language.reflectiveCalls
 
           val $indexName = new Index
           val $weightsSet = new WeightsSet
