@@ -42,7 +42,7 @@ object DocClassifyExample {
   }
   def main(args: Array[String]) {
     val (train, test) = Load20NewsGroups.loadFromTarGz()
-    val sub = train.take(100)
+    val sub = train.take(1000)
     val labels = train.map(_.label).distinct
     println(labels.mkString(", "))
     val model = new Model(labels)
