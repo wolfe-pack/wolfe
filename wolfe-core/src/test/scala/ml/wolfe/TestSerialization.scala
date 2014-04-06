@@ -9,6 +9,7 @@ import scala.pickling._
 import json._
 import scala.pickling.binary.BinaryPickleFormat
 import org.scalatest.{FlatSpec, Matchers}
+import scala.language.existentials
 
 /**
  * Created by larysa  26.02.14

@@ -46,7 +46,7 @@ class ConditionerSpecs extends StructureIsomorphisms {
     "condition by specifying hidden variables in flat case class" in {
       case class Data(x: Boolean, y: Boolean, z: Boolean)
       def space = Wolfe.all(Data)
-      def observed(d: Data) = d.copy(y = hide[Boolean])
+      def observed(d: Data) = d.copy(y = hidden)
       val instance = Data(true, true, false)
       val expected = space filter (observed(_) == observed(instance))
       val actual = Conditioner.conditioned(space)(observed(_) == observed(instance))
@@ -59,7 +59,7 @@ class ConditionerSpecs extends StructureIsomorphisms {
       implicit def nested = Wolfe.all(Nested)
       def space = Wolfe.all(Data)
       val instance = Data(Nested(false, false), true, false)
-      def observed(d: Data) = d.copy(x = d.x.copy(a = hide[Boolean]))
+      def observed(d: Data) = d.copy(x = d.x.copy(a = hidden))
       val expected = space filter (observed(_) == observed(instance))
       val actual = Conditioner.conditioned(space)(observed(_) == observed(instance))
       actual mustBeIsomorphicTo expected
@@ -69,7 +69,7 @@ class ConditionerSpecs extends StructureIsomorphisms {
       def elements = Wolfe.all(Element)
       def space = seqs(elements, 4)
       val instance = Seq.fill(3)(Element(true, false))
-      def observed(s: Seq[Element]) = s.map(_.copy(b = hide[Boolean]))
+      def observed(s: Seq[Element]) = s.map(_.copy(b = hidden))
       val expected = space filter (observed(_) == observed(instance))
       val actual = Conditioner.conditioned(space)(observed(_) == observed(instance))
       actual mustBeIsomorphicTo expected
@@ -80,7 +80,7 @@ class ConditionerSpecs extends StructureIsomorphisms {
       def elements = Wolfe.all(Element)
       def space = Wolfe.all(Container)(seqs(elements, 4))
       val instance = Container(Seq.fill(3)(Element(true, false)))
-      def observed(c: Container) = c.copy(elements = c.elements.map(_.copy(b = hide[Boolean])))
+      def observed(c: Container) = c.copy(elements = c.elements.map(_.copy(b = hidden)))
       val expected = space filter (observed(_) == observed(instance))
       val actual = Conditioner.conditioned(space)(observed(_) == observed(instance))
       actual mustBeIsomorphicTo expected
@@ -90,7 +90,7 @@ class ConditionerSpecs extends StructureIsomorphisms {
       import Library._
       case class Data(x: Boolean, y: Boolean, z: Boolean)
       def space = Wolfe.all(Data)
-      def observed(d: Data) = d.copy(y = hide[Boolean])
+      def observed(d: Data) = d.copy(y = hidden)
       val instance = Data(true, true, false)
       val expected = space filter evidence(observed)(instance)
       val actual = Conditioner.conditioned(space)(evidence(observed)(instance))

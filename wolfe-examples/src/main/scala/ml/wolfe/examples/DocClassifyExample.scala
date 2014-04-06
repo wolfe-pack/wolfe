@@ -21,7 +21,7 @@ object DocClassifyExample {
 
   def Docs = all(Doc)(strings x seqs(all(Token)) x Seq.empty[DocLabel])
 
-  def observed(d: Doc) = d.copy(label = hide[DocLabel])
+  def observed(d: Doc) = d.copy(label = hidden)
 
   def features(d: Doc) = sum { over(0 until d.tokens.size) of (i => oneHot(d.label -> d.tokens(i).word)) }
 

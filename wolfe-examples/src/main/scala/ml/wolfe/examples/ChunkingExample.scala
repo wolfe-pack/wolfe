@@ -17,7 +17,7 @@ object ChunkingExample {
 
   def Sentences = Wolfe.all(Sentence)(seqs(all(Token)))
 
-  def observed(s: Sentence) = s.copy(tokens = s.tokens.map(_.copy(chunk = hide[Chunk])))
+  def observed(s: Sentence) = s.copy(tokens = s.tokens.map(_.copy(chunk = hidden)))
 
   def features(s: Sentence) = {
     sum { over(0 until s.tokens.size) of (i => oneHot('o -> s.tokens(i).word -> s.tokens(i).chunk)) } +

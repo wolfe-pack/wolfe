@@ -21,7 +21,7 @@ class IrisSpecs extends WolfeSpec {
       def space = Wolfe.all(IrisData)
 
       //define what the observed part of the data is
-      def observed(d: IrisData) = d.copy(irisClass = hide[Label])
+      def observed(d: IrisData) = d.copy(irisClass = hidden)
 
       //feature function on data
       def features(data: IrisData) =
