@@ -13,7 +13,6 @@ import scala.collection.MapProxy
 object Wolfe extends SampleSpaceDefs
                      with StatsDefs
                      with VectorDefs
-                     with Conditioning
                      with DefaultValues
                      with ProblemBuilder
                      with Annotations {
@@ -302,19 +301,6 @@ trait DefaultValues {
   implicit def toDefaultInt[Int](default:Default) = -1
   implicit def toDefaultBoolean[Boolean](default:Default) = false
   implicit def toDefaultDouble[Double](default:Default) = 0.0
-
-}
-
-trait Conditioning {
-  class Maskable[T](val mask: T)
-
-  implicit object MaskableInt extends Maskable(-1)
-  implicit object MaskableBoolean extends Maskable(false)
-  implicit def maskableAnyRef[T <: AnyRef] = new Maskable[T](null.asInstanceOf[T])
-  //  implicit def maskableInt = new Maskable(-1)
-  //  implicit def maskableBoolean = new Maskable(false)
-
-  def hide[T: Maskable] = implicitly[Maskable[T]].mask
 
 }
 

@@ -92,6 +92,12 @@ trait PatternRepository[C <: Context] extends SymbolRepository[C] with CodeRepos
     }
   }
 
+  object AlwaysSame {
+    def unapply(pair:(Tree,Tree)) = {
+      pair._1.equalsStructure(pair._2)
+    }
+  }
+
   object CaseClassCopy {
 
     def unapply(tree: Tree): Option[(Tree, List[Tree])] = tree match {

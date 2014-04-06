@@ -24,7 +24,7 @@ class ChunkingSpecs extends WolfeSpec {
       def Tokens = Wolfe.all(Token)
       def Sentences = Wolfe.all(Sentence)(seqs(Tokens))
 
-      def observed(s: Sentence) = s.copy(tokens = s.tokens.map(_.copy(chunk = hide[Chunk])))
+      def observed(s: Sentence) = s.copy(tokens = s.tokens.map(_.copy(chunk = hidden)))
       def evidence(s1: Sentence)(s2: Sentence) = observed(s1) == observed(s2)
 
       def features(s: Sentence) = {

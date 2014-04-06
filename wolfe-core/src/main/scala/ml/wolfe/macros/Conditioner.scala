@@ -63,6 +63,9 @@ trait Conditioner[C <: Context] extends MetaStructures[C] {
       case (CaseClassCopy(select1, args1), CaseClassCopy(select2, args2)) => matcher(select1) match {
         case Some(StructurePointer(structure, meta: MetaCaseClassStructure)) =>
           val statements = ((args1 zip args2) zip meta.fields).map({
+            case (AlwaysSame(), field) =>
+              //todo: should also fire if it can be shown that both arguments evaluate to the same thing
+              Some(EmptyTree)
             case ((arg1, arg2), field)
               if arg1.symbol == wolfeSymbols.hide && arg2.symbol == wolfeSymbols.hide =>
               //todo: should also fire if it can be shown that both arguments evaluate to the same thing
@@ -168,7 +171,6 @@ object Conditioner {
     val structName = newTermName("structure")
 
     val helper = new ContextHelper[c.type](c) with MetaStructures[c.type] with Conditioner[c.type]
-    println(helper.scalaSymbols.and)
     val meta = helper.metaStructure(sampleSpace.tree)
     val normalized = helper.simplifyBlock(helper.unwrapSingletonBlocks(condition.tree))
     val q"($arg) => $rhs" = normalized
