@@ -1,7 +1,7 @@
 package ml.wolfe.examples
 
 import ml.wolfe.Wolfe
-import ml.wolfe.util.{Util, NLP}
+import ml.wolfe.util.{LoggerUtil, Util, NLP}
 import ml.wolfe.macros.{Library, OptimizedOperators}
 import java.io.BufferedInputStream
 import org.apache.commons.compress.compressors.gzip._
@@ -60,6 +60,7 @@ object Load20NewsGroups {
   def loadFromTarGz(path: String = "ml/wolfe/datasets/20news/20news-bydate.tar.gz") = {
     import NLP._
     //http://java-tweets.blogspot.co.uk/2012/07/untar-targz-file-with-apache-commons.html
+    LoggerUtil.info("Loading 20 newsgroups ...")
     val stream = Util.getStreamFromClassPathOrFile(path)
     val in = new BufferedInputStream(stream)
     val gzIn = new GzipCompressorInputStream(in)
@@ -69,7 +70,7 @@ object Load20NewsGroups {
     val trainDocs = new ListBuffer[Doc]
     val testDocs = new ListBuffer[Doc]
     while (entry != null) {
-      println(entry.getName + " " + entry.isDirectory)
+      //println(entry.getName + " " + entry.isDirectory)
       if (!entry.isDirectory) {
         val Array(root, label, id) = entry.getName.split("/")
         val content = new Array[Byte](entry.getSize.toInt)
