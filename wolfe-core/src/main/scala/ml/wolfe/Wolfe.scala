@@ -14,6 +14,7 @@ object Wolfe extends SampleSpaceDefs
                      with StatsDefs
                      with VectorDefs
                      with Conditioning
+                     with DefaultValues
                      with ProblemBuilder
                      with Annotations {
 
@@ -289,6 +290,18 @@ trait SampleSpaceDefs {
   implicit def unwrap5[A1, A2, A3, A4, A5, B](f: (A1, A2, A3, A4, A5) => B): ((A1, A2, A3, A4, A5)) => B =
     p => f(p._1, p._2, p._3, p._4, p._5)
 
+
+}
+
+trait DefaultValues {
+  sealed trait Default
+  object default extends Default
+  object hidden extends Default
+  object unknown extends Default
+  implicit def toDefaultValue[T <: AnyRef](default:Default) = null
+  implicit def toDefaultInt[Int](default:Default) = -1
+  implicit def toDefaultBoolean[Boolean](default:Default) = false
+  implicit def toDefaultDouble[Double](default:Default) = 0.0
 
 }
 

@@ -1,6 +1,7 @@
 package ml.wolfe.util
 
 import scala.io.Source
+import ml.wolfe.Wolfe
 
 /**
  * Code for NLP datasets.
@@ -8,6 +9,7 @@ import scala.io.Source
 object NLP {
 
   import scala.language.implicitConversions
+  import Wolfe._
 
   trait Label {def label: String }
 
@@ -15,9 +17,6 @@ object NLP {
   case class Tag(label: String) extends Label
   case class DocLabel(label: String) extends Label
 
-  class Default
-  object default extends Default
-  implicit def toDefaultValue[T <: AnyRef](default:Default) = null
 
   case class Token(word: String, tag: Tag = default, chunk: Chunk = default) {
     override def toString = s"$word/${ tag.label }/${ chunk.label }"
