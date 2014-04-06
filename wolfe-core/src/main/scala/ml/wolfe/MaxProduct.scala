@@ -53,17 +53,22 @@ object MaxProduct {
         norm = math.max(score, norm)
       }
 
-      obj += norm
+      // 2) count number of maximums
+      var maxCount = 0
+      var maxScore = Double.NegativeInfinity
+      for (i <- 0 until factor.entryCount) {
+        val setting = factor.settings(i)
+        val score = penalizedScore(factor, i, setting)
+        if (score == norm) {
+          maxCount += 1
+          maxScore =factor.score(i)
+        }
+      }
+
+      obj += maxScore
 
       if (factor.typ == MPGraph.FactorType.LINEAR) {
 
-        // 2) count number of maximums
-        var maxCount = 0
-        for (i <- 0 until factor.entryCount) {
-          val setting = factor.settings(i)
-          val score = penalizedScore(factor, i, setting)
-          if (score == norm) maxCount += 1
-        }
 
         // 3) prob = 1/|maxs| for all maximums, add corresponding vector
         for (i <- 0 until factor.entryCount) {
