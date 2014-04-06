@@ -67,6 +67,7 @@ object BuildSettings {
 
   val globalSettings =
     Seq(
+      scalacOptions ++= Seq("-feature"),
       resolvers ++= Seq(
         "IESL Release" at "https://dev-iesl.cs.umass.edu/nexus/content/groups/public",
         Resolver.sonatypeRepo("snapshots"),
