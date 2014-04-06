@@ -37,11 +37,11 @@ object DocClassifyExample {
   }
   def main(args: Array[String]) {
     val (train, test) = Load20NewsGroups.loadFromTarGz()
-    val sub = train.take(2)
-    val labels = sub.map(_.label).distinct
+    val sub = train.take(10)
+    val labels = train.map(_.label).distinct
     val model = new Model(labels)
     val w = model.learn(sub)
-    println(w)
+    println(w.take(10))
 
     //load 20 newsgroups data
   }
