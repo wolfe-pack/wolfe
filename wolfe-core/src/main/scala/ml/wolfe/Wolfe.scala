@@ -47,8 +47,6 @@ object Wolfe extends SampleSpaceDefs
   @deprecated("Use the new operators", "now")
   def logZOld[T](dom: Iterable[T])(model: T => Double) = math.log(dom.view.map(x => math.exp(model(x))).sum)
 
-  def forall[T](dom: Iterable[T])(pred: T => Boolean) = dom.forall(pred)
-
   case class RichCurried[A1, A2, B](f: A1 => A2 => B) {
     def apply(pair: (A2, A1)) = f(pair._2)(pair._1)
   }
@@ -267,6 +265,7 @@ trait SampleSpaceDefs {
 
   implicit val vectors = new All[Wolfe.Vector]
 
+  def infty[T] = new All[T]
 
   case class RichIterable[T](set: Iterable[T]) {
     def ->[B](that: Iterable[B]) = maps(set, that)
@@ -276,7 +275,7 @@ trait SampleSpaceDefs {
 
   implicit def toSeq[T](seq: Iterable[T]) = seq.toSeq
 
-  class All[T] extends Iterable[T] {
+  sealed class All[T] extends Iterable[T] {
     def iterator = sys.error("Can't iterate over all objects")
   }
 
@@ -301,6 +300,7 @@ trait DefaultValues {
   implicit def toDefaultInt[Int](default:Default) = -1
   implicit def toDefaultBoolean[Boolean](default:Default) = false
   implicit def toDefaultDouble[Double](default:Default) = 0.0
+  def default[T <: AnyRef]:T = null.asInstanceOf[T]
 
 }
 

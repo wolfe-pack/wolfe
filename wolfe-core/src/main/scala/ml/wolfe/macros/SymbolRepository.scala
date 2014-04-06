@@ -19,6 +19,7 @@ trait SymbolRepository[C <: Context] extends HasContext[C] {
 
     lazy val vectorClass      = rootMirror.staticClass("ml.wolfe.Wolfe.Vector")
     lazy val overWhereOfClass = rootMirror.staticClass("ml.wolfe.Wolfe.Builder")
+    lazy val allClass         = rootMirror.staticClass("ml.wolfe.Wolfe.All")
 
     lazy val strings = wolfeType.member(newTermName("strings"))
     lazy val doubles = wolfeType.member(newTermName("doubles"))

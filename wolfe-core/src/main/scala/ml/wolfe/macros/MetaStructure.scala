@@ -242,6 +242,8 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
           case None => sampleSpace.symbol match {
             case s if s == wolfeSymbols.doubles || s == wolfeSymbols.strings =>
               new MetaObservedAtomicStructure {def domain = sampleSpace}
+            case s if sampleSpace.tpe.typeSymbol == wolfeSymbols.allClass =>
+              new MetaObservedAtomicStructure {def domain = sampleSpace}
             case _ =>
               new MetaAtomicStructure {def domain = sampleSpace}
           }
