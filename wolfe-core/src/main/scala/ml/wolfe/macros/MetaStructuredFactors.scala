@@ -9,7 +9,7 @@ import ml.wolfe.Wolfe
  * @tparam C type of context.
  * @author Sebastian Riedel
  */
-trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] {
+trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOptimizer[C] {
 
   import context.universe._
 
@@ -17,8 +17,8 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] {
     def className: TypeName
     def classDef: Tree
     def weightVector: Option[Tree] = {
-      val childVectors = children.map(_.weightVector).collect({case Some(w) => w})
-      val allEqual = childVectors.forall(w => childVectors.forall( _.equalsStructure(w)))
+      val childVectors = children.map(_.weightVector).collect({ case Some(w) => w })
+      val allEqual = childVectors.forall(w => childVectors.forall(_.equalsStructure(w)))
       if (!allEqual) context.error(context.enclosingPosition, "Different weight vectors appear in model: " + childVectors)
       childVectors.headOption
     }
@@ -173,7 +173,8 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] {
   extends MetaAtomicStructuredFactor {
 
     def createFactor = q"graph.addLinearFactor(vectors, settings, dims)"
-    def perSettingValue = q"${ diffInfo.indexTree }.toCachedFactorieSparseVector($injected,true)"
+    def perSettingValue = toOptimizedFactorieVector(injected, diffInfo.indexTree)//q"${ diffInfo.indexTree }.toCachedFactorieSparseVector($injected,true)"
+    //    def perSettingValue = q"${ diffInfo.indexTree }.toCachedFactorieSparseVector($injected,true)"
     def perSettingArrayInitializer = q"Array.ofDim[ml.wolfe.FactorieVector](settingsCount)"
     def perSettingArrayName = newTermName("vectors")
   }
@@ -184,10 +185,10 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] {
     case false => MetaAtomicStructuredFactorTable(potential, structure, matcher, constructorArgs)
   }
 
-//  def unwrapIfRichVector(arg1: Tree) = arg1 match {
-//    case q"ml.wolfe.Wolfe.RichVector($actualArg1)" => actualArg1
-//    case _ => arg1
-//  }
+  //  def unwrapIfRichVector(arg1: Tree) = arg1 match {
+  //    case q"ml.wolfe.Wolfe.RichVector($actualArg1)" => actualArg1
+  //    case _ => arg1
+  //  }
 
 
   def metaStructuredFactor(potential: Tree, structure: MetaStructure,
@@ -195,7 +196,7 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] {
                            constructorArgs: List[ValDef] = Nil,
                            linearModelInfo: LinearModelInfo,
                            linear: Boolean = false): MetaStructuredFactor = {
-//    val simplified = unwrapSingletonBlocks(potential)
+    //    val simplified = unwrapSingletonBlocks(potential)
     val simplified = simplifyBlock(unwrapSingletonBlocks(potential))
     simplified match {
       case Sum(BuilderTrees(dom, filter, obj, _)) =>
@@ -209,10 +210,10 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] {
         MetaSumFactor(List(arg1, arg2), List(f1, f2), structure, constructorArgs)
       case Dot(arg1, arg2) if structures(arg1, matcher).isEmpty =>
         val linearFactor = metaStructuredFactor(arg2, structure, matcher, constructorArgs, linearModelInfo, true)
-        WithWeightVector(linearFactor,arg1)
+        WithWeightVector(linearFactor, arg1)
       case Dot(arg2, arg1) if structures(arg1, matcher).isEmpty =>
         val linearFactor = metaStructuredFactor(arg2, structure, matcher, constructorArgs, linearModelInfo, true)
-        WithWeightVector(linearFactor,arg1)
+        WithWeightVector(linearFactor, arg1)
       case _ => inlineOnce(potential) match {
         case Some(inlined) =>
           metaStructuredFactor(inlined, structure, matcher, constructorArgs, linearModelInfo, linear)
@@ -222,13 +223,13 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] {
     }
   }
 
-  def structuredLinearFactorCode(sampleSpace:Tree, arg:Tree, rhs:Tree) = {
+  def structuredLinearFactorCode(sampleSpace: Tree, arg: Tree, rhs: Tree) = {
     val structName = newTermName("structure")
     val graphName = newTermName("_graph")
     val meta = metaStructure(sampleSpace)
     val root = rootMatcher(arg.symbol, q"$structName", meta)
     val matcher = meta.matcher(root)
-    val metaFactor = metaStructuredFactor(rhs, meta, matcher,linearModelInfo = LinearModelInfo(q"_index"))
+    val metaFactor = metaStructuredFactor(rhs, meta, matcher, linearModelInfo = LinearModelInfo(q"_index"))
     val factorieWeights = metaFactor.weightVector.map(
       w => q"ml.wolfe.FactorieConverter.toFactorieDenseVector($w,_index)"
     ).getOrElse(q"new ml.wolfe.DenseVector(0)")
@@ -246,7 +247,7 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] {
       $graphName.weights = _factorieWeights
       result
     """
-    (context.resetLocalAttrs(code),metaFactor)
+    (context.resetLocalAttrs(code), metaFactor)
   }
 }
 
@@ -273,10 +274,9 @@ object MetaStructuredFactor {
     val helper = new ContextHelper[c.type](c) with MetaStructuredFactors[c.type]
 
     val q"($arg) => $rhs" = helper.unwrapSingletonBlocks(potential.tree)
-    val (code,_) = helper.structuredLinearFactorCode(sampleSpace.tree, arg,rhs)
+    val (code, _) = helper.structuredLinearFactorCode(sampleSpace.tree, arg, rhs)
     c.Expr[StructuredFactor[T]](code)
   }
-
 
 
   def structuredLinearFactorImpl[T: c.WeakTypeTag](c: Context)(sampleSpace: c.Expr[Iterable[T]],
@@ -285,10 +285,10 @@ object MetaStructuredFactor {
     val helper = new ContextHelper[c.type](c) with MetaStructuredFactors[c.type]
 
     val q"($param) => ($arg) => $rhs" = helper.unwrapSingletonBlocks(potential.tree)
-    val (code,meta) = helper.structuredLinearFactorCode(sampleSpace.tree,arg,rhs)
+    val (code, meta) = helper.structuredLinearFactorCode(sampleSpace.tree, arg, rhs)
     if (!meta.weightVector.exists(_.symbol == param.symbol))
       c.error(c.enclosingPosition,
-        s"Weight vector of linear model doesn't match parameter: ${meta.weightVector} != ${param.symbol}")
+        s"Weight vector of linear model doesn't match parameter: ${ meta.weightVector } != ${ param.symbol }")
 
     val function = q"($param => $code)"
     c.Expr[Wolfe.Vector => StructuredFactor[T]](function)

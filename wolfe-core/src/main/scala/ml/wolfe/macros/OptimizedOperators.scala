@@ -167,6 +167,7 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
     CodeAndInitialization(context.resetLocalAttrs(code), initialization)
   }
 
+  //todo: this may be replaced by simplifyBlocks / normalize at some point?
   def blockToFunction(tree: Tree): Tree = tree match {
     case f: Function => f
     case Block(stats, Function(args, body)) => {
