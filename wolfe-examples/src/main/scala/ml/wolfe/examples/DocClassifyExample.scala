@@ -19,21 +19,30 @@ object DocClassifyExample {
   import OptimizedOperators._
   import Library._
 
-  def Docs = all(Doc)(strings x seqs(all(Token)) x Seq.empty[DocLabel])
+  class Model(labels: Iterable[DocLabel]) {
+    def Docs = all(Doc) { strings x seqs(all(Token) { strings x infty[Tag] x infty[Chunk] }) x labels }
 
-  def observed(d: Doc) = d.copy(label = hidden)
+    def observed(d: Doc) = d.copy(label = hidden)
 
-  def features(d: Doc) = sum { over(0 until d.tokens.size) of (i => oneHot(d.label -> d.tokens(i).word)) }
+    def features(d: Doc) = sum { over(0 until d.tokens.size) of (i => oneHot(d.label -> d.tokens(i).word)) }
 
-  def model(w: Vector)(d: Doc) = w dot features(d)
+    def model(w: Vector)(d: Doc) = w dot features(d)
 
-  def predictor(w: Vector)(d: Doc) = argmax { over(Docs) of model(w) st evidence(observed)(d) }
+    def predictor(w: Vector)(d: Doc) = argmax { over(Docs) of model(w) st evidence(observed)(d) }
 
-  def loss(data: Iterable[Doc])(w: Vector) = sum { over(data) of (s => model(w)(predictor(w)(s)) - model(w)(s)) }
+    def loss(data: Iterable[Doc])(w: Vector) = sum { over(data) of (s => model(w)(predictor(w)(s)) - model(w)(s)) }
 
-  def learn(data: Iterable[Doc]) = argmin { over[Vector] of loss(data) }
+    def learn(data: Iterable[Doc]) = argmin { over[Vector] of loss(data) }
 
+  }
   def main(args: Array[String]) {
+    val (train, test) = Load20NewsGroups.loadFromTarGz()
+    val sub = train.take(2)
+    val labels = sub.map(_.label).distinct
+    val model = new Model(labels)
+    val w = model.learn(sub)
+    println(w)
+
     //load 20 newsgroups data
   }
 
@@ -42,13 +51,13 @@ object DocClassifyExample {
 object Load20NewsGroups {
 
   def main(args: Array[String]) {
-    val (train,test) = loadFromTarGz()
+    val (train, test) = loadFromTarGz()
     println(train.size)
     println(test.size)
     println(train.head.tokens.size)
   }
 
-  def loadFromTarGz(path:String = "ml/wolfe/datasets/20news/20news-bydate.tar.gz") = {
+  def loadFromTarGz(path: String = "ml/wolfe/datasets/20news/20news-bydate.tar.gz") = {
     import NLP._
     //http://java-tweets.blogspot.co.uk/2012/07/untar-targz-file-with-apache-commons.html
     val stream = Util.getStreamFromClassPathOrFile(path)
@@ -66,7 +75,7 @@ object Load20NewsGroups {
         val content = new Array[Byte](entry.getSize.toInt)
         tarIn.read(content, 0, entry.getSize.toInt)
         val text = new String(content)
-        def toToken(string:String) = Token(string)
+        def toToken(string: String) = Token(string)
         val tokens = alphaSegmenter(text).map(toToken).toIndexedSeq
         val doc = Doc(text, tokens, DocLabel(label))
         if (root.endsWith("train")) trainDocs += doc else testDocs += doc
@@ -75,7 +84,7 @@ object Load20NewsGroups {
       entry = tarIn.getNextEntry
     }
     in.close()
-    (trainDocs,testDocs)
+    (trainDocs, testDocs)
 
   }
 

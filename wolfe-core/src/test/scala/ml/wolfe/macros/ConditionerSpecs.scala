@@ -86,7 +86,7 @@ class ConditionerSpecs extends StructureIsomorphisms {
       actual mustBeIsomorphicTo expected
     }
 
-    "condition by specifying hidden variables in flat case class using a library function " in {
+    "condition by specifying hidden variables in flat case class using a library function" in {
       import Library._
       case class Data(x: Boolean, y: Boolean, z: Boolean)
       def space = Wolfe.all(Data)
@@ -97,6 +97,14 @@ class ConditionerSpecs extends StructureIsomorphisms {
       actual mustBeIsomorphicTo expected
     }
 
+    "turn infinite search spaces into finite structures when conditioning" in {
+      case class Data(label:String)
+      def space = infty[Data]
+      def condition(d:Data) = d == Data("test")
+      val actual = Conditioner.conditioned(space)(condition)
+      actual mustBeIsomorphicTo Seq(Data("test"))
+
+    }
 
   }
 

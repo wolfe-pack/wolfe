@@ -60,4 +60,5 @@ object NLP {
       "TO", "UH", "VB", "VBD", "VBG", "VBN", "VBP", "VBZ", "WDT", "WP", "WP$", "WRB", "``").map(Tag)
 
 
+
 }
