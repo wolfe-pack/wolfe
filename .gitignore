@@ -13,6 +13,8 @@ project/boot/
 project/plugins/project/
 
 # intellij
-.idea 
+.idea
+.idea/*
 .idea_modules
 !.idea/codeStyleSettings.xml
+*.iml
