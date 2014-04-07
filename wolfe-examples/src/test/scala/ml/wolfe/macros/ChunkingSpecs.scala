@@ -50,7 +50,7 @@ class ChunkingSpecs extends WolfeSpec {
 
       val predictedTrain = map { over(train) using predict }
       val evalTrain = Evaluator.evaluate(train.flatMap(_.tokens), predictedTrain.flatMap(_.tokens))(_.chunk)
-      evalTrain.f1 should be(0.85 +- 0.01)
+      evalTrain.f1 should be(0.83 +- 0.01)
 
       //      val evalTest = Evaluator.evaluate(test, predictedTest)(_.irisClass)
       //
