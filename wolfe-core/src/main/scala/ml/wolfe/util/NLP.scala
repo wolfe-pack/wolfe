@@ -52,13 +52,13 @@ object NLP {
     loadCoNLL(Source.fromInputStream(Util.getStreamFromClassPathOrFile(fileOrClassPath)).getLines())(mapper)
 
   implicit val conllChunks =
-    Seq("O", "B-VP", "B-NP", "B-PP", "I-VP", "I-NP", "I-PP", "B-SBAR", "I-SBAR", "B-ADJP", "I-ADJP").map(Chunk)
+    Seq("B-NP","B-PP","I-NP","B-VP","I-VP","B-SBAR","O","B-ADJP","B-ADVP","I-ADVP","I-ADJP","I-SBAR","I-PP","B-PRT",
+      "B-LST","B-INTJ","I-INTJ","B-CONJP","I-CONJP","I-PRT","B-UCP","I-UCP").map(Chunk)
 
   implicit val ptbTags =
     Seq("#", "$", "''", "(", ")", ",", ".", ":", "CC", "CD", "DT", "EX", "FW", "IN", "JJ", "JJR", "JJS",
       "MD", "NN", "NNP", "NNPS", "NNS", "PDT", "POS", "PRP", "PRP$", "RB", "RBR", "RBS", "RP", "SYM",
       "TO", "UH", "VB", "VBD", "VBG", "VBN", "VBP", "VBZ", "WDT", "WP", "WP$", "WRB", "``").map(Tag)
-
 
 
 }

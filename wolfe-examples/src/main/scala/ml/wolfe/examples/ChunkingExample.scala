@@ -28,7 +28,7 @@ object ChunkingExample {
   def model(w: Vector)(s: Sentence) = w dot features(s)
   def predictor(w: Vector)(s: Sentence) = argmax { over(Sentences) of model(w) st evidence(observed)(s) }
 
-  @OptimizeByLearning(new OnlineTrainer(_, new Perceptron, 5, 100))
+  @OptimizeByLearning(new OnlineTrainer(_, new Perceptron, 3, 100))
   def loss(data: Iterable[Sentence])(w: Vector) = sum { over(data) of (s => model(w)(predictor(w)(s)) - model(w)(s)) } ////
   def learn(data:Iterable[Sentence]) = argmin { over[Vector] of loss(data) }
 

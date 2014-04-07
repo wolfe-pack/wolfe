@@ -45,10 +45,13 @@ trait MetaGradientCalculators[C <: Context] extends MetaStructures[C]
           final class $className extends ml.wolfe.macros.GradientCalculator {
             val coefficient = $factorieCoefficient
             def valueAndGradient(param: ml.wolfe.FactorieVector): (Double, ml.wolfe.FactorieVector) = {
+              //println(value + " vs " + expected)
               (param dot coefficient, coefficient)
             }
           }
         """
+    //val value = param dot coefficient
+    //val expected = $coefficient dot ml.wolfe.FactorieConverter.toWolfeVector(param,$indexTree)
     MetaGradientCalculator(className, classDef)
   }
 
@@ -69,7 +72,6 @@ trait MetaGradientCalculators[C <: Context] extends MetaStructures[C]
                 def valueAndGradient(param: ml.wolfe.FactorieVector): (Double, ml.wolfe.FactorieVector) = {
                   val (v1,g1) = arg1.valueAndGradient(param)
                   val (v2,g2) = arg2.valueAndGradient(param)
-                  //assert(v1 >= v2, v1 + " < " + v2)
                   ($value, $gradient)
                 }}
           """
@@ -140,13 +142,12 @@ trait MetaGradientCalculators[C <: Context] extends MetaStructures[C]
           }
         """
         /*  code to test score
-                      $structName.setToArgmax()
 
                 val objWithFactorieWeights = transform(obj, {
                   case i:Ident if i.symbol == weightVar => q"ml.wolfe.FactorieConverter.toWolfeVector(param,$indexTree)"
                 })
-
-               val guess = $structName.value()
+              $structName.setToArgmax()
+              val guess = $structName.value()
               val score = $objWithFactorieWeights(guess)
               println(score + " vs " + _graph.value)
 
@@ -202,22 +203,6 @@ object FactorieVectorHelper {
     result += arg1
     result -= arg2
     result
-    //    val firstResult = arg1 - arg2
-    //    val otherResult = if (arg2.activeDomainSize == 27) {
-    //      println("-----")
-    //      println(arg1)
-    //      println(arg2)
-    //      val testResult = arg1 - arg2
-    //      result += arg1
-    //      result -= arg2
-    //      println(arg1)
-    //      println(arg2)
-    //      println(result)
-    //      println(testResult)
-    //      println(firstResult)
-    //      testResult
-    //    }  else arg1 - arg2
-    //    otherResult
 
   }
 }
