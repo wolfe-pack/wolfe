@@ -34,6 +34,14 @@ object MaxProduct {
     fg.gradient = new SparseVector(1000)
     fg.value = featureExpectationsAndObjective(fg, fg.gradient)
 
+    if (edges.size == 30 && fg.value > 20.2 && fg.value < 20.3) {
+      println(fg.value)
+      println(edges.size)
+      //do brute force search to check value?
+      println("Bruteforce search")
+      BruteForceSearch(fg)
+    }
+
   }
 
 
@@ -156,6 +164,58 @@ object MaxProduct {
 }
 
 
+/**
+ * Searches through all states of the factor graph.
+ */
+object BruteForceSearch {
+  def apply(fg: MPGraph) {
+    import MPGraph._
+    def loopOverSettings(nodes: List[Node], loop: (() => Unit) => Unit = body => body()): (() => Unit) => Unit = {
+      nodes match {
+        case Nil => (body: () => Unit) => loop(body)
+        case head :: tail =>
+          def newLoop(body: () => Unit) {
+            for (setting <- head.domain.indices) {
+              head.setting = setting
+              loop(body)
+            }
+          }
+          loopOverSettings(tail, newLoop)
+      }
+    }
+    val loop = loopOverSettings(fg.nodes.toList)
+    var maxScore = Double.NegativeInfinity
+    var maxSetting: Array[Int] = null
+    loop { () =>
+        var score = 0.0
+        var i = 0
+        while (i < fg.factors.size) {
+          score += fg.factors(i).scoreCurrentSetting
+          i += 1
+        }
+        if (score > maxScore) {
+          println(score)
+          maxScore = score
+          maxSetting = fg.nodes.view.map(_.setting).toArray
+        }
+    }
+
+    for ((s,n) <- maxSetting zip fg.nodes) {
+      MoreArrayOps.fill(n.b,0.0)
+      n.b(s) = 1.0
+      n.setting = s
+    }
+
+    fg.value = maxScore
+    fg.gradient = new SparseVector(1000)
+
+    for (f <- fg.factors; if f.typ == FactorType.LINEAR)
+      fg.gradient += f.gradientCurrentSetting
+
+    println("Bruteforce: " + maxScore)
+
+  }
+}
 
 
 
