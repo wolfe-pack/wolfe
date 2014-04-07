@@ -1,4 +1,5 @@
 package ml.wolfe
+
 import scalaxy.loops._
 import scala.language.postfixOps
 
@@ -17,7 +18,7 @@ object MaxProduct {
    * @param maxIteration maximum number of iterations.
    * @param canonical should edges be processed in canonical ordering according to [[ml.wolfe.MPGraph.EdgeOrdering]].
    */
-  def apply(fg: MPGraph, maxIteration: Int, canonical:Boolean = true) {
+  def apply(fg: MPGraph, maxIteration: Int, canonical: Boolean = true) {
     val edges = if (canonical) fg.edges.sorted(MPGraph.EdgeOrdering) else fg.edges
 
     for (i <- 0 until maxIteration) {
@@ -31,7 +32,7 @@ object MaxProduct {
     //calculate gradient and objective
     //todo this is not needed if we don't have linear factors. Maybe initial size should depend on number of linear factors
     fg.gradient = new SparseVector(1000)
-    fg.value = featureExpectationsAndObjective(fg,fg.gradient)
+    fg.value = featureExpectationsAndObjective(fg, fg.gradient)
 
   }
 
@@ -61,10 +62,9 @@ object MaxProduct {
         val score = penalizedScore(factor, i, setting)
         if (score == norm) {
           maxCount += 1
-          maxScore =factor.score(i)
+          maxScore = factor.score(i)
         }
       }
-
       obj += maxScore
 
       if (factor.typ == MPGraph.FactorType.LINEAR) {
@@ -81,6 +81,7 @@ object MaxProduct {
 
       }
     }
+    //sanity check
     obj
   }
 
@@ -150,9 +151,6 @@ object MaxProduct {
       for (i <- 0 until node.dim)
         node.b(i) += node.edges(e).f2n(i)
   }
-
-
-
 
 
 }
