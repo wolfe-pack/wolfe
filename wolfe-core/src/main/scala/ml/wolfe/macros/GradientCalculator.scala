@@ -72,7 +72,6 @@ trait MetaGradientCalculators[C <: Context] extends MetaStructures[C]
                 def valueAndGradient(param: ml.wolfe.FactorieVector): (Double, ml.wolfe.FactorieVector) = {
                   val (v1,g1) = arg1.valueAndGradient(param)
                   val (v2,g2) = arg2.valueAndGradient(param)
-                  if (v1 < v2) println(v1 + " " + v2 + " " + (v1 - v2))
                   ($value, $gradient)
                 }}
           """
@@ -204,22 +203,6 @@ object FactorieVectorHelper {
     result += arg1
     result -= arg2
     result
-    //    val firstResult = arg1 - arg2
-    //    val otherResult = if (arg2.activeDomainSize == 27) {
-    //      println("-----")
-    //      println(arg1)
-    //      println(arg2)
-    //      val testResult = arg1 - arg2
-    //      result += arg1
-    //      result -= arg2
-    //      println(arg1)
-    //      println(arg2)
-    //      println(result)
-    //      println(testResult)
-    //      println(firstResult)
-    //      testResult
-    //    }  else arg1 - arg2
-    //    otherResult
 
   }
 }

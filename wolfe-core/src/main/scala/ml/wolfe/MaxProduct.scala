@@ -34,14 +34,6 @@ object MaxProduct {
     fg.gradient = new SparseVector(1000)
     fg.value = featureExpectationsAndObjective(fg, fg.gradient)
 
-    if (edges.size == 30 && fg.value > 20.2 && fg.value < 20.3) {
-      println(fg.value)
-      println(edges.size)
-      //do brute force search to check value?
-      println("Bruteforce search")
-      BruteForceSearch(fg)
-    }
-
   }
 
 
