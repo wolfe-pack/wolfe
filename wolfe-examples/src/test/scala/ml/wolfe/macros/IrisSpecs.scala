@@ -36,7 +36,7 @@ class IrisSpecs extends WolfeSpec {
       def predictor(w: Vector)(i: IrisData) = argmax { over(space) of model(w) st evidence(observed)(i) }
 
       //the training loss
-      @OptimizeByLearning(new OnlineTrainer(_, new Perceptron, 4))
+      @OptimizeByLearning(new OnlineTrainer(_, new Perceptron, 4,1))
       def loss(data: Iterable[IrisData])(w: Vector) = sum { over(data) of (s => model(w)(predictor(w)(s)) - model(w)(s)) } ////
       def learn(data: Iterable[IrisData]) = argmin { over[Vector] of loss(data) }
 

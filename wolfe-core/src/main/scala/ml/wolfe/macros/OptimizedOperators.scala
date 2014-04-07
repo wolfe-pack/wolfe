@@ -56,15 +56,9 @@ object OptimizedOperators extends Operators {
 
 }
 
-trait OptimizedOperators[C <: Context] extends MetaStructures[C]
-                                               with MetaStructuredFactors[C]
-                                               with Conditioner[C]
-                                               with MetaGradientCalculators[C] {
-
+trait LinearModelArgmaxCode[C <: Context] extends SymbolRepository[C] {
   import context.universe._
-
-
-  def inferenceCode(objRhs: Tree, graph: TermName) = objRhs match {
+  def inferenceCode(objRhs: Tree, graph: TermName):Tree = objRhs match {
     case q"$f(${ _ })" =>
       f.symbol.annotations.find(_.tpe.typeSymbol == wolfeSymbols.optByInference) match {
         case Some(annotation) => q"${ annotation.scalaArgs.head }($graph)"
@@ -73,7 +67,19 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
     case _ => q"ml.wolfe.MaxProduct($graph,1)"
   }
 
-  def learningCode(objRhs: Tree, weightsSet: TermName) = {
+}
+
+trait OptimizedOperators[C <: Context] extends MetaStructures[C]
+                                               with MetaStructuredFactors[C]
+                                               with Conditioner[C]
+                                               with MetaGradientCalculators[C]
+                                               with LinearModelArgmaxCode[C]{
+
+  import context.universe._
+
+
+
+  def learningCode(objRhs: Tree, weightsSet: TermName):Tree = {
     def getCodeFromAnnotation(f: Tree): Tree = {
       f.symbol.annotations.find(_.tpe.typeSymbol == wolfeSymbols.optByLearning) match {
         case Some(annotation) => q"${ annotation.scalaArgs.head }($weightsSet)"

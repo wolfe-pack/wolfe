@@ -16,7 +16,8 @@ trait GradientCalculator {
 trait MetaGradientCalculators[C <: Context] extends MetaStructures[C]
                                                     with Conditioner[C]
                                                     with MetaStructuredFactors[C]
-                                                    with CodeOptimizer[C] {
+                                                    with CodeOptimizer[C]
+                                                    with LinearModelArgmaxCode[C] {
 
   import context.universe._
 
@@ -68,6 +69,7 @@ trait MetaGradientCalculators[C <: Context] extends MetaStructures[C]
                 def valueAndGradient(param: ml.wolfe.FactorieVector): (Double, ml.wolfe.FactorieVector) = {
                   val (v1,g1) = arg1.valueAndGradient(param)
                   val (v2,g2) = arg2.valueAndGradient(param)
+                  //assert(v1 >= v2, v1 + " < " + v2)
                   ($value, $gradient)
                 }}
           """
@@ -84,29 +86,10 @@ trait MetaGradientCalculators[C <: Context] extends MetaStructures[C]
     """
   }
 
-  /*
-        result += $arg1
-      result -= $arg2
-
-      val result = new cc.factorie.la.SparseTensor1($arg1.size + $arg2.size)
-      val otherResult = $arg1 - $arg2
-      println("-----")
-      result += $arg1
-      result -= $arg2
-      println($arg1)
-      println($arg2)
-      println(result)
-      println(otherResult)
-      otherResult
-
-   */
   def subtractFactorieVectors(arg1: Tree, arg2: Tree) = {
     q"""
       ml.wolfe.macros.FactorieVectorHelper.subtract($arg1,$arg2)
     """
-    //    q"""
-    //      $arg1 - $arg2
-    //    """
   }
 
 
@@ -138,6 +121,7 @@ trait MetaGradientCalculators[C <: Context] extends MetaStructures[C]
         val factors = metaStructuredFactor(objRhs, meta, objMatcher, linearModelInfo = LinearModelInfo(indexTree))
         val structureDef = meta.classDef(newTermName("_graph"))
         val className = newTypeName(context.fresh("MaxGradientCalculator"))
+        val inferCode = inferenceCode(objRhs, newTermName("_graph"))
         val classDef = q"""
           final class $className extends ml.wolfe.macros.GradientCalculator {
             val _graph = new ml.wolfe.MPGraph
@@ -150,12 +134,24 @@ trait MetaGradientCalculators[C <: Context] extends MetaStructures[C]
             _graph.build()
             def valueAndGradient(param: ml.wolfe.FactorieVector): (Double, ml.wolfe.FactorieVector) = {
               _graph.weights = param
-              ml.wolfe.MaxProduct(_graph,5)
+              $inferCode
               (_graph.value,_graph.gradient)
             }
           }
         """
-        Good(MetaGradientCalculator(className, classDef))
+        /*  code to test score
+                      $structName.setToArgmax()
+
+                val objWithFactorieWeights = transform(obj, {
+                  case i:Ident if i.symbol == weightVar => q"ml.wolfe.FactorieConverter.toWolfeVector(param,$indexTree)"
+                })
+
+               val guess = $structName.value()
+              val score = $objWithFactorieWeights(guess)
+              println(score + " vs " + _graph.value)
+
+         */
+        Good(MetaGradientCalculator(className, context.resetAllAttrs(classDef)))
       //Bad(CantDifferentiate(rhs))
       case x => inlineOnce(x) match {
         case Some(inlined) => metaGradientCalculator(inlined, weightVar, indexTree)
@@ -206,22 +202,22 @@ object FactorieVectorHelper {
     result += arg1
     result -= arg2
     result
-//    val firstResult = arg1 - arg2
-//    val otherResult = if (arg2.activeDomainSize == 27) {
-//      println("-----")
-//      println(arg1)
-//      println(arg2)
-//      val testResult = arg1 - arg2
-//      result += arg1
-//      result -= arg2
-//      println(arg1)
-//      println(arg2)
-//      println(result)
-//      println(testResult)
-//      println(firstResult)
-//      testResult
-//    }  else arg1 - arg2
-//    otherResult
+    //    val firstResult = arg1 - arg2
+    //    val otherResult = if (arg2.activeDomainSize == 27) {
+    //      println("-----")
+    //      println(arg1)
+    //      println(arg2)
+    //      val testResult = arg1 - arg2
+    //      result += arg1
+    //      result -= arg2
+    //      println(arg1)
+    //      println(arg2)
+    //      println(result)
+    //      println(testResult)
+    //      println(firstResult)
+    //      testResult
+    //    }  else arg1 - arg2
+    //    otherResult
 
   }
 }
