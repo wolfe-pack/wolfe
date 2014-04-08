@@ -333,7 +333,9 @@ object MPGraph {
             //tood: which is doing the same thing.
             case singleton: SingletonVector =>
               val index = singleton.singleIndex
-              val result = singleton(index) * fg.weights(index)
+              val result =
+                if (index >= fg.weights.size) 0 //rockt: for weights not observed during training but at test time
+                else singleton(index) * fg.weights(index)
               result
             case vector => vector dot fg.weights
           }

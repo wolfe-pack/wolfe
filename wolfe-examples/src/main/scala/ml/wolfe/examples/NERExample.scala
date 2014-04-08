@@ -1,18 +1,24 @@
 package ml.wolfe.examples
 
 import java.io.{InputStream, BufferedInputStream, FileNotFoundException}
-import ml.wolfe.util.{Evaluator, NLP, Util}
+import ml.wolfe.util._
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
 import ml.wolfe.{MaxProduct, Wolfe}
-import cc.factorie.optimize.{Perceptron, OnlineTrainer}
+import cc.factorie.optimize.{AveragedPerceptron, Perceptron, OnlineTrainer}
 import ml.wolfe.macros.{Library, OptimizedOperators}
+import ml.wolfe.util.NLP.{Token, Sentence}
+import scala.collection.mutable.ListBuffer
+import ml.wolfe.util.NLP.Token
+import ml.wolfe.util.NLP.Sentence
 
 /**
  * Created by rockt on 07/04/2014.
+ *
+ * Linear-chain example for BioNLP 2004 NER corpus.
+ * See http://www.nactem.ac.uk/tsujii/GENIA/ERtask/report.html
  */
 object NERExample {
-  //http://www.nactem.ac.uk/tsujii/GENIA/ERtask/report.html
   import Wolfe._
   import OptimizedOperators._
   import NLP.{Sentence, Chunk, Tag, Token, groupLines}
@@ -35,7 +41,8 @@ object NERExample {
   def model(w: Vector)(s: Sentence) = w dot features(s)
   def predictor(w: Vector)(s: Sentence) = argmax { over(Sentences) of model(w) st evidence(observed)(s) }
 
-  @OptimizeByLearning(new OnlineTrainer(_, new Perceptron, 3, 100))
+  //100: epochs, -1: report interval
+  @OptimizeByLearning(new OnlineTrainer(_, new AveragedPerceptron, 100, -1))
   def loss(data: Iterable[Sentence])(w: Vector) = sum { over(data) of (s => model(w)(predictor(w)(s)) - model(w)(s)) }
   def learn(data:Iterable[Sentence]) = argmin { over[Vector] of loss(data) }
 
@@ -70,11 +77,14 @@ object NERExample {
 
     def evaluate(corpus: Seq[Sentence]) = {
       val predicted = map { over(corpus) using predictor(w) }
-      val evaluated = Evaluator.evaluate(corpus.flatMap(_.tokens), predicted.flatMap(_.tokens))(_.tag)
+      //val evaluated = Evaluator.evaluate(corpus.flatMap(_.tokens), predicted.flatMap(_.tokens))(_.tag)
+      val evaluated = MentionEvaluator.evaluate(corpus, predicted)
       println(evaluated)
     }
 
+    println("Train:")
     evaluate(train)
+    println("Test:")
     evaluate(test)
   }
 
