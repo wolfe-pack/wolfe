@@ -11,7 +11,7 @@ object NLP {
   import scala.language.implicitConversions
   import Wolfe._
 
-  trait Label {def label: String }
+  trait Label { def label: String }
 
   case class Chunk(label: String) extends Label
   case class Tag(label: String) extends Label
