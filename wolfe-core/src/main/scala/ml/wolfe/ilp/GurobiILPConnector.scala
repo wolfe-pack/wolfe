@@ -6,6 +6,7 @@ import scala.collection.mutable
 import scala.util.Random
 import scala.annotation.tailrec
 import org.scalautils.{Good, Bad, Or}
+import scala.language.postfixOps
 
 
 /**
