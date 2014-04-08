@@ -108,7 +108,12 @@ trait VectorDefs {
 //      case v:Vector => v.self == this.self
 //    }
     override def toString() = s"""Vector(${underlying.map(p => p._1 + " -> " + p._2 ).mkString(", ")})"""
-
+    override def equals(that: Any) = that match {
+      case v:Vector =>
+        val keys = v.keySet ++ keySet
+        keys.forall(k => this(k) == v(k))
+      case _ => false
+    }
   }
 
   object Vector {
@@ -120,7 +125,7 @@ trait VectorDefs {
   def ft(key: Any, value: Boolean): Vector = ft(key, if (value) 1.0 else 0.0)
   def feat(key: Any*) = Map(key.toSeq.asInstanceOf[Any] -> 1.0)
 
-  val VectorZero = Map.empty[Any, Double]
+  val VectorZero = new Vector(Map.empty[Any, Double])
 
   implicit def toVector(map:Map[_,Double]) = new Vector(map.asInstanceOf[Map[Any,Double]])
 

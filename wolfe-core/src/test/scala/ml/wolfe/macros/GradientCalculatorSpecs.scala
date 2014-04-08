@@ -21,6 +21,19 @@ class GradientCalculatorSpecs extends WolfeSpec {
       v should be(10.0)
       g should be(oneHot(1, 2.0))
     }
+    "return a constant as gradient for dot products with a large sum" in {
+      def vector =
+        oneHot(0, 0.0) +
+        oneHot(1, 1.0) +
+        oneHot(2, 2.0) +
+        oneHot(3, 3.0) +
+        oneHot(4, 4.0)
+      def f(w: Wolfe.Vector) = w dot vector
+      val (v, g) = GradientCalculator.valueAndgradientAt(f, oneHot(1, 5.0))
+      v should be(oneHot(1, 5.0) dot vector)
+      g should be(vector)
+    }
+
     "return the difference of gradients for a difference of functions" in {
       def f(w: Wolfe.Vector) = (w dot oneHot(1, 2.0)) - (w dot oneHot(1, 1.0))
       val (v, g) = GradientCalculator.valueAndgradientAt(f, oneHot(1, 5.0))
