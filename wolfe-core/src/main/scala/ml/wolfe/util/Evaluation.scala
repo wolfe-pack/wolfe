@@ -1,5 +1,8 @@
 package ml.wolfe.util
 
+import ml.wolfe.util.NLP.Sentence
+import scala.collection.mutable.ListBuffer
+
 case class EvaluationSummary(evaluations:Map[Any,Evaluation]) {
   override def toString = {
     val keys = evaluations.keys.toSeq.sortBy(_.toString)
@@ -40,4 +43,50 @@ object Evaluator {
   def evaluate[T](target: T, guess: T)(attribute: T => Any): Evaluation =
     if (attribute(target) == attribute(guess)) Evaluation(tp = 1, tn = 1) else Evaluation(fp = 1, fn = 1)
 
+}
+
+
+
+case class Mention(start: Int, end: Int, label: String) {
+  def inc = Mention(start, end + 1, label)
+}
+
+object MentionEvaluator {
+  import scala.language.implicitConversions
+
+  def evaluate[T <: Sentence](target: Iterable[T], guess: Iterable[T]): Evaluation = {
+    val evaluations = for ((t, g) <- target.view zip guess.view) yield evaluateMentions(t, g)
+    val reduced = evaluations.foldLeft(Evaluation())(_ + _)
+    reduced
+  }
+
+
+  implicit def collectMentions[T <: Sentence](t: T): Set[Mention] = {
+    t.tokens.zipWithIndex.foldLeft(ListBuffer[Mention]())((mentions: ListBuffer[Mention], tokenWithIndex) => {
+      val (token, ix) = tokenWithIndex
+      val label = token.tag.label
+      val Array(prefix, labelType) = if (label == "O") Array("O", "O") else label.split("-")
+
+      prefix match {
+        case "O" => mentions
+        case "B" => mentions += Mention(ix, ix, labelType)
+        case "I" =>
+          if (mentions.isEmpty) mentions += Mention(ix, ix, labelType)
+          else {
+            val last = mentions.last
+            if (last.end == ix && last.label.split("-").last == labelType) mentions.last.inc
+            else mentions += Mention(ix, ix, labelType)
+          }
+      }
+
+      mentions
+    }).toSet
+  }
+
+  def evaluateMentions(target: Set[Mention], guess: Set[Mention]): Evaluation = {
+    val tp = (target intersect guess).size
+    val fp = (guess diff target).size
+    val fn = (target diff guess).size
+    Evaluation(tp, 0, fp, fn)
+  }
 }
