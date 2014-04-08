@@ -116,17 +116,17 @@ trait PatternRepository[C <: Context] extends SymbolRepository[C] with CodeRepos
     }
   }
 
-//  class Flattened(operator: ApplyBinaryOperator) {
-//    val Match = this
-//    def unapply(tree: Tree): Option[List[Tree]] = tree match {
-//      case operator(Match(args1), Match(args2)) => Some(args1 ::: args2)
-//      case operator(arg1, Match(args2)) => Some(arg1 :: args2)
-//      case operator(Match(args1), arg2) => Some(arg2 :: args1)
-//      case operator(arg1, arg2) => Some(List(arg1, arg2))
-//      case _ => None
-//    }
-//
-//  }
+  class Flattened(operator: InfixApply) {
+    val Match = this
+    def unapply(tree: Tree): Option[List[Tree]] = tree match {
+      case operator(Match(args1), Match(args2)) => Some(args1 ::: args2)
+      case operator(arg1, Match(args2)) => Some(arg1 :: args2)
+      case operator(Match(args1), arg2) => Some(arg2 :: args1)
+      case operator(arg1, arg2) => Some(List(arg1, arg2))
+      case _ => None
+    }
+
+  }
 
   object ApplyAnd extends InfixApply(Set(scalaSymbols.and))
   object ApplyDoublePlus extends InfixApply(scalaSymbols.doublePluses)
@@ -136,6 +136,7 @@ trait PatternRepository[C <: Context] extends SymbolRepository[C] with CodeRepos
   object Sum extends AppliedOperator(Set(scalaSymbols.doubleClass, wolfeSymbols.vectorType), wolfeSymbols.sum, scalaSymbols.sum)
   object ArgmaxOperator extends AppliedOperator(Set(scalaSymbols.doubleClass), wolfeSymbols.argmax, scalaSymbols.maxBy)
   object MapOperator extends AppliedOperator(_ => true, wolfeSymbols.map, scalaSymbols.map)
+  object FlattenedPlus extends Flattened(ApplyPlus)
 
 
   case class BuilderTrees(over: Tree = EmptyTree, where: Tree = EmptyTree, of: Tree = EmptyTree, using: Tree = EmptyTree)
