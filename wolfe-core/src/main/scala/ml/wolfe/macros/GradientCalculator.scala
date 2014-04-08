@@ -182,7 +182,7 @@ object GradientCalculator {
           val _index = new ml.wolfe.Index()
           ${ calculator.classDef }
           val calculator = new ${ calculator.className }
-          val factorieArgument = ml.wolfe.FactorieConverter.toFreshFactorieSparseVector(${ argument.tree },_index)
+          val factorieArgument = ml.wolfe.FactorieConverter.toFactorieDenseVector(${ argument.tree },_index)
           val (value,gradient) = calculator.valueAndGradient(factorieArgument)
           val wolfeResult = ml.wolfe.FactorieConverter.toWolfeVector(gradient, _index)
           (value,wolfeResult)
