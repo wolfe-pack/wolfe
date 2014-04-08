@@ -23,12 +23,6 @@ object FactorieConverter {
     }
   }
 
-  def addFactorieSparseVectors(arg1: SparseVector, arg2: SparseVector) = {
-    arg1 + arg2
-    arg1 dot arg2
-    ???
-  }
-
   def toFactorieDenseVector[T](vector: WVector, index: Index): FVector = {
     val dense = new DenseVector(vector.self.size + 1000)
     for ((key, value) <- vector.self) dense(index(Seq(key))) = value

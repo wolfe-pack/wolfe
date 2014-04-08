@@ -52,7 +52,7 @@ class GradientCalculatorSpecs extends WolfeSpec {
       v should be(2.0)
     }
 
-    "return a subgradient of a max expression formulated using argmax" in {
+    "return a subgradient of a max expression formulated using argmax " in {
       import OptimizedOperators._
       case class Data(x: Symbol, y: Symbol)
       def space = Wolfe.all(Data)(c(Seq('X1, 'X2), Seq('Y1, 'Y2, 'Y3)))

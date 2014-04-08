@@ -334,8 +334,12 @@ object MPGraph {
             case singleton: SingletonVector =>
               val index = singleton.singleIndex
               val result =
-                //if (index >= fg.weights.size) 0 //rockt: for weights not observed during training but at test time
-                //else
+                if (index >= fg.weights.size)
+                //rockt: for weights not observed during training but at test time
+                //sr: this doesn't work for sparse vectors where .size only provides the number of non-zero items
+                //sr: fix for now by never using sparse vectors as fg.weigths
+                  0.0
+                else
                   singleton(index) * fg.weights(index)
               result
             case vector => vector dot fg.weights
