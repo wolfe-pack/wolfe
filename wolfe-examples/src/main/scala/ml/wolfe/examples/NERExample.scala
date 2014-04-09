@@ -11,6 +11,7 @@ import ml.wolfe.util.NLP.{Token, Sentence}
 import scala.collection.mutable.ListBuffer
 import ml.wolfe.util.NLP.Token
 import ml.wolfe.util.NLP.Sentence
+import scala.collection.mutable
 
 /**
  * Created by rockt on 07/04/2014.
@@ -22,19 +23,26 @@ object NERExample {
   import Wolfe._
   import OptimizedOperators._
   import NLP.{Sentence, Chunk, Tag, Token, groupLines}
+  //import NLP._
   import Library._
 
   implicit val defaultChunks = Seq("?").map(Chunk)
   implicit val labels = Seq("O", "B-protein", "I-protein", "B-cell_type", "I-cell_type", "B-DNA", "I-DNA",
     "B-cell_line", "I-cell_line", "B-RNA", "I-RNA").map(Tag)
 
+  //@Atomic
+  def toFeatureVector(token: Token): Wolfe.Vector = {
+    oneHot('word -> token.word -> token.tag) +
+    oneHot('firstCap -> token.tag, I(token.word.head.isUpper))
+  }
+
   def Sentences = Wolfe.all(Sentence)(seqs(all(Token)))
 
   def observed(s: Sentence) = s.copy(tokens = s.tokens.map(_.copy(tag = hidden)))
-
-  def features(s: Sentence) = {
-    sum { over(0 until s.tokens.size) of (i => oneHot('emission -> s.tokens(i).word -> s.tokens(i).tag)) } +
-    sum { over(0 until s.tokens.size - 1) of (i => oneHot('transition -> s.tokens(i).tag -> s.tokens(i + 1).tag)) }
+  
+  def features(s: Sentence): Wolfe.Vector = {
+    sum { over(0 until s.tokens.size) of (i => toFeatureVector(s.tokens(i))) } //+
+    //sum { over(0 until s.tokens.size - 1) of (i => oneHot('transition -> s.tokens(i).tag -> s.tokens(i + 1).tag)) }
   }
 
   @OptimizeByInference(MaxProduct(_, 1))
@@ -45,8 +53,6 @@ object NERExample {
   @OptimizeByLearning(new OnlineTrainer(_, new AveragedPerceptron, 100, -1))
   def loss(data: Iterable[Sentence])(w: Vector) = sum { over(data) of (s => model(w)(predictor(w)(s)) - model(w)(s)) }
   def learn(data:Iterable[Sentence]) = argmin { over[Vector] of loss(data) }
-
-
 
   def main(args: Array[String]) {
     import scala.sys.process._
@@ -71,13 +77,10 @@ object NERExample {
     val train = IOBToWolfe(groupLines(loadIOB(trainSource).toIterator, "###MEDLINE:")).flatten
     val test = IOBToWolfe(groupLines(loadIOB(testSource).toIterator, "###MEDLINE:")).flatten
 
-    //println(train.flatMap((s: Sentence) => s.tokens.map(t => t.tag.label)).distinct.mkString("Seq(\"", "\", \"", "\").map(Tag)"))
-
     val w = learn(train)
 
     def evaluate(corpus: Seq[Sentence]) = {
       val predicted = map { over(corpus) using predictor(w) }
-      //val evaluated = Evaluator.evaluate(corpus.flatMap(_.tokens), predicted.flatMap(_.tokens))(_.tag)
       val evaluated = MentionEvaluator.evaluate(corpus, predicted)
       println(evaluated)
     }
