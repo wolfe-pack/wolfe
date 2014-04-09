@@ -11,7 +11,7 @@ object NLP {
   import scala.language.implicitConversions
   import Wolfe._
 
-  trait Label { def label: String }
+  trait Label {def label: String }
 
   case class Chunk(label: String) extends Label
   case class Tag(label: String) extends Label
@@ -59,6 +59,4 @@ object NLP {
     Seq("#", "$", "''", "(", ")", ",", ".", ":", "CC", "CD", "DT", "EX", "FW", "IN", "JJ", "JJR", "JJS",
       "MD", "NN", "NNP", "NNPS", "NNS", "PDT", "POS", "PRP", "PRP$", "RB", "RBR", "RBS", "RP", "SYM",
       "TO", "UH", "VB", "VBD", "VBG", "VBN", "VBP", "VBZ", "WDT", "WP", "WP$", "WRB", "``").map(Tag)
-
-
 }
