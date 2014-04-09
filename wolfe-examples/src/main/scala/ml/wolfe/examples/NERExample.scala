@@ -5,13 +5,8 @@ import ml.wolfe.util._
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
 import ml.wolfe.{MaxProduct, Wolfe}
-import cc.factorie.optimize.{AveragedPerceptron, Perceptron, OnlineTrainer}
+import cc.factorie.optimize.{AveragedPerceptron, OnlineTrainer}
 import ml.wolfe.macros.{Library, OptimizedOperators}
-import ml.wolfe.util.NLP.{Token, Sentence}
-import scala.collection.mutable.ListBuffer
-import ml.wolfe.util.NLP.Token
-import ml.wolfe.util.NLP.Sentence
-import scala.collection.mutable
 
 /**
  * Created by rockt on 07/04/2014.
@@ -32,8 +27,8 @@ object NERExample {
 
   //@Atomic
   def toFeatureVector(token: Token): Wolfe.Vector = {
-    oneHot('word -> token.word -> token.tag) +
-    oneHot('firstCap -> token.tag, I(token.word.head.isUpper))
+    oneHot('word -> token.word -> token.tag)
+    //oneHot('firstCap -> token.tag, I(token.word.head.isUpper))
   }
 
   def Sentences = Wolfe.all(Sentence)(seqs(all(Token)))

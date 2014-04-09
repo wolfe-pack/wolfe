@@ -2,6 +2,7 @@ package ml.wolfe
 
 import scala.collection.mutable.ArrayBuffer
 import scalaxy.loops._
+import scala.annotation.tailrec
 
 
 /**
@@ -157,7 +158,9 @@ final class MPGraph {
     """.stripMargin
   }
 
+  def getNode(index: Int) = nodes(index)
 
+  def getFactor(index: Int) = factors(index)
 }
 
 object MPGraph {
@@ -440,6 +443,36 @@ object MPGraph {
     }
   }
 
+  /**
+   * Scheduler provide a valid order of edges given a factor graph.
+   */
+  trait MPScheduler {
+    /**
+     * @param graph a factor graph.
+     * @return A list of edges canonically ordered such that forward-backward algorithm can be applied.
+     */
+    def schedule(graph: MPGraph): Seq[Edge]
+  }
+
+  /**
+   * Assumes the graph is acyclic.
+   */
+  object SimpleScheduler extends MPScheduler {
+    override def schedule(graph: MPGraph): Seq[Edge] = {
+      @tailrec
+      def collectLeaves(nodes: Seq[Node], factors: Seq[Factor], edges: Seq[Edge], acc: Seq[Edge]): Seq[Edge] = {
+        if (edges.isEmpty) acc
+        else {
+          //TODO: needs more efficient implementation
+          val (leafNodes, innerNodes) = nodes.partition(n => edges.count(_.n == n) == 1)
+          val (leafFactors, innerFactors) = factors.partition(f => edges.count(_.f == f) == 1)
+          val (leafEdges, innerEdges) = edges.partition(e => leafNodes.contains(e.n) || leafFactors.contains(e.f))
+          collectLeaves(innerNodes, innerFactors, innerEdges, acc ++ leafEdges)
+        }
+      }
+      collectLeaves(graph.nodes, graph.factors, graph.edges, Seq())
+    }
+  }
 
   /**
    * Printer of nodes, factors and edges. Helps debugging (as the graph itself is

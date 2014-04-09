@@ -20,6 +20,7 @@ object MaxProduct {
    */
   def apply(fg: MPGraph, maxIteration: Int, canonical: Boolean = true) {
     val edges = if (canonical) fg.edges.sorted(MPGraph.EdgeOrdering) else fg.edges
+    //val edges = if (canonical) SimpleScheduler.schedule(fg) else fg.edges
 
     for (i <- 0 until maxIteration) {
       for (edge <- edges) {
