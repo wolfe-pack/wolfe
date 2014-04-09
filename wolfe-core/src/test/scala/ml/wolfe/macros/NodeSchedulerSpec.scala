@@ -1,22 +1,18 @@
 package ml.wolfe.macros
 
-import org.scalatest.{Matchers, FreeSpec}
-import ml.wolfe.{MPGraph, MaxProduct, Wolfe}
-import ml.wolfe.macros.OptimizedOperators._
-import ml.wolfe.macros.Library._
-import cc.factorie.optimize.{AveragedPerceptron, OnlineTrainer}
-import ml.wolfe.util.NLP.Sentence
-import ml.wolfe.util.NLP.Tag
-import ml.wolfe.util.NLP.Chunk
-import ml.wolfe.util.NLP.Token
-import ml.wolfe.MPGraph.SimpleScheduler
+import ml.wolfe.Wolfe
+import ml.wolfe.util.NLP
+import Wolfe._
+import NLP._
+import OptimizedOperators._
 
 
 /**
  * Created by rockt on 09/04/2014.
  */
-class NodeSchedulerSpec extends FreeSpec with Matchers {
-  "A scheduler" - {
+class NodeSchedulerSpec extends StructureIsomorphisms {
+  /*
+  "A scheduler" should {
     "gives a valid edge ordering on a MPGraph" in {
       val graph = new MPGraph()
       (0 to 5).foreach(i => graph.addNode(0))
@@ -39,47 +35,34 @@ class NodeSchedulerSpec extends FreeSpec with Matchers {
 
       actual should be(expected)
     }
+  }
+  */
 
-    "gives a valid edge ordering when adding features" ignore {
-      import Wolfe._
-      implicit val defaultChunks = Seq("?").map(Chunk)
-      implicit val labels = Seq("O", "B", "I").map(Tag)
-      def toFeatureVector(token: Token): Wolfe.Vector = {
-        oneHot('word -> token.word -> token.tag) +
-        oneHot('firstCap -> token.tag, I(token.word.head.isUpper))
-      }
-      def Sentences = Wolfe.all(Sentence)(seqs(Wolfe.all(Token)))
-      def observed(s: Sentence) = s.copy(tokens = s.tokens.map(_.copy(tag = hidden)))
-      def features(s: Sentence): Wolfe.Vector = {
-        sum { over(0 until s.tokens.size) of (i => toFeatureVector(s.tokens(i))) } +
-        sum { over(0 until s.tokens.size - 1) of (i => oneHot('transition -> s.tokens(i).tag -> s.tokens(i + 1).tag)) }
-      }
-
-      @OptimizeByInference(MaxProduct(_, 1))
-      def model(w: Vector)(s: Sentence) = w dot features(s)
-      def predictor(w: Vector)(s: Sentence) = argmax { over(Sentences) of model(w) st evidence(observed)(s) }
-
-      @OptimizeByLearning(new OnlineTrainer(_, new AveragedPerceptron, 3, 1))
-      def loss(data: Iterable[Sentence])(w: Vector) = sum { over(data) of (s => model(w)(predictor(w)(s)) - model(w)(s)) }
-      def learn(data:Iterable[Sentence]) = argmin { over[Vector] of loss(data) }
-
-      val train = Seq(
+  "A MetaStructuredFactor" should {
+    "does not generate cycles" in {
+      //def space = Wolfe.all(Sentence)(seqs(Wolfe.all(Token)))
+      def space = Seq(
         Sentence(Seq(
-          Token("This", "O", "?"),
-          Token("is", "B", "?"),
-          Token("a", "I", "?"),
-          Token("test", "O", "?"),
-          Token(".", "O", "?")
-        )),
-        Sentence(Seq(
-          Token("This", "O", "?"),
-          Token("is", "B", "?"),
-          Token("another", "O", "?"),
-          Token(".", "O", "?")
+          Token("This", Tag("B"), Chunk("?")),
+          Token("is", Tag("I"), Chunk("?")),
+          Token("a", Tag("O"), Chunk("?")),
+          Token("test", Tag("O"), Chunk("?")),
+          Token(".", Tag("O"), Chunk("?"))
         ))
       )
 
-      learn(train)
+      def features(s: Sentence) = {
+        sum { over(0 until s.tokens.size) of (i => oneHot('word -> s.tokens(i).word -> s.tokens(i).tag)) }
+        //sum { over(0 until s.tokens.size) of (i => oneHot('word -> s.tokens(i).word -> s.tokens(i).chunk)) }
+      }
+
+      val w = oneHot(1)
+      def potential(s: Sentence) = w dot features(s)
+
+      val factor = MetaStructuredFactor.structuredFactor[Sentence](space, potential)
+
+      //TODO test for cycles
+      println(factor.graph.edges)
     }
   }
 }
