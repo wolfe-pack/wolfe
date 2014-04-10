@@ -64,7 +64,7 @@ final class MPGraph {
    * @param indexInFactor the index the edge has in the factor.
    * @return the added edge.
    */
-  def addEdge(f: Factor, n: Node, indexInFactor: Int) = {
+  def addEdge(f: Factor, n: Node, indexInFactor: Int): Edge = {
     val e = new Edge(n, f, n.dim)
     e.indexInFactor = indexInFactor
     n.edgeCount += 1
@@ -72,6 +72,14 @@ final class MPGraph {
     edges += e
     e
   }
+
+  /**
+   * Adds an edge between node and factor
+   * @param f factor to connect.
+   * @param n node to connect.
+   * @return the added edge.
+   */
+  def addEdge(f: Factor, n: Node): Edge = addEdge(f, n, f.edgeCount)
 
   /**
    * Adds a factor based on a table of scores, one for each setting.
@@ -444,30 +452,51 @@ object MPGraph {
   }
 
   /**
-   * A scheduler provides a canonical ordering of edges. Designed so that on a chain with variables indexed in order, the
-   * edge order resembles forward-backward.
+   * A scheduler provides a canonical ordering of edges such that it resembles the message ordering of forward-backward.
    */
   trait MPScheduler {
-    def schedule(graph: MPGraph): Seq[Edge]
+    /**
+     * @param node root node
+     * @return correct message ordering for forward-backward pass
+     */
+    def schedule(node: Node): Seq[Edge]
+    def schedule(graph: MPGraph): Seq[Edge] = if (graph.nodes.isEmpty) Seq() else schedule(graph.nodes.head)
+    def schedule(factor: Factor): Seq[Edge] = schedule(factor.edges.head)
+    def schedule(edge: Edge): Seq[Edge] = schedule(edge.n)
   }
 
   /**
-   * Assumes the graph is acyclic.
+   * Assumes the graph is acyclic. //TODO: use a heuristic for loopy graphs
    */
-  object SimpleScheduler extends MPScheduler {
-    override def schedule(graph: MPGraph): Seq[Edge] = {
-      @tailrec
-      def collectLeaves(nodes: Seq[Node], factors: Seq[Factor], edges: Seq[Edge], acc: Seq[Edge]): Seq[Edge] = {
-        if (edges.isEmpty) acc
-        else {
-          //TODO: needs more efficient implementation
-          val (leafNodes, innerNodes) = nodes.partition(n => edges.count(_.n == n) == 1)
-          val (leafFactors, innerFactors) = factors.partition(f => edges.count(_.f == f) == 1)
-          val (leafEdges, innerEdges) = edges.partition(e => leafNodes.contains(e.n) || leafFactors.contains(e.f))
-          collectLeaves(innerNodes, innerFactors, innerEdges, acc ++ leafEdges)
-        }
-      }
-      collectLeaves(graph.nodes, graph.factors, graph.edges, Seq())
+  object MPSchedulerImpl extends MPScheduler {
+    /**
+     * @param e edge whose node will become the root node
+     * @return correct message ordering for forward messaging pass (excluding the edge itself)
+     */
+    //TODO: @tailrec
+    def up(e: Edge): Seq[Edge] = {
+      if (e.f.edgeCount == 1) Seq()
+      else e.f.edges.filterNot(_ == e).flatMap(neighborEdge => {
+        val newEdges = neighborEdge.n.edges.filterNot(_ == neighborEdge)
+        newEdges.flatMap(up) ++ newEdges
+      })
+    }
+
+    /**
+     * @param e edge whose node will become the root node
+     * @return correct message ordering for backward messaging pass (excluding the edge itself)
+     */
+    //TODO: @tailrec
+    def down(e: Edge): Seq[Edge] = {
+      if (e.f.edgeCount == 1) Seq()
+      else e.f.edges.filterNot(_ == e).flatMap(neighborEdge => {
+        val newEdges = neighborEdge.n.edges.filterNot(_ == neighborEdge)
+        Seq(neighborEdge) ++ newEdges.flatMap(down)
+      })
+    }
+
+    override def schedule(node: Node): Seq[Edge] = {
+      node.edges.flatMap(up) ++ node.edges.toSeq ++ node.edges.flatMap(down)
     }
   }
 

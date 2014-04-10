@@ -19,8 +19,8 @@ object MaxProduct {
    * @param canonical should edges be processed in canonical ordering according to [[ml.wolfe.MPGraph.EdgeOrdering]].
    */
   def apply(fg: MPGraph, maxIteration: Int, canonical: Boolean = true) {
-    val edges = if (canonical) fg.edges.sorted(MPGraph.EdgeOrdering) else fg.edges
-    //val edges = if (canonical) SimpleScheduler.schedule(fg) else fg.edges
+    //val edges = if (canonical) fg.edges.sorted(MPGraph.EdgeOrdering) else fg.edges
+    val edges = if (canonical) MPSchedulerImpl.schedule(fg) else fg.edges
 
     for (i <- 0 until maxIteration) {
       for (edge <- edges) {

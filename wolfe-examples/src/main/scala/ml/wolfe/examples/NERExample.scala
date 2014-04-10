@@ -26,8 +26,18 @@ object NERExample {
     "B-cell_line", "I-cell_line", "B-RNA", "I-RNA").map(Tag)
 
   def toFeatureVector(token: Token): Wolfe.Vector = {
-    oneHot('word -> token.word -> token.tag) +
-    oneHot('firstCap -> token.tag, I(token.word.head.isUpper))
+    //oneHot('word -> token.tag -> token.word.toLowerCase)
+    oneHot('word -> token.word.toLowerCase -> token.tag)
+    /*
+    oneHot('word -> token.word.toLowerCase -> token.tag) +
+    oneHot('firstCap -> token.tag, I(token.word.head.isUpper)) +
+    oneHot('allCap -> token.tag, I(token.word.matches("[A-Z]+"))) +
+    oneHot('realNumber -> token.tag, I(token.word.matches("[-0-9]+[.,]+[0-9.,]+"))) +
+    oneHot('isDash -> token.tag, I(token.word.matches("[-–—−]"))) +
+    oneHot('isQuote -> token.tag, I(token.word.matches("[„“””‘’\"']"))) +
+    oneHot('isSlash -> token.tag, I(token.word.matches("[/\\\\]"))) +
+    oneHot('prefix2 -> token.tag -> token.word.take(2)) +
+    oneHot('suffix2 -> token.tag -> token.word.takeRight(2))*/
   }
 
   def Sentences = Wolfe.all(Sentence)(seqs(all(Token)))
