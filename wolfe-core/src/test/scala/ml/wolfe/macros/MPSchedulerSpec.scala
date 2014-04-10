@@ -30,16 +30,16 @@ class MPSchedulerSpec extends StructureIsomorphisms {
 
       "return the right edge ordering for a forward messaging pass" in {
         val actualUp = Seq(100 -> 1, 104 -> 5, 103 -> 4, 102 -> 3)
-        val predictedUp = MPSchedulerImpl.up(root).map(e => (e.f.index, e.n.index))
-        info("up: " + predictedUp)
-        predictedUp should be(actualUp)
+        val predicted = MPSchedulerImpl.up(root).map(e => (e.f.index, e.n.index))
+        info("up: " + predicted)
+        predicted should be(actualUp)
       }
 
       "return the right edge ordering for a backward messaging pass" in {
         val actualDown = Seq(101 -> 3, 102 -> 1, 100 -> 0, 102 -> 4, 103 -> 5)
-        val predictedDown = MPSchedulerImpl.down(root).map(e => (e.f.index, e.n.index))
-        info("down: " + predictedDown)
-        predictedDown should be(actualDown)
+        val predicted = MPSchedulerImpl.down(root).map(e => (e.f.index, e.n.index))
+        info("down: " + predicted)
+        predicted should be(actualDown)
       }
 
       "return the right edge ordering for a forward/backward messaging pass" in {
@@ -65,11 +65,28 @@ class MPSchedulerSpec extends StructureIsomorphisms {
       edges.foreach(edge => graph.addEdge(graph.getFactor(edge._1), graph.getNode(edge._2)))
       graph.build()
       val root = graph.edges(2) //"randomly" pick an edge that defines the root node
+      info("root: " + root)
+
+      "return only one loop for a forward messaging pass" in {
+        val actual = Seq((101,1), (100,0), (102,2))
+        val predicted = MPSchedulerImpl.up(root).map(e => (e.f.index, e.n.index))
+        info("up: " + predicted)
+        predicted should be(actual)
+      }
+
+      "return only one loop for a backward messaging pass" in {
+        val actual = Seq((101,2), (102,0), (100,1))
+        val predicted = MPSchedulerImpl.down(root).map(e => (e.f.index, e.n.index))
+        info("down: " + predicted)
+        predicted should be(actual)
+      }
+
 
       "return a tree-like ordering for a forward/backward messaging pass" in {
+        val actual = Seq((101,1), (100,0), (102,2), (100,1), (101,2), (102,0))
         val predicted = MPSchedulerImpl.schedule(root).map(e => (e.f.index, e.n.index))
         info("schedule: " + predicted)
-        //FIXME
+
       }
     }
   }
