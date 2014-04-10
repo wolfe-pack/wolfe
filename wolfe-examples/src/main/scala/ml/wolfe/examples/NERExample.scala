@@ -38,8 +38,8 @@ object NERExample {
   def features(s: Sentence): Wolfe.Vector = {
     //sum { over(0 until s.tokens.size) of (i => toFeatureVector(s.tokens(i))) }
     //sum { over(0 until s.tokens.size) of (i => oneHot('o -> s.tokens(i).word -> s.tokens(i).chunk)) }
-    sum { over(0 until s.tokens.size) of (i => oneHot('word -> s.tokens(i).word -> s.tokens(i).tag)) } +
-    sum { over(0 until s.tokens.size - 1) of (i => oneHot('transition -> s.tokens(i).tag -> s.tokens(i + 1).tag)) }
+    sum { over(0 until s.tokens.size) of (i => oneHot('word -> s.tokens(i).word -> s.tokens(i).tag)) } //+
+//    sum { over(0 until s.tokens.size - 1) of (i => oneHot('transition -> s.tokens(i).tag -> s.tokens(i + 1).tag)) }
   }
 
   @OptimizeByInference(MaxProduct(_, 1))
