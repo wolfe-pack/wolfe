@@ -444,13 +444,10 @@ object MPGraph {
   }
 
   /**
-   * Scheduler provide a valid order of edges given a factor graph.
+   * A scheduler provides a canonical ordering of edges. Designed so that on a chain with variables indexed in order, the
+   * edge order resembles forward-backward.
    */
   trait MPScheduler {
-    /**
-     * @param graph a factor graph.
-     * @return A list of edges canonically ordered such that forward-backward algorithm can be applied.
-     */
     def schedule(graph: MPGraph): Seq[Edge]
   }
 

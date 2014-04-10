@@ -25,10 +25,9 @@ object NERExample {
   implicit val labels = Seq("O", "B-protein", "I-protein", "B-cell_type", "I-cell_type", "B-DNA", "I-DNA",
     "B-cell_line", "I-cell_line", "B-RNA", "I-RNA").map(Tag)
 
-  //@Atomic
   def toFeatureVector(token: Token): Wolfe.Vector = {
-    oneHot('word -> token.word -> token.tag)
-    //oneHot('firstCap -> token.tag, I(token.word.head.isUpper))
+    oneHot('word -> token.word -> token.tag) +
+    oneHot('firstCap -> token.tag, I(token.word.head.isUpper))
   }
 
   def Sentences = Wolfe.all(Sentence)(seqs(all(Token)))
@@ -36,10 +35,8 @@ object NERExample {
   def observed(s: Sentence) = s.copy(tokens = s.tokens.map(_.copy(tag = hidden)))
   
   def features(s: Sentence): Wolfe.Vector = {
-    //sum { over(0 until s.tokens.size) of (i => toFeatureVector(s.tokens(i))) }
-    //sum { over(0 until s.tokens.size) of (i => oneHot('o -> s.tokens(i).word -> s.tokens(i).chunk)) }
-    sum { over(0 until s.tokens.size) of (i => oneHot('word -> s.tokens(i).word -> s.tokens(i).tag)) } //+
-//    sum { over(0 until s.tokens.size - 1) of (i => oneHot('transition -> s.tokens(i).tag -> s.tokens(i + 1).tag)) }
+    sum { over(0 until s.tokens.size) of (i => toFeatureVector(s.tokens(i))) } +
+    sum { over(0 until s.tokens.size - 1) of (i => oneHot('transition -> s.tokens(i).tag -> s.tokens(i + 1).tag)) }
   }
 
   @OptimizeByInference(MaxProduct(_, 1))
