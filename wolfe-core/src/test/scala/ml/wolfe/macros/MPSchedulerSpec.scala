@@ -13,39 +13,64 @@ import ml.wolfe.MPGraph.MPSchedulerImpl
  */
 class MPSchedulerSpec extends StructureIsomorphisms {
   "A scheduler" should {
-    val graph = new MPGraph()
-    (0 to 5).foreach(i => graph.addNode(0)) //dummy nodes
-    (0 to 104).foreach(i => graph.addTableFactor(Array(), Array(), Array())) //dummy factors
-    val edges = Array(
-      100 -> 0, 100 -> 1,
-      101 -> 2, 101 -> 3,
-      102 -> 1, 102 -> 3, 102 -> 4,
-      103 -> 4, 103 -> 5,
-      104 -> 5
-    )
-    edges.foreach(edge => graph.addEdge(graph.getFactor(edge._1), graph.getNode(edge._2)))
-    graph.build()
-    val root = graph.edges(2) //"randomly" pick an edge that defines the root node
+    "given a tree" should {
+      val graph = new MPGraph()
+      (0 to 5).foreach(i => graph.addNode(0)) //dummy nodes
+      (0 to 104).foreach(i => graph.addTableFactor(Array(), Array(), Array())) //dummy factors
+      val edges = Array(
+        100 -> 0, 100 -> 1,
+        101 -> 2, 101 -> 3,
+        102 -> 1, 102 -> 3, 102 -> 4,
+        103 -> 4, 103 -> 5,
+        104 -> 5
+      )
+      edges.foreach(edge => graph.addEdge(graph.getFactor(edge._1), graph.getNode(edge._2)))
+      graph.build()
+      val root = graph.edges(2) //"randomly" pick an edge that defines the root node
 
-    "return the right edge ordering for a forward messaging pass" in {
-      val actualUp = Seq(100 -> 1, 104 -> 5, 103 -> 4, 102 -> 3)
-      val predictedUp = MPSchedulerImpl.up(root).map(e => (e.f.index, e.n.index))
-      //info("up: " + predictedUp)
-      predictedUp should be(actualUp)
+      "return the right edge ordering for a forward messaging pass" in {
+        val actualUp = Seq(100 -> 1, 104 -> 5, 103 -> 4, 102 -> 3)
+        val predictedUp = MPSchedulerImpl.up(root).map(e => (e.f.index, e.n.index))
+        info("up: " + predictedUp)
+        predictedUp should be(actualUp)
+      }
+
+      "return the right edge ordering for a backward messaging pass" in {
+        val actualDown = Seq(101 -> 3, 102 -> 1, 100 -> 0, 102 -> 4, 103 -> 5)
+        val predictedDown = MPSchedulerImpl.down(root).map(e => (e.f.index, e.n.index))
+        info("down: " + predictedDown)
+        predictedDown should be(actualDown)
+      }
+
+      "return the right edge ordering for a forward/backward messaging pass" in {
+        val actual = Seq(100 -> 1, 104 -> 5, 103 -> 4, 102 -> 3, 101 -> 2, 101 -> 3, 102 -> 1, 100 -> 0, 102 -> 4, 103 -> 5)
+        val predicted = MPSchedulerImpl.schedule(root).map(e => (e.f.index, e.n.index))
+        info("schedule: " + predicted)
+        predicted should be(actual)
+      }
     }
 
-    "return the right edge ordering for a backward messaging pass" in {
-      val actualDown = Seq(101 -> 3, 102 -> 1, 100 -> 0, 102 -> 4, 103 -> 5)
-      val predictedDown = MPSchedulerImpl.down(root).map(e => (e.f.index, e.n.index))
-      //info("down: " + predictedDown)
-      predictedDown should be(actualDown)
-    }
+    "given a loopy graph" should {
+      val graph = new MPGraph()
+      (0 to 2).foreach(i => graph.addNode(0)) //dummy nodes
+      (0 to 102).foreach(i => graph.addTableFactor(Array(), Array(), Array())) //dummy factors
+      val edges = Array(
+          100 -> 0,
+          100 -> 1,
+          101 -> 1,
+          101 -> 2,
+          102 -> 2,
+          102 -> 0
+        )
+      edges.foreach(edge => graph.addEdge(graph.getFactor(edge._1), graph.getNode(edge._2)))
+      graph.build()
+      val root = graph.edges(2) //"randomly" pick an edge that defines the root node
 
-    "return the right edge ordering for a forward/backward messaging pass" in {
-      val actual = Seq(100 -> 1, 104 -> 5, 103 -> 4, 102 -> 3, 101 -> 2, 101 -> 3, 102 -> 1, 100 -> 0, 102 -> 4, 103 -> 5)
-      val predicted = MPSchedulerImpl.schedule(root).map(e => (e.f.index, e.n.index))
-      //info("schedule: " + predicted)
-      predicted should be(actual)
+      "return a tree-like ordering for a forward/backward messaging pass" in {
+        val predicted = MPSchedulerImpl.schedule(root).map(e => (e.f.index, e.n.index))
+        info("schedule: " + predicted)
+        //FIXME
+      }
     }
   }
 

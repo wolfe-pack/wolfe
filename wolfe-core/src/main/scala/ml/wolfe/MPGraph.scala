@@ -474,11 +474,11 @@ object MPGraph {
      * @return correct message ordering for forward messaging pass (excluding the edge itself)
      */
     //TODO: @tailrec
-    def up(e: Edge): Seq[Edge] = {
-      if (e.f.edgeCount == 1) Seq()
+    def up(e: Edge, visitedEdges: Set[Edge] = Set()): Seq[Edge] = {
+      if (e.f.edgeCount == 1 || visitedEdges.contains(e)) Seq()
       else e.f.edges.filterNot(_ == e).flatMap(neighborEdge => {
         val newEdges = neighborEdge.n.edges.filterNot(_ == neighborEdge)
-        newEdges.flatMap(up) ++ newEdges
+        newEdges.flatMap(ne => up(ne, visitedEdges + e)) ++ newEdges
       })
     }
 
@@ -487,16 +487,16 @@ object MPGraph {
      * @return correct message ordering for backward messaging pass (excluding the edge itself)
      */
     //TODO: @tailrec
-    def down(e: Edge): Seq[Edge] = {
-      if (e.f.edgeCount == 1) Seq()
+    def down(e: Edge, visitedEdges: Set[Edge] = Set()): Seq[Edge] = {
+      if (e.f.edgeCount == 1 || visitedEdges.contains(e)) Seq()
       else e.f.edges.filterNot(_ == e).flatMap(neighborEdge => {
         val newEdges = neighborEdge.n.edges.filterNot(_ == neighborEdge)
-        Seq(neighborEdge) ++ newEdges.flatMap(down)
+        Seq(neighborEdge) ++ newEdges.flatMap(ne => down(ne, visitedEdges + e))
       })
     }
 
     override def schedule(node: Node): Seq[Edge] = {
-      node.edges.flatMap(up) ++ node.edges.toSeq ++ node.edges.flatMap(down)
+      node.edges.flatMap(e => up(e)) ++ node.edges.toSeq ++ node.edges.flatMap(e => down(e))
     }
   }
 
