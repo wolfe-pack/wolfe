@@ -433,8 +433,8 @@ object MPGraph {
    */
   object EdgeOrdering extends Ordering[Edge] {
     def compare(x1: Edge, x2: Edge): Int = {
-      if (x1.n.dim == 1) return 1 //messages to observed nodes should be last
-      if (x2.n.dim == 1) return -1
+      if (x1.n.dim == 1 && x2.n.dim != 1) return 1 //messages to observed nodes should be last
+      if (x2.n.dim == 1 && x1.n.dim != 1) return -1
       if (x1.f.rank != x2.f.rank) return x1.f.rank - x2.f.rank
       if (x1.indexInFactor != x2.indexInFactor) return x2.indexInFactor - x1.indexInFactor
       val sign = -1 + (x1.indexInFactor % 2) * 2
