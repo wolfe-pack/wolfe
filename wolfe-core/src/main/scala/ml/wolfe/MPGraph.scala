@@ -3,6 +3,7 @@ package ml.wolfe
 import scala.collection.mutable.ArrayBuffer
 import scalaxy.loops._
 import scala.annotation.tailrec
+import scala.collection.mutable
 
 
 /**
@@ -496,7 +497,21 @@ object MPGraph {
     }
 
     override def schedule(node: Node): Seq[Edge] = {
-      node.edges.flatMap(e => up(e)) ++ node.edges.toSeq ++ node.edges.flatMap(e => down(e))
+      //node.edges.flatMap(e => up(e)) ++ node.edges.toSeq ++ node.edges.flatMap(e => down(e))
+
+      def collectEdges(edges: Seq[Edge], visitedEdges: Set[Edge], fun: (Edge, Set[Edge]) => Seq[Edge]): Seq[Edge] =
+        edges match {
+          case Nil => Seq()
+          case head :: tail =>
+            val tmpEdges = fun(head, visitedEdges)
+            collectEdges(tail, visitedEdges ++ tmpEdges, fun) ++ tmpEdges
+        }
+
+      val upEdges = collectEdges(node.edges.toList, Set(), up)
+      val downEdges = collectEdges(node.edges.toList, Set(), down).filterNot(upEdges.contains)
+      val middleEdges = node.edges.filterNot(e => upEdges.contains(e) || downEdges.contains(e))
+
+      upEdges ++ middleEdges ++ downEdges
     }
   }
 

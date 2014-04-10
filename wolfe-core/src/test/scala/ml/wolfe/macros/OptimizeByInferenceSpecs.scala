@@ -41,7 +41,7 @@ class OptimizeByInferenceSpecs extends WolfeSpec {
       val approximate = argmax { over[Data] of oneIteration }
       val expected = BruteForceOperators.argmax { over[Data] of tenIterations }
       actual should be(expected)
-      //actual should not be approximate //rockt: with scheduler this can now happen
+      actual should not be approximate
     }
 
     "find the optimal solution of a linear chain " in {
