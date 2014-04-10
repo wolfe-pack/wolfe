@@ -30,21 +30,21 @@ class MPSchedulerSpec extends StructureIsomorphisms {
     "return the right edge ordering for a forward messaging pass" in {
       val actualUp = Seq(100 -> 1, 104 -> 5, 103 -> 4, 102 -> 3)
       val predictedUp = MPSchedulerImpl.up(root).map(e => (e.f.index, e.n.index))
-      info("up: " + predictedUp)
+      //info("up: " + predictedUp)
       predictedUp should be(actualUp)
     }
 
     "return the right edge ordering for a backward messaging pass" in {
       val actualDown = Seq(101 -> 3, 102 -> 1, 100 -> 0, 102 -> 4, 103 -> 5)
       val predictedDown = MPSchedulerImpl.down(root).map(e => (e.f.index, e.n.index))
-      info("down: " + predictedDown)
+      //info("down: " + predictedDown)
       predictedDown should be(actualDown)
     }
 
     "return the right edge ordering for a forward/backward messaging pass" in {
       val actual = Seq(100 -> 1, 104 -> 5, 103 -> 4, 102 -> 3, 101 -> 2, 101 -> 3, 102 -> 1, 100 -> 0, 102 -> 4, 103 -> 5)
       val predicted = MPSchedulerImpl.schedule(root).map(e => (e.f.index, e.n.index))
-      info("schedule: " + predicted)
+      //info("schedule: " + predicted)
       predicted should be(actual)
     }
   }
