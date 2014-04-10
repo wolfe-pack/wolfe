@@ -40,20 +40,11 @@ class NodeSchedulerSpec extends StructureIsomorphisms {
 
   "A MetaStructuredFactor" should {
     "does not generate cycles" in {
-      //def space = Wolfe.all(Sentence)(seqs(Wolfe.all(Token)))
-      def space = Seq(
-        Sentence(Seq(
-          Token("This", Tag("B"), Chunk("?")),
-          Token("is", Tag("I"), Chunk("?")),
-          Token("a", Tag("O"), Chunk("?")),
-          Token("test", Tag("O"), Chunk("?")),
-          Token(".", Tag("O"), Chunk("?"))
-        ))
-      )
+      def space = Wolfe.all(Sentence)(seqs(5, Wolfe.all(Token)(Seq("blub") x Seq(Tag("blah")) x Seq(Chunk("blub")))))
 
       def features(s: Sentence) = {
-        sum { over(0 until s.tokens.size) of (i => oneHot('word -> s.tokens(i).word -> s.tokens(i).tag)) }
-        //sum { over(0 until s.tokens.size) of (i => oneHot('word -> s.tokens(i).word -> s.tokens(i).chunk)) }
+//        sum { over(0 until s.tokens.size) of (i => oneHot('word -> s.tokens(i).word -> s.tokens(i).tag)) }
+        sum { over(0 until s.tokens.size) of (i => oneHot('word -> s.tokens(i).word -> s.tokens(i).chunk)) }
       }
 
       val w = oneHot(1)

@@ -114,6 +114,11 @@ trait VectorDefs {
         keys.forall(k => this(k) == v(k))
       case _ => false
     }
+    def outer(that:Vector) = {
+      val map = for ((k1,v1) <- this; (k2,v2) <- that) yield (k1,k2) -> v1 * v2
+      new Vector(map.toMap)
+    }
+    def x(that:Vector) = outer(that)
   }
 
   object Vector {
