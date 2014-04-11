@@ -474,20 +474,26 @@ object MPGraph {
      * @param e edge whose node will become the root node
      * @return correct message ordering for forward messaging pass (excluding the edge itself)
      */
-    //TODO: @tailrec
-    def up(e: Edge, visitedEdges: Set[Edge] = Set()): Seq[Edge] = {
-      if (e.f.edgeCount == 1 || visitedEdges.contains(e)) Seq()
-      else e.f.edges.filterNot(_ == e).flatMap(neighborEdge => {
-        val newEdges = neighborEdge.n.edges.filterNot(_ == neighborEdge)
-        newEdges.flatMap(ne => up(ne, visitedEdges + e)) ++ newEdges
-      })
+    def up(e: Edge, done: Set[Edge] = Set()): Seq[Edge] = {
+      @tailrec
+      def upAcc(todo: Seq[Edge], done: Set[Edge] = Set(), acc: Seq[Edge]): Seq[Edge] = todo match {
+        case Nil => acc
+        case head :: tail =>
+          if (head.f.edgeCount == 1 || done.contains(head)) upAcc(tail, done, acc)
+          else {
+            val siblings = head.f.edges.filterNot(todo.contains)
+            val nephews = siblings.flatMap(sibling => sibling.n.edges.filterNot(_ == sibling))
+            upAcc(tail ++ nephews, done ++ siblings, nephews ++ acc)
+          }
+      }
+      upAcc(Seq(e), done, Seq())
     }
 
     /**
      * @param e edge whose node will become the root node
      * @return correct message ordering for backward messaging pass (excluding the edge itself)
      */
-    //TODO: @tailrec
+    //@tailrec
     def down(e: Edge, visitedEdges: Set[Edge] = Set()): Seq[Edge] = {
       if (e.f.edgeCount == 1 || visitedEdges.contains(e)) Seq()
       else e.f.edges.filterNot(_ == e).flatMap(neighborEdge => {
