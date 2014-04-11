@@ -77,6 +77,13 @@ trait CodeRepository[C <: Context] extends HasContext[C] with Transformers[C] wi
     case n => inlineOnce(tree).flatMap(i => inlineN(n - 1, i))
   }
 
+  def inlineFull(tree:Tree):Tree = {
+    inlineOnce(tree) match {
+      case Some(inlined) => inlineFull(inlined)
+      case None => tree
+    }
+  }
+
 
   class ReplaceMethodsWithFunctions(recursive: Boolean = true) extends Transformer {
     def getDef(f: Tree) = f match {
