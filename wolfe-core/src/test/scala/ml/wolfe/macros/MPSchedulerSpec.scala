@@ -6,6 +6,7 @@ import Wolfe._
 import NLP._
 import OptimizedOperators._
 import ml.wolfe.MPGraph.MPSchedulerImpl
+import ml.wolfe.MPGraph.MPSchedulerImpl.MPDirection
 
 
 /**
@@ -28,25 +29,39 @@ class MPSchedulerSpec extends StructureIsomorphisms {
       graph.build()
       val root = graph.edges(2) //"randomly" pick an edge that defines the root node
 
+      val validForwardPasses = Set(
+        Seq(104 -> 5, 100 -> 1, 103 -> 4, 102 -> 3),
+        Seq(104 -> 5, 103 -> 4, 100 -> 1, 102 -> 3),
+        Seq(100 -> 1, 104 -> 5, 103 -> 4, 102 -> 3)
+      )
+
+      val validBackwardPasses = Set(
+        Seq(101 -> 3, 102 -> 1, 100 -> 0, 102 -> 4, 103 -> 5),
+        Seq(101 -> 3, 102 -> 1, 102 -> 4, 100 -> 0, 103 -> 5),
+        Seq(101 -> 3, 102 -> 1, 102 -> 4, 103 -> 5, 100 -> 0)
+      )
+
+      val validForwardBackwardPasses = for {
+        forward <- validForwardPasses
+        backward <- validBackwardPasses
+      } yield forward ++ Seq((root.f.index, root.n.index)) ++ backward
+
       "return the right edge ordering for a forward messaging pass" in {
-        val actualUp = Seq(104 -> 5, 100 -> 1, 103 -> 4, 102 -> 3)
-        val predicted = MPSchedulerImpl.up(root).map(e => (e.f.index, e.n.index))
+        val predicted = MPSchedulerImpl.schedule(root, MPDirection.Forward).map(e => (e.f.index, e.n.index))
         info("up: " + predicted)
-        predicted should be(actualUp)
+        validForwardPasses should contain(predicted)
       }
 
       "return the right edge ordering for a backward messaging pass" in {
-        val actualDown = Seq(101 -> 3, 102 -> 1, 100 -> 0, 102 -> 4, 103 -> 5)
-        val predicted = MPSchedulerImpl.down(root).map(e => (e.f.index, e.n.index))
+        val predicted = MPSchedulerImpl.schedule(root, MPDirection.Backward).map(e => (e.f.index, e.n.index))
         info("down: " + predicted)
-        predicted should be(actualDown)
+        validBackwardPasses should contain(predicted)
       }
 
-      "return the right edge ordering for a forward/backward messaging pass" in {
-        val actual = Seq(100 -> 1, 104 -> 5, 103 -> 4, 102 -> 3, 101 -> 2, 101 -> 3, 102 -> 1, 100 -> 0, 102 -> 4, 103 -> 5)
+      "return the right edge ordering for a forward-backward messaging pass" in {
         val predicted = MPSchedulerImpl.schedule(root).map(e => (e.f.index, e.n.index))
         info("schedule: " + predicted)
-        predicted should be(actual)
+        validForwardBackwardPasses should contain(predicted)
       }
     }
 
@@ -69,14 +84,14 @@ class MPSchedulerSpec extends StructureIsomorphisms {
 
       "return only one loop for a forward messaging pass" in {
         val actual = Seq((101,1), (100,0), (102,2))
-        val predicted = MPSchedulerImpl.up(root).map(e => (e.f.index, e.n.index))
+        val predicted = MPSchedulerImpl.schedule(root, MPDirection.Forward).map(e => (e.f.index, e.n.index))
         info("up: " + predicted)
         predicted should be(actual)
       }
 
       "return only one loop for a backward messaging pass" in {
         val actual = Seq((101,2), (102,0), (100,1))
-        val predicted = MPSchedulerImpl.down(root).map(e => (e.f.index, e.n.index))
+        val predicted = MPSchedulerImpl.schedule(root, MPDirection.Backward).map(e => (e.f.index, e.n.index))
         info("down: " + predicted)
         predicted should be(actual)
       }

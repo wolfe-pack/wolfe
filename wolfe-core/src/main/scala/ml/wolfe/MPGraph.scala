@@ -470,21 +470,24 @@ object MPGraph {
    * Assumes the graph is acyclic. //TODO: use a heuristic for loopy graphs
    */
   object MPSchedulerImpl extends MPScheduler {
+    object MPDirection extends Enumeration {
+      val Forward, Backward = Value
+    }
+
     /**
      * @param e edge whose node will become the root node
-     * @return correct message ordering for forward messaging pass (excluding the edge itself)
+     * @param direction whether calculating forward or backward pass
+     * @return correct ordering for messaging pass for given direction (excluding the staring edge)
      */
-    def up(e: Edge, done: Set[Edge] = Set()): Seq[Edge] = {
+    def schedule(e: Edge, direction: MPDirection.Value, done: Set[Edge] = Set()): Seq[Edge] = {
       @tailrec
-      def upAcc(todo: Seq[Edge], done: Set[Edge] = Set(), acc: Seq[Edge]): Seq[Edge] = todo match {
+      def scheduleAcc(todo: Seq[Edge], done: Set[Edge], acc: Seq[Edge]): Seq[Edge] = todo match {
         case Nil => acc
         case head :: tail =>
-          if (head.f.edgeCount == 1 || done.contains(head)) upAcc(tail, done, acc)
+          if (head.f.edgeCount == 1 || done.contains(head)) scheduleAcc(tail, done, acc)
           else {
             val siblings = head.f.edges.filterNot(todo.contains)
             val nephews = siblings.flatMap(sibling => sibling.n.edges.filterNot(_ == sibling))
-            //breadth-first traversal; for depth-first use nephews ++ tail as first argument
-
             println(
               s"""
                 |current:  $head
@@ -492,44 +495,32 @@ object MPGraph {
                 |done:     $done
                 |siblings: ${siblings.toList}
                 |nephews:  ${nephews.toList}
+                |acc:      ${acc.toList}
               """.stripMargin)
-
-            upAcc(tail ++ nephews, done + head, nephews ++ acc)
+            direction match {
+              case MPDirection.Forward => scheduleAcc(tail ++ nephews, done + head, nephews ++ acc)
+              case MPDirection.Backward => scheduleAcc(tail ++ nephews, done + head, acc ++ siblings)
+            }
           }
       }
-      upAcc(Seq(e), done, Seq())
-    }
-
-    /**
-     * @param e edge whose node will become the root node
-     * @return correct message ordering for backward messaging pass (excluding the edge itself)
-     */
-    //@tailrec
-    def down(e: Edge, visitedEdges: Set[Edge] = Set()): Seq[Edge] = {
-      if (e.f.edgeCount == 1 || visitedEdges.contains(e)) Seq()
-      else e.f.edges.filterNot(_ == e).flatMap(neighborEdge => {
-        val newEdges = neighborEdge.n.edges.filterNot(_ == neighborEdge)
-        Seq(neighborEdge) ++ newEdges.flatMap(ne => down(ne, visitedEdges + e))
-      })
+      scheduleAcc(Seq(e), done, Seq())
     }
 
     override def schedule(node: Node): Seq[Edge] = {
-      /*
-      def collectEdges(edges: Seq[Edge], visitedEdges: Set[Edge], fun: (Edge, Set[Edge]) => Seq[Edge]): Seq[Edge] =
-        edges match {
-          case Nil => Seq()
-          case head :: tail =>
-            val tmpEdges = fun(head, visitedEdges)
-            collectEdges(tail, visitedEdges ++ tmpEdges, fun) ++ tmpEdges
-        }
+      @tailrec
+      def forwardBackward(edges: Seq[Edge], done: Set[Edge], acc: Seq[Edge]): Seq[Edge] = edges.toList match {
+        case Nil => acc
+        case head :: tail =>
+          val forward = schedule(head, MPDirection.Forward, done)
+          val backward = schedule(head, MPDirection.Backward, done)
+          forwardBackward(tail, done ++ forward ++ backward, acc ++ forward ++ Seq(head) ++ backward)
+      }
 
-      val upEdges = collectEdges(node.edges.toList, Set(), up)
-      val downEdges = collectEdges(node.edges.toList, Set(), down).filterNot(upEdges.contains)
-      val middleEdges = node.edges.filterNot(e => upEdges.contains(e) || downEdges.contains(e))
+//      node.edges.flatMap(e => schedule(e, MPDirection.Forward)) ++
+//      node.edges.toSeq ++
+//      node.edges.flatMap(e => schedule(e, MPDirection.Backward))
 
-      upEdges ++ middleEdges ++ downEdges
-      */
-      node.edges.flatMap(e => up(e)) ++ node.edges.toSeq ++ node.edges.flatMap(e => down(e))
+      forwardBackward(node.edges, Set(), Seq())
     }
   }
 
