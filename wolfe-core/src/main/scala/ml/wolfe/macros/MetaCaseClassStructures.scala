@@ -33,7 +33,7 @@ trait MetaCaseClassStructures[C<:Context] {
         ..${subClassDefs(graphName)}
         ..$structureFields
         private var iterator:Iterator[Unit] = _
-        def children() = fields
+        def children() = fields.map(_.asInstanceOf[ml.wolfe.macros.Structure[Any]])
         def fields:Iterator[ml.wolfe.macros.Structure[_]] = Iterator(..$fieldIds)
         def graph = $graphName
         def value():$argType = new $argType(..$fieldValues)
