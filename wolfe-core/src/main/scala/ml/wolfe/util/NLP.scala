@@ -14,20 +14,23 @@ object NLP {
   trait Label {
     def label: Symbol
     override def hashCode() = label.hashCode()
+    override def equals(obj: scala.Any) =
+      obj.getClass == getClass && obj.asInstanceOf[Label].label == label
   }
 
   case class Chunk(label: Symbol) extends Label
   case class Tag(label: Symbol) extends Label
   case class DocLabel(label: Symbol) extends Label
 
-
   case class Token(word: String, tag: Tag = default, chunk: Chunk = default) {
     override def toString = s"$word/${ tag.label }/${ chunk.label }"
   }
+
   case class Sentence(tokens: Seq[Token]) {
     override def toString = tokens.view.mkString(" ")
     def toSentenceString = tokens.view.map(_.word).mkString(" ")
   }
+
   case class Doc(source: String, tokens: Seq[Token], label: DocLabel)
 
   implicit def labelToSymbol(l: Label) = l.label
