@@ -61,7 +61,7 @@ object BuildSettings {
     "net.sf.trove4j" % "trove4j" % "3.0.3",
     "com.nativelibs4java" %% "scalaxy-loops" % "0.3-SNAPSHOT" % "provided",
     "cc.factorie" % "factorie" % "1.0.0-M7",
-    "org.scalamacros" % "quasiquotes" % "2.0.0-M3" cross CrossVersion.full
+    "org.scalamacros" %% "quasiquotes" % "2.0.0-M3" cross CrossVersion.full
   )
 
 
