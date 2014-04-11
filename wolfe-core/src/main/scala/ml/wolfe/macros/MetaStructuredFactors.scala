@@ -182,8 +182,8 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
 
   def atomic(potential: Tree, structure: MetaStructure, matcher: Tree => Option[StructurePointer], constructorArgs: List[ValDef],
              linearModelInfo: LinearModelInfo, linear: Boolean) = linear match {
-    case true => MetaAtomicStructuredFactorLinear(potential, structure, matcher, linearModelInfo, constructorArgs)
-    case false => MetaAtomicStructuredFactorTable(potential, structure, matcher, constructorArgs)
+    case true => MetaAtomicStructuredFactorLinear(inlineFull(potential), structure, matcher, linearModelInfo, constructorArgs)
+    case false => MetaAtomicStructuredFactorTable(inlineFull(potential), structure, matcher, constructorArgs)
   }
 
   //  def unwrapIfRichVector(arg1: Tree) = arg1 match {
