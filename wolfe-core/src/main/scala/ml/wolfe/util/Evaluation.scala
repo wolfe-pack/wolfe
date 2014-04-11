@@ -65,7 +65,7 @@ object MentionEvaluator {
     t.tokens.zipWithIndex.foldLeft(ListBuffer[Mention]())((mentions: ListBuffer[Mention], tokenWithIndex) => {
       val (token, ix) = tokenWithIndex
       val label = token.tag.label
-      val Array(prefix, labelType) = if (label == "O") Array("O", "O") else label.split("-")
+      val Array(prefix, labelType) = if (label == "O") Array("O", "O") else label.toString().split("-")
 
       prefix match {
         case "O" => mentions

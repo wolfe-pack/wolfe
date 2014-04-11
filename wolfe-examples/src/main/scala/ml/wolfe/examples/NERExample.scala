@@ -21,9 +21,9 @@ object NERExample {
   //import NLP._
   import Library._
 
-  implicit val defaultChunks = Seq("?").map(Chunk)
+  implicit val defaultChunks = Seq("?").map(c => Chunk(Symbol(c)))
   implicit val labels = Seq("O", "B-protein", "I-protein", "B-cell_type", "I-cell_type", "B-DNA", "I-DNA",
-    "B-cell_line", "I-cell_line", "B-RNA", "I-RNA").map(Tag)
+    "B-cell_line", "I-cell_line", "B-RNA", "I-RNA").map(t => Tag(Symbol(t)))
 
   def toFeatureVector(token: Token): Wolfe.Vector = {
     oneHot('word -> token.word.toLowerCase -> token.tag) +
@@ -123,7 +123,7 @@ object NERExample {
           } yield {
             val Array(word, label) = line.split("\t")
             //FIXME: chunk ("?") shouldn't be needed here, but toString of default value throws Exception
-            Token(word, label, "?")
+            Token(word, label, '?)
           }
         )
       }).toSeq
