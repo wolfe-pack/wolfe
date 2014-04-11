@@ -32,7 +32,7 @@ trait MetaAtomicStructures[C <: Context] {
         val node = $graphName.addNode($domName.length)
         private def updateValue() {node.value = node.domain(node.setting)}
         def value():$argType = $domName(node.value)
-        def children():Iterator[ml.wolfe.macros.Structure[_]] = Iterator.empty
+        def children():Iterator[ml.wolfe.macros.Structure[Any]] = Iterator.empty
         def graph = $graphName
         def nodes() = Iterator(node)
         def resetSetting() {node.setting = -1}
@@ -70,7 +70,7 @@ trait MetaAtomicStructures[C <: Context] {
         private var _value:$argType = _
         val node = $graphName.addNode(1)
         def value():$argType = _value
-        def children():Iterator[ml.wolfe.macros.Structure[_]] = Iterator.empty
+        def children():Iterator[ml.wolfe.macros.Structure[Any]] = Iterator.empty
         def graph = $graphName
         def nodes() = Iterator(node)
         def resetSetting() {node.setting = -1}
