@@ -83,6 +83,11 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
     //todo: at compile time using a validate method on the meta structure. Probably requires stateful meta structure to
     //todo: be affected during conditioning.
 
+    /**
+     * @return does this type of structure only supports observed nodes.
+     */
+    def observed:Boolean = false
+
   }
 
 
@@ -92,14 +97,14 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
    * @param matchStructure the matcher to apply on sub-trees to
    * @return all structures in expression `tree`.
    */
-  def structures(tree: Tree, matchStructure: Tree => Option[StructurePointer]): List[Tree] = {
-    var result: List[Tree] = Nil
+  def structures(tree: Tree, matchStructure: Tree => Option[StructurePointer]): List[StructurePointer] = {
+    var result: List[StructurePointer] = Nil
     val traverser = new Traverser with WithFunctionStack {
       override def traverse(tree: Tree) = {
         pushIfFunction(tree)
         val tmp = matchStructure(tree) match {
           case Some(structure) if !hasFunctionArgument(tree) =>
-            result ::= structure.structure
+            result ::= structure
           case _ =>
             super.traverse(tree)
         }
