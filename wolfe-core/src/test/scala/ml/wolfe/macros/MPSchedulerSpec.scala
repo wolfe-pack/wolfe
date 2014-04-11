@@ -98,32 +98,13 @@ class MPSchedulerSpec extends StructureIsomorphisms {
 
 
       "return a tree-like ordering for a forward/backward messaging pass" in {
-        val actual = Seq((101,1), (100,0), (102,2), (100,1), (101,2), (102,0))
+        val actual = Set(
+          Seq((100,1), (101,2), (102,0), (100,0), (102,2), (101,1)) //FIXME: list other possible cases
+        )
         val predicted = MPSchedulerImpl.schedule(root).map(e => (e.f.index, e.n.index))
         info("schedule: " + predicted)
-
+        actual should contain(predicted)
       }
     }
   }
-
-/*
-    "A MetaStructuredFactor" should {
-    "does not generate cycles" in {
-      def space = Wolfe.all(Sentence)(seqs(5, Wolfe.all(Token)(Seq("blub") x Seq(Tag("blah")) x Seq(Chunk("blub")))))
-
-      def features(s: Sentence) = {
-//        sum { over(0 until s.tokens.size) of (i => oneHot('word -> s.tokens(i).word -> s.tokens(i).tag)) }
-        sum { over(0 until s.tokens.size) of (i => oneHot('word -> s.tokens(i).word -> s.tokens(i).chunk)) }
-      }
-
-      val w = oneHot(1)
-      def potential(s: Sentence) = w dot features(s)
-
-      val factor = MetaStructuredFactor.structuredFactor[Sentence](space, potential)
-
-      //TODO test for cycles
-      println(factor.graph.edges)
-    }
-  }
-*/
 }

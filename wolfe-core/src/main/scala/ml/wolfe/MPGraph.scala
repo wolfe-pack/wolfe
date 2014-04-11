@@ -466,9 +466,6 @@ object MPGraph {
     def schedule(edge: Edge): Seq[Edge] = schedule(edge.n)
   }
 
-  /**
-   * Assumes the graph is acyclic. //TODO: use a heuristic for loopy graphs
-   */
   object MPSchedulerImpl extends MPScheduler {
     object MPDirection extends Enumeration {
       val Forward, Backward = Value
@@ -488,15 +485,6 @@ object MPGraph {
           else {
             val siblings = head.f.edges.filterNot(todo.contains)
             val nephews = siblings.flatMap(sibling => sibling.n.edges.filterNot(_ == sibling))
-            println(
-              s"""
-                |current:  $head
-                |todo:     $tail
-                |done:     $done
-                |siblings: ${siblings.toList}
-                |nephews:  ${nephews.toList}
-                |acc:      ${acc.toList}
-              """.stripMargin)
             direction match {
               case MPDirection.Forward => scheduleAcc(tail ++ nephews, done + head, nephews ++ acc)
               case MPDirection.Backward => scheduleAcc(tail ++ nephews, done + head, acc ++ siblings)
@@ -513,12 +501,10 @@ object MPGraph {
         case head :: tail =>
           val forward = schedule(head, MPDirection.Forward, done)
           val backward = schedule(head, MPDirection.Backward, done)
-          forwardBackward(tail, done ++ forward ++ backward, acc ++ forward ++ Seq(head) ++ backward)
+          val rest = tail.filterNot(e => forward.contains(e) || backward.contains(e))
+          val middle = if (forward.contains(head) || backward.contains(head)) Nil else Seq(head)
+          forwardBackward(rest, done ++ forward ++ backward, acc ++ forward ++ middle ++ backward)
       }
-
-//      node.edges.flatMap(e => schedule(e, MPDirection.Forward)) ++
-//      node.edges.toSeq ++
-//      node.edges.flatMap(e => schedule(e, MPDirection.Backward))
 
       forwardBackward(node.edges, Set(), Seq())
     }
