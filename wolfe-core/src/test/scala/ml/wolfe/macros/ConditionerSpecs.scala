@@ -103,7 +103,6 @@ class ConditionerSpecs extends StructureIsomorphisms {
       def condition(d:Data) = d == Data("test")
       val actual = Conditioner.conditioned(space)(condition)
       actual mustBeIsomorphicTo Seq(Data("test"))
-
     }
 
   }
