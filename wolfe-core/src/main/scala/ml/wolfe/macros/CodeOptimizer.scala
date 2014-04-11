@@ -16,9 +16,10 @@ trait CodeOptimizer[C <: Context] extends HasContext[C] with CodeRepository[C] w
         case q"ml.wolfe.Wolfe.oneHot($oneHotIndex,$oneHotValue)" =>
           val code = q"""
             val dom = $dom
-            val result = new cc.factorie.la.GrowableSparseTensor1(dom)
+            val result = new cc.factorie.la.SparseTensor1(1)
+            result.ensureCapacity(dom.size)
             for (${arg.name} <- dom) {
-              result +=($index.apply(Seq($oneHotIndex)),$oneHotValue)
+              result +=($index.apply($oneHotIndex),$oneHotValue)
             }
             result
           """
@@ -26,10 +27,10 @@ trait CodeOptimizer[C <: Context] extends HasContext[C] with CodeRepository[C] w
         case _ => q"ml.wolfe.FactorieConverter.toFreshFactorieSparseVector($wolfeVector,$index)"
       }
     case FlattenedPlus(args) =>
-      val init = q"val result = new cc.factorie.la.SparseTensor1(0)"
+      val init = q"val result = new cc.factorie.la.SparseTensor1(1)"
       val commands = for (arg <- args) yield arg match {
         case q"ml.wolfe.Wolfe.oneHot($oneHotIndex,$oneHotValue)" =>
-          q"{val value = $oneHotValue; if (value != 0.0) result +=($index.apply(Seq($oneHotIndex)),$oneHotValue)}"
+          q"{val value = $oneHotValue; if (value != 0.0) result +=($index.apply($oneHotIndex),$oneHotValue)}"
         case _ =>
           val argVector = toOptimizedFactorieVector(arg,index)
           q"result += $argVector"
@@ -42,6 +43,7 @@ trait CodeOptimizer[C <: Context] extends HasContext[C] with CodeRepository[C] w
       val arg2Vector = toOptimizedFactorieVector(arg2,index)
       val code = q"""
         val result = new cc.factorie.la.SparseTensor1($arg1.size + $arg2.size)
+        result.ensureCapacity($arg1.size + $arg2.size)
         result += $arg1Vector
         result += $arg2Vector
         result

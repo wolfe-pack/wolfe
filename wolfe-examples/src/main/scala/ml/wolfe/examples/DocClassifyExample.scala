@@ -35,7 +35,7 @@ object DocClassifyExample {
 
     def batchPredictor(w:Vector)(data:Iterable[Doc]) = map { over(data) using predictor(w)}
 
-    @OptimizeByLearning(new OnlineTrainer(_, new Perceptron, 1, 50))
+    @OptimizeByLearning(new OnlineTrainer(_, new Perceptron, 1, 1000))
     def loss(data: Iterable[Doc])(w: Vector) = sum { over(data) of (s => model(w)(predictor(w)(s)) - model(w)(s)) }
 
     def learn(data: Iterable[Doc]) = argmin { over[Vector] of loss(data) }
@@ -51,9 +51,10 @@ object DocClassifyExample {
     val model = new Model(labels)
     val w = model.learn(sub)
     println(w.take(10))
-//    val trainPredicted = model.batchPredictor(w)(sub)
-//    val trainEval = Evaluator.evaluate(sub,trainPredicted)(_.label)
-//    println(trainEval)
+    println("Prediction ... ")
+    val trainPredicted = model.batchPredictor(w)(sub)
+    val trainEval = Evaluator.evaluate(sub,trainPredicted)(_.label)
+    println(trainEval)
 
     //load 20 newsgroups data
   }

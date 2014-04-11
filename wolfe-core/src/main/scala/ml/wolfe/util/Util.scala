@@ -2,6 +2,8 @@ package ml.wolfe.util
 
 import java.io.{FileInputStream, InputStream}
 import scala.io.Source
+import scala.collection.mutable
+import java.util.concurrent.TimeUnit
 
 /**
  * @author Sebastian Riedel
@@ -21,7 +23,6 @@ object Util {
       is
     }
   }
-
 
 }
 
@@ -46,3 +47,17 @@ object Iris {
   }
 }
 
+object Timer {
+  val timings = new mutable.HashMap[String,Long]()
+
+  def time[A](name:String)(f: => A) = {
+    val start = System.nanoTime
+    val result = f
+    val time: Long = TimeUnit.MILLISECONDS.convert(System.nanoTime - start, TimeUnit.NANOSECONDS)
+    timings(name) = time
+    result
+  }
+
+  def reported(name:String):Long = timings.getOrElse(name, -1)
+
+}
