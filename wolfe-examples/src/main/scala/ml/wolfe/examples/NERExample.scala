@@ -66,11 +66,13 @@ object NERExample {
   def model(w: Vector)(s: Sentence) = w dot features(s)
   def predictor(w: Vector)(s: Sentence) = argmax { over(Sentences) of model(w) st evidence(observed)(s) }
 
-  @OptimizeByLearning(new OnlineTrainer(_, new AveragedPerceptron, 100, -1))
+  @OptimizeByLearning(new OnlineTrainer(_, new AveragedPerceptron, 20, -1))
   def loss(data: Iterable[Sentence])(w: Vector) = sum { over(data) of (s => model(w)(predictor(w)(s)) - model(w)(s)) }
   def learn(data:Iterable[Sentence]) = argmin { over[Vector] of loss(data) }
 
   def main(args: Array[String]) {
+    val useSample = if (args.length > 0) args(0).toBoolean else false
+
     import scala.sys.process._
 
     def loadGenia(path: String): InputStream = Util.getStreamFromClassPathOrFile(path)
@@ -90,8 +92,20 @@ object NERExample {
           (loadGenia(prefix + trainPath), loadGenia(prefix + testPath))
       }
 
-    val train = IOBToWolfe(groupLines(loadIOB(trainSource).toIterator, "###MEDLINE:")).flatten
-    val test = IOBToWolfe(groupLines(loadIOB(testSource).toIterator, "###MEDLINE:")).flatten
+    val (train, test) =
+      if (useSample) {
+        val sample = IOBToWolfe(groupLines(loadIOB(trainSource, "sampletest2").toIterator, "###MEDLINE:")).flatten
+        val (trainSample, testSample) = sample.splitAt((sample.size * 0.9).toInt)
+        (trainSample, testSample)
+      } else
+        (IOBToWolfe(groupLines(loadIOB(trainSource).toIterator, "###MEDLINE:")).flatten,
+         IOBToWolfe(groupLines(loadIOB(testSource).toIterator, "###MEDLINE:")).flatten)
+
+    println(
+      s"""
+        |Train sentences: ${train.size}
+        |Test sentences:  ${test.size}
+      """.stripMargin)
 
     val w = learn(train)
 
@@ -107,7 +121,7 @@ object NERExample {
     evaluate(test)
   }
 
-  def loadIOB(stream: InputStream) = {
+  def loadIOB(stream: InputStream, sampleFilePrefix: String = "") = {
     val in = new BufferedInputStream(stream)
     val gzIn = new GzipCompressorInputStream(in)
     val tarIn = new TarArchiveInputStream(gzIn)
@@ -116,7 +130,8 @@ object NERExample {
     var lines = Array[String]()
 
     while (entry != null) {
-      if (entry.getName.startsWith("Genia") && entry.getName.endsWith("2.iob2")) {
+      val (prefix, suffix) =  if (!sampleFilePrefix.isEmpty) (sampleFilePrefix, ".iob2") else ("Genia", "2.iob2")
+      if (entry.getName.startsWith(prefix) && entry.getName.endsWith(suffix)) {
         println("Loading " + entry.getName + " ...")
         val content = new Array[Byte](entry.getSize.toInt)
         tarIn.read(content, 0, entry.getSize.toInt)
@@ -135,7 +150,7 @@ object NERExample {
         Sentence(
           for {
             line <- sentence.split("\n")
-            if !line.startsWith("###MEDLINE:")
+            if !line.startsWith("###MEDLINE:") && !line.isEmpty
           } yield {
             val Array(word, label) = line.split("\t")
             //FIXME: chunk ("?") shouldn't be needed here, but toString of default value throws Exception
