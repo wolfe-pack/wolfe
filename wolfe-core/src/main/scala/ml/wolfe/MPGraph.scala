@@ -497,8 +497,7 @@ object MPGraph {
     }
 
     override def schedule(node: Node): Seq[Edge] = {
-      //node.edges.flatMap(e => up(e)) ++ node.edges.toSeq ++ node.edges.flatMap(e => down(e))
-
+      /*
       def collectEdges(edges: Seq[Edge], visitedEdges: Set[Edge], fun: (Edge, Set[Edge]) => Seq[Edge]): Seq[Edge] =
         edges match {
           case Nil => Seq()
@@ -512,6 +511,8 @@ object MPGraph {
       val middleEdges = node.edges.filterNot(e => upEdges.contains(e) || downEdges.contains(e))
 
       upEdges ++ middleEdges ++ downEdges
+      */
+      node.edges.flatMap(e => up(e)) ++ node.edges.toSeq ++ node.edges.flatMap(e => down(e))
     }
   }
 
