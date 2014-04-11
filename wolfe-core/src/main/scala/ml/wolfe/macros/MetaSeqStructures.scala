@@ -32,7 +32,7 @@ trait MetaSeqStructures[C<:Context] {
             _elements = Array.fill(length)(new ${elementMetaStructure.className})
           }
           def elements = _elements
-          def children() = elements.iterator
+          def children() = elements.iterator.map(_.asInstanceOf[ml.wolfe.macros.Structure[Any]])
           def nodes = _elements.iterator.flatMap(_.nodes)
           def graph = $graphName
 
