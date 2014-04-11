@@ -48,19 +48,16 @@ class MPSchedulerSpec extends StructureIsomorphisms {
 
       "return the right edge ordering for a forward messaging pass" in {
         val predicted = MPSchedulerImpl.schedule(root, MPDirection.Forward).map(e => (e.f.index, e.n.index))
-        info("up: " + predicted)
         validForwardPasses should contain(predicted)
       }
 
       "return the right edge ordering for a backward messaging pass" in {
         val predicted = MPSchedulerImpl.schedule(root, MPDirection.Backward).map(e => (e.f.index, e.n.index))
-        info("down: " + predicted)
         validBackwardPasses should contain(predicted)
       }
 
       "return the right edge ordering for a forward-backward messaging pass" in {
         val predicted = MPSchedulerImpl.schedule(root).map(e => (e.f.index, e.n.index))
-        info("schedule: " + predicted)
         validForwardBackwardPasses should contain(predicted)
       }
     }
@@ -84,14 +81,12 @@ class MPSchedulerSpec extends StructureIsomorphisms {
       "return only one loop for a forward messaging pass" in {
         val actual = Seq((101,1), (100,0), (102,2))
         val predicted = MPSchedulerImpl.schedule(root, MPDirection.Forward).map(e => (e.f.index, e.n.index))
-        info("up: " + predicted)
         predicted should be(actual)
       }
 
       "return only one loop for a backward messaging pass" in {
         val actual = Seq((101,2), (102,0), (100,1))
         val predicted = MPSchedulerImpl.schedule(root, MPDirection.Backward).map(e => (e.f.index, e.n.index))
-        info("down: " + predicted)
         predicted should be(actual)
       }
 
@@ -101,14 +96,13 @@ class MPSchedulerSpec extends StructureIsomorphisms {
           Seq((100,1), (101,2), (102,0), (100,0), (102,2), (101,1)) //FIXME: list other possible cases
         )
         val predicted = MPSchedulerImpl.schedule(root).map(e => (e.f.index, e.n.index))
-        info("schedule: " + predicted)
         actual should contain(predicted)
       }
     }
 
     "should given a graph with disconnected components return a schedule on all components" in {
       val graph = new MPGraph()
-      (0 to 3).foreach(i => graph.addNode(0)) //dummy nodes
+      (0 to 4).foreach(i => graph.addNode(0)) //dummy nodes
       (0 to 101).foreach(i => graph.addTableFactor(Array(), Array(), Array())) //dummy factors
       val edges = Array(
           100 -> 0,
@@ -123,6 +117,29 @@ class MPSchedulerSpec extends StructureIsomorphisms {
         Seq(100 -> 0, 100 -> 1, 101 -> 2, 101 -> 3)
       )
       val predicted = MPSchedulerImpl.schedule(graph).map(e => (e.f.index, e.n.index))
+      actual should contain(predicted)
+    }
+
+    "should given an inner node first return the forward passes and then the backward passes" in {
+      val graph = new MPGraph()
+      (0 to 4).foreach(i => graph.addNode(0)) //dummy nodes
+      (0 to 101).foreach(i => graph.addTableFactor(Array(), Array(), Array())) //dummy factors
+      val edges = Array(
+          100 -> 0,
+          100 -> 1,
+          101 -> 1,
+          101 -> 2
+        )
+      edges.foreach(edge => graph.addEdge(graph.getFactor(edge._1), graph.getNode(edge._2)))
+      graph.build()
+
+      val root = graph.nodes(1)
+
+      val actual = Set(
+        Seq((101,1), (100,1), (100,0), (101,2))
+      )
+      val predicted = MPSchedulerImpl.schedule(root).map(e => (e.f.index, e.n.index))
+
       actual should contain(predicted)
     }
   }
