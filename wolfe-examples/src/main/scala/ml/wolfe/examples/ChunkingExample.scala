@@ -34,7 +34,7 @@ object ChunkingExample {
 
   def main(args: Array[String]) {
 
-    def toToken(conll: Array[String]) = Token(conll(0), Tag(conll(1)), Chunk(conll(2)))
+    def toToken(conll: Array[String]) = Token(conll(0), Tag(Symbol(conll(1))), Chunk(Symbol(conll(2))))
 
     val train = loadCoNLL("ml/wolfe/datasets/conll2000/train.txt")(toToken).map(Sentence).take(1000)
     val w = learn(train)
