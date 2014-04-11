@@ -19,7 +19,7 @@ object MaxProduct {
    * @param canonical should edges be processed in canonical ordering according to [[ml.wolfe.MPGraph.EdgeOrdering]].
    */
   def apply(fg: MPGraph, maxIteration: Int, canonical: Boolean = true) {
-    //val edges = if (canonical) fg.edges.sorted(MPGraph.EdgeOrdering) else fg.edges
+//    val edges = if (canonical) fg.edges.sorted(MPGraph.EdgeOrdering) else fg.edges
     val edges = if (canonical) MPSchedulerImpl.schedule(fg) else fg.edges
 
     for (i <- 0 until maxIteration) {
@@ -49,7 +49,9 @@ object MaxProduct {
     for (factor <- fg.factors) {
       // 1) go over all states, find max
       var norm = Double.NegativeInfinity
-      for (i <- 0 until factor.entryCount) {
+      //update all n2f messages
+      for (e <- factor.edges) updateN2F(e)
+      for (i <- (0 until factor.entryCount).optimized) {
         val setting = factor.settings(i)
         val score = penalizedScore(factor, i, setting)
         norm = math.max(score, norm)
@@ -58,7 +60,7 @@ object MaxProduct {
       // 2) count number of maximums
       var maxCount = 0
       var maxScore = Double.NegativeInfinity
-      for (i <- 0 until factor.entryCount) {
+      for (i <- (0 until factor.entryCount).optimized) {
         val setting = factor.settings(i)
         val score = penalizedScore(factor, i, setting)
         if (score == norm) {

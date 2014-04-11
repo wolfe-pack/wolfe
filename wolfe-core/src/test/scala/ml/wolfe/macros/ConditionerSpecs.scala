@@ -97,7 +97,7 @@ class ConditionerSpecs extends StructureIsomorphisms {
       actual mustBeIsomorphicTo expected
     }
 
-    "turn infinite search spaces into finite structures when conditioning" in {
+    "turn infinite search spaces into finite structures when conditioning " in {
       case class Data(label:String)
       def space = infty[Data]
       def condition(d:Data) = d == Data("test")

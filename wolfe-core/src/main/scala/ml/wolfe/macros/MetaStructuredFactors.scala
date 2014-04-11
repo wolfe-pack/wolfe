@@ -123,14 +123,15 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
     override def weightVector = None
 
     lazy val className       = newTypeName(context.fresh("AtomicStructuredFactor"))
-    lazy val arguments       = distinctTrees(structures(potential, matcher))
+    lazy val arguments       = distinctTrees(structures(potential, matcher).filterNot(_.meta.observed).map(_.structure))
+//    lazy val arguments       = distinctTrees(structures(potential, matcher).map(_.structure))
     lazy val nodesPerArg     = arguments.map(a => q"$a.nodes()")
     lazy val nodes           = q"""Iterator(..$nodesPerArg).flatMap(identity)"""
     lazy val injected        = context.resetLocalAttrs(injectStructure(potential, matcher))
     lazy val constructorArgs = q"val structure:${ structure.className }" :: args
 
     lazy val perSetting = q"""
-        //println(nodes.map(_.setting).mkString(","))
+//        println(nodes.map(_.setting).mkString(","))
         settings(settingIndex) = nodes.map(_.setting)
         $perSettingArrayName(settingIndex) = $perSettingValue
         settingIndex += 1

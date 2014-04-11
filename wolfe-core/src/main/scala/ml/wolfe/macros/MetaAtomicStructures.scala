@@ -61,6 +61,7 @@ trait MetaAtomicStructures[C <: Context] {
 
     def domain: Tree
 
+    override def observed = true
     lazy val className = newTypeName(context.fresh("AtomicObservedStructure"))
     lazy val argType   = iterableArgumentType(domain)
     lazy val domainDefs  = Nil
@@ -68,20 +69,38 @@ trait MetaAtomicStructures[C <: Context] {
     def classDef(graphName: TermName) = q"""
       final class $className extends ml.wolfe.macros.Structure[$argType] {
         private var _value:$argType = _
-        val node = $graphName.addNode(1)
+        private var _hasNext = true
         def value():$argType = _value
         def children():Iterator[ml.wolfe.macros.Structure[Any]] = Iterator.empty
         def graph = $graphName
-        def nodes() = Iterator(node)
-        def resetSetting() {node.setting = -1}
-        def hasNextSetting = node.setting < node.dim - 1
-        def nextSetting() = {node.setting += 1}
-        def setToArgmax() { node.setting = 0}
+        def nodes() = Iterator.empty
+        def resetSetting() {_hasNext = true}
+        def hasNextSetting = _hasNext
+        def nextSetting() = {_hasNext = false}
+        def setToArgmax() {}
         final def observe(value:$argType) {
           _value = value
         }
       }
     """
+//    def classDef(graphName: TermName) = q"""
+//      final class $className extends ml.wolfe.macros.Structure[$argType] {
+//        private var _value:$argType = _
+//        val node = $graphName.addNode(1)
+//        def value():$argType = _value
+//        def children():Iterator[ml.wolfe.macros.Structure[Any]] = Iterator.empty
+//        def graph = $graphName
+//        def nodes() = Iterator(node)
+//        def resetSetting() {node.setting = -1}
+//        def hasNextSetting = node.setting < node.dim - 1
+//        def nextSetting() = {node.setting += 1}
+//        def setToArgmax() { node.setting = 0}
+//        final def observe(value:$argType) {
+//          _value = value
+//        }
+//      }
+//    """
+
 
     def matcher(parent: Tree => Option[StructurePointer],
                 result: Tree => Option[StructurePointer]): Tree => Option[StructurePointer] = result

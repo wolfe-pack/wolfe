@@ -11,7 +11,7 @@ import ml.wolfe.util.Evaluator
 class IrisSpecs extends WolfeSpec {
 
   "A Iris Model" should {
-    "give reasonable performance on the IRIS dataset " in {
+    "give reasonable performance on the IRIS dataset" in {
       import ml.wolfe.util.Iris._
       import Wolfe._
       import OptimizedOperators._
