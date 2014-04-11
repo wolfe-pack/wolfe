@@ -25,16 +25,23 @@ object NERExample {
   implicit val labels = Seq("O", "B-protein", "I-protein", "B-cell_type", "I-cell_type", "B-DNA", "I-DNA",
     "B-cell_line", "I-cell_line", "B-RNA", "I-RNA").map(Tag)
 
-  def toFeatureVector(token: Token): Wolfe.Vector = {
-    oneHot('word -> token.word.toLowerCase -> token.tag) +
-    oneHot('firstCap -> token.tag, I(token.word.head.isUpper)) +
-    oneHot('allCap -> token.tag, I(token.word.matches("[A-Z]+"))) +
-    oneHot('realNumber -> token.tag, I(token.word.matches("[-0-9]+[.,]+[0-9.,]+"))) +
-    oneHot('isDash -> token.tag, I(token.word.matches("[-–—−]"))) +
-    oneHot('isQuote -> token.tag, I(token.word.matches("[„“””‘’\"']"))) +
-    oneHot('isSlash -> token.tag, I(token.word.matches("[/\\\\]"))) +
-    oneHot('prefix2 -> token.tag -> token.word.take(2)) +
-    oneHot('suffix2 -> token.tag -> token.word.takeRight(2))
+  @Atomic
+  def tokenToFeatures(token: Token): Wolfe.Vector = {
+    oneHot('word -> token.word.toLowerCase) +
+    oneHot('firstCap, I(token.word.head.isUpper)) +
+    oneHot('allCap, I(token.word.matches("[A-Z]+"))) +
+    oneHot('realNumber, I(token.word.matches("[-0-9]+[.,]+[0-9.,]+"))) +
+    oneHot('isDash, I(token.word.matches("[-–—−]"))) +
+    oneHot('isQuote, I(token.word.matches("[„“””‘’\"']"))) +
+    oneHot('isSlash, I(token.word.matches("[/\\\\]"))) +
+    oneHot('prefix2 -> token.word.take(2)) +
+    oneHot('suffix2 -> token.word.takeRight(2))
+  }
+
+  @Atomic
+  def labelToFeature(label: Tag): Wolfe.Vector = {
+    oneHot('label -> label) +
+    oneHot('iob -> label.label.head)
   }
 
   def Sentences = Wolfe.all(Sentence)(seqs(all(Token)))
@@ -42,7 +49,7 @@ object NERExample {
   def observed(s: Sentence) = s.copy(tokens = s.tokens.map(_.copy(tag = hidden)))
   
   def features(s: Sentence): Wolfe.Vector = {
-    sum { over(0 until s.tokens.size) of (i => toFeatureVector(s.tokens(i))) } +
+    sum { over(0 until s.tokens.size) of (i => tokenToFeatures(s.tokens(i)) outer labelToFeature(s.tokens(i).tag)) } +
     sum { over(0 until s.tokens.size - 1) of (i => oneHot('transition -> s.tokens(i).tag -> s.tokens(i + 1).tag)) }
   }
 
@@ -50,7 +57,6 @@ object NERExample {
   def model(w: Vector)(s: Sentence) = w dot features(s)
   def predictor(w: Vector)(s: Sentence) = argmax { over(Sentences) of model(w) st evidence(observed)(s) }
 
-  //100: epochs, -1: report interval
   @OptimizeByLearning(new OnlineTrainer(_, new AveragedPerceptron, 100, -1))
   def loss(data: Iterable[Sentence])(w: Vector) = sum { over(data) of (s => model(w)(predictor(w)(s)) - model(w)(s)) }
   def learn(data:Iterable[Sentence]) = argmin { over[Vector] of loss(data) }

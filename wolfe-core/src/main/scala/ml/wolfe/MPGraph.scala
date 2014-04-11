@@ -354,11 +354,20 @@ object MPGraph {
                 else
                   singleton(index) * fg.weights(index)
               result
-            case vector => vector dot fg.weights
+            case vector => {
+              //vector dot fg.weights
+              var sum = 0.0
+              val maxIndex = fg.weights.dim1
+              vector.foreachActiveElement((index: Int, value: Double) =>
+                if (index < maxIndex) sum += value * fg.weights(index)
+              )
+              sum
+            }
           }
         case STRUCTURED => structured.score(this, entryToSetting(settingIndex, dims), fg.weights)
       }
     }
+
 
     /**
      * Evaluates the score based on the current setting of the neighboring nodes.
