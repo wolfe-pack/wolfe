@@ -76,7 +76,7 @@ trait MetaFunStructures[C<:Context] {
         ..$domainDefs
         private var iterator:Iterator[Unit] = _
         val subStructures = Array.fill(..$keyDomSizes)(new ${valueMetaStructure.className})
-        def children() = subStructureIterator()
+        def children() = subStructureIterator().map(_.asInstanceOf[Structure[Any]])
         def graph = $graphName
         def subStructureIterator() = $iterator
         def nodes() = subStructureIterator().flatMap(_.nodes())
