@@ -524,7 +524,7 @@ object MPGraph {
           val backward = schedule(head, MPDirection.Backward, done)
           val rest = tail.filterNot(e => forward.contains(e) || backward.contains(e))
           val middle = if (forward.contains(head) || backward.contains(head)) Nil else Seq(head)
-          forwardBackward(rest, done ++ forward ++ backward, acc ++ forward ++ middle ++ backward)
+          forwardBackward(rest, done ++ forward ++ backward, forward ++ middle ++ acc ++ backward)
       }
 
       forwardBackward(node.edges, Set(), Seq())
