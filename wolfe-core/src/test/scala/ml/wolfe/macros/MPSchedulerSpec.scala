@@ -80,7 +80,6 @@ class MPSchedulerSpec extends StructureIsomorphisms {
       edges.foreach(edge => graph.addEdge(graph.getFactor(edge._1), graph.getNode(edge._2)))
       graph.build()
       val root = graph.edges(2) //"randomly" pick an edge that defines the root node
-      info("root: " + root)
 
       "return only one loop for a forward messaging pass" in {
         val actual = Seq((101,1), (100,0), (102,2))
@@ -105,6 +104,26 @@ class MPSchedulerSpec extends StructureIsomorphisms {
         info("schedule: " + predicted)
         actual should contain(predicted)
       }
+    }
+
+    "should given a graph with disconnected components return a schedule on all components" in {
+      val graph = new MPGraph()
+      (0 to 3).foreach(i => graph.addNode(0)) //dummy nodes
+      (0 to 101).foreach(i => graph.addTableFactor(Array(), Array(), Array())) //dummy factors
+      val edges = Array(
+          100 -> 0,
+          100 -> 1,
+          101 -> 2,
+          101 -> 3
+        )
+      edges.foreach(edge => graph.addEdge(graph.getFactor(edge._1), graph.getNode(edge._2)))
+      graph.build()
+
+      val actual = Set(
+        Seq(100 -> 0, 100 -> 1, 101 -> 2, 101 -> 3)
+      )
+      val predicted = MPSchedulerImpl.schedule(graph).map(e => (e.f.index, e.n.index))
+      actual should contain(predicted)
     }
   }
 }

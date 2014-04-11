@@ -461,8 +461,29 @@ object MPGraph {
      * @return correct message ordering for forward-backward pass
      */
     def schedule(node: Node): Seq[Edge]
-    def schedule(graph: MPGraph): Seq[Edge] = if (graph.nodes.isEmpty) Seq() else schedule(graph.nodes.head)
+
+    /**
+     * Runs scheduler on all disconnected components of the graph
+     * @param graph factor graph with (possibly) disconnected components
+     * @return schedule for forward-backward over all disconnected components of the graph
+     */
+    def schedule(graph: MPGraph): Seq[Edge] = {
+      @tailrec
+      def scheduleAcc(nodes: Seq[Node], done: Set[Node], acc: Seq[Edge]): Seq[Edge] = nodes match {
+        case Nil => acc
+        case head :: tail =>
+          if (done.contains(head)) scheduleAcc(tail, done, acc)
+          else {
+            val edges = schedule(head)
+            scheduleAcc(tail, done ++ edges.map(_.n), acc ++ edges)
+          }
+      }
+
+      scheduleAcc(graph.nodes.toList, Set(), Seq())
+    }
+
     def schedule(factor: Factor): Seq[Edge] = schedule(factor.edges.head)
+
     def schedule(edge: Edge): Seq[Edge] = schedule(edge.n)
   }
 
