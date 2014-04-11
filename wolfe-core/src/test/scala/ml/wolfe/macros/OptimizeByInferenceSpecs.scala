@@ -35,13 +35,17 @@ class OptimizeByInferenceSpecs extends WolfeSpec {
       implicit def data = Wolfe.all(Data)
       @OptimizeByInference(MaxProduct(_, 10))
       def tenIterations(d: Data) = I(d.x && d.y) + I(d.y && !d.z) + I(d.z && !d.x)
+      @OptimizeByInference(MaxProduct(_, 2))
+      def twoIterations(d: Data) = tenIterations(d)
       @OptimizeByInference(MaxProduct(_, 1))
       def oneIteration(d: Data) = tenIterations(d)
-      val actual = argmax { over[Data] of tenIterations }
-      val approximate = argmax { over[Data] of oneIteration }
+      val afterOneIter = argmax { over[Data] of oneIteration }
+      val afterTwoIter = argmax { over[Data] of twoIterations }
+      val afterTenIter = argmax { over[Data] of tenIterations }
       val expected = BruteForceOperators.argmax { over[Data] of tenIterations }
-      actual should be(expected)
-      actual should not be approximate
+      afterOneIter should be(expected)
+      afterTwoIter should be(expected)
+      afterTenIter should be(expected)
     }
 
     "find the optimal solution of a linear chain " in {
