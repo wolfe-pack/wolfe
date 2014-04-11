@@ -483,7 +483,18 @@ object MPGraph {
           else {
             val siblings = head.f.edges.filterNot(todo.contains)
             val nephews = siblings.flatMap(sibling => sibling.n.edges.filterNot(_ == sibling))
-            upAcc(tail ++ nephews, done ++ siblings, nephews ++ acc)
+            //breadth-first traversal; for depth-first use nephews ++ tail as first argument
+
+            println(
+              s"""
+                |current:  $head
+                |todo:     $tail
+                |done:     $done
+                |siblings: ${siblings.toList}
+                |nephews:  ${nephews.toList}
+              """.stripMargin)
+
+            upAcc(tail ++ nephews, done + head, nephews ++ acc)
           }
       }
       upAcc(Seq(e), done, Seq())
