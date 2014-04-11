@@ -13,6 +13,8 @@ import ml.wolfe.macros.{Library, OptimizedOperators}
  *
  * Linear-chain example for BioNLP 2004 NER corpus.
  * See http://www.nactem.ac.uk/tsujii/GENIA/ERtask/report.html
+ *
+ * TODO: compare corpus statistics to http://www.nactem.ac.uk/tsujii/GENIA/ERtask/shared_task_intro.pdf
  */
 object NERExample {
   import Wolfe._
@@ -26,22 +28,22 @@ object NERExample {
     "B-cell_line", "I-cell_line", "B-RNA", "I-RNA").map(Tag)
 
   @Atomic
-  def tokenToFeatures(token: Token): Wolfe.Vector = {
-    oneHot('word -> token.word.toLowerCase) +
-    oneHot('firstCap, I(token.word.head.isUpper)) +
-    oneHot('allCap, I(token.word.matches("[A-Z]+"))) +
-    oneHot('realNumber, I(token.word.matches("[-0-9]+[.,]+[0-9.,]+"))) +
-    oneHot('isDash, I(token.word.matches("[-–—−]"))) +
-    oneHot('isQuote, I(token.word.matches("[„“””‘’\"']"))) +
-    oneHot('isSlash, I(token.word.matches("[/\\\\]"))) +
-    oneHot('prefix2 -> token.word.take(2)) +
-    oneHot('suffix2 -> token.word.takeRight(2))
+  def tokenToFeatures(token: Token, prefix: String = ""): Wolfe.Vector = {
+    oneHot(prefix + 'word -> token.word.toLowerCase) +
+    oneHot(prefix + 'firstCap, I(token.word.head.isUpper)) +
+    oneHot(prefix + 'allCap, I(token.word.matches("[A-Z]+"))) +
+    oneHot(prefix + 'realNumber, I(token.word.matches("[-0-9]+[.,]+[0-9.,]+"))) +
+    oneHot(prefix + 'isDash, I(token.word.matches("[-–—−]"))) +
+    oneHot(prefix + 'isQuote, I(token.word.matches("[„“””‘’\"']"))) +
+    oneHot(prefix + 'isSlash, I(token.word.matches("[/\\\\]"))) +
+    oneHot(prefix + 'prefix2 -> token.word.take(2)) +
+    oneHot(prefix + 'suffix2 -> token.word.takeRight(2))
   }
 
   @Atomic
   def labelToFeature(label: Tag): Wolfe.Vector = {
-    oneHot('label -> label) +
-    oneHot('iob -> label.label.head)
+    oneHot('label -> label)
+    //oneHot('iob -> label.label.head)
   }
 
   def Sentences = Wolfe.all(Sentence)(seqs(all(Token)))
@@ -49,8 +51,15 @@ object NERExample {
   def observed(s: Sentence) = s.copy(tokens = s.tokens.map(_.copy(tag = hidden)))
   
   def features(s: Sentence): Wolfe.Vector = {
+    //token features
     sum { over(0 until s.tokens.size) of (i => tokenToFeatures(s.tokens(i)) outer labelToFeature(s.tokens(i).tag)) } +
-    sum { over(0 until s.tokens.size - 1) of (i => oneHot('transition -> s.tokens(i).tag -> s.tokens(i + 1).tag)) }
+    //first order transitions
+    sum { over(0 until s.tokens.size - 1) of (i => oneHot('transition -> s.tokens(i).tag -> s.tokens(i + 1).tag)) } +
+    //offset conjunctions
+    sum { over(1 until s.tokens.size) of (i => tokenToFeatures(s.tokens(i - 1), "@-1") outer labelToFeature(s.tokens(i).tag)) } +
+    sum { over(2 until s.tokens.size) of (i => tokenToFeatures(s.tokens(i - 2), "@-2") outer labelToFeature(s.tokens(i).tag)) } +
+    sum { over(0 until s.tokens.size - 1) of (i => tokenToFeatures(s.tokens(i + 1), "@+1") outer labelToFeature(s.tokens(i).tag)) } +
+    sum { over(0 until s.tokens.size - 2) of (i => tokenToFeatures(s.tokens(i + 2), "@+2") outer labelToFeature(s.tokens(i).tag)) }
   }
 
   @OptimizeByInference(MaxProduct(_, 1))
@@ -107,7 +116,8 @@ object NERExample {
     var lines = Array[String]()
 
     while (entry != null) {
-      if (entry.getName.endsWith("2.iob2")) {
+      if (entry.getName.startsWith("Genia") && entry.getName.endsWith("2.iob2")) {
+        println("Loading " + entry.getName + " ...")
         val content = new Array[Byte](entry.getSize.toInt)
         tarIn.read(content, 0, entry.getSize.toInt)
         val text = new String(content)
