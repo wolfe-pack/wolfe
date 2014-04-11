@@ -18,7 +18,7 @@ class ChunkingSpecs extends WolfeSpec {
       import OptimizedOperators._
       import NLP._
 
-      def toToken(conll: Array[String]) = Token(conll(0), Tag(conll(1)), Chunk(conll(2)))
+      def toToken(conll: Array[String]) = Token(conll(0), conll(1), conll(2))
 
       val train = loadCoNLL("ml/wolfe/datasets/conll2000/train.txt")(toToken).map(Sentence).take(100)
 

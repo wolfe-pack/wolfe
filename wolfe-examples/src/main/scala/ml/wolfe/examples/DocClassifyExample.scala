@@ -91,7 +91,7 @@ object Load20NewsGroups {
         val text = new String(content)
         def toToken(string: String) = Token(string)
         val tokens = alphaSegmenter(text).map(toToken).toIndexedSeq
-        val doc = Doc(text, tokens, DocLabel(label))
+        val doc = Doc(text, tokens, DocLabel(Symbol(label)))
         if (root.endsWith("train")) trainDocs += doc else testDocs += doc
         //
       }
