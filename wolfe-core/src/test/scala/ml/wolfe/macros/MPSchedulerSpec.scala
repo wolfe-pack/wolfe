@@ -29,7 +29,7 @@ class MPSchedulerSpec extends StructureIsomorphisms {
       val root = graph.edges(2) //"randomly" pick an edge that defines the root node
 
       "return the right edge ordering for a forward messaging pass" in {
-        val actualUp = Seq(100 -> 1, 104 -> 5, 103 -> 4, 102 -> 3)
+        val actualUp = Seq(104 -> 5, 100 -> 1, 103 -> 4, 102 -> 3)
         val predicted = MPSchedulerImpl.up(root).map(e => (e.f.index, e.n.index))
         info("up: " + predicted)
         predicted should be(actualUp)
