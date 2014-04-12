@@ -179,7 +179,7 @@ object GradientCalculator {
     helper.metaGradientCalculator(rhs, x.symbol, index) match {
       case Good(calculator) =>
         val code = q"""
-          val _index = new ml.wolfe.Index()
+          val _index = new ml.wolfe.DefaultIndex()
           ${ calculator.classDef }
           val calculator = new ${ calculator.className }
           val factorieArgument = ml.wolfe.FactorieConverter.toFactorieDenseVector(${ argument.tree },_index)
