@@ -10,10 +10,16 @@ import gnu.trove.map.hash.TObjectIntHashMap
 /**
  * @author Sebastian Riedel
  */
+trait Index {
+  def apply(key:Any):Int = index(key)
+  def index(key:Any):Int
+  def inverse():GenMap[Int,Any]
+}
+
 @SerialVersionUID(100L)
 class SimpleIndex extends Serializable with Index {
 
-  private var map = new TObjectIntHashMap[Any]
+  private val map = new TObjectIntHashMap[Any]
 
   def size = map.size()
   def index(args: Any): Int = {
@@ -51,11 +57,6 @@ class SimpleIndex extends Serializable with Index {
 
 }
 
-trait Index {
-  def apply(key:Any):Int = index(key)
-  def index(key:Any):Int
-  def inverse():GenMap[Int,Any]
-}
 
 trait FactorieVectorBuilder {
   this: Index =>
@@ -95,8 +96,9 @@ trait FactorieVectorBuilder {
   }
 }
 
-class DefaultIndex extends SimpleIndex with FactorieVectorBuilder
+class SimpleIndexAndBuilder extends SimpleIndex with FactorieVectorBuilder
 
 object Index {
   var toDebug: Option[Index] = None
 }
+
