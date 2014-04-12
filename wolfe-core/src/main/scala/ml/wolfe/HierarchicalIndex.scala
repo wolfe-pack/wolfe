@@ -16,6 +16,8 @@ class HierarchicalIndex extends Index {
   final class NodeIndex(val key: Any) {
     val children = new THashMap[Any, NodeIndex]()
     val indices  = new TObjectIntHashMap[Any]
+    private var lastKey:Any = _
+    private var lastNode:NodeIndex = _
 
     def index(key: Any) = {
       val result = indices.adjustOrPutValue(key, 0, _size)
@@ -24,12 +26,18 @@ class HierarchicalIndex extends Index {
     }
     
     def getOrUpdateChild(key:Any) = {
-      var node = children.get(key)
-      if (node == null) {
-        node = new NodeIndex(key)
-        children.put(key,node)
+      if (lastKey == key) {
+        lastNode
+      } else {
+        var node = children.get(key)
+        if (node == null) {
+          node = new NodeIndex(key)
+          children.put(key, node)
+        }
+        lastNode = node
+        lastKey = key
+        node
       }
-      node
     }
 
     def indexQualified(key:Any):Int = {
