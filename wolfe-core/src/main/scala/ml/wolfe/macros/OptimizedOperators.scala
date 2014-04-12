@@ -153,7 +153,7 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
     ).getOrElse(q"new ml.wolfe.DenseVector(0)")
 
     val initialization = List(
-      q"val _index = new ml.wolfe.Index()",
+      q"val _index = new ml.wolfe.DefaultIndex()",
       q"val _factorieWeights = $factorieWeights")
 
     val code = q"""
@@ -220,7 +220,7 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
           import ml.wolfe._
           import scala.language.reflectiveCalls
 
-          val $indexName = new Index
+          val $indexName = new ml.wolfe.DefaultIndex()
           val $weightsSet = new WeightsSet
           ml.wolfe.util.LoggerUtil.info("Creating examples ...")
           val examples = ml.wolfe.util.Timer.time("examples") { for ($instanceName <- ${ sum.over }) yield new Example {

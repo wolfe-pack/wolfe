@@ -236,7 +236,7 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
     ).getOrElse(q"new ml.wolfe.DenseVector(0)")
     val structureClass = meta.classDef(graphName)
     val code = q"""
-      val _index = new ml.wolfe.Index
+      val _index = new ml.wolfe.DefaultIndex
       val $graphName = new ml.wolfe.MPGraph
       $structureClass
       val $structName = new ${ meta.className }

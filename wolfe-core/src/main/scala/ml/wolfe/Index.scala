@@ -2,7 +2,7 @@ package ml.wolfe
 
 import gnu.trove.strategy.HashingStrategy
 import gnu.trove.map.custom_hash.TObjectIntCustomHashMap
-import scala.collection.mutable
+import scala.collection.{GenMap, mutable}
 import gnu.trove.procedure.TObjectIntProcedure
 import java.io.{ObjectInputStream, ObjectOutputStream}
 import gnu.trove.map.hash.TObjectIntHashMap
@@ -11,20 +11,11 @@ import gnu.trove.map.hash.TObjectIntHashMap
  * @author Sebastian Riedel
  */
 @SerialVersionUID(100L)
-class Index extends Serializable {
+class SimpleIndex extends Serializable with Index {
 
-  class ArrayHashing extends HashingStrategy[Array[AnyRef]] {
-    def computeHashCode(arg: Array[AnyRef]) = java.util.Arrays.deepHashCode(arg)
-    def equals(o1: Array[AnyRef], o2: Array[AnyRef]) = java.util.Arrays.deepEquals(o1, o2)
-  }
-
-  private var _oldMap = new TObjectIntCustomHashMap[Array[AnyRef]](new ArrayHashing)
   private var map = new TObjectIntHashMap[Any]
 
-  //map.keySet().asScala
-  def apply(v1: Any) = index(v1)
   def size = map.size()
-  //map.containsKey(x.toArray)
   def index(args: Any): Int = {
     map.adjustOrPutValue(args, 0, map.size)
   }
@@ -37,14 +28,6 @@ class Index extends Serializable {
     result
   }
 
-  def vectorToString(vector: FactorieVector, sep: String = "\n") = {
-    val inv = inverse()
-    val lines = for (i <- vector.activeDomain.toSeq; if vector(i) != 0.0) yield {
-      f"${ inv(i)}%20s ${ vector(i) }%5.2f"
-    }
-    lines.mkString(sep)
-  }
-
   def toVerboseString = {
     val result = new mutable.StringBuilder()
     map.forEachEntry(new TObjectIntProcedure[Any] {
@@ -53,7 +36,6 @@ class Index extends Serializable {
     result.toString()
   }
   override def toString = "Index"
-
 
   def serialize(stream: ObjectOutputStream) {
     map.writeExternal(stream)
@@ -66,8 +48,19 @@ class Index extends Serializable {
     this
   }
 
-  private val sparseVectorCache = new mutable.HashMap[Wolfe.Vector, FactorieVector]()
 
+}
+
+trait Index {
+  def apply(key:Any):Int = index(key)
+  def index(key:Any):Int
+  def inverse():GenMap[Int,Any]
+}
+
+trait FactorieVectorBuilder {
+  this: Index =>
+
+  private val sparseVectorCache = new mutable.HashMap[Wolfe.Vector, FactorieVector]()
   private val oneHotFactorieVectorCache = new mutable.HashMap[(Int, Double), FactorieVector]()
 
   def toCachedFactorieOneHotVector(component: Any, value: Double) = {
@@ -93,8 +86,16 @@ class Index extends Serializable {
     }
   }
 
-
+  def vectorToString(vector: FactorieVector, sep: String = "\n") = {
+    val inv = inverse()
+    val lines = for (i <- vector.activeDomain.toSeq; if vector(i) != 0.0) yield {
+      f"${ inv(i)}%20s ${ vector(i) }%5.2f"
+    }
+    lines.mkString(sep)
+  }
 }
+
+class DefaultIndex extends SimpleIndex with FactorieVectorBuilder
 
 object Index {
   var toDebug: Option[Index] = None
