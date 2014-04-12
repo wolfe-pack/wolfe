@@ -11,6 +11,7 @@ import gnu.trove.map.hash.TObjectIntHashMap
  * @author Sebastian Riedel
  */
 trait Index {
+  def size:Int
   def apply(key:Any):Int = index(key)
   def index(key:Any):Int
   def inverse():GenMap[Int,Any]

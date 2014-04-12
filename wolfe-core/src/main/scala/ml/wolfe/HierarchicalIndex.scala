@@ -9,17 +9,36 @@ import gnu.trove.procedure.{TObjectObjectProcedure, TObjectIntProcedure}
  */
 class HierarchicalIndex extends Index {
 
-  private var size = 0
+  private var _size = 0
 
-  class NodeIndex(val key: Any) {
+  def size = _size
+
+  final class NodeIndex(val key: Any) {
     val children = new THashMap[Any, NodeIndex]()
     val indices  = new TObjectIntHashMap[Any]
 
     def index(key: Any) = {
-      val result = indices.adjustOrPutValue(key, 0, size)
-      if (result == size) size += 1
+      val result = indices.adjustOrPutValue(key, 0, _size)
+      if (result == _size) _size += 1
       result
     }
+    
+    def getOrUpdateChild(key:Any) = {
+      var node = children.get(key)
+      if (node == null) {
+        node = new NodeIndex(key)
+        children.put(key,node)
+      }
+      node
+    }
+
+    def indexQualified(key:Any):Int = {
+      key match {
+        case (k1,k2) => getOrUpdateChild(k1).indexQualified(k2)
+        case _ => index(key)
+      }
+    }
+
     def fillInverse(prefix: Any, map: scala.collection.mutable.Map[Int, Any]) {
       indices.forEachEntry(new TObjectIntProcedure[Any] {
         def execute(a: Any, b: Int) = {
@@ -29,7 +48,7 @@ class HierarchicalIndex extends Index {
       })
       children.forEachEntry(new TObjectObjectProcedure[Any,NodeIndex] {
         def execute(a: Any, b: NodeIndex) = {
-          b.fillInverse(if (b.key != null) b.key -> a else a, map)
+          b.fillInverse(b.key, map)
           true
         }
       })
@@ -46,11 +65,8 @@ class HierarchicalIndex extends Index {
   }
 
   def index(key: Any) = {
-    key match {
-      case (k1, k2) =>
-        val node = root.children.putIfAbsent(k1, new NodeIndex(k1))
-        node.index(k2)
-      case _ => root.index(key)
-    }
+    root.indexQualified(key)
   }
 }
+
+class HierarchicalIndexAndBuilder extends HierarchicalIndex with FactorieVectorBuilder
