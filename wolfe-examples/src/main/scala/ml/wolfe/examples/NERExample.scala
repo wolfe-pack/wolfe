@@ -14,7 +14,7 @@ import ml.wolfe.macros.{Library, OptimizedOperators}
  * Linear-chain example for BioNLP 2004 NER corpus.
  * See http://www.nactem.ac.uk/tsujii/GENIA/ERtask/report.html
  *
- * TODO: compare corpus statistics to http://www.nactem.ac.uk/tsujii/GENIA/ERtask/shared_task_intro.pdf
+ * TODO: compare number of mentions to http://www.nactem.ac.uk/tsujii/GENIA/ERtask/shared_task_intro.pdf
  */
 object NERExample {
   import Wolfe._
@@ -56,8 +56,8 @@ object NERExample {
     //first order transitions
     sum { over(0 until s.tokens.size - 1) of (i => oneHot('transition -> s.tokens(i).tag -> s.tokens(i + 1).tag)) } +
     //offset conjunctions
-    sum { over(1 until s.tokens.size) of (i => tokenToFeatures(s.tokens(i - 1), "@-1") outer labelToFeature(s.tokens(i).tag)) } +
     sum { over(2 until s.tokens.size) of (i => tokenToFeatures(s.tokens(i - 2), "@-2") outer labelToFeature(s.tokens(i).tag)) } +
+    sum { over(1 until s.tokens.size) of (i => tokenToFeatures(s.tokens(i - 1), "@-1") outer labelToFeature(s.tokens(i).tag)) } +
     sum { over(0 until s.tokens.size - 1) of (i => tokenToFeatures(s.tokens(i + 1), "@+1") outer labelToFeature(s.tokens(i).tag)) } +
     sum { over(0 until s.tokens.size - 2) of (i => tokenToFeatures(s.tokens(i + 2), "@+2") outer labelToFeature(s.tokens(i).tag)) }
   }
@@ -72,6 +72,8 @@ object NERExample {
 
   def main(args: Array[String]) {
     val useSample = if (args.length > 0) args(0).toBoolean else false
+
+    val start = System.currentTimeMillis()
 
     import scala.sys.process._
 
@@ -94,7 +96,7 @@ object NERExample {
 
     val (train, test) =
       if (useSample) {
-        val sample = IOBToWolfe(groupLines(loadIOB(trainSource, "sampletest2").toIterator, "###MEDLINE:")).flatten
+        val sample = IOBToWolfe(groupLines(loadIOB(trainSource, "sampletest").toIterator, "###MEDLINE:")).flatten
         val (trainSample, testSample) = sample.splitAt((sample.size * 0.9).toInt)
         (trainSample, testSample)
       } else
@@ -106,6 +108,11 @@ object NERExample {
         |Train sentences: ${train.size}
         |Test sentences:  ${test.size}
       """.stripMargin)
+
+    if (!useSample) {
+      assert(train.size == 20546)
+      assert(test.size == 4260)
+    }
 
     val w = learn(train)
 
@@ -119,6 +126,8 @@ object NERExample {
     evaluate(train)
     println("Test:")
     evaluate(test)
+
+    println("Finished after: " + Timer.getTimeString(System.currentTimeMillis() - start))
   }
 
   def loadIOB(stream: InputStream, sampleFilePrefix: String = "") = {
@@ -130,8 +139,9 @@ object NERExample {
     var lines = Array[String]()
 
     while (entry != null) {
-      val (prefix, suffix) =  if (!sampleFilePrefix.isEmpty) (sampleFilePrefix, ".iob2") else ("Genia", "2.iob2")
-      if (entry.getName.startsWith(prefix) && entry.getName.endsWith(suffix)) {
+
+      val prefix = if (!sampleFilePrefix.isEmpty) sampleFilePrefix else "Genia"
+      if (entry.getName.startsWith(prefix) && entry.getName.endsWith("2.iob2")) {
         println("Loading " + entry.getName + " ...")
         val content = new Array[Byte](entry.getSize.toInt)
         tarIn.read(content, 0, entry.getSize.toInt)
