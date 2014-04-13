@@ -53,6 +53,10 @@ object Wolfe extends SampleSpaceDefs
 
   implicit def toRichCurried[A1, A2, B](f: A1 => A2 => B) = new RichCurried(f)
 
+  def atomic(f: Double) = f
+  def atomic(v: Vector) = v
+
+
   implicit class BarBuilder[T](t: T) {
     def |[A](that: A) = t -> that
   }
