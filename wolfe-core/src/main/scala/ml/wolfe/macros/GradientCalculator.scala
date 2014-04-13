@@ -107,7 +107,7 @@ trait MetaGradientCalculators[C <: Context] extends MetaStructures[C]
         binaryOperatorGradientCalculator(arg1, arg2, weightVar, indexTree, (v1, v2) => q"$v1 - $v2", subtractFactorieVectors)
       case ApplyDoublePlus(arg1, arg2) =>
         binaryOperatorGradientCalculator(arg1, arg2, weightVar, indexTree, (v1, v2) => q"$v1 + $v2", addFactorieVectors)
-      case DoubleMax(BuilderTrees(dom, where, obj, _)) =>
+      case DoubleMax(BuilderTrees(dom, where, obj, _,_)) =>
         val structName = newTermName(context.fresh("structure"))
         val meta = metaStructure(dom)
         val Function(List(objArg), objRhs) = unwrapSingletonBlocks(obj)

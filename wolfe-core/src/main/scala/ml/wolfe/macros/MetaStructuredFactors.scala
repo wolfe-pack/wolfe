@@ -2,6 +2,7 @@ package ml.wolfe.macros
 
 import scala.reflect.macros.Context
 import ml.wolfe.Wolfe
+import ml.wolfe.util.CachedPartialFunction
 
 /**
  * Functionality for creating structured factors.
@@ -187,18 +188,46 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
     case false => MetaAtomicStructuredFactorTable(inlineFull(potential), structure, matcher, constructorArgs)
   }
 
-  //  def unwrapIfRichVector(arg1: Tree) = arg1 match {
-  //    case q"ml.wolfe.Wolfe.RichVector($actualArg1)" => actualArg1
-  //    case _ => arg1
-  //  }
 
-
-  def variablesContainArgument(obj:Tree, matcher:Tree => Option[StructurePointer]) = {
+  def variablesContainArgument(obj: Tree, matcher: Tree => Option[StructurePointer]) = {
     val Function(List(arg), rhs) = normalize(obj)
-    val structs= structures(rhs, matcher)
+    val structs = structures(rhs, matcher)
     val variables = distinctTrees(structs.filterNot(_.meta.observed).map(_.structure))
     variables.exists(_.exists(_.symbol == arg.symbol))
   }
+
+
+  def mergeSumArgs(args: List[Tree], matcher: Tree => Option[StructurePointer]) = {
+
+    def mergeTwoArgs(arg1: Tree)(arg2: Tree): Option[(Tree, Tree)] = {
+      (arg1, arg2) match {
+        case (Sum(BuilderTrees(dom1, filter1, obj1, _, impArg)), Sum(BuilderTrees(dom2, filter2, obj2, _, _)))
+          if dom1.equalsStructure(dom2) && filter1 == EmptyTree && filter2 == EmptyTree =>
+          val Function(List(p1), rhs1) = normalize(obj1)
+          val Function(List(p2), rhs2) = normalize(obj2)
+          val rhs2WithP1 = transform(rhs2, {
+            case x: Ident if x.symbol == p2.symbol => Ident(p1.symbol)
+          })
+          val add = q"$rhs1 + $rhs2WithP1"
+          val addObj = Function(List(p1), add)
+          val newSum = q"$dom1.map($addObj).sum($impArg)"
+          val typed = context.typeCheck(context.resetLocalAttrs(newSum))
+          Some(arg2 -> typed)
+        case _ => None
+      }
+
+    }
+
+    val mergeResult = args.foldLeft(List.empty[Tree]) {
+      case (result, arg) =>
+        result.collectFirst(CachedPartialFunction(mergeTwoArgs(arg))) match {
+          case Some((orig, merged)) => result.map(a => if (a == orig) merged else a)
+          case None => arg :: result
+        }
+    }
+    mergeResult
+  }
+
 
   def metaStructuredFactor(potential: Tree, structure: MetaStructure,
                            matcher: Tree => Option[StructurePointer],
@@ -208,10 +237,10 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
     //    val simplified = unwrapSingletonBlocks(potential)
     val simplified = simplifyBlock(unwrapSingletonBlocks(potential))
     simplified match {
-      case Sum(BuilderTrees(dom, filter, obj, _)) =>
+      case Sum(BuilderTrees(dom, filter, obj, _, _)) =>
         require(filter == EmptyTree)
         //check whether we need to further factorize (only if the objective argument is part of the variables)
-        if (!variablesContainArgument(obj,matcher))
+        if (!variablesContainArgument(obj, matcher))
           atomic(potential, structure, matcher, constructorArgs, linearModelInfo, linear)
         else
           MetaFirstOrderSumFactor(List(dom), obj, matcher, structure, constructorArgs, linearModelInfo, linear)

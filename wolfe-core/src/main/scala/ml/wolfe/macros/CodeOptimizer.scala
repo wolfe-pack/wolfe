@@ -10,7 +10,7 @@ trait CodeOptimizer[C <: Context] extends HasContext[C] with CodeRepository[C] w
   import context.universe._
 
   def toOptimizedFactorieVector(wolfeVector: Tree, index: Tree): Tree = wolfeVector match {
-    case Sum(BuilderTrees(dom, filter, obj, _)) if filter == EmptyTree =>
+    case Sum(BuilderTrees(dom, filter, obj, _,_)) if filter == EmptyTree =>
       val Function(List(arg),body) = normalize(obj)
       body match {
         case q"ml.wolfe.Wolfe.oneHot($oneHotIndex,$oneHotValue)" =>

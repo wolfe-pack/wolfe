@@ -24,29 +24,29 @@ trait PatternRepository[C <: Context] extends SymbolRepository[C] with CodeRepos
   class AppliedOperator(classes: Symbol => Boolean, wolfeSymbol: Symbol, scalaSymbol: Symbol) {
     def unapply(tree: Tree): Option[BuilderTrees] = {
       tree match {
-        case q"$op[$opType](${ _ })" if op.symbol == scalaSymbol && classes(opType.symbol) => op match {
+        case q"$op[$opType]($impArg)" if op.symbol == scalaSymbol && classes(opType.symbol) => op match {
           case q"$map[..${ _ }]($obj)(${ _ }).${ _ }" if map.symbol == scalaSymbols.map => map match {
             case q"$filter($where).map" if filter.symbol == scalaSymbols.filter =>
               val q"$dom.filter" = filter
-              Some(BuilderTrees(dom, where, obj))
+              Some(BuilderTrees(dom, where, obj, implicitArg = impArg))
             case q"$dom.map" =>
-              Some(BuilderTrees(dom, EmptyTree, obj))
+              Some(BuilderTrees(dom, EmptyTree, obj, implicitArg = impArg))
             case _ => None
           }
           case _ => None
         }
         //maxBy signature style
-        case q"$op[$opType]($obj)(${ _ })" if op.symbol == scalaSymbol && classes(opType.symbol) => op match {
+        case q"$op[$opType]($obj)($impArg)" if op.symbol == scalaSymbol && classes(opType.symbol) => op match {
           case q"$filter($where).${ _ }" if filter.symbol == scalaSymbols.filter =>
             val q"$dom.filter" = filter
-            Some(BuilderTrees(dom, where, obj))
+            Some(BuilderTrees(dom, where, obj, implicitArg = impArg))
           case dom =>
-            Some(BuilderTrees(dom, EmptyTree, obj))
+            Some(BuilderTrees(dom, EmptyTree, obj, implicitArg = impArg))
 //          case _ => None
 
         }
-        case q"$op[$domType,$opType]($overWhereOf)(${ _ })" if op.symbol == wolfeSymbol && classes(opType.symbol) =>
-          val trees = builderTrees(overWhereOf)
+        case q"$op[$domType,$opType]($overWhereOf)($impArg)" if op.symbol == wolfeSymbol && classes(opType.symbol) =>
+          val trees = builderTrees(overWhereOf).copy(implicitArg = impArg)
           Some(trees)
         case _ => None
       }
@@ -139,7 +139,8 @@ trait PatternRepository[C <: Context] extends SymbolRepository[C] with CodeRepos
   object FlattenedPlus extends Flattened(ApplyPlus)
 
 
-  case class BuilderTrees(over: Tree = EmptyTree, where: Tree = EmptyTree, of: Tree = EmptyTree, using: Tree = EmptyTree)
+  case class BuilderTrees(over: Tree = EmptyTree, where: Tree = EmptyTree, of: Tree = EmptyTree,
+                          using: Tree = EmptyTree, implicitArg:Tree = EmptyTree)
 
   def builderTrees(tree: Tree): BuilderTrees = tree match {
     case q"$of[${_}]($obj)" if of.symbol == wolfeSymbols.of =>
