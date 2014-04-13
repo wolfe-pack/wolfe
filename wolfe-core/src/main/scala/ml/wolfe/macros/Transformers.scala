@@ -20,6 +20,8 @@ trait Transformers[C<:Context] {
   def betaReduce(tree: Tree) = betaReducer transform tree
   def unwrapSingletonBlocks(tree: Tree) = blockSimplifier transform tree
 
+  def freshlyTyped(tree:Tree) = context.typeCheck(context.resetLocalAttrs(tree))
+
   def simplifyBlock(tree: Tree): Tree = tree match {
     case Block(stats, expr) => {
       //Note that we are going right to left. This means that val definitions *can* use previous val definitions.
