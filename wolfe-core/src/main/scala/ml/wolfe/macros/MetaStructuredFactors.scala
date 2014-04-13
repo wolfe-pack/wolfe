@@ -197,6 +197,7 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
   }
 
 
+  //merge the arguments of a propositional sum
   def mergeSumArgs(args: List[Tree], matcher: Tree => Option[StructurePointer]) = {
 
     def mergeTwoArgs(arg1: Tree)(arg2: Tree): Option[(Tree, Tree)] = {
@@ -213,6 +214,18 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
           val newSum = q"$dom1.map($addObj).sum($impArg)"
           val typed = context.typeCheck(context.resetLocalAttrs(newSum))
           Some(arg2 -> typed)
+        case (p1,p2) =>
+          //check whether p1 and p2 have the same hidden variables. In this case add them into an atomic call
+          val structs1 = structures(p1, matcher)
+          val structs2 = structures(p2, matcher)
+          val vars1 = distinctTrees(structs1.filterNot(_.meta.observed).map(_.structure))
+          val vars2 = distinctTrees(structs2.filterNot(_.meta.observed).map(_.structure))
+          val mergable = vars1.size == vars2.size && vars1.forall(v1 => vars2.exists(v2 => v1.equalsStructure(v2)))
+          if (mergable) {
+            val merged = q"ml.wolfe.Wolfe.atomic($p1 + $p2)"
+            val typed = context.typeCheck(context.resetLocalAttrs(merged))
+            Some(arg2 -> typed)
+          } else None
         case _ => None
       }
 
