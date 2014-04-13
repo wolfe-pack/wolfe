@@ -217,10 +217,9 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
           MetaFirstOrderSumFactor(List(dom), obj, matcher, structure, constructorArgs, linearModelInfo, linear)
       case Apply(f, args) if f.symbol.annotations.exists(_.tpe.typeSymbol == wolfeSymbols.atomic) =>
         atomic(potential, structure, matcher, constructorArgs, linearModelInfo, linear)
-      case ApplyPlus(arg1, arg2) =>
-        val f1 = metaStructuredFactor(arg1, structure, matcher, constructorArgs, linearModelInfo, linear)
-        val f2 = metaStructuredFactor(arg2, structure, matcher, constructorArgs, linearModelInfo, linear)
-        MetaSumFactor(List(arg1, arg2), List(f1, f2), structure, constructorArgs)
+      case FlattenedPlus(args) =>
+        val metaStructs = args.map(arg => metaStructuredFactor(arg, structure, matcher, constructorArgs, linearModelInfo, linear))
+        MetaSumFactor(args, metaStructs, structure, constructorArgs)
       case Dot(arg1, arg2) if structures(arg1, matcher).isEmpty =>
         val linearFactor = metaStructuredFactor(arg2, structure, matcher, constructorArgs, linearModelInfo, true)
         WithWeightVector(linearFactor, arg1)
