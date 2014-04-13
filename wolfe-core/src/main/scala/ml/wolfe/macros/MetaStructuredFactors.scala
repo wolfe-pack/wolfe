@@ -124,7 +124,7 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
 
     lazy val className       = newTypeName(context.fresh("AtomicStructuredFactor"))
     lazy val arguments       = distinctTrees(structures(potential, matcher).filterNot(_.meta.observed).map(_.structure))
-//    lazy val arguments       = distinctTrees(structures(potential, matcher).map(_.structure))
+    //    lazy val arguments       = distinctTrees(structures(potential, matcher).map(_.structure))
     lazy val nodesPerArg     = arguments.map(a => q"$a.nodes()")
     lazy val nodes           = q"""Iterator(..$nodesPerArg).flatMap(identity)"""
     lazy val injected        = context.resetLocalAttrs(injectStructure(potential, matcher))
@@ -174,7 +174,8 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
   extends MetaAtomicStructuredFactor {
 
     def createFactor = q"graph.addLinearFactor(vectors, settings, dims)"
-    def perSettingValue = toOptimizedFactorieVector(injected, diffInfo.indexTree)//q"${ diffInfo.indexTree }.toCachedFactorieSparseVector($injected,true)"
+    def perSettingValue = toOptimizedFactorieVector(injected, diffInfo.indexTree)
+    //q"${ diffInfo.indexTree }.toCachedFactorieSparseVector($injected,true)"
     //    def perSettingValue = q"${ diffInfo.indexTree }.toCachedFactorieSparseVector($injected,true)"
     def perSettingArrayInitializer = q"Array.ofDim[ml.wolfe.FactorieVector](settingsCount)"
     def perSettingArrayName = newTermName("vectors")
@@ -192,6 +193,13 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
   //  }
 
 
+  def variablesContainArgument(obj:Tree, matcher:Tree => Option[StructurePointer]) = {
+    val Function(List(arg), rhs) = normalize(obj)
+    val structs= structures(rhs, matcher)
+    val variables = distinctTrees(structs.filterNot(_.meta.observed).map(_.structure))
+    variables.exists(_.exists(_.symbol == arg.symbol))
+  }
+
   def metaStructuredFactor(potential: Tree, structure: MetaStructure,
                            matcher: Tree => Option[StructurePointer],
                            constructorArgs: List[ValDef] = Nil,
@@ -202,7 +210,11 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
     simplified match {
       case Sum(BuilderTrees(dom, filter, obj, _)) =>
         require(filter == EmptyTree)
-        MetaFirstOrderSumFactor(List(dom), obj, matcher, structure, constructorArgs, linearModelInfo, linear)
+        //check whether we need to further factorize (only if the objective argument is part of the variables)
+        if (!variablesContainArgument(obj,matcher))
+          atomic(potential, structure, matcher, constructorArgs, linearModelInfo, linear)
+        else
+          MetaFirstOrderSumFactor(List(dom), obj, matcher, structure, constructorArgs, linearModelInfo, linear)
       case Apply(f, args) if f.symbol.annotations.exists(_.tpe.typeSymbol == wolfeSymbols.atomic) =>
         atomic(potential, structure, matcher, constructorArgs, linearModelInfo, linear)
       case ApplyPlus(arg1, arg2) =>

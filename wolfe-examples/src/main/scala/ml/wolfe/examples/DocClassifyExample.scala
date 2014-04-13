@@ -26,7 +26,6 @@ object DocClassifyExample {
 
     def observed(d: Doc) = d.copy(label = hidden)
 
-    @Atomic
     def features(d: Doc) = sum { over(0 until d.tokens.size) of (i => oneHot(d.label -> d.tokens(i).word)) }
 
     def model(w: Vector)(d: Doc) = w dot features(d)
