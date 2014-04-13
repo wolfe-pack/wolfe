@@ -64,8 +64,10 @@ trait MetaSeqStructures[C<:Context] {
     def matcher(parent: Tree => Option[StructurePointer], result: Tree => Option[StructurePointer]) = {
       def matchElementOf(tree:Tree):Option[StructurePointer] = tree match {
         case q"$f.apply($arg)" => parent(f) match {
-          case Some(pointer) => Some(StructurePointer(q"${pointer.structure}.elements($arg)",elementMetaStructure))
-          case _ => None
+          case Some(pointer) =>
+            Some(StructurePointer(q"${pointer.structure}.elements($arg)",elementMetaStructure))
+          case _ =>
+            None
         }
         case _ => None
       }
