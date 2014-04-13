@@ -92,7 +92,7 @@ class MetaStructuredFactorSpecs extends StructureIsomorphisms {
       factor.factors.size should be (5)
     }
 
-    "generate a local classifier with a first order sum feature that involves only a single hidden variable" in {
+    "generate an atomic factor for first order sum feature because the argument appears in an atomic position" in {
       case class Data(label:Boolean, elements:Seq[Int])
       def space = Wolfe.all(Data)(bools x Seq(Seq(0,5)))
       def potential(data:Data) = sum { over(0 until data.elements.size) of (i => I(data.label) * data.elements(i).toDouble)}
@@ -102,43 +102,43 @@ class MetaStructuredFactorSpecs extends StructureIsomorphisms {
     }
 
     "generate a linear chain with local and pairwise factors" in {
-      def space = seqs(5,Range(0,3))
-      def potential(seq:Seq[Int]) = {
-        val local = sum { over(0 until seq.size) of (seq(_).toDouble)}
-        val pairs = sum { over(0 until seq.size - 1) of (i => I(seq(i) == seq(i+1)))}
+      def space = seqs(5, Range(0, 3))
+      def potential(seq: Seq[Int]) = {
+        val local = sum { over(0 until seq.size) of (seq(_).toDouble) }
+        val pairs = sum { over(0 until seq.size - 1) of (i => I(seq(i) == seq(i + 1))) }
         local + pairs
       }
-      val factor = MetaStructuredFactor.structuredFactor(space,potential)
+      val factor = MetaStructuredFactor.structuredFactor(space, potential)
       factor mustBeIsomorphicTo potential
-      factor.factors.size should be (9)
+      factor.factors.size should be(9)
     }
 
     "generate a linear chain with local and pairwise factors where defined vals are used within a val defintion" in {
-      def space = seqs(5,Range(0,3))
-      def potential(seq:Seq[Int]) = {
+      def space = seqs(5, Range(0, 3))
+      def potential(seq: Seq[Int]) = {
         val n = seq.size
-        val local = sum { over(0 until n) of (seq(_).toDouble)}
-        val pairs = sum { over(0 until n - 1) of (i => I(seq(i) == seq(i+1)))}
+        val local = sum { over(0 until n) of (seq(_).toDouble) }
+        val pairs = sum { over(0 until n - 1) of (i => I(seq(i) == seq(i + 1))) }
         local + pairs
       }
-      val factor = MetaStructuredFactor.structuredFactor(space,potential)
+      val factor = MetaStructuredFactor.structuredFactor(space, potential)
       factor mustBeIsomorphicTo potential
-      factor.factors.size should be (9)
+      factor.factors.size should be(9)
     }
 
 
     "generate a linear chain with local and pairwise dot-product factors" in {
-      def space = seqs(5,Range(0,3))
-      def features(seq:Seq[Int]) = {
-        val local = sum { over(0 until seq.size) of (i => oneHot(seq(i)))}
-        val pairs = sum { over(0 until seq.size - 1) of (i => oneHot(seq(i) -> seq(i+1)))}
+      def space = seqs(5, Range(0, 3))
+      def features(seq: Seq[Int]) = {
+        val local = sum { over(0 until seq.size) of (i => oneHot(seq(i))) }
+        val pairs = sum { over(0 until seq.size - 1) of (i => oneHot(seq(i) -> seq(i + 1))) }
         local + pairs
       }
-      def potential(w:Vector)(s:Seq[Int]) = w dot features(s)
+      def potential(w: Vector)(s: Seq[Int]) = w dot features(s)
       val w = oneHot(1)
-      val factor = MetaStructuredFactor.structuredLinearFactor(space,potential)
+      val factor = MetaStructuredFactor.structuredLinearFactor(space, potential)
       factor(w) mustBeIsomorphicTo potential(w)
-      factor(w).factors.size should be (9)
+      factor(w).factors.size should be(9)
     }
 
 
