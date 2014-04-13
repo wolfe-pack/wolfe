@@ -74,3 +74,32 @@ object Timer {
 
   def getTimeString(milliseconds: Long): String = getTimeString((milliseconds / 1000).toInt)
 }
+
+
+/**
+ * A function that turns "lifted" functions to Options into partial functions such that repeated calls
+ * in isDefinedAt and apply are avoided by caching results.
+ * @param f the lifted function to turn into a partial function.
+ */
+case class CachedPartialFunction[A,B](f:A => Option[B]) extends PartialFunction[A,B] {
+  private var cacheArg:A = _
+  private var cacheResult:Option[B] = None
+
+  def cache(x:A) = {
+    if (x != cacheArg) {
+      cacheArg = x
+      cacheResult = f(cacheArg)
+    }
+  }
+
+  def isDefinedAt(x: A) = {
+    cache(x)
+    cacheResult.isDefined
+  }
+
+  def apply(x:A) = {
+    cache(x)
+    cacheResult.get
+  }
+
+}

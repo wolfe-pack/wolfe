@@ -192,7 +192,7 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
       context.error(context.enclosingPosition, "Can't learn with constraints on weights yet: " + trees.where)
     val q"($arg) => $rhs" = unwrapSingletonBlocks(trees.of)
     def toSum(tree: Tree): BuilderTrees = tree match {
-      case s@Sum(BuilderTrees(over, where, of, _)) => BuilderTrees(over, where, of)
+      case s@Sum(BuilderTrees(over, where, of, _, _)) => BuilderTrees(over, where, of)
       case s => inlineOnce(tree) match {
         case Some(inlined) => toSum(inlined)
         case None => BuilderTrees(q"List(0)", EmptyTree, q"(i:Int) => $s")
