@@ -19,7 +19,7 @@ class MetaStructuredFactorSpecs extends StructureIsomorphisms {
       factor.arguments.size should be(1)
     }
 
-    "factorize a sum" in {
+    "factorize a sum " in {
       case class Data(x: Boolean, y: Boolean, z: Boolean)
       def space = Wolfe.all(Data)
       def potential(d: Data) = Wolfe.I(d.x) + Wolfe.I(d.y) + Wolfe.I(d.z)

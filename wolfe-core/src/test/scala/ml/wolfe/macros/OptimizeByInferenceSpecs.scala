@@ -31,19 +31,20 @@ class OptimizeByInferenceSpecs extends WolfeSpec {
       actual should be(expected)
     }
     "use the algorithm in the maxBy annotation" in {
+      //todo: can we find a better way to check whether an annotation was used
       case class Data(x: Boolean, y: Boolean, z: Boolean)
       implicit def data = Wolfe.all(Data)
       @OptimizeByInference(MaxProduct(_, 10))
-      def tenIterations(d: Data) = I(d.x && d.y) + I(d.y && !d.z) + I(d.z && !d.x)
+      def model(d: Data) = I(d.x && d.y) + I(d.y && !d.z) + I(d.z && !d.x)
       @OptimizeByInference(MaxProduct(_, 2))
-      def twoIterations(d: Data) = tenIterations(d)
+      def twoIterations(d: Data) = model(d)
       @OptimizeByInference(MaxProduct(_, 1))
-      def oneIteration(d: Data) = tenIterations(d)
+      def oneIteration(d: Data) = model(d)
       val afterOneIter = argmax { over[Data] of oneIteration }
       val afterTwoIter = argmax { over[Data] of twoIterations }
-      val afterTenIter = argmax { over[Data] of tenIterations }
-      val expected = BruteForceOperators.argmax { over[Data] of tenIterations }
-      afterOneIter should be(expected)
+      val afterTenIter = argmax { over[Data] of model }
+      val expected = BruteForceOperators.argmax { over[Data] of model }
+      afterOneIter should not be expected
       afterTwoIter should be(expected)
       afterTenIter should be(expected)
     }
