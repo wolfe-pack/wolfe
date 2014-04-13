@@ -134,7 +134,7 @@ class MetaStructuredFactorSpecs extends StructureIsomorphisms {
       }
       val factor = MetaStructuredFactor.structuredFactor(space, potential)
       factor mustBeIsomorphicTo potential
-      //factor.factors.size should be(5)
+      factor.factors.size should be(5)
     }
 
 
@@ -164,6 +164,20 @@ class MetaStructuredFactorSpecs extends StructureIsomorphisms {
       val factor = MetaStructuredFactor.structuredLinearFactor(space, potential)
       factor(w) mustBeIsomorphicTo potential(w)
       factor(w).factors.size should be(9)
+    }
+
+    "merge local linear factors" in {
+      def space = seqs(5, Range(0, 3))
+      def features(seq: Seq[Int]) = {
+        val local1 = sum { over(0 until seq.size) of (i => oneHot('a -> seq(i))) }
+        val local2 = sum { over(0 until seq.size) of (i => oneHot('b -> seq(i))) }
+        local1 + local2
+      }
+      def potential(w: Vector)(s: Seq[Int]) = w dot features(s)
+      val w = oneHot('a -> 1)
+      val factor = MetaStructuredFactor.structuredLinearFactor(space, potential)
+      factor(w) mustBeIsomorphicTo potential(w)
+      factor(w).factors.size should be(5)
     }
 
 
