@@ -94,7 +94,7 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
         replacement
     })
 
-    val child         = metaStructuredFactor(substitutedObj, structure, matchStructure, childParams, linearModelInfo, linear)
+    val child         = metaStructuredFactor(StructureGenerationInfo(substitutedObj, structure, matchStructure, childParams, linearModelInfo, linear))
     val setupChildren = tupleProcessor(keyDomNames, tmpNames, q"new ${ child.className }(..$childArgs)")
 
     val classDef = q"""
@@ -202,19 +202,20 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
 
     def mergeTwoArgs(arg1: Tree)(arg2: Tree): Option[(Tree, Tree)] = {
       (arg1, arg2) match {
-        case (Sum(BuilderTrees(dom1, filter1, obj1, _, impArg)), Sum(BuilderTrees(dom2, filter2, obj2, _, _)))
-          if dom1.equalsStructure(dom2) && filter1 == EmptyTree && filter2 == EmptyTree =>
-          val Function(List(p1), rhs1) = normalize(obj1)
-          val Function(List(p2), rhs2) = normalize(obj2)
-          val rhs2WithP1 = transform(rhs2, {
-            case x: Ident if x.symbol == p2.symbol => Ident(p1.symbol)
-          })
-          val add = q"$rhs1 + $rhs2WithP1"
-          val addObj = Function(List(p1), add)
-          val newSum = q"$dom1.map($addObj).sum($impArg)"
-          val typed = context.typeCheck(context.resetLocalAttrs(newSum))
-          Some(arg2 -> typed)
-        case (p1,p2) =>
+//        case (Sum(BuilderTrees(dom1, filter1, obj1, _, impArg)), Sum(BuilderTrees(dom2, filter2, obj2, _, _)))
+//          if dom1.equalsStructure(dom2) && filter1 == EmptyTree && filter2 == EmptyTree =>
+//          val Function(List(p1), rhs1) = normalize(obj1)
+//          val Function(List(p2), rhs2) = normalize(obj2)
+//          val rhs2WithP1 = transform(rhs2, {
+//            case x: Ident if x.symbol == p2.symbol => Ident(p1.symbol)
+//          })
+//          val add = q"$rhs1 + $rhs2WithP1"
+//          val addObj = Function(List(p1), add)
+//          val newSum = q"$dom1.map($addObj).sum($impArg)"
+//          val typed = context.typeCheck(context.resetLocalAttrs(newSum))
+//          Some(arg2 -> typed)
+        case (Sum(_), Sum(_)) => None
+        case (p1, p2) =>
           //check whether p1 and p2 have the same hidden variables. In this case add them into an atomic call
           val structs1 = structures(p1, matcher)
           val structs2 = structures(p2, matcher)
@@ -234,19 +235,25 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
     val mergeResult = args.foldLeft(List.empty[Tree]) {
       case (result, arg) =>
         result.collectFirst(CachedPartialFunction(mergeTwoArgs(arg))) match {
-          case Some((orig, merged)) => result.map(a => if (a == orig) merged else a)
-          case None => arg :: result
+          case Some((orig, merged)) =>
+            result.map(a => if (a == orig) merged else a)
+          case None =>
+            arg :: result
         }
     }
-    mergeResult
+    mergeResult.reverse
+    //args
   }
 
+  case class StructureGenerationInfo(potential: Tree,
+                                     structure: MetaStructure,
+                                     matcher: Tree => Option[StructurePointer],
+                                     constructorArgs: List[ValDef] = Nil,
+                                     linearModelInfo: LinearModelInfo,
+                                     linear: Boolean = false)
 
-  def metaStructuredFactor(potential: Tree, structure: MetaStructure,
-                           matcher: Tree => Option[StructurePointer],
-                           constructorArgs: List[ValDef] = Nil,
-                           linearModelInfo: LinearModelInfo,
-                           linear: Boolean = false): MetaStructuredFactor = {
+  def metaStructuredFactor(info:StructureGenerationInfo): MetaStructuredFactor = {
+    import info._
     //    val simplified = unwrapSingletonBlocks(potential)
     val simplified = simplifyBlock(unwrapSingletonBlocks(potential))
     simplified match {
@@ -260,17 +267,19 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
       case Apply(f, args) if f.symbol.annotations.exists(_.tpe.typeSymbol == wolfeSymbols.atomic) =>
         atomic(potential, structure, matcher, constructorArgs, linearModelInfo, linear)
       case FlattenedPlus(args) =>
-        val metaStructs = args.map(arg => metaStructuredFactor(arg, structure, matcher, constructorArgs, linearModelInfo, linear))
-        MetaSumFactor(args, metaStructs, structure, constructorArgs)
+        val merged = mergeSumArgs(args, matcher)
+        val metaStructs = merged.map(arg =>
+          metaStructuredFactor(StructureGenerationInfo(arg, structure, matcher, constructorArgs, linearModelInfo, linear)))
+        MetaSumFactor(merged, metaStructs, structure, constructorArgs)
       case Dot(arg1, arg2) if structures(arg1, matcher).isEmpty =>
-        val linearFactor = metaStructuredFactor(arg2, structure, matcher, constructorArgs, linearModelInfo, true)
+        val linearFactor = metaStructuredFactor(StructureGenerationInfo(arg2, structure, matcher, constructorArgs, linearModelInfo, true))
         WithWeightVector(linearFactor, arg1)
       case Dot(arg2, arg1) if structures(arg1, matcher).isEmpty =>
-        val linearFactor = metaStructuredFactor(arg2, structure, matcher, constructorArgs, linearModelInfo, true)
+        val linearFactor = metaStructuredFactor(StructureGenerationInfo(arg2, structure, matcher, constructorArgs, linearModelInfo, true))
         WithWeightVector(linearFactor, arg1)
       case _ => inlineOnce(potential) match {
         case Some(inlined) =>
-          metaStructuredFactor(inlined, structure, matcher, constructorArgs, linearModelInfo, linear)
+          metaStructuredFactor(StructureGenerationInfo(inlined, structure, matcher, constructorArgs, linearModelInfo, linear))
         case None =>
           atomic(potential, structure, matcher, constructorArgs, linearModelInfo, linear)
       }
@@ -283,7 +292,7 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
     val meta = metaStructure(sampleSpace)
     val root = rootMatcher(arg.symbol, q"$structName", meta)
     val matcher = meta.matcher(root)
-    val metaFactor = metaStructuredFactor(rhs, meta, matcher, linearModelInfo = LinearModelInfo(q"_index"))
+    val metaFactor = metaStructuredFactor(StructureGenerationInfo(rhs, meta, matcher, linearModelInfo = LinearModelInfo(q"_index")))
     val factorieWeights = metaFactor.weightVector.map(
       w => q"ml.wolfe.FactorieConverter.toFactorieDenseVector($w,_index)"
     ).getOrElse(q"new ml.wolfe.DenseVector(0)")

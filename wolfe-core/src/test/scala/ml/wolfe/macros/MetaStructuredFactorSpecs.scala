@@ -19,7 +19,7 @@ class MetaStructuredFactorSpecs extends StructureIsomorphisms {
       factor.arguments.size should be(1)
     }
 
-    "factorize a sum " in {
+    "factorize a sum" in {
       case class Data(x: Boolean, y: Boolean, z: Boolean)
       def space = Wolfe.all(Data)
       def potential(d: Data) = Wolfe.I(d.x) + Wolfe.I(d.y) + Wolfe.I(d.z)
@@ -27,6 +27,16 @@ class MetaStructuredFactorSpecs extends StructureIsomorphisms {
       factor mustBeIsomorphicTo potential
       factor.factors.size should be(3)
     }
+
+    "merge factors with the same hidden variables " in {
+      case class Data(x: Boolean, y: Boolean, z: Boolean)
+      def space = Wolfe.all(Data)
+      def potential(d: Data) = Wolfe.I(d.x) + Wolfe.I(d.x) + Wolfe.I(d.y) + Wolfe.I(d.z)
+      val factor = MetaStructuredFactor.structuredFactor[Data](space, potential)
+      factor mustBeIsomorphicTo potential
+      factor.factors.size should be(3)
+    }
+
 
     "generate only one factor for atomic sub-objectives" in {
       case class Data(x: Boolean, y: Boolean, z: Boolean)
@@ -64,22 +74,24 @@ class MetaStructuredFactorSpecs extends StructureIsomorphisms {
       factor(weights) mustBeIsomorphicTo potential(weights)
     }
 
-    "generate a linear factor from a sum of vectors with a weight parameter" in {
-      def space = Range(0, 5)
-      def features(y: Int) = oneHot(y) + oneHot(y + 1)
-      def potential(w: Vector)(y: Int) = features(y) dot w
+    "generate a linear factor from a sum of vectors with a weight parameter " in {
+      case class Data(x:Int, y:Int)
+      def space = Wolfe.all(Data)(Range(0, 5) x Range(0, 5))
+      def features(y: Data) = oneHot(y.x) + oneHot(y.y + 1)
+      def potential(w: Vector)(y: Data) = features(y) dot w
       val weights = oneHot(3, 2.0)
-      val factor = MetaStructuredFactor.structuredLinearFactor[Int](space, potential)
+      val factor = MetaStructuredFactor.structuredLinearFactor[Data](space, potential)
       factor(weights) mustBeIsomorphicTo potential(weights)
       factor(weights).factors.size should be(2)
     }
 
     "generate a linear factor from a sum of vectors without a weight parameter " in {
-      def space = Range(0, 5)
-      def features(y: Int) = oneHot(y) + oneHot(y + 1)
+      case class Data(x:Int, y:Int)
+      def space = Wolfe.all(Data)(Range(0, 5) x Range(0, 5))
+      def features(y: Data) = oneHot(y.x) + oneHot(y.y + 1)
       val weights = oneHot(3, 2.0)
-      def potential(y: Int) = features(y) dot weights
-      val factor = MetaStructuredFactor.structuredFactor[Int](space, potential)
+      def potential(y: Data) = features(y) dot weights
+      val factor = MetaStructuredFactor.structuredFactor[Data](space, potential)
       factor mustBeIsomorphicTo potential
       factor.factors.size should be (2)
     }
@@ -101,7 +113,7 @@ class MetaStructuredFactorSpecs extends StructureIsomorphisms {
       factor.factors.size should be (1)
     }
 
-    "generate a linear chain with local and pairwise factors" in {
+    "generate a linear chain with local and pairwise factors " in {
       def space = seqs(5, Range(0, 3))
       def potential(seq: Seq[Int]) = {
         val local = sum { over(0 until seq.size) of (seq(_).toDouble) }
@@ -112,6 +124,19 @@ class MetaStructuredFactorSpecs extends StructureIsomorphisms {
       factor mustBeIsomorphicTo potential
       factor.factors.size should be(9)
     }
+
+    "merge local factors" in {
+      def space = seqs(5, Range(0, 3))
+      def potential(seq: Seq[Int]) = {
+        val local1 = sum { over(0 until seq.size) of (seq(_).toDouble) }
+        val local2 = sum { over(0 until seq.size) of (seq(_).toDouble * 2.0) }
+        local1 + local2
+      }
+      val factor = MetaStructuredFactor.structuredFactor(space, potential)
+      factor mustBeIsomorphicTo potential
+      //factor.factors.size should be(5)
+    }
+
 
     "generate a linear chain with local and pairwise factors where defined vals are used within a val defintion" in {
       def space = seqs(5, Range(0, 3))

@@ -136,7 +136,7 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
     val meta = metaStructure(trees.over)
     val Function(List(objArg), objRhs) = blockToFunction(unwrapSingletonBlocks(trees.of))
     val objMatcher = meta.matcher(rootMatcher(objArg.symbol, q"$structName", meta))
-    val factors = metaStructuredFactor(objRhs, meta, objMatcher, linearModelInfo = LinearModelInfo(q"_index"))
+    val factors = metaStructuredFactor(StructureGenerationInfo(objRhs, meta, objMatcher, linearModelInfo = LinearModelInfo(q"_index")))
     val inferCode = inferenceCode(objRhs, newTermName("_graph"))
 
     val structureDef = meta.classDef(newTermName("_graph"))
