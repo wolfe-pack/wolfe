@@ -1,7 +1,7 @@
 package ml.wolfe.ilp
 
-import ml.wolfe.MPGraph
-import ml.wolfe.MPGraph.{Factor, Node}
+import ml.wolfe.FactorGraph
+import ml.wolfe.FactorGraph.{Factor, Node}
 import ml.wolfe.ilp._
 
 /**
@@ -13,7 +13,7 @@ object MPwithILP{
    * Constructs an ILP
    * @param fg the message passing graph to run
    */
-  def apply(fg: MPGraph) {
+  def apply(fg: FactorGraph) {
     val connector = new GurobiILPConnector[NodeOrFactorValue]()
 
 

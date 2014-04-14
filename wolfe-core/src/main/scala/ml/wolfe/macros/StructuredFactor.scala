@@ -1,6 +1,6 @@
 package ml.wolfe.macros
 
-import ml.wolfe.MPGraph
+import ml.wolfe.FactorGraph
 
 /**
  * Represents a factor that decomposes into sub-factors, and provides a potential over
@@ -22,7 +22,7 @@ trait StructuredFactor[T] {
   /**
    * @return the factor graph factors this structured factor corresponds to.
    */
-  def factors: Iterator[MPGraph.Factor]
+  def factors: Iterator[FactorGraph.Factor]
 
   /**
    * @return the score of the structures current setting under the factor's potential.

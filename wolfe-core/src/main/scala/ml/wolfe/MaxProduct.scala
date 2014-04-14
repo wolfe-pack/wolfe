@@ -9,17 +9,17 @@ import scala.language.postfixOps
  */
 object MaxProduct {
 
-  import MPGraph._
+  import FactorGraph._
   import MoreArrayOps._
 
   /**
    * Runs some iterations of belief propagation.
    * @param fg the message passing graph to run
    * @param maxIteration maximum number of iterations.
-   * @param canonical should edges be processed in canonical ordering according to [[ml.wolfe.MPGraph.EdgeOrdering]].
+   * @param canonical should edges be processed in canonical ordering according to [[ml.wolfe.FactorGraph.EdgeOrdering]].
    */
-  def apply(fg: MPGraph, maxIteration: Int, canonical: Boolean = true) {
-//    val edges = if (canonical) fg.edges.sorted(MPGraph.EdgeOrdering) else fg.edges
+  def apply(fg: FactorGraph, maxIteration: Int, canonical: Boolean = true) {
+//    val edges = if (canonical) fg.edges.sorted(FactorGraph.EdgeOrdering) else fg.edges
     val edges = if (canonical) MPSchedulerImpl.schedule(fg) else fg.edges
 
     for (i <- 0 until maxIteration) {
@@ -44,7 +44,7 @@ object MaxProduct {
    * @param fg factor graph.
    * @param result vector to add results to.
    */
-  def featureExpectationsAndObjective(fg: MPGraph, result: FactorieVector): Double = {
+  def featureExpectationsAndObjective(fg: FactorGraph, result: FactorieVector): Double = {
     var obj = 0.0
     for (factor <- fg.factors) {
       // 1) go over all states, find max
@@ -70,7 +70,7 @@ object MaxProduct {
       }
       obj += maxScore
 
-      if (factor.typ == MPGraph.FactorType.LINEAR) {
+      if (factor.typ == FactorGraph.FactorType.LINEAR) {
 
 
         // 3) prob = 1/|maxs| for all maximums, add corresponding vector
@@ -95,7 +95,7 @@ object MaxProduct {
    * @param setting the setting corresponding to the id.
    * @return penalized score of setting.
    */
-  def penalizedScore(factor: MPGraph.Factor, settingId: Int, setting: Array[Int]): Double = {
+  def penalizedScore(factor: FactorGraph.Factor, settingId: Int, setting: Array[Int]): Double = {
     var score = factor.score(settingId)
     for (j <- 0 until factor.rank) {
       score += factor.edges(j).n2f(setting(j))
@@ -163,8 +163,8 @@ object MaxProduct {
  * Searches through all states of the factor graph.
  */
 object BruteForceSearch {
-  def apply(fg: MPGraph) {
-    import MPGraph._
+  def apply(fg: FactorGraph) {
+    import FactorGraph._
     def loopOverSettings(nodes: List[Node], loop: (() => Unit) => Unit = body => body()): (() => Unit) => Unit = {
       nodes match {
         case Nil => (body: () => Unit) => loop(body)

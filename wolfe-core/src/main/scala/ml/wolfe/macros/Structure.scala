@@ -1,9 +1,9 @@
 package ml.wolfe.macros
 
-import ml.wolfe.MPGraph
+import ml.wolfe.FactorGraph
 
 /**
- * A structure is a collection of MPGraph nodes whose assignments correspond to values of type `T`.
+ * A structure is a collection of FactorGraph nodes whose assignments correspond to values of type `T`.
  * @tparam T the type of the values this structure can generate.
  * @author Sebastian Riedel
  */
@@ -20,12 +20,12 @@ trait Structure[T] {
   /**
    * @return all nodes in this structure (including nodes of substructures)
    */
-  def nodes(): Iterator[MPGraph.Node]
+  def nodes(): Iterator[FactorGraph.Node]
 
   /**
    * @return the underling factor graph that owns the nodes of this structure.
    */
-  def graph: MPGraph
+  def graph: FactorGraph
 
   /**
    * @return the value that the current assignment to all nodes is representing.
