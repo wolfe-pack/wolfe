@@ -1,92 +1,120 @@
 ---
 layout: default
-title: Jekyll &bull; Simple, blog-aware, static sites
+title: Wolfe &bull; expressive, extensible and efficient ML
 overview: true
 ---
 
 <section class="intro">
-  <div class="grid">
-    <div class="unit whole center-on-mobiles">
-      <p class="first">Declarative Machine Learning</p>
+    <div class="grid">
+        <div class="unit whole center-on-mobiles">
+            <p class="first">Declarative Machine Learning</p>
+        </div>
     </div>
-  </div>
 </section>
 <section class="features">
-  <div class="grid">
-    <div class="unit one-third">
-      <h2>Declarative</h2>
-      <p>
-        Users <em>declare</em>
-        data, models and objectives, Wolfe does the rest.
-      </p>
-      <a href="/docs/usage/">Interactive tutorials&rarr;</a>
-    </div>
-    <div class="unit one-third">
-      <h2>Extensible</h2>
-      <p><a href="http://daringfireball.net/projects/markdown/">Markdown</a> (or <a href="http://textile.sitemonks.com/">Textile</a>), <a href="http://wiki.shopify.com/Liquid">Liquid</a>, HTML <span class="amp">&amp;</span> CSS go in. Static sites come out ready for deployment.</p>
-      <a href="/docs/templates/">Wolfe Extension Points &rarr;</a>
-    </div>
-    <div class="unit one-third">
-      <h2>Efficient</h2>
-      <p>
-        Permalinks, categories, pages, posts, and custom layouts are all first-class citizens here.
-      </p>
-      <a href="/docs/migrations/">Technical Papers&rarr;</a>
-    </div>
-    <div class="clear"></div>
-  </div>
-</section>
-<section class="quickstart">
-  <div class="grid">
-    <div class="unit golden-small center-on-mobiles">
-      <h4>Get up and running <em>in&nbsp;seconds</em>.</h4>
-    </div>
-    <div class="unit golden-large code">
-      <p class="title">Quick-start Instructions</p>
-      <div class="shell">
-        Blah
-        <p class="line">
-          <span class="path">~</span>
-          <span class="prompt">$</span>
-          <span class="command">g8 wolfe-pack/wolfe</span>
-        </p>
-        <p class="line">
-          <span class="path">~</span>
-          <span class="prompt">$</span>
-          <span class="command">jekyll new my-awesome-site</span>
-        </p>
-        <p class="line">
-          <span class="path">~</span>
-          <span class="prompt">$</span>
-          <span class="command">cd my-awesome-site</span>
-        </p>
-        <p class="line">
-          <span class="path">~/my-awesome-site</span>
-          <span class="prompt">$</span>
-          <span class="command">jekyll serve</span>
-        </p>
-        <p class="line">
-          <span class="output"># => Now browse to http://localhost:4000</span>
-        </p>
-      </div>
-    </div>
-    <div class="clear"></div>
-  </div>
-</section>
-<section class="free-hosting">
-  <div class="grid">
-    <div class="unit whole">
-      <div class="grid pane">
-        <div class="unit whole center-on-mobiles">
-          <img src="img/octojekyll.png" width="300" height="251" alt="Free Jekyll hosting on GitHub Pages">
-          <div class="pane-content">
-            <h2 class="center-on-mobiles"><strong>Free hosting</strong> with GitHub Pages</h2>
-            <p>Sick of dealing with hosting companies? <a href="http://pages.github.com/">GitHub Pages</a> are <em>powered by Jekyll</em>, so you can easily deploy your site using GitHub for free&mdash;<a href="https://help.github.com/articles/setting-up-a-custom-domain-with-pages">custom domain name</a> and&nbsp;all.</p>
-            <a href="http://pages.github.com/">Learn more about GitHub Pages &rarr;</a>
-          </div>
+    <div class="grid">
+        <div class="unit one-third">
+            <h2>Expressive</h2>
+
+            <p>
+                Users <em>declare</em>
+                data, models and objectives, Wolfe does the rest.
+            </p>
+            <a href="/docs/usage/">Interactive tutorials&rarr;</a>
+        </div>
+        <div class="unit one-third">
+            <h2>Extensible</h2>
+
+            <p><a href="http://daringfireball.net/projects/markdown/">Markdown</a> (or <a
+                    href="http://textile.sitemonks.com/">Textile</a>), <a
+                    href="http://wiki.shopify.com/Liquid">Liquid</a>, HTML <span class="amp">&amp;</span> CSS go in.
+                Static sites come out ready for deployment.</p>
+            <a href="/docs/templates/">Wolfe Extension Points &rarr;</a>
+        </div>
+        <div class="unit one-third">
+            <h2>Efficient</h2>
+
+            <p>
+                Permalinks, categories, pages, posts, and custom layouts are all first-class citizens here.
+            </p>
+            <a href="/docs/migrations/">Technical Papers&rarr;</a>
         </div>
         <div class="clear"></div>
-      </div>
     </div>
-  </div>
 </section>
+<section class="quickstart">
+    <div class="grid">
+        <div class="unit golden-small center-on-mobiles">
+            <h4>Get up and running <em>in&nbsp;seconds</em>.</h4>
+        </div>
+        <div class="unit golden-large code">
+            <p class="title">Quick-start Instructions</p>
+
+            <div class="shell">
+                <p class="line">
+                    <span class="output"># Install <a href="http://www.scala-sbt.org/">SBT</a> and <a href="https://github.com/n8han/giter8">giter8</a></span>
+                </p>
+
+                <p class="line">
+                    <span class="path">~</span>
+                    <span class="prompt">$</span>
+                    <span class="command">g8 wolfe-pack/wolfe --name my-wolfe</span>
+                </p>
+
+                <p class="line">
+                    <span class="path">~</span>
+                    <span class="prompt">$</span>
+                    <span class="command">cd my-wolfe</span>
+                </p>
+
+                <p class="line">
+                    <span class="path">~/my-wolfe</span>
+                    <span class="prompt">$</span>
+                    <span class="command">wolfe console</span>
+                </p>
+
+                <!--<p class="line">-->
+                    <!--<span class="output"># => Start building ML applications</span>-->
+                <!--</p>-->
+            </div>
+        </div>
+        <div class="clear"></div>
+    </div>
+</section>
+<!--<section class="free-hosting">-->
+    <!--<div class="grid">-->
+        <!--<div class="unit whole">-->
+            <!--<div class="grid pane">-->
+                <!--<div class="unit whole center-on-mobiles">-->
+                    <!--<a href="http://erc.europa.eu/"><img height="70px"-->
+                                                         <!--src="http://www.levkingroup.com/uploads/RTEmagicC_logo_erc_01.png.png"></a>-->
+                    <!--<a href="http://www.cs.washington.edu/"><img height="70px"-->
+                                                                 <!--src="http://upload.wikimedia.org/wikipedia/en/9/93/University_of_Washington_Seal.png"></a>-->
+                    <!--<a href="http://www.tu-berlin.de"><img width="70px"-->
+                                                           <!--src="http://upload.wikimedia.org/wikipedia/commons/3/30/TU-Berlin-Logo.svg"></a>-->
+                    <!--<a href="http://cs.stanford.edu"><img height="70px"-->
+                                                          <!--src="https://upload.wikimedia.org/wikipedia/en/b/b7/Stanford_University_seal_2003.svg"></a>-->
+                    <!--<a href="http://www.ucl.ac.uk"><img height="40px"-->
+                                                        <!--src="http://upload.wikimedia.org/wikipedia/en/d/d1/University_College_London_logo.svg"></a>-->
+                    <!--<a href="http://www.uni-mannheim.de/"><img height="40"-->
+                                                               <!--src="http://upload.wikimedia.org/wikipedia/commons/0/04/University_of_Mannheim.svg"></a>-->
+
+
+
+                    <!--&lt;!&ndash;<img src="img/octojekyll.png" width="300" height="251" alt="Free Jekyll hosting on GitHub Pages">&ndash;&gt;-->
+
+                    <!--&lt;!&ndash;<div class="pane-content">&ndash;&gt;-->
+                        <!--&lt;!&ndash;<h2 class="center-on-mobiles"><strong>Free hosting</strong> with GitHub Pages</h2>&ndash;&gt;-->
+
+                        <!--&lt;!&ndash;<p>Sick of dealing with hosting companies? <a href="http://pages.github.com/">GitHub Pages</a>&ndash;&gt;-->
+                            <!--&lt;!&ndash;are <em>powered by Jekyll</em>, so you can easily deploy your site using GitHub for free&mdash;<a&ndash;&gt;-->
+                                    <!--&lt;!&ndash;href="https://help.github.com/articles/setting-up-a-custom-domain-with-pages">custom&ndash;&gt;-->
+                                <!--&lt;!&ndash;domain name</a> and&nbsp;all.</p>&ndash;&gt;-->
+                        <!--&lt;!&ndash;<a href="http://pages.github.com/">Learn more about GitHub Pages &rarr;</a>&ndash;&gt;-->
+                    <!--&lt;!&ndash;</div>&ndash;&gt;-->
+                <!--</div>-->
+                <!--<div class="clear"></div>-->
+            <!--</div>-->
+        <!--</div>-->
+    <!--</div>-->
+<!--</section>-->
