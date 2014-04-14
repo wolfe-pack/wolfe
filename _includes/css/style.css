@@ -11,8 +11,9 @@ body {
   font-size: 21px;
   font-weight: 300;
   color: #ddd;
+  //background: #e7e7e7 url(../images/body-bg.png) 0 0 repeat;
   background: gray;
-  border-top: 5px solid #fc0;
+  //border-top: 5px solid #fc0;
   box-shadow: inset 0 3px 30px rgba(0,0,0,.3);
   text-shadow: 0 1px 3px rgba(0,0,0,.5);
 }
