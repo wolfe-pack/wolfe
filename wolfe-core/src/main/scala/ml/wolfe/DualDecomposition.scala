@@ -1,6 +1,6 @@
 package ml.wolfe
 
-import ml.wolfe.MPGraph.{Node, Factor}
+import ml.wolfe.FactorGraph.{Node, Factor}
 
 /**
  * Run dual decomposition on a message passing graph.
@@ -24,7 +24,7 @@ object DualDecomposition {
    * @param stepSize A function that gives the step size at each iteration. Defaults to defaultStepSize
    * @param parallelize A flag that indicates that each factor's inference can be run in parallel. Defaults to true
    */
-  def apply(fg: MPGraph, maxIteration: Int, stepSize: Int => Double = defaultStepSize, parallelize: Boolean = true):
+  def apply(fg: FactorGraph, maxIteration: Int, stepSize: Int => Double = defaultStepSize, parallelize: Boolean = true):
   Unit = {
 
     val factors = if (parallelize) fg.factors.par else fg.factors
@@ -58,7 +58,7 @@ object DualDecomposition {
    * variables.
    * @param fg The factor graph
    */
-  private def initializeN2FMessages(fg: MPGraph): Unit = {
+  private def initializeN2FMessages(fg: FactorGraph): Unit = {
     for (factor <- fg.factors;
          edge <- factor.edges) {
       for (i <- 0 until edge.n2f.size)
@@ -70,15 +70,15 @@ object DualDecomposition {
    * Find the score-maximizing assignment to the nodes associated with a factor, accounting for the score penalties
    * @param factor The factor
    */
-  def solveFactorWithPenalty(factor: MPGraph.Factor): Unit = {
+  def solveFactorWithPenalty(factor: FactorGraph.Factor): Unit = {
     factor.typ match {
-      case MPGraph.FactorType.TABLE =>
+      case FactorGraph.FactorType.TABLE =>
         val best = (0 until factor.table.size).maxBy(i => penalizedScore(factor, i))
         propagateSettingInformation(factor, factor.settings(best))
-      case MPGraph.FactorType.LINEAR =>
+      case FactorGraph.FactorType.LINEAR =>
         val best = (0 until factor.table.size).maxBy(i => penalizedScore(factor, i))
         propagateSettingInformation(factor, factor.settings(best))
-      case MPGraph.FactorType.STRUCTURED =>
+      case FactorGraph.FactorType.STRUCTURED =>
         // TODO: How does one mandate that this uses the penalties
         val argmax = factor.structured.argmaxMarginal2AllNodes(factor)
 
@@ -91,7 +91,7 @@ object DualDecomposition {
    * @param factor The factor graph
    * @param setting The best setting for the nodes connected to this factor
    */
-  def propagateSettingInformation(factor: MPGraph.Factor, setting: Array[Int]) = {
+  def propagateSettingInformation(factor: FactorGraph.Factor, setting: Array[Int]) = {
 
     for (i <- 0 until factor.edges.length) {
       val edge = factor.edges(i)
@@ -112,7 +112,7 @@ object DualDecomposition {
    * @param settingId id of the setting to score.
    * @return penalized score of setting.
    */
-  def penalizedScore(factor: MPGraph.Factor, settingId: Int): Double = {
+  def penalizedScore(factor: FactorGraph.Factor, settingId: Int): Double = {
     var score = factor.score(settingId)
 
     val setting = factor.settings(settingId)
@@ -129,7 +129,7 @@ object DualDecomposition {
    * @param fg The factor graph
    * @param stepSize The step size for the gradient descent
    */
-  def updatePenalties(fg: MPGraph, stepSize: Double): Unit = {
+  def updatePenalties(fg: FactorGraph, stepSize: Double): Unit = {
     fg.factors.foreach {updateFactorPenalties(_, stepSize)}
   }
 
@@ -154,7 +154,7 @@ object DualDecomposition {
    * @param fg The factor graph
    * @return
    */
-  def hasConverged(fg: MPGraph): Boolean = {
+  def hasConverged(fg: FactorGraph): Boolean = {
     var hasConverged = true
 
     for (factor <- fg.factors; if hasConverged) {

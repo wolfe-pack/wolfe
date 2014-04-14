@@ -1,12 +1,12 @@
 package ml.wolfe.macros
 
-import ml.wolfe.{MPGraph, Wolfe}
+import ml.wolfe.{FactorGraph, Wolfe}
 import ml.wolfe.util.NLP
 import Wolfe._
 import NLP._
 import OptimizedOperators._
-import ml.wolfe.MPGraph.MPSchedulerImpl
-import ml.wolfe.MPGraph.MPSchedulerImpl.MPDirection
+import ml.wolfe.FactorGraph.MPSchedulerImpl
+import ml.wolfe.FactorGraph.MPSchedulerImpl.MPDirection
 
 
 /**
@@ -15,7 +15,7 @@ import ml.wolfe.MPGraph.MPSchedulerImpl.MPDirection
 class MPSchedulerSpec extends StructureIsomorphisms {
   "A scheduler" should {
     "given a tree" should {
-      val graph = new MPGraph()
+      val graph = new FactorGraph()
       (0 to 5).foreach(i => graph.addNode(0)) //dummy nodes
       (0 to 104).foreach(i => graph.addTableFactor(Array(), Array(), Array())) //dummy factors
       val edges = Array(
@@ -63,7 +63,7 @@ class MPSchedulerSpec extends StructureIsomorphisms {
     }
 
     "given a loopy graph" should {
-      val graph = new MPGraph()
+      val graph = new FactorGraph()
       (0 to 2).foreach(i => graph.addNode(0)) //dummy nodes
       (0 to 102).foreach(i => graph.addTableFactor(Array(), Array(), Array())) //dummy factors
       val edges = Array(
@@ -101,7 +101,7 @@ class MPSchedulerSpec extends StructureIsomorphisms {
     }
 
     "should given a graph with disconnected components return a schedule on all components" in {
-      val graph = new MPGraph()
+      val graph = new FactorGraph()
       (0 to 4).foreach(i => graph.addNode(0)) //dummy nodes
       (0 to 101).foreach(i => graph.addTableFactor(Array(), Array(), Array())) //dummy factors
       val edges = Array(
@@ -121,7 +121,7 @@ class MPSchedulerSpec extends StructureIsomorphisms {
     }
 
     "should given an inner node first return the forward passes and then the backward passes" in {
-      val graph = new MPGraph()
+      val graph = new FactorGraph()
       (0 to 4).foreach(i => graph.addNode(0)) //dummy nodes
       (0 to 101).foreach(i => graph.addTableFactor(Array(), Array(), Array())) //dummy factors
       val edges = Array(

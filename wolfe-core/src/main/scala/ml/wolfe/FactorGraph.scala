@@ -16,10 +16,10 @@ import scala.collection.mutable
  *
  *
  */
-final class MPGraph {
+final class FactorGraph {
 
-  import MPGraph.FactorType._
-  import MPGraph._
+  import FactorGraph.FactorType._
+  import FactorGraph._
 
   val edges   = new ArrayBuffer[Edge]
   val nodes   = new ArrayBuffer[Node]
@@ -172,7 +172,7 @@ final class MPGraph {
   def getFactor(index: Int) = factors(index)
 }
 
-object MPGraph {
+object FactorGraph {
 
   /**
    * We define a set of factor types. Inference algorithms will use the type of a factor
@@ -251,8 +251,8 @@ object MPGraph {
 
     override def toString = index.toString
 
-    private[MPGraph] var edgeCount : Int = 0
-    private[MPGraph] var edgeFilled: Int = 0
+    private[FactorGraph] var edgeCount : Int = 0
+    private[FactorGraph] var edgeFilled: Int = 0
 
     override def equals(other: Any): Boolean = other match {
       case that: Node =>
@@ -291,7 +291,7 @@ object MPGraph {
   /**
    * A factor in a message passing factor graph.
    *
-   * Some hints for the usage of Factors of MPGraph
+   * Some hints for the usage of Factors of FactorGraph
    * f.Settings    | f. table
    * 0 0 0         | 0.5
    * 0 0 1         | 0.8
@@ -317,8 +317,8 @@ object MPGraph {
    * @param structured if `typ=STRUCTURED` this stores a generic object for scoring the factor and inference related
    *                   operations.
    */
-  final class Factor(val fg: MPGraph, val index: Int, val dims: Array[Int], val settings: Array[Array[Int]],
-                     val typ: FactorType.Value = MPGraph.FactorType.TABLE,
+  final class Factor(val fg: FactorGraph, val index: Int, val dims: Array[Int], val settings: Array[Array[Int]],
+                     val typ: FactorType.Value = FactorGraph.FactorType.TABLE,
                      val table: Array[Double],
                      val stats: Array[FactorieVector] = null,
                      val structured: StructuredPotential = null) {
@@ -375,13 +375,13 @@ object MPGraph {
      */
     def scoreCurrentSetting = {
       val setting = edges.map(_.n.setting)
-      val entry = MPGraph.settingToEntry(setting, dims)
+      val entry = FactorGraph.settingToEntry(setting, dims)
       score(entry)
     }
 
     def gradientCurrentSetting = {
       val setting = edges.map(_.n.setting)
-      val entry = MPGraph.settingToEntry(setting, dims)
+      val entry = FactorGraph.settingToEntry(setting, dims)
       stats(entry)
     }
 
@@ -419,8 +419,8 @@ object MPGraph {
       //for (i <-0 until settings.length) table(i) = stats(i).dot(fg.weights)
     }
 
-    private[MPGraph] var edgeCount : Int = 0
-    private[MPGraph] var edgeFilled: Int = 0
+    private[FactorGraph] var edgeCount : Int = 0
+    private[FactorGraph] var edgeFilled: Int = 0
 
     override def equals(other: Any): Boolean = other match {
       case that: Factor =>
@@ -476,7 +476,7 @@ object MPGraph {
      * @param graph factor graph with (possibly) disconnected components
      * @return schedule for forward-backward over all disconnected components of the graph
      */
-    def schedule(graph: MPGraph): Seq[Edge] = {
+    def schedule(graph: FactorGraph): Seq[Edge] = {
       @tailrec
       def scheduleAcc(nodes: Seq[Node], done: Set[Node], acc: Seq[Edge]): Seq[Edge] = nodes match {
         case Nil => acc

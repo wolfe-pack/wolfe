@@ -1,6 +1,6 @@
 package ml.wolfe.macros
 
-import ml.wolfe.{MPGraph, BruteForceOperators, Wolfe, Operators}
+import ml.wolfe.{FactorGraph, BruteForceOperators, Wolfe, Operators}
 import scala.reflect.macros.Context
 import Wolfe._
 import org.scalautils.{Bad, Good}
@@ -157,7 +157,7 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
       q"val _factorieWeights = $factorieWeights")
 
     val code = q"""
-      val _graph = new ml.wolfe.MPGraph
+      val _graph = new ml.wolfe.FactorGraph
       $structureDef
       val $structName = new ${ meta.className }
       $conditionCode

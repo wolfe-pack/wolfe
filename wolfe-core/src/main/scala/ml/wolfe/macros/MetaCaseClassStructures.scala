@@ -29,7 +29,7 @@ trait MetaCaseClassStructures[C<:Context] {
     lazy val argType         = tpe.widen
     def classDef(graphName: TermName) = q"""
       final class $className extends ml.wolfe.macros.Structure[$tpe] {
-        import ml.wolfe.MPGraph._
+        import ml.wolfe.FactorGraph._
         ..${subClassDefs(graphName)}
         ..$structureFields
         private var iterator:Iterator[Unit] = _

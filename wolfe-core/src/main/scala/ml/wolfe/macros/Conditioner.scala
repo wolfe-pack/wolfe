@@ -179,7 +179,7 @@ object Conditioner {
     val conditionCode = helper.conditioning(rhs, matcher)
     val cls = meta.classDef(graphName)
     val code = q"""
-      val $graphName = new ml.wolfe.MPGraph
+      val $graphName = new ml.wolfe.FactorGraph
       $cls
       val $structName = new ${meta.className}
       ${conditionCode.code}

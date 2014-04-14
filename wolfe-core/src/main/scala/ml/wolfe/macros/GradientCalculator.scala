@@ -126,7 +126,7 @@ trait MetaGradientCalculators[C <: Context] extends MetaStructures[C]
         val inferCode = inferenceCode(objRhs, newTermName("_graph"))
         val classDef = q"""
           final class $className extends ml.wolfe.macros.GradientCalculator {
-            val _graph = new ml.wolfe.MPGraph
+            val _graph = new ml.wolfe.FactorGraph
             $structureDef
             val $structName = new ${ meta.className }
             $conditionerCode

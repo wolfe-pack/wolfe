@@ -317,7 +317,7 @@ object MetaStructure {
 
     val injectedProj = q"($structArgName:ml.wolfe.macros.Structure[${meta.argType}]) => $injectedRhs"
     val code = q"""
-      val $graphName = new ml.wolfe.MPGraph
+      val $graphName = new ml.wolfe.FactorGraph
       $cls
       val $structName = new ${meta.className}
       $graphName.setupNodes()
@@ -344,7 +344,7 @@ object MetaStructure {
 
     val injectedProj = q"($structArgName:ml.wolfe.macros.Structure[${meta.argType}]) => $injectedRhs"
     val code = q"""
-      val $graphName = new ml.wolfe.MPGraph
+      val $graphName = new ml.wolfe.FactorGraph
       $cls
       val $structName = new ${meta.className}
       ($structName,$injectedProj)
@@ -360,7 +360,7 @@ object MetaStructure {
     val graphName = newTermName("_graph")
     val cls = meta.classDef(graphName)
     val code = q"""
-      val $graphName = new ml.wolfe.MPGraph
+      val $graphName = new ml.wolfe.FactorGraph
       $cls
       val structure = new ${meta.className}
       $graphName.setupNodes()
