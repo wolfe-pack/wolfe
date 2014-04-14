@@ -1,6 +1,6 @@
 package ml.wolfe.macros
 
-import ml.wolfe.{BruteForceOperators, Wolfe, Operators}
+import ml.wolfe.{MPGraph, BruteForceOperators, Wolfe, Operators}
 import scala.reflect.macros.Context
 import Wolfe._
 import org.scalautils.{Bad, Good}
@@ -260,5 +260,11 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
     else argmaxLinearModel(trees)
   }
 
+  trait IsmorphicFactorGraph[T] {
+    def graph = structure.graph
+    def structure:Structure[T]
+  }
+
+  def fg[T,N](overWhereOf: Builder[T, N]):IsmorphicFactorGraph[T] = null
 
 }

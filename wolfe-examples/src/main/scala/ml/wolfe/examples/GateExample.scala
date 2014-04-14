@@ -8,7 +8,7 @@ import ml.wolfe.util.Evaluator
 /**
  * @author Sebastian Riedel
  */
-object GateLearner {
+object GateExample {
 
   import Wolfe._
   import OptimizedOperators._
