@@ -363,29 +363,7 @@ object MetaStructuredFactor {
 
     val function = q"($param => $code)"
     c.Expr[Wolfe.Vector => StructuredFactor[T]](function)
-    /*
 
-    val root = helper.rootMatcher(arg.symbol, q"$structName",meta)
-    val matcher = meta.matcher(root)
-    val diffInfo = helper.DifferentiatorInfo(param.symbol,q"_index")
-    val metaFactor = helper.metaStructuredFactor(rhs, meta, matcher,differentiatorInfo = Some(diffInfo))
-    val structureClass = meta.classDef(graphName)
-    val code = q"""
-      (weights:ml.wolfe.Wolfe.Vector) => {
-        val $graphName = new ml.wolfe.MPGraph
-        val _index = new ml.wolfe.Index()
-        $structureClass
-        val $structName = new ${meta.className}
-        $graphName.setupNodes()
-        ${metaFactor.classDef}
-        val result:StructuredFactor[${meta.argType}] = new ${metaFactor.className}($structName)
-        $graphName.build()
-        val factorieWeights = ml.wolfe.FactorieConverter.toFactorieDenseVector(weights,_index)
-        $graphName.weights = factorieWeights
-        result
-      }
-    """
-     */
   }
 
 
