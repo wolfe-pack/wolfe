@@ -64,6 +64,16 @@ object BuildSettings {
     "org.scalamacros" %% "quasiquotes" % "2.0.0-M3" cross CrossVersion.full
   )
 
+  val publishSettings = Seq(
+    publishTo <<= version {
+      version: String =>
+        val homeniscient = "http://homeniscient.cs.ucl.ac.uk:8081/nexus/content/repositories/"
+        if (version.trim.endsWith("SNAPSHOT")) Some("snapshots" at homeniscient + "snapshots/")
+        else Some("releases" at homeniscient + "releases/")
+    },
+    credentials += Credentials(Path.userHome / ".ivy2" / ".credentials-homeniscient")
+  )
+
 
   val globalSettings =
     Seq(
@@ -74,18 +84,11 @@ object BuildSettings {
         Resolver.sonatypeRepo("releases")
       ),
       globalDependencies,
-      publishTo <<= version {
-        version: String =>
-          val homeniscient = "http://homeniscient.cs.ucl.ac.uk:8081/nexus/content/repositories/"
-          if (version.trim.endsWith("SNAPSHOT")) Some("snapshots" at homeniscient + "snapshots/")
-          else Some("releases" at homeniscient + "releases/")
-      },
-      credentials += Credentials(Path.userHome / ".ivy2" / ".credentials-homeniscient"),
       initialCommands := """
         import ml.wolfe.Wolfe._
         import ml.wolfe.macros.OptimizedOperators._
       """
-    ) ++ releaseSettings
+    ) ++ releaseSettings ++ publishSettings
 
 }
 
@@ -96,7 +99,8 @@ object Build extends Build {
 
   lazy val root = Project(
     id = "wolfe",
-    base = file(".")
+    base = file("."),
+    settings = publishSettings
   ) aggregate(core, examples)
 
   lazy val core = Project(
@@ -112,5 +116,6 @@ object Build extends Build {
     base = file("wolfe-examples"),
     settings = buildSettings ++ globalSettings
   ) dependsOn core % "test->test;compile->compile"
+
 
 }
