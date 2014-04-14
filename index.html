@@ -40,6 +40,19 @@
                 and mathematical operators that interact with these models---most prominently maximization and
                 summation.</p>
 
+            <!--<pre><code class="language-scala">//a feature function of observation and transition features-->
+<!--def f(s:Sentence) = {-->
+  <!--val n = s.words.size-->
+  <!--sum { over(0 until n) of (i => oneHot(s.words(i) -> s.tags(i))} +-->
+  <!--sum { over(0 until n - 1) of (i => oneHot(s.tags(i) -> s.tags(i+1)) } }-->
+
+<!--//a linear model-->
+<!--def s(w:Vector)(s:Sentence) = w dot f(s)-->
+
+<!--//find the highest scoring assignment to the tag values.-->
+<!--def h(w:Vector)(s:Sentence) = argmax { over[Sentence] of s(w) st x(s)}-->
+<!--</code></pre>-->
+
             <p>In Wolfe these mathematical operators are primitives, and the practitioner can rely on the Wolfe
                 interpreter
                 to implement these in optimized, and generally approximate, fashion.
@@ -53,23 +66,11 @@
                 inference, integer linear programming solvers, message passing, nested min max objectives,
                 dual decomposition etc. Wolfe’s host language is Scala.</p>
 
-            <!--<pre><code class="language-scala">case class Token(word:String, tag:String)-->
-<!--case class Sentence(tokens:Seq[Token])-->
 
-<!--//a feature function of observation and transition features-->
-<!--def features(s:Sentence) =-->
-  <!--sum { over(0 until s.tokens.size) of (i => oneHot(s.tokens(i).word -> s.tokens(i).tag)} +-->
-  <!--sum { over(0 until s.tokens.size - 1) of (i => oneHot(s.tokens(i).tag -> s.tokens(i+1).tag)}-->
-
-<!--//a linear model-->
-<!--def model(w:Vector)(s:Sentence) = w dot features(s)-->
-
-<!--//given a weight and sentence, find the highest scoring assignment to the tag values.-->
-<!--def predictor(w:Vector)(s:Sentence) = argmax { over[Sentence] of model(w) st evidence(s)}-->
-
-<!--//find weights by minimizing a training loss-->
-<!--def learn(data:Seq[Sentence]) = argmin { over[Vector] of loss(data) }-->
-<!--</code></pre>-->
+            <!--case class Token(word:String, tag:String)-->
+            <!--case class Sentence(tokens:Seq[Token])-->
+            <!--//find weights by minimizing a training loss-->
+            <!--def learn(data:Seq[Sentence]) = argmin { over[Vector] of loss(data) }-->
 
 
             <h3>
