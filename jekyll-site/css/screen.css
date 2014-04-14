@@ -5,19 +5,19 @@
 /*                *\
  * $normalize.css *
 \*                */
-{% include css/normalize.css %}
+{% include jekyll-site/css/normalize.css %}
 /*                *\
  * $gridism.css   *
 \*                */
-{% include css/gridism.css %}
+{% include jekyll-site/css/gridism.css %}
 /*                *\
  * $style.css     *
 \*                */
-{% include css/style.css %}
+{% include jekyll-site/css/style.css %}
 /*                *\
  * $pygments.css  *
 \*                */
-{% include css/pygments.css %}
+{% include jekyll-site/css/pygments.css %}
 {% endcapture %}
 
 {% if site.GH_ENV %}
