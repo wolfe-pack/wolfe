@@ -15,8 +15,8 @@ trait Index {
   def apply(key:Any):Int = index(key)
   def index(key:Any):Int
   def inverse():GenMap[Int,Any]
-  def serialize(stream: ObjectOutputStream)
-  def deserialize(stream: ObjectInputStream): Index
+//  def serialize(stream: ObjectOutputStream)
+//  def deserialize(stream: ObjectInputStream): Index
 }
 
 @SerialVersionUID(100L)
