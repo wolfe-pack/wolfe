@@ -100,7 +100,7 @@ object Build extends Build {
   lazy val root = Project(
     id = "wolfe",
     base = file("."),
-    settings = publishSettings
+    settings = Project.defaultSettings ++ publishSettings
   ) aggregate(core, examples)
 
   lazy val core = Project(
