@@ -12,7 +12,7 @@ import ml.wolfe.FactorGraph.MPSchedulerImpl.MPDirection
 /**
  * Created by rockt on 09/04/2014.
  */
-class MPSchedulerSpec extends StructureIsomorphisms {
+class FactorGraphSchedulerSpec extends StructureIsomorphisms {
   "A scheduler" should {
     "given a tree" should {
       val graph = new FactorGraph()
