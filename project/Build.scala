@@ -50,10 +50,10 @@ object BuildSettings {
     "com.github.axel22" %% "scalameter" % "0.4",
     "org.scala-lang" % "scala-compiler" % "2.10.3",
     "org.scala-lang" % "scala-library" % "2.10.3",
-    "org.scala-lang" %% "scala-pickling" % "0.8.0-SNAPSHOT",
     "org.slf4j" % "slf4j-api" % "1.7.6",
     "org.slf4j" % "slf4j-simple" % "1.7.6",
     "org.apache.commons" % "commons-compress" % "1.8",
+    "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.1.3",
     "com.typesafe" % "scalalogging-slf4j_2.10" % "1.1.0"
   )
 
@@ -87,7 +87,7 @@ object BuildSettings {
       initialCommands := """
         import ml.wolfe.Wolfe._
         import ml.wolfe.macros.OptimizedOperators._
-      """
+                         """
     ) ++ releaseSettings ++ publishSettings
 
 }
