@@ -4,27 +4,31 @@ import java.io._
 import cc.factorie.la._
 import scala.collection.mutable
 import java.util.zip.{GZIPOutputStream, GZIPInputStream}
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
+import com.fasterxml.jackson.core.`type`.TypeReference
+import java.lang.reflect.{ParameterizedType, Type}
 
 /**
-* Created by larysa
-*/
+ * Created by larysa
+ */
 
 //todo: add Factorie header
 // todo: feature vector (de)serialization is adapted from cc.factorie.util.BinarySerializer
 object BinarySerializerUtil {
 
 
-  private val INT: Byte = 0x01
-  private val DOUBLE: Byte = 0x02
-  private val BOOLEAN: Byte = 0x03
-  private val STRING: Byte = 0x04
-  private val TENSOR: Byte = 0x05
-  private val MAP: Byte = 0x06
-  private val LIST: Byte = 0x07
-  private val NULL: Byte = 0x08
+  private val INT                  : Byte = 0x01
+  private val DOUBLE               : Byte = 0x02
+  private val BOOLEAN              : Byte = 0x03
+  private val STRING               : Byte = 0x04
+  private val TENSOR               : Byte = 0x05
+  private val MAP                  : Byte = 0x06
+  private val LIST                 : Byte = 0x07
+  private val NULL                 : Byte = 0x08
   private val SPARSE_INDEXED_TENSOR: Byte = 0x09
-  private val SPARSE_BINARY_TENSOR: Byte = 0x10
-  private val DENSE_TENSOR: Byte = 0x11
+  private val SPARSE_BINARY_TENSOR : Byte = 0x10
+  private val DENSE_TENSOR         : Byte = 0x11
 
   private def tagForType(value: Any): Byte = value match {
     case _: Int => INT
@@ -140,7 +144,7 @@ object BinarySerializerUtil {
         }
       case t: Tensor =>
         s.writeInt(t.activeDomainSize)
-        t.foreachActiveElement((i, v) => {s.writeInt(i); s.writeDouble(v)})
+        t.foreachActiveElement((i, v) => { s.writeInt(i); s.writeDouble(v) })
       case m: mutable.Map[String@unchecked, Any@unchecked] =>
         s.writeInt(m.size)
         for ((k, v) <- m) serializeFeatureVector(v, s)
@@ -177,12 +181,12 @@ object BinarySerializerUtil {
     s.writeInt(str.length)
     str.foreach(s.writeChar(_))
   }
-  private def readDoubleArray(s: DataInputStream, arr: Array[Double]): Array[Double] = { val length = s.readInt(); var i = 0; while (i < length) {arr(i) = s.readDouble(); i += 1}; arr }
-  private def readDoubleArray(s: DataInputStream): Array[Double] = { val arr = new Array[Double](s.readInt()); var i = 0; while (i < arr.length) {arr(i) = s.readDouble(); i += 1}; arr }
-  private def writeDoubleArray(s: DataOutputStream, arr: Array[Double], length: Int): Unit = { s.writeInt(length); var i = 0; while (i < length) {s.writeDouble(arr(i)); i += 1} }
-  private def readIntArray(s: DataInputStream): Array[Int] = { val arr = new Array[Int](s.readInt()); var i = 0; while (i < arr.length) {arr(i) = s.readInt(); i += 1}; arr }
+  private def readDoubleArray(s: DataInputStream, arr: Array[Double]): Array[Double] = { val length = s.readInt(); var i = 0; while (i < length) { arr(i) = s.readDouble(); i += 1 }; arr }
+  private def readDoubleArray(s: DataInputStream): Array[Double] = { val arr = new Array[Double](s.readInt()); var i = 0; while (i < arr.length) { arr(i) = s.readDouble(); i += 1 }; arr }
+  private def writeDoubleArray(s: DataOutputStream, arr: Array[Double], length: Int): Unit = { s.writeInt(length); var i = 0; while (i < length) { s.writeDouble(arr(i)); i += 1 } }
+  private def readIntArray(s: DataInputStream): Array[Int] = { val arr = new Array[Int](s.readInt()); var i = 0; while (i < arr.length) { arr(i) = s.readInt(); i += 1 }; arr }
   private def writeIntArray(s: DataOutputStream, arr: Array[Int]): Unit = writeIntArray(s, arr, arr.length)
-  private def writeIntArray(s: DataOutputStream, arr: Array[Int], length: Int): Unit = { s.writeInt(length); var i = 0; while (i < length) {s.writeInt(arr(i)); i += 1} }
+  private def writeIntArray(s: DataOutputStream, arr: Array[Int], length: Int): Unit = { s.writeInt(length); var i = 0; while (i < length) { s.writeInt(arr(i)); i += 1 } }
   private def readString(s: DataInputStream): String = {
     val bldr = new StringBuilder
     repeat(s.readInt())(bldr += s.readChar())
@@ -191,7 +195,9 @@ object BinarySerializerUtil {
   def repeat(n: Int)(f: => Unit): Unit = for (i <- 0 until n) f
 
 
-  /* Index Serialization*/
+}
+
+object SimpleIndexSerializer {
 
   def serializeIndex(index: SimpleIndex, file: String) = {
     val stream = new ObjectOutputStream(new FileOutputStream(new File(file)))
@@ -204,87 +210,70 @@ object BinarySerializerUtil {
     new SimpleIndex().deserialize(stream)
   }
 
-
 }
 
-object JsonSerializer {
-  println(" = ")
+/**
+ * JSON based serialization for Wolfe Vector.
+ */
+
+object VectorSerializer {
+  def serialize(v: Wolfe.Vector): String = {
+    JacksonWrapper.serialize(v)
+  }
+
+  def deserialize(vector: String): Wolfe.Vector = {
+    new Wolfe.Vector(JacksonWrapper.deserialize[Wolfe.Vector](vector).asInstanceOf[Map[Any, Double]])
+  }
+
+  //  def serializeToFile(v: Wolfe.Vector, file: String) {
+  //    JacksonWrapper.serializeToFile(v, file)
+  //  }
+  //
+  //  def deserializeFromFile(file: String): Wolfe.Vector = {
+  //    JacksonWrapper.deserializeFromFile(file)
+  //  }
 }
 
-//
-//object JsonSerializer {
-//
-//  import java.io.{InputStream, File}
-//  import scala.io.{ Source}
-//  import scala.pickling.io.TextFileOutput
-//  import scala.pickling._
-//  import json._
-//
-//  def serialize[T: SPickler : FastTypeTag](t: T) = t.pickle
-//
-//  def serializeToFile[T: SPickler : FastTypeTag](t: T, filePath: String) = {
-//    val tempFile: File = new File(filePath)
-//    val file: TextFileOutput = new TextFileOutput(tempFile)
-//    t.pickleTo(file)
-//    file.close()
-//  }
-//
-//  def deserializeFromFile[T: Unpickler : FastTypeTag](fileName: String) = {
-//    val file: InputStream = util.Util.getStreamFromClassPathOrFile(fileName)
-//    val objAsString: String = Source.fromInputStream(file).getLines().mkString("")
-//    val unpickler: JSONPickle = JSONPickle(objAsString)
-//    unpickler.unpickle[T]
-//  }
-//
-//  def deserialize[T: Unpickler : FastTypeTag](obj: JSONPickleFormat#PickleType) = obj.unpickle[T]
-//}
-//
-//object BinarySerializer {
-//
-//  import scala.pickling._
-//  import binary._
-//  import java.io.{FileInputStream, IOException, FileOutputStream}
-//
-//  def serialize[T: SPickler : FastTypeTag](t: T) = t.pickle
-//
-//  def serializeToFile[T: SPickler : FastTypeTag](t: T, fileName: String) = {
-//    var out = None: Option[FileOutputStream]
-//    try {
-//      val buffer = new ByteArrayBuffer()
-//      t.pickleTo(buffer)
-//      out = Some(new FileOutputStream(fileName))
-//      out.get.write(buffer.toArray)
-//    } catch {
-//      case e: IOException => e.printStackTrace
-//    } finally {
-//      if (out.isDefined) out.get.close
-//    }
-//  }
-//  //
-//  def deserializeFromFile[T: Unpickler : FastTypeTag](fileName: String) = {
-//    var value = None: Option[T]
-//    var in = None: Option[FileInputStream]
-//    try {
-//      in = Some(new FileInputStream(fileName))
-//
-//      val inBuffer = new Array[Byte](in.get.available())
-//      in.get.read(inBuffer)
-//      val unpicklerArray: BinaryPickle = BinaryPickle(inBuffer)
-//      value = Some(unpicklerArray.unpickle[T])
-//
-//    }
-//    catch {
-//      case e: IOException => e.printStackTrace
-//    }
-//    finally {
-//      if (in.isDefined) in.get.close
-//    }
-//    value.get
-//  }
-//
-//  def deserialize[T: Unpickler : FastTypeTag](bytes: Array[Byte]) = bytes.unpickle[T]
-//}
+object JacksonWrapper {
+  val mapper = new ObjectMapper()
+  mapper.registerModule(DefaultScalaModule)
 
+  def serialize(value: Any): String = {
+    import java.io.StringWriter
+    val writer = new StringWriter()
+    mapper.writeValue(writer, value)
+    writer.toString
+  }
+
+  def serializeToFile(value: Any, file: String) {
+    //1.create outputStream
+    //2.  mapper.writeValue(outputStream, value)
+    //3. close outputStream
+  }
+
+  def deserialize[T: Manifest](value: String): T =
+    mapper.readValue(value, typeReference[T])
+
+  def deserializeFromFile[T: Manifest](file: String) /*: T*/ = {
+    //1. create InputStream from file
+    //2.    mapper.readValue(inputStream, typeReference[T])
+    //3. close inputStream
+    // should return T
+  }
+
+  private[this] def typeReference[T: Manifest] = new TypeReference[T] {
+    override def getType = typeFromManifest(manifest[T])
+  }
+
+  private[this] def typeFromManifest(m: Manifest[_]): Type = {
+    if (m.typeArguments.isEmpty) { m.runtimeClass }
+    else new ParameterizedType {
+      def getRawType = m.runtimeClass
+      def getActualTypeArguments = m.typeArguments.map(typeFromManifest).toArray
+      def getOwnerType = null
+    }
+  }
+}
 
 
 
