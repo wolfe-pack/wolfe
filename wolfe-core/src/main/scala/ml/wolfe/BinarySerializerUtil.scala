@@ -193,7 +193,7 @@ object BinarySerializerUtil {
 
   /* Index Serialization*/
 
-  def serializeIndex(index: Index, file: String) = {
+  def serializeIndex(index: SimpleIndex, file: String) = {
     val stream = new ObjectOutputStream(new FileOutputStream(new File(file)))
     index.serialize(stream)
     stream.close()
@@ -206,6 +206,11 @@ object BinarySerializerUtil {
 
 
 }
+
+object JsonSerializer {
+  println(" = ")
+}
+
 //
 //object JsonSerializer {
 //
