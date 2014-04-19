@@ -1,14 +1,13 @@
 package ml.wolfe.macros
 
 import scala.reflect.macros.Context
-import scala.reflect.api.Universe
 import scala.collection.mutable
 
 
 /**
  * A group of general purpose transformers defined with respect to some universe.
  */
-trait Transformers[C<:Context] {
+trait Transformers[C<:Context] extends SymbolRepository[C]{
 
   this: HasContext[C] =>
 
@@ -159,6 +158,17 @@ trait Transformers[C<:Context] {
       val symbols = tree.collect({case i: Ident => i}).map(_.name).toSet //todo: this shouldn't just be by name
       functionStack.exists(_.vparams.exists(p => symbols(p.name)))
     }
+  }
+
+
+  /**
+   * @param iterable a tree representing an iterable object
+   * @return the argument type of the iterable, e.g. for Seq(1,2,3) it would be Int.
+   */
+  def iterableArgumentType(iterable: Tree): Type = {
+    val iterableType = iterable.tpe.baseType(scalaSymbols.iterableClass)
+    val TypeRef(_, _, List(argType)) = iterableType
+    argType
   }
 
 

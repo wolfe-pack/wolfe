@@ -25,7 +25,7 @@ trait MetaCaseClassStructures[C<:Context] {
       q"val ${newTermName(f.name.encoded)} = new ${t.className}"
     lazy val fieldIds        = fields.map(f => Ident(f.name))
     lazy val fieldValues     = fieldIds.map(i => q"$i.value()")
-    lazy val observeFields   = fields.map(f => q"${f.name}.observe(value.${f.name})")
+    lazy val observeFields   = fields.map(f => q"${f.name.toTermName}.observe(value.${f.name.toTermName})")
     lazy val argType         = tpe.widen
     def classDef(graphName: TermName) = q"""
       final class $className extends ml.wolfe.macros.Structure[$tpe] {

@@ -62,10 +62,10 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
   def tupleProcessor(domainIds: List[TermName], tmpIds: List[TermName], body: Tree,
                      op: TermName = newTermName("flatMap"), lastOp: TermName = newTermName("map")): Tree =
     (domainIds, tmpIds) match {
-      case (dom :: Nil, id :: Nil) => q"Range(0,$dom.length).$lastOp($id => $body)"
+      case (dom :: Nil, id :: Nil) => q"Range(0,$dom.length).$lastOp(($id:Int) => $body)"
       case (dom :: domTail, id :: idTail) =>
         val inner = tupleProcessor(domTail, idTail, body, op)
-        q"Range(0,$dom.length).$op($id => $inner)"
+        q"Range(0,$dom.length).$op(($id:Int) => $inner)"
       case _ => sys.error("shouldn't happen")
     }
 
@@ -141,6 +141,8 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
     lazy val injected        = context.resetLocalAttrs(injectStructure(potential, matcher))
     lazy val constructorArgs = q"val structure:${ structure.className }" :: info.constructorArgs
 
+    def inject(term:Tree) = context.resetLocalAttrs(injectStructure(term, matcher))
+
     lazy val perSetting = q"""
 //        println(nodes.map(_.setting).mkString(","))
         settings(settingIndex) = nodes.map(_.setting)
@@ -184,8 +186,7 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
 
     def createFactor = q"graph.addLinearFactor(vectors, settings, dims)"
     def perSettingValue = toOptimizedFactorieVector(injected, linearModelInfo.indexTree)
-    //q"${ diffInfo.indexTree }.toCachedFactorieSparseVector($injected,true)"
-    //    def perSettingValue = q"${ diffInfo.indexTree }.toCachedFactorieSparseVector($injected,true)"
+//    def perSettingValue = inject(toOptimizedFactorieVector(potential, linearModelInfo.indexTree))
     def perSettingArrayInitializer = q"Array.ofDim[ml.wolfe.FactorieVector](settingsCount)"
     def perSettingArrayName = newTermName("vectors")
   }

@@ -182,15 +182,7 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
   }
 
 
-  /**
-   * @param iterable a tree representing an iterable object
-   * @return the argument type of the iterable, e.g. for Seq(1,2,3) it would be Int.
-   */
-  def iterableArgumentType(iterable: Tree): Type = {
-    val iterableType = iterable.tpe.baseType(scalaSymbols.iterableClass)
-    val TypeRef(_, _, List(argType)) = iterableType
-    argType
-  }
+
 
   object CartesianProduct {
     def unapply(tree:Tree):Option[List[Tree]] = tree match {
