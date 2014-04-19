@@ -101,10 +101,10 @@ trait MetaFunStructures[C<:Context] {
     def tupleProcessor(domainIds: List[TermName], tmpIds: List[TermName], body: Tree,
                        op: TermName = newTermName("flatMap"), lastOp: TermName = newTermName("map")): Tree =
       (domainIds, tmpIds) match {
-        case (dom :: Nil, id :: Nil) => q"Range(0,$dom.length).$lastOp($id => $body)"
+        case (dom :: Nil, id :: Nil) => q"Range(0,$dom.length).$lastOp(($id:Int) => $body)"
         case (dom :: domTail, id :: idTail) =>
           val inner = tupleProcessor(domTail, idTail, body, op)
-          q"Range(0,$dom.length).$op($id => $inner)"
+          q"Range(0,$dom.length).$op(($id:Int) => $inner)"
         case _ => sys.error("shouldn't happen")
       }
 

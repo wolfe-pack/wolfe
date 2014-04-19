@@ -57,8 +57,10 @@ object OptimizedOperators extends Operators {
 }
 
 trait LinearModelArgmaxCode[C <: Context] extends SymbolRepository[C] {
+
   import context.universe._
-  def inferenceCode(objRhs: Tree, graph: TermName):Tree = objRhs match {
+
+  def inferenceCode(objRhs: Tree, graph: TermName): Tree = objRhs match {
     case q"$f(${ _ })" =>
       f.symbol.annotations.find(_.tpe.typeSymbol == wolfeSymbols.optByInference) match {
         case Some(annotation) => q"${ annotation.scalaArgs.head }($graph)"
@@ -73,13 +75,12 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
                                                with MetaStructuredFactors[C]
                                                with Conditioner[C]
                                                with MetaGradientCalculators[C]
-                                               with LinearModelArgmaxCode[C]{
+                                               with LinearModelArgmaxCode[C] {
 
   import context.universe._
 
 
-
-  def learningCode(objRhs: Tree, weightsSet: TermName):Tree = {
+  def learningCode(objRhs: Tree, weightsSet: TermName): Tree = {
     def getCodeFromAnnotation(f: Tree): Tree = {
       f.symbol.annotations.find(_.tpe.typeSymbol == wolfeSymbols.optByLearning) match {
         case Some(annotation) => q"${ annotation.scalaArgs.head }($weightsSet)"
@@ -87,7 +88,11 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
       }
     }
     objRhs match {
-      case q"$f(${ _ })" => getCodeFromAnnotation(f)
+        //todo: generalize to allow any number of arguments
+      case q"$f(${ _ })" =>
+        getCodeFromAnnotation(f)
+      case q"$f(${ _ })(${ _ })" =>
+        getCodeFromAnnotation(f)
       case _ => q"new OnlineTrainer($weightsSet, new Perceptron, 4)"
     }
   }
@@ -206,10 +211,16 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
     val key = newTermName(context.fresh("_key"))
     val learner = learningCode(rhs, weightsSet)
 
-    val replaced = transform(perInstanceRhs, { case i: Ident if i.symbol == x.symbol => Ident(instanceName) })
+    val replaced = transform(perInstanceRhs, {
+      case i: Ident if i.symbol == x.symbol => Ident(instanceName) //treeCopy.Ident(i,instanceName)
+    })
+    //todo: this doesn't work
+    val exampleDom = iterableArgumentType(context.typeCheck(context.resetLocalAttrs(sum.over)))
 
+    //metaGradientCalculator(replaced, arg.symbol, Ident(indexName)) match {
     metaGradientCalculator(replaced, arg.symbol, Ident(indexName)) match {
       case Good(calculator) =>
+        val classDef = calculator.classDef
         val code = q"""
           import cc.factorie.WeightsSet
           import cc.factorie.Weights
@@ -223,8 +234,8 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
           val $indexName = new ml.wolfe.DefaultIndex()
           val $weightsSet = new WeightsSet
           ml.wolfe.util.LoggerUtil.info("Creating examples ...")
-          val examples = ml.wolfe.util.Timer.time("examples") { for ($instanceName <- ${ sum.over }) yield new Example {
-              ${ calculator.classDef }
+          val examples = ml.wolfe.util.Timer.time("examples") { ${ sum.over }.map(($instanceName:$exampleDom) => new Example {
+              ${ classDef }
               var _key:Weights = null
               val gradientCalculator = new ${ calculator.className }
               def accumulateValueAndGradient(value: DoubleAccumulator, gradient: WeightsMapAccumulator) = {
@@ -234,11 +245,11 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
                 value.accumulate($scaling * v)
                 gradient.accumulate(_key, g, $scaling)
               }
-            }
+            })
           }
           ml.wolfe.util.LoggerUtil.info(s"Speed: "  +  (1000 * examples.size.toDouble / ml.wolfe.util.Timer.reported("examples")) + " examples/sec")
           val $key = $weightsSet.newWeights(new ml.wolfe.DenseVector($indexName.size))
-          for (example <- examples) example._key = $key
+          examples.foreach(example => example._key = $key)
           val trainer = $learner
           ml.wolfe.util.LoggerUtil.info("Starting to optimize ...")
           trainer.trainFromExamples(examples)
@@ -256,15 +267,15 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
     val trees = builderTrees(overWhereOf)
     //todo: deal with scaling in linear model as well
     if (trees.over.symbol == wolfeSymbols.vectors)
-      CodeAndInitialization(argmaxByLearning(trees, scaling),Nil)
+      CodeAndInitialization(argmaxByLearning(trees, scaling), Nil)
     else argmaxLinearModel(trees)
   }
 
   trait IsmorphicFactorGraph[T] {
     def graph = structure.graph
-    def structure:Structure[T]
+    def structure: Structure[T]
   }
 
-  def fg[T,N](overWhereOf: Builder[T, N]):IsmorphicFactorGraph[T] = null
+  def fg[T, N](overWhereOf: Builder[T, N]): IsmorphicFactorGraph[T] = null
 
 }

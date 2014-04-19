@@ -73,7 +73,7 @@ trait Conditioner[C <: Context] extends MetaStructures[C] {
             case ((q"${_}.$copyDefault1", q"${_}.$copyDefault2"), field)
               if copyDefault1.encoded.startsWith("copy$default$") && copyDefault2.encoded.startsWith("copy$default$") =>
               //observe!
-              val code = q"$structure.${field.name}.observe($select2.${field.name})"
+              val code = q"$structure.${field.name.toTermName}.observe($select2.${field.name.toTermName})"
               Some(code)
             case ((arg1, arg2), field) =>
               conditioningPair(arg1, arg2, matcher)

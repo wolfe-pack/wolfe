@@ -28,7 +28,7 @@ object DocClassifyExample {
 
     def features(d: Doc) = sum { over(0 until d.tokens.size) of (i => oneHot(d.label -> d.tokens(i).word)) }
 
-    def model(w: Vector)(d: Doc) = w dot features(d)
+    def model(w: Vector)(blubb: Doc) = w dot features(blubb)
 
     def predictor(w: Vector)(d: Doc) = argmax { over(Docs) of model(w) st evidence(observed)(d) }
 
@@ -50,7 +50,7 @@ object DocClassifyExample {
     val model = new Model(labels)
     val w = model.learn(sub)
     println(w.take(10))
-    println("Prediction ... ")
+    println("Prediction ...")
     val trainPredicted = model.batchPredictor(w)(sub)
     val trainEval = Evaluator.evaluate(sub,trainPredicted)(_.label)
     println(trainEval)
