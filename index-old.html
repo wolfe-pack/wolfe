@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <link href='https://fonts.googleapis.com/css?family=Chivo:900'
+          rel='stylesheet' type='text/css'>
+    <link rel="shortcut icon" href="images/wolfe-logo/wolfe-logo-zoom-square.png">
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen"/>
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen"/>
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print"/>
+    <link rel="stylesheet" href="highlight/styles/zenburn.css">
+    <script src="highlight/highlight.pack.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>Wolfe: Declarative Machine Learning in Scala</title>
+</head>
+
+<body>
+<div id="container">
+    <div class="inner">
+
+        <header>
+            <h1><img width="40px" src="images/wolfe-logo/wolfe-logo-zoom.png"> Wolfe</h1>
+
+            <h2>Declarative Machine Learning in Scala</h2>
+        </header>
+
+        <section id="main_content">
+            <h3>
+                <a name="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages"><span
+                        class="octicon octicon-link"></span></a>Welcome</h3>
+
+            <p align="justify">Wolfe acknowledges that at the heart of most machine learning (ML) applications are two
+                concepts:
+                mathematical models that assign probabilities or scores to hypotheses (or possible worlds),
+                and mathematical operators that interact with these models---most prominently maximization and
+                summation.</p>
+
+            <!--<pre><code class="language-scala">//a feature function of observation and transition features-->
+<!--def f(s:Sentence) = {-->
+  <!--val n = s.words.size-->
+  <!--sum { over(0 until n) of (i => oneHot(s.words(i) -> s.tags(i))} +-->
+  <!--sum { over(0 until n - 1) of (i => oneHot(s.tags(i) -> s.tags(i+1)) } }-->
+
+<!--//a linear model-->
+<!--def s(w:Vector)(s:Sentence) = w dot f(s)-->
+
+<!--//find the highest scoring assignment to the tag values.-->
+<!--def h(w:Vector)(s:Sentence) = argmax { over[Sentence] of s(w) st x(s)}-->
+<!--</code></pre>-->
+
+            <p>In Wolfe these mathematical operators are primitives, and the practitioner can rely on the Wolfe
+                interpreter
+                to implement these in optimized, and generally approximate, fashion.
+                This enables declarative and concise development of ML applications, which allows the practitioner to
+                focus on mathematical modelling of her problem as opposed to machine learning implementation details.
+                With these primitives, existing probabilistic programming and Statistical Relational Learning approaches
+                (e.g. Factorie or Markov Logic) can be used and extended.</p>
+
+            <p>Wolfe supports (or will support) most objectives
+                and operations used in learning and inference: convex learning risks functions, linear programs for MAP
+                inference, integer linear programming solvers, message passing, nested min max objectives,
+                dual decomposition etc. Wolfe’s host language is Scala.</p>
+
+
+            <!--case class Token(word:String, tag:String)-->
+            <!--case class Sentence(tokens:Seq[Token])-->
+            <!--//find weights by minimizing a training loss-->
+            <!--def learn(data:Seq[Sentence]) = argmin { over[Vector] of loss(data) }-->
+
+
+            <h3>
+                <a name="authors-and-contributors" class="anchor" href="#authors-and-contributors"><span
+                        class="octicon octicon-link"></span></a>Core Team</h3>
+            In alphabetical order:
+            <ul>
+                <li><a href="http://dws.informatik.uni-mannheim.de/en/people/researchers/jan-noessner/">Jan Noessner</a>
+                </li>
+                <li><a href="https://twitter.com/visenger">Larysa Visengeriyeva</a></li>
+                <li><a href="http://people.cs.umass.edu/~sameer/">Sameer Singh</a></li>
+                <li><a href="http://www.riedelcastro.org">Sebastian Riedel</a></li>
+                <li><a href="http://rockt.github.io/">Tim Rocktäschel</a></li>
+                <li><a href="http://svivek.com/">Vivek Srikumar</a></li>
+            </ul>
+
+            <h3>
+                <a name="support" class="anchor" href="#support"><span class="octicon octicon-link"></span></a>Supported
+                By</h3>
+
+            <a href="http://erc.europa.eu/"><img height="70px"
+                                                 src="http://www.levkingroup.com/uploads/RTEmagicC_logo_erc_01.png.png"></a>
+            <a href="http://www.cs.washington.edu/"><img height="70px"
+                                                         src="http://upload.wikimedia.org/wikipedia/en/9/93/University_of_Washington_Seal.png"></a>
+            <a href="http://www.tu-berlin.de"><img width="70px"
+                                                   src="http://upload.wikimedia.org/wikipedia/commons/3/30/TU-Berlin-Logo.svg"></a>
+            <a href="http://cs.stanford.edu"><img height="70px"
+                                                  src="https://upload.wikimedia.org/wikipedia/en/b/b7/Stanford_University_seal_2003.svg"></a>
+
+            <p></p>
+            <a href="http://www.ucl.ac.uk"><img height="40px"
+                                                src="http://upload.wikimedia.org/wikipedia/en/d/d1/University_College_London_logo.svg"></a>
+            <a href="http://www.uni-mannheim.de/"><img height="40"
+                                                       src="http://upload.wikimedia.org/wikipedia/commons/0/04/University_of_Mannheim.svg"></a>
+
+            <hr>
+
+            <section id="downloads" class="clearfix">
+                <a href="https://github.com/wolfe-pack/wolfe" id="view-on-github"
+                   class="button"><span>GitHub Source</span></a>
+                <a href="https://github.com/wolfe-pack/wolfe/wiki" id="view-on-github"
+                   class="button"><span>GitHub Wiki</span></a>
+            </section>
+
+
+        </section>
+
+
+        <footer>
+            Wolfe is maintained by <a href="https://github.com/uclmr">uclmr</a><br>
+            This page was generated by <a href="http://pages.github.com">GitHub Pages</a>. Tactile theme by <a
+                href="https://twitter.com/jasonlong">Jason Long</a>.
+        </footer>
+
+
+    </div>
+</div>
+</body>
+</html>
