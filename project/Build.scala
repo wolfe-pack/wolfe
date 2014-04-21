@@ -74,6 +74,13 @@ object BuildSettings {
     credentials += Credentials(Path.userHome / ".ivy2" / ".credentials-homeniscient")
   )
 
+  val generalSettings =
+    Seq(
+      initialCommands := """
+        import ml.wolfe.Wolfe._
+        import ml.wolfe.macros.OptimizedOperators._
+                         """
+    )
 
   val globalSettings =
     Seq(
@@ -83,12 +90,8 @@ object BuildSettings {
         Resolver.sonatypeRepo("snapshots"),
         Resolver.sonatypeRepo("releases")
       ),
-      globalDependencies,
-      initialCommands := """
-        import ml.wolfe.Wolfe._
-        import ml.wolfe.macros.OptimizedOperators._
-                         """
-    ) ++ releaseSettings ++ publishSettings
+      globalDependencies
+    ) ++ generalSettings ++ releaseSettings ++ publishSettings
 
 }
 
@@ -100,7 +103,7 @@ object Build extends Build {
   lazy val root = Project(
     id = "wolfe",
     base = file("."),
-    settings = Project.defaultSettings ++ publishSettings
+    settings = Project.defaultSettings ++ publishSettings ++ generalSettings
   ) aggregate(core, examples)
 
   lazy val core = Project(
