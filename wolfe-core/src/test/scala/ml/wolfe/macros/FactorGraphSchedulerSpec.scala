@@ -5,8 +5,8 @@ import ml.wolfe.util.NLP
 import Wolfe._
 import NLP._
 import OptimizedOperators._
-import ml.wolfe.FactorGraph.MPSchedulerImpl
-import ml.wolfe.FactorGraph.MPSchedulerImpl.MPDirection
+import ml.wolfe.FactorGraph.SchedulerImpl
+import ml.wolfe.FactorGraph.SchedulerImpl.Direction
 
 
 /**
@@ -47,17 +47,17 @@ class FactorGraphSchedulerSpec extends StructureIsomorphisms {
       } yield forward ++ Seq((root.f.index, root.n.index)) ++ backward
 
       "return the right edge ordering for a forward messaging pass" in {
-        val predicted = MPSchedulerImpl.schedule(root, MPDirection.Forward).map(e => (e.f.index, e.n.index))
+        val predicted = SchedulerImpl.schedule(root, Direction.Forward).map(e => (e.f.index, e.n.index))
         validForwardPasses should contain(predicted)
       }
 
       "return the right edge ordering for a backward messaging pass" in {
-        val predicted = MPSchedulerImpl.schedule(root, MPDirection.Backward).map(e => (e.f.index, e.n.index))
+        val predicted = SchedulerImpl.schedule(root, Direction.Backward).map(e => (e.f.index, e.n.index))
         validBackwardPasses should contain(predicted)
       }
 
       "return the right edge ordering for a forward-backward messaging pass" in {
-        val predicted = MPSchedulerImpl.schedule(root).map(e => (e.f.index, e.n.index))
+        val predicted = SchedulerImpl.schedule(root).map(e => (e.f.index, e.n.index))
         validForwardBackwardPasses should contain(predicted)
       }
     }
@@ -80,13 +80,13 @@ class FactorGraphSchedulerSpec extends StructureIsomorphisms {
 
       "return only one loop for a forward messaging pass" in {
         val actual = Seq((101,1), (100,0), (102,2))
-        val predicted = MPSchedulerImpl.schedule(root, MPDirection.Forward).map(e => (e.f.index, e.n.index))
+        val predicted = SchedulerImpl.schedule(root, Direction.Forward).map(e => (e.f.index, e.n.index))
         predicted should be(actual)
       }
 
       "return only one loop for a backward messaging pass" in {
         val actual = Seq((101,2), (102,0), (100,1))
-        val predicted = MPSchedulerImpl.schedule(root, MPDirection.Backward).map(e => (e.f.index, e.n.index))
+        val predicted = SchedulerImpl.schedule(root, Direction.Backward).map(e => (e.f.index, e.n.index))
         predicted should be(actual)
       }
 
@@ -95,7 +95,7 @@ class FactorGraphSchedulerSpec extends StructureIsomorphisms {
         val actual = Set(
           Seq((100,1), (101,2), (102,0), (100,0), (102,2), (101,1)) //FIXME: list other possible cases
         )
-        val predicted = MPSchedulerImpl.schedule(root).map(e => (e.f.index, e.n.index))
+        val predicted = SchedulerImpl.schedule(root).map(e => (e.f.index, e.n.index))
         actual should contain(predicted)
       }
     }
@@ -116,7 +116,7 @@ class FactorGraphSchedulerSpec extends StructureIsomorphisms {
       val actual = Set(
         Seq(100 -> 0, 100 -> 1, 101 -> 2, 101 -> 3)
       )
-      val predicted = MPSchedulerImpl.schedule(graph).map(e => (e.f.index, e.n.index))
+      val predicted = SchedulerImpl.schedule(graph).map(e => (e.f.index, e.n.index))
       actual should contain(predicted)
     }
 
@@ -138,7 +138,7 @@ class FactorGraphSchedulerSpec extends StructureIsomorphisms {
       val actual = Set(
         Seq((101,1), (100,1), (100,0), (101,2))
       )
-      val predicted = MPSchedulerImpl.schedule(root).map(e => (e.f.index, e.n.index))
+      val predicted = SchedulerImpl.schedule(root).map(e => (e.f.index, e.n.index))
 
       actual should contain(predicted)
     }

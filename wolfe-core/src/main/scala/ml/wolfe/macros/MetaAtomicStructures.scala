@@ -29,7 +29,7 @@ trait MetaAtomicStructures[C <: Context] {
     def classDef(graphName: TermName) = q"""
       final class $className extends ml.wolfe.macros.Structure[$argType] {
         ..$domainDefs
-        val node = $graphName.addNode($domName.length)
+        val node = $graphName.addNode($domName.length, label = "")
         private def updateValue() {node.value = node.domain(node.setting)}
         def value():$argType = $domName(node.value)
         def children():Iterator[ml.wolfe.macros.Structure[Any]] = Iterator.empty

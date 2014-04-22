@@ -20,7 +20,7 @@ object MaxProduct {
    */
   def apply(fg: FactorGraph, maxIteration: Int, canonical: Boolean = true) {
 //    val edges = if (canonical) fg.edges.sorted(FactorGraph.EdgeOrdering) else fg.edges
-    val edges = if (canonical) MPSchedulerImpl.schedule(fg) else fg.edges
+    val edges = if (canonical) SchedulerImpl.schedule(fg) else fg.edges
 
     for (i <- 0 until maxIteration) {
       for (edge <- edges) {
