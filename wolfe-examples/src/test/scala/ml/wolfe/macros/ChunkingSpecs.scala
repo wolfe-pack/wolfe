@@ -29,8 +29,8 @@ class ChunkingSpecs extends WolfeSpec {
 
       def features(s: Sentence) = {
         import s._
-        val obs = sum { over(0 until tokens.size) of (i => oneHot('o -> tokens(i).word -> tokens(i).chunk)) }
-        val pairs = sum { over(0 until tokens.size - 1) of (i => oneHot('p -> tokens(i).chunk -> tokens(i + 1).chunk)) }
+        val obs = sum(0 until tokens.size) { i => oneHot('o -> tokens(i).word -> tokens(i).chunk) }
+        val pairs = sum(0 until tokens.size - 1) { i => oneHot('p -> tokens(i).chunk -> tokens(i + 1).chunk) }
         obs + pairs
       }
 
@@ -40,12 +40,12 @@ class ChunkingSpecs extends WolfeSpec {
       def perceptronLoss(w: Vector)(i: Sentence): Double = max { over(Sentences) of model(w) st evidence(i) } - model(w)(i)
 
       @OptimizeByLearning(new OnlineTrainer(_, new Perceptron, 4))
-      def loss(w: Vector) = sum { over(train) of perceptronLoss(w) }
+      def loss(w: Vector) = sum(train) { perceptronLoss(w) }
 
       val w = argmin { over[Vector] of loss }
 
       //the predictor given some observed instance
-      def predict(s: Sentence) = argmax { over(Sentences) of model(w) st evidence(s) }
+      def predict(s: Sentence) = argmax (Sentences filter evidence(s)) { model(w) }
 
       val predictedTrain = map { over(train) using predict }
       val evalTrain = Evaluator.evaluate(train.flatMap(_.tokens), predictedTrain.flatMap(_.tokens))(_.chunk)
@@ -67,19 +67,19 @@ class ChunkingSpecs extends WolfeSpec {
 object SubtractTest {
 
   def argument1() = {
-    val indices0 = Seq(3841,3196,3855,3866,2422,3877,509,255,3888,509,3897,14,2300,544,332,3723,3074,363,401,434,434,431,401,432,409,401,432,410,410,409,401,431,401,436,451,0,0,0,0,0,0,0)
-    val values0 = Seq(1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0)
+    val indices0 = Seq(3841, 3196, 3855, 3866, 2422, 3877, 509, 255, 3888, 509, 3897, 14, 2300, 544, 332, 3723, 3074, 363, 401, 434, 434, 431, 401, 432, 409, 401, 432, 410, 410, 409, 401, 431, 401, 436, 451, 0, 0, 0, 0, 0, 0, 0)
+    val values0 = Seq(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
     val arg0 = new SparseTensor1(1000)
     arg0.ensureCapacity(42)
-    for (i <- indices0.indices) arg0 += (indices0(i),values0(i))
+    for (i <- indices0.indices) arg0 +=(indices0(i), values0(i))
     arg0
   }
   def argument2() = {
-    val indices0 = Seq(14,255,332,363,389,396,397,399,401,409,420,422,431,432,509,544,2300,2422,3069,3192,3723,3841,3854,3865,3877,3888,3896,0)
-    val values0 = Seq(1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,4.0,3.0,1.0,1.0,2.0,2.0,2.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,0.0)
+    val indices0 = Seq(14, 255, 332, 363, 389, 396, 397, 399, 401, 409, 420, 422, 431, 432, 509, 544, 2300, 2422, 3069, 3192, 3723, 3841, 3854, 3865, 3877, 3888, 3896, 0)
+    val values0 = Seq(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 4.0, 3.0, 1.0, 1.0, 2.0, 2.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0)
     val arg0 = new SparseTensor1(27)
     arg0.ensureCapacity(28)
-    for (i <- indices0.indices) arg0 += (indices0(i),values0(i))
+    for (i <- indices0.indices) arg0 +=(indices0(i), values0(i))
     arg0
   }
 
