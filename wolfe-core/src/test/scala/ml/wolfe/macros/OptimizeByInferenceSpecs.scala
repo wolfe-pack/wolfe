@@ -21,15 +21,22 @@ class OptimizeByInferenceSpecs extends WolfeSpec {
 
 
     "return the argmax of a one-node sample space and atomic objective with implicit domain" in {
-      val actual = argmax { over[Boolean] of (I(_)) }
-      val expected = BruteForceOperators.argmax { over[Boolean] of (I(_)) }
+      val actual = argmax(bools) { I(_) }
+      val expected = BruteForceOperators.argmax(bools) { I(_) }
       actual should be(expected)
     }
 
     "return the argmax of a two node case class sample space, one observation and atomic objective" in {
       case class Data(x: Boolean, y: Boolean)
-      val actual = argmax { over(Wolfe.all(Data)) of (d => I(!d.x || d.y)) st (_.x) }
-      val expected = BruteForceOperators.argmax { over(Wolfe.all(Data)) of (d => I(!d.x || d.y)) st (_.x) }
+      val actual = argmax(Wolfe.all(Data) filter (_.x)) { d => I(!d.x || d.y) }
+      val expected = BruteForceOperators.argmax(Wolfe.all(Data) filter (_.x)) { d => I(!d.x || d.y) }
+      actual should be(expected)
+    }
+
+    "support where instead of filter " in {
+      case class Data(x: Boolean, y: Boolean)
+      val actual = argmax(Wolfe.all(Data) where (_.x)) { d => I(!d.x || d.y) }
+      val expected = BruteForceOperators.argmax(Wolfe.all(Data) filter (_.x)) { d => I(!d.x || d.y) }
       actual should be(expected)
     }
 
@@ -68,8 +75,8 @@ class OptimizeByInferenceSpecs extends WolfeSpec {
         val pairs = sum { over(0 until seq.size - 1) of (i => I(seq(i) == seq(i + 1))) }
         local + pairs
       }
-      val actual = argmax { over(space) of potential }
-      val expected = BruteForceOperators.argmax { over(space) of potential }
+      val actual = argmax(space) { potential }
+      val expected = BruteForceOperators.argmax(space) { potential }
 
       actual should be(expected)
     }

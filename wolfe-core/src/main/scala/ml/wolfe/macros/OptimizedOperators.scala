@@ -12,22 +12,22 @@ object OptimizedOperators extends Operators {
 
   import scala.language.experimental.macros
 
-  override def argmax[T, N: Ordering](dom: Iterable[T])(obj:T=>N): T = macro argmaxImplNew[T, N]
-  override def argmin[T, N: Ordering](dom: Iterable[T])(obj:T=>N): T = macro argminImplNew[T, N]
+  override def argmax[T, N: Ordering](dom: Iterable[T])(obj: T => N): T = macro argmaxImplNew[T, N]
+  override def argmin[T, N: Ordering](dom: Iterable[T])(obj: T => N): T = macro argminImplNew[T, N]
+  override def map[A, B](dom: Iterable[A])(mapper: A => B): Iterable[B] = macro mapImplNew[A, B]
 
 
   override def argmax[T, N: Ordering](overWhereOf: Builder[T, N]): T = macro argmaxImpl[T, N]
   override def argmin[T, N: Ordering](overWhereOf: Builder[T, N]): T = macro argminImpl[T, N]
-
   override def map[T](overWhereOf: Builder[T, _]): Iterable[T] = macro mapImpl[T]
 
 
   def argmaxImplNew[T: c.WeakTypeTag, N: c.WeakTypeTag](c: Context)
-                                                       (dom:c.Expr[Iterable[T]])
-                                                       (obj:c.Expr[T => N])
-                                                       (ord: c.Expr[Ordering[N]])= {
+                                                       (dom: c.Expr[Iterable[T]])
+                                                       (obj: c.Expr[T => N])
+                                                       (ord: c.Expr[Ordering[N]]) = {
     val helper = new ContextHelper[c.type](c) with OptimizedOperators[c.type]
-    val trees = helper.builderTrees(dom.tree,obj.tree)
+    val trees = helper.builderTrees(dom.tree, obj.tree)
     if (c.enclosingMacros.size > 1) {
       import c.universe._
       val code: Tree = q"${ trees.over }.filter(${ trees.where }).maxBy(${ trees.of })"
@@ -64,12 +64,12 @@ object OptimizedOperators extends Operators {
   }
 
   def argminImplNew[T: c.WeakTypeTag, N: c.WeakTypeTag](c: Context)
-                                                       (dom:c.Expr[Iterable[T]])
-                                                       (obj:c.Expr[T => N])
-                                                       (ord: c.Expr[Ordering[N]])= {
+                                                       (dom: c.Expr[Iterable[T]])
+                                                       (obj: c.Expr[T => N])
+                                                       (ord: c.Expr[Ordering[N]]) = {
     import c.universe._
     val helper = new ContextHelper[c.type](c) with OptimizedOperators[c.type]
-    val trees = helper.builderTrees(dom.tree,obj.tree)
+    val trees = helper.builderTrees(dom.tree, obj.tree)
     val result: Tree = helper.argmax(trees, q"-1.0").combined
     c.Expr[T](result)
   }
@@ -80,11 +80,22 @@ object OptimizedOperators extends Operators {
     import c.universe._
     val helper = new ContextHelper[c.type](c) with OptimizedOperators[c.type]
 
-    val result: Tree = helper.map(overWhereOf.tree)
-    //    val result: Tree = helper.argmax(overWhereOf.tree, q"-1.0")
-    //    val expr = reify[Iterable[T]](overWhereOf.splice.dom.filter(overWhereOf.splice.filter).map(overWhereOf.splice.mapper))
-    //    c.Expr[Iterable[T]](c.resetLocalAttrs(expr.tree))
+    val trees = helper.builderTrees(overWhereOf.tree)
+
+    val result: Tree = helper.map(trees)
     c.Expr[T](result)
+  }
+
+  def mapImplNew[A: c.WeakTypeTag, B: c.WeakTypeTag](c: Context)
+                                                    (dom: c.Expr[Iterable[A]])
+                                                    (mapper: c.Expr[A => B]) = {
+    import c.universe._
+    val helper = new ContextHelper[c.type](c) with OptimizedOperators[c.type]
+
+    val trees = helper.builderTrees(dom.tree, EmptyTree, mapper.tree)
+
+    val result: Tree = helper.map(trees)
+    c.Expr[Iterable[B]](result)
   }
 
 
@@ -122,7 +133,7 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
       }
     }
     objRhs match {
-        //todo: generalize to allow any number of arguments
+      //todo: generalize to allow any number of arguments
       case q"$f(${ _ })" =>
         getCodeFromAnnotation(f)
       case q"$f(${ _ })(${ _ })" =>
@@ -131,8 +142,7 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
     }
   }
 
-  def map(builder: Tree): Tree = {
-    val trees = builderTrees(builder)
+  def map(trees: BuilderTrees): Tree = {
     val Function(List(mapperArg), _) = unwrapSingletonBlocks(trees.using)
 
     //we should do this until no more inlining can be done
