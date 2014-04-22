@@ -13,6 +13,7 @@ trait Operators {
   def argmin[T, N: Ordering](dom:Iterable[T])(obj:T => N) = dom.minBy(obj)
   def sum[T, N: Numeric](dom:Iterable[T])(obj:T => N) = dom.map(obj).sum
   def max[T, N: Ordering](dom:Iterable[T])(obj:T => N) = dom.map(obj).max
+  def map[A,B](dom:Iterable[A])(mapper:A => B):Iterable[B] = dom.map(mapper)
 
   def argmax[T, N: Ordering](overWhereOf: Builder[T, N]):T =
     overWhereOf.dom.filter(overWhereOf.filter).maxBy(overWhereOf.obj)

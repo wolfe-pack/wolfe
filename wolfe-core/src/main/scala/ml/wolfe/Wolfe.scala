@@ -327,6 +327,11 @@ trait Annotations {
 
 trait ProblemBuilder {
 
+  implicit class RichIterable[T](iterable:Iterable[T]) {
+    def where(pred:T => Boolean) = iterable filter pred
+    def st(pred:T => Boolean) = iterable filter pred
+  }
+
   case class Builder[T, N](dom: Iterable[T],
                            filter: T => Boolean = (_: T) => true,
                            obj: T => N,
@@ -341,8 +346,8 @@ trait ProblemBuilder {
   }
 
 
-  implicit def toOverWhereOf[T, N](obj: T => N) = Builder[T, N](Nil, obj = obj)
-  implicit def toOverWhereOf[T](dom: Iterable[T]) = Builder[T, Double](dom, obj = (_: T) => 0.0)
+//  implicit def toOverWhereOf[T, N](obj: T => N) = Builder[T, N](Nil, obj = obj)
+//  implicit def toOverWhereOf[T](dom: Iterable[T]) = Builder[T, Double](dom, obj = (_: T) => 0.0)
   //  implicit def toOverWhereOf[T](obj: T => Double) = OverWhereOf[T,Double](Nil, obj = obj)
 
   def over[T](implicit over: Iterable[T]) = Builder(over, (_: T) => true, (_: T) => 0.0)
