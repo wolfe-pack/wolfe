@@ -28,7 +28,7 @@ object DocClassifyExample {
 
     def features(d: Doc) = sum(0 until d.tokens.size) { i => oneHot(d.label -> d.tokens(i).word) }
 
-    def model(w: Vector)(blubb: Doc) = w dot features(blubb)
+    def model(w: Vector)(d: Doc) = w dot features(d)
 
     def predictor(w: Vector)(d: Doc) = argmax(Docs filter evidence(observed)(d)) { model(w) }
 
