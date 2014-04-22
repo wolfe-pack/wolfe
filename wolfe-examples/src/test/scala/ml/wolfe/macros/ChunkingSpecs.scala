@@ -11,7 +11,7 @@ import cc.factorie.la.SparseTensor1
 class ChunkingSpecs extends WolfeSpec {
 
   "A Chunking Model" should {
-    "give reasonable performance on the CoNLL dataset" in {
+    "give reasonable performance on the CoNLL dataset " in {
 
       import Wolfe._
       import OptimizedOperators._
@@ -37,7 +37,7 @@ class ChunkingSpecs extends WolfeSpec {
       @OptimizeByInference(MaxProduct(_, 1))
       def model(w: Vector)(s: Sentence) = w dot features(s)
 
-      def perceptronLoss(w: Vector)(i: Sentence): Double = max(Sentences filter evidence(i)) { model(w) } - model(w)(i)
+      def perceptronLoss(w: Vector)(i: Sentence): Double = max(Sentences where evidence(i)) { model(w) } - model(w)(i)
 
       @OptimizeByLearning(new OnlineTrainer(_, new Perceptron, 4))
       def loss(w: Vector) = sum(train) { perceptronLoss(w) }
