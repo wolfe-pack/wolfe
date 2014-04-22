@@ -1,6 +1,6 @@
 package ml.wolfe.macros
 
-import ml.wolfe.{FactorGraph, BruteForceOperators, Wolfe, Operators}
+import ml.wolfe.{Wolfe, Operators}
 import scala.reflect.macros.Context
 import Wolfe._
 import org.scalautils.{Bad, Good}
@@ -12,22 +12,41 @@ object OptimizedOperators extends Operators {
 
   import scala.language.experimental.macros
 
+  override def argmax[T, N: Ordering](dom: Iterable[T])(obj:T=>N): T = macro argmaxImplNew[T, N]
+
+
   override def argmax[T, N: Ordering](overWhereOf: Builder[T, N]): T = macro argmaxImpl[T, N]
   override def argmin[T, N: Ordering](overWhereOf: Builder[T, N]): T = macro argminImpl[T, N]
   override def map[T](overWhereOf: Builder[T, _]): Iterable[T] = macro mapImpl[T]
 
 
+  def argmaxImplNew[T: c.WeakTypeTag, N: c.WeakTypeTag](c: Context)
+                                                       (dom:c.Expr[Iterable[T]])
+                                                       (obj:c.Expr[T => N])
+                                                       (ord: c.Expr[Ordering[N]])= {
+    val helper = new ContextHelper[c.type](c) with OptimizedOperators[c.type]
+    val trees = helper.builderTrees(dom.tree,obj.tree)
+    if (c.enclosingMacros.size > 1) {
+      import c.universe._
+      val code: Tree = q"${ trees.over }.filter(${ trees.where }).maxBy(${ trees.of })"
+      c.Expr[T](code)
+    } else {
+      val result = helper.argmax(trees)
+      c.Expr[T](c.resetLocalAttrs(result.combined))
+    }
+  }
+
   def argmaxImpl[T: c.WeakTypeTag, N: c.WeakTypeTag](c: Context)
                                                     (overWhereOf: c.Expr[Builder[T, N]])
                                                     (ord: c.Expr[Ordering[N]]) = {
     val helper = new ContextHelper[c.type](c) with OptimizedOperators[c.type]
+    val trees = helper.builderTrees(overWhereOf.tree)
     if (c.enclosingMacros.size > 1) {
       import c.universe._
-      val trees = helper.builderTrees(overWhereOf.tree)
       val code: Tree = q"${ trees.over }.filter(${ trees.where }).maxBy(${ trees.of })"
       c.Expr[T](code)
     } else {
-      val result = helper.argmax(overWhereOf.tree)
+      val result = helper.argmax(trees)
       c.Expr[T](c.resetLocalAttrs(result.combined))
     }
   }
@@ -37,7 +56,8 @@ object OptimizedOperators extends Operators {
                                                     (ord: c.Expr[Ordering[N]]) = {
     import c.universe._
     val helper = new ContextHelper[c.type](c) with OptimizedOperators[c.type]
-    val result: Tree = helper.argmax(overWhereOf.tree, q"-1.0").combined
+    val trees = helper.builderTrees(overWhereOf.tree)
+    val result: Tree = helper.argmax(trees, q"-1.0").combined
     c.Expr[T](result)
   }
 
@@ -262,9 +282,8 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
     }
   }
 
-  def argmax(overWhereOf: Tree, scaling: Tree = q"1.0"): CodeAndInitialization = {
+  def argmax(trees: BuilderTrees, scaling: Tree = q"1.0"): CodeAndInitialization = {
 
-    val trees = builderTrees(overWhereOf)
     //todo: deal with scaling in linear model as well
     if (trees.over.symbol == wolfeSymbols.vectors)
       CodeAndInitialization(argmaxByLearning(trees, scaling), Nil)

@@ -21,9 +21,10 @@ trait PatternRepository[C <: Context] extends SymbolRepository[C] with CodeRepos
     }
   }
 
-  class AppliedOperator(classes: Symbol => Boolean, wolfeSymbol: Symbol, scalaSymbol: Symbol) {
+  class AppliedOperator(classes: Symbol => Boolean, wolfeSymbol: Symbol => Boolean, scalaSymbol: Symbol) {
     def unapply(tree: Tree): Option[BuilderTrees] = {
       tree match {
+          //scala style
         case q"$op[$opType]($impArg)" if op.symbol == scalaSymbol && classes(opType.symbol) => op match {
           case q"$map[..${ _ }]($obj)(${ _ }).${ _ }" if map.symbol == scalaSymbols.map => map match {
             case q"$filter($where).map" if filter.symbol == scalaSymbols.filter =>
@@ -45,9 +46,17 @@ trait PatternRepository[C <: Context] extends SymbolRepository[C] with CodeRepos
 //          case _ => None
 
         }
-        case q"$op[$domType,$opType]($overWhereOf)($impArg)" if op.symbol == wolfeSymbol && classes(opType.symbol) =>
+        //builder-type style
+        case q"$op[$domType,$opType]($overWhereOf)($impArg)" if wolfeSymbol(op.symbol) && classes(opType.symbol) =>
           val trees = builderTrees(overWhereOf).copy(implicitArg = impArg)
           Some(trees)
+
+          //new simplified style
+        case q"$op[$domType,$opType]($overWhere)($of)($impArg)" if wolfeSymbol(op.symbol) && classes(opType.symbol) =>
+          val trees = builderTrees(overWhere,of).copy(implicitArg = impArg)
+          Some(trees)
+
+
         case _ => None
       }
     }
@@ -63,7 +72,7 @@ trait PatternRepository[C <: Context] extends SymbolRepository[C] with CodeRepos
     }
   }
 
-  object DoubleMax extends AppliedOperator(Set(scalaSymbols.doubleClass), wolfeSymbols.max, scalaSymbols.max) {
+  object DoubleMax extends AppliedOperator(Set(scalaSymbols.doubleClass), wolfeSymbols.maxes, scalaSymbols.max) {
 
 //    def sameFunction(f1:Tree, f2:Tree)
 
@@ -132,10 +141,10 @@ trait PatternRepository[C <: Context] extends SymbolRepository[C] with CodeRepos
   object ApplyDoublePlus extends InfixApply(scalaSymbols.doublePluses)
   object ApplyPlus extends InfixApply(scalaSymbols.doublePluses ++ wolfeSymbols.vectorPluses)
   object ApplyDoubleMinus extends InfixApply(scalaSymbols.doubleMinuses)
-  object DoubleSum extends AppliedOperator(Set(scalaSymbols.doubleClass), wolfeSymbols.sum, scalaSymbols.sum)
-  object Sum extends AppliedOperator(Set(scalaSymbols.doubleClass, wolfeSymbols.vectorType), wolfeSymbols.sum, scalaSymbols.sum)
-  object ArgmaxOperator extends AppliedOperator(Set(scalaSymbols.doubleClass), wolfeSymbols.argmax, scalaSymbols.maxBy)
-  object MapOperator extends AppliedOperator(_ => true, wolfeSymbols.map, scalaSymbols.map)
+  object DoubleSum extends AppliedOperator(Set(scalaSymbols.doubleClass), wolfeSymbols.sums, scalaSymbols.sum)
+  object Sum extends AppliedOperator(Set(scalaSymbols.doubleClass, wolfeSymbols.vectorType), wolfeSymbols.sums, scalaSymbols.sum)
+  object ArgmaxOperator extends AppliedOperator(Set(scalaSymbols.doubleClass), wolfeSymbols.argmaxes, scalaSymbols.maxBy)
+  object MapOperator extends AppliedOperator(_ => true, wolfeSymbols.maps, scalaSymbols.map)
   object FlattenedPlus extends Flattened(ApplyPlus)
 
 
@@ -163,7 +172,13 @@ trait PatternRepository[C <: Context] extends SymbolRepository[C] with CodeRepos
         context.error(context.enclosingPosition, "Can't analyze over-where-of clause " + tree)
         BuilderTrees()
     }
-
   }
+
+  def builderTrees(dom:Tree, obj:Tree) = dom match {
+    case q"$iterable.filter($pred)" => BuilderTrees(iterable,pred,obj,EmptyTree,EmptyTree)
+    case _ => BuilderTrees(dom,EmptyTree,obj,EmptyTree,EmptyTree)
+  }
+
+
 
 }

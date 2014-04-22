@@ -48,10 +48,10 @@ trait SymbolRepository[C <: Context] extends HasContext[C] {
     lazy val st    = overWhereOfClass.typeSignature.member(newTermName("st"))
 
     //optimized operators
-    lazy val sum    = optimizedOpsType.member(newTermName("sum"))
-    lazy val argmax = optimizedOpsType.member(newTermName("argmax"))
-    lazy val max    = optimizedOpsType.member(newTermName("max"))
-    lazy val map    = optimizedOpsType.member(newTermName("map"))
+    lazy val sums     = optimizedOpsType.member(newTermName("sum")).asTerm.alternatives.toSet
+    lazy val argmaxes = optimizedOpsType.member(newTermName("argmax")).asTerm.alternatives.toSet
+    lazy val maxes    = optimizedOpsType.member(newTermName("max")).asTerm.alternatives.toSet
+    lazy val maps     = optimizedOpsType.member(newTermName("map")).asTerm.alternatives.toSet
 
 
     lazy val vectorType   = rootMirror.staticClass("ml.wolfe.Wolfe.Vector")

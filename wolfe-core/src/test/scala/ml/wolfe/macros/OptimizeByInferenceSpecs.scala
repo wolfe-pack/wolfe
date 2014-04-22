@@ -12,11 +12,13 @@ class OptimizeByInferenceSpecs extends WolfeSpec {
 
 
   "An argmax operator" should {
-    "return the argmax of a one-node sample space and atomic objective " in {
-      val actual = argmax { over(Range(0, 5)) of (_.toDouble) }
-      val expected = BruteForceOperators.argmax { over(Range(0, 5)) of (_.toDouble) }
+
+    "return the argmax of a one-node sample space and atomic objective" in {
+      val actual = argmax(0 until 5) { _.toDouble }
+      val expected = BruteForceOperators.argmax(0 until 5) { _.toDouble }
       actual should be(expected)
     }
+
 
     "return the argmax of a one-node sample space and atomic objective with implicit domain" in {
       val actual = argmax { over[Boolean] of (I(_)) }
@@ -30,6 +32,15 @@ class OptimizeByInferenceSpecs extends WolfeSpec {
       val expected = BruteForceOperators.argmax { over(Wolfe.all(Data)) of (d => I(!d.x || d.y)) st (_.x) }
       actual should be(expected)
     }
+
+    "return the argmax of a two node case class sample space, one observation and atomic objective (new style)" in {
+      case class Data(x: Boolean, y: Boolean)
+      val actual = argmax(Wolfe.all(Data) filter (_.x)) { d => I(!d.x || d.y) }
+      val expected = BruteForceOperators.argmax(Wolfe.all(Data) filter (_.x)) { d => I(!d.x || d.y) }
+      actual should be(expected)
+    }
+
+
     "use the algorithm in the maxBy annotation" in {
       //todo: can we find a better way to check whether an annotation was used
       case class Data(x: Boolean, y: Boolean, z: Boolean)
@@ -40,10 +51,10 @@ class OptimizeByInferenceSpecs extends WolfeSpec {
       def twoIterations(d: Data) = model(d)
       @OptimizeByInference(MaxProduct(_, 1))
       def oneIteration(d: Data) = model(d)
-      val afterOneIter = argmax { over[Data] of oneIteration }
-      val afterTwoIter = argmax { over[Data] of twoIterations }
-      val afterTenIter = argmax { over[Data] of model }
-      val expected = BruteForceOperators.argmax { over[Data] of model }
+      val afterOneIter = argmax(data) { oneIteration }
+      val afterTwoIter = argmax(data) { twoIterations }
+      val afterTenIter = argmax(data) { model }
+      val expected = BruteForceOperators.argmax(data) { model }
       afterOneIter should not be expected
       afterTwoIter should be(expected)
       afterTenIter should be(expected)
@@ -60,7 +71,7 @@ class OptimizeByInferenceSpecs extends WolfeSpec {
       val actual = argmax { over(space) of potential }
       val expected = BruteForceOperators.argmax { over(space) of potential }
 
-      actual should be (expected)
+      actual should be(expected)
     }
 
 

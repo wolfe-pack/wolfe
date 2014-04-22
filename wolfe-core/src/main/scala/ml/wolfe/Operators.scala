@@ -9,6 +9,9 @@ trait Operators {
 
   import Wolfe._
 
+  def argmax[T, N: Ordering](dom:Iterable[T])(obj:T => N) = dom.maxBy(obj)
+  def sum[T, N: Numeric](dom:Iterable[T])(obj:T => N) = dom.map(obj).sum
+
   def argmax[T, N: Ordering](overWhereOf: Builder[T, N]):T =
     overWhereOf.dom.filter(overWhereOf.filter).maxBy(overWhereOf.obj)
 
