@@ -37,15 +37,15 @@ class ChunkingSpecs extends WolfeSpec {
       @OptimizeByInference(MaxProduct(_, 1))
       def model(w: Vector)(s: Sentence) = w dot features(s)
 
-      def perceptronLoss(w: Vector)(i: Sentence): Double = max { over(Sentences) of model(w) st evidence(i) } - model(w)(i)
+      def perceptronLoss(w: Vector)(i: Sentence): Double = max(Sentences filter evidence(i)) { model(w) } - model(w)(i)
 
       @OptimizeByLearning(new OnlineTrainer(_, new Perceptron, 4))
       def loss(w: Vector) = sum(train) { perceptronLoss(w) }
 
-      val w = argmin { over[Vector] of loss }
+      val w = argmin(vectors) { loss }
 
       //the predictor given some observed instance
-      def predict(s: Sentence) = argmax (Sentences filter evidence(s)) { model(w) }
+      def predict(s: Sentence) = argmax(Sentences filter evidence(s)) { model(w) }
 
       val predictedTrain = map { over(train) using predict }
       val evalTrain = Evaluator.evaluate(train.flatMap(_.tokens), predictedTrain.flatMap(_.tokens))(_.chunk)
