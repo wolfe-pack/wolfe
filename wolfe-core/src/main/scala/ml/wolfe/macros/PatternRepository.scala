@@ -175,9 +175,12 @@ trait PatternRepository[C <: Context] extends SymbolRepository[C] with CodeRepos
   }
 
   def builderTrees(dom: Tree, obj: Tree, using: Tree = EmptyTree) = dom match {
-    case q"$iterable.filter($pred)" => BuilderTrees(iterable, pred, obj, using, EmptyTree)
-    case q"ml.wolfe.Wolfe.RichIterable($iterable).where($pred)" => BuilderTrees(iterable, pred, obj, using, EmptyTree)
-    case q"ml.wolfe.Wolfe.RichIterable($iterable).st($pred)" => BuilderTrees(iterable, pred, obj, using, EmptyTree)
+    case q"$iterable.filter($pred)" =>
+      BuilderTrees(iterable, pred, obj, using, EmptyTree)
+    case q"ml.wolfe.Wolfe.RichIterable[${_}]($iterable).where($pred)" =>
+      BuilderTrees(iterable, pred, obj, using, EmptyTree)
+    case q"ml.wolfe.Wolfe.RichIterable[${_}]($iterable).st($pred)" =>
+      BuilderTrees(iterable, pred, obj, using, EmptyTree)
     case _ => BuilderTrees(dom, EmptyTree, obj, using, EmptyTree)
   }
 
