@@ -52,8 +52,8 @@ final class FactorGraph {
    * @param dim size of domain of corresponding variable
    * @return the added node.
    */
-  def addNode(dim: Int) = {
-    val n = new Node(nodes.size, dim)
+  def addNode(dim: Int, label: String = "") = {
+    val n = new Node(nodes.size, dim, label)
     nodes += n
     n
   }
@@ -221,8 +221,9 @@ object FactorGraph {
    * A node representing a variable.
    * @param index the index of the node.
    * @param dim the dimension of the variable the node is representing.
+   * @param label the name or label when this node get's displayed 
    */
-  final class Node(val index: Int, var dim: Int) {
+  final class Node(val index: Int, var dim: Int, label: String = "") {
     /* all edges to factors that this node is connected to */
     var edges: Array[Edge] = Array.ofDim(0)
 
@@ -243,13 +244,13 @@ object FactorGraph {
 
     def toVerboseString(nodePrinter: Node => String = n => "") = {
       f"""-----------------
-        |Node:   $index%3d ${ nodePrinter(this) }
+        |Node:   ${this.toString()} ${ nodePrinter(this) }
         |Belief:
         |${ b.mkString("\n") }
       """.stripMargin
     }
 
-    override def toString = index.toString
+    override def toString = if (label.isEmpty) index.toString else label
 
     private[FactorGraph] var edgeCount : Int = 0
     private[FactorGraph] var edgeFilled: Int = 0
@@ -282,10 +283,10 @@ object FactorGraph {
     def toVerboseString(fgPrinter: FGPrinter) =
       f"""----------
         |Edge
-        |Node:    ${ n.index } ${ fgPrinter.node2String(n) }
-        |Factor:  ${ f.index } ${ fgPrinter.factor2String(f) }
+        |Node:    ${ n.toString } ${ fgPrinter.node2String(n) }
+        |Factor:  ${ f.toString } ${ fgPrinter.factor2String(f) }
       """.stripMargin
-    override def toString = s"${ f.index } -> ${ n.index }"
+    override def toString = s"${ f.toString } -> ${ n.toString }"
   }
 
   /**
@@ -321,7 +322,8 @@ object FactorGraph {
                      val typ: FactorType.Value = FactorGraph.FactorType.TABLE,
                      val table: Array[Double],
                      val stats: Array[FactorieVector] = null,
-                     val structured: StructuredPotential = null) {
+                     val structured: StructuredPotential = null,
+                     val label: String = "") {
     var edges: Array[Edge] = Array.ofDim(0)
     def rank = dims.length
     val entryCount = {
@@ -402,14 +404,14 @@ object FactorGraph {
       }
       f"""-----------------
         |Factor:  $index ${ fgPrinter.factor2String(this) }
-        |Nodes:   ${ edges.map(_.n.index).mkString(" ") } ${ edges.map(e => fgPrinter.node2String(e.n)).mkString(" ") }
+        |Nodes:   ${ edges.map(_.n.toString).mkString(" ") } ${ edges.map(e => fgPrinter.node2String(e.n)).mkString(" ") }
         |Type:    $typ
         |Table:
         |${ tableString.mkString("\n") }
       """.stripMargin
     }
 
-    override def toString = index.toString
+    override def toString = if (label.isEmpty) index.toString else label
 
     /**
      * Calculates scores in table based on feature vectors and currently set weights.
@@ -464,7 +466,7 @@ object FactorGraph {
   /**
    * A scheduler provides a canonical ordering of edges such that it resembles the message ordering of forward-backward.
    */
-  trait MPScheduler {
+  trait Scheduler {
     /**
      * @param node root node
      * @return correct message ordering for forward-backward pass
@@ -496,8 +498,8 @@ object FactorGraph {
     def schedule(edge: Edge): Seq[Edge] = schedule(edge.n)
   }
 
-  object MPSchedulerImpl extends MPScheduler {
-    object MPDirection extends Enumeration {
+  object SchedulerImpl extends Scheduler {
+    object Direction extends Enumeration {
       val Forward, Backward = Value
     }
 
@@ -506,7 +508,7 @@ object FactorGraph {
      * @param direction whether calculating forward or backward pass
      * @return correct ordering for messaging pass for given direction (excluding the staring edge)
      */
-    def schedule(e: Edge, direction: MPDirection.Value, done: Set[Edge] = Set()): Seq[Edge] = {
+    def schedule(e: Edge, direction: Direction.Value, done: Set[Edge] = Set()): Seq[Edge] = {
       @tailrec
       def scheduleAcc(todo: Seq[Edge], done: Set[Edge], acc: Seq[Edge]): Seq[Edge] = todo match {
         case Nil => acc
@@ -516,8 +518,8 @@ object FactorGraph {
             val siblings = head.f.edges.filterNot(todo.contains)
             val nephews = siblings.flatMap(sibling => sibling.n.edges.filterNot(_ == sibling))
             direction match {
-              case MPDirection.Forward => scheduleAcc(tail ++ nephews, done + head, nephews ++ acc)
-              case MPDirection.Backward => scheduleAcc(tail ++ nephews, done + head, acc ++ siblings)
+              case Direction.Forward => scheduleAcc(tail ++ nephews, done + head, nephews ++ acc)
+              case Direction.Backward => scheduleAcc(tail ++ nephews, done + head, acc ++ siblings)
             }
           }
       }
@@ -529,8 +531,8 @@ object FactorGraph {
       def forwardBackward(edges: Seq[Edge], done: Set[Edge], acc: Seq[Edge]): Seq[Edge] = edges.toList match {
         case Nil => acc
         case head :: tail =>
-          val forward = schedule(head, MPDirection.Forward, done)
-          val backward = schedule(head, MPDirection.Backward, done)
+          val forward = schedule(head, Direction.Forward, done)
+          val backward = schedule(head, Direction.Backward, done)
           val rest = tail.filterNot(e => forward.contains(e) || backward.contains(e))
           val middle = if (forward.contains(head) || backward.contains(head)) Nil else Seq(head)
           forwardBackward(rest, done ++ forward ++ backward, forward ++ middle ++ acc ++ backward)
@@ -550,12 +552,9 @@ object FactorGraph {
     def vector2String(vector: FactorieVector): String
   }
 
-
   object DefaultPrinter extends FGPrinter {
     def node2String(node: Node) = ""
     def factor2String(factor: Factor) = ""
     def vector2String(vector: ml.wolfe.FactorieVector) = vector.toString()
   }
-
-
 }
