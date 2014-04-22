@@ -20,17 +20,18 @@ object ChunkingExample {
   def observed(s: Sentence) = s.copy(tokens = s.tokens.map(_.copy(chunk = hidden)))
 
   def features(s: Sentence) = {
-    sum { over(0 until s.tokens.size) of (i => oneHot('o -> s.tokens(i).word -> s.tokens(i).chunk)) } +
-    sum { over(0 until s.tokens.size - 1) of (i => oneHot('p -> s.tokens(i).chunk -> s.tokens(i + 1).chunk)) }
+    sum(0 until s.tokens.size) { i => oneHot('o -> s.tokens(i).word -> s.tokens(i).chunk) } +
+    sum(0 until s.tokens.size - 1) { i => oneHot('p -> s.tokens(i).chunk -> s.tokens(i + 1).chunk) }
   }
 
   @OptimizeByInference(MaxProduct(_, 1))
   def model(w: Vector)(s: Sentence) = w dot features(s)
-  def predictor(w: Vector)(s: Sentence) = argmax { over(Sentences) of model(w) st evidence(observed)(s) }
+  def predictor(w: Vector)(s: Sentence) = argmax(Sentences filter evidence(observed)(s)) { model(w) }
 
   @OptimizeByLearning(new OnlineTrainer(_, new Perceptron, 3, 100))
-  def loss(data: Iterable[Sentence])(w: Vector) = sum { over(data) of (s => model(w)(predictor(w)(s)) - model(w)(s)) } ////
-  def learn(data:Iterable[Sentence]) = argmin { over[Vector] of loss(data) }
+  def loss(data: Iterable[Sentence])(w: Vector) = sum(data) { s => model(w)(predictor(w)(s)) - model(w)(s) }
+  ////
+  def learn(data: Iterable[Sentence]) = argmin(vectors) { loss(data) }
 
   def main(args: Array[String]) {
 
