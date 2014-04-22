@@ -10,6 +10,7 @@ trait Operators {
   import Wolfe._
 
   def argmax[T, N: Ordering](dom:Iterable[T])(obj:T => N) = dom.maxBy(obj)
+  def argmin[T, N: Ordering](dom:Iterable[T])(obj:T => N) = dom.minBy(obj)
   def sum[T, N: Numeric](dom:Iterable[T])(obj:T => N) = dom.map(obj).sum
 
   def argmax[T, N: Ordering](overWhereOf: Builder[T, N]):T =

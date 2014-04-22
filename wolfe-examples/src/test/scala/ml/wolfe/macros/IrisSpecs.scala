@@ -33,12 +33,12 @@ class IrisSpecs extends WolfeSpec {
       //the linear model
       @OptimizeByInference(MaxProduct(_, 1))
       def model(w: Vector)(i: IrisData) = features(i) dot w
-      def predictor(w: Vector)(i: IrisData) = argmax { over(space) of model(w) st evidence(observed)(i) }
+      def predictor(w: Vector)(i: IrisData) = argmax(space filter evidence(observed)(i)) { model(w) }
 
       //the training loss
       @OptimizeByLearning(new OnlineTrainer(_, new Perceptron, 4))
-      def loss(data: Iterable[IrisData])(w: Vector) = sum { over(data) of (s => model(w)(predictor(w)(s)) - model(w)(s)) } ////
-      def learn(data: Iterable[IrisData]) = argmin { over[Vector] of loss(data) }
+      def loss(data: Iterable[IrisData])(w: Vector) = sum(data) { s => model(w)(predictor(w)(s)) - model(w)(s) } ////
+      def learn(data: Iterable[IrisData]) = argmin(vectors) { loss(data) }
 
       //random generator for shuffling the data
       val random = new Random(0l)

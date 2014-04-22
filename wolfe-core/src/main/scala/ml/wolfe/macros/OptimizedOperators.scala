@@ -13,10 +13,12 @@ object OptimizedOperators extends Operators {
   import scala.language.experimental.macros
 
   override def argmax[T, N: Ordering](dom: Iterable[T])(obj:T=>N): T = macro argmaxImplNew[T, N]
+  override def argmin[T, N: Ordering](dom: Iterable[T])(obj:T=>N): T = macro argminImplNew[T, N]
 
 
   override def argmax[T, N: Ordering](overWhereOf: Builder[T, N]): T = macro argmaxImpl[T, N]
   override def argmin[T, N: Ordering](overWhereOf: Builder[T, N]): T = macro argminImpl[T, N]
+
   override def map[T](overWhereOf: Builder[T, _]): Iterable[T] = macro mapImpl[T]
 
 
@@ -60,6 +62,18 @@ object OptimizedOperators extends Operators {
     val result: Tree = helper.argmax(trees, q"-1.0").combined
     c.Expr[T](result)
   }
+
+  def argminImplNew[T: c.WeakTypeTag, N: c.WeakTypeTag](c: Context)
+                                                       (dom:c.Expr[Iterable[T]])
+                                                       (obj:c.Expr[T => N])
+                                                       (ord: c.Expr[Ordering[N]])= {
+    import c.universe._
+    val helper = new ContextHelper[c.type](c) with OptimizedOperators[c.type]
+    val trees = helper.builderTrees(dom.tree,obj.tree)
+    val result: Tree = helper.argmax(trees, q"-1.0").combined
+    c.Expr[T](result)
+  }
+
 
   def mapImpl[T: c.WeakTypeTag](c: Context)
                                (overWhereOf: c.Expr[Builder[T, _]]) = {
