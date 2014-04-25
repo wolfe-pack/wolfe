@@ -17,8 +17,8 @@ class OptimizeByLearningSpecs extends WolfeSpec {
       implicit val space = Range(0, 5)
       def features(i: Int) = oneHot(i)
       def model(w: Vector)(i: Int) = w dot features(i)
-      def mapLL(i: Int)(w: Vector) = model(w)(i) - max { over[Int] of model(w) }
-      val w = argmax { over[Vector] of mapLL(3) }
+      def mapLL(i: Int)(w: Vector) = model(w)(i) - max(space) { model(w) }
+      val w = argmax(vectors) { mapLL(3) }
       w should be(vector(0 -> -0.2, 1 -> -0.2, 2 -> -0.2, 3 -> 0.8, 4 -> -0.2))
       //this solution arises from the fact that the MP solution at ties distributes scores across features.
     }
@@ -26,8 +26,8 @@ class OptimizeByLearningSpecs extends WolfeSpec {
       implicit val space = Range(0, 5)
       def features(i: Int) = oneHot(i)
       def model(w: Vector)(i: Int) = w dot features(i)
-      def perceptronLoss(i: Int)(w: Vector) = max { over[Int] of model(w) } - model(w)(i)
-      val w = argmin { over[Vector] of perceptronLoss(3) }
+      def perceptronLoss(i: Int)(w: Vector) = max(space) { model(w) } - model(w)(i)
+      val w = argmin(vectors) {perceptronLoss(3) }
       w should be(vector(0 -> -0.2, 1 -> -0.2, 2 -> -0.2, 3 -> 0.8, 4 -> -0.2))
     }
 
@@ -36,11 +36,11 @@ class OptimizeByLearningSpecs extends WolfeSpec {
       def features(i: Int) = oneHot(i)
       def model(w: Vector)(i: Int) = w dot features(i)
       @OptimizeByLearning(new OnlineTrainer(_, new AdaGrad(),1))
-      def mapLLAda(i: Int)(w: Vector) = model(w)(i) - max { over[Int] of model(w) }
+      def mapLLAda(i: Int)(w: Vector) = model(w)(i) - max(space) { model(w) }
       @OptimizeByLearning(new OnlineTrainer(_, new Perceptron,1))
-      def mapLLPerceptron(i: Int)(w: Vector) = model(w)(i) - max { over[Int] of model(w) }
-      val wAda = argmax { over[Vector] of mapLLAda(3) }
-      val wPerceptron = argmax { over[Vector] of mapLLPerceptron(3) }
+      def mapLLPerceptron(i: Int)(w: Vector) = model(w)(i) - max(space) { model(w) }
+      val wAda = argmax(vectors) { mapLLAda(3) }
+      val wPerceptron = argmax(vectors) { mapLLPerceptron(3) }
       wAda should not be wPerceptron
     }
 
