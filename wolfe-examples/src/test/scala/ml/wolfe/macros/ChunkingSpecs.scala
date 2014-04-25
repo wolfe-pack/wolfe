@@ -11,7 +11,7 @@ import cc.factorie.la.SparseTensor1
 class ChunkingSpecs extends WolfeSpec {
 
   "A Chunking Model" should {
-    "give reasonable performance on the CoNLL dataset " in {
+    "give reasonable performance on the CoNLL dataset" in {
 
       import Wolfe._
       import OptimizedOperators._
