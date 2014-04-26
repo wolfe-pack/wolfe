@@ -93,10 +93,9 @@ trait VectorDefs {
 
   //type Vector = Map[Any, Double]
 
-  class Vector(underlying: Map[Any, Double]) extends MapProxy[Any,Double] {
+
+  class Vector(underlying: Map[Any, Double]) extends scala.collection.immutable.MapProxy[Any,Double] {
     val self = underlying withDefaultValue 0.0
-//    def apply(x: Any) = self(x)
-//    def get(x: Any) = self.get(x)
 
     def +(that: Vector) = {
       val keys = self.keySet ++ that.self.keySet
@@ -107,9 +106,6 @@ trait VectorDefs {
     def norm = VectorNumeric.norm(this)
     def *(scale: Double) = new Vector(self.mapValues(_ * scale))
     def *(vector: Vector) = new Vector(vector.self.map({ case (k, v) => k -> v * vector(k) }))
-//    override def equals(p1: scala.Any) = p1 match {
-//      case v:Vector => v.self == this.self
-//    }
     override def toString() = s"""Vector(${underlying.map(p => p._1 + " -> " + p._2 ).mkString(", ")})"""
     override def equals(that: Any) = that match {
       case v:Vector =>
@@ -122,6 +118,10 @@ trait VectorDefs {
       new Vector(map.toMap)
     }
     def x(that:Vector) = outer(that)
+    override def filter(p: ((Any, Double)) => Boolean):Vector = new Vector(underlying.filter(p))
+    override def filterNot(p: ((Any, Double)) => Boolean):Vector = new Vector(underlying.filterNot(p))
+    override def groupBy[K](f: ((Any, Double)) => K):Map[K,Vector] = super.groupBy(f).mapValues(m => new Vector(m))
+    override def filterKeys(p: (Any) => Boolean):Vector = new Vector(underlying.filterKeys(p))
   }
 
   object Vector {
