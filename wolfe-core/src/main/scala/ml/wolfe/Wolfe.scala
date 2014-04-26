@@ -122,6 +122,10 @@ trait VectorDefs {
     override def filterNot(p: ((Any, Double)) => Boolean):Vector = new Vector(underlying.filterNot(p))
     override def groupBy[K](f: ((Any, Double)) => K):Map[K,Vector] = super.groupBy(f).mapValues(m => new Vector(m))
     override def filterKeys(p: (Any) => Boolean):Vector = new Vector(underlying.filterKeys(p))
+    def filterKeysWith(p: PartialFunction[Any,Boolean]):Vector =
+      new Vector(underlying.filterKeys(p.orElse[Any,Boolean](PartialFunction(x => false))))
+
+    
   }
 
   object Vector {
