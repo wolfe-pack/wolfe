@@ -42,7 +42,6 @@ object NLP {
   //implicit def stringToSymbol(l: String) = Symbol(l)
 
 
-
   /**
    * Takes an iterator over lines and groups this according to a delimiter line.
    */
@@ -50,6 +49,7 @@ object NLP {
     groupLinesList(lines, delim).reverse.map(_.reverse)
   }
 
+  //todo: allow loading less sentences w/o reading in everything
   def groupLinesList(lines: Iterator[String], delim: String = ""): List[List[String]] = {
     lines.foldLeft(List(List.empty[String])) {
       (result, line) => if (line == delim) Nil :: result else (line :: result.head) :: result.tail
@@ -63,11 +63,22 @@ object NLP {
     loadCoNLL(Source.fromInputStream(Util.getStreamFromClassPathOrFile(fileOrClassPath)).getLines())(mapper)
 
   implicit val conllChunks =
-    Seq("B-NP","B-PP","I-NP","B-VP","I-VP","B-SBAR","O","B-ADJP","B-ADVP","I-ADVP","I-ADJP","I-SBAR","I-PP","B-PRT",
-      "B-LST","B-INTJ","I-INTJ","B-CONJP","I-CONJP","I-PRT","B-UCP","I-UCP").map(c => Chunk(Symbol(c)))
+    Seq("B-NP", "B-PP", "I-NP", "B-VP", "I-VP", "B-SBAR", "O", "B-ADJP", "B-ADVP", "I-ADVP", "I-ADJP", "I-SBAR", "I-PP", "B-PRT",
+      "B-LST", "B-INTJ", "I-INTJ", "B-CONJP", "I-CONJP", "I-PRT", "B-UCP", "I-UCP").map(c => Chunk(Symbol(c)))
 
   implicit val ptbTags =
     Seq("#", "$", "''", "(", ")", ",", ".", ":", "CC", "CD", "DT", "EX", "FW", "IN", "JJ", "JJR", "JJS",
       "MD", "NN", "NNP", "NNPS", "NNS", "PDT", "POS", "PRP", "PRP$", "RB", "RBR", "RBS", "RP", "SYM",
       "TO", "UH", "VB", "VBD", "VBG", "VBN", "VBP", "VBZ", "WDT", "WP", "WP$", "WRB", "``").map(c => Tag(Symbol(c)))
+
+  def toToken(conll: Array[String]) = Token(conll(0), Tag(Symbol(conll(1))), Chunk(Symbol(conll(2))))
+
+  def conll2000TrainSample() = {
+    loadCoNLL("ml/wolfe/datasets/conll2000/train.txt")(toToken).map(Sentence).take(100)
+  }
+
+  def conll2000TestSample() = {
+    loadCoNLL("ml/wolfe/datasets/conll2000/test.txt")(toToken).map(Sentence).take(100)
+  }
+
 }
