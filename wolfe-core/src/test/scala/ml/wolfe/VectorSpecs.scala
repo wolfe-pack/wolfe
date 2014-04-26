@@ -19,6 +19,11 @@ class VectorSpecs extends WolfeSpec {
       v('B) should be(1.0)
       v('C) should be(0.0)
     }
+    "support filter by partial function" in {
+      val v = Vector('A -> 1 -> 2.0, 'A -> 2 -> 1.0, 'C -> 3.0)
+      val filtered = v.filterKeysWith({case ('A,_) => true})
+      filtered should be (Vector('A -> 1 -> 2.0, 'A -> 2 -> 1.0))
+    }
 
 
 
