@@ -17,14 +17,17 @@ import ml.wolfe.macros.{Library, OptimizedOperators}
  * TODO: compare number of mentions to http://www.nactem.ac.uk/tsujii/GENIA/ERtask/shared_task_intro.pdf
  */
 object NERExample {
+
   import Wolfe._
   import OptimizedOperators._
   import NLP.{Sentence, Chunk, Tag, Token, groupLines}
+
   //import NLP._
+
   import Library._
 
   implicit val defaultChunks = Seq("?").map(c => Chunk(Symbol(c)))
-  implicit val labels = Seq("O", "B-protein", "I-protein", "B-cell_type", "I-cell_type", "B-DNA", "I-DNA",
+  implicit val labels        = Seq("O", "B-protein", "I-protein", "B-cell_type", "I-cell_type", "B-DNA", "I-DNA",
     "B-cell_line", "I-cell_line", "B-RNA", "I-RNA").map(t => Tag(Symbol(t)))
 
   @Atomic
@@ -49,26 +52,26 @@ object NERExample {
   def Sentences = Wolfe.all(Sentence)(seqs(all(Token)))
 
   def observed(s: Sentence) = s.copy(tokens = s.tokens.map(_.copy(tag = hidden)))
-  
+
   def features(s: Sentence): Wolfe.Vector = {
     //token features
-    sum { over(0 until s.tokens.size) of (i => tokenToFeatures(s.tokens(i)) outer labelToFeature(s.tokens(i).tag)) } +
+    sum(0 until s.tokens.size) { i => tokenToFeatures(s.tokens(i)) outer labelToFeature(s.tokens(i).tag) } +
     //first order transitions
-    sum { over(0 until s.tokens.size - 1) of (i => oneHot('transition -> s.tokens(i).tag -> s.tokens(i + 1).tag)) } +
+    sum(0 until s.tokens.size - 1) { i => oneHot('transition -> s.tokens(i).tag -> s.tokens(i + 1).tag) } +
     //offset conjunctions
-    sum { over(2 until s.tokens.size) of (i => tokenToFeatures(s.tokens(i - 2), "@-2") outer labelToFeature(s.tokens(i).tag)) } +
-    sum { over(1 until s.tokens.size) of (i => tokenToFeatures(s.tokens(i - 1), "@-1") outer labelToFeature(s.tokens(i).tag)) } +
-    sum { over(0 until s.tokens.size - 1) of (i => tokenToFeatures(s.tokens(i + 1), "@+1") outer labelToFeature(s.tokens(i).tag)) } +
-    sum { over(0 until s.tokens.size - 2) of (i => tokenToFeatures(s.tokens(i + 2), "@+2") outer labelToFeature(s.tokens(i).tag)) }
+    sum(2 until s.tokens.size) { i => tokenToFeatures(s.tokens(i - 2), "@-2") outer labelToFeature(s.tokens(i).tag) } +
+    sum(1 until s.tokens.size) { i => tokenToFeatures(s.tokens(i - 1), "@-1") outer labelToFeature(s.tokens(i).tag) } +
+    sum(0 until s.tokens.size - 1) { i => tokenToFeatures(s.tokens(i + 1), "@+1") outer labelToFeature(s.tokens(i).tag) } +
+    sum(0 until s.tokens.size - 2) { i => tokenToFeatures(s.tokens(i + 2), "@+2") outer labelToFeature(s.tokens(i).tag) }
   }
 
   @OptimizeByInference(MaxProduct(_, 1))
   def model(w: Vector)(s: Sentence) = w dot features(s)
-  def predictor(w: Vector)(s: Sentence) = argmax { over(Sentences) of model(w) st evidence(observed)(s) }
+  def predictor(w: Vector)(s: Sentence) = argmax(Sentences where evidence(observed)(s)) { model(w) }
 
   @OptimizeByLearning(new OnlineTrainer(_, new AveragedPerceptron, 20, -1))
-  def loss(data: Iterable[Sentence])(w: Vector) = sum { over(data) of (s => model(w)(predictor(w)(s)) - model(w)(s)) }
-  def learn(data:Iterable[Sentence]) = argmin { over[Vector] of loss(data) }
+  def loss(data: Iterable[Sentence])(w: Vector) = sum(data) { s => model(w)(predictor(w)(s)) - model(w)(s) }
+  def learn(data: Iterable[Sentence]) = argmin(vectors) { loss(data) }
 
   def main(args: Array[String]) {
     val useSample = if (args.length > 0) args(0).toBoolean else false
@@ -101,12 +104,12 @@ object NERExample {
         (trainSample, testSample)
       } else
         (IOBToWolfe(groupLines(loadIOB(trainSource).toIterator, "###MEDLINE:")).flatten,
-         IOBToWolfe(groupLines(loadIOB(testSource).toIterator, "###MEDLINE:")).flatten)
+        IOBToWolfe(groupLines(loadIOB(testSource).toIterator, "###MEDLINE:")).flatten)
 
     println(
       s"""
-        |Train sentences: ${train.size}
-        |Test sentences:  ${test.size}
+        |Train sentences: ${ train.size }
+        |Test sentences:  ${ test.size }
       """.stripMargin)
 
     if (!useSample) {
