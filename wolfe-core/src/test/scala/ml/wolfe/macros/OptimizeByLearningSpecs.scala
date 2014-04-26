@@ -19,7 +19,7 @@ class OptimizeByLearningSpecs extends WolfeSpec {
       def model(w: Vector)(i: Int) = w dot features(i)
       def mapLL(i: Int)(w: Vector) = model(w)(i) - max(space) { model(w) }
       val w = argmax(vectors) { mapLL(3) }
-      w should be(vector(0 -> -0.2, 1 -> -0.2, 2 -> -0.2, 3 -> 0.8, 4 -> -0.2))
+      w should be(Vector(0 -> -0.2, 1 -> -0.2, 2 -> -0.2, 3 -> 0.8, 4 -> -0.2))
       //this solution arises from the fact that the MP solution at ties distributes scores across features.
     }
     "return the argmin of the perceptron loss (MAP log-likelihood)" in {
@@ -28,7 +28,7 @@ class OptimizeByLearningSpecs extends WolfeSpec {
       def model(w: Vector)(i: Int) = w dot features(i)
       def perceptronLoss(i: Int)(w: Vector) = max(space) { model(w) } - model(w)(i)
       val w = argmin(vectors) {perceptronLoss(3) }
-      w should be(vector(0 -> -0.2, 1 -> -0.2, 2 -> -0.2, 3 -> 0.8, 4 -> -0.2))
+      w should be(Vector(0 -> -0.2, 1 -> -0.2, 2 -> -0.2, 3 -> 0.8, 4 -> -0.2))
     }
 
     "react to different learning annotation on the objective " in {

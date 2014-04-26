@@ -86,7 +86,6 @@ object Wolfe extends SampleSpaceDefs
 
 trait StatsDefs {
   def oneHot(key: Any, value: Double = 1.0): Wolfe.Vector = Wolfe.Vector(key -> value)
-  def vector(keyValue: (Any, Double)*): Wolfe.Vector = keyValue.toMap
 
 }
 
@@ -126,13 +125,8 @@ trait VectorDefs {
   }
 
   object Vector {
-    def apply(elems: (Any, Double)*) = Map(elems: _*)
+    def apply(elems: (Any, Double)*) = new Vector(Map(elems: _*))
   }
-
-
-  def ft(key: Any, value: Double = 1.0): Vector = Map(key -> value)
-  def ft(key: Any, value: Boolean): Vector = ft(key, if (value) 1.0 else 0.0)
-  def feat(key: Any*) = Map(key.toSeq.asInstanceOf[Any] -> 1.0)
 
   val VectorZero = new Vector(Map.empty[Any, Double])
 
