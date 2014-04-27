@@ -25,8 +25,6 @@ class VectorSpecs extends WolfeSpec {
       filtered should be (Vector('A -> 1 -> 2.0, 'A -> 2 -> 1.0))
     }
 
-
-
   }
 
 }
