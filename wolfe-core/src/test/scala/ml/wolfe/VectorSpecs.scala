@@ -24,6 +24,11 @@ class VectorSpecs extends WolfeSpec {
       val filtered = v.filterKeysWith({case ('A,_) => true})
       filtered should be (Vector('A -> 1 -> 2.0, 'A -> 2 -> 1.0))
     }
+    "determine equality based on content" in {
+      val v1 = oneHot('A, 2.0)
+      val v2 = Vector('A -> 2.0, 'B -> 0.0)
+      v1 should be (v2)
+    }
 
   }
 
