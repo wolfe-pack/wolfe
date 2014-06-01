@@ -4,6 +4,7 @@ import scala.collection.mutable.ArrayBuffer
 import scalaxy.loops._
 import scala.annotation.tailrec
 import scala.collection.mutable
+import ml.wolfe.potential.Potential
 
 
 /**
@@ -115,8 +116,8 @@ final class FactorGraph {
    * @param potential the potential the factor should have.
    * @return the created factor.
    */
-  def addStructuredFactor(potential: StructuredPotential) = {
-    val f = new Factor(this, factors.size, null, null, STRUCTURED, null, structured = potential)
+  def addFactor() = {
+    val f = new Factor(this, factors.size, null, null, GENERIC, null)
     factors += f
     f
   }
@@ -180,7 +181,7 @@ object FactorGraph {
    * avoid any kind of polymorphism inside the inner loop of inference.
    */
   object FactorType extends Enumeration {
-    val TABLE, LINEAR, STRUCTURED = Value
+    val TABLE, LINEAR, GENERIC = Value
   }
 
   import FactorType._
@@ -249,7 +250,7 @@ object FactorGraph {
       """.stripMargin
     }
 
-    override def toString = index.toString
+    override def toString = "N" + index.toString
 
     private[FactorGraph] var edgeCount : Int = 0
     private[FactorGraph] var edgeFilled: Int = 0
@@ -303,7 +304,7 @@ object FactorGraph {
    * print(dims)  = 1,2,3
    * Node 0:  factor.edges(0).n
    * Node 1:  factor.edges(1).n
-   * Node 2:  factor.edges(1).n
+   * Node 2:  factor.edges(2).n
    *
    * @param fg the factor graph.
    * @param index the index/id of the factor
@@ -314,21 +315,25 @@ object FactorGraph {
    *              `settings`.
    * @param stats if `typ=TABLE` this stores a feature vector for each setting (index by the index of the setting
    *              in `settings`.
-   * @param structured if `typ=STRUCTURED` this stores a generic object for scoring the factor and inference related
-   *                   operations.
    */
   final class Factor(val fg: FactorGraph, val index: Int, val dims: Array[Int], val settings: Array[Array[Int]],
                      val typ: FactorType.Value = FactorGraph.FactorType.TABLE,
                      val table: Array[Double],
-                     val stats: Array[FactorieVector] = null,
-                     val structured: StructuredPotential = null) {
+                     val stats: Array[FactorieVector] = null) {
     var edges: Array[Edge] = Array.ofDim(0)
     def rank = dims.length
-    val entryCount = {
+    //todo: this should probably go into potential code
+    val entryCount = if (typ == GENERIC) 1 else {
       var result = 1
       for (i <- (0 until dims.length).optimized) result *= dims(i)
       result
     }
+
+    /**
+     * The potential for this factor. Usually created after edges to factor have been created as
+     * the potential directly works with the edges.
+     */
+    var potential:Potential  = null
 
     /**
      * Evaluates the score of the factor for the setting corresponding to the given setting index.
@@ -364,7 +369,7 @@ object FactorGraph {
               sum
             }
           }
-        case STRUCTURED => structured.score(this, entryToSetting(settingIndex, dims), fg.weights)
+//        case GENERIC => structured.score(this, entryToSetting(settingIndex, dims), fg.weights)
       }
     }
 

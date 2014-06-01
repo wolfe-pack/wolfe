@@ -78,11 +78,11 @@ object DualDecomposition {
       case FactorGraph.FactorType.LINEAR =>
         val best = (0 until factor.table.size).maxBy(i => penalizedScore(factor, i))
         propagateSettingInformation(factor, factor.settings(best))
-      case FactorGraph.FactorType.STRUCTURED =>
-        // TODO: How does one mandate that this uses the penalties
-        val argmax = factor.structured.argmaxMarginal2AllNodes(factor)
-
-        propagateSettingInformation(factor, argmax)
+//      case FactorGraph.FactorType.STRUCTURED =>
+//        // TODO: How does one mandate that this uses the penalties
+//        val argmax = factor.structured.argmaxMarginal2AllNodes(factor)
+//
+//        propagateSettingInformation(factor, argmax)
     }
   }
 
