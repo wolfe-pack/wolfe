@@ -102,6 +102,11 @@ trait VectorDefs {
       val result = keys map (k => k -> (self.getOrElse(k, 0.0) + that.self.getOrElse(k, 0.0)))
       new Vector(result.toMap)
     }
+    def +(that: Vector, scale:Double) = {
+      val keys = self.keySet ++ that.self.keySet
+      val result = keys map (k => k -> (self.getOrElse(k, 0.0) + scale * that.self.getOrElse(k, 0.0)))
+      new Vector(result.toMap)
+    }
     def dot(that: Vector) = VectorNumeric.dot(this, that)
     def norm = VectorNumeric.norm(this)
     def *(scale: Double) = new Vector(self.mapValues(_ * scale))
@@ -300,6 +305,14 @@ trait SampleSpaceDefs {
   implicit def unwrap5[A1, A2, A3, A4, A5, B](f: (A1, A2, A3, A4, A5) => B): ((A1, A2, A3, A4, A5)) => B =
     p => f(p._1, p._2, p._3, p._4, p._5)
 
+//  class Doubles(maxCount:Double = Double.PositiveInfinity) extends Iterable[Double] {
+//
+//    override def take(n: Int) = new Doubles(n.toDouble)
+//    def iterator = {
+//      var count = 0
+//      Iterator.continually({ count += 1; Random.nextGaussian()}).takeWhile()
+//    }
+//  }
 
 }
 
