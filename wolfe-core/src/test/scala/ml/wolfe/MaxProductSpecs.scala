@@ -8,7 +8,13 @@ import scala.util.Random
  */
 class MaxProductSpecs extends WolfeSpec {
 
-  val randomTable = TablePotential.table(Array(2,2),_ => Random.nextGaussian())
+  val randomTable = TablePotential.table(Array(2, 2), _ => Random.nextGaussian())
+  val fixedTable  = TablePotential.table(Array(2, 2), {
+    case Array(0, 0) => 1
+    case Array(0, 1) => 2
+    case Array(1, 0) => -3
+    case Array(1, 1) => 0
+  })
 
   def tableFG() = {
     val fg = new FactorGraph
@@ -17,15 +23,16 @@ class MaxProductSpecs extends WolfeSpec {
     val f1 = fg.addFactor()
     val e1 = fg.addEdge(f1, n1)
     val e2 = fg.addEdge(f1, n2)
-    f1.potential = TablePotential(Array(e1,e2), randomTable)
+    f1.potential = TablePotential(Array(e1, e2), fixedTable)
     fg.build()
     fg
   }
 
-  def sameBeliefs(fg1:FactorGraph, fg2:FactorGraph) = {
-    def sameBeliefs(n1:List[FactorGraph.Node],n2:List[FactorGraph.Node]):Boolean = (n1,n2) match {
-      case (Nil,Nil) => true
-      case (h1::t1, h2::t2) => h1.b.deep == h2.b.deep && sameBeliefs(t1,t2)
+  def sameBeliefs(fg1: FactorGraph, fg2: FactorGraph) = {
+    def sameBeliefs(n1: List[FactorGraph.Node], n2: List[FactorGraph.Node]): Boolean = (n1, n2) match {
+      case (Nil, Nil) => true
+      //todo: this should be approx. equal on array
+      case (h1 :: t1, h2 :: t2) => MoreArrayOps.approxEqual(h1.b,h2.b) && sameBeliefs(t1, t2)
       case _ => false
     }
     sameBeliefs(fg1.nodes.toList, fg2.nodes.toList)
@@ -36,26 +43,20 @@ class MaxProductSpecs extends WolfeSpec {
       val fg_mp = tableFG()
       val fg_bf = tableFG()
 
-      MaxProductNew(fg_mp,1)
+      MaxProductNew(fg_mp, 1)
       BruteForceSearchNew(fg_bf)
 
-      println(fg_mp.nodes.map(_.b.mkString(" ")))
-      println(fg_bf.nodes.map(_.b.mkString(" ")))
-
-      println(fg_mp.value)
-      println(fg_bf.value)
-
-//      sameBeliefs(fg_mp,fg_bf) should be (true)
+      sameBeliefs(fg_mp, fg_bf) should be(true)
 
 
 
 
 
 
-//      //fg.pot = new TablePotential(Array(e1,e2),settings,scores)
-//      trait Potential {
-//        def setup(factor:FactorGraph.Factor)
-//      }
+      //      //fg.pot = new TablePotential(Array(e1,e2),settings,scores)
+      //      trait Potential {
+      //        def setup(factor:FactorGraph.Factor)
+      //      }
     }
   }
 
