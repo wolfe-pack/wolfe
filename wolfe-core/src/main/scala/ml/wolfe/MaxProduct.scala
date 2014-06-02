@@ -2,6 +2,7 @@ package ml.wolfe
 
 import scalaxy.loops._
 import scala.language.postfixOps
+import ml.wolfe.MoreArrayOps._
 
 
 /**
@@ -19,7 +20,7 @@ object MaxProduct {
    * @param canonical should edges be processed in canonical ordering according to [[ml.wolfe.FactorGraph.EdgeOrdering]].
    */
   def apply(fg: FactorGraph, maxIteration: Int, canonical: Boolean = true) {
-//    val edges = if (canonical) fg.edges.sorted(FactorGraph.EdgeOrdering) else fg.edges
+    //    val edges = if (canonical) fg.edges.sorted(FactorGraph.EdgeOrdering) else fg.edges
     val edges = if (canonical) MPSchedulerImpl.schedule(fg) else fg.edges
 
     for (i <- 0 until maxIteration) {
@@ -182,21 +183,21 @@ object BruteForceSearch {
     var maxScore = Double.NegativeInfinity
     var maxSetting: Array[Int] = null
     loop { () =>
-        var score = 0.0
-        var i = 0
-        while (i < fg.factors.size) {
-          score += fg.factors(i).scoreCurrentSetting
-          i += 1
-        }
-        if (score > maxScore) {
-          println(score)
-          maxScore = score
-          maxSetting = fg.nodes.view.map(_.setting).toArray
-        }
+      var score = 0.0
+      var i = 0
+      while (i < fg.factors.size) {
+        score += fg.factors(i).scoreCurrentSetting
+        i += 1
+      }
+      if (score > maxScore) {
+        println(score)
+        maxScore = score
+        maxSetting = fg.nodes.view.map(_.setting).toArray
+      }
     }
 
-    for ((s,n) <- maxSetting zip fg.nodes) {
-      MoreArrayOps.fill(n.b,0.0)
+    for ((s, n) <- maxSetting zip fg.nodes) {
+      MoreArrayOps.fill(n.b, 0.0)
       n.b(s) = 1.0
       n.setting = s
     }
@@ -261,19 +262,19 @@ object MaxProductNew {
 
       obj += factor.potential.maxMarginalExpectationsAndObjective(result)
 
-//      if (factor.typ == FactorGraph.FactorType.LINEAR) {
-//
-//
-//        // 3) prob = 1/|maxs| for all maximums, add corresponding vector
-//        for (i <- 0 until factor.entryCount) {
-//          val setting = factor.settings(i)
-//          val score = penalizedScore(factor, i, setting)
-//          if (score == norm) {
-//            result +=(factor.stats(i), 1.0 / maxCount)
-//          }
-//        }
-//
-//      }
+      //      if (factor.typ == FactorGraph.FactorType.LINEAR) {
+      //
+      //
+      //        // 3) prob = 1/|maxs| for all maximums, add corresponding vector
+      //        for (i <- 0 until factor.entryCount) {
+      //          val setting = factor.settings(i)
+      //          val score = penalizedScore(factor, i, setting)
+      //          if (score == norm) {
+      //            result +=(factor.stats(i), 1.0 / maxCount)
+      //          }
+      //        }
+      //
+      //      }
     }
     //sanity check
     obj
@@ -357,6 +358,8 @@ object BruteForceSearchNew {
     }
     val loop = loopOverSettings(fg.nodes.toList)
     var maxScore = Double.NegativeInfinity
+    for (n <- fg.nodes) fill(n.b, Double.NegativeInfinity)
+
     var maxSetting: Array[Int] = null
     loop { () =>
       var score = 0.0
@@ -365,16 +368,20 @@ object BruteForceSearchNew {
         score += fg.factors(i).potential.value()
         i += 1
       }
+      for (n <- fg.nodes) {
+        n.b(n.setting) = math.max(score,n.b(n.setting))
+      }
+
       if (score > maxScore) {
         maxScore = score
         maxSetting = fg.nodes.view.map(_.setting).toArray
+        println(maxSetting.mkString(" "))
       }
     }
 
-    for ((s,n) <- maxSetting zip fg.nodes) {
-      MoreArrayOps.fill(n.b,0.0)
-      n.b(s) = 1.0
+    for ((s, n) <- maxSetting zip fg.nodes) {
       n.setting = s
+      maxNormalize(n.b)
     }
 
     fg.value = maxScore
