@@ -71,7 +71,7 @@ final class LinearPotential(val edges: Array[Edge], statistics: Stats, fg: Facto
       else if (score > norm) {
         norm = score
         maxScore = scoreEntry(i)
-        maxCount = 0
+        maxCount = 1
       }
     }
     // prob = 1/|maxs| for all maximums, add corresponding vector

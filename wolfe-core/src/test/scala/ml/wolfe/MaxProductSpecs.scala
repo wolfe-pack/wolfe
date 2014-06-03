@@ -31,11 +31,11 @@ class MaxProductSpecs extends WolfeSpec {
     f1
   }
 
-  def linearPotential(fg:FactorGraph, n1:Node, n2:Node, stats:Stats) = {
+  def linearPotential(fg: FactorGraph, n1: Node, n2: Node, stats: Stats) = {
     val f1 = fg.addFactor()
     val e1 = fg.addEdge(f1, n1)
     val e2 = fg.addEdge(f1, n2)
-    f1.potential = new LinearPotential(Array(e1, e2), stats,fg)
+    f1.potential = new LinearPotential(Array(e1, e2), stats, fg)
     f1
   }
 
@@ -76,6 +76,11 @@ class MaxProductSpecs extends WolfeSpec {
     sameBeliefs(fg1.nodes.toList, fg2.nodes.toList)
   }
 
+  def sameVector(v1: FactorieVector, v2: FactorieVector, eps: Double = 0.00001) = {
+    v1.activeDomain.forall(i => math.abs(v1(i) - v2(i)) < eps) &&
+    v2.activeDomain.forall(i => math.abs(v1(i) - v2(i)) < eps)
+  }
+
   "A Max Product algorithm" should {
     "return the exact max-marginals when given a single table potential" in {
       val fg_mp = oneFactorFG()
@@ -85,6 +90,8 @@ class MaxProductSpecs extends WolfeSpec {
       BruteForceSearchNew(fg_bf)
 
       sameBeliefs(fg_mp, fg_bf) should be(true)
+      fg_mp.value should be (fg_bf.value)
+
     }
     "return the exact marginals given a chain" in {
       val fg_mp = chainFG(5)
@@ -94,6 +101,8 @@ class MaxProductSpecs extends WolfeSpec {
       BruteForceSearchNew(fg_bf)
 
       sameBeliefs(fg_mp, fg_bf) should be(true)
+      fg_mp.value should be (fg_bf.value)
+
     }
     "return feature vectors of argmax state" in {
       val fg_mp = chainFGWithFeatures(5)
@@ -103,13 +112,8 @@ class MaxProductSpecs extends WolfeSpec {
       BruteForceSearchNew(fg_bf)
 
       sameBeliefs(fg_mp, fg_bf) should be(true)
-
-
-      println(fg_mp.nodes.map(_.setting).mkString(" "))
-      println(fg_mp.gradient)
-      println(fg_bf.nodes.map(_.setting).mkString(" "))
-      println(fg_bf.gradient)
-
+      sameVector(fg_mp.gradient, fg_bf.gradient)
+      fg_mp.value should be (fg_bf.value)
 
 
     }
