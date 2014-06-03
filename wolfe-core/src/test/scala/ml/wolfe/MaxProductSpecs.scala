@@ -1,7 +1,9 @@
 package ml.wolfe
 
-import ml.wolfe.potential.{Table, TablePotential}
+import ml.wolfe.potential._
 import scala.util.Random
+import ml.wolfe.potential.Table
+import ml.wolfe.potential.Stats
 
 /**
  * @author Sebastian Riedel
@@ -10,19 +12,31 @@ class MaxProductSpecs extends WolfeSpec {
 
   import FactorGraph._
 
-  val randomTable = TablePotential.table(Array(2, 2), _ => Random.nextGaussian())
-  val fixedTable  = TablePotential.table(Array(2, 2), {
+  val fixedTable = TablePotential.table(Array(2, 2), {
     case Array(0, 0) => 1
     case Array(0, 1) => 2
     case Array(1, 0) => -3
     case Array(1, 1) => 0
   })
+  val fixedStats = LinearPotential.stats(Array(2, 2), {
+    case Array(i, j) => LinearPotential.singleton(2 * i + j, 1.0)
+  })
+
 
   def tablePotential(fg: FactorGraph, n1: Node, n2: Node, table: Table) = {
     val f1 = fg.addFactor()
     val e1 = fg.addEdge(f1, n1)
     val e2 = fg.addEdge(f1, n2)
     f1.potential = TablePotential(Array(e1, e2), table)
+    f1
+  }
+
+  def linearPotential(fg:FactorGraph, n1:Node, n2:Node, stats:Stats) = {
+    val f1 = fg.addFactor()
+    val e1 = fg.addEdge(f1, n1)
+    val e2 = fg.addEdge(f1, n2)
+    f1.potential = new LinearPotential(Array(e1, e2), stats,fg)
+    f1
   }
 
   def oneFactorFG() = {
@@ -34,10 +48,19 @@ class MaxProductSpecs extends WolfeSpec {
     fg
   }
 
-  def chainFG(length:Int) = {
+  def chainFG(length: Int) = {
     val fg = new FactorGraph
     val nodes = for (i <- 0 until length) yield fg.addNode(2)
-    for ((n1,n2) <- nodes.dropRight(1) zip nodes.drop(1)) tablePotential(fg,n1,n2,fixedTable)
+    for ((n1, n2) <- nodes.dropRight(1) zip nodes.drop(1)) tablePotential(fg, n1, n2, fixedTable)
+    fg.build()
+    fg
+  }
+
+  def chainFGWithFeatures(length: Int) = {
+    val fg = new FactorGraph
+    val nodes = for (i <- 0 until length) yield fg.addNode(2)
+    for ((n1, n2) <- nodes.dropRight(1) zip nodes.drop(1)) linearPotential(fg, n1, n2, fixedStats)
+    fg.weights = LinearPotential.dense(4, 0 -> 1.0, 1 -> 2.0, 2 -> -3, 3 -> 0)
     fg.build()
     fg
   }
@@ -71,8 +94,26 @@ class MaxProductSpecs extends WolfeSpec {
       BruteForceSearchNew(fg_bf)
 
       sameBeliefs(fg_mp, fg_bf) should be(true)
+    }
+    "return feature vectors of argmax state" in {
+      val fg_mp = chainFGWithFeatures(5)
+      val fg_bf = chainFGWithFeatures(5)
+
+      MaxProductNew(fg_mp, 1)
+      BruteForceSearchNew(fg_bf)
+
+      sameBeliefs(fg_mp, fg_bf) should be(true)
+
+
+      println(fg_mp.nodes.map(_.setting).mkString(" "))
+      println(fg_mp.gradient)
+      println(fg_bf.nodes.map(_.setting).mkString(" "))
+      println(fg_bf.gradient)
+
+
 
     }
+
   }
 
 }

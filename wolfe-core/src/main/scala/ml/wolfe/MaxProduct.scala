@@ -259,24 +259,8 @@ object MaxProductNew {
     for (factor <- fg.factors) {
       //update all n2f messages
       for (e <- factor.edges) updateN2F(e)
-
       obj += factor.potential.maxMarginalExpectationsAndObjective(result)
-
-      //      if (factor.typ == FactorGraph.FactorType.LINEAR) {
-      //
-      //
-      //        // 3) prob = 1/|maxs| for all maximums, add corresponding vector
-      //        for (i <- 0 until factor.entryCount) {
-      //          val setting = factor.settings(i)
-      //          val score = penalizedScore(factor, i, setting)
-      //          if (score == norm) {
-      //            result +=(factor.stats(i), 1.0 / maxCount)
-      //          }
-      //        }
-      //
-      //      }
     }
-    //sanity check
     obj
   }
 
@@ -377,7 +361,6 @@ object BruteForceSearchNew {
       if (score > maxScore) {
         maxScore = score
         maxSetting = fg.nodes.view.map(_.setting).toArray
-        println(maxSetting.mkString(" "))
       }
     }
 
@@ -389,8 +372,8 @@ object BruteForceSearchNew {
     fg.value = maxScore
     fg.gradient = new SparseVector(1000)
 
-    for (f <- fg.factors; if f.typ == FactorType.LINEAR)
-      fg.gradient += f.gradientCurrentSetting
+    for (f <- fg.factors; if f.potential.isLinear)
+      fg.gradient += f.potential.stats()
 
     println("Bruteforce: " + maxScore)
 
