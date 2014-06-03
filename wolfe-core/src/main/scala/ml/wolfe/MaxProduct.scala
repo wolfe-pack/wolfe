@@ -329,9 +329,11 @@ object MaxProductNew {
    */
   def updateBelief(node: Node) {
     System.arraycopy(node.in, 0, node.b, 0, node.b.length)
-    for (e <- 0 until node.edges.length)
+    for (e <- 0 until node.edges.length) {
       for (i <- 0 until node.dim)
         node.b(i) += node.edges(e).f2n(i)
+      maxNormalize(node.b)
+    }
   }
 
 
