@@ -43,6 +43,9 @@ trait MetaCaseClassStructures[C<:Context] {
         def nextSetting = iterator.next
         def setToArgmax() {fields.foreach(_.setToArgmax())}
         def observe(value:$argType) { ..$observeFields }
+        type Edges = Unit
+        def createEdges(factor: ml.wolfe.FactorGraph.Factor): Edges = {}
+
       }
     """
     def children = fieldStructures

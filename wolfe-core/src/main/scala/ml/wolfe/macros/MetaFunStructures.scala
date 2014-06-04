@@ -88,6 +88,9 @@ trait MetaFunStructures[C<:Context] {
         def observe(value:$argType) {
           ${tupleProcessor(keyDomNames, tmpNames, observeSubStructure, newTermName("foreach"), newTermName("foreach"))}
         }
+        type Edges = Unit
+        def createEdges(factor: ml.wolfe.FactorGraph.Factor): Edges = {}
+
       }
     """
     }

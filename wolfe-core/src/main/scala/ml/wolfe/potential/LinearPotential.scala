@@ -32,7 +32,7 @@ final class LinearPotential(val edges: Array[Edge], statistics: Stats, fg: Facto
     }
     maxNormalize(edge.f2n)
   }
-  def value() = {
+  def valueForCurrentSetting() = {
     val setting = edges.map(_.n.setting)
     val entry = TablePotential.settingToEntry(setting, dims)
     scoreEntry(entry)

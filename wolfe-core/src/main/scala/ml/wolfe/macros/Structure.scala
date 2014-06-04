@@ -1,6 +1,7 @@
 package ml.wolfe.macros
 
 import ml.wolfe.FactorGraph
+import ml.wolfe.FactorGraph.Factor
 
 /**
  * A structure is a collection of FactorGraph nodes whose assignments correspond to values of type `T`.
@@ -15,7 +16,7 @@ trait Structure[T] {
   /**
    * @return direct child structures of this structure.
    */
-  def children():Iterator[Structure[Any]] //or Structure[_]?
+  def children(): Iterator[Structure[Any]] //or Structure[_]?
 
   /**
    * @return all nodes in this structure (including nodes of substructures)
@@ -54,6 +55,22 @@ trait Structure[T] {
    * set the structure to its next state by changing one or more of its nodes assignments.
    */
   def nextSetting()
+
+  /**
+   * Each type of structure has a way to represent itself through a set of factor graph edges.
+   */
+  type Edges
+
+  /**
+   * Create a set of edges from the factor to the nodes that represent this structure.
+   * @param factor the factor to connect the nodes to.
+   * @return a representation of the edges that were created. This representation depends on the
+   *         type of structure. For example, for a sequence structure the edge representation
+   *         is a sequence of edge representations of the element structure.
+   */
+  def createEdges(factor: Factor): Edges
+
+
 }
 
 object Structure {
