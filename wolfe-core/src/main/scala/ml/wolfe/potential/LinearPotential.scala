@@ -1,6 +1,6 @@
 package ml.wolfe.potential
 
-import ml.wolfe.{FactorGraph, FactorieVector}
+import ml.wolfe.{SingletonVector, FactorGraph, FactorieVector}
 import ml.wolfe.FactorGraph.Edge
 import ml.wolfe.MoreArrayOps._
 import scalaxy.loops._
@@ -45,7 +45,34 @@ final class LinearPotential(val edges: Array[Edge], statistics: Stats, fg: Facto
   }
 
 
-  def scoreEntry(entry: Int) = vectors(entry) dot fg.weights
+  def scoreEntry(entry: Int) = {
+    vectors(entry) match {
+      //todo: unclear why, but this manual dot product is faster than calling the singleton vector dot product
+      //todo: which is doing the same thing.
+      case singleton: SingletonVector =>
+        val index = singleton.singleIndex
+        val result =
+          if (index >= fg.weights.size)
+          //rockt: for weights not observed during training but at test time
+          //sr: this doesn't work for sparse vectors where .size only provides the number of non-zero items
+          //sr: fix for now by never using sparse vectors as fg.weigths
+            0.0
+          else
+            singleton(index) * fg.weights(index)
+        result
+      case vector => {
+        //vector dot fg.weights
+        var sum = 0.0
+        val maxIndex = fg.weights.dim1
+        vector.foreachActiveElement((index: Int, value: Double) =>
+          if (index < maxIndex) sum += value * fg.weights(index)
+        )
+        sum
+      }
+    }
+
+    //vectors(entry) dot fg.weights
+  }
 
   def penalizedScore(settingId: Int, setting: Array[Int]): Double = {
     var score = scoreEntry(settingId)
@@ -102,27 +129,26 @@ object LinearPotential {
     }
     Stats(settings, vectors)
   }
-  
-  def sparse(entries:(Int,Double)*) = {
+
+  def sparse(entries: (Int, Double)*) = {
     val result = new SparseTensor1(100)
-    for ((key,value) <- entries) result += (key,value)
+    for ((key, value) <- entries) result +=(key, value)
     result
   }
 
-  def singleton(key:Int,value:Double,dim:Int=100) = {
-    new SingletonTensor1(dim,key,value)
+  def singleton(key: Int, value: Double, dim: Int = 100) = {
+    new SingletonTensor1(dim, key, value)
   }
 
-  def dense(dim:Int) = {
+  def dense(dim: Int) = {
     new DenseTensor1(dim)
   }
 
-  def dense(dim:Int,entries:(Int,Double)*) = {
+  def dense(dim: Int, entries: (Int, Double)*) = {
     val result = new DenseTensor1(dim)
-    for ((index,value) <- entries) result(index) = value
+    for ((index, value) <- entries) result(index) = value
     result
   }
-
 
 
 }

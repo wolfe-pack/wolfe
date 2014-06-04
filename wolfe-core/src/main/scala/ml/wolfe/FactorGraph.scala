@@ -347,7 +347,7 @@ object FactorGraph {
         case LINEAR =>
           stats(settingIndex) match {
             //todo: unclear why, but this manual dot product is faster than calling the singleton vector dot product
-            //tood: which is doing the same thing.
+            //todo: which is doing the same thing.
             case singleton: SingletonVector =>
               val index = singleton.singleIndex
               val result =
