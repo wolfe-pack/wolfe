@@ -84,40 +84,11 @@ final class FactorGraph {
   def addEdge(f: Factor, n: Node): Edge = addEdge(f, n, f.edgeCount)
 
   /**
-   * Adds a factor based on a table of scores, one for each setting.
-   * @param scores the scores as an array over setting indices.
-   * @param settings the settings as integer arrays ordered in the same way as the scores.
-   * @param dims the dimensions of the variables that connect to this factor.
-   * @return the created factor.
-   */
-  def addTableFactor(scores: Array[Double], settings: Array[Array[Int]], dims: Array[Int]) = {
-    val f = new Factor(this, factors.size, dims, settings, TABLE, scores)
-    factors += f
-    f
-  }
-
-  /**
-   * Adds a factor based on sufficient statistics for each setting, and a base score. The score
-   * of a setting is the current weight vector times the feature vector of the setting, plus the
-   * base score for that setting.
-   * @param stats array of statistics vector, one for each setting.
-   * @param settings the settings as integer arrays ordered in the same way as stats and base.
-   * @param dims the dimensions of the variables that connect to this factor.
-   * @return the created factor.
-   */
-  def addLinearFactor(stats: Array[FactorieVector], settings: Array[Array[Int]], dims: Array[Int]) = {
-    val f = new Factor(this, factors.size, dims, settings, LINEAR, null, stats)
-    factors += f
-    f
-  }
-
-  /**
-   * Creates and adds a potential with structure and custom scoring etc.
-   * @param potential the potential the factor should have.
+   * Creates a new factor, no potential assigned.
    * @return the created factor.
    */
   def addFactor() = {
-    val f = new Factor(this, factors.size, null, null, GENERIC, null)
+    val f = new Factor(this, factors.size)
     factors += f
     f
   }
@@ -308,32 +279,19 @@ object FactorGraph {
    *
    * @param fg the factor graph.
    * @param index the index/id of the factor
-   * @param dims array with dimensions of the participating variables, in the order of the `edges` array of edges.
-   * @param settings array with integer array representations of settings of the neighbors
-   * @param typ the type of factor
-   * @param table if `typ=TABLE` this stores a score for each possible setting (indexed by the index of the setting in
-   *              `settings`.
-   * @param stats if `typ=TABLE` this stores a feature vector for each setting (index by the index of the setting
-   *              in `settings`.
    */
-  final class Factor(val fg: FactorGraph, val index: Int, val dims: Array[Int], val settings: Array[Array[Int]],
-                     val typ: FactorType.Value = FactorGraph.FactorType.TABLE,
-                     val table: Array[Double],
-                     val stats: Array[FactorieVector] = null) {
+  final class Factor(val fg: FactorGraph, val index: Int) {
     var edges: Array[Edge] = Array.ofDim(0)
-    def rank = dims.length
     //todo: this should probably go into potential code
-    val entryCount = if (typ == GENERIC) 1 else {
-      var result = 1
-      for (i <- (0 until dims.length).optimized) result *= dims(i)
-      result
-    }
+    val entryCount = 1
+
+    def numNeighbors = edges.size
 
     /**
      * The potential for this factor. Usually created after edges to factor have been created as
      * the potential directly works with the edges.
      */
-    var potential:Potential  = null
+    var potential: Potential = null
 
     /**
      * Evaluates the score of the factor for the setting corresponding to the given setting index.
@@ -341,36 +299,9 @@ object FactorGraph {
      * @return score of the setting under this factor.
      */
     @inline
+    @deprecated("Setting ids a are specific to table based potentials. Use potential.value() instead.")
     def score(settingIndex: Int): Double = {
-      typ match {
-        case TABLE => table(settingIndex)
-        case LINEAR =>
-          stats(settingIndex) match {
-            //todo: unclear why, but this manual dot product is faster than calling the singleton vector dot product
-            //todo: which is doing the same thing.
-            case singleton: SingletonVector =>
-              val index = singleton.singleIndex
-              val result =
-                if (index >= fg.weights.size)
-                //rockt: for weights not observed during training but at test time
-                //sr: this doesn't work for sparse vectors where .size only provides the number of non-zero items
-                //sr: fix for now by never using sparse vectors as fg.weigths
-                  0.0
-                else
-                  singleton(index) * fg.weights(index)
-              result
-            case vector => {
-              //vector dot fg.weights
-              var sum = 0.0
-              val maxIndex = fg.weights.dim1
-              vector.foreachActiveElement((index: Int, value: Double) =>
-                if (index < maxIndex) sum += value * fg.weights(index)
-              )
-              sum
-            }
-          }
-//        case GENERIC => structured.score(this, entryToSetting(settingIndex, dims), fg.weights)
-      }
+      0.0
     }
 
     /**
@@ -379,21 +310,12 @@ object FactorGraph {
      * @return A verbose string representation of this factor.
      */
     def toVerboseString(implicit fgPrinter: FGPrinter) = {
-      val tableString = typ match {
-        case TABLE =>
-          for ((setting, index) <- settings.zipWithIndex) yield
-            s"${ setting.mkString(" ") } | ${ table(index) }"
-        case LINEAR =>
-          for ((setting, index) <- settings.zipWithIndex) yield
-            f"${ setting.mkString(" ") }%5s | ${ score(index) }%7.4f | ${ fgPrinter.vector2String(stats(index)) }"
-
-      }
+      val tableString = potential.toVerboseString
       f"""-----------------
         |Factor:  $index ${ fgPrinter.factor2String(this) }
         |Nodes:   ${ edges.map(_.n.index).mkString(" ") } ${ edges.map(e => fgPrinter.node2String(e.n)).mkString(" ") }
-        |Type:    $typ
         |Table:
-        |${ tableString.mkString("\n") }
+        |${ tableString }
       """.stripMargin
     }
 
@@ -441,7 +363,7 @@ object FactorGraph {
     def compare(x1: Edge, x2: Edge): Int = {
       if (x1.n.dim == 1 && x2.n.dim != 1) return 1 //messages to observed nodes should be last
       if (x2.n.dim == 1 && x1.n.dim != 1) return -1
-      if (x1.f.rank != x2.f.rank) return x1.f.rank - x2.f.rank
+      if (x1.f.numNeighbors != x2.f.numNeighbors) return x1.f.numNeighbors - x2.f.numNeighbors
       if (x1.indexInFactor != x2.indexInFactor) return x2.indexInFactor - x1.indexInFactor
       val sign = -1 + (x1.indexInFactor % 2) * 2
       if (x1.n.index != x2.n.index) return sign * (x1.n.index - x2.n.index)

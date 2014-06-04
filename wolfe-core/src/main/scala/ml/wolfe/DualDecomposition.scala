@@ -71,19 +71,19 @@ object DualDecomposition {
    * @param factor The factor
    */
   def solveFactorWithPenalty(factor: FactorGraph.Factor): Unit = {
-    factor.typ match {
-      case FactorGraph.FactorType.TABLE =>
-        val best = (0 until factor.table.size).maxBy(i => penalizedScore(factor, i))
-        propagateSettingInformation(factor, factor.settings(best))
-      case FactorGraph.FactorType.LINEAR =>
-        val best = (0 until factor.table.size).maxBy(i => penalizedScore(factor, i))
-        propagateSettingInformation(factor, factor.settings(best))
-//      case FactorGraph.FactorType.STRUCTURED =>
-//        // TODO: How does one mandate that this uses the penalties
-//        val argmax = factor.structured.argmaxMarginal2AllNodes(factor)
-//
-//        propagateSettingInformation(factor, argmax)
-    }
+//    factor.typ match {
+//      case FactorGraph.FactorType.TABLE =>
+//        val best = (0 until factor.table.size).maxBy(i => penalizedScore(factor, i))
+//        propagateSettingInformation(factor, factor.settings(best))
+//      case FactorGraph.FactorType.LINEAR =>
+//        val best = (0 until factor.table.size).maxBy(i => penalizedScore(factor, i))
+//        propagateSettingInformation(factor, factor.settings(best))
+////      case FactorGraph.FactorType.STRUCTURED =>
+////        // TODO: How does one mandate that this uses the penalties
+////        val argmax = factor.structured.argmaxMarginal2AllNodes(factor)
+////
+////        propagateSettingInformation(factor, argmax)
+//    }
   }
 
   /**
@@ -115,11 +115,11 @@ object DualDecomposition {
   def penalizedScore(factor: FactorGraph.Factor, settingId: Int): Double = {
     var score = factor.score(settingId)
 
-    val setting = factor.settings(settingId)
-
-    for (j <- 0 until factor.rank) {
-      score += factor.edges(j).n2f(setting(j))
-    }
+//    val setting = factor.settings(settingId)
+//
+//    for (j <- 0 until factor.numNeighbors) {
+//      score += factor.edges(j).n2f(setting(j))
+//    }
     score
   }
 

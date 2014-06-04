@@ -14,6 +14,12 @@ trait Potential {
   def value():Double
   def isLinear = false
   def stats():FactorieVector = null
+  /**
+   * More verbose string representation that shows that potential table depending on factor type.
+   * @param fgPrinter a printer that can print nodes and factors.
+   * @return A verbose string representation of this factor.
+   */
+  def toVerboseString(implicit fgPrinter: FGPrinter):String
 
 }
 

@@ -75,6 +75,22 @@ final class TablePotential(edges: Array[Edge], table: Table) extends Potential {
   val dims       = edges.map(_.n.dim)
   val entryCount = table.scores.size
 
+
+  /**
+   * More verbose string representation that shows that potential table depending on factor type.
+   * @param fgPrinter a printer that can print nodes and factors.
+   * @return A verbose string representation of this factor.
+   */
+  def toVerboseString(implicit fgPrinter: FGPrinter) = {
+
+    val tableString =
+      for ((setting, index) <- settings.zipWithIndex) yield
+        s"${ setting.mkString(" ") } | ${ table.scores(index) }"
+
+    tableString.mkString("\n")
+  }
+
+
   def value() = {
     val setting = edges.map(_.n.setting)
     val entry = TablePotential.settingToEntry(setting, dims)
