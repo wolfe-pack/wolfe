@@ -375,7 +375,7 @@ object BruteForceSearchNew {
     for (f <- fg.factors; if f.potential.isLinear)
       fg.gradient += f.potential.stats()
 
-    println("Bruteforce: " + maxScore)
+    //println("Bruteforce: " + maxScore)
 
   }
 }
