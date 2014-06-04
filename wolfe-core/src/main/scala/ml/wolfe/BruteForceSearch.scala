@@ -31,7 +31,7 @@ object BruteForceSearch {
       var score = 0.0
       var i = 0
       while (i < fg.factors.size) {
-        score += fg.factors(i).potential.value()
+        score += fg.factors(i).potential.valueForCurrentSetting()
         i += 1
       }
       for (n <- fg.nodes) {

@@ -91,7 +91,7 @@ final class TablePotential(edges: Array[Edge], table: Table) extends Potential {
   }
 
 
-  def value() = {
+  def valueForCurrentSetting() = {
     val setting = edges.map(_.n.setting)
     val entry = TablePotential.settingToEntry(setting, dims)
     scores(entry)

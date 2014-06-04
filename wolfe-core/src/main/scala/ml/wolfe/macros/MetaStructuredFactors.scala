@@ -118,6 +118,32 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
 
   case class LinearModelInfo(indexTree: Tree)
 
+  trait MetaGenericStructuredFactor extends MetaStructuredFactor {
+    val info: FactorGenerationInfo
+
+    import info._
+
+    lazy val className       = newTypeName(context.fresh("GenericStructuredFactor"))
+    lazy val arguments       = distinctTrees(structures(potential, matcher).filterNot(_.meta.observed).map(_.structure))
+    lazy val nodesPerArg     = arguments.map(a => q"$a.nodes()")
+    lazy val nodes           = q"""Iterator(..$nodesPerArg).flatMap(identity)"""
+    lazy val constructorArgs = q"val structure:${ structure.className }" :: info.constructorArgs
+
+    def children = Nil
+    def classDef = q"""
+      final class $className(..$constructorArgs) extends ml.wolfe.macros.StructuredFactor[${ structure.argType }] {
+        import ml.wolfe.FactorGraph._
+        val nodes:Array[Node] = $nodes.toArray
+        val factor = graph.addFactor()
+        val edges = nodes.view.zipWithIndex.map(p => graph.addEdge(factor,p._1,p._2)).toArray
+        factor.potential = null
+        def factors = Iterator(factor)
+        def arguments = List(..$arguments)
+      }
+    """
+
+  }
+
   trait MetaAtomicStructuredFactor extends MetaStructuredFactor {
     val info: FactorGenerationInfo
     //    def potential: Tree
@@ -142,7 +168,7 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
     lazy val injected        = context.resetLocalAttrs(injectStructure(potential, matcher))
     lazy val constructorArgs = q"val structure:${ structure.className }" :: info.constructorArgs
 
-    def inject(term:Tree) = context.resetLocalAttrs(injectStructure(term, matcher))
+    def inject(term: Tree) = context.resetLocalAttrs(injectStructure(term, matcher))
 
     lazy val perSetting = q"""
 //        println(nodes.map(_.setting).mkString(","))
@@ -193,7 +219,7 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
     def createPotential = q"new ml.wolfe.potential.LinearPotential(edges,ml.wolfe.potential.Stats(settings,vectors),graph)"
 
     def perSettingValue = toOptimizedFactorieVector(injected, linearModelInfo.indexTree)
-//    def perSettingValue = inject(toOptimizedFactorieVector(potential, linearModelInfo.indexTree))
+    //    def perSettingValue = inject(toOptimizedFactorieVector(potential, linearModelInfo.indexTree))
     def perSettingArrayInitializer = q"Array.ofDim[ml.wolfe.FactorieVector](settingsCount)"
     def perSettingArrayName = newTermName("vectors")
   }
@@ -201,6 +227,34 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
   def atomic(info: FactorGenerationInfo) = info.linear match {
     case true => MetaAtomicStructuredFactorLinear(info.copy(potential = info.transformer(inlineFull(info.potential))))
     case false => MetaAtomicStructuredFactorTable(info.copy(potential = info.transformer(inlineFull(info.potential))))
+  }
+
+  def tailorMadePotential(info: FactorGenerationInfo, args: List[Tree], annotation: Annotation) = {
+    import info._
+    //get argument which must correspond to sub-structures
+    val argumentStructures = args map (a => matcher(a).get.structure)
+    val argumentEdges = argumentStructures map (a => q"$a.createEdges(factor)")
+    val createPotential = q"${ annotation.scalaArgs.head }(..$argumentEdges)"
+
+
+    val nameOfClass = newTypeName(context.fresh("GenericStructuredFactor"))
+    val constructorArgs = q"val structure:${ structure.className }" :: info.constructorArgs
+
+    val classDefinition = q"""
+      final class $nameOfClass(..$constructorArgs) extends ml.wolfe.macros.StructuredFactor[${ structure.argType }] {
+        import ml.wolfe.FactorGraph._
+        val factor = graph.addFactor()
+        factor.potential = $createPotential
+        def factors = Iterator(factor)
+        def arguments = List(..$argumentStructures)
+      }
+    """
+    new MetaStructuredFactor {
+      def children = Nil
+      def className = nameOfClass
+      def classDef = classDefinition
+    }
+
   }
 
 
@@ -282,6 +336,8 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
           MetaFirstOrderSumFactor(List(dom), obj, info)
       case Apply(f, args) if f.symbol.annotations.exists(_.tpe.typeSymbol == wolfeSymbols.atomic) =>
         atomic(info)
+      case Apply(f, args) if f.symbol.annotations.exists(_.tpe.typeSymbol == wolfeSymbols.potential) =>
+        tailorMadePotential(info, args, f.symbol.annotations.find(_.tpe.typeSymbol == wolfeSymbols.potential).get)
       case FlattenedPlus(args) =>
         val merged = mergeSumArgs(args, matcher)
         val metaStructs = merged.map(arg =>

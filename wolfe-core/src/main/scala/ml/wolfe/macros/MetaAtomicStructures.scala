@@ -44,6 +44,11 @@ trait MetaAtomicStructures[C <: Context] {
           node.domain = Array(index)
           node.dim = 1
         }
+        type Edges = ml.wolfe.FactorGraph.Edge
+        def createEdges(factor: ml.wolfe.FactorGraph.Factor): Edges = {
+          graph.addEdge(factor,node)
+        }
+
       }
     """
 
@@ -81,26 +86,11 @@ trait MetaAtomicStructures[C <: Context] {
         final def observe(value:$argType) {
           _value = value
         }
+        type Edges = Unit
+        def createEdges(factor: ml.wolfe.FactorGraph.Factor): Edges = {}
+
       }
     """
-//    def classDef(graphName: TermName) = q"""
-//      final class $className extends ml.wolfe.macros.Structure[$argType] {
-//        private var _value:$argType = _
-//        val node = $graphName.addNode(1)
-//        def value():$argType = _value
-//        def children():Iterator[ml.wolfe.macros.Structure[Any]] = Iterator.empty
-//        def graph = $graphName
-//        def nodes() = Iterator(node)
-//        def resetSetting() {node.setting = -1}
-//        def hasNextSetting = node.setting < node.dim - 1
-//        def nextSetting() = {node.setting += 1}
-//        def setToArgmax() { node.setting = 0}
-//        final def observe(value:$argType) {
-//          _value = value
-//        }
-//      }
-//    """
-
 
     def matcher(parent: Tree => Option[StructurePointer],
                 result: Tree => Option[StructurePointer]): Tree => Option[StructurePointer] = result

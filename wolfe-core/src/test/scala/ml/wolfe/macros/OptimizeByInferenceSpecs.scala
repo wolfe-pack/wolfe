@@ -1,6 +1,7 @@
 package ml.wolfe.macros
 
-import ml.wolfe.{MaxProduct, BruteForceOperators, Wolfe, WolfeSpec}
+import ml.wolfe._
+import ml.wolfe.potential.AndPotential
 
 /**
  * @author Sebastian Riedel
@@ -67,7 +68,7 @@ class OptimizeByInferenceSpecs extends WolfeSpec {
       afterTenIter should be(expected)
     }
 
-    "find the optimal solution of a linear chain " in {
+    "find the optimal solution of a linear chain" in {
       def space = seqs(5, Range(0, 3))
       @OptimizeByInference(MaxProduct(_, 1))
       def potential(seq: Seq[Int]) = {
@@ -79,6 +80,27 @@ class OptimizeByInferenceSpecs extends WolfeSpec {
       val expected = BruteForceOperators.argmax(space) { potential }
 
       actual should be(expected)
+    }
+
+    "use a tailor-made potential " in {
+
+      import FactorGraph._
+
+      case class Sample(x: Boolean, y: Boolean)
+
+      def space = Wolfe.all(Sample)
+
+      def andImpl(arg1: Edge, arg2: Edge) = new AndPotential(arg1, arg2)
+
+      @Potential(andImpl(_: Edge, _: Edge))
+      def and(arg1: Boolean, arg2: Boolean) =
+        if (arg1 && arg2) 0.0 else Double.NegativeInfinity
+
+      val actual = argmax(space) { s => and(s.x, s.y) }
+      val expected = BruteForceOperators.argmax(space) { s => and(s.x, s.y) }
+
+      actual should be(expected)
+
     }
 
 
