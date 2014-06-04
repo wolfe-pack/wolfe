@@ -86,8 +86,8 @@ class MaxProductSpecs extends WolfeSpec {
       val fg_mp = oneFactorFG()
       val fg_bf = oneFactorFG()
 
-      MaxProductNew(fg_mp, 1)
-      BruteForceSearchNew(fg_bf)
+      MaxProduct(fg_mp, 1)
+      BruteForceSearch(fg_bf)
 
       sameBeliefs(fg_mp, fg_bf) should be(true)
       fg_mp.value should be (fg_bf.value)
@@ -97,8 +97,8 @@ class MaxProductSpecs extends WolfeSpec {
       val fg_mp = chainFG(5)
       val fg_bf = chainFG(5)
 
-      MaxProductNew(fg_mp, 1)
-      BruteForceSearchNew(fg_bf)
+      MaxProduct(fg_mp, 1)
+      BruteForceSearch(fg_bf)
 
       sameBeliefs(fg_mp, fg_bf) should be(true)
       fg_mp.value should be (fg_bf.value)
@@ -108,8 +108,8 @@ class MaxProductSpecs extends WolfeSpec {
       val fg_mp = chainFGWithFeatures(5)
       val fg_bf = chainFGWithFeatures(5)
 
-      MaxProductNew(fg_mp, 1)
-      BruteForceSearchNew(fg_bf)
+      MaxProduct(fg_mp, 1)
+      BruteForceSearch(fg_bf)
 
       sameBeliefs(fg_mp, fg_bf) should be(true)
       sameVector(fg_mp.gradient, fg_bf.gradient)

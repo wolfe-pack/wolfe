@@ -373,23 +373,6 @@ object FactorGraph {
       }
     }
 
-
-    /**
-     * Evaluates the score based on the current setting of the neighboring nodes.
-     * @return the score under current setting.
-     */
-    def scoreCurrentSetting = {
-      val setting = edges.map(_.n.setting)
-      val entry = FactorGraph.settingToEntry(setting, dims)
-      score(entry)
-    }
-
-    def gradientCurrentSetting = {
-      val setting = edges.map(_.n.setting)
-      val entry = FactorGraph.settingToEntry(setting, dims)
-      stats(entry)
-    }
-
     /**
      * More verbose string representation that shows that potential table depending on factor type.
      * @param fgPrinter a printer that can print nodes and factors.

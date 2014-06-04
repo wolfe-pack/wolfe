@@ -128,6 +128,7 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
     def perSettingArrayInitializer: Tree
     def perSettingValue: Tree
     def createFactor: Tree
+    def createPotential: Tree
     def children = Nil
     override def weightVector = None
 
@@ -161,8 +162,9 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
         val $perSettingArrayName = $perSettingArrayInitializer
         var settingIndex = 0
         $loop
-        val factor = $createFactor
-        nodes.view.zipWithIndex.foreach(p => graph.addEdge(factor,p._1,p._2))
+        val factor = graph.addFactor()
+        val edges = nodes.view.zipWithIndex.map(p => graph.addEdge(factor,p._1,p._2)).toArray
+        factor.potential = $createPotential
         def factors = Iterator(factor)
         def arguments = List(..$arguments)
       }
@@ -174,6 +176,8 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
     import info._
 
     def createFactor = q"graph.addTableFactor(scores, settings, dims)"
+
+    def createPotential = q"new ml.wolfe.potential.TablePotential(edges,ml.wolfe.potential.Table(settings,scores))"
     def perSettingValue = q"$injected"
     def perSettingArrayInitializer = q"Array.ofDim[Double](settingsCount)"
     def perSettingArrayName = newTermName("scores")
@@ -185,6 +189,9 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
     import info._
 
     def createFactor = q"graph.addLinearFactor(vectors, settings, dims)"
+
+    def createPotential = q"new ml.wolfe.potential.LinearPotential(edges,ml.wolfe.potential.Stats(settings,vectors),graph)"
+
     def perSettingValue = toOptimizedFactorieVector(injected, linearModelInfo.indexTree)
 //    def perSettingValue = inject(toOptimizedFactorieVector(potential, linearModelInfo.indexTree))
     def perSettingArrayInitializer = q"Array.ofDim[ml.wolfe.FactorieVector](settingsCount)"
