@@ -17,7 +17,7 @@ class MPSchedulerSpec extends StructureIsomorphisms {
     "given a tree" should {
       val graph = new FactorGraph()
       (0 to 5).foreach(i => graph.addNode(0)) //dummy nodes
-      (0 to 104).foreach(i => graph.addTableFactor(Array(), Array(), Array())) //dummy factors
+      (0 to 104).foreach(i => graph.addFactor()) //dummy factors
       val edges = Array(
         100 -> 0, 100 -> 1,
         101 -> 2, 101 -> 3,
@@ -65,7 +65,7 @@ class MPSchedulerSpec extends StructureIsomorphisms {
     "given a loopy graph" should {
       val graph = new FactorGraph()
       (0 to 2).foreach(i => graph.addNode(0)) //dummy nodes
-      (0 to 102).foreach(i => graph.addTableFactor(Array(), Array(), Array())) //dummy factors
+      (0 to 102).foreach(i => graph.addFactor()) //dummy factors
       val edges = Array(
           100 -> 0,
           100 -> 1,
@@ -103,7 +103,7 @@ class MPSchedulerSpec extends StructureIsomorphisms {
     "should given a graph with disconnected components return a schedule on all components" in {
       val graph = new FactorGraph()
       (0 to 4).foreach(i => graph.addNode(0)) //dummy nodes
-      (0 to 101).foreach(i => graph.addTableFactor(Array(), Array(), Array())) //dummy factors
+      (0 to 101).foreach(i => graph.addFactor()) //dummy factors
       val edges = Array(
           100 -> 0,
           100 -> 1,
@@ -123,7 +123,7 @@ class MPSchedulerSpec extends StructureIsomorphisms {
     "should given an inner node first return the forward passes and then the backward passes" in {
       val graph = new FactorGraph()
       (0 to 4).foreach(i => graph.addNode(0)) //dummy nodes
-      (0 to 101).foreach(i => graph.addTableFactor(Array(), Array(), Array())) //dummy factors
+      (0 to 101).foreach(i => graph.addFactor()) //dummy factors
       val edges = Array(
           100 -> 0,
           100 -> 1,

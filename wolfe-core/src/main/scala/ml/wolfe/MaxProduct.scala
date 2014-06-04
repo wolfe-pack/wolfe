@@ -56,21 +56,6 @@ object MaxProduct {
   }
 
   /**
-   * Calculates the score of a setting and adds penalties based on incoming messages of the factor.
-   * @param factor the factor to calculate the penalised score for.
-   * @param settingId id of the setting to score.
-   * @param setting the setting corresponding to the id.
-   * @return penalized score of setting.
-   */
-  def penalizedScore(factor: FactorGraph.Factor, settingId: Int, setting: Array[Int]): Double = {
-    var score = factor.score(settingId)
-    for (j <- 0 until factor.rank) {
-      score += factor.edges(j).n2f(setting(j))
-    }
-    score
-  }
-
-  /**
    * Updates the message from factor to node.
    * @param edge the factor-node edge.
    */
@@ -114,62 +99,7 @@ object MaxProduct {
 
 }
 
-/**
- * Searches through all states of the factor graph.
- */
-object BruteForceSearch {
-  def apply(fg: FactorGraph) {
-    import FactorGraph._
-    def loopOverSettings(nodes: List[Node], loop: (() => Unit) => Unit = body => body()): (() => Unit) => Unit = {
-      nodes match {
-        case Nil => (body: () => Unit) => loop(body)
-        case head :: tail =>
-          def newLoop(body: () => Unit) {
-            for (setting <- head.domain.indices) {
-              head.setting = setting
-              loop(body)
-            }
-          }
-          loopOverSettings(tail, newLoop)
-      }
-    }
-    val loop = loopOverSettings(fg.nodes.toList)
-    var maxScore = Double.NegativeInfinity
-    for (n <- fg.nodes) fill(n.b, Double.NegativeInfinity)
 
-    var maxSetting: Array[Int] = null
-    loop { () =>
-      var score = 0.0
-      var i = 0
-      while (i < fg.factors.size) {
-        score += fg.factors(i).potential.value()
-        i += 1
-      }
-      for (n <- fg.nodes) {
-        n.b(n.setting) = math.max(score,n.b(n.setting))
-      }
-
-      if (score > maxScore) {
-        maxScore = score
-        maxSetting = fg.nodes.view.map(_.setting).toArray
-      }
-    }
-
-    for ((s, n) <- maxSetting zip fg.nodes) {
-      n.setting = s
-      maxNormalize(n.b)
-    }
-
-    fg.value = maxScore
-    fg.gradient = new SparseVector(1000)
-
-    for (f <- fg.factors; if f.potential.isLinear)
-      fg.gradient += f.potential.stats()
-
-    //println("Bruteforce: " + maxScore)
-
-  }
-}
 
 
 

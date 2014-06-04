@@ -1,7 +1,7 @@
 package ml.wolfe.potential
 
 import ml.wolfe.{SingletonVector, FactorGraph, FactorieVector}
-import ml.wolfe.FactorGraph.Edge
+import ml.wolfe.FactorGraph.{FGPrinter, Edge}
 import ml.wolfe.MoreArrayOps._
 import scalaxy.loops._
 import cc.factorie.la.{SingletonTensor1, DenseTensor1, SparseTensor1}
@@ -112,6 +112,18 @@ final class LinearPotential(val edges: Array[Edge], statistics: Stats, fg: Facto
     maxScore
   }
   override def isLinear = true
+  /**
+   * More verbose string representation that shows that potential table depending on factor type.
+   * @param fgPrinter a printer that can print nodes and factors.
+   * @return A verbose string representation of this factor.
+   */
+  override def toVerboseString(implicit fgPrinter: FGPrinter) = {
+    val tableString =
+      for ((setting, index) <- statistics.settings.zipWithIndex) yield
+        f"${ setting.mkString(" ") }%5s | ${ scoreEntry(index) }%7.4f | ${ fgPrinter.vector2String(statistics.vectors(index)) }"
+
+    tableString.mkString("\n")
+  }
 }
 
 case class Stats(settings: Array[Array[Int]], vectors: Array[FactorieVector])
