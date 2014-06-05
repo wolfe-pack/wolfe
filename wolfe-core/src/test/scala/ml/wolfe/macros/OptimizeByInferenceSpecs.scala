@@ -110,9 +110,7 @@ class OptimizeByInferenceSpecs extends WolfeSpec {
 
       def space = Wolfe.all(Sample)
 
-      def andSeqImpl(args: Seq[Edge]) = new AndPotential(args(0),args(1))
-
-      @Potential(andSeqImpl(_: Seq[Edge]))
+      @Potential((args:Seq[Edge]) => new AndPotential(args(0),args(1)))
       def andSeq(args:Seq[Boolean]) = if (args(0) && args(1)) 0.0 else Double.NegativeInfinity
 
       val actual = argmax(space) { s => andSeq(Seq(s.x, s.y)) }
