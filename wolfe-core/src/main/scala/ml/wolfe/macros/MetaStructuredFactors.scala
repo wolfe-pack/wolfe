@@ -231,14 +231,21 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
 
   def tailorMadePotential(info: FactorGenerationInfo, args: List[Tree], annotation: Annotation) = {
     import info._
-    //get argument which must correspond to sub-structures
-    val argumentStructures = args map (a => matcher(a).get.structure)
-    val argumentEdges = argumentStructures map (a => q"$a.createEdges(factor)")
+    val argumentStructures = distinctTrees(structures(potential, matcher).map(_.structure))
+    val argumentEdges = args map {a => {
+      val injected = injectStructure(a,matcher, t => q"$t.createEdges(factor)")
+      val removeTypes = transform(injected, {
+        case Apply(TypeApply(f,_),funArgs) => Apply(f,funArgs)
+      })
+      val reset = context.resetAllAttrs(removeTypes)
+      reset
+    }}
     val createPotential = q"${ annotation.scalaArgs.head }(..$argumentEdges)"
-
 
     val nameOfClass = newTypeName(context.fresh("GenericStructuredFactor"))
     val constructorArgs = q"val structure:${ structure.className }" :: info.constructorArgs
+
+    //todo: get ..$argumentStructures back into arguments
 
     val classDefinition = q"""
       final class $nameOfClass(..$constructorArgs) extends ml.wolfe.macros.StructuredFactor[${ structure.argType }] {
