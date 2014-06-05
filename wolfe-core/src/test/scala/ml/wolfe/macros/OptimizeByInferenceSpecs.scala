@@ -34,7 +34,7 @@ class OptimizeByInferenceSpecs extends WolfeSpec {
       actual should be(expected)
     }
 
-    "support where instead of filter " in {
+    "support where instead of filter" in {
       case class Data(x: Boolean, y: Boolean)
       val actual = argmax(Wolfe.all(Data) where (_.x)) { d => I(!d.x || d.y) }
       val expected = BruteForceOperators.argmax(Wolfe.all(Data) filter (_.x)) { d => I(!d.x || d.y) }
@@ -82,7 +82,7 @@ class OptimizeByInferenceSpecs extends WolfeSpec {
       actual should be(expected)
     }
 
-    "use a tailor-made potential " in {
+    "use a tailor-made potential" in {
 
       import FactorGraph._
 
@@ -93,11 +93,30 @@ class OptimizeByInferenceSpecs extends WolfeSpec {
       def andImpl(arg1: Edge, arg2: Edge) = new AndPotential(arg1, arg2)
 
       @Potential(andImpl(_: Edge, _: Edge))
-      def and(arg1: Boolean, arg2: Boolean) =
-        if (arg1 && arg2) 0.0 else Double.NegativeInfinity
+      def and(arg1: Boolean, arg2: Boolean) = if (arg1 && arg2) 0.0 else Double.NegativeInfinity
 
       val actual = argmax(space) { s => and(s.x, s.y) }
       val expected = BruteForceOperators.argmax(space) { s => and(s.x, s.y) }
+
+      actual should be(expected)
+
+    }
+
+    "use a tailor-made potential with structured arguments " in {
+
+      import FactorGraph._
+
+      case class Sample(x: Boolean, y: Boolean)
+
+      def space = Wolfe.all(Sample)
+
+      def andSeqImpl(args: Seq[Edge]) = new AndPotential(args(0),args(1))
+
+      @Potential(andSeqImpl(_: Seq[Edge]))
+      def andSeq(args:Seq[Boolean]) = if (args(0) && args(1)) 0.0 else Double.NegativeInfinity
+
+      val actual = argmax(space) { s => andSeq(Seq(s.x, s.y)) }
+      val expected = BruteForceOperators.argmax(space) { s => andSeq(Seq(s.x, s.y)) }
 
       actual should be(expected)
 
