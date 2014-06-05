@@ -102,19 +102,21 @@ class OptimizeByInferenceSpecs extends WolfeSpec {
 
     }
 
-    "use a tailor-made potential with structured arguments " in {
+    "use a tailor-made potential with structured arguments" in {
 
       import FactorGraph._
 
-      case class Sample(x: Boolean, y: Boolean)
+      case class Sample(pred:Pred[Int])
+
+      implicit def ints = 0 until 4
 
       def space = Wolfe.all(Sample)
 
       @Potential((args:Seq[Edge]) => new AndPotential(args(0),args(1)))
       def andSeq(args:Seq[Boolean]) = if (args(0) && args(1)) 0.0 else Double.NegativeInfinity
 
-      val actual = argmax(space) { s => andSeq(Seq(s.x, s.y)) }
-      val expected = BruteForceOperators.argmax(space) { s => andSeq(Seq(s.x, s.y)) }
+      val actual = argmax(space) { s => andSeq(Seq(s.pred(0), s.pred(1))) }
+      val expected = BruteForceOperators.argmax(space) { s => andSeq(Seq(s.pred(0), s.pred(1))) }
 
       actual should be(expected)
 

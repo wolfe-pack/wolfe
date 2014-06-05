@@ -124,7 +124,8 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
    * @return the tree with injected structure.
    */
   def injectStructure(tree: Tree, matcher: Tree => Option[StructurePointer],
-                      replace:Tree => Tree = t => q"$t.value()") = {
+                      replace:Tree => Tree = t => q"$t.value()",
+                      ignoreTermsWithFunctionArgs:Boolean = true) = {
     val transformer = new Transformer {
       val functionStack = new mutable.Stack[Function]()
       override def transform(tree: Tree) = {
@@ -137,7 +138,7 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
             //get symbols in tree
             val symbols = tree.collect({case i: Ident => i}).map(_.name).toSet //todo: this shouldn't just be by name
             val hasFunctionArg = functionStack.exists(_.vparams.exists(p => symbols(p.name)))
-            if (hasFunctionArg)
+            if (ignoreTermsWithFunctionArgs && hasFunctionArg)
               super.transform(tree)
             else
               replace(structure.structure)
@@ -145,7 +146,7 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
           case _ => super.transform(tree)
         }
         tree match {
-          case _: Function => functionStack.pop
+          case _: Function => functionStack.pop()
           case _ =>
         }
         result

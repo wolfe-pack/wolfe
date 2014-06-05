@@ -233,9 +233,10 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
     import info._
     val argumentStructures = distinctTrees(structures(potential, matcher).map(_.structure))
     val argumentEdges = args map {a => {
-      val injected = injectStructure(a,matcher, t => q"$t.createEdges(factor)")
+      val injected = injectStructure(a,matcher, t => q"$t.createEdges(factor)", false)
       val removeTypes = transform(injected, {
         case Apply(TypeApply(f,_),funArgs) => Apply(f,funArgs)
+        case TypeApply(s:Select,_) => s
       })
       val reset = context.resetAllAttrs(removeTypes)
       reset
