@@ -1,8 +1,9 @@
 package ml.wolfe.macros
 
-import ml.wolfe.Wolfe
+import ml.wolfe.{FactorGraph, Wolfe}
 import Wolfe._
 import OptimizedOperators._
+import ml.wolfe.potential.ExactlyOncePotential
 
 
 /**
@@ -178,6 +179,24 @@ class MetaStructuredFactorSpecs extends StructureIsomorphisms {
       val factor = MetaStructuredFactor.structuredLinearFactor(space, potential)
       factor(w) mustBeIsomorphicTo potential(w)
       factor(w).factors.size should be(5)
+    }
+
+    "create a factor with user-specified potential" in {
+      case class Sample(pred:Pred[Int])
+      implicit def ints = 0 until 5
+      def space = Wolfe.all(Sample)
+
+      @Potential(new ExactlyOncePotential(_:Seq[FactorGraph.Edge]))
+      def exactlyOnce(args:Seq[Boolean]) = if (args.count(identity) == 1) 0.0 else Double.NegativeInfinity
+
+      def model(s:Sample) = exactlyOnce(for (i <- 0 until 5) yield s.pred(i))
+
+      val structuredFactor = MetaStructuredFactor.structuredFactor(space,model)
+      structuredFactor.factors.size should be (1)
+      val factor = structuredFactor.factors.next()
+      factor.edges.length should be (5)
+      factor.potential shouldBe a [ExactlyOncePotential]
+
     }
 
 
