@@ -48,6 +48,12 @@ class OptimizeByInferenceSpecs extends WolfeSpec {
       actual should be(expected)
     }
 
+    "return the argmin of function " in {
+      val actual = argmin(-3 until 3) { x => x * x}
+      val expected = BruteForceOperators.argmin(-3 until 3) { x => x * x}
+      actual should be (expected)
+    }
+
 
     "use the algorithm in the maxBy annotation" in {
       //todo: can we find a better way to check whether an annotation was used
