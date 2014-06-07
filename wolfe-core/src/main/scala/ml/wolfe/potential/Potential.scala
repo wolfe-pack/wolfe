@@ -12,6 +12,7 @@ trait Potential {
   def maxMarginalF2N(edge: Edge)
   def maxMarginalExpectationsAndObjective(dstExpectations: FactorieVector): Double
   def valueForCurrentSetting(): Double
+  def gradientForAllEdges() {}
   def isLinear = false
   def stats(): FactorieVector = null
   def toVerboseString(implicit fgPrinter: FGPrinter): String
