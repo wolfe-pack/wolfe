@@ -19,7 +19,6 @@ import ml.wolfe.potential.Potential
  */
 final class FactorGraph {
 
-  import FactorGraph.FactorType._
   import FactorGraph._
 
   val edges   = new ArrayBuffer[Edge]
@@ -146,48 +145,6 @@ final class FactorGraph {
 
 object FactorGraph {
 
-  /**
-   * We define a set of factor types. Inference algorithms will use the type of a factor
-   * to determine how to treat the factor. We use a type instead of sub-classing to
-   * avoid any kind of polymorphism inside the inner loop of inference.
-   */
-  object FactorType extends Enumeration {
-    val TABLE, LINEAR, GENERIC = Value
-  }
-
-  import FactorType._
-
-
-  /**
-   * Turns a setting vector into an entry number.
-   * @param setting setting
-   * @param dims dimensions of each variable.
-   * @return the entry corresponding to the given setting.
-   */
-  final def settingToEntry(setting: Array[Int], dims: Array[Int]) = {
-    var result = 0
-    for (i <- (0 until dims.length).optimized) {
-      result = setting(i) + result * dims(i)
-    }
-    result
-  }
-
-  /**
-   * Turns an entry into a setting
-   * @param entry the entry number.
-   * @param dims dimensions of the variables.
-   * @return a setting array corresponding to the entry.
-   */
-  final def entryToSetting(entry: Int, dims: Array[Int]) = {
-    val result = Array.ofDim[Int](dims.length)
-    var current = entry
-    for (i <- (0 until dims.length).optimized) {
-      val value = current % dims(i)
-      result(i) = value
-      current = current / dims(i)
-    }
-    result
-  }
 
   /**
    * A node representing a variable.
