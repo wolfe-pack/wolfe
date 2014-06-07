@@ -9,13 +9,6 @@ import ml.wolfe.potential.Potential
 
 /**
  * A simple Factor Graph with infrastructure for message passing.
- * It stores messages and table potentials in double arrays.
- * Factors can have one of three types:
- * (1) simple dense table based;
- * (2) based on a feature vector for each state that is multiplied with a shared weight vector
- * (3) generic (calls a function to be evaluated at a particular state)
- *
- *
  */
 final class FactorGraph {
 
@@ -25,6 +18,10 @@ final class FactorGraph {
   val nodes   = new ArrayBuffer[Node]
   val factors = new ArrayBuffer[Factor]
 
+  /**
+   * Stochastic factors can be
+   */
+  val stochasticFactors = new ArrayBuffer[(Factor,()=>Seq[Node])]()
 
   /**
    * A flag that indicates whether the algorithm that uses this graph to find a solution has converged
@@ -93,6 +90,57 @@ final class FactorGraph {
   }
 
   /**
+   * Adds a factor whose nodes will be resampled.
+   * @param sampleNodes a function that samples neighbors of the factor
+   */
+  def addStochasticFactor(sampleNodes: =>Seq[Node]) {
+    val f = addFactor()
+    stochasticFactors += f -> (() =>sampleNodes)
+  }
+
+  /**
+   * Change the arguments of each stochastic factor.
+   */
+  def sampleFactors() {
+    for ((f,s) <- stochasticFactors) {
+      moveFactor(f,s())
+    }
+  }
+
+  /**
+   * Removes the factor from the graph. Very expensive.
+   * @param factor the factor to remove.
+   */
+  def removeFactor(factor: Factor) {
+    for (e <- factor.edges) {
+      e.n.edges = e.n.edges.filter(_ != e)
+      e.n.edgeCount -= 1
+      edges.remove(edges.indexOf(e))
+    }
+    factors.remove(factors.indexOf(factor))
+  }
+
+  /**
+   * Method to efficiently "move" a factor from one set of nodes
+   * to another. Factor will retain its potential and edges, only
+   * the edge nodes are changed.
+   * @param factor factor to move.
+   * @param newNodes the new nodes the factor should point to. It should be the same number and types of
+   *                 variables as the factor connected before.
+   */
+  def moveFactor(factor: Factor, newNodes: Seq[Node]) {
+    require(newNodes.size == factor.edges.size)
+    for ((e, n) <- factor.edges zip newNodes) {
+      //todo: some of the array recreation code may be a bottleneck.
+      e.n.edges = e.n.edges.filter(_ != e)
+      e.n.edgeCount -= 1
+      e.n = n
+      e.n.edgeCount += 1
+      e.n.edges = e.n.edges :+ e
+    }
+  }
+
+  /**
    * creates node message buffers and domains if necessary.
    */
   def setupNodes() {
@@ -138,9 +186,12 @@ final class FactorGraph {
     """.stripMargin
   }
 
+
   def getNode(index: Int) = nodes(index)
 
   def getFactor(index: Int) = factors(index)
+
+
 }
 
 object FactorGraph {
@@ -200,7 +251,7 @@ object FactorGraph {
    * @param f the factor.
    * @param dim dimension of the node's variable.
    */
-  final class Edge(val n: Node, val f: Factor, val dim: Int) {
+  final class Edge(var n: Node, val f: Factor, val dim: Int) {
     val n2f     = Array.ofDim[Double](dim)
     val f2n     = Array.ofDim[Double](dim)
     val f2nLast = Array.ofDim[Double](dim)
@@ -376,5 +427,5 @@ object FactorGraph {
     def vector2String(vector: ml.wolfe.FactorieVector) = vector.toString()
   }
 
-
 }
+
