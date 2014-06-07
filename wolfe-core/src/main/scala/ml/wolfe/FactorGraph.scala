@@ -4,7 +4,7 @@ import scala.collection.mutable.ArrayBuffer
 import scalaxy.loops._
 import scala.annotation.tailrec
 import scala.collection.mutable
-import ml.wolfe.potential.Potential
+import ml.wolfe.fg.{Var, DiscreteVar, Potential}
 
 
 /**
@@ -63,7 +63,7 @@ final class FactorGraph {
    * @return the added edge.
    */
   def addEdge(f: Factor, n: Node, indexInFactor: Int): Edge = {
-    val e = new Edge(n, f, n.dim)
+    val e = new Edge(n, f, n.variable.asDiscrete.dim)
     e.indexInFactor = indexInFactor
     n.edgeCount += 1
     f.edgeCount += 1
@@ -144,11 +144,7 @@ final class FactorGraph {
    * creates node message buffers and domains if necessary.
    */
   def setupNodes() {
-    for (node <- nodes) {
-      if (node.domain == null || node.domain.length != node.dim) node.domain = Array.range(0, node.dim)
-      if (node.b == null || node.b.length != node.dim) node.b = Array.ofDim[Double](node.dim)
-      if (node.in == null || node.in.length != node.dim) node.in = Array.ofDim[Double](node.dim)
-    }
+    for (node <- nodes) node.variable.setup()
   }
 
   /**
@@ -202,30 +198,16 @@ object FactorGraph {
    * @param index the index of the node.
    * @param dim the dimension of the variable the node is representing.
    */
-  final class Node(val index: Int, var dim: Int) {
+  final class Node(val index: Int, dim: Int) {
     /* all edges to factors that this node is connected to */
     var edges: Array[Edge] = Array.ofDim(0)
 
-    /* node belief */
-    var b = Array.ofDim[Double](dim)
-
-    /* external message for this node. Will usually not be updated during inference */
-    var in = Array.ofDim[Double](dim)
-
-    /* the domain of values. By default this corresponds to [0,dim) but can be a subset if observations are given */
-    var domain: Array[Int] = _
-
-    /* indicates that variable is in a certain state */
-    var setting: Int = 0
-
-    /* indicates the value corresponding to the setting of the node */
-    var value: Int = 0
+    var variable:Var = new DiscreteVar(dim)
 
     def toVerboseString(nodePrinter: Node => String = n => "") = {
       f"""-----------------
         |Node:   $index%3d ${ nodePrinter(this) }
-        |Belief:
-        |${ b.mkString("\n") }
+        |Var:    $variable
       """.stripMargin
     }
 

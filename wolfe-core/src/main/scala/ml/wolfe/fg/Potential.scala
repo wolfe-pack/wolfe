@@ -1,4 +1,4 @@
-package ml.wolfe.potential
+package ml.wolfe.fg
 
 import ml.wolfe.FactorGraph._
 import ml.wolfe.FactorieVector
@@ -20,13 +20,15 @@ trait Potential {
 }
 
 final class AndPotential(arg1: Edge, arg2: Edge) extends Potential {
+  val n1 = arg1.n.variable.asDiscrete
+  val n2 = arg2.n.variable.asDiscrete
   def maxMarginalF2N(edge: Edge) = {
     val other = if (edge == arg1) arg2 else arg1
     edge.f2n(1) = other.n2f(1)
     edge.f2n(0) = Double.NegativeInfinity
   }
   def valueForCurrentSetting() = {
-    if (arg1.n.setting == 1 && arg2.n.setting == 1) 0.0 else Double.NegativeInfinity
+    if (n1.setting == 1 && n2.setting == 1) 0.0 else Double.NegativeInfinity
   }
   def maxMarginalExpectationsAndObjective(dstExpectations: FactorieVector) = {
     val beliefInConsistentSolution = arg1.n2f(1) + arg2.n2f(1)

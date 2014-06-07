@@ -1,7 +1,7 @@
 package ml.wolfe.macros
 
 import ml.wolfe._
-import ml.wolfe.potential.AndPotential
+import ml.wolfe.fg.AndPotential
 
 /**
  * @author Sebastian Riedel

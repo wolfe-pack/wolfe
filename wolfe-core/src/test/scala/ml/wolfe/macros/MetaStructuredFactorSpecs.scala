@@ -3,7 +3,7 @@ package ml.wolfe.macros
 import ml.wolfe.{FactorGraph, Wolfe}
 import Wolfe._
 import OptimizedOperators._
-import ml.wolfe.potential.ExactlyOncePotential
+import ml.wolfe.fg.ExactlyOncePotential
 
 
 /**

@@ -30,19 +30,20 @@ trait MetaAtomicStructures[C <: Context] {
       final class $className extends ml.wolfe.macros.Structure[$argType] {
         ..$domainDefs
         val node = $graphName.addNode($domName.length)
-        private def updateValue() {node.value = node.domain(node.setting)}
-        def value():$argType = $domName(node.value)
+        val variable = node.variable.asDiscrete
+        private def updateValue() {variable.value = variable.domain(variable.setting)}
+        def value():$argType = $domName(variable.value)
         def children():Iterator[ml.wolfe.macros.Structure[Any]] = Iterator.empty
         def graph = $graphName
         def nodes() = Iterator(node)
-        def resetSetting() {node.setting = -1}
-        def hasNextSetting = node.setting < node.dim - 1
-        def nextSetting() = {node.setting += 1; updateValue()}
-        def setToArgmax() { node.setting = ml.wolfe.MoreArrayOps.maxIndex(node.b); updateValue()}
+        def resetSetting() {variable.setting = -1}
+        def hasNextSetting = variable.setting < variable.dim - 1
+        def nextSetting() = {variable.setting += 1; updateValue()}
+        def setToArgmax() { variable.setting = ml.wolfe.MoreArrayOps.maxIndex(variable.b); updateValue()}
         final def observe(value:$argType) {
           val index = $indexName(value)
-          node.domain = Array(index)
-          node.dim = 1
+          variable.domain = Array(index)
+          variable.dim = 1
         }
         type Edges = ml.wolfe.FactorGraph.Edge
         def createEdges(factor: ml.wolfe.FactorGraph.Factor): Edges = {

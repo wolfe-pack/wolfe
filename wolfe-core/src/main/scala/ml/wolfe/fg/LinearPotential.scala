@@ -1,4 +1,4 @@
-package ml.wolfe.potential
+package ml.wolfe.fg
 
 import ml.wolfe.{SingletonVector, FactorGraph, FactorieVector}
 import ml.wolfe.FactorGraph.{FGPrinter, Edge}
@@ -14,7 +14,7 @@ final class LinearPotential(val edges: Array[Edge], statistics: Stats, fg: Facto
 
   import statistics._
 
-  val dims       = edges.map(_.n.dim)
+  val dims       = edges.map(_.n.variable.asDiscrete.dim)
   val entryCount = statistics.settings.size
 
   def maxMarginalF2N(edge: Edge) = {
@@ -33,13 +33,13 @@ final class LinearPotential(val edges: Array[Edge], statistics: Stats, fg: Facto
     maxNormalize(edge.f2n)
   }
   def valueForCurrentSetting() = {
-    val setting = edges.map(_.n.setting)
+    val setting = edges.map(_.n.variable.asDiscrete.setting)
     val entry = TablePotential.settingToEntry(setting, dims)
     scoreEntry(entry)
   }
 
   override def stats() = {
-    val setting = edges.map(_.n.setting)
+    val setting = edges.map(_.n.variable.asDiscrete.setting)
     val entry = TablePotential.settingToEntry(setting, dims)
     vectors(entry)
   }
