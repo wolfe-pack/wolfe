@@ -17,7 +17,7 @@ object MaxProduct {
    * Runs some iterations of belief propagation.
    * @param fg the message passing graph to run
    * @param maxIteration maximum number of iterations.
-   * @param canonical should edges be processed in canonical ordering according to [[ml.wolfe.FactorGraph.EdgeOrdering]].
+   * @param canonical should edges be processed in canonical ordering according.
    */
   def apply(fg: FactorGraph, maxIteration: Int, canonical: Boolean = true) {
     //    val edges = if (canonical) fg.edges.sorted(FactorGraph.EdgeOrdering) else fg.edges
@@ -76,8 +76,9 @@ object MaxProduct {
    */
   def updateN2F(edge: Edge) {
     val node = edge.n
-    System.arraycopy(node.in, 0, edge.n2f, 0, edge.n2f.length)
-    for (i <- (0 until node.dim).optimized) {
+    val v = node.variable.asDiscrete
+    System.arraycopy(v.in, 0, edge.n2f, 0, edge.n2f.length)
+    for (i <- (0 until v.dim).optimized) {
       for (e <- (0 until node.edges.length).optimized; if e != edge.indexInNode)
         edge.n2f(i) += node.edges(e).f2n(i)
     }
@@ -88,11 +89,12 @@ object MaxProduct {
    * @param node the node to update.
    */
   def updateBelief(node: Node) {
-    System.arraycopy(node.in, 0, node.b, 0, node.b.length)
+    val v = node.variable.asDiscrete
+    System.arraycopy(v.in, 0, v.b, 0, v.b.length)
     for (e <- 0 until node.edges.length) {
-      for (i <- 0 until node.dim)
-        node.b(i) += node.edges(e).f2n(i)
-      maxNormalize(node.b)
+      for (i <- 0 until v.dim)
+        v.b(i) += node.edges(e).f2n(i)
+      maxNormalize(v.b)
     }
   }
 

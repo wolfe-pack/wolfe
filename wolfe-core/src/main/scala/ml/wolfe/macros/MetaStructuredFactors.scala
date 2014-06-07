@@ -171,8 +171,8 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
     def inject(term: Tree) = context.resetLocalAttrs(injectStructure(term, matcher))
 
     lazy val perSetting = q"""
-//        println(nodes.map(_.setting).mkString(","))
-        settings(settingIndex) = nodes.map(_.setting)
+//        println(vars.map(_.setting).mkString(","))
+        settings(settingIndex) = vars.map(_.setting)
         $perSettingArrayName(settingIndex) = $perSettingValue
         settingIndex += 1
       """
@@ -182,7 +182,8 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
       final class $className(..$constructorArgs) extends ml.wolfe.macros.StructuredFactor[${ structure.argType }] {
         import ml.wolfe.FactorGraph._
         val nodes:Array[Node] = $nodes.toArray
-        val dims = nodes.map(_.dim)
+        val vars = nodes.map(_.variable.asDiscrete)
+        val dims = vars.map(_.dim)
         val settingsCount = dims.product
         val settings = Array.ofDim[Array[Int]](settingsCount)
         val $perSettingArrayName = $perSettingArrayInitializer
@@ -203,7 +204,7 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
 
     def createFactor = q"graph.addTableFactor(scores, settings, dims)"
 
-    def createPotential = q"new ml.wolfe.potential.TablePotential(edges,ml.wolfe.potential.Table(settings,scores))"
+    def createPotential = q"new ml.wolfe.fg.TablePotential(edges,ml.wolfe.fg.Table(settings,scores))"
     def perSettingValue = q"$injected"
     def perSettingArrayInitializer = q"Array.ofDim[Double](settingsCount)"
     def perSettingArrayName = newTermName("scores")
@@ -216,7 +217,7 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
 
     def createFactor = q"graph.addLinearFactor(vectors, settings, dims)"
 
-    def createPotential = q"new ml.wolfe.potential.LinearPotential(edges,ml.wolfe.potential.Stats(settings,vectors),graph)"
+    def createPotential = q"new ml.wolfe.fg.LinearPotential(edges,ml.wolfe.fg.Stats(settings,vectors),graph)"
 
     def perSettingValue = toOptimizedFactorieVector(injected, linearModelInfo.indexTree)
     //    def perSettingValue = inject(toOptimizedFactorieVector(potential, linearModelInfo.indexTree))

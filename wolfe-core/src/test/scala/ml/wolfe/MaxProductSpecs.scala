@@ -1,9 +1,9 @@
 package ml.wolfe
 
-import ml.wolfe.potential._
+import ml.wolfe.fg._
 import scala.util.Random
-import ml.wolfe.potential.Table
-import ml.wolfe.potential.Stats
+import ml.wolfe.fg.Table
+import ml.wolfe.fg.Stats
 
 /**
  * @author Sebastian Riedel
@@ -70,7 +70,8 @@ class MaxProductSpecs extends WolfeSpec {
     def sameBeliefs(n1: List[FactorGraph.Node], n2: List[FactorGraph.Node]): Boolean = (n1, n2) match {
       case (Nil, Nil) => true
       //todo: this should be approx. equal on array
-      case (h1 :: t1, h2 :: t2) => MoreArrayOps.approxEqual(h1.b, h2.b) && sameBeliefs(t1, t2)
+      case (h1 :: t1, h2 :: t2) =>
+        MoreArrayOps.approxEqual(h1.variable.asDiscrete.b, h2.variable.asDiscrete.b) && sameBeliefs(t1, t2)
       case _ => false
     }
     sameBeliefs(fg1.nodes.toList, fg2.nodes.toList)

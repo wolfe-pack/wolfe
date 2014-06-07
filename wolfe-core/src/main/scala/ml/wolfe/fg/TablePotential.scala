@@ -1,4 +1,4 @@
-package ml.wolfe.potential
+package ml.wolfe.fg
 
 import ml.wolfe.FactorGraph._
 import scalaxy.loops._
@@ -25,7 +25,7 @@ object TablePotential {
   }
 
   def apply(edges: Array[Edge], pot: Array[Int] => Double) = {
-    val dims = edges.map(_.n.dim)
+    val dims = edges.map(_.n.variable.asDiscrete.dim)
     new TablePotential(edges, table(dims, pot))
   }
   def apply(edges: Array[Edge], table: Table) = {
@@ -72,9 +72,10 @@ final class TablePotential(edges: Array[Edge], table: Table) extends Potential {
 
   import table._
 
-  val dims       = edges.map(_.n.dim)
+  val dims       = edges.map(_.n.variable.asDiscrete.dim)
   val entryCount = table.scores.size
 
+  lazy val vars = edges.map(_.n.variable.asDiscrete)
 
   /**
    * More verbose string representation that shows that potential table depending on factor type.
@@ -92,7 +93,7 @@ final class TablePotential(edges: Array[Edge], table: Table) extends Potential {
 
 
   def valueForCurrentSetting() = {
-    val setting = edges.map(_.n.setting)
+    val setting = vars.map(_.setting)
     val entry = TablePotential.settingToEntry(setting, dims)
     scores(entry)
   }

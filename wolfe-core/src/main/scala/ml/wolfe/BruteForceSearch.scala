@@ -14,8 +14,8 @@ object BruteForceSearch {
         case Nil => (body: () => Unit) => loop(body)
         case head :: tail =>
           def newLoop(body: () => Unit) {
-            for (setting <- head.domain.indices) {
-              head.setting = setting
+            for (setting <- head.variable.asDiscrete.domain.indices) {
+              head.variable.asDiscrete.setting = setting
               loop(body)
             }
           }
@@ -24,7 +24,7 @@ object BruteForceSearch {
     }
     val loop = loopOverSettings(fg.nodes.toList)
     var maxScore = Double.NegativeInfinity
-    for (n <- fg.nodes) fill(n.b, Double.NegativeInfinity)
+    for (n <- fg.nodes) n.variable.initialize()
 
     var maxSetting: Array[Int] = null
     loop { () =>
@@ -35,18 +35,20 @@ object BruteForceSearch {
         i += 1
       }
       for (n <- fg.nodes) {
-        n.b(n.setting) = math.max(score,n.b(n.setting))
+        val v = n.variable.asDiscrete
+        v.b(v.setting) = math.max(score,v.b(v.setting))
       }
 
       if (score > maxScore) {
         maxScore = score
-        maxSetting = fg.nodes.view.map(_.setting).toArray
+        maxSetting = fg.nodes.view.map(_.variable.asDiscrete.setting).toArray
       }
     }
 
     for ((s, n) <- maxSetting zip fg.nodes) {
-      n.setting = s
-      maxNormalize(n.b)
+      val v = n.variable.asDiscrete
+      v.setting = s
+      maxNormalize(v.b)
     }
 
     fg.value = maxScore
