@@ -76,6 +76,7 @@ final class TablePotential(edges: Array[Edge], table: Table) extends Potential {
   val entryCount = table.scores.size
 
   lazy val vars = edges.map(_.n.variable.asDiscrete)
+  lazy val msgs = edges.map(_.msgs.asDiscrete)
 
   /**
    * More verbose string representation that shows that potential table depending on factor type.
@@ -100,26 +101,27 @@ final class TablePotential(edges: Array[Edge], table: Table) extends Potential {
 
   def penalizedScore(settingId: Int, setting: Array[Int]): Double = {
     var score = scores(settingId)
-    for (j <- 0 until edges.size) {
-      score += edges(j).n2f(setting(j))
+    for (j <- 0 until msgs.size) {
+      score += msgs(j).n2f(setting(j))
     }
     score
   }
 
   def maxMarginalF2N(edge: Edge) = {
     //max over all settings
-    fill(edge.f2n, Double.NegativeInfinity)
+    val m = edge.msgs.asDiscrete
+    fill(m.f2n, Double.NegativeInfinity)
 
     for (i <- 0 until settings.size) {
       val setting = settings(i)
       var score = scores(i)
       val varValue = setting(edge.indexInFactor)
       for (j <- 0 until edges.size; if j != edge.indexInFactor) {
-        score += edges(j).n2f(setting(j))
+        score += msgs(j).n2f(setting(j))
       }
-      edge.f2n(varValue) = math.max(score, edge.f2n(varValue))
+      m.f2n(varValue) = math.max(score, m.f2n(varValue))
     }
-    maxNormalize(edge.f2n)
+    maxNormalize(m.f2n)
 
   }
   def maxMarginalExpectationsAndObjective(result: FactorieVector) = {

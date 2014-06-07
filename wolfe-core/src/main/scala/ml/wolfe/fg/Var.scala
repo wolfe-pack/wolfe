@@ -47,10 +47,11 @@ final class DiscreteVar(var dim: Int) extends Var {
 
   def updateN2F(edge: Edge) = {
     val node = edge.n
-    System.arraycopy(in, 0, edge.n2f, 0, edge.n2f.length)
+    val m = edge.msgs.asDiscrete
+    System.arraycopy(in, 0, m.n2f, 0, m.n2f.length)
     for (i <- (0 until dim).optimized) {
       for (e <- (0 until node.edges.length).optimized; if e != edge.indexInNode)
-        edge.n2f(i) += node.edges(e).f2n(i)
+        m.n2f(i) += node.edges(e).msgs.asDiscrete.f2n(i)
     }
 
   }
@@ -58,7 +59,7 @@ final class DiscreteVar(var dim: Int) extends Var {
     System.arraycopy(in, 0, b, 0, b.length)
     for (e <- 0 until node.edges.length) {
       for (i <- 0 until dim)
-        b(i) += node.edges(e).f2n(i)
+        b(i) += node.edges(e).msgs.asDiscrete.f2n(i)
       maxNormalize(b)
     }
   }

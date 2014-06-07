@@ -61,7 +61,7 @@ object MaxProduct {
     val factor = edge.f
 
     //remember last message for calculating residuals
-    set(edge.f2n, edge.f2nLast)
+    edge.msgs.saveCurrentFN2AsOld()
 
     //message calculation happens in potential
     factor.potential.maxMarginalF2N(edge)
