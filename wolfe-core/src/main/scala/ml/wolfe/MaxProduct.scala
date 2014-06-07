@@ -1,8 +1,6 @@
 package ml.wolfe
 
-import scalaxy.loops._
 import scala.language.postfixOps
-import ml.wolfe.MoreArrayOps._
 
 
 /**
@@ -75,13 +73,7 @@ object MaxProduct {
    * @param edge the factor-node edge.
    */
   def updateN2F(edge: Edge) {
-    val node = edge.n
-    val v = node.variable.asDiscrete
-    System.arraycopy(v.in, 0, edge.n2f, 0, edge.n2f.length)
-    for (i <- (0 until v.dim).optimized) {
-      for (e <- (0 until node.edges.length).optimized; if e != edge.indexInNode)
-        edge.n2f(i) += node.edges(e).f2n(i)
-    }
+    edge.n.variable.updateN2F(edge)
   }
 
   /**
@@ -89,13 +81,7 @@ object MaxProduct {
    * @param node the node to update.
    */
   def updateBelief(node: Node) {
-    val v = node.variable.asDiscrete
-    System.arraycopy(v.in, 0, v.b, 0, v.b.length)
-    for (e <- 0 until node.edges.length) {
-      for (i <- 0 until v.dim)
-        v.b(i) += node.edges(e).f2n(i)
-      maxNormalize(v.b)
-    }
+    node.variable.updateBelief(node)
   }
 
 
