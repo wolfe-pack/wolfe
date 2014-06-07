@@ -180,10 +180,12 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
     def combined = q"{..$all}"
   }
 
-  def argmaxLinearModel(trees: BuilderTrees): CodeAndInitialization = {
+  def argmaxLinearModel(trees: BuilderTrees, scaling:Tree = q"1.0"): CodeAndInitialization = {
     val structName = newTermName(context.fresh("structure"))
     val meta = metaStructure(trees.over)
-    val Function(List(objArg), objRhs) = blockToFunction(unwrapSingletonBlocks(trees.of))
+    val Function(List(objArg), rawObjRhs) = blockToFunction(unwrapSingletonBlocks(trees.of))
+    //todo: scaling should happen on a per factor basis (challenge: negating special-purpose potentials)
+    val objRhs = if (scaling.equalsStructure(q"1.0")) rawObjRhs else q"$scaling * $rawObjRhs"
     val objMatcher = meta.matcher(rootMatcher(objArg.symbol, q"$structName", meta))
     val factors = metaStructuredFactor(FactorGenerationInfo(objRhs, meta, objMatcher, linearModelInfo = LinearModelInfo(q"_index")))
     val inferCode = inferenceCode(objRhs, newTermName("_graph"))
@@ -311,7 +313,9 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
     //todo: deal with scaling in linear model as well
     if (trees.over.symbol == wolfeSymbols.vectors)
       CodeAndInitialization(argmaxByLearning(trees, scaling), Nil)
-    else argmaxLinearModel(trees)
+    else {
+      argmaxLinearModel(trees,scaling)
+    }
   }
 
   trait IsmorphicFactorGraph[T] {
