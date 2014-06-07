@@ -322,33 +322,6 @@ object FactorGraph {
     }
   }
 
-  /**
-   * A generic message passing interface for terms that have structure and give rise to more efficient
-   * inference algorithms.
-   */
-  trait StructuredPotential {
-    def score(factor: Factor, setting: Array[Int], weights: FactorieVector): Double
-    def maxMarginal2Node(edge: Edge)
-    def maxMarginal2AllNodes(factor: Factor)
-    def argmaxMarginal2AllNodes(factor: Factor): Array[Int]
-    def maxScoreAndFeatures(factor: Factor, featureDest: FactorieVector)
-  }
-
-  /**
-   * A canonical ordering of edges. Designed so that on a chain with variables indexed in order, the
-   * edge order resembles forward-backward.
-   */
-  object EdgeOrdering extends Ordering[Edge] {
-    def compare(x1: Edge, x2: Edge): Int = {
-      if (x1.n.dim == 1 && x2.n.dim != 1) return 1 //messages to observed nodes should be last
-      if (x2.n.dim == 1 && x1.n.dim != 1) return -1
-      if (x1.f.numNeighbors != x2.f.numNeighbors) return x1.f.numNeighbors - x2.f.numNeighbors
-      if (x1.indexInFactor != x2.indexInFactor) return x2.indexInFactor - x1.indexInFactor
-      val sign = -1 + (x1.indexInFactor % 2) * 2
-      if (x1.n.index != x2.n.index) return sign * (x1.n.index - x2.n.index)
-      x1.f.index - x2.f.index
-    }
-  }
 
   /**
    * A scheduler provides a canonical ordering of edges such that it resembles the message ordering of forward-backward.
