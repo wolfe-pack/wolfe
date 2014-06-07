@@ -4,7 +4,7 @@ import scala.collection.mutable.ArrayBuffer
 import scalaxy.loops._
 import scala.annotation.tailrec
 import scala.collection.mutable
-import ml.wolfe.fg.{Var, DiscreteVar, Potential}
+import ml.wolfe.fg._
 
 
 /**
@@ -233,10 +233,8 @@ object FactorGraph {
    * @param f the factor.
    * @param dim dimension of the node's variable.
    */
-  final class Edge(var n: Node, val f: Factor, val dim: Int) {
-    val n2f     = Array.ofDim[Double](dim)
-    val f2n     = Array.ofDim[Double](dim)
-    val f2nLast = Array.ofDim[Double](dim)
+  final class Edge(var n: Node, val f: Factor, dim: Int) {
+    val msgs:Msgs = new DiscreteMsgs(dim)
 
     var indexInFactor = -1
     var indexInNode   = -1

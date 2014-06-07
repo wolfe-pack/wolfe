@@ -19,18 +19,19 @@ final class LinearPotential(val edges: Array[Edge], statistics: Stats, fg: Facto
 
   def maxMarginalF2N(edge: Edge) = {
     //max over all settings
-    fill(edge.f2n, Double.NegativeInfinity)
+    val msgs = edge.msgs.asDiscrete
+    fill(msgs.f2n, Double.NegativeInfinity)
 
     for (i <- 0 until settings.size) {
       val setting = settings(i)
       var score = scoreEntry(i)
       val varValue = setting(edge.indexInFactor)
       for (j <- 0 until edges.size; if j != edge.indexInFactor) {
-        score += edges(j).n2f(setting(j))
+        score += edges(j).msgs.asDiscrete.n2f(setting(j))
       }
-      edge.f2n(varValue) = math.max(score, edge.f2n(varValue))
+      msgs.f2n(varValue) = math.max(score, msgs.f2n(varValue))
     }
-    maxNormalize(edge.f2n)
+    maxNormalize(msgs.f2n)
   }
   def valueForCurrentSetting() = {
     val setting = edges.map(_.n.variable.asDiscrete.setting)
@@ -77,7 +78,7 @@ final class LinearPotential(val edges: Array[Edge], statistics: Stats, fg: Facto
   def penalizedScore(settingId: Int, setting: Array[Int]): Double = {
     var score = scoreEntry(settingId)
     for (j <- 0 until edges.size) {
-      score += edges(j).n2f(setting(j))
+      score += edges(j).msgs.asDiscrete.n2f(setting(j))
     }
     score
   }
