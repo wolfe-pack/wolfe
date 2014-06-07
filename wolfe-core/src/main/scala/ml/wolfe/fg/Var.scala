@@ -1,6 +1,10 @@
 package ml.wolfe.fg
 
 import ml.wolfe.MoreArrayOps._
+import ml.wolfe.FactorGraph
+import ml.wolfe.FactorGraph.{Node, Edge}
+import scalaxy.loops._
+
 
 /**
  * @author Sebastian Riedel
@@ -10,10 +14,12 @@ trait Var {
   def asDiscrete = this.asInstanceOf[DiscreteVar]
   def setup()
   def initialize()
+  def updateN2F(edge: FactorGraph.Edge)
+  def updateBelief(node: FactorGraph.Node)
 
 }
 
-final class DiscreteVar(var dim:Int) extends Var {
+final class DiscreteVar(var dim: Int) extends Var {
   /* node belief */
   var b = Array.ofDim[Double](dim)
 
@@ -38,6 +44,25 @@ final class DiscreteVar(var dim:Int) extends Var {
     if (b == null || b.length != dim) b = Array.ofDim[Double](dim)
     if (in == null || in.length != dim) in = Array.ofDim[Double](dim)
   }
+
+  def updateN2F(edge: Edge) = {
+    val node = edge.n
+    System.arraycopy(in, 0, edge.n2f, 0, edge.n2f.length)
+    for (i <- (0 until dim).optimized) {
+      for (e <- (0 until node.edges.length).optimized; if e != edge.indexInNode)
+        edge.n2f(i) += node.edges(e).f2n(i)
+    }
+
+  }
+  def updateBelief(node: Node) = {
+    System.arraycopy(in, 0, b, 0, b.length)
+    for (e <- 0 until node.edges.length) {
+      for (i <- 0 until dim)
+        b(i) += node.edges(e).f2n(i)
+      maxNormalize(b)
+    }
+  }
+
 
 }
 
