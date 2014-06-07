@@ -113,7 +113,7 @@ object DualDecomposition {
    * @return penalized score of setting.
    */
   def penalizedScore(factor: FactorGraph.Factor, settingId: Int): Double = {
-    var score = factor.score(settingId)
+    var score = 0.0 //factor.score(settingId)
 
 //    val setting = factor.settings(settingId)
 //

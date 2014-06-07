@@ -264,7 +264,7 @@ object FactorGraph {
    * A factor in a message passing factor graph.
    *
    * Some hints for the usage of Factors of FactorGraph
-   * f.Settings    | f. table
+   * f.potential.table.settings    | f.potential.table.scores
    * 0 0 0         | 0.5
    * 0 0 1         | 0.8
    * 0 0 2         | 0.9
@@ -282,8 +282,6 @@ object FactorGraph {
    */
   final class Factor(val fg: FactorGraph, val index: Int) {
     var edges: Array[Edge] = Array.ofDim(0)
-    //todo: this should probably go into potential code
-    val entryCount = 1
 
     def numNeighbors = edges.size
 
@@ -292,17 +290,6 @@ object FactorGraph {
      * the potential directly works with the edges.
      */
     var potential: Potential = null
-
-    /**
-     * Evaluates the score of the factor for the setting corresponding to the given setting index.
-     * @param settingIndex the index of the setting to score.
-     * @return score of the setting under this factor.
-     */
-    @inline
-    @deprecated("Setting ids a are specific to table based potentials. Use potential.value() instead.")
-    def score(settingIndex: Int): Double = {
-      0.0
-    }
 
     /**
      * More verbose string representation that shows that potential table depending on factor type.
@@ -320,14 +307,6 @@ object FactorGraph {
     }
 
     override def toString = index.toString
-
-    /**
-     * Calculates scores in table based on feature vectors and currently set weights.
-     */
-    def cacheLinearScores() {
-      //todo: this should write into a dedicated cache array as the table array is used for base scores in the linear model.
-      //for (i <-0 until settings.length) table(i) = stats(i).dot(fg.weights)
-    }
 
     private[FactorGraph] var edgeCount : Int = 0
     private[FactorGraph] var edgeFilled: Int = 0
