@@ -17,7 +17,7 @@ final class LinearPotential(val edges: Array[Edge], statistics: Stats, fg: Facto
   val dims       = edges.map(_.n.variable.asDiscrete.dim)
   val entryCount = statistics.settings.size
 
-  def maxMarginalF2N(edge: Edge) = {
+  override def maxMarginalF2N(edge: Edge) = {
     //max over all settings
     val msgs = edge.msgs.asDiscrete
     fill(msgs.f2n, Double.NegativeInfinity)
@@ -84,7 +84,7 @@ final class LinearPotential(val edges: Array[Edge], statistics: Stats, fg: Facto
   }
 
 
-  def maxMarginalExpectationsAndObjective(dstExpectations: FactorieVector) = {
+  override def maxMarginalExpectationsAndObjective(dstExpectations: FactorieVector) = {
     var norm = Double.NegativeInfinity
     var maxScore = Double.NegativeInfinity
     var maxCount = 0

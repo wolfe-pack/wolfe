@@ -24,7 +24,7 @@ object BruteForceSearch {
     }
     val loop = loopOverSettings(fg.nodes.toList)
     var maxScore = Double.NegativeInfinity
-    for (n <- fg.nodes) n.variable.initialize()
+    for (n <- fg.nodes) n.variable.initializeToNegInfinity()
 
     var maxSetting: Array[Int] = null
     loop { () =>

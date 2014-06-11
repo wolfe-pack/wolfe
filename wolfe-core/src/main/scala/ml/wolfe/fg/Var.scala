@@ -1,9 +1,11 @@
 package ml.wolfe.fg
 
 import ml.wolfe.MoreArrayOps._
-import ml.wolfe.FactorGraph
+import ml.wolfe.{FactorieVector, FactorGraph}
 import ml.wolfe.FactorGraph.{Node, Edge}
 import scalaxy.loops._
+import scala.util.Random
+import cc.factorie.la.DenseTensor1
 
 
 /**
@@ -12,8 +14,10 @@ import scalaxy.loops._
 trait Var {
 
   def asDiscrete = this.asInstanceOf[DiscreteVar]
+  def asVector = this.asInstanceOf[VectorVar]
   def setup()
-  def initialize()
+  def initializeToNegInfinity()
+  def initializeRandomly(eps:Double)
   def updateN2F(edge: FactorGraph.Edge)
   def updateBelief(node: FactorGraph.Node)
 
@@ -36,9 +40,15 @@ final class DiscreteVar(var dim: Int) extends Var {
   var value: Int = 0
 
 
-  def initialize() = {
+  def initializeToNegInfinity() = {
     fill(b, Double.NegativeInfinity)
   }
+
+
+  def initializeRandomly(eps:Double) = {
+    for (i <- b.indices) b(i) = Random.nextGaussian() * eps
+  }
+
   def setup() {
     if (domain == null || domain.length != dim) domain = Array.range(0, dim)
     if (b == null || b.length != dim) b = Array.ofDim[Double](dim)
@@ -64,8 +74,29 @@ final class DiscreteVar(var dim: Int) extends Var {
     }
   }
 
-
 }
 
+final class VectorVar(val dim:Int) extends Var {
+  var b:FactorieVector = new DenseTensor1(dim)
+  var setting:FactorieVector = null
+
+  def setup() = {
+
+  }
+
+  def updateN2F(edge: Edge) = {
+    edge.msgs.asVector.n2f = b //todo: copy instead?
+  }
+
+  def initializeRandomly(eps:Double) = {
+    for (i <- 0 until dim) b(i) = Random.nextGaussian() * eps
+  }
+  def initializeToNegInfinity() = {
+    b := Double.NegativeInfinity
+  }
+  def updateBelief(node: Node) = {
+
+  }
+}
 
 

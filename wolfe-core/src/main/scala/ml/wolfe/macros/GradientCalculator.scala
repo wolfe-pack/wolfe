@@ -95,36 +95,25 @@ trait MetaGradientCalculators[C <: Context] extends MetaStructures[C]
   }
 
 
-  def metaGradientCalculator(rhs: Tree, weightVar: Symbol, indexTree: Tree): MetaGradientCalculator Or CantDifferentiate = {
-    rhs match {
-      case x if !x.exists(_.symbol == weightVar) =>
-        Good(constantGradientCalculator(x))
-      case Dot(arg1, arg2) if arg1.symbol == weightVar && !arg2.exists(_.symbol == weightVar) =>
-        Good(linearGradientCalculator(arg2, indexTree))
-      case Dot(arg1, arg2) if arg2.symbol == weightVar && !arg1.exists(_.symbol == weightVar) =>
-        Good(linearGradientCalculator(arg1, indexTree))
-      case ApplyDoubleMinus(arg1, arg2) =>
-        binaryOperatorGradientCalculator(arg1, arg2, weightVar, indexTree, (v1, v2) => q"$v1 - $v2", subtractFactorieVectors)
-      case ApplyDoublePlus(arg1, arg2) =>
-        binaryOperatorGradientCalculator(arg1, arg2, weightVar, indexTree, (v1, v2) => q"$v1 + $v2", addFactorieVectors)
-      case DoubleMax(BuilderTrees(dom, where, obj, _,_)) =>
-        val structName = newTermName(context.fresh("structure"))
-        val meta = metaStructure(dom)
-        val Function(List(objArg), objRhs) = unwrapSingletonBlocks(obj)
+  def inferenceGradientCalculator(dom:Tree,where:Tree,obj:Tree,indexTree:Tree,
+                                  inferenceCode:(Tree,TermName) => Tree = optimizeByInferenceCode) = {
+    val structName = newTermName(context.fresh("structure"))
+    val meta = metaStructure(dom)
+    val Function(List(objArg), objRhs) = unwrapSingletonBlocks(obj)
 
-        val conditionerCode = if (where != EmptyTree) {
-          val Function(List(whereArg), whereRhs) = simplifyBlock(unwrapSingletonBlocks(where))
-          val whereMatcher = meta.matcher(rootMatcher(whereArg.symbol, q"$structName", meta))
-          val conditioner = conditioning(whereRhs, whereMatcher)
-          conditioner.code
-        } else EmptyTree
+    val conditionerCode = if (where != EmptyTree) {
+      val Function(List(whereArg), whereRhs) = simplifyBlock(unwrapSingletonBlocks(where))
+      val whereMatcher = meta.matcher(rootMatcher(whereArg.symbol, q"$structName", meta))
+      val conditioner = conditioning(whereRhs, whereMatcher)
+      conditioner.code
+    } else EmptyTree
 
-        val objMatcher = meta.matcher(rootMatcher(objArg.symbol, q"$structName", meta))
-        val factors = metaStructuredFactor(FactorGenerationInfo(objRhs, meta, objMatcher, linearModelInfo = LinearModelInfo(indexTree)))
-        val structureDef = meta.classDef(newTermName("_graph"))
-        val className = newTypeName(context.fresh("MaxGradientCalculator"))
-        val inferCode = inferenceCode(objRhs, newTermName("_graph"))
-        val classDef = q"""
+    val objMatcher = meta.matcher(rootMatcher(objArg.symbol, q"$structName", meta))
+    val factors = metaStructuredFactor(FactorGenerationInfo(objRhs, meta, objMatcher, linearModelInfo = LinearModelInfo(indexTree)))
+    val structureDef = meta.classDef(newTermName("_graph"))
+    val className = newTypeName(context.fresh("MaxGradientCalculator"))
+    val inferCode = inferenceCode(objRhs, newTermName("_graph"))
+    val classDef = q"""
           final class $className extends ml.wolfe.macros.GradientCalculator {
             val _graph = new ml.wolfe.FactorGraph
             $structureDef
@@ -141,18 +130,35 @@ trait MetaGradientCalculators[C <: Context] extends MetaStructures[C]
             }
           }
         """
-        /*  code to test score
+    /*  code to test score
 
-                val objWithFactorieWeights = transform(obj, {
-                  case i:Ident if i.symbol == weightVar => q"ml.wolfe.FactorieConverter.toWolfeVector(param,$indexTree)"
-                })
-              $structName.setToArgmax()
-              val guess = $structName.value()
-              val score = $objWithFactorieWeights(guess)
-              println(score + " vs " + _graph.value)
+            val objWithFactorieWeights = transform(obj, {
+              case i:Ident if i.symbol == weightVar => q"ml.wolfe.FactorieConverter.toWolfeVector(param,$indexTree)"
+            })
+          $structName.setToArgmax()
+          val guess = $structName.value()
+          val score = $objWithFactorieWeights(guess)
+          println(score + " vs " + _graph.value)
 
-         */
-        Good(MetaGradientCalculator(className, context.resetAllAttrs(classDef)))
+     */
+    Good(MetaGradientCalculator(className, context.resetAllAttrs(classDef)))
+
+  }
+
+  def metaGradientCalculator(rhs: Tree, weightVar: Symbol, indexTree: Tree): MetaGradientCalculator Or CantDifferentiate = {
+    rhs match {
+      case x if !x.exists(_.symbol == weightVar) =>
+        Good(constantGradientCalculator(x))
+      case Dot(arg1, arg2) if arg1.symbol == weightVar && !arg2.exists(_.symbol == weightVar) =>
+        Good(linearGradientCalculator(arg2, indexTree))
+      case Dot(arg1, arg2) if arg2.symbol == weightVar && !arg1.exists(_.symbol == weightVar) =>
+        Good(linearGradientCalculator(arg1, indexTree))
+      case ApplyDoubleMinus(arg1, arg2) =>
+        binaryOperatorGradientCalculator(arg1, arg2, weightVar, indexTree, (v1, v2) => q"$v1 - $v2", subtractFactorieVectors)
+      case ApplyDoublePlus(arg1, arg2) =>
+        binaryOperatorGradientCalculator(arg1, arg2, weightVar, indexTree, (v1, v2) => q"$v1 + $v2", addFactorieVectors)
+      case DoubleMax(BuilderTrees(dom, where, obj, _,_)) =>
+        inferenceGradientCalculator(dom,where,obj,indexTree)
       //Bad(CantDifferentiate(rhs))
       case x => inlineOnce(x) match {
         case Some(inlined) => metaGradientCalculator(inlined, weightVar, indexTree)
