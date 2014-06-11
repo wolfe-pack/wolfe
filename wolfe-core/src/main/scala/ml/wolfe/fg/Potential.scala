@@ -9,13 +9,15 @@ import ml.wolfe.FactorieVector
  */
 trait Potential {
 
-  def maxMarginalF2N(edge: Edge)
-  def maxMarginalExpectationsAndObjective(dstExpectations: FactorieVector): Double
+  def notSupported = sys.error("This function is not supported")
+
+  def maxMarginalF2N(edge: Edge):Unit = notSupported
+  def maxMarginalExpectationsAndObjective(dstExpectations: FactorieVector): Double = notSupported
   def valueForCurrentSetting(): Double
-  def gradientForAllEdges() {}
+  def valueAndGradientForAllEdges():Double = notSupported
   def isLinear = false
   def stats(): FactorieVector = null
-  def toVerboseString(implicit fgPrinter: FGPrinter): String
+  def toVerboseString(implicit fgPrinter: FGPrinter): String = getClass.getName
 
 }
 
@@ -25,7 +27,7 @@ final class AndPotential(arg1: Edge, arg2: Edge) extends Potential {
   val m1 = arg1.msgs.asDiscrete
   val m2 = arg2.msgs.asDiscrete
 
-  def maxMarginalF2N(edge: Edge) = {
+  override def maxMarginalF2N(edge: Edge) = {
     val msgs = edge.msgs.asDiscrete
     val other = if (edge == arg1) m2 else m1
     msgs.f2n(1) = other.n2f(1)
@@ -34,17 +36,17 @@ final class AndPotential(arg1: Edge, arg2: Edge) extends Potential {
   def valueForCurrentSetting() = {
     if (n1.setting == 1 && n2.setting == 1) 0.0 else Double.NegativeInfinity
   }
-  def maxMarginalExpectationsAndObjective(dstExpectations: FactorieVector) = {
+  override def maxMarginalExpectationsAndObjective(dstExpectations: FactorieVector) = {
     val beliefInConsistentSolution = m1.n2f(1) + m2.n2f(1)
     if (beliefInConsistentSolution > Double.NegativeInfinity) 0.0 else Double.NegativeInfinity
   }
-  def toVerboseString(implicit fgPrinter: FGPrinter) = s"And(${ arg1.n.index },${ arg2.n.index })"
+  override def toVerboseString(implicit fgPrinter: FGPrinter) = s"And(${ arg1.n.index },${ arg2.n.index })"
 
 }
 
 final class ExactlyOncePotential(args: Seq[Edge]) extends Potential {
   val msgs = args.map(_.msgs.asDiscrete)
-  def toVerboseString(implicit fgPrinter: FGPrinter) = {
+  override def toVerboseString(implicit fgPrinter: FGPrinter) = {
     val argIndices = args map (_.n.index) mkString ","
     s"ExactlyOne($argIndices)"
   }
@@ -57,13 +59,13 @@ final class ExactlyOncePotential(args: Seq[Edge]) extends Potential {
     if (count == 1) 0.0 else Double.NegativeInfinity
   }
 
-  def maxMarginalExpectationsAndObjective(dstExpectations: FactorieVector):Double = {
+  override def maxMarginalExpectationsAndObjective(dstExpectations: FactorieVector):Double = {
     //objective usually zero unless all choices are impossible
     for (arg <- msgs) if (arg.n2f(1) > Double.NegativeInfinity) return 0.0
     Double.NegativeInfinity
   }
 
-  def maxMarginalF2N(edge: Edge) = {
+  override def maxMarginalF2N(edge: Edge) = {
     var othersFalseScore = 0.0
     var winningDelta = Double.NegativeInfinity
     for (e <- msgs; if e != edge.msgs) {

@@ -83,7 +83,7 @@ final class TablePotential(edges: Array[Edge], table: Table) extends Potential {
    * @param fgPrinter a printer that can print nodes and factors.
    * @return A verbose string representation of this factor.
    */
-  def toVerboseString(implicit fgPrinter: FGPrinter) = {
+  override def toVerboseString(implicit fgPrinter: FGPrinter) = {
 
     val tableString =
       for ((setting, index) <- settings.zipWithIndex) yield
@@ -107,7 +107,7 @@ final class TablePotential(edges: Array[Edge], table: Table) extends Potential {
     score
   }
 
-  def maxMarginalF2N(edge: Edge) = {
+  override def maxMarginalF2N(edge: Edge) = {
     //max over all settings
     val m = edge.msgs.asDiscrete
     fill(m.f2n, Double.NegativeInfinity)
@@ -124,7 +124,7 @@ final class TablePotential(edges: Array[Edge], table: Table) extends Potential {
     maxNormalize(m.f2n)
 
   }
-  def maxMarginalExpectationsAndObjective(result: FactorieVector) = {
+  override def maxMarginalExpectationsAndObjective(result: FactorieVector) = {
     // 1) go over all states, find max with respect to incoming messages
     var norm = Double.NegativeInfinity
     var maxScore = Double.NegativeInfinity
