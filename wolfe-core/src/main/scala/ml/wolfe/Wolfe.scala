@@ -332,6 +332,7 @@ trait DefaultValues {
 trait Annotations {
   class OptimizeByLearning(trainer: WeightsSet => Trainer) extends StaticAnnotation
   class OptimizeByInference(inference: FactorGraph => Unit) extends StaticAnnotation
+  class LogZByInference(inference: FactorGraph => Unit) extends StaticAnnotation
   class Atomic extends StaticAnnotation
   class Potential(construct: _ => ml.wolfe.fg.Potential) extends StaticAnnotation
 

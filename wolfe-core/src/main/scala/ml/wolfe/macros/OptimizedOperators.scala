@@ -105,7 +105,7 @@ trait LinearModelArgmaxCode[C <: Context] extends SymbolRepository[C] {
 
   import context.universe._
 
-  def inferenceCode(objRhs: Tree, graph: TermName): Tree = objRhs match {
+  def optimizeByInferenceCode(objRhs: Tree, graph: TermName): Tree = objRhs match {
     case q"$f(${ _ })" =>
       f.symbol.annotations.find(_.tpe.typeSymbol == wolfeSymbols.optByInference) match {
         case Some(annotation) => q"${ annotation.scalaArgs.head }($graph)"
@@ -113,6 +113,16 @@ trait LinearModelArgmaxCode[C <: Context] extends SymbolRepository[C] {
       }
     case _ => q"ml.wolfe.MaxProduct($graph,1)"
   }
+
+  def logZByInferenceCode(objRhs: Tree, graph: TermName): Tree = objRhs match {
+    case q"$f(${ _ })" =>
+      f.symbol.annotations.find(_.tpe.typeSymbol == wolfeSymbols.logZByInference) match {
+        case Some(annotation) => q"${ annotation.scalaArgs.head }($graph)"
+        case None => q"ml.wolfe.MaxProduct($graph,1)"
+      }
+    case _ => q"ml.wolfe.MaxProduct($graph,1)"
+  }
+
 
 }
 
@@ -188,7 +198,7 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
     val objRhs = if (scaling.equalsStructure(q"1.0")) rawObjRhs else q"$scaling * $rawObjRhs"
     val objMatcher = meta.matcher(rootMatcher(objArg.symbol, q"$structName", meta))
     val factors = metaStructuredFactor(FactorGenerationInfo(objRhs, meta, objMatcher, linearModelInfo = LinearModelInfo(q"_index")))
-    val inferCode = inferenceCode(objRhs, newTermName("_graph"))
+    val inferCode = optimizeByInferenceCode(objRhs, newTermName("_graph"))
 
     val structureDef = meta.classDef(newTermName("_graph"))
 
