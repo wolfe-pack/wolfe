@@ -11,8 +11,22 @@ trait Potential {
 
   def notSupported = sys.error("This function is not supported")
 
+  /**
+   * Calculate and update the max-marginal message from the factor of this potential to
+   * the given edge.
+   * @param edge the edge to pass the message on.
+   */
   def maxMarginalF2N(edge: Edge):Unit = notSupported
+
+  /**
+   * Calculate and update the marginal message from the factor of this potential to
+   * the given edge.
+   * @param edge the edge to pass the message on.
+   */
+  def marginalF2N(edge: Edge):Unit = notSupported
+
   def maxMarginalExpectationsAndObjective(dstExpectations: FactorieVector): Double = notSupported
+  def marginalExpectationsAndObjective(dstExpectations: FactorieVector): Double = notSupported
   def valueForCurrentSetting(): Double
   def valueAndGradientForAllEdges():Double = notSupported
   def isLinear = false

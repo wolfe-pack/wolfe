@@ -33,6 +33,25 @@ final class LinearPotential(val edges: Array[Edge], statistics: Stats, fg: Facto
     }
     maxNormalize(msgs.f2n)
   }
+
+
+  override def marginalF2N(edge: Edge) = {
+    val msgs = edge.msgs.asDiscrete
+    fill(msgs.f2n, 0.0)
+
+    for (i <- 0 until settings.size) {
+      val setting = settings(i)
+      var score = scoreEntry(i)
+      val varValue = setting(edge.indexInFactor)
+      for (j <- 0 until edges.size; if j != edge.indexInFactor) {
+        score += edges(j).msgs.asDiscrete.n2f(setting(j))
+      }
+      msgs.f2n(varValue) = msgs.f2n(varValue) + math.exp(score)
+    }
+    normalize(msgs.f2n)
+    log(msgs.f2n)
+  }
+
   def valueForCurrentSetting() = {
     val setting = edges.map(_.n.variable.asDiscrete.setting)
     val entry = TablePotential.settingToEntry(setting, dims)
@@ -112,6 +131,26 @@ final class LinearPotential(val edges: Array[Edge], statistics: Stats, fg: Facto
     }
     maxScore
   }
+
+  override def marginalExpectationsAndObjective(dstExpectations: FactorieVector) = {
+    var localZ = Double.NegativeInfinity
+    //calculate local partition function
+    for (i <- (0 until entryCount).optimized) {
+      val setting = settings(i)
+      val score = penalizedScore(i, setting)
+      localZ += math.exp(score)
+    }
+    // prob = 1/|maxs| for all maximums, add corresponding vector
+    for (i <- 0 until entryCount) {
+      val setting = settings(i)
+      val score = penalizedScore(i, setting)
+      val prob = math.exp(score - localZ)
+      dstExpectations +=(vectors(i), prob)
+    }
+    localZ
+  }
+
+
   override def isLinear = true
   /**
    * More verbose string representation that shows that potential table depending on factor type.
