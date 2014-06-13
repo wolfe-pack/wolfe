@@ -124,6 +124,28 @@ final class TablePotential(edges: Array[Edge], table: Table) extends Potential {
     maxNormalize(m.f2n)
 
   }
+
+
+  override def marginalF2N(edge: Edge) = {
+    val m = edge.msgs.asDiscrete
+    fill(m.f2n, 0.0)
+
+    for (i <- 0 until settings.size) {
+      val setting = settings(i)
+      var score = scores(i)
+      val varValue = setting(edge.indexInFactor)
+      for (j <- 0 until edges.size; if j != edge.indexInFactor) {
+        score += msgs(j).n2f(setting(j))
+      }
+      m.f2n(varValue) = m.f2n(varValue) + math.exp(score)
+    }
+    //normalize
+    normalize(m.f2n)
+    //convert to log space
+    log(m.f2n)
+
+  }
+
   override def maxMarginalExpectationsAndObjective(result: FactorieVector) = {
     // 1) go over all states, find max with respect to incoming messages
     var norm = Double.NegativeInfinity
@@ -136,8 +158,18 @@ final class TablePotential(edges: Array[Edge], table: Table) extends Potential {
         maxScore = scores(i)
       }
     }
-
-
     maxScore
   }
+
+  override def marginalExpectationsAndObjective(dstExpectations: FactorieVector) = {
+    var localZ = Double.NegativeInfinity
+    //calculate local partition function
+    for (i <- (0 until entryCount).optimized) {
+      val setting = settings(i)
+      val score = penalizedScore(i, setting)
+      localZ += math.exp(score)
+    }
+    localZ
+  }
+
 }
