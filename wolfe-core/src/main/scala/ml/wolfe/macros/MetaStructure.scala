@@ -192,7 +192,7 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
       case q"$iter1.x[${_}]($iter2)" => iter1 match {
         case CartesianProduct(args) =>
           Some(args :+ iter2)
-        case q"ml.wolfe.Wolfe.CartesianProductBuilder[${_}]($root)" =>
+        case q"$builder[${_}]($root)" if builder.symbol == wolfeSymbols.cartesianProductBuilder =>
           Some(List(root,iter2))
         case _ => None
       }
