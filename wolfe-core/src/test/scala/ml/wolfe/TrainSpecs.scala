@@ -15,8 +15,9 @@ class TrainSpecs extends WolfeSpec {
   import Library._
   import OptimizedOperators._
 
-  "A Foo" should {
-    "bar" in {
+  "A small, separable training example" should {
+    "be perfectly classified" in {
+
       def tokens = Wolfe.all(Token)(strings x Seq(Tag('DT), Tag('NN)) x Seq(Chunk('?)))
       def sentences = Wolfe.all(Sentence)(seqs(tokens))
 
@@ -36,7 +37,6 @@ class TrainSpecs extends WolfeSpec {
       }
       def learn(data: Iterable[Sentence]) = argmin(vectors) { loss(data) }
 
-
       //---------------
 
       def trainSentence = Sentence(Seq(
@@ -45,7 +45,7 @@ class TrainSpecs extends WolfeSpec {
       ))
 
       val w = learn(Seq(trainSentence))
-      println(predictor(w)(trainSentence))
+      predictor(w)(trainSentence) shouldEqual trainSentence
 
     }
   }
