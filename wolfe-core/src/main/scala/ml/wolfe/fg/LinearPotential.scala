@@ -140,14 +140,16 @@ final class LinearPotential(val edges: Array[Edge], statistics: Stats, fg: Facto
       val score = penalizedScore(i, setting)
       localZ += math.exp(score)
     }
+    val logZ = math.log(localZ)
     // prob = 1/|maxs| for all maximums, add corresponding vector
     for (i <- 0 until entryCount) {
       val setting = settings(i)
       val score = penalizedScore(i, setting)
-      val prob = math.exp(score - localZ)
+      val prob = math.exp(score - logZ)
       dstExpectations +=(vectors(i), prob)
     }
-    localZ
+    //todo: this double counts local entropy, need to subtract node entropies later.
+    logZ
   }
 
 

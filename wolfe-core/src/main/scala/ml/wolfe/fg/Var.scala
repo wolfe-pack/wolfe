@@ -20,6 +20,7 @@ trait Var {
   def initializeRandomly(eps:Double)
   def updateN2F(edge: FactorGraph.Edge)
   def updateBelief(node: FactorGraph.Node)
+  def entropy():Double
 
 }
 
@@ -39,6 +40,13 @@ final class DiscreteVar(var dim: Int) extends Var {
   /* indicates the value corresponding to the setting of the node */
   var value: Int = 0
 
+  def entropy() = {
+    var result = 0.0
+    for (i <- (0 until b.length).optimized) {
+      result -= math.exp(b(i)) * b(i) //messages are in log space
+    }
+    result
+  }
 
   def initializeToNegInfinity() = {
     fill(b, Double.NegativeInfinity)
@@ -79,6 +87,9 @@ final class DiscreteVar(var dim: Int) extends Var {
 final class VectorVar(val dim:Int) extends Var {
   var b:FactorieVector = new DenseTensor1(dim)
   var setting:FactorieVector = null
+
+
+  def entropy() = ???
 
   def setup() = {
 
