@@ -58,7 +58,7 @@ final class LinearPotential(val edges: Array[Edge], statistics: Stats, fg: Facto
     scoreEntry(entry)
   }
 
-  override def stats() = {
+  override def statsForCurrentSetting() = {
     val setting = edges.map(_.n.variable.asDiscrete.setting)
     val entry = TablePotential.settingToEntry(setting, dims)
     vectors(entry)
@@ -133,7 +133,7 @@ final class LinearPotential(val edges: Array[Edge], statistics: Stats, fg: Facto
   }
 
   override def marginalExpectationsAndObjective(dstExpectations: FactorieVector) = {
-    var localZ = Double.NegativeInfinity
+    var localZ = 0.0
     //calculate local partition function
     for (i <- (0 until entryCount).optimized) {
       val setting = settings(i)

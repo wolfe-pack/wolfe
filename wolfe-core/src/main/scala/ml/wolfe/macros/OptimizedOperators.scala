@@ -109,18 +109,18 @@ trait LinearModelArgmaxCode[C <: Context] extends SymbolRepository[C] {
     case q"$f(${ _ })" =>
       f.symbol.annotations.find(_.tpe.typeSymbol == wolfeSymbols.optByInference) match {
         case Some(annotation) => q"${ annotation.scalaArgs.head }($graph)"
-        case None => q"ml.wolfe.MaxProduct($graph,1)"
+        case None => q"ml.wolfe.BeliefPropagation($graph,1)"
       }
-    case _ => q"ml.wolfe.MaxProduct($graph,1)"
+    case _ => q"ml.wolfe.BeliefPropagation($graph,1)"
   }
 
   def logZByInferenceCode(objRhs: Tree, graph: TermName): Tree = objRhs match {
     case q"$f(${ _ })" =>
       f.symbol.annotations.find(_.tpe.typeSymbol == wolfeSymbols.logZByInference) match {
         case Some(annotation) => q"${ annotation.scalaArgs.head }($graph)"
-        case None => q"ml.wolfe.MaxProduct($graph,1)"
+        case None => q"ml.wolfe.BeliefPropagation($graph,1)"
       }
-    case _ => q"ml.wolfe.MaxProduct($graph,1)"
+    case _ => q"ml.wolfe.BeliefPropagation($graph,1)"
   }
 
 

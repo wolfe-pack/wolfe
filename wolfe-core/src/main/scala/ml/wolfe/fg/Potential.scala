@@ -30,7 +30,7 @@ trait Potential {
   def valueForCurrentSetting(): Double
   def valueAndGradientForAllEdges():Double = notSupported
   def isLinear = false
-  def stats(): FactorieVector = null
+  def statsForCurrentSetting(): FactorieVector = null
   def toVerboseString(implicit fgPrinter: FGPrinter): String = getClass.getName
 
 }

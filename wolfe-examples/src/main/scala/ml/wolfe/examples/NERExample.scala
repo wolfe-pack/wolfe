@@ -4,7 +4,7 @@ import java.io.{InputStream, BufferedInputStream, FileNotFoundException}
 import ml.wolfe.util._
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
-import ml.wolfe.{MaxProduct, Wolfe}
+import ml.wolfe.{BeliefPropagation, Wolfe}
 import cc.factorie.optimize.{AveragedPerceptron, OnlineTrainer}
 import ml.wolfe.macros.{Library, OptimizedOperators}
 
@@ -65,7 +65,7 @@ object NERExample {
     sum(0 until s.tokens.size - 2) { i => tokenToFeatures(s.tokens(i + 2), "@+2") outer labelToFeature(s.tokens(i).tag) }
   }
 
-  @OptimizeByInference(MaxProduct(_, 1))
+  @OptimizeByInference(BeliefPropagation(_, 1))
   def model(w: Vector)(s: Sentence) = w dot features(s)
   def predictor(w: Vector)(s: Sentence) = argmax(Sentences where evidence(observed)(s)) { model(w) }
 

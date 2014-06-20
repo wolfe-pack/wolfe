@@ -6,25 +6,28 @@ import scala.language.postfixOps
 /**
  * @author Sebastian Riedel
  */
-object MaxProduct {
+object BeliefPropagation {
 
   import FactorGraph._
   import MoreArrayOps._
+
+  def maxProduct(maxIteration: Int, schedule: Boolean = true)(fg: FactorGraph) = apply(fg, maxIteration, schedule, false)
+  def sumProduct(maxIteration: Int, schedule: Boolean = true)(fg: FactorGraph) = apply(fg, maxIteration, schedule, true)
 
   /**
    * Runs some iterations of belief propagation.
    * @param fg the message passing graph to run
    * @param maxIteration maximum number of iterations.
-   * @param canonical should edges be processed in canonical ordering according.
+   * @param schedule should edges be scheduled.
    */
-  def apply(fg: FactorGraph, maxIteration: Int, canonical: Boolean = true) {
+  def apply(fg: FactorGraph, maxIteration: Int, schedule: Boolean = true, sum: Boolean = false) {
     //    val edges = if (canonical) fg.edges.sorted(FactorGraph.EdgeOrdering) else fg.edges
-    val edges = if (canonical) MPSchedulerImpl.schedule(fg) else fg.edges
+    val edges = if (schedule) MPSchedulerImpl.schedule(fg) else fg.edges
 
     for (i <- 0 until maxIteration) {
       for (edge <- edges) {
         for (other <- edge.f.edges; if other != edge) updateN2F(other)
-        updateF2N(edge)
+        updateF2N(edge, sum)
       }
     }
     for (node <- fg.nodes) updateBelief(node)
@@ -32,7 +35,7 @@ object MaxProduct {
     //calculate gradient and objective
     //todo this is not needed if we don't have linear factors. Maybe initial size should depend on number of linear factors
     fg.gradient = new SparseVector(1000)
-    fg.value = featureExpectationsAndObjective(fg, fg.gradient)
+    fg.value = featureExpectationsAndObjective(fg, fg.gradient, sum)
 
   }
 
@@ -43,12 +46,19 @@ object MaxProduct {
    * @param fg factor graph.
    * @param result vector to add results to.
    */
-  def featureExpectationsAndObjective(fg: FactorGraph, result: FactorieVector): Double = {
+  def featureExpectationsAndObjective(fg: FactorGraph, result: FactorieVector, sum: Boolean): Double = {
     var obj = 0.0
     for (factor <- fg.factors) {
       //update all n2f messages
       for (e <- factor.edges) updateN2F(e)
-      obj += factor.potential.maxMarginalExpectationsAndObjective(result)
+      obj += {
+        if (sum) factor.potential.marginalExpectationsAndObjective(result)
+        else factor.potential.maxMarginalExpectationsAndObjective(result)
+      }
+    }
+    //in case we do sum-product we need to subtract doubly counted node entropies to calculate the bethe objective.
+    if (sum) for (node <- fg.nodes) {
+      obj += (1.0 - node.edges.size) * node.variable.entropy()
     }
     obj
   }
@@ -57,14 +67,14 @@ object MaxProduct {
    * Updates the message from factor to node.
    * @param edge the factor-node edge.
    */
-  def updateF2N(edge: Edge) {
+  def updateF2N(edge: Edge, sum: Boolean) {
     val factor = edge.f
 
     //remember last message for calculating residuals
     edge.msgs.saveCurrentF2NAsOld()
 
     //message calculation happens in potential
-    factor.potential.maxMarginalF2N(edge)
+    if (sum) factor.potential.marginalF2N(edge) else factor.potential.maxMarginalF2N(edge)
 
   }
 
