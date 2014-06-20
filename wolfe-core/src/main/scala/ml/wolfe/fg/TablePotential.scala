@@ -162,7 +162,7 @@ final class TablePotential(edges: Array[Edge], table: Table) extends Potential {
   }
 
   override def marginalExpectationsAndObjective(dstExpectations: FactorieVector) = {
-    var localZ = Double.NegativeInfinity
+    var localZ = 0.0
     //calculate local partition function
     for (i <- (0 until entryCount).optimized) {
       val setting = settings(i)

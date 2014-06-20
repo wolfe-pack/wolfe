@@ -59,11 +59,11 @@ class OptimizeByInferenceSpecs extends WolfeSpec {
       //todo: can we find a better way to check whether an annotation was used
       case class Data(x: Boolean, y: Boolean, z: Boolean)
       implicit def data = Wolfe.all(Data)
-      @OptimizeByInference(MaxProduct(_, 10))
+      @OptimizeByInference(BeliefPropagation(_, 10))
       def model(d: Data) = I(d.x && d.y) + I(d.y && !d.z) + I(d.z && !d.x)
-      @OptimizeByInference(MaxProduct(_, 2))
+      @OptimizeByInference(BeliefPropagation(_, 2))
       def twoIterations(d: Data) = model(d)
-      @OptimizeByInference(MaxProduct(_, 1))
+      @OptimizeByInference(BeliefPropagation(_, 1))
       def oneIteration(d: Data) = model(d)
       val afterOneIter = argmax(data) { oneIteration }
       val afterTwoIter = argmax(data) { twoIterations }
@@ -76,7 +76,7 @@ class OptimizeByInferenceSpecs extends WolfeSpec {
 
     "find the optimal solution of a linear chain" in {
       def space = seqs(5, Range(0, 3))
-      @OptimizeByInference(MaxProduct(_, 1))
+      @OptimizeByInference(BeliefPropagation(_, 1))
       def potential(seq: Seq[Int]) = {
         val local = sum { over(0 until seq.size) of (i => i * I(seq(i) == i)) }
         val pairs = sum { over(0 until seq.size - 1) of (i => I(seq(i) == seq(i + 1))) }

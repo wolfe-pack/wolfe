@@ -27,7 +27,7 @@ class TrainSpecs extends WolfeSpec {
         oneHot('word -> s.tokens(i).word) outer oneHot('tag -> s.tokens(i).tag)
       }
 
-      @OptimizeByInference(MaxProduct(_, 1))
+      @OptimizeByInference(BeliefPropagation(_, 1))
       def model(w: Vector)(s: Sentence) = w dot features(s)
       def predictor(w: Vector)(s: Sentence) = argmax(sentences filter evidence(obs)(s)) { model(w) }
 

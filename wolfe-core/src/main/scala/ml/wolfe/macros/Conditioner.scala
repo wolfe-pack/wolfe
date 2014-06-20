@@ -162,7 +162,7 @@ object Conditioner {
 
   import scala.language.experimental.macros
 
-  def conditioned[T](sampleSpace: Iterable[T])(condition: T => Boolean) = macro conditionedImpl[T]
+  def conditioned[T](sampleSpace: Iterable[T])(condition: T => Boolean):Structure[T] = macro conditionedImpl[T]
 
   def conditionedImpl[T: c.WeakTypeTag](c: Context)(sampleSpace: c.Expr[Iterable[T]])
                                        (condition: c.Expr[T => Boolean]) = {

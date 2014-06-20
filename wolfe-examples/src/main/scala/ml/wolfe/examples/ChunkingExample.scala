@@ -1,6 +1,6 @@
 package ml.wolfe.examples
 
-import ml.wolfe.{MaxProduct, Wolfe}
+import ml.wolfe.{BeliefPropagation, Wolfe}
 import ml.wolfe.macros.{Library, OptimizedOperators}
 import ml.wolfe.util.{Evaluator, NLP}
 import cc.factorie.optimize.{Perceptron, OnlineTrainer}
@@ -24,7 +24,7 @@ object ChunkingExample {
     sum(0 until s.tokens.size - 1) { i => oneHot('p -> s.tokens(i).chunk -> s.tokens(i + 1).chunk) }
   }
 
-  @OptimizeByInference(MaxProduct(_, 1))
+  @OptimizeByInference(BeliefPropagation(_, 1))
   def model(w: Vector)(s: Sentence) = w dot features(s)
   def predictor(w: Vector)(s: Sentence) = argmax(Sentences filter evidence(observed)(s)) { model(w) }
 

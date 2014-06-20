@@ -8,7 +8,7 @@ import ml.wolfe.fg.Stats
 /**
  * @author Sebastian Riedel
  */
-class MaxProductSpecs extends WolfeSpec {
+class BeliefPropagationSpecs extends WolfeSpec {
 
   import FactorGraph._
 
@@ -87,7 +87,7 @@ class MaxProductSpecs extends WolfeSpec {
       val fg_mp = oneFactorFG()
       val fg_bf = oneFactorFG()
 
-      MaxProduct(fg_mp, 1)
+      BeliefPropagation(fg_mp, 1)
       BruteForceSearch(fg_bf)
 
       sameBeliefs(fg_mp, fg_bf) should be(true)
@@ -98,7 +98,7 @@ class MaxProductSpecs extends WolfeSpec {
       val fg_mp = chainFG(5)
       val fg_bf = chainFG(5)
 
-      MaxProduct(fg_mp, 1)
+      BeliefPropagation(fg_mp, 1)
       BruteForceSearch(fg_bf)
 
       sameBeliefs(fg_mp, fg_bf) should be(true)
@@ -109,7 +109,7 @@ class MaxProductSpecs extends WolfeSpec {
       val fg_mp = chainFGWithFeatures(5)
       val fg_bf = chainFGWithFeatures(5)
 
-      MaxProduct(fg_mp, 1)
+      BeliefPropagation(fg_mp, 1)
       BruteForceSearch(fg_bf)
 
       sameBeliefs(fg_mp, fg_bf) should be(true)
@@ -120,5 +120,45 @@ class MaxProductSpecs extends WolfeSpec {
     }
 
   }
+
+  "A Sum Product algorithm" should {
+    "return the exact marginals when given a single table potential" in {
+      val fg_bp = oneFactorFG()
+      val fg_bf = oneFactorFG()
+
+      BeliefPropagation.sumProduct(1)(fg_bp)
+      BruteForceSearch(fg_bf)
+
+//      sameBeliefs(fg_bp, fg_bf) should be(true)
+//      fg_bp.value should be (fg_bf.value)
+
+    }
+//    "return the exact marginals given a chain" in {
+//      val fg_bp = chainFG(5)
+//      val fg_bf = chainFG(5)
+//
+//      BeliefPropagation(fg_bp, 1)
+//      BruteForceSearch(fg_bf)
+//
+//      sameBeliefs(fg_bp, fg_bf) should be(true)
+//      fg_bp.value should be (fg_bf.value)
+//
+//    }
+//    "return feature vectors of argmax state" in {
+//      val fg_bp = chainFGWithFeatures(5)
+//      val fg_bf = chainFGWithFeatures(5)
+//
+//      BeliefPropagation(fg_bp, 1)
+//      BruteForceSearch(fg_bf)
+//
+//      sameBeliefs(fg_bp, fg_bf) should be(true)
+//      sameVector(fg_bp.gradient, fg_bf.gradient)
+//      fg_bp.value should be (fg_bf.value)
+//
+//
+//    }
+
+  }
+
 
 }

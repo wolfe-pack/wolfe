@@ -1,6 +1,6 @@
 package ml.wolfe.macros
 
-import ml.wolfe.{MaxProduct, Wolfe, WolfeSpec}
+import ml.wolfe.{BeliefPropagation, Wolfe, WolfeSpec}
 import scala.util.Random
 import cc.factorie.optimize.{Perceptron, OnlineTrainer}
 import ml.wolfe.util.Evaluator
@@ -31,7 +31,7 @@ class IrisSpecs extends WolfeSpec {
         oneHot('pw -> data.irisClass, data.petalWidth)
 
       //the linear model
-      @OptimizeByInference(MaxProduct(_, 1))
+      @OptimizeByInference(BeliefPropagation(_, 1))
       def model(w: Vector)(i: IrisData) = features(i) dot w
       def predictor(w: Vector)(i: IrisData) = argmax(space filter evidence(observed)(i)) { model(w) }
 
