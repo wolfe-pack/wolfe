@@ -137,17 +137,9 @@ class BeliefPropagationSpecs extends WolfeSpec {
       BeliefPropagation.sumProduct(1)(fg_bp)
       BruteForceSearch.marginalize(fg_bf)
 
-      println(fg_bp.value)
-      println(fg_bf.value)
-
-      println(fg_bf.nodes(0).variable.asDiscrete.b.mkString(" "))
-      println(fg_bf.nodes(1).variable.asDiscrete.b.mkString(" "))
-
-      println(fg_bp.nodes(0).variable.asDiscrete.b.mkString(" "))
-      println(fg_bp.nodes(1).variable.asDiscrete.b.mkString(" "))
-
-      //      sameBeliefs(fg_bp, fg_bf) should be(true)
       fg_bp.value should be(fg_bf.value)
+      sameBeliefs(fg_bp, fg_bf) should be(true)
+
 
     }
     //    "return the exact marginals given a chain" in {
