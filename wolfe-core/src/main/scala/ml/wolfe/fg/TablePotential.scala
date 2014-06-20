@@ -169,7 +169,7 @@ final class TablePotential(edges: Array[Edge], table: Table) extends Potential {
       val score = penalizedScore(i, setting)
       localZ += math.exp(score)
     }
-    localZ
+    math.log(localZ)
   }
 
 }

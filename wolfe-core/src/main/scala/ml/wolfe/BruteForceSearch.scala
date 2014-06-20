@@ -94,6 +94,7 @@ object BruteForceSearch {
     for (n <- fg.nodes) {
       val v = n.variable.asDiscrete
       normalize(v.b)
+      log(v.b)
     }
 
     fg.value = math.log(Z)

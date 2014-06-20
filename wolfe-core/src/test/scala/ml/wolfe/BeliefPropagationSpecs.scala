@@ -91,7 +91,7 @@ class BeliefPropagationSpecs extends WolfeSpec {
       BruteForceSearch(fg_bf)
 
       sameBeliefs(fg_mp, fg_bf) should be(true)
-      fg_mp.value should be (fg_bf.value)
+      fg_mp.value should be(fg_bf.value)
 
     }
     "return the exact marginals given a chain" in {
@@ -102,7 +102,7 @@ class BeliefPropagationSpecs extends WolfeSpec {
       BruteForceSearch(fg_bf)
 
       sameBeliefs(fg_mp, fg_bf) should be(true)
-      fg_mp.value should be (fg_bf.value)
+      fg_mp.value should be(fg_bf.value)
 
     }
     "return feature vectors of argmax state" in {
@@ -114,11 +114,19 @@ class BeliefPropagationSpecs extends WolfeSpec {
 
       sameBeliefs(fg_mp, fg_bf) should be(true)
       sameVector(fg_mp.gradient, fg_bf.gradient)
-      fg_mp.value should be (fg_bf.value)
-
-
+      fg_mp.value should be(fg_bf.value)
     }
 
+  }
+
+  "A BrufeForce algorithm" should {
+    "return the exact log partition function" in {
+      import math._
+      val fg_bf = oneFactorFG()
+      BruteForceSearch.marginalize(fg_bf)
+      val logZ = log(fixedTable.scores.map(exp).sum)
+      fg_bf.value should be(logZ)
+    }
   }
 
   "A Sum Product algorithm" should {
@@ -127,36 +135,45 @@ class BeliefPropagationSpecs extends WolfeSpec {
       val fg_bf = oneFactorFG()
 
       BeliefPropagation.sumProduct(1)(fg_bp)
-      BruteForceSearch(fg_bf)
+      BruteForceSearch.marginalize(fg_bf)
 
-//      sameBeliefs(fg_bp, fg_bf) should be(true)
-//      fg_bp.value should be (fg_bf.value)
+      println(fg_bp.value)
+      println(fg_bf.value)
+
+      println(fg_bf.nodes(0).variable.asDiscrete.b.mkString(" "))
+      println(fg_bf.nodes(1).variable.asDiscrete.b.mkString(" "))
+
+      println(fg_bp.nodes(0).variable.asDiscrete.b.mkString(" "))
+      println(fg_bp.nodes(1).variable.asDiscrete.b.mkString(" "))
+
+      //      sameBeliefs(fg_bp, fg_bf) should be(true)
+      fg_bp.value should be(fg_bf.value)
 
     }
-//    "return the exact marginals given a chain" in {
-//      val fg_bp = chainFG(5)
-//      val fg_bf = chainFG(5)
-//
-//      BeliefPropagation(fg_bp, 1)
-//      BruteForceSearch(fg_bf)
-//
-//      sameBeliefs(fg_bp, fg_bf) should be(true)
-//      fg_bp.value should be (fg_bf.value)
-//
-//    }
-//    "return feature vectors of argmax state" in {
-//      val fg_bp = chainFGWithFeatures(5)
-//      val fg_bf = chainFGWithFeatures(5)
-//
-//      BeliefPropagation(fg_bp, 1)
-//      BruteForceSearch(fg_bf)
-//
-//      sameBeliefs(fg_bp, fg_bf) should be(true)
-//      sameVector(fg_bp.gradient, fg_bf.gradient)
-//      fg_bp.value should be (fg_bf.value)
-//
-//
-//    }
+    //    "return the exact marginals given a chain" in {
+    //      val fg_bp = chainFG(5)
+    //      val fg_bf = chainFG(5)
+    //
+    //      BeliefPropagation(fg_bp, 1)
+    //      BruteForceSearch(fg_bf)
+    //
+    //      sameBeliefs(fg_bp, fg_bf) should be(true)
+    //      fg_bp.value should be (fg_bf.value)
+    //
+    //    }
+    //    "return feature vectors of argmax state" in {
+    //      val fg_bp = chainFGWithFeatures(5)
+    //      val fg_bf = chainFGWithFeatures(5)
+    //
+    //      BeliefPropagation(fg_bp, 1)
+    //      BruteForceSearch(fg_bf)
+    //
+    //      sameBeliefs(fg_bp, fg_bf) should be(true)
+    //      sameVector(fg_bp.gradient, fg_bf.gradient)
+    //      fg_bp.value should be (fg_bf.value)
+    //
+    //
+    //    }
 
   }
 
