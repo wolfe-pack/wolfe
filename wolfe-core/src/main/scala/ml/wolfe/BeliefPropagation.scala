@@ -30,7 +30,7 @@ object BeliefPropagation {
         updateF2N(edge, sum)
       }
     }
-    for (node <- fg.nodes) updateBelief(node)
+    for (node <- fg.nodes) updateBelief(node, sum)
 
     //calculate gradient and objective
     //todo this is not needed if we don't have linear factors. Maybe initial size should depend on number of linear factors
@@ -90,8 +90,8 @@ object BeliefPropagation {
    * Updates the belief (sum of incoming messages) at a node.
    * @param node the node to update.
    */
-  def updateBelief(node: Node) {
-    node.variable.updateBelief(node)
+  def updateBelief(node: Node, sum: Boolean) {
+    if (sum) node.variable.updateMarginalBelief(node) else node.variable.updateMaxMarginalBelief(node)
   }
 
 

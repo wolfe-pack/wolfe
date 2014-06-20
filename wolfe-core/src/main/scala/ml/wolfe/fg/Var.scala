@@ -6,6 +6,7 @@ import ml.wolfe.FactorGraph.{Node, Edge}
 import scalaxy.loops._
 import scala.util.Random
 import cc.factorie.la.DenseTensor1
+import math._
 
 
 /**
@@ -19,7 +20,8 @@ trait Var {
   def initializeToNegInfinity()
   def initializeRandomly(eps:Double)
   def updateN2F(edge: FactorGraph.Edge)
-  def updateBelief(node: FactorGraph.Node)
+  def updateMaxMarginalBelief(node: FactorGraph.Node)
+  def updateMarginalBelief(node: FactorGraph.Node)
   def entropy():Double
 
 }
@@ -73,7 +75,7 @@ final class DiscreteVar(var dim: Int) extends Var {
     }
 
   }
-  def updateBelief(node: Node) = {
+  def updateMaxMarginalBelief(node: Node) = {
     System.arraycopy(in, 0, b, 0, b.length)
     for (e <- 0 until node.edges.length) {
       for (i <- 0 until dim)
@@ -81,6 +83,16 @@ final class DiscreteVar(var dim: Int) extends Var {
       maxNormalize(b)
     }
   }
+  def updateMarginalBelief(node: Node) = {
+    System.arraycopy(in, 0, b, 0, b.length)
+    for (e <- 0 until node.edges.length) {
+      for (i <- 0 until dim)
+        b(i) += node.edges(e).msgs.asDiscrete.f2n(i)
+      val logZ = math.log(b.view.map(exp).sum)
+      -=(b,logZ)
+    }
+  }
+
 
 }
 
@@ -95,6 +107,8 @@ final class VectorVar(val dim:Int) extends Var {
 
   }
 
+
+  def updateMarginalBelief(node: Node) = ???
   def updateN2F(edge: Edge) = {
     edge.msgs.asVector.n2f = b //todo: copy instead?
   }
@@ -105,7 +119,7 @@ final class VectorVar(val dim:Int) extends Var {
   def initializeToNegInfinity() = {
     b := Double.NegativeInfinity
   }
-  def updateBelief(node: Node) = {
+  def updateMaxMarginalBelief(node: Node) = {
 
   }
 }
