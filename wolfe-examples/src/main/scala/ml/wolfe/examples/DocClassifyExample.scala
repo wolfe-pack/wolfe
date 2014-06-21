@@ -32,7 +32,7 @@ object DocClassifyExample {
 
     def predictor(w: Vector)(d: Doc) = argmax(Docs filter evidence(observed)(d)) { model(w) }
 
-    def batchPredictor(w: Vector)(data: Iterable[Doc]) = map { over(data) using predictor(w) }
+    def batchPredictor(w: Vector)(data: Iterable[Doc]) = map(data) { predictor(w) }
 
     @OptimizeByLearning(new OnlineTrainer(_, new Perceptron, 1, 1000))
     def loss(data: Iterable[Doc])(w: Vector) = sum(data) { s => model(w)(predictor(w)(s)) - model(w)(s) }

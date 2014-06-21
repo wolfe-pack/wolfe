@@ -59,7 +59,7 @@ class GradientCalculatorSpecs extends WolfeSpec {
       import OptimizedOperators._
       case class Data(x: Symbol, y: Symbol)
       def space = Wolfe.all(Data)(c(Seq('X1, 'X2), Seq('Y1, 'Y2, 'Y3)))
-      def f(w: Vector) = max { over(space) of (d => oneHot(d.x -> d.y, 1.0) dot w) st (_.x == 'X2) }
+      def f(w: Vector) = max(space where (_.x == 'X2))(d => oneHot(d.x -> d.y, 1.0) dot w)
       val (v, g) = GradientCalculator.valueAndgradientAt(f, oneHot('X2 -> 'Y3, 2.0))
       g should be(oneHot('X2 -> 'Y3, 1.0))
       v should be(2.0)
@@ -70,7 +70,7 @@ class GradientCalculatorSpecs extends WolfeSpec {
       case class Data(x: Symbol, y: Symbol)
       def space = Wolfe.all(Data)(c(Seq('X1, 'X2), Seq('Y1, 'Y2, 'Y3)))
       def model(w: Vector)(d: Data) = oneHot(d.x -> d.y, 1.0) dot w
-      def f(w: Vector) = model(w)(argmax { over(space) of model(w) })
+      def f(w: Vector) = model(w)(argmax(space)(model(w)))
       val (v, g) = GradientCalculator.valueAndgradientAt(f, oneHot('X2 -> 'Y3, 2.0))
       g should be(oneHot('X2 -> 'Y3, 1.0))
       v should be(2.0)

@@ -120,7 +120,7 @@ object NERExample {
     val w = learn(train)
 
     def evaluate(corpus: Seq[Sentence]) = {
-      val predicted = map { over(corpus) using predictor(w) }
+      val predicted = map (corpus) { predictor(w) }
       val evaluated = MentionEvaluator.evaluate(corpus, predicted)
       println(evaluated)
     }

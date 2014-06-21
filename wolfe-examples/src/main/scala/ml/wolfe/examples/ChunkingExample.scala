@@ -39,7 +39,7 @@ object ChunkingExample {
 
     val train = loadCoNLL("ml/wolfe/datasets/conll2000/train.txt")(toToken).map(Sentence).take(1000)
     val w = learn(train)
-    val predictedTrain = map { over(train) using predictor(w) }
+    val predictedTrain = map(train) { predictor(w) }
     val evalTrain = Evaluator.evaluate(train.flatMap(_.tokens), predictedTrain.flatMap(_.tokens))(_.chunk)
 
     println(evalTrain)
