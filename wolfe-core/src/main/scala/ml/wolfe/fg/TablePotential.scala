@@ -163,13 +163,26 @@ final class TablePotential(edges: Array[Edge], table: Table) extends Potential {
 
   override def marginalExpectationsAndObjective(dstExpectations: FactorieVector) = {
     var localZ = 0.0
+
     //calculate local partition function
     for (i <- (0 until entryCount).optimized) {
       val setting = settings(i)
       val score = penalizedScore(i, setting)
       localZ += math.exp(score)
     }
-    math.log(localZ)
+
+    var linear = 0.0
+    var entropy = 0.0
+    //calculate linear contribution to objective and entropy
+    for (i <- (0 until entryCount).optimized) {
+      val setting = settings(i)
+      val score = penalizedScore(i, setting)
+      val prob = math.exp(score) / localZ
+      linear += scores(i) * prob
+      entropy -= math.log(prob) * prob
+    }
+    val obj = linear + entropy
+    obj
   }
 
 }

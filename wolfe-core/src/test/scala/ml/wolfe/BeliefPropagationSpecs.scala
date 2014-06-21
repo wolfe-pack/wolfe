@@ -12,12 +12,15 @@ class BeliefPropagationSpecs extends WolfeSpec {
 
   import FactorGraph._
 
-  val fixedTable = TablePotential.table(Array(2, 2), {
+  val pot: Array[Int] => Double = {
     case Array(0, 0) => 1
     case Array(0, 1) => 2
     case Array(1, 0) => -3
     case Array(1, 1) => 0
-  })
+  }
+
+  val fixedTable = TablePotential.table(Array(2, 2), pot)
+
   val fixedStats = LinearPotential.stats(Array(2, 2), {
     case Array(i, j) => LinearPotential.singleton(2 * i + j, 1.0)
   })
@@ -113,7 +116,7 @@ class BeliefPropagationSpecs extends WolfeSpec {
       BruteForce.maxMarginals(fg_bf)
 
       sameBeliefs(fg_mp, fg_bf) should be(true)
-      sameVector(fg_mp.gradient, fg_bf.gradient)
+      sameVector(fg_mp.gradient, fg_bf.gradient) should be (true)
       fg_mp.value should be(fg_bf.value)
     }
 
@@ -149,27 +152,23 @@ class BeliefPropagationSpecs extends WolfeSpec {
       BeliefPropagation.sumProduct(1)(fg_bp)
       BruteForce.marginalize(fg_bf)
 
-      println(fg_bp.nodes.map(_.variable.asDiscrete.b.mkString(" ")).mkString("\n"))
-      println("----")
-      println(fg_bf.nodes.map(_.variable.asDiscrete.b.mkString(" ")).mkString("\n"))
-
       sameBeliefs(fg_bp, fg_bf) should be(true)
-//      fg_bp.value should be(fg_bf.value)
+      fg_bp.value should be(fg_bf.value +- 0.001)
 
     }
-    //    "return feature vectors of argmax state" in {
-    //      val fg_bp = chainFGWithFeatures(5)
-    //      val fg_bf = chainFGWithFeatures(5)
-    //
-    //      BeliefPropagation(fg_bp, 1)
-    //      BruteForceSearch(fg_bf)
-    //
-    //      sameBeliefs(fg_bp, fg_bf) should be(true)
-    //      sameVector(fg_bp.gradient, fg_bf.gradient)
-    //      fg_bp.value should be (fg_bf.value)
-    //
-    //
-    //    }
+    "return feature vectors of argmax state" in {
+      val fg_bp = chainFGWithFeatures(5)
+      val fg_bf = chainFGWithFeatures(5)
+
+      BeliefPropagation.sumProduct(1)(fg_bp)
+      BruteForce.marginalize(fg_bf)
+
+      sameBeliefs(fg_bp, fg_bf) should be(true)
+      sameVector(fg_bp.gradient, fg_bf.gradient) should be (true)
+      fg_bp.value should be(fg_bf.value +- 0.001)
+
+
+    }
 
   }
 

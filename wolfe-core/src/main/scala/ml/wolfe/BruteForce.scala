@@ -9,6 +9,7 @@ import ml.wolfe.MoreArrayOps._
  * Searches through all states of the factor graph.
  */
 object BruteForce {
+
   import FactorGraph._
 
   def loopOverSettings(nodes: List[Node], loop: (() => Unit) => Unit = body => body()): (() => Unit) => Unit = {
@@ -35,7 +36,7 @@ object BruteForce {
       val score = currentScore(fg)
       for (n <- fg.nodes) {
         val v = n.variable.asDiscrete
-        v.b(v.setting) = math.max(score,v.b(v.setting))
+        v.b(v.setting) = math.max(score, v.b(v.setting))
       }
 
       if (score > maxScore) {
@@ -60,7 +61,7 @@ object BruteForce {
 
   }
 
-  def currentScore(fg:FactorGraph) = {
+  def currentScore(fg: FactorGraph) = {
     var score = 0.0
     var i = 0
     while (i < fg.factors.size) {
@@ -97,9 +98,9 @@ object BruteForce {
 
     loop { () =>
       val score = currentScore(fg)
-      val prob = math.exp(score)
+      val prob = math.exp(score) / Z
       for (f <- fg.factors; if f.potential.isLinear)
-        fg.gradient += f.potential.statsForCurrentSetting()
+        fg.gradient +=(f.potential.statsForCurrentSetting(), prob)
     }
 
     //println("Bruteforce: " + maxScore)
