@@ -8,7 +8,7 @@ import ml.wolfe.MoreArrayOps._
 /**
  * Searches through all states of the factor graph.
  */
-object BruteForceSearch {
+object BruteForce {
   import FactorGraph._
 
   def loopOverSettings(nodes: List[Node], loop: (() => Unit) => Unit = body => body()): (() => Unit) => Unit = {
@@ -25,19 +25,14 @@ object BruteForceSearch {
     }
   }
 
-  def apply(fg: FactorGraph) {
+  def maxMarginals(fg: FactorGraph) {
     val loop = loopOverSettings(fg.nodes.toList)
     var maxScore = Double.NegativeInfinity
     for (n <- fg.nodes) n.variable.initializeToNegInfinity()
 
     var maxSetting: Array[Int] = null
     loop { () =>
-      var score = 0.0
-      var i = 0
-      while (i < fg.factors.size) {
-        score += fg.factors(i).potential.valueForCurrentSetting()
-        i += 1
-      }
+      val score = currentScore(fg)
       for (n <- fg.nodes) {
         val v = n.variable.asDiscrete
         v.b(v.setting) = math.max(score,v.b(v.setting))
