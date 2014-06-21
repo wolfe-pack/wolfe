@@ -1,7 +1,7 @@
 package ml.wolfe.macros
 
 import ml.wolfe.{BruteForceOperators, Wolfe, WolfeSpec}
-import cc.factorie.optimize.{Perceptron, AdaGrad, OnlineTrainer}
+import cc.factorie.optimize._
 
 /**
  * @author Sebastian Riedel
@@ -55,6 +55,19 @@ class OptimizeByLearningSpecs extends WolfeSpec {
       val w = argmax(vectors)(total)
       for (i <- range) w(i -> i) should be(0.8)
       for (i <- range; j <- range; if i != j) w(i -> j) should be(-0.2)
+    }
+
+    "return the argmax of the log-likelihood" in {
+      val n = 5
+      val space = Range(0, n)
+      def features(i: Int) = oneHot(i)
+      def model(w: Vector)(i: Int) = w dot features(i)
+      @OptimizeByLearning(new BatchTrainer(_, new LBFGS()))
+      def ll(data: Seq[Int])(w: Vector) = sum(data) { i => model(w)(i) - logZ(space) { model(w) } }
+//      val w = argmax(vectors) { ll(0 until n) }
+//      println(w)
+      //w should be(Vector(0 -> -0.2, 1 -> -0.2, 2 -> -0.2, 3 -> 0.8, 4 -> -0.2))
+
     }
 
 

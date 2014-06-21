@@ -159,6 +159,8 @@ trait MetaGradientCalculators[C <: Context] extends MetaStructures[C]
         binaryOperatorGradientCalculator(arg1, arg2, weightVar, indexTree, (v1, v2) => q"$v1 + $v2", addFactorieVectors)
       case DoubleMax(BuilderTrees(dom, where, obj, _,_)) =>
         inferenceGradientCalculator(dom,where,obj,indexTree)
+      case LogZ(BuilderTrees(dom, where, obj, _,_)) =>
+        inferenceGradientCalculator(dom,where,obj,indexTree,inferenceCode = logZByInferenceCode)
       //Bad(CantDifferentiate(rhs))
       case x => inlineOnce(x) match {
         case Some(inlined) => metaGradientCalculator(inlined, weightVar, indexTree)

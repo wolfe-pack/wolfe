@@ -53,7 +53,9 @@ trait SymbolRepository[C <: Context] extends HasContext[C] {
     lazy val sums     = optimizedOpsType.member(newTermName("sum")).asTerm.alternatives.toSet
     lazy val argmaxes = optimizedOpsType.member(newTermName("argmax")).asTerm.alternatives.toSet
     lazy val maxes    = optimizedOpsType.member(newTermName("max")).asTerm.alternatives.toSet
-    lazy val maps     = optimizedOpsType.member(newTermName("map")).asTerm.alternatives.toSet
+    lazy val logZs    = optimizedOpsType.member(newTermName("logZ")).asTerm.alternatives.toSet
+
+    lazy val maps = optimizedOpsType.member(newTermName("map")).asTerm.alternatives.toSet
 
 
     lazy val vectorType   = rootMirror.staticClass("ml.wolfe.Wolfe.Vector")
