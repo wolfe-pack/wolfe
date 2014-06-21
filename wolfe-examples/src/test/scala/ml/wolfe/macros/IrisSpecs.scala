@@ -51,8 +51,8 @@ class IrisSpecs extends WolfeSpec {
 
       val w = learn(train)
 
-      val predictedTest = map { over(test) using predictor(w) }
-      val predictedTrain = map { over(train) using predictor(w) }
+      val predictedTest = map (test) { predictor(w) }
+      val predictedTrain = map (train) { predictor(w) }
 
       val evalTrain = Evaluator.evaluate(train, predictedTrain)(_.irisClass)
       val evalTest = Evaluator.evaluate(test, predictedTest)(_.irisClass)

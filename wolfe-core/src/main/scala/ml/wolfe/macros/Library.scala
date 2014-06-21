@@ -18,13 +18,13 @@ object Library {
                        (model: Vector => T => Double)
                        (predictor: T => T)
                        (weights: Vector): Double =
-    sum { over(data) of (t => model(weights)(predictor(t)) - model(weights)(t)) }
+    sum(data)(t => model(weights)(predictor(t)) - model(weights)(t))
 
-  def evidence[T](observed:T=>T)(t1:T)(t2:T) = observed(t1) == observed(t2)
+  def evidence[T](observed: T => T)(t1: T)(t2: T) = observed(t1) == observed(t2)
 
 }
 
-class Inlinable(clz:Class[_]) extends StaticAnnotation
+class Inlinable(clz: Class[_]) extends StaticAnnotation
 
 class LibraryExpressions {
   def perceptronLoss[T](c: Context)
@@ -33,12 +33,12 @@ class LibraryExpressions {
                        (predictor: c.Expr[T => T])
                        (weights: c.Expr[Vector]) = {
     c.universe.reify[Double] {
-      sum { over(data.splice) of (t => model.splice(weights.splice)(predictor.splice(t)) - model.splice(weights.splice)(t)) }
+      sum(data.splice)(t => model.splice(weights.splice)(predictor.splice(t)) - model.splice(weights.splice)(t))
     }
   }
 
-  def evidence[T](c:Context)(observed:c.Expr[T=>T])(t1:c.Expr[T])(t2:c.Expr[T]) =
-    c.universe.reify[Boolean]{
+  def evidence[T](c: Context)(observed: c.Expr[T => T])(t1: c.Expr[T])(t2: c.Expr[T]) =
+    c.universe.reify[Boolean] {
       observed.splice(t1.splice) == observed.splice(t2.splice)
     }
 

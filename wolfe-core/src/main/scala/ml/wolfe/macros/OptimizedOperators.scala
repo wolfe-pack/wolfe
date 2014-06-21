@@ -16,12 +16,6 @@ object OptimizedOperators extends Operators {
   override def argmin[T, N: Ordering](dom: Iterable[T])(obj: T => N): T = macro argminImplNew[T, N]
   override def map[A, B](dom: Iterable[A])(mapper: A => B): Iterable[B] = macro mapImplNew[A, B]
 
-
-  override def argmax[T, N: Ordering](overWhereOf: Builder[T, N]): T = macro argmaxImpl[T, N]
-  override def argmin[T, N: Ordering](overWhereOf: Builder[T, N]): T = macro argminImpl[T, N]
-  override def map[T](overWhereOf: Builder[T, _]): Iterable[T] = macro mapImpl[T]
-
-
   def argmaxImplNew[T: c.WeakTypeTag, N: c.WeakTypeTag](c: Context)
                                                        (dom: c.Expr[Iterable[T]])
                                                        (obj: c.Expr[T => N])
@@ -38,30 +32,6 @@ object OptimizedOperators extends Operators {
     }
   }
 
-  def argmaxImpl[T: c.WeakTypeTag, N: c.WeakTypeTag](c: Context)
-                                                    (overWhereOf: c.Expr[Builder[T, N]])
-                                                    (ord: c.Expr[Ordering[N]]) = {
-    val helper = new ContextHelper[c.type](c) with OptimizedOperators[c.type]
-    val trees = helper.builderTrees(overWhereOf.tree)
-    if (c.enclosingMacros.size > 1) {
-      import c.universe._
-      val code: Tree = q"${ trees.over }.filter(${ trees.where }).maxBy(${ trees.of })"
-      c.Expr[T](code)
-    } else {
-      val result = helper.argmax(trees)
-      c.Expr[T](c.resetLocalAttrs(result.combined))
-    }
-  }
-
-  def argminImpl[T: c.WeakTypeTag, N: c.WeakTypeTag](c: Context)
-                                                    (overWhereOf: c.Expr[Builder[T, N]])
-                                                    (ord: c.Expr[Ordering[N]]) = {
-    import c.universe._
-    val helper = new ContextHelper[c.type](c) with OptimizedOperators[c.type]
-    val trees = helper.builderTrees(overWhereOf.tree)
-    val result: Tree = helper.argmax(trees, q"-1.0").combined
-    c.Expr[T](result)
-  }
 
   def argminImplNew[T: c.WeakTypeTag, N: c.WeakTypeTag](c: Context)
                                                        (dom: c.Expr[Iterable[T]])
@@ -74,17 +44,6 @@ object OptimizedOperators extends Operators {
     c.Expr[T](result)
   }
 
-
-  def mapImpl[T: c.WeakTypeTag](c: Context)
-                               (overWhereOf: c.Expr[Builder[T, _]]) = {
-    import c.universe._
-    val helper = new ContextHelper[c.type](c) with OptimizedOperators[c.type]
-
-    val trees = helper.builderTrees(overWhereOf.tree)
-
-    val result: Tree = helper.map(trees)
-    c.Expr[T](result)
-  }
 
   def mapImplNew[A: c.WeakTypeTag, B: c.WeakTypeTag](c: Context)
                                                     (dom: c.Expr[Iterable[A]])
@@ -118,9 +77,9 @@ trait LinearModelArgmaxCode[C <: Context] extends SymbolRepository[C] {
     case q"$f(${ _ })" =>
       f.symbol.annotations.find(_.tpe.typeSymbol == wolfeSymbols.logZByInference) match {
         case Some(annotation) => q"${ annotation.scalaArgs.head }($graph)"
-        case None => q"ml.wolfe.BeliefPropagation($graph,1)"
+        case None => q"ml.wolfe.BeliefPropagation.sumProduct(1)"
       }
-    case _ => q"ml.wolfe.BeliefPropagation($graph,1)"
+    case _ => q"ml.wolfe.BeliefPropagation.sumProduct(1)"
   }
 
 

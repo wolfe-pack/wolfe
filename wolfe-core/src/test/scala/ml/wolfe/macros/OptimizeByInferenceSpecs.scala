@@ -11,7 +11,6 @@ class OptimizeByInferenceSpecs extends WolfeSpec {
   import OptimizedOperators._
   import Wolfe._
 
-
   "An argmax operator" should {
 
     "return the argmax of a one-node sample space and atomic objective" in {
@@ -78,8 +77,8 @@ class OptimizeByInferenceSpecs extends WolfeSpec {
       def space = seqs(5, Range(0, 3))
       @OptimizeByInference(BeliefPropagation(_, 1))
       def potential(seq: Seq[Int]) = {
-        val local = sum { over(0 until seq.size) of (i => i * I(seq(i) == i)) }
-        val pairs = sum { over(0 until seq.size - 1) of (i => I(seq(i) == seq(i + 1))) }
+        val local = sum (0 until seq.size) (i => i * I(seq(i) == i))
+        val pairs = sum (0 until seq.size - 1)(i => I(seq(i) == seq(i + 1)))
         local + pairs
       }
       val actual = argmax(space) { potential }

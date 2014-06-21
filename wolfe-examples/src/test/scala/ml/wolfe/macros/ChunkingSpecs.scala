@@ -47,7 +47,7 @@ class ChunkingSpecs extends WolfeSpec {
       //the predictor given some observed instance
       def predict(s: Sentence) = argmax(Sentences filter evidence(s)) { model(w) }
 
-      val predictedTrain = map { over(train) using predict }
+      val predictedTrain = map(train) { predict }
       val evalTrain = Evaluator.evaluate(train.flatMap(_.tokens), predictedTrain.flatMap(_.tokens))(_.chunk)
       evalTrain.f1 should be(0.83 +- 0.01)
 

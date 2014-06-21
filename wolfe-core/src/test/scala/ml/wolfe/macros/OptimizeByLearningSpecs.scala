@@ -11,7 +11,6 @@ class OptimizeByLearningSpecs extends WolfeSpec {
   import OptimizedOperators._
   import Wolfe._
 
-
   "An argmax operator" should {
     "return the argmax of the MAP log-likelihood (perceptron)" in {
       implicit val space = Range(0, 5)
@@ -27,7 +26,7 @@ class OptimizeByLearningSpecs extends WolfeSpec {
       def features(i: Int) = oneHot(i)
       def model(w: Vector)(i: Int) = w dot features(i)
       def perceptronLoss(i: Int)(w: Vector) = max(space) { model(w) } - model(w)(i)
-      val w = argmin(vectors) {perceptronLoss(3) }
+      val w = argmin(vectors) { perceptronLoss(3) }
       w should be(Vector(0 -> -0.2, 1 -> -0.2, 2 -> -0.2, 3 -> 0.8, 4 -> -0.2))
     }
 
@@ -35,9 +34,9 @@ class OptimizeByLearningSpecs extends WolfeSpec {
       implicit val space = Range(0, 5)
       def features(i: Int) = oneHot(i)
       def model(w: Vector)(i: Int) = w dot features(i)
-      @OptimizeByLearning(new OnlineTrainer(_, new AdaGrad(),1))
+      @OptimizeByLearning(new OnlineTrainer(_, new AdaGrad(), 1))
       def mapLLAda(i: Int)(w: Vector) = model(w)(i) - max(space) { model(w) }
-      @OptimizeByLearning(new OnlineTrainer(_, new Perceptron,1))
+      @OptimizeByLearning(new OnlineTrainer(_, new Perceptron, 1))
       def mapLLPerceptron(i: Int)(w: Vector) = model(w)(i) - max(space) { model(w) }
       val wAda = argmax(vectors) { mapLLAda(3) }
       val wPerceptron = argmax(vectors) { mapLLPerceptron(3) }
@@ -51,9 +50,9 @@ class OptimizeByLearningSpecs extends WolfeSpec {
       val train = Range(0, 5) map (i => Data(i, i))
       def features(i: Data) = oneHot(i.x -> i.y)
       def model(w: Vector)(i: Data) = w dot features(i)
-      def mapLL(i: Data)(w: Vector) = model(w)(i) - max { over[Data] of model(w) st (_.x == i.x) }
-      def total(w: Vector) = sum { over(train) of { i => mapLL(i)(w) } }
-      val w = argmax { over[Vector] of total }
+      def mapLL(i: Data)(w: Vector) = model(w)(i) - max(space where (_.x == i.x))(model(w))
+      def total(w: Vector) = sum(train) { i => mapLL(i)(w) }
+      val w = argmax(vectors)(total)
       for (i <- range) w(i -> i) should be(0.8)
       for (i <- range; j <- range; if i != j) w(i -> j) should be(-0.2)
     }
