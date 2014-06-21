@@ -65,6 +65,8 @@ class GradientCalculatorSpecs extends WolfeSpec {
       v should be(2.0)
     }
 
+
+
     "return a subgradient of a max expression formulated using argmax " in {
       import OptimizedOperators._
       case class Data(x: Symbol, y: Symbol)
@@ -74,6 +76,17 @@ class GradientCalculatorSpecs extends WolfeSpec {
       val (v, g) = GradientCalculator.valueAndgradientAt(f, oneHot('X2 -> 'Y3, 2.0))
       g should be(oneHot('X2 -> 'Y3, 1.0))
       v should be(2.0)
+    }
+
+    "return a gradient of a log partition function expression using logZ operator" in {
+      import OptimizedOperators._
+      def space = 0 until 4
+      def f(w: Vector) = logZ(space)(d => oneHot(d, 1.0) dot w)
+      val (v, g) = GradientCalculator.valueAndgradientAt(f, oneHot(1, math.log(2.0)))
+      val Z = 1.0 + 2.0 + 1.0 + 1.0
+      val expected = Vector(0 -> 1/Z, 1 -> 2/Z, 2 -> 1/Z, 3 -> 1/Z)
+      g should be (expected)
+      v should be (math.log(Z) +- 0.0001)
     }
 
 
