@@ -2,11 +2,19 @@ package ml.wolfe.macros
 
 import ml.wolfe.{Wolfe, WolfeSpec}
 import Wolfe._
+import org.scalautils.Equality
 
 /**
  * @author Sebastian Riedel
  */
 class GradientCalculatorSpecs extends WolfeSpec {
+
+  implicit val vectorEq = new Equality[Vector] {
+    def areEqual(a: Wolfe.Vector, b: Any) = b match {
+      case v:Wolfe.Vector => a.keySet == v.keySet && a.keySet.forall(k => math.abs(a(k) - v(k)) < 0.0001)
+      case _ => false
+    }
+  }
 
   "A gradient calculator" should {
     "return 0 gradient for a constant function" in {
@@ -78,15 +86,30 @@ class GradientCalculatorSpecs extends WolfeSpec {
       v should be(2.0)
     }
 
-    "return a gradient of a log partition function expression using logZ operator" in {
+    "return the gradient of a log partition function expression using logZ operator" in {
       import OptimizedOperators._
       def space = 0 until 4
       def f(w: Vector) = logZ(space)(d => oneHot(d, 1.0) dot w)
       val (v, g) = GradientCalculator.valueAndgradientAt(f, oneHot(1, math.log(2.0)))
       val Z = 1.0 + 2.0 + 1.0 + 1.0
-      val expected = Vector(0 -> 1/Z, 1 -> 2/Z, 2 -> 1/Z, 3 -> 1/Z)
-      g should be (expected)
-      v should be (math.log(Z) +- 0.0001)
+      val expected = Vector(0 -> 1 / Z, 1 -> 2 / Z, 2 -> 1 / Z, 3 -> 1 / Z)
+      g should be(expected)
+      v should be(math.log(Z) +- 0.0001)
+    }
+
+    "return the gradient of a log partition function expression of a markov chain using logZ operator" in {
+      import OptimizedOperators._
+      def space = seqs(4, bools)
+      def feat(seq: Seq[Boolean]) = sum(0 until seq.size - 1) { i => oneHot(seq(i) -> seq(i + 1)) }
+      def model(w: Vector)(seq: Seq[Boolean]) = feat(seq) dot w
+      val weights = Vector((false, false) -> 1.0, (false, true) -> 2.0, (true, false) -> -3.0, (true, true) -> 0.0)
+      def f(w: Vector) = logZ(space) { model(w) }
+      val (v, g) = GradientCalculator.valueAndgradientAt(f, weights)
+      val Z = (space map (s => math.exp(model(weights)(s)))).sum
+      val expectations = (space map (s => feat(s) * (math.exp(model(weights)(s)) / Z))).sum
+      v should be(math.log(Z) +- 0.0001)
+      g should equal (expectations)
+
     }
 
 
