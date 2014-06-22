@@ -69,7 +69,7 @@ class CodeRepositorySpecs extends WolfeSpec {
       val predictor = (t:Int) => t
       val w = oneHot(1)
       val actual = CodeRepository.inlineMacro(Library.perceptronLoss(data)(model)(predictor)(w),1)
-      actual should be ("Some(OptimizedOperators.sum[T, Double](Wolfe.over[T](data).of[Double](((t: T) => model.apply(w).apply(predictor.apply(t)).-(model.apply(w).apply(t)))))(Numeric.DoubleIsFractional))")
+      actual should be ("Some(OptimizedOperators.sum[T, Double](data)(((t: T) => model.apply(w).apply(predictor.apply(t)).-(model.apply(w).apply(t))))(Numeric.DoubleIsFractional))")
     }
 
 

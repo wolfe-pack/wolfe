@@ -64,8 +64,8 @@ class OptimizeByLearningSpecs extends WolfeSpec {
       def model(w: Vector)(i: Int) = w dot features(i)
       @OptimizeByLearning(new BatchTrainer(_, new LBFGS()))
       def ll(data: Seq[Int])(w: Vector) = sum(data) { i => model(w)(i) - logZ(space) { model(w) } }
-//      val w = argmax(vectors) { ll(0 until n) }
-//      println(w)
+      val w = argmax(vectors) { ll(0 until n) }
+      println(w)
       //w should be(Vector(0 -> -0.2, 1 -> -0.2, 2 -> -0.2, 3 -> 0.8, 4 -> -0.2))
 
     }
