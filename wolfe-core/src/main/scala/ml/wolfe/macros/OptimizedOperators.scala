@@ -228,7 +228,7 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
   def argmaxByLearning(trees: BuilderTrees, scaling: Tree = q"1.0"): Tree = {
     if (trees.where != EmptyTree)
       context.error(context.enclosingPosition, "Can't learn with constraints on weights yet: " + trees.where)
-    val q"($arg) => $rhs" = unwrapSingletonBlocks(trees.of)
+    val q"($arg) => $rhs" = simplifyBlock(trees.of)
     def toSum(tree: Tree): BuilderTrees = tree match {
       case s@Sum(BuilderTrees(over, where, of, _, _)) => BuilderTrees(over, where, of)
       case s => inlineOnce(tree) match {
