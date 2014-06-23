@@ -66,8 +66,7 @@ class OptimizeByLearningSpecs extends WolfeSpec {
       def ll(data: Seq[Int])(w: Vector) = sum(data) { i => model(w)(i) - logZ(space) { model(w) } }
       val data = Seq(0, 1, 1, 2, 3, 4)
       val w = argmax(vectors) { ll(data) }
-      def prob(w:Vector)(i:Int) = math.exp(model(w)(i) - logZ(space)(model(w)))
-      val mu = BruteForceOperators.expect(space)(prob(w))(features)
+      val mu = BruteForceOperators.expect(space)(model(w))(features)
       val empirical = sum(data)( i => features(i) * (1.0 / data.size) )
       //check if moments match!
       mu should equal (empirical)
