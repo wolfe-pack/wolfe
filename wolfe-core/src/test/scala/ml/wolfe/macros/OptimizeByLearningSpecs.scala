@@ -64,10 +64,13 @@ class OptimizeByLearningSpecs extends WolfeSpec {
       def model(w: Vector)(i: Int) = w dot features(i)
       @OptimizeByLearning(new BatchTrainer(_, new LBFGS()))
       def ll(data: Seq[Int])(w: Vector) = sum(data) { i => model(w)(i) - logZ(space) { model(w) } }
-      val w = argmax(vectors) { ll(0 until n) }
-      println(w)
-      //w should be(Vector(0 -> -0.2, 1 -> -0.2, 2 -> -0.2, 3 -> 0.8, 4 -> -0.2))
-
+      val data = Seq(0, 1, 1, 2, 3, 4)
+      val w = argmax(vectors) { ll(data) }
+      def prob(w:Vector)(i:Int) = math.exp(model(w)(i) - logZ(space)(model(w)))
+      val mu = BruteForceOperators.expect(space)(prob(w))(features)
+      val empirical = sum(data)( i => features(i) * (1.0 / data.size) )
+      //check if moments match!
+      mu should equal (empirical)
     }
 
 
