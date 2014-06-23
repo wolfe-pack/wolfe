@@ -16,7 +16,10 @@ trait Operators {
   def max[T, N: Ordering](dom:Iterable[T])(obj:T => N) = dom.map(obj).max
   def map[A,B](dom:Iterable[A])(mapper:A => B):Iterable[B] = dom.map(mapper)
 
-  def expect[T](dom:Iterable[T])(prob:T=>Double)(stats:T=>Vector) = sum(dom){x => stats(x) * prob(x)}
+  def expect[T](dom:Iterable[T])(logLinear:T=>Double)(stats:T=>Vector) = {
+    val lZ = logZ(dom)(logLinear)
+    sum(dom){x => stats(x) * math.exp(logLinear(x) - lZ) }
+  }
 
 
 }
