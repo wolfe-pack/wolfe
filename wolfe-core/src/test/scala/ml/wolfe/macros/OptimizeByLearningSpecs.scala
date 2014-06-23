@@ -1,6 +1,6 @@
 package ml.wolfe.macros
 
-import ml.wolfe.{BruteForceOperators, Wolfe, WolfeSpec}
+import ml.wolfe.{Learn, BruteForceOperators, Wolfe, WolfeSpec}
 import cc.factorie.optimize._
 
 /**
@@ -34,9 +34,9 @@ class OptimizeByLearningSpecs extends WolfeSpec {
       implicit val space = Range(0, 5)
       def features(i: Int) = oneHot(i)
       def model(w: Vector)(i: Int) = w dot features(i)
-      @OptimizeByLearning(new OnlineTrainer(_, new AdaGrad(), 1))
+      @OptimizeByLearning(Learn.online(1,new AdaGrad()))
       def mapLLAda(i: Int)(w: Vector) = model(w)(i) - max(space) { model(w) }
-      @OptimizeByLearning(new OnlineTrainer(_, new Perceptron, 1))
+      @OptimizeByLearning(Learn.online(1,new Perceptron))
       def mapLLPerceptron(i: Int)(w: Vector) = model(w)(i) - max(space) { model(w) }
       val wAda = argmax(vectors) { mapLLAda(3) }
       val wPerceptron = argmax(vectors) { mapLLPerceptron(3) }
@@ -62,7 +62,7 @@ class OptimizeByLearningSpecs extends WolfeSpec {
       val space = Range(0, n)
       def features(i: Int) = oneHot(i)
       def model(w: Vector)(i: Int) = w dot features(i)
-      @OptimizeByLearning(new BatchTrainer(_, new LBFGS()))
+      @OptimizeByLearning(Learn.batch())
       def ll(data: Seq[Int])(w: Vector) = sum(data) { i => model(w)(i) - logZ(space) { model(w) } }
       val data = Seq(0, 1, 1, 2, 3, 4)
       val w = argmax(vectors) { ll(data) }
