@@ -9,12 +9,6 @@ import org.scalautils.Equality
  */
 class GradientCalculatorSpecs extends WolfeSpec {
 
-  implicit val vectorEq = new Equality[Vector] {
-    def areEqual(a: Wolfe.Vector, b: Any) = b match {
-      case v:Wolfe.Vector => a.keySet == v.keySet && a.keySet.forall(k => math.abs(a(k) - v(k)) < 0.0001)
-      case _ => false
-    }
-  }
 
   "A gradient calculator" should {
     "return 0 gradient for a constant function" in {
