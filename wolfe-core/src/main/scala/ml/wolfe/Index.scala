@@ -11,10 +11,10 @@ import gnu.trove.map.hash.TObjectIntHashMap
  * @author Sebastian Riedel
  */
 trait Index {
-  def size:Int
-  def apply(key:Any):Int = index(key)
-  def index(key:Any):Int
-  def inverse():GenMap[Int,Any]
+  def size: Int
+  def apply(key: Any): Int = index(key)
+  def index(key: Any): Int
+  def inverse(): GenMap[Int, Any]
 }
 
 @SerialVersionUID(100L)
@@ -62,7 +62,7 @@ class SimpleIndex extends Serializable with Index {
 trait FactorieVectorBuilder {
   this: Index =>
 
-  private val sparseVectorCache = new mutable.HashMap[Wolfe.Vector, FactorieVector]()
+  private val sparseVectorCache         = new mutable.HashMap[Wolfe.Vector, FactorieVector]()
   private val oneHotFactorieVectorCache = new mutable.HashMap[(Int, Double), FactorieVector]()
 
   def toCachedFactorieOneHotVector(component: Any, value: Double) = {
@@ -91,7 +91,7 @@ trait FactorieVectorBuilder {
   def vectorToString(vector: FactorieVector, sep: String = "\n") = {
     val inv = inverse()
     val lines = for (i <- vector.activeDomain.toSeq; if vector(i) != 0.0) yield {
-      f"${ inv(i)}%20s ${ vector(i) }%5.2f"
+      f"${ inv(i) }%20s ${ vector(i) }%5.2f"
     }
     lines.mkString(sep)
   }

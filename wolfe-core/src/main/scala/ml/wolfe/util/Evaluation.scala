@@ -1,6 +1,6 @@
 package ml.wolfe.util
 
-import ml.wolfe.util.NLP.Sentence
+import ml.wolfe.util.NLP.{Label, Sentence, Token}
 import scala.collection.mutable.ListBuffer
 
 case class EvaluationSummary(evaluations:Map[Any,Evaluation]) {
@@ -54,33 +54,30 @@ case class Mention(start: Int, end: Int, label: String) {
 object MentionEvaluator {
   import scala.language.implicitConversions
 
-  def evaluate[T <: Sentence](target: Iterable[T], guess: Iterable[T]): Evaluation = {
-    val evaluations = for ((t, g) <- target.view zip guess.view) yield evaluateMentions(t, g)
+  def evaluate[T <: Sentence](target: Iterable[T], guess: Iterable[T], getLabel: Token=>Label = _.tag): Evaluation = {
+    val evaluations = for ((t, g) <- target.view zip guess.view) yield
+      evaluateMentions( collectMentions(t, getLabel), collectMentions(g, getLabel) )
     val reduced = evaluations.foldLeft(Evaluation())(_ + _)
     reduced
   }
 
-
-  implicit def collectMentions[T <: Sentence](t: T): Set[Mention] = {
+  implicit def collectMentions[T <: Sentence](t: T, getLabel: Token=>Label): Set[Mention] = {
     t.tokens.zipWithIndex.foldLeft(ListBuffer[Mention]())((mentions: ListBuffer[Mention], tokenWithIndex) => {
       val (token, ix) = tokenWithIndex
-      val label = token.tag.label.name
+      val label = getLabel(token).label.name
       val Array(prefix, labelType) = if (label == "O") Array("O", "O") else label.split("-")
 
       prefix match {
         case "O" => mentions
-        case "B" => mentions += Mention(ix, ix, labelType)
+        case "B" => mentions :+ Mention(ix, ix, labelType)
         case "I" =>
-          if (mentions.isEmpty) mentions += Mention(ix, ix, labelType)
+          if (mentions.isEmpty) mentions :+ Mention(ix, ix, labelType)
           else {
             val last = mentions.last
-            if (last.end == ix && last.label.split("-").last == labelType) mentions.last.inc
-            else mentions += Mention(ix, ix, labelType)
+            if (last.end == ix - 1 && last.label == labelType) mentions.updated(mentions.length - 1, mentions.last.inc)
+            else mentions :+ Mention(ix, ix, labelType)
           }
-      }
-
-      mentions
-    }).toSet
+    }}).toSet
   }
 
   def evaluateMentions(target: Set[Mention], guess: Set[Mention]): Evaluation = {

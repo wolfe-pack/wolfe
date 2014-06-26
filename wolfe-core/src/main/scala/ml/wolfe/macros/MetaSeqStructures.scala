@@ -45,8 +45,11 @@ trait MetaSeqStructures[C<:Context] {
 
           def observe(value:$argType) {
             if (_elements == null || _elements.length != value.size) setLength(value.size)
-            for (i <- value.indices) _elements(i).observe(value(i))
+            value.indices.foreach { (i:Int) =>  _elements(i).observe(value(i)) }
           }
+          type Edges = Unit
+          def createEdges(factor: ml.wolfe.FactorGraph.Factor): Edges = {}
+
 
           $lengthInitializer
         }

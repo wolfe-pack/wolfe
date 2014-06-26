@@ -86,7 +86,6 @@ object Wolfe extends SampleSpaceDefs
 
 trait StatsDefs {
   def oneHot(key: Any, value: Double = 1.0): Wolfe.Vector = Wolfe.Vector(key -> value)
-  def vector(keyValue: (Any, Double)*): Wolfe.Vector = keyValue.toMap
 
 }
 
@@ -94,23 +93,24 @@ trait VectorDefs {
 
   //type Vector = Map[Any, Double]
 
-  class Vector(underlying: Map[Any, Double]) extends MapProxy[Any,Double] {
+
+  class Vector(underlying: Map[Any, Double]) extends scala.collection.immutable.MapProxy[Any,Double] {
     val self = underlying withDefaultValue 0.0
-//    def apply(x: Any) = self(x)
-//    def get(x: Any) = self.get(x)
 
     def +(that: Vector) = {
       val keys = self.keySet ++ that.self.keySet
       val result = keys map (k => k -> (self.getOrElse(k, 0.0) + that.self.getOrElse(k, 0.0)))
       new Vector(result.toMap)
     }
+    def +(that: Vector, scale:Double) = {
+      val keys = self.keySet ++ that.self.keySet
+      val result = keys map (k => k -> (self.getOrElse(k, 0.0) + scale * that.self.getOrElse(k, 0.0)))
+      new Vector(result.toMap)
+    }
     def dot(that: Vector) = VectorNumeric.dot(this, that)
     def norm = VectorNumeric.norm(this)
     def *(scale: Double) = new Vector(self.mapValues(_ * scale))
     def *(vector: Vector) = new Vector(vector.self.map({ case (k, v) => k -> v * vector(k) }))
-//    override def equals(p1: scala.Any) = p1 match {
-//      case v:Vector => v.self == this.self
-//    }
     override def toString() = s"""Vector(${underlying.map(p => p._1 + " -> " + p._2 ).mkString(", ")})"""
     override def equals(that: Any) = that match {
       case v:Vector =>
@@ -123,16 +123,19 @@ trait VectorDefs {
       new Vector(map.toMap)
     }
     def x(that:Vector) = outer(that)
+    override def filter(p: ((Any, Double)) => Boolean):Vector = new Vector(underlying.filter(p))
+    override def filterNot(p: ((Any, Double)) => Boolean):Vector = new Vector(underlying.filterNot(p))
+    override def groupBy[K](f: ((Any, Double)) => K):Map[K,Vector] = super.groupBy(f).mapValues(m => new Vector(m))
+    override def filterKeys(p: (Any) => Boolean):Vector = new Vector(underlying.filterKeys(p))
+    def filterKeysWith(p: PartialFunction[Any,Boolean]):Vector =
+      new Vector(underlying.filterKeys(p.orElse[Any,Boolean](PartialFunction(x => false))))
+
+    
   }
 
   object Vector {
-    def apply(elems: (Any, Double)*) = Map(elems: _*)
+    def apply(elems: (Any, Double)*) = new Vector(Map(elems: _*))
   }
-
-
-  def ft(key: Any, value: Double = 1.0): Vector = Map(key -> value)
-  def ft(key: Any, value: Boolean): Vector = ft(key, if (value) 1.0 else 0.0)
-  def feat(key: Any*) = Map(key.toSeq.asInstanceOf[Any] -> 1.0)
 
   val VectorZero = new Vector(Map.empty[Any, Double])
 
@@ -256,7 +259,7 @@ trait SampleSpaceDefs {
   }
 
   def seqs[A](dom: Iterable[A], maxLength: Int = 1000): Iterable[Seq[A]] = {
-    Range(0, maxLength + 1).view.flatMap(seqs(_, dom))
+    Range(0, maxLength + 1).view.flatMap(seqs(_, dom)).toList
   }
 
   def seqs[A](doms: Seq[Iterable[A]]): Iterable[Seq[A]] = {
@@ -302,6 +305,14 @@ trait SampleSpaceDefs {
   implicit def unwrap5[A1, A2, A3, A4, A5, B](f: (A1, A2, A3, A4, A5) => B): ((A1, A2, A3, A4, A5)) => B =
     p => f(p._1, p._2, p._3, p._4, p._5)
 
+//  class Doubles(maxCount:Double = Double.PositiveInfinity) extends Iterable[Double] {
+//
+//    override def take(n: Int) = new Doubles(n.toDouble)
+//    def iterator = {
+//      var count = 0
+//      Iterator.continually({ count += 1; Random.nextGaussian()}).takeWhile()
+//    }
+//  }
 
 }
 
@@ -321,11 +332,18 @@ trait DefaultValues {
 trait Annotations {
   class OptimizeByLearning(trainer: WeightsSet => Trainer) extends StaticAnnotation
   class OptimizeByInference(inference: FactorGraph => Unit) extends StaticAnnotation
+  class LogZByInference(inference: FactorGraph => Unit) extends StaticAnnotation
   class Atomic extends StaticAnnotation
+  class Potential(construct: _ => ml.wolfe.fg.Potential) extends StaticAnnotation
 
 }
 
 trait ProblemBuilder {
+
+  implicit class RichIterable[T](iterable:Iterable[T]) {
+    def where(pred:T => Boolean) = iterable filter pred
+    def st(pred:T => Boolean) = iterable filter pred
+  }
 
   case class Builder[T, N](dom: Iterable[T],
                            filter: T => Boolean = (_: T) => true,
@@ -341,8 +359,8 @@ trait ProblemBuilder {
   }
 
 
-  implicit def toOverWhereOf[T, N](obj: T => N) = Builder[T, N](Nil, obj = obj)
-  implicit def toOverWhereOf[T](dom: Iterable[T]) = Builder[T, Double](dom, obj = (_: T) => 0.0)
+//  implicit def toOverWhereOf[T, N](obj: T => N) = Builder[T, N](Nil, obj = obj)
+//  implicit def toOverWhereOf[T](dom: Iterable[T]) = Builder[T, Double](dom, obj = (_: T) => 0.0)
   //  implicit def toOverWhereOf[T](obj: T => Double) = OverWhereOf[T,Double](Nil, obj = obj)
 
   def over[T](implicit over: Iterable[T]) = Builder(over, (_: T) => true, (_: T) => 0.0)

@@ -28,7 +28,7 @@ trait StructuredFactor[T] {
    * @return the score of the structures current setting under the factor's potential.
    */
   def potential(): Double = {
-    factors.map(_.scoreCurrentSetting).sum
+    factors.map(_.potential.valueForCurrentSetting()).sum
   }
 
   /**

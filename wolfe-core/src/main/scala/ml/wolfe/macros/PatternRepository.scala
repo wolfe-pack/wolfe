@@ -21,9 +21,10 @@ trait PatternRepository[C <: Context] extends SymbolRepository[C] with CodeRepos
     }
   }
 
-  class AppliedOperator(classes: Symbol => Boolean, wolfeSymbol: Symbol, scalaSymbol: Symbol) {
+  class AppliedOperator(classes: Symbol => Boolean, wolfeSymbol: Symbol => Boolean, scalaSymbol: Symbol) {
     def unapply(tree: Tree): Option[BuilderTrees] = {
       tree match {
+        //scala style
         case q"$op[$opType]($impArg)" if op.symbol == scalaSymbol && classes(opType.symbol) => op match {
           case q"$map[..${ _ }]($obj)(${ _ }).${ _ }" if map.symbol == scalaSymbols.map => map match {
             case q"$filter($where).map" if filter.symbol == scalaSymbols.filter =>
@@ -42,12 +43,25 @@ trait PatternRepository[C <: Context] extends SymbolRepository[C] with CodeRepos
             Some(BuilderTrees(dom, where, obj, implicitArg = impArg))
           case dom =>
             Some(BuilderTrees(dom, EmptyTree, obj, implicitArg = impArg))
-//          case _ => None
+          //          case _ => None
 
         }
-        case q"$op[$domType,$opType]($overWhereOf)($impArg)" if op.symbol == wolfeSymbol && classes(opType.symbol) =>
+        //builder-type style
+        case q"$op[$domType,$opType]($overWhereOf)($impArg)" if wolfeSymbol(op.symbol) && classes(opType.symbol) =>
           val trees = builderTrees(overWhereOf).copy(implicitArg = impArg)
           Some(trees)
+
+        //new simplified style
+        case q"$op[$domType,$opType]($overWhere)($of)($impArg)" if wolfeSymbol(op.symbol) && classes(opType.symbol) =>
+          val trees = builderTrees(overWhere, of).copy(implicitArg = impArg)
+          Some(trees)
+
+        //simplified style w/o implicit args
+        case q"$op[$domType]($overWhere)($of)" if wolfeSymbol(op.symbol) =>
+          val trees = builderTrees(overWhere, of)
+          Some(trees)
+
+
         case _ => None
       }
     }
@@ -63,37 +77,39 @@ trait PatternRepository[C <: Context] extends SymbolRepository[C] with CodeRepos
     }
   }
 
-  object DoubleMax extends AppliedOperator(Set(scalaSymbols.doubleClass), wolfeSymbols.max, scalaSymbols.max) {
+  object LogZ extends AppliedOperator(Set(scalaSymbols.doubleClass), wolfeSymbols.logZs, null)
 
-//    def sameFunction(f1:Tree, f2:Tree)
+  object DoubleMax extends AppliedOperator(Set(scalaSymbols.doubleClass), wolfeSymbols.maxes, scalaSymbols.max) {
 
-    def collapseCurriedFunction(tree:Tree) = tree match {
-      case Function(List(arg1),Apply(f,List(arg2))) if arg1.symbol == arg2.symbol => f
+    //    def sameFunction(f1:Tree, f2:Tree)
+
+    def collapseCurriedFunction(tree: Tree) = tree match {
+      case Function(List(arg1), Apply(f, List(arg2))) if arg1.symbol == arg2.symbol => f
       case _ => tree
     }
 
-    def normalizeFunction(f:Tree) = collapseCurriedFunction(unwrapSingletonBlocks(f))
+    def normalizeFunction(f: Tree) = collapseCurriedFunction(unwrapSingletonBlocks(f))
 
-    def isArgMaxWithFunction(term:Tree, function:Tree):Option[BuilderTrees] = term match {
+    def isArgMaxWithFunction(term: Tree, function: Tree): Option[BuilderTrees] = term match {
       case ArgmaxOperator(trees) if normalizeFunction(trees.of).equalsStructure(normalizeFunction(function)) =>
         Some(trees)
       case _ => inlineOnce(term) match {
-        case Some(inlined) => isArgMaxWithFunction(inlined,function)
+        case Some(inlined) => isArgMaxWithFunction(inlined, function)
         case _ => None
       }
     }
 
-    override def unapply(tree:Tree) = super.unapply(tree) match {
-      case s:Some[_] => s
+    override def unapply(tree: Tree) = super.unapply(tree) match {
+      case s: Some[_] => s
       case None => tree match {
-        case Apply(f,List(arg)) => isArgMaxWithFunction(arg,f)
+        case Apply(f, List(arg)) => isArgMaxWithFunction(arg, f)
         case _ => None
       }
     }
   }
 
   object AlwaysSame {
-    def unapply(pair:(Tree,Tree)) = {
+    def unapply(pair: (Tree, Tree)) = {
       pair._1.equalsStructure(pair._2)
     }
   }
@@ -132,18 +148,18 @@ trait PatternRepository[C <: Context] extends SymbolRepository[C] with CodeRepos
   object ApplyDoublePlus extends InfixApply(scalaSymbols.doublePluses)
   object ApplyPlus extends InfixApply(scalaSymbols.doublePluses ++ wolfeSymbols.vectorPluses)
   object ApplyDoubleMinus extends InfixApply(scalaSymbols.doubleMinuses)
-  object DoubleSum extends AppliedOperator(Set(scalaSymbols.doubleClass), wolfeSymbols.sum, scalaSymbols.sum)
-  object Sum extends AppliedOperator(Set(scalaSymbols.doubleClass, wolfeSymbols.vectorType), wolfeSymbols.sum, scalaSymbols.sum)
-  object ArgmaxOperator extends AppliedOperator(Set(scalaSymbols.doubleClass), wolfeSymbols.argmax, scalaSymbols.maxBy)
-  object MapOperator extends AppliedOperator(_ => true, wolfeSymbols.map, scalaSymbols.map)
+  object DoubleSum extends AppliedOperator(Set(scalaSymbols.doubleClass), wolfeSymbols.sums, scalaSymbols.sum)
+  object Sum extends AppliedOperator(Set(scalaSymbols.doubleClass, wolfeSymbols.vectorType), wolfeSymbols.sums, scalaSymbols.sum)
+  object ArgmaxOperator extends AppliedOperator(Set(scalaSymbols.doubleClass), wolfeSymbols.argmaxes, scalaSymbols.maxBy)
+  object MapOperator extends AppliedOperator(_ => true, wolfeSymbols.maps, scalaSymbols.map)
   object FlattenedPlus extends Flattened(ApplyPlus)
 
 
   case class BuilderTrees(over: Tree = EmptyTree, where: Tree = EmptyTree, of: Tree = EmptyTree,
-                          using: Tree = EmptyTree, implicitArg:Tree = EmptyTree)
+                          using: Tree = EmptyTree, implicitArg: Tree = EmptyTree)
 
   def builderTrees(tree: Tree): BuilderTrees = tree match {
-    case q"$of[${_}]($obj)" if of.symbol == wolfeSymbols.of =>
+    case q"$of[${ _ }]($obj)" if of.symbol == wolfeSymbols.of =>
       val q"$owo.of" = of
       builderTrees(owo).copy(of = obj)
     case q"$st($filter)" if st.symbol == wolfeSymbols.st =>
@@ -163,7 +179,17 @@ trait PatternRepository[C <: Context] extends SymbolRepository[C] with CodeRepos
         context.error(context.enclosingPosition, "Can't analyze over-where-of clause " + tree)
         BuilderTrees()
     }
-
   }
+
+  def builderTrees(dom: Tree, obj: Tree, using: Tree = EmptyTree) = dom match {
+    case q"$iterable.filter($pred)" =>
+      BuilderTrees(iterable, pred, obj, using, EmptyTree)
+    case q"ml.wolfe.Wolfe.RichIterable[${ _ }]($iterable).where($pred)" =>
+      BuilderTrees(iterable, pred, obj, using, EmptyTree)
+    case q"ml.wolfe.Wolfe.RichIterable[${ _ }]($iterable).st($pred)" =>
+      BuilderTrees(iterable, pred, obj, using, EmptyTree)
+    case _ => BuilderTrees(dom, EmptyTree, obj, using, EmptyTree)
+  }
+
 
 }

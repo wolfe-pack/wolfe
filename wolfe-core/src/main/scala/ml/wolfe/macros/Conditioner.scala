@@ -73,7 +73,7 @@ trait Conditioner[C <: Context] extends MetaStructures[C] {
             case ((q"${_}.$copyDefault1", q"${_}.$copyDefault2"), field)
               if copyDefault1.encoded.startsWith("copy$default$") && copyDefault2.encoded.startsWith("copy$default$") =>
               //observe!
-              val code = q"$structure.${field.name}.observe($select2.${field.name})"
+              val code = q"$structure.${field.name.toTermName}.observe($select2.${field.name.toTermName})"
               Some(code)
             case ((arg1, arg2), field) =>
               conditioningPair(arg1, arg2, matcher)
@@ -162,7 +162,7 @@ object Conditioner {
 
   import scala.language.experimental.macros
 
-  def conditioned[T](sampleSpace: Iterable[T])(condition: T => Boolean) = macro conditionedImpl[T]
+  def conditioned[T](sampleSpace: Iterable[T])(condition: T => Boolean):Structure[T] = macro conditionedImpl[T]
 
   def conditionedImpl[T: c.WeakTypeTag](c: Context)(sampleSpace: c.Expr[Iterable[T]])
                                        (condition: c.Expr[T => Boolean]) = {

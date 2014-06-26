@@ -1,6 +1,6 @@
 package ml.wolfe.macros
 
-import ml.wolfe.{FactorGraph, BruteForceOperators, Wolfe, Operators}
+import ml.wolfe.{Wolfe, Operators}
 import scala.reflect.macros.Context
 import Wolfe._
 import org.scalautils.{Bad, Good}
@@ -12,60 +12,94 @@ object OptimizedOperators extends Operators {
 
   import scala.language.experimental.macros
 
-  override def argmax[T, N: Ordering](overWhereOf: Builder[T, N]): T = macro argmaxImpl[T, N]
-  override def argmin[T, N: Ordering](overWhereOf: Builder[T, N]): T = macro argminImpl[T, N]
-  override def map[T](overWhereOf: Builder[T, _]): Iterable[T] = macro mapImpl[T]
+  override def argmax[T, N: Ordering](dom: Iterable[T])(obj: T => N): T = macro argmaxImplNew[T, N]
+  //  override def logZ[T](dom: Iterable[T])(obj: T => Double): Double = macro logZImpl[T]
+  override def argmin[T, N: Ordering](dom: Iterable[T])(obj: T => N): T = macro argminImplNew[T, N]
+  override def map[A, B](dom: Iterable[A])(mapper: A => B): Iterable[B] = macro mapImplNew[A, B]
 
-
-  def argmaxImpl[T: c.WeakTypeTag, N: c.WeakTypeTag](c: Context)
-                                                    (overWhereOf: c.Expr[Builder[T, N]])
-                                                    (ord: c.Expr[Ordering[N]]) = {
+  def argmaxImplNew[T: c.WeakTypeTag, N: c.WeakTypeTag](c: Context)
+                                                       (dom: c.Expr[Iterable[T]])
+                                                       (obj: c.Expr[T => N])
+                                                       (ord: c.Expr[Ordering[N]]) = {
     val helper = new ContextHelper[c.type](c) with OptimizedOperators[c.type]
+    val trees = helper.builderTrees(dom.tree, obj.tree)
+    //do not replace the code if inside another macro
     if (c.enclosingMacros.size > 1) {
       import c.universe._
-      val trees = helper.builderTrees(overWhereOf.tree)
       val code: Tree = q"${ trees.over }.filter(${ trees.where }).maxBy(${ trees.of })"
       c.Expr[T](code)
     } else {
-      val result = helper.argmax(overWhereOf.tree)
+      val result = helper.argmax(trees)
       c.Expr[T](c.resetLocalAttrs(result.combined))
     }
   }
 
-  def argminImpl[T: c.WeakTypeTag, N: c.WeakTypeTag](c: Context)
-                                                    (overWhereOf: c.Expr[Builder[T, N]])
-                                                    (ord: c.Expr[Ordering[N]]) = {
+
+  def argminImplNew[T: c.WeakTypeTag, N: c.WeakTypeTag](c: Context)
+                                                       (dom: c.Expr[Iterable[T]])
+                                                       (obj: c.Expr[T => N])
+                                                       (ord: c.Expr[Ordering[N]]) = {
     import c.universe._
     val helper = new ContextHelper[c.type](c) with OptimizedOperators[c.type]
-    val result: Tree = helper.argmax(overWhereOf.tree, q"-1.0").combined
+    val trees = helper.builderTrees(dom.tree, obj.tree)
+    val result: Tree = helper.argmax(trees, q"-1.0").combined
     c.Expr[T](result)
   }
 
-  def mapImpl[T: c.WeakTypeTag](c: Context)
-                               (overWhereOf: c.Expr[Builder[T, _]]) = {
+
+  def mapImplNew[A: c.WeakTypeTag, B: c.WeakTypeTag](c: Context)
+                                                    (dom: c.Expr[Iterable[A]])
+                                                    (mapper: c.Expr[A => B]) = {
     import c.universe._
     val helper = new ContextHelper[c.type](c) with OptimizedOperators[c.type]
 
-    val result: Tree = helper.map(overWhereOf.tree)
-    //    val result: Tree = helper.argmax(overWhereOf.tree, q"-1.0")
-    //    val expr = reify[Iterable[T]](overWhereOf.splice.dom.filter(overWhereOf.splice.filter).map(overWhereOf.splice.mapper))
-    //    c.Expr[Iterable[T]](c.resetLocalAttrs(expr.tree))
-    c.Expr[T](result)
+    val trees = helper.builderTrees(dom.tree, EmptyTree, mapper.tree)
+
+    val result: Tree = helper.map(trees)
+    c.Expr[Iterable[B]](result)
+  }
+
+  def logZImpl[T: c.WeakTypeTag](c: Context)
+                                (dom: c.Expr[Iterable[T]])
+                                (obj: c.Expr[T => Double]) = {
+    val helper = new ContextHelper[c.type](c) with OptimizedOperators[c.type]
+    val trees = helper.builderTrees(dom.tree, obj.tree)
+    //do not replace the code if inside another macro
+    if (c.enclosingMacros.size > 1) {
+      import c.universe._
+      val code: Tree = q"ml.wolfe.macros.BruteForceOperators.logZ(${ trees.over }.filter(${ trees.where }))(${ trees.of })"
+      c.Expr[Double](code)
+    } else {
+      val result = helper.argmax(trees)
+      c.Expr[Double](c.resetLocalAttrs(result.combined))
+    }
   }
 
 
 }
 
 trait LinearModelArgmaxCode[C <: Context] extends SymbolRepository[C] {
+
   import context.universe._
-  def inferenceCode(objRhs: Tree, graph: TermName):Tree = objRhs match {
+
+  def optimizeByInferenceCode(objRhs: Tree, graph: TermName): Tree = objRhs match {
     case q"$f(${ _ })" =>
       f.symbol.annotations.find(_.tpe.typeSymbol == wolfeSymbols.optByInference) match {
         case Some(annotation) => q"${ annotation.scalaArgs.head }($graph)"
-        case None => q"ml.wolfe.MaxProduct($graph,1)"
+        case None => q"ml.wolfe.BeliefPropagation($graph,1)"
       }
-    case _ => q"ml.wolfe.MaxProduct($graph,1)"
+    case _ => q"ml.wolfe.BeliefPropagation($graph,1)"
   }
+
+  def logZByInferenceCode(objRhs: Tree, graph: TermName): Tree = objRhs match {
+    case q"$f(${ _ })" =>
+      f.symbol.annotations.find(_.tpe.typeSymbol == wolfeSymbols.logZByInference) match {
+        case Some(annotation) => q"${ annotation.scalaArgs.head }($graph)"
+        case None => q"ml.wolfe.BeliefPropagation.sumProduct(1)($graph)"
+      }
+    case _ => q"ml.wolfe.BeliefPropagation.sumProduct(1)($graph)"
+  }
+
 
 }
 
@@ -73,13 +107,12 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
                                                with MetaStructuredFactors[C]
                                                with Conditioner[C]
                                                with MetaGradientCalculators[C]
-                                               with LinearModelArgmaxCode[C]{
+                                               with LinearModelArgmaxCode[C] {
 
   import context.universe._
 
 
-
-  def learningCode(objRhs: Tree, weightsSet: TermName):Tree = {
+  def learningCode(objRhs: Tree, weightsSet: TermName): Tree = {
     def getCodeFromAnnotation(f: Tree): Tree = {
       f.symbol.annotations.find(_.tpe.typeSymbol == wolfeSymbols.optByLearning) match {
         case Some(annotation) => q"${ annotation.scalaArgs.head }($weightsSet)"
@@ -87,13 +120,16 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
       }
     }
     objRhs match {
-      case q"$f(${ _ })" => getCodeFromAnnotation(f)
+      //todo: generalize to allow any number of arguments
+      case q"$f(${ _ })" =>
+        getCodeFromAnnotation(f)
+      case q"$f(${ _ })(${ _ })" =>
+        getCodeFromAnnotation(f)
       case _ => q"new OnlineTrainer($weightsSet, new Perceptron, 4)"
     }
   }
 
-  def map(builder: Tree): Tree = {
-    val trees = builderTrees(builder)
+  def map(trees: BuilderTrees): Tree = {
     val Function(List(mapperArg), _) = unwrapSingletonBlocks(trees.using)
 
     //we should do this until no more inlining can be done
@@ -131,13 +167,15 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
     def combined = q"{..$all}"
   }
 
-  def argmaxLinearModel(trees: BuilderTrees): CodeAndInitialization = {
+  def argmaxLinearModel(trees: BuilderTrees, scaling: Tree = q"1.0"): CodeAndInitialization = {
     val structName = newTermName(context.fresh("structure"))
     val meta = metaStructure(trees.over)
-    val Function(List(objArg), objRhs) = blockToFunction(unwrapSingletonBlocks(trees.of))
+    val Function(List(objArg), rawObjRhs) = blockToFunction(unwrapSingletonBlocks(trees.of))
+    //todo: scaling should happen on a per factor basis (challenge: negating special-purpose potentials)
+    val objRhs = if (scaling.equalsStructure(q"1.0")) rawObjRhs else q"$scaling * $rawObjRhs"
     val objMatcher = meta.matcher(rootMatcher(objArg.symbol, q"$structName", meta))
     val factors = metaStructuredFactor(FactorGenerationInfo(objRhs, meta, objMatcher, linearModelInfo = LinearModelInfo(q"_index")))
-    val inferCode = inferenceCode(objRhs, newTermName("_graph"))
+    val inferCode = optimizeByInferenceCode(objRhs, newTermName("_graph"))
 
     val structureDef = meta.classDef(newTermName("_graph"))
 
@@ -190,7 +228,7 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
   def argmaxByLearning(trees: BuilderTrees, scaling: Tree = q"1.0"): Tree = {
     if (trees.where != EmptyTree)
       context.error(context.enclosingPosition, "Can't learn with constraints on weights yet: " + trees.where)
-    val q"($arg) => $rhs" = unwrapSingletonBlocks(trees.of)
+    val q"($arg) => $rhs" = simplifyBlock(trees.of)
     def toSum(tree: Tree): BuilderTrees = tree match {
       case s@Sum(BuilderTrees(over, where, of, _, _)) => BuilderTrees(over, where, of)
       case s => inlineOnce(tree) match {
@@ -206,10 +244,16 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
     val key = newTermName(context.fresh("_key"))
     val learner = learningCode(rhs, weightsSet)
 
-    val replaced = transform(perInstanceRhs, { case i: Ident if i.symbol == x.symbol => Ident(instanceName) })
+    val replaced = transform(perInstanceRhs, {
+      case i: Ident if i.symbol == x.symbol => Ident(instanceName) //treeCopy.Ident(i,instanceName)
+    })
+    //todo: this doesn't work
+    val exampleDom = iterableArgumentType(context.typeCheck(context.resetLocalAttrs(sum.over)))
 
+    //metaGradientCalculator(replaced, arg.symbol, Ident(indexName)) match {
     metaGradientCalculator(replaced, arg.symbol, Ident(indexName)) match {
       case Good(calculator) =>
+        val classDef = calculator.classDef
         val code = q"""
           import cc.factorie.WeightsSet
           import cc.factorie.Weights
@@ -223,8 +267,8 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
           val $indexName = new ml.wolfe.DefaultIndex()
           val $weightsSet = new WeightsSet
           ml.wolfe.util.LoggerUtil.info("Creating examples ...")
-          val examples = ml.wolfe.util.Timer.time("examples") { for ($instanceName <- ${ sum.over }) yield new Example {
-              ${ calculator.classDef }
+          val examples = ml.wolfe.util.Timer.time("examples") { ${ sum.over }.map(($instanceName:$exampleDom) => new Example {
+              ${ classDef }
               var _key:Weights = null
               val gradientCalculator = new ${ calculator.className }
               def accumulateValueAndGradient(value: DoubleAccumulator, gradient: WeightsMapAccumulator) = {
@@ -234,11 +278,11 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
                 value.accumulate($scaling * v)
                 gradient.accumulate(_key, g, $scaling)
               }
-            }
+            })
           }
           ml.wolfe.util.LoggerUtil.info(s"Speed: "  +  (1000 * examples.size.toDouble / ml.wolfe.util.Timer.reported("examples")) + " examples/sec")
           val $key = $weightsSet.newWeights(new ml.wolfe.DenseVector($indexName.size))
-          for (example <- examples) example._key = $key
+          examples.foreach(example => example._key = $key)
           val trainer = $learner
           ml.wolfe.util.LoggerUtil.info("Starting to optimize ...")
           trainer.trainFromExamples(examples)
@@ -251,20 +295,21 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
     }
   }
 
-  def argmax(overWhereOf: Tree, scaling: Tree = q"1.0"): CodeAndInitialization = {
+  def argmax(trees: BuilderTrees, scaling: Tree = q"1.0"): CodeAndInitialization = {
 
-    val trees = builderTrees(overWhereOf)
     //todo: deal with scaling in linear model as well
     if (trees.over.symbol == wolfeSymbols.vectors)
-      CodeAndInitialization(argmaxByLearning(trees, scaling),Nil)
-    else argmaxLinearModel(trees)
+      CodeAndInitialization(argmaxByLearning(trees, scaling), Nil)
+    else {
+      argmaxLinearModel(trees, scaling)
+    }
   }
 
   trait IsmorphicFactorGraph[T] {
     def graph = structure.graph
-    def structure:Structure[T]
+    def structure: Structure[T]
   }
 
-  def fg[T,N](overWhereOf: Builder[T, N]):IsmorphicFactorGraph[T] = null
+  def fg[T, N](overWhereOf: Builder[T, N]): IsmorphicFactorGraph[T] = null
 
 }

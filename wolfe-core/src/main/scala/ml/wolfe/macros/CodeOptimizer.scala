@@ -5,20 +5,27 @@ import scala.reflect.macros.Context
 /**
  * @author Sebastian Riedel
  */
-trait CodeOptimizer[C <: Context] extends HasContext[C] with CodeRepository[C] with PatternRepository[C] {
+trait CodeOptimizer[C <: Context] extends HasContext[C]
+                                          with CodeRepository[C]
+                                          with PatternRepository[C]
+                                          with Transformers[C]{
 
   import context.universe._
 
   def toOptimizedFactorieVector(wolfeVector: Tree, index: Tree): Tree = wolfeVector match {
-    case Sum(BuilderTrees(dom, filter, obj, _,_)) if filter == EmptyTree =>
+    case Sum(b@BuilderTrees(dom, filter, obj, _,_)) if filter == EmptyTree =>
       val Function(List(arg),body) = normalize(obj)
+//      val domTyp = iterableArgumentType(freshlyTyped(dom))
+//      val domTyp = iterableArgumentType(dom)
+//      val domTyp = iterableArgumentType(dom)
+
       body match {
         case q"ml.wolfe.Wolfe.oneHot($oneHotIndex,$oneHotValue)" =>
           val code = q"""
             val dom = $dom
             val result = new cc.factorie.la.SparseTensor1(1)
             result.ensureCapacity(dom.size)
-            for (${arg.name} <- dom) {
+            dom.foreach { $arg =>
               result +=($index.apply($oneHotIndex),$oneHotValue)
             }
             result
