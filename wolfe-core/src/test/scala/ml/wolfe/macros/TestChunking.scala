@@ -1,6 +1,6 @@
 package ml.wolfe.macros
 
-import ml.wolfe.{MaxProduct, Wolfe}
+import ml.wolfe.{BeliefPropagation, Wolfe}
 import Wolfe._
 import scala.io.Source
 import ml.wolfe.util.Util
@@ -40,7 +40,7 @@ object TestChunking {
 //      sumOld(0 until s.tokens.size)(_ => true)(i => oneHot('obs -> s.tokens(i).chunk -> s.tokens(i).word))(VectorNumeric) +
 //      sumOld(0 until s.tokens.size - 1)(_ => true)(i => oneHot('trans -> s.tokens(i).chunk -> s.tokens(i + 1).chunk))(VectorNumeric)
 //
-//    @OptimizeByInference(MaxProduct(_,1))
+//    @OptimizeByInference(BeliefPropagation(_,1))
 //    def model(w: Vector)(s: Sentence) = features(s) dot w
 //
 //    @OptimizeByLearning(new OnlineTrainer(_, new Perceptron, 5))

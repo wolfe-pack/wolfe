@@ -123,7 +123,9 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
    * @param matcher the matcher to look for structure with.
    * @return the tree with injected structure.
    */
-  def injectStructure(tree: Tree, matcher: Tree => Option[StructurePointer]) = {
+  def injectStructure(tree: Tree, matcher: Tree => Option[StructurePointer],
+                      replace:Tree => Tree = t => q"$t.value()",
+                      ignoreTermsWithFunctionArgs:Boolean = true) = {
     val transformer = new Transformer {
       val functionStack = new mutable.Stack[Function]()
       override def transform(tree: Tree) = {
@@ -136,15 +138,15 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
             //get symbols in tree
             val symbols = tree.collect({case i: Ident => i}).map(_.name).toSet //todo: this shouldn't just be by name
             val hasFunctionArg = functionStack.exists(_.vparams.exists(p => symbols(p.name)))
-            if (hasFunctionArg)
+            if (ignoreTermsWithFunctionArgs && hasFunctionArg)
               super.transform(tree)
             else
-              q"${structure.structure}.value()"
+              replace(structure.structure)
           }
           case _ => super.transform(tree)
         }
         tree match {
-          case _: Function => functionStack.pop
+          case _: Function => functionStack.pop()
           case _ =>
         }
         result
@@ -182,15 +184,7 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
   }
 
 
-  /**
-   * @param iterable a tree representing an iterable object
-   * @return the argument type of the iterable, e.g. for Seq(1,2,3) it would be Int.
-   */
-  def iterableArgumentType(iterable: Tree): Type = {
-    val iterableType = iterable.tpe.baseType(scalaSymbols.iterableClass)
-    val TypeRef(_, _, List(argType)) = iterableType
-    argType
-  }
+
 
   object CartesianProduct {
     def unapply(tree:Tree):Option[List[Tree]] = tree match {
@@ -198,7 +192,7 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
       case q"$iter1.x[${_}]($iter2)" => iter1 match {
         case CartesianProduct(args) =>
           Some(args :+ iter2)
-        case q"ml.wolfe.Wolfe.CartesianProductBuilder[${_}]($root)" =>
+        case q"$builder[${_}]($root)" if builder.symbol == wolfeSymbols.cartesianProductBuilder =>
           Some(List(root,iter2))
         case _ => None
       }

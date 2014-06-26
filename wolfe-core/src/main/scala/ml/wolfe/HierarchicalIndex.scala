@@ -47,20 +47,21 @@ class HierarchicalIndex extends Index {
       }
     }
 
-    def fillInverse(prefix: Any, map: scala.collection.mutable.Map[Int, Any]) {
+    def fillInverse(map: scala.collection.mutable.Map[Int, Any], keyBuilder:Any => Any = identity) {
       indices.forEachEntry(new TObjectIntProcedure[Any] {
         def execute(a: Any, b: Int) = {
-          map(b) = if (prefix == null) a else prefix -> a
+          map(b) = keyBuilder(a)
           true
         }
       })
       children.forEachEntry(new TObjectObjectProcedure[Any,NodeIndex] {
         def execute(a: Any, b: NodeIndex) = {
-          b.fillInverse(b.key, map)
+          b.fillInverse(map,key => keyBuilder(a -> key))
           true
         }
       })
     }
+
   }
 
 
@@ -68,7 +69,7 @@ class HierarchicalIndex extends Index {
 
   def inverse() = {
     val result = new collection.mutable.HashMap[Int, Any]
-    root.fillInverse(null, result)
+    root.fillInverse(result)
     result
   }
 

@@ -50,10 +50,10 @@ object BuildSettings {
     "com.github.axel22" %% "scalameter" % "0.4",
     "org.scala-lang" % "scala-compiler" % "2.10.3",
     "org.scala-lang" % "scala-library" % "2.10.3",
-    "org.scala-lang" %% "scala-pickling" % "0.8.0-SNAPSHOT",
     "org.slf4j" % "slf4j-api" % "1.7.6",
     "org.slf4j" % "slf4j-simple" % "1.7.6",
     "org.apache.commons" % "commons-compress" % "1.8",
+    "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.1.3",
     "com.typesafe" % "scalalogging-slf4j_2.10" % "1.1.0"
   )
 
@@ -61,7 +61,7 @@ object BuildSettings {
     "net.sf.trove4j" % "trove4j" % "3.0.3",
     "com.nativelibs4java" %% "scalaxy-loops" % "0.3-SNAPSHOT" % "provided",
     "cc.factorie" % "factorie" % "1.0.0-M7",
-    "org.scalamacros" %% "quasiquotes" % "2.0.0-M3" cross CrossVersion.full
+    "org.scalamacros" %% "quasiquotes" % "2.0.0"
   )
 
   val publishSettings = Seq(
@@ -74,6 +74,13 @@ object BuildSettings {
     credentials += Credentials(Path.userHome / ".ivy2" / ".credentials-homeniscient")
   )
 
+  val generalSettings =
+    Seq(
+      initialCommands := """
+        import ml.wolfe.Wolfe._
+        import ml.wolfe.macros.OptimizedOperators._
+                         """
+    )
 
   val globalSettings =
     Seq(
@@ -83,12 +90,8 @@ object BuildSettings {
         Resolver.sonatypeRepo("snapshots"),
         Resolver.sonatypeRepo("releases")
       ),
-      globalDependencies,
-      initialCommands := """
-        import ml.wolfe.Wolfe._
-        import ml.wolfe.macros.OptimizedOperators._
-      """
-    ) ++ releaseSettings ++ publishSettings
+      globalDependencies
+    ) ++ generalSettings ++ releaseSettings ++ publishSettings
 
 }
 
@@ -100,14 +103,14 @@ object Build extends Build {
   lazy val root = Project(
     id = "wolfe",
     base = file("."),
-    settings = Project.defaultSettings ++ publishSettings
+    settings = Project.defaultSettings ++ publishSettings ++ generalSettings ++ releaseSettings
   ) aggregate(core, examples)
 
   lazy val core = Project(
     id = "wolfe-core",
     base = file("wolfe-core"),
     settings = buildSettings ++ globalSettings ++ coreDependencies ++ Seq(
-      addCompilerPlugin("org.scalamacros" % "paradise" % "2.0.0-M3" cross CrossVersion.full)
+      addCompilerPlugin("org.scalamacros" % "paradise" % "2.0.0" cross CrossVersion.full)
     )
   )
 

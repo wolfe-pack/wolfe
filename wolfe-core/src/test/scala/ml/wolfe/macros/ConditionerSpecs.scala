@@ -10,7 +10,7 @@ import Wolfe._
 class ConditionerSpecs extends StructureIsomorphisms {
 
   "A conditioner" should {
-    "condition an atomic sample space using equality" in {
+    "condition an atomic sample space using equality " in {
       def space = Seq(1, 2, 3, 4)
       val structure = Conditioner.conditioned(space)(x => x == 1)
       structure mustBeIsomorphicTo (space filter (_ == 1))

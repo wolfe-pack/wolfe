@@ -26,18 +26,18 @@ object DocClassifyExample {
 
     def observed(d: Doc) = d.copy(label = hidden)
 
-    def features(d: Doc) = sum { over(0 until d.tokens.size) of (i => oneHot(d.label -> d.tokens(i).word)) }
+    def features(d: Doc) = sum(0 until d.tokens.size) { i => oneHot(d.label -> d.tokens(i).word) }
 
     def model(w: Vector)(d: Doc) = w dot features(d)
 
-    def predictor(w: Vector)(d: Doc) = argmax { over(Docs) of model(w) st evidence(observed)(d) }
+    def predictor(w: Vector)(d: Doc) = argmax(Docs filter evidence(observed)(d)) { model(w) }
 
-    def batchPredictor(w:Vector)(data:Iterable[Doc]) = map { over(data) using predictor(w)}
+    def batchPredictor(w: Vector)(data: Iterable[Doc]) = map(data) { predictor(w) }
 
     @OptimizeByLearning(new OnlineTrainer(_, new Perceptron, 1, 1000))
-    def loss(data: Iterable[Doc])(w: Vector) = sum { over(data) of (s => model(w)(predictor(w)(s)) - model(w)(s)) }
+    def loss(data: Iterable[Doc])(w: Vector) = sum(data) { s => model(w)(predictor(w)(s)) - model(w)(s) }
 
-    def learn(data: Iterable[Doc]) = argmin { over[Vector] of loss(data) }
+    def learn(data: Iterable[Doc]) = argmin(vectors) { loss(data) }
 
   }
   def main(args: Array[String]) {
@@ -50,9 +50,9 @@ object DocClassifyExample {
     val model = new Model(labels)
     val w = model.learn(sub)
     println(w.take(10))
-    println("Prediction ... ")
+    println("Prediction ...")
     val trainPredicted = model.batchPredictor(w)(sub)
-    val trainEval = Evaluator.evaluate(sub,trainPredicted)(_.label)
+    val trainEval = Evaluator.evaluate(sub, trainPredicted)(_.label)
     println(trainEval)
 
     //load 20 newsgroups data

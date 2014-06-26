@@ -61,8 +61,8 @@ object DualDecomposition {
   private def initializeN2FMessages(fg: FactorGraph): Unit = {
     for (factor <- fg.factors;
          edge <- factor.edges) {
-      for (i <- 0 until edge.n2f.size)
-        edge.n2f(i) = 0
+      for (i <- 0 until edge.msgs.asDiscrete.n2f.size)
+        edge.msgs.asDiscrete.n2f(i) = 0
     }
   }
 
@@ -71,19 +71,19 @@ object DualDecomposition {
    * @param factor The factor
    */
   def solveFactorWithPenalty(factor: FactorGraph.Factor): Unit = {
-    factor.typ match {
-      case FactorGraph.FactorType.TABLE =>
-        val best = (0 until factor.table.size).maxBy(i => penalizedScore(factor, i))
-        propagateSettingInformation(factor, factor.settings(best))
-      case FactorGraph.FactorType.LINEAR =>
-        val best = (0 until factor.table.size).maxBy(i => penalizedScore(factor, i))
-        propagateSettingInformation(factor, factor.settings(best))
-      case FactorGraph.FactorType.STRUCTURED =>
-        // TODO: How does one mandate that this uses the penalties
-        val argmax = factor.structured.argmaxMarginal2AllNodes(factor)
-
-        propagateSettingInformation(factor, argmax)
-    }
+//    factor.typ match {
+//      case FactorGraph.FactorType.TABLE =>
+//        val best = (0 until factor.table.size).maxBy(i => penalizedScore(factor, i))
+//        propagateSettingInformation(factor, factor.settings(best))
+//      case FactorGraph.FactorType.LINEAR =>
+//        val best = (0 until factor.table.size).maxBy(i => penalizedScore(factor, i))
+//        propagateSettingInformation(factor, factor.settings(best))
+////      case FactorGraph.FactorType.STRUCTURED =>
+////        // TODO: How does one mandate that this uses the penalties
+////        val argmax = factor.structured.argmaxMarginal2AllNodes(factor)
+////
+////        propagateSettingInformation(factor, argmax)
+//    }
   }
 
   /**
@@ -98,11 +98,11 @@ object DualDecomposition {
       val s = setting(i)
 
       // clear out all old information
-      for (j <- 0 until edge.f2n.size)
-        edge.f2n(j) = 0
+      for (j <- 0 until edge.msgs.asDiscrete.f2n.size)
+        edge.msgs.asDiscrete.f2n(j) = 0
 
       // set the new piece of information
-      edge.f2n(s) = 1
+      edge.msgs.asDiscrete.f2n(s) = 1
     }
   }
 
@@ -113,13 +113,13 @@ object DualDecomposition {
    * @return penalized score of setting.
    */
   def penalizedScore(factor: FactorGraph.Factor, settingId: Int): Double = {
-    var score = factor.score(settingId)
+    var score = 0.0 //factor.score(settingId)
 
-    val setting = factor.settings(settingId)
-
-    for (j <- 0 until factor.rank) {
-      score += factor.edges(j).n2f(setting(j))
-    }
+//    val setting = factor.settings(settingId)
+//
+//    for (j <- 0 until factor.numNeighbors) {
+//      score += factor.edges(j).n2f(setting(j))
+//    }
     score
   }
 
@@ -139,8 +139,8 @@ object DualDecomposition {
 
       for (otherEdge <- node.edges
            if otherEdge != edge) {
-        for (i <- 0 until edge.f2n.size) {
-          edge.n2f(i) -= stepSize * (edge.f2n(i) - otherEdge.f2n(i))
+        for (i <- 0 until edge.msgs.asDiscrete.f2n.size) {
+          edge.msgs.asDiscrete.n2f(i) -= stepSize * (edge.msgs.asDiscrete.f2n(i) - otherEdge.msgs.asDiscrete.f2n(i))
         }
       }
 
@@ -164,8 +164,8 @@ object DualDecomposition {
            if otherEdge.f != factor
            if hasConverged) {
 
-        for (i <- 0 until edge.dim; if hasConverged) {
-          hasConverged = edge.f2n(i) == otherEdge.f2n(i)
+        for (i <- 0 until edge.msgs.asDiscrete.dim; if hasConverged) {
+          hasConverged = edge.msgs.asDiscrete.f2n(i) == otherEdge.msgs.asDiscrete.f2n(i)
         }
       }
     }
@@ -177,10 +177,11 @@ object DualDecomposition {
    * @param node the node to update.
    */
   def updateBelief(node: Node) {
-    System.arraycopy(node.in, 0, node.b, 0, node.b.length)
+    val v = node.variable.asDiscrete
+    System.arraycopy(v.in, 0, v.b, 0, v.b.length)
     for (e <- 0 until node.edges.length) {
-      for (i <- 0 until node.dim) {
-        node.b(i) += node.edges(e).f2n(i)
+      for (i <- 0 until v.dim) {
+        v.b(i) += node.edges(e).msgs.asDiscrete.f2n(i)
       }
     }
   }
