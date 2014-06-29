@@ -1,6 +1,9 @@
 package ml.wolfe.fg
 
 import ml.wolfe.FactorGraph._
+import ml.wolfe.util.LabelledTensor
+import ml.wolfe.util.LabelledTensor
+import ml.wolfe.util.LabelledTensor.LabelledTensor
 import scalaxy.loops._
 import ml.wolfe.MoreArrayOps._
 import ml.wolfe.FactorieVector
@@ -92,6 +95,14 @@ final class TablePotential(edges: Array[Edge], table: Table) extends Potential {
     tableString.mkString("\n")
   }
 
+  override def getScoreTable(forVariables:Array[DiscreteVar]) : LabelledTensor[DiscreteVar, Double] = {
+    if(forVariables.toSeq == vars.toSeq) {
+      LabelledTensor.onArray(vars, vars.map(_.dim), table.scores.clone())
+    } else {
+      println("TablePotential getScoreTable variables are in the incorrect order")
+      super.getScoreTable(forVariables)
+    }
+  }
 
   def valueForCurrentSetting() = {
     val setting = vars.map(_.setting)

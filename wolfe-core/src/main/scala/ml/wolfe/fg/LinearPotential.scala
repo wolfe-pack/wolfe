@@ -132,6 +132,8 @@ final class LinearPotential(val edges: Array[Edge], statistics: Stats, fg: Facto
     maxScore
   }
 
+  def getVectors = vectors
+
   override def marginalExpectationsAndObjective(dstExpectations: FactorieVector) = {
     var localZ = 0.0
     //calculate local partition function

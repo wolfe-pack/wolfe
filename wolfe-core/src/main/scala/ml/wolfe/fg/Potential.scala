@@ -2,6 +2,9 @@ package ml.wolfe.fg
 
 import ml.wolfe.FactorGraph._
 import ml.wolfe.FactorieVector
+import ml.wolfe.util.LabelledTensor.LabelledTensor
+import ml.wolfe.util.LabelledTensor.LabelledTensor
+import ml.wolfe.util.{LabelledTensor, Util}
 
 
 /**
@@ -33,6 +36,17 @@ trait Potential {
   def statsForCurrentSetting(): FactorieVector = null
   def toVerboseString(implicit fgPrinter: FGPrinter): String = getClass.getName
 
+  def getScoreTable(forVariables:Array[DiscreteVar]) : LabelledTensor[DiscreteVar, Double] = {
+    val t:LabelledTensor[DiscreteVar, Double] = LabelledTensor(forVariables, forVariables.map(_.dim), 0.0)
+    val varsSettings = Util.cartesianProduct(forVariables.map(0 until _.dim))
+    for(mul <- varsSettings) {
+      for((v, s) <- forVariables zip mul) {
+        v.setting = s
+      }
+      t(mul) = valueForCurrentSetting()
+    }
+    t
+  }
 }
 
 final class AndPotential(arg1: Edge, arg2: Edge) extends Potential {

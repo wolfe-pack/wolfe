@@ -16,6 +16,7 @@ trait Var {
 
   def asDiscrete = this.asInstanceOf[DiscreteVar]
   def asVector = this.asInstanceOf[VectorVar]
+  def asTuple = this.asInstanceOf[TupleVar]
   def setup()
   def initializeToNegInfinity()
   def initializeRandomly(eps:Double)
