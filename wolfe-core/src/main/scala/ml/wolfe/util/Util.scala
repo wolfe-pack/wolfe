@@ -1,9 +1,13 @@
 package ml.wolfe.util
 
 import java.io.{FileInputStream, InputStream}
+import java.util
+import scala.annotation.tailrec
 import scala.io.Source
 import scala.collection.mutable
 import java.util.concurrent.TimeUnit
+
+import scala.reflect.ClassTag
 
 /**
  * @author Sebastian Riedel
@@ -24,7 +28,101 @@ object Util {
     }
   }
 
+  //todo: can use arrays of length factors.length
+  def cartesianProduct[S](factors: Seq[Seq[S]]) : Seq[Seq[S]] = {
+    @tailrec
+    def productWithPrefixes(suffixes:Seq[List[S]], remainingFactors:Seq[Seq[S]]) : Seq[List[S]] =
+      remainingFactors.headOption match {
+        case None => suffixes
+        case Some(head) => {
+          def newSuffixes = for (s <- suffixes; v <- head) yield v +: s
+          productWithPrefixes(newSuffixes, remainingFactors.tail)
+        }
+      }
+    productWithPrefixes(Seq(List()), factors.reverse)
+  }
 }
+
+
+object LabelledTensor {
+
+  /*def apply[I, T: ClassTag](labels:Array[I], dimensions: Array[Int], array:Array[T]) =
+    new LabelledTensor(labels, dimensions, array)*/
+  
+  def apply[I, T: ClassTag](labels:Array[I], dimensions: Array[Int], default:T) =
+    new LabelledTensor(labels, dimensions, Array.fill[T](dimensions.product)(default))
+
+  def onArray[I, T: ClassTag](labels:Array[I], dimensions: Array[Int], array:Array[T]) =
+    new LabelledTensor(labels, dimensions, array)
+
+  class LabelledTensor[I, T: ClassTag](val labels:Array[I], val dimensions: Array[Int], val array: Array[T] ) {
+    import scalaxy.loops._
+
+    if(array.length != dimensions.product) sys.error("LabelledTensor array is not the right size")
+
+    private val indexSteps: Array[Int] = dimensions.scanRight(1)(_ * _).tail.toArray
+
+    private def multiToIndex(multi: Seq[Int]): Int = {
+      var idx = 0
+      for ((n, i) <- multi.zipWithIndex) {
+        idx = idx + n * indexSteps(i)
+      }
+      idx
+    }
+    private def indexToMulti(index: Int): Array[Int] = {
+      val mul = Array.ofDim[Int](dimensions.length)
+      for (i <- (0 until dimensions.length).optimized) {
+        mul(i) = (index / indexSteps(i)) % dimensions(i)
+      }
+      mul
+    }
+    private def indexToMultiFiltered(index: Int, dimIdxs: Array[Int]): Array[Int] = {
+      val mul = Array.ofDim[Int](dimIdxs.length)
+      for (i <- (0 until dimIdxs.length).optimized) {
+        mul(i) = (index / indexSteps(dimIdxs(i))) % dimensions(dimIdxs(i))
+      }
+      mul
+    }
+
+    def apply(idxs: Seq[Int]): T = array(multiToIndex(idxs))
+    def update(idxs: Seq[Int], elem: T): Unit = array(multiToIndex(idxs)) = elem
+
+    //def apply(idxs: Seq[I]): T = apply(idxs.map(labels.indexOf(_)))
+    //def update(idxs: Seq[I], elem: T): Unit = update(idxs.map(labels.indexOf(_)), elem)
+
+    def fold[S: ClassTag](keepDims: Array[I], z: S, op: (S, T) => S, destination:Array[S]) : LabelledTensor[I, S] = {
+      for(i <- (0 until destination.length)) destination(i)=z
+      val keepIndices = keepDims.map(labels.indexOf(_))
+      val reduced = LabelledTensor.onArray[I, S](keepDims, keepIndices.map(dimensions(_)), destination)
+      for (i <- (0 until array.length).optimized) {
+        val mul = indexToMultiFiltered(i, keepIndices)
+        reduced(mul) = op(reduced(mul), array(i))
+      }
+      reduced
+    }
+
+    def fold[S: ClassTag](keepDims: Array[I], z: S, op: (S, T) => S) : LabelledTensor[I, S] = {
+      val keepIndices = keepDims.map(labels.indexOf(_))
+      val destination  = Array.fill[S](keepIndices.map(dimensions(_)).product)(z)
+      fold(keepDims, z, op, destination)
+    }
+
+    def elementWise[U, V](that: LabelledTensor[I, U], op: (T, U) => V, destination:Array[V]) : Array[V] = {
+      val dimIdxs = that.labels.map(labels.indexOf(_))
+      for (i <- (0 until array.length).optimized) {
+        destination(i) = op(array(i), that(indexToMultiFiltered(i, dimIdxs)))
+      }
+      destination
+    }
+
+    def elementWise(that: LabelledTensor[I, T], op: (T, T) => T) : Array[T] = elementWise(that, op, array)
+
+
+    override def toString = array.mkString(",")
+  }
+}
+
+
 
 /**
  * Code for IRIS dataset.

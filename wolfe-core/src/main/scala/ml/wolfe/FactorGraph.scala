@@ -1,5 +1,7 @@
 package ml.wolfe
 
+import ml.wolfe.util.LabelledTensor
+
 import scala.collection.mutable.ArrayBuffer
 import scalaxy.loops._
 import scala.annotation.tailrec
@@ -50,7 +52,14 @@ final class FactorGraph {
    * @return the added node.
    */
   def addNode(dim: Int) = {
-    val n = new Node(nodes.size, dim)
+    val n = new Node(nodes.size, new DiscreteVar(dim))
+    nodes += n
+    n
+  }
+
+  def addTupleNode(componentNodes:Array[Node]) = {
+    val variable = new TupleVar(componentNodes.map(_.variable.asDiscrete))
+    val n = new Node(nodes.size, variable)
     nodes += n
     n
   }
@@ -63,7 +72,7 @@ final class FactorGraph {
    * @return the added edge.
    */
   def addEdge(f: Factor, n: Node, indexInFactor: Int): Edge = {
-    val e = new Edge(n, f, n.variable.asDiscrete.dim)
+    val e = new Edge(n, f, new DiscreteMsgs(n.variable.asDiscrete.dim))
     e.indexInFactor = indexInFactor
     n.edgeCount += 1
     f.edgeCount += 1
@@ -78,6 +87,15 @@ final class FactorGraph {
    * @return the added edge.
    */
   def addEdge(f: Factor, n: Node): Edge = addEdge(f, n, f.edgeCount)
+
+  def addTupleEdge(f: Factor, n: Node, baseVariables:Array[DiscreteVar]): Edge = {
+    val e = new Edge(n, f, new TupleMsgs(n.variable.asTuple, baseVariables))
+    e.indexInFactor = f.edgeCount
+    n.edgeCount += 1
+    f.edgeCount += 1
+    edges += e
+    e
+  }
 
   /**
    * Creates a new factor, no potential assigned.
@@ -187,6 +205,22 @@ final class FactorGraph {
 
   def getFactor(index: Int) = factors(index)
 
+  def isLoopy:Boolean = {
+    @tailrec
+    def loopyAcc(remainingFactors: List[Factor], trees: Set[Set[Node]]): Boolean =
+      remainingFactors match {
+        case Nil => false
+        case f :: tail => {
+          val neighbourTrees = f.edges.map{ e => trees.find(_ contains e.n) match { case Some(x) => x; case None => sys.error("Something went wrong in isLoopy!")} }.toSet
+          if(neighbourTrees.size != f.edges.length) true
+          else {
+            val newTrees = trees -- neighbourTrees + neighbourTrees.reduce(_ ++ _)
+            loopyAcc(tail, newTrees)
+          }
+        }
+      }
+    loopyAcc(factors.toList, nodes.map(Set(_)).toSet)
+  }
 
 }
 
@@ -198,11 +232,9 @@ object FactorGraph {
    * @param index the index of the node.
    * @param dim the dimension of the variable the node is representing.
    */
-  final class Node(val index: Int, dim: Int) {
+  final class Node(val index: Int, var variable:Var) {
     /* all edges to factors that this node is connected to */
     var edges: Array[Edge] = Array.ofDim(0)
-
-    var variable:Var = new DiscreteVar(dim)
 
     def toVerboseString(nodePrinter: Node => String = n => "") = {
       f"""-----------------
@@ -233,9 +265,7 @@ object FactorGraph {
    * @param f the factor.
    * @param dim dimension of the node's variable.
    */
-  final class Edge(var n: Node, val f: Factor, dim: Int) {
-    val msgs:Msgs = new DiscreteMsgs(dim)
-
+  final class Edge(var n: Node, val f: Factor, val msgs: Msgs) {
     var indexInFactor = -1
     var indexInNode   = -1
 

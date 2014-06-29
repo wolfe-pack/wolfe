@@ -1,5 +1,7 @@
 package ml.wolfe
 
+import ml.wolfe.fg.Junkify
+
 import scala.language.postfixOps
 
 
@@ -22,7 +24,14 @@ object BeliefPropagation {
    */
   def apply(fg: FactorGraph, maxIteration: Int, schedule: Boolean = true, sum: Boolean = false) {
     //    val edges = if (canonical) fg.edges.sorted(FactorGraph.EdgeOrdering) else fg.edges
-    val edges = if (schedule) MPSchedulerImpl.schedule(fg) else fg.edges
+    val fg2 = if(fg.isLoopy) {
+      print("Factor graph is loopy. Converting to junction tree...")
+      val jt = Junkify(fg)
+      println("✓"); jt
+    } else fg
+
+    val t = System.currentTimeMillis()
+    val edges = if (schedule) MPSchedulerImpl.schedule(fg2) else fg2.edges
 
     for (i <- 0 until maxIteration) {
       for (edge <- edges) {
@@ -30,13 +39,14 @@ object BeliefPropagation {
         updateF2N(edge, sum)
       }
     }
-    for (node <- fg.nodes) updateBelief(node, sum)
+    for (node <- fg2.nodes) updateBelief(node, sum)
 
     //calculate gradient and objective
     //todo this is not needed if we don't have linear factors. Maybe initial size should depend on number of linear factors
     fg.gradient = new SparseVector(1000)
-    fg.value = featureExpectationsAndObjective(fg, fg.gradient, sum)
-
+    fg.value = featureExpectationsAndObjective(fg2, fg.gradient, sum)
+    println("Belief Propagation took " + (System.currentTimeMillis()-t) + "ms.")
+    //println("Value = " + fg.value + ". Gradient = " + fg.gradient)
   }
 
 
