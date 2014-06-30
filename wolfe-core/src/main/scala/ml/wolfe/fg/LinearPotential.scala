@@ -52,7 +52,7 @@ final class LinearPotential(val edges: Array[Edge], statistics: Stats, fg: Facto
     log(msgs.f2n)
   }
 
-  def valueForCurrentSetting() = {
+  override def valueForCurrentSetting() = {
     val setting = edges.map(_.n.variable.asDiscrete.setting)
     val entry = TablePotential.settingToEntry(setting, dims)
     scoreEntry(entry)

@@ -61,7 +61,12 @@ object BuildSettings {
     "net.sf.trove4j" % "trove4j" % "3.0.3",
     "com.nativelibs4java" %% "scalaxy-loops" % "0.3-SNAPSHOT" % "provided",
     "cc.factorie" % "factorie" % "1.0.0-M7",
-    "org.scalamacros" %% "quasiquotes" % "2.0.0"
+    "org.scalamacros" %% "quasiquotes" % "2.0.0",
+    "org.scalanlp" %% "breeze-math" % "0.3",
+    "org.scalanlp" %% "breeze-learn" % "0.3",
+    "org.scalanlp" %% "breeze-process" % "0.3",
+    "org.scalanlp" %% "breeze-viz" % "0.3"
+
   )
 
   val publishSettings = Seq(

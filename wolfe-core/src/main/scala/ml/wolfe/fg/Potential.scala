@@ -27,7 +27,7 @@ trait Potential {
 
   def maxMarginalExpectationsAndObjective(dstExpectations: FactorieVector): Double = notSupported
   def marginalExpectationsAndObjective(dstExpectations: FactorieVector): Double = notSupported
-  def valueForCurrentSetting(): Double
+  def valueForCurrentSetting(): Double = notSupported
   def valueAndGradientForAllEdges():Double = notSupported
   def isLinear = false
   def statsForCurrentSetting(): FactorieVector = null
@@ -47,7 +47,7 @@ final class AndPotential(arg1: Edge, arg2: Edge) extends Potential {
     msgs.f2n(1) = other.n2f(1)
     msgs.f2n(0) = Double.NegativeInfinity
   }
-  def valueForCurrentSetting() = {
+  override def valueForCurrentSetting() = {
     if (n1.setting == 1 && n2.setting == 1) 0.0 else Double.NegativeInfinity
   }
   override def maxMarginalExpectationsAndObjective(dstExpectations: FactorieVector) = {
@@ -64,7 +64,7 @@ final class ExactlyOncePotential(args: Seq[Edge]) extends Potential {
     val argIndices = args map (_.n.index) mkString ","
     s"ExactlyOne($argIndices)"
   }
-  def valueForCurrentSetting():Double = {
+  override def valueForCurrentSetting():Double = {
     var count = 0
     for (arg <- msgs) {
       if (arg.f2n(1) == 1) count += 1
