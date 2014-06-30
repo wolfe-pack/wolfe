@@ -43,8 +43,61 @@ object Util {
   }
 }
 
-
 object LabelledTensor {
+  def onExistingArray[L, T: ClassTag](labels:Array[L], dimensions: L => Int, array: Array[T] ) =
+    new LabelledTensor(labels, dimensions, array)
+
+  def onNewArray[L, T: ClassTag](labels:Array[L], dimensions: L => Int, default:T) =
+    new LabelledTensor(labels, dimensions, Array.fill(labels.map(dimensions).product)(default))
+
+  class LabelledTensor[L, T: ClassTag](val labels:Array[L], val dimensions: L => Int, val array: Array[T] ) {
+
+    if(array.length != labels.map(dimensions).product) sys.error("LabelledTensor array is not the right size")
+    private val indexSteps: L => Int = labels.zip(labels.scanRight(1)((l, acc) => dimensions(l) * acc).tail).toMap
+
+    def allMuls(forLabels:Seq[L]) = Util.cartesianProduct(
+      forLabels.map(l => {(0 until dimensions(l)).map(l -> _)})
+    ).map(_.toMap)
+
+    def fill(f:Map[L, Int] => T) = for((mul, idx) <- allMuls(labels).zipWithIndex) array(idx) = f(mul)
+
+    private def mulToIndex(mul: Map[L, Int]) : Int = (
+      for( (label, idx) <- mul ) yield indexSteps(label) * idx
+    ).sum
+
+    def fold[S: ClassTag](keepLabels: Array[L], z: S, op: (S, T) => S, destination:Array[S]) : LabelledTensor[L, S] = {
+      val destIndicesBase = allMuls(keepLabels).map(mulToIndex)
+      val foldedIndicesBase = allMuls(labels diff keepLabels).map(mulToIndex)
+      for((i, j) <- destIndicesBase.zipWithIndex) {
+        val toFold = for(k <- foldedIndicesBase) yield array(i + k)
+        destination(j) = toFold.foldLeft(z)(op)
+      }
+      LabelledTensor.onExistingArray[L, S](keepLabels, dimensions, destination)
+    }
+
+    def fold[S: ClassTag](keepDims: Array[L], z: S, op: (S, T) => S) : LabelledTensor[L, S] = {
+      val destination  = Array.fill[S](keepDims.map(dimensions(_)).product)(z)
+      fold(keepDims, z, op, destination)
+    }
+
+    def elementWiseOp[U, V:ClassTag](that: LabelledTensor[L, U], op: (T, U) => V, destination:Array[V]) : LabelledTensor[L, V] = {
+      val sameLabels = this.labels intersect that.labels
+      val sameIndicesBase = allMuls(sameLabels).map(mulToIndex)
+      val diffIndicesBase = allMuls(labels diff sameLabels).map(mulToIndex)
+      for((i,j) <- sameIndicesBase.zipWithIndex) {
+        val x = that.array(j)
+        for(k <- diffIndicesBase) {
+          destination(i + k) = op(this.array(k), x)
+        }
+      }
+      LabelledTensor.onExistingArray[L,V](labels, dimensions, destination)
+    }
+
+    def elementWiseOp[U](that: LabelledTensor[L, U], op: (T, U) => T) : LabelledTensor[L, T] =
+      elementWiseOp(that, op, this.array)
+  }
+}
+/*object LabelledTensor {
 
   /*def apply[I, T: ClassTag](labels:Array[I], dimensions: Array[Int], array:Array[T]) =
     new LabelledTensor(labels, dimensions, array)*/
@@ -91,7 +144,7 @@ object LabelledTensor {
     //def update(idxs: Seq[I], elem: T): Unit = update(idxs.map(labels.indexOf(_)), elem)
 
     def fold[S: ClassTag](keepDims: Array[I], z: S, op: (S, T) => S, destination:Array[S]) : LabelledTensor[I, S] = {
-      for(i <- (0 until destination.length)) destination(i)=z
+      for(i <- (0 until destination.length).optimized) destination(i)=z
       val keepIndices = keepDims.map(labels.indexOf(_))
       val reduced = LabelledTensor.onArray[I, S](keepDims, keepIndices.map(dimensions(_)), destination)
       for (i <- (0 until array.length).optimized) {
@@ -108,9 +161,34 @@ object LabelledTensor {
     }
 
     def elementWise[U, V](that: LabelledTensor[I, U], op: (T, U) => V, destination:Array[V]) : Array[V] = {
-      val dimIdxs = that.labels.map(labels.indexOf(_))
+      /*val dimIdxs = that.labels.map(labels.indexOf(_))
       for (i <- (0 until array.length).optimized) {
         destination(i) = op(array(i), that(indexToMultiFiltered(i, dimIdxs)))
+      }
+      destination*/
+      val thatIndexSteps = that.labels.map(x => indexSteps(this.labels.indexOf(x)))
+      val distinctLabels = this.labels diff that.labels
+      val distinctIndexSteps = distinctLabels.map(x => indexSteps(labels.indexOf(x)))
+      val initialMultis  = Util.cartesianProduct(distinctLabels.map(x =>
+        0 until dimensions(labels.indexOf(x))))
+      val initialIndices = initialMultis.map(mul => {
+        var x = 0
+        for(i <- (0 until mul.length).optimized) {
+          x = x + mul(i)*distinctIndexSteps(i)
+        }
+        x
+      })
+      for(i <- (0 until that.array.length).optimized) {
+        val thatMul = that.indexToMulti(i)
+        val firstIndex = {
+          var x = 0
+          for(j <- (0 until thatMul.length).optimized) x = x + thatMul(j) * thatIndexSteps(j)
+          x
+        }
+        for(j <- (0 until initialIndices.length).optimized) {
+          val r = firstIndex + j
+          destination(r) = op(array(r), that.array(i))
+        }
       }
       destination
     }
@@ -120,7 +198,7 @@ object LabelledTensor {
 
     override def toString = array.mkString(",")
   }
-}
+}*/
 
 
 

@@ -3,8 +3,6 @@ package ml.wolfe.fg
 import ml.wolfe.FactorGraph.{FGPrinter, Edge}
 import ml.wolfe.FactorieVector
 import ml.wolfe.MoreArrayOps._
-import ml.wolfe.fg.TablePotential
-import ml.wolfe.util.LabelledTensor.LabelledTensor
 import ml.wolfe.util.LabelledTensor.LabelledTensor
 import ml.wolfe.util.{LabelledTensor, Util}
 import scalaxy.loops._
@@ -51,7 +49,7 @@ final class TupleConsistencyPotential(edge1: Edge, edge2: Edge) extends TuplePot
 
   override def maxMarginalExpectationsAndObjective(result: FactorieVector) = {
     val positive1:LabelledTensor[DiscreteVar, Boolean] =
-      m1.n2f.fold(baseVariables, false, (pos:Boolean, x:Double) => pos || x > Double.NegativeInfinity)
+      m1.n2f.fold[Boolean](baseVariables, false, (pos:Boolean, x:Double) => pos || x > Double.NegativeInfinity)
     val positive2:LabelledTensor[DiscreteVar, Boolean] =
       m1.n2f.fold(baseVariables, false, (pos:Boolean, x:Double) => pos || x > Double.NegativeInfinity)
 
@@ -109,9 +107,9 @@ final class WrappedPotential(val origPotential: Potential, val edge:Edge, val ba
   override def maxMarginalExpectationsAndObjective(result: FactorieVector) = {
     val scoretable = origPotential.getScoreTable(baseVariables)
     val scorePairs:LabelledTensor[DiscreteVar, (Double, Double)] =
-      LabelledTensor(v.components, v.components.map(_.dim), (0.0, 0.0))
+      LabelledTensor.onNewArray(v.components, _.dim, (0.0, 0.0))
 
-    m.n2f.elementWise(scoretable, (n2f:Double, score:Double) => (score, score+n2f), scorePairs.array)
+    m.n2f.elementWiseOp(scoretable, (n2f:Double, score:Double) => (score, score+n2f), scorePairs.array)
     var maxScore = Double.NegativeInfinity
     var maxPenalisedScore = Double.NegativeInfinity
     var maxIndices:Int = 0
