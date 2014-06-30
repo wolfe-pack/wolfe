@@ -17,11 +17,11 @@ class TupleVar(val components:Array[DiscreteVar]) extends Var {
 
   /* node belief */
   val b = Array.ofDim[Double](dim)
-  val B = LabelledTensor.onArray(components, components.map(_.dim), b)
+  val B = LabelledTensor.onExistingArray[DiscreteVar, Double](components, _.dim, b)
 
   /* external message for this node. Will usually not be updated during inference */
   val in = Array.ofDim[Double](dim)
-  val IN = LabelledTensor.onArray(components, components.map(_.dim), in)
+  val IN = LabelledTensor.onExistingArray[DiscreteVar, Double](components, _.dim, in)
 
   /* indicates that variable is in a certain state */
   val setting: Array[Int] = Array.ofDim[Int](components.size)
@@ -54,14 +54,14 @@ class TupleVar(val components:Array[DiscreteVar]) extends Var {
     val m = edge.msgs.asTuple
     System.arraycopy(in, 0, m.n2f.array, 0, m.n2f.array.length)
     for (e <- 0 until node.edges.length if e != edge.indexInNode) {
-      m.n2f.elementWise(node.edges(e).msgs.asTuple.f2n, _+_)
+      m.n2f.elementWiseOp[Double](node.edges(e).msgs.asTuple.f2n, _+_)
     }
   }
 
   override def updateMaxMarginalBelief(node: Node) = {
     System.arraycopy(in, 0, b, 0, b.length)
     for (e <- 0 until node.edges.length) {
-      B.elementWise(node.edges(e).msgs.asTuple.f2n, _+_)
+      B.elementWiseOp[Double](node.edges(e).msgs.asTuple.f2n, _+_)
       maxNormalize(b)
     }
     for(v <- components) {

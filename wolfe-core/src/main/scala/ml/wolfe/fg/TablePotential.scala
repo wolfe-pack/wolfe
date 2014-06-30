@@ -97,7 +97,7 @@ final class TablePotential(edges: Array[Edge], table: Table) extends Potential {
 
   override def getScoreTable(forVariables:Array[DiscreteVar]) : LabelledTensor[DiscreteVar, Double] = {
     if(forVariables.toSeq == vars.toSeq) {
-      LabelledTensor.onArray(vars, vars.map(_.dim), table.scores.clone())
+      LabelledTensor.onExistingArray(vars, _.dim, table.scores.clone())
     } else {
       println("TablePotential getScoreTable variables are in the incorrect order")
       super.getScoreTable(forVariables)

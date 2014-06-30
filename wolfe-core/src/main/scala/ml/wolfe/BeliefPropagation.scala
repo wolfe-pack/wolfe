@@ -16,6 +16,8 @@ object BeliefPropagation {
   def maxProduct(maxIteration: Int, schedule: Boolean = true)(fg: FactorGraph) = apply(fg, maxIteration, schedule, false)
   def sumProduct(maxIteration: Int, schedule: Boolean = true)(fg: FactorGraph) = apply(fg, maxIteration, schedule, true)
 
+  var runCount = 0
+  var totalTime:Long = 0
   /**
    * Runs some iterations of belief propagation.
    * @param fg the message passing graph to run
@@ -24,13 +26,18 @@ object BeliefPropagation {
    */
   def apply(fg: FactorGraph, maxIteration: Int, schedule: Boolean = true, sum: Boolean = false) {
     //    val edges = if (canonical) fg.edges.sorted(FactorGraph.EdgeOrdering) else fg.edges
+    val t = System.currentTimeMillis()
     val fg2 = if(fg.isLoopy) {
       print("Factor graph is loopy. Converting to junction tree...")
       val jt = Junkify(fg)
       println("✓"); jt
     } else fg
 
-    val t = System.currentTimeMillis()
+    println(fg.edges.size)
+    println(fg.edges.map(_.msgs.asDiscrete.n2f.length).sum)
+
+    println(fg2.edges.size)
+    println(fg2.edges.map(_.msgs.asTuple.n2f.array.length).sum)
     val edges = if (schedule) MPSchedulerImpl.schedule(fg2) else fg2.edges
 
     for (i <- 0 until maxIteration) {
@@ -45,7 +52,10 @@ object BeliefPropagation {
     //todo this is not needed if we don't have linear factors. Maybe initial size should depend on number of linear factors
     fg.gradient = new SparseVector(1000)
     fg.value = featureExpectationsAndObjective(fg2, fg.gradient, sum)
-    println("Belief Propagation took " + (System.currentTimeMillis()-t) + "ms.")
+
+    runCount = runCount + 1
+    totalTime = totalTime + (System.currentTimeMillis()-t)
+    println(s"Belief Propagation has run $runCount times, avg ${totalTime/runCount}ms")
     //println("Value = " + fg.value + ". Gradient = " + fg.gradient)
   }
 

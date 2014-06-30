@@ -37,14 +37,13 @@ trait Potential {
   def toVerboseString(implicit fgPrinter: FGPrinter): String = getClass.getName
 
   def getScoreTable(forVariables:Array[DiscreteVar]) : LabelledTensor[DiscreteVar, Double] = {
-    val t:LabelledTensor[DiscreteVar, Double] = LabelledTensor(forVariables, forVariables.map(_.dim), 0.0)
-    val varsSettings = Util.cartesianProduct(forVariables.map(0 until _.dim))
-    for(mul <- varsSettings) {
-      for((v, s) <- forVariables zip mul) {
+    val t:LabelledTensor[DiscreteVar, Double] = LabelledTensor.onNewArray[DiscreteVar, Double](forVariables, _.dim, 0.0)
+    t.fill(mul => {
+      for ((v, s) <- mul) {
         v.setting = s
       }
-      t(mul) = valueForCurrentSetting()
-    }
+      valueForCurrentSetting()
+    })
     t
   }
 }
