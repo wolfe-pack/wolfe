@@ -234,7 +234,7 @@ object FactorGraph {
    * @param dim dimension of the node's variable.
    */
   final class Edge(var n: Node, val f: Factor, dim: Int) {
-    val msgs:Msgs = new DiscreteMsgs(dim)
+    var msgs:Msgs = new DiscreteMsgs(dim)
 
     var indexInFactor = -1
     var indexInNode   = -1

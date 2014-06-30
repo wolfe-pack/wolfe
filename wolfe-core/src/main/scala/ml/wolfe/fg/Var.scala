@@ -1,7 +1,7 @@
 package ml.wolfe.fg
 
 import ml.wolfe.MoreArrayOps._
-import ml.wolfe.{FactorieVector, FactorGraph}
+import ml.wolfe.{Wolfe, FactorieVector, FactorGraph}
 import ml.wolfe.FactorGraph.{Node, Edge}
 import scalaxy.loops._
 import scala.util.Random
@@ -14,15 +14,17 @@ import math._
  */
 trait Var {
 
+  import Wolfe.notSupported
+
   def asDiscrete = this.asInstanceOf[DiscreteVar]
   def asVector = this.asInstanceOf[VectorVar]
-  def setup()
-  def initializeToNegInfinity()
-  def initializeRandomly(eps:Double)
-  def updateN2F(edge: FactorGraph.Edge)
-  def updateMaxMarginalBelief(node: FactorGraph.Node)
-  def updateMarginalBelief(node: FactorGraph.Node)
-  def entropy():Double
+  def setup(){}
+  def initializeToNegInfinity():Unit = notSupported
+  def initializeRandomly(eps:Double):Unit = notSupported
+  def updateN2F(edge: FactorGraph.Edge):Unit = notSupported
+  def updateMaxMarginalBelief(node: FactorGraph.Node):Unit = notSupported
+  def updateMarginalBelief(node: FactorGraph.Node):Unit = notSupported
+  def entropy():Double = notSupported
 
 }
 
@@ -42,7 +44,7 @@ final class DiscreteVar(var dim: Int) extends Var {
   /* indicates the value corresponding to the setting of the node */
   var value: Int = 0
 
-  def entropy() = {
+  override def entropy() = {
     var result = 0.0
     for (i <- (0 until b.length).optimized) {
       result -= math.exp(b(i)) * b(i) //messages are in log space
@@ -50,22 +52,22 @@ final class DiscreteVar(var dim: Int) extends Var {
     result
   }
 
-  def initializeToNegInfinity() = {
+  override def initializeToNegInfinity() = {
     fill(b, Double.NegativeInfinity)
   }
 
 
-  def initializeRandomly(eps:Double) = {
+  override def initializeRandomly(eps:Double) = {
     for (i <- b.indices) b(i) = Random.nextGaussian() * eps
   }
 
-  def setup() {
+  override def setup() {
     if (domain == null || domain.length != dim) domain = Array.range(0, dim)
     if (b == null || b.length != dim) b = Array.ofDim[Double](dim)
     if (in == null || in.length != dim) in = Array.ofDim[Double](dim)
   }
 
-  def updateN2F(edge: Edge) = {
+  override def updateN2F(edge: Edge) = {
     val node = edge.n
     val m = edge.msgs.asDiscrete
     System.arraycopy(in, 0, m.n2f, 0, m.n2f.length)
@@ -75,7 +77,7 @@ final class DiscreteVar(var dim: Int) extends Var {
     }
 
   }
-  def updateMaxMarginalBelief(node: Node) = {
+  override def updateMaxMarginalBelief(node: Node) = {
     System.arraycopy(in, 0, b, 0, b.length)
     for (e <- 0 until node.edges.length) {
       for (i <- 0 until dim)
@@ -83,7 +85,7 @@ final class DiscreteVar(var dim: Int) extends Var {
       maxNormalize(b)
     }
   }
-  def updateMarginalBelief(node: Node) = {
+  override def updateMarginalBelief(node: Node) = {
     System.arraycopy(in, 0, b, 0, b.length)
     for (e <- 0 until node.edges.length) {
       for (i <- 0 until dim)
@@ -101,26 +103,15 @@ final class VectorVar(val dim:Int) extends Var {
   var setting:FactorieVector = null
 
 
-  def entropy() = ???
-
-  def setup() = {
-
-  }
-
-
-  def updateMarginalBelief(node: Node) = ???
-  def updateN2F(edge: Edge) = {
+  override def updateN2F(edge: Edge) = {
     edge.msgs.asVector.n2f = b //todo: copy instead?
   }
 
-  def initializeRandomly(eps:Double) = {
+  override def initializeRandomly(eps:Double) = {
     for (i <- 0 until dim) b(i) = Random.nextGaussian() * eps
   }
-  def initializeToNegInfinity() = {
+  override def initializeToNegInfinity() = {
     b := Double.NegativeInfinity
-  }
-  def updateMaxMarginalBelief(node: Node) = {
-
   }
 }
 

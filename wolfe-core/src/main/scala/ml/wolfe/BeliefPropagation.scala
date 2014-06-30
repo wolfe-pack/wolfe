@@ -11,8 +11,10 @@ object BeliefPropagation {
   import FactorGraph._
   import MoreArrayOps._
 
-  def maxProduct(maxIteration: Int, schedule: Boolean = true)(fg: FactorGraph) = apply(fg, maxIteration, schedule, false)
-  def sumProduct(maxIteration: Int, schedule: Boolean = true)(fg: FactorGraph) = apply(fg, maxIteration, schedule, true)
+  def maxProduct(maxIteration: Int, schedule: Boolean = true, gradientAndObjective: Boolean = true)
+                (fg: FactorGraph) = apply(fg, maxIteration, schedule, false, gradientAndObjective)
+  def sumProduct(maxIteration: Int, schedule: Boolean = true, gradientAndObjective: Boolean = true)
+                (fg: FactorGraph) = apply(fg, maxIteration, schedule, true, gradientAndObjective)
 
   /**
    * Runs some iterations of belief propagation.
@@ -20,7 +22,10 @@ object BeliefPropagation {
    * @param maxIteration maximum number of iterations.
    * @param schedule should edges be scheduled.
    */
-  def apply(fg: FactorGraph, maxIteration: Int, schedule: Boolean = true, sum: Boolean = false) {
+  def apply(fg: FactorGraph, maxIteration: Int,
+            schedule: Boolean = true,
+            sum: Boolean = false,
+            gradientAndObjective: Boolean = true) {
     //    val edges = if (canonical) fg.edges.sorted(FactorGraph.EdgeOrdering) else fg.edges
     val edges = if (schedule) MPSchedulerImpl.schedule(fg) else fg.edges
 
@@ -34,8 +39,10 @@ object BeliefPropagation {
 
     //calculate gradient and objective
     //todo this is not needed if we don't have linear factors. Maybe initial size should depend on number of linear factors
-    fg.gradient = new SparseVector(1000)
-    fg.value = featureExpectationsAndObjective(fg, fg.gradient, sum)
+    if (gradientAndObjective) {
+      fg.gradient = new SparseVector(1000)
+      fg.value = featureExpectationsAndObjective(fg, fg.gradient, sum)
+    }
 
   }
 
