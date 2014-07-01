@@ -12,7 +12,8 @@ import scalaxy.loops._
 /**
  * @author luke
  */
-class TupleVar(val components:Array[DiscreteVar]) extends Var {
+class TupleVar(val componentNodes:Array[Node]) extends Var {
+  val components = componentNodes.map(_.variable.asDiscrete)
   val dim = components.map(_.dim).product
 
   /* node belief */
@@ -56,6 +57,10 @@ class TupleVar(val components:Array[DiscreteVar]) extends Var {
     for (e <- 0 until node.edges.length if e != edge.indexInNode) {
       m.n2f.elementWiseOp[Double](node.edges(e).msgs.asTuple.f2n, _+_)
     }
+    println( "n2f: " +
+      componentNodes.map(_.index.toString).mkString("(", ",", ")").padTo(10, ' ') + " -> " +
+      edge.f.potential.asInstanceOf[TuplePotential].baseNodes.map(_.index.toString).mkString("(", ",", ")").padTo(10, ' ')  + " = " +
+      m.n2f.array.mkString(","))
   }
 
   override def updateMaxMarginalBelief(node: Node) = {

@@ -1,7 +1,7 @@
 package ml.wolfe.fg
 
-import ml.wolfe.FactorGraph.{FGPrinter, Edge}
-import ml.wolfe.FactorieVector
+import ml.wolfe.FactorGraph.{Factor, FGPrinter, Edge, Node}
+import ml.wolfe.{FactorGraph, FactorieVector}
 import ml.wolfe.MoreArrayOps._
 import ml.wolfe.util.LabelledTensor.LabelledTensor
 import ml.wolfe.util.{LabelledTensor, Util}
@@ -11,7 +11,7 @@ import scalaxy.loops._
  * Created by luke on 27/06/14.
  */
 trait TuplePotential extends Potential {
-  val baseVariables:Array[DiscreteVar]
+  val baseNodes:Array[Node]
 }
 
 final class TupleConsistencyPotential(edge1: Edge, edge2: Edge) extends TuplePotential {
@@ -20,10 +20,12 @@ final class TupleConsistencyPotential(edge1: Edge, edge2: Edge) extends TuplePot
   val m1 = edge1.msgs.asTuple
   val m2 = edge2.msgs.asTuple
 
-  val baseVariables = v1.components intersect v2.components
+  val baseNodes = v1.componentNodes intersect v2.componentNodes
+  val baseVariables = baseNodes.map(_.variable.asDiscrete)
 
   override def toVerboseString(implicit fgPrinter: FGPrinter) = {
-    s"TupleConsistency(Nodes ${edge1.n.index} and ${edge2.n.index} with shared variables ${baseVariables.mkString(",")})"
+    //s"TupleConsistency(Nodes ${edge1.n.index} and ${edge2.n.index} with shared variables ${baseVariables.mkString(",")})"
+    "TupleConsistency\n" + "nodes: " + baseNodes.map(_.index.toString).mkString(",")
   }
 
   override def valueForCurrentSetting() = {
@@ -36,6 +38,11 @@ final class TupleConsistencyPotential(edge1: Edge, edge2: Edge) extends TuplePot
 
     thatMsg.n2f.fold(baseVariables, Double.NegativeInfinity, math.max, thisMsg.f2n.array)
     maxNormalize(thisMsg.f2n.array)
+
+    println( "f2n: " +
+      baseNodes.map(_.index.toString).mkString("(", ",", ")").padTo(10, ' ') + " -> " +
+      edge.n.variable.asInstanceOf[TupleVar].componentNodes.map(_.index.toString).mkString("(", ",", ")").padTo(10, ' ')  + " = " +
+      thisMsg.f2n.array.mkString(","))
   }
 
   override def marginalF2N(edge: Edge) = {
@@ -85,12 +92,84 @@ final class TupleConsistencyPotential(edge1: Edge, edge2: Edge) extends TuplePot
 }
 
 
-final class WrappedPotential(val origPotential: Potential, val edge:Edge, val baseVariables:Array[DiscreteVar]) extends TuplePotential {
+final class GroupPotential(val components: Array[Factor], val edge:Edge, val baseNodes:Array[Node]) extends TuplePotential {
   val v = edge.n.variable.asTuple
   val m = edge.msgs.asTuple
 
+
+  def componentVariables(f:Factor) = f.edges.map(_.n.variable.asDiscrete)
+
   override def toVerboseString(implicit fgPrinter: FGPrinter) = {
-    "OneTuplePotential(" + origPotential + ")"
+    "Group Potential\n" + "nodes: " + baseNodes.map(_.index.toString).mkString(",")
+  }
+
+  override def valueForCurrentSetting() = {
+    v.updateComponentSettings()
+    components.map(_.potential.valueForCurrentSetting()).sum
+  }
+
+  override def marginalF2N(edge: Edge) = {
+    val scoretables = components.map(f => f.potential.getScoreTable(componentVariables(f)))
+    m.f2n.fill(x => 0)
+    for(t <- scoretables) m.f2n.elementWiseOp[Double](t, _+_)
+
+    println( "f2n: " +
+      baseNodes.map(_.index.toString).mkString("(", ",", ")").padTo(10, ' ') + " -> " +
+      edge.n.variable.asInstanceOf[TupleVar].componentNodes.map(_.index.toString).mkString("(", ",", ")").padTo(10, ' ')  + " = " +
+      m.f2n.array.mkString(","))
+  }
+  override def maxMarginalF2N(edge:Edge) = marginalF2N(edge)
+
+  override def maxMarginalExpectationsAndObjective(result: FactorieVector) = {
+    val scoretables = components.map(f => f.potential.getScoreTable(componentVariables(f)))
+    val scoreSums:LabelledTensor[DiscreteVar, Double] =
+      LabelledTensor.onNewArray(v.components, _.dim, 0.0)
+    for(t <- scoretables) scoreSums.elementWiseOp[Double](t, _+_)
+
+    val scorePairs:LabelledTensor[DiscreteVar, (Double, Double)] =
+      LabelledTensor.onNewArray(v.components, _.dim, (0.0, 0.0))
+
+    m.n2f.elementWiseOp(scoreSums, (n2f:Double, score:Double) => (score, score+n2f), scorePairs.array)
+
+    var maxScore = Double.NegativeInfinity
+    var maxPenalisedScore = Double.NegativeInfinity
+    var maxIndices:Int = 0
+    for(i <- (0 until scorePairs.array.length).optimized) {
+      if(scorePairs.array(i)._2 > maxPenalisedScore) {
+
+        maxPenalisedScore = scorePairs.array(i)._2
+        maxScore = scorePairs.array(i)._1
+        maxIndices = 1
+      } else if(scorePairs.array(i)._2 == maxPenalisedScore) {
+        maxIndices = maxIndices + 1
+      }
+    }
+
+    val prob = 1d / maxIndices
+    for (f <- components if f.potential.isLinear) { //todo: yuck!
+      val resultBoost = scorePairs.fold[Double](componentVariables(f), 0, {
+        (acc:Double, x:(Double, Double)) =>
+          if(x._2 == maxPenalisedScore) acc + prob else acc
+      })
+      f.potential match {
+        case p: LinearPotential => for(i <- (0 until resultBoost.array.length).optimized) {
+          result += (p.getVectors(i), resultBoost.array(i))
+        }
+      }
+    }
+    maxScore
+  }
+}
+
+
+/*
+final class WrappedPotential(val origPotential: Potential, val edge:Edge, val baseNodes:Array[Node]) extends TuplePotential {
+  val v = edge.n.variable.asTuple
+  val m = edge.msgs.asTuple
+
+  val baseVariables = baseNodes.map(_.variable.asDiscrete)
+  override def toVerboseString(implicit fgPrinter: FGPrinter) = {
+    "WrappedPotential\n" + "nodes: " + baseNodes.map(_.index.toString).mkString(",")
   }
 
   override def valueForCurrentSetting() = {
@@ -140,9 +219,4 @@ final class WrappedPotential(val origPotential: Potential, val edge:Edge, val ba
     }
     maxScore
   }
-
-  override def marginalExpectationsAndObjective(result: FactorieVector) = {
-    //todo
-    0
-  }
-}
+ }*/

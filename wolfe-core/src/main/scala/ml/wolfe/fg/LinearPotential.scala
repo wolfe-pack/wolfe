@@ -10,7 +10,7 @@ import cc.factorie.la.{SingletonTensor1, DenseTensor1, SparseTensor1}
 /**
  * @author Sebastian Riedel
  */
-final class LinearPotential(val edges: Array[Edge], statistics: Stats, fg: FactorGraph) extends Potential {
+final class LinearPotential(val edges: Array[Edge], val statistics: Stats, fg: FactorGraph) extends Potential {
 
   import statistics._
 

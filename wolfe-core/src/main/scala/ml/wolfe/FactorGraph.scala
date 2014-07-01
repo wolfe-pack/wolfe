@@ -58,7 +58,7 @@ final class FactorGraph {
   }
 
   def addTupleNode(componentNodes:Array[Node]) = {
-    val variable = new TupleVar(componentNodes.map(_.variable.asDiscrete))
+    val variable = new TupleVar(componentNodes)
     val n = new Node(nodes.size, variable)
     nodes += n
     n
@@ -88,8 +88,8 @@ final class FactorGraph {
    */
   def addEdge(f: Factor, n: Node): Edge = addEdge(f, n, f.edgeCount)
 
-  def addTupleEdge(f: Factor, n: Node, baseVariables:Array[DiscreteVar]): Edge = {
-    val e = new Edge(n, f, new TupleMsgs(n.variable.asTuple, baseVariables))
+  def addTupleEdge(f: Factor, n: Node, baseNodes:Array[Node]): Edge = {
+    val e = new Edge(n, f, new TupleMsgs(n.variable.asTuple, baseNodes.map(_.variable.asDiscrete)))
     e.indexInFactor = f.edgeCount
     n.edgeCount += 1
     f.edgeCount += 1
@@ -220,6 +220,29 @@ final class FactorGraph {
         }
       }
     loopyAcc(factors.toList, nodes.map(Set(_)).toSet)
+  }
+
+
+  def displayAsGraph() {
+    def nodeString(n:Node) = n.variable match {
+      case v:TupleVar => v.componentNodes.map(_.index.toString).mkString("(", ",", ")")
+      case _ => n.index.toString
+    }
+    def factorString(f:Factor) = f.edges.map(_.n.index.toString).mkString("(",",",")") + "\n" + f.potential.toVerboseString(DefaultPrinter)
+    val fgv = new ml.wolfe.FactorGraphViewer()
+    val factorVertices = factors.map(f => f.potential match {
+      case p:GroupPotential => {
+        val x = fgv.addGroupFactor(f.potential.toVerboseString(DefaultPrinter))
+        for(g <- p.components) {
+          fgv.addEdge(fgv.addFactor(factorString(g)), x)
+        }
+        f -> x
+      }
+      case _ => f -> fgv.addFactor(factorString(f))
+    }).toMap
+    val nodeVertices = nodes.map(n => n -> fgv.addNode(nodeString(n))).toMap
+    for(e <- edges) fgv.addEdge(factorVertices(e.f), nodeVertices(e.n))
+    fgv.render()
   }
 
 }
@@ -432,8 +455,14 @@ object FactorGraph {
 
 
   object DefaultPrinter extends FGPrinter {
-    def node2String(node: Node) = ""
-    def factor2String(factor: Factor) = ""
+    def node2String(node: Node) = node.variable match {
+      case v: TupleVar => v.componentNodes.map(_.index.toString).mkString("(", ",", ")")
+      case _ => ""
+    }
+    def factor2String(factor: Factor) = factor.potential match {
+      case p:TuplePotential => p.baseNodes.map(_.index.toString).mkString("(", ",", ")")
+      case _ => ""
+    }
     def vector2String(vector: ml.wolfe.FactorieVector) = vector.toString()
   }
 

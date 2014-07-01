@@ -198,19 +198,27 @@ object Junkify {
     val jt = new FactorGraph
     val cliqueNodes = cliques.map(c => c -> jt.addTupleNode(c.toArray)).toMap
 
-    for((clique, factors) <- cliqueFactors; f <- factors) {
+    /*for((clique, factors) <- cliqueFactors; f <- factors) {
       val wrapped = jt.addFactor()
-      val edge = jt.addTupleEdge(wrapped, cliqueNodes(clique), f.edges.map(_.n.variable.asDiscrete))
-      wrapped.potential = new WrappedPotential(f.potential, edge, f.edges.map(_.n.variable.asDiscrete))
+      val edge = jt.addTupleEdge(wrapped, cliqueNodes(clique), f.edges.map(_.n))
+      wrapped.potential = new WrappedPotential(f.potential, edge, f.edges.map(_.n))
+    }*/
+    for((clique, factors) <- cliqueFactors if factors.nonEmpty) {
+      val factorsArr = factors.toArray
+      val groupFactor = jt.addFactor()
+      val componentNodes = factorsArr.map(f => f.potential -> f.edges.map(_.n)).toMap
+      val baseNodes = componentNodes.values.reduce(_ ++ _).distinct
+      val edge = jt.addTupleEdge(groupFactor, cliqueNodes(clique), baseNodes)
+      groupFactor.potential = new GroupPotential(factorsArr, edge, baseNodes)
     }
 
     for (e <- edges) {
       val f = jt.addFactor()
 
-      val intersectionVariables = (e._1 & e._2).toArray.map(_.variable.asDiscrete)
+      val intersectionNodes = (e._1 & e._2).toArray
 
-      val edge1 = jt.addTupleEdge(f, cliqueNodes(e._1), intersectionVariables)
-      val edge2 = jt.addTupleEdge(f, cliqueNodes(e._2), intersectionVariables)
+      val edge1 = jt.addTupleEdge(f, cliqueNodes(e._1), intersectionNodes)
+      val edge2 = jt.addTupleEdge(f, cliqueNodes(e._2), intersectionNodes)
 
       f.potential = new TupleConsistencyPotential(edge1, edge2)
     }

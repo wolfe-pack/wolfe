@@ -28,16 +28,18 @@ object BeliefPropagation {
     //    val edges = if (canonical) fg.edges.sorted(FactorGraph.EdgeOrdering) else fg.edges
     val t = System.currentTimeMillis()
     val fg2 = if(fg.isLoopy) {
-      print("Factor graph is loopy. Converting to junction tree...")
       val jt = Junkify(fg)
-      println("✓"); jt
+      println("Weights = " + fg.weights + ", Junction Tree=\n" + jt.toVerboseString()); jt
     } else fg
 
-    println(fg.edges.size)
+    println("Original Factor Graph=\n" + fg.toVerboseString())
+    fg.displayAsGraph()
+    fg2.displayAsGraph()
+   /* println(fg.edges.size)
     println(fg.edges.map(_.msgs.asDiscrete.n2f.length).sum)
 
     println(fg2.edges.size)
-    println(fg2.edges.map(_.msgs.asTuple.n2f.array.length).sum)
+    println(fg2.edges.map(_.msgs.asTuple.n2f.array.length).sum)*/
     val edges = if (schedule) MPSchedulerImpl.schedule(fg2) else fg2.edges
 
     for (i <- 0 until maxIteration) {
