@@ -31,15 +31,15 @@ object Util {
   //todo: can use arrays of length factors.length
   def cartesianProduct[S](factors: Seq[Seq[S]]) : Seq[Seq[S]] = {
     @tailrec
-    def productWithPrefixes(suffixes:Seq[List[S]], remainingFactors:Seq[Seq[S]]) : Seq[List[S]] =
+    def productWithSuffixes(suffixes:Seq[List[S]], remainingFactors:Seq[Seq[S]]) : Seq[List[S]] =
       remainingFactors.headOption match {
         case None => suffixes
         case Some(head) => {
-          def newSuffixes = for (s <- suffixes; v <- head) yield v +: s
-          productWithPrefixes(newSuffixes, remainingFactors.tail)
+          def newSuffixes = for (v <- head; s <- suffixes) yield v +: s
+          productWithSuffixes(newSuffixes, remainingFactors.tail)
         }
       }
-    productWithPrefixes(Seq(List()), factors.reverse)
+    productWithSuffixes(Seq(List()), factors.reverse)
   }
 }
 
@@ -82,12 +82,13 @@ object LabelledTensor {
 
     def elementWiseOp[U, V:ClassTag](that: LabelledTensor[L, U], op: (T, U) => V, destination:Array[V]) : LabelledTensor[L, V] = {
       val sameLabels = this.labels intersect that.labels
-      val sameIndicesBase = allMuls(sameLabels).map(mulToIndex)
+      val sameMulsBase = allMuls(sameLabels)
+      val sameIndicesBase = sameMulsBase.map(mulToIndex)
       val diffIndicesBase = allMuls(labels diff sameLabels).map(mulToIndex)
       for((i,j) <- sameIndicesBase.zipWithIndex) {
         val x = that.array(j)
         for(k <- diffIndicesBase) {
-          destination(i + k) = op(this.array(k), x)
+          destination(i + k) = op(this.array(i+k), x)
         }
       }
       LabelledTensor.onExistingArray[L,V](labels, dimensions, destination)
