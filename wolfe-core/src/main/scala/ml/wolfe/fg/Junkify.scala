@@ -207,7 +207,7 @@ object Junkify {
       val factorsArr = factors.toArray
       val groupFactor = jt.addFactor()
       val componentNodes = factorsArr.map(f => f.potential -> f.edges.map(_.n)).toMap
-      val baseNodes = componentNodes.values.reduce(_ ++ _).distinct
+      val baseNodes = componentNodes.values.reduce(_ ++ _).distinct.sortBy(_.index)
       val edge = jt.addTupleEdge(groupFactor, cliqueNodes(clique), baseNodes)
       groupFactor.potential = new GroupPotential(factorsArr, edge, baseNodes)
     }

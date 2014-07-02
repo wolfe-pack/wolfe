@@ -4,7 +4,7 @@ import ml.wolfe.{SingletonVector, FactorGraph, FactorieVector}
 import ml.wolfe.FactorGraph.{FGPrinter, Edge}
 import ml.wolfe.MoreArrayOps._
 import scalaxy.loops._
-import cc.factorie.la.{SingletonTensor1, DenseTensor1, SparseTensor1}
+import cc.factorie.la.{SingletonTensor, SingletonTensor1, DenseTensor1, SparseTensor1}
 
 
 /**
@@ -122,17 +122,17 @@ final class LinearPotential(val edges: Array[Edge], val statistics: Stats, fg: F
       }
     }
     // prob = 1/|maxs| for all maximums, add corresponding vector
+    val prob = 1.0 / maxCount
     for (i <- 0 until entryCount) {
       val setting = settings(i)
       val score = penalizedScore(i, setting)
       if (score == norm) {
-        dstExpectations +=(vectors(i), 1.0 / maxCount)
+        dstExpectations +=(vectors(i), prob)
+        //println(toString + " Adding: " + vectors(i).asInstanceOf[SingletonTensor].singleIndex + "->" + vectors(i).asInstanceOf[SingletonTensor].singleValue + " x " + prob + " to dstExpectations")
       }
     }
     maxScore
   }
-
-  def getVectors = vectors
 
   override def marginalExpectationsAndObjective(dstExpectations: FactorieVector) = {
     var localZ = 0.0
@@ -171,6 +171,8 @@ final class LinearPotential(val edges: Array[Edge], val statistics: Stats, fg: F
 
     tableString.mkString("\n")
   }
+
+  override def toString = "Linear " + edges.map(_.n.index.toString).mkString("(",",",")")
 }
 
 case class Stats(settings: Array[Array[Int]], vectors: Array[FactorieVector])

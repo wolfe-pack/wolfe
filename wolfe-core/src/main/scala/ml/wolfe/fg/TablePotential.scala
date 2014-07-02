@@ -44,7 +44,7 @@ object TablePotential {
   final def settingToEntry(setting: Array[Int], dims: Array[Int]) = {
     var result = 0
     for (i <- (0 until dims.length).optimized) {
-      result = setting(dims.length - i - 1) + result * dims(dims.length - i - 1)
+      result = setting(i) + result * dims(dims.length - i - 1)
     }
     result
   }
@@ -60,7 +60,7 @@ object TablePotential {
     var current = entry
     for (i <- (0 until dims.length).optimized) {
       val value = current % dims(i)
-      result(i) = value
+      result(dims.length - i - 1) = value
       current = current / dims(i)
     }
     result
