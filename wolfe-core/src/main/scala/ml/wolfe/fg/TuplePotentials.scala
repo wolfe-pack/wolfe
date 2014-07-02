@@ -1,5 +1,6 @@
 package ml.wolfe.fg
 
+import cc.factorie.la.SingletonTensor
 import ml.wolfe.FactorGraph.{Factor, FGPrinter, Edge, Node}
 import ml.wolfe.{FactorGraph, FactorieVector}
 import ml.wolfe.MoreArrayOps._
@@ -25,7 +26,7 @@ final class TupleConsistencyPotential(edge1: Edge, edge2: Edge) extends TuplePot
 
   override def toVerboseString(implicit fgPrinter: FGPrinter) = {
     //s"TupleConsistency(Nodes ${edge1.n.index} and ${edge2.n.index} with shared variables ${baseVariables.mkString(",")})"
-    "TupleConsistency\n" + "nodes: " + baseNodes.map(_.index.toString).mkString(",")
+    "Consistency " + baseNodes.map(_.index.toString).mkString("(",",",")")
   }
 
   override def valueForCurrentSetting() = {
@@ -38,11 +39,11 @@ final class TupleConsistencyPotential(edge1: Edge, edge2: Edge) extends TuplePot
 
     thatMsg.n2f.fold(baseVariables, Double.NegativeInfinity, math.max, thisMsg.f2n.array)
     maxNormalize(thisMsg.f2n.array)
-
+/*
     println( "f2n: " +
       baseNodes.map(_.index.toString).mkString("(", ",", ")").padTo(10, ' ') + " -> " +
       edge.n.variable.asInstanceOf[TupleVar].componentNodes.map(_.index.toString).mkString("(", ",", ")").padTo(10, ' ')  + " = " +
-      thisMsg.f2n.array.mkString(","))
+      thisMsg.f2n.array.mkString(","))*/
   }
 
   override def marginalF2N(edge: Edge) = {
@@ -99,9 +100,7 @@ final class GroupPotential(val components: Array[Factor], val edge:Edge, val bas
 
   def componentVariables(f:Factor) = f.edges.map(_.n.variable.asDiscrete)
 
-  override def toVerboseString(implicit fgPrinter: FGPrinter) = {
-    "Group Potential\n" + "nodes: " + baseNodes.map(_.index.toString).mkString(",")
-  }
+  override def toString = "Group " + baseNodes.map(_.index.toString).mkString("(",",",")")
 
   override def valueForCurrentSetting() = {
     v.updateComponentSettings()
@@ -111,12 +110,13 @@ final class GroupPotential(val components: Array[Factor], val edge:Edge, val bas
   override def marginalF2N(edge: Edge) = {
     val scoretables = components.map(f => f.potential.getScoreTable(componentVariables(f)))
     m.f2n.fill(x => 0)
-    for(t <- scoretables) m.f2n.elementWiseOp[Double](t, _+_)
-
+    for(t <- scoretables) m.f2n.elementWiseOp[Double](t, _+_) //todo: preorder so we don't need to do this
+    maxNormalize(m.f2n.array)
+/*
     println( "f2n: " +
       baseNodes.map(_.index.toString).mkString("(", ",", ")").padTo(10, ' ') + " -> " +
       edge.n.variable.asInstanceOf[TupleVar].componentNodes.map(_.index.toString).mkString("(", ",", ")").padTo(10, ' ')  + " = " +
-      m.f2n.array.mkString(","))
+      m.f2n.array.mkString(","))*/
   }
   override def maxMarginalF2N(edge:Edge) = marginalF2N(edge)
 
@@ -152,8 +152,16 @@ final class GroupPotential(val components: Array[Factor], val edge:Edge, val bas
           if(x._2 == maxPenalisedScore) acc + prob else acc
       })
       f.potential match {
-        case p: LinearPotential => for(i <- (0 until resultBoost.array.length).optimized) {
-          result += (p.getVectors(i), resultBoost.array(i))
+        case p: LinearPotential => {
+          //todo: Pre-order all factor tables so we don't have to reorder here
+          val R = resultBoost.permute(p.edges.map(_.n.variable.asDiscrete))
+          for(i <- (0 until resultBoost.array.length).optimized) {
+            if(R.array(i)!=0) {
+              result +=(p.statistics.vectors(i), R.array(i))
+              /*println(toString + "/" + p.toString + " Adding: " + p.statistics.vectors(i).asInstanceOf[SingletonTensor].singleIndex +
+              "->" + p.statistics.vectors(i).asInstanceOf[SingletonTensor].singleValue + " x " + R.array(i) + " to dstExpectations")*/
+            }
+          }
         }
       }
     }
@@ -169,7 +177,7 @@ final class WrappedPotential(val origPotential: Potential, val edge:Edge, val ba
 
   val baseVariables = baseNodes.map(_.variable.asDiscrete)
   override def toVerboseString(implicit fgPrinter: FGPrinter) = {
-    "WrappedPotential\n" + "nodes: " + baseNodes.map(_.index.toString).mkString(",")
+    "Wrapped " + baseNodes.map(_.index.toString).mkString("(",",",")")
   }
 
   override def valueForCurrentSetting() = {

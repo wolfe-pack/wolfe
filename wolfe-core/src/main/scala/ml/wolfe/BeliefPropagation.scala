@@ -1,5 +1,6 @@
 package ml.wolfe
 
+import cc.factorie.la.SparseIndexedTensor
 import ml.wolfe.fg.Junkify
 
 import scala.language.postfixOps
@@ -18,6 +19,7 @@ object BeliefPropagation {
 
   var runCount = 0
   var totalTime:Long = 0
+  var shownGraph = false;
   /**
    * Runs some iterations of belief propagation.
    * @param fg the message passing graph to run
@@ -27,33 +29,59 @@ object BeliefPropagation {
   def apply(fg: FactorGraph, maxIteration: Int, schedule: Boolean = true, sum: Boolean = false) {
     //    val edges = if (canonical) fg.edges.sorted(FactorGraph.EdgeOrdering) else fg.edges
     val t = System.currentTimeMillis()
-    val fg2 = if(fg.isLoopy) {
+    val fg2 = if(true/*fg.isLoopy*/) {
       val jt = Junkify(fg)
-      println("Weights = " + fg.weights + ", Junction Tree=\n" + jt.toVerboseString()); jt
+      //println("Weights = " + fg.weights + ", Junction Tree=\n" + jt.toVerboseString());
+      jt
     } else fg
 
-    println("Original Factor Graph=\n" + fg.toVerboseString())
-    fg.displayAsGraph()
-    fg2.displayAsGraph()
-   /* println(fg.edges.size)
-    println(fg.edges.map(_.msgs.asDiscrete.n2f.length).sum)
+    //println("Original Factor Graph=\n" + fg.toVerboseString())
 
-    println(fg2.edges.size)
-    println(fg2.edges.map(_.msgs.asTuple.n2f.array.length).sum)*/
-    val edges = if (schedule) MPSchedulerImpl.schedule(fg2) else fg2.edges
-
-    for (i <- 0 until maxIteration) {
-      for (edge <- edges) {
-        for (other <- edge.f.edges; if other != edge) updateN2F(other)
-        updateF2N(edge, sum)
+    def bp(FG:FactorGraph) = {
+      val edges = if (schedule) MPSchedulerImpl.schedule(FG) else FG.edges
+      /*if(runCount == 2) {
+        println("Schedule\n--------")
+        println(edges.map(e =>
+          e.f.edges.map(_.n.index.toString).mkString("(", ",", ")") + "  -->  " + e.n.index
+        ).mkString("\n"))
+      }*/
+      for (i <- 0 until maxIteration) {
+        for (edge <- edges) {
+          for (other <- edge.f.edges; if other != edge) updateN2F(other) //todo: this is inefficient! Don't need to update if unchanged!
+          updateF2N(edge, sum)
+        }
       }
-    }
-    for (node <- fg2.nodes) updateBelief(node, sum)
+      for (node <- FG.nodes) updateBelief(node, sum)
 
-    //calculate gradient and objective
-    //todo this is not needed if we don't have linear factors. Maybe initial size should depend on number of linear factors
-    fg.gradient = new SparseVector(1000)
-    fg.value = featureExpectationsAndObjective(fg2, fg.gradient, sum)
+      //calculate gradient and objective
+      //todo this is not needed if we don't have linear factors. Maybe initial size should depend on number of linear factors
+      FG.gradient = new SparseVector(1000)
+      FG.value = featureExpectationsAndObjective(FG, FG.gradient, sum)
+    }
+
+    bp(fg)
+    bp(fg2)
+
+    if(fg.value != fg2.value) {
+      println("fg value = " + fg.value)
+      println("jt value = " + fg2.value)
+    }
+    fg.gradient.asInstanceOf[SparseIndexedTensor]._makeReadable()
+    fg2.gradient.asInstanceOf[SparseIndexedTensor]._makeReadable()
+    if(fg.gradient.toString != fg2.gradient.toString()) {
+      println("fg gradient = " + fg.gradient + "\n")
+      println("jt gradient = " + fg2.gradient + "\n----------------------------------------------------------\n")
+    }
+      //todo: make a spec that these should be equal for a linear chain
+
+    if(runCount == 2) {
+      fg.displayAsGraph(true)
+      /*if (fg2 != fg) fg2.displayAsGraph(true)
+      shownGraph = true*/
+    }
+
+    fg.value = fg2.value
+    fg.gradient = fg2.gradient
 
     runCount = runCount + 1
     totalTime = totalTime + (System.currentTimeMillis()-t)

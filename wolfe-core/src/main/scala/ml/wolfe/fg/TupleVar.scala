@@ -57,18 +57,18 @@ class TupleVar(val componentNodes:Array[Node]) extends Var {
     for (e <- 0 until node.edges.length if e != edge.indexInNode) {
       m.n2f.elementWiseOp[Double](node.edges(e).msgs.asTuple.f2n, _+_)
     }
-    println( "n2f: " +
+    /*println( "n2f: " +
       componentNodes.map(_.index.toString).mkString("(", ",", ")").padTo(10, ' ') + " -> " +
       edge.f.potential.asInstanceOf[TuplePotential].baseNodes.map(_.index.toString).mkString("(", ",", ")").padTo(10, ' ')  + " = " +
-      m.n2f.array.mkString(","))
+      m.n2f.array.mkString(","))*/
   }
 
   override def updateMaxMarginalBelief(node: Node) = {
     System.arraycopy(in, 0, b, 0, b.length)
     for (e <- 0 until node.edges.length) {
       B.elementWiseOp[Double](node.edges(e).msgs.asTuple.f2n, _+_)
-      maxNormalize(b)
     }
+    maxNormalize(b)
     for(v <- components) {
       B.fold(Array(v), Double.NegativeInfinity, max, v.b)
     }

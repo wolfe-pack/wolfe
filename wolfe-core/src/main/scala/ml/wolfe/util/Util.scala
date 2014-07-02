@@ -55,6 +55,8 @@ object LabelledTensor {
     if(array.length != labels.map(dimensions).product) sys.error("LabelledTensor array is not the right size")
     private val indexSteps: L => Int = labels.zip(labels.scanRight(1)((l, acc) => dimensions(l) * acc).tail).toMap
 
+    override def toString = array.mkString("(", ", ", ")")
+
     def allMuls(forLabels:Seq[L]) = Util.cartesianProduct(
       forLabels.map(l => {(0 until dimensions(l)).map(l -> _)})
     ).map(_.toMap)
@@ -75,9 +77,18 @@ object LabelledTensor {
       LabelledTensor.onExistingArray[L, S](keepLabels, dimensions, destination)
     }
 
-    def fold[S: ClassTag](keepDims: Array[L], z: S, op: (S, T) => S) : LabelledTensor[L, S] = {
-      val destination  = Array.fill[S](keepDims.map(dimensions(_)).product)(z)
-      fold(keepDims, z, op, destination)
+    def fold[S: ClassTag](keepLabels: Array[L], z: S, op: (S, T) => S) : LabelledTensor[L, S] = {
+      val destination  = Array.ofDim[S](keepLabels.map(dimensions(_)).product)
+      fold(keepLabels, z, op, destination)
+    }
+
+    def permute(order: Array[L]) : LabelledTensor[L,T] = {
+      val destination = Array.ofDim[T](order.map(dimensions(_)).product)
+      val destIndices = allMuls(order).map(mulToIndex)
+      for((i, j) <- destIndices.zipWithIndex) {
+        destination(j) = array(i)
+      }
+      LabelledTensor.onExistingArray[L, T](order, dimensions, destination)
     }
 
     def elementWiseOp[U, V:ClassTag](that: LabelledTensor[L, U], op: (T, U) => V, destination:Array[V]) : LabelledTensor[L, V] = {

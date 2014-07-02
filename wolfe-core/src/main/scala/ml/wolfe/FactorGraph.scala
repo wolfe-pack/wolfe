@@ -1,5 +1,6 @@
 package ml.wolfe
 
+import cc.factorie.la.SingletonTensor
 import ml.wolfe.util.LabelledTensor
 
 import scala.collection.mutable.ArrayBuffer
@@ -223,25 +224,41 @@ final class FactorGraph {
   }
 
 
-  def displayAsGraph() {
+  def displayAsGraph(showMessages:Boolean = false) {
     def nodeString(n:Node) = n.variable match {
       case v:TupleVar => v.componentNodes.map(_.index.toString).mkString("(", ",", ")")
       case _ => n.index.toString
     }
-    def factorString(f:Factor) = f.edges.map(_.n.index.toString).mkString("(",",",")") + "\n" + f.potential.toVerboseString(DefaultPrinter)
+    def factorString(f:Factor) = f.edges.map(e => nodeString(e.n)).mkString("(",",",")") + "\n" + f.potential.toVerboseString(DefaultPrinter)
+    def shortArr[T](array:Array[T]) = array.map(_.toString.take(4)).mkString("(", ",", ")")
+    def edgeString(e:Edge) = e.msgs match {
+      case m:TupleMsgs => "n2f: " + shortArr(m.n2f.array) + "\nf2n:" + shortArr(m.f2n.array)
+      case m:DiscreteMsgs => "n2f: " + shortArr(m.n2f)  + "\nf2n:" + shortArr(m.f2n.array)
+      case _ => ""
+    }
     val fgv = new ml.wolfe.FactorGraphViewer()
     val factorVertices = factors.map(f => f.potential match {
       case p:GroupPotential => {
-        val x = fgv.addGroupFactor(f.potential.toVerboseString(DefaultPrinter))
+        val x = fgv.addGroupFactor(factorString(f))
         for(g <- p.components) {
           fgv.addEdge(fgv.addFactor(factorString(g)), x)
         }
         f -> x
       }
+      case p:TupleConsistencyPotential => f -> fgv.addGroupFactor(factorString(f))
       case _ => f -> fgv.addFactor(factorString(f))
     }).toMap
     val nodeVertices = nodes.map(n => n -> fgv.addNode(nodeString(n))).toMap
-    for(e <- edges) fgv.addEdge(factorVertices(e.f), nodeVertices(e.n))
+
+    if(showMessages)
+      for(e <- edges) fgv.addEdge(nodeVertices(e.n), factorVertices(e.f), edgeString(e))
+    else
+      for(e <- edges) fgv.addEdge(nodeVertices(e.n), factorVertices(e.f))
+
+    fgv.addTextbox("Value = " + value.toString())
+    if(weights != null) fgv.addTextbox("Weights = " + weights.toString())
+    if(gradient != null) fgv.addTextbox("Gradient = " + gradient.toString())
+
     fgv.render()
   }
 
@@ -463,7 +480,10 @@ object FactorGraph {
       case p:TuplePotential => p.baseNodes.map(_.index.toString).mkString("(", ",", ")")
       case _ => ""
     }
-    def vector2String(vector: ml.wolfe.FactorieVector) = vector.toString()
+    def vector2String(vector: ml.wolfe.FactorieVector) = vector match {
+      case v:SingletonVector => v.singleIndex + " -> " + v.singleValue
+      case _ => vector.toString()
+    }
   }
 
 }
