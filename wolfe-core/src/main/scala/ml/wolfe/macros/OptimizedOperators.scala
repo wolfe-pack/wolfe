@@ -84,7 +84,7 @@ trait LinearModelArgmaxCode[C <: Context] extends SymbolRepository[C] {
   import context.universe._
 
   def optimizeByInferenceCode(objRhs: Tree, graph: TermName): Tree = objRhs match {
-    case q"$f(${ _ })" =>
+    case q"$f(...${ _ })" =>
       f.symbol.annotations.find(_.tpe.typeSymbol == wolfeSymbols.optByInference) match {
         case Some(annotation) => q"${ annotation.scalaArgs.head }($graph)"
         case None => q"ml.wolfe.BeliefPropagation($graph,1)"
@@ -93,7 +93,7 @@ trait LinearModelArgmaxCode[C <: Context] extends SymbolRepository[C] {
   }
 
   def logZByInferenceCode(objRhs: Tree, graph: TermName): Tree = objRhs match {
-    case q"$f(${ _ })" =>
+    case q"$f(...${ _ })" =>
       f.symbol.annotations.find(_.tpe.typeSymbol == wolfeSymbols.logZByInference) match {
         case Some(annotation) => q"${ annotation.scalaArgs.head }($graph)"
         case None => q"ml.wolfe.BeliefPropagation.sumProduct(1)($graph)"
