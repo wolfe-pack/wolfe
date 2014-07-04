@@ -20,9 +20,9 @@ object BeliefPropagation {
   def sumProduct(maxIteration: Int, schedule: Boolean = true, gradientAndObjective: Boolean = true)
                 (fg: FactorGraph) = apply(fg, maxIteration, schedule, true, gradientAndObjective)
   def junctionTreeMaxProduct(gradientAndObjective: Boolean = true)
-                (fg: FactorGraph) = onJunctionTree(fg, sum=false, gradientAndObjective)
+                (fg: FactorGraph) = onJunctionTree(fg, sum=false, gradientAndObjective=gradientAndObjective)
   def junctionTreeSumProduct(gradientAndObjective: Boolean = true)
-                (fg: FactorGraph) = onJunctionTree(fg, sum=true, gradientAndObjective)
+                (fg: FactorGraph) = onJunctionTree(fg, sum=true, gradientAndObjective=gradientAndObjective)
 
   /**
    * Runs some iterations of belief propagation.
@@ -60,13 +60,10 @@ object BeliefPropagation {
    *  then copies value/gradient back into the original factor graph.
    *  @param fg the original factor graph
    */
-  def onJunctionTree(fg:FactorGraph):Unit = onJunctionTree(fg, sum = false, gradientAndObjective = true)
-  def onJunctionTree(fg: FactorGraph, sum: Boolean, gradientAndObjective: Boolean) {
-    if(! fg.isLoopy) {
-      if(! shownLoopyWarning) {
-        LoggerUtil.warn("Junction tree belief propagation called on a non-loopy graph. Ignoring.")
-        shownLoopyWarning = true
-      }
+
+  def onJunctionTree(fg: FactorGraph, sum: Boolean = false, gradientAndObjective: Boolean = true, forceJunctionTree:Boolean = false) {
+    if(!forceJunctionTree && !fg.isLoopy) {
+      LoggerUtil.once(LoggerUtil.warn, "Junction tree belief propagation called on a non-loopy graph. Ignoring.")
       apply(fg, 1, schedule=true, sum, gradientAndObjective)
     } else {
       val jt = Junkify(fg)
@@ -77,7 +74,6 @@ object BeliefPropagation {
       }
     }
   }
-  var shownLoopyWarning = false
 
   /**
    * Accumulates the expectations of all feature vectors under the current model. In MaxProduce expectations
