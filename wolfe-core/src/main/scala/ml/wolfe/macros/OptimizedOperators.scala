@@ -83,22 +83,30 @@ trait LinearModelArgmaxCode[C <: Context] extends SymbolRepository[C] {
 
   import context.universe._
 
-  def optimizeByInferenceCode(objRhs: Tree, graph: TermName): Tree = objRhs match {
-    case q"$f(...${ _ })" =>
+  def optimizeByInferenceCode(objRhs: Tree, graph: TermName): Tree = {
+    def getCodeFromAnnotation(f: Tree): Tree =
       f.symbol.annotations.find(_.tpe.typeSymbol == wolfeSymbols.optByInference) match {
         case Some(annotation) => q"${ annotation.scalaArgs.head }($graph)"
         case None => q"ml.wolfe.BeliefPropagation($graph,1)"
       }
-    case _ => q"ml.wolfe.BeliefPropagation($graph,1)"
+    objRhs match {
+      case q"$f(${ _ })" => getCodeFromAnnotation(f)
+      case q"$f(${ _ })(${ _ })" => getCodeFromAnnotation(f)
+      case _ => q"ml.wolfe.BeliefPropagation($graph,1)"
+    }
   }
 
-  def logZByInferenceCode(objRhs: Tree, graph: TermName): Tree = objRhs match {
-    case q"$f(...${ _ })" =>
+  def logZByInferenceCode(objRhs: Tree, graph: TermName): Tree = {
+    def getCodeFromAnnotation(f: Tree): Tree =
       f.symbol.annotations.find(_.tpe.typeSymbol == wolfeSymbols.logZByInference) match {
         case Some(annotation) => q"${ annotation.scalaArgs.head }($graph)"
         case None => q"ml.wolfe.BeliefPropagation.sumProduct(1)($graph)"
       }
-    case _ => q"ml.wolfe.BeliefPropagation.sumProduct(1)($graph)"
+    objRhs match {
+      case q"$f(${ _ })" => getCodeFromAnnotation(f)
+      case q"$f(${ _ })(${ _ })" => getCodeFromAnnotation(f)
+      case _ => q"ml.wolfe.BeliefPropagation.sumProduct(1)($graph)"
+    }
   }
 
 
