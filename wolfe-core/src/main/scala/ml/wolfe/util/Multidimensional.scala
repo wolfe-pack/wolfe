@@ -10,7 +10,7 @@ import scalaxy.loops._
 object Multidimensional {
 
   /**
-   * Returns the cartesian product of some sequences in lexographical order
+   * Returns the cartesian product of some sequences in lexicographical order
    * i.e. (000, 001, ..., 010, ...)
    * @param factors The sequences to take the product of
    * @tparam S the type of the elements
@@ -43,6 +43,7 @@ object Multidimensional {
      */
     def onNewArray[L, T: ClassTag](labels: Array[L], dimensions: L => Int, default:T = null.asInstanceOf[T]) =
       new LabelledTensor(labels, dimensions, Array.fill[T](labels.map(dimensions).product)(default))
+
   }
 
 
@@ -152,35 +153,39 @@ object Multidimensional {
     (that: LabelledTensor[L, U], op: (T, U) => V, destination: LabelledTensor[L, V]): LabelledTensor[L, V] = {
       assertEquivalent(labels, destination.labels)
       assertContains(labels, that.labels)
-      if (this.labels.toSeq == that.labels.toSeq && this.labels.toSeq == destination.labels.toSeq) {
-        //All arrays are of the same dimension, and indexed the same way
-        for (i <- (0 until destination.array.length).optimized)
-          destination.array(i) = op(this.array(i), that.array(i))
+      if (this.labels.toSeq == destination.labels.toSeq) {
+        if(this.labels.toSeq == that.labels.toSeq) {
+          //All arrays are of the same dimension, and indexed the same way
+          for (i <- (0 until destination.array.length).optimized)
+            destination.array(i) = op(this.array(i), that.array(i))
+        } else {
+          if(this.labels.length == that.labels.length) LoggerUtil.once(LoggerUtil.warn,
+            "LabelledTensor elementwise this and that have permuted labels. This is inefficient.",
+            labels.mkString("(",",",")") + " != " + that.labels.mkString("(",",",")"))
 
-      } else {
-        val sameLabels = this.labels intersect that.labels
-        if(sameLabels.length == that.labels.length)
-          LoggerUtil.warn("LabelledTensor elementWise operands have permuted labels. This is inefficient.")
-
-        if(this.labels.toSeq == destination.labels.toSeq) {
+          val sameLabels = this.labels intersect that.labels
           val sameIndices = allMuls(sameLabels).map(mulToIndex)
           val extraIndices = allMuls(labels diff sameLabels).map(mulToIndex)
           for ((iThis, iThat) <- sameIndices.zipWithIndex) {
             val x = that.array(iThat)
             for (jThis <- extraIndices) destination.array(iThis + jThis) = op(this.array(iThis + jThis), x)
           }
+        }
 
-        } else {
-          LoggerUtil.warn("LabelledTensor elementWise destination has permuted labels. This is inefficient.")
-          val sameIndices = allMuls(sameLabels).map(m => (mulToIndex(m), destination.mulToIndex(m)))
-          val extraIndices = allMuls(labels diff sameLabels).map(m => (mulToIndex(m), destination.mulToIndex(m)))
-          for (((iThis, iDest), iThat) <- sameIndices.zipWithIndex) {
-            val x = that.array(iThat)
-            for ((jThis, jDest) <- extraIndices) destination.array(iDest + jDest) = op(this.array(iThis + jThis), x)
-          }
+      } else {
+        LoggerUtil.once(LoggerUtil.warn,
+          "LabelledTensor elementwise this and destination have permuted labels. This is inefficient.",
+          labels.mkString("(",",",")") + " != " + destination.labels.mkString("(",",",")"))
 
+        val sameLabels = this.labels intersect that.labels
+        val sameIndices = allMuls(sameLabels).map(m => (mulToIndex(m), destination.mulToIndex(m)))
+        val extraIndices = allMuls(labels diff sameLabels).map(m => (mulToIndex(m), destination.mulToIndex(m)))
+        for (((iThis, iDest), iThat) <- sameIndices.zipWithIndex) {
+          val x = that.array(iThat)
+          for ((jThis, jDest) <- extraIndices) destination.array(iDest + jDest) = op(this.array(iThis + jThis), x)
         }
       }
+
       destination
     }
 

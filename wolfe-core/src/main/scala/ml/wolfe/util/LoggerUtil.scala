@@ -12,6 +12,15 @@ object LoggerUtil extends Logging {
 
   def getLogger = logger.underlying
 
+  val seenBefore:scala.collection.mutable.Set[String] = scala.collection.mutable.Set()
+  def once(function:String=>Unit, msg:String, details:String = "") {
+    if(! seenBefore(msg)) {
+      seenBefore += msg
+      function(msg)
+      if(details.nonEmpty) function(">> " + details)
+    }
+  }
+
   def info(msg: String) = {
     logger.info(msg)
   }
