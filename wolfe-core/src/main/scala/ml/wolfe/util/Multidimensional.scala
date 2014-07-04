@@ -47,6 +47,8 @@ object Multidimensional {
   }
 
 
+  case class LabelledTensorDimensionError(msg:String = "") extends Exception(msg)
+  
   /**
    * Wrapper for an Array so that it can be used as a tensor, with labelled dimensions
    * @param labels The labels for each dimension of the tensor
@@ -58,10 +60,10 @@ object Multidimensional {
   class LabelledTensor[L, T: ClassTag](val labels: Array[L], val dimensions: L => Int, val array: Array[T]) {
     type MultiIndex = Map[L, Int]
 
-    if (array.length != labels.map(dimensions).product) sys.error("LabelledTensor array is not the right size")
+    if (array.length != labels.map(dimensions).product) throw new LabelledTensorDimensionError()
     private val indexSteps: L => Int = labels.zip(labels.scanRight(1)((l, acc) => dimensions(l) * acc).tail).toMap
 
-    private def allMuls(forLabels: Seq[L]) : Seq[MultiIndex] = cartesianProduct(
+    private def allMuls(forLabels: Seq[L] = labels) : Seq[MultiIndex] = cartesianProduct(
       forLabels.map(l => { (0 until dimensions(l)).map(l -> _) })
     ).map(_.toMap)
 
@@ -71,11 +73,11 @@ object Multidimensional {
 
     private def assertEquivalent(arr1:Array[L], arr2:Array[L]) =
       if(arr1.length != arr2.length || (arr2 diff arr1).nonEmpty)
-        sys.error("LabelledTensor error. Two LabelledTensors should live in the same space, but did not.")
+        throw new LabelledTensorDimensionError("Two LabelledTensors should live in the same space, but did not.")
 
     private def assertContains(arr1:Array[L], arr2:Array[L]) =
       if((arr2 diff arr1).nonEmpty)
-        sys.error("LabelledTensor error. One Labelled tensor should live in a subspace of another, but did not.")
+        throw new LabelledTensorDimensionError("LabelledTensor error. One Labelled tensor should live in a subspace of another, but did not.")
 
 
 
@@ -149,7 +151,7 @@ object Multidimensional {
      * @tparam V The type of the elements in destination
      * @return destination
      */
-    private def elementWiseToDestination[U, V: ClassTag]
+    def elementWiseToDestination[U, V: ClassTag]
     (that: LabelledTensor[L, U], op: (T, U) => V, destination: LabelledTensor[L, V]): LabelledTensor[L, V] = {
       assertEquivalent(labels, destination.labels)
       assertContains(labels, that.labels)
@@ -163,9 +165,8 @@ object Multidimensional {
             "LabelledTensor elementwise this and that have permuted labels. This is inefficient.",
             labels.mkString("(",",",")") + " != " + that.labels.mkString("(",",",")"))
 
-          val sameLabels = this.labels intersect that.labels
-          val sameIndices = allMuls(sameLabels).map(mulToIndex)
-          val extraIndices = allMuls(labels diff sameLabels).map(mulToIndex)
+          val sameIndices = that.allMuls() map mulToIndex
+          val extraIndices = allMuls(labels diff that.labels) map mulToIndex
           for ((iThis, iThat) <- sameIndices.zipWithIndex) {
             val x = that.array(iThat)
             for (jThis <- extraIndices) destination.array(iThis + jThis) = op(this.array(iThis + jThis), x)
@@ -174,12 +175,11 @@ object Multidimensional {
 
       } else {
         LoggerUtil.once(LoggerUtil.warn,
-          "LabelledTensor elementwise this and destination have permuted labels. This is inefficient.",
+          "LabelledTensor elementwise this and destination have permuted labels. This is inefficient",
           labels.mkString("(",",",")") + " != " + destination.labels.mkString("(",",",")"))
 
-        val sameLabels = this.labels intersect that.labels
-        val sameIndices = allMuls(sameLabels).map(m => (mulToIndex(m), destination.mulToIndex(m)))
-        val extraIndices = allMuls(labels diff sameLabels).map(m => (mulToIndex(m), destination.mulToIndex(m)))
+        val sameIndices = that.allMuls() map (m => (mulToIndex(m), destination.mulToIndex(m)))
+        val extraIndices = allMuls(labels diff that.labels) map (m => (mulToIndex(m), destination.mulToIndex(m)))
         for (((iThis, iDest), iThat) <- sameIndices.zipWithIndex) {
           val x = that.array(iThat)
           for ((jThis, jDest) <- extraIndices) destination.array(iDest + jDest) = op(this.array(iThis + jThis), x)
