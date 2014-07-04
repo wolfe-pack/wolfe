@@ -1,6 +1,6 @@
 package ml.wolfe.macros
 
-import ml.wolfe.{Wolfe, Operators}
+import ml.wolfe.{BruteForceOperators, Wolfe, Operators}
 import scala.reflect.macros.Context
 import Wolfe._
 import org.scalautils.{Bad, Good}
@@ -13,7 +13,7 @@ object OptimizedOperators extends Operators {
   import scala.language.experimental.macros
 
   override def argmax[T, N: Ordering](dom: Iterable[T])(obj: T => N): T = macro argmaxImplNew[T, N]
-  //  override def logZ[T](dom: Iterable[T])(obj: T => Double): Double = macro logZImpl[T]
+//    override def logZ[T](dom: Iterable[T])(obj: T => Double): Double = macro logZImpl[T]
   override def argmin[T, N: Ordering](dom: Iterable[T])(obj: T => N): T = macro argminImplNew[T, N]
   override def map[A, B](dom: Iterable[A])(mapper: A => B): Iterable[B] = macro mapImplNew[A, B]
 
@@ -62,17 +62,18 @@ object OptimizedOperators extends Operators {
   def logZImpl[T: c.WeakTypeTag](c: Context)
                                 (dom: c.Expr[Iterable[T]])
                                 (obj: c.Expr[T => Double]) = {
-    val helper = new ContextHelper[c.type](c) with OptimizedOperators[c.type]
-    val trees = helper.builderTrees(dom.tree, obj.tree)
-    //do not replace the code if inside another macro
-    if (c.enclosingMacros.size > 1) {
-      import c.universe._
-      val code: Tree = q"ml.wolfe.macros.BruteForceOperators.logZ(${ trees.over }.filter(${ trees.where }))(${ trees.of })"
-      c.Expr[Double](code)
-    } else {
-      val result = helper.argmax(trees)
-      c.Expr[Double](c.resetLocalAttrs(result.combined))
-    }
+//    val helper = new ContextHelper[c.type](c) with MetaGradientCalculators[c.type]
+//    val gv = GradientCalculator.valueAndgradientAtImpl(c)(BruteForceOperators.logZ(dom.splice)(obj.splice))
+//    val trees = helper.builderTrees(dom.tree, obj.tree)
+//    //do not replace the code if inside another macro
+//    if (c.enclosingMacros.size > 1) {
+//      import c.universe._
+//      val code: Tree = q"ml.wolfe.macros.BruteForceOperators.logZ(${ trees.over }.filter(${ trees.where }))(${ trees.of })"
+//      c.Expr[Double](code)
+//    } else {
+//      val result = helper.argmax(trees)
+//      c.Expr[Double](c.resetLocalAttrs(result.combined))
+//    }
   }
 
 
@@ -83,7 +84,7 @@ trait LinearModelArgmaxCode[C <: Context] extends SymbolRepository[C] {
   import context.universe._
 
   def optimizeByInferenceCode(objRhs: Tree, graph: TermName): Tree = objRhs match {
-    case q"$f(${ _ })" =>
+    case q"$f(...${ _ })" =>
       f.symbol.annotations.find(_.tpe.typeSymbol == wolfeSymbols.optByInference) match {
         case Some(annotation) => q"${ annotation.scalaArgs.head }($graph)"
         case None => q"ml.wolfe.BeliefPropagation($graph,1)"
@@ -92,7 +93,7 @@ trait LinearModelArgmaxCode[C <: Context] extends SymbolRepository[C] {
   }
 
   def logZByInferenceCode(objRhs: Tree, graph: TermName): Tree = objRhs match {
-    case q"$f(${ _ })" =>
+    case q"$f(...${ _ })" =>
       f.symbol.annotations.find(_.tpe.typeSymbol == wolfeSymbols.logZByInference) match {
         case Some(annotation) => q"${ annotation.scalaArgs.head }($graph)"
         case None => q"ml.wolfe.BeliefPropagation.sumProduct(1)($graph)"

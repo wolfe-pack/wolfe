@@ -1,9 +1,7 @@
 package ml.wolfe.fg
 
 import ml.wolfe.FactorGraph._
-import ml.wolfe.util.LabelledTensor
-import ml.wolfe.util.LabelledTensor
-import ml.wolfe.util.LabelledTensor.LabelledTensor
+import ml.wolfe.util.Multidimensional._
 import scalaxy.loops._
 import ml.wolfe.MoreArrayOps._
 import ml.wolfe.FactorieVector
@@ -35,6 +33,8 @@ object TablePotential {
     new TablePotential(edges, table)
   }
 
+
+  //todo: move these both into Util, to share code with LabelledTensor
   /**
    * Turns a setting vector into an entry number.
    * @param setting setting
@@ -96,15 +96,11 @@ final class TablePotential(edges: Array[Edge], table: Table) extends Potential {
   }
 
   override def getScoreTable(forVariables:Array[DiscreteVar]) : LabelledTensor[DiscreteVar, Double] = {
-    if(forVariables.toSeq == vars.toSeq) {
-      LabelledTensor.onExistingArray(vars, _.dim, table.scores.clone())
-    } else {
-      println("TablePotential getScoreTable variables are in the incorrect order")
-      super.getScoreTable(forVariables)
-    }
+    def curr = LabelledTensor.onExistingArray[DiscreteVar, Double](vars, _.dim, table.scores)
+    curr.permute(forVariables, allowSameArray = true)
   }
 
-  def valueForCurrentSetting() = {
+  override def valueForCurrentSetting() = {
     val setting = vars.map(_.setting)
     val entry = TablePotential.settingToEntry(setting, dims)
     scores(entry)

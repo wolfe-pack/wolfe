@@ -8,11 +8,12 @@ import scala.collection.SortedSet
 import scala.collection.immutable.Queue
 
 /**
- * Created by luke on 17/06/14.
+ * @author luke
  */
 object Junkify {
-  var debug:Boolean = _
-  type Clique = SortedSet[Node]
+  /**
+   * An undirected Edge between two objects of type T
+   */
   object Edge {
     def apply[T](_1: T, _2: T) = new Edge(_1, _2)
     def unapply[T](e: Edge[T]): Option[(T, T)] = Some(e._1, e._2)
@@ -23,20 +24,15 @@ object Junkify {
       case _ => false
     }
   }
+  type Clique = SortedSet[Node]
 
-  def apply(fg: FactorGraph, debug:Boolean = false) = {
-    Junkify.debug = debug
+  /**
+   * Given a factor graph, return a corresponding junction tree
+   * @param fg the original factor graph
+   * @return the junction tree (as a factor graph)
+   */
+  def apply(fg: FactorGraph) = {
     val nodes = fg.nodes.toSet
-
-    def printGraph(title: String, neighbours: Map[Node, Set[Node]]) = {
-      println(title)
-      println(nodes.toSeq.sortBy(_.index).map(n =>
-        neighbours(n).filter(_.index > n.index).toSeq.sortBy(_.index)
-        .map(m => n + "-" + m).mkString("\t")
-      ).mkString("\n"))
-      println()
-    }
-
 
     // MORALIZATION:
     val moralisedNeighbours: Map[Node, Set[Node]] = nodes.map(n =>
@@ -48,22 +44,12 @@ object Junkify {
            ) yield e2.n
            ).toSet
     ).toMap
-    if(debug) printGraph("MORALIZED", moralisedNeighbours)
-
 
     // TRIANGULATION:
     val triangulatedNeighbours = triangulate(nodes, moralisedNeighbours)
-    if(debug) printGraph("TRIANGULATED", triangulatedNeighbours)
 
-
-    // MAXIMAL CLIQUE GRAPH:   http://en.wikipedia.org/wiki/Bron%E2%80%93Kerbosch_algorithm
+    // MAXIMAL CLIQUE GRAPH:
     val cliques = maximalCliques(nodes, triangulatedNeighbours)
-    if(debug) {
-      println("\nMaximal Cliques:")
-      for (c <- cliques) println(c.mkString(", "))
-      println()
-    }
-
 
     // JUNCTION TREE:  Max spanning tree of clique graph, with weights given by intersection size
     val allCliqueEdges: Set[Edge[Clique]] = (
@@ -74,13 +60,11 @@ object Junkify {
 
     // CLIQUE POTENTIALS
     @tailrec
-    val cliqueFactors = getCliqueFactors(cliques, fg.factors, cliques.map(_ -> Set[FactorGraph.Factor]()).toMap)
-    if(debug) println("\nClique Factors:\n" + cliques.map(c => c + "\t\t has factors \t\t" + cliqueFactors(c)).mkString("\n"))
-
+    val cliqueFactors = getCliqueFactors(cliques, fg.factors)
 
     // CONVERT TO A FACTOR GRAPH
     val jt = toFactorGraph(cliques, cliqueFactors, jtEdges)
-    if(debug) println("\nJunkify Complete.")
+
     jt
   }
 
@@ -89,53 +73,56 @@ object Junkify {
 
   def productDimension(nodes: Iterable[Node]) = nodes.foldLeft(1)(_ * _.variable.asDiscrete.dim)
 
+  /**
+   * Given an undirected graph of nodes, triangulate it
+   * @param nodes the nodes on the graph
+   * @param neighbours A map from each node to its neighbours in the original graph
+   * @return the new map from each node to its (triangulated) neighbours
+   */
   @tailrec
-  def triangulate(remaining: Set[Node], neighboursAcc: Map[Node, Set[Node]]): Map[Node, Set[Node]] = {
-    if (remaining.isEmpty) neighboursAcc
+  def triangulate(nodes: Set[Node], neighbours: Map[Node, Set[Node]]): Map[Node, Set[Node]] = {
+    if (nodes.isEmpty) neighbours
     else {
 
-      def neighbourDimensions(n: Node): Int = productDimension(neighboursAcc(n))
+      def neighbourDimensions(n: Node): Int = productDimension(neighbours(n))
       def isSimplical(n: Node): Boolean = {
-        val r = neighboursAcc(n) & remaining
+        val r = neighbours(n) & nodes
 
         r forall (x =>
           (r - x) forall (y =>
-            neighboursAcc(x) contains y
+            neighbours(x) contains y
           ))
       }
-      def withNodeEliminated(n: Node): Map[Node, Set[Node]] = neighboursAcc ++
-      neighboursAcc(n).map(m =>
-        m -> (neighboursAcc(m) ++ neighboursAcc(n) - m)
+      def withNodeEliminated(n: Node): Map[Node, Set[Node]] = neighbours ++
+      neighbours(n).map(m =>
+        m -> (neighbours(m) ++ neighbours(n) - m)
       )
 
-      val simplicalNodes = remaining filter isSimplical
+      val simplicalNodes = nodes filter isSimplical
 
       if (simplicalNodes.nonEmpty) {
-        if(debug) println("Eliminating simplical nodes:\t" + simplicalNodes.mkString(", "))
-        triangulate(remaining -- simplicalNodes, neighboursAcc)
+        triangulate(nodes -- simplicalNodes, neighbours)
       } else {
-        val nodeToEliminate = remaining minBy neighbourDimensions
-        if(debug) println("Eliminating " + nodeToEliminate + "\t(neighbour Dimension = " + neighbourDimensions(nodeToEliminate) + ")")
-        triangulate(remaining - nodeToEliminate, withNodeEliminated(nodeToEliminate))
+        val nodeToEliminate = nodes minBy neighbourDimensions
+        triangulate(nodes - nodeToEliminate, withNodeEliminated(nodeToEliminate))
       }
     }
   }
 
-
+  /**
+   * Given an undirected graph of nodes, find the maximal cliques
+   * @see [[http://en.wikipedia.org/wiki/Bron%E2%80%93Kerbosch_algorithm Bron Kerbosch algorithm]]
+   * @param nodes the nodes of the graph
+   * @param neighbours A map from each node to its neighbours in the original graph
+   * @return A set of cliques (sets of nodes) in the graph
+   */
   def maximalCliques(nodes: Set[Node], neighbours: Map[Node, Set[Node]]): Set[Clique] = {
-    if(debug) println("Bron Kerbosch:")
-
     @tailrec
     def BronKerbosch2Acc(todo: Seq[(SortedSet[Node], Set[Node], Set[Node])], acc: Set[Clique]): Set[Clique] = todo match {
       case Nil => acc
       case (r, p, x) :: tail => (p ++ x).headOption match {
-        case None => {
-          if(debug) println(">> " + List(r, p, x).map(_.map(_.index).mkString(",")))
-          BronKerbosch2Acc(tail, acc + r)
-        }
-        case Some(u) => {
-          if(debug) println(List(r, p, x).map(_.map(_.index).mkString(",").padTo(nodes.map(_.index).mkString(",").length, ' ')).mkString(" | "))
-
+        case None => BronKerbosch2Acc(tail, acc + r)
+        case Some(u) =>
           // State is a tuple: ((State for accumulator), Modified p and x for inner loop)
           def states = (p -- neighbours(u)).scanLeft ((r, p, x), p, x) {
             case ((_, p2, x2), v) => (
@@ -145,85 +132,94 @@ object Junkify {
           }
           val next = states.map(_._1) - ((r, p, x))
           BronKerbosch2Acc(next ++: tail, acc)
-        }
       }
     }
 
     BronKerbosch2Acc(Seq((SortedSet[Node]()(Ordering.by(_.index)), nodes, Set[Node]())), Set[Clique]())
   }
 
-
-
-
+  /**
+   * Given an undirected (not necessarily connected) graph, find the maximal spanning forest
+   * @param nodes the nodes of the graph
+   * @param edges the edges of the graph
+   * @param weight a map from edges to their weights
+   * @tparam T the type of the vertices in the graph
+   * @tparam S the type of the weights
+   * @return
+   */
   def maxSpanningForest[T, S <% Ordered[S]](nodes:Set[T], edges: Set[Edge[T]], weight: Edge[T] => S): Set[Edge[T]] = {
-    if(debug) println("Kruskal's:")
     @tailrec
     def kruskals(remainingEdges: Seq[Edge[T]], trees: Set[Set[T]], acc: Set[Edge[T]]): Set[Edge[T]] =
       remainingEdges.headOption match {
         case None => acc
-        case Some(Edge(n1,n2)) => {
+        case Some(Edge(n1,n2)) =>
           def e = remainingEdges.head
           def tail = remainingEdges.tail
           val tree1 = trees.find(_ contains n1) match { case Some(x) => x; case None => sys.error("Something went wrong in Kruskal's!")}
           if(tree1 contains n2) kruskals(tail, trees, acc)
           else {
-            if(debug) println("Adding Edge: " + n1.toString.padTo(40, ' ')  + " -- " + n2.toString.padTo(40, ' ') + " weight = " + weight(e))
             val tree2 = trees find(_ contains n2) match { case Some(x) => x; case None => sys.error("Something went wrong in Kruskal's!")}
             val newTrees = trees - tree1 - tree2 + (tree1 ++ tree2)
             kruskals(tail, newTrees, acc + e)
-          }
         }
       }
     val edgesSorted = edges.toSeq.sortBy(weight).reverse
     kruskals(edgesSorted, nodes.map(Set(_)), Set())
   }
 
-
-  def getCliqueFactors(cliques:Set[Clique], factors: Seq[FactorGraph.Factor], acc: Map[Clique, Set[FactorGraph.Factor]]): Map[Clique, Set[FactorGraph.Factor]] =
-    factors.headOption match {
-      case None => acc
-      case Some(f) => {
-        def f = factors.head
-        val clique = cliques.find(c => f.edges.map(_.n).toSet.subsetOf(c))
-        clique match {
-          case Some(c) => getCliqueFactors(cliques, factors.tail, acc + (c -> (acc(c) + f)))
-          case None => sys.error("Junction Tree creation error: a factor has no clique to contain its potential")
-        }
+  /**
+   * Given a set of cliques (sets of nodes) and factors, assign each factor to a
+   * clique that contains all of the relevant nodes
+   * @param cliques the cliques
+   * @param factors the factors
+   * @return a map from cliques to the factors that they are responsible for
+   */
+  def getCliqueFactors(cliques:Set[Clique], factors: Seq[FactorGraph.Factor]): Map[Clique, Set[FactorGraph.Factor]] = {
+    def getCliqueFactorsAcc(cliques: Set[Clique], factors: Seq[FactorGraph.Factor], acc: Map[Clique, Set[FactorGraph.Factor]])
+      : Map[Clique, Set[FactorGraph.Factor]] = factors.headOption match {
+        case None => acc
+        case Some(f) =>
+          def f = factors.head
+          val clique = cliques.find(c => f.edges.map(_.n).toSet.subsetOf(c))
+          clique match {
+            case Some(c) => getCliqueFactorsAcc(cliques, factors.tail, acc + (c -> (acc(c) + f)))
+            case None => sys.error("Junction Tree creation error: a factor has no clique to contain its potential")
+          }
       }
-    }
+    getCliqueFactorsAcc(cliques, factors, cliques.map(_ -> Set[FactorGraph.Factor]()).toMap)
+  }
 
-
-
+  /**
+   * Create a factor graph to represent the junction tree
+   * @param cliques the cliques of the original graph (nodes of the junction tree)
+   * @param cliqueFactors a map from cliques to the factors they should hold
+   * @param edges the edges of the original graph
+   * @return the junction tree, as a factor graph
+   */
   def toFactorGraph(cliques: Set[Clique], cliqueFactors: Map[Clique, Set[FactorGraph.Factor]], edges:Set[Edge[Clique]]) = {
     val jt = new FactorGraph
-    val cliqueNodes = cliques.map(c => c -> jt.addTupleNode(c.toArray)).toMap
+    // a map from cliques in the fg to nodes in the jt
+    val jtNodes = cliques.map(c => c -> jt.addTupleNode(c.toArray)).toMap
 
-    /*for((clique, factors) <- cliqueFactors; f <- factors) {
-      val wrapped = jt.addFactor()
-      val edge = jt.addTupleEdge(wrapped, cliqueNodes(clique), f.edges.map(_.n))
-      wrapped.potential = new WrappedPotential(f.potential, edge, f.edges.map(_.n))
-    }*/
     for((clique, factors) <- cliqueFactors if factors.nonEmpty) {
-      val factorsArr = factors.toArray
+      val components = factors.toArray
       val groupFactor = jt.addFactor()
-      val componentNodes = factorsArr.map(f => f.potential -> f.edges.map(_.n)).toMap
-      val baseNodes = componentNodes.values.reduce(_ ++ _).distinct.sortBy(_.index)
-      val edge = jt.addTupleEdge(groupFactor, cliqueNodes(clique), baseNodes)
-      groupFactor.potential = new GroupPotential(factorsArr, edge, baseNodes)
+      val baseNodes = components.flatMap(_.edges.map(_.n)).distinct.sortBy(_.index)
+      val edge = jt.addTupleEdge(groupFactor, jtNodes(clique), baseNodes)
+      groupFactor.potential = new GroupPotential(components, edge, baseNodes)
     }
 
-    for (e <- edges) {
-      val f = jt.addFactor()
-
-      val intersectionNodes = (e._1 & e._2).toArray
-
-      val edge1 = jt.addTupleEdge(f, cliqueNodes(e._1), intersectionNodes)
-      val edge2 = jt.addTupleEdge(f, cliqueNodes(e._2), intersectionNodes)
-
-      f.potential = new TupleConsistencyPotential(edge1, edge2)
+    for (e <- edges) e match {
+      case Edge(clique1, clique2) =>
+        val f = jt.addFactor()
+        val intersectionNodes = (clique1 & clique2).toArray
+        val edge1 = jt.addTupleEdge(f, jtNodes(clique1), intersectionNodes)
+        val edge2 = jt.addTupleEdge(f, jtNodes(clique2), intersectionNodes)
+        f.potential = new TupleConsistencyPotential(edge1, edge2)
     }
+
     jt.build()
-
     jt
+
   }
 }

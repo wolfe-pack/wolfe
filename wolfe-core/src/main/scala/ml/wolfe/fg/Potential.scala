@@ -2,10 +2,7 @@ package ml.wolfe.fg
 
 import ml.wolfe.FactorGraph._
 import ml.wolfe.FactorieVector
-import ml.wolfe.util.LabelledTensor.LabelledTensor
-import ml.wolfe.util.LabelledTensor.LabelledTensor
-import ml.wolfe.util.{LabelledTensor, Util}
-
+import ml.wolfe.util.Multidimensional._
 
 /**
  * @author Sebastian Riedel
@@ -30,15 +27,20 @@ trait Potential {
 
   def maxMarginalExpectationsAndObjective(dstExpectations: FactorieVector): Double = notSupported
   def marginalExpectationsAndObjective(dstExpectations: FactorieVector): Double = notSupported
-  def valueForCurrentSetting(): Double
+  def valueForCurrentSetting(): Double = notSupported
   def valueAndGradientForAllEdges():Double = notSupported
   def isLinear = false
   def statsForCurrentSetting(): FactorieVector = null
   def toVerboseString(implicit fgPrinter: FGPrinter): String = getClass.getName
 
+  /**
+   * Get the table of scores assigned by the potential over different settings, as a LabelledTensor
+   * @param forVariables the order in which the variables should appear in the table
+   * @return a LabelledTensor containing the scores
+   */
   def getScoreTable(forVariables:Array[DiscreteVar]) : LabelledTensor[DiscreteVar, Double] = {
     val t:LabelledTensor[DiscreteVar, Double] = LabelledTensor.onNewArray[DiscreteVar, Double](forVariables, _.dim, 0.0)
-    t.fill(mul => {
+    t.fillBy(mul => {
       for ((v, s) <- mul) {
         v.setting = s
       }
@@ -60,7 +62,7 @@ final class AndPotential(arg1: Edge, arg2: Edge) extends Potential {
     msgs.f2n(1) = other.n2f(1)
     msgs.f2n(0) = Double.NegativeInfinity
   }
-  def valueForCurrentSetting() = {
+  override def valueForCurrentSetting() = {
     if (n1.setting == 1 && n2.setting == 1) 0.0 else Double.NegativeInfinity
   }
   override def maxMarginalExpectationsAndObjective(dstExpectations: FactorieVector) = {
@@ -77,7 +79,7 @@ final class ExactlyOncePotential(args: Seq[Edge]) extends Potential {
     val argIndices = args map (_.n.index) mkString ","
     s"ExactlyOne($argIndices)"
   }
-  def valueForCurrentSetting():Double = {
+  override def valueForCurrentSetting():Double = {
     var count = 0
     for (arg <- msgs) {
       if (arg.f2n(1) == 1) count += 1
