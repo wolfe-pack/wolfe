@@ -1,7 +1,7 @@
 package ml.wolfe
 
 import cc.factorie.la.SingletonTensor
-import ml.wolfe.util.LabelledTensor
+import ml.wolfe.util.Multidimensional._
 
 import scala.collection.mutable.ArrayBuffer
 import scalaxy.loops._
@@ -58,6 +58,11 @@ final class FactorGraph {
     n
   }
 
+  /**
+   * Adds a tuple node (with components probably from another factor graph)
+   * @param componentNodes the components of the tuple
+   * @return the added tuple node.
+   */
   def addTupleNode(componentNodes:Array[Node]) = {
     val variable = new TupleVar(componentNodes)
     val n = new Node(nodes.size, variable)
@@ -66,7 +71,7 @@ final class FactorGraph {
   }
 
   /**
-   * Adds an edge between node and factor
+   * Adds an edge with DiscreteMsgs between node and factor
    * @param f factor to connect.
    * @param n node to connect.
    * @param indexInFactor the index the edge has in the factor.
@@ -89,8 +94,15 @@ final class FactorGraph {
    */
   def addEdge(f: Factor, n: Node): Edge = addEdge(f, n, f.edgeCount)
 
-  def addTupleEdge(f: Factor, n: Node, baseNodes:Array[Node]): Edge = {
-    val e = new Edge(n, f, new TupleMsgs(n.variable.asTuple, baseNodes.map(_.variable.asDiscrete)))
+  /**
+   * Adds an edge with TupleMsgs between tuple node and factor
+   * @param f factor to connect.
+   * @param n node to connect.
+   * @param msgNodes the nodes relevant for f2n messages
+   * @return the added edge.
+   */
+  def addTupleEdge(f: Factor, n: Node, msgNodes:Array[Node]): Edge = {
+    val e = new Edge(n, f, new TupleMsgs(n.variable.asTuple.components, msgNodes.map(_.variable.asDiscrete)))
     e.indexInFactor = f.edgeCount
     n.edgeCount += 1
     f.edgeCount += 1
@@ -206,6 +218,9 @@ final class FactorGraph {
 
   def getFactor(index: Int) = factors(index)
 
+  /**
+   * @return Is this factor graph loopy?
+   */
   def isLoopy:Boolean = {
     @tailrec
     def loopyAcc(remainingFactors: List[Factor], trees: Set[Set[Node]]): Boolean =
@@ -223,13 +238,16 @@ final class FactorGraph {
     loopyAcc(factors.toList, nodes.map(Set(_)).toSet)
   }
 
-
+  /**
+   * Render a graphic of this factor graph
+   * @param showMessages whether to include message passing on the graphic
+   */
   def displayAsGraph(showMessages:Boolean = false) {
     def nodeString(n:Node) = n.variable match {
       case v:TupleVar => v.componentNodes.map(_.index.toString).mkString("(", ",", ")")
       case _ => n.index.toString
     }
-    def factorString(f:Factor) = f.edges.map(e => nodeString(e.n)).mkString("(",",",")") + "\n" + f.potential.toVerboseString(DefaultPrinter)
+    def factorString(f:Factor) = f.edges.map(e => nodeString(e.n)).mkString("(",",",")") + "\n" + f.potential.toString
     def shortArr[T](array:Array[T]) = array.map(_.toString.take(4)).mkString("(", ",", ")")
     def edgeString(e:Edge) = e.msgs match {
       case m:TupleMsgs => "n2f: " + shortArr(m.n2f.array) + "\nf2n:" + shortArr(m.f2n.array)
@@ -238,13 +256,12 @@ final class FactorGraph {
     }
     val fgv = new ml.wolfe.FactorGraphViewer()
     val factorVertices = factors.map(f => f.potential match {
-      case p:GroupPotential => {
+      case p:GroupPotential =>
         val x = fgv.addGroupFactor(factorString(f))
         for(g <- p.components) {
           fgv.addEdge(fgv.addFactor(factorString(g)), x)
         }
         f -> x
-      }
       case p:TupleConsistencyPotential => f -> fgv.addGroupFactor(factorString(f))
       case _ => f -> fgv.addFactor(factorString(f))
     }).toMap
@@ -270,7 +287,7 @@ object FactorGraph {
   /**
    * A node representing a variable.
    * @param index the index of the node.
-   * @param dim the dimension of the variable the node is representing.
+   * @param variable the variable the node is representing.
    */
   final class Node(val index: Int, var variable:Var) {
     /* all edges to factors that this node is connected to */
@@ -303,9 +320,9 @@ object FactorGraph {
    * An edge between node and factor
    * @param n the node.
    * @param f the factor.
-   * @param dim dimension of the node's variable.
+   * @param msgs the Msgs used for message passing
    */
-  final class Edge(var n: Node, val f: Factor, val msgs: Msgs) {
+  final class Edge(var n: Node, val f: Factor, var msgs: Msgs) {
     var indexInFactor = -1
     var indexInNode   = -1
 

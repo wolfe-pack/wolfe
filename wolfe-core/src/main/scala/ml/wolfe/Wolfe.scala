@@ -18,6 +18,7 @@ object Wolfe extends SampleSpaceDefs
                      with Annotations {
 
   //core operators
+  def notSupported = sys.error("This function is not supported")
 
 
   //sufficient statistics

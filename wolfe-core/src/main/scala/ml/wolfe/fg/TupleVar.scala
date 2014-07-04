@@ -2,7 +2,7 @@ package ml.wolfe.fg
 
 import ml.wolfe.FactorGraph.{Edge, Node}
 import ml.wolfe.MoreArrayOps._
-import ml.wolfe.util.LabelledTensor
+import ml.wolfe.util.Multidimensional._
 
 import scala.math._
 import scala.util.Random
@@ -17,12 +17,12 @@ class TupleVar(val componentNodes:Array[Node]) extends Var {
   val dim = components.map(_.dim).product
 
   /* node belief */
-  val b = Array.ofDim[Double](dim)
-  val B = LabelledTensor.onExistingArray[DiscreteVar, Double](components, _.dim, b)
+  val B = LabelledTensor.onNewArray[DiscreteVar, Double](components, _.dim, 0)
+  val b = B.array
 
   /* external message for this node. Will usually not be updated during inference */
-  val in = Array.ofDim[Double](dim)
-  val IN = LabelledTensor.onExistingArray[DiscreteVar, Double](components, _.dim, in)
+  val IN = LabelledTensor.onNewArray[DiscreteVar, Double](components, _.dim, 0)
+  val in = IN.array
 
   /* indicates that variable is in a certain state */
   val setting: Array[Int] = Array.ofDim[Int](components.size)
@@ -53,35 +53,21 @@ class TupleVar(val componentNodes:Array[Node]) extends Var {
   override def updateN2F(edge: Edge) = {
     val node = edge.n
     val m = edge.msgs.asTuple
-    System.arraycopy(in, 0, m.n2f.array, 0, m.n2f.array.length)
-    for (e <- 0 until node.edges.length if e != edge.indexInNode) {
-      m.n2f.elementWiseOp[Double](node.edges(e).msgs.asTuple.f2n, _+_)
-    }
-    /*println( "n2f: " +
-      componentNodes.map(_.index.toString).mkString("(", ",", ")").padTo(10, ' ') + " -> " +
-      edge.f.potential.asInstanceOf[TuplePotential].baseNodes.map(_.index.toString).mkString("(", ",", ")").padTo(10, ' ')  + " = " +
-      m.n2f.array.mkString(","))*/
+    m.n2f.copyFrom(IN)
+    for (e <- 0 until node.edges.length if e != edge.indexInNode)
+      m.n2f += node.edges(e).msgs.asTuple.f2n
   }
 
   override def updateMaxMarginalBelief(node: Node) = {
-    System.arraycopy(in, 0, b, 0, b.length)
+    B.copyFrom(IN)
     for (e <- 0 until node.edges.length) {
-      B.elementWiseOp[Double](node.edges(e).msgs.asTuple.f2n, _+_)
+      B += node.edges(e).msgs.asTuple.f2n
     }
     maxNormalize(b)
     for(v <- components) {
-      B.fold(Array(v), Double.NegativeInfinity, max, v.b)
+      val vB = LabelledTensor.onExistingArray[DiscreteVar, Double](Array(v), _.dim, v.b)
+      B.foldInto(Double.NegativeInfinity, max, vB)
     }
   }
 
-  override def updateMarginalBelief(node: Node) = {
-    /*System.arraycopy(in, 0, b, 0, b.length)
-    for (e <- 0 until node.edges.length) {
-      for (i <- 0 until dim)
-        b(i) += node.edges(e).msgs.asDiscrete.f2n(i)
-      val logZ = math.log(b.view.map(exp).sum)
-      -=(b,logZ)
-    }*/
-    ???
-  }
 }

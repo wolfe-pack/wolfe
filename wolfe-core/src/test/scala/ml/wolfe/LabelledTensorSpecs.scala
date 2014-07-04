@@ -1,6 +1,6 @@
 package ml.wolfe
 
-import ml.wolfe.util.LabelledTensor
+import ml.wolfe.util.Multidimensional._
 
 /**
  * Created by luke on 30/06/14.
@@ -16,7 +16,7 @@ class LabelledTensorSpecs extends WolfeSpec {
       for (i <- 0 until 4) ys(i) = i
       val Ys = LabelledTensor.onExistingArray[Int, Int](Array(0, 2), x => 2, ys)
 
-      Xs.elementWiseOp[Int](Ys, _ + _)
+      Xs += Ys
       xs.toSeq shouldEqual Seq(0, 1, 3, 4, 4, 5, 7, 8, 10, 11, 13, 14, 14, 15, 17, 18)
     }
   }

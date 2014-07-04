@@ -1,12 +1,12 @@
 package ml.wolfe
 
-import javax.imageio.ImageIO
-import javax.swing._
 import java.awt._
 import java.awt.image.BufferedImage
-import java.io.File
-import java.io.IOException
-import com.mxgraph.layout._
+import java.io.{File, IOException}
+import javax.imageio.ImageIO
+import javax.swing._
+
+import com.mxgraph.layout.mxFastOrganicLayout
 import com.mxgraph.model.{mxGeometry, mxCell}
 import com.mxgraph.swing.mxGraphComponent
 import com.mxgraph.swing.util.mxMorphing
@@ -16,14 +16,15 @@ import com.mxgraph.view.mxGraph
  * Created by Luke on 01/07/2014.
  */
 class FactorGraphViewer {
-  class MyMxGraph extends mxGraph { //can't move edges
-    override def isCellSelectable(cell:AnyRef):Boolean = cell match {
-      case c:mxCell => if(c.isEdge) false else super.isCellSelectable(c);
+  class MyMxGraph extends mxGraph {
+    //can't move edges
+    override def isCellSelectable(cell: AnyRef): Boolean = cell match {
+      case c: mxCell => if (c.isEdge) false else super.isCellSelectable(c);
       case _ => super.isCellSelectable(cell);
     }
   }
-  val f = new JFrame
-  val width = 800
+  val f      = new JFrame
+  val width  = 800
   val height = 600
   f.setSize(800, 600)
   f.setLocation(300, 200)
@@ -39,15 +40,15 @@ class FactorGraphViewer {
   val parent = graph.getDefaultParent
 
   def addFactor(text: String): AnyRef = {
-    graph.updateCellSize(graph.insertVertex(parent, null, text, width/4, height/4, 0, 0))
+    graph.updateCellSize(graph.insertVertex(parent, null, text, width / 4, height / 4, 0, 0))
   }
 
   def addGroupFactor(text: String): AnyRef = {
-    graph.updateCellSize(graph.insertVertex(parent, null, text, width/4, height/4, 0, 0, "fillColor=green;fontColor=black"))
+    graph.updateCellSize(graph.insertVertex(parent, null, text, width / 4, height / 4, 0, 0, "fillColor=green;fontColor=black"))
   }
 
   def addNode(text: String): AnyRef = {
-    graph.insertVertex(parent, null, text, width/4, height/4, 40, 40, "shape=ellipse;fillColor=yellow")
+    graph.insertVertex(parent, null, text, width / 4, height / 4, 40, 40, "shape=ellipse;fillColor=yellow")
   }
 
   def addEdge(v1: AnyRef, v2: AnyRef, text: String): AnyRef = {
@@ -59,18 +60,18 @@ class FactorGraphViewer {
   }
 
   var nTextboxes = 0
-  def addTextbox(text: String) : AnyRef = {
-    val t = graph.insertVertex(parent, null, text, width-210, 10 + 50*nTextboxes, 200, 50, "fontColor=black;fillColor=white;opacity=0")
+  def addTextbox(text: String): AnyRef = {
+    val t = graph.insertVertex(parent, null, text, width - 210, 10 + 50 * nTextboxes, 200, 50, "fontColor=black;fillColor=white;opacity=0")
     nTextboxes = nTextboxes + 1
     t
   }
 
-  def render () = {
-    for(i <- 0 until parent.asInstanceOf[mxCell].getChildCount) {
+  def render() = {
+    for (i <- 0 until parent.asInstanceOf[mxCell].getChildCount) {
       val c = parent.asInstanceOf[mxCell].getChildAt(i)
       val x = width * i / parent.asInstanceOf[mxCell].getChildCount
       val g = c.getGeometry
-      if(c.isVertex) c.setGeometry(new mxGeometry(x, g.getY, g.getWidth, g.getHeight))
+      if (c.isVertex) c.setGeometry(new mxGeometry(x, g.getY, g.getWidth, g.getHeight))
     }
     new mxFastOrganicLayout(graph).execute(graph.getDefaultParent)
     new mxMorphing(graphComponent).startAnimation()

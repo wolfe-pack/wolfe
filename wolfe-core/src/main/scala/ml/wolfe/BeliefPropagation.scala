@@ -2,6 +2,7 @@ package ml.wolfe
 
 import cc.factorie.la.SparseIndexedTensor
 import ml.wolfe.fg.Junkify
+import ml.wolfe.util.LoggerUtil
 
 import scala.language.postfixOps
 
@@ -14,81 +15,69 @@ object BeliefPropagation {
   import FactorGraph._
   import MoreArrayOps._
 
-  def maxProduct(maxIteration: Int, schedule: Boolean = true)(fg: FactorGraph) = apply(fg, maxIteration, schedule, false)
-  def sumProduct(maxIteration: Int, schedule: Boolean = true)(fg: FactorGraph) = apply(fg, maxIteration, schedule, true)
+  def maxProduct(maxIteration: Int, schedule: Boolean = true, gradientAndObjective: Boolean = true)
+                (fg: FactorGraph) = apply(fg, maxIteration, schedule, false, gradientAndObjective)
+  def sumProduct(maxIteration: Int, schedule: Boolean = true, gradientAndObjective: Boolean = true)
+                (fg: FactorGraph) = apply(fg, maxIteration, schedule, true, gradientAndObjective)
+  def junctionTreeMaxProduct(gradientAndObjective: Boolean = true)
+                (fg: FactorGraph) = onJunctionTree(fg, sum=false, gradientAndObjective)
+  def junctionTreeSumProduct(gradientAndObjective: Boolean = true)
+                (fg: FactorGraph) = onJunctionTree(fg, sum=true, gradientAndObjective)
 
-  var runCount = 0
-  var totalTime:Long = 0
-  var shownGraph = false;
   /**
    * Runs some iterations of belief propagation.
    * @param fg the message passing graph to run
    * @param maxIteration maximum number of iterations.
    * @param schedule should edges be scheduled.
    */
-  def apply(fg: FactorGraph, maxIteration: Int, schedule: Boolean = true, sum: Boolean = false) {
+  def apply(fg: FactorGraph, maxIteration: Int,
+            schedule: Boolean = true,
+            sum: Boolean = false,
+            gradientAndObjective: Boolean = true) {
     //    val edges = if (canonical) fg.edges.sorted(FactorGraph.EdgeOrdering) else fg.edges
-    val t = System.currentTimeMillis()
-    val fg2 = if(true/*fg.isLoopy*/) {
-      val jt = Junkify(fg)
-      //println("Weights = " + fg.weights + ", Junction Tree=\n" + jt.toVerboseString());
-      jt
-    } else fg
+    val edges = if (schedule) MPSchedulerImpl.schedule(fg) else fg.edges
 
-    //println("Original Factor Graph=\n" + fg.toVerboseString())
-
-    def bp(FG:FactorGraph) = {
-      val edges = if (schedule) MPSchedulerImpl.schedule(FG) else FG.edges
-      /*if(runCount == 2) {
-        println("Schedule\n--------")
-        println(edges.map(e =>
-          e.f.edges.map(_.n.index.toString).mkString("(", ",", ")") + "  -->  " + e.n.index
-        ).mkString("\n"))
-      }*/
-      for (i <- 0 until maxIteration) {
-        for (edge <- edges) {
-          for (other <- edge.f.edges; if other != edge) updateN2F(other) //todo: this is inefficient! Don't need to update if unchanged!
-          updateF2N(edge, sum)
-        }
+    for (i <- 0 until maxIteration) {
+      for (edge <- edges) {
+        for (other <- edge.f.edges; if other != edge) updateN2F(other) //todo: this is inefficient! Don't need to update if unchanged!
+        updateF2N(edge, sum)
       }
-      for (node <- FG.nodes) updateBelief(node, sum)
-
-      //calculate gradient and objective
-      //todo this is not needed if we don't have linear factors. Maybe initial size should depend on number of linear factors
-      FG.gradient = new SparseVector(1000)
-      FG.value = featureExpectationsAndObjective(FG, FG.gradient, sum)
     }
 
-    bp(fg)
-    bp(fg2)
+    for (node <- fg.nodes) updateBelief(node, sum)
 
-    if(fg.value != fg2.value) {
-      println("fg value = " + fg.value)
-      println("jt value = " + fg2.value)
-    }
-    fg.gradient.asInstanceOf[SparseIndexedTensor]._makeReadable()
-    fg2.gradient.asInstanceOf[SparseIndexedTensor]._makeReadable()
-    if(fg.gradient.toString != fg2.gradient.toString()) {
-      println("fg gradient = " + fg.gradient + "\n")
-      println("jt gradient = " + fg2.gradient + "\n----------------------------------------------------------\n")
-    }
-      //todo: make a spec that these should be equal for a linear chain
-
-    if(runCount == 2) {
-      fg.displayAsGraph(true)
-      /*if (fg2 != fg) fg2.displayAsGraph(true)
-      shownGraph = true*/
+    //calculate gradient and objective
+    //todo this is not needed if we don't have linear factors. Maybe initial size should depend on number of linear factors
+    if (gradientAndObjective) {
+      fg.gradient = new SparseVector(1000)
+      fg.value = featureExpectationsAndObjective(fg, fg.gradient, sum)
     }
 
-    fg.value = fg2.value
-    fg.gradient = fg2.gradient
-
-    runCount = runCount + 1
-    totalTime = totalTime + (System.currentTimeMillis()-t)
-    println(s"Belief Propagation has run $runCount times, avg ${totalTime/runCount}ms")
-    //println("Value = " + fg.value + ". Gradient = " + fg.gradient)
   }
 
+  /**
+   *  Creates a junction tree from the original factor graph, runs BP,
+   *  then copies value/gradient back into the original factor graph.
+   *  @param fg the original factor graph
+   */
+  def onJunctionTree(fg:FactorGraph):Unit = onJunctionTree(fg, sum = false, gradientAndObjective = true)
+  def onJunctionTree(fg: FactorGraph, sum: Boolean, gradientAndObjective: Boolean) {
+    if(! fg.isLoopy) {
+      if(! shownLoopyWarning) {
+        LoggerUtil.warn("Junction tree belief propagation called on a non-loopy graph. Ignoring.")
+        shownLoopyWarning = true
+      }
+      apply(fg, 1, schedule=true, sum, gradientAndObjective)
+    } else {
+      val jt = Junkify(fg)
+      apply(jt, 1, schedule=true, sum, gradientAndObjective)
+      if (gradientAndObjective) {
+        fg.value = jt.value
+        fg.gradient = jt.gradient
+      }
+    }
+  }
+  var shownLoopyWarning = false
 
   /**
    * Accumulates the expectations of all feature vectors under the current model. In MaxProduce expectations

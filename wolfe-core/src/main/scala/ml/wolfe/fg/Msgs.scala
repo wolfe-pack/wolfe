@@ -2,7 +2,7 @@ package ml.wolfe.fg
 
 import ml.wolfe.FactorieVector
 import ml.wolfe.MoreArrayOps._
-import ml.wolfe.util.LabelledTensor
+import ml.wolfe.util.Multidimensional._
 
 
 /**
@@ -26,14 +26,19 @@ final class DiscreteMsgs(val dim: Int) extends Msgs {
   }
 }
 
-final class TupleMsgs(tupleVar:TupleVar, baseVariables:Array[DiscreteVar]) extends Msgs {
-  val n2f     = LabelledTensor.onNewArray[DiscreteVar, Double](tupleVar.components, _.dim, 0.0)
-  val f2n     = LabelledTensor.onNewArray[DiscreteVar, Double](baseVariables, _.dim, 0.0)
-  val f2nLast = LabelledTensor.onNewArray[DiscreteVar, Double](baseVariables, _.dim, 0.0)
+/**
+ *
+ * @param n2fComponents The components of the n2f message
+ * @param f2nComponents The components of the f2n message
+ */
+final class TupleMsgs(n2fComponents:Array[DiscreteVar], f2nComponents:Array[DiscreteVar]) extends Msgs {
+  val n2f     = LabelledTensor.onNewArray[DiscreteVar, Double](n2fComponents, _.dim, 0.0)
+  val f2nLast = LabelledTensor.onNewArray[DiscreteVar, Double](f2nComponents, _.dim, 0.0)
+  val f2n     = LabelledTensor.onNewArray[DiscreteVar, Double](f2nComponents, _.dim, 0.0)
   def saveCurrentF2NAsOld() = {
     set(f2n.array, f2nLast.array)
+    //remember last message for calculating residuals
   }
-//remember last message for calculating residuals
 }
 
 final class VectorMsgs extends Msgs {
