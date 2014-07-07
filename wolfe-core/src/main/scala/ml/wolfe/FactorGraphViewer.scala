@@ -73,7 +73,9 @@ class FactorGraphViewer {
       val g = c.getGeometry
       if (c.isVertex) c.setGeometry(new mxGeometry(x, g.getY, g.getWidth, g.getHeight))
     }
-    new mxFastOrganicLayout(graph).execute(graph.getDefaultParent)
+    val layout = new mxFastOrganicLayout(graph)
+    layout.setForceConstant(100)
+    layout.execute(graph.getDefaultParent)
     new mxMorphing(graphComponent).startAnimation()
   }
 

@@ -247,10 +247,10 @@ final class FactorGraph {
       case v:TupleVar => v.componentNodes.map(_.index.toString).mkString("(", ",", ")")
       case _ => n.index.toString
     }
-    def factorString(f:Factor) = f.edges.map(e => nodeString(e.n)).mkString("(",",",")") + "\n" + f.potential.toString
+    def factorString(f:Factor) = f.edges.map(e => nodeString(e.n)).mkString("(",",",")") + "\n" + f.potential.toVerboseString(DefaultPrinter)
     def shortArr[T](array:Array[T]) = array.map(_.toString.take(4)).mkString("(", ",", ")")
     def edgeString(e:Edge) = e.msgs match {
-      case m:TupleMsgs => "n2f: " + shortArr(m.n2f.array) + "\nf2n:" + shortArr(m.f2n.array)
+      case m:TupleMsgs => "n2f: " + m.n2f.toString + "\nf2n:" + m.f2n.toString
       case m:DiscreteMsgs => "n2f: " + shortArr(m.n2f)  + "\nf2n:" + shortArr(m.f2n.array)
       case _ => ""
     }
