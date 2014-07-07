@@ -4,8 +4,6 @@ import cc.factorie.la.SparseIndexedTensor
 import ml.wolfe.fg.Junkify
 import ml.wolfe.util.LoggerUtil
 
-import scala.language.postfixOps
-
 
 /**
  * @author Sebastian Riedel

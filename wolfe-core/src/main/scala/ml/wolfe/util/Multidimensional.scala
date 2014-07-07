@@ -67,10 +67,6 @@ object Multidimensional {
       forLabels.map(l => { (0 until dimensions(l)).map(l -> _) })
     ).map(_.toMap)
 
-    private def mulToIndex(mul: MultiIndex): Int = (
-                                                   for ((label, idx) <- mul) yield indexSteps(label) * idx
-                                                   ).sum
-
     private def assertEquivalent(arr1:Array[L], arr2:Array[L]) =
       if(arr1.length != arr2.length || (arr2 diff arr1).nonEmpty)
         throw new LabelledTensorDimensionError("Two LabelledTensors should live in the same space, but did not.")
@@ -80,6 +76,17 @@ object Multidimensional {
         throw new LabelledTensorDimensionError("LabelledTensor error. One Labelled tensor should live in a subspace of another, but did not.")
 
 
+    // ------------------------------------------------------
+
+    // Useful for testing, but I'm not really that keen on these being public, because it discourages
+    // working with the Tensor as a whole   -Luke
+    def mulToIndex(mul: MultiIndex): Int = (
+      for ((label, idx) <- mul) yield indexSteps(label) * idx
+    ).sum
+
+    def indexToMul(i:Int) : MultiIndex = (
+      for (l <- labels) yield l -> (i / indexSteps(l)) % dimensions(l)
+    ).toMap
 
     // --------------------- Interface ----------------------
 
@@ -209,8 +216,14 @@ object Multidimensional {
       elementWiseOpInPlace[T](source, (_, x) => x)
 
 
+    override def toString = {
+      val d = labels.reverse.find(indexSteps(_) >= math.sqrt(array.length))
+      d match {
+        case None => array.map(_.toString.take(4)).mkString("(", ",", ")")
+        case Some(x) => array.map(_.toString.take(4)).grouped(indexSteps(x)).map(_.mkString("(", ",", ")")).mkString("\n")
+      }
 
-    override def toString = array.mkString("(", ", ", ")")
+    }
   }
 
 }
