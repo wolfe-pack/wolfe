@@ -6,6 +6,7 @@ import ml.wolfe.{FactorGraph, FactorieVector}
 import ml.wolfe.MoreArrayOps._
 import ml.wolfe.util.Multidimensional._
 import scalaxy.loops._
+import ml.wolfe.util.Util.approxEqual
 
 /**
  * @author Luke
@@ -88,7 +89,7 @@ final class GroupPotential(val components: Array[Factor], val edge:Edge, val bas
   }
   override def maxMarginalF2N(edge:Edge) = marginalF2N(edge)
 
-  override def maxMarginalExpectationsAndObjective(result: FactorieVector) = {
+  override def maxMarginalExpectationsAndObjective(dstExpectations: FactorieVector) = {
     val scoretables = components.map(f => f.potential.getScoreTable(componentVariables(f)))
     val scoreSums:LabelledTensor[DiscreteVar, Double] =
       LabelledTensor.onNewArray[DiscreteVar, Double](v.components, _.dim, 0.0)
@@ -99,28 +100,28 @@ final class GroupPotential(val components: Array[Factor], val edge:Edge, val bas
 
     var maxScore = Double.NegativeInfinity
     var maxPenalisedScore = Double.NegativeInfinity
-    var maxIndices:Int = 0
+    var maxCount:Int = 0
     for(i <- (0 until scorePairs.array.length).optimized) {
-      if(scorePairs.array(i)._2 > maxPenalisedScore) {
+      if (approxEqual(scorePairs.array(i)._2, maxPenalisedScore)) {
+        maxCount = maxCount + 1
+       } else if(scorePairs.array(i)._2 > maxPenalisedScore) {
         maxPenalisedScore = scorePairs.array(i)._2
         maxScore = scorePairs.array(i)._1
-        maxIndices = 1
-      } else if(scorePairs.array(i)._2 == maxPenalisedScore) {
-        maxIndices = maxIndices + 1
+        maxCount = 1
       }
     }
 
-    val prob = 1d / maxIndices
+    val prob = 1d / maxCount
     for (f <- components if f.potential.isLinear) { //todo: yuck!
       val maxMarginal = scorePairs.fold[Double](componentVariables(f), 0, {
         (acc:Double, x:(Double, Double)) =>
-          if(x._2 == maxPenalisedScore) acc + prob else acc
+          if(approxEqual(x._2, maxPenalisedScore)) acc + prob else acc
       })
       f.potential match {
         case p: LinearPotential =>
           val R = maxMarginal.permute(p.edges.map(_.n.variable.asDiscrete), allowSameArray = true)
           for(i <- 0 until R.array.length if R.array(i)!=0)
-              result +=(p.statistics.vectors(i), R.array(i))
+            dstExpectations +=(p.statistics.vectors(i), R.array(i))
       }
     }
     maxScore

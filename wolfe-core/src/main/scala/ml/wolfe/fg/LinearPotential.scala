@@ -5,7 +5,7 @@ import ml.wolfe.FactorGraph.{FGPrinter, Edge}
 import ml.wolfe.MoreArrayOps._
 import scalaxy.loops._
 import cc.factorie.la.{SingletonTensor, SingletonTensor1, DenseTensor1, SparseTensor1}
-
+import ml.wolfe.util.Util.approxEqual
 
 /**
  * @author Sebastian Riedel
@@ -112,7 +112,7 @@ final class LinearPotential(val edges: Array[Edge], val statistics: Stats, fg: F
     for (i <- (0 until entryCount).optimized) {
       val setting = settings(i)
       val score = penalizedScore(i, setting)
-      if (score == norm) {
+      if (approxEqual(score, norm)) {
         maxCount += 1
       }
       else if (score > norm) {
@@ -121,14 +121,14 @@ final class LinearPotential(val edges: Array[Edge], val statistics: Stats, fg: F
         maxCount = 1
       }
     }
+
     // prob = 1/|maxs| for all maximums, add corresponding vector
     val prob = 1.0 / maxCount
     for (i <- 0 until entryCount) {
       val setting = settings(i)
       val score = penalizedScore(i, setting)
-      if (score == norm) {
+      if (approxEqual(score, norm)) {
         dstExpectations +=(vectors(i), prob)
-        //println(toString + " Adding: " + vectors(i).asInstanceOf[SingletonTensor].singleIndex + "->" + vectors(i).asInstanceOf[SingletonTensor].singleValue + " x " + prob + " to dstExpectations")
       }
     }
     maxScore
