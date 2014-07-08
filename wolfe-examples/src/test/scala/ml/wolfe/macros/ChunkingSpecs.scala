@@ -1,6 +1,6 @@
 package ml.wolfe.macros
 
-import ml.wolfe.{BeliefPropagation, Wolfe, WolfeSpec}
+import ml.wolfe.{Learn, BeliefPropagation, Wolfe, WolfeSpec}
 import cc.factorie.optimize.{Perceptron, OnlineTrainer}
 import ml.wolfe.util.{NLP, Evaluator}
 import cc.factorie.la.SparseTensor1
@@ -34,12 +34,12 @@ class ChunkingSpecs extends WolfeSpec {
         obs + pairs
       }
 
-      @OptimizeByInference(BeliefPropagation(_, 1))
+      @OptimizeByInference(BeliefPropagation.maxProduct(1))
       def model(w: Vector)(s: Sentence) = w dot features(s)
 
       def perceptronLoss(w: Vector)(i: Sentence): Double = max(Sentences where evidence(i)) { model(w) } - model(w)(i)
 
-      @OptimizeByLearning(new OnlineTrainer(_, new Perceptron, 4))
+      @OptimizeByLearning(Learn.online(4, new Perceptron))
       def loss(w: Vector) = sum(train) { perceptronLoss(w) }
 
       val w = argmin(vectors) { loss }

@@ -4,13 +4,13 @@ import ml.wolfe.{SingletonVector, FactorGraph, FactorieVector}
 import ml.wolfe.FactorGraph.{FGPrinter, Edge}
 import ml.wolfe.MoreArrayOps._
 import scalaxy.loops._
-import cc.factorie.la.{SingletonTensor1, DenseTensor1, SparseTensor1}
-
+import cc.factorie.la.{SingletonTensor, SingletonTensor1, DenseTensor1, SparseTensor1}
+import ml.wolfe.util.Util.approxEqual
 
 /**
  * @author Sebastian Riedel
  */
-final class LinearPotential(val edges: Array[Edge], statistics: Stats, fg: FactorGraph) extends Potential {
+final class LinearPotential(val edges: Array[Edge], val statistics: Stats, fg: FactorGraph) extends Potential {
 
   import statistics._
 
@@ -52,7 +52,7 @@ final class LinearPotential(val edges: Array[Edge], statistics: Stats, fg: Facto
     log(msgs.f2n)
   }
 
-  def valueForCurrentSetting() = {
+  override def valueForCurrentSetting() = {
     val setting = edges.map(_.n.variable.asDiscrete.setting)
     val entry = TablePotential.settingToEntry(setting, dims)
     scoreEntry(entry)
@@ -112,7 +112,7 @@ final class LinearPotential(val edges: Array[Edge], statistics: Stats, fg: Facto
     for (i <- (0 until entryCount).optimized) {
       val setting = settings(i)
       val score = penalizedScore(i, setting)
-      if (score == norm) {
+      if (approxEqual(score, norm)) {
         maxCount += 1
       }
       else if (score > norm) {
@@ -121,12 +121,14 @@ final class LinearPotential(val edges: Array[Edge], statistics: Stats, fg: Facto
         maxCount = 1
       }
     }
+
     // prob = 1/|maxs| for all maximums, add corresponding vector
+    val prob = 1.0 / maxCount
     for (i <- 0 until entryCount) {
       val setting = settings(i)
       val score = penalizedScore(i, setting)
-      if (score == norm) {
-        dstExpectations +=(vectors(i), 1.0 / maxCount)
+      if (approxEqual(score, norm)) {
+        dstExpectations +=(vectors(i), prob)
       }
     }
     maxScore
@@ -169,6 +171,8 @@ final class LinearPotential(val edges: Array[Edge], statistics: Stats, fg: Facto
 
     tableString.mkString("\n")
   }
+
+  override def toString = "Linear " + edges.map(_.n.index.toString).mkString("(",",",")")
 }
 
 case class Stats(settings: Array[Array[Int]], vectors: Array[FactorieVector])

@@ -15,7 +15,7 @@ final class CellLogisticLoss(rowEdge: Edge, columnEdge: Edge) extends Potential 
 
   def sig(x: Double) = 1.0 / (1.0 + math.exp(-x))
 
-  def valueForCurrentSetting() = {
+  override def valueForCurrentSetting() = {
     val a = rowVar.setting
     val v = columnVar.setting
     val s = a dot v
