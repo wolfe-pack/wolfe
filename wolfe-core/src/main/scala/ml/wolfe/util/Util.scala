@@ -24,6 +24,12 @@ object Util {
     }
   }
 
+  /**
+   * Are x and y approximately equal, to within eps?
+   */
+  def approxEqual(x:Double, y:Double, eps:Double = 1e-10) =  {
+    math.abs(x-y) < eps
+  }
 }
 
 /**
