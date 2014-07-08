@@ -5,8 +5,9 @@ import ml.wolfe.util.NLP
 import Wolfe._
 import NLP._
 import OptimizedOperators._
-import ml.wolfe.FactorGraph.SchedulerImpl
-import ml.wolfe.FactorGraph.SchedulerImpl.Direction
+
+import ml.wolfe.FactorGraph.{MPSchedulerImpl => SchedulerImpl}
+import ml.wolfe.FactorGraph.MPSchedulerImpl.{MPDirection => Direction}
 
 
 /**
