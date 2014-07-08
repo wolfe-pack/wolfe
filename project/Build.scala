@@ -105,6 +105,14 @@ object Build extends Build {
 
   import BuildSettings._
 
+  def vmargs = Command.args("vmargs", "<name>") {
+    (state, args) =>
+      val javaRunOptions = args.mkString(" ")
+      println("Applying JVM arguments: " + javaRunOptions)
+      Project.extract(state).append(javaOptions := Seq(javaRunOptions), state)
+  }
+
+
   lazy val root = Project(
     id = "wolfe",
     base = file("."),
