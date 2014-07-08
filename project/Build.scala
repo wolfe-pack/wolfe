@@ -87,8 +87,17 @@ object BuildSettings {
                          """
     )
 
+   def vmargs = Command.args("vmargs", "<name>") {
+    (state, args) =>
+      val javaRunOptions = args.mkString(" ")
+      println("Applying JVM arguments: " + javaRunOptions)
+      Project.extract(state).append(javaOptions := Seq(javaRunOptions), state)
+   }
+
+
   val globalSettings =
     Seq(
+      commands ++= Seq(vmargs),
       scalacOptions ++= Seq("-feature"),
       resolvers ++= Seq(
         "IESL Release" at "https://dev-iesl.cs.umass.edu/nexus/content/groups/public",
@@ -104,14 +113,6 @@ object BuildSettings {
 object Build extends Build {
 
   import BuildSettings._
-
-  def vmargs = Command.args("vmargs", "<name>") {
-    (state, args) =>
-      val javaRunOptions = args.mkString(" ")
-      println("Applying JVM arguments: " + javaRunOptions)
-      Project.extract(state).append(javaOptions := Seq(javaRunOptions), state)
-  }
-
 
   lazy val root = Project(
     id = "wolfe",
