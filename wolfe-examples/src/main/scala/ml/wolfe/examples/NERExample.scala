@@ -30,7 +30,7 @@ object NERExample {
   implicit val labels        = Seq("O", "B-protein", "I-protein", "B-cell_type", "I-cell_type", "B-DNA", "I-DNA",
     "B-cell_line", "I-cell_line", "B-RNA", "I-RNA").map(t => Tag(Symbol(t)))
 
-  @Atomic
+  /*@Atomic
   def tokenToFeatures(token: Token, prefix: String = ""): Wolfe.Vector = {
     oneHot(prefix + 'word -> token.word.toLowerCase) +
     oneHot(prefix + 'firstCap, I(token.word.head.isUpper)) +
@@ -41,7 +41,13 @@ object NERExample {
     oneHot(prefix + 'isSlash, I(token.word.matches("[/\\\\]"))) +
     oneHot(prefix + 'prefix2 -> token.word.take(2)) +
     oneHot(prefix + 'suffix2 -> token.word.takeRight(2))
-  }
+  }*/
+
+  @Atomic
+  def tokenToFeatures(token: Token, prefix: String = ""): Wolfe.Vector = NERFeatures(token, prefix)
+
+
+
 
   @Atomic
   def labelToFeature(label: Tag): Wolfe.Vector = {
@@ -74,7 +80,7 @@ object NERExample {
   def learn(data: Iterable[Sentence]) = argmin(vectors) { loss(data) }
 
   def main(args: Array[String]) {
-    val useSample = if (args.length > 0) args(0).toBoolean else false
+    val useSample = true/*if (args.length > 0) args(0).toBoolean else false*/
 
     val start = System.currentTimeMillis()
 
