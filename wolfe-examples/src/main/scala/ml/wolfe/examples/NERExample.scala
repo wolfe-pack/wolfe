@@ -75,7 +75,7 @@ object NERExample {
   def model(w: Vector)(s: Sentence) = w dot features(s)
   def predictor(w: Vector)(s: Sentence) = argmax(Sentences where evidence(observed)(s)) { model(w) }
 
-  @OptimizeByLearning(new OnlineTrainer(_, new AveragedPerceptron, 20, -1))
+  @OptimizeByLearning(new OnlineTrainer(_, new AveragedPerceptron, 20, 1))
   def loss(data: Iterable[Sentence])(w: Vector) = sum(data) { s => model(w)(predictor(w)(s)) - model(w)(s) }
   def learn(data: Iterable[Sentence]) = argmin(vectors) { loss(data) }
 
@@ -123,8 +123,10 @@ object NERExample {
       assert(test.size == 4260)
     }
 
+    println("Training!")
     val w = learn(train)
 
+    println("Evaluating!")
     def evaluate(corpus: Seq[Sentence]) = {
       val predicted = map (corpus) { predictor(w) }
       val evaluated = MentionEvaluator.evaluate(corpus, predicted)
