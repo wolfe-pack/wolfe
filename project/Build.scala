@@ -40,6 +40,7 @@ object BuildSettings {
   val buildSettings = Defaults.defaultSettings ++ Seq(
     organization := buildOrganization,
     scalaVersion := buildScalaVersion,
+    scalacOptions := Seq("unchecked","deprecation"),
     shellPrompt := ShellPrompt.buildShellPrompt,
     fork in run := true //use a fresh JVM for sbt run
   )
@@ -62,10 +63,12 @@ object BuildSettings {
     "com.nativelibs4java" %% "scalaxy-loops" % "0.3-SNAPSHOT" % "provided",
     "cc.factorie" % "factorie" % "1.0.0-M7",
     "org.scalamacros" %% "quasiquotes" % "2.0.0",
-    "org.scalanlp" %% "breeze-math" % "0.3",
-    "org.scalanlp" %% "breeze-learn" % "0.3",
-    "org.scalanlp" %% "breeze-process" % "0.3",
-    "org.scalanlp" %% "breeze-viz" % "0.3"
+    "org.scalanlp" %% "breeze" % "0.8.1",
+    "org.scalanlp" %% "breeze-natives" % "0.8.1"
+//    "org.scalanlp" %% "breeze-math" % "0.3",
+//    "org.scalanlp" %% "breeze-learn" % "0.3",
+//    "org.scalanlp" %% "breeze-process" % "0.3",
+//    "org.scalanlp" %% "breeze-viz" % "0.3"
 
   )
 

@@ -1,6 +1,7 @@
 package ml.wolfe.util
 
-import java.io.{FileInputStream, InputStream}
+import java.io.{File, FileInputStream, InputStream}
+import scala.collection.mutable.ArrayBuffer
 import scala.io.Source
 import scala.collection.mutable
 import java.util.concurrent.TimeUnit
@@ -25,11 +26,26 @@ object Util {
   }
 
   /**
+   * Recursively descend directory, returning a list of files.
+   */
+  def files(directory: File): Seq[File] = {
+    if (!directory.exists) throw new Error("File " + directory + " does not exist")
+    if (directory.isFile) return List(directory)
+    val result = new ArrayBuffer[File]
+    for (entry: File <- directory.listFiles) {
+      if (entry.isFile) result += entry
+      else if (entry.isDirectory) result ++= files(entry)
+    }
+    result
+  }
+
+  /**
    * Are x and y approximately equal, to within eps?
    */
-  def approxEqual(x:Double, y:Double, eps:Double = 1e-10) =  {
-    math.abs(x-y) < eps
+  def approxEqual(x: Double, y: Double, eps: Double = 1e-10) = {
+    math.abs(x - y) < eps
   }
+
 }
 
 /**
@@ -54,9 +70,9 @@ object Iris {
 }
 
 object Timer {
-  val timings = new mutable.HashMap[String,Long]()
+  val timings = new mutable.HashMap[String, Long]()
 
-  def time[A](name:String)(f: => A) = {
+  def time[A](name: String)(f: => A) = {
     val start = System.nanoTime
     val result = f
     val time: Long = TimeUnit.MILLISECONDS.convert(System.nanoTime - start, TimeUnit.NANOSECONDS)
@@ -64,7 +80,7 @@ object Timer {
     result
   }
 
-  def reported(name:String):Long = timings.getOrElse(name, -1)
+  def reported(name: String): Long = timings.getOrElse(name, -1)
 
   def getTimeString(seconds: Int): String = {
     def buildTimeString(seconds: Int, acc: String): String = {
@@ -87,11 +103,11 @@ object Timer {
  * in isDefinedAt and apply are avoided by caching results.
  * @param f the lifted function to turn into a partial function.
  */
-case class CachedPartialFunction[A,B](f:A => Option[B]) extends PartialFunction[A,B] {
-  private var cacheArg:A = _
-  private var cacheResult:Option[B] = None
+case class CachedPartialFunction[A, B](f: A => Option[B]) extends PartialFunction[A, B] {
+  private var cacheArg   : A         = _
+  private var cacheResult: Option[B] = None
 
-  def cache(x:A) = {
+  def cache(x: A) = {
     if (x != cacheArg) {
       cacheArg = x
       cacheResult = f(cacheArg)
@@ -103,7 +119,7 @@ case class CachedPartialFunction[A,B](f:A => Option[B]) extends PartialFunction[
     cacheResult.isDefined
   }
 
-  def apply(x:A) = {
+  def apply(x: A) = {
     cache(x)
     cacheResult.get
   }
