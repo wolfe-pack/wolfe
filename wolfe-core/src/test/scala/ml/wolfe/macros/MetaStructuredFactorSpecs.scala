@@ -106,6 +106,7 @@ class MetaStructuredFactorSpecs extends StructureIsomorphisms {
     }
 
     "generate an atomic factor for first order sum feature because the argument appears in an atomic position" in {
+      //rockt: failing!
       case class Data(label: Boolean, elements: Seq[Int])
       def space = Wolfe.all(Data)(bools x Seq(Seq(0, 5)))
       def potential(data: Data) = sum(0 until data.elements.size) { i => I(data.label) * data.elements(i).toDouble }
