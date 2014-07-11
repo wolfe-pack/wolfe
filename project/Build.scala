@@ -69,7 +69,10 @@ object BuildSettings {
 //    "org.scalanlp" %% "breeze-learn" % "0.3",
 //    "org.scalanlp" %% "breeze-process" % "0.3",
 //    "org.scalanlp" %% "breeze-viz" % "0.3"
+  )
 
+  val nlpDependencies = libraryDependencies ++= Seq(
+    "edu.arizona.sista" % "processors" % "2.0"
   )
 
   val publishSettings = Seq(
@@ -134,7 +137,7 @@ object Build extends Build {
   lazy val nlp = Project(
     id = "wolfe-nlp",
     base = file("wolfe-nlp"),
-    settings = buildSettings ++ globalSettings
+    settings = buildSettings ++ globalSettings ++ nlpDependencies
   ) dependsOn core % "test->test;compile->compile"
 
   lazy val examples = Project(

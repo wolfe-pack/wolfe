@@ -248,6 +248,7 @@ object KernelBPTed {
     println(en_files.size)
     println(tokenize(de_files(0)._2.txt) map (_.dropRight(3)))
 
+    //first create basic vectors for each document.
     //get document frequencies
 
 
