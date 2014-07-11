@@ -59,6 +59,7 @@ object Junkify {
 
 
     // CLIQUE POTENTIALS
+    //rockt: TODO tailrec annotation should be on the method definition below — it doesn't do something sensible on the val here
     @tailrec
     val cliqueFactors = getCliqueFactors(cliques, fg.factors)
 
