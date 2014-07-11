@@ -9,9 +9,7 @@ class JunctionTreeSpecs extends WolfeSpec {
   import Wolfe._
   import macros.Library._
 
-  //rockt: ignoring test since work in progress
-  "Junction Tree Belief Propagation" ignore {
-
+  "Junction Tree Belief Propagation" should {
     "Return the same argmax as normal BP on a tree" in {
       def sqDiff(x:Int, y:Int) = (x-y) * (x-y)
 
