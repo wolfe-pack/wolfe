@@ -1,16 +1,16 @@
-package ml.wolfe.fg
+package ml.wolfe.apps
 
 import java.io.File
 import java.util.StringTokenizer
 
 import breeze.linalg._
-import ml.wolfe.util.Util
-import ml.wolfe.{BeliefPropagation, FactorGraph}
 import ml.wolfe.FactorGraph.{Edge, Node}
+import ml.wolfe.{BeliefPropagation, FactorGraph}
 
 import scala.collection.mutable
-import scala.collection.mutable.{ListBuffer, ArrayBuffer}
+import scala.collection.mutable.ListBuffer
 import scala.io.Source
+import ml.wolfe.fg._
 
 
 /**
