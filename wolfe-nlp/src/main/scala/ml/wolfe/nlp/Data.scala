@@ -33,6 +33,7 @@ case class Sentence(tokens: Seq[Token], attributes: Attributes = Attributes.empt
 case class Document(source: String, sentences: Seq[Sentence], attributes: Attributes = Attributes.empty) {
   def toText = sentences map (_.toText) mkString "\n"
   def toTaggedText = sentences map (_.toTaggedText) mkString "\n"
+  def tokens = sentences flatMap (_.tokens)
 }
 
 

@@ -5,7 +5,8 @@ import java.util.StringTokenizer
 
 import breeze.linalg._
 import ml.wolfe.FactorGraph.{Edge, Node}
-import ml.wolfe.{BeliefPropagation, FactorGraph}
+import ml.wolfe.nlp.{Key, Document, SISTAProcessors}
+import ml.wolfe.{SimpleIndex, Index, BeliefPropagation, FactorGraph}
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -226,13 +227,45 @@ object KernelBPTed {
     result
   }
 
-  case class Doc(txt: String) {
-    lazy val tokens = tokenize(txt)
-  }
 
   def textKernel(a1: Any, a2: Any) = (a1, a2) match {
-    case (d1: Doc, d2: Doc) =>
+    case (d1: Document, d2: Document) =>
     //
+  }
+
+  object DocVector extends Key[Vector[Double]]
+  object WordIndex extends Key[Index]
+
+  def calculateTFIDFVectors(docs: Seq[Document]): Seq[Document] = {
+    val index = new SimpleIndex
+    val rawDF = new mutable.HashMap[String, Double]() withDefaultValue(0.0)
+    val numDocs = docs.size
+    //get document frequencies first
+    for (doc <- docs) {
+      val words = for (t <- doc.tokens) yield t.word
+
+      for (w <- words.distinct) {
+        rawDF(w) += 1.0
+        index.index(w)
+      }
+    }
+    val numWords = rawDF.size
+    val result = for (doc <- docs) yield {
+      //get term frequencies
+      val rawTF = new mutable.HashMap[String,Double]() withDefaultValue(0.0)
+      for (t <- doc.tokens)  {
+        rawTF(t.word) += 1.0
+      }
+      val docVector = SparseVector.zeros[Double](numWords)
+      for ((w,f) <- rawTF) {
+        val tf = rawTF(w)
+        val idf = math.log(numDocs / rawDF(w))
+        val wordIndex = index(w)
+        docVector(wordIndex) = tf * idf
+      }
+      doc.copy(attributes = doc.attributes add (DocVector,docVector) add (WordIndex,index))
+    }
+    result
   }
 
   def main(args: Array[String]) {
@@ -241,12 +274,23 @@ object KernelBPTed {
     val en_de = new File("/Users/sriedel/corpora//ted-cldc/en-de/")
 
     println("Loading translations de")
-    val de_files = getTrainSet(de_en).sortBy(_._1).take(100) //.map(d => tokenize(d._2))
+    val de_files = getTrainSet(de_en, "_de").sortBy(_._1).take(1000) //.map(d => tokenize(d._2))
     println("Loading translations en")
-    val en_files = getTrainSet(en_de).sortBy(_._1).take(100) //.map(d => tokenize(d._2))
+    val en_files = getTrainSet(en_de, "_en").sortBy(_._1).take(1000) //.map(d => tokenize(d._2))
     println(de_files.size)
     println(en_files.size)
-    println(tokenize(de_files(0)._2.txt) map (_.dropRight(3)))
+
+    val de_docs = de_files map (f => SISTAProcessors.mkDocument(f._2))
+    val en_docs = en_files map (f => SISTAProcessors.mkDocument(f._2))
+
+    println(de_docs.head)
+
+    val de_vecs = calculateTFIDFVectors(de_docs)
+    val en_vecs = calculateTFIDFVectors(en_docs)
+
+    println(de_vecs.head.attributes(DocVector))
+
+
 
     //first create basic vectors for each document.
     //get document frequencies
@@ -269,14 +313,15 @@ object KernelBPTed {
 
   }
 
-  def getTrainSet(topDir: File) = {
+  def getTrainSet(topDir: File, toRemove:String = "") = {
     val de_files = for (tag <- new File(topDir, "train").listFiles();
                         posNeg <- tag.listFiles();
                         doc <- posNeg.listFiles()) yield {
       val txt = Source.fromFile(doc).getLines().mkString("\n")
+      def removed = if (toRemove == "") txt else txt.replaceAllLiterally(toRemove,"")
       //      val tokens = txt.split(" ").map(_.dropRight(3))
       //      println(tokens.mkString(" "))
-      (posNeg.getName, doc.getName) -> Doc(txt)
+      (posNeg.getName, doc.getName) -> removed
     }
     de_files
   }
@@ -316,7 +361,7 @@ object IncompleteCholesky {
     I += argmax(d)
 
     while (a > eta) {
-      assert( j < m, "something's fishy")
+      assert(j < m, "something's fishy")
       nu += math.sqrt(a)
       val current = X(I(j))
 

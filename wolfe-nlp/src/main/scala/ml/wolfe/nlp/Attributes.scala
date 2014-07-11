@@ -19,10 +19,10 @@ case object Lemma extends Key[String]
 trait Attributes {
   def get[T](key:Key[T]):Option[T]
   def apply[T](key:Key[T]) = get(key).get
-  def +[T](key:Key[T],value:T):Attributes
+  def add[T](key:Key[T],value:T):Attributes
   def keys:Iterable[Key[_]]
   def addOpt[T](key:Key[T],opt:Option[T]):Attributes = opt match {
-    case Some(value) => this + (key,value)
+    case Some(value) => this add (key,value)
     case None => this
   }
   override def toString = {
@@ -36,13 +36,13 @@ object Attributes {
 
   class MapBasedAttributes(map:Map[Key[_],Any]) extends Attributes {
     def get[T](key: Key[T]) = map.get(key).asInstanceOf[Option[T]]
-    def +[T](key: Key[T], value: T) = new MapBasedAttributes(map + (key -> value))
+    def add[T](key: Key[T], value: T) = new MapBasedAttributes(map + (key -> value))
     def keys = map.keys
   }
 
   val empty = new Attributes {
     def get[T](key: Key[T]) = None
-    def +[T](key: Key[T], value: T) = new MapBasedAttributes(Map(key -> value))
+    def add[T](key: Key[T], value: T) = new MapBasedAttributes(Map(key -> value))
     def keys = Iterable.empty
   }
 
