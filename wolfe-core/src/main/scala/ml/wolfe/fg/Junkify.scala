@@ -59,8 +59,6 @@ object Junkify {
 
 
     // CLIQUE POTENTIALS
-    //rockt: TODO tailrec annotation should be on the method definition below — it doesn't do something sensible on the val here
-    @tailrec
     val cliqueFactors = getCliqueFactors(cliques, fg.factors)
 
     // CONVERT TO A FACTOR GRAPH
@@ -176,6 +174,7 @@ object Junkify {
    * @return a map from cliques to the factors that they are responsible for
    */
   def getCliqueFactors(cliques:Set[Clique], factors: Seq[FactorGraph.Factor]): Map[Clique, Set[FactorGraph.Factor]] = {
+    @tailrec
     def getCliqueFactorsAcc(cliques: Set[Clique], factors: Seq[FactorGraph.Factor], acc: Map[Clique, Set[FactorGraph.Factor]])
       : Map[Clique, Set[FactorGraph.Factor]] = factors.headOption match {
         case None => acc
