@@ -40,6 +40,7 @@ object BuildSettings {
   val buildSettings = Defaults.defaultSettings ++ Seq(
     organization := buildOrganization,
     scalaVersion := buildScalaVersion,
+    scalacOptions := Seq("unchecked", "deprecation"),
     shellPrompt := ShellPrompt.buildShellPrompt,
     fork in run := true //use a fresh JVM for sbt run
   )
@@ -62,11 +63,16 @@ object BuildSettings {
     "com.nativelibs4java" %% "scalaxy-loops" % "0.3-SNAPSHOT" % "provided",
     "cc.factorie" % "factorie" % "1.0.0-M7",
     "org.scalamacros" %% "quasiquotes" % "2.0.0",
-    "org.scalanlp" %% "breeze-math" % "0.3",
-    "org.scalanlp" %% "breeze-learn" % "0.3",
-    "org.scalanlp" %% "breeze-process" % "0.3",
-    "org.scalanlp" %% "breeze-viz" % "0.3"
+    "org.scalanlp" %% "breeze" % "0.8.1",
+    "org.scalanlp" %% "breeze-natives" % "0.8.1"
+    //    "org.scalanlp" %% "breeze-math" % "0.3",
+    //    "org.scalanlp" %% "breeze-learn" % "0.3",
+    //    "org.scalanlp" %% "breeze-process" % "0.3",
+    //    "org.scalanlp" %% "breeze-viz" % "0.3"
+  )
 
+  val nlpDependencies = libraryDependencies ++= Seq(
+    "edu.arizona.sista" % "processors" % "2.0"
   )
 
   val publishSettings = Seq(
@@ -87,12 +93,12 @@ object BuildSettings {
                          """
     )
 
-   def vmargs = Command.args("vmargs", "<name>") {
+  def vmargs = Command.args("vmargs", "<name>") {
     (state, args) =>
       val javaRunOptions = args.mkString(" ")
       println("Applying JVM arguments: " + javaRunOptions)
       Project.extract(state).append(javaOptions := Seq(javaRunOptions), state)
-   }
+  }
 
 
   val globalSettings =
@@ -118,7 +124,7 @@ object Build extends Build {
     id = "wolfe",
     base = file("."),
     settings = Project.defaultSettings ++ publishSettings ++ generalSettings ++ releaseSettings
-  ) aggregate(core, nlp, examples)
+  ) aggregate(core, nlp, examples, apps)
 
   lazy val core = Project(
     id = "wolfe-core",
@@ -131,7 +137,7 @@ object Build extends Build {
   lazy val nlp = Project(
     id = "wolfe-nlp",
     base = file("wolfe-nlp"),
-    settings = buildSettings ++ globalSettings
+    settings = buildSettings ++ globalSettings ++ nlpDependencies
   ) dependsOn core % "test->test;compile->compile"
 
   lazy val examples = Project(
@@ -139,7 +145,18 @@ object Build extends Build {
     base = file("wolfe-examples"),
     settings = buildSettings ++ globalSettings
   ) dependsOn(
-    core % "test->test;compile->compile",
-    nlp % "test->test;compile->compile"
+  core % "test->test;compile->compile",
+  nlp % "test->test;compile->compile"
   )
+
+  lazy val apps = Project(
+    id = "wolfe-apps",
+    base = file("wolfe-apps"),
+    settings = buildSettings ++ globalSettings
+  ) dependsOn(
+  core % "test->test;compile->compile",
+  nlp % "test->test;compile->compile"
+  )
+
+
 }
