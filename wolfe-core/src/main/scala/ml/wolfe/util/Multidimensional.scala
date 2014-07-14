@@ -7,7 +7,7 @@ import scalaxy.loops._
 /**
  * @author luke
  */
-object Multidimensional {
+object Multidimensional { //todo: views!
 
   /**
    * Returns the cartesian product of some sequences in lexicographical order
@@ -43,12 +43,11 @@ object Multidimensional {
      */
     def onNewArray[L, T: ClassTag](labels: Array[L], dimensions: L => Int, default:T = null.asInstanceOf[T]) =
       new LabelledTensor(labels, dimensions, Array.fill[T](labels.map(dimensions).product)(default))
-
   }
 
 
   case class LabelledTensorDimensionError(msg:String = "") extends Exception(msg)
-  
+
   /**
    * Wrapper for an Array so that it can be used as a tensor, with labelled dimensions
    * @param labels The labels for each dimension of the tensor
@@ -58,14 +57,15 @@ object Multidimensional {
    * @tparam T The type of the elements
    */
   class LabelledTensor[L, T: ClassTag](val labels: Array[L], val dimensions: L => Int, val array: Array[T]) {
-    type MultiIndex = Map[L, Int]
+    val size = (labels map dimensions).product
+    type MultiIndex = Seq[(L, Int)]
 
     if (array.length != labels.map(dimensions).product) throw new LabelledTensorDimensionError()
     private val indexSteps: L => Int = labels.zip(labels.scanRight(1)((l, acc) => dimensions(l) * acc).tail).toMap
 
     private def allMuls(forLabels: Seq[L] = labels) : Seq[MultiIndex] = cartesianProduct(
       forLabels.map(l => { (0 until dimensions(l)).map(l -> _) })
-    ).map(_.toMap)
+    )
 
     private def assertEquivalent(arr1:Array[L], arr2:Array[L]) =
       if(arr1.length != arr2.length || (arr2 diff arr1).nonEmpty)
@@ -78,17 +78,20 @@ object Multidimensional {
 
     // ------------------------------------------------------
 
-    // Useful for testing, but I'm not really that keen on these being public, because it discourages
-    // working with the Tensor as a whole   -Luke
+    // Useful for testing, but I'm not really that keen on these being public   -Luke
     def mulToIndex(mul: MultiIndex): Int = (
-      for ((label, idx) <- mul) yield indexSteps(label) * idx
-    ).sum
+                                           for ((label, idx) <- mul) yield indexSteps(label) * idx
+                                           ).sum
 
-    def indexToMul(i:Int) : MultiIndex = (
+    def indexToMul(i:Int) : MultiIndex =
       for (l <- labels) yield l -> (i / indexSteps(l)) % dimensions(l)
-    ).toMap
 
     // --------------------- Interface ----------------------
+
+    def apply(mul: MultiIndex) : T = array(mulToIndex(mul))
+    def update(mul: MultiIndex, value:T) : Unit = array(mulToIndex(mul)) = value
+    def apply(i:Int) : T = array(i)
+    def update(i:Int, value:T) : Unit = array(i) = value
 
     /** fill all elements in this with some function of their [[MultiIndex]] */
     def fillBy(f: MultiIndex => T) = for ((mul, idx) <- allMuls(labels).zipWithIndex) array(idx) = f(mul)
@@ -215,6 +218,9 @@ object Multidimensional {
     def copyFrom(source: LabelledTensor[L, T]): LabelledTensor[L, T] =
       elementWiseOpInPlace[T](source, (_, x) => x)
 
+    def map[U:ClassTag](f:T => U) = LabelledTensor.onExistingArray[L, U](labels, dimensions, array.map(f))
+
+    override def clone() = LabelledTensor.onExistingArray(labels, dimensions, array.clone())
 
     override def toString = {
       val d = labels.reverse.find(indexSteps(_) >= math.sqrt(array.length))
