@@ -17,6 +17,8 @@ final class LinearPotential(val edges: Array[Edge], val statistics: Stats, fg: F
   val dims       = edges.map(_.n.variable.asDiscrete.dim)
   val entryCount = statistics.settings.size
 
+  lazy val msgs = edges.map(_.msgs.asDiscrete)
+
   override def maxMarginalF2N(edge: Edge) = {
     //max over all settings
     val msgs = edge.msgs.asDiscrete
@@ -50,6 +52,29 @@ final class LinearPotential(val edges: Array[Edge], val statistics: Stats, fg: F
     }
     normalize(msgs.f2n)
     log(msgs.f2n)
+  }
+
+  override def mapF2N() = {
+    for (j <- (0 until edges.size).optimized)
+      fill(msgs(j).f2n, Double.NegativeInfinity)
+
+    var maxScore = Double.NegativeInfinity
+    var maxSetting = Array.ofDim[Int](edges.size)
+
+    for (i <- (0 until settings.size).optimized) {
+      val setting = settings(i)
+      var score = scoreEntry(i)
+      for (j <- (0 until edges.size).optimized)
+        score += msgs(j).n2f(setting(j))
+
+      if(score > maxScore) {
+        maxScore = score
+        maxSetting = setting
+      }
+    }
+
+    for (j <- (0 until edges.size).optimized)
+      msgs(j).f2n(maxSetting(j)) = 0
   }
 
   override def valueForCurrentSetting() = {
