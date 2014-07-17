@@ -93,7 +93,7 @@ class GradientCalculatorSpecs extends WolfeSpec {
 
     "return the gradient of a log partition function expression of a markov chain using logZ operator" in {
       import OptimizedOperators._
-      def space = seqs(4, bools)
+      def space = seqsOfLength(4, bools)
       def feat(seq: Seq[Boolean]) = sum(0 until seq.size - 1) { i => oneHot(seq(i) -> seq(i + 1)) }
       def model(w: Vector)(seq: Seq[Boolean]) = feat(seq) dot w
       val weights = Vector((false, false) -> 1.0, (false, true) -> 2.0, (true, false) -> -3.0, (true, true) -> 0.0)

@@ -247,8 +247,8 @@ trait SampleSpaceDefs {
     recurse(dom.toList, range.toList).toIterable
   }
 
-
-  def seqs[A](length: Int, dom: Iterable[A]): Iterable[Seq[A]] = {
+  /** Sequences over ''dom'' of fixed length ''length'' **/
+  def seqsOfLength[A](length: Int, dom: Iterable[A]): Iterable[Seq[A]] = {
     def recurse(l: Int, postfix: Iterable[List[A]] = Iterable(Nil)): Iterable[List[A]] =
       l match {
         case 0 => postfix
@@ -259,8 +259,9 @@ trait SampleSpaceDefs {
     recurse(length).map(_.toIndexedSeq)
   }
 
+  /** Sequences over ''dom'' up to length ''maxLength'' **/
   def seqs[A](dom: Iterable[A], maxLength: Int = 1000): Iterable[Seq[A]] = {
-    Range(0, maxLength + 1).view.flatMap(seqs(_, dom)).toList
+    Range(0, maxLength + 1).view.flatMap(seqsOfLength(_, dom)).toList
   }
 
   def seqs[A](doms: Seq[Iterable[A]]): Iterable[Seq[A]] = {

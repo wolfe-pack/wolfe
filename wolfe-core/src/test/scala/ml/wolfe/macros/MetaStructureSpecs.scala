@@ -79,7 +79,7 @@ class MetaStructureSpecs extends StructureIsomorphisms {
 
     "generate isomorphic structure and projection for fixed length sequence spaces" in {
       implicit val ints = Range(0, 2)
-      def space = Wolfe.seqs(4, ints)
+      def space = Wolfe.seqsOfLength(4, ints)
       val (structure, projection) = MetaStructure.projection[Seq[Int], Int](space, s => s(1))
       (structure, projection) mustBeIsomorphicTo(space, s => s(1))
       structure.nodes().size should be(4)
