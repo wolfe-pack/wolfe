@@ -74,7 +74,7 @@ class OptimizeByInferenceSpecs extends WolfeSpec {
     }
 
     "find the optimal solution of a linear chain" in {
-      def space = seqs(5, Range(0, 3))
+      def space = seqsOfLength(5, Range(0, 3))
       @OptimizeByInference(BeliefPropagation(_, 1))
       def potential(seq: Seq[Int]) = {
         val local = sum (0 until seq.size) (i => i * I(seq(i) == i))
