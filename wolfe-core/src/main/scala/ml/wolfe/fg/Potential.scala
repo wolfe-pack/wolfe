@@ -25,6 +25,17 @@ trait Potential {
    */
   def marginalF2N(edge: Edge):Unit = notSupported
 
+  /**
+   * Calculate and update the MAP messages from the factor of this potential to all edges.
+   */
+  def mapF2N():Unit = notSupported
+
+  /**
+   * Calculate and update the quadratic program messages from the factor of this
+   * potential to all edges, as used in AD3.
+   */
+  def quadraticProgramF2N(stepSize:Double, maxIterations:Int):Unit = notSupported
+
   def maxMarginalExpectationsAndObjective(dstExpectations: FactorieVector): Double = notSupported
   def marginalExpectationsAndObjective(dstExpectations: FactorieVector): Double = notSupported
   def valueForCurrentSetting(): Double = notSupported
@@ -32,7 +43,6 @@ trait Potential {
   def isLinear = false
   def statsForCurrentSetting(): FactorieVector = null
   def toVerboseString(implicit fgPrinter: FGPrinter): String = getClass.getName
-
   /**
    * Get the table of scores assigned by the potential over different settings, as a LabelledTensor
    * @param forVariables the order in which the variables should appear in the table
