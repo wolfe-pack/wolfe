@@ -226,7 +226,7 @@ final class TablePotential(edges: Array[Edge], table: Table) extends Potential {
 
 
 
-
+  //todo: (this doesn't actually work yet)
   override def quadraticProgramF2N(stepSize:Double, maxIterations:Int) : Unit = {
     println(s"quadraticProgramF2N($stepSize, $maxIterations)")
 
