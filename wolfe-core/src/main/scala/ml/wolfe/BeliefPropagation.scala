@@ -51,6 +51,12 @@ object BeliefPropagation {
       fg.value = featureExpectationsAndObjective(fg, fg.gradient, sum)
     }
 
+    //calculate expectations
+    if (fg.expectationFactors.size > 0) {
+      fg.expectations = new SparseVector(1000)
+      featureExpectationsAndObjective(fg, fg.expectations, sum)
+    }
+
   }
 
   /**

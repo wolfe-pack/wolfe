@@ -17,12 +17,33 @@ final class FactorGraph {
 
   import FactorGraph._
 
+  /**
+   * Edges from factors to nodes.
+   */
   val edges   = new ArrayBuffer[Edge]
+
+  /**
+   * Nodes that represent variables.
+   */
   val nodes   = new ArrayBuffer[Node]
+
+  /**
+   * Factors that capture model potentials.
+   */
   val factors = new ArrayBuffer[Factor]
 
   /**
-   * Stochastic factors can be
+   * factors used only to calculate expectations.
+   */
+  val expectationFactors = new ArrayBuffer[Factor]
+
+  /**
+   * Edges between expectation factors and nodes.
+   */
+  val expectationEdges = new ArrayBuffer[Edge]
+
+  /**
+   * Stochastic factors can sample their neighbors.
    */
   val stochasticFactors = new ArrayBuffer[(Factor,()=>Seq[Node])]()
 
@@ -46,6 +67,11 @@ final class FactorGraph {
    * Algorithms that calculate gradients (or sub-gradients) can store their results here.
    */
   var gradient: FactorieVector = null
+
+  /**
+   * Algorithms can use this variable to store expectations.
+   */
+  var expectations: FactorieVector = null
 
   /**
    * Adds a node for a variable of domain size `dim`
@@ -87,6 +113,22 @@ final class FactorGraph {
   }
 
   /**
+   * Adds an edge between an expectation factor and a node. This does not register
+   * the factor edge in the node!
+   * @param f factor to connect.
+   * @param n node to connect.
+   * @param msgs msg object
+   * @return the added edge.
+   */
+  def addExpectationEdge(f:Factor, n:Node)(msgs:Msgs = new DiscreteMsgs(n.variable.asDiscrete.dim)):Edge = {
+    val e = new Edge(n,f, msgs)
+    e.indexInFactor = f.edgeCount
+    f.edgeCount +=1
+    expectationEdges += e
+    e
+  }
+
+  /**
    * Adds an edge between node and factor
    * @param f factor to connect.
    * @param n node to connect.
@@ -117,6 +159,16 @@ final class FactorGraph {
   def addFactor() = {
     val f = new Factor(this, factors.size)
     factors += f
+    f
+  }
+
+  /**
+   * Creates and adds a factor to be used for calculating expectations.
+   * @return the created factor.
+   */
+  def addExpectationFactor() = {
+    val f = new Factor(this, expectationFactors.size)
+    expectationFactors += f
     f
   }
 
@@ -191,6 +243,12 @@ final class FactorGraph {
       edge.n.edges(edge.indexInNode) = edge
       edge.f.edgeFilled += 1
       edge.n.edgeFilled += 1
+    }
+    //expectation edges are not registered in nodes.
+    for (edge <- expectationEdges) {
+      if (edge.f.edges.length != edge.f.edgeCount) edge.f.edges = Array.ofDim[Edge](edge.f.edgeCount)
+      edge.f.edges(edge.indexInFactor) = edge
+      edge.f.edgeFilled += 1
     }
   }
 
