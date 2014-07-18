@@ -184,7 +184,7 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
     val objRhs = if (scaling.equalsStructure(q"1.0")) rawObjRhs else q"$scaling * $rawObjRhs"
     val objMatcher = meta.matcher(rootMatcher(objArg.symbol, q"$structName", meta))
     val factors = metaStructuredFactor(FactorGenerationInfo(objRhs, meta, objMatcher, linearModelInfo = LinearModelInfo(q"_index")))
-    val inferCode = optimizeByInferenceCode(objRhs, newTermName("_graph"))
+    val inferCode = optimizeByInferenceCode(rawObjRhs, newTermName("_graph"))
 
     val structureDef = meta.classDef(newTermName("_graph"))
 
