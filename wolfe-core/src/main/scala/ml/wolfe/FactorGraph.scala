@@ -560,5 +560,19 @@ object FactorGraph {
     }
   }
 
+  /**
+   * A mutable store for factor graphs. Can be combined with an inference method when
+   * we want to expect the factor graph that the inference method used.
+   */
+  trait Store extends (FactorGraph => FactorGraph) {
+    var factorGraph:FactorGraph = _
+    def apply(v1: FactorGraph) = {
+      factorGraph = v1
+      factorGraph
+    }
+  }
+
+  object Store extends Store
+
 }
 
