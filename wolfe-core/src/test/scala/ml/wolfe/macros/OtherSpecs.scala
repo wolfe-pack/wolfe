@@ -13,7 +13,7 @@ class OtherSpecs extends WolfeSpec {
   "A Factor Graph Store" should {
     "store the factor graph used in inference" in {
       @OptimizeByInference(FactorGraph.Store andThen BeliefPropagation.maxProduct(1))
-      def model(coin: Boolean) = flip(coin, 0.9)
+      def model(coin: Boolean) = bernoulli(0.9)(coin)
       val result = argmax(bools) { model }
       val fg = FactorGraph.Store.factorGraph
       result should be (true)

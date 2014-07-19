@@ -68,7 +68,7 @@ object Wolfe extends SampleSpaceDefs
     def <->(that: Boolean) = b == that
   }
 
-  def flip(coin:Boolean, p:Double = 0.5) = if (coin) math.log(p) else math.log1p(-p)
+  def bernoulli(p:Double = 0.5)(coin:Boolean) = if (coin) math.log(p) else math.log1p(-p)
 
   def I(b: Boolean) = if (b) 1.0 else 0.0
 
