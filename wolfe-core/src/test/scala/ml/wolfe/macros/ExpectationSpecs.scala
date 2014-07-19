@@ -1,6 +1,7 @@
 package ml.wolfe.macros
 
-import ml.wolfe.{Wolfe, BruteForceOperators, WolfeSpec}
+import ml.wolfe.macros.OptimizedOperators._
+import ml.wolfe.{BeliefPropagation, Wolfe, BruteForceOperators, WolfeSpec}
 
 /**
  * @author Sebastian Riedel
@@ -23,6 +24,22 @@ class ExpectationSpecs extends WolfeSpec {
     val expected = BruteForceOperators.expect(Wolfe.all(Data) filter (_.x)) { model } { stats }
     actual should equal(expected)
   }
+
+  "find the optimal solution of a linear chain" in {
+    def space = seqsOfLength(5, Range(0, 3))
+    def stats(seq:Seq[Int]) = sum(0 until seq.size) { i => oneHot(i -> seq(i))}
+    @LogZByInference(BeliefPropagation.sumProduct(1))
+    def potential(seq: Seq[Int]) = {
+      val local = sum (0 until seq.size) (i => i * I(seq(i) == i))
+      val pairs = sum (0 until seq.size - 1)(i => I(seq(i) == seq(i + 1)))
+      local + pairs
+    }
+    val actual = OptimizedOperators.expect(space) { potential } { stats }
+    val expected = BruteForceOperators.expect(space) { potential } { stats }
+
+    actual should equal (expected)
+  }
+
 
 
 }
