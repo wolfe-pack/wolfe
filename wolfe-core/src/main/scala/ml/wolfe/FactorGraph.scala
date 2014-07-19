@@ -20,12 +20,12 @@ final class FactorGraph {
   /**
    * Edges from factors to nodes.
    */
-  val edges   = new ArrayBuffer[Edge]
+  val edges = new ArrayBuffer[Edge]
 
   /**
    * Nodes that represent variables.
    */
-  val nodes   = new ArrayBuffer[Node]
+  val nodes = new ArrayBuffer[Node]
 
   /**
    * Factors that capture model potentials.
@@ -45,7 +45,7 @@ final class FactorGraph {
   /**
    * Stochastic factors can sample their neighbors.
    */
-  val stochasticFactors = new ArrayBuffer[(Factor,()=>Seq[Node])]()
+  val stochasticFactors = new ArrayBuffer[(Factor, () => Seq[Node])]()
 
   /**
    * A flag that indicates whether the algorithm that uses this graph to find a solution has converged
@@ -89,7 +89,7 @@ final class FactorGraph {
    * @param componentNodes the components of the tuple
    * @return the added tuple node.
    */
-  def addTupleNode(componentNodes:Array[Node]) = {
+  def addTupleNode(componentNodes: Array[Node]) = {
     val variable = new TupleVar(componentNodes)
     val n = new Node(nodes.size, variable)
     nodes += n
@@ -117,13 +117,12 @@ final class FactorGraph {
    * the factor edge in the node!
    * @param f factor to connect.
    * @param n node to connect.
-   * @param msgs msg object
    * @return the added edge.
    */
-  def addExpectationEdge(f:Factor, n:Node)(msgs:Msgs = new DiscreteMsgs(n.variable.asDiscrete.dim)):Edge = {
-    val e = new Edge(n,f, msgs)
+  def addExpectationEdge(f: Factor, n: Node, indexInFactor: Int): Edge = {
+    val e = new Edge(n, f, new DiscreteMsgs(n.variable.asDiscrete.dim))
     e.indexInFactor = f.edgeCount
-    f.edgeCount +=1
+    f.edgeCount += 1
     expectationEdges += e
     e
   }
@@ -143,7 +142,7 @@ final class FactorGraph {
    * @param msgNodes the nodes relevant for f2n messages
    * @return the added edge.
    */
-  def addTupleEdge(f: Factor, n: Node, msgNodes:Array[Node]): Edge = {
+  def addTupleEdge(f: Factor, n: Node, msgNodes: Array[Node]): Edge = {
     val e = new Edge(n, f, new TupleMsgs(n.variable.asTuple.components, msgNodes.map(_.variable.asDiscrete)))
     e.indexInFactor = f.edgeCount
     n.edgeCount += 1
@@ -176,17 +175,17 @@ final class FactorGraph {
    * Adds a factor whose nodes will be resampled.
    * @param sampleNodes a function that samples neighbors of the factor
    */
-  def addStochasticFactor(sampleNodes: =>Seq[Node]) {
+  def addStochasticFactor(sampleNodes: => Seq[Node]) {
     val f = addFactor()
-    stochasticFactors += f -> (() =>sampleNodes)
+    stochasticFactors += f -> (() => sampleNodes)
   }
 
   /**
    * Change the arguments of each stochastic factor.
    */
   def sampleFactors() {
-    for ((f,s) <- stochasticFactors) {
-      moveFactor(f,s())
+    for ((f, s) <- stochasticFactors) {
+      moveFactor(f, s())
     }
   }
 
@@ -279,14 +278,14 @@ final class FactorGraph {
   /**
    * @return Is this factor graph loopy?
    */
-  def isLoopy:Boolean = {
+  def isLoopy: Boolean = {
     @tailrec
     def loopyAcc(remainingFactors: List[Factor], trees: Set[Set[Node]]): Boolean =
       remainingFactors match {
         case Nil => false
         case f :: tail => {
-          val neighbourTrees = f.edges.map{ e => trees.find(_ contains e.n) match { case Some(x) => x; case None => sys.error("Something went wrong in isLoopy!")} }.toSet
-          if(neighbourTrees.size != f.edges.length) true
+          val neighbourTrees = f.edges.map { e => trees.find(_ contains e.n) match { case Some(x) => x; case None => sys.error("Something went wrong in isLoopy!") } }.toSet
+          if (neighbourTrees.size != f.edges.length) true
           else {
             val newTrees = trees -- neighbourTrees + neighbourTrees.reduce(_ ++ _)
             loopyAcc(tail, newTrees)
@@ -300,39 +299,39 @@ final class FactorGraph {
    * Render a graphic of this factor graph
    * @param showMessages whether to include message passing on the graphic
    */
-  def displayAsGraph(showMessages:Boolean = false) {
-    def nodeString(n:Node) = n.variable match {
-      case v:TupleVar => v.componentNodes.map(_.index.toString).mkString("(", ",", ")")
+  def displayAsGraph(showMessages: Boolean = false) {
+    def nodeString(n: Node) = n.variable match {
+      case v: TupleVar => v.componentNodes.map(_.index.toString).mkString("(", ",", ")")
       case _ => n.index.toString
     }
-    def factorString(f:Factor) = f.edges.map(e => nodeString(e.n)).mkString("(",",",")") + "\n" + f.potential.toVerboseString(DefaultPrinter)
-    def shortArr[T](array:Array[T]) = array.map(_.toString.take(4)).mkString("(", ",", ")")
-    def edgeString(e:Edge) = e.msgs match {
-      case m:TupleMsgs => "n2f: " + m.n2f.toString + "\nf2n:" + m.f2n.toString
-      case m:DiscreteMsgs => "n2f: " + shortArr(m.n2f)  + "\nf2n:" + shortArr(m.f2n.array)
+    def factorString(f: Factor) = f.edges.map(e => nodeString(e.n)).mkString("(", ",", ")") + "\n" + f.potential.toVerboseString(DefaultPrinter)
+    def shortArr[T](array: Array[T]) = array.map(_.toString.take(4)).mkString("(", ",", ")")
+    def edgeString(e: Edge) = e.msgs match {
+      case m: TupleMsgs => "n2f: " + m.n2f.toString + "\nf2n:" + m.f2n.toString
+      case m: DiscreteMsgs => "n2f: " + shortArr(m.n2f) + "\nf2n:" + shortArr(m.f2n.array)
       case _ => ""
     }
     val fgv = new ml.wolfe.FactorGraphViewer()
     val factorVertices = factors.map(f => f.potential match {
-      case p:GroupPotential =>
+      case p: GroupPotential =>
         val x = fgv.addGroupFactor(factorString(f))
-        for(g <- p.components) {
+        for (g <- p.components) {
           fgv.addEdge(fgv.addFactor(factorString(g)), x)
         }
         f -> x
-      case p:TupleConsistencyPotential => f -> fgv.addGroupFactor(factorString(f))
+      case p: TupleConsistencyPotential => f -> fgv.addGroupFactor(factorString(f))
       case _ => f -> fgv.addFactor(factorString(f))
     }).toMap
     val nodeVertices = nodes.map(n => n -> fgv.addNode(nodeString(n))).toMap
 
-    if(showMessages)
-      for(e <- edges) fgv.addEdge(nodeVertices(e.n), factorVertices(e.f), edgeString(e))
+    if (showMessages)
+      for (e <- edges) fgv.addEdge(nodeVertices(e.n), factorVertices(e.f), edgeString(e))
     else
-      for(e <- edges) fgv.addEdge(nodeVertices(e.n), factorVertices(e.f))
+      for (e <- edges) fgv.addEdge(nodeVertices(e.n), factorVertices(e.f))
 
     fgv.addTextbox("Value = " + value.toString())
-    if(weights != null) fgv.addTextbox("Weights = " + weights.toString())
-    if(gradient != null) fgv.addTextbox("Gradient = " + gradient.toString())
+    if (weights != null) fgv.addTextbox("Weights = " + weights.toString())
+    if (gradient != null) fgv.addTextbox("Gradient = " + gradient.toString())
 
     fgv.render()
   }
@@ -347,7 +346,7 @@ object FactorGraph {
    * @param index the index of the node.
    * @param variable the variable the node is representing.
    */
-  final class Node(val index: Int, var variable:Var) {
+  final class Node(val index: Int, var variable: Var) {
     /* all edges to factors that this node is connected to */
     var edges: Array[Edge] = Array.ofDim(0)
 
@@ -552,11 +551,11 @@ object FactorGraph {
       case _ => ""
     }
     def factor2String(factor: Factor) = factor.potential match {
-      case p:TuplePotential => p.baseNodes.map(_.index.toString).mkString("(", ",", ")")
+      case p: TuplePotential => p.baseNodes.map(_.index.toString).mkString("(", ",", ")")
       case _ => ""
     }
     def vector2String(vector: ml.wolfe.FactorieVector) = vector match {
-      case v:SingletonVector => v.singleIndex + " -> " + v.singleValue
+      case v: SingletonVector => v.singleIndex + " -> " + v.singleValue
       case _ => vector.toString()
     }
   }
