@@ -10,6 +10,11 @@ class ExpectationSpecs extends WolfeSpec {
 
   import ml.wolfe.Wolfe._
 
+  "return the expectations of a bernoulli variable" in {
+    val actual = OptimizedOperators.expect(bools) { bernoulli(0.7) } { oneHot(_) }
+    actual should equal(Vector(true -> 0.7, false -> 0.3))
+  }
+
   "return the expectations of a one-node sample space and atomic objective" in {
     val actual = OptimizedOperators.expect(0 until 5) { _.toDouble } { oneHot(_) }
     val expected = BruteForceOperators.expect(0 until 5) { _.toDouble } { oneHot(_) }
