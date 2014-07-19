@@ -209,22 +209,64 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
     """
   }
 
-  def inferenceInLinearModel(trees: BuilderTrees, scaling: Tree = q"1.0",
+  /**
+   * This method generates code that creates a factor graph, runs an inference algorithm on
+   * this factor graph and then produces a result. The method can be used both for MAP and marginal
+   * inference by setting `inferenceCode`, `resultCodeFunction` and `stats` accordingly.
+   * @param trees the ASTs that define the main properties of the inference problem (domain, objective, observation).
+   * @param scaling double term that is multiplied with the objective. Usually 1.0.
+   * @param stats the AST that corresponds to a statistics or feature function over which we can calculate expectations.
+   * @param inferenceCode a function that takes an objective AST as first argument, and a factor graph term name as second
+   *                      argument, and then returns an AST that represents a call to inference algorithm on the factor
+   *                      graph referred by the factor graph term name.
+   * @param resultCodeFunction a function that takes as first argument a term name for a [[ml.wolfe.macros.Structure]]
+   *                           and as second argument a term name for an [[ml.wolfe.Index]] and returns code that
+   *                           evaluates to the result of inference (e.g., an argmax state, or a vector of expectations,
+   *                           or a logZ value).
+   * @return code that creates a factor graph, runs inference and returns a result.
+   */
+  def inferenceInLinearModel(trees: BuilderTrees,
+                             scaling: Tree = q"1.0",
                              stats: Tree = EmptyTree,
                              inferenceCode: (Tree, TermName) => Tree = optimizeByInferenceCode,
                              resultCodeFunction: (TermName, TermName) => Tree = argmaxResultCode): CodeAndInitialization = {
+    //the name of the variable that stores the created structure isomorphic to the search space.
     val structName = newTermName(context.fresh("structure"))
+
+    //the name of the variable that stores the Factorie-to-Wolfe index.
     val indexName = newTermName("_index")
+
+    //the name of the variable that stores the factor graph.
+    val graphName = newTermName("_graph")
+
+    //meta information about the class of structures isomorphic to the search space.
     val meta = metaStructure(trees.over)
+
+    //normalizing the objective function, and then separating its arguments from its RHS.
     val Function(List(objArg), rawObjRhs) = blockToFunction(unwrapSingletonBlocks(trees.of))
+
     //todo: scaling should happen on a per factor basis (challenge: negating special-purpose potentials)
+    //we adapt the objective based on the scaling factor
     val objRhs = if (scaling.equalsStructure(q"1.0")) rawObjRhs else q"$scaling * $rawObjRhs"
+
+    //this matcher takes a tree if and if the tree corresponds to the argument identifier of the objective, returns
+    //the structure with name structName. Using this "root" matcher the meta object can
+    //create more fine-grained matcher (that return sub-structures based on terms that involve the argument identifier).
     val objMatcher = meta.matcher(rootMatcher(objArg.symbol, q"$structName", meta))
+
+    //This method returns meta information about the class of factors that correspond to the given objective.
+    //this meta information can be used to define the class of factors, and to create instances of it.
     val factors = metaStructuredFactor(FactorGenerationInfo(objRhs, meta, objMatcher, linearModelInfo = LinearModelInfo(q"_index")))
 
-    val inferCode = inferenceCode(rawObjRhs, newTermName("_graph"))
-    val structureDef = meta.classDef(newTermName("_graph"))
+    //based on possible annotation on the objective, determine which inference code should be used.
+    val inferCode = inferenceCode(rawObjRhs, graphName)
 
+    //the class definition of the structure isomorphic to the search space. Currently needs access to
+    //the name of the factor graph variable because the structure calls methods of the factor graph.
+    val structureDef = meta.classDef(graphName)
+
+    //If a statistics function is specified we want to calculate expectations of, this
+    //code generates the code that creates the expectation factors.
     val statsFactors: MetaStructuredFactor = if (stats == EmptyTree) null
     else {
       val Function(List(statsArg), statsRhs) = blockToFunction(unwrapSingletonBlocks(stats))
@@ -233,6 +275,8 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
         linearModelInfo = LinearModelInfo(q"_index"), linear = true, expectations = true))
     }
 
+    //If a condition/filter on the search space is defined, here we generate code that
+    //modifies the isomorphic structure and factor graph to capture the condition.
     val conditionCode = if (trees.where == EmptyTree) EmptyTree
     else {
       val Function(List(whereArg), whereRhs) = simplifyBlock(unwrapSingletonBlocks(trees.where))
@@ -241,19 +285,27 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
       conditioner.code
     }
 
+    //the factors meta object may contain a (Wolfe) weight vector that is used in the definition
+    //of the linear model. If so this code translates the wolfe vector into a factorie vector
+    //to be used in the factor graph.
     val factorieWeights = factors.weightVector.map(
       w => q"ml.wolfe.FactorieConverter.toFactorieDenseVector($w,$indexName)"
     ).getOrElse(q"new ml.wolfe.DenseVector(0)")
 
+    //default initialization code to create index and weight vector.
     val initialization = List(
       q"val $indexName = new ml.wolfe.DefaultIndex()",
       q"val _factorieWeights = $factorieWeights")
 
+    //the code that turns the factor graph state (which contains the result of inference) into a result
+    //to be returned to the client (say, an element of the search space or a wolfe vector of expectations).
     val resultCode = resultCodeFunction(structName, indexName)
 
+    //if we have statistics to calculate expectations of, this code will create the corresponding factors.
     val statsFactorDef = if (statsFactors == null) EmptyTree else statsFactors.classDef
     val statsFactorInit = if (statsFactors == null) EmptyTree else q"val statsFactors = new ${ statsFactors.className }($structName)"
 
+    //the code that puts everything together.
     val code = q"""
       val _graph = new ml.wolfe.FactorGraph
       $structureDef
@@ -366,10 +418,9 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
     }
   }
 
-  def expect(trees: BuilderTrees, scaling: Tree = q"1.0",stats:Tree): CodeAndInitialization = {
+  def expect(trees: BuilderTrees, scaling: Tree = q"1.0", stats: Tree): CodeAndInitialization = {
     inferenceInLinearModel(trees, scaling, stats, logZByInferenceCode, expectResultCode)
   }
-
 
 
   trait IsmorphicFactorGraph[T] {
