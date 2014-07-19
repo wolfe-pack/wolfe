@@ -18,9 +18,9 @@ object BeliefPropagation {
   def sumProduct(maxIteration: Int, schedule: Boolean = true, gradientAndObjective: Boolean = true)
                 (fg: FactorGraph) = apply(fg, maxIteration, schedule, true, gradientAndObjective)
   def junctionTreeMaxProduct(gradientAndObjective: Boolean = true)
-                (fg: FactorGraph) = onJunctionTree(fg, sum=false, gradientAndObjective=gradientAndObjective)
+                            (fg: FactorGraph) = onJunctionTree(fg, sum = false, gradientAndObjective = gradientAndObjective)
   def junctionTreeSumProduct(gradientAndObjective: Boolean = true)
-                (fg: FactorGraph) = onJunctionTree(fg, sum=true, gradientAndObjective=gradientAndObjective)
+                            (fg: FactorGraph) = onJunctionTree(fg, sum = true, gradientAndObjective = gradientAndObjective)
 
   /**
    * Runs some iterations of belief propagation.
@@ -52,26 +52,32 @@ object BeliefPropagation {
     }
 
     //calculate expectations
-    if (fg.expectationFactors.size > 0) {
-      fg.expectations = new SparseVector(1000)
-      featureExpectationsAndObjective(fg, fg.expectations, sum)
-    }
+    if (fg.expectationFactors.size > 0) calculateExpectations(fg, sum)
 
   }
 
+  def calculateExpectations(fg: FactorGraph, sum: Boolean) {
+    fg.expectations = new SparseVector(1000)
+    for (factor <- fg.expectationFactors) {
+      //update all n2f messages
+      for (e <- factor.edges) updateN2F(e)
+      if (sum) factor.potential.marginalExpectationsAndObjective(fg.expectations)
+      else factor.potential.maxMarginalExpectationsAndObjective(fg.expectations)
+    }
+  }
   /**
-   *  Creates a junction tree from the original factor graph, runs BP,
-   *  then copies value/gradient back into the original factor graph.
-   *  @param fg the original factor graph
+   * Creates a junction tree from the original factor graph, runs BP,
+   * then copies value/gradient back into the original factor graph.
+   * @param fg the original factor graph
    */
 
-  def onJunctionTree(fg: FactorGraph, sum: Boolean = false, gradientAndObjective: Boolean = true, forceJunctionTree:Boolean = false) {
-    if(!forceJunctionTree && !fg.isLoopy) {
+  def onJunctionTree(fg: FactorGraph, sum: Boolean = false, gradientAndObjective: Boolean = true, forceJunctionTree: Boolean = false) {
+    if (!forceJunctionTree && !fg.isLoopy) {
       LoggerUtil.once(LoggerUtil.warn, "Junction tree belief propagation called on a non-loopy graph. Ignoring.")
-      apply(fg, 1, schedule=true, sum, gradientAndObjective)
+      apply(fg, 1, schedule = true, sum, gradientAndObjective)
     } else {
       val jt = Junkify(fg)
-      apply(jt, 1, schedule=true, sum, gradientAndObjective)
+      apply(jt, 1, schedule = true, sum, gradientAndObjective)
       if (gradientAndObjective) {
         fg.value = jt.value
         fg.gradient = jt.gradient
