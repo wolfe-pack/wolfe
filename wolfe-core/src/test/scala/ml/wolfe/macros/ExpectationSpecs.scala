@@ -21,7 +21,7 @@ class ExpectationSpecs extends WolfeSpec {
     actual should equal(expected)
   }
 
-  "return the argmax of a two node case class sample space, one observation and atomic objective" in {
+  "return the single variable expectations of a two node case class sample space, one observation and atomic objective" in {
     case class Data(x: Boolean, y: Boolean)
     def model(d: Data) = I(!d.x || d.y)
     def stats(d: Data) = oneHot('x -> d.x) + oneHot('y -> d.y)
@@ -30,7 +30,7 @@ class ExpectationSpecs extends WolfeSpec {
     actual should equal(expected)
   }
 
-  "find the optimal solution of a linear chain" in {
+  "return the exact expectations of single node variables in a linear chain" in {
     def space = seqsOfLength(5, Range(0, 3))
     def stats(seq:Seq[Int]) = sum(0 until seq.size) { i => oneHot(i -> seq(i))}
     @LogZByInference(BeliefPropagation.sumProduct(1))
