@@ -1,6 +1,6 @@
 package ml.wolfe
 
-import cc.factorie.WeightsSet
+import cc.factorie.model.WeightsSet
 import cc.factorie.optimize._
 
 /**

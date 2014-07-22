@@ -368,8 +368,8 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
       case Good(calculator) =>
         val classDef = calculator.classDef
         val code = q"""
-          import cc.factorie.WeightsSet
-          import cc.factorie.Weights
+          import cc.factorie.model.WeightsSet
+          import cc.factorie.model.Weights
           import cc.factorie.la.WeightsMapAccumulator
           import cc.factorie.util.DoubleAccumulator
           import cc.factorie.optimize._
