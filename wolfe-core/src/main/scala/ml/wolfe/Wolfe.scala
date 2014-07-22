@@ -2,7 +2,7 @@ package ml.wolfe
 
 import scala.language.implicitConversions
 import scala.util.Random
-import cc.factorie.WeightsSet
+import cc.factorie.model.WeightsSet
 import cc.factorie.optimize.Trainer
 import scala.annotation.StaticAnnotation
 import scala.collection.MapProxy
