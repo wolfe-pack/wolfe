@@ -144,7 +144,7 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
     def getCodeFromAnnotation(f: Tree): Tree = {
       f.symbol.annotations.find(_.tpe.typeSymbol == wolfeSymbols.optByLearning) match {
         case Some(annotation) => q"${ annotation.scalaArgs.head }($weightsSet)"
-        case None => q"new OnlineTrainer($weightsSet, new Perceptron, 4)"
+        case None => q"new ml.wolfe.WolfeOnlineTrainer($weightsSet, new Perceptron, 4)"
       }
     }
     objRhs match {
@@ -153,7 +153,7 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
         getCodeFromAnnotation(f)
       case q"$f(${ _ })(${ _ })" =>
         getCodeFromAnnotation(f)
-      case _ => q"new OnlineTrainer($weightsSet, new Perceptron, 4)"
+      case _ => q"new ml.wolfe.WolfeOnlineTrainer($weightsSet, new Perceptron, 4)"
     }
   }
 
