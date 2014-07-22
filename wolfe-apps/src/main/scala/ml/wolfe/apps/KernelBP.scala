@@ -89,7 +89,7 @@ object KernelBP {
   }
 
   def normalizeMsg(msg: DenseVector[Double]) {
-    val sum = msg.sum
+    val sum = breeze.linalg.sum(msg)
     if (math.abs(sum) > 0.0)
       msg :*= 1.0 / sum
     else
