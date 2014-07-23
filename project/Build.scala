@@ -35,7 +35,7 @@ object ShellPrompt {
 object BuildSettings {
   val buildName         = "wolfe"
   val buildOrganization = "ml.wolfe"
-  val buildScalaVersion = "2.10.3"
+  val buildScalaVersion = "2.10.4"
 
   val buildSettings = Defaults.defaultSettings ++ Seq(
     organization := buildOrganization,
@@ -72,7 +72,8 @@ object BuildSettings {
   )
 
   val nlpDependencies = libraryDependencies ++= Seq(
-    "edu.arizona.sista" % "processors" % "2.0"
+    "edu.arizona.sista" % "processors" % "2.0",
+    "org.scala-lang" %% "scala-pickling" % "0.8.0"
   )
 
   val publishSettings = Seq(
