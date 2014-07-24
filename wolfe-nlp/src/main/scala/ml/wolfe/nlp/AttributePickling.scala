@@ -8,34 +8,42 @@ import scala.pickling._
  * @author Sebastian Riedel
  */
 object AttributePickling {
-  def main(args: Array[String]) {
-    import json._
-
-    implicit val ap = new AttributePickling()
-    ap.register(Lemma)
-
-    val attr = Attributes(Lemma -> "test")
-
-    val pickled = attr.pickle
-    val unpickled = pickled.unpickle[Attributes]
-
-    val data = Sentence(Seq(Token("the", CharOffsets(0,3), attributes = Attributes(Lemma -> "blah"))))
-    val pickledData = data.pickle
-    val unpickledData = pickledData.unpickle[Sentence]
-    println(unpickledData)
-    println(pickledData.value)
-
-    val binaryPickle = data.pickle(binary.pickleFormat)
-//    val binaryUnpickled = binaryPickle.unpickle[Sentence]
-//    println(binaryUnpickled)
-
-
-  }
+//  def main(args: Array[String]) {
+//    import binary._
+//
+//    implicit val ap = new AttributePickling()
+//    ap.register(Lemma)
+//
+//    val attr = Attributes(Lemma -> "test")
+//
+//    val p1 = implicitly[SPickler[Map[String, Any]]]
+//    val p2 = implicitly[DPickler[Map[String, Any]]]
+//    println(p1)
+//    //
+//    //
+//    val pickled = attr.pickle
+//    println(pickled.value)
+//    val unpickled = pickled.unpickle[Attributes]
+//
+//    println(unpickled)
+//
+//    //    val data = Sentence(Seq(Token("the", CharOffsets(0,3), attributes = Attributes(Lemma -> "blah"))))
+//    //    val pickledData = data.pickle
+//    //    val unpickledData = pickledData.unpickle[Sentence]
+//    //    println(unpickledData)
+//    //    println(pickledData.value)
+//
+//    //    val binaryPickle = data.tokens.head.pickle(binary.pickleFormat)
+//    //    val binaryUnpickled = binaryPickle.unpickle[Token]
+//    //    println(binaryUnpickled)
+//
+//
+//  }
 }
 
-class AttributePickling(implicit val format: PickleFormat) extends SPickler[Attributes] with Unpickler[Attributes] {
-  private val picklers        = new mutable.HashMap[Key[_], SPickler[(String,Any)]]
-  private val unpicklers      = new mutable.HashMap[Key[_], Unpickler[(String,Any)]]
+class AttributePickling(implicit val format: PickleFormat, val mapPickler: SPickler[Map[String, Any]], val mapUnpickler: Unpickler[Map[String, Any]]) extends SPickler[Attributes] with Unpickler[Attributes] {
+  private val picklers        = new mutable.HashMap[Key[_], SPickler[(String, Any)]]
+  private val unpicklers      = new mutable.HashMap[Key[_], Unpickler[(String, Any)]]
   private val tags            = new mutable.HashMap[Key[_], FastTypeTag[_]]
   private val keys            = new mutable.HashMap[String, Key[_]]
   private val attributesTag   = implicitly[FastTypeTag[Attributes]]
@@ -44,51 +52,50 @@ class AttributePickling(implicit val format: PickleFormat) extends SPickler[Attr
   private val stringUnpickler = implicitly[Unpickler[String]]
 
 
-  def register[T](key: Key[T])(implicit pickler: SPickler[(String,T)], unpickler: Unpickler[(String,T)], tag: FastTypeTag[(String,T)]) {
-    picklers(key) = pickler.asInstanceOf[SPickler[(String,Any)]]
-    unpicklers(key) = unpickler.asInstanceOf[Unpickler[(String,Any)]]
+  def register[T](key: Key[T])(implicit pickler: SPickler[(String, T)], unpickler: Unpickler[(String, T)], tag: FastTypeTag[(String, T)]) {
+    picklers(key) = pickler.asInstanceOf[SPickler[(String, Any)]]
+    unpicklers(key) = unpickler.asInstanceOf[Unpickler[(String, Any)]]
     tags(key) = tag
     keys(key.toString) = key
   }
   def pickle(picklee: Attributes, builder: PBuilder) = {
-    //    builder.beginEntry(picklee)
-    val keys = picklee.keys
-    builder.hintTag(attributesTag)
-    builder.beginEntry(picklee)
-    builder.beginCollection(keys.size)
-    for (key <- keys; tag <- tags.get(key); pickler <- picklers.get(key)) {
-      builder.putElement(b => {
-        b.hintTag(tag)
-        b.hintStaticallyElidedType()
-        pickler.pickle(key.toString -> picklee(key), b)
-      })
-    }
-    builder.endCollection()
-    builder.endEntry()
 
   }
   def unpickle(tag: => FastTypeTag[_], preader: PReader) = {
-    preader.hintTag(attributesTag)
-    val attrTag = preader.beginEntry()
-    val collReader = preader.beginCollection()
-    val length = collReader.readLength()
-    val resultMap = new mutable.HashMap[Key[_],Any]()
-    for (_ <- 0 until length) {
-      val elemReader = collReader.readElement()
-      val keyReader = elemReader.readField("_1")
-      keyReader.hintTag(stringTag)
-      keyReader.hintStaticallyElidedType()
-      keyReader.beginEntry()
-      val keyString = stringUnpickler.unpickle(stringTag,keyReader).asInstanceOf[String]
-      for (key <- keys.get(keyString); tag <- tags.get(key); unpickler <- unpicklers.get(key)) {
-        val pair = unpickler.unpickle(tag,elemReader).asInstanceOf[(String,Any)]
-        resultMap(key) = pair._2
-      }
-      elemReader.endEntry()
-    }
-    collReader.endCollection()
-    preader.endCollection()
-    //r.readField()
-    if (resultMap.isEmpty) Attributes.empty else new Attributes.MapBasedAttributes(resultMap.toMap)
+    Attributes.empty
   }
 }
+
+//object PickleTest {
+//
+//  case class Wrapper(map: Map[String, Any])
+//
+//  implicit def mkWrapperPickler(implicit mapPickler: SPickler[Map[String, Any]],
+//                                pf: PickleFormat) =
+//    new SPickler[Wrapper] with Unpickler[Wrapper] {
+//      def pickle(picklee: Wrapper, builder: PBuilder) = {
+//        builder.beginEntry(picklee)
+//        builder.putField("map", b => mapPickler.pickle(picklee.map, b))
+//        builder.endEntry()
+//      }
+//      def unpickle(tag: => FastTypeTag[_], reader: PReader) = {
+//        reader.beginEntry()
+//        val map = reader.readField("map").unpickle[Map[String, Any]]
+//        reader.endEntry()
+//        new Wrapper(map)
+//      }
+//      val format: PickleFormat = pf
+//    }
+//
+//  def main(args: Array[String]) {
+//    import binary._
+//
+//    val wrapper = new Wrapper(Map("1" -> 1, "2" -> "text"))
+//    val pickled = wrapper.pickle
+//    val unpickled = pickled.unpickle[Wrapper]
+//
+//    println(unpickled)
+//
+//    assert(wrapper == unpickled)
+//  }
+//}
