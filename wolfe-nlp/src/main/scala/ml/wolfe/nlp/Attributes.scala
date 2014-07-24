@@ -34,7 +34,7 @@ trait Attributes {
  */
 object Attributes {
 
-  class MapBasedAttributes(map: Map[Key[_], Any]) extends Attributes {
+  class MapBasedAttributes(val map: Map[Key[_], Any]) extends Attributes {
     def get[T](key: Key[T]) = map.get(key).asInstanceOf[Option[T]]
     def add[T](key: Key[T], value: T) = new MapBasedAttributes(map + (key -> value))
     def keys = map.keys
