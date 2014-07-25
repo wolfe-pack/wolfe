@@ -296,7 +296,7 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
           val typed = context.typeCheck(context.resetLocalAttrs(newSum))
           Some(arg2 -> typed)
         case (Sum(_), Sum(_)) => None
-        case (p1, p2) =>
+        case (p1, p2) if inlineOnce(p1).isEmpty && inlineOnce(p2).isEmpty =>
           //check whether p1 and p2 have the same hidden variables. In this case add them into an atomic call
           val structs1 = structures(p1, matcher)
           val structs2 = structures(p2, matcher)

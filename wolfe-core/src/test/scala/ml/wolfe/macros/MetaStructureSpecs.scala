@@ -1,8 +1,7 @@
 package ml.wolfe.macros
 
-import ml.wolfe.{Wolfe, WolfeSpec}
-import scala.collection.mutable
-import Wolfe._
+import ml.wolfe.Wolfe
+import ml.wolfe.Wolfe._
 
 
 /**
@@ -39,7 +38,7 @@ class MetaStructureSpecs extends StructureIsomorphisms {
     }
 
     "generate a structure for all case class objects with a cartesian product builder" in {
-      case class Data(x: Boolean, y: Boolean, z:Boolean)
+      case class Data(x: Boolean, y: Boolean, z: Boolean)
       def space = Wolfe.all(Data)(bools x bools x bools)
       val structure = MetaStructure.structure(space)
       structure mustBeIsomorphicTo space
@@ -77,6 +76,7 @@ class MetaStructureSpecs extends StructureIsomorphisms {
       structure.nodes().size should be(4)
     }
 
+
     "generate isomorphic structure and projection for fixed length sequence spaces" in {
       implicit val ints = Range(0, 2)
       def space = Wolfe.seqsOfLength(4, ints)
@@ -96,6 +96,15 @@ class MetaStructureSpecs extends StructureIsomorphisms {
       (structure, projection) mustBeIsomorphicTo(space filter (_.size == 3), s => s(1))
       structure.nodes().size should be(3)
     }
+
+    "generate isomorphic structure and projection for map spaces with more than 1 argument" in {
+      val ints = Range(0, 3)
+      def space = Wolfe.maps(ints x ints, ints)
+      val (structure, projection) = MetaStructure.projection[Map[(Int, Int), Int], Int](space, d => d(1, 1))
+      (structure, projection) mustBeIsomorphicTo(space, d => d(1, 1))
+      structure.nodes().size should be(3 * 3)
+    }
+
 
   }
 
