@@ -474,23 +474,35 @@ object FactorGraph {
 
     /**
      * @param node root node
-     * @return correct message ordering for forward-backward pass
+     * @return correct message ordering for forward pass
      */
-    def schedule(node: Node): Seq[DirectedEdge]
+    def scheduleForward(node: Node): Seq[DirectedEdge]
+
+    def schedule(node:Node):Seq[DirectedEdge] = {
+      val forward = scheduleForward(node)
+      val backward = forward.reverse.map(_.swap)
+      forward ++ backward
+    }
 
     /**
      * Runs scheduler on all disconnected components of the graph
      * @param graph factor graph with (possibly) disconnected components
      * @return schedule for forward-backward over all disconnected components of the graph
      */
-    def schedule(graph: FactorGraph): Seq[DirectedEdge] = {
+    def schedule(graph: FactorGraph):Seq[DirectedEdge] = {
+      val forward = scheduleForward(graph)
+      val backward = forward.reverse.map(_.swap)
+      forward ++ backward
+    }
+
+    def scheduleForward(graph: FactorGraph): Seq[DirectedEdge] = {
       @tailrec
       def scheduleAcc(nodes: Seq[Node], done: Set[Node], acc: Seq[DirectedEdge]): Seq[DirectedEdge] = nodes match {
         case Nil => acc
         case head :: tail =>
           if (done.contains(head)) scheduleAcc(tail, done, acc)
           else {
-            val edges = schedule(head)
+            val edges = scheduleForward(head)
             scheduleAcc(tail, done ++ edges.map(_.n), acc ++ edges)
           }
       }
@@ -531,14 +543,8 @@ object FactorGraph {
       val firstEdges = node.edges.map(DirectedEdge(_, EdgeDirection.F2N)).toList
       scheduleAcc(firstEdges, Set(), firstEdges)
     }
-    
-    def scheduleBackward(node:Node) = scheduleForward(node).reverse.map(_.swap)
 
-    override def schedule(node: Node): Seq[DirectedEdge] = {
-      val forward = scheduleForward(node)
-      val backward = forward.reverse.map(_.swap)
-      forward ++ backward
-    }
+
   }
 
   /**
