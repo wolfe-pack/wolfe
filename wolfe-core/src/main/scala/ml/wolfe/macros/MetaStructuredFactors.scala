@@ -97,11 +97,12 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
       })
     }
 
-    val child         = metaStructuredFactor(info.copy(
+    val child = metaStructuredFactor(info.copy(
       potential = objRhs,
       constructorArgs = childParams,
       transformer = info.transformer.andThen(replaceArgumentWithOwnArg)
     ))
+
     val setupChildren = tupleProcessor(keyDomNames, tmpNames, q"new ${ child.className }(..$childArgs)")
 
     val classDef = q"""
@@ -272,7 +273,14 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
 
   def variablesContainArgument(obj: Tree, matcher: Tree => Option[StructurePointer]) = {
     val Function(List(arg), rhs) = normalize(obj)
-    val structs = structures(rhs, matcher)
+    //find other sums in in objective and collect their arguments. These don't count as free variables
+    //that break the structure
+    val allSumArgs:List[Symbol] = rhs.collect({
+      case Sum(BuilderTrees(_,_,sumObj,_,_)) =>
+        val Function(List(sumArg), _) = normalize(sumObj)
+        sumArg.symbol
+    })
+    val structs = structures(rhs, matcher, allSumArgs.toSet)
     val variables = distinctTrees(structs.filterNot(_.meta.observed).map(_.structure))
     variables.exists(_.exists(_.symbol == arg.symbol))
   }

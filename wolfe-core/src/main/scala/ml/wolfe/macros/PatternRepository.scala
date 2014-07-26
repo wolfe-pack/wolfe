@@ -47,9 +47,9 @@ trait PatternRepository[C <: Context] extends SymbolRepository[C] with CodeRepos
 
         }
         //builder-type style
-        case q"$op[$domType,$opType]($overWhereOf)($impArg)" if wolfeSymbol(op.symbol) && classes(opType.symbol) =>
-          val trees = builderTrees(overWhereOf).copy(implicitArg = impArg)
-          Some(trees)
+//        case q"$op[$domType,$opType]($overWhereOf)($impArg)" if wolfeSymbol(op.symbol) && classes(opType.symbol) =>
+//          val trees = builderTrees(overWhereOf).copy(implicitArg = impArg)
+//          Some(trees)
 
         //new simplified style
         case q"$op[$domType,$opType]($overWhere)($of)($impArg)" if wolfeSymbol(op.symbol) && classes(opType.symbol) =>
@@ -174,7 +174,8 @@ trait PatternRepository[C <: Context] extends SymbolRepository[C] with CodeRepos
     case q"$over($dom)" if over.symbol == wolfeSymbols.over =>
       BuilderTrees(dom)
     case _ => inlineOnce(tree) match {
-      case Some(inlined) => builderTrees(tree)
+      case Some(inlined) =>
+        builderTrees(inlined)
       case None =>
         context.error(context.enclosingPosition, "Can't analyze over-where-of clause " + tree)
         BuilderTrees()

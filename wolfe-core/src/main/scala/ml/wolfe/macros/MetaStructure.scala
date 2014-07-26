@@ -95,15 +95,18 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
    * get all structures in expression.
    * @param tree the expression to search for structures in.
    * @param matchStructure the matcher to apply on sub-trees to
+   * @param varsToIgnore variables/symbols that shoudn't be considered when checking whether a structure has a function argument.
    * @return all structures in expression `tree`.
    */
-  def structures(tree: Tree, matchStructure: Tree => Option[StructurePointer]): List[StructurePointer] = {
+  def structures(tree: Tree,
+                 matchStructure: Tree => Option[StructurePointer],
+                 varsToIgnore:Set[Symbol] = Set.empty): List[StructurePointer] = {
     var result: List[StructurePointer] = Nil
     val traverser = new Traverser with WithFunctionStack {
       override def traverse(tree: Tree) = {
         pushIfFunction(tree)
         val tmp = matchStructure(tree) match {
-          case Some(structure) if !hasFunctionArgument(tree) =>
+          case Some(structure) if !hasFunctionArgument(tree,varsToIgnore) =>
             result ::= structure
           case _ =>
             super.traverse(tree)

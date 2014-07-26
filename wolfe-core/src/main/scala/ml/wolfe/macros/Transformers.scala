@@ -149,14 +149,14 @@ trait Transformers[C<:Context] extends SymbolRepository[C]{
 
     def popIfFunction(tree: Tree) {
       tree match {
-        case _: Function => functionStack.pop
+        case _: Function => functionStack.pop()
         case _ =>
       }
     }
 
-    def hasFunctionArgument(tree: Tree) = {
+    def hasFunctionArgument(tree: Tree, toIgnore:Set[Symbol] = Set.empty) = {
       val symbols = tree.collect({case i: Ident => i}).map(_.name).toSet //todo: this shouldn't just be by name
-      functionStack.exists(_.vparams.exists(p => symbols(p.name)))
+      functionStack.exists(_.vparams.exists(p => !toIgnore(p.symbol) && symbols(p.name)))
     }
   }
 
