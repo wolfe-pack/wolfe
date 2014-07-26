@@ -33,12 +33,14 @@ object BeliefPropagation {
             sum: Boolean = false,
             gradientAndObjective: Boolean = true) {
     //    val edges = if (canonical) fg.edges.sorted(FactorGraph.EdgeOrdering) else fg.edges
-    val edges = if (schedule) MPSchedulerImpl.schedule(fg) else fg.edges
+    val directedEdges =
+      if (schedule) MPSchedulerImpl.schedule(fg)
+      else fg.edges.flatMap(e => Seq(DirectedEdge(e, EdgeDirection.N2F), Seq(DirectedEdge(e, EdgeDirection.F2N))))
 
     for (i <- 0 until maxIteration) {
-      for (edge <- edges) {
-        for (other <- edge.f.edges; if other != edge) updateN2F(other) //todo: this is inefficient! Don't need to update if unchanged!
-        updateF2N(edge, sum)
+      for (directedEdge <- directedEdges) directedEdge match {
+        case DirectedEdge(edge, EdgeDirection.F2N) => updateF2N(edge, sum)
+        case DirectedEdge(edge, EdgeDirection.N2F) => updateN2F(edge)
       }
     }
 
