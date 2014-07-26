@@ -456,24 +456,36 @@ object FactorGraph {
   }
 
 
+  type EdgeDirection = Boolean
+  object EdgeDirection {
+    val N2F:EdgeDirection = true
+    val F2N:EdgeDirection = false
+  }
+  case class DirectedEdge(edge:Edge, direction:EdgeDirection) {
+    def f = edge.f
+    def n = edge.n
+    def swap = DirectedEdge(edge, !direction)
+  }
+
   /**
    * A scheduler provides a canonical ordering of edges such that it resembles the message ordering of forward-backward.
    */
   trait MPScheduler {
+
     /**
      * @param node root node
      * @return correct message ordering for forward-backward pass
      */
-    def schedule(node: Node): Seq[Edge]
+    def schedule(node: Node): Seq[DirectedEdge]
 
     /**
      * Runs scheduler on all disconnected components of the graph
      * @param graph factor graph with (possibly) disconnected components
      * @return schedule for forward-backward over all disconnected components of the graph
      */
-    def schedule(graph: FactorGraph): Seq[Edge] = {
+    def schedule(graph: FactorGraph): Seq[DirectedEdge] = {
       @tailrec
-      def scheduleAcc(nodes: Seq[Node], done: Set[Node], acc: Seq[Edge]): Seq[Edge] = nodes match {
+      def scheduleAcc(nodes: Seq[Node], done: Set[Node], acc: Seq[DirectedEdge]): Seq[DirectedEdge] = nodes match {
         case Nil => acc
         case head :: tail =>
           if (done.contains(head)) scheduleAcc(tail, done, acc)
@@ -486,52 +498,46 @@ object FactorGraph {
       scheduleAcc(graph.nodes.toList, Set(), Seq())
     }
 
-    def schedule(factor: Factor): Seq[Edge] = schedule(factor.edges.head)
+    def schedule(factor: Factor): Seq[DirectedEdge] = schedule(factor.edges.head)
 
-    def schedule(edge: Edge): Seq[Edge] = schedule(edge.n)
+    def schedule(edge: Edge): Seq[DirectedEdge] = schedule(edge.n)
   }
 
   object MPSchedulerImpl extends MPScheduler {
-    object MPDirection extends Enumeration {
-      val Forward, Backward = Value
-    }
-
     /**
-     * @param e edge whose node will become the root node
-     * @param direction whether calculating forward or backward pass
+     * @param node The node which will become the root node
      * @return correct ordering for messaging pass for given direction (excluding the staring edge)
      */
-    def schedule(e: Edge, direction: MPDirection.Value, done: Set[Edge] = Set()): Seq[Edge] = {
+    def scheduleForward(node: Node) : Seq[DirectedEdge] = {
       @tailrec
-      def scheduleAcc(todo: Seq[Edge], done: Set[Edge], acc: Seq[Edge]): Seq[Edge] = todo match {
-        case Nil => acc
-        case head :: tail =>
-          if (head.f.edgeCount == 1 || done.contains(head)) scheduleAcc(tail, done, acc)
-          else {
-            val siblings = head.f.edges.filterNot(todo.contains)
-            val nephews = siblings.flatMap(sibling => sibling.n.edges.filterNot(_ == sibling))
-            direction match {
-              case MPDirection.Forward => scheduleAcc(tail ++ nephews, done + head, nephews ++ acc)
-              case MPDirection.Backward => scheduleAcc(tail ++ nephews, done + head, acc ++ siblings)
+      def scheduleAcc(todo: List[DirectedEdge], done: Set[Edge], acc: Seq[DirectedEdge]): Seq[DirectedEdge] =
+        todo match {
+          case Nil => acc
+          case head :: tail =>
+            if (done.contains(head.edge)) scheduleAcc(tail, done, acc)
+            else {
+              val parents = head.direction match {
+                case EdgeDirection.N2F => head.n.edges.
+                                          filterNot(e => e == head.edge || todo.view.map(_.edge).contains(e)).
+                                          map(DirectedEdge(_, EdgeDirection.F2N))
+                case EdgeDirection.F2N => head.f.edges.
+                                          filterNot(e => e == head.edge || todo.view.map(_.edge).contains(e)).
+                                          map(DirectedEdge(_, EdgeDirection.N2F))
+              }
+
+              scheduleAcc(tail ++ parents, done + head.edge, parents ++ acc)
             }
-          }
-      }
-      scheduleAcc(Seq(e), done, Seq())
+        }
+      val firstEdges = node.edges.map(DirectedEdge(_, EdgeDirection.F2N)).toList
+      scheduleAcc(firstEdges, Set(), firstEdges)
     }
+    
+    def scheduleBackward(node:Node) = scheduleForward(node).reverse.map(_.swap)
 
-    override def schedule(node: Node): Seq[Edge] = {
-      @tailrec
-      def forwardBackward(edges: Seq[Edge], done: Set[Edge], acc: Seq[Edge]): Seq[Edge] = edges.toList match {
-        case Nil => acc
-        case head :: tail =>
-          val forward = schedule(head, MPDirection.Forward, done)
-          val backward = schedule(head, MPDirection.Backward, done)
-          val rest = tail.filterNot(e => forward.contains(e) || backward.contains(e))
-          val middle = if (forward.contains(head) || backward.contains(head)) Nil else Seq(head)
-          forwardBackward(rest, done ++ forward ++ backward, forward ++ middle ++ acc ++ backward)
-      }
-
-      forwardBackward(node.edges, Set(), Seq())
+    override def schedule(node: Node): Seq[DirectedEdge] = {
+      val forward = scheduleForward(node)
+      val backward = forward.reverse.map(_.swap)
+      forward ++ backward
     }
   }
 
