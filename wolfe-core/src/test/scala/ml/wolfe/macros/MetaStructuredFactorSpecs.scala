@@ -182,21 +182,39 @@ class MetaStructuredFactorSpecs extends StructureIsomorphisms {
     }
 
     "create a factor with user-specified potential" in {
-      case class Sample(pred:Pred[Int])
+      case class Sample(pred: Pred[Int])
       implicit def ints = 0 until 5
       def space = Wolfe.all(Sample)
 
-      @Potential(new ExactlyOncePotential(_:Seq[FactorGraph.Edge]))
-      def exactlyOnce(args:Seq[Boolean]) = if (args.count(identity) == 1) 0.0 else Double.NegativeInfinity
+      @Potential(new ExactlyOncePotential(_: Seq[FactorGraph.Edge]))
+      def exactlyOnce(args: Seq[Boolean]) = if (args.count(identity) == 1) 0.0 else Double.NegativeInfinity
 
-      def model(s:Sample) = exactlyOnce(for (i <- 0 until 5) yield s.pred(i))
+      def model(s: Sample) = exactlyOnce(for (i <- 0 until 5) yield s.pred(i))
 
-      val structuredFactor = MetaStructuredFactor.structuredFactor(space,model)
-      structuredFactor.factors.size should be (1)
+      val structuredFactor = MetaStructuredFactor.structuredFactor(space, model)
+      structuredFactor.factors.size should be(1)
       val factor = structuredFactor.factors.next()
-      factor.edges.length should be (5)
-      factor.potential shouldBe a [ExactlyOncePotential]
+      factor.edges.length should be(5)
+      factor.potential shouldBe a[ExactlyOncePotential]
 
+    }
+
+    "create a factors for nested sums" in {
+      def ints = 0 until 3
+      def space = Wolfe.maps(ints x ints, ints)
+      def model(map: Map[(Int, Int), Int]) = sum(ints) { i => sum(ints) { j => I(map(i, j) == 1) } }
+      val structuredFactor = MetaStructuredFactor.structuredFactor(space, model)
+      structuredFactor mustBeIsomorphicTo model
+      structuredFactor.factors.size should be(3 * 3)
+    }
+
+    "create a factors for cartesian product sums" in {
+      def ints = 0 until 3
+      def space = Wolfe.maps(ints x ints, ints)
+      def model(map: Map[(Int, Int), Int]) = sum(ints x ints) { p => I(map(p) == 1) }
+      val structuredFactor = MetaStructuredFactor.structuredFactor(space, model)
+      structuredFactor mustBeIsomorphicTo model
+      structuredFactor.factors.size should be(3 * 3)
     }
 
 

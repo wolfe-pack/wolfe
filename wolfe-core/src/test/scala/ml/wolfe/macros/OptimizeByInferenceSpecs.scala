@@ -127,7 +127,6 @@ class OptimizeByInferenceSpecs extends WolfeSpec {
 
     }
 
-
   }
 
 }

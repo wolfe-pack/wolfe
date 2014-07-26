@@ -1,7 +1,6 @@
 package ml.wolfe
 
 import cc.factorie.la.SparseIndexedTensor
-import ml.wolfe.BeliefPropagation.BPType.BPType
 import ml.wolfe.fg.Junkify
 import ml.wolfe.util.LoggerUtil
 
@@ -24,9 +23,9 @@ object BeliefPropagation {
   def sumProduct(maxIteration: Int, schedule: Boolean = true, gradientAndObjective: Boolean = true)
                 (fg: FactorGraph) = apply(fg, maxIteration, schedule, Sum, gradientAndObjective)
   def junctionTreeMaxProduct(gradientAndObjective: Boolean = true)
-                (fg: FactorGraph) = onJunctionTree(fg, Sum, gradientAndObjective=gradientAndObjective)
+                (fg: FactorGraph) = onJunctionTree(fg, Sum, gradientAndObjective = gradientAndObjective)
   def junctionTreeSumProduct(gradientAndObjective: Boolean = true)
-                (fg: FactorGraph) = onJunctionTree(fg, Max, gradientAndObjective=gradientAndObjective)
+                (fg: FactorGraph) = onJunctionTree(fg, Max, gradientAndObjective = gradientAndObjective)
 
   /**
    * Runs some iterations of belief propagation.
@@ -63,10 +62,7 @@ object BeliefPropagation {
     }
 
     //calculate expectations
-    if (fg.expectationFactors.size > 0) {
-      fg.expectations = new SparseVector(1000)
-      featureExpectationsAndObjective(fg, fg.expectations, bpType==Sum)
-    }
+    if (fg.expectationFactors.size > 0) calculateExpectations(fg, bpType == Sum)
 
     if(bpType == Max || bpType == MaxOnly) {
       for (e <- backwardEdges) {
@@ -79,19 +75,28 @@ object BeliefPropagation {
     }
   }
 
+  def calculateExpectations(fg: FactorGraph, sum: Boolean) {
+    fg.expectations = new SparseVector(1000)
+    for (factor <- fg.expectationFactors) {
+      //update all n2f messages
+      for (e <- factor.edges) updateN2F(e)
+      if (sum) factor.potential.marginalExpectationsAndObjective(fg.expectations)
+      else factor.potential.maxMarginalExpectationsAndObjective(fg.expectations)
+    }
+  }
   /**
-   *  Creates a junction tree from the original factor graph, runs BP,
-   *  then copies value/gradient back into the original factor graph.
-   *  @param fg the original factor graph
+   * Creates a junction tree from the original factor graph, runs BP,
+   * then copies value/gradient back into the original factor graph.
+   * @param fg the original factor graph
    */
 
-  def onJunctionTree(fg: FactorGraph, bpType: BPType = Max, gradientAndObjective: Boolean = true, forceJunctionTree:Boolean = false) {
-    if(!forceJunctionTree && !fg.isLoopy) {
+  def onJunctionTree(fg: FactorGraph, bpType: BPType = Max, gradientAndObjective: Boolean = true, forceJunctionTree: Boolean = false) {
+    if (!forceJunctionTree && !fg.isLoopy) {
       LoggerUtil.once(LoggerUtil.warn, "Junction tree belief propagation called on a non-loopy graph. Ignoring.")
-      apply(fg, 1, schedule=true, bpType, gradientAndObjective)
+      apply(fg, 1, schedule = true, bpType, gradientAndObjective)
     } else {
       val jt = Junkify(fg)
-      apply(jt, 1, schedule=true, bpType, gradientAndObjective)
+      apply(jt, 1, schedule = true, bpType, gradientAndObjective)
       if (gradientAndObjective) {
         fg.value = jt.value
         fg.gradient = jt.gradient
@@ -161,6 +166,7 @@ object BeliefPropagation {
   def updateBelief(node: Node, sum: Boolean) {
     if (sum) node.variable.updateMarginalBelief(node) else node.variable.updateMaxMarginalBelief(node)
   }
+
 
 }
 

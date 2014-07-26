@@ -85,7 +85,7 @@ trait Operators {
    * @tparam T type of objects in domain.
    * @return the expectation of the given statistics under the given model.
    */
-  def expect[T](dom: Iterable[T])(logLinear: T => Double)(stats: T => Vector) = {
+  def expect[T](dom: Iterable[T])(logLinear: T => Double)(stats: T => Vector):Vector = {
     val lZ = logZ(dom)(logLinear)
     sum(dom) { x => stats(x) * math.exp(logLinear(x) - lZ) }
   }

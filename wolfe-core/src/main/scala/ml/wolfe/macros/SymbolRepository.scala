@@ -35,14 +35,16 @@ trait SymbolRepository[C <: Context] extends HasContext[C] {
     lazy val cs                      = wolfeType.member(newTermName("c")).asTerm.alternatives.toSet
     lazy val crossProducts           = crosses ++ cs
     lazy val Pred                    = wolfeType.member(newTermName("Pred"))
-    lazy val preds                   = wolfeType.member(newTermName("preds"))
-    lazy val seqs                    = wolfeType.member(newTermName("seqs")).asTerm.alternatives.toSet
-    lazy val seqsOfLength            = wolfeType.member(newTermName("seqsOfLength")).asTerm.alternatives.toSet
+    lazy val mapsSpace               = wolfeType.member(newTermName("maps"))
+
+    lazy val preds        = wolfeType.member(newTermName("preds"))
+    lazy val seqs         = wolfeType.member(newTermName("seqs")).asTerm.alternatives.toSet
+    lazy val seqsOfLength = wolfeType.member(newTermName("seqsOfLength")).asTerm.alternatives.toSet
 
     //todo: this should be based on the types, not on the names
-    lazy val fixedLengthSeqs         = seqsOfLength.find(_.asMethod.paramss.head.head.name.encoded == "length").get
-    lazy val maxLengthSeqs           = seqs.find(_.asMethod.paramss.head.head.name.encoded == "dom").get
-    lazy val signature2seqs          = seqs.map(s => s.typeSignature -> s).toMap
+    lazy val fixedLengthSeqs = seqsOfLength.find(_.asMethod.paramss.head.head.name.encoded == "length").get
+    lazy val maxLengthSeqs   = seqs.find(_.asMethod.paramss.head.head.name.encoded == "dom").get
+    lazy val signature2seqs  = seqs.map(s => s.typeSignature -> s).toMap
 
     //problem builder
     lazy val over  = wolfeType.member(newTermName("over"))
