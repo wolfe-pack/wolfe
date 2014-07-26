@@ -199,13 +199,22 @@ class MetaStructuredFactorSpecs extends StructureIsomorphisms {
 
     }
 
-    "create a factors for nested sums " in {
+    "create a factors for nested sums" in {
       def ints = 0 until 3
       def space = Wolfe.maps(ints x ints, ints)
       def model(map: Map[(Int, Int), Int]) = sum(ints) { i => sum(ints) { j => I(map(i, j) == 1) } }
       val structuredFactor = MetaStructuredFactor.structuredFactor(space, model)
       structuredFactor mustBeIsomorphicTo model
-      structuredFactor.factors.size should be (3 * 3)
+      structuredFactor.factors.size should be(3 * 3)
+    }
+
+    "create a factors for cartesian product sums" in {
+      def ints = 0 until 3
+      def space = Wolfe.maps(ints x ints, ints)
+      def model(map: Map[(Int, Int), Int]) = sum(ints x ints) { p => I(map(p) == 1) }
+      val structuredFactor = MetaStructuredFactor.structuredFactor(space, model)
+      structuredFactor mustBeIsomorphicTo model
+      structuredFactor.factors.size should be(3 * 3)
     }
 
 
