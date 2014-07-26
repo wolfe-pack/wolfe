@@ -2,7 +2,7 @@ package ml.wolfe
 
 import scala.language.implicitConversions
 import scala.util.Random
-import cc.factorie.WeightsSet
+import cc.factorie.model.WeightsSet
 import cc.factorie.optimize.Trainer
 import scala.annotation.StaticAnnotation
 import scala.collection.MapProxy
@@ -67,6 +67,8 @@ object Wolfe extends SampleSpaceDefs
     def -->(that: Boolean) = !b || that
     def <->(that: Boolean) = b == that
   }
+
+  def bernoulli(p:Double = 0.5)(coin:Boolean) = if (coin) math.log(p) else math.log1p(-p)
 
   def I(b: Boolean) = if (b) 1.0 else 0.0
 
