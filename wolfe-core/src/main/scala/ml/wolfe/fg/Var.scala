@@ -24,6 +24,8 @@ trait Var {
   def initializeRandomly(eps:Double):Unit = notSupported
   def updateN2F(edge: FactorGraph.Edge):Unit = notSupported
   def updateDualN2F(edge: FactorGraph.Edge, stepSize:Double):Unit = notSupported
+  def fixMapSetting(node: FactorGraph.Node, overwrite:Boolean = false):Unit = notSupported
+  def deterministicN2F(edge: FactorGraph.Edge):Unit = notSupported
   def updateMaxMarginalBelief(node: FactorGraph.Node):Unit = notSupported
   def updateMarginalBelief(node: FactorGraph.Node):Unit = notSupported
   def entropy():Double = notSupported
@@ -83,6 +85,29 @@ final class DiscreteVar(var dim: Int) extends Var {
     val m = edge.msgs.asDiscrete
     for(i <- (0 until m.n2f.size).optimized)
       m.n2f(i) = m.n2f(i) - stepSize * math.log(math.exp(m.f2n(i)) - math.exp(b(i)))
+  }
+
+  var fixedSetting = false
+  override def fixMapSetting(node:Node, overwrite:Boolean = false):Unit = {
+    if(! fixedSetting || overwrite) {
+      var maxScore = Double.NegativeInfinity
+      for (i <- (0 until dim).optimized) {
+        var score = in(i)
+        for (e <- (0 until node.edges.length).optimized)
+          score += node.edges(e).msgs.asDiscrete.f2n(i)
+        if (score > maxScore) {
+          maxScore = score
+          setting = i
+        }
+        fixedSetting = true
+      }
+    }
+  }
+
+  override def deterministicN2F(edge: Edge) = {
+    val m = edge.msgs.asDiscrete
+    fill(m.n2f, Double.NegativeInfinity)
+    m.n2f(setting) = 0
   }
 
   override def updateMaxMarginalBelief(node: Node) = {

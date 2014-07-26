@@ -1,6 +1,7 @@
 package ml.wolfe
 
 import cc.factorie.la.SparseIndexedTensor
+import ml.wolfe.BeliefPropagation.BPType.BPType
 import ml.wolfe.fg.Junkify
 import ml.wolfe.util.LoggerUtil
 
@@ -13,14 +14,19 @@ object BeliefPropagation {
   import FactorGraph._
   import MoreArrayOps._
 
+  object BPType extends Enumeration {
+    type BPType = Value
+    val Sum, Max, MaxMarginals, MaxOnly = Value
+  }
+  import BPType._
   def maxProduct(maxIteration: Int, schedule: Boolean = true, gradientAndObjective: Boolean = true)
-                (fg: FactorGraph) = apply(fg, maxIteration, schedule, false, gradientAndObjective)
+                (fg: FactorGraph) = apply(fg, maxIteration, schedule, Max, gradientAndObjective)
   def sumProduct(maxIteration: Int, schedule: Boolean = true, gradientAndObjective: Boolean = true)
-                (fg: FactorGraph) = apply(fg, maxIteration, schedule, true, gradientAndObjective)
+                (fg: FactorGraph) = apply(fg, maxIteration, schedule, Sum, gradientAndObjective)
   def junctionTreeMaxProduct(gradientAndObjective: Boolean = true)
-                (fg: FactorGraph) = onJunctionTree(fg, sum=false, gradientAndObjective=gradientAndObjective)
+                (fg: FactorGraph) = onJunctionTree(fg, Sum, gradientAndObjective=gradientAndObjective)
   def junctionTreeSumProduct(gradientAndObjective: Boolean = true)
-                (fg: FactorGraph) = onJunctionTree(fg, sum=true, gradientAndObjective=gradientAndObjective)
+                (fg: FactorGraph) = onJunctionTree(fg, Max, gradientAndObjective=gradientAndObjective)
 
   /**
    * Runs some iterations of belief propagation.
@@ -30,35 +36,47 @@ object BeliefPropagation {
    */
   def apply(fg: FactorGraph, maxIteration: Int,
             schedule: Boolean = true,
-            sum: Boolean = false,
+            bpType:BPType = BPType.Max,
             gradientAndObjective: Boolean = true) {
     //    val edges = if (canonical) fg.edges.sorted(FactorGraph.EdgeOrdering) else fg.edges
-    val directedEdges =
-      if (schedule) MPSchedulerImpl.schedule(fg)
-      else fg.edges.flatMap(e => Seq(DirectedEdge(e, EdgeDirection.N2F), Seq(DirectedEdge(e, EdgeDirection.F2N))))
+    val forwardEdges = if (schedule) MPSchedulerImpl.scheduleForward(fg) else ???
+    val backwardEdges = forwardEdges.reverse.map(_.swap)
+    val forwardBackwardEdges = forwardEdges ++ backwardEdges
 
     for (i <- 0 until maxIteration) {
-      for (directedEdge <- directedEdges) directedEdge match {
-        case DirectedEdge(edge, EdgeDirection.F2N) => updateF2N(edge, sum)
+      def edges = if(bpType == MaxOnly && i == maxIteration-1) forwardEdges else forwardBackwardEdges
+      for (e <- forwardBackwardEdges) e match {
+        case DirectedEdge(edge, EdgeDirection.F2N) => updateF2N(edge, bpType==Sum)
         case DirectedEdge(edge, EdgeDirection.N2F) => updateN2F(edge)
       }
     }
 
-    for (node <- fg.nodes) updateBelief(node, sum)
+    if(bpType == Sum) for (node <- fg.nodes) updateBelief(node, true)
+    if(bpType == Max || bpType == MaxMarginals) for (node <- fg.nodes) updateBelief(node, false)
+
 
     //calculate gradient and objective
     //todo this is not needed if we don't have linear factors. Maybe initial size should depend on number of linear factors
     if (gradientAndObjective) {
       fg.gradient = new SparseVector(1000)
-      fg.value = featureExpectationsAndObjective(fg, fg.gradient, sum)
+      fg.value = featureExpectationsAndObjective(fg, fg.gradient, bpType==Sum)
     }
 
     //calculate expectations
     if (fg.expectationFactors.size > 0) {
       fg.expectations = new SparseVector(1000)
-      featureExpectationsAndObjective(fg, fg.expectations, sum)
+      featureExpectationsAndObjective(fg, fg.expectations, bpType==Sum)
     }
 
+    if(bpType == Max || bpType == MaxOnly) {
+      for (e <- backwardEdges) {
+        e match {
+          case DirectedEdge(edge, EdgeDirection.F2N) => updateF2N(edge, false)
+          case DirectedEdge(edge, EdgeDirection.N2F) => updateDeterministicMaxN2F(edge)
+        }
+      }
+      for(n <- fg.nodes) n.variable.asDiscrete.fixMapSetting(n)
+    }
   }
 
   /**
@@ -67,13 +85,13 @@ object BeliefPropagation {
    *  @param fg the original factor graph
    */
 
-  def onJunctionTree(fg: FactorGraph, sum: Boolean = false, gradientAndObjective: Boolean = true, forceJunctionTree:Boolean = false) {
+  def onJunctionTree(fg: FactorGraph, bpType: BPType = Max, gradientAndObjective: Boolean = true, forceJunctionTree:Boolean = false) {
     if(!forceJunctionTree && !fg.isLoopy) {
       LoggerUtil.once(LoggerUtil.warn, "Junction tree belief propagation called on a non-loopy graph. Ignoring.")
-      apply(fg, 1, schedule=true, sum, gradientAndObjective)
+      apply(fg, 1, schedule=true, bpType, gradientAndObjective)
     } else {
       val jt = Junkify(fg)
-      apply(jt, 1, schedule=true, sum, gradientAndObjective)
+      apply(jt, 1, schedule=true, bpType, gradientAndObjective)
       if (gradientAndObjective) {
         fg.value = jt.value
         fg.gradient = jt.gradient
@@ -128,13 +146,21 @@ object BeliefPropagation {
   }
 
   /**
+   * Updates the deterministic max-product message from a node to a factor.
+   * @param edge the factor-node edge.
+   */
+  def updateDeterministicMaxN2F(edge: Edge) {
+    edge.n.variable.fixMapSetting(edge.n)
+    edge.n.variable.deterministicN2F(edge)
+  }
+
+  /**
    * Updates the belief (sum of incoming messages) at a node.
    * @param node the node to update.
    */
   def updateBelief(node: Node, sum: Boolean) {
     if (sum) node.variable.updateMarginalBelief(node) else node.variable.updateMaxMarginalBelief(node)
   }
-
 
 }
 
