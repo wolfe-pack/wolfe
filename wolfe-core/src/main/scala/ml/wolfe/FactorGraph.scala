@@ -456,15 +456,15 @@ object FactorGraph {
   }
 
 
-  type EdgeDirection = Boolean
-  object EdgeDirection {
-    val N2F:EdgeDirection = true
-    val F2N:EdgeDirection = false
+  object EdgeDirection extends Enumeration {
+    type EdgeDirection = Value
+    val N2F, F2N = Value
   }
+  import EdgeDirection._
   case class DirectedEdge(edge:Edge, direction:EdgeDirection) {
     def f = edge.f
     def n = edge.n
-    def swap = DirectedEdge(edge, !direction)
+    def swap = DirectedEdge(edge, if(direction == N2F) F2N else N2F)
   }
 
   /**
