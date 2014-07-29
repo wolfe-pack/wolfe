@@ -1,5 +1,7 @@
 package ml.wolfe.nlp
 
+import scala.collection.mutable
+
 
 case class CharOffsets(start: Int, end: Int)
 
@@ -12,6 +14,7 @@ case class CharOffsets(start: Int, end: Int)
  */
 case class Token(word: String, offsets: CharOffsets, posTag: String = null, attributes: Attributes = Attributes.empty) {
   def toTaggedText = word + "/" + posTag
+  def $sentence(implicit graph: ObjectGraph) = graph.receive[Token, Sentence]('tokens, this)
 }
 
 /**
@@ -22,6 +25,7 @@ case class Token(word: String, offsets: CharOffsets, posTag: String = null, attr
 case class Sentence(tokens: Seq[Token], attributes: Attributes = Attributes.empty) {
   def toText = tokens map (_.word) mkString " "
   def toTaggedText = tokens map (_.toTaggedText) mkString " "
+  def $tokens(implicit graph: ObjectGraph) = graph.link1toN[Sentence, Token, Seq[Token]]('tokens, this, tokens)
 }
 
 /**
@@ -36,16 +40,34 @@ case class Document(source: String, sentences: Seq[Sentence], attributes: Attrib
   def tokens = sentences flatMap (_.tokens)
 }
 
+trait ObjectGraph {
+  def link1toN[Parent, Child, I <: Iterable[Child]](rel: Any, parent: Parent, children: I): I
+  def receive[Child, Parent](rel: Any, child: Child): Parent
+}
+
+class SimpleObjectGraph extends ObjectGraph {
+  private val map = new mutable.HashMap[(Any, Any), Any]()
+  def link1toN[Parent, Child, I <: Iterable[Child]](rel: Any, parent: Parent, children: I) = {
+    for (c <- children) map(c -> rel) = parent
+    children
+  }
+  def receive[Child, Parent](rel: Any, child: Child) = map(child -> rel).asInstanceOf[Parent]
+}
 
 object Data {
   def main(args: Array[String]) {
     val source = "My name is Wolfe."
 
     val result = SISTAProcessors.mkDocument(source)
-    val result2 = SISTAProcessors.annotate(source)
 
-    println(result2.toTaggedText)
-    println(result2)
+    implicit val graph = new SimpleObjectGraph
+    val s = result.sentences.head
+    println(s.$tokens.head.$sentence == s)
+
+//    val result2 = SISTAProcessors.annotate(source)
+//
+//    println(result2.toTaggedText)
+//    println(result2)
 
 
   }

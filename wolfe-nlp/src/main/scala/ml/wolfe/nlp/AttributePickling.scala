@@ -66,37 +66,37 @@ class AttributePickling(implicit val format: PickleFormat, val mapPickler: SPick
   }
 }
 
-object PickleTest {
-
-  case class Wrapper(map: Map[String, Any])
-
-  implicit def mkWrapperPickler(implicit mapPickler: SPickler[Map[String, Any]],
-                                pf: PickleFormat) =
-    new SPickler[Wrapper] with Unpickler[Wrapper] {
-      def pickle(picklee: Wrapper, builder: PBuilder) = {
-        builder.beginEntry(picklee)
-        builder.putField("map", b => mapPickler.pickle(picklee.map, b))
-        builder.endEntry()
-      }
-      def unpickle(tag: => FastTypeTag[_], reader: PReader) = {
-        reader.beginEntry()
-        val map = reader.readField("map").unpickle[Map[String, Any]]
-        reader.endEntry()
-        new Wrapper(map)
-      }
-      val format: PickleFormat = pf
-    }
-
-  def main(args: Array[String]) {
-    import binary._
-
-    val wrapper = new Wrapper(Map("1" -> 1, "2" -> "text"))
-    val pickled = wrapper.pickle
-    val unpickled = pickled.unpickle[Wrapper]
-
-    println(unpickled)
-
-    assert(wrapper == unpickled)
-  }
-}
+//object PickleTest {
+//
+//  case class Wrapper(map: Map[String, Any])
+//
+//  implicit def mkWrapperPickler(implicit mapPickler: SPickler[Map[String, Any]],
+//                                pf: PickleFormat) =
+//    new SPickler[Wrapper] with Unpickler[Wrapper] {
+//      def pickle(picklee: Wrapper, builder: PBuilder) = {
+//        builder.beginEntry(picklee)
+//        builder.putField("map", b => mapPickler.pickle(picklee.map, b))
+//        builder.endEntry()
+//      }
+//      def unpickle(tag: => FastTypeTag[_], reader: PReader) = {
+//        reader.beginEntry()
+//        val map = reader.readField("map").unpickle[Map[String, Any]]
+//        reader.endEntry()
+//        new Wrapper(map)
+//      }
+//      val format: PickleFormat = pf
+//    }
+//
+//  def main(args: Array[String]) {
+//    import binary._
+//
+//    val wrapper = new Wrapper(Map("1" -> 1, "2" -> "text"))
+//    val pickled = wrapper.pickle
+//    val unpickled = pickled.unpickle[Wrapper]
+//
+//    println(unpickled)
+//
+//    assert(wrapper == unpickled)
+//  }
+//}
 //}

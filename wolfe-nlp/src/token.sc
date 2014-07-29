@@ -14,3 +14,5 @@ val wire = attr.pickle.value
 val wireMap = Lemma.pickle.value
 val unpickled = attr.pickle.unpickle[Attributes]
 
+List(1,2,3).splitAt()
+
