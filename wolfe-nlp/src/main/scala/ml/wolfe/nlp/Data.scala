@@ -14,7 +14,13 @@ case class CharOffsets(start: Int, end: Int)
  */
 case class Token(word: String, offsets: CharOffsets, posTag: String = null, attributes: Attributes = Attributes.empty) {
   def toTaggedText = word + "/" + posTag
-  def $sentence(implicit graph: ObjectGraph) = graph.receive[Token, Sentence]('tokens, this)
+  def sentence$(implicit graph: ObjectGraph) =
+    graph.receiveOrdered[Token, Sentence, Sentence]('tokens, this)((_, s) => s)
+  def next$(implicit graph: ObjectGraph) =
+    graph.receiveOrdered[Token, Sentence, Option[Token]]('tokens, this)((i, s) => s.tokens.lift(i + 1))
+  def prev$(implicit graph: ObjectGraph) =
+    graph.receiveOrdered[Token, Sentence, Option[Token]]('tokens, this)((i, s) => s.tokens.lift(i - 1))
+
 }
 
 /**
@@ -25,7 +31,8 @@ case class Token(word: String, offsets: CharOffsets, posTag: String = null, attr
 case class Sentence(tokens: Seq[Token], attributes: Attributes = Attributes.empty) {
   def toText = tokens map (_.word) mkString " "
   def toTaggedText = tokens map (_.toTaggedText) mkString " "
-  def $tokens(implicit graph: ObjectGraph) = graph.link1toN[Sentence, Token, Seq[Token]]('tokens, this, tokens)
+  def $tokens(implicit graph: ObjectGraph) =
+    graph.link1toNOrdered[Sentence, Token, Seq[Token]]('tokens, this, tokens)
 }
 
 /**
@@ -40,19 +47,8 @@ case class Document(source: String, sentences: Seq[Sentence], attributes: Attrib
   def tokens = sentences flatMap (_.tokens)
 }
 
-trait ObjectGraph {
-  def link1toN[Parent, Child, I <: Iterable[Child]](rel: Any, parent: Parent, children: I): I
-  def receive[Child, Parent](rel: Any, child: Child): Parent
-}
 
-class SimpleObjectGraph extends ObjectGraph {
-  private val map = new mutable.HashMap[(Any, Any), Any]()
-  def link1toN[Parent, Child, I <: Iterable[Child]](rel: Any, parent: Parent, children: I) = {
-    for (c <- children) map(c -> rel) = parent
-    children
-  }
-  def receive[Child, Parent](rel: Any, child: Child) = map(child -> rel).asInstanceOf[Parent]
-}
+
 
 object Data {
   def main(args: Array[String]) {
@@ -62,12 +58,13 @@ object Data {
 
     implicit val graph = new SimpleObjectGraph
     val s = result.sentences.head
-    println(s.$tokens.head.$sentence == s)
+    println(s.$tokens.head.sentence$ == s)
+    println(s.tokens.head.next$)
 
-//    val result2 = SISTAProcessors.annotate(source)
-//
-//    println(result2.toTaggedText)
-//    println(result2)
+    //    val result2 = SISTAProcessors.annotate(source)
+    //
+    //    println(result2.toTaggedText)
+    //    println(result2)
 
 
   }
