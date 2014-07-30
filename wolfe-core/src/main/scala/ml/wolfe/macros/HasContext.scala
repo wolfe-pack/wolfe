@@ -26,6 +26,14 @@ trait HasContext[C <: Context] {
       distinctTrees(tail, distinct)
   }
 
+  def distinctByTrees[T](list: List[T], result: List[T] = Nil)(f:T => Tree): List[T] = list match {
+    case Nil => result
+    case head :: tail =>
+      val distinct = if (result.map(f).exists(_.equalsStructure(f(head)))) result else head :: result
+      distinctByTrees(tail, distinct)(f)
+  }
+
+
 }
 
 /**
