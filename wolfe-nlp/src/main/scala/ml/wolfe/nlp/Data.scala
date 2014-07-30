@@ -1,6 +1,11 @@
 package ml.wolfe.nlp
 
 
+/**
+ * Offsets for a natural language token.
+ * @param start index of the initial character in the token.
+ * @param end index of the final character in the token
+ */
 case class CharOffsets(start: Int, end: Int)
 
 /**
@@ -8,9 +13,9 @@ case class CharOffsets(start: Int, end: Int)
  * @param word word at token.
  * @param offsets character offsets
  * @param posTag part-of-speech tag at token.
- * @param attributes collection of generic attributes.
+ * @param lemma lemma at token.
  */
-case class Token(word: String, offsets: CharOffsets, posTag: String = null, attributes: Attributes = Attributes.empty) {
+case class Token(word: String, offsets: CharOffsets, posTag: String = null, lemma: String = null) {
   def toTaggedText = word + "/" + posTag
   def sentence(implicit graph: ObjectGraph) =
     graph.receiveOrdered[Token, Sentence, Sentence]('tokens, this)((_, s) => s)
@@ -24,9 +29,10 @@ case class Token(word: String, offsets: CharOffsets, posTag: String = null, attr
 /**
  * A sentence consisting of tokens.
  * @param tokens the tokens of the sentence.
- * @param attributes collection of generic attributes.
+ * @param syntax syntactic annotation for the sentence.
+ * @param ie information extraction style annotation for the sentence
  */
-case class Sentence(tokens: Seq[Token], attributes: Attributes = Attributes.empty) {
+case class Sentence(tokens: Seq[Token], syntax: SyntaxAnnotation = SyntaxAnnotation.empty, ie: IEAnnotation = IEAnnotation.empty) {
   def toText = tokens map (_.word) mkString " "
   def toTaggedText = tokens map (_.toTaggedText) mkString " "
   def document(implicit g:ObjectGraph) =
