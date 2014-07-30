@@ -1,7 +1,5 @@
 package ml.wolfe.nlp
 
-import scala.collection.mutable
-
 
 case class CharOffsets(start: Int, end: Int)
 
@@ -14,11 +12,11 @@ case class CharOffsets(start: Int, end: Int)
  */
 case class Token(word: String, offsets: CharOffsets, posTag: String = null, attributes: Attributes = Attributes.empty) {
   def toTaggedText = word + "/" + posTag
-  def sentence$(implicit graph: ObjectGraph) =
+  def sentence(implicit graph: ObjectGraph) =
     graph.receiveOrdered[Token, Sentence, Sentence]('tokens, this)((_, s) => s)
-  def next$(implicit graph: ObjectGraph) =
+  def next(implicit graph: ObjectGraph) =
     graph.receiveOrdered[Token, Sentence, Option[Token]]('tokens, this)((i, s) => s.tokens.lift(i + 1))
-  def prev$(implicit graph: ObjectGraph) =
+  def prev(implicit graph: ObjectGraph) =
     graph.receiveOrdered[Token, Sentence, Option[Token]]('tokens, this)((i, s) => s.tokens.lift(i - 1))
 
 }
@@ -31,6 +29,8 @@ case class Token(word: String, offsets: CharOffsets, posTag: String = null, attr
 case class Sentence(tokens: Seq[Token], attributes: Attributes = Attributes.empty) {
   def toText = tokens map (_.word) mkString " "
   def toTaggedText = tokens map (_.toTaggedText) mkString " "
+  def document(implicit g:ObjectGraph) =
+    g.receiveOrdered[Sentence,Document,Document]('sentences,this)((_,d) => d)
   def $tokens(implicit graph: ObjectGraph) =
     graph.link1toNOrdered[Sentence, Token, Seq[Token]]('tokens, this, tokens)
 }
@@ -45,6 +45,8 @@ case class Document(source: String, sentences: Seq[Sentence], attributes: Attrib
   def toText = sentences map (_.toText) mkString "\n"
   def toTaggedText = sentences map (_.toTaggedText) mkString "\n"
   def tokens = sentences flatMap (_.tokens)
+  def $sentences(implicit g:ObjectGraph) =
+    g.link1toNOrdered[Document,Sentence,Seq[Sentence]]('sentences, this, sentences)
 }
 
 
@@ -58,8 +60,8 @@ object Data {
 
     implicit val graph = new SimpleObjectGraph
     val s = result.sentences.head
-    println(s.$tokens.head.sentence$ == s)
-    println(s.tokens.head.next$)
+    println(s.$tokens.head.sentence == s)
+    println(s.tokens.head.next)
 
     //    val result2 = SISTAProcessors.annotate(source)
     //
