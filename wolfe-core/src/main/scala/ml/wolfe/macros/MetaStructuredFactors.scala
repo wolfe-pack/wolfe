@@ -172,7 +172,7 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
     def inject(term: Tree) = context.resetLocalAttrs(injectStructure(term, matcher))
 
     lazy val perSetting = q"""
-        println(vars.map(_.setting).mkString(","))
+        //println(vars.map(_.setting).mkString(","))
         settings(settingIndex) = vars.map(_.setting)
         $perSettingArrayName(settingIndex) = $perSettingValue
         settingIndex += 1
