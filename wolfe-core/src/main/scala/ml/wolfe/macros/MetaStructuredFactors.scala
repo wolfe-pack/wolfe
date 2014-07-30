@@ -162,8 +162,6 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
     lazy val className       = newTypeName(context.fresh("AtomicStructuredFactor"))
     lazy val transformedPointers = distinctByTrees(structures(transformedPot, matcher).filterNot(_.meta.observed))(_.structure)
     lazy val transformedArgs = transformedPointers.map(_.structure) //distinctTrees(structures(transformedPot, matcher).filterNot(_.meta.observed).map(_.structure))
-    lazy val args            = distinctTrees(structures(potential, matcher).filterNot(_.meta.observed).map(_.structure))
-    //    lazy val arguments       = distinctTrees(structures(potential, matcher).map(_.structure))
     lazy val nodesPerArg     = transformedArgs.map(a => q"$a.nodes()")
     lazy val nodes           = q"""Iterator(..$nodesPerArg).flatMap(identity)"""
     lazy val injected        = context.resetLocalAttrs(injectStructure(transformedPot, matcher))
