@@ -19,7 +19,7 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
    * @param structure the expression that refers to a structure.
    * @param meta the meta structure corresponding to the structure pointed to.
    */
-  case class StructurePointer(structure: Tree, meta: MetaStructure)
+  case class StructurePointer(structure: Tree, meta: MetaStructure, original:Option[Tree] = None)
 
   /**
    * Represents code that generates structures for a given sample space.
@@ -100,14 +100,14 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
    */
   def structures(tree: Tree,
                  matchStructure: Tree => Option[StructurePointer],
-                 varsToIgnore:Set[Symbol] = Set.empty): List[StructurePointer] = {
+                 varsToIgnore: Set[Symbol] = Set.empty): List[StructurePointer] = {
     var result: List[StructurePointer] = Nil
     val traverser = new Traverser with WithFunctionStack {
       override def traverse(tree: Tree) = {
         pushIfFunction(tree)
         val tmp = matchStructure(tree) match {
-          case Some(structure) if !hasFunctionArgument(tree,varsToIgnore) =>
-            result ::= structure
+          case Some(structure) if !hasFunctionArgument(tree, varsToIgnore) =>
+            result ::= structure.copy(original = Some(tree))
           case _ =>
             super.traverse(tree)
         }
@@ -168,6 +168,28 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
     case head :: tail =>
       val inner = loopSettings(tail)(block)
       q"{ $head.resetSetting();  while ($head.hasNextSetting) {  $head.nextSetting(); $inner } }"
+  }
+
+  /**
+   * @param args a list of expressions corresponding to structures.
+   * @param block the code that should be executed in the loop.
+   * @return a code block that executes `block` for every setting of the given structure `args`, and
+   *         makes sure that no structure is incremented within two or more loops.
+   */
+  def loopSettingsNoDuplicates(args: List[StructurePointer], processed: List[StructurePointer] = Nil)(block: Tree): Tree = args match {
+    case Nil => block
+    case head :: tail =>
+      def differentTo(previous: List[StructurePointer]): Tree = previous match {
+        case Nil => q"true"
+        case headPrevious :: tailPrevious =>
+          if (headPrevious.meta.className != head.meta.className)
+            differentTo(tailPrevious)
+          else
+            q"${headPrevious.structure} != ${head.structure} && ${ differentTo(tailPrevious) }"
+      }
+      val check = differentTo(processed)
+      val inner = loopSettingsNoDuplicates(tail, head :: processed)(block)
+      q"{ if (!$check) {$inner} else { ${head.structure}.resetSetting();  while (${head.structure}.hasNextSetting) {  ${head.structure}.nextSetting(); $inner } } } "
   }
 
 
@@ -263,8 +285,8 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
     }
   }
 
-  def metaFunStructure(sampleSpace: Tree, keyDom: Tree, valueDom: Tree):MetaFunStructure = {
-    def getKeyDoms(dom:Tree):List[Tree] = dom match {
+  def metaFunStructure(sampleSpace: Tree, keyDom: Tree, valueDom: Tree): MetaFunStructure = {
+    def getKeyDoms(dom: Tree): List[Tree] = dom match {
       case CartesianProduct(doms) => doms
       //todo: the line below is probably not needed anymore
       case q"$cross[..${ _ }](..$doms)" if wolfeSymbols.crosses(cross.symbol) => doms

@@ -44,11 +44,11 @@ trait Conditioner[C <: Context] extends MetaStructures[C] {
     object SeqSetLength {
       def unapply(tree: Tree) = tree match {
         case q"$x.size == $value" => matcher(x) match {
-          case Some(StructurePointer(structure, meta: MetaSeqStructure)) => Some(q"$structure.setLength($value)")
+          case Some(StructurePointer(structure, meta: MetaSeqStructure,_)) => Some(q"$structure.setLength($value)")
           case _ => None
         }
         case q"$value == $x.size" => matcher(x) match {
-          case Some(StructurePointer(structure, meta: MetaSeqStructure)) => Some(q"$structure.setLength($value)")
+          case Some(StructurePointer(structure, meta: MetaSeqStructure,_)) => Some(q"$structure.setLength($value)")
           case _ => None
         }
         case _ => None
@@ -61,7 +61,7 @@ trait Conditioner[C <: Context] extends MetaStructures[C] {
   def conditioningPair(expr1: Tree, expr2: Tree, matcher: Tree => Option[StructurePointer]): Option[Tree] = {
     (expr1, expr2) match {
       case (CaseClassCopy(select1, args1), CaseClassCopy(select2, args2)) => matcher(select1) match {
-        case Some(StructurePointer(structure, meta: MetaCaseClassStructure)) =>
+        case Some(StructurePointer(structure, meta: MetaCaseClassStructure,_)) =>
           val statements = ((args1 zip args2) zip meta.fields).map({
             case (AlwaysSame(), field) =>
               //todo: should also fire if it can be shown that both arguments evaluate to the same thing
@@ -91,7 +91,7 @@ trait Conditioner[C <: Context] extends MetaStructures[C] {
         val q"$select1.map" = map1
         val q"$select2.map" = map2
         matcher(select1) match {
-          case Some(StructurePointer(structure, meta: MetaSeqStructure)) =>
+          case Some(StructurePointer(structure, meta: MetaSeqStructure,_)) =>
             //todo: we should get the matcher by calling structure.meta.matcher
             val newArg1:Tree = q"$select1.apply(argIndex)"
             val newArg2:Tree = q"$select2.apply(argIndex)"
@@ -134,6 +134,7 @@ trait Conditioner[C <: Context] extends MetaStructures[C] {
       //          ConditioningCode(q"${structure.structure}.observe($value)", EmptyTree)
       //        case _ => ConditioningCode(EmptyTree, condition)
       //      }
+      case t if t.equalsStructure(q"true") => ConditioningCode(EmptyTree, EmptyTree)
       case SimpleCondition(code) => ConditioningCode(code, EmptyTree)
       case PairMatcher(code) => ConditioningCode(code, EmptyTree)
       case SeqSetLength(code) => ConditioningCode(code, EmptyTree)

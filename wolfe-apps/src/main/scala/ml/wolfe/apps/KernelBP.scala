@@ -233,12 +233,9 @@ object KernelBPTed {
     //
   }
 
-  object DocVector extends Key[Vector[Double]]
-  object WordIndex extends Key[Index]
-
   def calculateTFIDFVectors(docs: Seq[Document]): Seq[Document] = {
     val index = new SimpleIndex
-    val rawDF = new mutable.HashMap[String, Double]() withDefaultValue(0.0)
+    val rawDF = new mutable.HashMap[String, Double]() withDefaultValue 0.0
     val numDocs = docs.size
     //get document frequencies first
     for (doc <- docs) {
@@ -252,7 +249,7 @@ object KernelBPTed {
     val numWords = rawDF.size
     val result = for (doc <- docs) yield {
       //get term frequencies
-      val rawTF = new mutable.HashMap[String,Double]() withDefaultValue(0.0)
+      val rawTF = new mutable.HashMap[String,Double]() withDefaultValue 0.0
       for (t <- doc.tokens)  {
         rawTF(t.word) += 1.0
       }
@@ -263,8 +260,9 @@ object KernelBPTed {
         val wordIndex = index(w)
         docVector(wordIndex) = tf * idf
       }
-      doc.copy(attributes = doc.attributes add (DocVector,docVector) add (WordIndex,index))
+      doc.copy(ir = doc.ir.copy(bowVector = docVector))
     }
+    //todo: return word index.
     result
   }
 
@@ -288,7 +286,7 @@ object KernelBPTed {
     val de_vecs = calculateTFIDFVectors(de_docs)
     val en_vecs = calculateTFIDFVectors(en_docs)
 
-    println(de_vecs.head.attributes(DocVector))
+    println(de_vecs.head.ir.bowVector)
 
 
 
