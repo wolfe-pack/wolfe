@@ -1,18 +1,28 @@
-import ml.wolfe.nlp._
-import scala.collection.mutable
-import scala.pickling._
-import json._
 
-val attr = Attributes(Lemma -> "blah")
-val map = Map(Lemma -> "the")
 
-implicit val ser = new AttributePickling()
+trait Edge {
+  def src:Node
+  def tgt:Node
 
-ser.register(Lemma)
+}
+trait Node {
 
-val wire = attr.pickle.value
-val wireMap = Lemma.pickle.value
-val unpickled = attr.pickle.unpickle[Attributes]
+}
 
-List(1,2,3).splitAt()
+trait Graph {
+  type E <: Edge
+  type N <: Node
+
+  def nodes:List[N]
+  def edges:List[E]
+
+}
+
+trait WeightedEdge extends Edge
+
+trait WeightedGraph {
+  type E <: WeightedEdge
+
+
+}
 
