@@ -217,6 +217,14 @@ class MetaStructuredFactorSpecs extends StructureIsomorphisms {
       structuredFactor.factors.size should be(3 * 3)
     }
 
+    "create factors in quantified formulas with duplicate predicates " in {
+      def ints = 0 until 3
+      def space = Wolfe.maps(ints, ints)
+      def model(map: Map[Int, Int]) = sum(ints) { i => sum(ints) { j => I(map(i) == map(j)) } }
+      val structuredFactor = MetaStructuredFactor.structuredFactor(space, model)
+      structuredFactor mustBeIsomorphicTo model
+      structuredFactor.factors.size should be(9)
+    }
 
   }
 

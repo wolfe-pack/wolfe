@@ -99,3 +99,4 @@ class AttributePickling(implicit val format: PickleFormat, val mapPickler: SPick
 //    assert(wrapper == unpickled)
 //  }
 //}
+//}
