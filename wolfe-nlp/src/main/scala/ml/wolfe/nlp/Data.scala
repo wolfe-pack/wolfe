@@ -1,5 +1,8 @@
 package ml.wolfe.nlp
 
+import breeze.linalg.{SparseVector, DenseVector}
+import ml.wolfe.{SimpleIndex, Index}
+
 
 /**
  * Offsets for a natural language token.
@@ -45,9 +48,11 @@ case class Sentence(tokens: Seq[Token], syntax: SyntaxAnnotation = SyntaxAnnotat
  * A document consisting of sentences.
  * @param source the source text.
  * @param sentences list of sentences.
- * @param attributes collection of generic attributes.
+ * @param ir information retrieval annotations for document.
  */
-case class Document(source: String, sentences: Seq[Sentence], attributes: Attributes = Attributes.empty) {
+case class Document(source: String,
+                    sentences: Seq[Sentence],
+                    ir:IRAnnotation = IRAnnotation.empty) {
   def toText = sentences map (_.toText) mkString "\n"
   def toTaggedText = sentences map (_.toTaggedText) mkString "\n"
   def tokens = sentences flatMap (_.tokens)
@@ -55,7 +60,15 @@ case class Document(source: String, sentences: Seq[Sentence], attributes: Attrib
     g.link1toNOrdered[Document,Sentence,Seq[Sentence]]('sentences, this, sentences)
 }
 
+/**
+ * Class to represent IR information for a document
+ * @param bowVector a vectorized bag of word representation, for example using tf-idf counts.
+ */
+case class IRAnnotation(bowVector:SparseVector[Double] = SparseVector.zeros(0))
 
+object IRAnnotation {
+  val empty = IRAnnotation()
+}
 
 
 object Data {
