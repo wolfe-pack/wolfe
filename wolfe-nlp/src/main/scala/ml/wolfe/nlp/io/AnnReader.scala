@@ -19,9 +19,9 @@ class AnnReader(dir: String, pattern: String = ".*") extends Iterable[Document] 
   def iterator: Iterator[Document] = {
     val dreader = new DirectoryReader
     val fgroups = dreader.fileGroups(dir)
-    fgroups.keys.filter(k => k.matches(pattern) && fgroups(k).size == 2).map { f =>
+    fgroups.keys.filter(k => k.matches(pattern) && fgroups(k).size == 2).iterator.map { f =>
       mkAnnDocument(f + ".txt", f + ".ann")
-    }.iterator
+    }
   }
 
   def mkAnnDocument(textFile: String, annFile: String): Document = {
@@ -133,6 +133,9 @@ object AnnReader {
         println("Entities:\n" + s.ie.entityMentions.mkString("\n") + "\n")
         println("Relations:\n" + s.ie.entityMentions.mkString("\n") + "\n")
         println("Events:\n" + s.ie.eventMentions.mkString("\n") + "\n")
+        println("Dependencies:\n" + s.syntax.dependencies)
+        println("Parse:\n" + s.syntax.tree)
+        println
       }
     }
   }

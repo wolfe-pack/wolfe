@@ -1,6 +1,7 @@
 package ml.wolfe.nlp
 
 import scala.collection.mutable.ArrayBuffer
+import ml.wolfe.nlp.io._
 
 /**
  * A mention of a named entity.
@@ -102,6 +103,188 @@ object ConstituentTree {
 
 case class ConstituentTree(node: ConstituentNode, children : Seq[ConstituentTree] = Seq()) {
 
+  def label: String = node.label
+
+  def isPreterminal = node.isPreterminal
+
+  def isNonterminal = node.isNonterminal
+
+  def labelsOfSpan(i: Int, j: Int): Iterator[String] = {
+    index(i)(j).map(_.label).iterator
+  }
+
+  def coarsenLabels: ConstituentTree = {
+    val coarsed = coarsen(node.label)
+    if (node.label == coarsed) {
+      new ConstituentTree(node, children.map(_.coarsenLabels))
+    }
+    else {
+      if (isNonterminal) {
+        new ConstituentTree(new NonterminalNode(coarsed), children.map(_.coarsenLabels))
+      }
+      else {
+        new ConstituentTree(new PreterminalNode(coarsed, node.asInstanceOf[PreterminalNode].word), children.map(_.coarsenLabels))
+      }
+    }
+  }
+
+
+  def coarsen(ll: String): String = {
+    if (ll == "-DFL-") return ll
+    var l = ll
+    while (l.startsWith("^")) {
+      l = l.substring(1)
+    }
+    if (l.contains("|"))
+      l = l.substring(0, l.indexOf("|"))
+    if (l.contains("-"))
+      l = l.substring(0, l.indexOf("-"))
+    if (l.contains("="))
+      l = l.substring(0, l.indexOf("="))
+    if (l.contains("^"))
+      l = l.substring(0, l.indexOf("^"))
+    return l
+  }
+
+  def tags: Iterator[String] = leaves.collect { case l: PreterminalNode => l.label }
+
+  def words: Iterator[String] = leaves.collect { case l: PreterminalNode => l.word }
+
+//  def tokens: Iterator[TaggedToken] = leaves.collect { case l: PreterminalNode => TaggedToken(l.word, l.label) }
+
+  def setYield(words: Array[String], tags: Array[String], offset: Int = 0): ConstituentTree = {
+    //    println("setting yield")
+    var tally = 0
+    node match {
+      case x: NonterminalNode => {
+        //      println(" set nonterm")
+        new ConstituentTree(node, children.map{ c =>
+          val child = c.setYield(words, tags, offset + tally)
+          tally += c.width
+          child
+        })
+      }
+      case x: PreterminalNode => {
+        //       println("offset = " + offset)
+        new ConstituentTree(new PreterminalNode(tags(offset), words(offset)))
+      }
+    }
+  }
+
+  def index: Array[Array[ArrayBuffer[Span]]] = {
+    val ispans = Array.fill(length+1,length+1)(new ArrayBuffer[Span])
+    var numLeaves = 0
+    for (t <- leafFirstSearch) {
+      if (t.isLeaf) {
+        ispans(numLeaves)(numLeaves+1) += new Span(numLeaves, numLeaves+1, t.label, 0)
+        numLeaves += 1
+      }
+      else {
+        val len = t.length
+        val height = ispans(numLeaves-len)(numLeaves).size
+        ispans(numLeaves-len)(numLeaves) += new Span(numLeaves-len, numLeaves, t.label, height)
+      }
+    }
+    ispans
+  }
+
+  override def toString: String = {
+    node match {
+      case x: NonterminalNode => return "(%s %s)".format(x.label, children.map(_.toString()).mkString(" "))
+      case x: PreterminalNode => return "(%s %s)".format(x.label, x.word)
+    }
+  }
+
+  def slice(i: Int, j: Int): ConstituentTree = {
+    val ospans = toSpans.toArray
+    val fspans = ospans.filter{ s => s.start >= i && s.end <= j && s.width > 1} // && (span.end-span.start > 1 || span.isUnary)}
+    val ss2 = fspans.map{span => Span(span.start-i, span.end-i, span.label, span.height)}
+    val t = ConstituentTreeFactory.constructFromSpans(ss2, j-i, words.slice(i, j).toArray, tags.slice(i, j).toArray)
+    t
+  }
+
+  def binarize(mode: String = "RIGHT_0MARKOV"): ConstituentTree = {
+    //   println("-- " + children.map(_.label).mkString(", "))
+    if (children.size > 2) {
+      //val grandchildren = children.slice(1, children.size)
+      mode match {
+        case "RIGHT_0MARKOV" => {
+          println("right 0 markov")
+          val blabel = if (node.label.startsWith("@")) node.label else "@%s".format(node.label)
+          return new ConstituentTree(node, List[ConstituentTree](
+            children(0).binarize(mode),
+            new ConstituentTree(new NonterminalNode(blabel), children.slice(1, children.size)).binarize(mode)))
+        }
+        case "LEFT_0MARKOV" => {
+          println("left 0 markov")
+          val blabel = if (node.label.startsWith("@")) node.label else "@%s".format(node.label)
+          return new ConstituentTree(node, List[ConstituentTree](
+            new ConstituentTree(new NonterminalNode(blabel), children.slice(0, children.size-1)).binarize(mode),
+            children.last.binarize(mode)))
+        }
+        case "RIGHT_SINGLE" => {
+          println("right single")
+          return new ConstituentTree(node, List[ConstituentTree](
+            children(0).binarize(mode),
+            new ConstituentTree(new NonterminalNode("@"), children.slice(1, children.size)).binarize(mode)))
+        }
+        case "LEFT_SINGLE" => {
+          println("left single")
+          return new ConstituentTree(node, List[ConstituentTree](
+            new ConstituentTree(new NonterminalNode("@"), children.slice(0, children.size-1)).binarize(mode),
+            children.last.binarize(mode)))
+        }
+      }
+    }
+    else{
+      return new ConstituentTree(node, children.map(_.binarize(mode)))
+    }
+  }
+
+  def isBinarized: Boolean = node.label.contains("@")
+
+  def removeUnaryChains(): ConstituentTree = {
+    return new ConstituentTree(node,
+      if (children.size == 1) {
+        val uh = unaryHelper()
+        unaryHelper().map(_.removeUnaryChains())
+      }
+      else {
+        children.map(_.removeUnaryChains())
+      })
+  }
+
+  def unaryHelper(): Seq[ConstituentTree] = {
+    if (children.size == 0) {
+      return List(this)
+    }
+    if (children.size == 1) {
+      children(0).unaryHelper()
+    }
+    else {
+      return children
+    }
+  }
+
+  def removeNones(): ConstituentTree = {
+    val nchildren = children.map(_.removeNones()).filter(_ != null.asInstanceOf[ConstituentTree])
+    if (label == "-NONE-" || label == "-RRB-" || label == "-LRB-" || (children.size > 0 && nchildren.size == 0)) {
+      return null.asInstanceOf[ConstituentTree]
+    }
+    else {
+      return new ConstituentTree(node, nchildren)
+    }
+  }
+
+  def removeTop: ConstituentTree = {
+    assert(children.size == 1, "Attempted to remove top node on a tree that would become multi-rooted.\n" + toString)
+    children(0)
+  }
+
+  def nodemap(f: (ConstituentNode) => ConstituentNode): ConstituentTree = {
+    return new ConstituentTree(f(node), children.map(_.nodemap(f)))
+  }
+
   private lazy val len = leaves.size
 
   def breadthFirstSearch: Iterator[ConstituentTree] = {
@@ -139,38 +322,12 @@ case class ConstituentTree(node: ConstituentNode, children : Seq[ConstituentTree
 
   def length: Int = len
 
-  override def toString(): String = {
-    if (isLeaf) {
-      return "(%s)".format(node.toString())
-    }
-    else {
-      return "(%s %s)".format(node.toString(), children.map(_.toString()).mkString(" "))
-    }
-  }
-
   def width: Int = {
     leaves.size
   }
 
   // Indexing Methods
   lazy private val spans = index
-
-  def index: Array[Array[ArrayBuffer[Span]]] = {
-    val ispans = Array.fill(length+1,length+1)(new ArrayBuffer[Span])
-    var numLeaves = 0
-    for (t <- leafFirstSearch) {
-      if (t.isLeaf) {
-        ispans(numLeaves)(numLeaves+1) += new Span(numLeaves, numLeaves+1, node.toString, 0)
-        numLeaves += 1
-      }
-      else {
-        val len = t.length
-        val height = ispans(numLeaves-len)(numLeaves).size
-        ispans(numLeaves-len)(numLeaves) += new Span(numLeaves-len, numLeaves, node.toString, height)
-      }
-    }
-    ispans
-  }
 
   def containsSpan(i: Int, j: Int): Boolean = {
     if (i < 0 || j < 0) return false
