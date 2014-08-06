@@ -25,9 +25,11 @@ trait Var {
   def updateN2F(edge: FactorGraph.Edge):Unit = notSupported
   def updateDualN2F(edge: FactorGraph.Edge, stepSize:Double):Unit = notSupported
   def fixMapSetting(node: FactorGraph.Node, overwrite:Boolean = false):Unit = notSupported
+  def setToArgmax():Unit = notSupported
   def deterministicN2F(edge: FactorGraph.Edge):Unit = notSupported
   def updateMaxMarginalBelief(node: FactorGraph.Node):Unit = notSupported
   def updateMarginalBelief(node: FactorGraph.Node):Unit = notSupported
+  def updateAverageBelief(node: FactorGraph.Node):Unit = notSupported
   def entropy():Double = notSupported
 
 }
@@ -84,7 +86,7 @@ final class DiscreteVar(var dim: Int) extends Var {
   override def updateDualN2F(edge:Edge, stepSize:Double) = {
     val m = edge.msgs.asDiscrete
     for(i <- (0 until m.n2f.size).optimized)
-      m.n2f(i) = m.n2f(i) - stepSize * math.log(math.exp(m.f2n(i)) - math.exp(b(i)))
+      m.n2f(i) = m.n2f(i) - stepSize * (math.exp(m.f2n(i)) - math.exp(b(i)))
   }
 
   var fixedSetting = false
@@ -102,6 +104,11 @@ final class DiscreteVar(var dim: Int) extends Var {
         fixedSetting = true
       }
     }
+  }
+
+  override def setToArgmax():Unit = {
+    if(! fixedSetting)
+      setting = ml.wolfe.MoreArrayOps.maxIndex(b)
   }
 
   override def deterministicN2F(edge: Edge) = {
@@ -126,6 +133,14 @@ final class DiscreteVar(var dim: Int) extends Var {
       val logZ = math.log(b.view.map(exp).sum)
       -=(b,logZ)
     }
+  }
+
+  override def updateAverageBelief(node: Node) = {
+    System.arraycopy(in, 0, b, 0, b.length)
+    for (e <- 0 until node.edges.length)
+      for (i <- 0 until dim)
+        b(i) += node.edges(e).msgs.asDiscrete.f2n(i)
+    for(i <- 0 until dim) b(i) = b(i) / node.edges.length
   }
 
 

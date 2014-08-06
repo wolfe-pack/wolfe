@@ -56,7 +56,7 @@ final class LinearPotential(val edges: Array[Edge], val statistics: Stats, fg: F
 
   override def mapF2N() = {
     for (j <- (0 until edges.size).optimized)
-      fill(msgs(j).f2n, Double.NegativeInfinity)
+      fill(msgs(j).f2n, 0)
 
     var maxScore = Double.NegativeInfinity
     var maxSetting = Array.ofDim[Int](edges.size)
@@ -74,7 +74,7 @@ final class LinearPotential(val edges: Array[Edge], val statistics: Stats, fg: F
     }
 
     for (j <- (0 until edges.size).optimized)
-      msgs(j).f2n(maxSetting(j)) = 0
+      msgs(j).f2n(maxSetting(j)) = 1
   }
 
   override def valueForCurrentSetting() = {

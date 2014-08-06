@@ -11,7 +11,7 @@ import scalaxy.loops._
 object DualDecomposition {
 
   /** Alternating Directions Dual Decomposition **/
-  def ad3(fg:FactorGraph, maxIteration: Int, stepSize: Double = 1, parallelize: Boolean = true):Unit = {
+  def ad3(fg:FactorGraph, maxIteration: Int, stepSize: Double = 0.1, parallelize: Boolean = true):Unit = {
     apply(fg, maxIteration, _ => stepSize, parallelize, ad3 = true)
   }
 
@@ -31,34 +31,30 @@ object DualDecomposition {
 
     fg.converged = false
 
-    // not sure if we need this. But who knows where this graph came from
-    initializeN2FMessages(fg)
+    initializeN2FAndBeliefs(fg)
 
-    // scumbag scala! makes me write java
-    var iter = 0
-    while (iter < maxIteration && !fg.converged) {
-
-      for(f <- factors) if(ad3) f.potential.quadraticProgramF2N(stepSize(iter), 1000) else f.potential.mapF2N()
-      for(n <- fg.nodes) n.variable.updateMarginalBelief(n)
+    for (iter <- 0 until maxIteration if !fg.converged) {
+      //todo: dynamically adjust QP step size (page 13)
+      for(f <- factors) if(ad3) f.potential.quadraticProgramF2N(stepSize(iter), 10) else f.potential.mapF2N()
+      for(n <- fg.nodes) n.variable.updateAverageBelief(n)
       for(n <- fg.nodes; e <- n.edges) n.variable.updateDualN2F(e, stepSize(iter))
 
       fg.converged = hasConverged(fg)
 
-      iter = iter + 1
     }
   }
 
-
-  /**
-   * Initializes the messages from each node to a factor to true. These variables store the values of the dual
-   * variables.
-   * @param fg The factor graph
-   */
-  private def initializeN2FMessages(fg: FactorGraph): Unit = {
+  private def initializeN2FAndBeliefs(fg: FactorGraph) : Unit = {
     for (factor <- fg.factors;
          edge <- factor.edges) {
-      for (i <- 0 until edge.msgs.asDiscrete.n2f.size)
-        edge.msgs.asDiscrete.n2f(i) = 0
+      val m = edge.msgs.asDiscrete
+      for (i <- 0 until m.n2f.size)
+        m.n2f(i) = 0
+
+      val v = edge.n.variable.asDiscrete
+      val p = 1d / v.b.size
+      for (i <- 0 until v.b.size)
+        v.b(i) = p
     }
   }
 
@@ -76,12 +72,10 @@ object DualDecomposition {
       for (edge <- factor.edges;
            otherEdge <- edge.n.edges
            if otherEdge != edge
-           if otherEdge.f != factor
            if hasConverged) {
 
-        for (i <- 0 until edge.msgs.asDiscrete.dim; if hasConverged) {
-          hasConverged = edge.msgs.asDiscrete.f2n(i) == otherEdge.msgs.asDiscrete.f2n(i)
-        }
+        hasConverged = MoreArrayOps.approxEqual(edge.msgs.asDiscrete.f2n, otherEdge.msgs.asDiscrete.f2n)
+
       }
     }
     hasConverged
