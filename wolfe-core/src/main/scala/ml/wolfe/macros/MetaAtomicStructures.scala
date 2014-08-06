@@ -39,7 +39,7 @@ trait MetaAtomicStructures[C <: Context] {
         def resetSetting() {variable.setting = -1}
         def hasNextSetting = variable.setting < variable.dim - 1
         def nextSetting() = {variable.setting += 1; updateValue()}
-        def setToArgmax() { /*variable.setting = ml.wolfe.MoreArrayOps.maxIndex(variable.b);*/ updateValue()}
+        def setToArgmax() { variable.setToArgmax(); /*variable.setting = ml.wolfe.MoreArrayOps.maxIndex(variable.b);*/ updateValue()}
         final def observe(value:$argType) {
           val index = $indexName(value)
           variable.domain = Array(index)
