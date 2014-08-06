@@ -1,6 +1,7 @@
 package ml.wolfe.nlp
 
 import edu.arizona.sista.processors.{Sentence => SISTASent}
+import edu.arizona.sista.processors.struct.Tree
 
 /**
  * Conversion code for the SISTA processor package.
@@ -26,14 +27,31 @@ object SISTAConverter {
 
   def toFullWolfeSentence(sentence: SISTASent): Sentence = {
     val tokens = for (i <- 0 until sentence.size) yield toWolfeToken(i, sentence)
-    val tree = toWolfeDependencyTree(sentence)
-    Sentence(tokens, syntax = new SyntaxAnnotation(tree = null, dependencies = tree))
+    val ctree = toWolfeConstituentTree(sentence)
+    val dtree = toWolfeDependencyTree(sentence)
+    Sentence(tokens, syntax = new SyntaxAnnotation(tree = ctree, dependencies = dtree))
+  }
+
+  def toWolfeConstituentTree(sent: SISTASent): ConstituentTree = {
+    sent.syntacticTree match {
+      case Some(tree) => treeToTree(tree)
+      case _=> ConstituentTree.empty
+    }
   }
 
   def toWolfeDependencyTree(sent: SISTASent): DependencyTree = {
     val dt = new DependencyTree(sent.dependencies.get.outgoingEdges.zipWithIndex.flatMap { case(x, i) => x.map { y => (i, y._1, y._2) }})
-    println(dt.toString())
+//    println(dt.toString())
     dt
+  }
+
+  def treeToTree(tree: Tree[String]): ConstituentTree = {
+    if (tree.isPreTerminal) {
+      new ConstituentTree(new PreterminalNode(label = tree.value, word = tree.children.get.head.value))
+    }
+    else {
+      new ConstituentTree(new NonterminalNode(label = tree.value, head = tree.head), tree.children.get.map(treeToTree(_)))
+    }
   }
 
 }
