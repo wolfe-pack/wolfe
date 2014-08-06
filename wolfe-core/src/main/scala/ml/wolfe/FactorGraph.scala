@@ -1,5 +1,7 @@
 package ml.wolfe
 
+import java.io.PrintWriter
+
 import cc.factorie.la.SingletonTensor
 import ml.wolfe.util.Multidimensional._
 
@@ -300,7 +302,7 @@ final class FactorGraph {
    * @param showMessages whether to include message passing on the graphic
    */
   def displayAsGraph(showMessages: Boolean = false) {
-    def nodeString(n: Node) = n.variable match {
+    /*def nodeString(n: Node) = n.variable match {
       case v: TupleVar => v.componentNodes.map(_.index.toString).mkString("(", ",", ")")
       case _ => n.index.toString
     }
@@ -333,7 +335,96 @@ final class FactorGraph {
     if (weights != null) fgv.addTextbox("Weights = " + weights.toString())
     if (gradient != null) fgv.addTextbox("Gradient = " + gradient.toString())
 
-    fgv.render()
+    fgv.render()*/
+
+    val writer = new PrintWriter("/home/luke/test.html", "UTF-8")
+
+    writer.println(
+      s"""
+        |<script>
+        |var graph = {
+        |  "nodes": [
+        |    ${nodes.map(n => "{}") ++ factors.map(f => "{shape: 'square'}") mkString ", "}
+        |  ],
+        |  "links": [
+        |    ${edges.map(e =>
+                "{'source': " + e.n.index + ", 'target': " + (e.f.index + nodes.length) + "}"
+              ) mkString ", "}
+        |  ]
+        |}
+        |</script>
+      """.stripMargin)
+
+    writer.println(
+    """
+      |<style>
+      |
+      |.link {
+      |  stroke: #000;
+      |  stroke-width: 1.5px;
+      |}
+      |
+      |.node {
+      |  cursor: move;
+      |  fill: #ccc;
+      |  stroke: #000;
+      |  stroke-width: 1.5px;
+      |}
+      |
+      |</style>
+      |<body>
+      |<script src="http://d3js.org/d3.v3.min.js"></script>
+      |<script>
+      |var width = 960,
+      |    height = 500;
+      |
+      |var force = d3.layout.force()
+      |    .size([width, height])
+      |    .charge(-400)
+      |    .linkDistance(40)
+      |    .on("tick", tick);
+      |
+      |var drag = force.drag()
+      |
+      |var svg = d3.select("body").append("svg")
+      |    .attr("width", width)
+      |    .attr("height", height);
+      |
+      |var link = svg.selectAll(".link"),
+      |    node = svg.selectAll(".node");
+      |
+      |force
+      |    .nodes(graph.nodes)
+      |    .links(graph.links)
+      |    .start();
+      |
+      |link = link.data(graph.links)
+      |    .enter().append("line")
+      |    .attr("class", "link");
+      |
+      |node = node.data(graph.nodes)
+      |    .enter().append("path")
+      |    .attr("class", "node")
+      |    .attr("d", d3.svg.symbol()
+      |	   .type(function(d) { return d.shape == undefined ? "circle" : d.shape ; })
+      |	   .size(1000))
+      |    .call(drag);
+      |
+      |function tick() {
+      |  link.attr("x1", function(d) { return d.source.x; })
+      |      .attr("y1", function(d) { return d.source.y; })
+      |      .attr("x2", function(d) { return d.target.x; })
+      |      .attr("y2", function(d) { return d.target.y; });
+      |
+      |  node.attr("transform", function(d) {return "translate(" + d.x + "," + d.y + ")"})
+      |}
+      |
+      |
+      |</script>
+      |
+    """.stripMargin)
+
+    writer.close()
   }
 
 }
