@@ -88,12 +88,24 @@ final class TablePotential(edges: Array[Edge], table: Table) extends Potential {
    * @return A verbose string representation of this factor.
    */
   override def toVerboseString(implicit fgPrinter: FGPrinter) = {
-
+/*
     val tableString =
       for ((setting, index) <- settings.zipWithIndex) yield
-        s"${ setting.mkString(" ") } | ${ table.scores(index) }"
+        s"${
+          setting.zipWithIndex.map({case (s,j) => vars(j).domainLabels(s)}).mkString("\t")
+        }\t| ${ table.scores(index) }"
 
-    tableString.mkString("\n")
+    tableString.mkString("\n")*/
+
+    val headerRow = "<tr>" + vars.map(_.label).map("<td><i>" + _ + "</i></td>").mkString(" ") + "</tr>"
+    val tableRows =
+      for ((setting, index) <- settings.zipWithIndex) yield {
+        val domainEntries = for ((s, j) <- setting.zipWithIndex) yield vars(j).domainLabels(s)
+        val cells = domainEntries :+ ("<b>" + table.scores(index).toString + "</b>")
+        "<tr>" + cells.map("<td>" + _ + "</td>").mkString(" ") + "</tr>"
+      }
+
+    "<table class='potentialtable'>" + headerRow + "\n" + tableRows.mkString("\n") + "</table>"
   }
 
   override def getScoreTable(forVariables:Array[DiscreteVar]) : LabelledTensor[DiscreteVar, Double] = {

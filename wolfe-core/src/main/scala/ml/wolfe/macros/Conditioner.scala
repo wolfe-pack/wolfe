@@ -178,7 +178,7 @@ object Conditioner {
     val root = helper.rootMatcher(arg.symbol, q"$structName.asInstanceOf[${meta.className}]", meta)
     val matcher = meta.matcher(root)
     val conditionCode = helper.conditioning(rhs, matcher)
-    val cls = meta.classDef(graphName)
+    val cls = meta.classDef(graphName, "???")
     val code = q"""
       val $graphName = new ml.wolfe.FactorGraph
       $cls

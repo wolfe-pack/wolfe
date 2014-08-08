@@ -32,9 +32,11 @@ trait Var {
   def updateAverageBelief(node: FactorGraph.Node):Unit = notSupported
   def entropy():Double = notSupported
 
+  /* A description of what the variable represents */
+  val label:String = ""
 }
 
-final class DiscreteVar(var dim: Int) extends Var {
+final class DiscreteVar(var dim: Int, override val label:String = "", val domainLabels:Seq[String] = Seq()) extends Var {
   /* node belief */
   var b = Array.ofDim[Double](dim)
 

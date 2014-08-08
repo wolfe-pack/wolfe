@@ -17,8 +17,8 @@ trait MetaSeqStructures[C<:Context] {
     var lengthInitialized = lengthInitializer != EmptyTree
 
     lazy val className = newTypeName(context.fresh("SeqStructure"))
-    def classDef(graphName:TermName) = {
-      val elementDef = elementMetaStructure.classDef(graphName)
+    def classDef(graphName:TermName, label:String) = {
+      val elementDef = elementMetaStructure.classDef(graphName, "???")
 
       q"""
         final class $className extends ml.wolfe.macros.Structure[$argType] with ml.wolfe.macros.SeqStructure[$argType] {
