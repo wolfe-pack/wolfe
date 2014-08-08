@@ -339,7 +339,7 @@ trait Annotations {
   class LogZByInference(inference: FactorGraph => Unit) extends StaticAnnotation
   class Atomic extends StaticAnnotation
   class Potential(construct: _ => ml.wolfe.fg.Potential) extends StaticAnnotation
-
+  class OutputFactorGraph(onGeneratedHtml: String => Unit) extends StaticAnnotation
 }
 
 trait ProblemBuilder {

@@ -263,7 +263,7 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
 
     //the class definition of the structure isomorphic to the search space. Currently needs access to
     //the name of the factor graph variable because the structure calls methods of the factor graph.
-    val structureDef = meta.classDef(graphName)
+    val structureDef = meta.classDef(graphName, objArg.name.toString)
 
     //If a statistics function is specified we want to calculate expectations of, this
     //code generates the code that creates the expectation factors.
@@ -284,6 +284,8 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
       val conditioner = conditioning(whereRhs, whereMatcher)
       conditioner.code
     }
+
+    val fgDebugCode = factorGraphDebugCode(objRhs, graphName)
 
     //the factors meta object may contain a (Wolfe) weight vector that is used in the definition
     //of the linear model. If so this code translates the wolfe vector into a factorie vector
@@ -318,6 +320,7 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
       $statsFactorInit
       _graph.build()
       _graph.weights = _factorieWeights
+      $fgDebugCode
       $inferCode
       $resultCode
     """
@@ -336,6 +339,19 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
       Function(args, Block(newStats, newBody))
     }
     case _ => context.error(context.enclosingPosition, s"Can't turn $tree into function"); ???
+  }
+
+  def factorGraphDebugCode(objRhs:Tree, graphName:TermName) = {
+    def getDebugFromAnnotation(f:Tree) =
+      f.symbol.annotations.find(_.tpe.typeSymbol == wolfeSymbols.debugFG) match {
+        case Some(annotation) => q"${ annotation.scalaArgs.head }($graphName.d3Code)"
+        case None => q""
+      }
+    objRhs match {
+      case q"$f(${ _ })" => getDebugFromAnnotation(f)
+      case q"$f(${ _ })(${ _ })" => getDebugFromAnnotation(f)
+      case _ => q""
+    }
   }
 
   def argmaxByLearning(trees: BuilderTrees, scaling: Tree = q"1.0"): Tree = {

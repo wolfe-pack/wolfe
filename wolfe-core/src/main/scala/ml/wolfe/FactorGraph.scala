@@ -78,10 +78,12 @@ final class FactorGraph {
   /**
    * Adds a node for a variable of domain size `dim`
    * @param dim size of domain of corresponding variable
+   * @param label description of what the variable represents
+   * @param domainLabels description of each element in the domain
    * @return the added node.
    */
-  def addNode(dim: Int) = {
-    val n = new Node(nodes.size, new DiscreteVar(dim))
+  def addNode(dim: Int, label:String = "", domainLabels:Seq[String]=Seq()) = {
+    val n = new Node(nodes.size, new DiscreteVar(dim, label, domainLabels))
     nodes += n
     n
   }
@@ -157,8 +159,8 @@ final class FactorGraph {
    * Creates a new factor, no potential assigned.
    * @return the created factor.
    */
-  def addFactor() = {
-    val f = new Factor(this, factors.size)
+  def addFactor(label:String = "") = {
+    val f = new Factor(this, factors.size, label)
     factors += f
     f
   }
@@ -167,8 +169,8 @@ final class FactorGraph {
    * Creates and adds a factor to be used for calculating expectations.
    * @return the created factor.
    */
-  def addExpectationFactor() = {
-    val f = new Factor(this, expectationFactors.size)
+  def addExpectationFactor(label:String = "") = {
+    val f = new Factor(this, expectationFactors.size, label)
     expectationFactors += f
     f
   }
@@ -301,7 +303,7 @@ final class FactorGraph {
    * Render a graphic of this factor graph
    * @param showMessages whether to include message passing on the graphic
    */
-  def displayAsGraph(showMessages: Boolean = false) {
+  def d3Code : String = {
     /*def nodeString(n: Node) = n.variable match {
       case v: TupleVar => v.componentNodes.map(_.index.toString).mkString("(", ",", ")")
       case _ => n.index.toString
@@ -337,14 +339,24 @@ final class FactorGraph {
 
     fgv.render()*/
 
-    val writer = new PrintWriter("/home/luke/test.html", "UTF-8")
 
-    writer.println(
-      s"""
+    def escape(s:String) =
+      s.replace("\n","\\n").replace("\'", "\\\'")
+
+    var code =  s"""
         |<script>
         |var graph = {
-        |  "nodes": [
-        |    ${nodes.map(n => "{}") ++ factors.map(f => "{shape: 'square'}") mkString ", "}
+        |  "nodes": [${(
+              nodes.map(n =>
+                     "{text:'" + escape(n.variable.label) + "'" +
+              ", hoverhtml:'Domain: {" + n.variable.asDiscrete.domainLabels.mkString(", ") + "}'" +
+              "}") ++
+              factors.map(f =>
+                "{shape: 'square'" +
+                ", hoverhtml:'" + "<div class=\"tooltipheader\">" + escape(f.label) + "</div>" +
+                  escape(f.potential.toVerboseString(DefaultPrinter)) + "'" +
+              "}")
+          ).mkString(", ")}
         |  ],
         |  "links": [
         |    ${edges.map(e =>
@@ -353,78 +365,18 @@ final class FactorGraph {
         |  ]
         |}
         |</script>
-      """.stripMargin)
+        |
+        |
+        |
+        |<link rel="stylesheet" type="text/css" href="fg.css" />
+        |	<script src="http://d3js.org/d3.v3.min.js"></script>
+        |
+        |<body>
+        |	<script src="fg.js"></script>
+        |</body>
+      """.stripMargin
 
-    writer.println(
-    """
-      |<style>
-      |
-      |.link {
-      |  stroke: #000;
-      |  stroke-width: 1.5px;
-      |}
-      |
-      |.node {
-      |  cursor: move;
-      |  fill: #ccc;
-      |  stroke: #000;
-      |  stroke-width: 1.5px;
-      |}
-      |
-      |</style>
-      |<body>
-      |<script src="http://d3js.org/d3.v3.min.js"></script>
-      |<script>
-      |var width = 960,
-      |    height = 500;
-      |
-      |var force = d3.layout.force()
-      |    .size([width, height])
-      |    .charge(-400)
-      |    .linkDistance(40)
-      |    .on("tick", tick);
-      |
-      |var drag = force.drag()
-      |
-      |var svg = d3.select("body").append("svg")
-      |    .attr("width", width)
-      |    .attr("height", height);
-      |
-      |var link = svg.selectAll(".link"),
-      |    node = svg.selectAll(".node");
-      |
-      |force
-      |    .nodes(graph.nodes)
-      |    .links(graph.links)
-      |    .start();
-      |
-      |link = link.data(graph.links)
-      |    .enter().append("line")
-      |    .attr("class", "link");
-      |
-      |node = node.data(graph.nodes)
-      |    .enter().append("path")
-      |    .attr("class", "node")
-      |    .attr("d", d3.svg.symbol()
-      |	   .type(function(d) { return d.shape == undefined ? "circle" : d.shape ; })
-      |	   .size(1000))
-      |    .call(drag);
-      |
-      |function tick() {
-      |  link.attr("x1", function(d) { return d.source.x; })
-      |      .attr("y1", function(d) { return d.source.y; })
-      |      .attr("x2", function(d) { return d.target.x; })
-      |      .attr("y2", function(d) { return d.target.y; });
-      |
-      |  node.attr("transform", function(d) {return "translate(" + d.x + "," + d.y + ")"})
-      |}
-      |
-      |
-      |</script>
-      |
-    """.stripMargin)
-
-    writer.close()
+    code
   }
 
 }
@@ -503,7 +455,7 @@ object FactorGraph {
    * @param fg the factor graph.
    * @param index the index/id of the factor
    */
-  final class Factor(val fg: FactorGraph, val index: Int) {
+  final class Factor(val fg: FactorGraph, val index: Int, val label:String = "") {
     var edges: Array[Edge] = Array.ofDim(0)
 
     def numNeighbors = edges.size
@@ -662,6 +614,7 @@ object FactorGraph {
       case _ => vector.toString()
     }
   }
+
 
   /**
    * A mutable store for factor graphs. Can be combined with an inference method when

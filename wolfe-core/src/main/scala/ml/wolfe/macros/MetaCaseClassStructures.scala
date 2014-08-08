@@ -17,7 +17,10 @@ trait MetaCaseClassStructures[C<:Context] {
     def tpe: Type
     def fields: List[Symbol]
     def fieldStructures: List[MetaStructure]
-    def subClassDefs(graphName: TermName): List[Tree] = fieldStructures.map(_.classDef(graphName))
+    //def subClassDefs(graphName: TermName): List[Tree] = fieldStructures.map(_.classDef(graphName))
+    def subClassDefs(graphName: TermName, label:String): List[Tree] = fieldsAndTypes.map(s =>
+      s._2.classDef(graphName, label + "." + s._1.name.toString)
+    )
 
     lazy val fieldsAndTypes  = fields zip fieldStructures
     lazy val className       = newTypeName(context.fresh(tpe.typeSymbol.name.encoded + "Structure"))
@@ -27,10 +30,10 @@ trait MetaCaseClassStructures[C<:Context] {
     lazy val fieldValues     = fieldIds.map(i => q"$i.value()")
     lazy val observeFields   = fields.map(f => q"${f.name.toTermName}.observe(value.${f.name.toTermName})")
     lazy val argType         = tpe.widen
-    def classDef(graphName: TermName) = q"""
+    override def classDef(graphName: TermName, label:String) = q"""
       final class $className extends ml.wolfe.macros.Structure[$tpe] {
         import ml.wolfe.FactorGraph._
-        ..${subClassDefs(graphName)}
+        ..${subClassDefs(graphName, label)}
         ..$structureFields
         private var iterator:Iterator[Unit] = _
         def children() = fields.map(_.asInstanceOf[ml.wolfe.macros.Structure[Any]])

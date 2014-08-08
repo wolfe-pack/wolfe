@@ -177,6 +177,25 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
       """
     lazy val loop       = transformer(loopSettingsNoDuplicates(transformedPointers) { perSetting })
 
+    def shortCode(t:Tree):String = t match {
+      case q"ml.wolfe.Wolfe.${x:TermName}" => x.toString
+      case q"!( $x )" => "!(" + shortCode(x) + ")"
+      case q"$x.||" => shortCode(x) + " || "
+      case q"$x.&&" => shortCode(x) + " && "
+      case q"$x.==" => shortCode(x) + " == "
+      case q"$x.>" => shortCode(x) + " > "
+      case q"$x.<" => shortCode(x) + " < "
+      case q"$x.>=" => shortCode(x) + " >= "
+      case q"$x.<=" => shortCode(x) + " <= "
+      case q"$x.+" => shortCode(x) + " + "
+      case q"$x.-" => shortCode(x) + " - "
+      case q"$x.*" => shortCode(x) + " * "
+      case q"$x./" => shortCode(x) + " / "
+      case q"${x:Select}" =>  shortCode(x.qualifier) + "." + x.name.toString
+      case q"${f:Select}($arg)" => shortCode(f) + "( " + shortCode(arg) + " )"
+      case _ => t.toString
+    }
+
     lazy val classDef = q"""
       final class $className(..$constructorArgs) extends ml.wolfe.macros.StructuredFactor[${ structure.argType }] {
         import ml.wolfe.FactorGraph._
@@ -188,7 +207,7 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
         val $perSettingArrayName = $perSettingArrayInitializer
         var settingIndex = 0
         $loop
-        val factor = graph.$addFactorMethod()
+        val factor = graph.$addFactorMethod(${shortCode(transformedPot)})
         val edges = nodes.view.zipWithIndex.map(p => graph.$addEdgeMethod(factor,p._1,p._2)).toArray
         factor.potential = $createPotential
         def factors = Iterator(factor)
@@ -388,7 +407,7 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
     val factorieWeights = metaFactor.weightVector.map(
       w => q"ml.wolfe.FactorieConverter.toFactorieDenseVector($w,_index)"
     ).getOrElse(q"new ml.wolfe.DenseVector(0)")
-    val structureClass = meta.classDef(graphName)
+    val structureClass = meta.classDef(graphName, "???")
     val code = q"""
       val _index = new ml.wolfe.DefaultIndex
       val $graphName = new ml.wolfe.FactorGraph

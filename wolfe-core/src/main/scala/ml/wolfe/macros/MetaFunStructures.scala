@@ -78,9 +78,9 @@ trait MetaFunStructures[C<:Context] {
 
     lazy val observeSubStructure = q"${curriedArguments(tmpIds)}.observe(value($tuple))"
 
-    def classDef(graphName: TermName) = {
+    def classDef(graphName: TermName, label:String) = {
       val iterator = substructureIterator(keyDoms.size)
-      val valueDef = valueMetaStructure.classDef(graphName)
+      val valueDef = valueMetaStructure.classDef(graphName, "???")
       q"""
       final class $className extends ml.wolfe.macros.Structure[$argType]{
         $valueDef
