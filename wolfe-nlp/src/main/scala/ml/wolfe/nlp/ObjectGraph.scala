@@ -13,6 +13,8 @@ trait ObjectGraph {
 }
 
 class SimpleObjectGraph extends ObjectGraph {
+
+  //todo: hashmaps should use case class object identity, not default equality, for hashing and comparing.
   private val map           = new mutable.HashMap[(Any, Any), Any]()
   private val mapForOrdered = new mutable.HashMap[(Any, Any), (Int, Any)]()
 
