@@ -82,7 +82,7 @@ object KernelBP {
 
     fg.build()
 
-    BeliefPropagation.sumProduct(1, gradientAndObjective = false, schedule = false)(fg)
+    BeliefPropagation.sumProduct(1, gradientAndObjective = false, schedule = true)(fg)
     println(n_A.variable.asInstanceOf[KernelBPVar].belief)
     println(n_B.variable.asInstanceOf[KernelBPVar].belief)
 
@@ -278,23 +278,28 @@ object KernelBPTed {
     println(de_files.size)
     println(en_files.size)
 
-    val de_docs = de_files map (f => SISTAProcessors.mkDocument(f._2))
-    val en_docs = en_files map (f => SISTAProcessors.mkDocument(f._2))
+    def mkDoc(file:((String,String,String),String)) = {
+      val doc = SISTAProcessors.mkDocument(file._2)
+      doc.copy(ir = doc.ir.copy(docLabel = Some(file._1._1 + ":" + file._1._2)))
+    }
+
+    val de_docs = de_files map mkDoc
+    val en_docs = en_files map mkDoc
 
     println(de_docs.head)
 
+    //get tfidf scores
     val de_vecs = calculateTFIDFVectors(de_docs)
     val en_vecs = calculateTFIDFVectors(en_docs)
 
     println(de_vecs.head.ir.bowVector)
 
+    //create the classification edge model in english
+    val en_byLabel = en_vecs.groupBy(_.ir.docLabel)
 
 
-    //first create basic vectors for each document.
-    //get document frequencies
 
 
-    //get tfidf scores
 
     //create kernel
 
@@ -319,7 +324,7 @@ object KernelBPTed {
       def removed = if (toRemove == "") txt else txt.replaceAllLiterally(toRemove,"")
       //      val tokens = txt.split(" ").map(_.dropRight(3))
       //      println(tokens.mkString(" "))
-      (posNeg.getName, doc.getName) -> removed
+      (tag.getName, posNeg.getName, doc.getName) -> removed
     }
     de_files
   }
