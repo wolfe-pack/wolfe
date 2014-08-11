@@ -10,29 +10,40 @@ import scala.util.matching.Regex
  */
 object NERFeatures {
 
-  def apply(token:Token, prefix:String = "") = oneHot(prefix + 'word -> token.word.toLowerCase) +
-  oneHot(prefix + 'firstCap, I(token.word.head.isUpper)) +
-  oneHot(prefix + 'allCap, I(token.word.matches("[A-Z]+"))) +
-  oneHot(prefix + 'realNumber, I(token.word.matches("[-0-9]+[.,]+[0-9.,]+"))) +
-  oneHot(prefix + 'isDash, I(token.word.matches("[-–—−]"))) +
-  oneHot(prefix + 'isQuote, I(token.word.matches("[„“””‘’\"']"))) +
-  oneHot(prefix + 'isSlash, I(token.word.matches("[/\\\\]"))) +
-  oneHot(prefix + 'prefix2 -> token.word.take(2)) +
-  oneHot(prefix + 'suffix2 -> token.word.takeRight(2))/*(
+  def apply(token:Token, prefix:String = "") = (
+    funFeatures.map({ case (sym:Symbol, fun:(Token => String)) =>
+      oneHot(prefix + sym -> fun(token))
+    }) ++
     regexFeatures.map({ case (sym:Symbol, reg:Regex) =>
       oneHot(prefix + sym, I(reg.pattern.matcher(token.toString).matches))
     }) ++
     boolFunFeatures.map({ case (sym:Symbol, fun:(Token => Boolean)) =>
       oneHot(prefix + sym, I(fun(token)))
     })
-  ).reduce(_+_)*/
+  ).reduce(_+_)
 
 
 
   val AminoAcidShortString = "Ala|Arg|Asn|Asp|Cys|Gln|Glu|Gly|His|Ile|Leu|Lys|Met|Phe|Pro|Ser|Thr|Trp|T.r,|Val|" +
   "Ter|Sec|Pyl|Asx|Glx|Xle|Xaa"
 
+
+  val funFeatures = Seq[(Symbol, Token => String)](
+    'word -> (t => t.word),
+    'prefix2 -> (t => t.word.take(2)),
+    'suffix2 -> (t => t.word.takeRight(2))
+  )
+
   val regexFeatures = Seq[(Symbol, Regex)](
+    'allCap     -> "[A-Z]+".r,
+    'realNumber -> "[-0-9]+[.,]+[0-9.,]+".r,
+    'isDash     -> "[-–—−]".r,
+    'isQuote    -> "[„“””‘’\"']".r,
+    'isSlash    -> "[/\\\\]".r
+  )
+
+  val regexFeaturesASDF = Seq[(Symbol, Regex)](
+
     //taken from BANNER
     'Alpha -> "[A-Za-z]+".r,
     'InitCaps -> "[A-Z].*".r,
@@ -114,7 +125,7 @@ object NERFeatures {
 
 
   val boolFunFeatures = Seq[(Symbol,Token => Boolean)] (
-    'EndCap     -> (t => t.word.last.isUpper),
+    /*'EndCap     -> (t => t.word.last.isUpper),
     'SingleCap  -> (t => t.word.count(_.isUpper) == 1),
     'TwoCap     -> (t => t.word.count(_.isUpper) == 2 && t.word.size == 2),
     'ThreeCap   -> (t => t.word.count(_.isUpper) == 3 && t.word.size == 3),
@@ -122,7 +133,7 @@ object NERFeatures {
     Symbol("WORD_LENGTH=1") -> (t => t.word.size == 1),
     Symbol("WORD_LENGTH=2") -> (t => t.word.size == 2),
     Symbol("WORD_LENGTH=3-5") -> (t => t.word.size >= 3 && t.word.size <= 5),
-    Symbol("WORD_LENGTH=6+") -> (t => t.word.size >= 6)
+    Symbol("WORD_LENGTH=6+") -> (t => t.word.size >= 6)*/
   )
 
 }

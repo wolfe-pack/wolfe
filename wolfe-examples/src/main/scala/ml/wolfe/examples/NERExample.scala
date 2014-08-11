@@ -5,7 +5,7 @@ import ml.wolfe.util._
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
 import ml.wolfe.{BeliefPropagation, Wolfe}
-import cc.factorie.optimize.{AveragedPerceptron, OnlineTrainer}
+import cc.factorie.optimize.{Perceptron, AveragedPerceptron, OnlineTrainer}
 import ml.wolfe.macros.{Library, OptimizedOperators}
 
 /**
@@ -30,6 +30,7 @@ object NERExample {
   implicit val labels        = Seq("O", "B-protein", "I-protein", "B-cell_type", "I-cell_type", "B-DNA", "I-DNA",
     "B-cell_line", "I-cell_line", "B-RNA", "I-RNA").map(t => Tag(Symbol(t)))
 
+/*
   @Atomic
   def tokenToFeatures(token: Token, prefix: String = ""): Wolfe.Vector = {
     oneHot(prefix + 'word -> token.word.toLowerCase) +
@@ -42,7 +43,7 @@ object NERExample {
     oneHot(prefix + 'prefix2 -> token.word.take(2)) +
     oneHot(prefix + 'suffix2 -> token.word.takeRight(2))
   }
-
+*/
   @Atomic
   def tokenToFeatures(token: Token, prefix: String = ""): Wolfe.Vector = NERFeatures(token, prefix)
 
