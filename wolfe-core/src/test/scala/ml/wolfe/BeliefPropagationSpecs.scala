@@ -21,6 +21,9 @@ class BeliefPropagationSpecs extends WolfeSpec {
 
   val fixedTable = TablePotential.table(Array(2, 2), pot)
 
+  val xorPot: Array[Int] => Double = arr => if ((arr(0)==1) ^ (arr(1)==1)) 0 else Double.NegativeInfinity
+  val xorTable = TablePotential.table(Array(2, 2), xorPot)
+
   val fixedStats = LinearPotential.stats(Array(2, 2), {
     case Array(i, j) => LinearPotential.singleton(2 * i + j, 1.0)
   })
@@ -47,6 +50,15 @@ class BeliefPropagationSpecs extends WolfeSpec {
     val n1 = fg.addNode(2)
     val n2 = fg.addNode(2)
     tablePotential(fg, n1, n2, fixedTable)
+    fg.build()
+    fg
+  }
+
+  def xorFG() = {
+    val fg = new FactorGraph
+    val n1 = fg.addNode(2)
+    val n2 = fg.addNode(2)
+    tablePotential(fg, n1, n2, xorTable)
     fg.build()
     fg
   }
@@ -96,6 +108,13 @@ class BeliefPropagationSpecs extends WolfeSpec {
       sameBeliefs(fg_mp, fg_bf) should be(true)
       fg_mp.value should be(fg_bf.value)
 
+    }
+    "choose a valid global max from a factor graph with multiple solutions" in {
+      val fg = xorFG()
+      BeliefPropagation(fg, 1)
+      val v0 = fg.nodes(0).variable.asDiscrete
+      val v1 = fg.nodes(1).variable.asDiscrete
+      v0.setting should not be(v1.setting)
     }
     "return the exact marginals given a chain" in {
       val fg_mp = chainFG(5)

@@ -98,7 +98,7 @@ class MetaStructuredFactorSpecs extends StructureIsomorphisms {
     }
 
     "generate a linear chain" in {
-      def space = seqs(5, Range(0, 3))
+      def space = seqsOfLength(5, Range(0, 3))
       def potential(seq: Seq[Int]) = sum(0 until seq.size) { seq(_).toDouble }
       val factor = MetaStructuredFactor.structuredFactor(space, potential)
       factor mustBeIsomorphicTo potential
@@ -115,7 +115,7 @@ class MetaStructuredFactorSpecs extends StructureIsomorphisms {
     }
 
     "generate a linear chain with local and pairwise factors " in {
-      def space = seqs(5, Range(0, 3))
+      def space = seqsOfLength(5, Range(0, 3))
       def potential(seq: Seq[Int]) = {
         val local = sum(0 until seq.size) { seq(_).toDouble }
         val pairs = sum(0 until seq.size - 1) { i => I(seq(i) == seq(i + 1)) }
@@ -127,7 +127,7 @@ class MetaStructuredFactorSpecs extends StructureIsomorphisms {
     }
 
     "merge local factors" in {
-      def space = seqs(5, Range(0, 3))
+      def space = seqsOfLength(5, Range(0, 3))
       def potential(seq: Seq[Int]) = {
         val local1 = sum(0 until seq.size) { seq(_).toDouble }
         val local2 = sum(0 until seq.size) { seq(_).toDouble * 2.0 }
@@ -140,7 +140,7 @@ class MetaStructuredFactorSpecs extends StructureIsomorphisms {
 
 
     "generate a linear chain with local and pairwise factors where defined vals are used within a val defintion" in {
-      def space = seqs(5, Range(0, 3))
+      def space = seqsOfLength(5, Range(0, 3))
       def potential(seq: Seq[Int]) = {
         val n = seq.size
         val local = sum(0 until n) { seq(_).toDouble }
@@ -154,7 +154,7 @@ class MetaStructuredFactorSpecs extends StructureIsomorphisms {
 
 
     "generate a linear chain with local and pairwise dot-product factors" in {
-      def space = seqs(5, Range(0, 3))
+      def space = seqsOfLength(5, Range(0, 3))
       def features(seq: Seq[Int]) = {
         val local = sum(0 until seq.size) { i => oneHot(seq(i)) }
         val pairs = sum(0 until seq.size - 1) { i => oneHot(seq(i) -> seq(i + 1)) }
@@ -168,7 +168,7 @@ class MetaStructuredFactorSpecs extends StructureIsomorphisms {
     }
 
     "merge local linear factors" in {
-      def space = seqs(5, Range(0, 3))
+      def space = seqsOfLength(5, Range(0, 3))
       def features(seq: Seq[Int]) = {
         val local1 = sum(0 until seq.size) { i => oneHot('a -> seq(i)) }
         val local2 = sum(0 until seq.size) { i => oneHot('b -> seq(i)) }
@@ -182,23 +182,49 @@ class MetaStructuredFactorSpecs extends StructureIsomorphisms {
     }
 
     "create a factor with user-specified potential" in {
-      case class Sample(pred:Pred[Int])
+      case class Sample(pred: Pred[Int])
       implicit def ints = 0 until 5
       def space = Wolfe.all(Sample)
 
-      @Potential(new ExactlyOncePotential(_:Seq[FactorGraph.Edge]))
-      def exactlyOnce(args:Seq[Boolean]) = if (args.count(identity) == 1) 0.0 else Double.NegativeInfinity
+      @Potential(new ExactlyOncePotential(_: Seq[FactorGraph.Edge]))
+      def exactlyOnce(args: Seq[Boolean]) = if (args.count(identity) == 1) 0.0 else Double.NegativeInfinity
 
-      def model(s:Sample) = exactlyOnce(for (i <- 0 until 5) yield s.pred(i))
+      def model(s: Sample) = exactlyOnce(for (i <- 0 until 5) yield s.pred(i))
 
-      val structuredFactor = MetaStructuredFactor.structuredFactor(space,model)
-      structuredFactor.factors.size should be (1)
+      val structuredFactor = MetaStructuredFactor.structuredFactor(space, model)
+      structuredFactor.factors.size should be(1)
       val factor = structuredFactor.factors.next()
-      factor.edges.length should be (5)
-      factor.potential shouldBe a [ExactlyOncePotential]
+      factor.edges.length should be(5)
+      factor.potential shouldBe a[ExactlyOncePotential]
 
     }
 
+    "create a factors for nested sums" in {
+      def ints = 0 until 3
+      def space = Wolfe.maps(ints x ints, ints)
+      def model(map: Map[(Int, Int), Int]) = sum(ints) { i => sum(ints) { j => I(map(i, j) == 1) } }
+      val structuredFactor = MetaStructuredFactor.structuredFactor(space, model)
+      structuredFactor mustBeIsomorphicTo model
+      structuredFactor.factors.size should be(3 * 3)
+    }
+
+    "create a factors for cartesian product sums" in {
+      def ints = 0 until 3
+      def space = Wolfe.maps(ints x ints, ints)
+      def model(map: Map[(Int, Int), Int]) = sum(ints x ints) { p => I(map(p) == 1) }
+      val structuredFactor = MetaStructuredFactor.structuredFactor(space, model)
+      structuredFactor mustBeIsomorphicTo model
+      structuredFactor.factors.size should be(3 * 3)
+    }
+
+    "create factors in quantified formulas with duplicate predicates " in {
+      def ints = 0 until 3
+      def space = Wolfe.maps(ints, ints)
+      def model(map: Map[Int, Int]) = sum(ints) { i => sum(ints) { j => I(map(i) == map(j)) } }
+      val structuredFactor = MetaStructuredFactor.structuredFactor(space, model)
+      structuredFactor mustBeIsomorphicTo model
+      structuredFactor.factors.size should be(9)
+    }
 
   }
 

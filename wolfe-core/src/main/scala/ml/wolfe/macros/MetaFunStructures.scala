@@ -15,6 +15,11 @@ trait MetaFunStructures[C<:Context] {
 
     self =>
 
+    /**
+     * @return the type of objects of the key.
+     */
+    def keyType: Type
+
     def keyDoms: List[Tree]
     def valueMetaStructure: MetaStructure
 
@@ -40,7 +45,13 @@ trait MetaFunStructures[C<:Context] {
         def replace(f: Tree, args: List[Tree]) = parent(f) match {
           //        case Apply(f, args) => parent(f) match {
           case Some(parentStructure) =>
-            val asIndices = for ((a, i) <- args zip keyIndexNames) yield q"${parentStructure.structure}.$i($a)"
+            val actualArgs = //args
+            //todo: if args contains a single element that is a tuple we need to break up the tuple.
+              if (args.size == 1 && keyDoms.size > 1) {
+              val arg = args.head
+              for ((_,i) <- keyDoms.zipWithIndex) yield q"$arg.${newTermName("_" + (i + 1))}"
+            } else args
+            val asIndices = for ((a, i) <- actualArgs zip keyIndexNames) yield q"${parentStructure.structure}.$i($a)"
             val substructure = curriedArguments(asIndices, q"${parentStructure.structure}.subStructures")
             Some(StructurePointer(substructure,valueMetaStructure))
           case _ => None
@@ -67,20 +78,20 @@ trait MetaFunStructures[C<:Context] {
 
     lazy val observeSubStructure = q"${curriedArguments(tmpIds)}.observe(value($tuple))"
 
-    def classDef(graphName: TermName) = {
+    def classDef(graphName: TermName, label:String) = {
       val iterator = substructureIterator(keyDoms.size)
-      val valueDef = valueMetaStructure.classDef(graphName)
+      val valueDef = valueMetaStructure.classDef(graphName, "???")
       q"""
-      final class $className extends Structure[$argType]{
+      final class $className extends ml.wolfe.macros.Structure[$argType]{
         $valueDef
         ..$domainDefs
         private var iterator:Iterator[Unit] = _
         val subStructures = Array.fill(..$keyDomSizes)(new ${valueMetaStructure.className})
-        def children() = subStructureIterator().map(_.asInstanceOf[Structure[Any]])
+        def children() = subStructureIterator().map(_.asInstanceOf[ml.wolfe.macros.Structure[Any]])
         def graph = $graphName
         def subStructureIterator() = $iterator
         def nodes() = subStructureIterator().flatMap(_.nodes())
-        def resetSetting() { iterator = Structure.settingsIterator(subStructureIterator().toList)()}
+        def resetSetting() { iterator = ml.wolfe.macros.Structure.settingsIterator(subStructureIterator().toList)()}
         def hasNextSetting = iterator.hasNext
         def nextSetting = iterator.next
         def setToArgmax() {subStructureIterator().foreach(_.setToArgmax())}

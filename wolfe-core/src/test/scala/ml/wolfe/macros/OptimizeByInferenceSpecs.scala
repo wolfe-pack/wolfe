@@ -55,26 +55,18 @@ class OptimizeByInferenceSpecs extends WolfeSpec {
 
 
     "use the algorithm in the maxBy annotation" in {
-      //todo: can we find a better way to check whether an annotation was used
-      case class Data(x: Boolean, y: Boolean, z: Boolean)
-      implicit def data = Wolfe.all(Data)
-      @OptimizeByInference(BeliefPropagation(_, 10))
-      def model(d: Data) = I(d.x && d.y) + I(d.y && !d.z) + I(d.z && !d.x)
-      @OptimizeByInference(BeliefPropagation(_, 2))
-      def twoIterations(d: Data) = model(d)
-      @OptimizeByInference(BeliefPropagation(_, 1))
-      def oneIteration(d: Data) = model(d)
-      val afterOneIter = argmax(data) { oneIteration }
-      val afterTwoIter = argmax(data) { twoIterations }
-      val afterTenIter = argmax(data) { model }
-      val expected = BruteForceOperators.argmax(data) { model }
-      afterOneIter should not be expected
-      afterTwoIter should be(expected)
-      afterTenIter should be(expected)
+      var usedAnnotation = false
+      def fun(fg:FactorGraph):Unit = usedAnnotation = true
+
+      @OptimizeByInference(fun)
+      def model(b:Boolean):Unit = I(b)
+      val b = argmax(bools) {model}
+
+      usedAnnotation should be(true)
     }
 
     "find the optimal solution of a linear chain" in {
-      def space = seqs(5, Range(0, 3))
+      def space = seqsOfLength(5, Range(0, 3))
       @OptimizeByInference(BeliefPropagation(_, 1))
       def potential(seq: Seq[Int]) = {
         val local = sum (0 until seq.size) (i => i * I(seq(i) == i))
@@ -126,7 +118,6 @@ class OptimizeByInferenceSpecs extends WolfeSpec {
       actual should be(expected)
 
     }
-
 
   }
 

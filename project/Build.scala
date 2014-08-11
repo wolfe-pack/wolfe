@@ -35,12 +35,12 @@ object ShellPrompt {
 object BuildSettings {
   val buildName         = "wolfe"
   val buildOrganization = "ml.wolfe"
-  val buildScalaVersion = "2.10.3"
+  val buildScalaVersion = "2.10.4"
 
   val buildSettings = Defaults.defaultSettings ++ Seq(
     organization := buildOrganization,
     scalaVersion := buildScalaVersion,
-    scalacOptions := Seq("unchecked", "deprecation"),
+    scalacOptions := Seq("-unchecked", "-deprecation", "-feature"),
     shellPrompt := ShellPrompt.buildShellPrompt,
     fork in run := true //use a fresh JVM for sbt run
   )
@@ -61,7 +61,7 @@ object BuildSettings {
   val coreDependencies = libraryDependencies ++= Seq(
     "net.sf.trove4j" % "trove4j" % "3.0.3",
     "com.nativelibs4java" %% "scalaxy-loops" % "0.3-SNAPSHOT" % "provided",
-    "cc.factorie" % "factorie" % "1.0.0-M7",
+    "cc.factorie" % "factorie" % "1.0",
     "org.scalamacros" %% "quasiquotes" % "2.0.0",
     "org.scalanlp" %% "breeze" % "0.8.1",
     "org.scalanlp" %% "breeze-natives" % "0.8.1"
@@ -72,7 +72,8 @@ object BuildSettings {
   )
 
   val nlpDependencies = libraryDependencies ++= Seq(
-    "edu.arizona.sista" % "processors" % "2.0"
+    "edu.arizona.sista" % "processors" % "2.0",
+    "org.scala-lang" %% "scala-pickling" % "0.8.0"
   )
 
   val publishSettings = Seq(

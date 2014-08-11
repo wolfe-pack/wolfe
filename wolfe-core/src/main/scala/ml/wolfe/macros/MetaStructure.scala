@@ -19,7 +19,7 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
    * @param structure the expression that refers to a structure.
    * @param meta the meta structure corresponding to the structure pointed to.
    */
-  case class StructurePointer(structure: Tree, meta: MetaStructure)
+  case class StructurePointer(structure: Tree, meta: MetaStructure, original:Option[Tree] = None)
 
   /**
    * Represents code that generates structures for a given sample space.
@@ -43,9 +43,10 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
      * @param graphName the structure class needs an underlying factor graph, and this parameter provides its name.
      *                  This means that when instantiating the structure class a factor graph with the given name needs
      *                  to be in scope.
+     * @param label Desription of what the structure represents (e.g. for use when displaying factor graph)
      * @return code that defines the structure class.
      */
-    def classDef(graphName: TermName): ClassDef
+    def classDef(graphName: TermName, label: String): ClassDef
 
     /**
      * @return the type of objects this structure represents (i.e. the type of objects in the sample space).
@@ -86,7 +87,7 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
     /**
      * @return does this type of structure only supports observed nodes.
      */
-    def observed:Boolean = false
+    def observed: Boolean = false
 
   }
 
@@ -95,16 +96,19 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
    * get all structures in expression.
    * @param tree the expression to search for structures in.
    * @param matchStructure the matcher to apply on sub-trees to
+   * @param varsToIgnore variables/symbols that shoudn't be considered when checking whether a structure has a function argument.
    * @return all structures in expression `tree`.
    */
-  def structures(tree: Tree, matchStructure: Tree => Option[StructurePointer]): List[StructurePointer] = {
+  def structures(tree: Tree,
+                 matchStructure: Tree => Option[StructurePointer],
+                 varsToIgnore: Set[Symbol] = Set.empty): List[StructurePointer] = {
     var result: List[StructurePointer] = Nil
     val traverser = new Traverser with WithFunctionStack {
       override def traverse(tree: Tree) = {
         pushIfFunction(tree)
         val tmp = matchStructure(tree) match {
-          case Some(structure) if !hasFunctionArgument(tree) =>
-            result ::= structure
+          case Some(structure) if !hasFunctionArgument(tree, varsToIgnore) =>
+            result ::= structure.copy(original = Some(tree))
           case _ =>
             super.traverse(tree)
         }
@@ -124,8 +128,8 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
    * @return the tree with injected structure.
    */
   def injectStructure(tree: Tree, matcher: Tree => Option[StructurePointer],
-                      replace:Tree => Tree = t => q"$t.value()",
-                      ignoreTermsWithFunctionArgs:Boolean = true) = {
+                      replace: Tree => Tree = t => q"$t.value()",
+                      ignoreTermsWithFunctionArgs: Boolean = true) = {
     val transformer = new Transformer {
       val functionStack = new mutable.Stack[Function]()
       override def transform(tree: Tree) = {
@@ -136,7 +140,7 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
         val result = matcher(tree) match {
           case Some(structure) => {
             //get symbols in tree
-            val symbols = tree.collect({case i: Ident => i}).map(_.name).toSet //todo: this shouldn't just be by name
+            val symbols = tree.collect({ case i: Ident => i }).map(_.name).toSet //todo: this shouldn't just be by name
             val hasFunctionArg = functionStack.exists(_.vparams.exists(p => symbols(p.name)))
             if (ignoreTermsWithFunctionArgs && hasFunctionArg)
               super.transform(tree)
@@ -167,6 +171,28 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
       q"{ $head.resetSetting();  while ($head.hasNextSetting) {  $head.nextSetting(); $inner } }"
   }
 
+  /**
+   * @param args a list of expressions corresponding to structures.
+   * @param block the code that should be executed in the loop.
+   * @return a code block that executes `block` for every setting of the given structure `args`, and
+   *         makes sure that no structure is incremented within two or more loops.
+   */
+  def loopSettingsNoDuplicates(args: List[StructurePointer], processed: List[StructurePointer] = Nil)(block: Tree): Tree = args match {
+    case Nil => block
+    case head :: tail =>
+      def differentTo(previous: List[StructurePointer]): Tree = previous match {
+        case Nil => q"true"
+        case headPrevious :: tailPrevious =>
+          if (headPrevious.meta.className != head.meta.className)
+            differentTo(tailPrevious)
+          else
+            q"${headPrevious.structure} != ${head.structure} && ${ differentTo(tailPrevious) }"
+      }
+      val check = differentTo(processed)
+      val inner = loopSettingsNoDuplicates(tail, head :: processed)(block)
+      q"{ if (!$check) {$inner} else { ${head.structure}.resetSetting();  while (${head.structure}.hasNextSetting) {  ${head.structure}.nextSetting(); $inner } } } "
+  }
+
 
   /**
    * Creates a matcher that checks for an identifier matching the given symbol, and then returns the
@@ -184,16 +210,14 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
   }
 
 
-
-
   object CartesianProduct {
-    def unapply(tree:Tree):Option[List[Tree]] = tree match {
+    def unapply(tree: Tree): Option[List[Tree]] = tree match {
       case q"$cross(..$sets)" if wolfeSymbols.crossProducts(cross.symbol) => Some(sets)
-      case q"$iter1.x[${_}]($iter2)" => iter1 match {
+      case q"$iter1.x[${ _ }]($iter2)" => iter1 match {
         case CartesianProduct(args) =>
           Some(args :+ iter2)
-        case q"$builder[${_}]($root)" if builder.symbol == wolfeSymbols.cartesianProductBuilder =>
-          Some(List(root,iter2))
+        case q"$builder[${ _ }]($root)" if builder.symbol == wolfeSymbols.cartesianProductBuilder =>
+          Some(List(root, iter2))
         case _ => None
       }
       case _ => None
@@ -209,14 +233,16 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
     //todo: assert that domain is an iterable
     //require(sampleSpace.tpe <:< scalaSymbols.iterableClass.typeSignature)
     sampleSpace match {
-      case q"$all[${_},$caseClassType]($unwrap[..${_}]($constructor))(${CartesianProduct(sets)})"
-        if all.symbol == wolfeSymbols.all && wolfeSymbols.unwraps(unwrap.symbol)  =>
+      case q"$all[${ _ },$caseClassType]($unwrap[..${ _ }]($constructor))(${ CartesianProduct(sets) })"
+        if all.symbol == wolfeSymbols.all && wolfeSymbols.unwraps(unwrap.symbol) =>
         metaCaseClassStructure(constructor, sets, caseClassType)
-      case q"$all[${_},$caseClassType]($constructor)(..$sets)"
+      case q"$all[${ _ },$caseClassType]($constructor)(..$sets)"
         if all.symbol == wolfeSymbols.all =>
         metaCaseClassStructure(constructor, sets, caseClassType)
-      case q"$pred[${_}]($keyDom)" if pred.symbol == wolfeSymbols.Pred =>
+      case q"$pred[${ _ }]($keyDom)" if pred.symbol == wolfeSymbols.Pred =>
         val valueDom = context.typeCheck(q"ml.wolfe.Wolfe.bools")
+        metaFunStructure(sampleSpace, keyDom, valueDom)
+      case q"$maps[${ _ },${ _ }]($keyDom,$valueDom)" if maps.symbol == wolfeSymbols.mapsSpace =>
         metaFunStructure(sampleSpace, keyDom, valueDom)
       case q"$seq($size,$dom)" if wolfeSymbols.fixedLengthSeqs == seq.symbol =>
         val typeOfArg = iterableArgumentType(sampleSpace)
@@ -240,11 +266,11 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
           case Some(inlined) => metaStructure(inlined)
           case None => sampleSpace.symbol match {
             case s if s == wolfeSymbols.doubles || s == wolfeSymbols.strings =>
-              new MetaObservedAtomicStructure {def domain = sampleSpace}
+              new MetaObservedAtomicStructure {def domain = sampleSpace }
             case s if sampleSpace.tpe.typeSymbol == wolfeSymbols.allClass =>
-              new MetaObservedAtomicStructure {def domain = sampleSpace}
+              new MetaObservedAtomicStructure {def domain = sampleSpace }
             case _ =>
-              new MetaAtomicStructure {def domain = sampleSpace}
+              new MetaAtomicStructure {def domain = sampleSpace }
           }
         }
     }
@@ -260,17 +286,26 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
     }
   }
 
-  def metaFunStructure(sampleSpace: Tree, keyDom: Tree, valueDom: Tree) = {
-    val keyDomains = keyDom match {
-      case q"$cross[..${_}](..$doms)" if wolfeSymbols.crosses(cross.symbol) => doms
-      case _ => List(keyDom)
+  def metaFunStructure(sampleSpace: Tree, keyDom: Tree, valueDom: Tree): MetaFunStructure = {
+    def getKeyDoms(dom: Tree): List[Tree] = dom match {
+      case CartesianProduct(doms) => doms
+      //todo: the line below is probably not needed anymore
+      case q"$cross[..${ _ }](..$doms)" if wolfeSymbols.crosses(cross.symbol) => doms
+      case _ => //List(dom)
+        inlineOnce(dom) match {
+          case Some(inlined) => getKeyDoms(inlined)
+          case _ => List(dom)
+        }
     }
+    val keyDomains = getKeyDoms(keyDom)
     val typeOfArg = iterableArgumentType(sampleSpace)
+    val typeOfKey = iterableArgumentType(keyDom)
     val valueStructure = metaStructure(valueDom)
     new MetaFunStructure {
       def argType = typeOfArg
       def valueMetaStructure = valueStructure
       def keyDoms = keyDomains
+      def keyType = typeOfKey
     }
   }
 
@@ -304,16 +339,16 @@ object MetaStructure {
     val graphName = newTermName("_graph")
     val structName = newTermName("structure")
     val structArgName = newTermName("structArg")
-    val cls = meta.classDef(graphName)
+    val cls = meta.classDef(graphName, "???")
     val q"($arg) => $rhs" = projection.tree
-    val root = helper.rootMatcher(arg.symbol, q"$structArgName.asInstanceOf[${meta.className}]", meta)
+    val root = helper.rootMatcher(arg.symbol, q"$structArgName.asInstanceOf[${ meta.className }]", meta)
     val injectedRhs = helper.injectStructure(rhs, meta.matcher(root))
 
-    val injectedProj = q"($structArgName:ml.wolfe.macros.Structure[${meta.argType}]) => $injectedRhs"
+    val injectedProj = q"($structArgName:ml.wolfe.macros.Structure[${ meta.argType }]) => $injectedRhs"
     val code = q"""
       val $graphName = new ml.wolfe.FactorGraph
       $cls
-      val $structName = new ${meta.className}
+      val $structName = new ${ meta.className }
       $graphName.setupNodes()
       ($structName,$injectedProj)
     """
@@ -331,16 +366,16 @@ object MetaStructure {
     val graphName = newTermName("_graph")
     val structName = newTermName("structure")
     val structArgName = newTermName("structArg")
-    val cls = meta.classDef(graphName)
+    val cls = meta.classDef(graphName, "???")
     val q"($arg) => $rhs" = projection.tree
-    val root = helper.rootMatcher(arg.symbol, q"$structArgName.asInstanceOf[${meta.className}]", meta)
+    val root = helper.rootMatcher(arg.symbol, q"$structArgName.asInstanceOf[${ meta.className }]", meta)
     val injectedRhs = helper.injectStructure(rhs, meta.matcher(root))
 
-    val injectedProj = q"($structArgName:ml.wolfe.macros.Structure[${meta.argType}]) => $injectedRhs"
+    val injectedProj = q"($structArgName:ml.wolfe.macros.Structure[${ meta.argType }]) => $injectedRhs"
     val code = q"""
       val $graphName = new ml.wolfe.FactorGraph
       $cls
-      val $structName = new ${meta.className}
+      val $structName = new ${ meta.className }
       ($structName,$injectedProj)
     """
     c.Expr[(Structure[T1], Structure[T1] => T2)](code)
@@ -352,11 +387,11 @@ object MetaStructure {
     val helper = new ContextHelper[c.type](c) with MetaStructures[c.type]
     val meta = helper.metaStructure(sampleSpace.tree)
     val graphName = newTermName("_graph")
-    val cls = meta.classDef(graphName)
+    val cls = meta.classDef(graphName, "???")
     val code = q"""
       val $graphName = new ml.wolfe.FactorGraph
       $cls
-      val structure = new ${meta.className}
+      val structure = new ${ meta.className }
       $graphName.setupNodes()
       structure
     """

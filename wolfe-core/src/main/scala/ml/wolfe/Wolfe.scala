@@ -2,7 +2,7 @@ package ml.wolfe
 
 import scala.language.implicitConversions
 import scala.util.Random
-import cc.factorie.WeightsSet
+import cc.factorie.model.WeightsSet
 import cc.factorie.optimize.Trainer
 import scala.annotation.StaticAnnotation
 import scala.collection.MapProxy
@@ -67,6 +67,8 @@ object Wolfe extends SampleSpaceDefs
     def -->(that: Boolean) = !b || that
     def <->(that: Boolean) = b == that
   }
+
+  def bernoulli(p:Double = 0.5)(coin:Boolean) = if (coin) math.log(p) else math.log1p(-p)
 
   def I(b: Boolean) = if (b) 1.0 else 0.0
 
@@ -247,8 +249,8 @@ trait SampleSpaceDefs {
     recurse(dom.toList, range.toList).toIterable
   }
 
-
-  def seqs[A](length: Int, dom: Iterable[A]): Iterable[Seq[A]] = {
+  /** Sequences over ''dom'' of fixed length ''length'' **/
+  def seqsOfLength[A](length: Int, dom: Iterable[A]): Iterable[Seq[A]] = {
     def recurse(l: Int, postfix: Iterable[List[A]] = Iterable(Nil)): Iterable[List[A]] =
       l match {
         case 0 => postfix
@@ -259,8 +261,9 @@ trait SampleSpaceDefs {
     recurse(length).map(_.toIndexedSeq)
   }
 
+  /** Sequences over ''dom'' up to length ''maxLength'' **/
   def seqs[A](dom: Iterable[A], maxLength: Int = 1000): Iterable[Seq[A]] = {
-    Range(0, maxLength + 1).view.flatMap(seqs(_, dom)).toList
+    Range(0, maxLength + 1).view.flatMap(seqsOfLength(_, dom)).toList
   }
 
   def seqs[A](doms: Seq[Iterable[A]]): Iterable[Seq[A]] = {
@@ -336,7 +339,7 @@ trait Annotations {
   class LogZByInference(inference: FactorGraph => Unit) extends StaticAnnotation
   class Atomic extends StaticAnnotation
   class Potential(construct: _ => ml.wolfe.fg.Potential) extends StaticAnnotation
-
+  class OutputFactorGraph(onGeneratedHtml: String => Unit) extends StaticAnnotation
 }
 
 trait ProblemBuilder {

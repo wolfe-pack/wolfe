@@ -13,8 +13,8 @@ resolvers ++= Seq(
   "Wolfe Snapshots" at "http://homeniscient.cs.ucl.ac.uk:8081/nexus/content/repositories/snapshots")
 
 libraryDependencies ++= Seq(
-  "ml.wolfe" %% "wolfe-core" % "0.1.0-SNAPSHOT",
-  "ml.wolfe" %% "wolfe-examples" % "0.1.0-SNAPSHOT"
+  "ml.wolfe" %% "wolfe-core" % "0.3.0-SNAPSHOT",
+  "ml.wolfe" %% "wolfe-examples" % "0.3.0-SNAPSHOT"
 )
 ```
 

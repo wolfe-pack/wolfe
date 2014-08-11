@@ -1,5 +1,7 @@
 package ml.wolfe
 
+import java.io.PrintWriter
+
 import cc.factorie.la.SingletonTensor
 import ml.wolfe.util.Multidimensional._
 
@@ -17,14 +19,35 @@ final class FactorGraph {
 
   import FactorGraph._
 
-  val edges   = new ArrayBuffer[Edge]
-  val nodes   = new ArrayBuffer[Node]
+  /**
+   * Edges from factors to nodes.
+   */
+  val edges = new ArrayBuffer[Edge]
+
+  /**
+   * Nodes that represent variables.
+   */
+  val nodes = new ArrayBuffer[Node]
+
+  /**
+   * Factors that capture model potentials.
+   */
   val factors = new ArrayBuffer[Factor]
 
   /**
-   * Stochastic factors can be
+   * factors used only to calculate expectations.
    */
-  val stochasticFactors = new ArrayBuffer[(Factor,()=>Seq[Node])]()
+  val expectationFactors = new ArrayBuffer[Factor]
+
+  /**
+   * Edges between expectation factors and nodes.
+   */
+  val expectationEdges = new ArrayBuffer[Edge]
+
+  /**
+   * Stochastic factors can sample their neighbors.
+   */
+  val stochasticFactors = new ArrayBuffer[(Factor, () => Seq[Node])]()
 
   /**
    * A flag that indicates whether the algorithm that uses this graph to find a solution has converged
@@ -48,12 +71,19 @@ final class FactorGraph {
   var gradient: FactorieVector = null
 
   /**
+   * Algorithms can use this variable to store expectations.
+   */
+  var expectations: FactorieVector = null
+
+  /**
    * Adds a node for a variable of domain size `dim`
    * @param dim size of domain of corresponding variable
+   * @param label description of what the variable represents
+   * @param domainLabels description of each element in the domain
    * @return the added node.
    */
-  def addNode(dim: Int) = {
-    val n = new Node(nodes.size, new DiscreteVar(dim))
+  def addNode(dim: Int, label:String = "", domainLabels:Seq[String]=Seq()) = {
+    val n = new Node(nodes.size, new DiscreteVar(dim, label, domainLabels))
     nodes += n
     n
   }
@@ -63,7 +93,7 @@ final class FactorGraph {
    * @param componentNodes the components of the tuple
    * @return the added tuple node.
    */
-  def addTupleNode(componentNodes:Array[Node]) = {
+  def addTupleNode(componentNodes: Array[Node]) = {
     val variable = new TupleVar(componentNodes)
     val n = new Node(nodes.size, variable)
     nodes += n
@@ -87,6 +117,21 @@ final class FactorGraph {
   }
 
   /**
+   * Adds an edge between an expectation factor and a node. This does not register
+   * the factor edge in the node!
+   * @param f factor to connect.
+   * @param n node to connect.
+   * @return the added edge.
+   */
+  def addExpectationEdge(f: Factor, n: Node, indexInFactor: Int): Edge = {
+    val e = new Edge(n, f, new DiscreteMsgs(n.variable.asDiscrete.dim))
+    e.indexInFactor = f.edgeCount
+    f.edgeCount += 1
+    expectationEdges += e
+    e
+  }
+
+  /**
    * Adds an edge between node and factor
    * @param f factor to connect.
    * @param n node to connect.
@@ -101,7 +146,7 @@ final class FactorGraph {
    * @param msgNodes the nodes relevant for f2n messages
    * @return the added edge.
    */
-  def addTupleEdge(f: Factor, n: Node, msgNodes:Array[Node]): Edge = {
+  def addTupleEdge(f: Factor, n: Node, msgNodes: Array[Node]): Edge = {
     val e = new Edge(n, f, new TupleMsgs(n.variable.asTuple.components, msgNodes.map(_.variable.asDiscrete)))
     e.indexInFactor = f.edgeCount
     n.edgeCount += 1
@@ -114,9 +159,19 @@ final class FactorGraph {
    * Creates a new factor, no potential assigned.
    * @return the created factor.
    */
-  def addFactor() = {
-    val f = new Factor(this, factors.size)
+  def addFactor(label:String = "") = {
+    val f = new Factor(this, factors.size, label)
     factors += f
+    f
+  }
+
+  /**
+   * Creates and adds a factor to be used for calculating expectations.
+   * @return the created factor.
+   */
+  def addExpectationFactor(label:String = "") = {
+    val f = new Factor(this, expectationFactors.size, label)
+    expectationFactors += f
     f
   }
 
@@ -124,17 +179,17 @@ final class FactorGraph {
    * Adds a factor whose nodes will be resampled.
    * @param sampleNodes a function that samples neighbors of the factor
    */
-  def addStochasticFactor(sampleNodes: =>Seq[Node]) {
+  def addStochasticFactor(sampleNodes: => Seq[Node]) {
     val f = addFactor()
-    stochasticFactors += f -> (() =>sampleNodes)
+    stochasticFactors += f -> (() => sampleNodes)
   }
 
   /**
    * Change the arguments of each stochastic factor.
    */
   def sampleFactors() {
-    for ((f,s) <- stochasticFactors) {
-      moveFactor(f,s())
+    for ((f, s) <- stochasticFactors) {
+      moveFactor(f, s())
     }
   }
 
@@ -192,6 +247,12 @@ final class FactorGraph {
       edge.f.edgeFilled += 1
       edge.n.edgeFilled += 1
     }
+    //expectation edges are not registered in nodes.
+    for (edge <- expectationEdges) {
+      if (edge.f.edges.length != edge.f.edgeCount) edge.f.edges = Array.ofDim[Edge](edge.f.edgeCount)
+      edge.f.edges(edge.indexInFactor) = edge
+      edge.f.edgeFilled += 1
+    }
   }
 
 
@@ -221,14 +282,14 @@ final class FactorGraph {
   /**
    * @return Is this factor graph loopy?
    */
-  def isLoopy:Boolean = {
+  def isLoopy: Boolean = {
     @tailrec
     def loopyAcc(remainingFactors: List[Factor], trees: Set[Set[Node]]): Boolean =
       remainingFactors match {
         case Nil => false
         case f :: tail => {
-          val neighbourTrees = f.edges.map{ e => trees.find(_ contains e.n) match { case Some(x) => x; case None => sys.error("Something went wrong in isLoopy!")} }.toSet
-          if(neighbourTrees.size != f.edges.length) true
+          val neighbourTrees = f.edges.map { e => trees.find(_ contains e.n) match { case Some(x) => x; case None => sys.error("Something went wrong in isLoopy!") } }.toSet
+          if (neighbourTrees.size != f.edges.length) true
           else {
             val newTrees = trees -- neighbourTrees + neighbourTrees.reduce(_ ++ _)
             loopyAcc(tail, newTrees)
@@ -242,41 +303,80 @@ final class FactorGraph {
    * Render a graphic of this factor graph
    * @param showMessages whether to include message passing on the graphic
    */
-  def displayAsGraph(showMessages:Boolean = false) {
-    def nodeString(n:Node) = n.variable match {
-      case v:TupleVar => v.componentNodes.map(_.index.toString).mkString("(", ",", ")")
+  def d3Code : String = {
+    /*def nodeString(n: Node) = n.variable match {
+      case v: TupleVar => v.componentNodes.map(_.index.toString).mkString("(", ",", ")")
       case _ => n.index.toString
     }
-    def factorString(f:Factor) = f.edges.map(e => nodeString(e.n)).mkString("(",",",")") + "\n" + f.potential.toVerboseString(DefaultPrinter)
-    def shortArr[T](array:Array[T]) = array.map(_.toString.take(4)).mkString("(", ",", ")")
-    def edgeString(e:Edge) = e.msgs match {
-      case m:TupleMsgs => "n2f: " + m.n2f.toString + "\nf2n:" + m.f2n.toString
-      case m:DiscreteMsgs => "n2f: " + shortArr(m.n2f)  + "\nf2n:" + shortArr(m.f2n.array)
+    def factorString(f: Factor) = f.edges.map(e => nodeString(e.n)).mkString("(", ",", ")") + "\n" + f.potential.toVerboseString(DefaultPrinter)
+    def shortArr[T](array: Array[T]) = array.map(_.toString.take(4)).mkString("(", ",", ")")
+    def edgeString(e: Edge) = e.msgs match {
+      case m: TupleMsgs => "n2f: " + m.n2f.toString + "\nf2n:" + m.f2n.toString
+      case m: DiscreteMsgs => "n2f: " + shortArr(m.n2f) + "\nf2n:" + shortArr(m.f2n.array)
       case _ => ""
     }
     val fgv = new ml.wolfe.FactorGraphViewer()
     val factorVertices = factors.map(f => f.potential match {
-      case p:GroupPotential =>
+      case p: GroupPotential =>
         val x = fgv.addGroupFactor(factorString(f))
-        for(g <- p.components) {
+        for (g <- p.components) {
           fgv.addEdge(fgv.addFactor(factorString(g)), x)
         }
         f -> x
-      case p:TupleConsistencyPotential => f -> fgv.addGroupFactor(factorString(f))
+      case p: TupleConsistencyPotential => f -> fgv.addGroupFactor(factorString(f))
       case _ => f -> fgv.addFactor(factorString(f))
     }).toMap
     val nodeVertices = nodes.map(n => n -> fgv.addNode(nodeString(n))).toMap
 
-    if(showMessages)
-      for(e <- edges) fgv.addEdge(nodeVertices(e.n), factorVertices(e.f), edgeString(e))
+    if (showMessages)
+      for (e <- edges) fgv.addEdge(nodeVertices(e.n), factorVertices(e.f), edgeString(e))
     else
-      for(e <- edges) fgv.addEdge(nodeVertices(e.n), factorVertices(e.f))
+      for (e <- edges) fgv.addEdge(nodeVertices(e.n), factorVertices(e.f))
 
     fgv.addTextbox("Value = " + value.toString())
-    if(weights != null) fgv.addTextbox("Weights = " + weights.toString())
-    if(gradient != null) fgv.addTextbox("Gradient = " + gradient.toString())
+    if (weights != null) fgv.addTextbox("Weights = " + weights.toString())
+    if (gradient != null) fgv.addTextbox("Gradient = " + gradient.toString())
 
-    fgv.render()
+    fgv.render()*/
+
+
+    def escape(s:String) =
+      s.replace("\n","\\n").replace("\'", "\\\'")
+
+    var code =  s"""
+        |<script>
+        |var graph = {
+        |  "nodes": [${(
+              nodes.map(n =>
+                     "{text:'" + escape(n.variable.label) + "'" +
+              ", hoverhtml:'Domain: {" + n.variable.asDiscrete.domainLabels.mkString(", ") + "}'" +
+              "}") ++
+              factors.map(f =>
+                "{shape: 'square'" +
+                ", hoverhtml:'" + "<div class=\"tooltipheader\">" + escape(f.label) + "</div>" +
+                  escape(f.potential.toVerboseString(DefaultPrinter)) + "'" +
+              "}")
+          ).mkString(", ")}
+        |  ],
+        |  "links": [
+        |    ${edges.map(e =>
+                "{'source': " + e.n.index + ", 'target': " + (e.f.index + nodes.length) + "}"
+              ) mkString ", "}
+        |  ]
+        |}
+        |</script>
+        |
+        |
+        |
+        |<link rel="stylesheet" type="text/css" href="fg.css" />
+        |	<script src="http://d3js.org/d3.v3.min.js"></script>
+        |
+        |<body>
+        |	<script src="fg.js"></script>
+        |</body>
+      """.stripMargin
+
+    code
   }
 
 }
@@ -289,7 +389,7 @@ object FactorGraph {
    * @param index the index of the node.
    * @param variable the variable the node is representing.
    */
-  final class Node(val index: Int, var variable:Var) {
+  final class Node(val index: Int, var variable: Var) {
     /* all edges to factors that this node is connected to */
     var edges: Array[Edge] = Array.ofDim(0)
 
@@ -355,7 +455,7 @@ object FactorGraph {
    * @param fg the factor graph.
    * @param index the index/id of the factor
    */
-  final class Factor(val fg: FactorGraph, val index: Int) {
+  final class Factor(val fg: FactorGraph, val index: Int, val label:String = "") {
     var edges: Array[Edge] = Array.ofDim(0)
 
     def numNeighbors = edges.size
@@ -398,29 +498,53 @@ object FactorGraph {
   }
 
 
+  object EdgeDirection extends Enumeration {
+    type EdgeDirection = Value
+    val N2F, F2N = Value
+  }
+  import EdgeDirection._
+  case class DirectedEdge(edge:Edge, direction:EdgeDirection) {
+    def f = edge.f
+    def n = edge.n
+    def swap = DirectedEdge(edge, if(direction == N2F) F2N else N2F)
+  }
+
   /**
    * A scheduler provides a canonical ordering of edges such that it resembles the message ordering of forward-backward.
    */
   trait MPScheduler {
+
     /**
      * @param node root node
-     * @return correct message ordering for forward-backward pass
+     * @return correct message ordering for forward pass
      */
-    def schedule(node: Node): Seq[Edge]
+    def scheduleForward(node: Node): Seq[DirectedEdge]
+
+    def schedule(node:Node):Seq[DirectedEdge] = {
+      val forward = scheduleForward(node)
+      val backward = forward.reverse.map(_.swap)
+      forward ++ backward
+    }
 
     /**
      * Runs scheduler on all disconnected components of the graph
      * @param graph factor graph with (possibly) disconnected components
      * @return schedule for forward-backward over all disconnected components of the graph
      */
-    def schedule(graph: FactorGraph): Seq[Edge] = {
+    def schedule(graph: FactorGraph):Seq[DirectedEdge] = {
+      val forward = scheduleForward(graph)
+      val backward = forward.reverse.map(_.swap)
+      forward ++ backward
+    }
+
+    def scheduleForward(graph: FactorGraph): Seq[DirectedEdge] = {
       @tailrec
-      def scheduleAcc(nodes: Seq[Node], done: Set[Node], acc: Seq[Edge]): Seq[Edge] = nodes match {
+      def scheduleAcc(nodes: Seq[Node], done: Set[Node], acc: Seq[DirectedEdge]): Seq[DirectedEdge] = nodes match {
         case Nil => acc
         case head :: tail =>
           if (done.contains(head)) scheduleAcc(tail, done, acc)
           else {
-            val edges = schedule(head)
+            val edges = scheduleForward(head)
             scheduleAcc(tail, done ++ edges.map(_.n), acc ++ edges)
           }
       }
@@ -428,53 +552,41 @@ object FactorGraph {
       scheduleAcc(graph.nodes.toList, Set(), Seq())
     }
 
-    def schedule(factor: Factor): Seq[Edge] = schedule(factor.edges.head)
+    def schedule(factor: Factor): Seq[DirectedEdge] = schedule(factor.edges.head)
 
-    def schedule(edge: Edge): Seq[Edge] = schedule(edge.n)
+    def schedule(edge: Edge): Seq[DirectedEdge] = schedule(edge.n)
   }
 
   object MPSchedulerImpl extends MPScheduler {
-    object MPDirection extends Enumeration {
-      val Forward, Backward = Value
-    }
-
     /**
-     * @param e edge whose node will become the root node
-     * @param direction whether calculating forward or backward pass
+     * @param node The node which will become the root node
      * @return correct ordering for messaging pass for given direction (excluding the staring edge)
      */
-    def schedule(e: Edge, direction: MPDirection.Value, done: Set[Edge] = Set()): Seq[Edge] = {
+    def scheduleForward(node: Node) : Seq[DirectedEdge] = {
       @tailrec
-      def scheduleAcc(todo: Seq[Edge], done: Set[Edge], acc: Seq[Edge]): Seq[Edge] = todo match {
-        case Nil => acc
-        case head :: tail =>
-          if (head.f.edgeCount == 1 || done.contains(head)) scheduleAcc(tail, done, acc)
-          else {
-            val siblings = head.f.edges.filterNot(todo.contains)
-            val nephews = siblings.flatMap(sibling => sibling.n.edges.filterNot(_ == sibling))
-            direction match {
-              case MPDirection.Forward => scheduleAcc(tail ++ nephews, done + head, nephews ++ acc)
-              case MPDirection.Backward => scheduleAcc(tail ++ nephews, done + head, acc ++ siblings)
+      def scheduleAcc(todo: List[DirectedEdge], done: Set[Edge], acc: Seq[DirectedEdge]): Seq[DirectedEdge] =
+        todo match {
+          case Nil => acc
+          case head :: tail =>
+            if (done.contains(head.edge)) scheduleAcc(tail, done, acc)
+            else {
+              val parents = head.direction match {
+                case EdgeDirection.N2F => head.n.edges.
+                                          filterNot(e => e == head.edge || todo.view.map(_.edge).contains(e)).
+                                          map(DirectedEdge(_, EdgeDirection.F2N))
+                case EdgeDirection.F2N => head.f.edges.
+                                          filterNot(e => e == head.edge || todo.view.map(_.edge).contains(e)).
+                                          map(DirectedEdge(_, EdgeDirection.N2F))
+              }
+
+              scheduleAcc(tail ++ parents, done + head.edge, parents ++ acc)
             }
-          }
-      }
-      scheduleAcc(Seq(e), done, Seq())
+        }
+      val firstEdges = node.edges.map(DirectedEdge(_, EdgeDirection.F2N)).toList
+      scheduleAcc(firstEdges, Set(), firstEdges)
     }
 
-    override def schedule(node: Node): Seq[Edge] = {
-      @tailrec
-      def forwardBackward(edges: Seq[Edge], done: Set[Edge], acc: Seq[Edge]): Seq[Edge] = edges.toList match {
-        case Nil => acc
-        case head :: tail =>
-          val forward = schedule(head, MPDirection.Forward, done)
-          val backward = schedule(head, MPDirection.Backward, done)
-          val rest = tail.filterNot(e => forward.contains(e) || backward.contains(e))
-          val middle = if (forward.contains(head) || backward.contains(head)) Nil else Seq(head)
-          forwardBackward(rest, done ++ forward ++ backward, forward ++ middle ++ acc ++ backward)
-      }
 
-      forwardBackward(node.edges, Set(), Seq())
-    }
   }
 
   /**
@@ -494,14 +606,29 @@ object FactorGraph {
       case _ => ""
     }
     def factor2String(factor: Factor) = factor.potential match {
-      case p:TuplePotential => p.baseNodes.map(_.index.toString).mkString("(", ",", ")")
+      case p: TuplePotential => p.baseNodes.map(_.index.toString).mkString("(", ",", ")")
       case _ => ""
     }
     def vector2String(vector: ml.wolfe.FactorieVector) = vector match {
-      case v:SingletonVector => v.singleIndex + " -> " + v.singleValue
+      case v: SingletonVector => v.singleIndex + " -> " + v.singleValue
       case _ => vector.toString()
     }
   }
+
+
+  /**
+   * A mutable store for factor graphs. Can be combined with an inference method when
+   * we want to expect the factor graph that the inference method used.
+   */
+  trait Store extends (FactorGraph => FactorGraph) {
+    var factorGraph:FactorGraph = _
+    def apply(v1: FactorGraph) = {
+      factorGraph = v1
+      factorGraph
+    }
+  }
+
+  object Store extends Store
 
 }
 

@@ -1,6 +1,93 @@
 package ml.wolfe
 
 import ml.wolfe.FactorGraph.{Node, Factor}
+import scalaxy.loops._
+
+/**
+ * Dual decomposition with projected subgradient, AD3, ..
+ *
+ * @author luke
+ */
+object DualDecomposition {
+
+  /** Alternating Directions Dual Decomposition **/
+  def ad3(fg:FactorGraph, maxIteration: Int, stepSize: Double = 0.1, parallelize: Boolean = true):Unit = {
+    apply(fg, maxIteration, _ => stepSize, parallelize, ad3 = true)
+  }
+
+
+
+  /**
+   * Run dual decomposition on a factor graph and sets the MAP assignment to the belief variable of each node in the
+   * graph
+   * @param fg The message passing factor graph
+   * @param maxIteration The maximum number of iterations after which the algorithm gives up
+   * @param stepSize A function that gives the step size at each iteration. Defaults to defaultStepSize
+   * @param parallelize A flag that indicates that each factor's inference can be run in parallel. Defaults to true
+   */
+  def apply(fg: FactorGraph, maxIteration: Int, stepSize: Int => Double = t => 1 / math.sqrt(t + 1),
+            parallelize: Boolean = true, ad3:Boolean = false):Unit = {
+    val factors = if (parallelize) fg.factors.par else fg.factors
+
+    fg.converged = false
+
+    initializeN2FAndBeliefs(fg)
+
+    for (iter <- 0 until maxIteration if !fg.converged) {
+      //todo: dynamically adjust QP step size (page 13)
+      for(f <- factors) if(ad3) f.potential.quadraticProgramF2N(stepSize(iter), 10) else f.potential.mapF2N()
+      for(n <- fg.nodes) n.variable.updateAverageBelief(n)
+      for(n <- fg.nodes; e <- n.edges) n.variable.updateDualN2F(e, stepSize(iter))
+
+      fg.converged = hasConverged(fg)
+
+    }
+  }
+
+  private def initializeN2FAndBeliefs(fg: FactorGraph) : Unit = {
+    for (factor <- fg.factors;
+         edge <- factor.edges) {
+      val m = edge.msgs.asDiscrete
+      for (i <- 0 until m.n2f.size)
+        m.n2f(i) = 0
+
+      val v = edge.n.variable.asDiscrete
+      val p = 1d / v.b.size
+      for (i <- 0 until v.b.size)
+        v.b(i) = p
+    }
+  }
+
+
+  /**
+   * Checks if for every factor, the nodes that are shared with another factor have consistent beliefs.
+   *
+   * @param fg The factor graph
+   * @return
+   */
+  private def hasConverged(fg: FactorGraph): Boolean = {
+    var hasConverged = true
+
+    for (factor <- fg.factors; if hasConverged) {
+      for (edge <- factor.edges;
+           otherEdge <- edge.n.edges
+           if otherEdge != edge
+           if hasConverged) {
+
+        hasConverged = MoreArrayOps.approxEqual(edge.msgs.asDiscrete.f2n, otherEdge.msgs.asDiscrete.f2n)
+
+      }
+    }
+    hasConverged
+  }
+}
+
+
+
+
+/*package ml.wolfe
+
+import ml.wolfe.FactorGraph.{Node, Factor}
 
 /**
  * Run dual decomposition on a message passing graph.
@@ -185,4 +272,4 @@ object DualDecomposition {
       }
     }
   }
-}
+}*/
