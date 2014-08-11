@@ -1,5 +1,6 @@
 package ml.wolfe.examples
 
+import ml.wolfe.Wolfe
 import ml.wolfe.Wolfe._
 import ml.wolfe.util.NLP._
 
@@ -10,39 +11,39 @@ import scala.util.matching.Regex
  */
 object NERFeatures {
 
-  def apply(token:Token, prefix:String = "") = (
-    funFeatures.map({ case (sym:Symbol, fun:(Token => String)) =>
-      oneHot(prefix + sym -> fun(token))
-    }) ++
-    regexFeatures.map({ case (sym:Symbol, reg:Regex) =>
-      oneHot(prefix + sym, I(reg.pattern.matcher(token.toString).matches))
-    }) ++
-    boolFunFeatures.map({ case (sym:Symbol, fun:(Token => Boolean)) =>
-      oneHot(prefix + sym, I(fun(token)))
-    })
-  ).reduce(_+_)
+  val allFeatures = funFeatures ++ boolFeatures ++ rubbishRegexFeatures
 
+  def apply(token:Token, prefix:String = "") = allFeatures.foldLeft( Wolfe.Vector() ){
+    (acc, f) => acc + f(token, prefix)
+  }
 
-
-  val AminoAcidShortString = "Ala|Arg|Asn|Asp|Cys|Gln|Glu|Gly|His|Ile|Leu|Lys|Met|Phe|Pro|Ser|Thr|Trp|T.r,|Val|" +
-  "Ter|Sec|Pyl|Asx|Glx|Xle|Xaa"
-
-
-  val funFeatures = Seq[(Symbol, Token => String)](
-    'word -> (t => t.word),
-    'prefix2 -> (t => t.word.take(2)),
-    'suffix2 -> (t => t.word.takeRight(2))
-  ).view
-
-  val regexFeatures = Seq[(Symbol, Regex)](
+  def rubbishRegexFeatures = Seq[(Symbol, Regex)](
     'allCap     -> "[A-Z]+".r,
     'realNumber -> "[-0-9]+[.,]+[0-9.,]+".r,
     'isDash     -> "[-–—−]".r,
     'isQuote    -> "[„“””‘’\"']".r,
     'isSlash    -> "[/\\\\]".r
-  ).view
+  ).map({ case (sym:Symbol, reg:Regex) =>
+    (token:Token, prefix:String) => oneHot(prefix + sym, I(reg.pattern.matcher(token.toString).matches))
+  })
 
-  val regexFeaturesASDF = Seq[(Symbol, Regex)](
+
+
+  // -----------------------------------
+
+  val AminoAcidShortString = "Ala|Arg|Asn|Asp|Cys|Gln|Glu|Gly|His|Ile|Leu|Lys|Met|Phe|Pro|Ser|Thr|Trp|T.r,|Val|" +
+  "Ter|Sec|Pyl|Asx|Glx|Xle|Xaa"
+
+
+  def funFeatures = Seq[(Symbol, Token => String)](
+    'word -> (t => t.word),
+    'prefix2 -> (t => t.word.take(2)),
+    'suffix2 -> (t => t.word.takeRight(2))
+  ).map({ case (sym:Symbol, fun:(Token => String)) =>
+    (token:Token, prefix:String) => oneHot(prefix + sym -> fun(token))
+  })
+
+  def regexFeatures = Seq[(Symbol, Regex)](
 
     //taken from BANNER
     'Alpha -> "[A-Za-z]+".r,
@@ -121,11 +122,12 @@ object NERFeatures {
 
     'AminoAcidAndPosition -> (AminoAcidShortString + "[0-9]+").r, //TODO, e.g., Ser150
     'Vowel -> "a|e|i|o|u|A|E|I|O|U".r
-  ).view
+  ).map({ case (sym:Symbol, reg:Regex) =>
+    (token:Token, prefix:String) => oneHot(prefix + sym, I(reg.pattern.matcher(token.toString).matches))
+  })
 
-
-  val boolFunFeatures = Seq[(Symbol,Token => Boolean)] (
-    /*'EndCap     -> (t => t.word.last.isUpper),
+  def boolFeatures = Seq[(Symbol,Token => Boolean)] (
+    'EndCap     -> (t => t.word.last.isUpper),
     'SingleCap  -> (t => t.word.count(_.isUpper) == 1),
     'TwoCap     -> (t => t.word.count(_.isUpper) == 2 && t.word.size == 2),
     'ThreeCap   -> (t => t.word.count(_.isUpper) == 3 && t.word.size == 3),
@@ -133,7 +135,8 @@ object NERFeatures {
     Symbol("WORD_LENGTH=1") -> (t => t.word.size == 1),
     Symbol("WORD_LENGTH=2") -> (t => t.word.size == 2),
     Symbol("WORD_LENGTH=3-5") -> (t => t.word.size >= 3 && t.word.size <= 5),
-    Symbol("WORD_LENGTH=6+") -> (t => t.word.size >= 6)*/
-  ).view
-
+    Symbol("WORD_LENGTH=6+") -> (t => t.word.size >= 6)
+  ).map({ case (sym:Symbol, fun:(Token => Boolean)) =>
+    (token:Token, prefix:String) => oneHot(prefix + sym, I(fun(token)))
+  })
 }
