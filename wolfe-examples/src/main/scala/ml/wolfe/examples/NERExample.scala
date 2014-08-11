@@ -81,7 +81,7 @@ object NERExample {
   def learn(data: Iterable[Sentence]) = argmin(vectors) { loss(data) }
 
   def main(args: Array[String]) {
-    val useSample = true/*if (args.length > 0) args(0).toBoolean else false*/
+    val useSample = if (args.length > 0) args(0).toBoolean else false
 
     val start = System.currentTimeMillis()
 
