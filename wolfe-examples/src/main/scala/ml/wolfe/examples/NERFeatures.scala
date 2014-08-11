@@ -11,22 +11,10 @@ import scala.util.matching.Regex
  */
 object NERFeatures {
 
-  val allFeatures = funFeatures ++/* boolFeatures ++ */rubbishRegexFeatures
+  val allFeatures = funFeatures ++ boolFeatures ++ rubbishRegexFeatures
 
-  /*def apply(token:Token, prefix:String = "") = allFeatures.foldLeft( Wolfe.Vector() ){
+  def apply(token:Token, prefix:String = "") = allFeatures.foldLeft( Wolfe.Vector() ){
     (acc, f) => acc + f(token, prefix)
-  }*/
-
-  def apply(token: Token, prefix: String = ""): Wolfe.Vector = {
-    oneHot(prefix + 'word -> token.word.toLowerCase) +
-    oneHot(prefix + 'prefix2 -> token.word.take(2)) +
-    oneHot(prefix + 'suffix2 -> token.word.takeRight(2)) +
-    oneHot(prefix + 'firstCap, I(token.word.head.isUpper)) +
-    oneHot(prefix + 'allCap, I(token.word.matches("[A-Z]+"))) +
-    oneHot(prefix + 'realNumber, I(token.word.matches("[-0-9]+[.,]+[0-9.,]+"))) +
-    oneHot(prefix + 'isDash, I(token.word.matches("[-–—−]"))) +
-    oneHot(prefix + 'isQuote, I(token.word.matches("[„“””‘’\"']"))) +
-    oneHot(prefix + 'isSlash, I(token.word.matches("[/\\\\]")))
   }
 
   def rubbishRegexFeatures = Seq[(Symbol, Regex)](
@@ -36,7 +24,7 @@ object NERFeatures {
     'isQuote    -> "[„“””‘’\"']".r,
     'isSlash    -> "[/\\\\]".r
   ).map({ case (sym:Symbol, reg:Regex) =>
-    (token:Token, prefix:String) => oneHot(prefix + sym, I(reg.pattern.matcher(token.toString).matches))
+    (token:Token, prefix:String) => oneHot(prefix + sym, I(reg.pattern.matcher(token.word).matches))
   })
 
 
@@ -135,7 +123,7 @@ object NERFeatures {
     'AminoAcidAndPosition -> (AminoAcidShortString + "[0-9]+").r, //TODO, e.g., Ser150
     'Vowel -> "a|e|i|o|u|A|E|I|O|U".r
   ).map({ case (sym:Symbol, reg:Regex) =>
-    (token:Token, prefix:String) => oneHot(prefix + sym, I(reg.pattern.matcher(token.toString).matches))
+    (token:Token, prefix:String) => oneHot(prefix + sym, I(reg.pattern.matcher(token.word).matches))
   })
 
   def boolFeatures = Seq[(Symbol,Token => Boolean)] (
