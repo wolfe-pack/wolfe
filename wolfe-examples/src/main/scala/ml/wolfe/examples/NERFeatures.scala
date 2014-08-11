@@ -10,14 +10,22 @@ import scala.util.matching.Regex
  */
 object NERFeatures {
 
-  def apply(token:Token, prefix:String = "") = (
+  def apply(token:Token, prefix:String = "") = oneHot(prefix + 'word -> token.word.toLowerCase) +
+  oneHot(prefix + 'firstCap, I(token.word.head.isUpper)) +
+  oneHot(prefix + 'allCap, I(token.word.matches("[A-Z]+"))) +
+  oneHot(prefix + 'realNumber, I(token.word.matches("[-0-9]+[.,]+[0-9.,]+"))) +
+  oneHot(prefix + 'isDash, I(token.word.matches("[-–—−]"))) +
+  oneHot(prefix + 'isQuote, I(token.word.matches("[„“””‘’\"']"))) +
+  oneHot(prefix + 'isSlash, I(token.word.matches("[/\\\\]"))) +
+  oneHot(prefix + 'prefix2 -> token.word.take(2)) +
+  oneHot(prefix + 'suffix2 -> token.word.takeRight(2))/*(
     regexFeatures.map({ case (sym:Symbol, reg:Regex) =>
       oneHot(prefix + sym, I(reg.pattern.matcher(token.toString).matches))
     }) ++
     boolFunFeatures.map({ case (sym:Symbol, fun:(Token => Boolean)) =>
       oneHot(prefix + sym, I(fun(token)))
     })
-  ).reduce(_+_)
+  ).reduce(_+_)*/
 
 
 

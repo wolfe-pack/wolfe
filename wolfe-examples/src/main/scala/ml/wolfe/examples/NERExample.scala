@@ -30,7 +30,7 @@ object NERExample {
   implicit val labels        = Seq("O", "B-protein", "I-protein", "B-cell_type", "I-cell_type", "B-DNA", "I-DNA",
     "B-cell_line", "I-cell_line", "B-RNA", "I-RNA").map(t => Tag(Symbol(t)))
 
-  /*@Atomic
+  @Atomic
   def tokenToFeatures(token: Token, prefix: String = ""): Wolfe.Vector = {
     oneHot(prefix + 'word -> token.word.toLowerCase) +
     oneHot(prefix + 'firstCap, I(token.word.head.isUpper)) +
@@ -41,7 +41,7 @@ object NERExample {
     oneHot(prefix + 'isSlash, I(token.word.matches("[/\\\\]"))) +
     oneHot(prefix + 'prefix2 -> token.word.take(2)) +
     oneHot(prefix + 'suffix2 -> token.word.takeRight(2))
-  }*/
+  }
 
   @Atomic
   def tokenToFeatures(token: Token, prefix: String = ""): Wolfe.Vector = NERFeatures(token, prefix)
@@ -75,7 +75,7 @@ object NERExample {
   def model(w: Vector)(s: Sentence) = w dot features(s)
   def predictor(w: Vector)(s: Sentence) = argmax(Sentences where evidence(observed)(s)) { model(w) }
 
-  @OptimizeByLearning(new OnlineTrainer(_, new AveragedPerceptron, 20, 1))
+  @OptimizeByLearning(new OnlineTrainer(_, new Perceptron, 20, 1))
   def loss(data: Iterable[Sentence])(w: Vector) = sum(data) { s => model(w)(predictor(w)(s)) - model(w)(s) }
   def learn(data: Iterable[Sentence]) = argmin(vectors) { loss(data) }
 
