@@ -11,7 +11,7 @@ import scala.util.matching.Regex
  */
 object NERFeatures {
 
-  val allFeatures = funFeatures ++ boolFeatures ++ rubbishRegexFeatures
+  val allFeatures = funFeatures ++/* boolFeatures ++ */rubbishRegexFeatures
 
   def apply(token:Token, prefix:String = "") = allFeatures.foldLeft( Wolfe.Vector() ){
     (acc, f) => acc + f(token, prefix)
