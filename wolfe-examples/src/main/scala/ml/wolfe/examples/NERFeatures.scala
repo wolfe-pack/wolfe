@@ -32,7 +32,7 @@ object NERFeatures {
     'word -> (t => t.word),
     'prefix2 -> (t => t.word.take(2)),
     'suffix2 -> (t => t.word.takeRight(2))
-  )
+  ).view
 
   val regexFeatures = Seq[(Symbol, Regex)](
     'allCap     -> "[A-Z]+".r,
@@ -40,7 +40,7 @@ object NERFeatures {
     'isDash     -> "[-–—−]".r,
     'isQuote    -> "[„“””‘’\"']".r,
     'isSlash    -> "[/\\\\]".r
-  )
+  ).view
 
   val regexFeaturesASDF = Seq[(Symbol, Regex)](
 
@@ -121,7 +121,7 @@ object NERFeatures {
 
     'AminoAcidAndPosition -> (AminoAcidShortString + "[0-9]+").r, //TODO, e.g., Ser150
     'Vowel -> "a|e|i|o|u|A|E|I|O|U".r
-  )
+  ).view
 
 
   val boolFunFeatures = Seq[(Symbol,Token => Boolean)] (
@@ -134,6 +134,6 @@ object NERFeatures {
     Symbol("WORD_LENGTH=2") -> (t => t.word.size == 2),
     Symbol("WORD_LENGTH=3-5") -> (t => t.word.size >= 3 && t.word.size <= 5),
     Symbol("WORD_LENGTH=6+") -> (t => t.word.size >= 6)*/
-  )
+  ).view
 
 }
