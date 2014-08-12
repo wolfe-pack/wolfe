@@ -299,53 +299,15 @@ final class FactorGraph {
     loopyAcc(factors.toList, nodes.map(Set(_)).toSet)
   }
 
-  /**
-   * Render a graphic of this factor graph
-   * @param showMessages whether to include message passing on the graphic
-   */
+
   def d3Code : String = {
-    /*def nodeString(n: Node) = n.variable match {
-      case v: TupleVar => v.componentNodes.map(_.index.toString).mkString("(", ",", ")")
-      case _ => n.index.toString
-    }
-    def factorString(f: Factor) = f.edges.map(e => nodeString(e.n)).mkString("(", ",", ")") + "\n" + f.potential.toVerboseString(DefaultPrinter)
-    def shortArr[T](array: Array[T]) = array.map(_.toString.take(4)).mkString("(", ",", ")")
-    def edgeString(e: Edge) = e.msgs match {
-      case m: TupleMsgs => "n2f: " + m.n2f.toString + "\nf2n:" + m.f2n.toString
-      case m: DiscreteMsgs => "n2f: " + shortArr(m.n2f) + "\nf2n:" + shortArr(m.f2n.array)
-      case _ => ""
-    }
-    val fgv = new ml.wolfe.FactorGraphViewer()
-    val factorVertices = factors.map(f => f.potential match {
-      case p: GroupPotential =>
-        val x = fgv.addGroupFactor(factorString(f))
-        for (g <- p.components) {
-          fgv.addEdge(fgv.addFactor(factorString(g)), x)
-        }
-        f -> x
-      case p: TupleConsistencyPotential => f -> fgv.addGroupFactor(factorString(f))
-      case _ => f -> fgv.addFactor(factorString(f))
-    }).toMap
-    val nodeVertices = nodes.map(n => n -> fgv.addNode(nodeString(n))).toMap
-
-    if (showMessages)
-      for (e <- edges) fgv.addEdge(nodeVertices(e.n), factorVertices(e.f), edgeString(e))
-    else
-      for (e <- edges) fgv.addEdge(nodeVertices(e.n), factorVertices(e.f))
-
-    fgv.addTextbox("Value = " + value.toString())
-    if (weights != null) fgv.addTextbox("Weights = " + weights.toString())
-    if (gradient != null) fgv.addTextbox("Gradient = " + gradient.toString())
-
-    fgv.render()*/
-
-
     def escape(s:String) =
       s.replace("\n","\\n").replace("\'", "\\\'")
 
-    var code =  s"""
-        |<script>
-        |var graph = {
+    val fgid = this.hashCode().toString
+
+    val genCode =  s"""
+        |var FG$fgid = {graph:{
         |  "nodes": [${(
               nodes.map(n =>
                      "{text:'" + escape(n.variable.label) + "'" +
@@ -363,17 +325,201 @@ final class FactorGraph {
                 "{'source': " + e.n.index + ", 'target': " + (e.f.index + nodes.length) + "}"
               ) mkString ", "}
         |  ]
+        |}}
+      """.stripMargin
+
+    val code =
+      s"""
+        |<div id="FG$fgid">
+        |<script src="http://d3js.org/d3.v3.min.js"></script>
+        |<style type="text/css">
+        |
+        |.link {
+        |	stroke: #000;
+        |	stroke-width: 1.5px;
         |}
+        |
+        |.node {
+        |	cursor: move;
+        |	fill: #ccc;
+        |	stroke: #000;
+        |	stroke-width: 1.5px;
+        |}
+        |
+        |.label {
+        |	cursor: move;
+        |	font-size: 15px;
+        |	font-family: 'sans-serif';
+        |	pointer-events:none;
+        |	-moz-user-select: -moz-none;
+        |	-khtml-user-select: none;
+        |	-webkit-user-select: none;
+        |	-o-user-select: none;
+        |	user-select: none;
+        |}
+        |
+        |.tooltip {
+        |	padding:0px;
+        |	font-family: 'sans-serif';
+        |	pointer-events:none;
+        |	-moz-user-select: -moz-none;
+        |	-khtml-user-select: none;
+        |	-webkit-user-select: none;
+        |	-o-user-select: none;
+        |	user-select: none;
+        |}
+        |
+        |/*
+        |.tooltipbox {
+        |	pointer-events:none;
+        |	fill:#eee;
+        |	fill-opacity:.9;
+        |	stroke:#666;
+        |	stroke-width:1.5px;
+        |}*/
+        |
+        |.tooltipinner {
+        |	pointer-events:none;
+        |	background:#eee;
+        |	border:1.5px solid;
+        |	border-radius:10px;
+        |	overflow:hidden;
+        |	padding:5px;
+        |	max-height:400px;
+        |}
+        |
+        |.tooltipheader {
+        |	background-color:white;
+        |	border-bottom:gray 1.5px solid;
+        |	padding:5px;
+        |	margin:-5px -5px 0 -5px;
+        |	font-style:italic;
+        |}
+        |
+        |.potentialtable {
+        |	border-spacing: 0px;
+        |	text-align: center;
+        |	margin-left: auto;
+        |	margin-right: auto;
+        |}
+        |
+        |.potentialtable td {
+        |	padding-top:3px;
+        |	padding-left:15px;
+        |}
+        |
+        |</style>
+        |
+        |
+        |
+        |<script>
+        |$genCode
         |</script>
         |
+        |<script type="text/javascript">
+        |FG$fgid.width = 500,
+        |FG$fgid.height = 400;
+        |
+        |FG$fgid.force = d3.layout.force()
+        |.size([FG$fgid.width, FG$fgid.height])
+        |.charge(-3000)
+        |.gravity(0.5)
+        |    //.linkDistance(150)
+        |    //.on("tick", tick);
+        |
+        |    FG$fgid.drag = FG$fgid.force.drag()
+        |
+        |    FG$fgid.svg = d3.select("#FG$fgid").append("svg")
+        |    .attr("width", FG$fgid.width)
+        |    .attr("height", FG$fgid.height);
         |
         |
-        |<link rel="stylesheet" type="text/css" href="fg.css" />
-        |	<script src="http://d3js.org/d3.v3.min.js"></script>
+        |    FG$fgid.link = FG$fgid.svg.selectAll(".link")
+        |    FG$fgid.node = FG$fgid.svg.selectAll(".node")
+        |    FG$fgid.label = FG$fgid.svg.selectAll(".label");
         |
-        |<body>
-        |	<script src="fg.js"></script>
-        |</body>
+        |    FG$fgid.force
+        |    .nodes(FG$fgid.graph.nodes)
+        |    .links(FG$fgid.graph.links)
+        |    .start();
+        |
+        |    FG$fgid.link = FG$fgid.link.data(FG$fgid.graph.links)
+        |	    .enter().append("line")
+        |	    .attr("class", "link");
+        |
+        |	FG$fgid.node = FG$fgid.node.data(FG$fgid.graph.nodes)
+        |	    .enter().append("path")
+        |	    .attr("class", "node")
+        |	    .attr("d", d3.svg.symbol()
+        |	    	.type(function(d) { return d.shape == undefined ? "circle" : d.shape })
+        |	    	.size(2000))
+        |	    .on("mouseover", function(d){
+        |	    	if(d.hoverhtml != undefined) {
+        |	    		FG$fgid.setTooltip(d.hoverhtml);
+        |	    		FG$fgid.tooltip.transition()
+        |	    			.duration(300)
+        |	    			.style("opacity", .9);
+        |	    		FG$fgid.tooltipNode = d;
+        |	    		FG$fgid.moveTooltip();
+        |	    	}
+        |	    })
+        |	    .on("mouseout", function(d){
+        |			FG$fgid.tooltip.transition()
+        |	                .duration(300)
+        |	                .style("opacity", 0)
+        |	    })
+        |		.call(FG$fgid.drag);
+        |
+        |FG$fgid.label = FG$fgid.label.data(FG$fgid.graph.nodes)
+        |	.enter().append("text")
+        |	.attr("class", "label")
+        |	.attr("dy", "5")
+        |	.attr("text-anchor", "middle")
+        |	.text(function(d) { return d.text == undefined ? "" : d.text })
+        |	.call(FG$fgid.drag);
+        |
+        |FG$fgid.tooltipNode = null
+        |FG$fgid.tooltip = null
+        |
+        |while(FG$fgid.force.alpha() != 0) {
+        |	FG$fgid.force.tick();
+        |}
+        |
+        |FG$fgid.tick = function() {
+        |	FG$fgid.link.attr("x1", function(d) { return d.source.x; })
+        |		.attr("y1", function(d) { return d.source.y; })
+        |		.attr("x2", function(d) { return d.target.x; })
+        |		.attr("y2", function(d) { return d.target.y; });
+        |
+        |	FG$fgid.node.attr("transform", function(d) {return "translate(" + d.x + "," + d.y + ")"});
+        |	FG$fgid.label.attr("transform", function(d) {return "translate(" + d.x + "," + d.y + ")"});
+        |	FG$fgid.moveTooltip();
+        |
+        |}
+        |
+        |FG$fgid.setTooltip = function(html) {
+        |	if(FG$fgid.tooltip != null) {
+        |		FG$fgid.tooltip.remove()
+        |	}
+        |	FG$fgid.tooltip = FG$fgid.svg.insert("foreignObject")
+        |		.attr("class", "tooltip")
+        |		.attr("width", "300")
+        |		.attr("height", "100%")
+        |		.style("opacity", 0)
+        |		.html("<div class='tooltipinner'>" + html + "</div>")
+        |}
+        |
+        |
+        |FG$fgid.moveTooltip = function() {
+        |	if(FG$fgid.tooltipNode != null) {
+        |		FG$fgid.tooltip.attr("transform", "translate(" + (FG$fgid.tooltipNode.x-150) + "," + (FG$fgid.tooltipNode.y+15) + ")" );
+        |	}
+        |}
+        |
+        |FG$fgid.force.on("tick", FG$fgid.tick);
+        |FG$fgid.tick();
+        |</script>
+        |</div>
       """.stripMargin
 
     code

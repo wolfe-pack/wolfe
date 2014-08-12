@@ -343,8 +343,8 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
 
   def factorGraphDebugCode(objRhs:Tree, graphName:TermName) = {
     def getDebugFromAnnotation(f:Tree) =
-      f.symbol.annotations.find(_.tpe.typeSymbol == wolfeSymbols.debugFG) match {
-        case Some(annotation) => q"${ annotation.scalaArgs.head }($graphName.d3Code)"
+      f.symbol.annotations.find(_.tpe.typeSymbol == wolfeSymbols.outputFG) match {
+        case Some(annotation) => q"${ annotation.scalaArgs.head }.+=($graphName)"
         case None => q""
       }
     objRhs match {
