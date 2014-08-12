@@ -48,8 +48,10 @@ object NERExample {
   def main(args: Array[String]) {
     val useSample = if (args.length > 0) args(0).toBoolean else false
     val useMiniFeatures = if (args.length > 1) args(1).toBoolean else false
+    val secondOrder = if (args.length > 2) args(2).toBoolean else false
     println(s"useSample = $useSample")
     println(s"useMiniFeatures = $useMiniFeatures")
+    println(s"secondOrder = $secondOrder")
 
     @Atomic
     def tokenToFeatures(token: Token, prefix: String = ""): Wolfe.Vector =
@@ -66,18 +68,26 @@ object NERExample {
     def observed(s: Sentence) = s.copy(tokens = s.tokens.map(_.copy(tag = hidden)))
 
     def features(s: Sentence): Wolfe.Vector = {
-      //token features
-      sum(0 until s.tokens.size) { i => tokenToFeatures(s.tokens(i)) outer labelToFeature(s.tokens(i).tag) } +
-      //first order transitions
-      sum(0 until s.tokens.size - 1) { i => oneHot('transition -> s.tokens(i).tag -> s.tokens(i + 1).tag) } +
-      //offset conjunctions
-      sum(2 until s.tokens.size) { i => tokenToFeatures(s.tokens(i - 2), "@-2") outer labelToFeature(s.tokens(i).tag) } +
-      sum(1 until s.tokens.size) { i => tokenToFeatures(s.tokens(i - 1), "@-1") outer labelToFeature(s.tokens(i).tag) } +
-      sum(0 until s.tokens.size - 1) { i => tokenToFeatures(s.tokens(i + 1), "@+1") outer labelToFeature(s.tokens(i).tag) } +
-      sum(0 until s.tokens.size - 2) { i => tokenToFeatures(s.tokens(i + 2), "@+2") outer labelToFeature(s.tokens(i).tag) }
+      def firstOrderFeatures =
+        //token features
+        sum(0 until s.tokens.size) { i => tokenToFeatures(s.tokens(i)) outer labelToFeature(s.tokens(i).tag) } +
+        //first order transitions
+        sum(0 until s.tokens.size - 1) { i => oneHot('transition -> s.tokens(i).tag -> s.tokens(i + 1).tag) } +
+        //offset conjunctions
+        sum(2 until s.tokens.size) { i => tokenToFeatures(s.tokens(i - 2), "@-2") outer labelToFeature(s.tokens(i).tag) } +
+        sum(1 until s.tokens.size) { i => tokenToFeatures(s.tokens(i - 1), "@-1") outer labelToFeature(s.tokens(i).tag) } +
+        sum(0 until s.tokens.size - 1) { i => tokenToFeatures(s.tokens(i + 1), "@+1") outer labelToFeature(s.tokens(i).tag) } +
+        sum(0 until s.tokens.size - 2) { i => tokenToFeatures(s.tokens(i + 2), "@+2") outer labelToFeature(s.tokens(i).tag) }
+
+      if(secondOrder)
+        firstOrderFeatures + sum(0 until s.tokens.size - 2) {
+          i => oneHot('transition2 -> s.tokens(i).tag -> s.tokens(i + 2).tag)
+        }
+      else
+        firstOrderFeatures
     }
 
-    @OptimizeByInference(BeliefPropagation(_, 1))
+    @OptimizeByInference(BeliefPropagation.onJunctionTree(_))
     def model(w: Vector)(s: Sentence) = w dot features(s)
     def predictor(w: Vector)(s: Sentence) = argmax(Sentences where evidence(observed)(s)) { model(w) }
 
