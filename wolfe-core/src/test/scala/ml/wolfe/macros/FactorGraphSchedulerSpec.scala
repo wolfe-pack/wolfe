@@ -1,12 +1,12 @@
 package ml.wolfe.macros
 
-import ml.wolfe.{FactorGraph, Wolfe}
+import ml.wolfe.{BeliefPropagation, FactorGraph, Wolfe}
 import ml.wolfe.util.NLP
 import Wolfe._
 import NLP._
 import OptimizedOperators._
 
-import ml.wolfe.FactorGraph.{MPSchedulerImpl => SchedulerImpl, DirectedEdge, EdgeDirection, Factor, Node}
+import ml.wolfe.FactorGraph.{MPSchedulerImpl => SchedulerImpl, _}
 
 
 /**
@@ -24,33 +24,33 @@ class FactorGraphSchedulerSpec extends StructureIsomorphisms {
       (0 to 5).foreach(i => graph.addNode(0)) //dummy nodes
       (0 to 104).foreach(i => graph.addFactor()) //dummy factors
       val edges = Array(
-        100 -> 0, 100 -> 1,
-        101 -> 2, 101 -> 3,
-        102 -> 1, 102 -> 3, 102 -> 4,
-        103 -> 4, 103 -> 5,
-        104 -> 5
-      )
+          100 -> 0, 100 -> 1,
+          101 -> 2, 101 -> 3,
+          102 -> 1, 102 -> 3, 102 -> 4,
+          103 -> 4, 103 -> 5,
+          104 -> 5
+        )
       edges.foreach(edge => graph.addEdge(graph.getFactor(edge._1), graph.getNode(edge._2)))
       graph.build()
       val root = graph.nodes(2) //"randomly" pick a root node
-/*
-      val validForwardPasses = Set(
-        Seq(104 -> 5, 100 -> 1, 103 -> 4, 102 -> 3),
-        Seq(104 -> 5, 103 -> 4, 100 -> 1, 102 -> 3),
-        Seq(100 -> 1, 104 -> 5, 103 -> 4, 102 -> 3)
-      )
+      /*
+            val validForwardPasses = Set(
+              Seq(104 -> 5, 100 -> 1, 103 -> 4, 102 -> 3),
+              Seq(104 -> 5, 103 -> 4, 100 -> 1, 102 -> 3),
+              Seq(100 -> 1, 104 -> 5, 103 -> 4, 102 -> 3)
+            )
 
-      val validBackwardPasses = Set(
-        Seq(101 -> 3, 102 -> 1, 100 -> 0, 102 -> 4, 103 -> 5),
-        Seq(101 -> 3, 102 -> 1, 102 -> 4, 100 -> 0, 103 -> 5),
-        Seq(101 -> 3, 102 -> 1, 102 -> 4, 103 -> 5, 100 -> 0)
-      )
+            val validBackwardPasses = Set(
+              Seq(101 -> 3, 102 -> 1, 100 -> 0, 102 -> 4, 103 -> 5),
+              Seq(101 -> 3, 102 -> 1, 102 -> 4, 100 -> 0, 103 -> 5),
+              Seq(101 -> 3, 102 -> 1, 102 -> 4, 103 -> 5, 100 -> 0)
+            )
 
-      val validForwardBackwardPasses = for {
-        forward <- validForwardPasses
-        backward <- validBackwardPasses
-      } yield forward ++ Seq((root.f.index, root.n.index)) ++ backward
-*/
+            val validForwardBackwardPasses = for {
+              forward <- validForwardPasses
+              backward <- validBackwardPasses
+            } yield forward ++ Seq((root.f.index, root.n.index)) ++ backward
+      */
       val branch0 = Seq(0 -> 100, 100 -> 1, 1 -> 102)
       val branch1 = Seq(104 -> 5, 5 -> 103, 103 -> 4, 4 -> 102)
       val finalBranch = Seq(102 -> 3, 3 -> 101, 101 -> 2)
@@ -58,6 +58,7 @@ class FactorGraphSchedulerSpec extends StructureIsomorphisms {
       "return the right edge ordering for a forward messaging pass" in {
         val predicted = SchedulerImpl.scheduleForward(root).map(indexTuple)
         val startLength = branch0.length + branch1.length
+        //println(predicted.mkString("\n"))
         predicted take startLength intersect branch0 shouldEqual branch0
         predicted take startLength intersect branch1 shouldEqual branch1
         predicted drop startLength shouldEqual finalBranch
@@ -133,7 +134,7 @@ class FactorGraphSchedulerSpec extends StructureIsomorphisms {
       }*/
     }
 
-    "should given a graph with disconnected components return a schedule on all components" in {
+    "given a graph with disconnected components return a schedule on all components" in {
       val graph = new FactorGraph()
       (0 to 4).foreach(i => graph.addNode(0)) //dummy nodes
       (0 to 101).foreach(i => graph.addFactor()) //dummy factors
@@ -152,7 +153,7 @@ class FactorGraphSchedulerSpec extends StructureIsomorphisms {
       predicted.containsSlice(Seq(2 -> 101, 101 -> 3)) || predicted.containsSlice(Seq(3 -> 101, 101 -> 2)) should be(true)
     }
 
-    "should given an inner node first return the forward passes and then the backward passes" in {
+    "given an inner node first return the forward passes and then the backward passes" in {
       val graph = new FactorGraph()
       (0 to 4).foreach(i => graph.addNode(0)) //dummy nodes
       (0 to 101).foreach(i => graph.addFactor()) //dummy factors
@@ -178,6 +179,28 @@ class FactorGraphSchedulerSpec extends StructureIsomorphisms {
       predicted take startLength intersect branch1 shouldEqual branch1
       predicted drop startLength intersect back0 shouldEqual back0
       predicted drop startLength intersect back1 shouldEqual back1
+    }
+
+    "when turned off return edges in the order they were added" in {
+      val graph = new FactorGraph()
+      (0 to 4).foreach(i => graph.addNode(0)) //dummy nodes
+      (0 to 103).foreach(i => graph.addFactor()) //dummy factors
+      val edges = Array(
+          103 -> 1,
+          100 -> 0,
+          101 -> 1,
+          101 -> 0,
+          102 -> 1,
+          102 -> 2
+        )
+
+      edges.foreach(edge => graph.addEdge(graph.getFactor(edge._1), graph.getNode(edge._2)))
+      graph.build()
+
+      val actual = Seq(103 -> 1, 100 -> 0, 0 -> 101, 101 -> 1, 2 -> 102, 102 -> 1)
+      val predicted = SchedulerImpl.canonicalSchedule(graph).map(indexTuple)
+
+      predicted shouldEqual actual
     }
   }
 }

@@ -1,28 +1,20 @@
+import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
+val map = new mutable.HashMap[String,Array[String]]
 
-trait Edge {
-  def src:Node
-  def tgt:Node
+map("rel") = map.getOrElse("rel",Array.empty[String]) :+ "parent"
 
-}
-trait Node {
+val map2 = new mutable.HashMap[String,ArrayBuffer[String]]
 
-}
+map2.getOrElse("rel",new ArrayBuffer[String]) += "parent"
 
-trait Graph {
-  type E <: Edge
-  type N <: Node
+val map3 = new mutable.HashMap[String,List[String]] withDefaultValue Nil
 
-  def nodes:List[N]
-  def edges:List[E]
+map3("rel") = "parent" :: map3("rel")
 
-}
+map3("rel") = "parent2" :: map3("rel")
 
-trait WeightedEdge extends Edge
+map3.mkString("\n")
 
-trait WeightedGraph {
-  type E <: WeightedEdge
-
-
-}
 
