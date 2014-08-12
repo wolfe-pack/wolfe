@@ -653,6 +653,7 @@ object FactorGraph {
     def f = edge.f
     def n = edge.n
     def swap = DirectedEdge(edge, if(direction == N2F) F2N else N2F)
+    override def toString = if (direction == N2F) s"n[$n] -> f[$f]" else s"f[$f] -> n[$n]"
   }
 
   /**
@@ -701,6 +702,27 @@ object FactorGraph {
     def schedule(factor: Factor): Seq[DirectedEdge] = schedule(factor.edges.head)
 
     def schedule(edge: Edge): Seq[DirectedEdge] = schedule(edge.n)
+
+    /**
+     * Returns a schedule based on the order edges were added to the factor graph
+     * @param fg factor graph where the first edge corresponds to a factor to node message
+     * @return schedule
+     */
+    def canonicalSchedule(fg: FactorGraph): Seq[DirectedEdge] = {
+      @tailrec
+      def canonicalSchedule(edges: List[Edge], done: Set[Edge], acc: Seq[DirectedEdge]): Seq[DirectedEdge] = edges match {
+        case Nil => acc
+        case e :: es =>
+          if (!done.contains(e)) {
+            val siblings = e.f.edges.filter(_ != e)
+            val f2n = DirectedEdge(e, EdgeDirection.F2N)
+            val n2fs = siblings.map(DirectedEdge(_, EdgeDirection.N2F))
+            canonicalSchedule(es, done ++ siblings + e, acc ++ n2fs ++ List(f2n))
+          }
+          else canonicalSchedule(es, done, acc)
+      }
+      canonicalSchedule(fg.edges.toList, Set(), Nil)
+    }
   }
 
   object MPSchedulerImpl extends MPScheduler {
@@ -731,8 +753,6 @@ object FactorGraph {
       val firstEdges = node.edges.map(DirectedEdge(_, EdgeDirection.F2N)).toList
       scheduleAcc(firstEdges, Set(), firstEdges)
     }
-
-
   }
 
   /**

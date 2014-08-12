@@ -38,7 +38,7 @@ object BeliefPropagation {
             bpType:BPType = BPType.Max,
             gradientAndObjective: Boolean = true) {
     //    val edges = if (canonical) fg.edges.sorted(FactorGraph.EdgeOrdering) else fg.edges
-    val forwardEdges = if (schedule) MPSchedulerImpl.scheduleForward(fg) else ???
+    val forwardEdges = if (schedule) MPSchedulerImpl.scheduleForward(fg) else MPSchedulerImpl.canonicalSchedule(fg)
     val backwardEdges = forwardEdges.reverse.map(_.swap)
     val forwardBackwardEdges = forwardEdges ++ backwardEdges
 
@@ -84,6 +84,7 @@ object BeliefPropagation {
       else factor.potential.maxMarginalExpectationsAndObjective(fg.expectations)
     }
   }
+
   /**
    * Creates a junction tree from the original factor graph, runs BP,
    * then copies value/gradient back into the original factor graph.

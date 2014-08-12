@@ -190,8 +190,9 @@ case class ConstituentTree(node: ConstituentNode, children : Seq[ConstituentTree
 
   override def toString: String = {
     node match {
-      case x: NonterminalNode => return "(%s %s)".format(x.label, children.map(_.toString()).mkString(" "))
-      case x: PreterminalNode => return "(%s %s)".format(x.label, x.word)
+      case x: NonterminalNode => "(%s %s)".format(x.label, children.map(_.toString()).mkString(" "))
+      case x: PreterminalNode => "(%s %s)".format(x.label, x.word)
+      case _ => "empty"
     }
   }
 
@@ -408,6 +409,8 @@ case class PreterminalNode(override val label: String, word: String) extends Con
 
   override def isPreterminal = true
 }
+
+
 
 case class Span(left: Int, right: Int, label: String, var height: Int=0) {
 
