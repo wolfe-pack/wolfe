@@ -51,9 +51,9 @@ object NERExample {
 
 
   def main(args: Array[String]) {
-    val useSample = if (args.length > 0) args(0).toBoolean else false
-    val useMiniFeatures = if (args.length > 1) args(1).toBoolean else false
-    val secondOrder = if (args.length > 2) args(2).toBoolean else false
+    val useSample = true//if (args.length > 0) args(0).toBoolean else false
+    val useMiniFeatures = true//if (args.length > 1) args(1).toBoolean else false
+    val secondOrder = true//if (args.length > 2) args(2).toBoolean else false
     println(s"useSample = $useSample")
     println(s"useMiniFeatures = $useMiniFeatures")
     println(s"secondOrder = $secondOrder")

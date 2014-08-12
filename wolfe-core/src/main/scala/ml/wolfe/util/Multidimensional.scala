@@ -60,7 +60,9 @@ object Multidimensional { //todo: views!
     val size = (labels map dimensions).product
     type MultiIndex = Seq[(L, Int)]
 
-    if (array.length != labels.map(dimensions).product) throw new LabelledTensorDimensionError()
+    if (array.length != labels.map(dimensions).product) {
+      throw new LabelledTensorDimensionError()
+    }
     private val indexSteps: L => Int = labels.zip(labels.scanRight(1)((l, acc) => dimensions(l) * acc).tail).toMap
 
     private def allMuls(forLabels: Seq[L] = labels) : Seq[MultiIndex] = cartesianProduct(
