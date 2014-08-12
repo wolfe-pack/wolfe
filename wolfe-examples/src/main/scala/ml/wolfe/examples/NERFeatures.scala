@@ -12,11 +12,12 @@ import scala.util.matching.Regex
 object NERFeatures {
 
   val allFeatures = funFeatures ++ boolFeatures ++ regexFeatures
+  val miniFeatures = funFeatures ++ regexFeaturesMini
 
-  def apply(token:Token, prefix:String = "") = allFeatures.foldLeft( Wolfe.Vector() ){
-    (acc, f) => acc + f(token, prefix)
-  }
-
+  def apply(token:Token, prefix:String = "", mini:Boolean = false) =
+    (if(mini) miniFeatures else allFeatures).foldLeft( Wolfe.Vector() ){
+      (acc, f) => acc + f(token, prefix)
+    }
 
   // -----------------------------------
 

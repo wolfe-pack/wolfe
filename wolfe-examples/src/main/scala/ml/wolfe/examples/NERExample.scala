@@ -30,7 +30,8 @@ object NERExample {
   implicit val labels        = Seq("O", "B-protein", "I-protein", "B-cell_type", "I-cell_type", "B-DNA", "I-DNA",
     "B-cell_line", "I-cell_line", "B-RNA", "I-RNA").map(t => Tag(Symbol(t)))
 
-/*
+
+  /*
   @Atomic
   def tokenToFeatures(token: Token, prefix: String = ""): Wolfe.Vector = {
     oneHot(prefix + 'word -> token.word.toLowerCase) +
@@ -42,46 +43,60 @@ object NERExample {
     oneHot(prefix + 'isSlash, I(token.word.matches("[/\\\\]"))) +
     oneHot(prefix + 'prefix2 -> token.word.take(2)) +
     oneHot(prefix + 'suffix2 -> token.word.takeRight(2))
-  }
-*/
-  @Atomic
-  def tokenToFeatures(token: Token, prefix: String = ""): Wolfe.Vector = NERFeatures(token, prefix)
-
-
-
-
-  @Atomic
-  def labelToFeature(label: Tag): Wolfe.Vector = {
-    oneHot('label -> label)
-    //oneHot('iob -> label.label.head)
-  }
-
-  def Sentences = Wolfe.all(Sentence)(seqs(all(Token)))
-
-  def observed(s: Sentence) = s.copy(tokens = s.tokens.map(_.copy(tag = hidden)))
-
-  def features(s: Sentence): Wolfe.Vector = {
-    //token features
-    sum(0 until s.tokens.size) { i => tokenToFeatures(s.tokens(i)) outer labelToFeature(s.tokens(i).tag) } +
-    //first order transitions
-    sum(0 until s.tokens.size - 1) { i => oneHot('transition -> s.tokens(i).tag -> s.tokens(i + 1).tag) } +
-    //offset conjunctions
-    sum(2 until s.tokens.size) { i => tokenToFeatures(s.tokens(i - 2), "@-2") outer labelToFeature(s.tokens(i).tag) } +
-    sum(1 until s.tokens.size) { i => tokenToFeatures(s.tokens(i - 1), "@-1") outer labelToFeature(s.tokens(i).tag) } +
-    sum(0 until s.tokens.size - 1) { i => tokenToFeatures(s.tokens(i + 1), "@+1") outer labelToFeature(s.tokens(i).tag) } +
-    sum(0 until s.tokens.size - 2) { i => tokenToFeatures(s.tokens(i + 2), "@+2") outer labelToFeature(s.tokens(i).tag) }
-  }
-
-  @OptimizeByInference(BeliefPropagation(_, 1))
-  def model(w: Vector)(s: Sentence) = w dot features(s)
-  def predictor(w: Vector)(s: Sentence) = argmax(Sentences where evidence(observed)(s)) { model(w) }
-
-  @OptimizeByLearning(new OnlineTrainer(_, new Perceptron, 20, 1))
-  def loss(data: Iterable[Sentence])(w: Vector) = sum(data) { s => model(w)(predictor(w)(s)) - model(w)(s) }
-  def learn(data: Iterable[Sentence]) = argmin(vectors) { loss(data) }
+  }*/
 
   def main(args: Array[String]) {
     val useSample = if (args.length > 0) args(0).toBoolean else false
+    val useMiniFeatures = if (args.length > 1) args(1).toBoolean else false
+
+    @Atomic
+    def tokenToFeatures(token: Token, prefix: String = ""): Wolfe.Vector =
+      NERFeatures(token, prefix, useMiniFeatures)
+
+    @Atomic
+    def labelToFeature(label: Tag): Wolfe.Vector = {
+      oneHot('label -> label)
+      //oneHot('iob -> label.label.head)
+    }
+
+    def Sentences = Wolfe.all(Sentence)(seqs(all(Token)))
+
+    def observed(s: Sentence) = s.copy(tokens = s.tokens.map(_.copy(tag = hidden)))
+
+    def features(s: Sentence): Wolfe.Vector = {
+      //token features
+      sum(0 until s.tokens.size) { i => tokenToFeatures(s.tokens(i)) outer labelToFeature(s.tokens(i).tag) } +
+      //first order transitions
+      sum(0 until s.tokens.size - 1) { i => oneHot('transition -> s.tokens(i).tag -> s.tokens(i + 1).tag) } +
+      //offset conjunctions
+      sum(2 until s.tokens.size) { i => tokenToFeatures(s.tokens(i - 2), "@-2") outer labelToFeature(s.tokens(i).tag) } +
+      sum(1 until s.tokens.size) { i => tokenToFeatures(s.tokens(i - 1), "@-1") outer labelToFeature(s.tokens(i).tag) } +
+      sum(0 until s.tokens.size - 1) { i => tokenToFeatures(s.tokens(i + 1), "@+1") outer labelToFeature(s.tokens(i).tag) } +
+      sum(0 until s.tokens.size - 2) { i => tokenToFeatures(s.tokens(i + 2), "@+2") outer labelToFeature(s.tokens(i).tag) }
+    }
+
+    @OptimizeByInference(BeliefPropagation(_, 1))
+    def model(w: Vector)(s: Sentence) = w dot features(s)
+    def predictor(w: Vector)(s: Sentence) = argmax(Sentences where evidence(observed)(s)) { model(w) }
+
+    @OptimizeByLearning(new OnlineTrainer(_, new Perceptron, 20, 1))
+    def loss(data: Iterable[Sentence])(w: Vector) = sum(data) { s => model(w)(predictor(w)(s)) - model(w)(s) }
+    def learn(data: Iterable[Sentence]) = argmin(vectors) { loss(data) }
+
+
+
+
+
+
+    // -------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
 
     val start = System.currentTimeMillis()
 
