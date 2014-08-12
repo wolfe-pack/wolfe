@@ -48,6 +48,8 @@ object NERExample {
   def main(args: Array[String]) {
     val useSample = if (args.length > 0) args(0).toBoolean else false
     val useMiniFeatures = if (args.length > 1) args(1).toBoolean else false
+    println(s"useSample = $useSample")
+    println(s"useMiniFeatures = $useMiniFeatures")
 
     @Atomic
     def tokenToFeatures(token: Token, prefix: String = ""): Wolfe.Vector =
