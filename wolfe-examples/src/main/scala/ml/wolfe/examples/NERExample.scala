@@ -45,6 +45,11 @@ object NERExample {
     oneHot(prefix + 'suffix2 -> token.word.takeRight(2))
   }*/
 
+
+
+
+
+
   def main(args: Array[String]) {
     val useSample = if (args.length > 0) args(0).toBoolean else false
     val useMiniFeatures = if (args.length > 1) args(1).toBoolean else false
@@ -52,6 +57,14 @@ object NERExample {
     println(s"useSample = $useSample")
     println(s"useMiniFeatures = $useMiniFeatures")
     println(s"secondOrder = $secondOrder")
+
+
+
+
+
+
+
+
 
     @Atomic
     def tokenToFeatures(token: Token, prefix: String = ""): Wolfe.Vector =
@@ -67,7 +80,7 @@ object NERExample {
 
     def observed(s: Sentence) = s.copy(tokens = s.tokens.map(_.copy(tag = hidden)))
 
-    def firstOrderFeatures(s:Sentence) = {
+    def features1(s:Sentence) = {
       //token features
       sum(0 until s.tokens.size) { i => tokenToFeatures(s.tokens(i)) outer labelToFeature(s.tokens(i).tag) } +
       //first order transitions
@@ -79,36 +92,37 @@ object NERExample {
       sum(0 until s.tokens.size - 2) { i => tokenToFeatures(s.tokens(i + 2), "@+2") outer labelToFeature(s.tokens(i).tag) }
     }
 
-    def features(s: Sentence): Wolfe.Vector = {
-      if(secondOrder)
-        firstOrderFeatures(s) + sum(0 until s.tokens.size - 2) {
-          i => oneHot('transition2 -> s.tokens(i).tag -> s.tokens(i + 2).tag)
-        }
-      else
-        firstOrderFeatures(s)
+    def features2(s: Sentence): Wolfe.Vector = {
+      features1(s) + sum(0 until s.tokens.size - 2) {
+        i => oneHot('transition2 -> s.tokens(i).tag -> s.tokens(i + 2).tag)
+      }
     }
 
-    @OptimizeByInference(BeliefPropagation.onJunctionTree(_))
-    def model(w: Vector)(s: Sentence) = w dot features(s)
-    def predictor(w: Vector)(s: Sentence) = argmax(Sentences where evidence(observed)(s)) { model(w) }
 
+    //First Order
+    @OptimizeByInference(BeliefPropagation(_,1))
+    def model(w: Vector)(s: Sentence) = w dot features1(s)
+    def predictor(w: Vector)(s: Sentence) = argmax(Sentences where evidence(observed)(s)) { model(w) }
     @OptimizeByLearning(new OnlineTrainer(_, new Perceptron, 20, 1))
     def loss(data: Iterable[Sentence])(w: Vector) = sum(data) { s => model(w)(predictor(w)(s)) - model(w)(s) }
-    def learn(data: Iterable[Sentence]) = argmin(vectors) { loss(data) }
+
+    //Second Order
+    @OptimizeByInference(BeliefPropagation.onJunctionTree(_))
+    def model2(w: Vector)(s: Sentence) = w dot features2(s)
+    def predictor2(w: Vector)(s: Sentence) = argmax(Sentences where evidence(observed)(s)) { model2(w) }
+    @OptimizeByLearning(new OnlineTrainer(_, new Perceptron, 20, 1))
+    def loss2(data: Iterable[Sentence])(w: Vector) = sum(data) { s => model2(w)(predictor2(w)(s)) - model2(w)(s) }
 
 
+    // ------------------------------------------------------------------------------------------
 
-
-
+    def learn(data: Iterable[Sentence]) = if(secondOrder) {
+      argmin(vectors) { loss2(data) }
+    } else {
+      argmin(vectors) { loss(data) }
+    }
 
     // -------------------------------------------------------------------------------------------
-
-
-
-
-
-
-
 
 
     val start = System.currentTimeMillis()
