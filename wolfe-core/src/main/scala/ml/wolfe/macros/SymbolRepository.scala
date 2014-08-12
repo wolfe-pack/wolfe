@@ -74,7 +74,7 @@ trait SymbolRepository[C <: Context] extends HasContext[C] {
     lazy val optByInference  = rootMirror.staticClass("ml.wolfe.Wolfe.OptimizeByInference")
     lazy val logZByInference = rootMirror.staticClass("ml.wolfe.Wolfe.LogZByInference")
     lazy val optByLearning   = rootMirror.staticClass("ml.wolfe.Wolfe.OptimizeByLearning")
-    lazy val debugFG         = rootMirror.staticClass("ml.wolfe.Wolfe.OutputFactorGraph")
+    lazy val outputFG        = rootMirror.staticClass("ml.wolfe.Wolfe.OutputFactorGraph")
     lazy val inlinable       = rootMirror.staticClass("ml.wolfe.macros.Inlinable")
 
 

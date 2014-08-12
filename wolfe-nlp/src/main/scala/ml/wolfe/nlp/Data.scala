@@ -52,6 +52,7 @@ case class Sentence(tokens: Seq[Token], syntax: SyntaxAnnotation = SyntaxAnnotat
  */
 case class Document(source: String,
                     sentences: Seq[Sentence],
+                    filename:Option[String] = None,
                     ir:IRAnnotation = IRAnnotation.empty) {
   def toText = sentences map (_.toText) mkString "\n"
   def toTaggedText = sentences map (_.toTaggedText) mkString "\n"
@@ -62,9 +63,11 @@ case class Document(source: String,
 
 /**
  * Class to represent IR information for a document
+ * @param docLabel an optional document label.
  * @param bowVector a vectorized bag of word representation, for example using tf-idf counts.
  */
-case class IRAnnotation(bowVector:SparseVector[Double] = SparseVector.zeros(0))
+case class IRAnnotation(docLabel:Option[String] = None,
+                        bowVector:SparseVector[Double] = SparseVector.zeros(0))
 
 object IRAnnotation {
   val empty = IRAnnotation()

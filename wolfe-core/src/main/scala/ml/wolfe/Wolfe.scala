@@ -5,6 +5,7 @@ import scala.util.Random
 import cc.factorie.model.WeightsSet
 import cc.factorie.optimize.Trainer
 import scala.annotation.StaticAnnotation
+import scala.collection.mutable.{ArrayBuffer, Buffer}
 import scala.collection.MapProxy
 
 /**
@@ -85,6 +86,7 @@ object Wolfe extends SampleSpaceDefs
     (example: T, weights: Vector) => weights dot featureGenerator(example).sum
   }
 
+  implicit val FactorGraphBuffer:Buffer[FactorGraph] = new ArrayBuffer[FactorGraph]
 }
 
 trait StatsDefs {
@@ -339,7 +341,8 @@ trait Annotations {
   class LogZByInference(inference: FactorGraph => Unit) extends StaticAnnotation
   class Atomic extends StaticAnnotation
   class Potential(construct: _ => ml.wolfe.fg.Potential) extends StaticAnnotation
-  class OutputFactorGraph(onGeneratedHtml: String => Unit) extends StaticAnnotation
+  class OutputFactorGraph(buffer: Buffer[FactorGraph] = Wolfe.FactorGraphBuffer) extends StaticAnnotation
+  
 }
 
 trait ProblemBuilder {
