@@ -17,11 +17,11 @@ trait MetaSeqStructures[C<:Context] {
     var lengthInitialized = lengthInitializer != EmptyTree
 
     lazy val className = newTypeName(context.fresh("SeqStructure"))
-    def classDef(graphName:TermName, label:String) = {
-      val elementDef = elementMetaStructure.classDef(graphName, "???")
+    override def classDef(graphName:TermName) = {
+      val elementDef = elementMetaStructure.classDef(graphName)
 
       q"""
-        final class $className extends ml.wolfe.macros.Structure[$argType] with ml.wolfe.macros.SeqStructure[$argType] {
+        final class $className (override val astLabel:String="") extends ml.wolfe.macros.Structure[$argType] with ml.wolfe.macros.SeqStructure[$argType] {
 
           $elementDef
 
@@ -29,7 +29,9 @@ trait MetaSeqStructures[C<:Context] {
 
           private var _elements:Array[${elementMetaStructure.className}] = null
           def setLength(length:Int) {
-            _elements = Array.fill(length)(new ${elementMetaStructure.className})
+            _elements = (0 until length).map({x:Int =>
+              new ${elementMetaStructure.className} (astLabel + "(" + x.toString + ")")
+            }).toArray
           }
           def elements = _elements
           def children() = elements.iterator.map(_.asInstanceOf[ml.wolfe.macros.Structure[Any]])

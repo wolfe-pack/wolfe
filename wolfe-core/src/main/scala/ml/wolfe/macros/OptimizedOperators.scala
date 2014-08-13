@@ -263,7 +263,7 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
 
     //the class definition of the structure isomorphic to the search space. Currently needs access to
     //the name of the factor graph variable because the structure calls methods of the factor graph.
-    val structureDef = meta.classDef(graphName, objArg.name.toString)
+    val structureDef = meta.classDef(graphName)
 
     //If a statistics function is specified we want to calculate expectations of, this
     //code generates the code that creates the expectation factors.
@@ -311,7 +311,7 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
     val code = q"""
       val _graph = new ml.wolfe.FactorGraph
       $structureDef
-      val $structName = new ${ meta.className }
+      val $structName = new ${ meta.className } (${objArg.name.toString})
       $conditionCode
       _graph.setupNodes()
       ${ factors.classDef }
@@ -344,7 +344,7 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
   def factorGraphDebugCode(objRhs:Tree, graphName:TermName) = {
     def getDebugFromAnnotation(f:Tree) =
       f.symbol.annotations.find(_.tpe.typeSymbol == wolfeSymbols.outputFG) match {
-        case Some(annotation) => q"${ annotation.scalaArgs.head }.+=($graphName)"
+        case Some(annotation) => q"${ annotation.scalaArgs.head }.set($graphName)"
         case None => q""
       }
     objRhs match {

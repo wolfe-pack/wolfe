@@ -56,6 +56,9 @@ trait Structure[T] {
    */
   def nextSetting()
 
+  /* what this structure represents in the original AST */
+  val astLabel:String
+
   /**
    * Each type of structure has a way to represent itself through a set of factor graph edges.
    */

@@ -1,5 +1,8 @@
 package ml.wolfe
 
+import ml.wolfe.FactorGraph.Node
+import org.sameersingh.htmlgen.HTML
+
 import scala.language.implicitConversions
 import scala.util.Random
 import cc.factorie.model.WeightsSet
@@ -86,7 +89,20 @@ object Wolfe extends SampleSpaceDefs
     (example: T, weights: Vector) => weights dot featureGenerator(example).sum
   }
 
-  implicit val FactorGraphBuffer:Buffer[FactorGraph] = new ArrayBuffer[FactorGraph]
+  trait FactorGraphBuffer {
+    def set(fg:FactorGraph) : Unit
+    def get() : FactorGraph
+  }
+  implicit val FactorGraphBuffer:FactorGraphBuffer = new FactorGraphBuffer {
+    var factorGraph:FactorGraph = null
+    def set(fg:FactorGraph) = factorGraph = fg
+    def get() = factorGraph
+  }
+  implicit def toD3FGDefault(fg:FactorGraph):HTML =
+    FactorGraphViewer.toD3Html(fg, _ => true)
+
+  def toD3FG(fg:FactorGraph, nodeFilter:Node=>Boolean = _ => true, linear:Boolean=false):HTML =
+    FactorGraphViewer.toD3Html(fg, nodeFilter, linear)
 }
 
 trait StatsDefs {
@@ -341,7 +357,7 @@ trait Annotations {
   class LogZByInference(inference: FactorGraph => Unit) extends StaticAnnotation
   class Atomic extends StaticAnnotation
   class Potential(construct: _ => ml.wolfe.fg.Potential) extends StaticAnnotation
-  class OutputFactorGraph(buffer: Buffer[FactorGraph] = Wolfe.FactorGraphBuffer) extends StaticAnnotation
+  class OutputFactorGraph(buffer: Wolfe.FactorGraphBuffer = Wolfe.FactorGraphBuffer) extends StaticAnnotation
   
 }
 
