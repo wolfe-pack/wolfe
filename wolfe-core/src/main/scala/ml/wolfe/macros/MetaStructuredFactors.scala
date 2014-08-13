@@ -370,6 +370,7 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
                                   transformer: Tree => Tree = identity[Tree],
                                   expectations: Boolean = false)
 
+
   def metaStructuredFactor(info: FactorGenerationInfo): MetaStructuredFactor = {
     import info._
     //    val simplified = unwrapSingletonBlocks(potential)
