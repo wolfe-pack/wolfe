@@ -88,18 +88,19 @@ final class TablePotential(edges: Array[Edge], table: Table) extends Potential {
    * @return A verbose string representation of this factor.
    */
   override def toVerboseString(implicit fgPrinter: FGPrinter) = {
-/*
     val tableString =
       for ((setting, index) <- settings.zipWithIndex) yield
         s"${
           setting.zipWithIndex.map({case (s,j) => vars(j).domainLabels(s)}).mkString("\t")
         }\t| ${ table.scores(index) }"
 
-    tableString.mkString("\n")*/
+    tableString.mkString("\n")
+  }
 
+  override def toHTMLString(implicit fgPrinter: FGPrinter) = {
     val headerRow = "<tr>" + vars.map(_.label).map("<td><i>" + _ + "</i></td>").mkString(" ") + "</tr>"
     val tableRows =
-      for ((setting, index) <- settings.zipWithIndex) yield {
+      for ((setting, index) <- settings.take(math.min(settings.length, 10)).zipWithIndex) yield {
         val domainEntries = for ((s, j) <- setting.zipWithIndex) yield vars(j).domainLabels(s)
         val cells = domainEntries :+ ("<b>" + table.scores(index).toString + "</b>")
         "<tr>" + cells.map("<td>" + _ + "</td>").mkString(" ") + "</tr>"
@@ -240,10 +241,10 @@ final class TablePotential(edges: Array[Edge], table: Table) extends Potential {
 
 
 
-
+  import breeze.linalg.DenseVector
   //todo: make this less ugly and extract generic functionality to a different class
   var Wt: ArrayBuffer[Int] = null
-  var vt: breeze.linalg.DenseVector[Double] = null
+  var vt: DenseVector[Double] = null
   var warmStart = false
   override def quadraticProgramF2N(stepSize:Double, maxIterations:Int) : Unit = {
     import breeze.linalg._

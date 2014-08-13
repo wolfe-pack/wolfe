@@ -43,6 +43,8 @@ trait Potential {
   def isLinear = false
   def statsForCurrentSetting(): FactorieVector = null
   def toVerboseString(implicit fgPrinter: FGPrinter): String = getClass.getName
+  def toHTMLString(implicit fgPrinter: FGPrinter): String = toVerboseString(fgPrinter)
+
   /**
    * Get the table of scores assigned by the potential over different settings, as a LabelledTensor
    * @param forVariables the order in which the variables should appear in the table
