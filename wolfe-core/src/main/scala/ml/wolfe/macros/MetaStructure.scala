@@ -43,10 +43,9 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
      * @param graphName the structure class needs an underlying factor graph, and this parameter provides its name.
      *                  This means that when instantiating the structure class a factor graph with the given name needs
      *                  to be in scope.
-     * @param label Desription of what the structure represents (e.g. for use when displaying factor graph)
      * @return code that defines the structure class.
      */
-    def classDef(graphName: TermName, label: String): ClassDef
+    def classDef(graphName: TermName): ClassDef
 
     /**
      * @return the type of objects this structure represents (i.e. the type of objects in the sample space).
@@ -339,7 +338,7 @@ object MetaStructure {
     val graphName = newTermName("_graph")
     val structName = newTermName("structure")
     val structArgName = newTermName("structArg")
-    val cls = meta.classDef(graphName, "???")
+    val cls = meta.classDef(graphName)
     val q"($arg) => $rhs" = projection.tree
     val root = helper.rootMatcher(arg.symbol, q"$structArgName.asInstanceOf[${ meta.className }]", meta)
     val injectedRhs = helper.injectStructure(rhs, meta.matcher(root))
@@ -366,7 +365,7 @@ object MetaStructure {
     val graphName = newTermName("_graph")
     val structName = newTermName("structure")
     val structArgName = newTermName("structArg")
-    val cls = meta.classDef(graphName, "???")
+    val cls = meta.classDef(graphName)
     val q"($arg) => $rhs" = projection.tree
     val root = helper.rootMatcher(arg.symbol, q"$structArgName.asInstanceOf[${ meta.className }]", meta)
     val injectedRhs = helper.injectStructure(rhs, meta.matcher(root))
@@ -387,7 +386,7 @@ object MetaStructure {
     val helper = new ContextHelper[c.type](c) with MetaStructures[c.type]
     val meta = helper.metaStructure(sampleSpace.tree)
     val graphName = newTermName("_graph")
-    val cls = meta.classDef(graphName, "???")
+    val cls = meta.classDef(graphName)
     val code = q"""
       val $graphName = new ml.wolfe.FactorGraph
       $cls

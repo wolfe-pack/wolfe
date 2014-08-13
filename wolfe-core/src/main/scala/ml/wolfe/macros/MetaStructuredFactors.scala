@@ -177,23 +177,32 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
       """
     lazy val loop       = transformer(loopSettingsNoDuplicates(transformedPointers) { perSetting })
 
-    def shortCode(t:Tree):String = t match {
-      case q"ml.wolfe.Wolfe.${x:TermName}" => x.toString
-      case q"!( $x )" => "!(" + shortCode(x) + ")"
-      case q"$x.||" => shortCode(x) + " || "
-      case q"$x.&&" => shortCode(x) + " && "
-      case q"$x.==" => shortCode(x) + " == "
-      case q"$x.>" => shortCode(x) + " > "
-      case q"$x.<" => shortCode(x) + " < "
-      case q"$x.>=" => shortCode(x) + " >= "
-      case q"$x.<=" => shortCode(x) + " <= "
-      case q"$x.+" => shortCode(x) + " + "
-      case q"$x.-" => shortCode(x) + " - "
-      case q"$x.*" => shortCode(x) + " * "
-      case q"$x./" => shortCode(x) + " / "
-      case q"${x:Select}" =>  shortCode(x.qualifier) + "." + x.name.toString
-      case q"${f:Select}($arg)" => shortCode(f) + "( " + shortCode(arg) + " )"
-      case _ => t.toString
+    def shortCode(t:Tree):Tree = t match {
+      case q"ml.wolfe.Wolfe.${x:TermName}" => q"${x.toString}"
+      case q"ml.wolfe.macros.OptimizedOperators.${x:TermName}" => q"${x.toString}"
+      case q"!( $x )" => q""" "!(" + ${shortCode(x)} + ")" """
+      case q"$x.||" => q""" ${shortCode(x)} + " || " """
+      case q"$x.^" => q"""${shortCode(x)} + " ^ " """
+      case q"$x.&&" => q"""${shortCode(x)} + " && " """
+      case q"$x.==" => q"""${shortCode(x)} + " == " """
+      case q"$x.>" => q"""${shortCode(x)} + " > " """
+      case q"$x.<" => q"""${shortCode(x)} + " < " """
+      case q"$x.>=" => q"""${shortCode(x)} + " >= " """
+      case q"$x.<=" => q"""${shortCode(x)} + " <= " """
+      case q"$x.+" => q"""${shortCode(x)} + " + " """
+      case q"$x.-" => q"""${shortCode(x)} + " - " """
+      case q"$x.*" => q"""${shortCode(x)} + " * " """
+      case q"$x./" => q"""${shortCode(x)} + " / " """
+      case q"$x.apply" => shortCode(x)
+      case q"qSumDom1($x)" => t
+      case q"qSumDom2($x)" => t
+      case q"qSumDom3($x)" => t
+      case q"qSumDom4($x)" => t
+      case q"qSumDom5($x)" => t
+      case q"qSumDom6($x)" => t
+      case q"${x:Select}" =>  q"""${shortCode(x.qualifier)} + "." + ${x.name.toString} """
+      case q"${f:Select}($arg)" => q"""${shortCode(f)} + "(" + ${shortCode(arg)} + ")" """
+      case _ => q"${t.toString}"
     }
 
     lazy val classDef = q"""
@@ -407,7 +416,7 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
     val factorieWeights = metaFactor.weightVector.map(
       w => q"ml.wolfe.FactorieConverter.toFactorieDenseVector($w,_index)"
     ).getOrElse(q"new ml.wolfe.DenseVector(0)")
-    val structureClass = meta.classDef(graphName, "???")
+    val structureClass = meta.classDef(graphName)
     val code = q"""
       val _index = new ml.wolfe.DefaultIndex
       val $graphName = new ml.wolfe.FactorGraph
