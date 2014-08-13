@@ -238,7 +238,7 @@ object KernelBPTed {
 
   def calculateTFIDFVectors(docs: Seq[Document],
                             index: Index = new SimpleIndex,
-                            freeze:Boolean = false): Seq[Document] = {
+                            freeze: Boolean = false): Seq[Document] = {
     val rawDF = new mutable.HashMap[String, Double]() withDefaultValue 0.0
     val numDocs = docs.size
     //get document frequencies first
@@ -275,29 +275,29 @@ object KernelBPTed {
       val doc = SISTAProcessors.mkDocument(file._2)
       doc.copy(ir = doc.ir.copy(docLabel = Some(file._1._1 + ":" + file._1._2)))
     }
+    def tag(label: String) = label.substring(0, label.indexOf(':'))
+
+    val tags = Seq("art", "arts")
+
 
     //load positive and negative training documents for en-de
     val de_en = new File("/Users/sriedel/corpora/ted-cldc/de-en/")
     val en_de = new File("/Users/sriedel/corpora/ted-cldc/en-de/")
 
-    println("Loading english data")
-    val en_train_files = getTrainSet(en_de, "train", "_en").sortBy(_._1).take(1000) //.map(d => tokenize(d._2))
-    val en_test_files = getTrainSet(en_de, "test", "_en").sortBy(_._1).take(1000) //.map(d => tokenize(d._2))
-
-    println("Annotating english data")
-    val en_train_docs = en_train_files map mkDoc
-    val en_test_docs = en_test_files map mkDoc
-
-    println("TF-IDF vector extraction for english")
+    def pipeline(dir: File, sub: String, label: String, toRemove: String,
+                 index:Index, freeze:Boolean = false): Map[String, Seq[Document]] = {
+      println("Loading data")
+      val en_train_files = getTrainSet(dir, sub, toRemove, Set(label)).sortBy(_._1).take(1000) //.map(d => tokenize(d._2))
+      println("Annotating data")
+      val en_train_docs = en_train_files map mkDoc
+      println("TFIDF calculations")
+      val en_train_vecs = calculateTFIDFVectors(en_train_docs, index, freeze)
+      val en_train_byLabel = en_train_vecs.groupBy(_.ir.docLabel.map(tag).get)
+      en_train_byLabel
+    }
     val en_index = new SimpleIndex
-    val en_train_vecs = calculateTFIDFVectors(en_train_docs, en_index)
-    val en_test_vecs = calculateTFIDFVectors(en_test_docs, en_index,true)
-
-    def tag(label: String) = label.substring(0, label.indexOf(':'))
-
-    //create the classification edge model in english
-    val en_train_byLabel = en_train_vecs.groupBy(_.ir.docLabel.map(tag).get)
-    val en_test_byLabel = en_test_vecs.groupBy(_.ir.docLabel.map(tag).get)
+    val en_train_byLabel = pipeline(en_de,"train","art","_en",en_index)
+    val en_test_byLabel = pipeline(en_de,"test","art","_en",en_index,true)
 
 
     println(en_train_byLabel.mapValues(_.size).mkString("\n"))
@@ -317,15 +317,15 @@ object KernelBPTed {
     println(label2DocModel.Obs12.size)
 
     //now create the factor graph (single variable, local factor)
-    def inferTagFromEn(enDoc:Document) = {
+    def inferTagFromEn(enDoc: Document) = {
       val fg = new FactorGraph
       val artNode = fg.addNode(0)
       val docFactor = fg.addFactor()
-      val artDocEdge = fg.addEdge(docFactor,artNode)
+      val artDocEdge = fg.addEdge(docFactor, artNode)
       artDocEdge.msgs = new KernelBPMSgs
       docFactor.potential = new KernelBPLocalPotential(label2DocModel, enDoc)
       artNode.variable = new KernelBPVar(
-        Map.empty,Map(artDocEdge -> ((v:DenseVector[Double]) => v)), label2DocModel.data.size)
+        Map.empty, Map(artDocEdge -> ((v: DenseVector[Double]) => v)), label2DocModel.data.size)
 
       fg.build()
       println("Running inference")
@@ -333,27 +333,35 @@ object KernelBPTed {
       val labelBelief = artNode.variable.asInstanceOf[KernelBPVar].belief
       //calculate expectation of each label
       println("Estimating marginals")
-      val result = new mutable.HashMap[String,Double] withDefaultValue 0.0
-      for ((p,i) <- en_train_art_data.zipWithIndex) result(p._1) += labelBelief(i)
+      val result = new mutable.HashMap[String, Double] withDefaultValue 0.0
+      for ((p, i) <- en_train_art_data.zipWithIndex) result(p._1) += labelBelief(i)
       result
     }
     //http://www.aclweb.org/anthology/P/P14/P14-1006.pdf
     var eval = new Evaluation()
     for (instance <- en_test_art) {
       import scala.language.implicitConversions
-      implicit def toInt(b:Boolean) = if (b) 1 else 0
+      implicit def toInt(b: Boolean) = if (b) 1 else 0
       val isPositive = instance.ir.docLabel.get.endsWith("positive")
       val prediction = inferTagFromEn(instance)
       val winner = prediction.maxBy(_._2)._1
       val tp = isPositive && winner == instance.ir.docLabel.get
-      val fp = isPositive && !tp
+      val fp = !isPositive && winner != instance.ir.docLabel.get
       val tn = !isPositive && winner == instance.ir.docLabel.get
-      val fn = !isPositive && !tn
-      eval = eval + Evaluation(tp,tn,fp,fn)
+      val fn = isPositive && winner != instance.ir.docLabel.get
+      eval = eval + Evaluation(tp, tn, fp, fn)
       println(instance.ir.docLabel)
+      println("Winner: " + winner)
       println(prediction.mkString("\n"))
+      println("TP: " + tp)
+      println("FP: " + fp)
+      println("TN: " + tn)
+      println("FN: " + fn)
+
     }
     println(eval)
+    println(eval.tp)
+    println(eval.fn)
 
     //
     //    println(en_train_files.size)
@@ -395,8 +403,8 @@ object KernelBPTed {
 
   }
 
-  def getTrainSet(topDir: File, subDir: String = "train", toRemove: String = "") = {
-    val de_files = for (tag <- new File(topDir, subDir).listFiles();
+  def getTrainSet(topDir: File, subDir: String = "train", toRemove: String = "", tagFilter: String => Boolean = _ => true) = {
+    val de_files = for (tag <- new File(topDir, subDir).listFiles() if tagFilter(tag.getName);
                         posNeg <- tag.listFiles();
                         doc <- posNeg.listFiles()) yield {
       val txt = Source.fromFile(doc).getLines().mkString("\n")
