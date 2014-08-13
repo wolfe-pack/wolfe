@@ -226,6 +226,16 @@ class MetaStructuredFactorSpecs extends StructureIsomorphisms {
       structuredFactor.factors.size should be(9)
     }
 
+    "generate a chain using an integer sum " in {
+      //todo: this should work without the .toDouble
+      def space = seqsOfLength(5, (0 to 3) map (_.toDouble))
+      def model(s: Seq[Double]) = sum(0 until s.length - 1) { i: Int => s(i) }
+      val factor = MetaStructuredFactor.structuredFactor(space, model)
+      factor mustBeIsomorphicTo model
+      factor.factors.size should be(4)
+
+    }
+
   }
 
 }

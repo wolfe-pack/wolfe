@@ -14,6 +14,7 @@ trait Index {
   def size: Int
   def apply(key: Any): Int = index(key)
   def index(key: Any): Int
+  def hasKey(key:Any) : Boolean
   def inverse(): GenMap[Int, Any]
 }
 
@@ -27,6 +28,8 @@ class SimpleIndex extends Serializable with Index {
     map.adjustOrPutValue(args, 0, map.size)
   }
 
+
+  def hasKey(key: Any) = map.containsKey(key)
   def inverse() = {
     val result = new mutable.HashMap[Int, Any]
     map.forEachEntry(new TObjectIntProcedure[Any] {
