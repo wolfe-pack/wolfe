@@ -321,6 +321,7 @@ final class TablePotential(edges: Array[Edge], table: Table) extends Potential {
           val (eigenValuesRe, eigenValuesIm, eigenVectors) = eig(constraintsMatrix)
           (0 until eigenValuesRe.length) find (i => eigenValuesRe(i) == 0 && eigenValuesIm(i) == 0) match {
             case Some(j:Int) => eigenVectors(::, j)
+            case None => ???
           }
       }
 
