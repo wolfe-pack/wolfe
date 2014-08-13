@@ -73,19 +73,28 @@ object SyntaxAnnotation {
 }
 
 /**
- * A sparse dependency tree.  Not all nodes require a head.
- * @param nodes tuples of child, head, and label fields for each token with a head.
+ * A sparse dependency tree.  Not all arcs require a head.
+ * @param arcs tuples of child, head, and label fields for each token with a head.
  */
-case class DependencyTree(nodes: Seq[(Int,Int,String)]) {
-  def hasHead(i: Int, j: Int) = nodes.exists(n => n._1 == i && n._2 == j)
-  override def toString = nodes.mkString("\n")
+case class DependencyTree(arcs: Seq[(Int,Int,String)]) {
+  def crosses(a1: (Int,Int,String), a2: (Int,Int,String)): Boolean = crosses(a1._1, a1._2, a2._1, a2._2)
+
+  def crosses(i: Int, j: Int, k: Int, l: Int): Boolean = {
+    (i < k && k < j && j < l) || (k < i && j < k && l < j)
+  }
+
+  def hasHead(i: Int, j: Int) = arcs.exists(n => n._1 == i && n._2 == j)
+
+  def isProjective = !arcs.zip(arcs).exists {case(a1, a2) => crosses(a1, a2)}
+
+  override def toString = arcs.mkString("\n")
 }
 
 /**
  * Companion object for the DependencyTree class.
  */
 object DependencyTree {
-  val empty = DependencyTree(nodes = Seq())
+  val empty = DependencyTree(arcs = Seq())
 }
 
 /**
