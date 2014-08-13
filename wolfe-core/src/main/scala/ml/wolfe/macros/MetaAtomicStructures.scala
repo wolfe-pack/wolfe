@@ -26,10 +26,10 @@ trait MetaAtomicStructures[C <: Context] {
       q"val $domName = $domain.toArray",
       q"val $indexName = $domName.zipWithIndex.toMap")
     def children = Nil
-    def classDef(graphName: TermName, label:String) = q"""
-      final class $className extends ml.wolfe.macros.Structure[$argType] {
+    override def classDef(graphName: TermName) = q"""
+      final class $className (override val astLabel : String = "") extends ml.wolfe.macros.Structure[$argType] {
         ..$domainDefs
-        val node = $graphName.addNode($domName.length, $label, $domName.map(_.toString))
+        val node = $graphName.addNode($domName.length, astLabel, $domName.map(_.toString))
         val variable = node.variable.asDiscrete
         private def updateValue() {variable.value = variable.domain(variable.setting)}
         def value():$argType = $domName(variable.value)
@@ -72,8 +72,8 @@ trait MetaAtomicStructures[C <: Context] {
     lazy val argType   = iterableArgumentType(domain)
     lazy val domainDefs  = Nil
     def children = Nil
-    def classDef(graphName: TermName, label:String) = q"""
-      final class $className extends ml.wolfe.macros.Structure[$argType] {
+    override def classDef(graphName: TermName) = q"""
+      final class $className (override val astLabel : String = "") extends ml.wolfe.macros.Structure[$argType] {
         private var _value:$argType = _
         private var _hasNext = true
         def value():$argType = _value

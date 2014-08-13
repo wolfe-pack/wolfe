@@ -1,5 +1,246 @@
 package ml.wolfe
 
+import ml.wolfe.FactorGraph.{Factor, Node}
+import org.sameersingh.htmlgen.{RawHTML, HTML}
+
+object FactorGraphViewer {
+
+  def nodeToNumber(n:Node) =  """(.*)\(([0-9]+)\)""".r.findFirstMatchIn(n.variable.label) match {
+      case Some(x) => x.group(2).toInt
+      case None => 0
+    }
+  def nodeToType(n:Node) = """(.*)\(([0-9]+)\)(.*)""".r.findFirstMatchIn(n.variable.label) match {
+    case Some(x) => x.group(3)
+    case None => ""
+  }
+
+  def toD3Html(fg:FactorGraph, nodeFilter:Node=>Boolean, linear:Boolean=false):HTML = {
+    def escape(s:String) =
+      s.replace("\n","\\n").replace("\'", "\\\'")
+
+    val fgid = this.hashCode().toString
+
+    val nodes = fg.nodes.filter(nodeFilter)
+    val factors = fg.factors.filter(_.edges.map(_.n).forall(nodeFilter))
+    val edges = fg.edges.filter(e => nodes.contains(e.n) && factors.contains(e.f))
+
+    val maxNodeNumber = nodes.map(nodeToNumber).max
+    val nodeTypes = nodes.map(nodeToType).distinct
+
+    val width = 620
+    val height = 300
+
+    def nodeX(n:Node) = width * (if(maxNodeNumber==0) Math.random() else (nodeToNumber(n).toDouble)/(maxNodeNumber))
+    def nodeY(n:Node) =
+      if(!linear || maxNodeNumber == 0) height * Math.random()
+      else height * ((nodeTypes.indexOf(nodeToType(n))+1).toDouble / (nodeTypes.length+1))
+    def factorX(f:Factor) = f.edges.map(e => nodeX(e.n)).sum / f.edges.length
+    def factorY(f:Factor) = f.edges.map(e => nodeY(e.n)).sum / f.edges.length
+
+
+
+    val genCode =  s"""
+        |var FG$fgid = {graph:{
+        |  "nodes": [${(
+             nodes.map(n =>
+                "{text:'" + escape(n.variable.label) + "'" +
+                ", class:'fgnode'" +
+                ", hoverhtml:'Domain: {" + n.variable.asDiscrete.domainLabels.mkString(", ") + "}'" +
+                ", x:" + nodeX(n) + ", y:" + nodeY(n) +
+                "}") ++
+             factors.map(f =>
+                "{shape: 'square'" +
+                ", class:'fgfactor'" +
+                ", hoverhtml:'" + "<div class=\"tooltipheader\">" + escape(f.label) + "</div>" +
+                escape(f.potential.toHTMLString(FactorGraph.DefaultPrinter)) + "'" +
+                ", x:" + factorX(f) + ", y:" + factorY(f) +
+                "}")
+             ).mkString(", ")}
+        |  ],
+        |  "links": [
+        |    ${edges.map(e =>
+      "{'source': " + nodes.indexOf(e.n) + ", 'target': " + (factors.indexOf(e.f) + nodes.length) + "}"
+    ) mkString ", "}
+        |  ]
+        |}}
+      """.stripMargin
+
+    val code =
+      s"""
+        |<div id="FG$fgid">
+        |<style type="text/css">
+        |
+        |.link {
+        |	stroke: #000;
+        |	stroke-width: 1.5px;
+        |}
+        |
+        |.fgshape {
+        |	cursor: move;
+        |}
+        |
+        |.label {
+        |	pointer-events:none;
+        |	-moz-user-select: -moz-none;
+        |	-khtml-user-select: none;
+        |	-webkit-user-select: none;
+        |	-o-user-select: none;
+        |	user-select: none;
+        |}
+        |
+        |.tooltip {
+        |	padding:0px;
+        |	pointer-events:none;
+        |	-moz-user-select: -moz-none;
+        |	-khtml-user-select: none;
+        |	-webkit-user-select: none;
+        |	-o-user-select: none;
+        |	user-select: none;
+        |}
+        |
+        |/*
+        |.tooltipbox {
+        |	pointer-events:none;
+        |}*/
+        |
+        |.tooltipinner {
+        |	pointer-events:none;
+        |	overflow:hidden;
+        |	max-height:400px;
+        |}
+        |
+        |</style>
+        |
+        |
+        |
+        |<script>
+        |$genCode
+        |</script>
+        |
+        |<script type="text/javascript">
+        |var onD3Loaded = function() {
+        |FG$fgid.width = $width,
+        |FG$fgid.height = $height;
+        |
+        |FG$fgid.force = d3.layout.force()
+        |.size([FG$fgid.width, FG$fgid.height])
+        |.charge(-3000)
+        |.gravity(0.5)
+        |    //.linkDistance(150)
+        |    //.on("tick", tick);
+        |
+        |    FG$fgid.drag = FG$fgid.force.drag()
+        |
+        |    FG$fgid.svg = d3.select("#FG$fgid").append("svg")
+        |    .attr("width", "100%")
+        |    .attr("height", FG$fgid.height)
+        |    .style("overflow", "visible");
+        |
+        |
+        |    FG$fgid.link = FG$fgid.svg.selectAll(".link")
+        |    FG$fgid.node = FG$fgid.svg.selectAll(".fgshape")
+        |    FG$fgid.label = FG$fgid.svg.selectAll(".label");
+        |
+        |    FG$fgid.force
+        |    .nodes(FG$fgid.graph.nodes)
+        |    .links(FG$fgid.graph.links)
+        |    .start();
+        |
+        |    FG$fgid.link = FG$fgid.link.data(FG$fgid.graph.links)
+        |	    .enter().append("line")
+        |	    .attr("class", "link");
+        |
+        |	FG$fgid.node = FG$fgid.node.data(FG$fgid.graph.nodes)
+        |	    .enter().append("path")
+        |	    .attr("class", function(d) { return "fgshape " + d.class})
+        |	    .attr("d", d3.svg.symbol()
+        |	    	.type(function(d) { return d.shape == undefined ? "circle" : d.shape })
+        |	    	.size(2000))
+        |	    .on("mouseover", function(d){
+        |	    	if(d.hoverhtml != undefined) {
+        |	    		FG$fgid.setTooltip(d.hoverhtml);
+        |	    		FG$fgid.tooltip.transition()
+        |	    			.duration(300)
+        |	    			.style("opacity", .9);
+        |	    		FG$fgid.tooltipNode = d;
+        |	    		FG$fgid.moveTooltip();
+        |	    	}
+        |	    })
+        |	    .on("mouseout", function(d){
+        |			FG$fgid.tooltip.transition()
+        |	                .duration(300)
+        |	                .style("opacity", 0)
+        |	    })
+        |		.call(FG$fgid.drag);
+        |
+        |FG$fgid.label = FG$fgid.label.data(FG$fgid.graph.nodes)
+        |	.enter().append("text")
+        |	.attr("class", "label")
+        |	.attr("dy", "5")
+        |	.attr("text-anchor", "middle")
+        |	.text(function(d) { return d.text == undefined ? "" : d.text })
+        |	.call(FG$fgid.drag);
+        |
+        |FG$fgid.tooltipNode = null
+        |FG$fgid.tooltip = null
+        |
+        |${if(!linear) "while(FG" + fgid + ".force.alpha() != 0) {FG" + fgid + ".force.tick();}\n"
+           else "FG" + fgid + ".force.alpha(0);\n"}
+        |
+        |FG$fgid.tick = function() {
+        |	FG$fgid.link.attr("x1", function(d) { return d.source.x; })
+        |		.attr("y1", function(d) { return d.source.y; })
+        |		.attr("x2", function(d) { return d.target.x; })
+        |		.attr("y2", function(d) { return d.target.y; });
+        |
+        |	FG$fgid.node.attr("transform", function(d) {return "translate(" + d.x + "," + d.y + ")"});
+        |	FG$fgid.label.attr("transform", function(d) {return "translate(" + d.x + "," + d.y + ")"});
+        |	FG$fgid.moveTooltip();
+        |
+        |}
+        |
+        |FG$fgid.setTooltip = function(html) {
+        |	if(FG$fgid.tooltip != null) {
+        |		FG$fgid.tooltip.remove()
+        |	}
+        |	FG$fgid.tooltip = FG$fgid.svg.insert("foreignObject")
+        |		.attr("class", "tooltip")
+        |		.attr("width", "300")
+        |		.attr("height", "100%")
+        |		.style("opacity", 0)
+        |		.html("<div class='tooltipinner'>" + html + "</div>")
+        |}
+        |
+        |
+        |FG$fgid.moveTooltip = function() {
+        |	if(FG$fgid.tooltipNode != null) {
+        |		FG$fgid.tooltip.attr("transform", "translate(" + (FG$fgid.tooltipNode.x-150) + "," + (FG$fgid.tooltipNode.y+15) + ")" );
+        |	}
+        |}
+        |
+        |FG$fgid.force.on("tick", FG$fgid.tick);
+        |FG$fgid.tick();
+        |}
+        |
+        |if(typeof d3 == "undefined") {
+        |var head= document.getElementsByTagName('head')[0];
+        |var script= document.createElement('script');
+        |script.type= 'text/javascript';
+        |script.src= 'http://d3js.org/d3.v3.min.js';
+        |script.onload = onD3Loaded;
+        |head.appendChild(script);
+        |} else {
+        |onD3Loaded();
+        |}
+        |</script>
+        |</div>
+      """.stripMargin
+
+    RawHTML(code)
+  }
+}
+
+/*
 import java.awt._
 import java.awt.image.BufferedImage
 import java.io.{File, IOException}
@@ -90,4 +331,4 @@ class FactorGraphViewer {
     }
   }
 }
-
+*/
