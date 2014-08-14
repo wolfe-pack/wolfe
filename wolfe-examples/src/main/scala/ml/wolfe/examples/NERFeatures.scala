@@ -14,20 +14,20 @@ object NERFeatures {
   val allFeatures = funFeatures ++ boolFeatures ++ regexFeatures
   val miniFeatures = funFeatures ++ regexFeaturesMini
 
-  def apply(token:Token, prefix:String = "", mini:Boolean = false) =
+  def apply(word:String, prefix:String = "", mini:Boolean = false) =
     (if(mini) miniFeatures else allFeatures).foldLeft( Wolfe.Vector() ){
-      (acc, f) => acc + f(token, prefix)
+      (acc, f) => acc + f(word, prefix)
     }
 
   // -----------------------------------
 
 
-  def funFeatures = Seq[(Symbol, Token => String)](
-    'word -> (t => t.word),
-    'prefix2 -> (t => t.word.take(2)),
-    'suffix2 -> (t => t.word.takeRight(2))
-  ).map({ case (sym:Symbol, fun:(Token => String)) =>
-    (token:Token, prefix:String) => oneHot(prefix + sym -> fun(token))
+  def funFeatures = Seq[(Symbol, String => String)](
+    'word -> (t => t),
+    'prefix2 -> (t => t.take(2)),
+    'suffix2 -> (t => t.takeRight(2))
+  ).map({ case (sym:Symbol, fun:(String => String)) =>
+    (word:String, prefix:String) => oneHot(prefix + sym -> fun(word))
   })
 
 
@@ -38,7 +38,7 @@ object NERFeatures {
     'isQuote    -> "[„“””‘’\"']".r,
     'isSlash    -> "[/\\\\]".r
   ).map({ case (sym:Symbol, reg:Regex) =>
-    (token:Token, prefix:String) => oneHot(prefix + sym, I(reg.pattern.matcher(token.word).matches))
+    (word:String, prefix:String) => oneHot(prefix + sym, I(reg.pattern.matcher(word).matches))
   })
 
   def regexFeatures = {
@@ -125,21 +125,21 @@ object NERFeatures {
       'AminoAcidAndPosition -> (AminoAcidShortString + "[0-9]+").r, //TODO, e.g., Ser150
       'Vowel -> "a|e|i|o|u|A|E|I|O|U".r
     ).map({ case (sym:Symbol, reg:Regex) =>
-      (token:Token, prefix:String) => oneHot(prefix + sym, I(reg.pattern.matcher(token.word).matches))
+      (word:String, prefix:String) => oneHot(prefix + sym, I(reg.pattern.matcher(word).matches))
     })
   }
 
-  def boolFeatures = Seq[(Symbol,Token => Boolean)] (
-    'EndCap     -> (t => t.word.last.isUpper),
-    'SingleCap  -> (t => t.word.count(_.isUpper) == 1),
-    'TwoCap     -> (t => t.word.count(_.isUpper) == 2 && t.word.size == 2),
-    'ThreeCap   -> (t => t.word.count(_.isUpper) == 3 && t.word.size == 3),
-    'MoreCap    -> (t => t.word.count(_.isUpper) > 3),
-    Symbol("WORD_LENGTH=1") -> (t => t.word.size == 1),
-    Symbol("WORD_LENGTH=2") -> (t => t.word.size == 2),
-    Symbol("WORD_LENGTH=3-5") -> (t => t.word.size >= 3 && t.word.size <= 5),
-    Symbol("WORD_LENGTH=6+") -> (t => t.word.size >= 6)
-  ).map({ case (sym:Symbol, fun:(Token => Boolean)) =>
-    (token:Token, prefix:String) => oneHot(prefix + sym, I(fun(token)))
+  def boolFeatures = Seq[(Symbol,String => Boolean)] (
+    'EndCap     -> (t => t.last.isUpper),
+    'SingleCap  -> (t => t.count(_.isUpper) == 1),
+    'TwoCap     -> (t => t.count(_.isUpper) == 2 && t.size == 2),
+    'ThreeCap   -> (t => t.count(_.isUpper) == 3 && t.size == 3),
+    'MoreCap    -> (t => t.count(_.isUpper) > 3),
+    Symbol("WORD_LENGTH=1") -> (t => t.size == 1),
+    Symbol("WORD_LENGTH=2") -> (t => t.size == 2),
+    Symbol("WORD_LENGTH=3-5") -> (t => t.size >= 3 && t.size <= 5),
+    Symbol("WORD_LENGTH=6+") -> (t => t.size >= 6)
+  ).map({ case (sym:Symbol, fun:(String => Boolean)) =>
+    (word:String, prefix:String) => oneHot(prefix + sym, I(fun(word)))
   })
 }
