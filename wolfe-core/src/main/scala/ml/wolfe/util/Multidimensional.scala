@@ -81,11 +81,11 @@ object Multidimensional { //todo: views!
     // ------------------------------------------------------
 
     // Useful for testing, but I'm not really that keen on these being public   -Luke
-    def mulToIndex(mul: MultiIndex): Int = (
+    private def mulToIndex(mul: MultiIndex): Int = (
                                            for ((label, idx) <- mul) yield indexSteps(label) * idx
                                            ).sum
 
-    def indexToMul(i:Int) : MultiIndex =
+    private def indexToMul(i:Int) : MultiIndex =
       for (l <- labels) yield l -> (i / indexSteps(l)) % dimensions(l)
 
     // --------------------- Interface ----------------------
@@ -213,6 +213,9 @@ object Multidimensional { //todo: views!
 
     /** Elementwise addition */
     def +=(that: LabelledTensor[L, T])(implicit n : Numeric[T]) = elementWiseOpInPlace(that, n.plus)
+
+    /** Index of maximum  */
+    def maxIndex(implicit o : Ordering[T]) = indexToMul((0 until array.length).maxBy(array)(o))
 
     /** Copy all elements from another labelled tensor to this one.
       * @note If '''source''' has fewer dimensions, then elements will be repeated.
