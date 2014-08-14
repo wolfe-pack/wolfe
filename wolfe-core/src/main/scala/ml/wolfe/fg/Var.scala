@@ -1,8 +1,8 @@
 package ml.wolfe.fg
 
+import ml.wolfe.FactorGraph.{Node, Edge}
 import ml.wolfe.MoreArrayOps._
 import ml.wolfe.{Wolfe, FactorieVector, FactorGraph}
-import ml.wolfe.FactorGraph.{Node, Edge}
 import scalaxy.loops._
 import scala.util.Random
 import cc.factorie.la.DenseTensor1
@@ -22,18 +22,20 @@ trait Var {
   def setup(){}
   def initializeToNegInfinity():Unit = notSupported
   def initializeRandomly(eps:Double):Unit = notSupported
-  def updateN2F(edge: FactorGraph.Edge):Unit = notSupported
-  def updateDualN2F(edge: FactorGraph.Edge, stepSize:Double):Unit = notSupported
-  def fixMapSetting(node: FactorGraph.Node, overwrite:Boolean = false):Unit = notSupported
+  def updateN2F(edge: Edge):Unit = notSupported
+  def updateDualN2F(edge: Edge, stepSize:Double):Unit = notSupported
+  def fixMapSetting(overwrite:Boolean = false):Unit = notSupported
   def setToArgmax():Unit = notSupported
-  def deterministicN2F(edge: FactorGraph.Edge):Unit = notSupported
-  def updateMaxMarginalBelief(node: FactorGraph.Node):Unit = notSupported
-  def updateMarginalBelief(node: FactorGraph.Node):Unit = notSupported
-  def updateAverageBelief(node: FactorGraph.Node):Unit = notSupported
+  def deterministicN2F(edge: Edge):Unit = notSupported
+  def updateMaxMarginalBelief():Unit = notSupported
+  def updateMarginalBelief():Unit = notSupported
+  def updateAverageBelief():Unit = notSupported
   def entropy():Double = notSupported
 
   /* A description of what the variable represents */
   val label:String = ""
+  
+  var node:Node = null //updated in node init
 }
 
 final class DiscreteVar(var dim: Int, override val label:String = "", val domainLabels:Seq[String] = Seq()) extends Var {
@@ -92,7 +94,7 @@ final class DiscreteVar(var dim: Int, override val label:String = "", val domain
   }
 
   var fixedSetting = false
-  override def fixMapSetting(node:Node, overwrite:Boolean = false):Unit = {
+  override def fixMapSetting(overwrite:Boolean = false):Unit = {
     if(! fixedSetting || overwrite) {
       var maxScore = Double.NegativeInfinity
       for (i <- (0 until dim).optimized) {
@@ -119,7 +121,7 @@ final class DiscreteVar(var dim: Int, override val label:String = "", val domain
     m.n2f(setting) = 0
   }
 
-  override def updateMaxMarginalBelief(node: Node) = {
+  override def updateMaxMarginalBelief() = {
     System.arraycopy(in, 0, b, 0, b.length)
     for (e <- 0 until node.edges.length) {
       for (i <- 0 until dim)
@@ -127,7 +129,7 @@ final class DiscreteVar(var dim: Int, override val label:String = "", val domain
       maxNormalize(b)
     }
   }
-  override def updateMarginalBelief(node: Node) = {
+  override def updateMarginalBelief() = {
     System.arraycopy(in, 0, b, 0, b.length)
     for (e <- 0 until node.edges.length) {
       for (i <- 0 until dim)
@@ -137,7 +139,7 @@ final class DiscreteVar(var dim: Int, override val label:String = "", val domain
     }
   }
 
-  override def updateAverageBelief(node: Node) = {
+  override def updateAverageBelief() = {
     System.arraycopy(in, 0, b, 0, b.length)
     for (e <- 0 until node.edges.length)
       for (i <- 0 until dim)

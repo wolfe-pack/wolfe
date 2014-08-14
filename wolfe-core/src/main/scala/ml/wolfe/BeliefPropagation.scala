@@ -71,7 +71,7 @@ object BeliefPropagation {
           case DirectedEdge(edge, EdgeDirection.N2F) => updateDeterministicMaxN2F(edge)
         }
       }
-      for(n <- fg.nodes) n.variable.fixMapSetting(n)
+      for(n <- fg.nodes) n.variable.fixMapSetting()
     }
 
     fg.nodes.foreach(_.variable.setToArgmax())
@@ -158,7 +158,7 @@ object BeliefPropagation {
    * @param edge the factor-node edge.
    */
   def updateDeterministicMaxN2F(edge: Edge) {
-    edge.n.variable.fixMapSetting(edge.n)
+    edge.n.variable.fixMapSetting()
     edge.n.variable.deterministicN2F(edge)
   }
 
@@ -167,7 +167,7 @@ object BeliefPropagation {
    * @param node the node to update.
    */
   def updateBelief(node: Node, sum: Boolean) {
-    if (sum) node.variable.updateMarginalBelief(node) else node.variable.updateMaxMarginalBelief(node)
+    if (sum) node.variable.updateMarginalBelief() else node.variable.updateMaxMarginalBelief()
   }
 
 

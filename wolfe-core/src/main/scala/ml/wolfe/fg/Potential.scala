@@ -44,25 +44,29 @@ trait Potential {
   def statsForCurrentSetting(): FactorieVector = null
   def toVerboseString(implicit fgPrinter: FGPrinter): String = getClass.getName
   def toHTMLString(implicit fgPrinter: FGPrinter): String = toVerboseString(fgPrinter)
+  var factor:Factor = null //Automatically set by Factor
 
-  /**
-   * Get the table of scores assigned by the potential over different settings, as a LabelledTensor
-   * @param forVariables the order in which the variables should appear in the table
-   * @return a LabelledTensor containing the scores
-   */
-  def getScoreTable(forVariables:Array[DiscreteVar]) : LabelledTensor[DiscreteVar, Double] = {
-    val t:LabelledTensor[DiscreteVar, Double] = LabelledTensor.onNewArray[DiscreteVar, Double](forVariables, _.dim, 0.0)
-    t.fillBy(mul => {
-      for ((v, s) <- mul) {
-        v.setting = s
-      }
-      valueForCurrentSetting()
-    })
-    t
-  }
 }
 
-final class AndPotential(arg1: Edge, arg2: Edge) extends Potential {
+trait DiscretePotential extends Potential {
+  lazy val vars:Array[DiscreteVar] = factor.edges.map(_.n.variable.asDiscrete)
+  def valueForSetting(setting:Seq[Int]): Double
+  override def valueForCurrentSetting(): Double = valueForSetting(vars.view.map(_.setting))
+
+  /**
+   * The table of scores assigned by the potential over different settings, as a LabelledTensor
+   * @return a LabelledTensor containing the scores
+   */
+  protected def getScoreTable : LabelledTensor[DiscreteVar, Double] = {
+    val t:LabelledTensor[DiscreteVar, Double] = LabelledTensor.onNewArray(vars, _.dim, 0.0)
+    t.fillBy(mul => valueForSetting(mul.map(_._2)))
+    t
+  }
+  protected lazy val $scoreTable = getScoreTable
+  def scoreTable = if(isLinear) getScoreTable else $scoreTable
+}
+
+final class AndPotential(arg1: Edge, arg2: Edge) extends DiscretePotential {
   val n1 = arg1.n.variable.asDiscrete
   val n2 = arg2.n.variable.asDiscrete
   val m1 = arg1.msgs.asDiscrete
@@ -74,8 +78,8 @@ final class AndPotential(arg1: Edge, arg2: Edge) extends Potential {
     msgs.f2n(1) = other.n2f(1)
     msgs.f2n(0) = Double.NegativeInfinity
   }
-  override def valueForCurrentSetting() = {
-    if (n1.setting == 1 && n2.setting == 1) 0.0 else Double.NegativeInfinity
+  override def valueForSetting(setting:Seq[Int]) = {
+    if (setting(0)==1 && setting(1)==1) 0.0 else Double.NegativeInfinity
   }
   override def maxMarginalExpectationsAndObjective(dstExpectations: FactorieVector) = {
     val beliefInConsistentSolution = m1.n2f(1) + m2.n2f(1)

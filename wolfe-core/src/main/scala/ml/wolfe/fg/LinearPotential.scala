@@ -10,7 +10,7 @@ import ml.wolfe.util.Util.approxEqual
 /**
  * @author Sebastian Riedel
  */
-final class LinearPotential(val edges: Array[Edge], val statistics: Stats, fg: FactorGraph) extends Potential {
+final class LinearPotential(val edges: Array[Edge], val statistics: Stats, fg: FactorGraph) extends DiscretePotential {
 
   import statistics._
 
@@ -77,8 +77,7 @@ final class LinearPotential(val edges: Array[Edge], val statistics: Stats, fg: F
       msgs(j).f2n(maxSetting(j)) = 1
   }
 
-  override def valueForCurrentSetting() = {
-    val setting = edges.map(_.n.variable.asDiscrete.setting)
+  override def valueForSetting(setting:Seq[Int]): Double = {
     val entry = TablePotential.settingToEntry(setting, dims)
     scoreEntry(entry)
   }
