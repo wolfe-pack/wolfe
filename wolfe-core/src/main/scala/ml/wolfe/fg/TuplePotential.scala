@@ -65,10 +65,10 @@ final class TupleConsistencyPotential(edge1: Edge, edge2: Edge) extends TuplePot
 
 /**
  * A wrapper potential, which sums over a collection of component potentials
- * @param components The component factors in the junction tree
+ * @param componentPotentials The component potentials in the junction tree
  * @param edge the edge between this GroupPotential and the TupleNode it communicates with
  */
-final class GroupPotential(val components: Array[Factor], val edge:Edge, val baseNodes:Array[Node]) extends TuplePotential {
+final class GroupPotential(val componentPotentials: Array[DiscretePotential], val edge:Edge, val baseNodes:Array[Node]) extends TuplePotential {
   val v = edge.n.variable.asTuple
   val m = edge.msgs.asTuple
 
@@ -78,11 +78,11 @@ final class GroupPotential(val components: Array[Factor], val edge:Edge, val bas
 
   override def valueForCurrentSetting() = {
     v.updateComponentSettings()
-    components.map(_.potential.valueForCurrentSetting()).sum
+    componentPotentials.map(_.valueForCurrentSetting()).sum
   }
 
   override def marginalF2N(edge: Edge) = {
-    val scoretables = components.map(f => f.potential.getScoreTable(componentVariables(f)))
+    val scoretables = componentPotentials.map(p => p.scoreTable)
     m.f2n.copyFrom(scoretables.head)
     for(t <- scoretables.tail) m.f2n += t
     maxNormalize(m.f2n.array)
@@ -90,7 +90,7 @@ final class GroupPotential(val components: Array[Factor], val edge:Edge, val bas
   override def maxMarginalF2N(edge:Edge) = marginalF2N(edge)
 
   override def maxMarginalExpectationsAndObjective(dstExpectations: FactorieVector) = {
-    val scoretables = components.map(f => f.potential.getScoreTable(componentVariables(f)))
+    val scoretables = componentPotentials.map(p => p.scoreTable)
     val scoreSums:LabelledTensor[DiscreteVar, Double] =
       LabelledTensor.onNewArray[DiscreteVar, Double](v.components, _.dim, 0.0)
     for(t <- scoretables) scoreSums += t
@@ -112,16 +112,16 @@ final class GroupPotential(val components: Array[Factor], val edge:Edge, val bas
     }
 
     val prob = 1d / maxCount
-    for (f <- components if f.potential.isLinear) { //todo: yuck!
-      val maxMarginal = scorePairs.fold[Double](componentVariables(f), 0, {
+    for (p <- componentPotentials if p.isLinear) { //todo: yuck!
+      val maxMarginal = scorePairs.fold[Double](p.vars, 0, {
         (acc:Double, x:(Double, Double)) =>
           if(approxEqual(x._2, maxPenalisedScore)) acc + prob else acc
       })
-      f.potential match {
-        case p: LinearPotential =>
-          val R = maxMarginal.permute(p.edges.map(_.n.variable.asDiscrete), allowSameArray = true)
+      p match {
+        case pot: LinearPotential =>
+          val R = maxMarginal.permute(pot.edges.map(_.n.variable.asDiscrete), allowSameArray = true)
           for(i <- 0 until R.array.length if R.array(i)!=0)
-            dstExpectations +=(p.statistics.vectors(i), R.array(i))
+            dstExpectations +=(pot.statistics.vectors(i), R.array(i))
       }
     }
     maxScore

@@ -311,6 +311,7 @@ object FactorGraph {
    * @param variable the variable the node is representing.
    */
   final class Node(val index: Int, var variable: Var) {
+    variable.node = this
     /* all edges to factors that this node is connected to */
     var edges: Array[Edge] = Array.ofDim(0)
 
@@ -385,7 +386,12 @@ object FactorGraph {
      * The potential for this factor. Usually created after edges to factor have been created as
      * the potential directly works with the edges.
      */
-    var potential: Potential = null
+    private var $potential: Potential = null
+    def potential = $potential
+    def potential_=(p:Potential) = {
+      $potential = p
+      p.factor = this
+    }
 
     /**
      * More verbose string representation that shows that potential table depending on factor type.

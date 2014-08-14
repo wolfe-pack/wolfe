@@ -123,7 +123,7 @@ object KernelBP {
       }
       normalizeMsg(msgs.n2f)
     }
-    override def updateMarginalBelief(node: Node) = {
+    override def updateMarginalBelief() = {
       belief = new DenseVector[Double](Array.fill(dim)(1.0))
       for (edge <- node.edges) {
         val source = edge.msgs.asInstanceOf[KernelBPMSgs]

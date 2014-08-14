@@ -64,7 +64,7 @@ class TupleVar(val componentNodes:Array[Node]) extends Var {
       m.n2f += node.edges(e).msgs.asTuple.f2n
   }
 
-  override def updateMaxMarginalBelief(node: Node) = {
+  override def updateMaxMarginalBelief() = {
     B.copyFrom(IN)
     for (e <- 0 until node.edges.length) {
       B += node.edges(e).msgs.asTuple.f2n
@@ -77,7 +77,7 @@ class TupleVar(val componentNodes:Array[Node]) extends Var {
   }
 
   var fixedSetting = false
-  override def fixMapSetting(node:Node, overwrite:Boolean = false):Unit = {
+  override def fixMapSetting(overwrite:Boolean = false):Unit = {
     if(! fixedSetting || overwrite) {
       var maxScore = Double.NegativeInfinity
       val scores = IN.clone()

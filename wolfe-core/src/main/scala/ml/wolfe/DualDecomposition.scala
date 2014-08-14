@@ -36,7 +36,7 @@ object DualDecomposition {
     for (iter <- 0 until maxIteration if !fg.converged) {
       //todo: dynamically adjust QP step size (page 13)
       for(f <- factors) if(ad3) f.potential.quadraticProgramF2N(stepSize(iter), 10) else f.potential.mapF2N()
-      for(n <- fg.nodes) n.variable.updateAverageBelief(n)
+      for(n <- fg.nodes) n.variable.updateAverageBelief()
       for(n <- fg.nodes; e <- n.edges) n.variable.updateDualN2F(e, stepSize(iter))
 
       fg.converged = hasConverged(fg)

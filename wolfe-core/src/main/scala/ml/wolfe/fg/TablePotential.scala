@@ -42,7 +42,7 @@ object TablePotential {
    * @param dims dimensions of each variable.
    * @return the entry corresponding to the given setting.
    */
-  final def settingToEntry(setting: Array[Int], dims: Array[Int]) = {
+  final def settingToEntry(setting: Seq[Int], dims: Array[Int]) = {
     var result = 0
     for (i <- (0 until dims.length).optimized) {
       result = setting(i) + result * dims(i)
@@ -72,14 +72,14 @@ object TablePotential {
 
 case class Table(settings: Array[Array[Int]], scores: Array[Double])
 
-final class TablePotential(edges: Array[Edge], table: Table) extends Potential {
+final class TablePotential(edges: Array[Edge], table: Table) extends DiscretePotential {
 
   import table._
 
   val dims       = edges.map(_.n.variable.asDiscrete.dim)
   val entryCount = table.scores.size
 
-  lazy val vars = edges.map(_.n.variable.asDiscrete)
+  //lazy val vars = edges.map(_.n.variable.asDiscrete)
   lazy val msgs = edges.map(_.msgs.asDiscrete)
 
   /**
@@ -109,13 +109,11 @@ final class TablePotential(edges: Array[Edge], table: Table) extends Potential {
     "<table class='potentialtable'>" + headerRow + "\n" + tableRows.mkString("\n") + "</table>"
   }
 
-  override def getScoreTable(forVariables:Array[DiscreteVar]) : LabelledTensor[DiscreteVar, Double] = {
-    def curr = LabelledTensor.onExistingArray[DiscreteVar, Double](vars, _.dim, table.scores)
-    curr.permute(forVariables, allowSameArray = true)
+  override def scoreTable: LabelledTensor[DiscreteVar, Double] = {
+     LabelledTensor.onExistingArray[DiscreteVar, Double](vars, _.dim, table.scores)
   }
 
-  override def valueForCurrentSetting() = {
-    val setting = vars.map(_.setting)
+  override def valueForSetting(setting:Seq[Int]): Double = {
     val entry = TablePotential.settingToEntry(setting, dims)
     scores(entry)
   }
