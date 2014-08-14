@@ -279,7 +279,6 @@ object KernelBPTed {
 
     val tags = Seq("art", "arts")
 
-
     //load positive and negative training documents for en-de
     val de_en = new File("/Users/sriedel/corpora/ted-cldc/de-en/")
     val en_de = new File("/Users/sriedel/corpora/ted-cldc/en-de/")
@@ -296,6 +295,9 @@ object KernelBPTed {
       en_train_byLabel
     }
     val en_index = new SimpleIndex
+
+
+
     val en_train_byLabel = pipeline(en_de,"train","art","_en",en_index)
     val en_test_byLabel = pipeline(en_de,"test","art","_en",en_index,true)
 
