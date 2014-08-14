@@ -99,10 +99,14 @@ object Wolfe extends SampleSpaceDefs
     def get() = factorGraph
   }
   implicit def toD3FGDefault(fg:FactorGraph):HTML =
-    FactorGraphViewer.toD3Html(fg, _ => true)
+    FactorGraphViewer.toD3Html(fg, 620, 300, _ => true)
 
-  def toD3FG(fg:FactorGraph, nodeFilter:Node=>Boolean = _ => true, linear:Boolean=false):HTML =
-    FactorGraphViewer.toD3Html(fg, nodeFilter, linear)
+  implicit def toD3FGByRegex(fg:FactorGraph, reg:String):HTML =
+    FactorGraphViewer.toD3Html(fg, 1000, 1000, _.variable.label.matches(reg))
+
+
+  def toD3FG(fg:FactorGraph, width:Int=620, height:Int = 300, nodeFilter:Node=>Boolean = _ => true, linear:Boolean=false):HTML =
+    FactorGraphViewer.toD3Html(fg, width, height, nodeFilter, linear)
 }
 
 trait StatsDefs {
