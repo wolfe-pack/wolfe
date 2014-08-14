@@ -67,7 +67,7 @@ case class Document(source: String,
  * @param bowVector a vectorized bag of word representation, for example using tf-idf counts.
  */
 case class IRAnnotation(docLabel:Option[String] = None,
-                        bowVector:SparseVector[Double] = SparseVector.zeros(0))
+                        bowVector:Option[SparseVector[Double]] = None)
 
 object IRAnnotation {
   val empty = IRAnnotation()

@@ -83,6 +83,7 @@ trait SymbolRepository[C <: Context] extends HasContext[C] {
   object scalaSymbols {
     lazy val booleanClass         = rootMirror.staticClass("scala.Boolean")
     lazy val doubleClass          = rootMirror.staticClass("scala.Double")
+    lazy val intClass             = rootMirror.staticClass("scala.Int")
     lazy val traversableOnceClass = rootMirror.staticClass("scala.collection.TraversableOnce")
     lazy val traversableLikeClass = rootMirror.staticClass("scala.collection.TraversableLike")
     lazy val iterableClass        = rootMirror.staticClass("scala.collection.Iterable")
