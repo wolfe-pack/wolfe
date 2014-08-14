@@ -14,9 +14,9 @@ object FactorGraphViewer {
     case None => ""
   }
 
-  def toD3Html(fg:FactorGraph, nodeFilter:Node=>Boolean, linear:Boolean=false):HTML = {
+  def toD3Html(fg:FactorGraph, width:Int=620, height:Int=300, nodeFilter:Node=>Boolean, linear:Boolean=false):HTML = {
     def escape(s:String) =
-      s.replace("\n","\\n").replace("\'", "\\\'")
+      s.replace("\n","\\n").replace("\'", "\\\'").replace("\"", "\\\"")
 
     val fgid = this.hashCode().toString
 
@@ -27,8 +27,8 @@ object FactorGraphViewer {
     val maxNodeNumber = nodes.map(nodeToNumber).max
     val nodeTypes = nodes.map(nodeToType).distinct
 
-    val width = 620
-    val height = 300
+    //val width = 620
+   // val height = 300
 
     def nodeX(n:Node) = width * (if(maxNodeNumber==0) Math.random() else (nodeToNumber(n).toDouble)/(maxNodeNumber))
     def nodeY(n:Node) =
