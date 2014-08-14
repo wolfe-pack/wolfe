@@ -43,7 +43,7 @@ object NERExample {
     oneHot(prefix + 'isSlash, I(token.word.matches("[/\\\\]"))) +
     oneHot(prefix + 'prefix2 -> token.word.take(2)) +
     oneHot(prefix + 'suffix2 -> token.word.takeRight(2))
-  }*/
+  }*/g
 
 
 
