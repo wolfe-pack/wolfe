@@ -71,8 +71,10 @@ object BeliefPropagation {
           case DirectedEdge(edge, EdgeDirection.N2F) => updateDeterministicMaxN2F(edge)
         }
       }
-      for(n <- fg.nodes) n.variable.asDiscrete.fixMapSetting(n)
+      for(n <- fg.nodes) n.variable.fixMapSetting(n)
     }
+
+    fg.nodes.foreach(_.variable.setToArgmax())
   }
 
   def calculateExpectations(fg: FactorGraph, sum: Boolean) {
@@ -97,8 +99,7 @@ object BeliefPropagation {
       apply(fg, 1, schedule = true, bpType, gradientAndObjective)
     } else {
       val jt = Junkify(fg)
-      //todo: Fix JT Belief Propagation to work with MAX (requires TupleVar.fixMapSetting and TupleVar.deterministicN2F)
-      apply(jt, 1, schedule = true, if(bpType == Sum) Sum else MaxMarginals, gradientAndObjective)
+      apply(jt, 1, schedule = true, bpType, gradientAndObjective)
       if (gradientAndObjective) {
         fg.value = jt.value
         fg.gradient = jt.gradient
