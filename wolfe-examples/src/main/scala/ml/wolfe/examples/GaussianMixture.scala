@@ -10,6 +10,7 @@ import math._
 object GaussianMixture extends App {
 
   import ml.wolfe.macros.OptimizedOperators._
+  import logDist._
 
   case class World(z: Int, x: Double)
   val means   = Seq(-1.0, 0.0, 1.0)
@@ -21,18 +22,19 @@ object GaussianMixture extends App {
 
   def worlds = all(World)
 
-  val mu = expect(worlds)(model)(w => oneHot('x -> w.x) + oneHot('z -> w.z))
+  //val mu = expect(worlds)(model)(w => oneHot('x -> w.x) + oneHot('z -> w.z))
 
 
 
 
 }
 
-object ComplexGaussianMixture {
+object FirstOrderGaussianMixture {
 
-  case class Component(mean: Double, variance: Double)
+  case class Component(mean: Double, dev: Double)
   case class World(instances: Seq[Instance], components: Seq[Component], prior: Seq[Double])
   case class Instance(z: Int, x: Double)
+
 
 
 }
