@@ -81,6 +81,9 @@ object Wolfe extends SampleSpaceDefs
       def sq(x: Double) = x * x
       log(1.0 / (dev * sqrt(2.0 * Pi)) * exp(-sq(x - mean) / (2.0 * sq(dev))))
     }
+
+
+
   }
 
 
