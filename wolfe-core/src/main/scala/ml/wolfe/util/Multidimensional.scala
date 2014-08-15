@@ -101,7 +101,7 @@ object Multidimensional { //todo: views!
     /** fill all elements in this with a constant */
     def fill(x: T) = fillBy(mul => x)
 
-
+    def zipWithIndex = array.view zip allMuls()
 
     /**
      * Fold this into a smaller LabelledTensor using a binary operation. Dimensions which appear in '''this'''
@@ -233,7 +233,6 @@ object Multidimensional { //todo: views!
         case None => array.map(_.toString.take(4)).mkString("(", ",", ")")
         case Some(x) => array.map(_.toString.take(4)).grouped(indexSteps(x)).map(_.mkString("(", ",", ")")).mkString("\n")
       }
-
     }
   }
 
