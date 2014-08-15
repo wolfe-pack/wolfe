@@ -75,9 +75,12 @@ object Wolfe extends SampleSpaceDefs
 
   def bernoulli(p: Double = 0.5)(coin: Boolean) = if (coin) log(p) else log1p(-p)
 
-  def gaussian(mean: Double = 0.0, dev: Double = 1.0)(x: Double) = {
-    def sq(x:Double) = x * x
-    log(1.0 / (dev * sqrt(2.0 * Pi)) * exp(-sq(x - mean) / (2.0 * sq(dev))))
+  object logDist {
+
+    def gaussian(mean: Double = 0.0, dev: Double = 1.0)(x: Double) = {
+      def sq(x: Double) = x * x
+      log(1.0 / (dev * sqrt(2.0 * Pi)) * exp(-sq(x - mean) / (2.0 * sq(dev))))
+    }
   }
 
 
