@@ -1,5 +1,7 @@
 package ml.wolfe
 
+import java.io.PrintWriter
+
 import ml.wolfe.FactorGraph.{Factor, Node}
 import org.sameersingh.htmlgen.{RawHTML, HTML}
 
@@ -7,16 +9,30 @@ object FactorGraphViewer {
 
   def nodeToNumber(n:Node) =  """(.*)\(([0-9]+)\)""".r.findFirstMatchIn(n.variable.label) match {
       case Some(x) => x.group(2).toInt
-      case None => 0
+      case None => -1
     }
   def nodeToType(n:Node) = """(.*)\(([0-9]+)\)(.*)""".r.findFirstMatchIn(n.variable.label) match {
     case Some(x) => x.group(3)
     case None => ""
   }
 
+  def saveHTML(fg:FactorGraph,
+                      file:String = System.getProperty("user.home") + "/factorgraph.html",
+                      regexFilter:String = ".*") = {
+    val html = FactorGraphViewer.toD3Html(fg, 1200, 800, _.variable.label.matches(regexFilter), true).source
+    val writer = new PrintWriter(file)
+    writer.println("<html>" +
+    "<head><link rel='stylesheet' href='http://moro.wolfe.ml:9000/assets/stylesheets/wolfe.css' />" +
+    "<style type='text/css'>.label{fill:#fff;font-size:15px;text-transform:none}</style></head>" +
+    "<body>" + html + "</body>" +
+    "</html>")
+
+    writer.close()
+  }
+
   def toD3Html(fg:FactorGraph, width:Int=620, height:Int=300, nodeFilter:Node=>Boolean, linear:Boolean=false):HTML = {
     def escape(s:String) =
-      s.replace("\n","\\n").replace("\'", "\\\'").replace("\"", "\\\"")
+      s.replace("\n","\\n").replace("'", "\\'").replace("\"", "\\\"")
 
     val fgid = this.hashCode().toString
 
@@ -25,18 +41,25 @@ object FactorGraphViewer {
     val edges = fg.edges.filter(e => nodes.contains(e.n) && factors.contains(e.f))
 
     val maxNodeNumber = nodes.map(nodeToNumber).max
+    val minNodeNumber = if(maxNodeNumber > -1) nodes.map(nodeToNumber).filter(_ > -1).min else -1
     val nodeTypes = nodes.map(nodeToType).distinct
 
     //val width = 620
    // val height = 300
 
-    def nodeX(n:Node) = width * (if(maxNodeNumber==0) Math.random() else (nodeToNumber(n).toDouble)/(maxNodeNumber))
+    val gravity = 0.03
+    val charge = -700
+    val linkDistance = 50
+
+    def nodeX(n:Node) = width * (
+      if(nodeToNumber(n) == -1) Math.random()
+      else ((nodeToNumber(n)-minNodeNumber).toDouble+0.5)/(maxNodeNumber - minNodeNumber +1))
     def nodeY(n:Node) =
-      if(!linear || maxNodeNumber == 0) height * Math.random()
+      if(!linear || maxNodeNumber == -1) height * Math.random()
       else height * ((nodeTypes.indexOf(nodeToType(n))+1).toDouble / (nodeTypes.length+1))
     def factorX(f:Factor) = f.edges.map(e => nodeX(e.n)).sum / f.edges.length
     def factorY(f:Factor) = f.edges.map(e => nodeY(e.n)).sum / f.edges.length
-
+    def isFixed(n:Node) = linear && maxNodeNumber != -1 && (nodeToNumber(n) == minNodeNumber || nodeToNumber(n) == maxNodeNumber)
 
 
     val genCode =  s"""
@@ -45,8 +68,9 @@ object FactorGraphViewer {
              nodes.map(n =>
                 "{text:'" + escape(n.variable.label) + "'" +
                 ", class:'fgnode'" +
-                ", hoverhtml:'Domain: {" + n.variable.asDiscrete.domainLabels.mkString(", ") + "}'" +
+                ", hoverhtml:'Domain: {" + escape(n.variable.asDiscrete.domainLabels.mkString(", ")) + "}'" +
                 ", x:" + nodeX(n) + ", y:" + nodeY(n) +
+                ", fixed:" + isFixed(n) +
                 "}") ++
              factors.map(f =>
                 "{shape: 'square'" +
@@ -124,15 +148,14 @@ object FactorGraphViewer {
         |
         |FG$fgid.force = d3.layout.force()
         |.size([FG$fgid.width, FG$fgid.height])
-        |.charge(-3000)
-        |.gravity(0.5)
-        |    //.linkDistance(150)
-        |    //.on("tick", tick);
+        |.charge($charge)
+        |.gravity($gravity)
+        |.linkDistance($linkDistance)
         |
         |    FG$fgid.drag = FG$fgid.force.drag()
         |
         |    FG$fgid.svg = d3.select("#FG$fgid").append("svg")
-        |    .attr("width", "100%")
+        |    .attr("width", FG$fgid.width)
         |    .attr("height", FG$fgid.height)
         |    .style("overflow", "visible");
         |
@@ -184,8 +207,10 @@ object FactorGraphViewer {
         |FG$fgid.tooltipNode = null
         |FG$fgid.tooltip = null
         |
-        |${if(!linear) "while(FG" + fgid + ".force.alpha() != 0) {FG" + fgid + ".force.tick();}\n"
-           else "FG" + fgid + ".force.alpha(0);\n"}
+        |${
+           /*if(!linear)*/ "while(FG" + fgid + ".force.alpha() > 0.05) {FG" + fgid + ".force.tick();}\n"
+           //else "FG" + fgid + ".force.alpha(0);\n"
+           }
         |
         |FG$fgid.tick = function() {
         |	FG$fgid.link.attr("x1", function(d) { return d.source.x; })

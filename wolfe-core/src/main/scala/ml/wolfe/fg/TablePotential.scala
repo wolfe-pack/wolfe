@@ -97,18 +97,6 @@ final class TablePotential(edges: Array[Edge], table: Table) extends DiscretePot
     tableString.mkString("\n")
   }
 
-  override def toHTMLString(implicit fgPrinter: FGPrinter) = {
-    val headerRow = "<tr>" + vars.map(_.label).map("<td><i>" + _ + "</i></td>").mkString(" ") + "</tr>"
-    val tableRows =
-      for ((setting, index) <- settings.take(math.min(settings.length, 10)).zipWithIndex) yield {
-        val domainEntries = for ((s, j) <- setting.zipWithIndex) yield vars(j).domainLabels(s)
-        val cells = domainEntries :+ ("<b>" + table.scores(index).toString + "</b>")
-        "<tr>" + cells.map("<td>" + _ + "</td>").mkString(" ") + "</tr>"
-      }
-
-    "<table class='potentialtable'>" + headerRow + "\n" + tableRows.mkString("\n") + "</table>"
-  }
-
   override def scoreTable: LabelledTensor[DiscreteVar, Double] = {
      LabelledTensor.onExistingArray[DiscreteVar, Double](vars, _.dim, table.scores)
   }

@@ -64,7 +64,20 @@ trait DiscretePotential extends Potential {
   }
   protected lazy val $scoreTable = getScoreTable
   def scoreTable = if(isLinear) getScoreTable else $scoreTable
+
+  override def toHTMLString(implicit fgPrinter: FGPrinter) = {
+    val table = scoreTable
+    val headerRow = "<tr>" + vars.map(_.label).map("<td><i>" + _ + "</i></td>").mkString(" ") + "</tr>"
+    val tableRows =
+      for((score, mul) <- table.zipWithIndex.take(10)) yield {
+        val domainEntries = mul.map( m => m._1.domainLabels(m._2) )
+        val cells = domainEntries :+ ("<b>" + score + "</b>")
+        "<tr>" + cells.map("<td>" + _ + "</td>").mkString(" ") + "</tr>"
+      }
+    "<table class='potentialtable'>" + headerRow + "\n" + tableRows.mkString("\n") + "</table>"
+  }
 }
+
 
 final class AndPotential(arg1: Edge, arg2: Edge) extends DiscretePotential {
   val n1 = arg1.n.variable.asDiscrete

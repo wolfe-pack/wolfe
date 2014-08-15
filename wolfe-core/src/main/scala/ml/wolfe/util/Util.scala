@@ -1,6 +1,9 @@
 package ml.wolfe.util
 
-import java.io.{File, FileInputStream, InputStream}
+import java.io.{PrintWriter, File, FileInputStream, InputStream}
+import ml.wolfe.{FactorGraphViewer, FactorGraph}
+import ml.wolfe.FactorGraph.Node
+
 import scala.collection.mutable.ArrayBuffer
 import scala.io.Source
 import scala.collection.mutable
@@ -45,8 +48,6 @@ object Util {
   def approxEqual(x: Double, y: Double, eps: Double = 1e-10) = {
     math.abs(x - y) < eps
   }
-
-
 
 }
 
