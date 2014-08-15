@@ -1,20 +1,8 @@
-import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
+import ml.wolfe.nlp.Document
 
-val map = new mutable.HashMap[String,Array[String]]
+def tokenize(d:Document)  = d
+def segment(d:Document) = d
+val tokenize2 = (d:Document) => d
 
-map("rel") = map.getOrElse("rel",Array.empty[String]) :+ "parent"
-
-val map2 = new mutable.HashMap[String,ArrayBuffer[String]]
-
-map2.getOrElse("rel",new ArrayBuffer[String]) += "parent"
-
-val map3 = new mutable.HashMap[String,List[String]] withDefaultValue Nil
-
-map3("rel") = "parent" :: map3("rel")
-
-map3("rel") = "parent2" :: map3("rel")
-
-map3.mkString("\n")
-
+val pipeline = tokenize2.andThen(segment)
 

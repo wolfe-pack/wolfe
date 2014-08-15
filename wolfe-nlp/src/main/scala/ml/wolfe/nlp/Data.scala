@@ -40,7 +40,7 @@ case class Sentence(tokens: Seq[Token], syntax: SyntaxAnnotation = SyntaxAnnotat
   def toTaggedText = tokens map (_.toTaggedText) mkString " "
   def document(implicit g:ObjectGraph) =
     g.receiveOrdered[Sentence,Document,Document]('sentences,this)((_,d) => d)
-  def $tokens(implicit graph: ObjectGraph) =
+  def linkTokens(implicit graph: ObjectGraph) =
     graph.link1toNOrdered[Sentence, Token, Seq[Token]]('tokens, this, tokens)
 }
 
@@ -59,6 +59,7 @@ case class Document(source: String,
   def tokens = sentences flatMap (_.tokens)
   def $sentences(implicit g:ObjectGraph) =
     g.link1toNOrdered[Document,Sentence,Seq[Sentence]]('sentences, this, sentences)
+
 }
 
 /**
@@ -81,9 +82,12 @@ object Data {
     val result = SISTAProcessors.mkDocument(source)
 
     implicit val graph = new SimpleObjectGraph
+
     val s = result.sentences.head
-    println(s.$tokens.head.sentence == s)
-    println(s.tokens.head.next)
+    //s.linkTokens(graph) //build graph
+
+    println(s.tokens.head.sentence == s)
+    println(s.tokens.head.next.get == s.tokens(1))
 
     //    val result2 = SISTAProcessors.annotate(source)
     //
