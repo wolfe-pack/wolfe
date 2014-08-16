@@ -51,7 +51,6 @@ object FirstOrderBayesianGaussianMixture {
   val k = 4
   val n = 5
 
-  case class Component(mean: Double, dev: Double)
   case class World(instances: Seq[Instance], phi: Seq[Double], mu: Seq[Double], sig: Seq[Double])
   case class Instance(z: Int, x: Double)
 

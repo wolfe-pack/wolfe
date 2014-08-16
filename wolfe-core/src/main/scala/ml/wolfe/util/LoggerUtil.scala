@@ -1,6 +1,10 @@
 package ml.wolfe.util
 
-import com.typesafe.scalalogging.slf4j.{Logging}
+import com.typesafe.scalalogging.slf4j.Logging
+
+import scala.annotation.StaticAnnotation
+import scala.reflect.macros.Context
+import language.experimental.macros
 
 /**
  * Logger wrapper class.
@@ -55,3 +59,31 @@ object LoggerUtil extends Logging {
     logger.trace(msg, t)
   }
 }
+
+class LogCalls(msg:String => Unit) extends StaticAnnotation {
+  def macroTransform(annottees: Any*) = macro LogCallsMacro.impl
+
+}
+
+object LogCallsMacro {
+  def impl(c: Context)(annottees: c.Expr[Any]*): c.Expr[Any] = {
+    import c.universe._
+    val inputs = annottees.map(_.tree).toList
+    val withLogging = inputs match {
+      case (defDef:DefDef) :: Nil =>
+        val msg = Constant(defDef.name.toString)
+        val app = c.macroApplication
+        val q"$ctr.${_}(${_})" = app
+        val q"new ${_}($fun)" = ctr
+        //todo: when the type of the passed function is not explicitly defined this seems to fail.
+        //todo: need inject type by force in such cases
+        val passMsg = q"$fun($msg)"
+        val newRhs = Block(List(passMsg),defDef.rhs)
+        treeCopy.DefDef(defDef,defDef.mods,defDef.name,defDef.tparams,defDef.vparamss,defDef.tpt,newRhs)
+      case _ =>
+        c.abort(c.enclosingPosition, "LogCalls can only annotate methods")
+    }
+    c.Expr[Any](withLogging)
+  }
+}
+
