@@ -1,9 +1,9 @@
 language: scala
 scala:
-   - 2.10.3
+   - 2.10.4
 jdk:
    - oraclejdk7
 
-after_script:
-   - sbt 'test:runMain ml.wolfe.benchmark.AllBenchmarks '$TRAVIS_BUILD_NUMBER' travis '$TRAVIS_BRANCH
+#after_script:
+#   - sbt 'test:runMain ml.wolfe.benchmark.AllBenchmarks '$TRAVIS_BUILD_NUMBER' travis '$TRAVIS_BRANCH
 
