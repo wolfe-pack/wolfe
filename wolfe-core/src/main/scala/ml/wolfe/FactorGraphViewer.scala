@@ -22,8 +22,12 @@ object FactorGraphViewer {
     val html = FactorGraphViewer.toD3Html(fg, 1200, 800, _.variable.label.matches(regexFilter), true).source
     val writer = new PrintWriter(file)
     writer.println("<html>" +
-    "<head><link rel='stylesheet' href='http://moro.wolfe.ml:9000/assets/stylesheets/wolfe.css' />" +
-    "<style type='text/css'>.label{fill:#fff;font-size:15px;text-transform:none}</style></head>" +
+    "<head><link rel='stylesheet' href='" +
+      //"http://moro.wolfe.ml:9000/assets/stylesheets/wolfe.css" +
+      "./workspace/moro/public/stylesheets/wolfe.css" +
+    "' />" +
+    "<style type='text/css'>.label{fill:#fff;font-size:15px;text-transform:none}</style>" +
+    "</head>" +
     "<body>" + html + "</body>" +
     "</html>")
 
@@ -54,9 +58,9 @@ object FactorGraphViewer {
     def nodeX(n:Node) = width * (
       if(nodeToNumber(n) == -1) Math.random()
       else ((nodeToNumber(n)-minNodeNumber).toDouble+0.5)/(maxNodeNumber - minNodeNumber +1))
-    def nodeY(n:Node) =
-      if(!linear || maxNodeNumber == -1) height * Math.random()
-      else height * ((nodeTypes.indexOf(nodeToType(n))+1).toDouble / (nodeTypes.length+1))
+    def nodeY(n:Node) = height * (
+      if(nodeToNumber(n) == -1) Math.random()
+      else (nodeTypes.indexOf(nodeToType(n))+1).toDouble / (nodeTypes.length+1))
     def factorX(f:Factor) = f.edges.map(e => nodeX(e.n)).sum / f.edges.length
     def factorY(f:Factor) = f.edges.map(e => nodeY(e.n)).sum / f.edges.length
     def isFixed(n:Node) = linear && maxNodeNumber != -1 && (nodeToNumber(n) == minNodeNumber || nodeToNumber(n) == maxNodeNumber)
