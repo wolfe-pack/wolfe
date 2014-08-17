@@ -79,7 +79,6 @@ object LogCallsMacro {
 
         //todo: when the type of the passed function is not explicitly defined this seems to fail.
         //todo: need inject type by force in such cases
-
         val newRhs = args match {
           case pre :: Nil =>
             val passPreMsg = q"$pre($msg)"
@@ -88,8 +87,8 @@ object LogCallsMacro {
             val passPreMsg = q"$pre($msg)"
             val passPostMsg = q"$post($msg)"
             defDef.rhs match {
-              case Block(statements,expr) => Block(passPreMsg :: (statements :+ passPostMsg), expr)
-              case expr => Block(passPreMsg :: (List(expr) :+ passPostMsg), expr)
+              case Block(statements, expr) => Block(passPreMsg :: (statements :+ passPostMsg), expr)
+              case expr => Block(passPreMsg :: (List(expr) :+ passPostMsg), q"{};")
             }
           case _ => c.abort(c.enclosingPosition, "LogCalls can only handle a pre and post hook")
         }
