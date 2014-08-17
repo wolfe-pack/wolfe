@@ -71,14 +71,13 @@ object FactorGraphViewer {
         |  "nodes": [${(
              nodes.map(n =>
                 "{text:'" + escape(n.variable.label) + "'" +
-                ", class:'fgnode'" +
+                ", type:'node'" +
                 ", hoverhtml:'Domain: {" + escape(n.variable.asDiscrete.domainLabels.mkString(", ")) + "}'" +
                 ", x:" + nodeX(n) + ", y:" + nodeY(n) +
                 ", fixed:" + isFixed(n) +
                 "}") ++
              factors.map(f =>
-                "{shape: 'square'" +
-                ", class:'fgfactor'" +
+                "{type:'factor'" +
                 ", hoverhtml:'" + "<div class=\"tooltipheader\">" + escape(f.label) + "</div>" +
                 escape(f.potential.toHTMLString(FactorGraph.DefaultPrinter)) + "'" +
                 ", x:" + factorX(f) + ", y:" + factorY(f) +
@@ -159,6 +158,7 @@ object FactorGraphViewer {
         |    FG$fgid.drag = FG$fgid.force.drag()
         |
         |    FG$fgid.svg = d3.select("#FG$fgid").append("svg")
+        |    .attr("class", "factorgraph")
         |    .attr("width", FG$fgid.width)
         |    .attr("height", FG$fgid.height)
         |    .style("overflow", "visible");
@@ -179,10 +179,14 @@ object FactorGraphViewer {
         |
         |	FG$fgid.node = FG$fgid.node.data(FG$fgid.graph.nodes)
         |	    .enter().append("path")
-        |	    .attr("class", function(d) { return "fgshape " + d.class})
+        |	    .attr("class", function(d) {
+        |       return 'fgshape' +
+        |         (d.type == 'factor' ? ' fgfactor' : ' fgnode') +
+        |         (d.fixed ? ' fgfixed' : '');
+        |     })
         |	    .attr("d", d3.svg.symbol()
-        |	    	.type(function(d) { return d.shape == undefined ? "circle" : d.shape })
-        |	    	.size(2000))
+        |	    	.type(function(d) { return d.type == 'factor' ? 'square' : 'circle' })
+        |	    	.size(function(d) { return d.type == 'factor' ? 1000 : 2000 }))
         |	    .on("mouseover", function(d){
         |	    	if(d.hoverhtml != undefined) {
         |	    		FG$fgid.setTooltip(d.hoverhtml);
