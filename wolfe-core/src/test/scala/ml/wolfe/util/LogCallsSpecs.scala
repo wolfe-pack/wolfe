@@ -36,12 +36,17 @@ object LogTest extends App {
   def testMethod1() = {
     //heavy computing...
     Thread.sleep(1000)
+    println(3)
+
+    //val x = 100
+    println(10)
   }
 
   @LogCalls(pre)
   def testMethod2() = {
     //nothing to do
   }
+
 
   testMethod1()
   testMethod2()
