@@ -42,6 +42,7 @@ trait Potential {
   def valueAndGradientForAllEdges():Double = notSupported
   def isLinear = false
   def statsForCurrentSetting(): FactorieVector = null
+  def ad3Init():Unit = notSupported
   def toVerboseString(implicit fgPrinter: FGPrinter): String = getClass.getName
   def toHTMLString(implicit fgPrinter: FGPrinter): String = toVerboseString(fgPrinter)
   var factor:Factor = null //Automatically set by Factor
