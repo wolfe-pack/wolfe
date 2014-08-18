@@ -1,6 +1,6 @@
 package ml.wolfe.fg
 
-import breeze.linalg.{Transpose, DenseMatrix, DenseVector}
+import breeze.linalg._
 import ml.wolfe.MoreArrayOps._
 import scalaxy.loops._
 
@@ -21,7 +21,8 @@ trait AD3GenericPotential extends DiscretePotential {
   private var scores:Array[Double] = null
   private var activeSet: ArrayBuffer[Int] = null
   private var solution: DenseVector[Double] = null
-  private var Ainv : DenseMatrix[Double] = null // Inverse of [[M'M 1], [1' 0]], where M is indexed by activeSet
+  private var AInv : DenseMatrix[Double] = null // Inverse of [[M'M 1], [1' 0]], where M is indexed by activeSet
+  private var ANull : DenseVector[Double] = null // Any vector in the null space of A
   private lazy val consistencyMatrices : Array[DenseMatrix[Double]] = {
     val Ms = vars.map(v => DenseMatrix.zeros[Double](v.dim, settings.length))
     for (i <- 0 until settings.length) {
@@ -35,7 +36,7 @@ trait AD3GenericPotential extends DiscretePotential {
     activeSet = ArrayBuffer(TablePotential.settingToEntry(computeMAP(), dims))
     solution = DenseVector.zeros[Double](settings.length)
     solution(activeSet(0)) = 1
-    Ainv = DenseMatrix((0d, 1d), (1d, -vars.length.toDouble))
+    AInv = DenseMatrix((0d, 1d), (1d, -vars.length.toDouble))
     scores = getScores
   }
 
@@ -56,16 +57,19 @@ trait AD3GenericPotential extends DiscretePotential {
     for(t <- 0 until maxIterations if !solved) {
       println(s"\titeration $t")
       println(s"activeSet = ${activeSet.mkString(",")}")
-      println(s"Ainv =\n $Ainv")
+      println(s"Ainv =\n $AInv")
       // ------------------- Solve the KKT system -----------------------------
-      val rhsKKT = DenseVector.vertcat(Mta(activeSet).toDenseVector, DenseVector.ones[Double](1))
-      for (i <- (0 until activeSet.size).optimized) {
-        val entry = TablePotential.settingToEntry(settings(activeSet(i)), dims)
-        rhsKKT(i) += scores(entry) / stepSize
+      val vAndTau = if(AInv == null) {
+        ANull
+      } else {
+        val rhsKKT = DenseVector.vertcat(Mta(activeSet).toDenseVector, DenseVector.ones[Double](1))
+        for (i <- (0 until activeSet.size).optimized) {
+          val entry = TablePotential.settingToEntry(settings(activeSet(i)), dims)
+          rhsKKT(i) += scores(entry) / stepSize
+        }
+        println(s"KKT rhs = $rhsKKT")
+        AInv * rhsKKT
       }
-      println(s"KKT rhs = $rhsKKT")
-
-      val vAndTau = Ainv * rhsKKT
       val vj:DenseVector[Double] = vAndTau(0 until vAndTau.length-1) // new solution, indexed by activeSet
       val tau = vAndTau(-1)
       println(s"vj = $vj")
@@ -118,9 +122,32 @@ trait AD3GenericPotential extends DiscretePotential {
   }
 
 
-  //todo: WHAT IF SINGULAR?
   private def addToActiveSet(r:Int): Unit = {
     println(s"Adding $r to active set")
+    if(AInv == null) {
+      activeSet += r
+      setAInverse()
+    } else {
+      AInvInsert(r)
+      activeSet += r
+    }
+    if(AInv == null) setANull()
+  }
+
+  private def removeFromActiveSet(r:Int): Unit = {
+    println(s"Removing $r to active set")
+    if(AInv == null) {
+      activeSet -= r
+      setAInverse()
+    } else {
+      // Update the active set
+      AInvRemove(r)
+      activeSet -= r
+    }
+    if(AInv == null) setANull()
+  }
+
+  private def AInvInsert(r:Int) = {
     /*   Update A⁻¹ = (MjMj')⁻¹ by blockwise inversion   */
     val B = DenseVector.tabulate[Double](activeSet.length + 1){ case(i) =>
       if(i < activeSet.length) (0 until vars.length) count { k => settings(r)(k) == settings(activeSet(i))(k) }
@@ -130,45 +157,80 @@ trait AD3GenericPotential extends DiscretePotential {
     val C = B.t
     val d = vars.length
 
-    val P:Transpose[DenseVector[Double]] = C * Ainv  // CA⁻¹
-    val Q:DenseVector[Double] = Ainv * B             // A⁻¹B
-    val q:Double = 1d / (d - (P * B))                 // (D - CA⁻¹B)⁻¹
-    val R:DenseVector[Double] = Q * q                 // A⁻¹B(D - CA⁻¹B)⁻¹
+    val P:Transpose[DenseVector[Double]] = C * AInv  // CA⁻¹
+    val Q:DenseVector[Double] = AInv * B             // A⁻¹B
+    val p:Double = d - (P * B)                // (D - CA⁻¹B)⁻¹
+    if(Math.abs(p) < 1e-9) {
+      //A is Singular
+      AInv = null
+    } else {
+      ANull = null
+      val q = 1d / p
+      val R:DenseVector[Double] = Q * q                 // A⁻¹B(D - CA⁻¹B)⁻¹
 
-    val X1:DenseMatrix[Double] = Ainv + (R * P)      // A⁻¹ + A⁻¹B(D - CA⁻¹B)⁻¹CA⁻¹
-    val X2:DenseVector[Double] = R * (-1d)             // -A⁻¹B(D - CA⁻¹B)⁻¹
-    val X3:Transpose[DenseVector[Double]] = P * (-q)  // -CA⁻¹(D - CA⁻¹B)⁻¹
+      val X1:DenseMatrix[Double] = AInv + (R * P)      // A⁻¹ + A⁻¹B(D - CA⁻¹B)⁻¹CA⁻¹
+      val X2:DenseVector[Double] = R * (-1d)             // -A⁻¹B(D - CA⁻¹B)⁻¹
+      val X3:Transpose[DenseVector[Double]] = P * (-q)  // -CA⁻¹(D - CA⁻¹B)⁻¹
 
 
-    Ainv = DenseMatrix.vertcat(
-      DenseMatrix.horzcat(X1, X2.toDenseMatrix.t),
-      DenseMatrix.horzcat(X3.t.toDenseMatrix, new DenseMatrix[Double](1, 1, Array(q)))
-    )
-    // At this point the matrix basis is out of order - we need to swap the final two dimensions
-    // (corresponding to tau and v(r), respectively)
-    val n = activeSet.length
-    for(i <- (0 until n+2).optimized) { val x = Ainv(i, n+1); Ainv(i, n+1) = Ainv(i, n); Ainv(i, n) = x }
-    for(i <- (0 until n+2).optimized) { val x = Ainv(n+1, i); Ainv(n+1, i) = Ainv(n, i); Ainv(n, i) = x }
+      AInv = DenseMatrix.vertcat(
+        DenseMatrix.horzcat(X1, X2.toDenseMatrix.t),
+        DenseMatrix.horzcat(X3.t.toDenseMatrix, new DenseMatrix[Double](1, 1, Array(q)))
+      )
+      // At this point the matrix basis is out of order - we need to swap the final two dimensions
+      // (corresponding to tau and v(r), respectively)
+      val n = activeSet.length
+      for(i <- (0 until n+2).optimized) { val x = AInv(i, n+1); AInv(i, n+1) = AInv(i, n); AInv(i, n) = x }
+      for(i <- (0 until n+2).optimized) { val x = AInv(n+1, i); AInv(n+1, i) = AInv(n, i); AInv(n, i) = x }
+    }
 
-    // Update the active set
-    activeSet += r
   }
 
-  private def removeFromActiveSet(r:Int): Unit = {
-    println(s"Removing $r to active set")
+  private def AInvRemove(r:Int) = {
 
     /*   Update A⁻¹ by http://math.stackexchange.com/questions/208001/are-there-any-decompositions-of-a-symmetric-matrix-that-allow-for-the-inversion/208021#208021*/
     val n = activeSet.length
     val s = activeSet.indexOf(r)
-    for(i <- (0 until n+1).optimized) { val x = Ainv(i, n); Ainv(i, n) = Ainv(i, s); Ainv(i, s) = x }
-    for(i <- (0 until n+1).optimized) { val x = Ainv(n, i); Ainv(n, i) = Ainv(s, i); Ainv(s, i) = x }
+    for(i <- (0 until n+1).optimized) { val x = AInv(i, n); AInv(i, n) = AInv(i, s); AInv(i, s) = x }
+    for(i <- (0 until n+1).optimized) { val x = AInv(n, i); AInv(n, i) = AInv(s, i); AInv(s, i) = x }
 
-    val E = Ainv(0 until n, 0 until n)
-    val f:DenseVector[Double] = Ainv(0 until n, n)
-    val g:DenseVector[Double] = Ainv(n, 0 until n).t
-    val h = Ainv(n, n)
-    Ainv = E - (f * g.t) / h
+    val E = AInv(0 until n, 0 until n)
+    val f:DenseVector[Double] = AInv(0 until n, n)
+    val g:DenseVector[Double] = AInv(n, 0 until n).t
+    val h = AInv(n, n)
+    if(Math.abs(h) < 1e-9) {
+      //A is Singular
+      AInv = null
+    } else {
+      AInv = E - (f * g.t) / h
+    }
+  }
 
-    activeSet -= r
+  private def getA():DenseMatrix[Double] = {
+    val A = DenseMatrix.zeros[Double](activeSet.size + 1, activeSet.size + 1)
+    for (i <- (0 until activeSet.length).optimized) {
+      for (j <- (0 until activeSet.length).optimized)
+        for (k <- (0 until vars.size).optimized)
+          if (settings(activeSet(i))(k) == settings(activeSet(j))(k)) A(i, j) += 1
+      A(activeSet.size, i) = 1
+      A(i, activeSet.size) = 1
+    }
+    A
+  }
+
+  private def setAInverse(): Unit = {
+    try {
+      AInv = inv(getA())
+    } catch {
+      case _:MatrixSingularException => AInv = null
+    }
+  }
+
+  private def setANull(): Unit = {
+    val A = getA()
+
+    val (eigenValuesRe, eigenValuesIm, eigenVectors) = eig(A)
+    val i: Int = (0 until eigenValuesRe.length).find(i => Math.abs(eigenValuesRe(i)) < 1e-9 && Math.abs(eigenValuesIm(i)) < 1e-9).get
+    ANull = eigenVectors(::, i)
   }
 }
