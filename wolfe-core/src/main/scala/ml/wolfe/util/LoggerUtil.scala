@@ -60,7 +60,7 @@ object LoggerUtil extends Logging {
   }
 }
 
-class LogCalls(msg:String => Unit) extends StaticAnnotation {
+class LogCalls(preHook: String => Unit, postHook: String => Unit = _ => {}) extends StaticAnnotation {
   def macroTransform(annottees: Any*) = macro LogCallsMacro.impl
 
 }
@@ -73,12 +73,26 @@ object LogCallsMacro {
       case (defDef:DefDef) :: Nil =>
         val msg = Constant(defDef.name.toString)
         val app = c.macroApplication
+
         val q"$ctr.${_}(${_})" = app
-        val q"new ${_}($fun)" = ctr
+        val q"new ${_}(..$args)" = ctr
+
         //todo: when the type of the passed function is not explicitly defined this seems to fail.
         //todo: need inject type by force in such cases
-        val passMsg = q"$fun($msg)"
-        val newRhs = Block(List(passMsg),defDef.rhs)
+        val newRhs = args match {
+          case pre :: Nil =>
+            val passPreMsg = q"$pre($msg)"
+            Block(List(passPreMsg), defDef.rhs)
+          case pre :: post :: Nil =>
+            val passPreMsg = q"$pre($msg)"
+            val passPostMsg = q"$post($msg)"
+            defDef.rhs match {
+              case Block(statements, expr) => Block(passPreMsg :: (statements :+ passPostMsg), expr)
+              case expr => Block(passPreMsg :: (List(expr) :+ passPostMsg), q"{};")
+            }
+          case _ => c.abort(c.enclosingPosition, "LogCalls can only handle a pre and post hook")
+        }
+
         treeCopy.DefDef(defDef,defDef.mods,defDef.name,defDef.tparams,defDef.vparamss,defDef.tpt,newRhs)
       case _ =>
         c.abort(c.enclosingPosition, "LogCalls can only annotate methods")
