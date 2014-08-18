@@ -95,14 +95,14 @@ object NERExample {
     @OptimizeByInference(BeliefPropagation(_,1))
     def model(w: Vector)(s: Sentence) = w dot features1(s)
     def predictor(w: Vector)(s: Sentence) = argmax(Sentences where evidence(observed)(s)) { model(w) }
-    @OptimizeByLearning(new OnlineTrainer(_, new Perceptron, 20, 1))
+    @OptimizeByLearning(new OnlineTrainer(_, new AveragedPerceptron, 20, -1))
     def loss(data: Iterable[Sentence])(w: Vector) = sum(data) { s => model(w)(predictor(w)(s)) - model(w)(s) }
 
     //Second Order
     @OptimizeByInference(BeliefPropagation.onJunctionTree(_))
     def model2(w: Vector)(s: Sentence) = w dot features2(s)
     def predictor2(w: Vector)(s: Sentence) = argmax(Sentences where evidence(observed)(s)) { model2(w) }
-    @OptimizeByLearning(new OnlineTrainer(_, new Perceptron, 20, 1))
+    @OptimizeByLearning(new OnlineTrainer(_, new AveragedPerceptron, 20, -1))
     def loss2(data: Iterable[Sentence])(w: Vector) = sum(data) { s => model2(w)(predictor2(w)(s)) - model2(w)(s) }
 
 
@@ -140,7 +140,7 @@ object NERExample {
 
     val (train, test) =
       if (useSample) {
-        val sample = IOBToWolfe(groupLines(loadIOB(trainSource, "sampletest").toIterator, "###MEDLINE:")).flatten.drop(1)
+        val sample = IOBToWolfe(groupLines(loadIOB(trainSource, "sampletest").toIterator, "###MEDLINE:")).flatten
         val (trainSample, testSample) = sample.splitAt((sample.size * 0.9).toInt)
         (trainSample, testSample)
       } else

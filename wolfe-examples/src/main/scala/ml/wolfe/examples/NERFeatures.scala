@@ -11,8 +11,8 @@ import scala.util.matching.Regex
  */
 object NERFeatures {
 
-  val allFeatures = funFeatures ++ boolFeatures ++ regexFeatures
-  val miniFeatures = funFeatures ++ regexFeaturesMini
+  val allFeatures = wordFeatures ++ boolFeatures ++ regexFeatures
+  val miniFeatures = wordFeatures ++ boolFeaturesMini ++ regexFeaturesMini
 
   def apply(word:String, prefix:String = "", mini:Boolean = false) =
     (if(mini) miniFeatures else allFeatures).foldLeft( Wolfe.Vector() ){
@@ -22,14 +22,18 @@ object NERFeatures {
   // -----------------------------------
 
 
-  def funFeatures = Seq[(Symbol, String => String)](
-    'word -> (t => t),
+  def wordFeatures = Seq[(Symbol, String => String)](
+    'word -> (t => t.toLowerCase),
     'prefix2 -> (t => t.take(2)),
     'suffix2 -> (t => t.takeRight(2))
   ).map({ case (sym:Symbol, fun:(String => String)) =>
     (word:String, prefix:String) => oneHot(prefix + sym -> fun(word))
   })
 
+
+  // ------------ Mini Features -----------
+
+  // Taken directly from https://github.com/wolfe-pack/wolfe/blob/052a72850221515b349a8b6a7cba2474637dde3d/wolfe-examples/src/main/scala/ml/wolfe/examples/NERExample.scala
 
   def regexFeaturesMini = Seq[(Symbol, Regex)](
     'allCap     -> "[A-Z]+".r,
@@ -40,6 +44,14 @@ object NERFeatures {
   ).map({ case (sym:Symbol, reg:Regex) =>
     (word:String, prefix:String) => oneHot(prefix + sym, I(reg.pattern.matcher(word).matches))
   })
+
+  def boolFeaturesMini = Seq[(Symbol,String => Boolean)] (
+    'FirstCap   -> (t => t.head.isUpper)
+  ).map({ case (sym:Symbol, fun:(String => Boolean)) =>
+    (word:String, prefix:String) => oneHot(prefix + sym, I(fun(word)))
+  })
+
+  // ----------- Full Features -----------------------
 
   def regexFeatures = {
     val AminoAcidShortString = "Ala|Arg|Asn|Asp|Cys|Gln|Glu|Gly|His|Ile|Leu|Lys|Met|Phe|Pro|Ser|Thr|Trp|T.r,|Val|" +
@@ -130,6 +142,7 @@ object NERFeatures {
   }
 
   def boolFeatures = Seq[(Symbol,String => Boolean)] (
+    'FirstCap   -> (t => t.head.isUpper),
     'EndCap     -> (t => t.last.isUpper),
     'SingleCap  -> (t => t.count(_.isUpper) == 1),
     'TwoCap     -> (t => t.count(_.isUpper) == 2 && t.size == 2),
