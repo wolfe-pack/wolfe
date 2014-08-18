@@ -23,8 +23,8 @@ object FactorGraphViewer {
     val writer = new PrintWriter(file)
     writer.println("<html>" +
     "<head><link rel='stylesheet' href='" +
-      //"http://moro.wolfe.ml:9000/assets/stylesheets/wolfe.css" +
-      "./workspace/moro/public/stylesheets/wolfe.css" +
+      "http://moro.wolfe.ml:9000/assets/stylesheets/wolfe.css" +
+      //"./workspace/moro/public/stylesheets/wolfe.css" +
     "' />" +
     "<style type='text/css'>.label{fill:#fff;font-size:15px;text-transform:none}</style>" +
     "</head>" +

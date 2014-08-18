@@ -28,20 +28,24 @@ object DualDecomposition {
   def apply(fg: FactorGraph, maxIteration: Int, stepSize: Int => Double = t => 1 / math.sqrt(t + 1),
             parallelize: Boolean = true, ad3:Boolean = false):Unit = {
     val factors = if (parallelize) fg.factors.par else fg.factors
-
+    factors.foreach(_.potential.ad3Init())
     fg.converged = false
 
     initializeN2FAndBeliefs(fg)
 
     for (iter <- 0 until maxIteration if !fg.converged) {
-      //todo: dynamically adjust QP step size (page 13)
+      println(s"\nAD3 Iteration $iter\n")
+      // todo: dynamically adjust QP step size
+      // (page 20 of http://web.stanford.edu/~boyd/papers/pdf/admm_distr_stats.pdf)
       for(f <- factors) if(ad3) f.potential.quadraticProgramF2N(stepSize(iter), 10) else f.potential.mapF2N()
       for(n <- fg.nodes) n.variable.updateAverageBelief()
       for(n <- fg.nodes; e <- n.edges) n.variable.updateDualN2F(e, stepSize(iter))
 
+      // todo: stop when dual + primal residual fall below threshold (eg 10^-6)
       fg.converged = hasConverged(fg)
-
     }
+
+    for(n <- fg.nodes) n.variable.setToArgmax()
   }
 
   private def initializeN2FAndBeliefs(fg: FactorGraph) : Unit = {
