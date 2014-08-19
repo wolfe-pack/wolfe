@@ -1,10 +1,10 @@
 package ml.wolfe.examples
 
-import ml.wolfe.Wolfe
-import Wolfe._
+import ml.wolfe.Wolfe._
 import ml.wolfe.Wolfe.logDist._
-import math._
 import ml.wolfe.macros.OptimizedOperators._
+
+import scala.math._
 
 
 /**

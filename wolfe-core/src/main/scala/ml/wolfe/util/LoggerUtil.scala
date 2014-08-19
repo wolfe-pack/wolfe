@@ -76,6 +76,14 @@ object LogCallsMacro {
 
         val q"$ctr.${_}(${_})" = app
         val q"new ${_}(..$args)" = ctr
+        //http://stackoverflow.com/questions/19379436/cant-access-parents-members-while-dealing-with-macro-annotations/19399119#19399119
+        //todo: difficult to get type information in macro annotations.
+//        val typed = c.typeCheck(q"${defDef.rhs}")
+//        println(typed.tpe)
+//        println(c.typeOf[Unit])
+//        println(defDef.rhs.tpe =:= c.typeOf[Unit])
+        //val unitType = c.typeOf[Unit]
+        //defDef.rhs.tpe =:= c.universe.
 
         //todo: when the type of the passed function is not explicitly defined this seems to fail.
         //todo: need inject type by force in such cases
