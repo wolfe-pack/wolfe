@@ -42,7 +42,6 @@ trait AD3GenericPotential extends DiscretePotential {
 
   override def quadraticProgramF2N(stepSize:Double, maxIterations:Int) : Unit = {
     // todo: cache solution (see page 15)
-    println(s"----------------\nquadraticProgramF2N($stepSize, $maxIterations)")
     // M'a
     val Mta = DenseVector.zeros[Double](settings.length)
     for (k <- (0 until vars.size).optimized) {
@@ -55,9 +54,6 @@ trait AD3GenericPotential extends DiscretePotential {
     /* Main Loop */
     var solved = false
     for(t <- 0 until maxIterations if !solved) {
-      println(s"\titeration $t")
-      println(s"activeSet = ${activeSet.mkString(",")}")
-      println(s"Ainv =\n $AInv")
       // ------------------- Solve the KKT system -----------------------------
       val vAndTau = if(AInv == null) {
         ANull
@@ -67,24 +63,22 @@ trait AD3GenericPotential extends DiscretePotential {
           val entry = TablePotential.settingToEntry(settings(activeSet(i)), dims)
           rhsKKT(i) += scores(entry) / stepSize
         }
-        println(s"KKT rhs = $rhsKKT")
         AInv * rhsKKT
       }
+
       val vj:DenseVector[Double] = vAndTau(0 until vAndTau.length-1) // new solution, indexed by activeSet
       val tau = vAndTau(-1)
-      println(s"vj = $vj")
-      println(s"tau = $tau")
+
       //----------------------------------------------------------------------
 
       //M' * (M_J)
       val MtMj = DenseMatrix.tabulate[Double](settings.length, activeSet.length){ case(i, j) =>
-        (0 until vars.length) count (k => settings(i)(k) == settings(j)(k)) }
+        (0 until vars.length) count (k => settings(i)(k) == settings(activeSet(j))(k)) }
       //M'w
       val Mtw = Mta.toDenseVector - MtMj * vj
-      println("M'w = " + Mtw)
 
       if (vj == solution(activeSet)) {
-        println("Same v as previous")
+
         val map = computeMAP(i => scores(i) + Mtw(i))
         val r = TablePotential.settingToEntry(map, dims)
         if (scores(r) + Mtw(r) <= tau + 1e-12) solved = true
@@ -103,12 +97,12 @@ trait AD3GenericPotential extends DiscretePotential {
         }
         for ((r,i) <- activeSet.zipWithIndex) solution(r) = solution(r) * (1 - alpha) + vj(i) * alpha
 
-        println(s"New Solution: $solution")
         blockingConstraint match {
           case Some(r:Int) => removeFromActiveSet(r)
           case _ => }
 
       }
+
     }
 
     for (j <- (0 until msgs.size).optimized)
@@ -123,7 +117,6 @@ trait AD3GenericPotential extends DiscretePotential {
 
 
   private def addToActiveSet(r:Int): Unit = {
-    println(s"Adding $r to active set")
     if(AInv == null) {
       activeSet += r
       setAInverse()
@@ -135,12 +128,10 @@ trait AD3GenericPotential extends DiscretePotential {
   }
 
   private def removeFromActiveSet(r:Int): Unit = {
-    println(s"Removing $r to active set")
     if(AInv == null) {
       activeSet -= r
       setAInverse()
     } else {
-      // Update the active set
       AInvRemove(r)
       activeSet -= r
     }
@@ -191,8 +182,19 @@ trait AD3GenericPotential extends DiscretePotential {
     /*   Update A⁻¹ by http://math.stackexchange.com/questions/208001/are-there-any-decompositions-of-a-symmetric-matrix-that-allow-for-the-inversion/208021#208021*/
     val n = activeSet.length
     val s = activeSet.indexOf(r)
-    for(i <- (0 until n+1).optimized) { val x = AInv(i, n); AInv(i, n) = AInv(i, s); AInv(i, s) = x }
-    for(i <- (0 until n+1).optimized) { val x = AInv(n, i); AInv(n, i) = AInv(s, i); AInv(s, i) = x }
+    val B = CSCMatrix.Builder
+
+    // Permutation
+    for(i <- (0 until n+1).optimized) {
+      val x = AInv(i, s)
+      for(j <- (s until n).optimized) AInv(i, j) = AInv(i, j+1)
+      AInv(i, n) = x
+    }
+    for(i <- (0 until n+1).optimized) {
+      val x = AInv(s, i)
+      for(j <- (s until n).optimized) AInv(j, i) = AInv(j+1, i)
+      AInv(n, i) = x
+    }
 
     val E = AInv(0 until n, 0 until n)
     val f:DenseVector[Double] = AInv(0 until n, n)
@@ -204,6 +206,28 @@ trait AD3GenericPotential extends DiscretePotential {
     } else {
       AInv = E - (f * g.t) / h
     }
+  }
+
+  def dualObjective(stepSize:Double) = {
+    def sq(x:Double) = x * x
+    var x:Double = 0
+    var y:Double = 0
+    var z:Double = 0
+    var w:Double = 0
+    for(r <- activeSet) {
+      x += solution(r) * scores(r)
+      for(s <- 0 until vars.length) {
+        y += solution(r) * factor.edges(s).msgs.asDiscrete.n2f(settings(r)(s))
+      }
+    }
+    for(s <- 0 until vars.length) {
+      for(t <- 0 until vars(s).asDiscrete.dim) {
+        z -= factor.edges(s).msgs.asDiscrete.n2f(t) * vars(s).asDiscrete.b(t)
+        w -= (stepSize / 2) * sq(factor.edges(s).msgs.asDiscrete.f2n(t) - vars(s).asDiscrete.b(t))
+      }
+    }
+    //println(s"$x + $y + $z + $w = ${x+y+z+w}")
+    x + y + z + w
   }
 
   private def getA():DenseMatrix[Double] = {

@@ -90,7 +90,7 @@ final class DiscreteVar(var dim: Int, override val label:String = "", val domain
   override def updateDualN2F(edge:Edge, stepSize:Double) = {
     val m = edge.msgs.asDiscrete
     for(i <- (0 until m.n2f.size).optimized)
-      m.n2f(i) = m.n2f(i) - stepSize * (math.exp(m.f2n(i)) - math.exp(b(i)))
+      m.n2f(i) = m.n2f(i) - stepSize * (m.f2n(i) - b(i))
   }
 
   var fixedSetting = false
