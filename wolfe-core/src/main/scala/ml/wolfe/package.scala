@@ -22,6 +22,12 @@ package object wolfe {
     def approxEqual(a1: A,a2:A,eps:Double = 0.00001) =  {
       a1.length == a2.length && a1.indices.forall(i => math.abs(a1(i) - a2(i)) < eps)
     }
+    def sqDiff(a1: A, a2: A) = {
+      require(a1.length == a2.length)
+      var x:Double = 0
+      for(i <- (0 until a1.length).optimized) x += (a1(i) - a2(i)) * (a1(i) - a2(i))
+      x
+    }
     def log(s:A) {
       for (i <- (0 until s.length).optimized) s(i) = math.log(s(i))
     }
