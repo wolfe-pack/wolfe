@@ -52,9 +52,12 @@ object D3Implicits {
     val dataid = id + "_data"
     val nonZero = v.filter(_._2 != 0)
 
+    val width = 500
+
     val barHeight = 30
     val barSpace = 10
-    val width = 400
+
+    val offset = 100
 
     val data = s"var data = { ${nonZero.map(x => "\"" + escape(x._1.toString) + "\": " + x._2).mkString(", ")} };"
     val run =
@@ -68,13 +71,13 @@ object D3Implicits {
 |       .attr("class", "barchart")
 |
 |				var scale = d3.scale.linear()
-|				.range([0, $width])
-|				.domain([0, d3.max(d3.values(data))]);
+|				.domain([0, d3.max(d3.values(data))])
+|				.range([0, $width - $offset]);
 |
 |				var bar = svg.selectAll("g")
 |				.data(d3.entries(data))
 |				.enter().append("g")
-|				.attr("transform", function(d, i) { return "translate(0," + i * (barHeight + barSpace) + ")"; });
+|				.attr("transform", function(d, i) { return "translate($offset," + i * (barHeight + barSpace) + ")"; });
 |
 |				bar.append("rect")
 |				.attr("width", function(d) { return scale(d.value); })
@@ -82,10 +85,20 @@ object D3Implicits {
 |				.attr("class", "bar")
 |
 |				bar.append("text")
-|				.attr("x", 4)
+|				.attr("x", -15)
 |				.attr("y", barHeight / 2)
-|				.attr("dy", ".35em")
+|       .attr("dy", ".35em")
+|       .attr("text-anchor", "end")
+|       .attr("class", "barlabel")
 |				.text(function(d) { return d.key; });
+|
+|				bar.append("text")
+        .attr("text-anchor", function(d) {return scale(d.value)>10 ? "end" : "start";})
+|				.attr("x", function(d) {return scale(d.value)>10 ? scale(d.value)-4 : 4;})
+|				.attr("y", barHeight / 2)
+|       .attr("dy", ".35em")
+|       .attr("class", "barvalue")
+|				.text(function(d) { return d.value; });
       """.stripMargin
 
     wrapCode(id, data + run)
