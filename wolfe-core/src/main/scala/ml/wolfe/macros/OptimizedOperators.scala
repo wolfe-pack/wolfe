@@ -414,7 +414,9 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
           examples.foreach(example => example._key = $key)
           val trainer = $learner
           ml.wolfe.util.LoggerUtil.info("Starting to optimize ...")
-          trainer.trainFromExamples(examples)
+          ml.wolfe.util.Timer.time("train") {
+            trainer.trainFromExamples(examples)
+          }
           ml.wolfe.FactorieConverter.toWolfeVector($weightsSet($key).asInstanceOf[FactorieVector], $indexName)
         """
         context.resetLocalAttrs(code)

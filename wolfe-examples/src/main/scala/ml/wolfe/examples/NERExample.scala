@@ -158,7 +158,7 @@ object NERExample {
     }
 
     println("Training!")
-    val w = Timer.time("learn") { learn(train) }
+    val w = learn(train)
 
     println("Evaluating!")
     def evaluate(corpus: Seq[Sentence]) = {
@@ -179,7 +179,8 @@ object NERExample {
         |Timings
         |-------
         |Load: ${Timer.getTimeString(Timer.reported("load"))}
-        |Learn: ${Timer.getTimeString(Timer.reported("learn"))}
+        |Examples: ${Timer.getTimeString(Timer.reported("examples"))}
+        |Train: ${Timer.getTimeString(Timer.reported("train"))}
         |Evaluate: ${Timer.getTimeString(Timer.reported("evaluate"))}
       """.stripMargin
     )
