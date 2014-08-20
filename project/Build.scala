@@ -114,7 +114,7 @@ object BuildSettings {
         Resolver.sonatypeRepo("releases")
       ),
       globalDependencies
-    ) ++ generalSettings ++ releaseSettings ++ publishSettings ++ instrumentSettings ++ coverallsSettings
+    ) ++ generalSettings ++ releaseSettings ++ publishSettings ++ instrumentSettings// ++ coverallsSettings
 
 }
 
