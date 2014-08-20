@@ -3,6 +3,7 @@ import sbt._
 import sbt.Keys._
 import sbtrelease.ReleasePlugin._
 import scoverage.ScoverageSbtPlugin._
+import
 
 object ShellPrompt {
   object devnull extends ProcessLogger {
@@ -113,7 +114,7 @@ object BuildSettings {
         Resolver.sonatypeRepo("releases")
       ),
       globalDependencies
-    ) ++ generalSettings ++ releaseSettings ++ publishSettings ++ instrumentSettings //++ coverallsSettings
+    ) ++ generalSettings ++ releaseSettings ++ publishSettings ++ instrumentSettings ++ coverallsSettings
 
 }
 
