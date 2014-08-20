@@ -1,7 +1,9 @@
 package ml.wolfe.fg
 
+import ml.wolfe.FactorGraph
 import ml.wolfe.FactorGraph.{Edge, Node}
 import ml.wolfe.MoreArrayOps._
+import ml.wolfe.Wolfe._
 import ml.wolfe.util.Multidimensional._
 
 import scala.math._
@@ -16,6 +18,8 @@ class TupleVar(val componentNodes:Array[Node]) extends Var {
   val components = componentNodes.map(_.variable.asDiscrete)
   val dim = components.map(_.dim).product
 
+  override val label = componentNodes.map(_.variable.label).mkString("(", ",", ")")
+
   /* node belief */
   val B = LabelledTensor.onNewArray[DiscreteVar, Double](components, _.dim, 0)
   val b = B.array
@@ -25,11 +29,13 @@ class TupleVar(val componentNodes:Array[Node]) extends Var {
   val in = IN.array
 
   /* indicates that variable is in a certain state */
-  val setting: Array[Int] = Array.ofDim[Int](components.size)
-  def componentSetting(v:DiscreteVar) = setting(components indexOf v)
+  var setting: Seq[(DiscreteVar, Int)] = components.map(_ -> 0)
+  def componentSetting(v:DiscreteVar) = setting(components indexOf v)._2
 
   def updateComponentSettings() = {
-    for(i <- (0 until components.length).optimized) components(i).asDiscrete.setting = setting(i)
+    setting.foreach {
+      (v:DiscreteVar, s:Int) => v.asDiscrete.setting = s
+    }
   }
 
   override def entropy() = { //todo: Will BP overestimate entropy because of shared variables? Does this matter?
@@ -58,7 +64,7 @@ class TupleVar(val componentNodes:Array[Node]) extends Var {
       m.n2f += node.edges(e).msgs.asTuple.f2n
   }
 
-  override def updateMaxMarginalBelief(node: Node) = {
+  override def updateMaxMarginalBelief() = {
     B.copyFrom(IN)
     for (e <- 0 until node.edges.length) {
       B += node.edges(e).msgs.asTuple.f2n
@@ -68,6 +74,29 @@ class TupleVar(val componentNodes:Array[Node]) extends Var {
       val vB = LabelledTensor.onExistingArray[DiscreteVar, Double](Array(v), _.dim, v.b)
       B.foldInto(Double.NegativeInfinity, max, vB)
     }
+  }
+
+  var fixedSetting = false
+  override def fixMapSetting(overwrite:Boolean = false):Unit = {
+    if(! fixedSetting || overwrite) {
+      var maxScore = Double.NegativeInfinity
+      val scores = IN.clone()
+      for (e <- (0 until node.edges.length).optimized)
+        scores += node.edges(e).msgs.asTuple.f2n
+      setting = scores.maxIndex
+    }
+  }
+
+  override def setToArgmax():Unit = {
+    if(! fixedSetting)
+      setting = B.maxIndex
+    updateComponentSettings()
+  }
+
+  override def deterministicN2F(edge: Edge) = {
+    val m = edge.msgs.asTuple
+    m.n2f.fill(Double.NegativeInfinity)
+    m.n2f(setting) = 0
   }
 
 }

@@ -60,7 +60,9 @@ object Multidimensional { //todo: views!
     val size = (labels map dimensions).product
     type MultiIndex = Seq[(L, Int)]
 
-    if (array.length != labels.map(dimensions).product) throw new LabelledTensorDimensionError()
+    if (array.length != labels.map(dimensions).product) {
+      throw new LabelledTensorDimensionError()
+    }
     private val indexSteps: L => Int = labels.zip(labels.scanRight(1)((l, acc) => dimensions(l) * acc).tail).toMap
 
     private def allMuls(forLabels: Seq[L] = labels) : Seq[MultiIndex] = cartesianProduct(
@@ -79,11 +81,11 @@ object Multidimensional { //todo: views!
     // ------------------------------------------------------
 
     // Useful for testing, but I'm not really that keen on these being public   -Luke
-    def mulToIndex(mul: MultiIndex): Int = (
+    private def mulToIndex(mul: MultiIndex): Int = (
                                            for ((label, idx) <- mul) yield indexSteps(label) * idx
                                            ).sum
 
-    def indexToMul(i:Int) : MultiIndex =
+    private def indexToMul(i:Int) : MultiIndex =
       for (l <- labels) yield l -> (i / indexSteps(l)) % dimensions(l)
 
     // --------------------- Interface ----------------------
@@ -99,7 +101,7 @@ object Multidimensional { //todo: views!
     /** fill all elements in this with a constant */
     def fill(x: T) = fillBy(mul => x)
 
-
+    def zipWithIndex = array.view zip allMuls()
 
     /**
      * Fold this into a smaller LabelledTensor using a binary operation. Dimensions which appear in '''this'''
@@ -212,6 +214,9 @@ object Multidimensional { //todo: views!
     /** Elementwise addition */
     def +=(that: LabelledTensor[L, T])(implicit n : Numeric[T]) = elementWiseOpInPlace(that, n.plus)
 
+    /** Index of maximum  */
+    def maxIndex(implicit o : Ordering[T]) = indexToMul((0 until array.length).maxBy(array)(o))
+
     /** Copy all elements from another labelled tensor to this one.
       * @note If '''source''' has fewer dimensions, then elements will be repeated.
       */
@@ -228,7 +233,6 @@ object Multidimensional { //todo: views!
         case None => array.map(_.toString.take(4)).mkString("(", ",", ")")
         case Some(x) => array.map(_.toString.take(4)).grouped(indexSteps(x)).map(_.mkString("(", ",", ")")).mkString("\n")
       }
-
     }
   }
 

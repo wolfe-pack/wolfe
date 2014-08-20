@@ -149,7 +149,7 @@ trait PatternRepository[C <: Context] extends SymbolRepository[C] with CodeRepos
   object ApplyPlus extends InfixApply(scalaSymbols.doublePluses ++ wolfeSymbols.vectorPluses)
   object ApplyDoubleMinus extends InfixApply(scalaSymbols.doubleMinuses)
   object DoubleSum extends AppliedOperator(Set(scalaSymbols.doubleClass), wolfeSymbols.sums, scalaSymbols.sum)
-  object Sum extends AppliedOperator(Set(scalaSymbols.doubleClass, wolfeSymbols.vectorType), wolfeSymbols.sums, scalaSymbols.sum)
+  object Sum extends AppliedOperator(Set(scalaSymbols.doubleClass, wolfeSymbols.vectorType,scalaSymbols.intClass), wolfeSymbols.sums, scalaSymbols.sum)
   object ArgmaxOperator extends AppliedOperator(Set(scalaSymbols.doubleClass), wolfeSymbols.argmaxes, scalaSymbols.maxBy)
   object MapOperator extends AppliedOperator(_ => true, wolfeSymbols.maps, scalaSymbols.map)
   object FlattenedPlus extends Flattened(ApplyPlus)

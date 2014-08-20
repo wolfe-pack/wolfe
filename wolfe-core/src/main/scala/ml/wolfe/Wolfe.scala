@@ -10,6 +10,7 @@ import cc.factorie.optimize.Trainer
 import scala.annotation.StaticAnnotation
 import scala.collection.mutable.{ArrayBuffer, Buffer}
 import scala.collection.MapProxy
+import math._
 
 /**
  * @author Sebastian Riedel
@@ -72,7 +73,19 @@ object Wolfe extends SampleSpaceDefs
     def <->(that: Boolean) = b == that
   }
 
-  def bernoulli(p:Double = 0.5)(coin:Boolean) = if (coin) math.log(p) else math.log1p(-p)
+  def bernoulli(p: Double = 0.5)(coin: Boolean) = if (coin) log(p) else log1p(-p)
+
+  object logDist {
+
+    def gaussian(mean: Double = 0.0, dev: Double = 1.0)(x: Double) = {
+      def sq(x: Double) = x * x
+      log(1.0 / (dev * sqrt(2.0 * Pi)) * exp(-sq(x - mean) / (2.0 * sq(dev))))
+    }
+
+
+
+  }
+
 
   def I(b: Boolean) = if (b) 1.0 else 0.0
 
@@ -90,19 +103,15 @@ object Wolfe extends SampleSpaceDefs
   }
 
   trait FactorGraphBuffer {
-    def set(fg:FactorGraph) : Unit
-    def get() : FactorGraph
+    def set(fg: FactorGraph): Unit
+    def get(): FactorGraph
   }
-  implicit val FactorGraphBuffer:FactorGraphBuffer = new FactorGraphBuffer {
-    var factorGraph:FactorGraph = null
-    def set(fg:FactorGraph) = factorGraph = fg
+  implicit val FactorGraphBuffer: FactorGraphBuffer = new FactorGraphBuffer {
+    var factorGraph: FactorGraph = null
+    def set(fg: FactorGraph) = factorGraph = fg
     def get() = factorGraph
   }
-  implicit def toD3FGDefault(fg:FactorGraph):HTML =
-    FactorGraphViewer.toD3Html(fg, _ => true)
 
-  def toD3FG(fg:FactorGraph, nodeFilter:Node=>Boolean = _ => true, linear:Boolean=false):HTML =
-    FactorGraphViewer.toD3Html(fg, nodeFilter, linear)
 }
 
 trait StatsDefs {
@@ -115,43 +124,40 @@ trait VectorDefs {
   //type Vector = Map[Any, Double]
 
 
-  class Vector(underlying: Map[Any, Double]) extends scala.collection.immutable.MapProxy[Any,Double] {
+  class Vector(underlying: Map[Any, Double]) extends scala.collection.immutable.MapProxy[Any, Double] {
     val self = underlying withDefaultValue 0.0
 
-    def +(that: Vector) = {
-      val keys = self.keySet ++ that.self.keySet
-      val result = keys map (k => k -> (self.getOrElse(k, 0.0) + that.self.getOrElse(k, 0.0)))
-      new Vector(result.toMap)
-    }
-    def +(that: Vector, scale:Double) = {
-      val keys = self.keySet ++ that.self.keySet
-      val result = keys map (k => k -> (self.getOrElse(k, 0.0) + scale * that.self.getOrElse(k, 0.0)))
-      new Vector(result.toMap)
-    }
+    def +(that: Vector): Vector =
+      if (self.size >= that.size) plus(this, that)
+      else plus(that, this)
+
+    def +(that: Vector, scale: Double): Vector =
+      this + new Vector(that.mapValues(_ * scale))
+
     def dot(that: Vector) = VectorNumeric.dot(this, that)
     def norm = VectorNumeric.norm(this)
     def *(scale: Double) = new Vector(self.mapValues(_ * scale))
     def *(vector: Vector) = new Vector(vector.self.map({ case (k, v) => k -> v * vector(k) }))
-    override def toString() = s"""Vector(${underlying.map(p => p._1 + " -> " + p._2 ).mkString(", ")})"""
+    override def toString() = s"""Vector(${ underlying.map(p => p._1 + " -> " + p._2).mkString(", ") })"""
     override def equals(that: Any) = that match {
-      case v:Vector =>
+      case v: Vector =>
         val keys = v.keySet ++ keySet
         keys.forall(k => this(k) == v(k))
       case _ => false
     }
-    def outer(that:Vector) = {
-      val map = for ((k1,v1) <- this; (k2,v2) <- that) yield (k1,k2) -> v1 * v2
+    def outer(that: Vector) = {
+      val map = for ((k1, v1) <- this; (k2, v2) <- that) yield (k1, k2) -> v1 * v2
       new Vector(map.toMap)
     }
-    def x(that:Vector) = outer(that)
-    override def filter(p: ((Any, Double)) => Boolean):Vector = new Vector(underlying.filter(p))
-    override def filterNot(p: ((Any, Double)) => Boolean):Vector = new Vector(underlying.filterNot(p))
-    override def groupBy[K](f: ((Any, Double)) => K):Map[K,Vector] = super.groupBy(f).mapValues(m => new Vector(m))
-    override def filterKeys(p: (Any) => Boolean):Vector = new Vector(underlying.filterKeys(p))
-    def filterKeysWith(p: PartialFunction[Any,Boolean]):Vector =
-      new Vector(underlying.filterKeys(p.orElse[Any,Boolean](PartialFunction(x => false))))
+    def x(that: Vector) = outer(that)
+    override def filter(p: ((Any, Double)) => Boolean): Vector = new Vector(underlying.filter(p))
+    override def filterNot(p: ((Any, Double)) => Boolean): Vector = new Vector(underlying.filterNot(p))
+    override def groupBy[K](f: ((Any, Double)) => K): Map[K, Vector] = super.groupBy(f).mapValues(m => new Vector(m))
+    override def filterKeys(p: (Any) => Boolean): Vector = new Vector(underlying.filterKeys(p))
+    def filterKeysWith(p: PartialFunction[Any, Boolean]): Vector =
+      new Vector(underlying.filterKeys(p.orElse[Any, Boolean](PartialFunction(x => false))))
 
-    
+
   }
 
   object Vector {
@@ -160,7 +166,7 @@ trait VectorDefs {
 
   val VectorZero = new Vector(Map.empty[Any, Double])
 
-  implicit def toVector(map:Map[_,Double]) = new Vector(map.asInstanceOf[Map[Any,Double]])
+  implicit def toVector(map: Map[_, Double]) = new Vector(map.asInstanceOf[Map[Any, Double]])
 
   implicit object VectorNumeric extends Numeric[Vector] {
     def plus(x: Vector, y: Vector) = x + y
@@ -194,11 +200,20 @@ trait VectorDefs {
   //    def *(vector: Vector) = vector.map({ case (k, v) => k -> v * vector.getOrElse(k, 0.0) })
   //  }
 
+  /**
+   * Adds two Wolfe vectors by iterating only over the elements of the second vector.
+   * @param v1 a large vector.
+   * @param v2 a small vector.
+   * @return v1+v2.
+   */
+  private def plus(v1: Vector, v2: Vector): Vector =
+    v2.foldLeft(v1)((acc, t) => {
+      val (key, value) = t
+      new Vector(acc.updated(key, acc.getOrElse(key, 0.0) + value))
+    })
 }
 
 trait SampleSpaceDefs {
-
-
   def all[A, B](mapper: A => B)(implicit dom: Iterable[A]): Iterable[B] = dom map mapper
 
   def c[A, B](set1: Iterable[A], set2: Iterable[B]) = for (i <- set1; j <- set2) yield (i, j)
@@ -327,14 +342,14 @@ trait SampleSpaceDefs {
   implicit def unwrap5[A1, A2, A3, A4, A5, B](f: (A1, A2, A3, A4, A5) => B): ((A1, A2, A3, A4, A5)) => B =
     p => f(p._1, p._2, p._3, p._4, p._5)
 
-//  class Doubles(maxCount:Double = Double.PositiveInfinity) extends Iterable[Double] {
-//
-//    override def take(n: Int) = new Doubles(n.toDouble)
-//    def iterator = {
-//      var count = 0
-//      Iterator.continually({ count += 1; Random.nextGaussian()}).takeWhile()
-//    }
-//  }
+  //  class Doubles(maxCount:Double = Double.PositiveInfinity) extends Iterable[Double] {
+  //
+  //    override def take(n: Int) = new Doubles(n.toDouble)
+  //    def iterator = {
+  //      var count = 0
+  //      Iterator.continually({ count += 1; Random.nextGaussian()}).takeWhile()
+  //    }
+  //  }
 
 }
 
@@ -343,11 +358,11 @@ trait DefaultValues {
   object default extends Default
   object hidden extends Default
   object unknown extends Default
-  implicit def toDefaultValue[T <: AnyRef](default:Default) = null
-  implicit def toDefaultInt[Int](default:Default) = -1
-  implicit def toDefaultBoolean[Boolean](default:Default) = false
-  implicit def toDefaultDouble[Double](default:Default) = 0.0
-  def default[T <: AnyRef]:T = null.asInstanceOf[T]
+  implicit def toDefaultValue[T <: AnyRef](default: Default) = null
+  implicit def toDefaultInt[Int](default: Default) = -1
+  implicit def toDefaultBoolean[Boolean](default: Default) = false
+  implicit def toDefaultDouble[Double](default: Default) = 0.0
+  def default[T <: AnyRef]: T = null.asInstanceOf[T]
 
 }
 
@@ -358,14 +373,14 @@ trait Annotations {
   class Atomic extends StaticAnnotation
   class Potential(construct: _ => ml.wolfe.fg.Potential) extends StaticAnnotation
   class OutputFactorGraph(buffer: Wolfe.FactorGraphBuffer = Wolfe.FactorGraphBuffer) extends StaticAnnotation
-  
+
 }
 
 trait ProblemBuilder {
 
-  implicit class RichIterable[T](iterable:Iterable[T]) {
-    def where(pred:T => Boolean) = iterable filter pred
-    def st(pred:T => Boolean) = iterable filter pred
+  implicit class RichIterable[T](iterable: Iterable[T]) {
+    def where(pred: T => Boolean) = iterable filter pred
+    def st(pred: T => Boolean) = iterable filter pred
   }
 
   case class Builder[T, N](dom: Iterable[T],
@@ -382,8 +397,8 @@ trait ProblemBuilder {
   }
 
 
-//  implicit def toOverWhereOf[T, N](obj: T => N) = Builder[T, N](Nil, obj = obj)
-//  implicit def toOverWhereOf[T](dom: Iterable[T]) = Builder[T, Double](dom, obj = (_: T) => 0.0)
+  //  implicit def toOverWhereOf[T, N](obj: T => N) = Builder[T, N](Nil, obj = obj)
+  //  implicit def toOverWhereOf[T](dom: Iterable[T]) = Builder[T, Double](dom, obj = (_: T) => 0.0)
   //  implicit def toOverWhereOf[T](obj: T => Double) = OverWhereOf[T,Double](Nil, obj = obj)
 
   def over[T](implicit over: Iterable[T]) = Builder(over, (_: T) => true, (_: T) => 0.0)
