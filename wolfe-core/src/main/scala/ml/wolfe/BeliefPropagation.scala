@@ -15,9 +15,18 @@ object BeliefPropagation {
 
   object BPType extends Enumeration {
     type BPType = Value
-    val Sum, Max, MaxMarginals, MaxOnly = Value
+    /** Computes marginals **/
+    val Sum = Value
+    /** Computes max-marginals and sets setting to a valid argmax **/
+    val Max = Value
+    /** Computes max-marginals ONLY (setting may not be a valid argmax if there are multiple solutions) **/
+    val MaxMarginals = Value
+    /** Sets setting to a valid argmax **/
+    val MaxOnly = Value
   }
+
   import BPType._
+
   def maxProduct(maxIteration: Int, schedule: Boolean = true, gradientAndObjective: Boolean = true)
                 (fg: FactorGraph) = apply(fg, maxIteration, schedule, Max, gradientAndObjective)
   def sumProduct(maxIteration: Int, schedule: Boolean = true, gradientAndObjective: Boolean = true)
