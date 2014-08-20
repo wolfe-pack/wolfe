@@ -92,7 +92,7 @@ object D3Implicits {
   }
 
   implicit def d3fg(fg:FactorGraph) = $d3fg(fg)
-  private def $d3fg(fg:FactorGraph, width:Int=600, height:Int=300, nodeFilter:Node=>Boolean = _=>true, linear:Boolean=true):HTML = {
+  private def $d3fg(fg:FactorGraph, width:Int=600, height:Int=200, nodeFilter:Node=>Boolean = _=>true, linear:Boolean=true):HTML = {
     val id = "FG" + Math.abs(fg.hashCode()).toString
 
     def nodeToNumber(n:Node) =  """(.*)\(([0-9]+)\)""".r.findFirstMatchIn(n.variable.label) match {
@@ -117,8 +117,9 @@ object D3Implicits {
     // val height = 300
 
     val gravity = 0.03
-    val charge = -700
+    val charge = -150
     val linkDistance = 50
+    val linkStrength = 0.5
 
     def nodeX(n:Node) = width * (
       if(nodeToNumber(n) == -1) Math.random()
@@ -200,6 +201,7 @@ object D3Implicits {
         |.size([$width, $height])
         |.charge($charge)
         |.gravity($gravity)
+        |.linkStrength($linkStrength)
         |.linkDistance($linkDistance)
         |    drag = force.drag()
         |    svg = d3.select("#$id").append("svg")
@@ -257,15 +259,20 @@ object D3Implicits {
         |tooltipNode = null
         |tooltip = null
         |
-        |while(force.alpha() > 0) {force.tick();}
         |
-        |var tick = function() {
-        |
+        |var checkBounds = function() {
         |    node.each(function(d) {
         |     d.x = Math.max(25, Math.min($width-25, d.x));
         |     d.y = Math.max(25, Math.min($height-25, d.y));
         |    });
+        |}
         |
+        |force.on("tick", checkBounds);
+        |for(var i=0; i<100; i++) {force.alpha(0.1); force.tick();}
+        |/*while(force.alpha() > 0.01) {force.tick();}*/
+        |
+        |var tick = function() {
+        | checkBounds();
         |	link.attr("x1", function(d) { return d.source.x; })
         |		.attr("y1", function(d) { return d.source.y; })
         |		.attr("x2", function(d) { return d.target.x; })
@@ -278,6 +285,7 @@ object D3Implicits {
         |
         |}
         |
+        |
         |var setTooltip = function(html) {
         |	if(tooltip != null) {
         |		tooltip.remove()
@@ -285,7 +293,7 @@ object D3Implicits {
         |	tooltip = svg.insert("foreignObject")
         |		.attr("class", "tooltip")
         |		.attr("width", "300")
-        |		.attr("height", "100%")
+        |		.attr("height", "500")
         |		.style("opacity", 0)
         |		.html("<div class='tooltipinner'>" + html + "</div>")
         |}
