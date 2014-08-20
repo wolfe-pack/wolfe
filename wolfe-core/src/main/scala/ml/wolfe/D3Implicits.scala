@@ -47,15 +47,14 @@ object D3Implicits {
 
 
   // ----- Implicits -------------------------------------------------------------------
-
-  implicit def d3bar(v:Wolfe.Vector) : HTML = {
+  def barChart(v:Wolfe.Vector) : HTML = {
     val id = "VEC" + Math.abs(v.hashCode()).toString
     val dataid = id + "_data"
     val nonZero = v.filter(_._2 != 0)
 
     val barHeight = 30
     val barSpace = 10
-    val width = 620
+    val width = 400
 
     val data = s"var data = { ${nonZero.map(x => "\"" + escape(x._1.toString) + "\": " + x._2).mkString(", ")} };"
     val run =
@@ -92,8 +91,8 @@ object D3Implicits {
     wrapCode(id, data + run)
   }
 
-
-  implicit def d3fg(fg:FactorGraph, width:Int=620, height:Int=300, nodeFilter:Node=>Boolean, linear:Boolean=true):HTML = {
+  implicit def d3fg(fg:FactorGraph) = $d3fg(fg)
+  private def $d3fg(fg:FactorGraph, width:Int=600, height:Int=300, nodeFilter:Node=>Boolean = _=>true, linear:Boolean=true):HTML = {
     val id = "FG" + Math.abs(fg.hashCode()).toString
 
     def nodeToNumber(n:Node) =  """(.*)\(([0-9]+)\)""".r.findFirstMatchIn(n.variable.label) match {
@@ -197,19 +196,16 @@ object D3Implicits {
       """.stripMargin
 
     val run = s"""
-        |var width = $width;
-        |var height = $height;
-        |
         |var force = d3.layout.force()
-        |.size([width, height])
+        |.size([$width, $height])
         |.charge($charge)
         |.gravity($gravity)
         |.linkDistance($linkDistance)
         |    drag = force.drag()
         |    svg = d3.select("#$id").append("svg")
         |     .attr("class", "factorgraph")
-        |     .attr("width", width)
-        |     .attr("height", height)
+        |     .attr("width", $width)
+        |     .attr("height", $height)
         |     .style("overflow", "visible");
         |    link = svg.selectAll(".link")
         |    node = svg.selectAll(".fgshape")
@@ -233,7 +229,7 @@ object D3Implicits {
         |     })
         |	    .attr("d", d3.svg.symbol()
         |	    	.type(function(d) { return d.type == 'factor' ? 'square' : 'circle' })
-        |	    	.size(function(d) { return d.type == 'factor' ? 1000 : 2000 }))
+        |	    	.size(function(d) { return d.type == 'factor' ? 500 : 2000 }))
         |	    .on("mouseover", function(d){
         |	    	if(d.hoverhtml != undefined) {
         |	    		setTooltip(d.hoverhtml);
@@ -266,8 +262,8 @@ object D3Implicits {
         |var tick = function() {
         |
         |    node.each(function(d) {
-        |     d.x = Math.max(0, Math.min($width, d.x));
-        |     d.y = Math.max(0, Math.min($height, d.y));
+        |     d.x = Math.max(25, Math.min($width-25, d.x));
+        |     d.y = Math.max(25, Math.min($height-25, d.y));
         |    });
         |
         |	link.attr("x1", function(d) { return d.source.x; })
@@ -318,13 +314,13 @@ object D3Implicits {
   def saveD3Graph(fg:FactorGraph,
                file:String = defaultLocation + "/factorgraph.html",
                regexFilter:String = ".*") = {
-    val html = d3fg(fg, 1200, 800, _.variable.label.matches(regexFilter), true)
+    val html = $d3fg(fg, 1200, 800, _.variable.label.matches(regexFilter), true)
     save(html, file)
   }
 
   def saveD3BarChart(v:Wolfe.Vector,
              file:String = defaultLocation + "/vector.html") = {
-    val html = d3bar(v)
+    val html = barChart(v)
     save(html, file)
   }
 
