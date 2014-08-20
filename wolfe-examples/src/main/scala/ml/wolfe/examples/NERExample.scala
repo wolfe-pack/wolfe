@@ -51,9 +51,9 @@ object NERExample {
 
 
   def main(args: Array[String]) {
-    val useSample = if (args.length > 0) args(0).toBoolean else false
-    val useMiniFeatures = if (args.length > 1) args(1).toBoolean else false
-    val secondOrder = if (args.length > 2) args(2).toBoolean else false
+    val useSample = true//if (args.length > 0) args(0).toBoolean else false
+    val useMiniFeatures = true//if (args.length > 1) args(1).toBoolean else false
+    val secondOrder = false//if (args.length > 2) args(2).toBoolean else false
     println(s"useSample = $useSample")
     println(s"useMiniFeatures = $useMiniFeatures")
     println(s"secondOrder = $secondOrder")
@@ -116,9 +116,6 @@ object NERExample {
 
     // -------------------------------------------------------------------------------------------
 
-
-    val start = System.currentTimeMillis()
-
     import scala.sys.process._
 
     def loadGenia(path: String): InputStream = Util.getStreamFromClassPathOrFile(path)
@@ -126,19 +123,20 @@ object NERExample {
     val trainPath = "ml/wolfe/datasets/genia/Genia4ERtraining.tar.gz"
     val testPath = "ml/wolfe/datasets/genia/Genia4ERtest.tar.gz"
 
-    //if genia corpus is not present, download it
-    val (trainSource, testSource) =
-      try {
-        (loadGenia(trainPath), loadGenia(testPath))
-      } catch {
-        case f: FileNotFoundException =>
-          "wget http://www.nactem.ac.uk/tsujii/GENIA/ERtask/Genia4ERtraining.tar.gz -P wolfe-examples/src/main/resources/ml/wolfe/datasets/genia/".!!
-          "wget http://www.nactem.ac.uk/tsujii/GENIA/ERtask/Genia4ERtest.tar.gz -P wolfe-examples/src/main/resources/ml/wolfe/datasets/genia/".!!
-          val prefix = "wolfe-examples/src/main/resources/"
-          (loadGenia(prefix + trainPath), loadGenia(prefix + testPath))
-      }
 
-    val (train, test) =
+    val (train, test) = Timer.time("load") {
+      //if genia corpus is not present, download it
+      val (trainSource, testSource) =
+        try {
+          (loadGenia(trainPath), loadGenia(testPath))
+        } catch {
+          case f: FileNotFoundException =>
+            "wget http://www.nactem.ac.uk/tsujii/GENIA/ERtask/Genia4ERtraining.tar.gz -P wolfe-examples/src/main/resources/ml/wolfe/datasets/genia/".!!
+            "wget http://www.nactem.ac.uk/tsujii/GENIA/ERtask/Genia4ERtest.tar.gz -P wolfe-examples/src/main/resources/ml/wolfe/datasets/genia/".!!
+            val prefix = "wolfe-examples/src/main/resources/"
+            (loadGenia(prefix + trainPath), loadGenia(prefix + testPath))
+        }
+
       if (useSample) {
         val sample = IOBToWolfe(groupLines(loadIOB(trainSource, "sampletest").toIterator, "###MEDLINE:")).flatten
         val (trainSample, testSample) = sample.splitAt((sample.size * 0.9).toInt)
@@ -146,6 +144,7 @@ object NERExample {
       } else
         (IOBToWolfe(groupLines(loadIOB(trainSource).toIterator, "###MEDLINE:")).flatten,
         IOBToWolfe(groupLines(loadIOB(testSource).toIterator, "###MEDLINE:")).flatten)
+    }
 
     println(
       s"""
@@ -159,7 +158,7 @@ object NERExample {
     }
 
     println("Training!")
-    val w = learn(train)
+    val w = Timer.time("learn") { learn(train) }
 
     println("Evaluating!")
     def evaluate(corpus: Seq[Sentence]) = {
@@ -168,12 +167,22 @@ object NERExample {
       println(evaluated)
     }
 
-    println("Train:")
-    evaluate(train)
-    println("Test:")
-    evaluate(test)
+    Timer.time("evaluate") {
+      println("Train:")
+      evaluate(train)
+      println("Test:")
+      evaluate(test)
+    }
 
-    println("Finished after: " + Timer.getTimeString(System.currentTimeMillis() - start))
+    println(
+      s"""
+        |Timings
+        |-------
+        |Load: ${Timer.getTimeString(Timer.reported("load"))}
+        |Learn: ${Timer.getTimeString(Timer.reported("learn"))}
+        |Evaluate: ${Timer.getTimeString(Timer.reported("evaluate"))}
+      """.stripMargin
+    )
   }
 
   def loadIOB(stream: InputStream, sampleFilePrefix: String = "") = {
