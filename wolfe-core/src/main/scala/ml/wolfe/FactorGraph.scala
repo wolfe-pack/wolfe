@@ -310,7 +310,8 @@ object FactorGraph {
    * @param index the index of the node.
    * @param variable the variable the node is representing.
    */
-  final class Node(val index: Int, var variable: Var) {
+  final class Node(val index: Int, var variable: Var) extends Ordered[Node] {
+    def compare(that:Node) = this.index.compareTo(that.index)
     variable.node = this
     /* all edges to factors that this node is connected to */
     var edges: Array[Edge] = Array.ofDim(0)
