@@ -101,7 +101,7 @@ object LogCallsMacro {
             val passPreMsg = q"$pre($msg)"
             val passPostMsg = q"$post($msg)"
             defDef.rhs match {
-              //problem: val tmp = expr is Unit!
+              //fixme: val tmp = expr is Unit!
               case Block(statements, expr) => Block(passPreMsg :: (statements ++ List(q"val $tmp = $expr", q"$passPostMsg")), q"$tmp")
               case expr => Block(List(passPreMsg, q"val $tmp = $expr", q"$passPostMsg"), q"$tmp")
             }
