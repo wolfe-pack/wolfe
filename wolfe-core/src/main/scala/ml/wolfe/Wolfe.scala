@@ -127,16 +127,13 @@ trait VectorDefs {
   class Vector(underlying: Map[Any, Double]) extends scala.collection.immutable.MapProxy[Any, Double] {
     val self = underlying withDefaultValue 0.0
 
-    def +(that: Vector) = {
-      val keys = self.keySet ++ that.self.keySet
-      val result = keys map (k => k -> (self.getOrElse(k, 0.0) + that.self.getOrElse(k, 0.0)))
-      new Vector(result.toMap)
-    }
-    def +(that: Vector, scale: Double) = {
-      val keys = self.keySet ++ that.self.keySet
-      val result = keys map (k => k -> (self.getOrElse(k, 0.0) + scale * that.self.getOrElse(k, 0.0)))
-      new Vector(result.toMap)
-    }
+    def +(that: Vector): Vector =
+      if (self.size >= that.size) plus(this, that)
+      else plus(that, this)
+
+    def +(that: Vector, scale: Double): Vector =
+      this + new Vector(that.mapValues(_ * scale))
+
     def dot(that: Vector) = VectorNumeric.dot(this, that)
     def norm = VectorNumeric.norm(this)
     def *(scale: Double) = new Vector(self.mapValues(_ * scale))
@@ -203,11 +200,20 @@ trait VectorDefs {
   //    def *(vector: Vector) = vector.map({ case (k, v) => k -> v * vector.getOrElse(k, 0.0) })
   //  }
 
+  /**
+   * Adds two Wolfe vectors by iterating only over the elements of the second vector.
+   * @param v1 a large vector.
+   * @param v2 a small vector.
+   * @return v1+v2.
+   */
+  private def plus(v1: Vector, v2: Vector): Vector =
+    v2.foldLeft(v1)((acc, t) => {
+      val (key, value) = t
+      new Vector(acc.updated(key, acc.getOrElse(key, 0.0) + value))
+    })
 }
 
 trait SampleSpaceDefs {
-
-
   def all[A, B](mapper: A => B)(implicit dom: Iterable[A]): Iterable[B] = dom map mapper
 
   def c[A, B](set1: Iterable[A], set2: Iterable[B]) = for (i <- set1; j <- set2) yield (i, j)
