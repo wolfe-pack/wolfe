@@ -10,14 +10,12 @@ import ml.wolfe.util.Util.approxEqual
 /**
  * @author Sebastian Riedel
  */
-final class LinearPotential(val edges: Array[Edge], val statistics: Stats, fg: FactorGraph) extends Potential {
+final class LinearPotential(val edges: Array[Edge], val statistics: Stats, fg: FactorGraph) extends DiscretePotential with AD3GenericPotential {
 
   import statistics._
 
-  val dims       = edges.map(_.n.variable.asDiscrete.dim)
-  val entryCount = statistics.settings.size
-
-  lazy val msgs = edges.map(_.msgs.asDiscrete)
+  override val settings = statistics.settings
+  val entryCount = settings.size
 
   override def maxMarginalF2N(edge: Edge) = {
     //max over all settings
@@ -54,31 +52,33 @@ final class LinearPotential(val edges: Array[Edge], val statistics: Stats, fg: F
     log(msgs.f2n)
   }
 
-  override def mapF2N() = {
-    for (j <- (0 until edges.size).optimized)
-      fill(msgs(j).f2n, 0)
-
+  override def computeMAP(): Array[Int] = computeMAP(penalizedScore)
+  override def computeMAP(scoreFun : Int => Double): Array[Int] = {
     var maxScore = Double.NegativeInfinity
     var maxSetting = Array.ofDim[Int](edges.size)
 
     for (i <- (0 until settings.size).optimized) {
-      val setting = settings(i)
-      var score = scoreEntry(i)
-      for (j <- (0 until edges.size).optimized)
-        score += msgs(j).n2f(setting(j))
-
+      var score = scoreFun(i)
       if(score > maxScore) {
         maxScore = score
-        maxSetting = setting
+        maxSetting = settings(i)
       }
     }
+
+    maxSetting
+  }
+
+  override def mapF2N() = {
+    for (j <- (0 until edges.size).optimized)
+      fill(msgs(j).f2n, 0)
+
+    val maxSetting = computeMAP()
 
     for (j <- (0 until edges.size).optimized)
       msgs(j).f2n(maxSetting(j)) = 1
   }
 
-  override def valueForCurrentSetting() = {
-    val setting = edges.map(_.n.variable.asDiscrete.setting)
+  override def valueForSetting(setting:Seq[Int]): Double = {
     val entry = TablePotential.settingToEntry(setting, dims)
     scoreEntry(entry)
   }
@@ -119,10 +119,11 @@ final class LinearPotential(val edges: Array[Edge], val statistics: Stats, fg: F
     //vectors(entry) dot fg.weights
   }
 
+  def penalizedScore(i:Int): Double = penalizedScore(i, TablePotential.entryToSetting(i, dims))
   def penalizedScore(settingId: Int, setting: Array[Int]): Double = {
     var score = scoreEntry(settingId)
-    for (j <- 0 until edges.size) {
-      score += edges(j).msgs.asDiscrete.n2f(setting(j))
+    for (j <- 0 until msgs.size) {
+      score += msgs(j).n2f(setting(j))
     }
     score
   }

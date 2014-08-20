@@ -5,7 +5,9 @@ import java.util.StringTokenizer
 
 import breeze.linalg._
 import ml.wolfe.FactorGraph.{Edge, Node}
+import ml.wolfe.apps.KernelBP.{KernelBPVar, KernelBPLocalPotential, KernelBPMSgs, EdgeModel}
 import ml.wolfe.nlp.{Key, Document, SISTAProcessors}
+import ml.wolfe.util.Evaluation
 import ml.wolfe.{SimpleIndex, Index, BeliefPropagation, FactorGraph}
 
 import scala.collection.mutable
@@ -121,7 +123,7 @@ object KernelBP {
       }
       normalizeMsg(msgs.n2f)
     }
-    override def updateMarginalBelief(node: Node) = {
+    override def updateMarginalBelief() = {
       belief = new DenseVector[Double](Array.fill(dim)(1.0))
       for (edge <- node.edges) {
         val source = edge.msgs.asInstanceOf[KernelBPMSgs]
@@ -141,7 +143,7 @@ object KernelBP {
     def saveCurrentF2NAsOld() = f2nOld = f2n
   }
 
-  def gram(kernel: (Any, Any) => Double, data: Seq[(Any, Any)], part: ((Any, Any)) => Any) = {
+  def gram[T, T1, T2](kernel: (T, T) => Double, data: Seq[(T1, T2)])(part: ((T1, T2)) => T) = {
     val G1 = new DenseMatrix[Double](data.size, data.size)
     for (i <- 0 until data.size) {
       val x1 = part(data(i))
@@ -155,12 +157,12 @@ object KernelBP {
     G1
   }
 
-  class EdgeModel(val data: Seq[(Any, Any)],
-                  val k1: (Any, Any) => Double, val k2: (Any, Any) => Double,
-                  val lambda: Double) {
+  class EdgeModel[T1, T2](val data: Seq[(T1, T2)],
+                          val k1: (T1, T1) => Double, val k2: (T2, T2) => Double,
+                          val lambda: Double) {
 
-    val G1    = gram(k1, data, _._1)
-    val G2    = gram(k2, data, _._2)
+    val G1    = gram(k1, data)(_._1)
+    val G2    = gram(k2, data)(_._2)
     val R     = (DenseMatrix.eye[Double](data.size) * lambda) * data.size.toDouble
     val G1_R  = G1 + R
     val G2_R  = G2 + R
@@ -171,11 +173,12 @@ object KernelBP {
 
   }
 
-  trait KernelBPPotential extends Potential {
-    def model: EdgeModel
+  trait KernelBPPotential[T1, T2] extends Potential {
+    def model: EdgeModel[T1, T2]
   }
 
-  class KernelBPPairPotential(val arg1: Edge, val arg2: Edge, val model: EdgeModel) extends KernelBPPotential {
+  class KernelBPPairPotential[T1, T2](val arg1: Edge, val arg2: Edge, val model: EdgeModel[T1, T2])
+  extends KernelBPPotential[T1, T2] {
 
 
     override def marginalF2N(edge: Edge) = {
@@ -187,7 +190,7 @@ object KernelBP {
   }
 
 
-  class KernelBPLocalPotential(val model: EdgeModel, val observation: Any) extends KernelBPPotential {
+  class KernelBPLocalPotential[T1, T2](val model: EdgeModel[T1, T2], val observation: T2) extends KernelBPPotential[T1, T2] {
 
     val orig = new DenseVector[Double](Array.ofDim[Double](model.data.size))
     for (((x1, x2), i) <- model.data.zipWithIndex) orig(i) = model.k2(x2, observation)
@@ -233,72 +236,158 @@ object KernelBPTed {
     //
   }
 
-  def calculateTFIDFVectors(docs: Seq[Document]): Seq[Document] = {
-    val index = new SimpleIndex
+  def calculateTFIDFVectors(docs: Seq[Document],
+                            index: Index = new SimpleIndex,
+                            freeze: Boolean = false): Seq[Document] = {
     val rawDF = new mutable.HashMap[String, Double]() withDefaultValue 0.0
     val numDocs = docs.size
     //get document frequencies first
     for (doc <- docs) {
       val words = for (t <- doc.tokens) yield t.word
 
-      for (w <- words.distinct) {
+      for (w <- words.distinct; if !freeze || index.hasKey(w)) {
         rawDF(w) += 1.0
-        index.index(w)
+        if (!freeze) index.index(w)
       }
     }
-    val numWords = rawDF.size
+    val numWords = index.size
     val result = for (doc <- docs) yield {
       //get term frequencies
-      val rawTF = new mutable.HashMap[String,Double]() withDefaultValue 0.0
-      for (t <- doc.tokens)  {
+      val rawTF = new mutable.HashMap[String, Double]() withDefaultValue 0.0
+      for (t <- doc.tokens; if !freeze || index.hasKey(t.word)) {
         rawTF(t.word) += 1.0
       }
       val docVector = SparseVector.zeros[Double](numWords)
-      for ((w,f) <- rawTF) {
+      for ((w, f) <- rawTF) {
         val tf = rawTF(w)
         val idf = math.log(numDocs / rawDF(w))
         val wordIndex = index(w)
         docVector(wordIndex) = tf * idf
       }
-      doc.copy(ir = doc.ir.copy(bowVector = docVector))
+      doc.copy(ir = doc.ir.copy(bowVector = Some(docVector)))
     }
     //todo: return word index.
     result
   }
 
   def main(args: Array[String]) {
-    //load positive and negative training documents for en-de
-    val de_en = new File("/Users/sriedel/corpora//ted-cldc/de-en/")
-    val en_de = new File("/Users/sriedel/corpora//ted-cldc/en-de/")
-
-    println("Loading translations de")
-    val de_files = getTrainSet(de_en, "_de").sortBy(_._1).take(1000) //.map(d => tokenize(d._2))
-    println("Loading translations en")
-    val en_files = getTrainSet(en_de, "_en").sortBy(_._1).take(1000) //.map(d => tokenize(d._2))
-    println(de_files.size)
-    println(en_files.size)
-
-    def mkDoc(file:((String,String,String),String)) = {
+    def mkDoc(file: ((String, String, String), String)) = {
       val doc = SISTAProcessors.mkDocument(file._2)
       doc.copy(ir = doc.ir.copy(docLabel = Some(file._1._1 + ":" + file._1._2)))
     }
+    def tag(label: String) = label.substring(0, label.indexOf(':'))
 
-    val de_docs = de_files map mkDoc
-    val en_docs = en_files map mkDoc
+    val tags = Seq("art", "arts")
 
-    println(de_docs.head)
+    //load positive and negative training documents for en-de
+    val de_en = new File("/Users/sriedel/corpora/ted-cldc/de-en/")
+    val en_de = new File("/Users/sriedel/corpora/ted-cldc/en-de/")
 
-    //get tfidf scores
-    val de_vecs = calculateTFIDFVectors(de_docs)
-    val en_vecs = calculateTFIDFVectors(en_docs)
+    def pipeline(dir: File, sub: String, label: String, toRemove: String,
+                 index:Index, freeze:Boolean = false): Map[String, Seq[Document]] = {
+      println("Loading data")
+      val en_train_files = getTrainSet(dir, sub, toRemove, Set(label)).sortBy(_._1).take(1000) //.map(d => tokenize(d._2))
+      println("Annotating data")
+      val en_train_docs = en_train_files map mkDoc
+      println("TFIDF calculations")
+      val en_train_vecs = calculateTFIDFVectors(en_train_docs, index, freeze)
+      val en_train_byLabel = en_train_vecs.groupBy(_.ir.docLabel.map(tag).get)
+      en_train_byLabel
+    }
+    val en_index = new SimpleIndex
 
-    println(de_vecs.head.ir.bowVector)
-
-    //create the classification edge model in english
-    val en_byLabel = en_vecs.groupBy(_.ir.docLabel)
 
 
+    val en_train_byLabel = pipeline(en_de,"train","art","_en",en_index)
+    val en_test_byLabel = pipeline(en_de,"test","art","_en",en_index,true)
 
+
+    println(en_train_byLabel.mapValues(_.size).mkString("\n"))
+    println(en_test_byLabel.mapValues(_.size).mkString("\n"))
+
+
+    val en_train_art = en_train_byLabel("art")
+    val en_test_art = en_test_byLabel("art")
+    val en_train_art_data = en_train_art map (d => d.ir.docLabel.get -> d)
+
+    def kernelLabel(l1: String, l2: String) = if (l1 == l2) 1.0 else 0.0
+    def kernelDoc(d1: Document, d2: Document) = d1.ir.bowVector.get dot d2.ir.bowVector.get
+
+    println("learning label model for English")
+    val label2DocModel = new EdgeModel(en_train_art_data, kernelLabel, kernelDoc, 0.1)
+
+    println(label2DocModel.Obs12.size)
+
+    //now create the factor graph (single variable, local factor)
+    def inferTagFromEn(enDoc: Document) = {
+      val fg = new FactorGraph
+      val artNode = fg.addNode(0)
+      val docFactor = fg.addFactor()
+      val artDocEdge = fg.addEdge(docFactor, artNode)
+      artDocEdge.msgs = new KernelBPMSgs
+      docFactor.potential = new KernelBPLocalPotential(label2DocModel, enDoc)
+      artNode.variable = new KernelBPVar(
+        Map.empty, Map(artDocEdge -> ((v: DenseVector[Double]) => v)), label2DocModel.data.size)
+
+      fg.build()
+      println("Running inference")
+      BeliefPropagation.sumProduct(1, gradientAndObjective = false, schedule = true)(fg)
+      val labelBelief = artNode.variable.asInstanceOf[KernelBPVar].belief
+      //calculate expectation of each label
+      println("Estimating marginals")
+      val result = new mutable.HashMap[String, Double] withDefaultValue 0.0
+      for ((p, i) <- en_train_art_data.zipWithIndex) result(p._1) += labelBelief(i)
+      result
+    }
+    //http://www.aclweb.org/anthology/P/P14/P14-1006.pdf
+    var eval = new Evaluation()
+    for (instance <- en_test_art) {
+      import scala.language.implicitConversions
+      implicit def toInt(b: Boolean) = if (b) 1 else 0
+      val isPositive = instance.ir.docLabel.get.endsWith("positive")
+      val prediction = inferTagFromEn(instance)
+      val winner = prediction.maxBy(_._2)._1
+      val tp = isPositive && winner == instance.ir.docLabel.get
+      val fp = !isPositive && winner != instance.ir.docLabel.get
+      val tn = !isPositive && winner == instance.ir.docLabel.get
+      val fn = isPositive && winner != instance.ir.docLabel.get
+      eval = eval + Evaluation(tp, tn, fp, fn)
+      println(instance.ir.docLabel)
+      println("Winner: " + winner)
+      println(prediction.mkString("\n"))
+      println("TP: " + tp)
+      println("FP: " + fp)
+      println("TN: " + tn)
+      println("FN: " + fn)
+
+    }
+    println(eval)
+    println(eval.tp)
+    println(eval.fn)
+
+    //
+    //    println(en_train_files.size)
+    //
+    //    val de_train_files = getTrainSet(de_en, "train", "_de").sortBy(_._1).take(1000) //.map(d => tokenize(d._2))
+    //    println("Loading translations en")
+    //    println(de_train_files.size)
+    //
+    //
+    //
+    //    val de_docs = de_train_files map mkDoc
+    //
+    //    println(de_docs.head)
+    //
+    //    //word to integer index
+    //    val de_index = new SimpleIndex
+    //
+    //    //get tfidf scores
+    //    val de_vecs = calculateTFIDFVectors(de_docs, de_index)
+    //
+    //    println(de_vecs.head.ir.bowVector)
+    //
+    //
+    //    println("Learned")
 
 
     //create kernel
@@ -316,14 +405,12 @@ object KernelBPTed {
 
   }
 
-  def getTrainSet(topDir: File, toRemove:String = "") = {
-    val de_files = for (tag <- new File(topDir, "train").listFiles();
+  def getTrainSet(topDir: File, subDir: String = "train", toRemove: String = "", tagFilter: String => Boolean = _ => true) = {
+    val de_files = for (tag <- new File(topDir, subDir).listFiles() if tagFilter(tag.getName);
                         posNeg <- tag.listFiles();
                         doc <- posNeg.listFiles()) yield {
       val txt = Source.fromFile(doc).getLines().mkString("\n")
-      def removed = if (toRemove == "") txt else txt.replaceAllLiterally(toRemove,"")
-      //      val tokens = txt.split(" ").map(_.dropRight(3))
-      //      println(tokens.mkString(" "))
+      def removed = if (toRemove == "") txt else txt.replaceAllLiterally(toRemove, "")
       (tag.getName, posNeg.getName, doc.getName) -> removed
     }
     de_files

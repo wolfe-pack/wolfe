@@ -1,6 +1,10 @@
 package ml.wolfe.util
 
-import com.typesafe.scalalogging.slf4j.{Logging}
+import com.typesafe.scalalogging.slf4j.Logging
+
+import scala.annotation.StaticAnnotation
+import scala.reflect.macros.Context
+import language.experimental.macros
 
 /**
  * Logger wrapper class.
@@ -55,3 +59,60 @@ object LoggerUtil extends Logging {
     logger.trace(msg, t)
   }
 }
+
+class LogCalls(preHook: String => Unit, postHook: String => Unit = _ => {}) extends StaticAnnotation {
+  def macroTransform(annottees: Any*) = macro LogCallsMacro.impl
+
+}
+
+object LogCallsMacro {
+  def impl(c: Context)(annottees: c.Expr[Any]*): c.Expr[Any] = {
+    import c.universe._
+    val inputs = annottees.map(_.tree).toList
+    val withLogging = inputs match {
+      case (defDef:DefDef) :: Nil =>
+        val msg = Constant(defDef.name.toString)
+        val app = c.macroApplication
+
+        val q"$ctr.${_}(${_})" = app
+        val q"new ${_}(..$args)" = ctr
+        //http://stackoverflow.com/questions/19379436/cant-access-parents-members-while-dealing-with-macro-annotations/19399119#19399119
+        //todo: difficult to get type information in macro annotations.
+//        val typed = c.typeCheck(q"${defDef.rhs}")
+//        println(typed.tpe)
+//        println(c.typeOf[Unit])
+//        println(defDef.rhs.tpe =:= c.typeOf[Unit])
+        //val unitType = c.typeOf[Unit]
+        //defDef.rhs.tpe =:= c.universe.
+
+        //todo: when the type of the passed function is not explicitly defined this seems to fail.
+        //todo: need inject type by force in such cases
+
+        //fixme: check for return type
+        val tmp = newTermName(c.fresh("tmp"))
+        //defDef.tpe //return type of the def? might also be the structured type!?
+        //alternative: check type of last expression
+
+        val newRhs = args match {
+          case pre :: Nil =>
+            val passPreMsg = q"$pre($msg)"
+            Block(List(passPreMsg), defDef.rhs)
+          case pre :: post :: Nil =>
+            val passPreMsg = q"$pre($msg)"
+            val passPostMsg = q"$post($msg)"
+            defDef.rhs match {
+              //problem: val tmp = expr is Unit!
+              case Block(statements, expr) => Block(passPreMsg :: (statements ++ List(q"val $tmp = $expr", q"$passPostMsg")), q"$tmp")
+              case expr => Block(List(passPreMsg, q"val $tmp = $expr", q"$passPostMsg"), q"$tmp")
+            }
+          case _ => c.abort(c.enclosingPosition, "LogCalls can only handle a pre and post hook")
+        }
+
+        treeCopy.DefDef(defDef,defDef.mods,defDef.name,defDef.tparams,defDef.vparamss,defDef.tpt,newRhs)
+      case _ =>
+        c.abort(c.enclosingPosition, "LogCalls can only annotate methods")
+    }
+    c.Expr[Any](withLogging)
+  }
+}
+

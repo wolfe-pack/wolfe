@@ -13,7 +13,7 @@ class VectorSpecs extends WolfeSpec {
       v(1) should be(3.0)
       v(2) should be(0.0)
     }
-    "be creable using a direct constructor" in {
+    "be creatable using a direct constructor" in {
       val v = Vector('A -> 2.0, 'B -> 1.0)
       v('A) should be(2.0)
       v('B) should be(1.0)
