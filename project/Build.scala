@@ -2,7 +2,7 @@ import java.io.IOException
 import sbt._
 import sbt.Keys._
 import sbtrelease.ReleasePlugin._
-
+import scoverage.ScoverageSbtPlugin._
 
 object ShellPrompt {
   object devnull extends ProcessLogger {
@@ -113,7 +113,7 @@ object BuildSettings {
         Resolver.sonatypeRepo("releases")
       ),
       globalDependencies
-    ) ++ generalSettings ++ releaseSettings ++ publishSettings
+    ) ++ generalSettings ++ releaseSettings ++ publishSettings ++ instrumentSettings //++ coverallsSettings
 
 }
 
