@@ -1,8 +1,6 @@
 package ml.wolfe.util
 
 import java.io.{PrintWriter, File, FileInputStream, InputStream}
-import ml.wolfe.{FactorGraphViewer, FactorGraph}
-import ml.wolfe.FactorGraph.Node
 
 import scala.collection.mutable.ArrayBuffer
 import scala.io.Source
