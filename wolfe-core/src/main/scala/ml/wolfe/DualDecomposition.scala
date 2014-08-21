@@ -24,11 +24,16 @@ object DualDecomposition {
    * @param initialStepSize The step size of the initial iteration.
    * @param parallelize A flag that indicates that each factor's inference can be run in parallel. Defaults to true
    */
-  def apply(fg: FactorGraph, maxIteration: Int, initialStepSize:Double,
+
+
+
+  def apply(fg: FactorGraph, maxIteration: Int, initialStepSize:Double = 1,
             parallelize: Boolean = true, ad3:Boolean = false):Unit = {
 
     val factors = if (parallelize) fg.factors.par else fg.factors
-    factors.foreach(_.potential.ad3Init())
+
+    if(ad3) { factors.foreach(_.potential.ad3Init()) }
+
     fg.converged = false
     initializeN2FAndBeliefs(fg)
     val convergenceThreshold = 1e-6 * fg.nodes.map(n => n.variable.asDiscrete.dim * n.edges.length).sum
@@ -43,7 +48,7 @@ object DualDecomposition {
         fg.nodes(i).variable.updateAverageBelief()
       }
       if(ad3) stepSize = updateAD3StepSize(stepSize, dualResidual(fg, previousBeliefs), primalResidual(fg))
-      else stepSize = initialStepSize / math.sqrt(iter + 1)
+         else stepSize = initialStepSize / math.sqrt(iter + 1)
 
       for(n <- fg.nodes; e <- n.edges) n.variable.updateDualN2F(e, stepSize)
 
@@ -51,7 +56,14 @@ object DualDecomposition {
     }
 
     for(n <- fg.nodes) n.variable.setToArgmax()
+
+    fg.gradient = new SparseVector(1000)
   }
+
+
+
+
+
 
   private def initializeN2FAndBeliefs(fg: FactorGraph) : Unit = {
     for (factor <- fg.factors;
