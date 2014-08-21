@@ -42,6 +42,7 @@ case class Sentence(tokens: Seq[Token], syntax: SyntaxAnnotation = SyntaxAnnotat
     g.receiveOrdered[Sentence,Document,Document]('sentences,this)((_,d) => d)
   def linkTokens(implicit graph: ObjectGraph) =
     graph.link1toNOrdered[Sentence, Token, Seq[Token]]('tokens, this, tokens)
+  def size = tokens.size
 }
 
 /**

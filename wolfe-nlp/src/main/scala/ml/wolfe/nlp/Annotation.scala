@@ -79,13 +79,20 @@ object SyntaxAnnotation {
 case class DependencyTree(arcs: Seq[(Int,Int,String)]) {
   def crosses(a1: (Int,Int,String), a2: (Int,Int,String)): Boolean = crosses(a1._1, a1._2, a2._1, a2._2)
 
-  def crosses(i: Int, j: Int, k: Int, l: Int): Boolean = {
+  def crosses(ii: Int, ij: Int, ik: Int, il: Int): Boolean = {
+    val (i,j) = if (ii < ij) (ii, ij) else (ij, ii)
+    val (k,l) = if (ik < il) (ik, il) else (il, ik)
     (i < k && k < j && j < l) || (k < i && j < k && l < j)
   }
 
   def hasHead(i: Int, j: Int) = arcs.exists(n => n._1 == i && n._2 == j)
 
-  def isProjective = !arcs.zip(arcs).exists {case(a1, a2) => crosses(a1, a2)}
+  def headOf(j: Int) = arcs.find(_._1 == j) match {
+    case Some(x) => Some(x._2)
+    case _ => None
+  }
+
+  def isProjective = !arcs.exists(a1 => arcs.exists(a2 => crosses(a1,a2)))
 
   override def toString = arcs.mkString("\n")
 }
@@ -159,7 +166,7 @@ case class ConstituentTree(node: ConstituentNode, children : Seq[ConstituentTree
 
   def words: Iterator[String] = leaves.collect { case l: PreterminalNode => l.word }
 
-//  def tokens: Iterator[TaggedToken] = leaves.collect { case l: PreterminalNode => TaggedToken(l.word, l.label) }
+  def tokens: Iterator[Token] = leaves.collect { case l: PreterminalNode => Token(word = l.word, offsets = null, posTag = l.label) }
 
   def setYield(words: Array[String], tags: Array[String], offset: Int = 0): ConstituentTree = {
     //    println("setting yield")

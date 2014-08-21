@@ -30,7 +30,7 @@ class CoNLLReader(filename: String) extends Iterable[Sentence]{
     val tokens = cells.map {c =>
       Token(c(1), CharOffsets(c(0).toInt,c(0).toInt), posTag = c(4), lemma = c(2))
     }
-    val dependencies = DependencyTree(cells.zipWithIndex.map{ case(c,i) => (i, c(8).toInt, null) })
+    val dependencies = DependencyTree(cells.zipWithIndex.map{ case(c,i) => (i+1, c(8).toInt, c(10)) })
     Sentence(tokens, syntax = SyntaxAnnotation(tree=null, dependencies=dependencies))
   }
 
