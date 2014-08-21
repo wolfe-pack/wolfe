@@ -11,7 +11,8 @@ object JointSRLAndDP extends App {
   import Wolfe._
   import ml.wolfe.macros.OptimizedOperators._
 
-  val labels = List('A, 'B)
+  val labels = List("A", "P")
+  val root   = "Root"
 
   type Edge = (Int, Int)
   type Labelled = (Edge, String)
@@ -22,6 +23,15 @@ object JointSRLAndDP extends App {
     def candidateArgs = for (h <- 0 until n; m <- 0 until n) yield (h, m)
     def candidateDeps = for (h <- 0 until n; m <- 1 until n; if h != m) yield (h, m)
     def candidateRoles = for (edge <- candidateArgs; label <- labels) yield edge -> label
+  }
+
+  def example: (X, Y) = {
+    val words = Seq(root, "Bob", "killed", "Anna")
+    val tags = Seq(root, "NNP", "VBD", "NNP")
+    val deps = Map((0, 2) -> true, (2, 1) -> true, (2, 3) -> true) withDefaultValue false
+    val args = Map((2, 1) -> true, (2, 3) -> true) withDefaultValue false
+    val roles = Map(((2, 1), "A") -> true, ((2, 3), "P") -> true) withDefaultValue false
+    (X(words, tags), Y(args, roles, deps))
   }
 
   def argLocal(x: X)(y: Y)(h: Int, m: Int) =
@@ -36,8 +46,13 @@ object JointSRLAndDP extends App {
     sum(x.candidateDeps) { case (h, m) => depLocal(x)(y)(h, m) } +
     sum(x.candidateArgs) { case (h, m) => oneHot('nand, I(y.args(h, m) && y.deps(h, m))) }
 
-  def model(w:Vector)(x:X)(y:Y) = feats(x)(y) dot w
+  def model(w: Vector)(x: X)(y: Y) =
+    feats(x)(y) dot w
 
+  def localLoss(x: X, gold: Y)(w: Vector) = 0.0
+
+  def loss(data: Seq[(X, Y)])(w: Vector) =
+    sum(data) { case (x, y) => localLoss(x, y)(w) }
 
   //  case class Sentence(words: Seq[String], tags: Seq[String],
   //                      args: Pred[(Int, Int)],
