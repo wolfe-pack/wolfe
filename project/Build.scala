@@ -102,7 +102,6 @@ object BuildSettings {
       Project.extract(state).append(javaOptions := Seq(javaRunOptions), state)
   }
 
-
   val globalSettings =
     Seq(
       commands ++= Seq(vmargs),
@@ -115,12 +114,13 @@ object BuildSettings {
       globalDependencies
     ) ++ generalSettings ++ releaseSettings ++ publishSettings ++ instrumentSettings //++ coverallsSettings
 
+  ScoverageKeys.excludedPackages in ScoverageCompile := ".*;.*.*"
 }
 
 
 object Build extends Build {
-
   import BuildSettings._
+
 
   lazy val root = Project(
     id = "wolfe",
@@ -159,6 +159,4 @@ object Build extends Build {
   core % "test->test;compile->compile",
   nlp % "test->test;compile->compile"
   )
-
-
 }
