@@ -392,6 +392,11 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
         val metaStructs = merged.map(arg =>
           metaStructuredFactor(info.copy(potential = arg)))
         MetaSumFactor(merged, metaStructs, structure, constructorArgs)
+      case ApplyMinus(arg1,arg2) =>
+        val merged = mergeSumArgs(List(arg1, q"-1 * $arg2"), matcher)
+        val metaStructs = merged.map(arg =>
+          metaStructuredFactor(info.copy(potential = arg)))
+        MetaSumFactor(merged, metaStructs, structure, constructorArgs)
       case Dot(arg1, arg2) if structures(arg1, matcher).isEmpty =>
         val linearFactor = metaStructuredFactor(FactorGenerationInfo(arg2, structure, matcher, constructorArgs, linearModelInfo, true))
         WithWeightVector(linearFactor, arg1)

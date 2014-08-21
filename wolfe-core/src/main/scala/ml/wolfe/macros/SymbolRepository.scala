@@ -66,6 +66,8 @@ trait SymbolRepository[C <: Context] extends HasContext[C] {
     lazy val dot          = vectorClass.typeSignature.member(newTermName("dot"))
     lazy val vectorPlus   = vectorClass.typeSignature.member(newTermName("$plus"))
     lazy val vectorPluses = vectorPlus.asTerm.alternatives.toSet
+    lazy val vectorMinus   = vectorClass.typeSignature.member(newTermName("$minus"))
+    lazy val vectorMinuses = vectorMinus.asTerm.alternatives.toSet
     lazy val oneHot       = rootMirror.staticClass("ml.wolfe.Wolfe.oneHot")
 
 
