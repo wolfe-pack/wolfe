@@ -208,7 +208,7 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C] with CodeOpt
     lazy val classDef = q"""
       final class $className(..$constructorArgs) extends ml.wolfe.macros.StructuredFactor[${ structure.argType }] {
         import ml.wolfe.FactorGraph._
-        val nodes:Array[Node] = $nodes.toList.distinct.sortBy(_.index).toArray
+        val nodes:Array[Node] = $nodes.toList.distinct.sorted.toArray
         val vars = nodes.map(_.variable.asDiscrete)
         val dims = vars.map(_.dim)
         val settingsCount = dims.product

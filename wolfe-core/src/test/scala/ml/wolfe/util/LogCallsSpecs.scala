@@ -60,6 +60,11 @@ class LogCallsSpecs extends WolfeSpec {
 
       testMethod2() //shouldBe "hi" //fixme
       checkCounter(1, 1)
+
+
+
+      println(testMethod1())
+      println(testMethod2())
     }
   }
 }
