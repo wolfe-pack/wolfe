@@ -116,9 +116,6 @@ object NERExample {
 
     // -------------------------------------------------------------------------------------------
 
-
-    val start = System.currentTimeMillis()
-
     import scala.sys.process._
 
     def loadGenia(path: String): InputStream = Util.getStreamFromClassPathOrFile(path)
@@ -126,19 +123,20 @@ object NERExample {
     val trainPath = "ml/wolfe/datasets/genia/Genia4ERtraining.tar.gz"
     val testPath = "ml/wolfe/datasets/genia/Genia4ERtest.tar.gz"
 
-    //if genia corpus is not present, download it
-    val (trainSource, testSource) =
-      try {
-        (loadGenia(trainPath), loadGenia(testPath))
-      } catch {
-        case f: FileNotFoundException =>
-          "wget http://www.nactem.ac.uk/tsujii/GENIA/ERtask/Genia4ERtraining.tar.gz -P wolfe-examples/src/main/resources/ml/wolfe/datasets/genia/".!!
-          "wget http://www.nactem.ac.uk/tsujii/GENIA/ERtask/Genia4ERtest.tar.gz -P wolfe-examples/src/main/resources/ml/wolfe/datasets/genia/".!!
-          val prefix = "wolfe-examples/src/main/resources/"
-          (loadGenia(prefix + trainPath), loadGenia(prefix + testPath))
-      }
 
-    val (train, test) =
+    val (train, test) = Timer.time("load") {
+      //if genia corpus is not present, download it
+      val (trainSource, testSource) =
+        try {
+          (loadGenia(trainPath), loadGenia(testPath))
+        } catch {
+          case f: FileNotFoundException =>
+            "wget http://www.nactem.ac.uk/tsujii/GENIA/ERtask/Genia4ERtraining.tar.gz -P wolfe-examples/src/main/resources/ml/wolfe/datasets/genia/".!!
+            "wget http://www.nactem.ac.uk/tsujii/GENIA/ERtask/Genia4ERtest.tar.gz -P wolfe-examples/src/main/resources/ml/wolfe/datasets/genia/".!!
+            val prefix = "wolfe-examples/src/main/resources/"
+            (loadGenia(prefix + trainPath), loadGenia(prefix + testPath))
+        }
+
       if (useSample) {
         val sample = IOBToWolfe(groupLines(loadIOB(trainSource, "sampletest").toIterator, "###MEDLINE:")).flatten
         val (trainSample, testSample) = sample.splitAt((sample.size * 0.9).toInt)
@@ -146,6 +144,7 @@ object NERExample {
       } else
         (IOBToWolfe(groupLines(loadIOB(trainSource).toIterator, "###MEDLINE:")).flatten,
         IOBToWolfe(groupLines(loadIOB(testSource).toIterator, "###MEDLINE:")).flatten)
+    }
 
     println(
       s"""
@@ -168,12 +167,23 @@ object NERExample {
       println(evaluated)
     }
 
-    println("Train:")
-    evaluate(train)
-    println("Test:")
-    evaluate(test)
+    Timer.time("evaluate") {
+      println("Train:")
+      evaluate(train)
+      println("Test:")
+      evaluate(test)
+    }
 
-    println("Finished after: " + Timer.getTimeString(System.currentTimeMillis() - start))
+    println(
+      s"""
+        |Timings
+        |-------
+        |Load: ${Timer.getTimeString(Timer.reported("load"))}
+        |Examples: ${Timer.getTimeString(Timer.reported("examples"))}
+        |Train: ${Timer.getTimeString(Timer.reported("train"))}
+        |Evaluate: ${Timer.getTimeString(Timer.reported("evaluate"))}
+      """.stripMargin
+    )
   }
 
   def loadIOB(stream: InputStream, sampleFilePrefix: String = "") = {

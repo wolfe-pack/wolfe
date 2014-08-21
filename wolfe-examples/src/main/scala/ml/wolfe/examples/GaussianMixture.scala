@@ -23,7 +23,7 @@ object GaussianMixture extends App {
 
   def worlds = all(World)
 
-  //val mu = expect(worlds)(model)(w => oneHot('x -> w.x) + oneHot('z -> w.z))
+  val mu = expect(worlds)(model)(w => oneHot('x, w.x) + oneHot('z, w.z))
 
 
 }

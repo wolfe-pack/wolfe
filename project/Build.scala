@@ -2,7 +2,7 @@ import java.io.IOException
 import sbt._
 import sbt.Keys._
 import sbtrelease.ReleasePlugin._
-
+import scoverage.ScoverageSbtPlugin._
 
 object ShellPrompt {
   object devnull extends ProcessLogger {
@@ -102,7 +102,6 @@ object BuildSettings {
       Project.extract(state).append(javaOptions := Seq(javaRunOptions), state)
   }
 
-
   val globalSettings =
     Seq(
       commands ++= Seq(vmargs),
@@ -113,14 +112,15 @@ object BuildSettings {
         Resolver.sonatypeRepo("releases")
       ),
       globalDependencies
-    ) ++ generalSettings ++ releaseSettings ++ publishSettings
+    ) ++ generalSettings ++ releaseSettings ++ publishSettings ++ instrumentSettings //++ coverallsSettings
 
+  ScoverageKeys.excludedPackages in ScoverageCompile := ".*;.*.*"
 }
 
 
 object Build extends Build {
-
   import BuildSettings._
+
 
   lazy val root = Project(
     id = "wolfe",
@@ -159,6 +159,4 @@ object Build extends Build {
   core % "test->test;compile->compile",
   nlp % "test->test;compile->compile"
   )
-
-
 }
