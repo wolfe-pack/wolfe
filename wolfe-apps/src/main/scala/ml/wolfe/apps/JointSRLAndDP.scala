@@ -25,6 +25,12 @@ object JointSRLAndDP extends App {
     def candidateRoles = for (edge <- candidateArgs; label <- labels) yield edge -> label
   }
 
+  def space(x: X) = all(Y) {
+    preds(x.candidateArgs) x
+    preds(x.candidateRoles) x
+    preds(x.candidateDeps)
+  }
+
   def example: (X, Y) = {
     val words = Seq(root, "Bob", "killed", "Anna")
     val tags = Seq(root, "NNP", "VBD", "NNP")
@@ -49,10 +55,13 @@ object JointSRLAndDP extends App {
   def model(w: Vector)(x: X)(y: Y) =
     feats(x)(y) dot w
 
-  def localLoss(x: X, gold: Y)(w: Vector) = 0.0
+  def localLoss(x: X, gold: Y)(w: Vector) =
+    logZ(space(x)) { model(w)(x) } -
+    logZ(space(x) where (y => y.args == gold.args)) { model(w)(x) }
 
   def loss(data: Seq[(X, Y)])(w: Vector) =
     sum(data) { case (x, y) => localLoss(x, y)(w) }
+
 
   //  case class Sentence(words: Seq[String], tags: Seq[String],
   //                      args: Pred[(Int, Int)],
