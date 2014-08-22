@@ -18,7 +18,8 @@ class TupleVar(val componentNodes:Array[Node]) extends Var {
   val components = componentNodes.map(_.variable.asDiscrete)
   val dim = components.map(_.dim).product
 
-  override val label = componentNodes.map(_.variable.label).mkString("(", ",", ")")
+  override val label = componentNodes.map(_.variable.label).mkString(",")
+  val domainLabels = cartesianProduct(components.map(_.domainLabels)).map(_.mkString("(", ", ", ")"))
 
   /* node belief */
   val B = LabelledTensor.onNewArray[DiscreteVar, Double](components, _.dim, 0)

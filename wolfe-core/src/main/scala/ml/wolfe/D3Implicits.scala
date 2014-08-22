@@ -3,6 +3,7 @@ package ml.wolfe
 import java.io.{File, PrintWriter}
 
 import ml.wolfe.FactorGraph.{Factor, Node}
+import ml.wolfe.fg.{TupleVar, DiscreteVar}
 import org.sameersingh.htmlgen.{RawHTML, HTML}
 import scala.language.implicitConversions
 
@@ -179,7 +180,6 @@ object D3Implicits {
         |.tooltipinner {
         |	pointer-events:none;
         |	overflow:hidden;
-        |	max-height:400px;
         |}
 """.stripMargin
 
@@ -189,7 +189,11 @@ object D3Implicits {
               nodes.map(n =>
                 "{text:'" + escape(n.variable.label) + "'" +
                 ", type:'node'" +
-                ", hoverhtml:'Domain: {" + escape(n.variable.asDiscrete.domainLabels.mkString(", ")) + "}'" +
+                 ", hoverhtml:'Domain:<br/>{" + escape(n.variable match {
+                  case v:DiscreteVar => v.domainLabels.mkString(", ")
+                  case v:TupleVar => v.domainLabels.mkString(", ")
+                  case _ => ""
+                }) + "}'" +
                 ", x:" + nodeX(n) + ", y:" + nodeY(n) +
                 ", fixed:" + isFixed(n) +
                 "}") ++
@@ -264,9 +268,10 @@ object D3Implicits {
         |var label = label.data(data.graph.nodes)
         |	.enter().append("text")
         |	.attr("class", "label")
-        |	.attr("dy", "5")
         |	.attr("text-anchor", "middle")
         |	.text(function(d) { return d.text == undefined ? "" : d.text })
+        | .style("font-size", function(d) { return Math.min(700 / this.getComputedTextLength(), 15) + "px"; })
+        |	.attr("dy", ".35em")
         |	.call(drag);
         |
         |tooltipNode = null
@@ -293,7 +298,7 @@ object D3Implicits {
         |
         |
         |	node.attr("transform", function(d) {return "translate(" + d.x + "," + d.y + ")"});
-        |	label.attr("transform", function(d) {return "translate(" + d.x + "," + d.y + ")"});
+        |	label.attr("transform", function(d) {return "translate(" + d.x + "," + (d.y) + ")"});
         |	moveTooltip();
         |
         |}
