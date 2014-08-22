@@ -9,40 +9,52 @@ import scala.reflect.macros.Context
 /**
  * @author Sebastian Riedel
  */
-trait NotebookRenderer {
+trait NotebookRenderer[T <: NotebookRenderer[T]] {
+
+  this:T =>
 
   val transformer = new ActuariusTransformer
 
-  def html(text: String)
+  def html(text: String):T
 
-  def md(markdown: String): Unit = {
+  def md(markdown: String): T = {
     html(transformer(markdown))
   }
   def h1(text: String) = html(s"<h1>$text</h1>")
   def h2(text: String) = html(s"<h1>$text</h1>")
   def source(src: String) = html(s"<pre>$src</pre>")
 
-  def close()
-
 }
 
-class HTMLFileRenderer(dst: File, template: String => String = SimpleTemplate) extends NotebookRenderer {
+class HTMLFileRenderer extends NotebookRenderer[HTMLFileRenderer] {
 
-  dst.getParentFile.mkdirs()
 
-  val tmp     = File.createTempFile(dst.getName, "html")
-  val builder = new StringBuilder
-  val out     = new PrintStream(tmp)
+  var builder:List[String] = Nil
 
-  def html(text: String) = builder append text
-  def close() = {
-    out.println(template(builder.toString()))
+  def html(text: String) = {
+    builder ::= text
+    this
+  }
+
+  def saveTo(dst: File,template: String => String = new SimpleTemplate): Unit = {
+    val tmp = File.createTempFile(dst.getName, "html")
+    val out = new PrintStream(tmp)
+    out.println(template(builder.reverse mkString "\n"))
     out.close()
+    dst.getParentFile.mkdirs()
+
     tmp.renameTo(dst)
+  }
+
+  def flip() = {
+    builder = builder match {
+      case l1 :: l2 :: t => l2 :: l1 :: t
+      case l => l
+    }
   }
 }
 
-object SimpleTemplate extends (String => String) {
+class SimpleTemplate(head:String = "") extends (String => String) {
 
   def apply(content: String) = {
     s"""
@@ -66,6 +78,7 @@ object SimpleTemplate extends (String => String) {
         |            },
         |            100);
         |    </script>
+        |    $head
         |</head>
         |
         |<body>
@@ -76,6 +89,20 @@ object SimpleTemplate extends (String => String) {
   }
 }
 
+object RevealJS {
+  def slides(body: => Unit)(implicit renderer: NotebookRenderer[_]): Unit = {
+    renderer.html( """<div class="reveal"><div class="slides">""")
+    body
+    renderer.html( """</div></div>""")
+  }
+  def slide(body: => Unit)(implicit renderer: NotebookRenderer[_]): Unit = {
+    renderer.html( """<section>""")
+    body
+    renderer.html( """</section""")
+  }
+}
+
+
 trait CodeBlock {
   val result: Any
 }
@@ -83,6 +110,57 @@ trait CodeBlock {
 object Notebook {
 
   import scala.language.experimental.macros
+
+  def lastNStatements(n:Int, level:Int = 1):String = macro lastNStatementsImpl
+
+  def parentMap[C<:Context](c:C)(tree:c.Tree):Map[c.Tree,c.Tree] = {
+    import c.universe._
+    val parents = tree.collect({
+      case parent =>
+        parent.children map (child => child -> parent)
+    }).flatMap(identity).toMap
+    parents
+  }
+
+  def lastNStatementsImpl(c:Context)(n:c.Expr[Int],level:c.Expr[Int]) = {
+    import c.universe._
+    //println(c.enclosingUnit.source.content.mkString(""))
+    def offset(tree:Tree) = tree match {
+      case v:ValDef => v.pos.point - 4
+      case _ => tree.pos.point
+    }
+    def visibleChildren(tree:Tree) = tree match {
+      case t:Template => t.children.drop(3)
+      case _ => tree.children
+    }
+    val exprRaw = c.macroApplication
+    val expr = c.enclosingUnit.body.find(exprRaw.pos.point == _.pos.point).get
+    val parents = parentMap[c.type](c)(c.enclosingUnit.body)
+    val constN = n.tree match {
+      case Literal(constant) => constant.value.asInstanceOf[Int]
+      case _ => c.abort(c.enclosingPosition,"N must be a literal integer")
+    }
+    val constLevel = level.tree match {
+      case Literal(const) => const.value.asInstanceOf[Int]
+      case _ => c.abort(c.enclosingPosition,"Level must be a literal integer")
+    }
+   def findAncestor(current:Tree, levelsLeft:Int): Tree = levelsLeft match {
+      case 0 => current
+      case _ => findAncestor(parents(current),levelsLeft - 1)
+    }
+    val ancestor = findAncestor(expr,constLevel)
+    val parent = parents(ancestor)
+    val children = visibleChildren(parent).toIndexedSeq
+    val index = children.indexOf(ancestor)
+    val beginIndex = math.max(0, index - (constN + 2))
+    val beginOffset = offset(children(beginIndex))
+    val endOffset = offset(ancestor)
+    val source = c.enclosingUnit.source.content.subSequence(beginOffset,endOffset).toString
+    val trimmed = source split "\n" map (_.trim) mkString "\n"
+    c.literal(trimmed)
+  }
+
+
 
   def block(code: CodeBlock): String = macro blockImpl
 

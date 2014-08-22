@@ -1,33 +1,40 @@
 import java.io.File
 
-import ml.wolfe.ui.{Notebook, CodeBlock, HTMLFileRenderer}
+import ml.wolfe.ui._
 
-val renderer = new HTMLFileRenderer(new File("/tmp/example.html"))
+implicit val renderer = new HTMLFileRenderer()
+
 
 import renderer._
 import Notebook._
+import RevealJS._
 
-object Code extends CodeBlock {
-  val i = 1
-  val j = 2
-  val result = i + j
+object Test {
+  val i  = 2
+  val j  = 3
+  i + j
+  val actual = lastNStatements(3, 1)
 }
-source(block(Code))
-html(Code.result.toString)
+//println(Test.actual)
+source(Test.actual)
+//source(actual) flip()
 h1("Yoo")
-
 //source(CodeBlock) { html(result)}
 md("#Example Header 2")
-
 md { """
 Some text.
-
-## Another header
+## Another header     blah
 
 And a [link](http://www.google.com).
 
-"""}
-
-
-
-close()
+     """
+}
+slides {
+  slide {
+    h1("Slide header")
+  }
+}
+saveTo(new File("/tmp/example.html"), new SimpleTemplate(
+  """
+    |
+  """.stripMargin))
