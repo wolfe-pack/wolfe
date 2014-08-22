@@ -88,6 +88,7 @@ object Wolfe extends SampleSpaceDefs
 
 
   def I(b: Boolean) = if (b) 1.0 else 0.0
+  def logI(b: Boolean) = if (b) 0.0 else Double.NegativeInfinity
 
   implicit class RichPredicate[T](pred: Map[T, Boolean]) {
     def only(trueAtoms: T*) = {
