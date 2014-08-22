@@ -31,15 +31,6 @@ object JointSRLAndDP extends App {
     preds(x.candidateDeps)
   }
 
-  def example: (X, Y) = {
-    val words = Seq(root, "Bob", "killed", "Anna")
-    val tags = Seq(root, "NNP", "VBD", "NNP")
-    val deps = Map((0, 2) -> true, (2, 1) -> true, (2, 3) -> true) withDefaultValue false
-    val args = Map((2, 1) -> true, (2, 3) -> true) withDefaultValue false
-    val roles = Map(((2, 1), "A") -> true, ((2, 3), "P") -> true) withDefaultValue false
-    (X(words, tags), Y(args, roles, deps))
-  }
-
   def argLocal(x: X)(y: Y)(h: Int, m: Int) =
     oneHot('ww ->(x.words(h), x.words(m), y.args(h, m)))
 
@@ -61,6 +52,15 @@ object JointSRLAndDP extends App {
 
   def loss(data: Seq[(X, Y)])(w: Vector) =
     sum(data) { case (x, y) => localLoss(x, y)(w) }
+
+  val example: (X, Y) = {
+    val words = Seq(root, "Bob", "killed", "Anna")
+    val tags = Seq(root, "NNP", "VBD", "NNP")
+    val deps = Map((0, 2) -> true, (2, 1) -> true, (2, 3) -> true) withDefaultValue false
+    val args = Map((2, 1) -> true, (2, 3) -> true) withDefaultValue false
+    val roles = Map(((2, 1), "A") -> true, ((2, 3), "P") -> true) withDefaultValue false
+    (X(words, tags), Y(args, roles, deps))
+  }
 
 
   //  case class Sentence(words: Seq[String], tags: Seq[String],
