@@ -1,8 +1,10 @@
 package ml.wolfe.ui
 
-import java.io.{PrintStream, File}
+import java.io.{File, PrintStream}
 
 import eu.henkelmann.actuarius.ActuariusTransformer
+
+import scala.reflect.macros.Context
 
 /**
  * @author Sebastian Riedel
@@ -11,26 +13,26 @@ trait NotebookRenderer {
 
   val transformer = new ActuariusTransformer
 
-  def html(text:String)
+  def html(text: String)
 
-  def md(markdown:String): Unit = {
+  def md(markdown: String): Unit = {
     html(transformer(markdown))
   }
-  def h1(text:String) = html(s"<h1>$text</h1>")
-  def h2(text:String) = html(s"<h1>$text</h1>")
-  def source(src:String) = html(s"<pre>$src</pre>")
+  def h1(text: String) = html(s"<h1>$text</h1>")
+  def h2(text: String) = html(s"<h1>$text</h1>")
+  def source(src: String) = html(s"<pre>$src</pre>")
 
   def close()
 
 }
 
-class HTMLFileRenderer(dst:File, template: String => String = SimpleTemplate) extends NotebookRenderer {
+class HTMLFileRenderer(dst: File, template: String => String = SimpleTemplate) extends NotebookRenderer {
 
   dst.getParentFile.mkdirs()
 
-  val tmp = File.createTempFile(dst.getName,"html")
+  val tmp     = File.createTempFile(dst.getName, "html")
   val builder = new StringBuilder
-  val out = new PrintStream(tmp)
+  val out     = new PrintStream(tmp)
 
   def html(text: String) = builder append text
   def close() = {
@@ -72,4 +74,56 @@ object SimpleTemplate extends (String => String) {
         </html>
     """.stripMargin
   }
+}
+
+trait CodeBlock {
+  val result: Any
+}
+
+object Notebook {
+
+  import scala.language.experimental.macros
+
+  def block(code: CodeBlock): String = macro blockImpl
+
+  def blockImpl(c: Context)(code: c.Expr[CodeBlock]) = {
+    import c.universe._
+    val blockSymbol = code.tree.symbol
+    val parents = c.enclosingUnit.body.collect({
+      case parent => parent.children map (child => child -> parent)
+    }).flatMap(identity).toMap
+    def next(tree:Tree, offset:Int = 1):Option[Tree] = parents.get(tree) match {
+      case Some(parent) =>
+        val children = parent.children.toIndexedSeq
+        val index = children.indexOf(tree)
+        children.lift(index + offset) match {
+          case Some(sibling) => Some(sibling)
+          case _ => None
+        }
+      case _ => None
+    }
+
+    val moduleDefs = c.enclosingUnit.body.collect({
+      case mdef: ModuleDef if mdef.symbol == blockSymbol => mdef
+    })
+    val sourceFile = c.enclosingUnit.source
+    //todo need to use original source file to recover the source code, as we otherwise drop comments, empty lines etc.
+    val source = moduleDefs match {
+      case blockDef :: Nil =>
+        val below = next(blockDef,+1).get
+        val beginningOfLine = sourceFile.lineToOffset(sourceFile.offsetToLine(below.pos.point))
+        val txt = sourceFile.content.subSequence(blockDef.pos.point,beginningOfLine).toString
+//        show(txt)
+//        val lines = for (line <- blockDef.impl.body.drop(1)) yield {
+//          show(line)
+//        }
+//        lines mkString "\n"
+        txt
+      case _ => c.abort(c.enclosingPosition, "Can't find a definition of a CodeBlock object corresponding to " + code)
+    }
+
+    c.literal(source)
+  }
+
+
 }
