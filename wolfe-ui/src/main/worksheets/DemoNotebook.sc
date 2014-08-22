@@ -14,6 +14,8 @@ object Code extends CodeBlock {
 }
 source(block(Code))
 
+h1("Yoo")
+
 //source(CodeBlock) { html(result)}
 md("#Example Header 2")
 

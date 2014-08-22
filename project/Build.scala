@@ -40,7 +40,7 @@ object BuildSettings {
   val buildSettings = Defaults.defaultSettings ++ Seq(
     organization := buildOrganization,
     scalaVersion := buildScalaVersion,
-    scalacOptions := Seq("-unchecked", "-deprecation", "-feature", "-Yrangepos"),
+    scalacOptions := Seq("-unchecked", "-deprecation", "-feature"), //, "-Yrangepos"?
     shellPrompt := ShellPrompt.buildShellPrompt,
     fork in run := true //use a fresh JVM for sbt run
   )
