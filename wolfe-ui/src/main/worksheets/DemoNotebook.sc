@@ -13,7 +13,7 @@ object Code extends CodeBlock {
   val result = i + j
 }
 source(block(Code))
-
+html(Code.result.toString)
 h1("Yoo")
 
 //source(CodeBlock) { html(result)}

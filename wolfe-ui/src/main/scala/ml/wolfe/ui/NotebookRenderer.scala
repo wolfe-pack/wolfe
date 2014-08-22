@@ -92,7 +92,7 @@ object Notebook {
     val parents = c.enclosingUnit.body.collect({
       case parent => parent.children map (child => child -> parent)
     }).flatMap(identity).toMap
-    def next(tree:Tree, offset:Int = 1):Option[Tree] = parents.get(tree) match {
+    def next(tree: Tree, offset: Int = 1): Option[Tree] = parents.get(tree) match {
       case Some(parent) =>
         val children = parent.children.toIndexedSeq
         val index = children.indexOf(tree)
@@ -107,18 +107,37 @@ object Notebook {
       case mdef: ModuleDef if mdef.symbol == blockSymbol => mdef
     })
     val sourceFile = c.enclosingUnit.source
+    def startOfLine(point: Int) = sourceFile.lineToOffset(sourceFile.offsetToLine(point))
+
     //todo need to use original source file to recover the source code, as we otherwise drop comments, empty lines etc.
     val source = moduleDefs match {
       case blockDef :: Nil =>
-        val below = next(blockDef,+1).get
-        val beginningOfLine = sourceFile.lineToOffset(sourceFile.offsetToLine(below.pos.point))
-        val txt = sourceFile.content.subSequence(blockDef.pos.point,beginningOfLine).toString
-//        show(txt)
-//        val lines = for (line <- blockDef.impl.body.drop(1)) yield {
-//          show(line)
-//        }
-//        lines mkString "\n"
-        txt
+        val firstNonInit = blockDef.impl.body(1)
+        val last = blockDef.impl.body.last
+        val txt = sourceFile.content.subSequence(startOfLine(firstNonInit.pos.point), startOfLine(last.pos.point)).toString
+        val below = next(blockDef, +1).get
+
+        val lastLine = last match {
+          case ValDef(_, _, _, rhs) =>
+            //            val start = rhs.pos.point
+            //            val end = sourceFile.lineToOffset(sourceFile.offsetToLine(start) + 1)
+            //            sourceFile.content.subSequence(start - 7,end).toString
+            val result = last.pos.lineContent.replaceAll("val result = ", "")
+            //show(rhs)
+            result
+          case _ => c.abort(c.enclosingPosition, "Bad")
+        }
+        val lines = (txt.split("\n") :+ lastLine) map (_.trim) mkString "\n"
+
+        //
+        //        val beginningOfLine = sourceFile.lineToOffset(sourceFile.offsetToLine(below.pos.point))
+        //        val txt = sourceFile.content.subSequence(blockDef.pos.point,beginningOfLine).toString
+        //        show(txt)
+        //        val lines = for (line <- blockDef.impl.body.drop(1)) yield {
+        //          show(line)
+        //        }
+        //        lines mkString "\n"
+        lines
       case _ => c.abort(c.enclosingPosition, "Can't find a definition of a CodeBlock object corresponding to " + code)
     }
 
