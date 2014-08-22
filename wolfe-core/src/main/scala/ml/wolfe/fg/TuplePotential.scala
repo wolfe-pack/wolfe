@@ -60,7 +60,9 @@ final class TupleConsistencyPotential(edge1: Edge, edge2: Edge) extends TuplePot
     if((0 until positive1.array.length).exists(i => positive1.array(i) && positive2.array(i)))
       0.0 else Double.NegativeInfinity
   }
-
+  override def toHTMLString(implicit fgPrinter: FGPrinter): String = {
+    "Consistency potential for:<br/>" + baseVariables.map(_.label).mkString(", ")
+  }
 }
 
 /**
@@ -125,5 +127,9 @@ final class GroupPotential(val componentPotentials: Array[DiscretePotential], va
       }
     }
     maxScore
+  }
+
+  override def toHTMLString(implicit fgPrinter: FGPrinter): String = {
+    "Sum of component potentials:<br/>" + componentPotentials.map(_.toHTMLString(fgPrinter)).mkString("")
   }
 }
