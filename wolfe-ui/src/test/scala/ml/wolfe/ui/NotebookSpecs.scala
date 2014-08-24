@@ -23,7 +23,7 @@ class NotebookSpecs extends WolfeSpec {
   }
 
   "A previous n statements generator" should {
-    "return the source code of the last n statements " in {
+    "return the source code of the last n statements" in {
       val i = 2
       def test = 2
       println(i)
