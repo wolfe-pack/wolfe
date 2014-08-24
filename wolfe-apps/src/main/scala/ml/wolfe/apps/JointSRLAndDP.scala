@@ -1,7 +1,7 @@
 package ml.wolfe.apps
 
 import ml.wolfe.FactorGraph.Edge
-import ml.wolfe.Wolfe
+import ml.wolfe.{Learn, Wolfe}
 
 /**
  * @author Sebastian Riedel
@@ -18,30 +18,35 @@ object JointSRLAndDP extends App {
   type Labelled = (Edge, String)
 
   case class Y(args: Pred[Edge], roles: Pred[Labelled], deps: Pred[Edge])
-  case class X(words: Seq[String], tags: Seq[String]) {
-    def n = words.size
-    def candidateArgs = for (h <- 0 until n; m <- 0 until n) yield (h, m)
-    def candidateDeps = for (h <- 0 until n; m <- 1 until n; if h != m) yield (h, m)
-    def candidateRoles = for (edge <- candidateArgs; label <- labels) yield edge -> label
-  }
+  case class X(words: Seq[String], tags: Seq[String])
+
+  //todo: wolfe cannot deal with class member methods, that's why we put these methods outside of X
+  def candidateArgs(x: X) = { val n = x.words.size; for (h <- 1 until n; m <- 1 until n) yield (h, m) }
+  def candidateDeps(x: X) = { val n = x.words.size; for (h <- 0 until n; m <- 1 until n; if h != m) yield (h, m) }
+  def candidateRoles(x: X) = for (edge <- candidateArgs(x); label <- labels) yield edge -> label
+  def overlap(x: X) = { val n = x.words.size; for (h <- 1 until n; m <- 1 until n; if h != m) yield (h, m) }
+
 
   def space(x: X) = all(Y) {
-    preds(x.candidateArgs) x
-    preds(x.candidateRoles) x
-    preds(x.candidateDeps)
+    preds(candidateArgs(x)) x
+    preds(candidateRoles(x)) x
+    preds(candidateDeps(x))
   }
 
-  def argLocal(x: X)(y: Y)(h: Int, m: Int) =
-    oneHot('ww ->(x.words(h), x.words(m), y.args(h, m)))
+  def argLocal(x: X)(y: Y)(e: (Int, Int)) = {
+    oneHot('a_ww ->(x.words(e._1), x.words(e._2), y.args(e)))
+  }
 
-  def depLocal(x: X)(y: Y)(h: Int, m: Int) =
-    oneHot('ww ->(x.words(h), x.words(m), y.deps(h, m)))
+  def depLocal(x: X)(y: Y)(e: (Int, Int)) =
+    oneHot('d_ww ->(x.words(e._1), x.words(e._2), y.deps(e)))
 
-
-  def feats(x: X)(y: Y) =
-    sum(x.candidateArgs) { case (h, m) => argLocal(x)(y)(h, m) } +
-    sum(x.candidateDeps) { case (h, m) => depLocal(x)(y)(h, m) } +
-    sum(x.candidateArgs) { case (h, m) => oneHot('nand, I(y.args(h, m) && y.deps(h, m))) }
+  //todo: wolfe cannot deal with pattern matching functions
+  //todo: wolfe cannot deal with conditions in sums
+  def feats(x: X)(y: Y) = {
+    sum(candidateArgs(x)) { e => argLocal(x)(y)(e) } +
+    sum(candidateDeps(x)) { e => depLocal(x)(y)(e) } +
+    sum(overlap(x)) { e => oneHot('nand, I(y.args(e) && y.deps(e))) }
+  }
 
   def model(w: Vector)(x: X)(y: Y) =
     feats(x)(y) dot w
@@ -50,17 +55,24 @@ object JointSRLAndDP extends App {
     logZ(space(x)) { model(w)(x) } -
     logZ(space(x) where (y => y.args == gold.args)) { model(w)(x) }
 
+  @OptimizeByLearning(Learn.batch())
   def loss(data: Seq[(X, Y)])(w: Vector) =
-    sum(data) { case (x, y) => localLoss(x, y)(w) }
+    sum(data) { i => localLoss(i._1, i._2)(w) } // todo: gradient calculator can't deal with "case (x,y)"
 
   val example: (X, Y) = {
-    val words = Seq(root, "Bob", "killed", "Anna")
+    val words = Seq(root, "Bob", "killed", "Ann")
     val tags = Seq(root, "NNP", "VBD", "NNP")
     val deps = Map((0, 2) -> true, (2, 1) -> true, (2, 3) -> true) withDefaultValue false
     val args = Map((2, 1) -> true, (2, 3) -> true) withDefaultValue false
     val roles = Map(((2, 1), "A") -> true, ((2, 3), "P") -> true) withDefaultValue false
     (X(words, tags), Y(args, roles, deps))
   }
+
+  val train = Seq(example)
+
+  val w = argmin(vectors) { loss(train) }
+
+  println(w)
 
 
   //  case class Sentence(words: Seq[String], tags: Seq[String],

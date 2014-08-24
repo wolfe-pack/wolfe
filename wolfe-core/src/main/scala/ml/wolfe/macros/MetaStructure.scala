@@ -238,7 +238,7 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
       case q"$all[${ _ },$caseClassType]($constructor)(..$sets)"
         if all.symbol == wolfeSymbols.all =>
         metaCaseClassStructure(constructor, sets, caseClassType)
-      case q"$pred[${ _ }]($keyDom)" if pred.symbol == wolfeSymbols.Pred =>
+      case q"$pred[${ _ }]($keyDom)" if pred.symbol == wolfeSymbols.Pred || pred.symbol == wolfeSymbols.preds =>
         val valueDom = context.typeCheck(q"ml.wolfe.Wolfe.bools")
         metaFunStructure(sampleSpace, keyDom, valueDom)
       case q"$maps[${ _ },${ _ }]($keyDom,$valueDom)" if maps.symbol == wolfeSymbols.mapsSpace =>

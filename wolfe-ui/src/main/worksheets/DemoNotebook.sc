@@ -2,7 +2,7 @@ import java.io.File
 
 import ml.wolfe.ui._
 
-implicit val renderer = new HTMLFileRenderer()
+implicit val renderer = new MutableHTMLNotebook()
 
 
 import renderer._
@@ -34,7 +34,4 @@ slides {
     h1("Slide header")
   }
 }
-saveTo(new File("/tmp/example.html"), new SimpleTemplate(
-  """
-    |
-  """.stripMargin))
+saveTo(new File("/tmp/example.html"), new SimpleTemplate())

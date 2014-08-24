@@ -3,13 +3,14 @@ package ml.wolfe.ui
 import java.io.{File, PrintStream}
 
 import eu.henkelmann.actuarius.ActuariusTransformer
+import org.sameersingh.htmlgen.HTML
 
 import scala.reflect.macros.Context
 
 /**
  * @author Sebastian Riedel
  */
-trait NotebookRenderer[T <: NotebookRenderer[T]] {
+trait MutableNotebook[T <: MutableNotebook[T]] {
 
   this:T =>
 
@@ -17,16 +18,20 @@ trait NotebookRenderer[T <: NotebookRenderer[T]] {
 
   def html(text: String):T
 
+  def html(h:HTML):T = html(h.source)
+
   def md(markdown: String): T = {
     html(transformer(markdown))
   }
   def h1(text: String) = html(s"<h1>$text</h1>")
-  def h2(text: String) = html(s"<h1>$text</h1>")
+  def h2(text: String) = html(s"<h2>$text</h2>")
   def source(src: String) = html(s"<pre>$src</pre>")
 
 }
 
-class HTMLFileRenderer extends NotebookRenderer[HTMLFileRenderer] {
+class MutableHTMLNotebook extends MutableNotebook[MutableHTMLNotebook] {
+
+  implicit val renderer = this
 
 
   var builder:List[String] = Nil
@@ -90,12 +95,12 @@ class SimpleTemplate(head:String = "") extends (String => String) {
 }
 
 object RevealJS {
-  def slides(body: => Unit)(implicit renderer: NotebookRenderer[_]): Unit = {
+  def slides(body: => Unit)(implicit renderer: MutableNotebook[_]): Unit = {
     renderer.html( """<div class="reveal"><div class="slides">""")
     body
     renderer.html( """</div></div>""")
   }
-  def slide(body: => Unit)(implicit renderer: NotebookRenderer[_]): Unit = {
+  def slide(body: => Unit)(implicit renderer: MutableNotebook[_]): Unit = {
     renderer.html( """<section>""")
     body
     renderer.html( """</section""")
