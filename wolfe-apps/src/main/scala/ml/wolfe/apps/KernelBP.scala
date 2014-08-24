@@ -109,9 +109,9 @@ object KernelBP {
 
   class KernelBPVar(val edge2edgeTranslations: Map[(Edge, Edge), DenseVector[Double] => DenseVector[Double]],
                     val edge2nodeTranslation: Map[Edge, DenseVector[Double] => DenseVector[Double]],
-                    val dim: Int) extends Var {
+                    val dim: Int) extends Var[Int] {
     var belief: DenseVector[Double] = null
-
+    override var setting:Int = ???
 
     override def updateN2F(edge: Edge) = {
       val msgs = edge.msgs.asInstanceOf[KernelBPMSgs]

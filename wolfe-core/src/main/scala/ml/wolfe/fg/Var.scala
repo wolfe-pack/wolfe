@@ -12,7 +12,7 @@ import math._
 /**
  * @author Sebastian Riedel
  */
-trait Var {
+trait Var[T] {
 
   import Wolfe.notSupported
 
@@ -32,13 +32,30 @@ trait Var {
   def updateAverageBelief():Unit = notSupported
   def entropy():Double = notSupported
 
+  var setting:T
+  def sample():Unit =
+    if(node.edges.isEmpty) sampleUniform()
+    else {
+      def score = exp(node.edges.map(_.f.potential.valueForCurrentSetting()).sum)
+
+      val oldSetting:T = setting
+      val oldScore = score
+
+      val e = node.edges(Random.nextInt(node.edges.length))
+      e.f.potential.proposeSetting(e)
+      val newScore = score
+
+      if(newScore / oldScore < Math.random()) setting = oldSetting
+    }
+  def sampleUniform():Unit = notSupported
+
   /* A description of what the variable represents */
   val label:String = ""
   
   var node:Node = null //updated in node init
 }
 
-final class DiscreteVar(var dim: Int, override val label:String = "", val domainLabels:Seq[String] = Seq()) extends Var {
+final class DiscreteVar(var dim: Int, override val label:String = "", val domainLabels:Seq[String] = Seq()) extends Var[Int] {
   /* node belief */
   var b = Array.ofDim[Double](dim)
 
@@ -49,7 +66,7 @@ final class DiscreteVar(var dim: Int, override val label:String = "", val domain
   var domain: Array[Int] = _
 
   /* indicates that variable is in a certain state */
-  var setting: Int = 0
+  override var setting: Int = 0
 
   /* indicates the value corresponding to the setting of the node */
   var value: Int = 0
@@ -147,12 +164,18 @@ final class DiscreteVar(var dim: Int, override val label:String = "", val domain
     for(i <- 0 until dim) b(i) = b(i) / node.edges.length
   }
 
-
+  override def sampleUniform(): Unit = setting = Random.nextInt(dim)
 }
 
-final class VectorVar(val dim:Int) extends Var {
+final class ContinuousVar(override val label:String = "") extends Var[Double] {
+  /* indicates that variable is in a certain state */
+  override var setting: Double = 0
+  override def sampleUniform(): Unit = setting = 42
+}
+
+final class VectorVar(val dim:Int) extends Var[FactorieVector] {
   var b:FactorieVector = new DenseTensor1(dim)
-  var setting:FactorieVector = null
+  override var setting:FactorieVector = null
 
 
   override def updateN2F(edge: Edge) = {
