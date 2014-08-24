@@ -14,7 +14,7 @@ import scalaxy.loops._
 /**
  * @author luke
  */
-class TupleVar(val componentNodes:Array[Node]) extends Var {
+class TupleVar(val componentNodes:Array[Node]) extends Var[Seq[(DiscreteVar, Int)]] {
   val components = componentNodes.map(_.variable.asDiscrete)
   val dim = components.map(_.dim).product
 
@@ -30,7 +30,7 @@ class TupleVar(val componentNodes:Array[Node]) extends Var {
   val in = IN.array
 
   /* indicates that variable is in a certain state */
-  var setting: Seq[(DiscreteVar, Int)] = components.map(_ -> 0)
+  override var setting: Seq[(DiscreteVar, Int)] = components.map(_ -> 0)
   def componentSetting(v:DiscreteVar) = setting(components indexOf v)._2
 
   def updateComponentSettings() = {

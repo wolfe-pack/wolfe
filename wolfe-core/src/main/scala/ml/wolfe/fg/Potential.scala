@@ -3,7 +3,8 @@ package ml.wolfe.fg
 import ml.wolfe.FactorGraph._
 import ml.wolfe.FactorieVector
 import ml.wolfe.util.Multidimensional._
-
+import scala.util.Random
+import scalaxy.loops._
 /**
  * @author Sebastian Riedel
  */
@@ -43,10 +44,10 @@ trait Potential {
   def isLinear = false
   def statsForCurrentSetting(): FactorieVector = null
   def ad3Init():Unit = notSupported
+  def proposeSetting(edge:Edge):Unit = notSupported
   def toVerboseString(implicit fgPrinter: FGPrinter): String = getClass.getName
   def toHTMLString(implicit fgPrinter: FGPrinter): String = toVerboseString(fgPrinter)
   var factor:Factor = null //Automatically set by Factor
-
 }
 
 trait DiscretePotential extends Potential {
@@ -68,6 +69,21 @@ trait DiscretePotential extends Potential {
   }
   protected lazy val $scoreTable = getScoreTable
   def scoreTable = if(isLinear) getScoreTable else $scoreTable
+
+  override def proposeSetting(edge: Edge): Unit = {
+    val setting = vars.map(_.setting)
+    val k = edge.indexInFactor
+    val v = vars(k)
+    val scores = Array.ofDim[Double](v.dim)
+    for(i <- (0 until v.dim).optimized) {
+      setting(k) = i
+      scores(i) = math.exp(valueForSetting(setting))
+    }
+    val cumulative = scores.scanLeft(0d)(_+_)
+    val threshold = math.random * cumulative.last
+    val x = cumulative.indexWhere(_ > threshold)
+    v.setting = if(x == -1) Random.nextInt(v.dim) else x-1
+  }
 
   override def toHTMLString(implicit fgPrinter: FGPrinter) = {
     val table = scoreTable
