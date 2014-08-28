@@ -19,6 +19,7 @@ trait Var[T] {
   def asDiscrete = this.asInstanceOf[DiscreteVar]
   def asVector = this.asInstanceOf[VectorVar]
   def asTuple = this.asInstanceOf[TupleVar]
+  def asContinuous = this.asInstanceOf[ContinuousVar]
   def setup(){}
   def initializeToNegInfinity():Unit = notSupported
   def initializeRandomly(eps:Double):Unit = notSupported
@@ -171,6 +172,9 @@ final class ContinuousVar(override val label:String = "") extends Var[Double] {
   /* indicates that variable is in a certain state */
   override var setting: Double = 0
   override def sampleUniform(): Unit = setting = 42
+  var value:Double = 0
+
+
 }
 
 final class VectorVar(val dim:Int) extends Var[FactorieVector] {

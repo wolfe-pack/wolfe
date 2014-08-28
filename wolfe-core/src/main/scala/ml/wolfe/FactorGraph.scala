@@ -82,10 +82,28 @@ final class FactorGraph {
    * @param domainLabels description of each element in the domain
    * @return the added node.
    */
-  def addNode(dim: Int, label:String = "", domainLabels:Seq[String]=Seq()) = {
+  def addDiscreteNode(dim: Int, label:String = "", domainLabels:Seq[String]=Seq()) = {
     val n = new Node(nodes.size, new DiscreteVar(dim, label, domainLabels))
     nodes += n
     n
+  }
+
+
+  /**
+   * Adds a node for a continuous variable
+   * @param label description of what the variable represents
+   * @return the added node.
+   */
+  def addContinuousNode(label:String = "") = {
+    val n = new Node(nodes.size, new ContinuousVar(label))
+    nodes += n
+    n
+  }
+
+  def observeNode(node:Node, valLabel:String = ""): Unit = {
+    node.variable = new DiscreteVar(1, node.variable.label, Seq(valLabel))
+    node.variable.node = node
+    node.edges.foreach(_.msgs = new DiscreteMsgs(1))
   }
 
   /**
@@ -387,10 +405,10 @@ object FactorGraph {
      * The potential for this factor. Usually created after edges to factor have been created as
      * the potential directly works with the edges.
      */
-    private var $potential: Potential = null
-    def potential = $potential
+    private var _potential: Potential = null
+    def potential = _potential
     def potential_=(p:Potential) = {
-      $potential = p
+      _potential = p
       p.factor = this
     }
 

@@ -52,9 +52,9 @@ object KernelBP {
 
     //create the factor graph
     val fg = new FactorGraph
-    val n_A = fg.addNode(0)
-    val n_B = fg.addNode(0)
-    //val n_C = fg.addNode(0) //we don't use this node because it's observed
+    val n_A = fg.addDiscreteNode(0)
+    val n_B = fg.addDiscreteNode(0)
+    //val n_C = fg.addDiscreteNode(0) //we don't use this node because it's observed
 
     val f_AB = fg.addFactor()
     val f_BC = fg.addFactor()
@@ -321,7 +321,7 @@ object KernelBPTed {
     //now create the factor graph (single variable, local factor)
     def inferTagFromEn(enDoc: Document) = {
       val fg = new FactorGraph
-      val artNode = fg.addNode(0)
+      val artNode = fg.addDiscreteNode(0)
       val docFactor = fg.addFactor()
       val artDocEdge = fg.addEdge(docFactor, artNode)
       artDocEdge.msgs = new KernelBPMSgs

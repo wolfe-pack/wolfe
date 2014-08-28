@@ -30,11 +30,15 @@ trait Conditioner[C <: Context] extends MetaStructures[C] {
     object SimpleCondition {
       def unapply(tree: Tree) = tree match {
         case q"$x == $value" => matcher(x) match {
-          case Some(structure) => Some(q"${structure.structure}.observe($value)")
+          case Some(structure) =>
+            structure.meta.observe()
+            Some(q"${structure.structure}.observe($value)")
           case _ => None
         }
         case q"$value == $x" => matcher(x) match {
-          case Some(structure) => Some(q"${structure.structure}.observe($value)")
+          case Some(structure) =>
+            structure.meta.observe()
+            Some(q"${structure.structure}.observe($value)")
           case _ => None
         }
         case _ => None
@@ -73,6 +77,7 @@ trait Conditioner[C <: Context] extends MetaStructures[C] {
             case ((q"${_}.$copyDefault1", q"${_}.$copyDefault2"), field)
               if copyDefault1.encoded.startsWith("copy$default$") && copyDefault2.encoded.startsWith("copy$default$") =>
               //observe!
+              meta.fieldStructures(meta.fields.indexOf(field)).observe()
               val code = q"$structure.${field.name.toTermName}.observe($select2.${field.name.toTermName})"
               Some(code)
             case ((arg1, arg2), field) =>

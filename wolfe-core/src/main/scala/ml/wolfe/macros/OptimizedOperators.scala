@@ -254,6 +254,17 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
     //create more fine-grained matcher (that return sub-structures based on terms that involve the argument identifier).
     val objMatcher = meta.matcher(rootMatcher(objArg.symbol, q"$structName", meta))
 
+    //If a condition/filter on the search space is defined, here we generate code that
+    //modifies the isomorphic structure and factor graph to capture the condition.
+    //NOTE: This now *also* modifies the corresponding metastructure, which is necessary before factor generation!
+    val conditionCode = if (trees.where == EmptyTree) EmptyTree
+    else {
+      val Function(List(whereArg), whereRhs) = simplifyBlock(unwrapSingletonBlocks(trees.where))
+      val whereMatcher = meta.matcher(rootMatcher(whereArg.symbol, q"$structName", meta))
+      val conditioner = conditioning(whereRhs, whereMatcher)
+      conditioner.code
+    }
+
     //This method returns meta information about the class of factors that correspond to the given objective.
     //this meta information can be used to define the class of factors, and to create instances of it.
     val factors = metaStructuredFactor(FactorGenerationInfo(objRhs, meta, objMatcher, linearModelInfo = LinearModelInfo(q"_index")))
@@ -273,16 +284,6 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
       val statsMatcher = meta.matcher(rootMatcher(statsArg.symbol, q"$structName", meta))
       metaStructuredFactor(FactorGenerationInfo(statsRhs, meta, statsMatcher,
         linearModelInfo = LinearModelInfo(q"_index"), linear = true, expectations = true))
-    }
-
-    //If a condition/filter on the search space is defined, here we generate code that
-    //modifies the isomorphic structure and factor graph to capture the condition.
-    val conditionCode = if (trees.where == EmptyTree) EmptyTree
-    else {
-      val Function(List(whereArg), whereRhs) = simplifyBlock(unwrapSingletonBlocks(trees.where))
-      val whereMatcher = meta.matcher(rootMatcher(whereArg.symbol, q"$structName", meta))
-      val conditioner = conditioning(whereRhs, whereMatcher)
-      conditioner.code
     }
 
     val fgDebugCode = factorGraphDebugCode(objRhs, graphName)

@@ -26,6 +26,9 @@ object Util {
     }
   }
 
+  def breakpoint() = {
+    var a = 0 // set breakpoint here for use in macro-generated code...
+  }
   /**
    * Recursively descend directory, returning a list of files.
    */

@@ -12,14 +12,14 @@ trait MetaAtomicStructures[C <: Context] {
    * For sample spaces that have no sub-structure.
    * @author Sebastian Riedel
    */
-  trait MetaAtomicStructure extends MetaStructure {
+  trait MetaDiscreteAtomicStructure extends MetaStructure {
     self =>
 
     def domain: Tree
 
     lazy val domName   = newTermName(context.fresh("atomDom"))
     lazy val indexName = newTermName(context.fresh("atomIndex"))
-    lazy val className = newTypeName(context.fresh("AtomicStructure"))
+    lazy val className = newTypeName(context.fresh("DiscreteAtomicStructure"))
     lazy val argType   = iterableArgumentType(domain)
     //{val TypeRef(_, _, List(argType)) = domain.tpe; argType}
     lazy val domainDefs  = List(
@@ -29,7 +29,7 @@ trait MetaAtomicStructures[C <: Context] {
     override def classDef(graphName: TermName) = q"""
       final class $className (override val astLabel : String = "") extends ml.wolfe.macros.Structure[$argType] {
         ..$domainDefs
-        val node = $graphName.addNode($domName.length, astLabel, $domName.map(_.toString))
+        val node = $graphName.addDiscreteNode($domName.length, astLabel, $domName.map(_.toString))
         val variable = node.variable.asDiscrete
         private def updateValue() {variable.value = variable.domain(variable.setting)}
         def value():$argType = $domName(variable.value)
@@ -58,6 +58,7 @@ trait MetaAtomicStructures[C <: Context] {
     def matcher(parent: Tree => Option[StructurePointer],
                 result: Tree => Option[StructurePointer]): Tree => Option[StructurePointer] = result
 
+    override def hasFiniteDomain: Boolean = true
   }
 
   /**
@@ -98,6 +99,61 @@ trait MetaAtomicStructures[C <: Context] {
     def matcher(parent: Tree => Option[StructurePointer],
                 result: Tree => Option[StructurePointer]): Tree => Option[StructurePointer] = result
 
+    override def hasFiniteDomain: Boolean = true
+  }
+
+
+
+
+  /**
+   * For sample spaces that have no sub-structure.
+   * @author Sebastian Riedel
+   */
+  trait MetaContinuousAtomicStructure extends MetaStructure {
+    self =>
+
+    def domain: Tree
+
+    lazy val domName   = newTermName(context.fresh("atomDom"))
+    lazy val className = newTypeName(context.fresh("ContinuousAtomicStructure"))
+    lazy val argType   = iterableArgumentType(domain)
+    //{val TypeRef(_, _, List(argType)) = domain.tpe; argType}
+    lazy val domainDefs  = List()
+    def children = Nil
+    override def classDef(graphName: TermName) = q"""
+      final class $className (override val astLabel: String = "") extends ml.wolfe.macros.Structure[$argType] {
+        val node = $graphName.addContinuousNode(astLabel)
+        var _observed:Option[$argType] = None
+        def value():$argType = _observed match {
+          case Some(v:$argType) => v
+          case None             => node.variable.asContinuous.setting
+        }
+        def children():Iterator[ml.wolfe.macros.Structure[Any]] = Iterator.empty
+        def graph = $graphName
+        def nodes() = Iterator(node)
+
+        private var _hasNext = true
+        def resetSetting() = _observed match { case Some(_) => _hasNext = true case None => ??? }
+        def hasNextSetting = _observed match { case Some(_) => _hasNext case None => ??? }
+        def nextSetting() = _observed match { case Some(_) => _hasNext = false case None => ??? }
+
+        def setToArgmax() = {}
+        final def observe(value:$argType) {
+          graph.observeNode(node, value.toString)
+          _observed = Some(value)
+        }
+        type Edges = ml.wolfe.FactorGraph.Edge
+        def createEdges(factor: ml.wolfe.FactorGraph.Factor): Edges = {
+          graph.addEdge(factor,node)
+        }
+
+      }
+    """
+
+    def matcher(parent: Tree => Option[StructurePointer],
+                result: Tree => Option[StructurePointer]): Tree => Option[StructurePointer] = result
+
+    override def hasFiniteDomain: Boolean = observed
   }
 
 }

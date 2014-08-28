@@ -21,7 +21,7 @@ class FactorGraphSchedulerSpec extends StructureIsomorphisms {
   "A scheduler" should {
     "given a tree" should {
       val graph = new FactorGraph()
-      (0 to 5).foreach(i => graph.addNode(0)) //dummy nodes
+      (0 to 5).foreach(i => graph.addDiscreteNode(0)) //dummy nodes
       (0 to 104).foreach(i => graph.addFactor()) //dummy factors
       val edges = Array(
           100 -> 0, 100 -> 1,
@@ -78,7 +78,7 @@ class FactorGraphSchedulerSpec extends StructureIsomorphisms {
 
     "given a loopy graph" should {
       val graph = new FactorGraph()
-      (0 to 2).foreach(i => graph.addNode(0)) //dummy nodes
+      (0 to 2).foreach(i => graph.addDiscreteNode(0)) //dummy nodes
       (0 to 102).foreach(i => graph.addFactor()) //dummy factors
       val edges = Array(
           100 -> 0,
@@ -136,7 +136,7 @@ class FactorGraphSchedulerSpec extends StructureIsomorphisms {
 
     "given a graph with disconnected components return a schedule on all components" in {
       val graph = new FactorGraph()
-      (0 to 4).foreach(i => graph.addNode(0)) //dummy nodes
+      (0 to 4).foreach(i => graph.addDiscreteNode(0)) //dummy nodes
       (0 to 101).foreach(i => graph.addFactor()) //dummy factors
       val edges = Array(
           100 -> 0,
@@ -155,7 +155,7 @@ class FactorGraphSchedulerSpec extends StructureIsomorphisms {
 
     "given an inner node first return the forward passes and then the backward passes" in {
       val graph = new FactorGraph()
-      (0 to 4).foreach(i => graph.addNode(0)) //dummy nodes
+      (0 to 4).foreach(i => graph.addDiscreteNode(0)) //dummy nodes
       (0 to 101).foreach(i => graph.addFactor()) //dummy factors
       val edges = Array(
           100 -> 0,
@@ -183,7 +183,7 @@ class FactorGraphSchedulerSpec extends StructureIsomorphisms {
 
     "when turned off return edges in the order they were added" in {
       val graph = new FactorGraph()
-      (0 to 4).foreach(i => graph.addNode(0)) //dummy nodes
+      (0 to 4).foreach(i => graph.addDiscreteNode(0)) //dummy nodes
       (0 to 103).foreach(i => graph.addFactor()) //dummy factors
       val edges = Array(
           103 -> 1,
