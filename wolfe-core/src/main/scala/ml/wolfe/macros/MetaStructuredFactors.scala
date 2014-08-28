@@ -1,6 +1,6 @@
 package ml.wolfe.macros
 
-import scala.reflect.macros.Context
+import scala.reflect.macros.{TypecheckException, Context}
 import ml.wolfe.Wolfe
 import ml.wolfe.util.CachedPartialFunction
 
@@ -199,6 +199,13 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C]
     variables.exists(_.exists(_.symbol == arg.symbol))
   }
 
+  def variablesContainArgumentInline(obj: Tree, matcher: Tree => Option[StructurePointer]):Boolean = {
+    val result = variablesContainArgument(obj,matcher)
+    if (result) result else inlineOnce(obj) match {
+      case Some(inlined) => variablesContainArgumentInline(inlined,matcher)
+      case None => false
+    }
+  }
 
   //merge the arguments of a propositional sum
   def mergeSumArgs(args: List[Tree], matcher: Tree => Option[StructurePointer]) = {
@@ -215,8 +222,13 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C]
           val add = q"$rhs1 + $rhs2WithP1"
           val addObj = Function(List(p1), add)
           val newSum = q"$dom1.map($addObj).sum($impArg)"
-          val typed = context.typeCheck(context.resetLocalAttrs(newSum))
-          Some(arg2 -> typed)
+          //todo: this shouldn't really be failing, but it does when the terms contain generated terms
+          try {
+            val typed = context.typeCheck(context.resetLocalAttrs(newSum))
+            Some(arg2 -> typed)
+          } catch {
+            case e:TypecheckException => None
+          }
         case (Sum(_), Sum(_)) => None
         case (p1, p2) if inlineOnce(p1).isEmpty && inlineOnce(p2).isEmpty =>
           //check whether p1 and p2 have the same hidden variables. In this case add them into an atomic call
@@ -266,7 +278,7 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C]
       case Sum(BuilderTrees(dom, filter, obj, _, _)) =>
         require(filter == EmptyTree)
         //check whether we need to further factorize (only if the objective argument is part of the variables)
-        if (!variablesContainArgument(obj, matcher))
+        if (!variablesContainArgumentInline(obj, matcher))
           atomic(info)
         else
           MetaFirstOrderSumFactor(List(dom), obj, info)

@@ -40,7 +40,7 @@ object BuildSettings {
   val buildSettings = Defaults.defaultSettings ++ Seq(
     organization := buildOrganization,
     scalaVersion := buildScalaVersion,
-    scalacOptions := Seq("-unchecked", "-deprecation", "-feature"),
+    scalacOptions := Seq("-unchecked", "-deprecation", "-feature"), //, "-Yrangepos"?
     shellPrompt := ShellPrompt.buildShellPrompt,
     fork in run := true //use a fresh JVM for sbt run
   )
@@ -75,6 +75,10 @@ object BuildSettings {
   val nlpDependencies = libraryDependencies ++= Seq(
     "edu.arizona.sista" % "processors" % "2.0",
     "org.scala-lang" %% "scala-pickling" % "0.8.0"
+  )
+
+  val uiDependencies = libraryDependencies ++= Seq(
+    "eu.henkelmann" % "actuarius_2.10.0" % "0.2.6"
   )
 
   val publishSettings = Seq(
@@ -119,6 +123,7 @@ object BuildSettings {
 
 
 object Build extends Build {
+
   import BuildSettings._
 
 
@@ -126,7 +131,7 @@ object Build extends Build {
     id = "wolfe",
     base = file("."),
     settings = Project.defaultSettings ++ publishSettings ++ generalSettings ++ releaseSettings
-  ) aggregate(core, nlp, examples, apps)
+  ) aggregate(core, nlp, examples, apps, ui)
 
   lazy val core = Project(
     id = "wolfe-core",
@@ -159,4 +164,14 @@ object Build extends Build {
   core % "test->test;compile->compile",
   nlp % "test->test;compile->compile"
   )
+
+  lazy val ui = Project(
+    id = "wolfe-ui",
+    base = file("wolfe-ui"),
+    settings = buildSettings ++ globalSettings ++ uiDependencies
+  ) dependsOn(
+  core % "test->test;compile->compile",
+  nlp % "test->test;compile->compile"
+  )
+
 }
