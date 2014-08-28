@@ -43,7 +43,7 @@ class LogCallsSpecs extends WolfeSpec {
       def testMethod1() = 3.7
 
       @LogCalls(pre, post)
-      def testMethod2() {
+      def testMethod2() = {
         preCounter -= 1
         "hi"
       }
@@ -58,7 +58,7 @@ class LogCallsSpecs extends WolfeSpec {
       testMethod1() shouldBe 3.7
       checkCounter(1, 0)
 
-      testMethod2() //shouldBe "hi" //fixme
+      testMethod2() shouldBe "hi"
       checkCounter(1, 1)
 
 

@@ -76,6 +76,7 @@ object LogCallsMacro {
 
         val q"$ctr.${_}(${_})" = app
         val q"new ${_}(..$args)" = ctr
+//        println(app)
         //http://stackoverflow.com/questions/19379436/cant-access-parents-members-while-dealing-with-macro-annotations/19399119#19399119
         //todo: difficult to get type information in macro annotations.
 //        val typed = c.typeCheck(q"${defDef.rhs}")
