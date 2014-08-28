@@ -47,8 +47,8 @@ class BeliefPropagationSpecs extends WolfeSpec {
 
   def oneFactorFG() = {
     val fg = new FactorGraph
-    val n1 = fg.addNode(2)
-    val n2 = fg.addNode(2)
+    val n1 = fg.addDiscreteNode(2)
+    val n2 = fg.addDiscreteNode(2)
     tablePotential(fg, n1, n2, fixedTable)
     fg.build()
     fg
@@ -56,8 +56,8 @@ class BeliefPropagationSpecs extends WolfeSpec {
 
   def xorFG() = {
     val fg = new FactorGraph
-    val n1 = fg.addNode(2)
-    val n2 = fg.addNode(2)
+    val n1 = fg.addDiscreteNode(2)
+    val n2 = fg.addDiscreteNode(2)
     tablePotential(fg, n1, n2, xorTable)
     fg.build()
     fg
@@ -65,7 +65,7 @@ class BeliefPropagationSpecs extends WolfeSpec {
 
   def chainFG(length: Int) = {
     val fg = new FactorGraph
-    val nodes = for (i <- 0 until length) yield fg.addNode(2)
+    val nodes = for (i <- 0 until length) yield fg.addDiscreteNode(2)
     for ((n1, n2) <- nodes.dropRight(1) zip nodes.drop(1)) tablePotential(fg, n1, n2, fixedTable)
     fg.build()
     fg
@@ -73,7 +73,7 @@ class BeliefPropagationSpecs extends WolfeSpec {
 
   def chainFGWithFeatures(length: Int) = {
     val fg = new FactorGraph
-    val nodes = for (i <- 0 until length) yield fg.addNode(2)
+    val nodes = for (i <- 0 until length) yield fg.addDiscreteNode(2)
     for ((n1, n2) <- nodes.dropRight(1) zip nodes.drop(1)) linearPotential(fg, n1, n2, fixedStats)
     fg.weights = LinearPotential.dense(4, 0 -> 1.0, 1 -> 2.0, 2 -> -3, 3 -> 0)
     fg.build()

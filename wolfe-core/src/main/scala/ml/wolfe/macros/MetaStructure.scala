@@ -86,8 +86,11 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
     /**
      * @return does this type of structure only supports observed nodes.
      */
-    def observed: Boolean = false
+    def observed: Boolean = _observed
+    private var _observed = false
+    def observe() = _observed = true
 
+    def hasFiniteDomain: Boolean = if(children.nonEmpty) children forall (_.hasFiniteDomain) else ???
   }
 
 
@@ -264,12 +267,14 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
         inlineOnce(sampleSpace) match {
           case Some(inlined) => metaStructure(inlined)
           case None => sampleSpace.symbol match {
-            case s if s == wolfeSymbols.doubles || s == wolfeSymbols.strings =>
+            case s if s == wolfeSymbols.doubles =>
+              new MetaContinuousAtomicStructure { def domain = sampleSpace }
+            case s if s == wolfeSymbols.strings =>
               new MetaObservedAtomicStructure {def domain = sampleSpace }
             case s if sampleSpace.tpe.typeSymbol == wolfeSymbols.allClass =>
               new MetaObservedAtomicStructure {def domain = sampleSpace }
             case _ =>
-              new MetaAtomicStructure {def domain = sampleSpace }
+              new MetaDiscreteAtomicStructure {def domain = sampleSpace }
           }
         }
     }
