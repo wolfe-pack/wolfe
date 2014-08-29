@@ -52,9 +52,9 @@ final class TupleConsistencyPotential(edge1: Edge, edge2: Edge) extends TuplePot
   }
 
   override def maxMarginalExpectationsAndObjective(result: FactorieVector) = {
-    val positive1:LabelledTensor[DiscreteVar, Boolean] =
+    val positive1:LabelledTensor[DiscreteVar[_], Boolean] =
       m1.n2f.fold(baseVariables, false, (pos:Boolean, x:Double) => pos || x > Double.NegativeInfinity)
-    val positive2:LabelledTensor[DiscreteVar, Boolean] =
+    val positive2:LabelledTensor[DiscreteVar[_], Boolean] =
       m1.n2f.fold(baseVariables, false, (pos:Boolean, x:Double) => pos || x > Double.NegativeInfinity)
 
     if((0 until positive1.array.length).exists(i => positive1.array(i) && positive2.array(i)))
@@ -93,12 +93,10 @@ final class GroupPotential(val componentPotentials: Array[DiscretePotential], va
 
   override def maxMarginalExpectationsAndObjective(dstExpectations: FactorieVector) = {
     val scoretables = componentPotentials.map(p => p.scoreTable)
-    val scoreSums:LabelledTensor[DiscreteVar, Double] =
-      LabelledTensor.onNewArray[DiscreteVar, Double](v.components, _.dim, 0.0)
+    val scoreSums = LabelledTensor.onNewArray[DiscreteVar[_], Double](v.components, _.dim, 0.0)
     for(t <- scoretables) scoreSums += t
 
-    val scorePairs : LabelledTensor[DiscreteVar, (Double, Double)] =
-      m.n2f.elementWiseOp[Double, (Double, Double)](scoreSums, (n2f, score) => (score, score+n2f))
+    val scorePairs = m.n2f.elementWiseOp[Double, (Double, Double)](scoreSums, (n2f, score) => (score, score+n2f))
 
     var maxScore = Double.NegativeInfinity
     var maxPenalisedScore = Double.NegativeInfinity

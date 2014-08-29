@@ -16,11 +16,15 @@ trait Var[T] {
 
   import Wolfe.notSupported
 
-  def asDiscrete = this.asInstanceOf[DiscreteVar]
+  def asTyped[Q] = this.asInstanceOf[Var[Q]]
+  def asDiscrete = this.asInstanceOf[DiscreteVar[_]]
+  def asDiscreteTyped[Q] = this.asInstanceOf[DiscreteVar[Q]]
   def asVector = this.asInstanceOf[VectorVar]
   def asTuple = this.asInstanceOf[TupleVar]
   def asContinuous = this.asInstanceOf[ContinuousVar]
+
   def setup(){}
+  def createMsgs():Msgs = ???
   def initializeToNegInfinity():Unit = notSupported
   def initializeRandomly(eps:Double):Unit = notSupported
   def updateN2F(edge: Edge):Unit = notSupported
@@ -33,13 +37,16 @@ trait Var[T] {
   def updateAverageBelief():Unit = notSupported
   def entropy():Double = notSupported
 
-  var setting:T
+  type S
+  var setting: S
+  def value:T
+
   def sample():Unit =
     if(node.edges.isEmpty) sampleUniform()
     else {
       def score = exp(node.edges.map(_.f.potential.valueForCurrentSetting()).sum)
 
-      val oldSetting:T = setting
+      val oldSetting:S = setting
       val oldScore = score
 
       val e = node.edges(Random.nextInt(node.edges.length))
@@ -56,21 +63,24 @@ trait Var[T] {
   var node:Node = null //updated in node init
 }
 
-final class DiscreteVar(var dim: Int, override val label:String = "", val domainLabels:Seq[String] = Seq()) extends Var[Int] {
+class DiscreteVar[T](var domain: Array[T], override val label:String = "") extends Var[T] {
+
+  def dim = domain.length
+
   /* node belief */
   var b = Array.ofDim[Double](dim)
 
   /* external message for this node. Will usually not be updated during inference */
   var in = Array.ofDim[Double](dim)
 
-  /* the domain of values. By default this corresponds to [0,dim) but can be a subset if observations are given */
-  var domain: Array[Int] = _
-
+  type S = Int
   /* indicates that variable is in a certain state */
   override var setting: Int = 0
 
   /* indicates the value corresponding to the setting of the node */
-  var value: Int = 0
+  override def value:T = domain(setting)
+
+  override def createMsgs() = new DiscreteMsgs(dim)
 
   override def entropy() = {
     var result = 0.0
@@ -90,7 +100,6 @@ final class DiscreteVar(var dim: Int, override val label:String = "", val domain
   }
 
   override def setup() {
-    if (domain == null || domain.length != dim) domain = Array.range(0, dim)
     if (b == null || b.length != dim) b = Array.ofDim[Double](dim)
     if (in == null || in.length != dim) in = Array.ofDim[Double](dim)
   }
@@ -168,19 +177,26 @@ final class DiscreteVar(var dim: Int, override val label:String = "", val domain
   override def sampleUniform(): Unit = setting = Random.nextInt(dim)
 }
 
-final class ContinuousVar(override val label:String = "") extends Var[Double] {
+class ContinuousVar(override val label:String = "") extends Var[Double] {
+  type S = Double
   /* indicates that variable is in a certain state */
   override var setting: Double = 0
-  override def sampleUniform(): Unit = setting = 42
-  var value:Double = 0
+  override def value = setting
 
+  override def sampleUniform(): Unit = setting = 42
+
+  override def createMsgs() = null
 
 }
 
-final class VectorVar(val dim:Int) extends Var[FactorieVector] {
+class VectorVar(val dim:Int) extends Var[FactorieVector] {
   var b:FactorieVector = new DenseTensor1(dim)
-  override var setting:FactorieVector = null
 
+  override type S = FactorieVector
+  override var setting:FactorieVector = null
+  override def value = setting
+
+  override def createMsgs() = null
 
   override def updateN2F(edge: Edge) = {
     edge.msgs.asVector.n2f = b //todo: copy instead?

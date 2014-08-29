@@ -40,10 +40,6 @@ trait Structure[T] {
   def observe(value: T)
 
   /**
-   * Sets all nodes to their argmax belief. todo: this could be generically implemented using nodes().
-   */
-  def setToArgmax()
-  /**
    * resets the state of all nodes.
    */
   def resetSetting()

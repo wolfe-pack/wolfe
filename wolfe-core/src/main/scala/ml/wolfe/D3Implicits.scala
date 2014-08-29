@@ -190,8 +190,8 @@ object D3Implicits {
                 "{text:'" + escape(n.variable.label) + "'" +
                 ", type:'node'" +
                  ", hoverhtml:'Domain:<br/>{" + escape(n.variable match {
-                  case v:DiscreteVar => v.domainLabels.mkString(", ")
-                  case v:TupleVar => v.domainLabels.mkString(", ")
+                  case v:DiscreteVar[_] => v.domain.mkString(", ")
+                  case v:TupleVar => v.domain.mkString(", ")
                   case _ => ""
                 }) + "}'" +
                 ", x:" + nodeX(n) + ", y:" + nodeY(n) +

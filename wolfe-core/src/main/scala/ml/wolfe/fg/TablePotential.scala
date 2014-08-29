@@ -88,14 +88,14 @@ final class TablePotential(edges: Array[Edge], table: Table) extends DiscretePot
     val tableString =
       for ((setting, index) <- settings.zipWithIndex) yield
         s"${
-          setting.zipWithIndex.map({case (s,j) => vars(j).domainLabels(s)}).mkString("\t")
+          setting.zipWithIndex.map({case (s,j) => vars(j).domain(s)}).mkString("\t")
         }\t| ${ table.scores(index) }"
 
     tableString.mkString("\n")
   }
 
-  override def scoreTable: LabelledTensor[DiscreteVar, Double] = {
-     LabelledTensor.onExistingArray[DiscreteVar, Double](vars, _.dim, table.scores)
+  override def scoreTable: LabelledTensor[DiscreteVar[_], Double] = {
+     LabelledTensor.onExistingArray[DiscreteVar[_], Double](vars, _.dim, table.scores)
   }
 
   override def valueForSetting(setting:Seq[Int]): Double = {

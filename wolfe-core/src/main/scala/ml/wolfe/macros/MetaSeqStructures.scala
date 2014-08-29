@@ -42,7 +42,6 @@ trait MetaSeqStructures[C<:Context] {
           def hasNextSetting = iterator.hasNext
           def nextSetting = iterator.next
 
-          def setToArgmax() {_elements.foreach(_.setToArgmax())}
           def value() = _elements.view.map(_.value()).toList
 
           def observe(value:$argType) {

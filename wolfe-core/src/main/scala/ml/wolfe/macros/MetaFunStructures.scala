@@ -94,7 +94,6 @@ trait MetaFunStructures[C<:Context] {
         def resetSetting() { iterator = ml.wolfe.macros.Structure.settingsIterator(subStructureIterator().toList)()}
         def hasNextSetting = iterator.hasNext
         def nextSetting = iterator.next
-        def setToArgmax() {subStructureIterator().foreach(_.setToArgmax())}
         def value() = $mappings.toMap
         def observe(value:$argType) {
           ${tupleProcessor(keyDomNames, tmpNames, observeSubStructure, newTermName("foreach"), newTermName("foreach"))}

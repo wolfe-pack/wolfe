@@ -51,7 +51,7 @@ trait Potential {
 }
 
 trait DiscretePotential extends Potential {
-  lazy val vars:Array[DiscreteVar] = factor.edges.map(_.n.variable.asDiscrete)
+  lazy val vars:Array[DiscreteVar[_]] = factor.edges.map(_.n.variable.asDiscrete)
   lazy val dims:Array[Int] = vars.map(_.asDiscrete.dim)
   lazy val msgs:Array[DiscreteMsgs] = factor.edges.map(_.msgs.asDiscrete)
 
@@ -62,8 +62,8 @@ trait DiscretePotential extends Potential {
    * The table of scores assigned by the potential over different settings, as a LabelledTensor
    * @return a LabelledTensor containing the scores
    */
-  protected def getScoreTable : LabelledTensor[DiscreteVar, Double] = {
-    val t:LabelledTensor[DiscreteVar, Double] = LabelledTensor.onNewArray(vars, _.dim, 0.0)
+  protected def getScoreTable : LabelledTensor[DiscreteVar[_], Double] = {
+    val t:LabelledTensor[DiscreteVar[_], Double] = LabelledTensor.onNewArray(vars, _.dim, 0.0)
     t.fillBy(mul => valueForSetting(mul.map(_._2)))
     t
   }
@@ -90,7 +90,7 @@ trait DiscretePotential extends Potential {
     val headerRow = "<tr>" + vars.map(_.label).map("<td><i>" + _ + "</i></td>").mkString(" ") + "</tr>"
     val tableRows =
       for((score, mul) <- table.zipWithIndex.take(10)) yield {
-        val domainEntries = mul.map( m => m._1.domainLabels(m._2) )
+        val domainEntries = mul.map( m => m._1.domain(m._2) )
         val cells = domainEntries :+ ("<b>" + score + "</b>")
         "<tr>" + cells.map("<td>" + _ + "</td>").mkString(" ") + "</tr>"
       }
