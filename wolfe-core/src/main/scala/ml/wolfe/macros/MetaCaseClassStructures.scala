@@ -44,7 +44,6 @@ trait MetaCaseClassStructures[C<:Context] {
         def resetSetting() { iterator = ml.wolfe.macros.Structure.settingsIterator(List(..$fieldIds).reverse)()}
         def hasNextSetting = iterator.hasNext
         def nextSetting = iterator.next
-        def setToArgmax() {fields.foreach(_.setToArgmax())}
         def observe(value:$argType) { ..$observeFields }
         type Edges = Unit
         def createEdges(factor: ml.wolfe.FactorGraph.Factor): Edges = {}

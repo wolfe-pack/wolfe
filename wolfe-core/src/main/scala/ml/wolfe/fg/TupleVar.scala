@@ -1,6 +1,5 @@
 package ml.wolfe.fg
 
-import ml.wolfe.FactorGraph
 import ml.wolfe.FactorGraph.{Edge, Node}
 import ml.wolfe.MoreArrayOps._
 import ml.wolfe.Wolfe._
@@ -14,28 +13,32 @@ import scalaxy.loops._
 /**
  * @author luke
  */
-class TupleVar(val componentNodes:Array[Node]) extends Var[Seq[(DiscreteVar, Int)]] {
+class TupleVar(val componentNodes:Array[Node]) extends Var[Seq[(DiscreteVar[_], Int)]] {
   val components = componentNodes.map(_.variable.asDiscrete)
   val dim = components.map(_.dim).product
 
   override val label = componentNodes.map(_.variable.label).mkString(",")
-  val domainLabels = cartesianProduct(components.map(_.domainLabels)).map(_.mkString("(", ", ", ")"))
+  val domain = cartesianProduct(components.map(_.domain.toSeq)).map(_.mkString("(", ", ", ")"))
 
   /* node belief */
-  val B = LabelledTensor.onNewArray[DiscreteVar, Double](components, _.dim, 0)
+  val B = LabelledTensor.onNewArray[DiscreteVar[_], Double](components, _.dim, 0)
   val b = B.array
 
   /* external message for this node. Will usually not be updated during inference */
-  val IN = LabelledTensor.onNewArray[DiscreteVar, Double](components, _.dim, 0)
+  val IN = LabelledTensor.onNewArray[DiscreteVar[_], Double](components, _.dim, 0)
   val in = IN.array
 
+  type S = Seq[(DiscreteVar[_], Int)]
   /* indicates that variable is in a certain state */
-  override var setting: Seq[(DiscreteVar, Int)] = components.map(_ -> 0)
-  def componentSetting(v:DiscreteVar) = setting(components indexOf v)._2
+  override def setting = components.map(v => (v, v.setting))
+  override def setting_=(s:S) = s.foreach{case (v, i) => v.setting = i}
+  override def value = setting
+
+  def componentSetting(v:DiscreteVar[_]) = setting(components indexOf v)._2
 
   def updateComponentSettings() = {
     setting.foreach {
-      (v:DiscreteVar, s:Int) => v.asDiscrete.setting = s
+      (v:DiscreteVar[_], s:Int) => v.setting = s
     }
   }
 
@@ -72,7 +75,7 @@ class TupleVar(val componentNodes:Array[Node]) extends Var[Seq[(DiscreteVar, Int
     }
     maxNormalize(b)
     for(v <- components) {
-      val vB = LabelledTensor.onExistingArray[DiscreteVar, Double](Array(v), _.dim, v.b)
+      val vB = LabelledTensor.onExistingArray[DiscreteVar[_], Double](Array(v), _.dim, v.b)
       B.foldInto(Double.NegativeInfinity, max, vB)
     }
   }

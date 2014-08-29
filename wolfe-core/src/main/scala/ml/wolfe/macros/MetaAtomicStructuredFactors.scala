@@ -21,8 +21,6 @@ trait MetaAtomicStructuredFactors[C <: Context] {
     else info.linear match {
       case true => MetaContinuousAtomicStructuredFactorLinear(info)
       case false => MetaContinuousAtomicStructuredFactorTable(info)
-      //    case true => MetaDiscreteAtomicStructuredFactorLinear(info.copy(potential = info.transformer(inlineFull(info.potential))))
-      //    case false => MetaDiscreteAtomicStructuredFactorTable(info.copy(potential = info.transformer(inlineFull(info.potential))))
     }
   }
 
@@ -74,7 +72,7 @@ trait MetaAtomicStructuredFactors[C <: Context] {
         var settingIndex = 0
         ml.wolfe.util.Util.breakpoint()
         $loop
-        val factor = graph.$addFactorMethod(${shortCode(transformedPot)})
+        val factor = graph.$addFactorMethod(${MetaStructuredFactor.shortCode(context)(transformedPot)})
         val edges = nodes.view.zipWithIndex.map(p => graph.$addEdgeMethod(factor,p._1,p._2)).toArray
         factor.potential = $createPotential
         def factors = Iterator(factor)
@@ -142,7 +140,7 @@ trait MetaAtomicStructuredFactors[C <: Context] {
         import ml.wolfe.FactorGraph._
         val nodes:Array[Node] = $nodes.toList.distinct.sorted.toArray
         val vars = nodes.map(_.variable)
-        val factor = graph.$addFactorMethod(${shortCode(transformedPot)})
+        val factor = graph.$addFactorMethod(${MetaStructuredFactor.shortCode(context)(transformedPot)})
         val edges = Nil.toArray
         factor.potential = $createPotential
         def factors = Iterator(factor)
@@ -158,7 +156,13 @@ trait MetaAtomicStructuredFactors[C <: Context] {
     import info._
     override def addFactorMethod = if (expectations) newTermName("addExpectationFactor") else newTermName("addFactor")
     override def addEdgeMethod = if (expectations) newTermName("addExpectationEdge") else newTermName("addEdge")
-    def createPotential = q"new ml.wolfe.fg.Potential {}"
+    def createPotential = q"""
+      new ml.wolfe.fg.Potential {
+        override def statsForCurrentSetting() = {
+          ${toOptimizedFactorieVector(injected, linearModelInfo.indexTree)}
+        }
+      }
+      """
   }
 
   case class MetaContinuousAtomicStructuredFactorTable(info: FactorGenerationInfo)
@@ -168,52 +172,4 @@ trait MetaAtomicStructuredFactors[C <: Context] {
   }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  // -----------------------------------------------------------------------
-
-  def shortCode(t:Tree):Tree = t match {
-    case q"ml.wolfe.Wolfe.${x:TermName}" => q"${x.toString}"
-    case q"ml.wolfe.macros.OptimizedOperators.${x:TermName}" => q"${x.toString}"
-    case q"!( $x )" => q""" "!(" + ${shortCode(x)} + ")" """
-    case q"$x.||" => q""" ${shortCode(x)} + " || " """
-    case q"$x.^" => q"""${shortCode(x)} + " ^ " """
-    case q"$x.&&" => q"""${shortCode(x)} + " && " """
-    case q"$x.==" => q"""${shortCode(x)} + " == " """
-    case q"$x.>" => q"""${shortCode(x)} + " > " """
-    case q"$x.<" => q"""${shortCode(x)} + " < " """
-    case q"$x.>=" => q"""${shortCode(x)} + " >= " """
-    case q"$x.<=" => q"""${shortCode(x)} + " <= " """
-    case q"$x.+" => q"""${shortCode(x)} + " + " """
-    case q"$x.-" => q"""${shortCode(x)} + " - " """
-    case q"$x.*" => q"""${shortCode(x)} + " * " """
-    case q"$x./" => q"""${shortCode(x)} + " / " """
-    case q"$x.apply" => shortCode(x)
-    case q"qSumDom1($x)" => t
-    case q"qSumDom2($x)" => t
-    case q"qSumDom3($x)" => t
-    case q"qSumDom4($x)" => t
-    case q"qSumDom5($x)" => t
-    case q"qSumDom6($x)" => t
-    case q"${x:Select}" =>  q"""${shortCode(x.qualifier)} + "." + ${x.name.toString} """
-    case q"${f:Select}($arg)" => q"""${shortCode(f)} + "(" + ${shortCode(arg)} + ")" """
-    case _ => q"${t.toString}"
-  }
 }

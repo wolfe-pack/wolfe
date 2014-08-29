@@ -197,7 +197,6 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
 
   def argmaxResultCode(structName: TermName, indexName: TermName): Tree = {
     q"""
-      $structName.setToArgmax()
       $structName.value()
     """
   }

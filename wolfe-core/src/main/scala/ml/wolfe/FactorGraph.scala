@@ -6,6 +6,7 @@ import cc.factorie.la.SingletonTensor
 import ml.wolfe.util.Multidimensional._
 
 import scala.collection.mutable.ArrayBuffer
+import scala.reflect.ClassTag
 import scalaxy.loops._
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -77,17 +78,17 @@ final class FactorGraph {
 
   /**
    * Adds a node for a variable of domain size `dim`
-   * @param dim size of domain of corresponding variable
+   * @param domain domain of the variable
    * @param label description of what the variable represents
-   * @param domainLabels description of each element in the domain
    * @return the added node.
    */
-  def addDiscreteNode(dim: Int, label:String = "", domainLabels:Seq[String]=Seq()) = {
-    val n = new Node(nodes.size, new DiscreteVar(dim, label, domainLabels))
+  def addDiscreteNodeWithDomain[T](domain:Array[T], label:String = "") = {
+    val n = new Node(nodes.size, new DiscreteVar(domain, label))
     nodes += n
     n
   }
 
+  def addDiscreteNode(dim:Int, label:String = "") = addDiscreteNodeWithDomain((0 until dim).toArray, label)
 
   /**
    * Adds a node for a continuous variable
@@ -100,10 +101,10 @@ final class FactorGraph {
     n
   }
 
-  def observeNode(node:Node, valLabel:String = ""): Unit = {
-    node.variable = new DiscreteVar(1, node.variable.label, Seq(valLabel))
+  def observeNode[T:ClassTag](node:Node, value:T): Unit = {
+    node.variable = new DiscreteVar[T](Array(value))
     node.variable.node = node
-    node.edges.foreach(_.msgs = new DiscreteMsgs(1))
+   // node.edges.foreach(_.msgs = new DiscreteMsgs(1))
   }
 
   /**
@@ -126,7 +127,7 @@ final class FactorGraph {
    * @return the added edge.
    */
   def addEdge(f: Factor, n: Node, indexInFactor: Int): Edge = {
-    val e = new Edge(n, f, new DiscreteMsgs(n.variable.asDiscrete.dim))
+    val e = new Edge(n, f, n.variable.createMsgs())
     e.indexInFactor = indexInFactor
     n.edgeCount += 1
     f.edgeCount += 1

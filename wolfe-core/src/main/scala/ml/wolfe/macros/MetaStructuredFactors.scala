@@ -12,7 +12,9 @@ import ml.wolfe.util.CachedPartialFunction
  */
 trait MetaStructuredFactors[C <: Context] extends MetaStructures[C]
                                                   with CodeOptimizer[C]
-                                                  with MetaAtomicStructuredFactors[C] {
+                                                  with MetaAtomicStructuredFactors[C]
+                                                  with MetaContinuousStructuredFactors[C] {
+
 
   import context.universe._
 
@@ -302,6 +304,12 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C]
       case Dot(arg2, arg1) if structures(arg1, matcher).isEmpty =>
         val linearFactor = metaStructuredFactor(FactorGenerationInfo(arg2, structure, matcher, constructorArgs, linearModelInfo, true))
         WithWeightVector(linearFactor, arg1)
+      case q"ml.wolfe.Wolfe.logDist.gaussian($arg1, $arg2)($arg3)" =>
+        (matcher(arg1), matcher(arg2), matcher(arg3)) match {
+          case (Some(mu), Some(sigma), Some(x)) =>
+            new MetaGaussianStructuredFactor(info, mu.structure, sigma.structure, x.structure)
+          case _ => ???
+        }
       case _ => inlineOnce(potential) match {
         case Some(inlined) =>
           metaStructuredFactor(info.copy(potential = inlined))
@@ -384,4 +392,41 @@ object MetaStructuredFactor {
   }
 
 
+
+
+
+
+  // -----------------------------------------------------------------------
+
+  def shortCode(c:Context)(t:c.Tree):c.Tree = {
+    import c.universe._
+
+    t match {
+      case q"ml.wolfe.Wolfe.${x:TermName}" => q"${x.toString}"
+      case q"ml.wolfe.macros.OptimizedOperators.${x:TermName}" => q"${x.toString}"
+      case q"!( $x )" => q""" "!(" + ${shortCode(c)(x)} + ")" """
+      case q"$x.||" => q""" ${shortCode(c)(x)} + " || " """
+      case q"$x.^" => q"""${shortCode(c)(x)} + " ^ " """
+      case q"$x.&&" => q"""${shortCode(c)(x)} + " && " """
+      case q"$x.==" => q"""${shortCode(c)(x)} + " == " """
+      case q"$x.>" => q"""${shortCode(c)(x)} + " > " """
+      case q"$x.<" => q"""${shortCode(c)(x)} + " < " """
+      case q"$x.>=" => q"""${shortCode(c)(x)} + " >= " """
+      case q"$x.<=" => q"""${shortCode(c)(x)} + " <= " """
+      case q"$x.+" => q"""${shortCode(c)(x)} + " + " """
+      case q"$x.-" => q"""${shortCode(c)(x)} + " - " """
+      case q"$x.*" => q"""${shortCode(c)(x)} + " * " """
+      case q"$x./" => q"""${shortCode(c)(x)} + " / " """
+      case q"$x.apply" => shortCode(c)(x)
+      case q"qSumDom1($x)" => t
+      case q"qSumDom2($x)" => t
+      case q"qSumDom3($x)" => t
+      case q"qSumDom4($x)" => t
+      case q"qSumDom5($x)" => t
+      case q"qSumDom6($x)" => t
+      case q"${x:Select}" =>  q"""${shortCode(c)(x.qualifier)} + "." + ${x.name.toString} """
+      case q"${f:Select}($arg)" => q"""${shortCode(c)(f)} + "(" + ${shortCode(c)(arg)} + ")" """
+      case _ => q"${t.toString}"
+    }
+  }
 }

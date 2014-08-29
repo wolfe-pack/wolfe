@@ -82,7 +82,9 @@ object Wolfe extends SampleSpaceDefs
       log(1.0 / (dev * sqrt(2.0 * Pi)) * exp(-sq(x - mean) / (2.0 * sq(dev))))
     }
 
-
+    def sampleGaussian(mean: Double = 0.0, dev: Double = 1.0) = {
+      Random.nextGaussian() * dev + mean
+    }
 
   }
 
