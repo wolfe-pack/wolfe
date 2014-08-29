@@ -25,10 +25,10 @@ object SISTAConverter {
     )
   }
 
-  def toFullWolfeSentence(sentence: SISTASent): Sentence = {
-    val tokens = for (i <- 0 until sentence.size) yield toWolfeToken(i, sentence)
-    val ctree = toWolfeConstituentTree(sentence)
-    val dtree = toWolfeDependencyTree(sentence)
+  def toFullWolfeSentence(sent: SISTASent): Sentence = {
+    val tokens = for (i <- 0 until sent.size) yield toWolfeToken(i, sent)
+    val ctree = toWolfeConstituentTree(sent)
+    val dtree = toWolfeDependencyTree(sent)
     Sentence(tokens, syntax = new SyntaxAnnotation(tree = ctree, dependencies = dtree))
   }
 
@@ -40,7 +40,8 @@ object SISTAConverter {
   }
 
   def toWolfeDependencyTree(sent: SISTASent): DependencyTree = {
-    val dt = new DependencyTree(sent.dependencies.get.outgoingEdges.zipWithIndex.flatMap { case(x, i) => x.map { y => (i, y._1, y._2) }})
+    val tokens = for (i <- 0 until sent.size) yield toWolfeToken(i, sent)
+    val dt = new DependencyTree(tokens, sent.dependencies.get.outgoingEdges.zipWithIndex.flatMap { case(x, i) => x.map { y => (i, y._1, y._2) }})
 //    println(dt.toString())
     dt
   }
