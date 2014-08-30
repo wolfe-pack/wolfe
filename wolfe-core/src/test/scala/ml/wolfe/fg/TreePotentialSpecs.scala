@@ -1,7 +1,7 @@
 package ml.wolfe.fg
 
 import ml.wolfe.FactorGraph.Edge
-import ml.wolfe.{Wolfe, WolfeSpec}
+import ml.wolfe.{BruteForceOperators, Wolfe, WolfeSpec}
 
 /**
  * @author Sebastian Riedel
@@ -26,14 +26,26 @@ class TreePotentialSpecs extends WolfeSpec {
   "A TreePotential" should {
     "Blah blah blah" in {
 
+      import Wolfe._
+      import BruteForceOperators._
+
       @Wolfe.Potential(new TreePotential(_: Map[(Any, Any), Edge], true))
       def tree[T](tree: Map[(T, T), Boolean]) =
         if (isFullyConnectedTree(tree)) 0.0 else Double.NegativeInfinity
 
-      val g = graph(0 -> 1, 1 -> 2, 2 -> 0)
+      type Node = Int
+      type Graph = Pred[(Node,Node)]
+      val slen = 3
+      val tokens = 0 until slen
+      def edges = tokens x tokens
+      def graphs = preds(edges)
+      def query(graph:Graph) = sum(edges) {e => oneHot(e, I(graph(e)))}
 
-      println(isFullyConnectedTree(graph(0 -> 1, 1 -> 2, 2 -> 0)))
-      println(isFullyConnectedTree(graph(0 -> 1, 1 -> 2, 2 -> 0)))
+      val marginals = BruteForceOperators.expect(graphs)(tree)(query)
+
+      println("Yo")
+      println(marginals)
+
 
 
     }

@@ -206,7 +206,7 @@ object TreePotential {
       case Nil => covered
       case h :: t if covered(h) => reached(t, covered)
       case h :: t =>
-        val toVisit = children.getOrElse(h, Nil)
+        val toVisit = children.getOrElse(h, Nil) filterNot covered
         reached(toVisit, covered ++ toVisit)
     }
     val result = reached(nodes)
