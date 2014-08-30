@@ -15,11 +15,11 @@ class TreePotentialSpecs extends WolfeSpec {
 
   "A tree constraint checker" should {
     "find a loop" in {
-      isFullyConnectedTree(graph(0 -> 1, 1 -> 2, 2 -> 0)) should be(false)
+      isFullyConnectedNonProjectiveTree(graph(0 -> 1, 1 -> 2, 2 -> 0)) should be(false)
     }
 
     "find a legal tree" in {
-      isFullyConnectedTree(graph(0 -> 1, 1 -> 2)) should be(true)
+      isFullyConnectedNonProjectiveTree(graph(0 -> 1, 1 -> 2)) should be(true)
     }
   }
 
@@ -31,7 +31,7 @@ class TreePotentialSpecs extends WolfeSpec {
 
       @Wolfe.Potential(new TreePotential(_: Map[(Any, Any), Edge], true))
       def tree[T](tree: Map[(T, T), Boolean]) =
-        if (isFullyConnectedTree(tree)) 0.0 else Double.NegativeInfinity
+        if (isFullyConnectedNonProjectiveTree(tree)) 0.0 else Double.NegativeInfinity
 
       type Node = Int
       type Graph = Pred[(Node,Node)]
