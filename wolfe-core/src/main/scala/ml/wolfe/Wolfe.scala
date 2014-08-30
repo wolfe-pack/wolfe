@@ -128,7 +128,7 @@ trait VectorDefs {
   //type Vector = Map[Any, Double]
 
 
-  class Vector(underlying: Map[Any, Double]) extends scala.collection.immutable.MapProxy[Any, Double] {
+  class Vector(val underlying: Map[Any, Double]) extends scala.collection.immutable.MapProxy[Any, Double] {
     val self = underlying withDefaultValue 0.0
 
     def +(that: Vector): Vector =
@@ -139,6 +139,9 @@ trait VectorDefs {
       this + new Vector(that.mapValues(_ * scale))
 
     def dot(that: Vector) = VectorNumeric.dot(this, that)
+
+
+
     def norm = VectorNumeric.norm(this)
     def *(scale: Double) = new Vector(self.mapValues(_ * scale))
     def *(vector: Vector) = new Vector(vector.self.map({ case (k, v) => k -> v * vector(k) }))
@@ -213,7 +216,7 @@ trait VectorDefs {
   private def plus(v1: Vector, v2: Vector): Vector =
     v2.foldLeft(v1)((acc, t) => {
       val (key, value) = t
-      new Vector(acc.updated(key, acc.getOrElse(key, 0.0) + value))
+      new Vector(acc.underlying.updated(key, acc.getOrElse(key, 0.0) + value))
     })
 }
 
