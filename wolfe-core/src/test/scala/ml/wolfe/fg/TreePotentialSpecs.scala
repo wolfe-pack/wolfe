@@ -41,6 +41,7 @@ class TreePotentialSpecs extends WolfeSpec {
       def graphs = preds(edges)
       def query(graph:Graph) = sum(edges) {e => oneHot(e, I(graph(e)))}
 
+      val result = graphs map (g => tree(g))
       val marginals = BruteForceOperators.expect(graphs)(tree)(query)
 
       println("Yo")
