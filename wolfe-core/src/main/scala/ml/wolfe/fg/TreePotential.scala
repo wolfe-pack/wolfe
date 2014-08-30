@@ -22,7 +22,7 @@ class TreePotential(edges: Map[(Any, Any), Edge], multinode: Boolean) extends Po
   }
   override def valueForCurrentSetting() = {
     val graph = edges mapValues (_.n.variable.asDiscrete.value == 1)
-    val tree = TreePotential.isFullyConnectedTree(graph)
+    val tree = TreePotential.isFullyConnectedNonProjectiveTree(graph)
     if (tree) 0.0 else Double.NegativeInfinity
   }
 
@@ -195,8 +195,8 @@ class TreePotential(edges: Map[(Any, Any), Edge], multinode: Boolean) extends Po
 
 object TreePotential {
 
-  def isFullyConnectedTree[T](graph: Map[(T, T), Boolean]) = {
-    val edges = (graph filter (_._2) map (_._1)).toList
+  def isFullyConnectedNonProjectiveTree[T](graph: Map[(T, T), Boolean]) = {
+    val edges = (graph filter (_._2)).toList map (_._1)
     val nodes = (graph.keys flatMap (p => List(p._1, p._2))).toList.distinct
     if (edges.size != nodes.size - 1) false
     else {
