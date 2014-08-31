@@ -25,7 +25,7 @@ class TreePotentialSpecs extends WolfeSpec {
   }
 
   "A TreePotential" should {
-    "Blah blah blah" in {
+    "Blah blah blah " in {
 
       import Wolfe._
       import BruteForceOperators._
@@ -45,7 +45,7 @@ class TreePotentialSpecs extends WolfeSpec {
       val result = graphs map (g => tree(g))
       val marginals = BruteForceOperators.expect(graphs)(tree)(query)
 
-      //def bp = OptimizedOperators.expect(graphs)(tree)(query)
+      def bp = OptimizedOperators.expect(graphs)(tree)(query)
 
       println("Yo")
       println(marginals)

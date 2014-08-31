@@ -23,8 +23,10 @@ trait MetaFunStructures[C<:Context] {
     def keyDoms: List[Tree]
     def valueMetaStructure: MetaStructure
 
+    lazy val anyKeyTypes = keyDoms map (_ => tq"Any")
+    lazy val anyKeyType = if (anyKeyTypes.size == 1) tq"Any" else tq"(..$anyKeyTypes)"
+    def edgesType = tq"Map[$anyKeyType,${valueMetaStructure.edgesType}]"
 
-    def edgesType = tq"Map[$keyType,${valueMetaStructure.edgesType}]"
     lazy val keyDomNames   = List.fill(keyDoms.size)(newTermName(context.fresh("funKeyDom")))
     lazy val keyIndexNames = List.fill(keyDoms.size)(newTermName(context.fresh("funKeyIndex")))
     lazy val tmpNames      = Range(0, keyDoms.size).map(i => newTermName("i" + i)).toList
