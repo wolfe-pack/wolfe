@@ -16,9 +16,15 @@ trait MetaSeqStructures[C<:Context] {
 
     var lengthInitialized = lengthInitializer != EmptyTree
 
+
+    def edgesType = tq"Seq[${elementMetaStructure.edgesType}]"
+
+    val test:Tree = tq"Unit"
+
     lazy val className = newTypeName(context.fresh("SeqStructure"))
     override def classDef(graphName:TermName) = {
       val elementDef = elementMetaStructure.classDef(graphName)
+      val elementEdgesType = stringToTypeName(className.toString  + ".this." + elementMetaStructure.className.toString + "#Edges")
 
       q"""
         final class $className (override val astLabel:String="") extends ml.wolfe.macros.Structure[$argType] with ml.wolfe.macros.SeqStructure[$argType] {
@@ -48,8 +54,10 @@ trait MetaSeqStructures[C<:Context] {
             if (_elements == null || _elements.length != value.size) setLength(value.size)
             value.indices.foreach { (i:Int) =>  _elements(i).observe(value(i)) }
           }
-          type Edges = Unit
-          def createEdges(factor: ml.wolfe.FactorGraph.Factor): Edges = {}
+          type Edges = $edgesType
+          def createEdges(factor: ml.wolfe.FactorGraph.Factor): Edges = {
+            (_elements map (_.createEdges(factor))).toSeq
+          }
 
 
           $lengthInitializer

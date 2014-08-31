@@ -22,6 +22,10 @@ trait MetaCaseClassStructures[C<:Context] {
       s._2.classDef(graphName, label + "." + s._1.name.toString)
     )*/
 
+
+    def edgesType = tq"Unit"
+
+
     lazy val fieldsAndTypes  = fields zip fieldStructures
     lazy val className       = newTypeName(context.fresh(tpe.typeSymbol.name.encoded + "Structure"))
     lazy val structureFields = for ((f, t) <- fields zip fieldStructures) yield

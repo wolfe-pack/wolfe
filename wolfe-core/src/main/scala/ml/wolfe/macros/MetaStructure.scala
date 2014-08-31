@@ -83,6 +83,8 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
     //todo: at compile time using a validate method on the meta structure. Probably requires stateful meta structure to
     //todo: be affected during conditioning.
 
+    def edgesType:Tree
+
     /**
      * @return does this type of structure only supports observed nodes.
      */
