@@ -1,6 +1,7 @@
 package ml.wolfe.fg
 
 import ml.wolfe.FactorGraph.Edge
+import ml.wolfe.macros.OptimizedOperators
 import ml.wolfe.{BruteForceOperators, Wolfe, WolfeSpec}
 
 /**
@@ -43,6 +44,8 @@ class TreePotentialSpecs extends WolfeSpec {
 
       val result = graphs map (g => tree(g))
       val marginals = BruteForceOperators.expect(graphs)(tree)(query)
+
+      //def bp = OptimizedOperators.expect(graphs)(tree)(query)
 
       println("Yo")
       println(marginals)

@@ -1,16 +1,16 @@
+import ml.wolfe.FactorGraph.Factor
 
+class S {
+  final class T {
+    type Edges = ml.wolfe.FactorGraph.Edge
+  }
 
-type T[S] = Array[Seq[S]]
+  type Edges = Seq[T#Edges]
 
+  val edges:Edges = null
 
-trait Test{
-
-  def changeMeAndReturn:this.type
 }
 
-class Blah extends Test {
-  def changeMeAndReturn = this
-}
+val s = new S
+s.edges
 
-val blah = new Blah
-blah.changeMeAndReturn.changeMeAndReturn.changeMeAndReturn
