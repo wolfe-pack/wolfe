@@ -1,6 +1,7 @@
 package ml.wolfe
 
-import ml.wolfe.FactorGraph.Node
+import ml.wolfe.FactorGraph.{Edge, Node}
+import ml.wolfe.fg.GaussianPotential
 import org.sameersingh.htmlgen.HTML
 
 import scala.language.implicitConversions
@@ -77,6 +78,7 @@ object Wolfe extends SampleSpaceDefs
 
   object logDist {
 
+    @Potential( (mean:Edge, dev:Edge, x: Edge) => new GaussianPotential(mean, dev)(x) )
     def gaussian(mean: Double = 0.0, dev: Double = 1.0)(x: Double) = {
       def sq(x: Double) = x * x
       log(1.0 / (dev * sqrt(2.0 * Pi)) * exp(-sq(x - mean) / (2.0 * sq(dev))))

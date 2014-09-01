@@ -12,8 +12,7 @@ import ml.wolfe.util.CachedPartialFunction
  */
 trait MetaStructuredFactors[C <: Context] extends MetaStructures[C]
                                                   with CodeOptimizer[C]
-                                                  with MetaAtomicStructuredFactors[C]
-                                                  with MetaContinuousStructuredFactors[C] {
+                                                  with MetaAtomicStructuredFactors[C] {
 
 
   import context.universe._
@@ -149,10 +148,10 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C]
 
   }
 
-  def tailorMadePotential(info: FactorGenerationInfo, args: List[Tree], annotation: Annotation) = {
+  def tailorMadePotential(info: FactorGenerationInfo, argss: List[List[Tree]], annotation: Annotation) = {
     import info._
     val argumentStructures = distinctTrees(structures(potential, matcher).map(_.structure))
-    val argumentEdges = args map { a => {
+    val argumentEdges = argss reduce (_ ++ _) map { a => {
       val injected = injectStructure(a, matcher, t => q"$t.createEdges(factor)", false)
       val removeTypes = transform(injected, {
         case Apply(TypeApply(f, _), funArgs) => Apply(f, funArgs)
@@ -286,8 +285,10 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C]
           MetaFirstOrderSumFactor(List(dom), obj, info)
       case Apply(f, args) if f.symbol.annotations.exists(_.tpe.typeSymbol == wolfeSymbols.atomic) =>
         atomic(info)
-      case Apply(f, args) if f.symbol.annotations.exists(_.tpe.typeSymbol == wolfeSymbols.potential) =>
-        tailorMadePotential(info, args, f.symbol.annotations.find(_.tpe.typeSymbol == wolfeSymbols.potential).get)
+      /*case Apply(f, args) if f.symbol.annotations.exists(_.tpe.typeSymbol == wolfeSymbols.potential) =>
+        tailorMadePotential(info, args, f.symbol.annotations.find(_.tpe.typeSymbol == wolfeSymbols.potential).get)*/
+      case q"$f(...$argss)" if f.symbol.annotations.exists(_.tpe.typeSymbol == wolfeSymbols.potential)  =>
+        tailorMadePotential(info, argss, f.symbol.annotations.find(_.tpe.typeSymbol == wolfeSymbols.potential).get)
       case FlattenedPlus(args) =>
         val merged = mergeSumArgs(args, matcher)
         val metaStructs = merged.map(arg =>
@@ -304,12 +305,6 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C]
       case Dot(arg2, arg1) if structures(arg1, matcher).isEmpty =>
         val linearFactor = metaStructuredFactor(FactorGenerationInfo(arg2, structure, matcher, constructorArgs, linearModelInfo, true))
         WithWeightVector(linearFactor, arg1)
-      case q"ml.wolfe.Wolfe.logDist.gaussian($arg1, $arg2)($arg3)" =>
-        (matcher(arg1), matcher(arg2), matcher(arg3)) match {
-          case (Some(mu), Some(sigma), Some(x)) =>
-            new MetaGaussianStructuredFactor(info, mu.structure, sigma.structure, x.structure)
-          case _ => ???
-        }
       case _ => inlineOnce(potential) match {
         case Some(inlined) =>
           metaStructuredFactor(info.copy(potential = inlined))
