@@ -23,6 +23,10 @@ trait MetaFunStructures[C<:Context] {
     def keyDoms: List[Tree]
     def valueMetaStructure: MetaStructure
 
+    lazy val anyKeyTypes = keyDoms map (_ => tq"Any")
+    lazy val anyKeyType = if (anyKeyTypes.size == 1) tq"Any" else tq"(..$anyKeyTypes)"
+    def edgesType = tq"Map[$anyKeyType,${valueMetaStructure.edgesType}]"
+
     lazy val keyDomNames   = List.fill(keyDoms.size)(newTermName(context.fresh("funKeyDom")))
     lazy val keyIndexNames = List.fill(keyDoms.size)(newTermName(context.fresh("funKeyIndex")))
     lazy val tmpNames      = Range(0, keyDoms.size).map(i => newTermName("i" + i)).toList
@@ -75,6 +79,8 @@ trait MetaFunStructures[C<:Context] {
 
 
     lazy val mappings = tupleProcessor(keyDomNames, tmpNames, q"$tuple -> ${curriedArguments(tmpIds)}.value")
+    lazy val createEdges = tupleProcessor(keyDomNames, tmpNames, q"$tuple -> ${curriedArguments(tmpIds)}.createEdges(factor)")
+
 
     lazy val observeSubStructure = q"${curriedArguments(tmpIds)}.observe(value($tuple))"
 
@@ -98,8 +104,10 @@ trait MetaFunStructures[C<:Context] {
         def observe(value:$argType) {
           ${tupleProcessor(keyDomNames, tmpNames, observeSubStructure, newTermName("foreach"), newTermName("foreach"))}
         }
-        type Edges = Unit
-        def createEdges(factor: ml.wolfe.FactorGraph.Factor): Edges = {}
+        type Edges = $edgesType
+        def createEdges(factor: ml.wolfe.FactorGraph.Factor): Edges = {
+          $createEdges.toMap
+        }
 
       }
     """
