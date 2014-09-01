@@ -1,5 +1,6 @@
 package ml.wolfe.macros
 
+import ml.wolfe.FactorGraph.Factor
 import ml.wolfe.{FactorGraph, Wolfe}
 import Wolfe._
 import OptimizedOperators._
@@ -75,7 +76,7 @@ class MetaStructuredFactorSpecs extends StructureIsomorphisms {
       factor(weights) mustBeIsomorphicTo potential(weights)
     }
 
-    "generate a linear factor from a sum of vectors with a weight parameter " in {
+    "generate a linear factor from a sum of vectors with a weight parameter" in {
       case class Data(x: Int, y: Int)
       def space = Wolfe.all(Data)(Range(0, 5) x Range(0, 5))
       def features(y: Data) = oneHot(y.x) + oneHot(y.y + 1)
@@ -86,7 +87,7 @@ class MetaStructuredFactorSpecs extends StructureIsomorphisms {
       factor(weights).factors.size should be(2)
     }
 
-    "generate a linear factor from a sum of vectors without a weight parameter " in {
+    "generate a linear factor from a sum of vectors without a weight parameter" in {
       case class Data(x: Int, y: Int)
       def space = Wolfe.all(Data)(Range(0, 5) x Range(0, 5))
       def features(y: Data) = oneHot(y.x) + oneHot(y.y + 1)
@@ -198,6 +199,22 @@ class MetaStructuredFactorSpecs extends StructureIsomorphisms {
       factor.potential shouldBe a[ExactlyOncePotential]
 
     }
+
+    "create a factor with user-specified potential with a sequence structure argument" in {
+      def space = seqsOfLength(4, bools)
+
+      @Potential(new ExactlyOncePotential(_: Seq[FactorGraph.Edge]))
+      def exactlyOnce(args: Seq[Boolean]) = if (args.count(identity) == 1) 0.0 else Double.NegativeInfinity
+
+      val structuredFactor = MetaStructuredFactor.structuredFactor(space, exactlyOnce)
+      structuredFactor.factors.size should be(1)
+      val factor = structuredFactor.factors.next()
+      factor.edges.length should be(4)
+      factor.potential shouldBe a[ExactlyOncePotential]
+    }
+
+
+
 
     "create a factors for nested sums" in {
       def ints = 0 until 3

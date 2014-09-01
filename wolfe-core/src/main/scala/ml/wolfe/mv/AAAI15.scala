@@ -3,7 +3,7 @@ package ml.wolfe.mv
 /**
  * @author Sebastian Riedel
  */
-object AAAI15 {
+object AAAI15 extends App {
 
   //User Space
   sealed trait MyList[+T]
@@ -50,12 +50,13 @@ object AAAI15 {
 
   //Converted Space
   //Generic Data structures
-  class State(map: Map[Any, Any]) {
+  class State(map: Map[Var[_], Any]) {
     def apply[T](v: Var[T]): T = map(v).asInstanceOf[T]
   }
-  class Var[T](dom: List[T]) extends Term[T] {
+  class Var[T](val dom: List[T]) extends Term[T] {
     def apply(state: State) = state(this)
     def vars = List(this)
+    override def toString = s"Var(${dom mkString ", "})"
   }
   case class Generic[T](f: State => T, terms: List[Term[_]]) extends Term[T] {
     def apply(state: State) = f(state)
@@ -238,7 +239,16 @@ object AAAI15 {
   def termBools = new Var(bools)
   def termPersons = new Var(persons)
 
-  def termToList[T](term: Term[T]): List[T] = ???
+  def allStates(vars:List[Var[_]], result:List[Map[Var[_],Any]] = List(Map.empty[Var[_],Any])):List[Map[Var[_],Any]] = vars match {
+    case Nil => result
+    case h :: t =>
+      val newMaps = for (m <- result; v <- h.dom) yield m + (h->v)
+      allStates(t, newMaps)
+  }
+
+  def termToList[T](term: Term[T]): List[T] = {
+    allStates(term.vars) map (m => term(new State(m)))
+  }
 
   def termAllMaps[A, B](dom: Term[A], range: Term[B]): Term[MyMap[A, B]] = termToList(dom) match {
     case Nil => TermMyNil
@@ -251,9 +261,9 @@ object AAAI15 {
   //allMaps(..) map (s => allMaps(...) map (c => World(s,c)) flatten
   //List(1,2,3).permutations
 
-  val termSpace = TermWorld(termAllMaps(termPersons, termBools), termAllMaps(termPersons, termBools))
+  def termSpace = TermWorld(termAllMaps(termPersons, termBools), termAllMaps(termPersons, termBools))
 
-  val fg = termModel(termSpace)
+  def fg = termModel(termSpace)
 
   //unroll(fg)
   //state = infer(unroll(fg))
@@ -294,7 +304,157 @@ object AAAI15 {
     termDot(toTermList(keys))(w, termFeat(y))
   }
 
+  def map[A,B](list:List[A])(f:A=>B):List[B] = list match {
+    case Nil => Nil
+    case h :: t => f(h) :: map(t)(f)
+  }
 
+  def termMap[A,B](list:Term[A])(f:A=>B):Term[B] = termToList(list) match {
+    case Nil => new Var(Nil)
+    case h :: t => new Var(f(h) :: termToList(termMap(new Var(t))(f)))
+      //termF(list):Term[B] would return a new Term such as TermPair(Const(a),list)
+      //essentially: move :: into f(h)
+      //say f:Term[A] => Term[B], e.g. a => TermPair(Const(b),a)
+      //
+      //in some cases we should return a special term termF(A)(list)
+  }
+
+  object Cross {
+    def apply[T](h:T,t:Term[T]):Term[T] = ???
+    def unapply[T](term:Term[T]):Option[(T, Term[T])] = ???
+  }
+
+  object EmptyTerm extends Term[Nothing] {
+    def vars = Nil
+    def apply(state: State) = sys.error("Cannot evaluate empty term")
+  }
+
+  def termMap2[A,B](list:Term[A])(f:A=>B):Term[B] = list match {
+    case EmptyTerm => EmptyTerm
+    case Cross(h,t) => Cross(f(h),termMap2(t)(f))
+    case _ => termMap(list)(f)
+  }
+
+  trait Crosser[T] {
+    def apply(h:T,t:Term[T]):Term[T]
+    def unapply(term:Term[T]):Option[(T, Term[T])]
+    def nil:Term[T]
+    def isNil(term:Term[T]):Boolean
+    //def vars(t:Term[T]):List[Var[_]]
+  }
+
+
+  def defaultCrosser[A] = new Crosser[A] {
+    def apply(h: A, t: Term[A]) = new Var((h :: termToList(t)).distinct)
+    def unapply(term: Term[A]) = {
+      termToList(term) match {
+        case Nil => None
+        case h :: t => Some(h->new Var(t))
+      }
+    }
+    def nil = new Var(Nil)
+    def isNil(term: Term[A]) = termToList(term) == Nil
+  }
+
+  implicit val boolCrosser = defaultCrosser[Boolean]
+
+  implicit def pairCrosser[A,B](implicit c1:Crosser[A],c2:Crosser[B]) = new Crosser[(A,B)] {
+    def apply(h: (A, B), t: Term[(A, B)]) = t match {
+      case TermTuple2(a1,a2) =>
+        TermTuple2(c1(h._1,a1),c2(h._2,a2))
+      case v:Var[_] =>
+        new Var(h :: termToList(t))
+    }
+    def unapply(term: Term[(A, B)]) = term match {
+      case TermTuple2(c1(h1,t1),c2(h2,t2)) => Some((h1->h2,TermTuple2(t1,t2)))
+      case v:Var[_] => defaultCrosser[(A,B)].unapply(term)
+    }
+    def nil = TermTuple2(c1.nil,c2.nil)
+
+    def isNil(term:Term[(A,B)]) = term match {
+      case TermTuple2(a1,a2) => c1.isNil(a1) || c2.isNil(a2)
+      case v:Var[_] => v.dom == Nil
+    }
+  }
+
+  def termMap3[A,B](list:Term[A])(f:A=>B)(implicit crossA:Crosser[A],crossB:Crosser[B]):Term[B] = list match {
+    case t if crossA.isNil(t) =>
+      crossB.nil
+    case crossA(h,t) =>
+      crossB(f(h),termMap3(t)(f))
+    case _ =>
+      termMap(list)(f)
+  }
+
+
+  def concat[T](l1:List[T],l2:List[T]):List[T] = l1 match {
+    case Nil => l2
+    case h :: t => h :: concat(t,l2)
+  }
+
+  def termConcat[T](l1:Term[T],l2:Term[T]):Term[T] = termToList(l1) match {
+    case Nil => l2
+    case h :: t => new Var(h :: termToList[T](termConcat[T](new Var(t),l2)))
+  }
+
+  def termConcat2[T](l1:Term[T],l2:Term[T]):Term[T] = l1 match {
+    case EmptyTerm => l2
+    case Cross(h,t) => Cross(h,termConcat2(t,l2))
+    case _ => termConcat(l1,l2)
+  }
+  def termConcat3[T](l1:Term[T],l2:Term[T])(implicit cross:Crosser[T]):Term[T] = l1 match {
+    case t if cross.isNil(t) =>
+      l2
+    case cross(h,t) =>
+      cross(h,termConcat3(t,l2))
+    case _ =>
+      termConcat(l1,l2)
+  }
+
+  def flatMap[A,B](list:List[A])(f:A => List[B]): List[B] = list match {
+    case Nil => Nil
+    case h :: t => concat(f(h),flatMap(t)(f))
+  }
+
+  def termFlatMap[A,B](list:Term[A])(f:A => Term[B]): Term[B] = termToList(list) match {
+    case Nil => new Var(Nil)
+    case h :: t => termConcat(f(h),termFlatMap(new Var(t))(f))
+  }
+
+  def termFlatMap2[A,B](list:Term[A])(f:A => Term[B]): Term[B] = list match {
+    case EmptyTerm => EmptyTerm
+    case Cross(h,t) => termConcat2(f(h),termFlatMap2(t)(f))
+    case _ => termFlatMap(list)(f)
+  }
+  def termFlatMap3[A,B](list:Term[A])(f:A => Term[B])(implicit crossA:Crosser[A],crossB:Crosser[B]): Term[B] = list match {
+    case t if crossA.isNil(t) => crossB.nil
+    case crossA(h,t) => termConcat3(f(h),termFlatMap3(t)(f))
+    case _ => termFlatMap(list)(f)
+  }
+
+  def mySpace = flatMap(bools) {a1 => map(bools) { a2 => (a1,a2)}}
+
+  def termMySpace = termFlatMap3(termBools) { a1 => termMap3(termBools) { a2 => (a1,a2)} }
+
+  //println(termMySpace)
+  val l1 = termMap3(termBools){a => (false,a)}
+  val l2 = termMap3(termBools){a => (true,a)}
+
+  println(l1)
+  println(l2)
+  println(termConcat3(l1,pairCrosser[Boolean,Boolean].nil))
+  println(termConcat3(l1,l2))
+  //println(termMap3(termBools){a => (false,a)})
+
+  def listMatch[T,R](t:List[T])(f1:Nil.type => R, f2: ::[T] => R) = t match {
+    case Nil => f1(Nil)
+    case h :: tail => f2(scala.collection.immutable.::(h,tail))
+  }
+
+  def concatFunApp[T](l1:List[T],l2:List[T]):List[T] = listMatch(l1) (
+    _ => l2,
+    c => c.head :: concatFunApp(c.tail,l2)
+  )
 
 }
 
@@ -308,8 +468,73 @@ AST be the runtime object x evaluates to in the current scope. Then
  (i) for every element e in eval(s) there exists an assignment a(e) to the variables of eval(t), and vice versa.
  (ii) for every element e in eval(s) we have: eval(o)(e) == eval(f) map (factor => factor(a(e))) sum
 
-Lemma: When we have an MLN in Wolfe using the style in example ..., the resulting factor graph is isomorphic to
- the Ground Markov Network of the MLN.
+Proposition: When we have an MLN in Wolfe using the style in example ..., the resulting factor graph is isomorphic to
+the Ground Markov Network of the MLN.
+
+Theoretical question: given a List AST, can you prove that it factorizes (and show how)? Cases where you can
+* if the AST is a flatMap ... map structure with certain properties?
+* Something more general?
+
+For example:
+
+  def map[A,B](list:List[A])(f:A=>B):List[B] = list match {
+    case Nil => Nil //factorizes
+    case h :: t => f(h) :: map(t)(f) //may temporally not factorize, or always factorize if f(h) controls only one component
+  }
+
+map(l)(f) factorizes if
+* f(h) is a product?
+* for all h f(h) only differs in one component (c1,..,fc(h),...)
+* {f(h) | h in l} factorizes
+
+ def concat[T](l1:List[T],l2:List[T]):List[T] = l1 match {
+    case Nil => l2
+    case h :: t => h :: concat(t,l2)
+  }
+
+concat(l1,l2) factorizes if
+* l1 and l2 factorize and ???
+* l1 and l2 are all-but-one-component constant lists, share the same non-constant component, and differ only in one constant component
+* c.head :: concat(t,l2) will factorize IF c.head is the last element of l1 and the above holds for l1 and l2
+* Let This means that concat(t,l2) must "almost factorize": it must contain (a,1),(a,2),(b,1) = {a,b} x {1,2} - {(b,2)}
+
+http://santos.cis.ksu.edu/schmidt/Escuela03/WSSA/talk1p.pdf
+http://www.soi.city.ac.uk/~seb/papers/thesis.ps.gz
+REALLY USEFUL: http://www.researchgate.net/publication/223314158_Strictness_analysis_for_higher-order_functions/links/0deec52a9f3ed6d118000000
+Abstract interpretation of list terms: N / A x B - R //meaning: nested Cartesian product with inside tree (A x B) and outside tree N
+Abstract interpretation of Nil: A x B - A x B
+concat(A1 x B - R1, A2 x B - R2) =  (A1 + A2) x B - (R1 + R2)
+Base case:
+* Nil => l2 = A2 x B2 - R2 = (A1 + A2) x B2 - A1 x B2
+example
+* l1 = 1 x {2,3} - 1 x {2,3}
+* l2 = 2 x {2,3} - 2 x 3
+* result = 2 x {2,3} - 2 x 3 = {1,2} x {2,3} - 2 x 3 - 1 x {2,3} = (A1+A2) x B - R1 - R2
+
+Induction:
+* h :: t => h :: concat(t,l2) = h :: concat(A1 x B - (R1 + {h}),A2 x B - R2) = h :: (A1+A2) x B - (R1 + h) - R2
+* = (A1+A2) x B - R1 - R2
+
+def map[F,T](list:List[F],f:F => T) = list match {
+ case Nil => Nil
+ case h :: t => f(h) :: map(t,f)
+}
+
+map(A, a => n/(i,a)) = N / {i} x A  //something more general?
+
+def flatMap[F,T](list:List[F],f:F => List[T]) = list match {
+ case Nil => Nil
+ case h :: t => concat(f(h),flatMap(t, f))
+}
+
+flatMap(A, f: a => N / {a} x B ) = N / A x B
+
+
+flatMap(Y, y => map(X, x => ((x,a),y))) =
+flatMap(Y, y => (X x a) x y)
+
+
+
 
 
 Search space:

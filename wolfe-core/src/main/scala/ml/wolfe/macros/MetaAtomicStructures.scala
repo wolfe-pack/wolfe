@@ -25,6 +25,8 @@ trait MetaAtomicStructures[C <: Context] {
       q"val $domName = $domain.toArray"
     )
     override def children = Nil
+
+    def edgesType = tq"ml.wolfe.FactorGraph.Edge"
     override def classDef(graphName: TermName) = q"""
       final class $className (override val astLabel : String = "") extends ml.wolfe.macros.Structure[$argType] {
         ..$domainDefs
@@ -68,6 +70,8 @@ trait MetaAtomicStructures[C <: Context] {
     override lazy val argType   = iterableArgumentType(domain)
     override lazy val domainDefs  = Nil
     override def children = Nil
+
+    def edgesType = tq"Unit"
     override def classDef(graphName: TermName) = q"""
       final class $className (override val astLabel : String = "") extends ml.wolfe.macros.Structure[$argType] {
         private var _value:$argType = _
@@ -112,6 +116,8 @@ trait MetaAtomicStructures[C <: Context] {
     //{val TypeRef(_, _, List(argType)) = domain.tpe; argType}
     override lazy val domainDefs  = List()
     def children = Nil
+
+    def edgesType = tq"ml.wolfe.FactorGraph.Edge"
     override def classDef(graphName: TermName) = q"""
       final class $className (override val astLabel: String = "") extends ml.wolfe.macros.Structure[$argType] {
         var observed = false

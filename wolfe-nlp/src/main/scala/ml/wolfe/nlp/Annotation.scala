@@ -76,7 +76,7 @@ object SyntaxAnnotation {
  * A sparse dependency tree.  Not all arcs require a head.
  * @param arcs tuples of child, head, and label fields for each token with a head.
  */
-case class DependencyTree(arcs: Seq[(Int,Int,String)]) {
+case class DependencyTree(tokens: Seq[Token], arcs: Seq[(Int,Int,String)]) {
   def crosses(a1: (Int,Int,String), a2: (Int,Int,String)): Boolean = crosses(a1._1, a1._2, a2._1, a2._2)
 
   def crosses(ii: Int, ij: Int, ik: Int, il: Int): Boolean = {
@@ -95,13 +95,15 @@ case class DependencyTree(arcs: Seq[(Int,Int,String)]) {
   def isProjective = !arcs.exists(a1 => arcs.exists(a2 => crosses(a1,a2)))
 
   override def toString = arcs.mkString("\n")
+
+  def size = tokens.size
 }
 
 /**
  * Companion object for the DependencyTree class.
  */
 object DependencyTree {
-  val empty = DependencyTree(arcs = Seq())
+  val empty = DependencyTree(tokens = Seq(), arcs = Seq())
 }
 
 /**
