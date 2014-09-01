@@ -62,7 +62,7 @@ trait MetaAtomicStructuredFactors[C <: Context] {
 
     lazy val classDef = q"""
       final class $className(..$constructorArgs) extends ml.wolfe.macros.StructuredFactor[${ structure.argType }] {
-        val nodes:Array[ml.wolfe.FactorGraph.Node] = $nodes.toList.distinct.sorted.toArray
+        val nodes:Array[ml.wolfe.FactorGraph.Node] = $nodes.toList.distinct.filter(! _.variable.isObserved).sorted.toArray
         val vars = nodes.map(_.variable.asDiscrete)
         val dims = vars.map(_.dim)
         val settingsCount = dims.product

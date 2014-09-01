@@ -101,12 +101,6 @@ final class FactorGraph {
     n
   }
 
-  def observeNode[T:ClassTag](node:Node, value:T): Unit = {
-    node.variable = new DiscreteVar[T](Array(value))
-    node.variable.node = node
-   // node.edges.foreach(_.msgs = new DiscreteMsgs(1))
-  }
-
   /**
    * Adds a tuple node (with components probably from another factor graph)
    * @param componentNodes the components of the tuple

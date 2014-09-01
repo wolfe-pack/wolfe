@@ -285,8 +285,6 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C]
           MetaFirstOrderSumFactor(List(dom), obj, info)
       case Apply(f, args) if f.symbol.annotations.exists(_.tpe.typeSymbol == wolfeSymbols.atomic) =>
         atomic(info)
-      /*case Apply(f, args) if f.symbol.annotations.exists(_.tpe.typeSymbol == wolfeSymbols.potential) =>
-        tailorMadePotential(info, args, f.symbol.annotations.find(_.tpe.typeSymbol == wolfeSymbols.potential).get)*/
       case q"$f(...$argss)" if f.symbol.annotations.exists(_.tpe.typeSymbol == wolfeSymbols.potential)  =>
         tailorMadePotential(info, argss, f.symbol.annotations.find(_.tpe.typeSymbol == wolfeSymbols.potential).get)
       case FlattenedPlus(args) =>
