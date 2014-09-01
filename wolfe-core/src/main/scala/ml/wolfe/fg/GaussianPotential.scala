@@ -6,9 +6,7 @@ import ml.wolfe.Wolfe.logDist._
 /**
  * Created by luke on 24/08/14.
  */
-
-
-final class GaussianPotential(val meanEdge:Edge, val devEdge:Edge, val xEdge:Edge) extends Potential {
+final class GaussianPotential(val meanEdge:Edge, val devEdge:Edge)(val xEdge:Edge) extends Potential {
   val meanVar:Var[Double] = meanEdge.n.variable.asTyped[Double]
   val devVar:Var[Double] = devEdge.n.variable.asTyped[Double]
   val xVar:Var[Double] = xEdge.n.variable.asTyped[Double]
