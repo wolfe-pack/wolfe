@@ -41,22 +41,6 @@ trait Var[T] {
   var setting: S
   def value:T
 
-  def sample():Unit =
-    if(node.edges.isEmpty) sampleUniform()
-    else {
-      def score = exp(node.edges.map(_.f.potential.valueForCurrentSetting()).sum)
-
-      val oldSetting:S = setting
-      val oldScore = score
-
-      val e = node.edges(Random.nextInt(node.edges.length))
-      e.f.potential.proposeSetting(e)
-      val newScore = score
-
-      if(newScore / oldScore < Math.random()) setting = oldSetting
-    }
-  def sampleUniform():Unit = notSupported
-
   /* A description of what the variable represents */
   val label:String = ""
   
@@ -174,7 +158,6 @@ class DiscreteVar[T](var domain: Array[T], override val label:String = "") exten
     for(i <- 0 until dim) b(i) = b(i) / node.edges.length
   }
 
-  override def sampleUniform(): Unit = setting = Random.nextInt(dim)
 }
 
 class ContinuousVar(override val label:String = "") extends Var[Double] {
@@ -182,8 +165,6 @@ class ContinuousVar(override val label:String = "") extends Var[Double] {
   /* indicates that variable is in a certain state */
   override var setting: Double = 0
   override def value = setting
-
-  override def sampleUniform(): Unit = setting = 42
 
   override def createMsgs() = null
 
