@@ -120,21 +120,20 @@ trait MetaAtomicStructures[C <: Context] {
     def edgesType = tq"ml.wolfe.FactorGraph.Edge"
     override def classDef(graphName: TermName) = q"""
       final class $className (override val astLabel: String = "") extends ml.wolfe.macros.Structure[$argType] {
-        var observed = false
         val node = $graphName.addContinuousNode(astLabel)
+        val variable = node.variable.asContinuous
         def value():Double = node.variable.asTyped[Double].value
         def children():Iterator[ml.wolfe.macros.Structure[Any]] = Iterator.empty
         def graph = $graphName
         def nodes() = Iterator(node)
 
         private var _hasNext = true
-        def resetSetting() = if(observed) _hasNext = true else ???
-        def hasNextSetting = if(observed) _hasNext else ???
-        def nextSetting() = if(observed) _hasNext = false else ???
+        def resetSetting() = if(variable.isObserved) _hasNext = true else ???
+        def hasNextSetting = if(variable.isObserved) _hasNext else ???
+        def nextSetting() = if(variable.isObserved) _hasNext = false else ???
 
         final def observe(value:$argType) {
-          graph.observeNode(node, value)
-          observed = true
+          variable.observe(value)
         }
         type Edges = ml.wolfe.FactorGraph.Edge
         def createEdges(factor: ml.wolfe.FactorGraph.Factor): Edges = {

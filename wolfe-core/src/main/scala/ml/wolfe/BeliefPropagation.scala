@@ -59,8 +59,8 @@ object BeliefPropagation {
       }
     }
 
-    if(bpType == Sum) for (node <- fg.nodes) updateBelief(node, true)
-    if(bpType == Max || bpType == MaxMarginals) for (node <- fg.nodes) updateBelief(node, false)
+    if(bpType == Sum) for (node <- fg.nodes if !node.variable.isObserved) updateBelief(node, true)
+    if(bpType == Max || bpType == MaxMarginals) for (node <- fg.nodes if !node.variable.isObserved) updateBelief(node, false)
 
 
     //calculate gradient and objective
@@ -80,10 +80,10 @@ object BeliefPropagation {
           case DirectedEdge(edge, EdgeDirection.N2F) => updateDeterministicMaxN2F(edge)
         }
       }
-      for(n <- fg.nodes) n.variable.fixMapSetting()
+      for(n <- fg.nodes if !n.variable.isObserved) n.variable.fixMapSetting()
     }
 
-    fg.nodes.foreach(_.variable.setToArgmax())
+    for(n <- fg.nodes if !n.variable.isObserved) n.variable.setToArgmax()
   }
 
   def calculateExpectations(fg: FactorGraph, sum: Boolean) {

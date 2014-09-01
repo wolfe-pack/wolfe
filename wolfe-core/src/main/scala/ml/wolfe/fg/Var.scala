@@ -25,6 +25,10 @@ trait Var[T] {
 
   def setup(){}
   def createMsgs():Msgs = ???
+  protected var observed: Option[T] = None
+  def isObserved = observed != None
+  def observe(value:T) = observed = Some(value)
+
   def initializeToNegInfinity():Unit = notSupported
   def initializeRandomly(eps:Double):Unit = notSupported
   def updateN2F(edge: Edge):Unit = notSupported
@@ -40,6 +44,7 @@ trait Var[T] {
   type S
   var setting: S
   def value:T
+
 
   /* A description of what the variable represents */
   val label:String = ""
@@ -62,7 +67,10 @@ class DiscreteVar[T](var domain: Array[T], override val label:String = "") exten
   override var setting: Int = 0
 
   /* indicates the value corresponding to the setting of the node */
-  override def value:T = domain(setting)
+  override def value:T = observed match {
+    case Some(value) => value
+    case None => domain(setting)
+  }
 
   override def createMsgs() = new DiscreteMsgs(dim)
 
@@ -164,10 +172,12 @@ class ContinuousVar(override val label:String = "") extends Var[Double] {
   type S = Double
   /* indicates that variable is in a certain state */
   override var setting: Double = 0
-  override def value = setting
+  override def value = observed match {
+    case Some(value) => value
+    case None => setting
+  }
 
   override def createMsgs() = null
-
 }
 
 class VectorVar(val dim:Int) extends Var[FactorieVector] {
