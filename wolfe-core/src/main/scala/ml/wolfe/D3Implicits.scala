@@ -131,7 +131,7 @@ object D3Implicits {
     // val height = 300
 
     val gravity = 0.03
-    val charge = -150
+    val charge = -200
     val linkDistance = 50
     val linkStrength = 0.5
 
@@ -188,7 +188,7 @@ object D3Implicits {
         |  "nodes": [${(
               nodes.map(n =>
                 "{text:'" + escape(n.variable.label) + "'" +
-                ", type:'node'" +
+                ", type:'" + (if(n.variable.isObserved) "observednode" else "node") + "'" +
                  ", hoverhtml:'Domain:<br/>{" + escape(n.variable match {
                   case v:DiscreteVar[_] => v.domain.mkString(", ")
                   case v:TupleVar => v.domain.mkString(", ")
@@ -242,8 +242,8 @@ object D3Implicits {
         |	  var node = node.data(data.graph.nodes)
         |	    .enter().append("path")
         |	    .attr("class", function(d) {
-        |       return 'fgshape' +
-        |         (d.type == 'factor' ? ' fgfactor' : ' fgnode') +
+        |       return 'fgshape ' +
+        |         (d.type == 'factor' ? 'fgfactor' : d.type == 'observednode' ? 'fgnode_observed' : 'fgnode') +
         |         (d.fixed ? ' fgfixed' : '');
         |     })
         |	    .attr("d", d3.svg.symbol()
