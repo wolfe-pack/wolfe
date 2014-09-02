@@ -1,5 +1,6 @@
 package ml.wolfe.examples
 
+import ml.wolfe.GibbsSampling
 import ml.wolfe.Wolfe._
 import ml.wolfe.Wolfe.logDist._
 import ml.wolfe.macros.OptimizedOperators._
@@ -19,11 +20,12 @@ object GaussianMixture extends App {
 
   implicit def components = 0 until means.size
 
+  @LogZByInference(GibbsSampling(_))
   def model(w: World) = gaussian(means(w.z), 1.0)(w.x) + log(mixture(w.z))
 
   def worlds = all(World)
 
-  //val mu = expect(worlds)(model)(w => oneHot('x, w.x) + oneHot('z, w.z))
+  val mu = expect(worlds)(model)(w => oneHot('x, w.x) + oneHot('z, w.z))
 
 
 }

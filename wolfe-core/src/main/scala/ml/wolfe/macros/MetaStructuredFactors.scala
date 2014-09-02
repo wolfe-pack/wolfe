@@ -151,34 +151,65 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C]
 
   def tailorMadePotential(info: FactorGenerationInfo, argss: List[List[Tree]], annotation: Annotation) = {
     import info._
+    case class EdgeData(nodeDefs:Seq[Tree], edge:Tree)
 
-    val unmatchedArgs = argss reduce (_ ++ _) filter (structures(_, matcher) == Nil)
-    val extraNodes = unmatchedArgs map { a => a ->
-      (newTermName(context.fresh("extraNode")), newTermName(context.fresh("extraEdge")))
-    }
+    val iterableType = typeOf[Iterable[_]].typeSymbol
+    def isIterable(tpe:Type) = tpe.baseClasses.contains(iterableType)
 
-    val extraNodesDef = extraNodes.flatMap { case (t, (n, e)) => t match {
-      case Literal(Constant(_)) => Seq(
-        q"""val $n = graph.addDiscreteNodeWithDomain(Array($t))""",
-        q"""val $e = graph.addEdge(factor, $n)""")
-      case _ => ???
-    }}
+    val argData:Seq[EdgeData] = argss reduce (_ ++ _) map { a:Tree =>
+      if(structures(a, matcher) == Nil) {
+        // Argument is a constant
+        val nodeName = newTermName(context.fresh("extraNode"))
+        val nodeDefs = a match {
+          case Literal(Constant(_)) => Seq(q"val $nodeName = graph.addDiscreteNodeWithDomain(Array($a), ${a.toString()})")
+        }
+        EdgeData(nodeDefs, q"graph.addEdge(factor, $nodeName)")
 
-    val argumentStructures = distinctTrees(structures(potential, matcher).map(_.structure))
-    val argumentEdges = argss reduce (_ ++ _) map { a => {
-      extraNodes.find(_._1 == a) match {
-        case Some((t, (n:TermName, e:TermName))) => q"$e"
-        case None =>
-          val injected = injectStructure(a, matcher, t => q"$t.createEdges(factor)", false)
+      } else a match {
+
+        case q"${s:Tree}.apply(${i:Tree})" if isIterable(s.tpe) && structures(s, matcher).isEmpty && matcher(i) != None =>
+          //TODO: structure must be atomic! Maybe make AtomicStructure with .node for idxNode
+          val choiceFactor = newTermName(context.fresh("choiceFactor"))
+          val chosenNode = newTermName(context.fresh("chosenNode"))
+          val choiceNodes = newTermName(context.fresh("choiceNodes"))
+
+          val matchedIdx = matcher(i).get
+          val idxNode = q"${matchedIdx.structure}.node"
+          val nodeDefs = Seq(
+             q"val $chosenNode:Node = graph.addDiscreteNodeWithDomain($s.toArray, ${s.toString() + "(" + i.toString + ")"})",
+             q"val $choiceNodes:Seq[Node] = (0 until $s.length).map( i => graph.addDiscreteNodeWithDomain(Array($s(i)), $s(i).toString) )",
+             q"val $choiceFactor = graph.addFactor()",
+             q"val p = ${matchedIdx.structure}",
+             q"""
+                 $choiceFactor.potential = new ml.wolfe.fg.ChoicePotential(
+                  graph.addEdge($choiceFactor, $chosenNode),
+                  $choiceNodes.map(n => graph.addEdge($choiceFactor, n)),
+                  graph.addEdge($choiceFactor, $idxNode)
+                )
+             """
+             )
+
+          EdgeData(nodeDefs, q"graph.addEdge(factor, $chosenNode)")
+
+        case _ =>
+          val injected = injectStructure(a, matcher, t => q"$t.createEdges(factor)", ignoreTermsWithFunctionArgs = false)
           val removeTypes = transform(injected, {
             case Apply(TypeApply(f, _), funArgs) => Apply(f, funArgs)
             case TypeApply(s: Select, _) => s
           })
           val reset = context.resetAllAttrs(removeTypes)
-          reset
+          EdgeData(Seq(), reset)
+
       }
     }
-    }
+
+
+
+
+
+    val argumentStructures = distinctTrees(structures(potential, matcher).map(_.structure))
+    val argumentEdges = argData.map(_.edge)
+    val nodeDefs = argData.flatMap(_.nodeDefs)
     val createPotential = q"${ annotation.scalaArgs.head }((..$argumentEdges))"
 
     val nameOfClass = newTypeName(context.fresh("GenericStructuredFactor"))
@@ -190,7 +221,7 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C]
       final class $nameOfClass(..$constructorArgs) extends ml.wolfe.macros.StructuredFactor[${ structure.argType }] {
         import ml.wolfe.FactorGraph._
         val factor = graph.addFactor()
-        ..$extraNodesDef
+        ..$nodeDefs
         factor.potential = $createPotential
         def factors = Iterator(factor)
         def arguments = List(..$argumentStructures)

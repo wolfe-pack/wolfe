@@ -12,7 +12,7 @@ trait MetaAtomicStructuredFactors[C <: Context] {
 
 
   def atomic(info: FactorGenerationInfo) = {
-    if(info.structure.hasFiniteDomain) info.linear match {
+    if(structures(info.potential, info.matcher).forall(_.meta.hasFiniteDomain)) info.linear match {
         case true => MetaDiscreteAtomicStructuredFactorLinear(info)
         case false => MetaDiscreteAtomicStructuredFactorTable(info)
         //    case true => MetaDiscreteAtomicStructuredFactorLinear(info.copy(potential = info.transformer(inlineFull(info.potential))))
@@ -69,7 +69,6 @@ trait MetaAtomicStructuredFactors[C <: Context] {
         val settings = Array.ofDim[Array[Int]](settingsCount)
         val $perSettingArrayName = $perSettingArrayInitializer
         var settingIndex = 0
-        ml.wolfe.util.Util.breakpoint()
         $loop
         val factor = graph.$addFactorMethod(${MetaStructuredFactor.shortCode(context)(transformedPot)})
         val edges = nodes.view.zipWithIndex.map(p => graph.$addEdgeMethod(factor,p._1,p._2)).toArray
