@@ -1,6 +1,6 @@
 package ml.wolfe
 
-import ml.wolfe.fg.{DiscreteVar, Var}
+import ml.wolfe.fg.{ContinuousVar, DiscreteVar, Var}
 
 import scala.math._
 import scalaxy.loops._
@@ -43,6 +43,7 @@ object GibbsSampling {
 
   def sampleUniform(v:Var[_]): Unit = v match {
     case v:DiscreteVar[_] => v.setting = Random.nextInt(v.dim)
+    case v:ContinuousVar => v.setting = 42
   }
 
 }

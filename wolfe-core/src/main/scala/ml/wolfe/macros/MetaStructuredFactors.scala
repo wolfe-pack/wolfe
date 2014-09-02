@@ -1,5 +1,6 @@
 package ml.wolfe.macros
 
+import scala.collection.mutable
 import scala.reflect.macros.{TypecheckException, Context}
 import ml.wolfe.Wolfe
 import ml.wolfe.util.CachedPartialFunction
@@ -150,18 +151,35 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C]
 
   def tailorMadePotential(info: FactorGenerationInfo, argss: List[List[Tree]], annotation: Annotation) = {
     import info._
+
+    val unmatchedArgs = argss reduce (_ ++ _) filter (structures(_, matcher) == Nil)
+    val extraNodes = unmatchedArgs map { a => a ->
+      (newTermName(context.fresh("extraNode")), newTermName(context.fresh("extraEdge")))
+    }
+
+    val extraNodesDef = extraNodes.flatMap { case (t, (n, e)) => t match {
+      case Literal(Constant(_)) => Seq(
+        q"""val $n = graph.addDiscreteNodeWithDomain(Array($t))""",
+        q"""val $e = graph.addEdge(factor, $n)""")
+      case _ => ???
+    }}
+
     val argumentStructures = distinctTrees(structures(potential, matcher).map(_.structure))
     val argumentEdges = argss reduce (_ ++ _) map { a => {
-      val injected = injectStructure(a, matcher, t => q"$t.createEdges(factor)", false)
-      val removeTypes = transform(injected, {
-        case Apply(TypeApply(f, _), funArgs) => Apply(f, funArgs)
-        case TypeApply(s: Select, _) => s
-      })
-      val reset = context.resetAllAttrs(removeTypes)
-      reset
+      extraNodes.find(_._1 == a) match {
+        case Some((t, (n:TermName, e:TermName))) => q"$e"
+        case None =>
+          val injected = injectStructure(a, matcher, t => q"$t.createEdges(factor)", false)
+          val removeTypes = transform(injected, {
+            case Apply(TypeApply(f, _), funArgs) => Apply(f, funArgs)
+            case TypeApply(s: Select, _) => s
+          })
+          val reset = context.resetAllAttrs(removeTypes)
+          reset
+      }
     }
     }
-    val createPotential = q"${ annotation.scalaArgs.head }(..$argumentEdges)"
+    val createPotential = q"${ annotation.scalaArgs.head }((..$argumentEdges))"
 
     val nameOfClass = newTypeName(context.fresh("GenericStructuredFactor"))
     val constructorArgs = q"val structure:${ structure.className }" :: info.constructorArgs
@@ -172,6 +190,7 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C]
       final class $nameOfClass(..$constructorArgs) extends ml.wolfe.macros.StructuredFactor[${ structure.argType }] {
         import ml.wolfe.FactorGraph._
         val factor = graph.addFactor()
+        ..$extraNodesDef
         factor.potential = $createPotential
         def factors = Iterator(factor)
         def arguments = List(..$argumentStructures)

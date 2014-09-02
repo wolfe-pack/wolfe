@@ -71,7 +71,7 @@ class DiscreteVar[T](var domain: Array[T], override val label:String = "") exten
     case Some(value) => value
     case None => domain(setting)
   }
-
+  override def isObserved = dim == 1 || super.isObserved
   override def createMsgs() = new DiscreteMsgs(dim)
 
   override def entropy() = {
