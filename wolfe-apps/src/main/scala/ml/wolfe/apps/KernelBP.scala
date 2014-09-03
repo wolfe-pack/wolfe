@@ -4,6 +4,7 @@ import java.io.File
 import java.util.StringTokenizer
 
 import breeze.linalg._
+import ml.wolfe.BeliefPropagation.BPSchedule
 import ml.wolfe.FactorGraph.{Edge, Node}
 import ml.wolfe.apps.KernelBP.{KernelBPVar, KernelBPLocalPotential, KernelBPMSgs, EdgeModel}
 import ml.wolfe.nlp.{Key, Document, SISTAProcessors}
@@ -84,7 +85,7 @@ object KernelBP {
 
     fg.build()
 
-    BeliefPropagation.sumProduct(1, gradientAndObjective = false, schedule = true)(fg)
+    BeliefPropagation.sumProduct(1, gradientAndObjective = false, schedule = BPSchedule.Auto)(fg)
     println(n_A.variable.asInstanceOf[KernelBPVar].belief)
     println(n_B.variable.asInstanceOf[KernelBPVar].belief)
 
@@ -334,7 +335,7 @@ object KernelBPTed {
 
       fg.build()
       println("Running inference")
-      BeliefPropagation.sumProduct(1, gradientAndObjective = false, schedule = true)(fg)
+      BeliefPropagation.sumProduct(1, gradientAndObjective = false, schedule = BPSchedule.Auto)(fg)
       val labelBelief = artNode.variable.asInstanceOf[KernelBPVar].belief
       //calculate expectation of each label
       println("Estimating marginals")

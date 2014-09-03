@@ -25,11 +25,23 @@ object BeliefPropagation {
     val MaxOnly = Value
   }
 
-  import BPType._
+  object BPSchedule extends Enumeration {
+    type BPSchedule = Value
+    val Auto = Value
+    val Canonical = Value
+    val Pow = Value
+  }
 
-  def maxProduct(maxIteration: Int, schedule: Boolean = true, gradientAndObjective: Boolean = true)
+  import BPType._
+  import BPSchedule._
+
+  def maxProduct(maxIteration: Int, schedule: BPSchedule = Auto, gradientAndObjective: Boolean = true)
                 (fg: FactorGraph) = apply(fg, maxIteration, schedule, Max, gradientAndObjective)
-  def sumProduct(maxIteration: Int, schedule: Boolean = true, gradientAndObjective: Boolean = true)
+  def sumProduct(maxIteration: Int, schedule: BPSchedule = Auto, gradientAndObjective: Boolean = true)
+                (fg: FactorGraph) = apply(fg, maxIteration, schedule, Sum, gradientAndObjective)
+  def maxProductPow(maxIteration: Int, schedule: BPSchedule = Pow, gradientAndObjective: Boolean = true)
+                (fg: FactorGraph) = apply(fg, maxIteration, schedule, Max, gradientAndObjective)
+  def sumProductPow(maxIteration: Int, schedule: BPSchedule = Pow, gradientAndObjective: Boolean = true)
                 (fg: FactorGraph) = apply(fg, maxIteration, schedule, Sum, gradientAndObjective)
   def junctionTreeMaxProduct(gradientAndObjective: Boolean = true)
                 (fg: FactorGraph) = onJunctionTree(fg, Sum, gradientAndObjective = gradientAndObjective)
@@ -43,19 +55,28 @@ object BeliefPropagation {
    * @param schedule should edges be scheduled.
    */
   def apply(fg: FactorGraph, maxIteration: Int,
-            schedule: Boolean = true,
+            schedule: BPSchedule = Auto,
             bpType:BPType = BPType.Max,
             gradientAndObjective: Boolean = true) {
-    //    val edges = if (canonical) fg.edges.sorted(FactorGraph.EdgeOrdering) else fg.edges
-    val forwardEdges = if (schedule) MPSchedulerImpl.scheduleForward(fg) else MPSchedulerImpl.canonicalSchedule(fg)
+
+    val forwardEdges = schedule match {
+      case Auto => MPSchedulerImpl.scheduleForward(fg)
+      case Canonical => MPSchedulerImpl.canonicalSchedule(fg)
+      case Pow => Nil
+    }
     val backwardEdges = forwardEdges.reverse.map(_.swap)
     val forwardBackwardEdges = forwardEdges ++ backwardEdges
 
     for (i <- 0 until maxIteration) {
-      def edges = if(bpType == MaxOnly && i == maxIteration-1) forwardEdges else forwardBackwardEdges
-      for (e <- forwardBackwardEdges) e match {
-        case DirectedEdge(edge, EdgeDirection.F2N) => updateF2N(edge, bpType==Sum)
-        case DirectedEdge(edge, EdgeDirection.N2F) => updateN2F(edge)
+      if(schedule == Pow) {
+        for(f <- fg.factors) powF2N(f, bpType == Sum)
+        for(n <- fg.nodes) powN2F(n)
+      } else {
+        def edges = if (bpType == MaxOnly && i == maxIteration - 1) forwardEdges else forwardBackwardEdges
+        for (e <- forwardBackwardEdges) e match {
+          case DirectedEdge(edge, EdgeDirection.F2N) => updateF2N(edge, bpType == Sum)
+          case DirectedEdge(edge, EdgeDirection.N2F) => updateN2F(edge)
+        }
       }
     }
 
@@ -74,17 +95,24 @@ object BeliefPropagation {
     if (fg.expectationFactors.size > 0) calculateExpectations(fg, bpType == Sum)
 
     if(bpType == Max || bpType == MaxOnly) {
-      for (e <- backwardEdges) {
-        e match {
-          case DirectedEdge(edge, EdgeDirection.F2N) => updateF2N(edge, false)
-          case DirectedEdge(edge, EdgeDirection.N2F) => updateDeterministicMaxN2F(edge)
+      if(schedule == Pow) ???
+      else {
+        for (e <- backwardEdges) {
+          e match {
+            case DirectedEdge(edge, EdgeDirection.F2N) => updateF2N(edge, false)
+            case DirectedEdge(edge, EdgeDirection.N2F) => updateDeterministicMaxN2F(edge)
+          }
         }
+        for (n <- fg.nodes if !n.variable.isObserved) n.variable.fixMapSetting()
       }
-      for(n <- fg.nodes if !n.variable.isObserved) n.variable.fixMapSetting()
     }
 
     for(n <- fg.nodes if !n.variable.isObserved) n.variable.setToArgmax()
   }
+
+
+
+
 
   def calculateExpectations(fg: FactorGraph, sum: Boolean) {
     fg.expectations = new SparseVector(1000)
@@ -105,10 +133,10 @@ object BeliefPropagation {
   def onJunctionTree(fg: FactorGraph, bpType: BPType = Max, gradientAndObjective: Boolean = true, forceJunctionTree: Boolean = false) {
     if (!forceJunctionTree && !fg.isLoopy) {
       LoggerUtil.once(LoggerUtil.warn, "Junction tree belief propagation called on a non-loopy graph. Ignoring.")
-      apply(fg, 1, schedule = true, bpType, gradientAndObjective)
+      apply(fg, 1, schedule = Auto, bpType, gradientAndObjective)
     } else {
       val jt = Junkify(fg)
-      apply(jt, 1, schedule = true, bpType, gradientAndObjective)
+      apply(jt, 1, schedule = Auto, bpType, gradientAndObjective)
       if (gradientAndObjective) {
         fg.value = jt.value
         fg.gradient = jt.gradient
@@ -151,7 +179,11 @@ object BeliefPropagation {
 
     //message calculation happens in potential
     if (sum) factor.potential.marginalF2N(edge) else factor.potential.maxMarginalF2N(edge)
+  }
 
+  def powF2N(f:Factor, sum: Boolean): Unit = {
+    f.edges.foreach(_.msgs.saveCurrentF2NAsOld())
+    if (sum) f.potential.powMarginalF2N() else f.potential.powMaxMarginalF2N()
   }
 
   /**
@@ -160,6 +192,10 @@ object BeliefPropagation {
    */
   def updateN2F(edge: Edge) {
     edge.n.variable.updateN2F(edge)
+  }
+
+  def powN2F(n:Node): Unit = {
+    n.variable.powN2F()
   }
 
   /**
