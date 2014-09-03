@@ -160,9 +160,8 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C]
       if(structures(a, matcher) == Nil) {
         // Argument is a constant
         val nodeName = newTermName(context.fresh("extraNode"))
-        val nodeDefs = a match {
-          case Literal(Constant(_)) => Seq(q"val $nodeName = graph.addDiscreteNodeWithDomain(Array($a), ${a.toString()})")
-        }
+        val nodeDefs = Seq(q"val $nodeName = graph.addDiscreteNodeWithDomain(Array($a), ${a.toString()})")
+
         EdgeData(nodeDefs, q"graph.addEdge(factor, $nodeName)")
 
       } else a match {
