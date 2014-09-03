@@ -90,7 +90,10 @@ trait MetaStructures[C <: Context] extends CodeRepository[C]
      */
     def observed: Boolean = _observed
     private var _observed = false
-    def observe() = _observed = true
+    def observe():Unit = {
+      _observed = true
+      children.foreach(_.observe())
+    }
 
     def hasFiniteDomain: Boolean = if(children.nonEmpty) children forall (_.hasFiniteDomain) else ???
   }
