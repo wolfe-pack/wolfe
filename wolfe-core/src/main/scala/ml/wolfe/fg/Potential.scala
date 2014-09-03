@@ -26,6 +26,9 @@ trait Potential {
    */
   def marginalF2N(edge: Edge):Unit = notSupported
 
+  def powMarginalF2N():Unit = notSupported
+  def powMaxMarginalF2N():Unit = notSupported
+
   /**
    * Calculate and update the MAP messages from the factor of this potential to all edges.
    */

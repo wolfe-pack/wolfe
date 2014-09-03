@@ -32,6 +32,7 @@ trait Var[T] {
   def initializeToNegInfinity():Unit = notSupported
   def initializeRandomly(eps:Double):Unit = notSupported
   def updateN2F(edge: Edge):Unit = notSupported
+  def powN2F():Unit = notSupported
   def updateDualN2F(edge: Edge, stepSize:Double):Unit = notSupported
   def fixMapSetting(overwrite:Boolean = false):Unit = notSupported
   def setToArgmax():Unit = notSupported
@@ -104,6 +105,17 @@ class DiscreteVar[T](var domain: Array[T], override val label:String = "") exten
       for (e <- (0 until node.edges.length).optimized; if e != edge.indexInNode)
         m.n2f(i) += node.edges(e).msgs.asDiscrete.f2n(i)
     }
+  }
+
+  override def powN2F() = {
+    val sums = in.clone()
+    for (i <- (0 until dim).optimized)
+      for (e <- (0 until node.edges.length).optimized)
+        sums(i) += node.edges(e).msgs.asDiscrete.f2n(i)
+
+    for (i <- (0 until dim).optimized)
+      for (e <- (0 until node.edges.length).optimized)
+        node.edges(e).msgs.asDiscrete.n2f(i) = sums(i) - node.edges(e).msgs.asDiscrete.n2f(i)
   }
 
   override def updateDualN2F(edge:Edge, stepSize:Double) = {
