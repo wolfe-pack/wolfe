@@ -65,7 +65,6 @@ trait MetaAtomicStructures[C <: Context] {
 
     def domain: Tree
 
-    override def observed = true
     override lazy val className = newTypeName(context.fresh("AtomicObservedStructure"))
     override lazy val argType   = iterableArgumentType(domain)
     override lazy val domainDefs  = Nil
@@ -96,7 +95,7 @@ trait MetaAtomicStructures[C <: Context] {
     def matcher(parent: Tree => Option[StructurePointer],
                 result: Tree => Option[StructurePointer]): Tree => Option[StructurePointer] = result
 
-    override def hasFiniteDomain: Boolean = true
+    override def hasFiniteDomain: Boolean = observed
   }
 
 
