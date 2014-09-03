@@ -45,13 +45,21 @@ trait Conditioner[C <: Context] extends MetaStructures[C] {
       }
     }
 
+    object SeqLength {
+      def unapply(tree: Tree) = tree match {
+        case q"$x.size" => Some(x)
+        case q"$x.length" => Some(x)
+        case _ => None
+      }
+    }
+
     object SeqSetLength {
       def unapply(tree: Tree) = tree match {
-        case q"$x.size == $value" => matcher(x) match {
+        case q"${SeqLength(x)} == $value" => matcher(x) match {
           case Some(StructurePointer(structure, meta: MetaSeqStructure,_)) => Some(q"$structure.setLength($value)")
           case _ => None
         }
-        case q"$value == $x.size" => matcher(x) match {
+        case q"$value == ${SeqLength(x)}" => matcher(x) match {
           case Some(StructurePointer(structure, meta: MetaSeqStructure,_)) => Some(q"$structure.setLength($value)")
           case _ => None
         }
