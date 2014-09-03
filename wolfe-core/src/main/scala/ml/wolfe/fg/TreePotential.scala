@@ -217,4 +217,22 @@ object TreePotential {
     }
   }
 
+//  def isFullyConnectedProjectiveTree[T](graph: Map[(T, T), Boolean]) = {
+//    isFullyConnectedNonProjectiveTree(graph) && isProjectiveTree(graph)
+//  }
+//
+//  def isProjectiveTree[T](graph: Map[(Int, Int), Boolean]) = {
+//    val edges = (graph filter (_._2)).toList map (_._1)
+//    (for (e1 <- edges;  e2 <- edges) yield (e1.,e2)).exists { case((i,j),(k,l)) =>
+//      crosses(i,j,k,l)
+//    }
+//  }
+//
+//  def crosses(ii: Int, ij: Int, ik: Int, il: Int): Boolean = {
+//    val (i,j) = if (ii < ij) (ii, ij) else (ij, ii)
+//    val (k,l) = if (ik < il) (ik, il) else (il, ik)
+//    (i < k && k < j && j < l) || (k < i && j < k && l < j)
+//  }
+
+
 }
