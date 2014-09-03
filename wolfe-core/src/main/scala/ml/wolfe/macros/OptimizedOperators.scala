@@ -264,6 +264,9 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
       conditioner.code
     }
 
+    meta.all.collect{ case x:MetaObservedAtomicStructure => x }.foreach( s =>
+      assert(s.observed, s"Can't iterate over ${s.domain.toString()}; did you forget to observe?"))
+
     //This method returns meta information about the class of factors that correspond to the given objective.
     //this meta information can be used to define the class of factors, and to create instances of it.
     val factors = metaStructuredFactor(FactorGenerationInfo(objRhs, meta, objMatcher, linearModelInfo = LinearModelInfo(q"_index")))
