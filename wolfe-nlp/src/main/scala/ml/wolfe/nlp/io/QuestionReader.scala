@@ -30,7 +30,7 @@ object MCTestReader {
 
   def main(args: Array[String]) {
     for (q <- new MCTestReader(args(0))) {
-      println(q)
+      println(q) + "\n"
     }
   }
 }
@@ -52,6 +52,12 @@ class MultipleChoiceQuestion(text: String, choices: Seq[AnswerChoice]) extends Q
 
   def isCorrect(label: String): Boolean = {
     choices.exists{ c => c.label == label && c.isCorrect}
+  }
+
+  override def toString = {
+    (Array(text) ++ choices.map { a =>
+      " (%s) [%s]\t%s".format(a.label, if (a.isCorrect) "X" else " ", a.text)
+    }).mkString("\n")
   }
 }
 
