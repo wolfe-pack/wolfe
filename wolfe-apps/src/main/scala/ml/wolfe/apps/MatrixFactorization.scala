@@ -45,5 +45,13 @@ object MatrixFactorization extends App {
 
   GradientBasedOptimizer(fg, new OnlineTrainer(_, new AdaGrad(), 10,1))
 
+  for (p <- entityPairs) {
+    println(s"$p: ${A(p).variable.asVector.b}")
+  }
+
+  for (r <- relations) {
+    println(s"$r: ${V(r).variable.asVector.b}")
+  }
+
 
 }
