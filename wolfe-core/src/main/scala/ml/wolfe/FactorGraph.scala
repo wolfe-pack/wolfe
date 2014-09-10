@@ -102,6 +102,18 @@ final class FactorGraph {
   }
 
   /**
+   * Adds a node for a vector variable
+   * @param label description of what the variable represents
+   * @return the added node.
+   */
+  def addVectorNode(dim:Int, label:String = "") = {
+    val n = new Node(nodes.size, new VectorVar(dim,label))
+    nodes += n
+    n
+  }
+
+
+  /**
    * Adds a tuple node (with components probably from another factor graph)
    * @param componentNodes the components of the tuple
    * @return the added tuple node.
@@ -179,6 +191,21 @@ final class FactorGraph {
   }
 
   /**
+   * Creates a new factor, no potential assigned.
+   * @return the created factor.
+   */
+  def addFactorAndPot(nodes:Seq[Node],label:String = "")(msgs:Seq[Edge] => Seq[Msgs])(pot: Seq[Edge] => Potential) = {
+    val f = addFactor(label)
+    val edges = nodes map (addEdge(f, _))
+    val createdMsgs = msgs(edges)
+    for ((edge,msg) <- edges zip createdMsgs) edge.msgs = msg
+    val potential = pot(edges)
+    f.potential = potential
+    f
+  }
+
+
+  /**
    * Creates and adds a factor to be used for calculating expectations.
    * @return the created factor.
    */
@@ -192,9 +219,15 @@ final class FactorGraph {
    * Adds a factor whose nodes will be resampled.
    * @param sampleNodes a function that samples neighbors of the factor
    */
-  def addStochasticFactor(sampleNodes: => Seq[Node]) {
+  def addStochasticFactorAndPot(sampleNodes: => Seq[Node])(msgs:Seq[Edge] => Seq[Msgs])(pot:Seq[Edge] => Potential) = {
     val f = addFactor()
     stochasticFactors += f -> (() => sampleNodes)
+    val edges = sampleNodes map (addEdge(f,_))
+    val createdMsgs = msgs(edges)
+    for ((edge,msg) <- edges zip createdMsgs) edge.msgs = msg
+    val potential = pot(edges)
+    f.potential = potential
+    f
   }
 
   /**

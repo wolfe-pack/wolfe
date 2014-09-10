@@ -20,7 +20,7 @@ object GradientBasedOptimizer {
     }
     val weightsSet = new WeightsSet
     val weightsKeys = new mutable.HashMap[FactorGraph.Node, Weights]()
-    for (n <- fg.nodes) weightsKeys(n) = weightsSet.newWeights(new DenseVector(n.variable.asVector.dim))
+    for (n <- fg.nodes) weightsKeys(n) = weightsSet.newWeights(n.variable.asVector.b)
     val examples = for (f <- fg.factors) yield new Example {
       val factor = f
       def accumulateValueAndGradient(value: DoubleAccumulator, gradient: WeightsMapAccumulator) = {
@@ -35,8 +35,12 @@ object GradientBasedOptimizer {
       }
     }
 
-    val learner = trainer(weightsSet)
+    val learner = new ResamplingTrainer(fg, trainer(weightsSet))
     learner.trainFromExamples(examples)
+    //set results
+    for (n <- fg.nodes) {
+      n.variable.asVector.b = weightsSet(weightsKeys(n)).asInstanceOf[FactorieVector]
+    }
 
 
     //go over all factors, calculate gradients into f2n
@@ -44,4 +48,12 @@ object GradientBasedOptimizer {
     //resample graph (hook in factorie?)
 
   }
+}
+
+class ResamplingTrainer(fg:FactorGraph, self:Trainer) extends Trainer {
+  def processExamples(examples: Iterable[Example]) = {
+    self.processExamples(examples)
+    fg.sampleFactors()
+  }
+  def isConverged = self.isConverged
 }

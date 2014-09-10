@@ -192,7 +192,7 @@ class ContinuousVar(override val label:String = "") extends Var[Double] {
   override def createMsgs() = null
 }
 
-class VectorVar(val dim:Int) extends Var[FactorieVector] {
+class VectorVar(val dim:Int, override val label:String) extends Var[FactorieVector] {
   var b:FactorieVector = new DenseTensor1(dim)
 
   override type S = FactorieVector
