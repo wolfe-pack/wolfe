@@ -1,6 +1,6 @@
 package ml.wolfe.apps
 
-import cc.factorie.optimize.{AdaGrad, OnlineTrainer}
+import cc.factorie.optimize.{L2Regularization, AdaGrad, OnlineTrainer}
 import ml.wolfe.{GradientBasedOptimizer, FactorGraph}
 import ml.wolfe.fg.{VectorMsgs, CellLogisticLoss}
 
@@ -43,7 +43,7 @@ object MatrixFactorization extends App {
 
   fg.build()
 
-  GradientBasedOptimizer(fg, new OnlineTrainer(_, new AdaGrad(), 10,1))
+  GradientBasedOptimizer(fg, new OnlineTrainer(_, new AdaGrad(), 100,1))
 
   for (p <- entityPairs) {
     println(s"$p: ${A(p).variable.asVector.b}")
