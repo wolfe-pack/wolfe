@@ -41,7 +41,8 @@ trait Operators {
    * @tparam N return type of `obj`, usually `Double` or `Vector`.
    * @return sum of `obj(x)` over all `x` in `dom`.
    */
-  def sum[T, N: Numeric](dom: Iterable[T])(obj: T => N) = dom.map(obj).sum
+  def sum[T, N: Numeric](dom: Iterable[T])(obj: T => N) = dom.foldLeft(implicitly[Numeric[N]].zero)( (acc, t) =>
+    implicitly[Numeric[N]].plus(acc, obj(t)))
 
   /**
    * Calculates the log-partition function of a log-linear model.
