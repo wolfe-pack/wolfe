@@ -1,5 +1,6 @@
 package ml.wolfe.examples
 
+import ml.wolfe.{BruteForceOperators, BruteForce}
 import ml.wolfe.Wolfe._
 import ml.wolfe.macros.OptimizedOperators._
 import ml.wolfe.util.Timer
@@ -38,7 +39,7 @@ object Scratch extends PerformanceTest.Quickbenchmark {
             }
           }
 
-          @Atomic
+          //@Atomic
           def smokingIsInfectious(w: World): Double = {
             sum(persons) { p1 => sum(persons) { p2 =>
               1.1 * I(w.friends(p1, p2) --> (w.smokes(p1) == w.smokes(p2)))
@@ -52,7 +53,7 @@ object Scratch extends PerformanceTest.Quickbenchmark {
 
           def query(world: World) = oneHot(world.cancer(persons.head))
           Timer.time("foo") {
-            argmax(worlds) { mln }
+            BruteForceOperators.argmax(worlds) { mln }
           }
           println(r.last + "\t" + Timer.reported("foo"))
         }
