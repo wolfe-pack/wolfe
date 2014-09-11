@@ -194,7 +194,7 @@ final class FactorGraph {
    * Creates a new factor, no potential assigned.
    * @return the created factor.
    */
-  def addFactorAndPot(nodes:Seq[Node],label:String = "")(msgs:Seq[Edge] => Seq[Msgs])(pot: Seq[Edge] => Potential) = {
+  def buildFactor(nodes:Seq[Node],label:String = "")(msgs:Seq[Edge] => Seq[Msgs])(pot: Seq[Edge] => Potential) = {
     val f = addFactor(label)
     val edges = nodes map (addEdge(f, _))
     val createdMsgs = msgs(edges)
@@ -219,7 +219,7 @@ final class FactorGraph {
    * Adds a factor whose nodes will be resampled.
    * @param sampleNodes a function that samples neighbors of the factor
    */
-  def addStochasticFactorAndPot(sampleNodes: => Seq[Node])(msgs:Seq[Edge] => Seq[Msgs])(pot:Seq[Edge] => Potential) = {
+  def buildStochasticFactor(sampleNodes: => Seq[Node])(msgs:Seq[Edge] => Seq[Msgs])(pot:Seq[Edge] => Potential) = {
     val f = addFactor()
     stochasticFactors += f -> (() => sampleNodes)
     val edges = sampleNodes map (addEdge(f,_))
