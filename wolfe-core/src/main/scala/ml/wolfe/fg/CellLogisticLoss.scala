@@ -21,15 +21,16 @@ final class CellLogisticLoss(rowEdge: Edge, columnEdge: Edge, truth:Boolean = tr
     val a = rowVar.setting
     val v = columnVar.setting
     val s = a dot v
-    val p = sig(s)
+    val p = if (truth) sig(s) else 1.0 - sig(s)
     math.log(p)
   }
 
   override def valueAndGradientForAllEdges() = {
     val s = rowMsgs.n2f dot columnMsgs.n2f
-    val p = sig(s)
-    rowMsgs.f2n = columnMsgs.n2f * (1.0 - p)
-    columnMsgs.f2n = rowMsgs.n2f * (1.0 - p)
+    val p = if (truth) sig(s) else 1.0 - sig(s)
+    val dir = if (truth) 1.0 else -1.0
+    rowMsgs.f2n = columnMsgs.n2f * (1.0 - p) * dir
+    columnMsgs.f2n = rowMsgs.n2f * (1.0 - p) * dir
     math.log(p)
   }
 }
