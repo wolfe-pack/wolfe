@@ -11,18 +11,27 @@ import scala.util.Random
  */
 object MatrixFactorization extends App {
 
-  val k      = 2
+  val k      = 100
   val random = new Random(0)
 
   val fg = new FactorGraph
 
-  val entityPairs = Seq('A -> 'B, 'A -> 'C, 'B -> 'C)
-  val relations   = Seq('rel1, 'rel2, 'rel3)
+  val numRows = 100
+  val numCols = 100
+  val cellDensity = 0.1
+  val numObservedCells = (numRows * numCols * cellDensity).toInt
 
-  val data = Seq(entityPairs(0) -> relations(1), entityPairs(0) -> relations(2))
+  val rows = (0 until numRows).map(i => 'e + i.toString).toArray
+  val cols = (0 until numCols).map(i => 'r + i.toString).toArray
 
-  val A = (entityPairs map (p => p -> fg.addVectorNode(k))).toMap
-  val V = (relations map (r => r -> fg.addVectorNode(k))).toMap
+  val data = (0 until numObservedCells).map(i => {
+    val row = random.nextInt(numRows)
+    val col = random.nextInt(numCols)
+    rows(row) -> cols(col)
+  })
+
+  val A = (rows map (p => p -> fg.addVectorNode(k))).toMap
+  val V = (cols map (r => r -> fg.addVectorNode(k))).toMap
 
   //create positive fact factors
   for (d <- data) {
@@ -33,11 +42,11 @@ object MatrixFactorization extends App {
   }
 
   //create one negative stochastic factor per relation
-  for (r <- relations) {
+  for (r <- cols) {
     val v = V(r)
     //todo: this should check if pair is not observed for relation.
-    def samplePair = entityPairs(random.nextInt(entityPairs.size))
-    fg.addStochasticFactorAndPot(Seq(v, A(samplePair))) (
+    def sampleRow = rows(random.nextInt(numRows))
+    fg.addStochasticFactorAndPot(Seq(v, A(sampleRow))) (
       _ map (_ => new VectorMsgs)) { e => new CellLogisticLoss(e(0), e(1), false) }
   }
 
@@ -45,11 +54,11 @@ object MatrixFactorization extends App {
 
   GradientBasedOptimizer(fg, new OnlineTrainer(_, new AdaGrad(), 100,1))
 
-  for (p <- entityPairs) {
+  for (p <- rows) {
     println(s"$p: ${A(p).variable.asVector.b}")
   }
 
-  for (r <- relations) {
+  for (r <- cols) {
     println(s"$r: ${V(r).variable.asVector.b}")
   }
 
