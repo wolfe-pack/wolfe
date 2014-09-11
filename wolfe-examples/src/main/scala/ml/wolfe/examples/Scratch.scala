@@ -55,7 +55,7 @@ object Scratch extends PerformanceTest.Quickbenchmark {
 
         def query(world: World) = oneHot(world.cancer(persons.head))
         Timer.time("foo") {
-          expect(worlds) { mln } { w => oneHot('smokes, I(w.smokes(Symbol("0")))) }
+          BruteForceOperators.expect(worlds) { mln } { w => oneHot('smokes, I(w.smokes(Symbol("0")))) }
           //argmax(worlds) { mln }
         }
         println(r.last + "\t" + Timer.reported("foo"))
