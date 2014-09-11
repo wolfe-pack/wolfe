@@ -71,7 +71,9 @@ object BeliefPropagation {
       n.variable match {case d:DiscreteVar[_] => d.dim  * n.edges.length case _ => 1} ).sum
     var hasConverged = false
 
-    for (i <- 0 until maxIteration if !hasConverged) {
+    var i = 0
+    while (!hasConverged && (i < maxIteration || maxIteration == -1)) {
+
       if(schedule == Pow) {
         for(f <- fg.factors) powF2N(f, bpType == Sum)
         for(n <- fg.nodes) powN2F(n)
@@ -82,7 +84,9 @@ object BeliefPropagation {
           case DirectedEdge(edge, EdgeDirection.N2F) => updateN2F(edge)
         }
       }
+
       hasConverged = converged(fg, convergenceThreshold)
+      i = i + 1
     }
 
     if(bpType == Sum) for (node <- fg.nodes if !node.variable.isObserved) updateBelief(node, true)
