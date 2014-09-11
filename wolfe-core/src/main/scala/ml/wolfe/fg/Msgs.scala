@@ -22,7 +22,7 @@ final class DiscreteMsgs(val dim: Int) extends Msgs {
   val f2nLast = Array.ofDim[Double](dim)
   def saveCurrentF2NAsOld() = {
     //remember last message for calculating residuals
-    set(f2n, f2nLast)
+    set(f2nLast, f2n)
   }
 }
 
@@ -36,7 +36,7 @@ final class TupleMsgs(n2fComponents:Array[DiscreteVar[_]], f2nComponents:Array[D
   val f2nLast = LabelledTensor.onNewArray[DiscreteVar[_], Double](f2nComponents, _.dim, 0.0)
   val f2n     = LabelledTensor.onNewArray[DiscreteVar[_], Double](f2nComponents, _.dim, 0.0)
   def saveCurrentF2NAsOld() = {
-    set(f2n.array, f2nLast.array)
+    set(f2nLast.array, f2n.array)
     //remember last message for calculating residuals
   }
 }
