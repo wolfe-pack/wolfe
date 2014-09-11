@@ -1,7 +1,7 @@
 package ml.wolfe
 
 import cc.factorie.la.SparseIndexedTensor
-import ml.wolfe.fg.Junkify
+import ml.wolfe.fg.{TupleMsgs, DiscreteMsgs, DiscreteVar, Junkify}
 import ml.wolfe.util.LoggerUtil
 
 
@@ -67,7 +67,11 @@ object BeliefPropagation {
     val backwardEdges = forwardEdges.reverse.map(_.swap)
     val forwardBackwardEdges = forwardEdges ++ backwardEdges
 
-    for (i <- 0 until maxIteration) {
+    val convergenceThreshold = 1e-6 * fg.nodes.map( n =>
+      n.variable match {case d:DiscreteVar[_] => d.dim  * n.edges.length case _ => 1} ).sum
+    var hasConverged = false
+
+    for (i <- 0 until maxIteration if !hasConverged) {
       if(schedule == Pow) {
         for(f <- fg.factors) powF2N(f, bpType == Sum)
         for(n <- fg.nodes) powN2F(n)
@@ -78,6 +82,7 @@ object BeliefPropagation {
           case DirectedEdge(edge, EdgeDirection.N2F) => updateN2F(edge)
         }
       }
+      hasConverged = converged(fg, convergenceThreshold)
     }
 
     if(bpType == Sum) for (node <- fg.nodes if !node.variable.isObserved) updateBelief(node, true)
@@ -215,6 +220,13 @@ object BeliefPropagation {
     if (sum) node.variable.updateMarginalBelief() else node.variable.updateMaxMarginalBelief()
   }
 
+  private def converged(fg: FactorGraph, threshold:Double): Boolean = {
+    val residual = fg.edges.view.map(_.msgs match {
+      case m:DiscreteMsgs => sqDiff(m.f2n, m.f2nLast)
+      case m:TupleMsgs => sqDiff(m.f2n.array, m.f2nLast.array)
+    }).sum
+    residual < threshold
+  }
 
 }
 
