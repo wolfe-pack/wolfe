@@ -38,7 +38,7 @@ object Scratch extends PerformanceTest.Quickbenchmark {
             }
           }
 
-          //@Atomic
+          @Atomic
           def smokingIsInfectious(w: World): Double = {
             sum(persons) { p1 => sum(persons) { p2 =>
               1.1 * I(w.friends(p1, p2) --> (w.smokes(p1) == w.smokes(p2)))
