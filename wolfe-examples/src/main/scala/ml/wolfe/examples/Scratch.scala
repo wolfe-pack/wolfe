@@ -32,7 +32,7 @@ object Scratch extends PerformanceTest.Quickbenchmark {
         implicit def persons = r.map(i => Symbol(i.toString)).toList
         def worlds = all(World)
 
-        //@Atomic
+        @Atomic
         def smokingCausesCancer(w: World): Double = {
           sum(persons) { p =>
             1.5 * I(w.smokes(p) --> w.cancer(p))
