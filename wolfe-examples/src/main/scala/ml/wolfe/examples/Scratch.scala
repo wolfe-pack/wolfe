@@ -8,7 +8,7 @@ import org.scalameter.{Gen, PerformanceTest}
 
 object Scratch extends PerformanceTest.Quickbenchmark {
 
-  val ranges = (3 +: (1 to 10)).map(0 to _)
+  val ranges = (3 +: (1 to 100)).map(0 to _)
   /*
   val sizes = Gen.range("size")(1, 10, 1)
 
