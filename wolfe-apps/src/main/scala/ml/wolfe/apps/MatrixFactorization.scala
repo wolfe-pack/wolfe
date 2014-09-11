@@ -37,7 +37,7 @@ object MatrixFactorization extends App {
   for (d <- data) {
     val a = A(d._1)
     val v = V(d._2)
-    fg.addFactorAndPot(Seq(a, v))(
+    fg.buildFactor(Seq(a, v))(
       _ map (_ => new VectorMsgs)) { e => new CellLogisticLoss(e(0), e(1), true) }
   }
 
@@ -46,7 +46,7 @@ object MatrixFactorization extends App {
     val v = V(r)
     //todo: this should check if pair is not observed for relation.
     def sampleRow = rows(random.nextInt(numRows))
-    fg.addStochasticFactorAndPot(Seq(v, A(sampleRow))) (
+    fg.buildStochasticFactor(Seq(v, A(sampleRow))) (
       _ map (_ => new VectorMsgs)) { e => new CellLogisticLoss(e(0), e(1), false) }
   }
 
