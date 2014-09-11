@@ -20,6 +20,12 @@ class ConditionerSpecs extends StructureIsomorphisms {
       val structure = Conditioner.conditioned(space)(x => x)
       structure mustBeIsomorphicTo (space filter (x => x))
     }
+    "condition an case class sample space using equality " in {
+      case class Data(x:Int)
+      def space = Wolfe.all(Data)(0 until 4)
+      val structure = Conditioner.conditioned(space)(x => x.x == 1)
+      structure mustBeIsomorphicTo (space filter (_.x == 1))
+    }
     "support import statements" in {
       case class Data(x:Boolean,y:Boolean)
       def space = Wolfe.all(Data)
