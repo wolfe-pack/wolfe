@@ -29,11 +29,14 @@ trait Conditioner[C <: Context] extends MetaStructures[C] {
 
     object SimpleCondition {
       def unapply(tree: Tree) = tree match {
-        case q"$x == $value" => matcher(x) match {
-          case Some(structure) =>
-            structure.meta.observe()
-            Some(q"${structure.structure}.observe($value)")
-          case _ => None
+        case q"$x == $value" => {
+          val _x = x
+          matcher(x) match {
+            case Some(structure) =>
+              structure.meta.observe()
+              Some(q"${ structure.structure }.observe($value)")
+            case _ => None
+          }
         }
         case q"$value == $x" => matcher(x) match {
           case Some(structure) =>
@@ -155,6 +158,15 @@ trait Conditioner[C <: Context] extends MetaStructures[C] {
         val c1 = conditioning(arg1, matchStructure)
         val c2 = conditioning(arg2, matchStructure)
         ConditioningCode(q"{${c1.code};${c2.code}}", q"${c1.remainderOfCondition} && ${c2.remainderOfCondition}")
+      case q"$iterable.forall($x => $y)"  => {
+        matchStructure(iterable) match {
+          case Some(structure) => ???
+          case None => {
+            val c = conditioning(y, matchStructure)
+            ConditioningCode(q"$iterable.foreach($x => ${c.code})", q"${c.remainderOfCondition}")
+          }
+        }
+      }
       case x => matchStructure(x) match {
         case Some(structure) => ConditioningCode(q"${structure.structure}.observe(true)", EmptyTree)
         case None => {
