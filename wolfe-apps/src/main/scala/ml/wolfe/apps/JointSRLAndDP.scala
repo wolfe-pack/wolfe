@@ -1,7 +1,7 @@
 package ml.wolfe.apps
 
-import ml.wolfe.FactorGraph.Edge
-import ml.wolfe.{Learn, Wolfe}
+import ml.wolfe.{BeliefPropagation, FactorGraph, Learn, Wolfe}
+import ml.wolfe.fg.TreePotential
 
 /**
  * @author Sebastian Riedel
@@ -10,6 +10,7 @@ object JointSRLAndDP extends App {
 
   import Wolfe._
   import ml.wolfe.macros.OptimizedOperators._
+  import TreePotential._
 
   val labels = List("A", "P")
   val root   = "Root"
@@ -48,8 +49,9 @@ object JointSRLAndDP extends App {
     sum(overlap(x)) { e => oneHot('nand, I(y.args(e) && y.deps(e))) }
   }
 
+  @LogZByInference(BeliefPropagation.sumProductPow(3))
   def model(w: Vector)(x: X)(y: Y) =
-    feats(x)(y) dot w
+    treeConstraint(y.deps) + (feats(x)(y) dot w)
 
   def localLoss(x: X, gold: Y)(w: Vector) =
     logZ(space(x)) { model(w)(x) } -
