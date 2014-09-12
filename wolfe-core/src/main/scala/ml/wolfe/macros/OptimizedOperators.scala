@@ -111,6 +111,7 @@ trait LinearModelArgmaxCode[C <: Context] extends SymbolRepository[C] {
     objRhs match {
       case q"$f(${ _ })" => getCodeFromAnnotation(f)
       case q"$f(${ _ })(${ _ })" => getCodeFromAnnotation(f)
+      case q"$f(${ _ })(${ _ })(${ _ })" => getCodeFromAnnotation(f)
       case _ => q"ml.wolfe.BeliefPropagation($graph,1)"
     }
   }
@@ -124,6 +125,7 @@ trait LinearModelArgmaxCode[C <: Context] extends SymbolRepository[C] {
     objRhs match {
       case q"$f(${ _ })" => getCodeFromAnnotation(f)
       case q"$f(${ _ })(${ _ })" => getCodeFromAnnotation(f)
+      case q"$f(${ _ })(${ _ })(${ _ })" => getCodeFromAnnotation(f)
       case _ => q"ml.wolfe.BeliefPropagation.sumProduct(1)($graph)"
     }
   }
