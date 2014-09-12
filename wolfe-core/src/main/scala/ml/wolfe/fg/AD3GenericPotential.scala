@@ -47,7 +47,7 @@ trait AD3GenericPotential extends DiscretePotential {
     for (k <- (0 until vars.size).optimized) {
       for (i <- (0 until settings.length).optimized) {
         Mta(i) += vars(k).b(settings(i)(k))
-        Mta(i) += msgs(k).n2f(settings(i)(k)) / stepSize
+        Mta(i) += msgss(k).n2f(settings(i)(k)) / stepSize
       }
     }
 
@@ -105,13 +105,13 @@ trait AD3GenericPotential extends DiscretePotential {
 
     }
 
-    for (j <- (0 until msgs.size).optimized)
-      fill(msgs(j).f2n, 0)
+    for (j <- (0 until msgss.size).optimized)
+      fill(msgss(j).f2n, 0)
 
     for(r <- activeSet) {
       val setting = settings(r)
-      for (j <- (0 until msgs.size).optimized)
-        msgs(j).f2n(setting(j)) += solution(r)
+      for (j <- (0 until msgss.size).optimized)
+        msgss(j).f2n(setting(j)) += solution(r)
     }
   }
 
