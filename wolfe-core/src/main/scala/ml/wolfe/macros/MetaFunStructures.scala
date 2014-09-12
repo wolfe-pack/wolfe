@@ -23,8 +23,14 @@ trait MetaFunStructures[C<:Context] {
     def keyDoms: List[Tree]
     def valueMetaStructure: MetaStructure
 
-    lazy val anyKeyTypes = keyDoms map (_ => tq"Any")
-    lazy val anyKeyType = if (anyKeyTypes.size == 1) tq"Any" else tq"(..$anyKeyTypes)"
+    //lazy val anyKeyTypes = keyDoms map (_ => tq"Any")
+    //lazy val anyKeyType = if (anyKeyTypes.size == 1) tq"Any" else tq"(..$anyKeyTypes)"
+    lazy val anyKeyType = keyType match {
+      case TypeRef(t, c, args) if keyType.typeSymbol.name.toString.matches("Tuple[0-9]+") =>
+        tq"(..${List.fill(args.length)(tq"Any")})"
+      case _ =>  tq"Any"
+    }
+
     def edgesType = tq"Map[$anyKeyType,${valueMetaStructure.edgesType}]"
 
     lazy val keyDomNames   = List.fill(keyDoms.size)(newTermName(context.fresh("funKeyDom")))
