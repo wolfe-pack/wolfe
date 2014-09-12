@@ -106,8 +106,8 @@ final class TablePotential(edges: Array[Edge], table: Table) extends DiscretePot
   def penalizedScore(i:Int): Double = penalizedScore(i, TablePotential.entryToSetting(i, dims))
   def penalizedScore(settingId: Int, setting: Array[Int]): Double = {
     var score = scores(settingId)
-    for (j <- 0 until msgs.size) {
-      score += msgs(j).n2f(setting(j))
+    for (j <- 0 until msgss.size) {
+      score += msgss(j).n2f(setting(j))
     }
     score
   }
@@ -122,7 +122,7 @@ final class TablePotential(edges: Array[Edge], table: Table) extends DiscretePot
       var score = scores(i)
       val varValue = setting(edge.indexInFactor)
       for (j <- 0 until edges.size; if j != edge.indexInFactor) {
-        score += msgs(j).n2f(setting(j))
+        score += msgss(j).n2f(setting(j))
       }
       m.f2n(varValue) = math.max(score, m.f2n(varValue))
     }
@@ -140,7 +140,7 @@ final class TablePotential(edges: Array[Edge], table: Table) extends DiscretePot
       var score = scores(i)
       val varValue = setting(edge.indexInFactor)
       for (j <- 0 until edges.size; if j != edge.indexInFactor) {
-        score += msgs(j).n2f(setting(j))
+        score += msgss(j).n2f(setting(j))
       }
       m.f2n(varValue) = m.f2n(varValue) + math.exp(score)
     }
@@ -169,12 +169,12 @@ final class TablePotential(edges: Array[Edge], table: Table) extends DiscretePot
 
   override def mapF2N() = {
     for (j <- (0 until edges.size).optimized)
-      fill(msgs(j).f2n, 0)
+      fill(msgss(j).f2n, 0)
 
     val maxSetting = computeMAP()
 
     for (j <- (0 until edges.size).optimized)
-      msgs(j).f2n(maxSetting(j)) = 1
+      msgss(j).f2n(maxSetting(j)) = 1
   }
 
   override def maxMarginalExpectationsAndObjective(result: FactorieVector) = {

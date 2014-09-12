@@ -59,7 +59,7 @@ class CantProposeException extends Exception
 trait DiscretePotential extends Potential {
   lazy val vars:Array[DiscreteVar[_]] = factor.edges.map(_.n.variable.asDiscrete)
   lazy val dims:Array[Int] = vars.map(_.asDiscrete.dim)
-  lazy val msgs:Array[DiscreteMsgs] = factor.edges.map(_.msgs.asDiscrete)
+  lazy val msgss:Array[DiscreteMsgs] = factor.edges.map(_.msgs.asDiscrete)
 
   def valueForSetting(setting:Seq[Int]): Double
   override def valueForCurrentSetting(): Double = valueForSetting(vars.view.map(_.setting))

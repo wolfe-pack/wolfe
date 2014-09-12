@@ -52,6 +52,31 @@ final class LinearPotential(val edges: Array[Edge], val statistics: Stats, fg: F
     log(msgs.f2n)
   }
 
+  override def powMarginalF2N() = {
+    msgss.foreach(m => fill(m.f2n, 0.0))
+    val scores = Array.ofDim[Double](edges.length)
+
+    for (i <- 0 until settings.size) {
+      val setting = settings(i)
+      val score = scoreEntry(i)
+      fill(scores, score)
+      //val varValue = setting(edge.indexInFactor)
+      for (j <- (0 until edges.size).optimized) {
+        val n2f_j = edges(j).msgs.asDiscrete.n2f(setting(j))
+        for (k <- (0 until edges.size).optimized)
+          if (j != k) scores(k) += n2f_j
+      }
+
+      for(j <- (0 until edges.size).optimized)
+        msgss(j).f2n(setting(j)) += math.exp(scores(j))
+    }
+    msgss.foreach(m => {
+      normalize(m.f2n)
+      log(m.f2n)
+    })
+  }
+
+
   override def computeMAP(): Array[Int] = computeMAP(penalizedScore)
   override def computeMAP(scoreFun : Int => Double): Array[Int] = {
     var maxScore = Double.NegativeInfinity
@@ -70,12 +95,12 @@ final class LinearPotential(val edges: Array[Edge], val statistics: Stats, fg: F
 
   override def mapF2N() = {
     for (j <- (0 until edges.size).optimized)
-      fill(msgs(j).f2n, 0)
+      fill(msgss(j).f2n, 0)
 
     val maxSetting = computeMAP()
 
     for (j <- (0 until edges.size).optimized)
-      msgs(j).f2n(maxSetting(j)) = 1
+      msgss(j).f2n(maxSetting(j)) = 1
   }
 
   override def valueForSetting(setting:Seq[Int]): Double = {
@@ -122,8 +147,8 @@ final class LinearPotential(val edges: Array[Edge], val statistics: Stats, fg: F
   def penalizedScore(i:Int): Double = penalizedScore(i, TablePotential.entryToSetting(i, dims))
   def penalizedScore(settingId: Int, setting: Array[Int]): Double = {
     var score = scoreEntry(settingId)
-    for (j <- 0 until msgs.size) {
-      score += msgs(j).n2f(setting(j))
+    for (j <- 0 until msgss.size) {
+      score += msgss(j).n2f(setting(j))
     }
     score
   }
