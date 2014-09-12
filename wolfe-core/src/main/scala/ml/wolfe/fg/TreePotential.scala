@@ -1,14 +1,18 @@
 package ml.wolfe.fg
 
 import ml.wolfe.FactorGraph.Edge
+import ml.wolfe.{FactorGraph, Wolfe}
+import Wolfe._
 
 import scala.math._
 
 /**
  * @author Sebastian Riedel
  */
-class TreePotential(val edges: Map[(Any, Any), Edge], multinode: Boolean) extends Potential {
-  private val distinctHeads = edges.keys.map(_._1).toSeq.distinct
+class TreePotential(val edges: Map[(Any, Any), Edge], val ord: Edge, multinode: Boolean) extends Potential {
+  val v = ord.n.variable
+  private val ordering = ord.n.variable.asTyped[Ordering[Any]].value
+  private val distinctHeads = edges.keys.map(_._1).toSeq.distinct.sorted(ordering)
   private val headIndices: Map[Any, Int] = distinctHeads.zipWithIndex.toMap
   private val indexedEdges:Map[(Int, Int), Edge] = edges.map {
     case ((x:Any, y:Any), e:Edge) => ((headIndices(x), headIndices(y)), e)
@@ -198,6 +202,10 @@ class TreePotential(val edges: Map[(Any, Any), Edge], multinode: Boolean) extend
 }
 
 object TreePotential {
+
+  @Wolfe.Potential( (edges: Map[(Any, Any), FactorGraph.Edge], ord:Edge) => new TreePotential(edges, ord, true) )
+  def treeConstraint[T : Ordering](tree: Map[(T, T), Boolean]) =
+    if (isFullyConnectedNonProjectiveTree(tree)) 0.0 else Double.NegativeInfinity
 
   def isFullyConnectedNonProjectiveTree[T](graph: Map[(T, T), Boolean]) = {
     val indexedEdges = (graph filter (_._2)).toList map (_._1)

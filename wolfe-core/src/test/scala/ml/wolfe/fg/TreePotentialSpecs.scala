@@ -30,10 +30,6 @@ class TreePotentialSpecs extends WolfeSpec {
       import Wolfe._
       import BruteForceOperators._
 
-      @Wolfe.Potential(new TreePotential(_: Map[(Any, Any), Edge], true))
-      def tree[T](tree: Map[(T, T), Boolean]) =
-        if (isFullyConnectedNonProjectiveTree(tree)) 0.0 else Double.NegativeInfinity
-
       type Node = Int
       type Graph = Pred[(Node,Node)]
       val slen = 3
@@ -42,10 +38,10 @@ class TreePotentialSpecs extends WolfeSpec {
       def graphs = preds(edges)
       def query(graph:Graph) = sum(edges) {e => oneHot(e, I(graph(e)))}
 
-      val result = graphs map (g => tree(g))
-      val marginals = BruteForceOperators.expect(graphs)(tree)(query)
+      val result = graphs map (g => treeConstraint(g))
+      val marginals = BruteForceOperators.expect(graphs)(treeConstraint[Int])(query)
 
-      def bp = OptimizedOperators.expect(graphs)(tree)(query)
+      def bp = OptimizedOperators.expect(graphs)(treeConstraint[Int])(query)
 
       println("Yo")
       println(marginals)
