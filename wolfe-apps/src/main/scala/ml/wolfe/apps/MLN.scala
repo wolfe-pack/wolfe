@@ -1,5 +1,6 @@
 package ml.wolfe.apps
 
+import ml.wolfe.GibbsSampling
 import ml.wolfe.Wolfe._
 import ml.wolfe.macros.OptimizedOperators._
 import ml.wolfe.D3Implicits._
@@ -23,7 +24,7 @@ object MLN extends App {
     //implicit def persons = List('Anna, 'Bob)
     def worlds = all(World)
 
-    @OutputFactorGraph
+    @LogZByInference(GibbsSampling(_))
     def mln(world: World) = {
       import world._
       sum(persons) { p =>
@@ -49,7 +50,7 @@ object MLN extends App {
 
       println(mu.toString())
 
-      saveD3Graph(FactorGraphBuffer.get)
+      //saveD3Graph(FactorGraphBuffer.get)
     }
 
 
