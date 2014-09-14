@@ -29,13 +29,10 @@ object GibbsSampling {
   }
 
   def sample(v:Var[_]):Unit = {
-    def expScore = {
-      val foo = v.node.edges.map(e => exp(e.f.potential.valueForCurrentSetting()))
-      v.node.edges.map(e => exp(e.f.potential.valueForCurrentSetting())).sum
-    }
+    def score = v.node.edges.map(e => e.f.potential.valueForCurrentSetting()).sum
 
     val oldSetting = v.setting
-    val oldScore = expScore
+    val oldScore = score
 
     var sampled = false
 
@@ -54,9 +51,9 @@ object GibbsSampling {
         sampleUniform(v)
       case Some(e) =>
     }
-    val newScore = expScore
+    val newScore = score
 
-    if(newScore - oldScore < Math.log(Math.random())) v.setting = oldSetting
+    if(exp(newScore - oldScore) < Math.random()) v.setting = oldSetting
 
   }
 
