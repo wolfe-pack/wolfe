@@ -11,14 +11,14 @@ import scala.util.Random
  */
 object MatrixFactorization extends App {
 
-  val k      = 100
+  val k      = 10
   val random = new Random(0)
 
   val fg = new FactorGraph
 
-  val numRows = 100
-  val numCols = 100
-  val cellDensity = 0.1
+  val numRows = 10
+  val numCols = 10
+  val cellDensity = 0.5
   val numObservedCells = (numRows * numCols * cellDensity).toInt
 
   val rows = (0 until numRows).map(i => 'e + i.toString).toArray
@@ -28,7 +28,7 @@ object MatrixFactorization extends App {
     val row = random.nextInt(numRows)
     val col = random.nextInt(numCols)
     rows(row) -> cols(col)
-  })
+  }).toSet
 
   val A = (rows map (p => p -> fg.addVectorNode(k))).toMap
   val V = (cols map (r => r -> fg.addVectorNode(k))).toMap
@@ -54,13 +54,18 @@ object MatrixFactorization extends App {
 
   GradientBasedOptimizer(fg, new OnlineTrainer(_, new AdaGrad(), 100,1))
 
-  for (p <- rows) {
-    println(s"$p: ${A(p).variable.asVector.b}")
-  }
 
-  for (r <- cols) {
-    println(s"$r: ${V(r).variable.asVector.b}")
-  }
+  def sig(x: Double) = 1.0 / (1.0 + math.exp(-x))
 
+  println("train:")
+  println("\t" + cols.mkString(" "*3))
+  println(rows.map(r => r + "\t" + cols.map(c =>
+    if (data.contains((r, c))) " 1  " else " "*4
+  ).mkString("  ")).mkString("\n"))
 
+  println("predicted:")
+  println("\t" + cols.mkString(" "*3))
+  println(rows.map(r => r + "\t" + cols.map(c =>
+    "%4.2f".format(sig(A(r).variable.asVector.b dot V(c).variable.asVector.b))
+  ).mkString("  ")).mkString("\n"))
 }
