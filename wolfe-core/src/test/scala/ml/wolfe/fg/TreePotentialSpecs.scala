@@ -14,13 +14,21 @@ class TreePotentialSpecs extends WolfeSpec {
 
   def graph[T](pairs: (T, T)*) = (pairs map (x => x -> true)).toMap withDefaultValue false
 
-  "A tree constraint checker" should {
-    "find a loop" in {
-      isFullyConnectedNonProjectiveTree(graph(0 -> 1, 1 -> 2, 2 -> 0)) should be(false)
+  "A projective tree constraint checker" should {
+    "disallow a loopy graph" in {
+      isFullyConnectedProjectiveTree(graph(0 -> 1, 1 -> 2, 2 -> 0)) should be(false)
     }
 
-    "find a legal tree" in {
-      isFullyConnectedNonProjectiveTree(graph(0 -> 1, 1 -> 2)) should be(true)
+    "disallow a disconnected graph" in {
+      isFullyConnectedProjectiveTree(graph(0 -> 1, 1 -> 2, 3 -> 4)) should be(false)
+    }
+
+    "disallow a legal non-projective tree" in {
+      isFullyConnectedProjectiveTree(graph(0 -> 1, 1 -> 3, 3 -> 2, 2 -> 4)) should be(false)
+    }
+
+    "allow a legal projective tree" in {
+      isFullyConnectedProjectiveTree(graph(0 -> 1, 1 -> 3, 3 -> 2, 3 -> 4)) should be(true)
     }
   }
 
