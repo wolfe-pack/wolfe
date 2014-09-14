@@ -1,5 +1,6 @@
 package ml.wolfe.macros
 
+import ml.wolfe.util.Timer
 import ml.wolfe.{BruteForceOperators, Wolfe, Operators}
 import scala.reflect.macros.Context
 import Wolfe._
@@ -310,8 +311,10 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
     val statsFactorDef = if (statsFactors == null) EmptyTree else statsFactors.classDef
     val statsFactorInit = if (statsFactors == null) EmptyTree else q"val statsFactors = new ${ statsFactors.className }($structName)"
 
+
     //the code that puts everything together.
     val code = q"""
+      val startTime = System.currentTimeMillis()
       val _graph = new ml.wolfe.FactorGraph
       $structureDef
       val $structName = new ${ meta.className } (${objArg.name.toString})
@@ -324,6 +327,7 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
       _graph.build()
       _graph.weights = _factorieWeights
       $fgDebugCode
+      print(System.currentTimeMillis() - startTime + "\t")
       $inferCode
       $resultCode
     """

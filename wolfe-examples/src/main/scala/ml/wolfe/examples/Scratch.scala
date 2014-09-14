@@ -1,5 +1,6 @@
 package ml.wolfe.examples
 
+import ml.wolfe.macros.OptimizedOperators
 import ml.wolfe.{D3Implicits, BeliefPropagation, BruteForceOperators, BruteForce}
 import ml.wolfe.Wolfe._
 import ml.wolfe.macros.OptimizedOperators._
@@ -7,7 +8,8 @@ import ml.wolfe.util.Timer
 import org.scalameter.{Gen, PerformanceTest}
 import D3Implicits._
 
-object Scratch extends PerformanceTest.Quickbenchmark {
+object Scratch extends App {
+
 
   val ranges = (1 +: (1 to 100)).map(0 to _)
   /*
@@ -32,7 +34,7 @@ object Scratch extends PerformanceTest.Quickbenchmark {
         implicit def persons = r.map(i => Symbol(i.toString)).toList
         def worlds = all(World)
 
-        @Atomic
+        //@Atomic
         def smokingCausesCancer(w: World): Double = {
           sum(persons) { p =>
             1.5 * I(w.smokes(p) --> w.cancer(p))
@@ -53,14 +55,16 @@ object Scratch extends PerformanceTest.Quickbenchmark {
           smokingCausesCancer(world) + smokingIsInfectious(world)
         }
 
-        def query(world: World) = oneHot(world.cancer(persons.head))
-        Timer.time("foo") {
-          BruteForceOperators.expect(worlds) { mln } { w => oneHot('smokes, I(w.smokes(Symbol("0")))) }
-          //argmax(worlds) { mln }
-        }
-        println(r.last + "\t" + Timer.reported("foo"))
-      }
 
+        def query(world: World) = oneHot(world.cancer(persons.head))
+        print(r.last + "\t")
+        Timer.time("foo") {
+          //BruteForceOperators.
+          OptimizedOperators.expect(worlds) { mln } { w => oneHot('smokes, I(w.smokes(Symbol("0")))) }
+        }
+        println(Timer.reported("foo"))
+        //print(r.last + "\t")
+      }
       runExperiment
   }
   /*}*/
