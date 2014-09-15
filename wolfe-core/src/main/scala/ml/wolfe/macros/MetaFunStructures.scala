@@ -93,12 +93,19 @@ trait MetaFunStructures[C<:Context] {
     override def classDef(graphName: TermName) = {
       val iterator = substructureIterator(keyDoms.size)
       val valueDef = valueMetaStructure.classDef(graphName)
+      val keyDomIterators = List.fill(keyDoms.size)(newTermName(context.fresh("i")))
+      val keyDomIteratorsTyped = keyDomIterators.map(x => q"$x:Int")
+      val indexedKeyComponentNames = keyDomIterators.zipWithIndex.map{case (k, i) => q"keyNames($i)($k)"}
+      val indexedKeyName = q"""Seq(..$indexedKeyComponentNames).mkString("(", ",", ")")"""
       q"""
       final class $className (override val astLabel : String = "") extends ml.wolfe.macros.Structure[$argType]{
         $valueDef
         ..$domainDefs
         private var iterator:Iterator[Unit] = _
-        val subStructures = Array.fill(..$keyDomSizes)(new ${valueMetaStructure.className})
+        val keyNames = Seq(..$keyDoms).map(_.map(_.toString))
+        ml.wolfe.util.Util.breakpoint();
+        def createNode(..$keyDomIteratorsTyped) = new ${valueMetaStructure.className} (astLabel + $indexedKeyName)
+        val subStructures = Array.tabulate(..$keyDomSizes)(createNode)
         def children() = subStructureIterator().map(_.asInstanceOf[ml.wolfe.macros.Structure[Any]])
         def graph = $graphName
         def subStructureIterator() = $iterator
