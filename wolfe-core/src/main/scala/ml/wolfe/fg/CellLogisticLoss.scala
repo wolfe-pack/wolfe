@@ -5,9 +5,10 @@ import ml.wolfe.FactorGraph._
 /**
  * @author Sebastian Riedel
  */
-final class CellLogisticLoss(rowEdge: Edge, columnEdge: Edge, truth:Boolean = true) extends Potential {
+final class CellLogisticLoss(rowEdge: Edge, columnEdge: Edge, truth: Boolean = true) extends Potential {
 
   //todo: incorporate truth
+  //rockt: truth should be degree of truth in the interval  (0, 1)
 
   //nodes of edges may change hence the def and not val.
   def rowVar = rowEdge.n.variable.asVector
