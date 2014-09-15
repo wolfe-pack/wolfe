@@ -1,27 +1,14 @@
 package ml.wolfe.nlp.io
 
-import com.google.api.services.freebase
-
-import java.net.URL;
-
-/*
-import com.freebase.api.Freebase;
-import com.freebase.json.JSON;
-
-import static com.freebase.json.JSON.o;
-import static com.freebase.json.JSON.a;
-*/
-
-/**
- * Created by narad on 9/11/14.
- */
-
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport
 
 import org.json.simple.parser.JSONParser
 import com.google.api.client.http._
 
 
+/**
+ * Created by narad on 9/11/14.
+ */
 
 class FreebaseReader {
 

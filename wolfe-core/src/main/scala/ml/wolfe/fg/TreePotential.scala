@@ -1,7 +1,7 @@
 package ml.wolfe.fg
 
 import ml.wolfe.FactorGraph.Edge
-import ml.wolfe.{FactorGraph, Wolfe}
+import ml.wolfe.{FactorieVector, FactorGraph, Wolfe}
 import Wolfe._
 
 import scala.math._
@@ -34,6 +34,7 @@ class TreePotential(val edges: Map[(Any, Any), Edge], val ord: Edge, multinode: 
     if (tree) 0.0 else Double.NegativeInfinity
   }
 
+  override def marginalExpectationsAndObjective(dstExpectations: FactorieVector): Double = 0.0 //super.marginalExpectationsAndObjective(dstExpectations)
   override def powMarginalF2N() = {           // Projective
     val slen = distinctHeads.length - 1 // indexedEdges.keys.map(_._1).max -- should indexedEdges simply be a Map[(Int,Int)]
                   // Or calculate as n as : n * (n-1) indexedEdges ?
@@ -48,10 +49,13 @@ class TreePotential(val edges: Map[(Any, Any), Edge], val ord: Edge, multinode: 
     for (dep <- 1 to slen) {
       val tkoffset = dep * slen
       tkmat(tkoffset + dep - 1) = 0
+//      println("tk offset = " + tkoffset)
       var trues = 0
       var trueHead = -1
       for (head <- 0 to slen if dep != head) {
-        val m = indexedEdges(head, dep).msgs.asDiscrete.n2f
+        val m = indexedEdges(head, dep).msgs.asDiscrete.n2f.map(Math.exp(_))
+//        println("m(%d,%d) = [%s]".format(head, dep, m.mkString(", ")))
+        //println("  - real space = [%s]".format(m.map(Math.exp(_)).mkString(", ")))
         if (m(0) == 0) {
           trues += 1
           trueHead = head
@@ -77,14 +81,17 @@ class TreePotential(val edges: Map[(Any, Any), Edge], val ord: Edge, multinode: 
       }
     }
     // Calculate the potential's log partition function
+//    println("tkmat = [%s]".format(tkmat.mkString(", ")))
+//    println("gradmat = [%s]".format(gradmat.mkString(", ")))
     val z = sumTree(tkmat, gradmat, slen, multirooted=false)
+//    println(z)
     // Originally had a check here for Z != 0
     // Compute outgoing messages in terms of Z and incoming messages
     for (dep <- 1 to slen) {
       val koff = (dep - 1) * slen
       val tkoff = dep * slen
       for (head <- 0 to slen if dep != head) {
-        val m = heads(dep-1) match {
+        var m = heads(dep-1) match {
           case -2 =>	Array(Double.NaN, Double.NaN) // Incoming beliefs are a conflicting configuration
           case -1 =>  {                             // No absolute belief was found pertaining to this head
             val s = if (head > dep) 1 else 0
@@ -93,6 +100,7 @@ class TreePotential(val edges: Map[(Any, Any), Edge], val ord: Edge, multinode: 
           }
           case _ => if (heads(dep-1) == head) Array(0.0, 1.0) else Array(1.0, 0.0) // Set outgoing message deterministically
         }
+        m = m.map(Math.log(_))
         indexedEdges(head, dep).msgs.asDiscrete.f2n(0) = m(0)
         indexedEdges(head, dep).msgs.asDiscrete.f2n(1) = m(1)
       }
