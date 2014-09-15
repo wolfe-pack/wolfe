@@ -30,7 +30,7 @@ class TreePotential(val edges: Map[(Any, Any), Edge], val ord: Edge, multinode: 
   }
   override def valueForCurrentSetting() = {
     val graph = indexedEdges mapValues (_.n.variable.asDiscrete.value == 1)
-    val tree = TreePotential.isFullyConnectedNonProjectiveTree(graph)
+    val tree = TreePotential.isFullyConnectedProjectiveTree(graph)
     if (tree) 0.0 else Double.NegativeInfinity
   }
 
@@ -205,9 +205,12 @@ object TreePotential {
 
   @Wolfe.Potential( (edges: Map[(Any, Any), FactorGraph.Edge], ord:Edge) => new TreePotential(edges, ord, true) )
   def treeConstraint[T : Ordering](tree: Map[(T, T), Boolean]) =
-    if (isFullyConnectedNonProjectiveTree(tree)) 0.0 else Double.NegativeInfinity
+    if (isFullyConnectedProjectiveTree(tree)) 0.0 else Double.NegativeInfinity
 
-  def isFullyConnectedNonProjectiveTree[T](graph: Map[(T, T), Boolean]) = {
+  def isFullyConnectedProjectiveTree[T: Ordering](graph: Map[(T, T), Boolean]) = {
+    val ord = implicitly[Ordering[T]]
+    import ord._
+
     val indexedEdges = (graph filter (_._2)).toList map (_._1)
     val nodes = (graph.keys flatMap (p => List(p._1, p._2))).toList.distinct
     if (indexedEdges.size != nodes.size - 1) false
@@ -224,8 +227,26 @@ object TreePotential {
         }
       }
 
-      val result = connected(nodes.head :: Nil)
-      result.size == nodes.size
+      val root = nodes.min
+      val isTree = connected(nodes.head :: Nil).length == nodes.length &&
+                   parents(root).isEmpty &&
+                   nodes.forall(n => parents(n).length == 1 || n == root)
+
+      if(! isTree) {
+        false
+      }
+      else {
+
+        def projective(node:T, left:T, right:T): Boolean =
+          lteq(left, node) && gteq(right, node) &&
+          children(node).forall( c =>
+            projective(c,
+              if(gt(c, node)) node else left,
+              if(lt(c, node)) node else right
+          ))
+
+        projective(root, root, nodes.max)
+      }
     }
   }
 
