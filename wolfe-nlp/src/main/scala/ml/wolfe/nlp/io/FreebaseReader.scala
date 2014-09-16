@@ -28,25 +28,31 @@ class FreebaseReader {
 
   /** Global instance of the HTTP transport. */
   private val httpTransport = GoogleNetHttpTransport.newTrustedTransport()
-  //val API_KEY = "
+  val API_KEY = "AIzaSyClJFx89pJR0_8yc1nvTClMUzFPj0r1dHA"
 
 
-  def connect() {
+  def events() {
+    val MID_PATTERN = """\"mid\":\"([^\"]+)\"""".r
 
     val parser = new JSONParser()
     val requestFactory = httpTransport.createRequestFactory()
 
     val url = new GenericUrl("https://www.googleapis.com/freebase/v1/search")
-    url.put("query", "Cee Lo Green")
-    url.put("filter", "(all type:/music/artist created:\"The Lady Killer\")")
-    url.put("limit", "10")
+//    url.put("query", "Battle of Trafalgar")
+    url.put("mid", "/m/0152ww")
+    url.put("type", "/time/event")
+    url.put("limit", "5")
     url.put("indent", "true")
-    url.put("key", "AIzaSyClJFx89pJR0_8yc1nvTClMUzFPj0r1dHA")
+    url.put("key", API_KEY)
 
     val request = requestFactory.buildGetRequest(url)
+    println("URL: " + url.toString())
+    println("Request: " + request.toString())
     val httpResponse = request.execute()
-    val response = parser.parse(httpResponse.parseAsString())
-
+    val response = parser.parse(httpResponse.parseAsString()).toString()
+    (MID_PATTERN findAllIn response).matchData foreach { m =>
+      println("group: " + m.group(1))
+    }
 
     println(response.toString())
   }
@@ -57,11 +63,39 @@ object FreebaseReader {
 
   def main(args: Array[String]) = {
     val fr = new FreebaseReader
-    fr.connect()
+    fr.events()
   }
 }
 
 
+
+
+
+
+
+//    val url = new GenericUrl("https://www.googleapis.com/freebase/v1/search")
+
+//    val url = new GenericUrl("https://www.googleapis.com/freebase/v1/search")
+//    "type": "/time/event"
+
+//    url.put("filter", "(all type:/music/artist created:\"The Lady Killer\")")
+
+//    url.put("query", "[{\"mid\": null,\"name\": null, \"type\": \"/location/statistical_region\",\"limit\": 100}]")
+//    url.put("filter", "/location/statistical_region")
+//    url.put("filter", "/time/event")
+
+
+/*
+
+    val url = new GenericUrl("https://www.googleapis.com/freebase/v1/search")
+    url.put("query", "Cee Lo Green")
+    url.put("filter", "(all type:/music/artist created:\"The Lady Killer\")")
+    url.put("limit", "10")
+    url.put("indent", "true")
+    url.put("key", "AIzaSyClJFx89pJR0_8yc1nvTClMUzFPj0r1dHA")
+
+
+ */
 
 
 // initialize the transport

@@ -59,6 +59,7 @@ object BuildSettings {
     "com.google.apis" % "google-api-services-freebase" % "v1-rev31-1.13.2-beta",
     "com.google.api-client" % "google-api-client" % "1.14.1-beta",
     "com.googlecode.json-simple" % "json-simple" % "1.1"
+//    "net.liftweb" %% "lift-json" % "2.3"
   )
 
   val coreDependencies = libraryDependencies ++= Seq(

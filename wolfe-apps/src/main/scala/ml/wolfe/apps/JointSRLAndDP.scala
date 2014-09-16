@@ -1,5 +1,6 @@
 package ml.wolfe.apps
 
+import cc.factorie.optimize.{AdaGrad, AveragedPerceptron, OnlineTrainer}
 import ml.wolfe.{BeliefPropagation, FactorGraph, Learn, Wolfe}
 import ml.wolfe.fg.TreePotential
 
@@ -57,7 +58,7 @@ object JointSRLAndDP extends App {
     logZ(space(x)) { model(w)(x) } -
     logZ(space(x) where (y => y.args == gold.args)) { model(w)(x) }
 
-  @OptimizeByLearning(Learn.batch())
+  @OptimizeByLearning(new OnlineTrainer(_, new AdaGrad(), 20, -1))
   def loss(data: Seq[(X, Y)])(w: Vector) =
     sum(data) { i => localLoss(i._1, i._2)(w) } // todo: gradient calculator can't deal with "case (x,y)"
 
@@ -75,6 +76,10 @@ object JointSRLAndDP extends App {
   val w = argmin(vectors) { loss(train) }
 
   println(w)
+
+
+//  val exp = expect (space(example._1)) (model(w)(example._1)) (x => oneHot("hello"))
+
 
 
   //  case class Sentence(words: Seq[String], tags: Seq[String],
