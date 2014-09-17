@@ -55,7 +55,11 @@ object BuildSettings {
     "org.slf4j" % "slf4j-simple" % "1.7.6",
     "org.apache.commons" % "commons-compress" % "1.8",
     "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.1.3",
-    "com.typesafe" % "scalalogging-slf4j_2.10" % "1.1.0"
+    "com.typesafe" % "scalalogging-slf4j_2.10" % "1.1.0",
+    "com.google.apis" % "google-api-services-freebase" % "v1-rev31-1.13.2-beta",
+    "com.google.api-client" % "google-api-client" % "1.14.1-beta",
+    "com.googlecode.json-simple" % "json-simple" % "1.1"
+//    "net.liftweb" %% "lift-json" % "2.3"
   )
 
   val coreDependencies = libraryDependencies ++= Seq(
