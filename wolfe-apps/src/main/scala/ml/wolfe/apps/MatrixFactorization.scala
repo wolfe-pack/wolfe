@@ -38,7 +38,7 @@ object MatrixFactorization extends App {
     val a = A(d._1)
     val v = V(d._2)
     fg.buildFactor(Seq(a, v))(
-      _ map (_ => new VectorMsgs)) { e => new CellLogisticLoss(e(0), e(1), true) }
+      _ map (_ => new VectorMsgs)) { e => new CellLogisticLoss(e(0), e(1), 1.0) }
   }
 
   //create one negative stochastic factor per relation
@@ -47,7 +47,7 @@ object MatrixFactorization extends App {
     //todo: this should check if pair is not observed for relation.
     def sampleRow = rows(random.nextInt(numRows))
     fg.buildStochasticFactor(Seq(v, A(sampleRow))) (
-      _ map (_ => new VectorMsgs)) { e => new CellLogisticLoss(e(0), e(1), false) }
+      _ map (_ => new VectorMsgs)) { e => new CellLogisticLoss(e(0), e(1), 0.0) }
   }
 
   fg.build()
