@@ -11,7 +11,8 @@ import D3Implicits._
 object Scratch extends App {
 
 
-  val ranges = (1 +: (1 to 100)).map(0 to _)
+  //val ranges = (1 +: (1 to 100)).map(0 to _)
+  val ranges = (1 to 101).map(0 to _).reverse
   /*
   val sizes = Gen.range("size")(1, 10, 1)
 
@@ -62,7 +63,7 @@ object Scratch extends App {
           //BruteForceOperators.
           OptimizedOperators.expect(worlds) { mln } { w => oneHot('smokes, I(w.smokes(Symbol("0")))) }
         }
-        println(Timer.reported("foo"))
+        println//(Timer.reported("foo"))
         //print(r.last + "\t")
       }
       runExperiment
