@@ -103,7 +103,6 @@ trait MetaFunStructures[C<:Context] {
         ..$domainDefs
         private var iterator:Iterator[Unit] = _
         val keyNames = Seq(..$keyDoms).map(_.map(_.toString))
-        ml.wolfe.util.Util.breakpoint();
         def createNode(..$keyDomIteratorsTyped) = new ${valueMetaStructure.className} (astLabel + $indexedKeyName)
         val subStructures = Array.tabulate(..$keyDomSizes)(createNode)
         def children() = subStructureIterator().map(_.asInstanceOf[ml.wolfe.macros.Structure[Any]])
