@@ -1,8 +1,10 @@
 package ml.wolfe.apps
 
-import cc.factorie.optimize.{L2Regularization, AdaGrad, OnlineTrainer}
+import breeze.optimize.StochasticGradientDescent
+import cc.factorie.model.{WeightsMap, WeightsSet}
+import cc.factorie.optimize.{AdaGrad, OnlineTrainer}
 import ml.wolfe.{GradientBasedOptimizer, FactorGraph}
-import ml.wolfe.fg.{VectorMsgs, CellLogisticLoss}
+import ml.wolfe.fg.{L2Regularization, VectorMsgs, CellLogisticLoss}
 
 import scala.util.Random
 
@@ -38,7 +40,7 @@ object MatrixFactorization extends App {
     val a = A(d._1)
     val v = V(d._2)
     fg.buildFactor(Seq(a, v))(
-      _ map (_ => new VectorMsgs)) { e => new CellLogisticLoss(e(0), e(1), 1.0) }
+      _ map (_ => new VectorMsgs)) { e => new CellLogisticLoss(e(0), e(1), 1.0, 0.01) with L2Regularization }
   }
 
   //create one negative stochastic factor per relation
@@ -47,10 +49,12 @@ object MatrixFactorization extends App {
     //todo: this should check if pair is not observed for relation.
     def sampleRow = rows(random.nextInt(numRows))
     fg.buildStochasticFactor(Seq(v, A(sampleRow))) (
-      _ map (_ => new VectorMsgs)) { e => new CellLogisticLoss(e(0), e(1), 0.0) }
+      _ map (_ => new VectorMsgs)) { e => new CellLogisticLoss(e(0), e(1), 0.0, 0.01) with L2Regularization }
   }
 
   fg.build()
+
+
 
   GradientBasedOptimizer(fg, new OnlineTrainer(_, new AdaGrad(), 100,1))
 
