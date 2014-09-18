@@ -81,6 +81,10 @@ object BuildSettings {
     "org.scala-lang" %% "scala-pickling" % "0.8.0"
   )
 
+  val appDependencies = libraryDependencies ++= Seq(
+    //"pl.project13.scala" %% "rainbow" % "0.2"
+  )
+
   val uiDependencies = libraryDependencies ++= Seq(
     "eu.henkelmann" % "actuarius_2.10.0" % "0.2.6"
   )
@@ -163,7 +167,7 @@ object Build extends Build {
   lazy val apps = Project(
     id = "wolfe-apps",
     base = file("wolfe-apps"),
-    settings = buildSettings ++ globalSettings
+    settings = buildSettings ++ globalSettings ++ appDependencies
   ) dependsOn(
   core % "test->test;compile->compile",
   nlp % "test->test;compile->compile"
