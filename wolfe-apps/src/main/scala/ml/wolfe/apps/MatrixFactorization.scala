@@ -22,7 +22,7 @@ object MatrixFactorization extends App {
 
   val numRows = 10
   val numCols = 10
-  val cellDensity = 0.1
+  val cellDensity = 0.3
   val numObservedCells = (numRows * numCols * cellDensity).toInt
 
   val rows = (0 until numRows).map(i => "e" + i).toArray
@@ -68,24 +68,42 @@ object MatrixFactorization extends App {
 
   def sig(x: Double) = 1.0 / (1.0 + math.exp(-x))
 
-  implicit class ColorString(string: String) {
+  implicit class ANSIString(string: String) {
     import Console._
-    def red() = colorize(RED)
-    def blue() = colorize(BLUE)
-    def cyan() = colorize(CYAN)
-    def green() = colorize(GREEN)
-    def yellow() = colorize(YELLOW)
-    def white() = colorize(WHITE)
-    def magenta() = colorize(MAGENTA)
-    def bold() = BOLD + string + RESET
-    def underlined() = UNDERLINED + string + RESET
-    private def colorize(color: String) = color + string + RESET
+    private def apply(modifier: String) = modifier + string + RESET
+    
+    //foreground
+    def black() =       this(BLACK)
+    def blue() =        this(BLUE)
+    def cyan() =        this(CYAN)
+    def green() =       this(GREEN)
+    def magenta() =     this(MAGENTA)
+    def red() =         this(RED)
+    def yellow() =      this(YELLOW)
+    def white() =       this(WHITE)
+
+    //background
+    def onBlack() =     this(BLACK_B)
+    def onBlue() =      this(BLUE_B)
+    def onCyan() =      this(CYAN_B)
+    def onGreen() =     this(GREEN_B)
+    def onMagenta() =   this(MAGENTA_B)
+    def onRed() =       this(RED_B)
+    def onYellow() =    this(YELLOW_B)
+    def onWhite() =     this(WHITE_B)
+
+    //style
+    def blink() =       this(BLINK)
+    def bold() =        this(BOLD)
+    def invisible() =   this(INVISIBLE)
+    def reversed() =    this(REVERSED)
+    def underlined() =  this(UNDERLINED)
   }
 
   println("train:")
   println("\t" + cols.mkString(" "*4))
   println(rows.map(r => r + "\t" + cols.map(c =>
-    if (data.contains((r, c))) " 1  ".green() else " "*4
+    if (data.contains((r, c))) " 1  ".onGreen() else " "*4
   ).mkString("  ")).mkString("\n"))
 
   println("predicted:")
@@ -94,11 +112,11 @@ object MatrixFactorization extends App {
     val p = sig(A(r).variable.asVector.b dot V(c).variable.asVector.b)
     val pString = "%4.2f".format(p)
     if (data.contains((r, c)))
-      if (p >= 0.9) pString.green()
-      else if (p >= 0.5) pString.yellow()
-      else pString.red()
-    else if (p >= 0.9) pString.magenta()
-    else if (p >= 0.5) pString.cyan()
+      if (p >= 0.8) pString.onGreen()
+      else if (p >= 0.5) pString.onYellow()
+      else pString.onRed()
+    else if (p >= 0.8) pString.red()
+    else if (p >= 0.5) pString.yellow()
     else pString
   }).mkString("  ")).mkString("\n"))
 }
