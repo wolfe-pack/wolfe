@@ -6,6 +6,7 @@ import cc.factorie.optimize.{AdaGrad, OnlineTrainer}
 import ml.wolfe.{GradientBasedOptimizer, FactorGraph}
 import ml.wolfe.fg.{L2Regularization, VectorMsgs, CellLogisticLoss}
 
+import scala.annotation.tailrec
 import scala.util.Random
 
 /**
@@ -23,8 +24,8 @@ object MatrixFactorization extends App {
   val cellDensity = 0.5
   val numObservedCells = (numRows * numCols * cellDensity).toInt
 
-  val rows = (0 until numRows).map(i => 'e + i.toString).toArray
-  val cols = (0 until numCols).map(i => 'r + i.toString).toArray
+  val rows = (0 until numRows).map(i => "e" + i).toArray
+  val cols = (0 until numCols).map(i => "r" + i).toArray
 
   val data = (0 until numObservedCells).map(i => {
     val row = random.nextInt(numRows)
@@ -35,40 +36,50 @@ object MatrixFactorization extends App {
   val A = (rows map (p => p -> fg.addVectorNode(k))).toMap
   val V = (cols map (r => r -> fg.addVectorNode(k))).toMap
 
-  //create positive fact factors
   for (d <- data) {
     val a = A(d._1)
     val v = V(d._2)
+
+    //create positive fact factor
     fg.buildFactor(Seq(a, v))(
       _ map (_ => new VectorMsgs)) { e => new CellLogisticLoss(e(0), e(1), 1.0, 0.01) with L2Regularization }
+
+    //also create a sampled stochastic negative factor in the same column
+    val rowOpt = sampleRow(d._2)
+    if (rowOpt.isDefined)
+      fg.buildStochasticFactor(Seq(v, A(rowOpt.get)))(
+        _ map (_ => new VectorMsgs)) { e => new CellLogisticLoss(e(0), e(1), 0.0, 0.01) with L2Regularization }
   }
 
-  //create one negative stochastic factor per relation
-  for (r <- cols) {
-    val v = V(r)
-    //todo: this should check if pair is not observed for relation.
-    def sampleRow = rows(random.nextInt(numRows))
-    fg.buildStochasticFactor(Seq(v, A(sampleRow))) (
-      _ map (_ => new VectorMsgs)) { e => new CellLogisticLoss(e(0), e(1), 0.0, 0.01) with L2Regularization }
+  @tailrec
+  def sampleRow(col: String, attempts: Int = 1000): Option[String] = {
+    if (attempts == 0) None
+    else {
+      val row = rows(random.nextInt(numRows))
+      if (data.contains(row -> col)) sampleRow(col, attempts - 1)
+      else Some(row)
+    }
   }
 
   fg.build()
 
 
 
-  GradientBasedOptimizer(fg, new OnlineTrainer(_, new AdaGrad(), 100,1))
+  GradientBasedOptimizer(fg, new OnlineTrainer(_, new AdaGrad(), 100,10))
+
+  //println(data.mkString("\n"))
 
 
   def sig(x: Double) = 1.0 / (1.0 + math.exp(-x))
 
   println("train:")
-  println("\t" + cols.mkString(" "*3))
+  println("\t" + cols.mkString(" "*4))
   println(rows.map(r => r + "\t" + cols.map(c =>
     if (data.contains((r, c))) " 1  " else " "*4
   ).mkString("  ")).mkString("\n"))
 
   println("predicted:")
-  println("\t" + cols.mkString(" "*3))
+  println("\t" + cols.mkString(" "*4))
   println(rows.map(r => r + "\t" + cols.map(c =>
     "%4.2f".format(sig(A(r).variable.asVector.b dot V(c).variable.asVector.b))
   ).mkString("  ")).mkString("\n"))
