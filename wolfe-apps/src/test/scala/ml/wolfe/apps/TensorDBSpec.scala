@@ -50,28 +50,17 @@ class TensorDBSpec extends WordSpec with Matchers {
       db.isMatrix shouldBe true
 
       db += Cell(Seq("r2", "e1", "e2"))
-      info(db.toIxString)
       db.isMatrix shouldBe false
     }
 
+    "be usable in a natural way for a knowledge base with binary relations" in {
+      val matrix = new TensorDB()
+      matrix.sampleTensor(10,5)
+      println(matrix.toVerboseString)
 
-
-    "be usable in a natural for a knowledge base with binary relations" ignore {
-      val db = new TensorDB()
-      val args = (1 until 5).map(i => s"e$i")
-      val rels = (1 until 3).map(i => s"r$i")
-      val rand = new Random(0l)
-      for {
-        e1 <- args
-        e2 <- args
-        if e1 != e2
-        r <- rels
-        if rand.nextBoolean()
-      } {
-        db += Cell(r -> (e1 -> e2))
-      }
-
-      println(db.toStringVerbose)
+      val tensor = new TensorDB()
+      tensor.sampleTensor(10,5,5)
+      println(tensor.toVerboseString)
     }
   }
 }
