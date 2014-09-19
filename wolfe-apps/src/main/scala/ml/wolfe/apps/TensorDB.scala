@@ -12,7 +12,9 @@ import CellType._
 import ml.wolfe.FactorGraph
 import ml.wolfe.FactorGraph.Node
 
+import scala.annotation.tailrec
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.ListBuffer
 import scala.util.Random
 
@@ -24,6 +26,8 @@ case class Cell(ix: Any, target: Double = 1.0, cellType: CellType = CellType.Tra
 }
 
 class TensorDB(k: Int = 100) {
+  val random = new Random(0l)
+
   /**
    * Represents training, dev and test cells in a sparse tensor.
    */
@@ -52,12 +56,12 @@ class TensorDB(k: Int = 100) {
   val ix3Map = new mutable.HashMap[Any, ListBuffer[(Any, Any)]]()
   val ix23Map = new mutable.HashMap[(Any, Any), ListBuffer[Any]]()
 
-  def keys1 = ix1Map.keySet
-  def keys2 = ix2Map.keySet
-  def keys3 = ix3Map.keySet
-  def keys23 = ix23Map.keySet
+  val keys1 = new ArrayBuffer[Any]()
+  val keys2 = new ArrayBuffer[Any]()
+  val keys3 = new ArrayBuffer[Any]()
+  val keys23 = new ArrayBuffer[Any]()
 
-  def isMatrix = keys1.size != 0 && keys2.size != 0 && keys3.isEmpty
+  def isMatrix = keys1.size > 0 && keys2.size > 0 && keys3.isEmpty
   def isTensor = keys3.nonEmpty
 
   val ix1ToNodeMap = new mutable.HashMap[Any, Node]()
@@ -108,36 +112,79 @@ class TensorDB(k: Int = 100) {
     cellMap += key -> cell
 
     val (key1, key2, key3) = key
-    ix1Map.getOrElseUpdate(key1, new ListBuffer[(Any, Any)]()) append ((key2, key3))
-    if (key2 != EmptyIx) ix2Map.getOrElseUpdate(key2, new ListBuffer[(Any, Any)]()) append ((key1, key3))
+    ix1Map.getOrElseUpdate(key1, {
+      keys1 += key1
+      new ListBuffer[(Any, Any)]()
+    }) append ((key2, key3))
+    if (key2 != EmptyIx) ix2Map.getOrElseUpdate(key2, {
+      keys2 += key2
+      new ListBuffer[(Any, Any)]()
+    }) append ((key1, key3))
     if (key3 != EmptyIx) {
-      ix3Map.getOrElseUpdate(key3, new ListBuffer[(Any, Any)]()) append ((key1, key2))
-      ix23Map.getOrElseUpdate((key2, key3), new ListBuffer[Any]()) append key1
+      ix3Map.getOrElseUpdate(key3, {
+        keys3 += key3
+        new ListBuffer[(Any, Any)]()
+      }) append ((key1, key2))
+      ix23Map.getOrElseUpdate((key2, key3), {
+        keys23 += ((key2, key3))
+        new ListBuffer[Any]()
+      }) append key1
     }
 
     cells append cell
   }
 
-  def toFactorGraph: FactorGraph = ???
+  def toFactorGraph: FactorGraph = {
+    val fg = new FactorGraph()
 
-  def toVerboseString = {
+    if (isMatrix) {
+      ix1ToNodeMap ++= keys1 map (key => key -> fg.addVectorNode(k))
+      ix2ToNodeMap ++= keys2 map (key => key -> fg.addVectorNode(k))
+    } else ???
+
+    fg
+  }
+
+  private def sig(x: Double) = 1.0 / (1.0 + math.exp(-x))
+
+  def toVerboseString(showTrain: Boolean = false) = {
     import ml.wolfe.nlp.util.ANSIFormatter._
-    val w1 = keys1.map(_.toString.length).max + 1
-    val rows = if (isMatrix) keys2 else keys23
-    val w2 = rows.map(_.toString.length).max + 1
 
-    val format1 = "%"+w1+"s"
-    val format2 = "%"+w2+"s"
-    val format3 = "%"+(w1-1)+"s "
+    val cols = keys1
+    val rows = if (isMatrix) keys2 else keys23
+
+    val colWidth = math.max(keys1.map(_.toString.length).max + 1, 5)
+    val firstColWidth = rows.map(_.toString.length).max + 1
+
+    val colFormat = "%"+colWidth+"s"
+    val firstColFormat = "%"+firstColWidth+"s"
+    val cellFormat = "%"+(colWidth-1)+"s "
+    val pFormat = "%4.2f"
 
     val sb = new mutable.StringBuilder()
-    sb ++= " " * w2
-    ix1Map.keySet.foreach(col => sb ++= format1.format(col))
+    sb ++= " " * firstColWidth
+    cols.foreach(col => sb ++= colFormat.format(col))
     sb ++= "\n"
     rows.foreach(row => {
-      sb ++= format2.format(row)
-      ix1Map.keySet.foreach(col => {
-        sb ++= (if (get(col, row).isDefined) format3.format("1").onGreen() else format3.format(" "))
+      sb ++= firstColFormat.format(row) + " "
+      cols.foreach(col => {
+        if (showTrain) sb ++= (if (get(col, row).isDefined) cellFormat.format("1").onGreen() else cellFormat.format(" "))
+        else {
+          val colVec = ix1ToNodeMap(col).variable.asVector.b
+          val rowVec = ix2ToNodeMap(row).variable.asVector.b
+          val p = sig(rowVec dot colVec)
+          val pString = cellFormat.format(pFormat.format(p))
+
+          sb ++= (
+            if (get(col, row).map(_.target).getOrElse(0.0) >= 0.5)
+              if (p >= 0.8) pString.onGreen()
+              else if (p >= 0.5) pString.onYellow()
+              else pString.onRed()
+            else if (p >= 0.8) pString.red()
+            else if (p >= 0.5) pString.yellow()
+            else pString
+          )
+        }
       })
       sb ++= "\n"
     })
@@ -152,14 +199,26 @@ class TensorDB(k: Int = 100) {
     val arg2s = if (num3 > 0) (1 to num3).map(i => s"e$i") else List(EmptyIx)
     val rand = new Random(0l)
     for {
+      r <- rels
       e1 <- arg1s
       e2 <- arg2s
       if e1 != e2
-      r <- rels
       if rand.nextDouble() <= density
     } {
       this += Cell(r -> (e1 -> e2))
     }
+  }
+
+  @tailrec
+  final def sampleNode(col: Any, attempts: Int = 1000): Node = {
+    if (isMatrix)
+      if (attempts == 0) ix2ToNodeMap(keys2(random.nextInt(keys2.size)))
+      else {
+        val row = keys2(random.nextInt(keys2.size))
+        if (get(col, row).isDefined) sampleNode(col, attempts - 1)
+        else ix2ToNodeMap(row)
+      }
+    else ???
   }
 }
 

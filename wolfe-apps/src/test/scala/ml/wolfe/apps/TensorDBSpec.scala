@@ -56,11 +56,11 @@ class TensorDBSpec extends WordSpec with Matchers {
     "be usable in a natural way for a knowledge base with binary relations" in {
       val matrix = new TensorDB()
       matrix.sampleTensor(10,5)
-      println(matrix.toVerboseString)
+      println(matrix.toVerboseString(showTrain = true))
 
       val tensor = new TensorDB()
       tensor.sampleTensor(10,5,5)
-      println(tensor.toVerboseString)
+      println(tensor.toVerboseString(showTrain = true))
     }
   }
 }
