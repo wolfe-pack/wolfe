@@ -8,6 +8,8 @@ object CellType extends Enumeration {
   val Train, Dev, Test, Observed = Value
 }
 
+case object DefaultIx
+
 import CellType._
 import ml.wolfe.FactorGraph
 import ml.wolfe.FactorGraph.Node
@@ -18,14 +20,23 @@ import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.ListBuffer
 import scala.util.Random
 
-case class Cell(ix: Any, target: Double = 1.0, cellType: CellType = CellType.Train) {
+case class Cell(key1: Any, key2: Any = DefaultIx, key3: Any = DefaultIx, target: Double = 1.0, cellType: CellType = CellType.Train) {
+  val key = (key1, key2, key3)
   val train =     cellType == Train
   val dev =       cellType == Dev
   val test =      cellType == Test
   val observed =  cellType == Observed
 }
 
-class TensorDB(k: Int = 100) {
+
+trait Tensor {
+  type CellIx = Any
+  type CellKey = (CellIx, CellIx, CellIx)
+
+  def get(key1: CellIx, key2: CellIx = DefaultIx, key3: CellIx = DefaultIx): Option[Cell]
+}
+
+class TensorDB(k: Int = 100) extends Tensor {
   val random = new Random(0l)
 
   /**
@@ -43,90 +54,62 @@ class TensorDB(k: Int = 100) {
    */
   def numCells = cells.size
 
-  type CellKey = (Any, Any, Any)
-  case object EmptyIx
 
   /**
    * Cells can be indexed by `Any` data structure.
    */
   val cellMap = new mutable.HashMap[CellKey, Cell]()
 
-  val ix1Map = new mutable.HashMap[Any, ListBuffer[(Any, Any)]]()
-  val ix2Map = new mutable.HashMap[Any, ListBuffer[(Any, Any)]]()
-  val ix3Map = new mutable.HashMap[Any, ListBuffer[(Any, Any)]]()
-  val ix23Map = new mutable.HashMap[(Any, Any), ListBuffer[Any]]()
+  val ix1Map = new mutable.HashMap[CellIx, ListBuffer[(CellIx, CellIx)]]()
+  val ix2Map = new mutable.HashMap[CellIx, ListBuffer[(CellIx, CellIx)]]()
+  val ix3Map = new mutable.HashMap[CellIx, ListBuffer[(CellIx, CellIx)]]()
+  val ix23Map = new mutable.HashMap[(CellIx, CellIx), ListBuffer[CellIx]]()
 
-  val keys1 = new ArrayBuffer[Any]()
-  val keys2 = new ArrayBuffer[Any]()
-  val keys3 = new ArrayBuffer[Any]()
-  val keys23 = new ArrayBuffer[Any]()
+  val keys1 = new ArrayBuffer[CellIx]()
+  val keys2 = new ArrayBuffer[CellIx]()
+  val keys3 = new ArrayBuffer[CellIx]()
+  val keys23 = new ArrayBuffer[CellIx]()
 
+  def isEmpty = cells.isEmpty
   def isMatrix = keys1.size > 0 && keys2.size > 0 && keys3.isEmpty
   def isTensor = keys3.nonEmpty
 
-  val ix1ToNodeMap = new mutable.HashMap[Any, Node]()
-  val ix2ToNodeMap = new mutable.HashMap[Any, Node]()
-  val ix3ToNodeMap = new mutable.HashMap[Any, Node]()
+  val ix1ToNodeMap = new mutable.HashMap[CellIx, Node]()
+  val ix2ToNodeMap = new mutable.HashMap[CellIx, Node]()
+  val ix3ToNodeMap = new mutable.HashMap[CellIx, Node]()
   //for pair-embeddings
-  val ix23ToNodeMap = new mutable.HashMap[(Any, Any), Node]()
+  val ix23ToNodeMap = new mutable.HashMap[(CellIx, CellIx), Node]()
 
-  //this should be made simpler
-  def get(key1: Any, key2: Any = EmptyIx, key3: Any = EmptyIx): Option[Cell] = key1 match {
-    case (a, b) if key3 == EmptyIx => get(a, b)
-    case (a, b, c) if key2 == EmptyIx && key3 == EmptyIx => get(a, b, c)
-    case a if key2 != EmptyIx => key2 match {
-      case (b, c) => get(a, b, c)
-      case _ => cellMap.get((key1, key2, key3))
-    }
-    case _ => cellMap.get((key1, key2, key3))
-  }
+  def get(key1: CellIx, key2: CellIx = DefaultIx, key3: CellIx = DefaultIx): Option[Cell] =
+    cellMap.get((key1, key2, key3))
 
-  def getBy1(key: Any) = ix1Map.getOrElse(key, List())
-  def getBy2(key: Any) = ix2Map.getOrElse(key, List())
-  def getBy3(key: Any) = ix3Map.getOrElse(key, List())
+  def getBy1(key: CellIx) = ix1Map.getOrElse(key, List())
+  def getBy2(key: CellIx) = ix2Map.getOrElse(key, List())
+  def getBy3(key: CellIx) = ix3Map.getOrElse(key, List())
+  def getBy23(key1: CellIx, key2: CellIx) = ix23Map.getOrElse(key1 -> key2, List())
 
   def ++=(cells: Seq[Cell]) = cells foreach (this += _)
 
-  def getKey(ix: Any, depth: Int = 1, key: CellKey = (EmptyIx, EmptyIx, EmptyIx)): CellKey = {
-    def modifyKey(ix: Any, depth: Int, key: CellKey): CellKey = depth match {
-      case 1 => (ix, key._2, key._3)
-      case 2 => (key._1, ix, key._3)
-      case 3 => (key._1, key._2, ix)
-    }
-
-    if (depth > 3) key
-    else ix match {
-      case Nil => key
-      case x :: y :: zs if depth == 3 => modifyKey(x :: y :: zs, depth, key)
-      case x :: ys => modifyKey(x, depth, getKey(ys, depth + 1))
-      case (x, ys) if depth == 3 => modifyKey((x, ys), depth, key)
-      case (x, ys) => modifyKey(x, depth, getKey(ys, depth + 1))
-      case (x, y, zs) => modifyKey(x, depth, getKey((y, zs), depth + 1))
-      case _ => modifyKey(ix, depth, key)
-    }
-  }
 
   def +=(cell: Cell) {
-    val key = getKey(cell.ix, 1)
+    cellMap += cell.key -> cell
 
-    cellMap += key -> cell
-
-    val (key1, key2, key3) = key
+    val (key1, key2, key3) = cell.key
     ix1Map.getOrElseUpdate(key1, {
       keys1 += key1
       new ListBuffer[(Any, Any)]()
-    }) append ((key2, key3))
-    if (key2 != EmptyIx) ix2Map.getOrElseUpdate(key2, {
+    }) append (key2 -> key3)
+    if (key2 != DefaultIx) ix2Map.getOrElseUpdate(key2, {
       keys2 += key2
       new ListBuffer[(Any, Any)]()
-    }) append ((key1, key3))
-    if (key3 != EmptyIx) {
+    }) append (key1 -> key3)
+    if (key3 != DefaultIx) {
       ix3Map.getOrElseUpdate(key3, {
         keys3 += key3
         new ListBuffer[(Any, Any)]()
-      }) append ((key1, key2))
-      ix23Map.getOrElseUpdate((key2, key3), {
-        keys23 += ((key2, key3))
+      }) append (key1 -> key2)
+      ix23Map.getOrElseUpdate(key2 -> key3, {
+        keys23 += (key2 -> key3)
         new ListBuffer[Any]()
       }) append key1
     }
@@ -168,7 +151,18 @@ class TensorDB(k: Int = 100) {
     rows.foreach(row => {
       sb ++= firstColFormat.format(row) + " "
       cols.foreach(col => {
-        if (showTrain) sb ++= (if (get(col, row).isDefined) cellFormat.format("1").onGreen() else cellFormat.format(" "))
+        val cellOpt =
+          if (isMatrix) get(col, row)
+          else {
+            val (key2, key3) = row
+            get(col, key2, key3)
+          }
+
+
+        if (showTrain) {
+          sb ++= (if (cellOpt.isDefined) cellFormat.format("1").onGreen() else cellFormat.format(" "))
+        }
+
         else {
           val colVec = ix1ToNodeMap(col).variable.asVector.b
           val rowVec = ix2ToNodeMap(row).variable.asVector.b
@@ -176,7 +170,7 @@ class TensorDB(k: Int = 100) {
           val pString = cellFormat.format(pFormat.format(p))
 
           sb ++= (
-            if (get(col, row).map(_.target).getOrElse(0.0) >= 0.5)
+            if (cellOpt.map(_.target).getOrElse(0.0) >= 0.5)
               if (p >= 0.8) pString.onGreen()
               else if (p >= 0.5) pString.onYellow()
               else pString.onRed()
@@ -196,7 +190,7 @@ class TensorDB(k: Int = 100) {
   def sampleTensor(num1: Int, num2: Int, num3: Int = 0, density: Double = 0.1) = {
     val rels = (1 to num1).map(i => s"r$i")
     val arg1s = (1 to num2).map(i => s"e$i")
-    val arg2s = if (num3 > 0) (1 to num3).map(i => s"e$i") else List(EmptyIx)
+    val arg2s = if (num3 > 0) (1 to num3).map(i => s"e$i") else List(DefaultIx)
     val rand = new Random(0l)
     for {
       r <- rels
@@ -205,12 +199,12 @@ class TensorDB(k: Int = 100) {
       if e1 != e2
       if rand.nextDouble() <= density
     } {
-      this += Cell(r -> (e1 -> e2))
+      this += Cell(r, e1, e2)
     }
   }
 
   @tailrec
-  final def sampleNode(col: Any, attempts: Int = 1000): Node = {
+  final def sampleNode(col: CellIx, attempts: Int = 1000): Node = {
     if (isMatrix)
       if (attempts == 0) ix2ToNodeMap(keys2(random.nextInt(keys2.size)))
       else {
@@ -227,5 +221,5 @@ class TensorKB(k: Int = 100) extends TensorDB(k) {
   def arg1s = keys2
   def arg2s = keys3
  
-  def getFact(relation: Any, entity1: Any, entity2: Any) = get(relation, entity1, entity2)
+  def getFact(relation: CellIx, entity1: CellIx, entity2: CellIx) = get(relation, entity1, entity2)
 }
