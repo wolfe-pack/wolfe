@@ -40,6 +40,7 @@ object JointSRLAndDP extends App {
   }
 
   def depLocal(x: X)(y: Y)(e: (Int, Int)) =
+    oneHot('test -> y.deps(1, 2)) +
     oneHot('d_ww ->(x.words(e._1), x.words(e._2), y.deps(e)))
 
   //todo: wolfe cannot deal with pattern matching functions
@@ -77,10 +78,9 @@ object JointSRLAndDP extends App {
 
   println(w)
 
-  def query(y:Y) = oneHot(0->1,1.0)
+  def query(y: Y) = oneHot(y.deps((1, 2)))
 
-//  val exp = expect (space(example._1)) (model(w)(example._1)) (query)
-
+  val exp = expect(space(example._1))(model(w)(example._1))(query)
 
 
   //  case class Sentence(words: Seq[String], tags: Seq[String],
