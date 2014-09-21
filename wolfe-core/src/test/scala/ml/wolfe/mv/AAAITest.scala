@@ -14,8 +14,12 @@ object AAAITest {
   case object MyNil extends MyList[Nothing]
   type MyMap[A,B] = MyList[(A,B)]
 
+
+
+  //val test = RTCase2(MyCons.apply,RTConst(1),RTConst(List(2,3)))
+
   def maps[A,B](dom:List[A])(range:List[B]):List[MyMap[A,B]] = {
-    if (dom.isEmpty) unit(MyNil) else
+    if (dom.isEmpty) MyNil :: Nil else
       crossADT[(A,B),MyMap[A,B],MyCons[(A,B)]](MyCons.apply)(cross(unit(dom.head),range),maps(dom.tail)(range))
   }
 
