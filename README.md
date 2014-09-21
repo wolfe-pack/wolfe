@@ -1,5 +1,5 @@
 [![Build Status](https://api.travis-ci.org/wolfe-pack/wolfe.svg)](https://travis-ci.org/wolfe-pack/wolfe)
-[![Coverage Status](https://coveralls.io/repos/wolfe-pack/wolfe/badge.svg)](https://coveralls.io/r/wolfe-pack/wolfe)
+[![Coverage Status](https://coveralls.io/repos/wolfe-pack/wolfe/badge.png)](https://coveralls.io/r/wolfe-pack/wolfe)
 [![Stories in Ready](https://badge.waffle.io/wolfe-pack/wolfe.svg?label=ready&title=Ready)](http://waffle.io/wolfe-pack/wolfe)
 
 Installation
