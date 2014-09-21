@@ -10,6 +10,12 @@ class ExpectationSpecs extends WolfeSpec {
 
   import ml.wolfe.Wolfe._
 
+
+  "return constant expectations for constant stats " in {
+    val actual = OptimizedOperators.expect(bools) { bernoulli(0.7) } { _ => oneHot(1) }
+    actual should equal(Vector(1 -> 1.0))
+  }
+
   "return the expectations of a bernoulli variable" in {
     val actual = OptimizedOperators.expect(bools) { bernoulli(0.7) } { oneHot(_) }
     actual should equal(Vector(true -> 0.7, false -> 0.3))

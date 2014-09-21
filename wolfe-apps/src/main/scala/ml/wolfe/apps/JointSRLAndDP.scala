@@ -77,8 +77,9 @@ object JointSRLAndDP extends App {
 
   println(w)
 
+  def query(y:Y) = oneHot(0->1,1.0)
 
-//  val exp = expect (space(example._1)) (model(w)(example._1)) (x => oneHot("hello"))
+//  val exp = expect (space(example._1)) (model(w)(example._1)) (query)
 
 
 
