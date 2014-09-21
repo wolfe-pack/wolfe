@@ -95,6 +95,7 @@ object Transformer {
           ???
 
       }
+      q"null"
       //first do minimal transformed type inference for all identifiers in the expression
       //if object is identifier, figure out its minimal transformed type in the context,
       //then translate
