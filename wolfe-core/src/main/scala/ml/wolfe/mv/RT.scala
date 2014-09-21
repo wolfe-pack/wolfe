@@ -82,19 +82,19 @@ object Transformer {
     case class FunType(argTypes:List[TargetType],resultType:TargetType) extends TargetType
 
     def transformSpace(space: Tree, arguments:Map[Symbol,Symbol], target:TargetType): Tree = {
-      space match {
-        case id@Ident(name) if arguments.contains(id.symbol) =>
-          Ident(arguments(id.symbol))
-        case Apply(fun,args) =>
-          ???
-        case Function(vparams,body) =>
-          ???
-        case Select(qualifier,name) =>
-          ???
-        case TypeApply(fun,args) =>
-          ???
-
-      }
+//      space match {
+//        case id@Ident(name) if arguments.contains(id.symbol) =>
+//          Ident(arguments(id.symbol))
+//        case Apply(fun,args) =>
+//          ???
+//        case Function(vparams,body) =>
+//          ???
+//        case Select(qualifier,name) =>
+//          ???
+//        case TypeApply(fun,args) =>
+//          ???
+//
+//      }
       q"null"
       //first do minimal transformed type inference for all identifiers in the expression
       //if object is identifier, figure out its minimal transformed type in the context,
