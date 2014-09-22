@@ -34,9 +34,10 @@ object DualDecomposition {
 
     if(ad3) { factors.foreach(_.potential.ad3Init()) }
 
-    fg.visualizationSchedule =
-      fg.factors.flatMap( _.edges map(e => DirectedEdge(e, EdgeDirection.F2N))) ++
+    fg.visualizationSchedule = Seq(
+      fg.factors.flatMap( _.edges map(e => DirectedEdge(e, EdgeDirection.F2N))),
       fg.factors.flatMap( _.edges map(e => DirectedEdge(e, EdgeDirection.N2F)))
+    )
 
     fg.converged = false
     initializeN2FAndBeliefs(fg)

@@ -145,24 +145,22 @@ object D3Implicits {
     def factorY(f:Factor) = f.edges.map(e => nodeY(e.n)).sum / f.edges.length
     def isFixed(n:Node) = linear && maxNodeNumber != -1 && (nodeToNumber(n) == minNodeNumber || nodeToNumber(n) == maxNodeNumber)
 
-    def msgs = fg.visualizationSchedule.map(e => e.direction match {
-      case EdgeDirection.F2N if e.edge.msgs.isInstanceOf[DiscreteMsgs] => e.edge.msgs.asDiscrete.f2n
-      case EdgeDirection.N2F if e.edge.msgs.isInstanceOf[DiscreteMsgs] => e.edge.msgs.asDiscrete.n2f
-      case _ => Array[Double]()
-    })
-    def msgNodes = fg.visualizationSchedule.map(e => e.edge.n)
-    def msgsTables = (msgs zip msgNodes).map { case (m:Array[Double], n:Node) =>
-      (n, m.zipWithIndex.map{ case (v:Double, i:Int) => (n.variable.asDiscrete.domain(i),v) })
-    }
-    def msgsHtml = {
-      (msgNodes zip msgs).map{ case(n, m) =>
+    def nodesMsgs = fg.visualizationSchedule.map(
+      set => set.map(
+        e => e.direction match {
+        case EdgeDirection.F2N if e.edge.msgs.isInstanceOf[DiscreteMsgs] => (e.edge.n, e.edge.msgs.asDiscrete.f2n)
+        case EdgeDirection.N2F if e.edge.msgs.isInstanceOf[DiscreteMsgs] => (e.edge.n, e.edge.msgs.asDiscrete.n2f)
+        case _ => null
+    }))
+    def msgsHtml = nodesMsgs.map( set => set.map {
+        case(n, m) =>
         val headerRow = "<tr><td><i>" + n.variable.label + "</i></td><td></td></tr>"
         val tableRows = for((x, y) <- n.variable.asDiscrete.domain.zip(m)) yield {
           "<tr><td>" + x + "</td><td>" + y + "</td></tr>"
         }
         "<table class='potentialtable'>" + headerRow + "\n" + tableRows.mkString("\n") + "</table>"
-      }
-    }
+      })
+
 
     val style =
       s"""
@@ -272,9 +270,24 @@ object D3Implicits {
         |    node = svg.selectAll(".fgshape")
         |    label = svg.selectAll(".label");
         |
-        |    var defs = svg.append("svg:defs")
+
+        |
+        |    force
+        |     .nodes(data.graph.nodes)
+        |     .links(data.graph.links)
+        |     .start();
+        |
+        |   var defs = svg.append("svg:defs")
+        |
+        |    var link = link.data(data.graph.links)
+        |	    .enter().append("line")
+        |	    .attr("class", "link")
+        |
+        |
+        |    link.each( function(d, i) {
         |    defs.append("svg:marker")
-        |    .attr("id", "markerArrow")
+        |    .attr("id", "markerArrow" + i)
+        |    .attr("class", "markerArrow")
         |    .attr("markerWidth", "100")
         |    .attr("markerHeight", "100")
         |    .attr("refX", 0)
@@ -284,15 +297,7 @@ object D3Implicits {
         |       .type('triangle-up')
         |       .size(30))
         |     .attr("fill", "white");
-        |
-        |    force
-        |     .nodes(data.graph.nodes)
-        |     .links(data.graph.links)
-        |     .start();
-        |
-        |    var link = link.data(data.graph.links)
-        |	    .enter().append("line")
-        |	    .attr("class", "link")
+        |   });
         |
         |	  var node = node.data(data.graph.nodes)
         |	    .enter().append("path")
@@ -383,8 +388,11 @@ object D3Implicits {
         |
         |
         |var schedule = ${if(fg.visualizationSchedule == null) "null" else
-            (fg.visualizationSchedule zip msgsHtml).map { case (e, t) =>
-              "{edge:" + fg.edges.indexOf(e.edge) + ", direction:'" + e.direction + "', msg:'" + escape(t) + "'}"
+            (fg.visualizationSchedule zip msgsHtml).map {
+              case (edgeSet, tableSet) => (edgeSet zip tableSet).map {
+                case (e, t) =>
+                  "{edge:" + fg.edges.indexOf(e.edge) + ", direction:'" + e.direction + "', msg:'" + escape(t) + "'}"
+              }.mkString("[", ", ", "]")
             }.mkString("[", ", ", "]")
           };
         |var transitionIndex = 0;
@@ -396,46 +404,55 @@ object D3Implicits {
         |   transitionIndex = 0;
         |   playbtn.text("Play");
         | } else {
-        |   var e = schedule[transitionIndex];
-        |   var l = link[0][e.edge];
-        |   var dx = l.getAttribute("x1") - l.getAttribute("x2");
-        |   var dy = l.getAttribute("y1") - l.getAttribute("y2");
-        |   var len = Math.sqrt(dx * dx + dy * dy) - 30
-        |   link.attr("marker-end", function(d, i){
-        |     return i == e.edge ? "url(#markerArrow)" : "none";
+        |   var es = schedule[transitionIndex];
+        |   link.attr("marker-end", "none");
+        |   var finCount = 0;
+        |   es.forEach(function(e) {
+        |     var l = link[0][e.edge];
+        |     var dx = l.getAttribute("x1") - l.getAttribute("x2");
+        |     var dy = l.getAttribute("y1") - l.getAttribute("y2");
+        |     var len = Math.sqrt(dx * dx + dy * dy) - 30
+        |
+        |     d3.select(link[0][e.edge])
+        |       .attr("marker-end", "url(#markerArrow" + e.edge + ")");
+        |
+        |     d3.select("#markerArrow" + e.edge)
+        |         .attr("refX", (e.direction == 'N2F' ? len : 0))
+        |         .select("path")
+        |           .attr("transform", "rotate(" + (e.direction == 'N2F' ? 90 : -90) + ")");
+        |
+        |     d3.select("#markerArrow" + e.edge)
+        |         .transition()
+        |         .attr("refX", (e.direction == 'N2F' ? 0 : len))
+        |         .duration(1000)
+        |         .ease("linear");
+        |
+        |     d3.select(link[0][e.edge]).each(function(d) {
+        |           var t = d3.select(this).transition().duration(1000).each("end", function() {
+        |             d.msgVisited = !d.msgVisited;
+        |             if(++finCount == es.length) {
+        |               transitionIndex++;
+        |               playTransition();
+        |             }
+        |           });
+        |           t.style("stroke", d.msgVisited ? "black" : "white");
+        |     }).on("mouseover", function(d) {
+        |   		  setTooltip(e.msg);
+        |   		  tooltip.transition()
+        |   			  .duration(300)
+        |   			  .style("opacity", .9);
+        |   		  tooltipNode = d.source;
+        |   		  moveTooltip();
+        |     })
+        |     .on("mouseout", function(d) {
+        |	      tooltip.transition()
+        |           .duration(300)
+        |           .style("opacity", 0)
+        |     });
         |   });
-        |   svg.select("#markerArrow")
-        |     .attr("refX", (e.direction == 'N2F' ? len : 0))
-        |     .select("path")
-        |       .attr("transform", "rotate(" + (e.direction == 'N2F' ? 90 : -90) + ")");
+
+        |   }
         |
-        |   svg.select("#markerArrow").transition()
-        |     .attr("refX", (e.direction == 'N2F' ? 0 : len))
-        |     .duration(1000)
-        |     .ease("linear")
-        |
-        |   link.each(function(d,i) { if(i == e.edge) {
-        |       var t = d3.select(this).transition().duration(1000).each("end", function() {
-        |         d.msgVisited = !d.msgVisited;
-        |         transitionIndex++; playTransition();
-        |       });
-        |       t.style("stroke", d.msgVisited ? "black" : "white");
-        |   }})
-        |
-        |   link.on("mouseover", function(d,i){ if(i == e.edge) {
-        |	    		setTooltip(e.msg);
-        |	    		tooltip.transition()
-        |	    			.duration(300)
-        |	    			.style("opacity", .9);
-        |	    		tooltipNode = d.source;
-        |	    		moveTooltip();
-        |	    }})
-        |	    .on("mouseout", function(d,i){ if(i == e.edge) {
-        |			    tooltip.transition()
-        |	          .duration(300)
-        |	          .style("opacity", 0)
-        |	    }})
-        | }
         |}
         |var playbtn = null;
         |if(schedule != null) {
@@ -449,7 +466,7 @@ object D3Implicits {
         |       d3.select(this).text("Pause");
         |     } else {
         |       playing = false;
-        |       svg.select("#markerArrow").transition();
+        |       svg.selectAll(".markerArrow").transition();
         |       link.transition();
         |       d3.select(this).text("Play");
         |     }
