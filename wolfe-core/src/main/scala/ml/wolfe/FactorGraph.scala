@@ -79,7 +79,7 @@ final class FactorGraph {
   /**
    * Message passing schedule to display when rendering in D3
    **/
-  var visualizationSchedule: Seq[DirectedEdge] = null
+  var visualizationSchedule: Seq[Iterable[DirectedEdge]] = null
 
   /**
    * Adds a node for a variable of domain size `dim`
