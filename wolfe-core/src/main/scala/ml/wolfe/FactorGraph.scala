@@ -77,6 +77,11 @@ final class FactorGraph {
   var expectations: FactorieVector = null
 
   /**
+   * Message passing schedule to display when rendering in D3
+   **/
+  var visualizationSchedule: Seq[DirectedEdge] = null
+
+  /**
    * Adds a node for a variable of domain size `dim`
    * @param domain domain of the variable
    * @param label description of what the variable represents

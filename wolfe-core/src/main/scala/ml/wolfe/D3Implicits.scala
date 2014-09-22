@@ -2,8 +2,8 @@ package ml.wolfe
 
 import java.io.{File, PrintWriter}
 
-import ml.wolfe.FactorGraph.{Factor, Node}
-import ml.wolfe.fg.{TupleVar, DiscreteVar}
+import ml.wolfe.FactorGraph.{EdgeDirection, Factor, Node}
+import ml.wolfe.fg.{DiscreteMsgs, TupleVar, DiscreteVar}
 import org.sameersingh.htmlgen.{RawHTML, HTML}
 import scala.language.implicitConversions
 
@@ -66,7 +66,7 @@ object D3Implicits {
 |				var barHeight = $barHeight;
 |				var barSpace = $barSpace;
 |
-|				svg = d3.select("#$id").append("svg")
+|				var svg = d3.select("#$id").append("svg")
 |       .attr("height", d3.entries(data).length * (barHeight + barSpace))
 |				.attr("width", $width)
 |       .attr("class", "barchart")
@@ -145,13 +145,30 @@ object D3Implicits {
     def factorY(f:Factor) = f.edges.map(e => nodeY(e.n)).sum / f.edges.length
     def isFixed(n:Node) = linear && maxNodeNumber != -1 && (nodeToNumber(n) == minNodeNumber || nodeToNumber(n) == maxNodeNumber)
 
-
+    def msgs = fg.visualizationSchedule.map(e => e.direction match {
+      case EdgeDirection.F2N if e.edge.msgs.isInstanceOf[DiscreteMsgs] => e.edge.msgs.asDiscrete.f2n
+      case EdgeDirection.N2F if e.edge.msgs.isInstanceOf[DiscreteMsgs] => e.edge.msgs.asDiscrete.n2f
+      case _ => Array[Double]()
+    })
+    def msgNodes = fg.visualizationSchedule.map(e => e.edge.n)
+    def msgsTables = (msgs zip msgNodes).map { case (m:Array[Double], n:Node) =>
+      (n, m.zipWithIndex.map{ case (v:Double, i:Int) => (n.variable.asDiscrete.domain(i),v) })
+    }
+    def msgsHtml = {
+      (msgNodes zip msgs).map{ case(n, m) =>
+        val headerRow = "<tr><td><i>" + n.variable.label + "</i></td><td></td></tr>"
+        val tableRows = for((x, y) <- n.variable.asDiscrete.domain.zip(m)) yield {
+          "<tr><td>" + x + "</td><td>" + y + "</td></tr>"
+        }
+        "<table class='potentialtable'>" + headerRow + "\n" + tableRows.mkString("\n") + "</table>"
+      }
+    }
 
     val style =
       s"""
         |.link {
         |	stroke: #000;
-        |	stroke-width: 1.5px;
+        |	stroke-width: 2px;
         |}
         |
         |.fgshape {
@@ -181,7 +198,32 @@ object D3Implicits {
         |	pointer-events:none;
         |	overflow:hidden;
         |}
-""".stripMargin
+        |
+        |marker{
+        |	overflow:visible;
+        |}
+        |
+        |.btn{
+        |  float: left;
+        |  background: #f70;
+        |  color: #000;
+        |  font-family: sans-serif;
+        |  padding: 5px;
+        |  box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 1px 5px rgba(0,0,0,.5);
+        |  text-shadow: 0 1px 0 rgba(255,255,255,.3);
+        |  border-radius: 5px;
+        |  -moz-user-select: -moz-none;
+        |  -khtml-user-select: none;
+        |  -o-user-select: none;
+        |  user-select: none;
+        |  cursor: pointer;
+        |}
+        |
+        |.factorgraph{
+        | float:left;
+        | clear:left;
+        | }
+        """.stripMargin
 
     val data =  s"""
         |var data = {graph:{
@@ -230,6 +272,19 @@ object D3Implicits {
         |    node = svg.selectAll(".fgshape")
         |    label = svg.selectAll(".label");
         |
+        |    var defs = svg.append("svg:defs")
+        |    defs.append("svg:marker")
+        |    .attr("id", "markerArrow")
+        |    .attr("markerWidth", "100")
+        |    .attr("markerHeight", "100")
+        |    .attr("refX", 0)
+        |    .attr("orient", "auto")
+        |    .append("svg:path")
+        |     .attr("d", d3.svg.symbol()
+        |       .type('triangle-up')
+        |       .size(30))
+        |     .attr("fill", "white");
+        |
         |    force
         |     .nodes(data.graph.nodes)
         |     .links(data.graph.links)
@@ -237,7 +292,7 @@ object D3Implicits {
         |
         |    var link = link.data(data.graph.links)
         |	    .enter().append("line")
-        |	    .attr("class", "link");
+        |	    .attr("class", "link")
         |
         |	  var node = node.data(data.graph.nodes)
         |	    .enter().append("path")
@@ -325,7 +380,84 @@ object D3Implicits {
         |
         |force.on("tick", tick);
         |tick();
+        |
+        |
+        |var schedule = ${if(fg.visualizationSchedule == null) "null" else
+            (fg.visualizationSchedule zip msgsHtml).map { case (e, t) =>
+              "{edge:" + fg.edges.indexOf(e.edge) + ", direction:'" + e.direction + "', msg:'" + escape(t) + "'}"
+            }.mkString("[", ", ", "]")
+          };
+        |var transitionIndex = 0;
+        |var playing = false;
+        |var playTransition = function(){
+        | playing = true;
+        | if(transitionIndex >= schedule.length) {
+        |   playing = false;
+        |   transitionIndex = 0;
+        |   playbtn.text("Play");
+        | } else {
+        |   var e = schedule[transitionIndex];
+        |   var l = link[0][e.edge];
+        |   var dx = l.getAttribute("x1") - l.getAttribute("x2");
+        |   var dy = l.getAttribute("y1") - l.getAttribute("y2");
+        |   var len = Math.sqrt(dx * dx + dy * dy) - 30
+        |   link.attr("marker-end", function(d, i){
+        |     return i == e.edge ? "url(#markerArrow)" : "none";
+        |   });
+        |   svg.select("#markerArrow")
+        |     .attr("refX", (e.direction == 'N2F' ? len : 0))
+        |     .select("path")
+        |       .attr("transform", "rotate(" + (e.direction == 'N2F' ? 90 : -90) + ")");
+        |
+        |   svg.select("#markerArrow").transition()
+        |     .attr("refX", (e.direction == 'N2F' ? 0 : len))
+        |     .duration(1000)
+        |     .ease("linear")
+        |
+        |   link.each(function(d,i) { if(i == e.edge) {
+        |       var t = d3.select(this).transition().duration(1000).each("end", function() {
+        |         d.msgVisited = !d.msgVisited;
+        |         transitionIndex++; playTransition();
+        |       });
+        |       t.style("stroke", d.msgVisited ? "black" : "white");
+        |   }})
+        |
+        |   link.on("mouseover", function(d,i){ if(i == e.edge) {
+        |	    		setTooltip(e.msg);
+        |	    		tooltip.transition()
+        |	    			.duration(300)
+        |	    			.style("opacity", .9);
+        |	    		tooltipNode = d.source;
+        |	    		moveTooltip();
+        |	    }})
+        |	    .on("mouseout", function(d,i){ if(i == e.edge) {
+        |			    tooltip.transition()
+        |	          .duration(300)
+        |	          .style("opacity", 0)
+        |	    }})
+        | }
+        |}
+        |var playbtn = null;
+        |if(schedule != null) {
+        | playbtn = d3.select("#$id")
+        |   .insert("div", "svg")
+        |   .attr("class", "btn")
+        |   .text("Play")
+        |   .on('click', function() {
+        |     if(playing == false) {
+        |       playTransition();
+        |       d3.select(this).text("Pause");
+        |     } else {
+        |       playing = false;
+        |       svg.select("#markerArrow").transition();
+        |       link.transition();
+        |       d3.select(this).text("Play");
+        |     }
+        |   });
+        |}
       """.stripMargin
+
+
 
     wrapCode(id, data + run, style)
   }

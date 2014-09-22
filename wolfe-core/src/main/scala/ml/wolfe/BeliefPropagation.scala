@@ -67,6 +67,8 @@ object BeliefPropagation {
     val backwardEdges = forwardEdges.reverse.map(_.swap)
     val forwardBackwardEdges = forwardEdges ++ backwardEdges
 
+    fg.visualizationSchedule = forwardBackwardEdges
+
     val convergenceThreshold = 1e-6 * fg.nodes.map( n =>
       n.variable match {case d:DiscreteVar[_] => d.dim  * n.edges.length case _ => 1} ).sum
     var hasConverged = false

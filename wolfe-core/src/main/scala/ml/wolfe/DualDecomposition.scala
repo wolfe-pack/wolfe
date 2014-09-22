@@ -1,6 +1,6 @@
 package ml.wolfe
 
-import ml.wolfe.FactorGraph.{Node, Factor}
+import ml.wolfe.FactorGraph.{EdgeDirection, DirectedEdge, Node, Factor}
 import ml.wolfe.fg.AD3GenericPotential
 import scalaxy.loops._
 
@@ -33,6 +33,10 @@ object DualDecomposition {
     val factors = if (parallelize) fg.factors.par else fg.factors
 
     if(ad3) { factors.foreach(_.potential.ad3Init()) }
+
+    fg.visualizationSchedule =
+      fg.factors.flatMap( _.edges map(e => DirectedEdge(e, EdgeDirection.F2N))) ++
+      fg.factors.flatMap( _.edges map(e => DirectedEdge(e, EdgeDirection.N2F)))
 
     fg.converged = false
     initializeN2FAndBeliefs(fg)
