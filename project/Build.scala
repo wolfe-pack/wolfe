@@ -78,7 +78,8 @@ object BuildSettings {
 
   val nlpDependencies = libraryDependencies ++= Seq(
     "edu.arizona.sista" % "processors" % "2.0",
-    "org.scala-lang" %% "scala-pickling" % "0.8.0"
+    "org.scala-lang" %% "scala-pickling" % "0.8.0",
+    "org.json4s" %% "json4s-native" % "3.2.10"
   )
 
   val appDependencies = libraryDependencies ++= Seq(
