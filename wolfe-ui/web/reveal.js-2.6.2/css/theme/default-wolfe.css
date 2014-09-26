@@ -32,17 +32,22 @@ body {
 .logo {
     color: #fc0;
     display: inline-block;
+    font-weight: bold;
+}
+
+.green {
+    color: #3d983d;
+    
 }
 
 .reveal pre {
     box-shadow: none;
 }
 
-
 .reveal {
     font-family: "Lato", sans-serif;
     font-size: 36px;
-    font-weight: normal;
+/*    font-weight: normal;*/
     letter-spacing: -0.02em;
     color: #eeeeee;
 }
@@ -77,7 +82,7 @@ body {
  *********************************************/
 
 .reveal a:not(.image) {
-    color: #13daec;
+    color: #fc0;
     text-decoration: none;
     -webkit-transition: color .15s ease;
     -moz-transition: color .15s ease;
@@ -86,7 +91,7 @@ body {
     transition: color .15s ease;
 }
 .reveal a:not(.image):hover {
-    color: #71e9f4;
+    color: #f90;
     text-shadow: none;
     border: none;
 }
