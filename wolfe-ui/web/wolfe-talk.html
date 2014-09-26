@@ -52,11 +52,11 @@
     <style>
         .reveal pre {
             box-shadow: none;
-/*            width: 100%;*/
+            /*            width: 100%;*/
         }
         pre code {
-            width: 100%;    
-        }
+            width: 100%;
+        }        
     </style>
 
 
@@ -73,10 +73,120 @@
             <section>
                 <h2>What is it?</h2>
                 <ul>
-                    <li class="fragment grow">Blah</li>
-                    <li class="fragment grow">Blub</li>
+                    <li class="fragment fade-in">Machine Learning Library</li>
+                    <li class="fragment fade-in">Probabilistic Programming Language</li>
+                    <li class="fragment fade-in">Optimization Framework</li>
+                    <li class="fragment fade-in">NLP Library</li>
+                    <li class="fragment fade-in">Visualizer</li>
+                    <li class="fragment fade-in">Bunch of utilities</li>
+                    <li class="fragment fade-in">Deep Learning Library?</li>
+
+
+
                 </ul>
             </section>
+            <section>
+                <h2>Machine Learning Library</h2>
+                <ul>
+                    <li class="fragment fade-in">Supervised Learning</li>
+                    <li class="fragment fade-in">Structured Prediction</li>
+                    <li class="fragment fade-in">Graphical Models</li>
+                    <li class="fragment fade-in">Semi-supervised Learning</li>
+                    <li class="fragment fade-in">Matrix Factorization</li>
+                    <li class="fragment fade-in">etc.</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>Probabilistic Programming Language</h2>
+                <ul>
+                    <li class="fragment fade-in">Most ML models have
+                        <ul>
+                            <li>search space</li>
+                            <li>objective</li>
+                        </ul>
+                    </li>
+                    <li class="fragment fade-in">Practitioners do two things with such models
+                        <ul>
+                            <li class="fragment fade-in">Optimize</li>
+                            <li class="fragment fade-in">Calculate expectations</li>
+                        </ul>
+
+                    </li>
+                    <li class="fragment fade-in">Wolfe makes this <a href="http://moro.wolfe.ml:9000/doc/wolfe-static/wolfe/docs/examples/03_grids">easy</a>
+                    </li>
+
+                </ul>
+            </section>
+
+            <section>
+                <h2>Optimization Framework</h2>
+                <ul>
+                    <li class="fragment fade-in">Through <a href="http://factorie.cs.umass.edu/">FACTORIE</a> optimization package
+                        <ul>
+                            <li>SGD</li>
+                            <li>Adagrad</li>
+                            <li>LBFGS...</li>
+                        </ul>
+                    </li>
+                    <li class="fragment fade-in">Through <a href="http://moro.wolfe.ml:9000/doc/wolfe-static/wolfe/docs/concepts/06_factorgraphs">factor graph</a> message passing
+                        <ul>
+                            <li>AD3</li>
+                            <li>MaxProduct</li>
+                        </ul>
+                    </li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>NLP Library</h2>
+                <ul>
+                    <li class="fragment fade-in">NLP Data structures</li>
+                    <li class="fragment fade-in">Load data from various formats</li>
+                    <li class="fragment fade-in">Convenient wrappers around NLP tools</li>
+                    <li class="fragment fade-in">Freebase support</li>
+                    <li class="fragment fade-in">Json and binary serialization</li>
+                    <li class="fragment fade-in">etc.</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>Visualizer</h2>
+                <ul>
+                    <li class="fragment fade-in">Data Analysis and Exploration is crucial</li>
+                    <li class="fragment fade-in">Factor Graphs</li>
+                    <li class="fragment fade-in">Bar charts for marginals</li>
+                    <li class="fragment fade-in">NLP <a href="http://brat.nlplab.org">visualization</a> (to come)
+                        <ul>
+                            <li>Text</li>
+                            <li>Tags</li>
+                            <li>Syntax & Semantics</li>
+                        </ul>
+                    </li>
+                    <li class="fragment fade-in">Geospatial visualization?</li>
+                    <li class="fragment fade-in">etc.</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>Utilities</h2>
+                <ul>
+                    <li class="fragment fade-in">Timers</li>
+                    <li class="fragment fade-in">Useful macros</li>
+                    <li class="fragment fade-in">...</li>
+                </ul>
+            </section>
+            
+             <section>
+                <h2>What's in for you?</h2>
+                <ul>
+                    <li class="fragment fade-in">You should think about your approaches as models, optimization problems, graphical models etc. <span class="green">Wolfe facilitates this.</span></li>
+                    <li class="fragment fade-in">Everybody processes tokens, sentences, needs utilities, visualization, evaluation etc. <span class="green">Let's not duplicate work</span></li>
+                    <li class="fragment fade-in">Coding together is <span class="green">fun</span>.</li>
+                    <li class="fragment fade-in">So get involved, <span class="green">if you can!</span></li>
+                </ul>
+            </section>
+            
             <section>
                 <h2>Example</h2>
                 <p>Easy ...</p>

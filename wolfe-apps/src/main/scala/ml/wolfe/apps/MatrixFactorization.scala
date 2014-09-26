@@ -4,7 +4,7 @@ import breeze.optimize.StochasticGradientDescent
 import cc.factorie.model.{WeightsMap, WeightsSet}
 import cc.factorie.optimize.{AdaGrad, OnlineTrainer}
 import ml.wolfe.FactorGraph.Node
-import ml.wolfe.{GradientBasedOptimizer, FactorGraph}
+import ml.wolfe.{Wolfe, DenseVector, GradientBasedOptimizer, FactorGraph}
 import ml.wolfe.fg.{L2Regularization, VectorMsgs, CellLogisticLoss}
 
 import scala.annotation.tailrec
@@ -50,4 +50,36 @@ object MatrixFactorization extends App {
 
   println("predicted:")
   println(db.toVerboseString())  
+}
+
+
+object WolfeStyleMF {
+
+  import Wolfe._
+  import ml.wolfe.macros.OptimizedOperators._
+  case class Data(rel:String, arg1:String, arg2:String, target:Double)
+
+  case class Model(relationVectors:Map[String,Seq[Double]], entityPairVectors:Map[(String,String),Seq[Double]])
+
+  def dot(a1:Seq[Double],a2:Seq[Double]) = ???
+
+  val rels = Seq("profAt")
+  val ents = Seq("Luke" -> "MIT")
+
+  def searchSpace(k:Int) = all(Model)(maps(rels,fvectors(k)) x maps(ents,fvectors(k)))
+
+  def fvectors(k:Int) = Wolfe.seqsOfLength(k,Wolfe.doubles)
+
+  @Potential(???)
+  def logisticLoss(target:Double, arg1:Seq[Double],arg2:Seq[Double]) =
+    sum(0 until arg1.length) { i => arg1(i) * arg2(i) }
+
+  def objective(data:Seq[Data])(model:Model) = {
+    sum(data) {d => logisticLoss(d.target,model.entityPairVectors(d.arg1 -> d.arg2), model.relationVectors(d.rel)) }
+    //sum(relations) { sum(pairs where pair not in data } ...logisticLoss()
+  }
+
+
+
+
 }
