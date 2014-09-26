@@ -13,6 +13,7 @@ case object DefaultIx
 import CellType._
 import ml.wolfe.FactorGraph
 import ml.wolfe.FactorGraph.Node
+import ml.wolfe.FactorieVector
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -89,6 +90,11 @@ class TensorDB(k: Int = 100) extends Tensor {
   def getBy23(key1: CellIx, key2: CellIx) = ix23Map.getOrElse(key1 -> key2, List())
 
   def ++=(cells: Seq[Cell]) = cells foreach (this += _)
+
+  def vector1(key1: CellIx) = ix1ToNodeMap.get(key1).map(_.variable.asVector.b)
+  def vector2(key2: CellIx) = ix2ToNodeMap.get(key2).map(_.variable.asVector.b)
+  def vector3(key3: CellIx) = ix3ToNodeMap.get(key3).map(_.variable.asVector.b)
+  def vector23(key23: (CellIx, CellIx)) = ix23ToNodeMap.get(key23).map(_.variable.asVector.b)
 
 
   def +=(cell: Cell) {

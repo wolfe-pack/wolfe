@@ -53,7 +53,7 @@ object MatrixFactorization extends App {
 }
 
 
-object WolfeStyleMF {
+object WolfeStyleMF extends App {
 
   import Wolfe._
   import ml.wolfe.macros.OptimizedOperators._
@@ -66,20 +66,31 @@ object WolfeStyleMF {
   val rels = Seq("profAt")
   val ents = Seq("Luke" -> "MIT")
 
+
   def searchSpace(k:Int) = all(Model)(maps(rels,fvectors(k)) x maps(ents,fvectors(k)))
 
   def fvectors(k:Int) = Wolfe.seqsOfLength(k,Wolfe.doubles)
 
-  @Potential(???)
+  //@Potential(???)
   def logisticLoss(target:Double, arg1:Seq[Double],arg2:Seq[Double]) =
     sum(0 until arg1.length) { i => arg1(i) * arg2(i) }
 
-  def objective(data:Seq[Data])(model:Model) = {
-    sum(data) {d => logisticLoss(d.target,model.entityPairVectors(d.arg1 -> d.arg2), model.relationVectors(d.rel)) }
-    //sum(relations) { sum(pairs where pair not in data } ...logisticLoss()
+  //@Stochastic(String => (String, String)) //samples a non-observed pair efficiently from data; not for now
+  //@Stochastic //creates as many stochastic factors as the integer before the sum
+  def negativeDataLoss(r: String) = {
+    val numObserved = 1 //function of r
+    val numUnobserved = numObserved - ents.size
+
+    def score(pair: (String, String)) = 1.0
+
+    //there needs to be a default implementation that takes the filtered domain (ents) and samples from it
+    numObserved * sum(ents filter { e => ??? /* (r,e) shouldn't be observed */ }){ pair => score(pair) * (numUnobserved / numObserved.toDouble) }
   }
 
+  def objective(data:Seq[Data])(model:Model) = {
+    sum(data) { d => logisticLoss(d.target,model.entityPairVectors(d.arg1 -> d.arg2), model.relationVectors(d.rel)) } +
+    sum(rels) { r => negativeDataLoss(r) }
+  }
 
-
-
+  println("It compiles, yay! :)")
 }
