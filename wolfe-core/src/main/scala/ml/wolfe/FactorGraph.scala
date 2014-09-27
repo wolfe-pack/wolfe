@@ -95,15 +95,26 @@ final class FactorGraph {
 
   def addDiscreteNode(dim:Int, label:String = "") = addDiscreteNodeWithDomain((0 until dim).toArray, label)
 
+
+  /**
+   * Adds a node to the factor graph with the given variable
+   * @param variable variable to associate the node with.
+   * @tparam T type of value of variable.
+   * @return the created node.
+   */
+  def addNode[T](variable:Var[T]) = {
+    val n = new Node(nodes.size, variable)
+    nodes += n
+    n
+  }
+
   /**
    * Adds a node for a continuous variable
    * @param label description of what the variable represents
    * @return the added node.
    */
   def addContinuousNode(label:String = "") = {
-    val n = new Node(nodes.size, new ContinuousVar(label))
-    nodes += n
-    n
+    addNode(new ContinuousVar(label))
   }
 
   /**
@@ -112,9 +123,7 @@ final class FactorGraph {
    * @return the added node.
    */
   def addVectorNode(dim:Int, label:String = "") = {
-    val n = new Node(nodes.size, new VectorVar(dim,label))
-    nodes += n
-    n
+    addNode(new VectorVar(dim,label))
   }
 
 
@@ -124,10 +133,7 @@ final class FactorGraph {
    * @return the added tuple node.
    */
   def addTupleNode(componentNodes: Array[Node]) = {
-    val variable = new TupleVar(componentNodes)
-    val n = new Node(nodes.size, variable)
-    nodes += n
-    n
+    addNode(new TupleVar(componentNodes))
   }
 
   /**
