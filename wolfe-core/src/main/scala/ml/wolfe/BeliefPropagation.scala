@@ -118,7 +118,7 @@ object BeliefPropagation {
       }
     }
 
-    for(n <- fg.nodes if !n.variable.isObserved) n.variable.setToArgmax()
+    if (bpType == Max) for(n <- fg.nodes if !n.variable.isObserved) n.variable.setToArgmax()
   }
 
 
@@ -230,6 +230,7 @@ object BeliefPropagation {
     val residual = fg.edges.view.map(_.msgs match {
       case m:DiscreteMsgs => sqDiff(m.f2n, m.f2nLast)
       case m:TupleMsgs => sqDiff(m.f2n.array, m.f2nLast.array)
+      case _ => Double.PositiveInfinity
     }).sum
     residual < threshold
   }

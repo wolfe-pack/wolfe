@@ -53,8 +53,10 @@ object KernelBP {
 
     //create the factor graph
     val fg = new FactorGraph
-    val n_A = fg.addDiscreteNode(0)
-    val n_B = fg.addDiscreteNode(0)
+    val v_A = new KernelBPVar(data_A.size)
+    val v_B = new KernelBPVar(data_B.size)
+    val n_A = fg.addNode(v_A)
+    val n_B = fg.addNode(v_B)
     //val n_C = fg.addDiscreteNode(0) //we don't use this node because it's observed
 
     val f_AB = fg.addFactor()
@@ -64,24 +66,21 @@ object KernelBP {
     val e_AB_B = fg.addEdge(f_AB, n_B)
     val e_AB_A = fg.addEdge(f_AB, n_A)
 
-    e_BC_B.msgs = new KernelBPMSgs
-    e_AB_B.msgs = new KernelBPMSgs
-    e_AB_A.msgs = new KernelBPMSgs
-
     val obs_C = 2
 
     f_AB.potential = new KernelBPPairPotential(e_AB_A, e_AB_B, model_AB)
     f_BC.potential = new KernelBPLocalPotential(model_BC, obs_C)
 
-    n_A.variable = new KernelBPVar(Map.empty, Map(e_AB_A -> f_trans_AB_A), data_A.size)
-    n_B.variable = new KernelBPVar(
-      Map(
-        (e_AB_B, e_BC_B) -> f_trans_AB_BC,
-        (e_BC_B, e_AB_B) -> f_trans_BC_AB),
-      Map(
-        e_AB_B -> f_trans_AB_B,
-        e_BC_B -> f_trans_BC_B
-      ), data_B.size)
+    v_A.edge2nodeTranslation = Map(e_AB_A -> f_trans_AB_A)
+
+    v_B.edge2edgeTranslations = Map(
+      (e_AB_B, e_BC_B) -> f_trans_AB_BC,
+      (e_BC_B, e_AB_B) -> f_trans_BC_AB)
+
+    v_B.edge2nodeTranslation = Map(
+      e_AB_B -> f_trans_AB_B,
+      e_BC_B -> f_trans_BC_B
+    )
 
     fg.build()
 
@@ -108,15 +107,20 @@ object KernelBP {
   }
 
 
-  class KernelBPVar(val edge2edgeTranslations: Map[(Edge, Edge), DenseVector[Double] => DenseVector[Double]],
-                    val edge2nodeTranslation: Map[Edge, DenseVector[Double] => DenseVector[Double]],
-                    val dim: Int) extends Var[Double] {
+  class KernelBPVar(val dim: Int) extends Var[DenseVector[Double]] {
     var belief: DenseVector[Double] = null
 
     override type S = Int
-    override var setting:S = 0
-    override def value:Double = ???
+    override var setting: S = 0
+    override def value = ???
 
+    var edge2edgeTranslations: Map[(Edge, Edge), DenseVector[Double] => DenseVector[Double]] = Map.empty
+    var edge2nodeTranslation : Map[Edge, DenseVector[Double] => DenseVector[Double]]         = Map.empty
+
+
+    override def createMsgs() = {
+      new KernelBPMSgs()
+    }
     override def updateN2F(edge: Edge) = {
       val msgs = edge.msgs.asInstanceOf[KernelBPMSgs]
       msgs.n2f = new DenseVector[Double](Array.fill(dim)(1.0))
@@ -288,7 +292,7 @@ object KernelBPTed {
     val en_de = new File("/Users/sriedel/corpora/ted-cldc/en-de/")
 
     def pipeline(dir: File, sub: String, label: String, toRemove: String,
-                 index:Index, freeze:Boolean = false): Map[String, Seq[Document]] = {
+                 index: Index, freeze: Boolean = false): Map[String, Seq[Document]] = {
       println("Loading data")
       val en_train_files = getTrainSet(dir, sub, toRemove, Set(label)).sortBy(_._1).take(1000) //.map(d => tokenize(d._2))
       println("Annotating data")
@@ -302,8 +306,8 @@ object KernelBPTed {
 
 
 
-    val en_train_byLabel = pipeline(en_de,"train","art","_en",en_index)
-    val en_test_byLabel = pipeline(en_de,"test","art","_en",en_index,true)
+    val en_train_byLabel = pipeline(en_de, "train", "art", "_en", en_index)
+    val en_test_byLabel = pipeline(en_de, "test", "art", "_en", en_index, true)
 
 
     println(en_train_byLabel.mapValues(_.size).mkString("\n"))
@@ -325,13 +329,12 @@ object KernelBPTed {
     //now create the factor graph (single variable, local factor)
     def inferTagFromEn(enDoc: Document) = {
       val fg = new FactorGraph
-      val artNode = fg.addDiscreteNode(0)
+      val artVar = new KernelBPVar(label2DocModel.data.size)
+      val artNode = fg.addNode(artVar)
       val docFactor = fg.addFactor()
       val artDocEdge = fg.addEdge(docFactor, artNode)
-      artDocEdge.msgs = new KernelBPMSgs
+      artVar.edge2nodeTranslation = Map(artDocEdge -> ((v: DenseVector[Double]) => v))
       docFactor.potential = new KernelBPLocalPotential(label2DocModel, enDoc)
-      artNode.variable = new KernelBPVar(
-        Map.empty, Map(artDocEdge -> ((v: DenseVector[Double]) => v)), label2DocModel.data.size)
 
       fg.build()
       println("Running inference")
