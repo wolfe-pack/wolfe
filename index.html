@@ -44,7 +44,7 @@ def s(w:Vector)(s:Sentence) = w dot f(s)
 <pre class="prettyprint lang-scala">
 // MAP inference
 def h(w:Vector)(x:Sentence):Sentence =
-  argmax(sentences st (obs(_)==obs(x))){ d=>(w)(d) }
+  argmax(sentences st (obs(_)==obs(x))){ d=>s(w)(d) }
 
 // Loss over training data
 def loss(data:Seq[Sentence])(w:Vector):Double =
