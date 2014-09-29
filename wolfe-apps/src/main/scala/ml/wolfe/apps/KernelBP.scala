@@ -304,7 +304,13 @@ object KernelBPTed {
     }
     def tag(label: String) = label.substring(0, label.indexOf(':'))
 
-    val tags = Seq("art", "arts")
+    val train_tags = Seq("art")
+    val test_tags = Seq("art")
+    //language without tag training data
+    val target_lang = "en"
+    //language with tag traing data
+    val source_lang = "en"
+    val aux_lang = Seq.empty[String]
 
     //load positive and negative training documents for en-de
     val de_en = new File("/Users/sriedel/corpora/ted-cldc/de-en/")
@@ -322,7 +328,6 @@ object KernelBPTed {
       en_train_byLabel
     }
 
-    val train_tags = Seq("art")
 
 
     //create a tag -> (trainset,testset) map. For each tag we have a different index, so models can only
@@ -372,16 +377,18 @@ object KernelBPTed {
     }
 
     //http://www.aclweb.org/anthology/P/P14/P14-1006.pdf
-    val testTags = Seq("art")
     var globalEval = new Evaluation()
-    for (tag <- testTags) {
+    for (tag <- test_tags) {
       var eval = new Evaluation()
       for (instance <- datasets(tag).test) {
         implicit def toInt(b: Boolean) = if (b) 1 else 0
         val isPositive = instance.ir.docLabel.get.endsWith("positive")
-        val fg = createMonolingualFG(Seq(tag), instance)
-        val prediction = fg.inferTagBeliefs("art") //   inferTagFromEn(instance)
-        val winner = prediction.maxBy(_._2)._1
+        val winner = if (source_lang == target_lang) {
+          val fg = createMonolingualFG(Seq(tag), instance)
+          val prediction = fg.inferTagBeliefs("art") //   inferTagFromEn(instance)
+          println(prediction.mkString("\n"))
+          prediction.maxBy(_._2)._1
+        } else "N/A"
         val tp = isPositive && winner == instance.ir.docLabel.get
         val fp = !isPositive && winner != instance.ir.docLabel.get
         val tn = !isPositive && winner == instance.ir.docLabel.get
@@ -390,11 +397,10 @@ object KernelBPTed {
         globalEval = globalEval + Evaluation(tp, tn, fp, fn)
         println(instance.ir.docLabel)
         println("Winner: " + winner)
-        println(prediction.mkString("\n"))
-        println("TP: " + tp)
-        println("FP: " + fp)
-        println("TN: " + tn)
-        println("FN: " + fn)
+//        println("TP: " + tp)
+//        println("FP: " + fp)
+//        println("TN: " + tn)
+//        println("FN: " + fn)
 
       }
       println(eval)
