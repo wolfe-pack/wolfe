@@ -1,5 +1,6 @@
 package ml.wolfe.apps
 
+import scala.language.implicitConversions
 import java.io.File
 import java.util.StringTokenizer
 
@@ -278,6 +279,24 @@ object KernelBPTed {
     result
   }
 
+  case class MonolingualModel(fg: FactorGraph, tagVars: Map[String, KernelBPVar], tag2Model: Map[String, EdgeModel[String, Document]]) {
+    def inferTagBeliefs = {
+      BeliefPropagation.sumProduct(1, gradientAndObjective = false, schedule = BPSchedule.Auto)(fg)
+      val map = for ((tag, variable) <- tagVars) yield {
+        val labelBelief = variable.asInstanceOf[KernelBPVar].belief
+        //calculate expectation of each label
+        println("Estimating marginals")
+        val result = new mutable.HashMap[String, Double] withDefaultValue 0.0
+        for ((p, i) <- tag2Model(tag).data.zipWithIndex) result(p._1) += labelBelief(i)
+        tag -> result
+      }
+      map.toMap
+
+    }
+  }
+  case class Datasets(train: Seq[Document], test: Seq[Document])
+
+
   def main(args: Array[String]) {
     def mkDoc(file: ((String, String, String), String)) = {
       val doc = SISTAProcessors.mkDocument(file._2)
@@ -302,75 +321,88 @@ object KernelBPTed {
       val en_train_byLabel = en_train_vecs.groupBy(_.ir.docLabel.map(tag).get)
       en_train_byLabel
     }
-    val en_index = new SimpleIndex
+
+    val train_tags = Seq("art")
 
 
+    //create a tag -> (trainset,testset) map. For each tag we have a different index, so models can only
+    //be used on the train/test pairs defined here.
+    val datasets = train_tags.map(tag => {
+      val en_index = new SimpleIndex
+      val en_train_byLabel = pipeline(en_de, "train", tag, "_en", en_index)
+      val en_test_byLabel = pipeline(en_de, "test", tag, "_en", en_index, true)
+      tag -> Datasets(en_train_byLabel(tag), en_test_byLabel(tag))
+    }).toMap
 
-    val en_train_byLabel = pipeline(en_de, "train", "art", "_en", en_index)
-    val en_test_byLabel = pipeline(en_de, "test", "art", "_en", en_index, true)
+    def createTagModel(tag: String): EdgeModel[String, Document] = {
+      val dataset = datasets(tag)
+      import dataset._
 
+      println(train.size)
+      println(test.size)
 
-    println(en_train_byLabel.mapValues(_.size).mkString("\n"))
-    println(en_test_byLabel.mapValues(_.size).mkString("\n"))
+      val label2documentData = train map (d => d.ir.docLabel.get -> d)
 
+      def kernelLabel(l1: String, l2: String) = if (l1 == l2) 1.0 else 0.0
+      def kernelDoc(d1: Document, d2: Document) = d1.ir.bowVector.get dot d2.ir.bowVector.get
 
-    val en_train_art = en_train_byLabel("art")
-    val en_test_art = en_test_byLabel("art")
-    val en_train_art_data = en_train_art map (d => d.ir.docLabel.get -> d)
+      println("learning label model for English")
+      val label2DocModel = new EdgeModel(label2documentData, kernelLabel, kernelDoc, 0.1)
 
-    def kernelLabel(l1: String, l2: String) = if (l1 == l2) 1.0 else 0.0
-    def kernelDoc(d1: Document, d2: Document) = d1.ir.bowVector.get dot d2.ir.bowVector.get
+      println(label2DocModel.Obs12.size)
+      label2DocModel
+    }
 
-    println("learning label model for English")
-    val label2DocModel = new EdgeModel(en_train_art_data, kernelLabel, kernelDoc, 0.1)
+    val tag2model = (train_tags map (tag => tag -> createTagModel(tag))).toMap
 
-    println(label2DocModel.Obs12.size)
-
-    //now create the factor graph (single variable, local factor)
-    def inferTagFromEn(enDoc: Document) = {
+    def createMonolingualFG(tags: Seq[String], enDoc: Document): MonolingualModel = {
       val fg = new FactorGraph
-      val artVar = new KernelBPVar(label2DocModel.data.size)
-      val artNode = fg.addNode(artVar)
-      val docFactor = fg.addFactor()
-      val artDocEdge = fg.addEdge(docFactor, artNode)
-      artVar.edge2nodeTranslation = Map(artDocEdge -> ((v: DenseVector[Double]) => v))
-      docFactor.potential = new KernelBPLocalPotential(label2DocModel, enDoc)
-
+      val vars = for (tag <- tags) yield {
+        val model = tag2model(tag)
+        val artVar = new KernelBPVar(model.data.size)
+        val artNode = fg.addNode(artVar)
+        val docFactor = fg.addFactor()
+        val artDocEdge = fg.addEdge(docFactor, artNode)
+        artVar.edge2nodeTranslation = Map(artDocEdge -> ((v: DenseVector[Double]) => v))
+        docFactor.potential = new KernelBPLocalPotential(model, enDoc)
+        tag -> artVar
+      }
       fg.build()
-      println("Running inference")
-      BeliefPropagation.sumProduct(1, gradientAndObjective = false, schedule = BPSchedule.Auto)(fg)
-      val labelBelief = artNode.variable.asInstanceOf[KernelBPVar].belief
-      //calculate expectation of each label
-      println("Estimating marginals")
-      val result = new mutable.HashMap[String, Double] withDefaultValue 0.0
-      for ((p, i) <- en_train_art_data.zipWithIndex) result(p._1) += labelBelief(i)
-      result
+      MonolingualModel(fg, vars.toMap, tag2model)
     }
-    //http://www.aclweb.org/anthology/P/P14/P14-1006.pdf
-    var eval = new Evaluation()
-    for (instance <- en_test_art) {
-      import scala.language.implicitConversions
-      implicit def toInt(b: Boolean) = if (b) 1 else 0
-      val isPositive = instance.ir.docLabel.get.endsWith("positive")
-      val prediction = inferTagFromEn(instance)
-      val winner = prediction.maxBy(_._2)._1
-      val tp = isPositive && winner == instance.ir.docLabel.get
-      val fp = !isPositive && winner != instance.ir.docLabel.get
-      val tn = !isPositive && winner == instance.ir.docLabel.get
-      val fn = isPositive && winner != instance.ir.docLabel.get
-      eval = eval + Evaluation(tp, tn, fp, fn)
-      println(instance.ir.docLabel)
-      println("Winner: " + winner)
-      println(prediction.mkString("\n"))
-      println("TP: " + tp)
-      println("FP: " + fp)
-      println("TN: " + tn)
-      println("FN: " + fn)
 
+    //http://www.aclweb.org/anthology/P/P14/P14-1006.pdf
+    val testTags = Seq("art")
+    var globalEval = new Evaluation()
+    for (tag <- testTags) {
+      var eval = new Evaluation()
+      for (instance <- datasets(tag).test) {
+        implicit def toInt(b: Boolean) = if (b) 1 else 0
+        val isPositive = instance.ir.docLabel.get.endsWith("positive")
+        val fg = createMonolingualFG(Seq(tag), instance)
+        val prediction = fg.inferTagBeliefs("art") //   inferTagFromEn(instance)
+        val winner = prediction.maxBy(_._2)._1
+        val tp = isPositive && winner == instance.ir.docLabel.get
+        val fp = !isPositive && winner != instance.ir.docLabel.get
+        val tn = !isPositive && winner == instance.ir.docLabel.get
+        val fn = isPositive && winner != instance.ir.docLabel.get
+        eval = eval + Evaluation(tp, tn, fp, fn)
+        globalEval = globalEval + Evaluation(tp, tn, fp, fn)
+        println(instance.ir.docLabel)
+        println("Winner: " + winner)
+        println(prediction.mkString("\n"))
+        println("TP: " + tp)
+        println("FP: " + fp)
+        println("TN: " + tn)
+        println("FN: " + fn)
+
+      }
+      println(eval)
+      println(eval.tp)
+      println(eval.fn)
     }
-    println(eval)
-    println(eval.tp)
-    println(eval.fn)
+    println(globalEval)
+
 
     //
     //    println(en_train_files.size)
