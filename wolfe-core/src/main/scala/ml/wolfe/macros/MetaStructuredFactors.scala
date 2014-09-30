@@ -451,6 +451,7 @@ object MetaStructuredFactor {
       case q"$x.^" => q"""${shortCode(c)(x)} + " ^ " """
       case q"$x.&&" => q"""${shortCode(c)(x)} + " && " """
       case q"$x.==" => q"""${shortCode(c)(x)} + " == " """
+      case q"$x.!=" => q"""${shortCode(c)(x)} + " != " """
       case q"$x.>" => q"""${shortCode(c)(x)} + " > " """
       case q"$x.<" => q"""${shortCode(c)(x)} + " < " """
       case q"$x.>=" => q"""${shortCode(c)(x)} + " >= " """

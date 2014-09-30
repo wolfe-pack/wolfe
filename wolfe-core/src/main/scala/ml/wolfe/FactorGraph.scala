@@ -79,7 +79,8 @@ final class FactorGraph {
   /**
    * Message passing schedule to display when rendering in D3
    **/
-  var visualizationSchedule: Seq[Iterable[DirectedEdge]] = null
+  var visualizationMessages: ArrayBuffer[Iterable[(DirectedEdge, Seq[Double])]] = null
+  var visualizationSamples : ArrayBuffer[(Var[_], Any, Boolean)] = null
 
   /**
    * Adds a node for a variable of domain size `dim`
@@ -348,6 +349,17 @@ final class FactorGraph {
         }
       }
     loopyAcc(factors.toList, nodes.map(Set(_)).toSet)
+  }
+
+  def addMessagesToVisualization(addEdges:Iterable[Edge], dir:EdgeDirection.EdgeDirection): Unit = {
+    if(visualizationMessages.length < 100) {
+      try {
+        visualizationMessages += addEdges.map(e =>
+          (DirectedEdge(e, dir),
+          if (dir == EdgeDirection.N2F) e.msgs.asDiscrete.n2f.toList else e.msgs.asDiscrete.f2n.toList)
+        )
+      } catch { case _: Exception => /* todo: deal with non discrete messages */ }
+    }
   }
 
 

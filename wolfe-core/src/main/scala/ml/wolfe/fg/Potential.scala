@@ -95,7 +95,7 @@ trait DiscretePotential extends Potential {
     val table = scoreTable
     val headerRow = "<tr>" + vars.map(_.label).map("<td><i>" + _ + "</i></td>").mkString(" ") + "</tr>"
     val tableRows =
-      for((score, mul) <- table.zipWithIndex.take(10)) yield {
+      for((score, mul) <- table.zipWithIndex.take(100)) yield {
         val domainEntries = mul.map( m => m._1.domain(m._2) )
         val cells = domainEntries :+ ("<b>" + score + "</b>")
         "<tr>" + cells.map("<td>" + _ + "</td>").mkString(" ") + "</tr>"
