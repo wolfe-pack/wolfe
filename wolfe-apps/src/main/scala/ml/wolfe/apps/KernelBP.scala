@@ -7,7 +7,7 @@ import java.util.StringTokenizer
 import breeze.linalg._
 import ml.wolfe.BeliefPropagation.BPSchedule
 import ml.wolfe.FactorGraph.{Edge, Node}
-import ml.wolfe.apps.KernelBP.{KernelBPVar, KernelBPLocalPotential, KernelBPMSgs, EdgeModel}
+import ml.wolfe.apps.KernelBP._
 import ml.wolfe.nlp.{Key, Document, SISTAProcessors}
 import ml.wolfe.util.Evaluation
 import ml.wolfe.{SimpleIndex, Index, BeliefPropagation, FactorGraph}
@@ -291,9 +291,29 @@ object KernelBPTed {
         tag -> result
       }
       map.toMap
-
     }
   }
+
+  case class BilingualModel(fg: FactorGraph,srcVar:KernelBPVar,tgtSrcModel:EdgeModel[Document,Document],
+                            tagVars: Map[String, KernelBPVar],
+                            tag2Model: Map[String, EdgeModel[String, Document]]) {
+    def inferTagBeliefs = {
+      BeliefPropagation.sumProduct(1, gradientAndObjective = false, schedule = BPSchedule.Auto)(fg)
+      val map = for ((tag, variable) <- tagVars) yield {
+        val labelBelief = variable.asInstanceOf[KernelBPVar].belief
+        //calculate expectation of each label
+        println("Estimating marginals")
+        val result = new mutable.HashMap[String, Double] withDefaultValue 0.0
+        for ((p, i) <- tag2Model(tag).data.zipWithIndex) result(p._1) += labelBelief(i)
+        tag -> result
+      }
+      map.toMap
+    }
+  }
+
+
+
+
   case class Datasets(train: Seq[Document], test: Seq[Document])
 
 
@@ -399,7 +419,41 @@ object KernelBPTed {
     }
 
     def createBilingualFG(tags: Seq[String], tgtDoc: Document) = {
-      ???
+      val fg = new FactorGraph
+
+      //create source variable and translation factor
+      val srcVar = new KernelBPVar(targetSourceTranslationModel.data.size)
+      val srcNode = fg.addNode(srcVar)
+      val transFactor = fg.addFactor()
+      val transSrcEdge = fg.addEdge(transFactor,srcNode)
+      transFactor.potential = new KernelBPLocalPotential(targetSourceTranslationModel,tgtDoc)
+
+      //todo: translation between msgs for "central" srcNode
+      val translations = new mutable.HashMap[(Edge,Edge),DenseVector[Double] => DenseVector[Double]]
+
+
+      //connect source variable to tag variables
+      val vars = for (tag <- tags) yield {
+        val model = tag2model(tag)
+        val tagVar = new KernelBPVar(model.data.size)
+        val tagNode = fg.addNode(tagVar)
+
+        val srcTagFactor = fg.addFactor()
+        val srcTagTagEdge = fg.addEdge(srcTagFactor, tagNode)
+        val srcTagSrcEdge = fg.addEdge(srcTagFactor, srcNode)
+
+        tagVar.edge2nodeTranslation = Map(srcTagTagEdge -> ((v: DenseVector[Double]) => v))
+        srcTagFactor.potential = new KernelBPPairPotential(srcTagSrcEdge,srcTagTagEdge,model)
+
+        //todo: think about what these translations need to be
+        translations((srcTagSrcEdge,transSrcEdge)) = (x:DenseVector[Double]) => x
+        translations((transSrcEdge,srcTagSrcEdge)) = (x:DenseVector[Double]) => x
+
+
+        tag -> tagVar
+      }
+      srcVar.edge2edgeTranslations = translations.toMap
+      BilingualModel(fg,srcVar,targetSourceTranslationModel,vars.toMap,tag2model)
     }
 
     //http://www.aclweb.org/anthology/P/P14/P14-1006.pdf
