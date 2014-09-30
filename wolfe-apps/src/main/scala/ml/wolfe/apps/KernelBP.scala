@@ -308,13 +308,16 @@ object KernelBPTed {
     val test_tags = Seq("art")
     //language without tag training data
     val target_lang = "en"
-    //language with tag traing data
+    //language with tag training data
     val source_lang = "en"
     val aux_lang = Seq.empty[String]
 
+    val source_dir = source_lang + "-" + (if (target_lang == source_lang) "de" else target_lang)
+    val target_dir = target_lang + "-" + source_lang
+
     //load positive and negative training documents for en-de
-    val de_en = new File("/Users/sriedel/corpora/ted-cldc/de-en/")
-    val en_de = new File("/Users/sriedel/corpora/ted-cldc/en-de/")
+    val tgt_src = new File(s"/Users/sriedel/corpora/ted-cldc/$target_dir/")
+    val src_tgt = new File(s"/Users/sriedel/corpora/ted-cldc/$source_dir/")
 
     def pipeline(dir: File, sub: String, label: String, toRemove: String,
                  index: Index, freeze: Boolean = false): Map[String, Seq[Document]] = {
@@ -329,38 +332,57 @@ object KernelBPTed {
     }
 
 
+    //dataset for source language
+    def createTrainingSet(dir: File, langToRemove: String, index: Index) =
+      train_tags.map { tag => tag -> pipeline(dir, "train", tag, "_" + langToRemove, index)(tag) }.toMap
+    def createTestingSet(dir: File, langToRemove: String, index: Index) =
+      test_tags.map { tag => tag -> pipeline(dir, "test", tag, "_" + langToRemove, index, true)(tag) }.toMap
 
-    //create a tag -> (trainset,testset) map. For each tag we have a different index, so models can only
-    //be used on the train/test pairs defined here.
-    val datasets = train_tags.map(tag => {
-      val en_index = new SimpleIndex
-      val en_train_byLabel = pipeline(en_de, "train", tag, "_en", en_index)
-      val en_test_byLabel = pipeline(en_de, "test", tag, "_en", en_index, true)
-      tag -> Datasets(en_train_byLabel(tag), en_test_byLabel(tag))
-    }).toMap
+
+    //datasets for source
+    val sourceIndex = new SimpleIndex
+    val sourceTrainingSets = createTrainingSet(src_tgt, source_lang, sourceIndex)
+    val sourceTestSets = createTestingSet(src_tgt,source_lang,sourceIndex)
+
+    //datasets for target
+    val targetIndex = new SimpleIndex
+    val targetTrainingSets = if (target_lang != source_lang) createTrainingSet(tgt_src, target_lang, targetIndex) else Map.empty[String,Seq[Document]]
+    val targetTestSets = if (target_lang != source_lang) createTestingSet(tgt_src,target_lang,targetIndex) else Map.empty[String,Seq[Document]]
+
+    def kernelLabel(l1: String, l2: String) = if (l1 == l2) 1.0 else 0.0
+    def kernelSource(d1: Document, d2: Document) = d1.ir.bowVector.get dot d2.ir.bowVector.get
+    def kernelTarget(d1: Document, d2: Document) = d1.ir.bowVector.get dot d2.ir.bowVector.get
+
 
     def createTagModel(tag: String): EdgeModel[String, Document] = {
-      val dataset = datasets(tag)
-      import dataset._
+      val train = sourceTrainingSets(tag)
 
       println(train.size)
-      println(test.size)
 
       val label2documentData = train map (d => d.ir.docLabel.get -> d)
 
-      def kernelLabel(l1: String, l2: String) = if (l1 == l2) 1.0 else 0.0
-      def kernelDoc(d1: Document, d2: Document) = d1.ir.bowVector.get dot d2.ir.bowVector.get
-
       println("learning label model for English")
-      val label2DocModel = new EdgeModel(label2documentData, kernelLabel, kernelDoc, 0.1)
+      val label2DocModel = new EdgeModel(label2documentData, kernelLabel, kernelSource, 0.1)
 
       println(label2DocModel.Obs12.size)
       label2DocModel
     }
 
-    val tag2model = (train_tags map (tag => tag -> createTagModel(tag))).toMap
+    def createTargetSourceTranslationModel() = {
+      println("Learning target to source translation model")
+      val tgtTrain = train_tags.flatMap(targetTrainingSets(_))
+      val srcTrain = train_tags.flatMap(sourceTrainingSets(_))
+      val tgt2srcData = tgtTrain zip srcTrain
+      val tgt2srcModel = new EdgeModel(tgt2srcData, kernelTarget, kernelSource, 0.1)
+      println(tgt2srcModel.Obs12.size)
+      tgt2srcModel
+    }
 
-    def createMonolingualFG(tags: Seq[String], enDoc: Document): MonolingualModel = {
+    val tag2model = (train_tags map (tag => tag -> createTagModel(tag))).toMap
+    val targetSourceTranslationModel:EdgeModel[Document,Document] =
+      if (source_lang != target_lang) createTargetSourceTranslationModel() else null
+
+    def createMonolingualFG(tags: Seq[String], srcDoc: Document): MonolingualModel = {
       val fg = new FactorGraph
       val vars = for (tag <- tags) yield {
         val model = tag2model(tag)
@@ -369,18 +391,22 @@ object KernelBPTed {
         val docFactor = fg.addFactor()
         val artDocEdge = fg.addEdge(docFactor, artNode)
         artVar.edge2nodeTranslation = Map(artDocEdge -> ((v: DenseVector[Double]) => v))
-        docFactor.potential = new KernelBPLocalPotential(model, enDoc)
+        docFactor.potential = new KernelBPLocalPotential(model, srcDoc)
         tag -> artVar
       }
       fg.build()
       MonolingualModel(fg, vars.toMap, tag2model)
     }
 
+    def createBilingualFG(tags: Seq[String], tgtDoc: Document) = {
+      ???
+    }
+
     //http://www.aclweb.org/anthology/P/P14/P14-1006.pdf
     var globalEval = new Evaluation()
     for (tag <- test_tags) {
       var eval = new Evaluation()
-      for (instance <- datasets(tag).test) {
+      for (instance <- sourceTestSets(tag)) {
         implicit def toInt(b: Boolean) = if (b) 1 else 0
         val isPositive = instance.ir.docLabel.get.endsWith("positive")
         val winner = if (source_lang == target_lang) {
@@ -397,10 +423,10 @@ object KernelBPTed {
         globalEval = globalEval + Evaluation(tp, tn, fp, fn)
         println(instance.ir.docLabel)
         println("Winner: " + winner)
-//        println("TP: " + tp)
-//        println("FP: " + fp)
-//        println("TN: " + tn)
-//        println("FN: " + fn)
+        //        println("TP: " + tp)
+        //        println("FP: " + fp)
+        //        println("TN: " + tn)
+        //        println("FN: " + fn)
 
       }
       println(eval)
