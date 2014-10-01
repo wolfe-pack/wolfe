@@ -18,7 +18,7 @@ object D3Implicits {
   private def wrapCode(id:String, javascript:String, style:String = "") : HTML = {
     val html =
       s"""
-        |	<div id="$id">
+        |	<div id="$id" style="display:inline-block;">
         |		<style type="text/css">
         |			$style
         |		</style>
