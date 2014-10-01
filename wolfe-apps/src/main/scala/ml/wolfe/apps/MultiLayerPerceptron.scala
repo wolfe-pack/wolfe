@@ -25,7 +25,7 @@ object MultiLayerPerceptron {
 
   def layer(w: Vector)(l: Int, mlp: MLP) = {
     sum(0 until mlp(l).length) { i =>
-      logI(mlp(l)(i) == tanh(sum(0 until mlp(l - 1).length) { j => w((l, i, j)) * mlp(l - 1)(j) }))
+      constraint(mlp(l)(i) == tanh(sum(0 until mlp(l - 1).length) { j => w((l, i, j)) * mlp(l - 1)(j) }))
     }
   }
 
