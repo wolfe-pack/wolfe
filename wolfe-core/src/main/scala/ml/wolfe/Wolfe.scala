@@ -68,6 +68,7 @@ import math._
 object Wolfe extends SampleSpaceDefs
                      with StatsDefs
                      with VectorDefs
+                     with Quantification
                      with DefaultValues
                      with ProblemBuilder
                      with Annotations {
@@ -270,6 +271,10 @@ trait VectorDefs {
     })
 }
 
+trait Quantification {
+  def forall[T](dom:Iterable[T])(pred:T => Boolean) = dom.forall(pred)
+}
+
 trait SampleSpaceDefs {
   def all[A, B](mapper: A => B)(implicit dom: Iterable[A]): Iterable[B] = dom map mapper
 
@@ -420,7 +425,6 @@ trait DefaultValues {
   implicit def toDefaultBoolean[Boolean](default: Default) = false
   implicit def toDefaultDouble[Double](default: Default) = 0.0
   def default[T <: AnyRef]: T = null.asInstanceOf[T]
-
 }
 
 trait Annotations {
