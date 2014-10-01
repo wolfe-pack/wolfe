@@ -29,7 +29,7 @@ object MultiLayerPerceptron {
     }
   }
 
-  def mlp(w: Vector)(m: MLP) = sum(0 until m.length) { l => layer(w)(l, m) }
+  def mlp(w: Vector)(m: MLP) = sum(1 until m.length) { l => layer(w)(l, m) }
 
   def propagate(w: Vector)(x:Seq[Double]) = BruteForceOperators.argmax(space where (m => m(0) == x)) { mlp(w) }
 
