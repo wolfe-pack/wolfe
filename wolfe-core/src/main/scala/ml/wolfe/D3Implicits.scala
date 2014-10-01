@@ -2,8 +2,8 @@ package ml.wolfe
 
 import java.io.{File, PrintWriter}
 
-import ml.wolfe.FactorGraph.{EdgeDirection, Factor, Node}
-import ml.wolfe.fg.{DiscreteMsgs, TupleVar, DiscreteVar}
+import ml.wolfe.FactorGraph.{DirectedEdge, EdgeDirection, Factor, Node}
+import ml.wolfe.fg.{TupleMsgs, DiscreteMsgs, TupleVar, DiscreteVar}
 import org.sameersingh.htmlgen.{RawHTML, HTML}
 import scala.language.implicitConversions
 
@@ -51,18 +51,18 @@ object D3Implicits {
   def barChart(v:Wolfe.Vector) : HTML = {
     val id = "VEC" + Math.abs(v.hashCode()).toString
     val dataid = id + "_data"
-    val nonZero = v.filter(_._2 != 0)
+    val nonZero = v.filter(_._2 != 0).sortBy(_.toString())
 
-    val width = 500
+      val width = 500
 
-    val barHeight = 30
-    val barSpace = 10
+      val barHeight = 30
+      val barSpace = 10
 
-    val offset = 100
+      val offset = 100
 
-    val data = s"var data = { ${nonZero.map(x => "\"" + escape(x._1.toString) + "\": " + x._2).mkString(", ")} };"
-    val run =
-      s"""
+      val data = s"var data = { ${nonZero.map(x => "\"" + escape(x._1.toString) + "\": " + BigDecimal(x._2).setScale(3, BigDecimal.RoundingMode.HALF_UP)).mkString(", ")} };"
+      val run =
+        s"""
 |				var barHeight = $barHeight;
 |				var barSpace = $barSpace;
 |
@@ -102,7 +102,7 @@ object D3Implicits {
 |				.text(function(d) { return d.value; });
       """.stripMargin
 
-    wrapCode(id, data + run)
+      wrapCode(id, data + run)
   }
 
   implicit def d3fg(fg:FactorGraph) = $d3fg(fg)
@@ -135,6 +135,8 @@ object D3Implicits {
     val linkDistance = 50
     val linkStrength = 0.5
 
+    val strokeWidth = 2
+
     def nodeX(n:Node) = width * (
       if(nodeToNumber(n) == -1) Math.random()
       else ((nodeToNumber(n)-minNodeNumber).toDouble+0.5)/(maxNodeNumber - minNodeNumber +1))
@@ -142,31 +144,36 @@ object D3Implicits {
       if(nodeToNumber(n) == -1) Math.random()
       else (nodeTypes.indexOf(nodeToType(n))+1).toDouble / (nodeTypes.length+1))
     def factorX(f:Factor) = f.edges.map(e => nodeX(e.n)).sum / f.edges.length
-    def factorY(f:Factor) = f.edges.map(e => nodeY(e.n)).sum / f.edges.length
+    def factorY(f:Factor) = f.edges.map(e => nodeY(e.n)).sum / f.edges.length + 20
     def isFixed(n:Node) = linear && maxNodeNumber != -1 && (nodeToNumber(n) == minNodeNumber || nodeToNumber(n) == maxNodeNumber)
 
-    def nodesMsgs = fg.visualizationSchedule.map(
+/*    def nodesMsgs = fg.visualizationMessages.map(
       set => set.map(
         e => e.direction match {
         case EdgeDirection.F2N if e.edge.msgs.isInstanceOf[DiscreteMsgs] => (e.edge.n, e.edge.msgs.asDiscrete.f2n)
         case EdgeDirection.N2F if e.edge.msgs.isInstanceOf[DiscreteMsgs] => (e.edge.n, e.edge.msgs.asDiscrete.n2f)
+        case EdgeDirection.F2N if e.edge.msgs.isInstanceOf[TupleMsgs] => (e.edge.n, e.edge.msgs.asTuple.f2n.array)
+        case EdgeDirection.N2F if e.edge.msgs.isInstanceOf[TupleMsgs] => (e.edge.n, e.edge.msgs.asTuple.n2f.array)
         case _ => null
-    }))
-    def msgsHtml = nodesMsgs.map( set => set.map {
-        case(n, m) =>
-        val headerRow = "<tr><td><i>" + n.variable.label + "</i></td><td></td></tr>"
-        val tableRows = for((x, y) <- n.variable.asDiscrete.domain.zip(m)) yield {
-          "<tr><td>" + x + "</td><td>" + y + "</td></tr>"
+    }))*/
+    def msgHtml(e:DirectedEdge, m:Seq[Double]) = {
+        val dom:Seq[String] = e.n.variable match {
+          case t:DiscreteVar[_] => t.domain.map(_.toString)
+          case t:TupleVar => t.domain
+        }
+        val headerRow = "<tr><td><i>" + e.n.variable.label + "</i></td><td></td></tr>"
+        val tableRows = for((x, y) <- dom.zip(m)) yield {
+          "<tr><td>" + x + "</td><td>" + "%.3f".format(y) + "</td></tr>"
         }
         "<table class='potentialtable'>" + headerRow + "\n" + tableRows.mkString("\n") + "</table>"
-      })
+    }
 
 
     val style =
       s"""
         |.link {
         |	stroke: #000;
-        |	stroke-width: 2px;
+        |	stroke-width:${strokeWidth}px;
         |}
         |
         |.fgshape {
@@ -201,21 +208,6 @@ object D3Implicits {
         |	overflow:visible;
         |}
         |
-        |.btn{
-        |  float: left;
-        |  background: #f70;
-        |  color: #000;
-        |  font-family: sans-serif;
-        |  padding: 5px;
-        |  box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 1px 5px rgba(0,0,0,.5);
-        |  text-shadow: 0 1px 0 rgba(255,255,255,.3);
-        |  border-radius: 5px;
-        |  -moz-user-select: -moz-none;
-        |  -khtml-user-select: none;
-        |  -o-user-select: none;
-        |  user-select: none;
-        |  cursor: pointer;
-        |}
         |
         |.factorgraph{
         | float:left;
@@ -229,11 +221,26 @@ object D3Implicits {
               nodes.map(n =>
                 "{text:'" + escape(n.variable.label) + "'" +
                 ", type:'" + (if(n.variable.isObserved) "observednode" else "node") + "'" +
-                 ", hoverhtml:'Domain:<br/>{" + escape(n.variable match {
-                  case v:DiscreteVar[_] => v.domain.mkString(", ")
-                  case v:TupleVar => v.domain.mkString(", ")
-                  case _ => ""
-                }) + "}'" +
+                 ", hoverhtml:'<table style=\\'width:initial\\'><tr><td>Setting</td><td>Belief</td></tr>" + escape(
+                  n.variable match {
+
+                    case v:DiscreteVar[_] => (v.domain zip v.b).zipWithIndex.map {
+                      case(db:(Any, Double),i:Int) =>
+                        "<tr><td>" +
+                        (if(v.fixedSetting && i == v.setting) s"<span style='font-weight:bold; color:#fc0'>${db._1}</span>" else db._1) +
+                        s"</td><td>${db._2}</td></tr>"
+                    }.mkString("\n")
+
+                    case v:TupleVar => (v.domain zip v.b).zipWithIndex.map {
+                      case(db:(Any, Double),i:Int) =>
+                        "<tr><td>" +
+                        db._1 +
+                        s"</td><td>${db._2}</td></tr>"
+                    }.mkString("\n")
+
+                    case _ => ""
+                  })
+                + "</table>'" +
                 ", x:" + nodeX(n) + ", y:" + nodeY(n) +
                 ", fixed:" + isFixed(n) +
                 "}") ++
@@ -370,7 +377,7 @@ object D3Implicits {
         |	}
         |	tooltip = svg.insert("foreignObject")
         |		.attr("class", "tooltip")
-        |		.attr("width", "300")
+        |		.attr("width", "350")
         |		.attr("height", "500")
         |		.style("opacity", 0)
         |		.html("<div class='tooltipinner'>" + html + "</div>")
@@ -387,22 +394,56 @@ object D3Implicits {
         |tick();
         |
         |
-        |var schedule = ${if(fg.visualizationSchedule == null) "null" else
-            (fg.visualizationSchedule zip msgsHtml).map {
-              case (edgeSet, tableSet) => (edgeSet zip tableSet).map {
-                case (e, t) =>
-                  "{edge:" + fg.edges.indexOf(e.edge) + ", direction:'" + e.direction + "', msg:'" + escape(t) + "'}"
+        |
+        |
+        |
+        |
+        |
+        |
+        |
+        |
+        |
+        |var samples = ${if (fg.visualizationSamples == null) "null" else
+          fg.visualizationSamples.map{case(v,s,a) => "{node:" + v.node.index + ", sample:'" + escape(s.toString) +
+            "', accepted:" + a + "}\n"}.mkString("[", ", ", "]")
+          };
+        |var toast = function(t, x, y) {
+        | t.attr("opacity", 1)
+        | .attr("x", x)
+        | .attr("y", y)
+        | .transition()
+        | .duration(1000)
+        | .ease("linear")
+        | .attr("opacity", 0)
+        | .attr("y", y-40)
+        |}
+        |var showSamples = function(i) {
+        |  if(playing) {
+        |   var n = data.graph.nodes[samples[i].node]
+        |   var t = svg.append("text")
+        |     .text(samples[i].sample)
+        |     .style("font-weight", "bold")
+        |     .attr("fill", samples[i].accepted  ? "#fc0" : "#f50")
+        |     .attr("text-anchor", "middle")
+        |   toast(t, n.x, n.y-30);
+        |   setTimeout(function() {showSamples(i+1);}, 400)
+        |  }
+        |}
+        |var schedule = ${if(fg.visualizationMessages == null) "null" else
+            fg.visualizationMessages.map { _.map{
+                case (e, m) =>
+                  "{edge:" + fg.edges.indexOf(e.edge) + ", direction:'" + e.direction + "', msg:'" + escape(msgHtml(e,m)) + "'}"
               }.mkString("[", ", ", "]")
             }.mkString("[", ", ", "]")
           };
         |var transitionIndex = 0;
         |var playing = false;
         |var playTransition = function(){
-        | playing = true;
         | if(transitionIndex >= schedule.length) {
-        |   playing = false;
         |   transitionIndex = 0;
+        |   playing = false;
         |   playbtn.text("Play");
+        |   //playTransition();
         | } else {
         |   var es = schedule[transitionIndex];
         |   link.attr("marker-end", "none");
@@ -411,7 +452,7 @@ object D3Implicits {
         |     var l = link[0][e.edge];
         |     var dx = l.getAttribute("x1") - l.getAttribute("x2");
         |     var dy = l.getAttribute("y1") - l.getAttribute("y2");
-        |     var len = Math.sqrt(dx * dx + dy * dy) - 30
+        |     var len = Math.sqrt(dx * dx + dy * dy) / ${strokeWidth}
         |
         |     d3.select(link[0][e.edge])
         |       .attr("marker-end", "url(#markerArrow" + e.edge + ")");
@@ -455,21 +496,24 @@ object D3Implicits {
         |
         |}
         |var playbtn = null;
-        |if(schedule != null) {
+        |if(schedule != null || samples != null) {
         | playbtn = d3.select("#$id")
         |   .insert("div", "svg")
-        |   .attr("class", "btn")
+        |   .attr("class", "playbtn")
         |   .text("Play")
         |   .on('click', function() {
-        |     if(playing == false) {
-        |       playTransition();
-        |       d3.select(this).text("Pause");
-        |     } else {
-        |       playing = false;
-        |       svg.selectAll(".markerArrow").transition();
-        |       link.transition();
-        |       d3.select(this).text("Play");
-        |     }
+        |      if(playing == false) {
+        |        d3.select(this).text("Pause");
+        |        playing = true;
+        |        if(schedule != null) { playTransition(); } else { showSamples(0);}
+        |      } else {
+        |        playing = false;
+        |        d3.select(this).text("Play");
+        |        if(schedule != null) {
+        |         svg.selectAll(".markerArrow").transition();
+        |         link.transition();
+        |        }
+        |      }
         |   });
         |}
       """.stripMargin
@@ -506,8 +550,8 @@ object D3Implicits {
     val writer = new PrintWriter(file)
     writer.println("<html>" +
     "<head><link rel='stylesheet' href='" +
-        //"https://raw.githubusercontent.com/wolfe-pack/moro/master/public/stylesheets/wolfe.css" +
-          "/home/luke/workspace/moro/public/stylesheets/wolfe.css" +
+        "https://raw.githubusercontent.com/wolfe-pack/moro/master/public/stylesheets/wolfe.css" +
+        //  "/home/luke/workspace/moro/public/stylesheets/wolfe.css" +
     "' />" +
     "</head>" +
     "<body>" + html.source + "</body>" +
