@@ -58,8 +58,10 @@ object BuildSettings {
     "com.typesafe" % "scalalogging-slf4j_2.10" % "1.1.0",
     "com.google.apis" % "google-api-services-freebase" % "v1-rev31-1.13.2-beta",
     "com.google.api-client" % "google-api-client" % "1.14.1-beta",
-    "com.googlecode.json-simple" % "json-simple" % "1.1"
-//    "net.liftweb" %% "lift-json" % "2.3"
+    "com.googlecode.json-simple" % "json-simple" % "1.1",
+    "org.json4s" %% "json4s-native" % "3.2.10"
+
+    //    "net.liftweb" %% "lift-json" % "2.3"
   )
 
   val coreDependencies = libraryDependencies ++= Seq(
@@ -78,8 +80,7 @@ object BuildSettings {
 
   val nlpDependencies = libraryDependencies ++= Seq(
     "edu.arizona.sista" % "processors" % "2.0",
-    "org.scala-lang" %% "scala-pickling" % "0.8.0",
-    "org.json4s" %% "json4s-native" % "3.2.10"
+    "org.scala-lang" %% "scala-pickling" % "0.8.0"
   )
 
   val appDependencies = libraryDependencies ++= Seq(
