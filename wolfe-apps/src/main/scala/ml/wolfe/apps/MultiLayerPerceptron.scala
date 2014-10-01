@@ -33,7 +33,7 @@ object MultiLayerPerceptron {
 
   def propagate(w: Vector)(x:Seq[Double]) = BruteForceOperators.argmax(space where (m => m(0) == x)) { mlp(w) }
 
-  def f(i:Instance) = sum(0 until i.mlp.last.length) { j => oneHot((i.label,j))}
+  def f(i:Instance) = sum(0 until i.mlp.last.length) { j => oneHot((i.label,j),i.mlp.last(j))}
 
   def classifier(w:Vector)(i:Instance) = mlp(w)(i.mlp) + (f(i) dot w)
 
