@@ -49,7 +49,7 @@ class MutableMoroNotebook extends MutableNotebook[MutableMoroNotebook] {
     this
   }
   def md(markdown: String) = {
-    cells += Cell(cells.size,"markdown",Input(stripLeadingWhitespace(markdown.stripMargin),OutputFormats.html.toString))
+    cells += Cell(cells.size,"markdown",Input(trimEmptyLines(markdown.stripMargin),OutputFormats.html.toString))
     this
   }
 
