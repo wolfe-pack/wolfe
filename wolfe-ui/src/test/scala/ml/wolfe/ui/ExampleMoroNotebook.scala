@@ -7,12 +7,12 @@ import java.io.File
  */
 object ExampleMoroNotebook extends MutableMoroNotebook with App {
 
-  md("""
-    ## Header
-
-    This is a paragraph
-
-   """)
+  md(
+    """
+      |## This is a heading
+      |
+      |This is a paragraph.
+    """)
 
   source(
     """
