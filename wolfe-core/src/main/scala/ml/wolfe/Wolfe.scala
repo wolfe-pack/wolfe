@@ -430,7 +430,7 @@ trait Annotations {
   class Atomic extends StaticAnnotation
   class Potential(construct: _ => ml.wolfe.fg.Potential) extends StaticAnnotation
   class OutputFactorGraph(buffer: Wolfe.FactorGraphBuffer = Wolfe.FactorGraphBuffer) extends StaticAnnotation
-
+  class Stochastic extends StaticAnnotation
 }
 
 trait ProblemBuilder {
