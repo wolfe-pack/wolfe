@@ -71,25 +71,30 @@ object WolfeStyleMF extends App {
 
   def fvectors(k:Int) = Wolfe.seqsOfLength(k,Wolfe.doubles)
 
-  //@Potential(???)
-  def logisticLoss(target:Double, arg1:Seq[Double],arg2:Seq[Double]) =
+
+
+  //@Potential(???) //cell logistic potential
+  def logisticLoss(target:Double, arg1:Seq[Double], arg2:Seq[Double]) =
+  //todo: sigmoid
     sum(0 until arg1.length) { i => arg1(i) * arg2(i) }
 
   //@Stochastic(String => (String, String)) //samples a non-observed pair efficiently from data; not for now
-  //@Stochastic //creates as many stochastic factors as the integer before the sum
-  def negativeDataLoss(r: String) = {
-    val numObserved = 1 //function of r
-    val numUnobserved = numObserved - ents.size
-
-    def score(pair: (String, String)) = 1.0
+  //creates as many stochastic factors as the integer before the sum
+  @Stochastic
+  def negativeDataLoss(data: Seq[Data])(model: Model) = {
+    val r = data.head.rel
+    val numObserved = data.size //function of r
+    val numUnobserved = ents.size - numObserved
 
     //there needs to be a default implementation that takes the filtered domain (ents) and samples from it
-    numObserved * sum(ents filter { e => ??? /* (r,e) shouldn't be observed */ }){ pair => score(pair) * (numUnobserved / numObserved.toDouble) }
+    numObserved * sum(ents filter { pair => !data.exists(d => pair == (d.arg1, d.arg2)) }){ pair =>
+      logisticLoss(0.0, model.entityPairVectors(pair), model.relationVectors(r)) * (numUnobserved / numObserved.toDouble)
+    }
   }
 
   def objective(data:Seq[Data])(model:Model) = {
     sum(data) { d => logisticLoss(d.target,model.entityPairVectors(d.arg1 -> d.arg2), model.relationVectors(d.rel)) } +
-    sum(rels) { r => negativeDataLoss(r) }
+    sum(rels) { r => negativeDataLoss(data.filter(_.rel == r))(model) }
   }
 
   println("It compiles, yay! :)")
