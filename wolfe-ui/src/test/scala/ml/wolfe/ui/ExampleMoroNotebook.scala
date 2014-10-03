@@ -19,6 +19,12 @@ object ExampleMoroNotebook extends MutableMoroNotebook with App {
       |3 + 4
     """)
 
+  section("New Slide")
+
+  md(
+    """
+      |More text here...
+    """)
   val dir = new File("/Users/sriedel/projects/moro-notebooks/test")
   dir.mkdirs()
   saveTo("Example Notebook", new File(dir,"example.json"))

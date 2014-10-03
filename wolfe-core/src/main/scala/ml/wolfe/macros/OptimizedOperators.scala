@@ -347,16 +347,17 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
   }
 
   def factorGraphDebugCode(objRhs:Tree, graphName:TermName) = {
-    def getDebugFromAnnotation(f:Tree) =
+    /*def getDebugFromAnnotation(f:Tree) =
       f.symbol.annotations.find(_.tpe.typeSymbol == wolfeSymbols.outputFG) match {
         case Some(annotation) => q"${ annotation.scalaArgs.head }.set($graphName)"
-        case None => q""
+        case None => q"ml.wolfe.Wolfe.FactorGraphBuffer.set($graphName)"
       }
     objRhs match {
       case q"$f(${ _ })" => getDebugFromAnnotation(f)
       case q"$f(${ _ })(${ _ })" => getDebugFromAnnotation(f)
       case _ => q""
-    }
+    }*/
+    q""
   }
 
   def argmaxByLearning(trees: BuilderTrees, scaling: Tree = q"1.0"): Tree = {
