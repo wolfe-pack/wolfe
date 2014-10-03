@@ -18,7 +18,7 @@ case class CharOffsets(start: Int, end: Int)
  * @param posTag part-of-speech tag at token.
  * @param lemma lemma at token.
  */
-case class Token(word: String, offsets: CharOffsets, posTag: String = null, lemma: String = null) {
+case class Token(word: String, offsets: CharOffsets = null, posTag: String = null, lemma: String = null) {
   def toTaggedText = word + "/" + posTag
   def sentence(implicit graph: ObjectGraph) =
     graph.receiveOrdered[Token, Sentence, Sentence]('tokens, this)((_, s) => s)
