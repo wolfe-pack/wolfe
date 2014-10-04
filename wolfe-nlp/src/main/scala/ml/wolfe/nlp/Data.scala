@@ -9,7 +9,9 @@ import ml.wolfe.{SimpleIndex, Index}
  * @param start index of the initial character in the token.
  * @param end index of the final character in the token
  */
-case class CharOffsets(start: Int, end: Int)
+case class CharOffsets(start: Int, end: Int) {
+  def substring(s: String) = s.substring(start, end)
+}
 
 /**
  * A natural language token.
@@ -18,15 +20,14 @@ case class CharOffsets(start: Int, end: Int)
  * @param posTag part-of-speech tag at token.
  * @param lemma lemma at token.
  */
-case class Token(word: String, offsets: CharOffsets = null, posTag: String = null, lemma: String = null) {
+case class Token(word: String, offsets: CharOffsets, posTag: String = null, lemma: String = null) {
   def toTaggedText = word + "/" + posTag
-  def sentence(implicit graph: ObjectGraph) =
-    graph.receiveOrdered[Token, Sentence, Sentence]('tokens, this)((_, s) => s)
-  def next(implicit graph: ObjectGraph) =
-    graph.receiveOrdered[Token, Sentence, Option[Token]]('tokens, this)((i, s) => s.tokens.lift(i + 1))
-  def prev(implicit graph: ObjectGraph) =
-    graph.receiveOrdered[Token, Sentence, Option[Token]]('tokens, this)((i, s) => s.tokens.lift(i - 1))
-
+  def sentence(implicit g: ObjectGraph) =
+    g.receiveOrdered[Token, Sentence, Sentence]('tokens, this)((_, s) => s)
+  def next(implicit g: ObjectGraph) =
+    g.receiveOrdered[Token, Sentence, Option[Token]]('tokens, this)((i, s) => s.tokens.lift(i + 1))
+  def prev(implicit g: ObjectGraph) =
+    g.receiveOrdered[Token, Sentence, Option[Token]]('tokens, this)((i, s) => s.tokens.lift(i - 1))
 }
 
 /**
@@ -40,9 +41,11 @@ case class Sentence(tokens: Seq[Token], syntax: SyntaxAnnotation = SyntaxAnnotat
   def toTaggedText = tokens map (_.toTaggedText) mkString " "
   def document(implicit g:ObjectGraph) =
     g.receiveOrdered[Sentence,Document,Document]('sentences,this)((_,d) => d)
-  def linkTokens(implicit graph: ObjectGraph) =
-    graph.link1toNOrdered[Sentence, Token, Seq[Token]]('tokens, this, tokens)
+  def linkTokens(implicit g: ObjectGraph) =
+    g.link1toNOrdered[Sentence, Token, Seq[Token]]('tokens, this, tokens)
   def size = tokens.size
+  private def getCharOffsets = CharOffsets(tokens.head.offsets.start, tokens.last.offsets.end)
+  def source(implicit g: ObjectGraph) = getCharOffsets.substring(document.source)
 }
 
 /**
@@ -58,9 +61,9 @@ case class Document(source: String,
   def toText = sentences map (_.toText) mkString "\n"
   def toTaggedText = sentences map (_.toTaggedText) mkString "\n"
   def tokens = sentences flatMap (_.tokens)
-  def $sentences(implicit g:ObjectGraph) =
+  def linkSentences(implicit g:ObjectGraph) =
     g.link1toNOrdered[Document,Sentence,Seq[Sentence]]('sentences, this, sentences)
-
+  
 }
 
 /**
@@ -85,7 +88,7 @@ object Data {
     implicit val graph = new SimpleObjectGraph
 
     val s = result.sentences.head
-    //s.linkTokens(graph) //build graph
+    s.linkTokens(graph) //build graph
 
     println(s.tokens.head.sentence == s)
     println(s.tokens.head.next.get == s.tokens(1))
