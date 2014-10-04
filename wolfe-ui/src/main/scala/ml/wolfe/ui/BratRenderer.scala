@@ -14,7 +14,7 @@ object BratRenderer {
   val bratLocation = "/assets/javascripts/brat"
   val headJS = bratLocation + "/client/lib/head.load.min.js"
 
-  def wrapCode(id: String, style: String, collData: String, docData: String): HTML = {
+  def wrapCode(id: String, collData: String, docData: String): HTML = {
     val webFontURLs =
       s"""
         |[
@@ -130,7 +130,7 @@ object BratRenderer {
 
     //Excluded this for now: |    '$bratLocation' + '/static/fonts/Astloch-Bold.ttf',
 
-    wrapCode(id,style,collData,docData)
+    wrapCode(id,collData,docData)
 
     //RawHTML("<b>Test</b>")
 
