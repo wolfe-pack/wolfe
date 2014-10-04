@@ -2,7 +2,7 @@ package ml.wolfe.ui
 
 import java.io.File
 
-import ml.wolfe.nlp.{Sentence, Token}
+import ml.wolfe.nlp.{Document, Sentence, Token}
 import org.sameersingh.htmlgen.{HTML, RawHTML}
 
 /**
@@ -14,7 +14,15 @@ object BratRenderer {
   val bratLocation = "/assets/javascripts/brat"
   val headJS = bratLocation + "/client/lib/head.load.min.js"
 
-  def wrapCode(id: String, style: String, collData: String, docData: String, webFontURLs: String): HTML = {
+  def wrapCode(id: String, style: String, collData: String, docData: String): HTML = {
+    val webFontURLs =
+      s"""
+        |[
+        |    '$bratLocation' + '/static/fonts/PT_Sans-Caption-Web-Regular.ttf',
+        |    '$bratLocation' + '/static/fonts/Liberation_Sans-Regular.ttf'
+        |]
+      """.stripMargin
+
     val script =
       s"""
         |<script type="text/javascript">
@@ -80,53 +88,49 @@ object BratRenderer {
     RawHTML(html)
   }
 
-  def sentenceToBrat(sentence:Sentence) = {
-    val id = "brat" + Math.abs(sentence.hashCode()).toString
-    val style = "{}"
+
+
+  def bratTokens(doc:Document) = {
+    val id = "brat" + Math.abs(doc.hashCode()).toString
     val collData =
       """
         |{
         |    entity_types: [ {
-        |            type   : 'Person',
+        |            type   : 'Token',
         |            /* The labels are used when displaying the annotion, in this case
         |                we also provide a short-hand "Per" for cases where
         |                abbreviations are preferable */
-        |            labels : ['Person', 'Per'],
+        |            labels : ['Token','Tok'],
         |            // Blue is a nice colour for a person?
-        |            bgColor: '#7fa2ff',
+        |            bgColor: '#fc0',
         |            // Use a slightly darker version of the bgColor for the border
         |            borderColor: 'darken'
         |    } ]
         |}
       """.stripMargin
 
+    val tokenEntities = for ((t,i) <- doc.tokens.zipWithIndex) yield s"['T$i','Token',[[${t.offsets.start},${t.offsets.end}]]]"
+
+    val sentenceBoundaries = for (s <- doc.sentences) yield s"[${s.offsets.start},${s.offsets.end}]"
+
     val docData =
-      """
+      s"""
         |{
         |    // Our text of choice
-        |    text     : "Ed O'Kelley was the man who shot the man who shot Jesse James.",
+        |    text     : "${doc.source}",
         |    // The entities entry holds all entity annotations
         |    entities : [
-        |        /* Format: [${ID}, ${TYPE}, [[${START}, ${END}]]]
-        |            note that range of the offsets are [${START},${END}) */
-        |        ['T1', 'Person', [[0, 11]]],
-        |        ['T2', 'Person', [[20, 23]]],
-        |        ['T3', 'Person', [[37, 40]]],
-        |        ['T4', 'Person', [[50, 61]]],
+        |        /* Format: [{ID}, {TYPE}, [[{START}, {END}]]]
+        |            note that range of the offsets are [{START},{END}) */
+        |        ${tokenEntities.mkString(",\n")}
         |    ],
+        |    sentence_offsets: [${sentenceBoundaries.mkString(",")}]
         |}
       """.stripMargin
 
-    val webFontURLs =
-      s"""
-        |[
-        |    '$bratLocation' + '/static/fonts/Astloch-Bold.ttf',
-        |    '$bratLocation' + '/static/fonts/PT_Sans-Caption-Web-Regular.ttf',
-        |    '$bratLocation' + '/static/fonts/Liberation_Sans-Regular.ttf'
-        |]
-      """.stripMargin
+    //Excluded this for now: |    '$bratLocation' + '/static/fonts/Astloch-Bold.ttf',
 
-    wrapCode(id,style,collData,docData,webFontURLs)
+    wrapCode(id,style,collData,docData)
 
     //RawHTML("<b>Test</b>")
 
@@ -136,7 +140,7 @@ object BratRenderer {
     val token1 = Token("A",null)
     val token2 = Token("man",null)
     val sent = Sentence(Seq(token1,token2))
-    val html = BratRenderer.sentenceToBrat(sent)
+    val html = BratRenderer.bratTokens(Document("A man",Seq(sent)))
     val nb = new MutableMoroNotebook
 
     nb.html(html.source)

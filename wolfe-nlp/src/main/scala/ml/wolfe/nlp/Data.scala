@@ -9,9 +9,7 @@ import ml.wolfe.{SimpleIndex, Index}
  * @param start index of the initial character in the token.
  * @param end index of the final character in the token
  */
-case class CharOffsets(start: Int, end: Int) {
-  def substring(s: String) = s.substring(start, end)
-}
+case class CharOffsets(start: Int, end: Int)
 
 /**
  * A natural language token.
@@ -22,12 +20,13 @@ case class CharOffsets(start: Int, end: Int) {
  */
 case class Token(word: String, offsets: CharOffsets, posTag: String = null, lemma: String = null) {
   def toTaggedText = word + "/" + posTag
-  def sentence(implicit g: ObjectGraph) =
-    g.receiveOrdered[Token, Sentence, Sentence]('tokens, this)((_, s) => s)
-  def next(implicit g: ObjectGraph) =
-    g.receiveOrdered[Token, Sentence, Option[Token]]('tokens, this)((i, s) => s.tokens.lift(i + 1))
-  def prev(implicit g: ObjectGraph) =
-    g.receiveOrdered[Token, Sentence, Option[Token]]('tokens, this)((i, s) => s.tokens.lift(i - 1))
+  def sentence(implicit graph: ObjectGraph) =
+    graph.receiveOrdered[Token, Sentence, Sentence]('tokens, this)((_, s) => s)
+  def next(implicit graph: ObjectGraph) =
+    graph.receiveOrdered[Token, Sentence, Option[Token]]('tokens, this)((i, s) => s.tokens.lift(i + 1))
+  def prev(implicit graph: ObjectGraph) =
+    graph.receiveOrdered[Token, Sentence, Option[Token]]('tokens, this)((i, s) => s.tokens.lift(i - 1))
+
 }
 
 /**
@@ -41,11 +40,10 @@ case class Sentence(tokens: Seq[Token], syntax: SyntaxAnnotation = SyntaxAnnotat
   def toTaggedText = tokens map (_.toTaggedText) mkString " "
   def document(implicit g:ObjectGraph) =
     g.receiveOrdered[Sentence,Document,Document]('sentences,this)((_,d) => d)
-  def linkTokens(implicit g: ObjectGraph) =
-    g.link1toNOrdered[Sentence, Token, Seq[Token]]('tokens, this, tokens)
+  def linkTokens(implicit graph: ObjectGraph) =
+    graph.link1toNOrdered[Sentence, Token, Seq[Token]]('tokens, this, tokens)
   def size = tokens.size
-  private def getCharOffsets = CharOffsets(tokens.head.offsets.start, tokens.last.offsets.end)
-  def source(implicit g: ObjectGraph) = getCharOffsets.substring(document.source)
+  def offsets = CharOffsets(tokens.head.offsets.start,tokens.last.offsets.end)
 }
 
 /**
@@ -58,12 +56,13 @@ case class Document(source: String,
                     sentences: Seq[Sentence],
                     filename:Option[String] = None,
                     ir:IRAnnotation = IRAnnotation.empty) {
+
   def toText = sentences map (_.toText) mkString "\n"
   def toTaggedText = sentences map (_.toTaggedText) mkString "\n"
   def tokens = sentences flatMap (_.tokens)
-  def linkSentences(implicit g:ObjectGraph) =
+  def $sentences(implicit g:ObjectGraph) =
     g.link1toNOrdered[Document,Sentence,Seq[Sentence]]('sentences, this, sentences)
-  
+
 }
 
 /**
@@ -88,7 +87,7 @@ object Data {
     implicit val graph = new SimpleObjectGraph
 
     val s = result.sentences.head
-    s.linkTokens(graph) //build graph
+    //s.linkTokens(graph) //build graph
 
     println(s.tokens.head.sentence == s)
     println(s.tokens.head.next.get == s.tokens(1))
