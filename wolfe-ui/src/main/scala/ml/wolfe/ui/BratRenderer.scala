@@ -113,6 +113,8 @@ object BratRenderer {
 
     val sentenceBoundaries = for (s <- doc.sentences) yield s"[${s.offsets.start},${s.offsets.end}]"
 
+    val tokenOffsets = for ((t,i) <- doc.tokens.zipWithIndex) yield s"[${t.offsets.start},${t.offsets.end}]"
+
     val docData =
       s"""
         |{
@@ -124,15 +126,14 @@ object BratRenderer {
         |            note that range of the offsets are [{START},{END}) */
         |        ${tokenEntities.mkString(",\n")}
         |    ],
-        |    sentence_offsets: [${sentenceBoundaries.mkString(",")}]
+        |    sentence_offsets: [${sentenceBoundaries.mkString(",")}],
+        |    token_offsets: [${tokenOffsets.mkString(",")}]
         |}
       """.stripMargin
 
     //Excluded this for now: |    '$bratLocation' + '/static/fonts/Astloch-Bold.ttf',
 
     wrapCode(id,collData,docData)
-
-    //RawHTML("<b>Test</b>")
 
   }
 
