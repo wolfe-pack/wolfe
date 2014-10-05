@@ -19,7 +19,7 @@ object ExampleMoroNotebook extends MutableMoroNotebook with App {
       |3 + 4
     """)
 
-  section("New Slide")
+  section("New Slide")()
 
   md(
     """
