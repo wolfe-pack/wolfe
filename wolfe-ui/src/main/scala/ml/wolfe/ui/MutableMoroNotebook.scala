@@ -54,6 +54,8 @@ class MutableMoroNotebook extends MutableNotebook[MutableMoroNotebook] {
     body
   }
 
+  def frame = section _
+
   def h1(text: String) = {
     cells += Cell(cells.size,"heading1",Input(text,OutputFormats.html.toString))
     this
