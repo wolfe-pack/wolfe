@@ -58,12 +58,13 @@ object SentenceSplitter extends (Document => Document) {
             //create a new token until here.
             val newToken = Token(text.substring(start,offset),CharOffsets(start,offset))
             val punctToken = Token(text(offset).toString,CharOffsets(offset,offset+1))
-            offset += 1
             tokens += newToken
             tokens += punctToken
             sentences += Sentence(tokens.toSeq)
-            start = offset
             tokens = new ArrayBuffer[Token]
+            offset += 1
+            while (offset < end && Character.isWhitespace(text(offset))) { offset += 1 }
+            start = offset
           } else {
             tokens += Token(text.substring(start,offset),CharOffsets(start,offset))
           }
@@ -77,4 +78,9 @@ object SentenceSplitter extends (Document => Document) {
     }
     doc.copy(sentences = doc.sentences.flatMap(split))
   }
+
+  def main(args: Array[String]) {
+    println(SentenceSplitter("This is Wolfe. What are you?"))
+  }
+
 }
