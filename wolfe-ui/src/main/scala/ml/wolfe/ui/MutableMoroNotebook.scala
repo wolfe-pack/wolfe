@@ -49,6 +49,11 @@ class MutableMoroNotebook extends MutableNotebook[MutableMoroNotebook] {
     this
   }
 
+  def wolfeNoEval(src: String) = {
+    cells += Cell(cells.size,"wolfeNoEval",Input(trimEmptyLines(src.stripMargin),OutputFormats.string.toString))
+    this
+  }
+
   def section(name: String)(body: => MutableMoroNotebook = this) = {
     cells += Cell(cells.size,"section",Input(name,OutputFormats.html.toString))
     body
