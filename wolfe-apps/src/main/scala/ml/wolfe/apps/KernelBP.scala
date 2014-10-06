@@ -294,7 +294,7 @@ object KernelBPTed {
     }
   }
 
-  case class BilingualModel(fg: FactorGraph,srcVar:KernelBPVar,tgtSrcModel:EdgeModel[Document,Document],
+  case class BilingualModel(fg: FactorGraph, srcVar: KernelBPVar, tgtSrcModel: EdgeModel[Document, Document],
                             tagVars: Map[String, KernelBPVar],
                             tag2Model: Map[String, EdgeModel[String, Document]]) {
     def inferTagBeliefs = {
@@ -310,8 +310,6 @@ object KernelBPTed {
       map.toMap
     }
   }
-
-
 
 
   case class Datasets(train: Seq[Document], test: Seq[Document])
@@ -362,12 +360,12 @@ object KernelBPTed {
     //datasets for source
     val sourceIndex = new SimpleIndex
     val sourceTrainingSets = createTrainingSet(src_tgt, source_lang, sourceIndex)
-    val sourceTestSets = createTestingSet(src_tgt,source_lang,sourceIndex)
+    val sourceTestSets = createTestingSet(src_tgt, source_lang, sourceIndex)
 
     //datasets for target
     val targetIndex = new SimpleIndex
-    val targetTrainingSets = if (target_lang != source_lang) createTrainingSet(tgt_src, target_lang, targetIndex) else Map.empty[String,Seq[Document]]
-    val targetTestSets = if (target_lang != source_lang) createTestingSet(tgt_src,target_lang,targetIndex) else Map.empty[String,Seq[Document]]
+    val targetTrainingSets = if (target_lang != source_lang) createTrainingSet(tgt_src, target_lang, targetIndex) else Map.empty[String, Seq[Document]]
+    val targetTestSets = if (target_lang != source_lang) createTestingSet(tgt_src, target_lang, targetIndex) else Map.empty[String, Seq[Document]]
 
     def kernelLabel(l1: String, l2: String) = if (l1 == l2) 1.0 else 0.0
     def kernelSource(d1: Document, d2: Document) = d1.ir.bowVector.get dot d2.ir.bowVector.get
@@ -394,13 +392,18 @@ object KernelBPTed {
       val srcTrain = train_tags.flatMap(sourceTrainingSets(_))
       val tgt2srcData = tgtTrain zip srcTrain
       val tgt2srcModel = new EdgeModel(tgt2srcData, kernelTarget, kernelSource, 0.1)
+      println("Done")
       println(tgt2srcModel.Obs12.size)
       tgt2srcModel
     }
 
     val tag2model = (train_tags map (tag => tag -> createTagModel(tag))).toMap
-    val targetSourceTranslationModel:EdgeModel[Document,Document] =
+    val targetSourceTranslationModel: EdgeModel[Document, Document] =
       if (source_lang != target_lang) createTargetSourceTranslationModel() else null
+
+    val msgTranslationTagTrans = new mutable.HashMap[String,DenseVector[Double] => DenseVector[Double]] withDefaultValue identity
+    val msgTranslationTransTag = new mutable.HashMap[String,DenseVector[Double] => DenseVector[Double]] withDefaultValue identity
+
 
     def createMonolingualFG(tags: Seq[String], srcDoc: Document): MonolingualModel = {
       val fg = new FactorGraph
@@ -425,11 +428,11 @@ object KernelBPTed {
       val srcVar = new KernelBPVar(targetSourceTranslationModel.data.size)
       val srcNode = fg.addNode(srcVar)
       val transFactor = fg.addFactor()
-      val transSrcEdge = fg.addEdge(transFactor,srcNode)
-      transFactor.potential = new KernelBPLocalPotential(targetSourceTranslationModel,tgtDoc)
+      val transSrcEdge = fg.addEdge(transFactor, srcNode)
+      transFactor.potential = new KernelBPLocalPotential(targetSourceTranslationModel, tgtDoc)
 
       //todo: translation between msgs for "central" srcNode
-      val translations = new mutable.HashMap[(Edge,Edge),DenseVector[Double] => DenseVector[Double]]
+      val translations = new mutable.HashMap[(Edge, Edge), DenseVector[Double] => DenseVector[Double]]
 
 
       //connect source variable to tag variables
@@ -443,32 +446,36 @@ object KernelBPTed {
         val srcTagSrcEdge = fg.addEdge(srcTagFactor, srcNode)
 
         tagVar.edge2nodeTranslation = Map(srcTagTagEdge -> ((v: DenseVector[Double]) => v))
-        srcTagFactor.potential = new KernelBPPairPotential(srcTagSrcEdge,srcTagTagEdge,model)
+        srcTagFactor.potential = new KernelBPPairPotential(srcTagSrcEdge, srcTagTagEdge, model)
 
         //todo: think about what these translations need to be
-        translations((srcTagSrcEdge,transSrcEdge)) = (x:DenseVector[Double]) => x
-        translations((transSrcEdge,srcTagSrcEdge)) = (x:DenseVector[Double]) => x
+        translations((srcTagSrcEdge, transSrcEdge)) = msgTranslationTagTrans(tag)
+        translations((transSrcEdge, srcTagSrcEdge)) = msgTranslationTransTag(tag)
 
 
         tag -> tagVar
       }
       srcVar.edge2edgeTranslations = translations.toMap
-      BilingualModel(fg,srcVar,targetSourceTranslationModel,vars.toMap,tag2model)
+      BilingualModel(fg, srcVar, targetSourceTranslationModel, vars.toMap, tag2model)
     }
 
     //http://www.aclweb.org/anthology/P/P14/P14-1006.pdf
     var globalEval = new Evaluation()
     for (tag <- test_tags) {
       var eval = new Evaluation()
-      for (instance <- sourceTestSets(tag)) {
+      val testSet = if (source_lang == target_lang) sourceTestSets else targetTestSets
+      for (instance <- testSet(tag)) {
         implicit def toInt(b: Boolean) = if (b) 1 else 0
         val isPositive = instance.ir.docLabel.get.endsWith("positive")
-        val winner = if (source_lang == target_lang) {
+        val prediction = if (source_lang == target_lang) {
           val fg = createMonolingualFG(Seq(tag), instance)
-          val prediction = fg.inferTagBeliefs("art") //   inferTagFromEn(instance)
-          println(prediction.mkString("\n"))
-          prediction.maxBy(_._2)._1
-        } else "N/A"
+          fg.inferTagBeliefs(tag) //   inferTagFromEn(instance)
+        } else {
+          val fg = createBilingualFG(Seq(tag), instance)
+          fg.inferTagBeliefs(tag)
+        }
+        println(prediction.mkString("\n"))
+        val winner = prediction.maxBy(_._2)._1
         val tp = isPositive && winner == instance.ir.docLabel.get
         val fp = !isPositive && winner != instance.ir.docLabel.get
         val tn = !isPositive && winner == instance.ir.docLabel.get
@@ -477,10 +484,6 @@ object KernelBPTed {
         globalEval = globalEval + Evaluation(tp, tn, fp, fn)
         println(instance.ir.docLabel)
         println("Winner: " + winner)
-        //        println("TP: " + tp)
-        //        println("FP: " + fp)
-        //        println("TN: " + tn)
-        //        println("FN: " + fn)
 
       }
       println(eval)
