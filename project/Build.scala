@@ -58,7 +58,8 @@ object BuildSettings {
     "com.typesafe" % "scalalogging-slf4j_2.10" % "1.1.0",
     "com.google.apis" % "google-api-services-freebase" % "v1-rev31-1.13.2-beta",
     "com.google.api-client" % "google-api-client" % "1.14.1-beta",
-    "com.googlecode.json-simple" % "json-simple" % "1.1"
+    "com.googlecode.json-simple" % "json-simple" % "1.1",
+    "org.mongodb" %% "casbah" % "2.5.0"
 //    "net.liftweb" %% "lift-json" % "2.3"
   )
 
