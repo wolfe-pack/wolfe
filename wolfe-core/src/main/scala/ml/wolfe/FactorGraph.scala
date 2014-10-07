@@ -77,6 +77,12 @@ final class FactorGraph {
   var expectations: FactorieVector = null
 
   /**
+   * Message passing schedule to display when rendering in D3
+   **/
+  var visualizationMessages: ArrayBuffer[Iterable[(DirectedEdge, Seq[Double])]] = null
+  var visualizationSamples : ArrayBuffer[(Var[_], Any, Boolean)] = null
+
+  /**
    * Adds a node for a variable of domain size `dim`
    * @param domain domain of the variable
    * @param label description of what the variable represents
@@ -90,15 +96,26 @@ final class FactorGraph {
 
   def addDiscreteNode(dim:Int, label:String = "") = addDiscreteNodeWithDomain((0 until dim).toArray, label)
 
+
+  /**
+   * Adds a node to the factor graph with the given variable
+   * @param variable variable to associate the node with.
+   * @tparam T type of value of variable.
+   * @return the created node.
+   */
+  def addNode[T](variable:Var[T]) = {
+    val n = new Node(nodes.size, variable)
+    nodes += n
+    n
+  }
+
   /**
    * Adds a node for a continuous variable
    * @param label description of what the variable represents
    * @return the added node.
    */
   def addContinuousNode(label:String = "") = {
-    val n = new Node(nodes.size, new ContinuousVar(label))
-    nodes += n
-    n
+    addNode(new ContinuousVar(label))
   }
 
   /**
@@ -107,9 +124,7 @@ final class FactorGraph {
    * @return the added node.
    */
   def addVectorNode(dim:Int, label:String = "") = {
-    val n = new Node(nodes.size, new VectorVar(dim,label))
-    nodes += n
-    n
+    addNode(new VectorVar(dim,label))
   }
 
 
@@ -119,10 +134,7 @@ final class FactorGraph {
    * @return the added tuple node.
    */
   def addTupleNode(componentNodes: Array[Node]) = {
-    val variable = new TupleVar(componentNodes)
-    val n = new Node(nodes.size, variable)
-    nodes += n
-    n
+    addNode(new TupleVar(componentNodes))
   }
 
   /**
@@ -343,6 +355,17 @@ final class FactorGraph {
         }
       }
     loopyAcc(factors.toList, nodes.map(Set(_)).toSet)
+  }
+
+  def addMessagesToVisualization(addEdges:Iterable[Edge], dir:EdgeDirection.EdgeDirection): Unit = {
+    if(visualizationMessages.length < 100) {
+      try {
+        visualizationMessages += addEdges.map(e =>
+          (DirectedEdge(e, dir),
+          if (dir == EdgeDirection.N2F) e.msgs.asDiscrete.n2f.toList else e.msgs.asDiscrete.f2n.toList)
+        )
+      } catch { case _: Exception => /* todo: deal with non discrete messages */ }
+    }
   }
 
 

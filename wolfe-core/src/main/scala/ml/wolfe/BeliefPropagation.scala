@@ -4,6 +4,8 @@ import cc.factorie.la.SparseIndexedTensor
 import ml.wolfe.fg.{TupleMsgs, DiscreteMsgs, DiscreteVar, Junkify}
 import ml.wolfe.util.LoggerUtil
 
+import scala.collection.mutable.ArrayBuffer
+
 
 /**
  * @author Sebastian Riedel
@@ -70,18 +72,25 @@ object BeliefPropagation {
     val convergenceThreshold = 1e-6 * fg.nodes.map( n =>
       n.variable match {case d:DiscreteVar[_] => d.dim  * n.edges.length case _ => 1} ).sum
     var hasConverged = false
+    fg.visualizationMessages = ArrayBuffer[Iterable[(DirectedEdge, Seq[Double])]]()
 
     var i = 0
     while (!hasConverged && (i < maxIteration || maxIteration == -1)) {
 
       if(schedule == Pow) {
         for(f <- fg.factors) powF2N(f, bpType == Sum)
+        fg.addMessagesToVisualization(fg.edges, EdgeDirection.F2N)
         for(n <- fg.nodes) powN2F(n)
+        fg.addMessagesToVisualization(fg.edges, EdgeDirection.N2F)
       } else {
         def edges = if (bpType == MaxOnly && i == maxIteration - 1) forwardEdges else forwardBackwardEdges
         for (e <- forwardBackwardEdges) e match {
-          case DirectedEdge(edge, EdgeDirection.F2N) => updateF2N(edge, bpType == Sum)
-          case DirectedEdge(edge, EdgeDirection.N2F) => updateN2F(edge)
+          case DirectedEdge(edge, EdgeDirection.F2N) =>
+            updateF2N(edge, bpType == Sum)
+            fg.addMessagesToVisualization(Seq(edge), EdgeDirection.F2N)
+          case DirectedEdge(edge, EdgeDirection.N2F) =>
+            updateN2F(edge)
+            fg.addMessagesToVisualization(Seq(edge), EdgeDirection.N2F)
         }
       }
 
@@ -116,7 +125,9 @@ object BeliefPropagation {
       }
     }
 
-    for(n <- fg.nodes if !n.variable.isObserved) n.variable.setToArgmax()
+    if (bpType == Max) for(n <- fg.nodes if !n.variable.isObserved) n.variable.setToArgmax()
+
+    Wolfe.FactorGraphBuffer.set(fg)
   }
 
 
@@ -228,6 +239,7 @@ object BeliefPropagation {
     val residual = fg.edges.view.map(_.msgs match {
       case m:DiscreteMsgs => sqDiff(m.f2n, m.f2nLast)
       case m:TupleMsgs => sqDiff(m.f2n.array, m.f2nLast.array)
+      case _ => Double.PositiveInfinity
     }).sum
     residual < threshold
   }

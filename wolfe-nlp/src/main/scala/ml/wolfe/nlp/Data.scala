@@ -43,6 +43,7 @@ case class Sentence(tokens: Seq[Token], syntax: SyntaxAnnotation = SyntaxAnnotat
   def linkTokens(implicit graph: ObjectGraph) =
     graph.link1toNOrdered[Sentence, Token, Seq[Token]]('tokens, this, tokens)
   def size = tokens.size
+  def offsets = CharOffsets(tokens.head.offsets.start,tokens.last.offsets.end)
 }
 
 /**
@@ -55,6 +56,7 @@ case class Document(source: String,
                     sentences: Seq[Sentence],
                     filename:Option[String] = None,
                     ir:IRAnnotation = IRAnnotation.empty) {
+
   def toText = sentences map (_.toText) mkString "\n"
   def toTaggedText = sentences map (_.toTaggedText) mkString "\n"
   def tokens = sentences flatMap (_.tokens)

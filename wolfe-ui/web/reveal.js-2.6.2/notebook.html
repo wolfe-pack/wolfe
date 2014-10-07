@@ -1,0 +1,257 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <script type="text/javascript">
+        var last = ""
+        setInterval(function () {
+                var href = document.URL;
+                var xmlhttp = new XMLHttpRequest();
+                xmlhttp.open("GET", href, false);
+                xmlhttp.send();
+                var changed = last != "" && last != xmlhttp.responseText;
+                //console.log("Changed: " + changed);
+                if (changed) {
+                    window.location = href;
+                }
+                last = xmlhttp.responseText;
+            },
+            100);
+    </script>
+    
+</head>
+
+<body>
+<link rel="stylesheet" href="css/reveal.min.css">
+<div class="reveal"><div class="slides">
+<section>
+<h1>This is a slide show</h1>
+<p>Yoo!</p>
+
+</section>
+<section>
+<h2>This is a slide</h2>
+<p>Whaaat?</p>
+
+
+	<div id="FG1742126571">
+		<style type="text/css">
+			
+.link {
+	stroke: #000;
+	stroke-width: 1.5px;
+}
+
+.fgshape {
+	cursor: move;
+}
+
+.label {
+	pointer-events:none;
+	-moz-user-select: -moz-none;
+	-khtml-user-select: none;
+	-webkit-user-select: none;
+	-o-user-select: none;
+	user-select: none;
+}
+
+.tooltip {
+	padding:0px;
+	pointer-events:none;
+	-moz-user-select: -moz-none;
+	-khtml-user-select: none;
+	-webkit-user-select: none;
+	-o-user-select: none;
+	user-select: none;
+}
+
+.tooltipinner {
+	pointer-events:none;
+	overflow:hidden;
+	max-height:400px;
+}
+
+		</style>
+
+		<script type="text/javascript">
+     var onD3Loaded = function() {
+			  
+var data = {graph:{
+  "nodes": [{text:'s.x', type:'node', hoverhtml:'Domain: {false, true}', x:374.0634198135865, y:106.10804081555779, fixed:false}, {text:'s.y', type:'node', hoverhtml:'Domain: {false, true}', x:411.73268143789466, y:191.1792341459066, fixed:false}, {type:'factor', hoverhtml:'<div class="tooltipheader">I(s.x == (s.y))</div><table class=\'potentialtable\'><tr><td><i>s.x</i></td> <td><i>s.y</i></td></tr>\n<tr><td>false</td> <td>false</td> <td><b>1.0</b></td></tr>\n<tr><td>false</td> <td>true</td> <td><b>0.0</b></td></tr>\n<tr><td>true</td> <td>false</td> <td><b>0.0</b></td></tr>\n<tr><td>true</td> <td>true</td> <td><b>1.0</b></td></tr></table>', x:343.8983788023209, y:81.57700530649358}, {type:'factor', hoverhtml:'<div class="tooltipheader">I(s.x)</div><table class=\'potentialtable\'><tr><td><i>s.x</i></td></tr>\n<tr><td>false</td> <td><b>0.0</b></td></tr>\n<tr><td>true</td> <td><b>1.0</b></td></tr></table>', x:225.94185800568846, y:188.58898238563918}
+  ],
+  "links": [
+    {'source': 0, 'target': 2}, {'source': 1, 'target': 2}, {'source': 0, 'target': 3}
+  ]
+}}
+      
+var force = d3.layout.force()
+.size([600, 200])
+.charge(-150)
+.gravity(0.03)
+.linkStrength(0.5)
+.linkDistance(50)
+    drag = force.drag()
+    svg = d3.select("#FG1742126571").append("svg")
+     .attr("class", "factorgraph")
+     .attr("width", 600)
+     .attr("height", 200)
+     .style("overflow", "visible");
+    link = svg.selectAll(".link")
+    node = svg.selectAll(".fgshape")
+    label = svg.selectAll(".label");
+
+    force
+     .nodes(data.graph.nodes)
+     .links(data.graph.links)
+     .start();
+
+    var link = link.data(data.graph.links)
+	    .enter().append("line")
+	    .attr("class", "link");
+
+	  var node = node.data(data.graph.nodes)
+	    .enter().append("path")
+	    .attr("class", function(d) {
+       return 'fgshape' +
+         (d.type == 'factor' ? ' fgfactor' : ' fgnode') +
+         (d.fixed ? ' fgfixed' : '');
+     })
+	    .attr("d", d3.svg.symbol()
+	    	.type(function(d) { return d.type == 'factor' ? 'square' : 'circle' })
+	    	.size(function(d) { return d.type == 'factor' ? 500 : 2000 }))
+	    .on("mouseover", function(d){
+	    	if(d.hoverhtml != undefined) {
+	    		setTooltip(d.hoverhtml);
+	    		tooltip.transition()
+	    			.duration(300)
+	    			.style("opacity", .9);
+	    		tooltipNode = d;
+	    		moveTooltip();
+	    	}
+	    })
+	    .on("mouseout", function(d){
+			tooltip.transition()
+	                .duration(300)
+	                .style("opacity", 0)
+	    })
+		.call(drag);
+var label = label.data(data.graph.nodes)
+	.enter().append("text")
+	.attr("class", "label")
+	.attr("dy", "5")
+	.attr("text-anchor", "middle")
+	.text(function(d) { return d.text == undefined ? "" : d.text })
+	.call(drag);
+
+tooltipNode = null
+tooltip = null
+
+
+var checkBounds = function() {
+    node.each(function(d) {
+     d.x = Math.max(25, Math.min(600-25, d.x));
+     d.y = Math.max(25, Math.min(200-25, d.y));
+    });
+}
+
+force.on("tick", checkBounds);
+for(var i=0; i<100; i++) {force.alpha(0.1); force.tick();}
+/*while(force.alpha() > 0.01) {force.tick();}*/
+
+var tick = function() {
+ checkBounds();
+	link.attr("x1", function(d) { return d.source.x; })
+		.attr("y1", function(d) { return d.source.y; })
+		.attr("x2", function(d) { return d.target.x; })
+		.attr("y2", function(d) { return d.target.y; });
+
+
+	node.attr("transform", function(d) {return "translate(" + d.x + "," + d.y + ")"});
+	label.attr("transform", function(d) {return "translate(" + d.x + "," + d.y + ")"});
+	moveTooltip();
+
+}
+
+
+var setTooltip = function(html) {
+	if(tooltip != null) {
+		tooltip.remove()
+	}
+	tooltip = svg.insert("foreignObject")
+		.attr("class", "tooltip")
+		.attr("width", "300")
+		.attr("height", "500")
+		.style("opacity", 0)
+		.html("<div class='tooltipinner'>" + html + "</div>")
+}
+
+
+var moveTooltip = function() {
+	if(tooltipNode != null) {
+		tooltip.attr("transform", "translate(" + (tooltipNode.x-150) + "," + (tooltipNode.y+15) + ")" );
+	}
+}
+
+force.on("tick", tick);
+tick();
+      
+     }
+
+			if(typeof d3 == "undefined") {
+				var head= document.getElementsByTagName('head')[0];
+				var script= document.createElement('script');
+				script.type= 'text/javascript';
+				script.src= 'http://d3js.org/d3.v3.min.js';
+				script.onload = onD3Loaded;
+				head.appendChild(script);
+			} else {
+				onD3Loaded();
+			}
+		</script>
+	</div>
+      
+</section>
+<section>
+<h2>This is another slide</h2>
+<p>Okay!</p>
+
+</section>
+</div></div>
+
+		<script src="lib/js/head.min.js"></script>
+		<script src="js/reveal.min.js"></script>
+
+		<script>
+
+			// Full list of configuration options available here:
+			// https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				controls: true,
+				progress: true,
+				history: true,
+				center: true,
+
+				theme: Reveal.getQueryHash().theme, // available themes are in /css/theme
+				transition: Reveal.getQueryHash().transition || 'default', // default/cube/page/concave/zoom/linear/fade/none
+
+				// Parallax scrolling
+				// parallaxBackgroundImage: 'https://s3.amazonaws.com/hakim-static/reveal-js/reveal-parallax-1.jpg',
+				// parallaxBackgroundSize: '2100px 900px',
+
+				// Optional libraries used to extend on reveal.js
+				dependencies: [
+					{ src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+					{ src: 'plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+					{ src: 'plugin/zoom-js/zoom.js', async: true, condition: function() { return !!document.body.classList; } },
+					{ src: 'plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } }
+				]
+			});
+
+		</script>
+    
+</body>
+        </html>
+    

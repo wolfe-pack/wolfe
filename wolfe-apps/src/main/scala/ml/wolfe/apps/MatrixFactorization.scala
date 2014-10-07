@@ -4,101 +4,98 @@ import breeze.optimize.StochasticGradientDescent
 import cc.factorie.model.{WeightsMap, WeightsSet}
 import cc.factorie.optimize.{AdaGrad, OnlineTrainer}
 import ml.wolfe.FactorGraph.Node
-import ml.wolfe.{GradientBasedOptimizer, FactorGraph}
+import ml.wolfe.{Wolfe, DenseVector, GradientBasedOptimizer, FactorGraph}
 import ml.wolfe.fg.{L2Regularization, VectorMsgs, CellLogisticLoss}
 
 import scala.annotation.tailrec
+import scala.collection.mutable
 import scala.util.Random
 
 /**
  * @author Sebastian Riedel
  */
 object MatrixFactorization extends App {
+  val k = 3
+  val db = new TensorKB(k)
+  db.sampleTensor(10, 10, 0, 0.1) //samples a matrix
 
-  val k      = 10
-  val random = new Random(0l)
+  val fg = db.toFactorGraph
+  val data = db.cells
+  val V = db.ix1ToNodeMap //cols
+  val A = db.ix2ToNodeMap //rows
 
-  val fg = new FactorGraph
-
-  val numRows = 10
-  val numCols = 10
-  val cellDensity = 0.1
-  val numObservedCells = (numRows * numCols * cellDensity).toInt
-
-  val rows = (0 until numRows).map(i => "e" + i).toArray
-  val cols = (0 until numCols).map(i => "r" + i).toArray
-
-  val data = (0 until numObservedCells).map(i => {
-    val row = random.nextInt(numRows)
-    val col = random.nextInt(numCols)
-    rows(row) -> cols(col)
-  }).toSet
-
-  val A = (rows map (p => p -> fg.addVectorNode(k))).toMap
-  val V = (cols map (r => r -> fg.addVectorNode(k))).toMap
-
+  //most of this will potentially go into TensorKB
   for (d <- data) {
-    val a = A(d._1)
-    val v = V(d._2)
+    val (colIx, rowIx, _) = d.key
+    val a = A(rowIx)
+    val v = V(colIx)
 
     //create positive fact factor
-    fg.buildFactor(Seq(a, v))(
-      _ map (_ => new VectorMsgs)) { e => new CellLogisticLoss(e(0), e(1), 1.0, 0.01) with L2Regularization }
-
-    //also create a sampled stochastic negative factor in the same column
-    //fixme: not resampled???
-    fg.buildStochasticFactor(Seq(v, sampleRow(d._1)))(
-      _ map (_ => new VectorMsgs)) { e => new CellLogisticLoss(e(0), e(1), 0.0, 0.01) with L2Regularization }
-  }
-
-  @tailrec
-  def sampleRow(col: String, attempts: Int = 1000): Node =
-    if (attempts == 0) A(rows(random.nextInt(numRows)))
-    else {
-      val row = rows(random.nextInt(numRows))
-      if (data.contains(row -> col)) sampleRow(col, attempts - 1)
-      else A(row)
+    fg.buildFactor(Seq(a, v))(_ map (_ => new VectorMsgs)) { 
+      e => new CellLogisticLoss(e(0), e(1), 1.0, 0.01) with L2Regularization
     }
 
-  fg.build()
-
-  GradientBasedOptimizer(fg, new OnlineTrainer(_, new AdaGrad(), 100,10))
-
-
-
-  def sig(x: Double) = 1.0 / (1.0 + math.exp(-x))
-
-  implicit class ColorString(string: String) {
-    import Console._
-    def red() = colorize(RED)
-    def blue() = colorize(BLUE)
-    def cyan() = colorize(CYAN)
-    def green() = colorize(GREEN)
-    def yellow() = colorize(YELLOW)
-    def white() = colorize(WHITE)
-    def magenta() = colorize(MAGENTA)
-    def bold() = BOLD + string + RESET
-    def underlined() = UNDERLINED + string + RESET
-    private def colorize(color: String) = color + string + RESET
+    //also create a sampled stochastic negative factor in the same column
+    fg.buildStochasticFactor(Seq(v, db.sampleNode(colIx)))(_ map (_ => new VectorMsgs)) {
+      e => new CellLogisticLoss(e(0), e(1), 0.0, 0.01) with L2Regularization
+    }
   }
 
+  fg.build()
+  GradientBasedOptimizer(fg, new OnlineTrainer(_, new AdaGrad(), 100,10))
+
   println("train:")
-  println("\t" + cols.mkString(" "*4))
-  println(rows.map(r => r + "\t" + cols.map(c =>
-    if (data.contains((r, c))) " 1  ".green() else " "*4
-  ).mkString("  ")).mkString("\n"))
+  println(db.toVerboseString(showTrain = true))
+  println()
 
   println("predicted:")
-  println("\t" + cols.mkString(" "*4))
-  println(rows.map(r => r + "\t" + cols.map(c => {
-    val p = sig(A(r).variable.asVector.b dot V(c).variable.asVector.b)
-    val pString = "%4.2f".format(p)
-    if (data.contains((r, c)))
-      if (p >= 0.9) pString.green()
-      else if (p >= 0.5) pString.yellow()
-      else pString.red()
-    else if (p >= 0.9) pString.magenta()
-    else if (p >= 0.5) pString.cyan()
-    else pString
-  }).mkString("  ")).mkString("\n"))
+  println(db.toVerboseString())  
+}
+
+
+object WolfeStyleMF extends App {
+
+  import Wolfe._
+  import ml.wolfe.macros.OptimizedOperators._
+  case class Data(rel:String, arg1:String, arg2:String, target:Double)
+
+  case class Model(relationVectors:Map[String,Seq[Double]], entityPairVectors:Map[(String,String),Seq[Double]])
+
+  def dot(a1:Seq[Double],a2:Seq[Double]) = ???
+
+  val rels = Seq("profAt")
+  val ents = Seq("Luke" -> "MIT")
+
+
+  def searchSpace(k:Int) = all(Model)(maps(rels,fvectors(k)) x maps(ents,fvectors(k)))
+
+  def fvectors(k:Int) = Wolfe.seqsOfLength(k,Wolfe.doubles)
+
+
+
+  //@Potential(???) //cell logistic potential
+  def logisticLoss(target:Double, arg1:Seq[Double], arg2:Seq[Double]) =
+  //todo: sigmoid
+    sum(0 until arg1.length) { i => arg1(i) * arg2(i) }
+
+  //@Stochastic(String => (String, String)) //samples a non-observed pair efficiently from data; not for now
+  //creates as many stochastic factors as the integer before the sum
+  @Stochastic
+  def negativeDataLoss(data: Seq[Data])(model: Model) = {
+    val r = data.head.rel
+    val numObserved = data.size //function of r
+    val numUnobserved = ents.size - numObserved
+
+    //there needs to be a default implementation that takes the filtered domain (ents) and samples from it
+    numObserved * sum(ents filter { pair => !data.exists(d => pair == (d.arg1, d.arg2)) }){ pair =>
+      logisticLoss(0.0, model.entityPairVectors(pair), model.relationVectors(r)) * (numUnobserved / numObserved.toDouble)
+    }
+  }
+
+  def objective(data:Seq[Data])(model:Model) = {
+    sum(data) { d => logisticLoss(d.target,model.entityPairVectors(d.arg1 -> d.arg2), model.relationVectors(d.rel)) } +
+    sum(rels) { r => negativeDataLoss(data.filter(_.rel == r))(model) }
+  }
+
+  println("It compiles, yay! :)")
 }

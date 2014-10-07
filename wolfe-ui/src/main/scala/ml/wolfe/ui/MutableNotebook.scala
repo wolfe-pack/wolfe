@@ -20,6 +20,16 @@ trait MutableNotebook[T <: MutableNotebook[T]] {
 
   def html(h:HTML):T = html(h.source)
 
+  def md(markdown: String): T
+  def h1(text: String):T
+  def h2(text: String):T
+  def source(src: String):T
+
+}
+
+trait DefaultMutableNotebook[T <: DefaultMutableNotebook[T]] extends MutableNotebook[T] {
+  this:T =>
+
   def md(markdown: String): T = {
     html(transformer(markdown))
   }
@@ -29,7 +39,7 @@ trait MutableNotebook[T <: MutableNotebook[T]] {
 
 }
 
-class MutableHTMLNotebook extends MutableNotebook[MutableHTMLNotebook] {
+class MutableHTMLNotebook extends DefaultMutableNotebook[MutableHTMLNotebook] {
 
   implicit val renderer = this
 

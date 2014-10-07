@@ -2,7 +2,7 @@ package ml.wolfe.macros
 
 import scala.reflect.macros.Context
 
-trait MetaFunStructures[C<:Context] {
+trait MetaFunStructures[C <: Context] {
   this: MetaStructures[C] =>
 
   import context.universe._
@@ -27,11 +27,11 @@ trait MetaFunStructures[C<:Context] {
     //lazy val anyKeyType = if (anyKeyTypes.size == 1) tq"Any" else tq"(..$anyKeyTypes)"
     lazy val anyKeyType = keyType match {
       case TypeRef(t, c, args) if keyType.typeSymbol.name.toString.matches("Tuple[0-9]+") =>
-        tq"(..${List.fill(args.length)(tq"Any")})"
-      case _ =>  tq"Any"
+        tq"(..${ List.fill(args.length)(tq"Any") })"
+      case _ => tq"Any"
     }
 
-    def edgesType = tq"Map[$anyKeyType,${valueMetaStructure.edgesType}]"
+    def edgesType = tq"Map[$anyKeyType,${ valueMetaStructure.edgesType }]"
 
     lazy val keyDomNames   = List.fill(keyDoms.size)(newTermName(context.fresh("funKeyDom")))
     lazy val keyIndexNames = List.fill(keyDoms.size)(newTermName(context.fresh("funKeyIndex")))
@@ -58,12 +58,16 @@ trait MetaFunStructures[C<:Context] {
             val actualArgs = //args
             //todo: if args contains a single element that is a tuple we need to break up the tuple.
               if (args.size == 1 && keyDoms.size > 1) {
-              val arg = args.head
-              for ((_,i) <- keyDoms.zipWithIndex) yield q"$arg.${newTermName("_" + (i + 1))}"
-            } else args
-            val asIndices = for ((a, i) <- actualArgs zip keyIndexNames) yield q"${parentStructure.structure}.$i($a)"
-            val substructure = curriedArguments(asIndices, q"${parentStructure.structure}.subStructures")
-            Some(StructurePointer(substructure,valueMetaStructure))
+                val arg = args.head
+                for ((_, i) <- keyDoms.zipWithIndex) yield q"$arg.${ newTermName("_" + (i + 1)) }"
+              } else if (args.size > 1 && keyDoms.size == 1) {
+                List(q"(..$args)")
+              }
+              else args
+
+            val asIndices = for ((a, i) <- actualArgs zip keyIndexNames) yield q"${ parentStructure.structure }.$i($a)"
+            val substructure = curriedArguments(asIndices, q"${ parentStructure.structure }.subStructures")
+            Some(StructurePointer(substructure, valueMetaStructure))
           case _ => None
         }
         tree match {
@@ -84,18 +88,18 @@ trait MetaFunStructures[C<:Context] {
     }
 
 
-    lazy val mappings = tupleProcessor(keyDomNames, tmpNames, q"$tuple -> ${curriedArguments(tmpIds)}.value")
-    lazy val createEdges = tupleProcessor(keyDomNames, tmpNames, q"$tuple -> ${curriedArguments(tmpIds)}.createEdges(factor)")
+    lazy val mappings    = tupleProcessor(keyDomNames, tmpNames, q"$tuple -> ${ curriedArguments(tmpIds) }.value")
+    lazy val createEdges = tupleProcessor(keyDomNames, tmpNames, q"$tuple -> ${ curriedArguments(tmpIds) }.createEdges(factor)")
 
 
-    lazy val observeSubStructure = q"${curriedArguments(tmpIds)}.observe(value($tuple))"
+    lazy val observeSubStructure = q"${ curriedArguments(tmpIds) }.observe(value($tuple))"
 
     override def classDef(graphName: TermName) = {
       val iterator = substructureIterator(keyDoms.size)
       val valueDef = valueMetaStructure.classDef(graphName)
       val keyDomIterators = List.fill(keyDoms.size)(newTermName(context.fresh("i")))
       val keyDomIteratorsTyped = keyDomIterators.map(x => q"$x:Int")
-      val indexedKeyComponentNames = keyDomIterators.zipWithIndex.map{case (k, i) => q"keyNames($i)($k)"}
+      val indexedKeyComponentNames = keyDomIterators.zipWithIndex.map { case (k, i) => q"keyNames($i)($k)" }
       val indexedKeyName = q"""Seq(..$indexedKeyComponentNames).mkString("(", ",", ")")"""
       q"""
       final class $className (override val astLabel : String = "") extends ml.wolfe.macros.Structure[$argType]{
@@ -103,7 +107,7 @@ trait MetaFunStructures[C<:Context] {
         ..$domainDefs
         private var iterator:Iterator[Unit] = _
         val keyNames = Seq(..$keyDoms).map(_.map(_.toString))
-        def createNode(..$keyDomIteratorsTyped) = new ${valueMetaStructure.className} (astLabel + $indexedKeyName)
+        def createNode(..$keyDomIteratorsTyped) = new ${ valueMetaStructure.className } (astLabel + $indexedKeyName)
         val subStructures = Array.tabulate(..$keyDomSizes)(createNode)
         def children() = subStructureIterator().map(_.asInstanceOf[ml.wolfe.macros.Structure[Any]])
         def graph = $graphName
@@ -114,7 +118,7 @@ trait MetaFunStructures[C<:Context] {
         def nextSetting = iterator.next
         def value() = $mappings.toMap
         def observe(value:$argType) {
-          ${tupleProcessor(keyDomNames, tmpNames, observeSubStructure, newTermName("foreach"), newTermName("foreach"))}
+          ${ tupleProcessor(keyDomNames, tmpNames, observeSubStructure, newTermName("foreach"), newTermName("foreach")) }
         }
         type Edges = $edgesType
         def createEdges(factor: ml.wolfe.FactorGraph.Factor): Edges = {
