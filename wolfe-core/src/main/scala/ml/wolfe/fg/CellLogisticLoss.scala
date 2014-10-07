@@ -50,7 +50,7 @@ trait L2Regularization extends Regularization {
   val λ: Double
   override def regLoss(vector: FactorieVector): Double =
     if (λ == 0) 0
-    else vector dot vector * λ * 0.5
+    else (vector dot vector) * λ * 0.5
   override def regGradient(vector: FactorieVector): FactorieVector =
     if (λ == 0) new SparseTensor1(vector.length)
     else vector * λ

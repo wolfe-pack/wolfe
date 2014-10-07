@@ -68,6 +68,7 @@ import math._
 object Wolfe extends SampleSpaceDefs
                      with StatsDefs
                      with VectorDefs
+                     with Quantification
                      with DefaultValues
                      with ProblemBuilder
                      with Annotations {
@@ -142,6 +143,7 @@ object Wolfe extends SampleSpaceDefs
 
   def I(b: Boolean) = if (b) 1.0 else 0.0
   def logI(b: Boolean) = if (b) 0.0 else Double.NegativeInfinity
+  def constraint(b:Boolean) = logI(b)
 
   implicit class RichPredicate[T](pred: Map[T, Boolean]) {
     def only(trueAtoms: T*) = {
@@ -268,6 +270,10 @@ trait VectorDefs {
       val (key, value) = t
       new Vector(acc.underlying.updated(key, acc.getOrElse(key, 0.0) + value))
     })
+}
+
+trait Quantification {
+  def forall[T](dom:Iterable[T])(pred:T => Boolean) = dom.forall(pred)
 }
 
 trait SampleSpaceDefs {
@@ -420,7 +426,6 @@ trait DefaultValues {
   implicit def toDefaultBoolean[Boolean](default: Default) = false
   implicit def toDefaultDouble[Double](default: Default) = 0.0
   def default[T <: AnyRef]: T = null.asInstanceOf[T]
-
 }
 
 trait Annotations {
@@ -430,7 +435,7 @@ trait Annotations {
   class Atomic extends StaticAnnotation
   class Potential(construct: _ => ml.wolfe.fg.Potential) extends StaticAnnotation
   class OutputFactorGraph(buffer: Wolfe.FactorGraphBuffer = Wolfe.FactorGraphBuffer) extends StaticAnnotation
-
+  class Stochastic extends StaticAnnotation
 }
 
 trait ProblemBuilder {

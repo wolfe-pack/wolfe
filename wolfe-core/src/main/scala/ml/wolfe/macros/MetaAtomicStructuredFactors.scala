@@ -46,7 +46,7 @@ trait MetaAtomicStructuredFactors[C <: Context] {
     lazy val transformedPointers = distinctByTrees(structures(transformedPot, matcher))(_.structure)
     lazy val transformedArgs = transformedPointers.map(_.structure) //distinctTrees(structures(transformedPot, matcher).filterNot(_.meta.observed).map(_.structure))
     lazy val nodesPerArg     = transformedArgs.map(a => q"$a.nodes()")
-    lazy val nodes           = q"""Iterator(..$nodesPerArg).flatMap(identity)"""
+    lazy val nodes           = q"""Iterator[Iterator[ml.wolfe.FactorGraph.Node]](..$nodesPerArg).flatMap(identity)"""
     lazy val injected        = context.resetLocalAttrs(injectStructure(transformedPot, matcher))
     lazy val constructorArgs = q"val structure:${ structure.className }" :: info.constructorArgs
 

@@ -1,7 +1,8 @@
 package ml.wolfe
 
-import ml.wolfe.FactorGraph.{Node, Factor}
+import ml.wolfe.FactorGraph.{EdgeDirection, DirectedEdge, Node, Factor}
 import ml.wolfe.fg.AD3GenericPotential
+import scala.collection.mutable.ArrayBuffer
 import scalaxy.loops._
 
 /**
@@ -40,9 +41,13 @@ object DualDecomposition {
     val previousBeliefs: Array[Array[Double]] = fg.nodes.map(_.variable.asDiscrete.b.clone()).toArray
     var stepSize = initialStepSize
 
+    fg.visualizationMessages = ArrayBuffer[Iterable[(DirectedEdge, Seq[Double])]]()
+
     for (iter <- 0 until maxIteration if !fg.converged) {
 
       for(f <- factors) if(ad3) f.potential.quadraticProgramF2N(stepSize, 10) else f.potential.mapF2N()
+      fg.addMessagesToVisualization(fg.edges, EdgeDirection.F2N)
+
       for(i <- fg.nodes.indices) {
         Array.copy(fg.nodes(i).variable.asDiscrete.b, 0, previousBeliefs(i), 0, previousBeliefs(i).length)
         fg.nodes(i).variable.updateAverageBelief()
@@ -51,6 +56,7 @@ object DualDecomposition {
          else stepSize = initialStepSize / math.sqrt(iter + 1)
 
       for(n <- fg.nodes; e <- n.edges) n.variable.updateDualN2F(e, stepSize)
+      fg.addMessagesToVisualization(fg.edges, EdgeDirection.N2F)
 
       fg.converged = hasConverged(fg, previousBeliefs, convergenceThreshold)
     }
@@ -58,6 +64,7 @@ object DualDecomposition {
     for(n <- fg.nodes) n.variable.setToArgmax()
 
     fg.gradient = new SparseVector(1000)
+    Wolfe.FactorGraphBuffer.set(fg)
   }
 
 

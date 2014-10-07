@@ -2,8 +2,8 @@ package ml.wolfe
 
 import java.io.{File, PrintWriter}
 
-import ml.wolfe.FactorGraph.{Factor, Node}
-import ml.wolfe.fg.{TupleVar, DiscreteVar}
+import ml.wolfe.FactorGraph.{DirectedEdge, EdgeDirection, Factor, Node}
+import ml.wolfe.fg.{TupleMsgs, DiscreteMsgs, TupleVar, DiscreteVar}
 import org.sameersingh.htmlgen.{RawHTML, HTML}
 import scala.language.implicitConversions
 
@@ -18,7 +18,7 @@ object D3Implicits {
   private def wrapCode(id:String, javascript:String, style:String = "") : HTML = {
     val html =
       s"""
-        |	<div id="$id">
+        |	<div id="$id" style="display:inline-block;">
         |		<style type="text/css">
         |			$style
         |		</style>
@@ -51,22 +51,22 @@ object D3Implicits {
   def barChart(v:Wolfe.Vector) : HTML = {
     val id = "VEC" + Math.abs(v.hashCode()).toString
     val dataid = id + "_data"
-    val nonZero = v.filter(_._2 != 0)
+    val nonZero = v.filter(_._2 != 0).sortBy(_.toString())
 
-    val width = 500
+      val width = 500
 
-    val barHeight = 30
-    val barSpace = 10
+      val barHeight = 30
+      val barSpace = 10
 
-    val offset = 100
+      val offset = 100
 
-    val data = s"var data = { ${nonZero.map(x => "\"" + escape(x._1.toString) + "\": " + x._2).mkString(", ")} };"
-    val run =
-      s"""
+      val data = s"var data = { ${nonZero.map(x => "\"" + escape(x._1.toString) + "\": " + BigDecimal(x._2).setScale(3, BigDecimal.RoundingMode.HALF_UP)).mkString(", ")} };"
+      val run =
+        s"""
 |				var barHeight = $barHeight;
 |				var barSpace = $barSpace;
 |
-|				svg = d3.select("#$id").append("svg")
+|				var svg = d3.select("#$id").append("svg")
 |       .attr("height", d3.entries(data).length * (barHeight + barSpace))
 |				.attr("width", $width)
 |       .attr("class", "barchart")
@@ -102,7 +102,7 @@ object D3Implicits {
 |				.text(function(d) { return d.value; });
       """.stripMargin
 
-    wrapCode(id, data + run)
+      wrapCode(id, data + run)
   }
 
   implicit def d3fg(fg:FactorGraph) = $d3fg(fg)
@@ -135,6 +135,8 @@ object D3Implicits {
     val linkDistance = 50
     val linkStrength = 0.5
 
+    val strokeWidth = 2
+
     def nodeX(n:Node) = width * (
       if(nodeToNumber(n) == -1) Math.random()
       else ((nodeToNumber(n)-minNodeNumber).toDouble+0.5)/(maxNodeNumber - minNodeNumber +1))
@@ -142,16 +144,36 @@ object D3Implicits {
       if(nodeToNumber(n) == -1) Math.random()
       else (nodeTypes.indexOf(nodeToType(n))+1).toDouble / (nodeTypes.length+1))
     def factorX(f:Factor) = f.edges.map(e => nodeX(e.n)).sum / f.edges.length
-    def factorY(f:Factor) = f.edges.map(e => nodeY(e.n)).sum / f.edges.length
+    def factorY(f:Factor) = f.edges.map(e => nodeY(e.n)).sum / f.edges.length + 20
     def isFixed(n:Node) = linear && maxNodeNumber != -1 && (nodeToNumber(n) == minNodeNumber || nodeToNumber(n) == maxNodeNumber)
 
+/*    def nodesMsgs = fg.visualizationMessages.map(
+      set => set.map(
+        e => e.direction match {
+        case EdgeDirection.F2N if e.edge.msgs.isInstanceOf[DiscreteMsgs] => (e.edge.n, e.edge.msgs.asDiscrete.f2n)
+        case EdgeDirection.N2F if e.edge.msgs.isInstanceOf[DiscreteMsgs] => (e.edge.n, e.edge.msgs.asDiscrete.n2f)
+        case EdgeDirection.F2N if e.edge.msgs.isInstanceOf[TupleMsgs] => (e.edge.n, e.edge.msgs.asTuple.f2n.array)
+        case EdgeDirection.N2F if e.edge.msgs.isInstanceOf[TupleMsgs] => (e.edge.n, e.edge.msgs.asTuple.n2f.array)
+        case _ => null
+    }))*/
+    def msgHtml(e:DirectedEdge, m:Seq[Double]) = {
+        val dom:Seq[String] = e.n.variable match {
+          case t:DiscreteVar[_] => t.domain.map(_.toString)
+          case t:TupleVar => t.domain
+        }
+        val headerRow = "<tr><td><i>" + e.n.variable.label + "</i></td><td></td></tr>"
+        val tableRows = for((x, y) <- dom.zip(m)) yield {
+          "<tr><td>" + x + "</td><td>" + "%.3f".format(y) + "</td></tr>"
+        }
+        "<table class='potentialtable'>" + headerRow + "\n" + tableRows.mkString("\n") + "</table>"
+    }
 
 
     val style =
       s"""
         |.link {
         |	stroke: #000;
-        |	stroke-width: 1.5px;
+        |	stroke-width:${strokeWidth}px;
         |}
         |
         |.fgshape {
@@ -181,7 +203,17 @@ object D3Implicits {
         |	pointer-events:none;
         |	overflow:hidden;
         |}
-""".stripMargin
+        |
+        |marker{
+        |	overflow:visible;
+        |}
+        |
+        |
+        |.factorgraph{
+        | float:left;
+        | clear:left;
+        | }
+        """.stripMargin
 
     val data =  s"""
         |var data = {graph:{
@@ -189,11 +221,26 @@ object D3Implicits {
               nodes.map(n =>
                 "{text:'" + escape(n.variable.label) + "'" +
                 ", type:'" + (if(n.variable.isObserved) "observednode" else "node") + "'" +
-                 ", hoverhtml:'Domain:<br/>{" + escape(n.variable match {
-                  case v:DiscreteVar[_] => v.domain.mkString(", ")
-                  case v:TupleVar => v.domain.mkString(", ")
-                  case _ => ""
-                }) + "}'" +
+                 ", hoverhtml:'<table style=\\'width:initial\\'><tr><td>Setting</td><td>Belief</td></tr>" + escape(
+                  n.variable match {
+
+                    case v:DiscreteVar[_] => (v.domain zip v.b).zipWithIndex.map {
+                      case(db:(Any, Double),i:Int) =>
+                        "<tr><td>" +
+                        (if(v.fixedSetting && i == v.setting) s"<span style='font-weight:bold; color:#fc0'>${db._1}</span>" else db._1) +
+                        s"</td><td>${db._2}</td></tr>"
+                    }.mkString("\n")
+
+                    case v:TupleVar => (v.domain zip v.b).zipWithIndex.map {
+                      case(db:(Any, Double),i:Int) =>
+                        "<tr><td>" +
+                        db._1 +
+                        s"</td><td>${db._2}</td></tr>"
+                    }.mkString("\n")
+
+                    case _ => ""
+                  })
+                + "</table>'" +
                 ", x:" + nodeX(n) + ", y:" + nodeY(n) +
                 ", fixed:" + isFixed(n) +
                 "}") ++
@@ -230,14 +277,34 @@ object D3Implicits {
         |    node = svg.selectAll(".fgshape")
         |    label = svg.selectAll(".label");
         |
+
+        |
         |    force
         |     .nodes(data.graph.nodes)
         |     .links(data.graph.links)
         |     .start();
         |
+        |   var defs = svg.append("svg:defs")
+        |
         |    var link = link.data(data.graph.links)
         |	    .enter().append("line")
-        |	    .attr("class", "link");
+        |	    .attr("class", "link")
+        |
+        |
+        |    link.each( function(d, i) {
+        |    defs.append("svg:marker")
+        |    .attr("id", "markerArrow" + i)
+        |    .attr("class", "markerArrow")
+        |    .attr("markerWidth", "100")
+        |    .attr("markerHeight", "100")
+        |    .attr("refX", 0)
+        |    .attr("orient", "auto")
+        |    .append("svg:path")
+        |     .attr("d", d3.svg.symbol()
+        |       .type('triangle-up')
+        |       .size(30))
+        |     .attr("fill", "white");
+        |   });
         |
         |	  var node = node.data(data.graph.nodes)
         |	    .enter().append("path")
@@ -310,7 +377,7 @@ object D3Implicits {
         |	}
         |	tooltip = svg.insert("foreignObject")
         |		.attr("class", "tooltip")
-        |		.attr("width", "300")
+        |		.attr("width", "350")
         |		.attr("height", "500")
         |		.style("opacity", 0)
         |		.html("<div class='tooltipinner'>" + html + "</div>")
@@ -325,7 +392,133 @@ object D3Implicits {
         |
         |force.on("tick", tick);
         |tick();
+        |
+        |
+        |
+        |
+        |
+        |
+        |
+        |
+        |
+        |
+        |
+        |var samples = ${if (fg.visualizationSamples == null) "null" else
+          fg.visualizationSamples.map{case(v,s,a) => "{node:" + v.node.index + ", sample:'" + escape(s.toString) +
+            "', accepted:" + a + "}\n"}.mkString("[", ", ", "]")
+          };
+        |var toast = function(t, x, y) {
+        | t.attr("opacity", 1)
+        | .attr("x", x)
+        | .attr("y", y)
+        | .transition()
+        | .duration(1000)
+        | .ease("linear")
+        | .attr("opacity", 0)
+        | .attr("y", y-40)
+        |}
+        |var showSamples = function(i) {
+        |  if(playing) {
+        |   var n = data.graph.nodes[samples[i].node]
+        |   var t = svg.append("text")
+        |     .text(samples[i].sample)
+        |     .style("font-weight", "bold")
+        |     .attr("fill", samples[i].accepted  ? "#fc0" : "#f50")
+        |     .attr("text-anchor", "middle")
+        |   toast(t, n.x, n.y-30);
+        |   setTimeout(function() {showSamples(i+1);}, 400)
+        |  }
+        |}
+        |var schedule = ${if(fg.visualizationMessages == null) "null" else
+            fg.visualizationMessages.map { _.map{
+                case (e, m) =>
+                  "{edge:" + fg.edges.indexOf(e.edge) + ", direction:'" + e.direction + "', msg:'" + escape(msgHtml(e,m)) + "'}"
+              }.mkString("[", ", ", "]")
+            }.mkString("[", ", ", "]")
+          };
+        |var transitionIndex = 0;
+        |var playing = false;
+        |var playTransition = function(){
+        | if(transitionIndex >= schedule.length) {
+        |   transitionIndex = 0;
+        |   playing = false;
+        |   playbtn.text("Play");
+        |   //playTransition();
+        | } else {
+        |   var es = schedule[transitionIndex];
+        |   link.attr("marker-end", "none");
+        |   var finCount = 0;
+        |   es.forEach(function(e) {
+        |     var l = link[0][e.edge];
+        |     var dx = l.getAttribute("x1") - l.getAttribute("x2");
+        |     var dy = l.getAttribute("y1") - l.getAttribute("y2");
+        |     var len = Math.sqrt(dx * dx + dy * dy) / ${strokeWidth}
+        |
+        |     d3.select(link[0][e.edge])
+        |       .attr("marker-end", "url(#markerArrow" + e.edge + ")");
+        |
+        |     d3.select("#markerArrow" + e.edge)
+        |         .attr("refX", (e.direction == 'N2F' ? len : 0))
+        |         .select("path")
+        |           .attr("transform", "rotate(" + (e.direction == 'N2F' ? 90 : -90) + ")");
+        |
+        |     d3.select("#markerArrow" + e.edge)
+        |         .transition()
+        |         .attr("refX", (e.direction == 'N2F' ? 0 : len))
+        |         .duration(1000)
+        |         .ease("linear");
+        |
+        |     d3.select(link[0][e.edge]).each(function(d) {
+        |           var t = d3.select(this).transition().duration(1000).each("end", function() {
+        |             d.msgVisited = !d.msgVisited;
+        |             if(++finCount == es.length) {
+        |               transitionIndex++;
+        |               playTransition();
+        |             }
+        |           });
+        |           t.style("stroke", d.msgVisited ? "black" : "white");
+        |     }).on("mouseover", function(d) {
+        |   		  setTooltip(e.msg);
+        |   		  tooltip.transition()
+        |   			  .duration(300)
+        |   			  .style("opacity", .9);
+        |   		  tooltipNode = d.source;
+        |   		  moveTooltip();
+        |     })
+        |     .on("mouseout", function(d) {
+        |	      tooltip.transition()
+        |           .duration(300)
+        |           .style("opacity", 0)
+        |     });
+        |   });
+
+        |   }
+        |
+        |}
+        |var playbtn = null;
+        |if(schedule != null || samples != null) {
+        | playbtn = d3.select("#$id")
+        |   .insert("div", "svg")
+        |   .attr("class", "playbtn")
+        |   .text("Play")
+        |   .on('click', function() {
+        |      if(playing == false) {
+        |        d3.select(this).text("Pause");
+        |        playing = true;
+        |        if(schedule != null) { playTransition(); } else { showSamples(0);}
+        |      } else {
+        |        playing = false;
+        |        d3.select(this).text("Play");
+        |        if(schedule != null) {
+        |         svg.selectAll(".markerArrow").transition();
+        |         link.transition();
+        |        }
+        |      }
+        |   });
+        |}
       """.stripMargin
+
+
 
     wrapCode(id, data + run, style)
   }
@@ -357,8 +550,8 @@ object D3Implicits {
     val writer = new PrintWriter(file)
     writer.println("<html>" +
     "<head><link rel='stylesheet' href='" +
-        //"https://raw.githubusercontent.com/wolfe-pack/moro/master/public/stylesheets/wolfe.css" +
-          "/home/luke/workspace/moro/public/stylesheets/wolfe.css" +
+        "https://raw.githubusercontent.com/wolfe-pack/moro/master/public/stylesheets/wolfe.css" +
+        //  "/home/luke/workspace/moro/public/stylesheets/wolfe.css" +
     "' />" +
     "</head>" +
     "<body>" + html.source + "</body>" +
