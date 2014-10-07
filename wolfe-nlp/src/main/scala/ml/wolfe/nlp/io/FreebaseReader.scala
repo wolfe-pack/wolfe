@@ -7,6 +7,8 @@ import scala.collection.mutable.HashMap
  * Created by narad on 9/11/14.
  */
 
+// To use the FreebaseReader class you must first start a MongoDB process in the environment.
+// A simple way of doing this is the command: mongod --dbpath <path-to-DB-cache-directory>
 class FreebaseReader {
   val INSTANCE_PATTERN = """<http://rdf.freebase.com/ns/([^>]+)>\t<http://rdf.freebase.com/ns/type.type.instance>\t<http://rdf.freebase.com/ns/([^>]+)>.*""".r
   val RELATION_PATTERN = """<http://rdf.freebase.com/ns/(m.[^>]+)>\t<http://rdf.freebase.com/ns/([^>]+)>\t<http://rdf.freebase.com/ns/(m.[^>]+)>.*""".r
