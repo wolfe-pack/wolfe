@@ -65,6 +65,12 @@ class MutableMoroNotebook extends MutableNotebook[MutableMoroNotebook] {
     cells += Cell(cells.size,"heading1",Input(text,OutputFormats.html.toString))
     this
   }
+
+  def raw(code: String) = {
+    cells += Cell(cells.size,"raw",Input(code,OutputFormats.html.toString))
+    this
+  }
+
   def md(markdown: String) = {
     cells += Cell(cells.size,"markdown",Input(trimEmptyLines(markdown.stripMargin),OutputFormats.html.toString))
     this
@@ -78,5 +84,4 @@ class MutableMoroNotebook extends MutableNotebook[MutableMoroNotebook] {
     fw.close()
 
   }
-
 }
