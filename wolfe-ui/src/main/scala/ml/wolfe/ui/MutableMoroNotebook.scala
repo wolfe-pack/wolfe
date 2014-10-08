@@ -76,6 +76,12 @@ class MutableMoroNotebook extends MutableNotebook[MutableMoroNotebook] {
     this
   }
 
+  def latex(text: String) = {
+    cells += Cell(cells.size,"latex",Input(text,OutputFormats.html.toString))
+    this
+  }
+
+
   def saveTo(name:String, file:File): Unit = {
     implicit val formats = Serialization.formats(NoTypeHints)
     val ser = Serialization.writePretty(DocumentData(name,cells))
