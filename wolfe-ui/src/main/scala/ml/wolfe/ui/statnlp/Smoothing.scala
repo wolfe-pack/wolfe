@@ -39,11 +39,26 @@ object Smoothing extends MutableMoroNotebook with App {
       """
         |import scala.io.Source
         |val file = "/Users/sriedel/projects/stat-nlp-course-intern/data/counts.json"
-        |def toPair(split:Array[String]) = (split(0),split(1))
+        |def toPair(split:Array[String]) = (split(0),split(1).toInt)
         |val lines = Source.fromFile(file).getLines()
         |val counts = lines.map(_.split("\t")).map(toPair).toList
         |counts.take(10)
       """.stripMargin)
+  }
+
+  section("Tail") {
+
+    md("##The Long Tail")
+
+    wolfe(
+      """
+        |val x = counts.take(100).indices.map(_.toDouble)
+        |val y = counts.take(100).map(_._2).map(_.toDouble)
+        |val chart = plot((x,(Y(y,"freq"))))
+        |D3Plotter.lineplot(chart)
+      """.stripMargin
+    )
+
   }
 
   saveTo("Smoothing", new File(Slides.dir, "smoothing.json"))
