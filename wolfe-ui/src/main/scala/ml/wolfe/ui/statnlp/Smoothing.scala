@@ -37,11 +37,8 @@ object Smoothing extends MutableMoroNotebook with App {
 
     wolfe(
       """
-        |import scala.io.Source
-        |val file = "/Users/sriedel/projects/stat-nlp-course-intern/data/counts.json"
-        |def toPair(split:Array[String]) = (split(0),split(1).toInt)
-        |val lines = Source.fromFile(file).getLines()
-        |val counts = lines.map(_.split("\t")).map(toPair).toList
+        |val file = new java.io.File("/Users/sriedel/projects/stat-nlp-course-intern/data/counts.json")
+        |val counts = io.IO.loadTSV(file)(a => a(0) -> a(1).toInt)
         |counts.take(10)
       """.stripMargin)
   }
@@ -52,12 +49,10 @@ object Smoothing extends MutableMoroNotebook with App {
 
     wolfe(
       """
-        |def steps[T](col:Seq[T],step:Int) =
-        |  (0 until col.length by step) map col
-        |val x = steps(counts.indices,1000).map(_.toDouble)
-        |val y = steps(counts,1000).map(_._2).map(_.toDouble)
-        |val chart = plot((x,(Y(y,"freq"))),y=Axis("freq",log=true))
-        |D3Plotter.lineplot(chart)        |
+        |val x = counts.indices.steps(1000).map(_.toDouble)
+        |val y = counts.steps(1000).map(_._2).map(_.toDouble)
+        |val chart = plot((x,(Y(y,"freq"))),y=Axis("freq",log=false))
+        |D3Plotter.lineplot(chart)
       """.stripMargin
     )
 
@@ -112,9 +107,6 @@ object PrepareSmoothing {
 
 object TestSmoothing {
   def main(args: Array[String]) {
-    val file = "/Users/sriedel/projects/stat-nlp-course-intern/data/counts.json"
-    def toPair(split:Array[String]) = (split(0),split(1))
-    val lines = Source.fromFile(file).getLines()
     val counts = IO.loadTSV(PrepareSmoothing.countsFile)(a => a(0) -> a(1).toInt)
     println(counts.take(10).mkString("\n"))
   }
