@@ -20,16 +20,6 @@ object Smoothing extends MutableMoroNotebook with App {
 
   def span(color: String)(body: String) = s"""<span style="color: $color">$body</span>"""
 
-  section("Zipf") {
-
-    md(
-      s"""
-        |## Zipf's Law
-        |The frequency ${span(mygreen)("$f$")} of a word is inversely proportional to its rank ${span(mygreen)("$r$")}.
-      """.stripMargin)
-
-    latex("f(k; s, N) = \\frac{1 / k^s}{ \\sum_i i}")
-  }
 
   section("ZipfGraph") {
 
@@ -49,14 +39,26 @@ object Smoothing extends MutableMoroNotebook with App {
 
     wolfe(
       """
-        |val x = counts.indices.steps(1000).map(_.toDouble)
-        |val y = counts.steps(1000).map(_._2).map(_.toDouble)
-        |val chart = plot((x,(Y(y,"freq"))),y=Axis("freq",log=false))
+        |val x = counts.indices.steps(1000).map(_ + 1.0)
+        |val Y1 = Y(counts.steps(1000).map(_._2).map(_.toDouble),"counts")
+        |val chart = plot((x,(Y1)),x=Axis("r",log=false),y=Axis("f",log=false))
         |D3Plotter.lineplot(chart)
       """.stripMargin
     )
 
   }
+
+  section("Zipf") {
+
+    md(
+      s"""
+        |## Zipf's Law
+        |The frequency ${span(mygreen)("$f$")} of a word is inversely proportional to its rank ${span(mygreen)("$r$")}.
+      """.stripMargin)
+
+    latex("f(k; s, N) = \\frac{1 / k^s}{ \\sum_i i}")
+  }
+
 
   saveTo("Smoothing", new File(Slides.dir, "smoothing.json"))
 

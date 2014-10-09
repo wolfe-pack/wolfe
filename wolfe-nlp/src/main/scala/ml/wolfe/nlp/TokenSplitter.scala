@@ -7,7 +7,7 @@ import scala.collection.mutable.ArrayBuffer
  */
 object TokenSplitter extends (Document => Document) {
 
-  val oneCharTokens = Set(',','"','\'','(',')', '/')
+  val oneCharTokens = Set(',','"','\'','(',')', '/', '[', ']')
 
   def apply(doc: Document) = {
     //go through all tokens and split the token at white space

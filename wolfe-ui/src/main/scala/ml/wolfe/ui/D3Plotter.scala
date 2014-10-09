@@ -55,6 +55,18 @@ object D3Plotter {
     def xlabel(in:String) = if (in == "") "X" else in
     def ylabel(in:String) = if (in == "") "Y" else in
 
+    val formats =
+      """
+        |var logFormat = function(i) {
+        |    if (Math.log10(i) % 1 === 0)
+        |        return i
+        |     else
+        |        return "";
+        |};
+        |var linearFormat = d3.format('.00f');
+        |
+      """.stripMargin
+
     val html =
       s"""
         |<div id="$id">
@@ -77,13 +89,16 @@ object D3Plotter {
         |                .showXAxis(true)        //Show the x-axis
         |  ;
         |
+        |  $formats
+        |
         |  chart.xAxis     //Chart x-axis settings
         |      .axisLabel("${xlabel(chart.x.label)}")
-        |      .tickFormat(d3.format(',r'));
+        |      .tickFormat(${if (chart.x.isLog) "logFormat" else "linearFormat"});
         |
         |  chart.yAxis     //Chart y-axis settings
         |      .axisLabel("${ylabel(chart.y.label)}")
-        |      .tickFormat(d3.format('.02f'));
+        |      .tickFormat(${if (chart.y.isLog) "logFormat" else "linearFormat"});
+        |
         |
         |  ${if (chart.x.isLog) "chart.xScale(d3.scale.log());" else ""}
         |  ${if (chart.y.isLog) "chart.yScale(d3.scale.log());" else ""}
