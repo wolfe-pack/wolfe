@@ -52,10 +52,12 @@ object Smoothing extends MutableMoroNotebook with App {
 
     wolfe(
       """
-        |val x = counts.take(100).indices.map(_.toDouble)
-        |val y = counts.take(100).map(_._2).map(_.toDouble)
-        |val chart = plot((x,(Y(y,"freq"))))
-        |D3Plotter.lineplot(chart)
+        |def steps[T](col:Seq[T],step:Int) =
+        |  (0 until col.length by step) map col
+        |val x = steps(counts.indices,1000).map(_.toDouble)
+        |val y = steps(counts,1000).map(_._2).map(_.toDouble)
+        |val chart = plot((x,(Y(y,"freq"))),y=Axis("freq",log=true))
+        |D3Plotter.lineplot(chart)        |
       """.stripMargin
     )
 
