@@ -16,7 +16,7 @@ import scala.io.Source
  */
 object Smoothing extends MutableMoroNotebook with App {
 
-  def mygreen = "#78AB46"
+  def mygreen = "#58C554"//  "#78AB46"
 
   def span(color: String)(body: String) = s"""<span style="color: $color">$body</span>"""
 
@@ -29,6 +29,7 @@ object Smoothing extends MutableMoroNotebook with App {
       """
         |val file = new java.io.File("/Users/sriedel/projects/stat-nlp-course-intern/data/counts.json")
         |val counts = io.IO.loadTSV(file)(a => a(0) -> a(1).toInt)
+        |val maxCount = counts.head._2
         |counts.take(10)
       """.stripMargin)
   }
@@ -41,7 +42,7 @@ object Smoothing extends MutableMoroNotebook with App {
       """
         |val x = counts.indices.steps(1000).map(_ + 1.0)
         |val Y1 = Y(counts.steps(1000).map(_._2).map(_.toDouble),"counts")
-        |val chart = plot((x,(Y1)),x=Axis("r",log=false),y=Axis("f",log=false))
+        |val chart = plot((x,(Y1)),x=Axis("rank",log=false),y=Axis("freq",log=false))
         |D3Plotter.lineplot(chart)
       """.stripMargin
     )
@@ -53,10 +54,24 @@ object Smoothing extends MutableMoroNotebook with App {
     md(
       s"""
         |## Zipf's Law
-        |The frequency ${span(mygreen)("$f$")} of a word is inversely proportional to its rank ${span(mygreen)("$r$")}.
+        |The count ${ span(mygreen)("$f$") } of a word is inversely proportional to its rank ${ span(mygreen)("$r$") }.
       """.stripMargin)
 
-    latex("f(k; s, N) = \\frac{1 / k^s}{ \\sum_i i}")
+    latex("f(r) = \\frac{M}{r}")
+  }
+
+  section("ZipfD3") {
+
+    md("##Zipf vs Counts")
+
+    wolfe(
+      """
+        |def zipf(a:Double)(r:Double) = maxCount / math.pow(r,a)
+        |val Y2 = Y(x map (zipf(1.0)),"zipf")
+        |val chart2 = plot((x,(Y1,Y2)),x=Axis("rank",log=true),y=Axis("freq",log=true))
+        |D3Plotter.lineplot(chart2)
+      """.stripMargin
+    )
   }
 
 
@@ -76,7 +91,7 @@ object PrepareSmoothing {
 
   import ml.wolfe.nlp._
 
-  val aclDir = new File("/Users/sriedel/corpora/cleaned_acl_arc_ascii")
+  val aclDir     = new File("/Users/sriedel/corpora/cleaned_acl_arc_ascii")
   val countsFile = new File("/Users/sriedel/projects/stat-nlp-course-intern/data/counts.json")
 
   def main(args: Array[String]) {
@@ -87,11 +102,11 @@ object PrepareSmoothing {
 
     println(docs.size)
 
-    def calculateCounts(docs:Seq[Document]) = {
-      type Counts = Map[String,Int]
+    def calculateCounts(docs: Seq[Document]) = {
+      type Counts = Map[String, Int]
       def words = for (d <- docs.view; s <- d.sentences.view; t <- s.tokens.view) yield t.word
-      val init = Map.empty[String,Int] withDefaultValue 0
-      def add(counts:Counts, word:String) = counts + (word -> (counts(word) + 1))
+      val init = Map.empty[String, Int] withDefaultValue 0
+      def add(counts: Counts, word: String) = counts + (word -> (counts(word) + 1))
       words.foldLeft(init)(add)
     }
 
@@ -102,7 +117,7 @@ object PrepareSmoothing {
     val sorted = counts.toSeq.sortBy(-_._2)
     println(sorted.take(10).mkString("\n"))
 
-    IO.saveTSV(sorted, countsFile)(c => Seq(c._1,c._2.toString))
+    IO.saveTSV(sorted, countsFile)(c => Seq(c._1, c._2.toString))
 
   }
 }

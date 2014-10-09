@@ -25,7 +25,7 @@ object D3Plotter {
          |{
          |  values: ${seriesDataToJson(series)},
          |  key: "${series.name}",
-         |  color: '#ff7f0e'
+         |  color: '$color'
          |}
        """.stripMargin
 
