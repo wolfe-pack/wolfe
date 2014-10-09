@@ -7,6 +7,8 @@ import scala.collection.mutable.ArrayBuffer
  */
 object TokenSplitter extends (Document => Document) {
 
+  val oneCharTokens = Set(',','"','\'','(',')', '/')
+
   def apply(doc: Document) = {
     //go through all tokens and split the token at white space
     val text = doc.source
@@ -21,14 +23,22 @@ object TokenSplitter extends (Document => Document) {
       val buffer = new StringBuilder
       while (offset < end) {
         while (offset < end && Character.isWhitespace(text(offset))) { offset += 1 }
-        val newTokenStart = offset
+        val newTokenStart = if (offset < end && oneCharTokens(text(offset))) {
+          tokens += Token(text(offset).toString,CharOffsets(offset,offset+1))
+          offset + 1
+        } else offset
         buffer.clear()
         while (offset < end && !Character.isWhitespace(text(offset))) {
           buffer.append(text(offset))
           offset += 1
         }
-        //tokens += Token(text.substring(newTokenStart,offset), CharOffsets(newTokenStart, offset))
-        tokens += Token(buffer.toString(), CharOffsets(newTokenStart, offset))
+        if (oneCharTokens(text(offset - 1))) {
+          tokens += Token(buffer.toString().dropRight(1), CharOffsets(newTokenStart, offset-1))
+          tokens += Token(text(offset - 1).toString,CharOffsets(offset-1,offset))
+        } else {
+          //tokens += Token(text.substring(newTokenStart,offset), CharOffsets(newTokenStart, offset))
+          tokens += Token(buffer.toString(), CharOffsets(newTokenStart, offset))
+        }
 
       }
       Seq.empty ++ tokens
@@ -46,7 +56,7 @@ object TokenSplitter extends (Document => Document) {
 
 object SentenceSplitter extends (Document => Document) {
 
-  val sentenceEnds = Set('.','?', ';')
+  val sentenceEnds = Set('.', '?', ';')
 
 
   def apply(doc: Document) = {
@@ -68,8 +78,8 @@ object SentenceSplitter extends (Document => Document) {
           }
           if (offset < end && sentenceEnds(text(offset))) {
             //create a new token until here.
-            val newToken = Token(buffer.toString(),CharOffsets(start,offset))
-            val punctToken = Token(text(offset).toString,CharOffsets(offset,offset+1))
+            val newToken = Token(buffer.toString(), CharOffsets(start, offset))
+            val punctToken = Token(text(offset).toString, CharOffsets(offset, offset + 1))
             tokens += newToken
             tokens += punctToken
             sentences += Sentence(Seq.empty ++ tokens)
@@ -79,7 +89,7 @@ object SentenceSplitter extends (Document => Document) {
             start = offset
             buffer.clear()
           } else {
-            tokens += Token(buffer.toString(),CharOffsets(start,offset))
+            tokens += Token(buffer.toString(), CharOffsets(start, offset))
             buffer.clear()
           }
         }

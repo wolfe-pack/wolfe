@@ -11,10 +11,17 @@ class SplitterSpecs extends WolfeSpec {
 
   "A Token Splitter" should {
     "Split whitespace" in {
-      val actual = TokenSplitter("This is text. Can you split it?")
+      val actual = normalizeDoc(TokenSplitter("This is text. Can you split it?"))
       val expected = makeDoc(Seq(Seq("This", "is", "text.", "Can", "you", "split", "it?")))
       actual should be (expected)
     }
+
+    "Split commas" in {
+      val actual = normalizeDoc(TokenSplitter("Find commas, or do not."))
+      val expected = makeDoc(Seq(Seq("Find", "commas", ",", "or", "do", "not.")))
+      actual should be (expected)
+    }
+
   }
 
   "A Sentence Splitter" should {

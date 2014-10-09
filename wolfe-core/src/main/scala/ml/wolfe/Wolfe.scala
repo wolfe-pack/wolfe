@@ -71,6 +71,7 @@ object Wolfe extends SampleSpaceDefs
                      with Quantification
                      with DefaultValues
                      with ProblemBuilder
+                     with Utilities
                      with Annotations {
 
   //core operators
@@ -436,6 +437,13 @@ trait Annotations {
   class Potential(construct: _ => ml.wolfe.fg.Potential) extends StaticAnnotation
   class OutputFactorGraph(buffer: Wolfe.FactorGraphBuffer = Wolfe.FactorGraphBuffer) extends StaticAnnotation
   class Stochastic extends StaticAnnotation
+}
+
+trait Utilities {
+
+  implicit class RichSeq[T](seq:Seq[T]) {
+    def steps(step:Int) = (0 until seq.size by step) map seq
+  }
 }
 
 trait ProblemBuilder {
