@@ -16,9 +16,9 @@ object IO {
 
   }
 
-  def loadTSV[T](file:File, delim:String = "\t")(mapper:Array[String] =>T) = {
+  def loadTSV[T](file:File, delim:String = "\t", skip:Int = 0)(mapper:Array[String] =>T) = {
     val source = Source.fromFile(file)
-    val lines = source.getLines()
+    val lines = source.getLines().drop(skip)
     val result = lines.map(_.split(delim)).map(mapper).toList
     source.close()
     result
