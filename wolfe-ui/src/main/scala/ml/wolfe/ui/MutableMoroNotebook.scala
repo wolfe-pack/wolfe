@@ -11,7 +11,6 @@ import scala.collection.mutable.ArrayBuffer
  * @author Sebastian Riedel
  */
 class MutableMoroNotebook extends MutableNotebook[MutableMoroNotebook] {
-
   val cells = new ArrayBuffer[Cell]()
 
   object OutputFormats extends Enumeration {
@@ -66,8 +65,17 @@ class MutableMoroNotebook extends MutableNotebook[MutableMoroNotebook] {
     this
   }
 
+  private def escape(code: String) = code
+    .replaceAll("</script>", "\\\\x3C/script>")
+    .replaceAll("'", "\\\"")
+
   def raw(code: String) = {
-    cells += Cell(cells.size,"raw",Input(code,OutputFormats.html.toString))
+    cells += Cell(cells.size,"raw",Input(escape(code)))
+    this
+  }
+
+  def rawOutside(code: String) = {
+    cells += Cell(cells.size,"rawOutside",Input(escape(code)))
     this
   }
 
@@ -81,6 +89,28 @@ class MutableMoroNotebook extends MutableNotebook[MutableMoroNotebook] {
     this
   }
 
+  //todo: speed up
+  //fixme: doesn't work for raw cells
+  def config(configs: Map[String, String])(body: => MutableMoroNotebook = this): MutableMoroNotebook = {
+    val before = this.cells.size
+    val after = body.cells.size
+
+    val affected = this.cells.slice(before, after)
+    cells.remove(before, after - before)
+
+    for {
+      cell <- affected
+    } {
+      val input = cell.input
+      val newConfig = input.extraFields ++ configs
+      val newInput = input.copy(extraFields = newConfig).asInstanceOf[this.Input]
+      cells += Cell(cell.id, cell.compiler, newInput)
+    }
+
+    this
+  }
+
+  def fragment(body: => MutableMoroNotebook = this) = config(Map("fragment" -> "true")) { body }
 
   def saveTo(name:String, file:File): Unit = {
     implicit val formats = Serialization.formats(NoTypeHints)
