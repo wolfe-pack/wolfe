@@ -125,7 +125,7 @@ object D3Plotter {
     import org.sameersingh.scalaplot.Implicits._
     val x = 0.0 until 2.0 * math.Pi by 0.1
     val y = x map (_ => 0.5)
-    val chart = plot(x ->(math.sin(_)),x=Axis("freq",log=true))
+    val chart = xyChart(x ->(math.sin(_)),x=Axis("freq",log=true))
     val chart2 = Seq(Y(y,"y"))
   }
 
