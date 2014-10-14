@@ -289,8 +289,8 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C]
           val mergable = vars1.size == vars2.size && vars1.forall(v1 => vars2.exists(v2 => v1.equalsStructure(v2)))
           if (mergable) {
             val merged = q"ml.wolfe.Wolfe.atomic($p1 + $p2)"
-            val typed = context.typeCheck(context.resetLocalAttrs(merged))
-            Some(arg2 -> typed)
+            //val typed = context.typeCheck(context.resetLocalAttrs(merged))
+            Some(arg2 -> merged)
           } else None
         case _ => None
       }
