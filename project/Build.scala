@@ -49,8 +49,9 @@ object BuildSettings {
     "org.scalautils" % "scalautils_2.10" % "2.0",
     "org.scalatest" %% "scalatest" % "2.1.0" % "test",
     "com.github.axel22" %% "scalameter" % "0.4",
-    "org.scala-lang" % "scala-compiler" % "2.10.3",
-    "org.scala-lang" % "scala-library" % "2.10.3",
+    "com.nativelibs4java" %% "scalaxy-loops" % "0.3-SNAPSHOT" % "provided",
+//    "org.scala-lang" % "scala-compiler" % "2.10.3",
+//    "org.scala-lang" % "scala-library" % "2.10.3",
     "org.slf4j" % "slf4j-api" % "1.7.6",
     "org.slf4j" % "slf4j-simple" % "1.7.6",
     "org.apache.commons" % "commons-compress" % "1.8",
@@ -67,7 +68,6 @@ object BuildSettings {
 
   val coreDependencies = libraryDependencies ++= Seq(
     "net.sf.trove4j" % "trove4j" % "3.0.3",
-    "com.nativelibs4java" %% "scalaxy-loops" % "0.3-SNAPSHOT" % "provided",
     "cc.factorie" % "factorie" % "1.0",
     "org.scalamacros" %% "quasiquotes" % "2.0.0",
     "org.scalanlp" %% "breeze" % "0.8.1",

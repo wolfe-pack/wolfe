@@ -15,7 +15,7 @@ object GraphBasedDependencyParser extends App {
   import TreePotential._
   import ml.wolfe.nlp.io.CoNLLReader
 
-  val root   = "Root"
+  val root = "Root"
 
   type Edge = (Int, Int)
 
@@ -29,6 +29,7 @@ object GraphBasedDependencyParser extends App {
   }
 
   def depLocal(x: X)(y: Y)(e: (Int, Int)) =
+    oneHot('d_bias, I(y.deps(e))) +
     oneHot('d_ww ->(x.words(e._1), x.words(e._2), y.deps(e)))
 
   def feats(x: X)(y: Y) = {
@@ -40,7 +41,7 @@ object GraphBasedDependencyParser extends App {
     treeConstraint(y.deps) + (feats(x)(y) dot w)
 
   def localLoss(x: X, gold: Y)(w: Vector) =
-    logZ(space(x)) { model(w)(x) }
+    logZ(space(x)) { model(w)(x) } - model(w)(x)(gold)
 
   @OptimizeByLearning(new OnlineTrainer(_, new AdaGrad(), 20, -1))
   def loss(data: Seq[(X, Y)])(w: Vector) =
@@ -50,14 +51,14 @@ object GraphBasedDependencyParser extends App {
     val words = Seq(root, "Bob", "killed", "Ann")
     val tags = Seq(root, "NNP", "VBD", "NNP")
     val deps = Map((0, 2) -> true, (2, 1) -> true, (2, 3) -> true) withDefaultValue false
-     (X(words, tags), Y(deps))
+    (X(words, tags), Y(deps))
   }
 
   def treeToInstance(tree: DependencyTree): (X, Y) = {
     val words = Seq(root) ++ tree.tokens.map(_.word)
     val tags = Seq(root) ++ tree.tokens.map(_.posTag)
-    val deps = tree.arcs.map {a => (a._1, a._2) -> true }.toMap withDefaultValue false
-      (X(words, tags), Y(deps))
+    val deps = tree.arcs.map { a => (a._1, a._2) -> true }.toMap withDefaultValue false
+    (X(words, tags), Y(deps))
   }
 
   val train = new CoNLLReader(args(0)).map(t => treeToInstance(t.syntax.dependencies))
@@ -68,9 +69,13 @@ object GraphBasedDependencyParser extends App {
 
   val test = new CoNLLReader(args(1)).map(t => treeToInstance(t.syntax.dependencies))
 
-  test.foreach { t =>
-//    val exp = expect (space(t._1)) (model(w)(t._1)) (x => oneHot("hello"))
-//    println(exp)
+  test.foreach { case (x, gold) =>
+
+    val exp = expect(space(x))(model(w)(x))(y => sum(candidateDeps(x)) { e => oneHot(e, I(y.deps(e)) ) })
+    val prob = exp(0 -> 5)
+
+    //    val exp = expect (space(t._1)) (model(w)(t._1)) (x => oneHot("hello"))
+    //    println(exp)
     println
   }
 }
