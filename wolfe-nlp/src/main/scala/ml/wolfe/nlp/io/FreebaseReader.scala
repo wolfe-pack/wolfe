@@ -26,7 +26,14 @@ class FreebaseReader {
     println(db.collectionNames.map("\t" + _).mkString("\n"))
     val coll = db("FB")
 
+    // Specify indices
+    coll.ensureIndex("mid")
+    coll.ensureIndex("arg1")
+    coll.ensureIndex("arg2")
+    coll.ensureIndex("type")
+
     println("Constructing Freebase indices...")
+    val startTime = System.currentTimeMillis()
     var count = 0
     for (line <- new GZipReader(filename)) {
       val cleaned = line.replaceAll("> +<", ">\t<").replaceAll("> +\"", ">\t\"")
@@ -35,26 +42,27 @@ class FreebaseReader {
           coll.insert(MongoDBObject("type" -> itype, "mid" -> mid))
         }
         case RELATION_PATTERN(mid1, relation, mid2) => {
-          coll.insert(MongoDBObject("mid1" -> mid1, "relation" -> relation, "mid2" -> mid2))
+          coll.insert(MongoDBObject("arg1" -> mid1, "relation" -> relation, "arg2" -> mid2))
         }
         case DATE_PATTERN(mid, dateType, date) => {
-          coll.insert(MongoDBObject("mid1" -> mid, "relation" -> dateType, "mid2" -> date))
+          coll.insert(MongoDBObject("arg1" -> mid, "relation" -> dateType, "arg2" -> date))
         }
         case TITLE_PATTERN(mid, title) => {
           midToTitle(mid) = title
-          coll.insert(MongoDBObject("mid1" -> mid, "title" -> title, "named" -> "yes"))
+          coll.insert(MongoDBObject("arg1" -> mid, "title" -> title, "named" -> "yes"))
         }
         case _ =>
       }
       count += 1
     }
-    println("Finished loading Freebase triples.")
+    val time = (System.currentTimeMillis() - startTime) / 1000.0
+    println("Finished loading Freebase triples in %1.1fm".format(time/60))
     coll
   }
 
   def getName(mid: String, coll: MongoCollection): Option[String] = {
-    return midToTitle.get(mid) // Much faster to keep a separate hash here, especially in low memory scenarios
-    coll findOne MongoDBObject("mid1" -> mid, "named" -> "yes") match {
+//    return midToTitle.get(mid) // Much faster to keep a separate hash here, especially in low memory scenarios
+    coll findOne MongoDBObject("arg1" -> mid, "named" -> "yes") match {
       case Some(record) => Some(record.get("title").toString())
       case _ => None
     }
@@ -62,20 +70,37 @@ class FreebaseReader {
 
   def eventQueries(coll: MongoCollection) {
     println("Querying...")
+    val startTime = System.currentTimeMillis()
     val query1 = MongoDBObject("type" -> "event.disaster")
     (coll find query1).foreach { q =>
       val sb = new StringBuilder
       val mid = q.get("mid").toString()
       val name = getName(mid, coll).getOrElse("None")
       sb.append(mid + ":" + name)
-      (coll find MongoDBObject("mid1" -> mid)).foreach { r =>
-        if (r.contains("mid2") && r.contains("relation")) {
-          sb.append("\t" + r.get("mid2") + ":" + r.get("relation") + ":" + getName(r.get("mid2").toString(), coll).getOrElse("None"))
+      (coll find MongoDBObject("arg1" -> mid)).foreach { r =>
+        if (r.contains("arg2") && r.contains("relation")) {
+          if (r.get("relation") == "start_date" || r.get("relation") == "end_date") {
+            sb.append("\t" + r.get("arg1") + ":" + r.get("relation") + ":" + r.get("arg2").toString())
+          }
+          else {
+            sb.append("\t" + r.get("arg1") + ":" + r.get("relation") + ":" + getName(r.get("arg2").toString(), coll).getOrElse("None"))
+          }
         }
       }
       println(sb.toString)
     }
+    val time = (System.currentTimeMillis() - startTime) / 1000.0
+    println("Event queries finished in %1.1fm".format(time/60))
   }
+
+//  def relationsOf(mid1: String, mid2: String, coll: MongoCollection): Seq[String] = {
+//    (coll find MongoDBObject("arg1" -> mid1, "arg2" -> mid2)).flatMap { r =>
+//      r("relation") match {
+//        case Some(relation) => Some(relation)
+//        case _ => None
+//      }
+//    }.toSeq
+//  }
 
   def load(filename: String) = collection = mongoFromTriples(filename)
 
@@ -86,7 +111,7 @@ object FreebaseReader {
   def main(args: Array[String]) = {
     val filename = args(0)
     //    val filename = "/Users/narad/Downloads/freebase-1million.gz"
-    //    val filename = "/Users/narad/Downloads/events.gz"
+//        val filename = "/Users/narad/Downloads/events.gz"
 //        val filename = "/Users/narad/Desktop/fb_test.gz"
     val fb = new FreebaseReader
     fb.load(filename)
@@ -100,6 +125,17 @@ object FreebaseReader {
 
 
 
+
+
+
+
+
+/*
+An example of Casbah compound index:
+
+db.collection.ensureIndex(MongoDBObject("Header.records.n" -> 1) ++ MongoDBObject("Header.records.v" -> 1) ++ MongoDBObject("Header.records.l" -> 1))
+
+ */
 
 /*
     var count = 0
