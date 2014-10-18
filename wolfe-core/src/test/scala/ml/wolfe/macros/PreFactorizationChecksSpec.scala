@@ -10,7 +10,7 @@ class PreFactorizationChecksSpec extends WolfeSpec {
   import Wolfe._
 
   "A Pre-factorization check" should {
-    "complain about vals instead of defs in the objective" in {
+    "complain about vals instead of defs in the objective" ignore {
 
       def model(b:Boolean) = {
         val tmp = !b

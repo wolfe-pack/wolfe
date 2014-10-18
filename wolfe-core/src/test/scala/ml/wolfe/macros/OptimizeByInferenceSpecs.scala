@@ -69,8 +69,8 @@ class OptimizeByInferenceSpecs extends WolfeSpec {
       def space = seqsOfLength(5, Range(0, 3))
       @OptimizeByInference(BeliefPropagation(_, 1))
       def potential(seq: Seq[Int]) = {
-        val local = sum (0 until seq.size) (i => i * I(seq(i) == i))
-        val pairs = sum (0 until seq.size - 1)(i => I(seq(i) == seq(i + 1)))
+        def local = sum (0 until seq.size) (i => i * I(seq(i) == i))
+        def pairs = sum (0 until seq.size - 1)(i => I(seq(i) == seq(i + 1)))
         local + pairs
       }
       val actual = argmax(space) { potential }

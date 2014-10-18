@@ -27,6 +27,7 @@ trait Transformers[C<:Context] extends SymbolRepository[C]{
       val (newExpr, newStats) = stats.foldRight(expr -> List.empty[Tree]) {
         (stat, result) => stat match {
           case v: ValDef => transform(result._1, { case i: Ident if i.symbol == v.symbol => v.rhs }) -> result._2
+          case d: DefDef => transform(result._1, { case i: Ident if i.symbol == d.symbol => d.rhs }) -> result._2
           case i: Import => result
           case s => (result._1, result._2 :+ s)
         }
