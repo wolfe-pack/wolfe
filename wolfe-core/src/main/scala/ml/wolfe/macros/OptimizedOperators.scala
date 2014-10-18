@@ -1,6 +1,7 @@
 package ml.wolfe.macros
 
 import ml.wolfe.{BruteForceOperators, Wolfe, Operators}
+import scala.reflect.internal.util.NoPosition
 import scala.reflect.macros.Context
 import Wolfe._
 import org.scalautils.{Bad, Good}
@@ -23,8 +24,16 @@ object OptimizedOperators extends Operators {
                                                        (dom: c.Expr[Iterable[T]])
                                                        (obj: c.Expr[T => N])
                                                        (ord: c.Expr[Ordering[N]]) = {
-    val helper = new ContextHelper[c.type](c) with OptimizedOperators[c.type]
+    val helper = new ContextHelper[c.type](c) with OptimizedOperators[c.type] with PreFactorizationChecks[c.type]
     val trees = helper.builderTrees(dom.tree, obj.tree)
+    //"syntax" pre-factorization check
+    val errors = helper.check(trees)
+    helper.outputErrorsAndAbortIfNecessary(errors)
+    //print(errors)
+    //if (exists errors) break!
+
+
+
     //do not replace the code if inside another macro
     if (c.enclosingMacros.size > 1) {
       import c.universe._
@@ -275,6 +284,10 @@ trait OptimizedOperators[C <: Context] extends MetaStructures[C]
 
     //based on possible annotation on the objective, determine which inference code should be used.
     val inferCode = inferenceCode(rawObjRhs, graphName)
+
+    //post-factorization checks
+    //val warnings = for (pattern <- inferenceWarningPatterns) yield pattern.check(factors, meta, ast, .. )
+
 
     //the class definition of the structure isomorphic to the search space. Currently needs access to
     //the name of the factor graph variable because the structure calls methods of the factor graph.
