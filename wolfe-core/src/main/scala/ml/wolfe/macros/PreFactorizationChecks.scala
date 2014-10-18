@@ -1,7 +1,7 @@
 package ml.wolfe.macros
 
 import scala.language.experimental.macros
-import scala.quasiquotes.QuasiquoteCompat
+import scala.reflect.internal.Flags
 import scala.reflect.macros.Context
 
 
@@ -16,7 +16,7 @@ trait PreFactorizationChecks[C <: Context] extends PatternRepository[C] with Bas
     def check(trees: BuilderTrees): List[PreFactorizationError]
   }
 
-  val checkers: List[Checker] = List(ValDefChecker)
+  val checkers: List[Checker] = Nil //List(ValDefChecker)
 
 
   def check(trees: BuilderTrees): List[PreFactorizationError] = {
@@ -26,9 +26,10 @@ trait PreFactorizationChecks[C <: Context] extends PatternRepository[C] with Bas
   def outputErrorsAndAbortIfNecessary(errors: List[PreFactorizationError]): Unit = {
     if (errors.nonEmpty) {
       for (error <- errors) {
-        context.error(error.position, error.msg)
+        context.warning(error.position, error.msg)
       }
-      context.abort(errors.last.position, "Can't go on like this")
+      context.abort(errors.last.position,
+        "Encountered wolfe specific errors when compiling operator")
     }
   }
 }
@@ -58,7 +59,7 @@ trait BasicPreFactorizationCheckers[C <: Context] {
 
     def checkTree(tree:Tree):List[PreFactorizationError] = {
       val collected = tree.collect({
-        case vd:ValDef if !vd.mods.hasFlag(Flag.PARAM) =>
+        case vd:ValDef if !vd.mods.hasFlag(Flag.PARAM) && !vd.mods.hasFlag(Flags.SYNTHETIC.toLong.asInstanceOf[FlagSet]) =>
           List(PreFactorizationError(vd.pos, s"""Wolfe expects ${vd.name.toString} to be a "def" instead of a "val""""))
         case id:Ident =>
           val definition = get(id.symbol)

@@ -9,7 +9,7 @@ import ml.wolfe.Wolfe._
 class MapperSpecs extends WolfeSpec {
 
   "An optimized map operator" should {
-    "map instances to argmax predictions of a linear model when weights are independent of the instance " in {
+    "map instances to argmax predictions of a linear model when weights are independent of the instance" in {
       import OptimizedOperators._
       case class Data(x: Int, y: Int)
       implicit val ints = Range(0, 5)
