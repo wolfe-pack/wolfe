@@ -99,6 +99,7 @@ object Timer {
   }
 
   def getTimeString(milliseconds: Long): String = getTimeString((milliseconds / 1000).toInt)
+  override def toString = timings.map({case (name,time) => s"$name: ${getTimeString(time)}"}).mkString("\n")
 }
 
 
