@@ -16,12 +16,32 @@ object IO {
 
   }
 
-  def loadTSV[T](file:File, delim:String = "\t", skip:Int = 0)(mapper:Array[String] =>T) = {
+  def loadTSV[T](file:File, delim:String = "\t", skip:Int = 0, limit:Int = Int.MaxValue)(mapper:Array[String] =>T) = {
     val source = Source.fromFile(file)
-    val lines = source.getLines().drop(skip)
-    val result = lines.map(_.split(delim)).map(mapper).toList
+    val lines = source.getLines().drop(skip).take(limit).filter(_ != "")
+    var processed = 0
+    def processLine(line:String) = {
+      processed += 1
+      if (processed % 1000000 == 0) println(processed)
+      mapper(line.split(delim))
+    }
+    val result = lines.map(processLine).toList
     source.close()
     result
   }
+
+  def processTSV[T](file:File, delim:String = "\t", skip:Int = 0, limit:Int = Int.MaxValue)(body:Array[String] => Unit) = {
+    val source = Source.fromFile(file)
+    val lines = source.getLines().drop(skip).take(limit)
+    var processed = 0
+    def processLine(line:String) = {
+      processed += 1
+      if (processed % 1000000 == 0) println(processed)
+      body(line.split(delim))
+    }
+    val result = lines.foreach(processLine)
+    source.close()
+  }
+
 
 }

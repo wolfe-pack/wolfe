@@ -99,7 +99,7 @@ object KernelBP {
       msg := 1.0 / msg.length
   }
 
-  def calculateTranslationMatrix(sourceData: Seq[Any], targetData: Seq[Any], targetKernel: (Any, Any) => Double) = {
+  def calculateTranslationMatrix[T](sourceData: Seq[T], targetData: Seq[T], targetKernel: (T, T) => Double) = {
     val result = new DenseMatrix[Double](targetData.size, sourceData.size)
     for (col <- 0 until sourceData.size; row <- 0 until targetData.size) {
       result(row, col) = targetKernel(sourceData(col), targetData(row))
@@ -294,20 +294,73 @@ object KernelBPTed {
     }
   }
 
-  case class BilingualModel(fg: FactorGraph, srcVar: KernelBPVar, tgtSrcModel: EdgeModel[Document, Document],
+  case class BilingualModel(fg: FactorGraph, srcVar: KernelBPVar, srcTgtModel: EdgeModel[Document, Document],
                             tagVars: Map[String, KernelBPVar],
-                            tag2Model: Map[String, EdgeModel[String, Document]]) {
+                            tag2Model: Map[String, EdgeModel[String, Document]], tgtDoc:Document,
+                            trans2TagTranslation:Map[String, DenseVector[Double] => DenseVector[Double]]) {
     def inferTagBeliefs = {
-      BeliefPropagation.sumProduct(1, gradientAndObjective = false, schedule = BPSchedule.Auto)(fg)
-      val map = for ((tag, variable) <- tagVars) yield {
-        val labelBelief = variable.asInstanceOf[KernelBPVar].belief
-        //calculate expectation of each label
-        println("Estimating marginals")
-        val result = new mutable.HashMap[String, Double] withDefaultValue 0.0
-        for ((p, i) <- tag2Model(tag).data.zipWithIndex) result(p._1) += labelBelief(i)
-        tag -> result
+      //do this manually
+      //a vector representing the beliefs over the source data
+      val observedTgtDocAsTrainingDocs = new DenseVector[Double](Array.ofDim[Double](srcTgtModel.data.size))
+      for (((x1, x2), i) <- srcTgtModel.data.zipWithIndex) observedTgtDocAsTrainingDocs(i) = srcTgtModel.k2(x2, tgtDoc)
+
+      val tgt2src = srcTgtModel.Obs21 * observedTgtDocAsTrainingDocs
+
+      val result = for ((tag, _) <- tagVars) yield {
+        //translate the "distribution" over source documents with respect to the translation corpus/
+        //to a distribution over source documents with respect to the source-tag corpus.
+        val asTagDocs = trans2TagTranslation(tag)(tgt2src)
+
+        //we can already get an estimate of tag probabilities by weighted counting of tags in the sample
+        val tagProbsInDocs = new mutable.HashMap[String, Double] withDefaultValue 0.0
+        for ((p, i) <- tag2Model(tag).data.zipWithIndex) tagProbsInDocs(p._2.ir.docLabel.get) += asTagDocs(i)
+
+        //but we can also map the distribution to a distribution over tag-docs
+        val model = tag2Model(tag)
+        val src2tag = model.T1 * asTagDocs
+
+        val tagProbsInTags = new mutable.HashMap[String, Double] withDefaultValue 0.0
+        for ((p, i) <- tag2Model(tag).data.zipWithIndex) tagProbsInTags(p._1) += src2tag(i)
+
+        tag -> tagProbsInTags
       }
-      map.toMap
+      result.toMap
+
+
+//
+//
+//      BeliefPropagation.sumProduct(2, gradientAndObjective = false, schedule = BPSchedule.Auto)(fg)
+//      val map = for ((tag, variable) <- tagVars) yield {
+//        val labelBelief = variable.asInstanceOf[KernelBPVar].belief
+//        //calculate expectation of each label
+//        println("Estimating marginals")
+//        val result = new mutable.HashMap[String, Double] withDefaultValue 0.0
+//        for ((p, i) <- tag2Model(tag).data.zipWithIndex) result(p._1) += labelBelief(i)
+//        tag -> result
+//      }
+//      //check rank of source document that is the translation of the target document
+//      //val sourceBelief = srcVar.belief
+//      val sourceBelief = srcVar.node.edges(0).msgs.asInstanceOf[KernelBPMSgs].f2n
+//
+//      val sortedDocPairIndices = srcTgtModel.data.indices.sortBy(i => -sourceBelief(i))
+//      println("Target Document: " + tgtDoc.filename.get)
+//      println(tgtDoc.source.take(1000))
+//      println("Top translation\n-----")
+//      println(srcTgtModel.data(sortedDocPairIndices.head)._1.source.take(1000))
+//      println("Top translations: ")
+//
+//      for (i <- sortedDocPairIndices.take(10)) {
+//        println(s"${srcTgtModel.data(i)._2.filename.get} ${srcTgtModel.data(i)._2.ir.docLabel.get} (${sourceBelief(i)})")
+//      }
+//      val ownResult = new mutable.HashMap[String,Double]() withDefaultValue 0.0
+//      for (i <- sortedDocPairIndices) {
+//        ownResult(srcTgtModel.data(i)._1.ir.docLabel.get) += sourceBelief(i)
+//      }
+//      println(ownResult.mkString("\n"))
+//      println("----")
+//
+//      //map.toMap
+//      Map("art" -> ownResult)
     }
   }
 
@@ -318,14 +371,14 @@ object KernelBPTed {
   def main(args: Array[String]) {
     def mkDoc(file: ((String, String, String), String)) = {
       val doc = SISTAProcessors.mkDocument(file._2)
-      doc.copy(ir = doc.ir.copy(docLabel = Some(file._1._1 + ":" + file._1._2)))
+      doc.copy(filename = Some(file._1._3),ir = doc.ir.copy(docLabel = Some(file._1._1 + ":" + file._1._2)))
     }
     def tag(label: String) = label.substring(0, label.indexOf(':'))
 
     val train_tags = Seq("art")
     val test_tags = Seq("art")
     //language without tag training data
-    val target_lang = "en"
+    val target_lang = "de"
     //language with tag training data
     val source_lang = "en"
     val aux_lang = Seq.empty[String]
@@ -386,24 +439,44 @@ object KernelBPTed {
       label2DocModel
     }
 
-    def createTargetSourceTranslationModel() = {
+    //source-target translation data
+    lazy val tgtTrain = train_tags.flatMap(targetTrainingSets(_))
+    lazy val srcTrain = train_tags.flatMap(sourceTrainingSets(_))
+    lazy val tgt2srcData = tgtTrain zip srcTrain
+    lazy val src2tgtData = srcTrain zip tgtTrain
+
+    def createSourceTargetTranslationModel() = {
       println("Learning target to source translation model")
-      val tgtTrain = train_tags.flatMap(targetTrainingSets(_))
-      val srcTrain = train_tags.flatMap(sourceTrainingSets(_))
-      val tgt2srcData = tgtTrain zip srcTrain
-      val tgt2srcModel = new EdgeModel(tgt2srcData, kernelTarget, kernelSource, 0.1)
+      val src2tgtModel = new EdgeModel(src2tgtData, kernelSource, kernelTarget, 1.0)
       println("Done")
-      println(tgt2srcModel.Obs12.size)
-      tgt2srcModel
+      println(src2tgtModel.Obs12.size)
+      src2tgtModel
     }
 
     val tag2model = (train_tags map (tag => tag -> createTagModel(tag))).toMap
-    val targetSourceTranslationModel: EdgeModel[Document, Document] =
-      if (source_lang != target_lang) createTargetSourceTranslationModel() else null
+    val sourceTargetTranslationModel: EdgeModel[Document, Document] =
+      if (source_lang != target_lang) createSourceTargetTranslationModel() else null
 
     val msgTranslationTagTrans = new mutable.HashMap[String,DenseVector[Double] => DenseVector[Double]] withDefaultValue identity
     val msgTranslationTransTag = new mutable.HashMap[String,DenseVector[Double] => DenseVector[Double]] withDefaultValue identity
 
+    //for each tag we have a different document collection, and different to the set of all documents for all language pairs
+
+
+    def createPerTagDocTranslationFunction(tag:String) = {
+      val tagDocs = sourceTrainingSets(tag)
+      val transDocs = srcTrain
+      val TagTransMatrix = calculateTranslationMatrix(tagDocs,transDocs,kernelSource)
+      val TransTagMatrix = calculateTranslationMatrix(transDocs,tagDocs,kernelSource)
+      msgTranslationTagTrans(tag) = (d:DenseVector[Double]) => TagTransMatrix * d
+      msgTranslationTransTag(tag) = (d:DenseVector[Double]) => TransTagMatrix * d
+    }
+
+    if (source_lang != target_lang) {
+      println("Creating translation matrices"  )
+      for (tag <- train_tags) createPerTagDocTranslationFunction(tag)
+      println("Done")
+    }
 
     def createMonolingualFG(tags: Seq[String], srcDoc: Document): MonolingualModel = {
       val fg = new FactorGraph
@@ -425,15 +498,19 @@ object KernelBPTed {
       val fg = new FactorGraph
 
       //create source variable and translation factor
-      val srcVar = new KernelBPVar(targetSourceTranslationModel.data.size)
+      val srcVar = new KernelBPVar(sourceTargetTranslationModel.data.size)
       val srcNode = fg.addNode(srcVar)
       val transFactor = fg.addFactor()
       val transSrcEdge = fg.addEdge(transFactor, srcNode)
-      transFactor.potential = new KernelBPLocalPotential(targetSourceTranslationModel, tgtDoc)
+      transFactor.potential = new KernelBPLocalPotential(sourceTargetTranslationModel, tgtDoc)
 
       //todo: translation between msgs for "central" srcNode
       val translations = new mutable.HashMap[(Edge, Edge), DenseVector[Double] => DenseVector[Double]]
+      val edge2nodeTranslations = new mutable.HashMap[Edge,DenseVector[Double] => DenseVector[Double]]
 
+      //model: tag --- source (--- target (local))
+
+      val trans2TagTranslations = new mutable.HashMap[String, DenseVector[Double] => DenseVector[Double]]
 
       //connect source variable to tag variables
       val vars = for (tag <- tags) yield {
@@ -452,11 +529,18 @@ object KernelBPTed {
         translations((srcTagSrcEdge, transSrcEdge)) = msgTranslationTagTrans(tag)
         translations((transSrcEdge, srcTagSrcEdge)) = msgTranslationTransTag(tag)
 
+        trans2TagTranslations(tag) = msgTranslationTransTag(tag)
+
+        //the tag document vector needs to be translated to the translation document vector to get marginals for the source document.
+        edge2nodeTranslations(srcTagSrcEdge) = msgTranslationTagTrans(tag)
 
         tag -> tagVar
       }
+      edge2nodeTranslations(transSrcEdge) = identity[DenseVector[Double]]
       srcVar.edge2edgeTranslations = translations.toMap
-      BilingualModel(fg, srcVar, targetSourceTranslationModel, vars.toMap, tag2model)
+      srcVar.edge2nodeTranslation = edge2nodeTranslations.toMap
+      fg.build()
+      BilingualModel(fg, srcVar, sourceTargetTranslationModel, vars.toMap, tag2model,tgtDoc,trans2TagTranslations.toMap)
     }
 
     //http://www.aclweb.org/anthology/P/P14/P14-1006.pdf
@@ -465,6 +549,7 @@ object KernelBPTed {
       var eval = new Evaluation()
       val testSet = if (source_lang == target_lang) sourceTestSets else targetTestSets
       for (instance <- testSet(tag)) {
+        println("===================")
         implicit def toInt(b: Boolean) = if (b) 1 else 0
         val isPositive = instance.ir.docLabel.get.endsWith("positive")
         val prediction = if (source_lang == target_lang) {
