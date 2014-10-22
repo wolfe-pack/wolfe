@@ -2,6 +2,7 @@ package ml.wolfe.nlp.io
 
 import com.mongodb.casbah.Imports._
 import scala.collection.mutable.HashMap
+import java.io.FileWriter
 
 /**
  * Created by narad on 9/11/14.
@@ -20,10 +21,12 @@ class FreebaseReader {
   def mongoFromTriples(filename: String, port: Int = 27017, init: Boolean = true): MongoCollection = {
     println("Connecting to local Mongo database at port %d...".format(port))
     val mongoClient = MongoClient("localhost", port)
-    if (init) mongoClient.dropDatabase("FB")
+      mongoClient.dropDatabase("FB")
     val db = mongoClient("FB")
     println("Collections:")
     println(db.collectionNames.map("\t" + _).mkString("\n"))
+    if (!init) return db("FB")
+
     val coll = db("FB")
 
     // Specify indices
@@ -68,8 +71,9 @@ class FreebaseReader {
     }
   }
 
-  def eventQueries(coll: MongoCollection) {
+  def collectEvents(coll: MongoCollection = collection, eventFile: String = "events.txt") {
     println("Querying...")
+    val out = new FileWriter(eventFile)
     val startTime = System.currentTimeMillis()
     val query1 = MongoDBObject("type" -> "event.disaster")
     (coll find query1).foreach { q =>
@@ -87,11 +91,14 @@ class FreebaseReader {
           }
         }
       }
-      println(sb.toString)
+      out.write(sb.toString + "\n")
     }
     val time = (System.currentTimeMillis() - startTime) / 1000.0
+    out.close()
     println("Event queries finished in %1.1fm".format(time/60))
   }
+
+  def load(filename: String, port: Int = 27017, init: Boolean = true) = collection = mongoFromTriples(filename, port, init)
 
 //  def relationsOf(mid1: String, mid2: String, coll: MongoCollection): Seq[String] = {
 //    (coll find MongoDBObject("arg1" -> mid1, "arg2" -> mid2)).flatMap { r =>
@@ -102,27 +109,25 @@ class FreebaseReader {
 //    }.toSeq
 //  }
 
-  def load(filename: String) = collection = mongoFromTriples(filename)
-
-  def printEvents = eventQueries(collection)
 }
 
 object FreebaseReader {
   def main(args: Array[String]) = {
     val filename = args(0)
-    //    val filename = "/Users/narad/Downloads/freebase-1million.gz"
-//        val filename = "/Users/narad/Downloads/events.gz"
-//        val filename = "/Users/narad/Desktop/fb_test.gz"
+    val rebuild = args(1) == true
+    val eventFile = args(2)
     val fb = new FreebaseReader
-    fb.load(filename)
-    fb.printEvents
+    fb.load(filename, init = rebuild)
+    fb.collectEvents()
     println("Done.")
   }
 }
 
 
 
-
+//    val filename = "/Users/narad/Downloads/freebase-1million.gz"
+//        val filename = "/Users/narad/Downloads/events.gz"
+//        val filename = "/Users/narad/Desktop/fb_test.gz"
 
 
 
