@@ -25,7 +25,10 @@ class FreebaseReader {
     val db = mongoClient("FB")
     println("Collections:")
     println(db.collectionNames.map("\t" + _).mkString("\n"))
-    if (!init) return db("FB")
+    if (!init) {
+      println("Using existing indexes.")
+      return db("FB")
+    }
 
     val coll = db("FB")
 
@@ -114,7 +117,7 @@ class FreebaseReader {
 object FreebaseReader {
   def main(args: Array[String]) = {
     val filename = args(0)
-    val rebuild = args(1) == true
+    val rebuild = args(1) == "true"
     val eventFile = args(2)
     val fb = new FreebaseReader
     fb.load(filename, init = rebuild)
