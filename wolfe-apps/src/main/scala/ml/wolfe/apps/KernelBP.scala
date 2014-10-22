@@ -375,8 +375,8 @@ object KernelBPTed {
     }
     def tag(label: String) = label.substring(0, label.indexOf(':'))
 
-    val train_tags = Seq("art")
-    val test_tags = Seq("art")
+    val train_tags = Seq("business")
+    val test_tags = train_tags
     //language without tag training data
     val target_lang = "de"
     //language with tag training data
