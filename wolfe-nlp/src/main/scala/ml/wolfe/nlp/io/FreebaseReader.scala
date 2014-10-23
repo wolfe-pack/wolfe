@@ -99,8 +99,10 @@ class FreebaseReader {
       val mid = q.get("arg1").toString()
       val name = getName(mid, coll).getOrElse("None")
       println(mid + ":" + name)
+      out.write(mid + ":" + name + "\t")
       val attributes = attributesOf(mid, coll)
-      for (a <- attributes.keys) println(a + "->" + attributes(a) + ":" + getName(attributes(a)).getOrElse("None"))
+      for (a <- attributes.keys) out.write(a + ":" + attributes(a) + ":" + getName(attributes(a)).getOrElse("None") + "\t")
+      out.write("\n")
     }
     val time = (System.currentTimeMillis() - startTime) / 1000.0
     out.close()
