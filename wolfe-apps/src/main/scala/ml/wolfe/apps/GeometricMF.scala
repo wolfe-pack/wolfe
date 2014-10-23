@@ -113,7 +113,12 @@ object ExtremeGeometricMF extends App {
     }
   }
 
-  //need to get counts from each row
+  def freq(col1: db.CellIx, col2: db.CellIx, b1: Boolean, b2: Boolean) = {
+    count(col1,col2,b1,b2) / numRows.toDouble
+  }
+
+
+    //need to get counts from each row
   for (row <- rowIds) {
     val cells = db.getBy2(row).toArray
     for (cell <- cells) singleCounts(cell._1) += 1
