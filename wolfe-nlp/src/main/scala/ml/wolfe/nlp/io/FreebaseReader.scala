@@ -96,7 +96,7 @@ class FreebaseReader {
     val startTime = System.currentTimeMillis()
     val dateQuery = MongoDBObject("attribute" -> "start_date")
     (coll find dateQuery).foreach { q =>
-      val mid = q.get("mid").toString()
+      val mid = q.get("arg1").toString()
       val name = getName(mid, coll).getOrElse("None")
       println(mid + ":" + name)
       val attributes = attributesOf(mid, coll)
