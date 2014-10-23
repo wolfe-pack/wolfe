@@ -113,12 +113,22 @@ object ExtremeGeometricMF extends App {
     }
   }
 
+  //change counts
+  def addRule(body: db.CellIx, head: db.CellIx): Unit = {
+    val oldCount11 = pairCounts(body, head)
+    val oldCount1_ = singleCounts(body)
+    val newCount11 = math.max(oldCount1_, oldCount11)
+    val newCount_1 = singleCounts(head) + (newCount11 - oldCount11)
+    pairCounts(body -> head) = newCount11
+    singleCounts(head) = newCount_1
+  }
+
   def freq(col1: db.CellIx, col2: db.CellIx, b1: Boolean, b2: Boolean) = {
-    count(col1,col2,b1,b2) / numRows.toDouble
+    count(col1, col2, b1, b2) / numRows.toDouble
   }
 
 
-    //need to get counts from each row
+  //need to get counts from each row
   for (row <- rowIds) {
     val cells = db.getBy2(row).toArray
     for (cell <- cells) singleCounts(cell._1) += 1
@@ -129,6 +139,8 @@ object ExtremeGeometricMF extends App {
 
   println(pairCounts.mkString("\n"))
   println(singleCounts.mkString("\n"))
+
+  addRule("r9", "r10")
 
   //create pairwise factors
   for (col1Index <- 0 until colIds.length; col2Index <- col1Index + 1 until colIds.size) {
@@ -186,7 +198,7 @@ object ExtremeGeometricMF extends App {
     for (row <- rowIds) {
       val result = new DenseTensor1(k)
       val cells = db.getBy2(row).toArray
-      for ((col,_) <- cells) {
+      for ((col, _) <- cells) {
         val v = V(col).variable.asVector.b
         result +=(v, scalingWeights(col).variable.asVector.b(0))
       }
