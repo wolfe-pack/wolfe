@@ -73,13 +73,10 @@ object GraphBasedDependencyParser extends App {
     DependencyTree(tokens, arcs)
   }
 
-  val train = new CoNLLReader("/Users/narad/Documents/work/data/conll/2009/english/evaluation.txt").view.map(t => treeToInstance(t.syntax.dependencies)).slice(0,10)
-  //  val test = new CoNLLReader("/Users/narad/Documents/work/data/conll/2009/english/evaluation.txt").view.map(t => treeToInstance(t.syntax.dependencies)).slice(0,1)
-  val test = train
+  val train = new CoNLLReader(args(0)).view.map(t => treeToInstance(t.syntax.dependencies))
+  val test = new CoNLLReader(args(1).view.map(t => treeToInstance(t.syntax.dependencies))
 
   val w = argmin(vectors) { loss(train) }
-
-//  saveD3Graph(FactorGraphBuffer.get, "/Users/narad/Documents/work/projects/factorgraph.html")
 
   println("Testing...")
   var correctArcs = 0
@@ -94,3 +91,13 @@ object GraphBasedDependencyParser extends App {
   println("Parse Accuracy: %.2f".format(100.0 * correctArcs / predictedArcs))
 }
 
+
+
+
+
+
+// "/Users/narad/Documents/work/data/conll/2009/english/evaluation.txt"
+
+//  saveD3Graph(FactorGraphBuffer.get, "/Users/narad/Documents/work/projects/factorgraph.html")
+
+// /Users/narad/Documents/work/data/conll/2009/english/evaluation.txt
