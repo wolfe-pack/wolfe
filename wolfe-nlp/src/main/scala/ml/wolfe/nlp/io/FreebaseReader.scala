@@ -41,6 +41,7 @@ class FreebaseReader {
     println("Constructing Freebase indices...")
     val startTime = System.currentTimeMillis()
     var count = 0
+    var dcount = 0
     for (line <- new GZipReader(filename)) {
       val cleaned = line.replaceAll("> +<", ">\t<").replaceAll("> +\"", ">\t\"")
       cleaned match {
@@ -51,7 +52,7 @@ class FreebaseReader {
           coll.insert(MongoDBObject("arg1" -> mid1, "attribute" -> attribute, "arg2" -> mid2))
         }
         case DATE_PATTERN(mid, dateType, date) => {
-          println(dateType)
+          dcount += 1
           coll.insert(MongoDBObject("arg1" -> mid, "attribute" -> dateType, "arg2" -> date))
         }
         case TITLE_PATTERN(mid, title) => {
@@ -64,6 +65,8 @@ class FreebaseReader {
     val time = (System.currentTimeMillis() - startTime) / 1000.0
     println("Finished loading Freebase triples in %1.1fm".format(time/60))
     println("There are %d mids.".format(coll.count("mid" $exists true)))
+    println("There are %d rows with start dates.".format(coll.count(MongoDBObject("attribute" -> "start_date"))))
+    println("Adding dates %d times".format(dcount))
     coll
   }
 
