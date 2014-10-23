@@ -74,7 +74,7 @@ object GraphBasedDependencyParser extends App {
   }
 
   val train = new CoNLLReader(args(0)).view.map(t => treeToInstance(t.syntax.dependencies))
-  val test = new CoNLLReader(args(1).view.map(t => treeToInstance(t.syntax.dependencies))
+  val test = new CoNLLReader(args(1)).view.map(t => treeToInstance(t.syntax.dependencies))
 
   val w = argmin(vectors) { loss(train) }
 
