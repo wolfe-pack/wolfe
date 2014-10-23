@@ -48,7 +48,7 @@ object GeometricMF extends App {
   for (rel <- db.relations) {
     val v = V(rel)
     fg.buildFactor(Seq(v))(_ map (_ => new VectorMsgs)) {
-      e => new L2Regularizer(e(0), 0.1)
+      e => new L2Regularizer(e(0), 0.01)
     }
   }
 
@@ -56,7 +56,7 @@ object GeometricMF extends App {
   for (ent <- db.arg1s) {
     val a = A(ent)
     fg.buildFactor(Seq(a))(_ map (_ => new VectorMsgs)) {
-      e => new L2Regularizer(e(0), 0.1)
+      e => new L2Regularizer(e(0), 0.01)
     }
   }
 
@@ -144,7 +144,7 @@ object ExtremeGeometricMF extends App {
     //build 3 * 2 factors (1,1), (1,0), and (0,1)
     //First: (1,1)
     for (b1 <- Seq(true, false); b2 <- Seq(true, false)) {
-      val count_b1b2 = count(col1, col2, b1, b2)
+      val count_b1b2 = freq(col1, col2, b1, b2)
       if (count_b1b2 > 0) {
         //learn the left cell
         fg.buildFactor(Seq(v1, v2, s1, s2))(_ map (_ => new VectorMsgs)) {
