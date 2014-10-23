@@ -11,21 +11,20 @@ import java.io.FileWriter
 // To use the FreebaseReader class you must first start a MongoDB process in the environment.
 // A simple way of doing this is the command: mongod --dbpath <path-to-DB-cache-directory>
 class FreebaseReader {
-  val INSTANCE_PATTERN = """<http://rdf.freebase.com/ns/([^>]+)>\t<http://rdf.freebase.com/ns/type.type.instance>\t<http://rdf.freebase.com/ns/([^>]+)>.*""".r
-  val RELATION_PATTERN = """<http://rdf.freebase.com/ns/(m.[^>]+)>\t<http://rdf.freebase.com/ns/([^>]+)>\t<http://rdf.freebase.com/ns/(m.[^>]+)>.*""".r
-  val DATE_PATTERN     = """<http://rdf.freebase.com/ns/(m.[^>]+)>\t<http://rdf.freebase.com/ns/time.event.([^_]+_date)>\t\"(.+)\".*""".r
-  val TITLE_PATTERN    = """<http://rdf.freebase.com/ns/(m.[^>]+)>\t<http://rdf.freebase.com/key/wikipedia.en>\t\"(.+)\".*""".r
-  val midToTitle = new HashMap[String, String]
+  val INSTANCE_PATTERN  = """<http://rdf.freebase.com/ns/([^>]+)>\t<http://rdf.freebase.com/ns/type.type.instance>\t<http://rdf.freebase.com/ns/([^>]+)>.*""".r
+  val ATTRIBUTE_PATTERN = """<http://rdf.freebase.com/ns/(m.[^>]+)>\t<http://rdf.freebase.com/ns/([^>]+)>\t<http://rdf.freebase.com/ns/(m.[^>]+)>.*""".r
+  val DATE_PATTERN      = """<http://rdf.freebase.com/ns/(m.[^>]+)>\t<http://rdf.freebase.com/ns/time.event.([^_]+_date)>\t\"(.+)\".*""".r
+  val TITLE_PATTERN     = """<http://rdf.freebase.com/ns/(m.[^>]+)>\t<http://rdf.freebase.com/key/wikipedia.en>\t\"(.+)\".*""".r
   var collection = null.asInstanceOf[MongoCollection]
 
-  def mongoFromTriples(filename: String, port: Int = 27017, init: Boolean = true): MongoCollection = {
+  def mongoFromTriples(filename: String, port: Int = 27017, emptyKB: Boolean = true): MongoCollection = {
     println("Connecting to local Mongo database at port %d...".format(port))
     val mongoClient = MongoClient("localhost", port)
       mongoClient.dropDatabase("FB")
     val db = mongoClient("FB")
     println("Collections:")
     println(db.collectionNames.map("\t" + _).mkString("\n"))
-    if (!init) {
+    if (!emptyKB) {
       println("Using existing indexes.")
       return db("FB")
     }
@@ -37,6 +36,7 @@ class FreebaseReader {
     coll.ensureIndex("arg1")
     coll.ensureIndex("arg2")
     coll.ensureIndex("type")
+    coll.ensureIndex("attribute")
 
     println("Constructing Freebase indices...")
     val startTime = System.currentTimeMillis()
@@ -47,14 +47,14 @@ class FreebaseReader {
         case INSTANCE_PATTERN(itype, mid) => {
           coll.insert(MongoDBObject("type" -> itype, "mid" -> mid))
         }
-        case RELATION_PATTERN(mid1, relation, mid2) => {
-          coll.insert(MongoDBObject("arg1" -> mid1, "relation" -> relation, "arg2" -> mid2))
+        case ATTRIBUTE_PATTERN(mid1, attribute, mid2) => {
+          coll.insert(MongoDBObject("arg1" -> mid1, "attribute" -> attribute, "arg2" -> mid2))
         }
         case DATE_PATTERN(mid, dateType, date) => {
-          coll.insert(MongoDBObject("arg1" -> mid, "relation" -> dateType, "arg2" -> date))
+          println(dateType)
+          coll.insert(MongoDBObject("arg1" -> mid, "attribute" -> dateType, "arg2" -> date))
         }
         case TITLE_PATTERN(mid, title) => {
-          midToTitle(mid) = title
           coll.insert(MongoDBObject("arg1" -> mid, "title" -> title, "named" -> "yes"))
         }
         case _ =>
@@ -63,38 +63,44 @@ class FreebaseReader {
     }
     val time = (System.currentTimeMillis() - startTime) / 1000.0
     println("Finished loading Freebase triples in %1.1fm".format(time/60))
+    println("There are %d mids.".format(coll.count("mid" $exists true)))
     coll
   }
 
-  def getName(mid: String, coll: MongoCollection): Option[String] = {
-//    return midToTitle.get(mid) // Much faster to keep a separate hash here, especially in low memory scenarios
+  def getName(mid: String, coll: MongoCollection = collection): Option[String] = {
     coll findOne MongoDBObject("arg1" -> mid, "named" -> "yes") match {
       case Some(record) => Some(record.get("title").toString())
       case _ => None
     }
   }
 
+  def getAttribute(mid: String, attribute: String, coll: MongoCollection = collection): Option[String] = {
+    coll findOne MongoDBObject("arg1" -> mid, "attribute" -> attribute) match {
+      case Some(record) => Some(record.get("arg2").toString())
+      case _ => None
+    }
+  }
+
+  def attributesOf(mid: String, coll: MongoCollection = collection): Map[String, String] = {
+    val query = MongoDBObject("arg1" -> mid)
+    (coll find query).map { m =>
+      val t1 = m.getOrElse("attribute", "None").toString()
+      val t2 = m.getOrElse("arg2", "None").toString()
+      (t1 -> t2)
+    }.filter(t => !(t._1 == "None" && t._2 == "None")).toMap
+  }
+
   def collectEvents(coll: MongoCollection = collection, eventFile: String = "events.txt") {
     println("Querying...")
     val out = new FileWriter(eventFile)
     val startTime = System.currentTimeMillis()
-    val query1 = MongoDBObject("type" -> "event.disaster")
-    (coll find query1).foreach { q =>
-      val sb = new StringBuilder
+    val dateQuery = MongoDBObject("attribute" -> "start_date")
+    (coll find dateQuery).foreach { q =>
       val mid = q.get("mid").toString()
       val name = getName(mid, coll).getOrElse("None")
-      sb.append(mid + ":" + name)
-      (coll find MongoDBObject("arg1" -> mid)).foreach { r =>
-        if (r.contains("arg2") && r.contains("relation")) {
-          if (r.get("relation") == "start_date" || r.get("relation") == "end_date") {
-            sb.append("\t" + r.get("arg1") + ":" + r.get("relation") + ":" + r.get("arg2").toString())
-          }
-          else {
-            sb.append("\t" + r.get("arg1") + ":" + r.get("relation") + ":" + getName(r.get("arg2").toString(), coll).getOrElse("None"))
-          }
-        }
-      }
-      out.write(sb.toString + "\n")
+      println(mid + ":" + name)
+      val attributes = attributesOf(mid, coll)
+      for (a <- attributes.keys) println(a + "->" + attributes(a) + ":" + getName(attributes(a)).getOrElse("None"))
     }
     val time = (System.currentTimeMillis() - startTime) / 1000.0
     out.close()
@@ -102,15 +108,6 @@ class FreebaseReader {
   }
 
   def load(filename: String, port: Int = 27017, init: Boolean = true) = collection = mongoFromTriples(filename, port, init)
-
-//  def relationsOf(mid1: String, mid2: String, coll: MongoCollection): Seq[String] = {
-//    (coll find MongoDBObject("arg1" -> mid1, "arg2" -> mid2)).flatMap { r =>
-//      r("relation") match {
-//        case Some(relation) => Some(relation)
-//        case _ => None
-//      }
-//    }.toSeq
-//  }
 
 }
 
@@ -128,12 +125,47 @@ object FreebaseReader {
 
 
 
+
+
+
+
+
+
+/*
+      (coll find MongoDBObject("arg1" -> mid)).foreach { r =>
+        if (r.contains("arg2") && r.contains("attribute")) {
+          if (r.get("attribute") == "start_date" || r.get("attribute") == "end_date") {
+            sb.append("\t" + r.get("arg1") + ":" + r.get("attribute") + ":" + r.get("arg2").toString())
+          }
+          else {
+            sb.append("\t" + r.get("arg1") + ":" + r.get("attribute") + ":" + getName(r.get("arg2").toString(), coll).getOrElse("None"))
+          }
+        }
+      }
+ */
+
+
+
+
+
 //    val filename = "/Users/narad/Downloads/freebase-1million.gz"
 //        val filename = "/Users/narad/Downloads/events.gz"
 //        val filename = "/Users/narad/Desktop/fb_test.gz"
 
 
 
+
+
+//  def attributesOf(mid1: String, mid2: String, coll: MongoCollection): Seq[String] = {
+//    (coll find MongoDBObject("arg1" -> mid1, "arg2" -> mid2)).flatMap { r =>
+//      r("attribute") match {
+//        case Some(attribute) => Some(attribute)
+//        case _ => None
+//      }
+//    }.toSeq
+//  }
+
+//  val query1 = MongoDBObject("type" -> "event.disaster")
 
 
 
