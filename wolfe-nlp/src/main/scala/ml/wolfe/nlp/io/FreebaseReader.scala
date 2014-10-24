@@ -44,9 +44,10 @@ class FreebaseReader {
     var dcount = 0
     for (line <- new GZipReader(filename)) {
       val cleaned = line.replaceAll("> +<", ">\t<").replaceAll("> +\"", ">\t\"")
+      println(cleaned)
       cleaned match {
-        case INSTANCE_PATTERN(itype, mid) => {
-          coll.insert(MongoDBObject("type" -> itype, "mid" -> mid))
+        case INSTANCE_PATTERN(t, mid) => {
+          coll.insert(MongoDBObject("mid" -> mid, "type" -> t))
         }
         case ATTRIBUTE_PATTERN(mid1, attribute, mid2) => {
           coll.insert(MongoDBObject("arg1" -> mid1, "attribute" -> attribute, "arg2" -> mid2))
@@ -56,23 +57,26 @@ class FreebaseReader {
           coll.insert(MongoDBObject("arg1" -> mid, "attribute" -> dateType, "arg2" -> date))
         }
         case TITLE_PATTERN(mid, title) => {
-          coll.insert(MongoDBObject("arg1" -> mid, "title" -> title, "named" -> "yes"))
+          println("matched")
+          coll.insert(MongoDBObject("arg1" -> mid, "attribute" -> "title", "arg2" -> title))
         }
         case _ =>
       }
       count += 1
     }
     val time = (System.currentTimeMillis() - startTime) / 1000.0
-    println("Finished loading Freebase triples in %1.1fm".format(time/60))
+    println("Finished loading Freebase triples (%d lines) in %1.1fm".format(count, time/60))
     println("There are %d mids.".format(coll.count("mid" $exists true)))
     println("There are %d rows with start dates.".format(coll.count(MongoDBObject("attribute" -> "start_date"))))
-    println("Adding dates %d times".format(dcount))
+    println("Date patterns were found %d times".format(dcount))
+    // (coll find MongoDBObject("named" -> "yes")).foreach { p => println(p)}
+    println(getName("m.081pw", coll))
     coll
   }
 
   def getName(mid: String, coll: MongoCollection = collection): Option[String] = {
-    coll findOne MongoDBObject("arg1" -> mid, "named" -> "yes") match {
-      case Some(record) => Some(record.get("title").toString())
+    (coll findOne MongoDBObject("arg1" -> mid, "attribute" -> "title")) match {
+      case Some(record) => Some(record.get("arg2").toString())
       case _ => None
     }
   }
