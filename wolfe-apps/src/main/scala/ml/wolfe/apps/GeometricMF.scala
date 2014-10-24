@@ -80,9 +80,9 @@ object ExtremeGeometricMF extends App {
 
   import Wolfe._
 
-  val k  = 5
+  val k  = 2
   val db = new TensorKB(k)
-  db.sampleTensor(100, 10, 0, 0.2)
+  db.sampleTensor(10, 10, 0, 0.2)
   //samples a matrix
   val fg   = db.toFactorGraph
   val data = db.cells
@@ -100,9 +100,14 @@ object ExtremeGeometricMF extends App {
   val numRows = rowIds.size
   val numCols = colIds.size
 
-  val scalingWeights = colIds.map(i => {
+  val colScales = colIds.map(i => {
     i -> fg.addVectorNode(1)
   }).toMap
+
+  val colBiases = colIds.map(i => {
+    i -> fg.addVectorNode(1)
+  }).toMap
+
 
   def count(col1: db.CellIx, col2: db.CellIx, b1: Boolean, b2: Boolean): Int = {
     (b1, b2) match {
@@ -113,26 +118,26 @@ object ExtremeGeometricMF extends App {
     }
   }
 
-//  //change counts
-//  def addRule(body: db.CellIx, head: db.CellIx): Unit = {
-//    val oldCount11 = pairCounts(body, head)
-//    val oldCount1_ = singleCounts(body)
-//    val newCount11 = math.max(oldCount1_, oldCount11)
-//    val newCount_1 = singleCounts(head) + (newCount11 - oldCount11)
-//    pairCounts(body -> head) = newCount11
-//    singleCounts(head) = newCount_1
-//  }
+  //  //change counts
+  //  def addRule(body: db.CellIx, head: db.CellIx): Unit = {
+  //    val oldCount11 = pairCounts(body, head)
+  //    val oldCount1_ = singleCounts(body)
+  //    val newCount11 = math.max(oldCount1_, oldCount11)
+  //    val newCount_1 = singleCounts(head) + (newCount11 - oldCount11)
+  //    pairCounts(body -> head) = newCount11
+  //    singleCounts(head) = newCount_1
+  //  }
 
 
   def freq(col1: db.CellIx, col2: db.CellIx, b1: Boolean, b2: Boolean) = {
     count(col1, col2, b1, b2) / numRows.toDouble
   }
 
-  val rules = Map[(db.CellIx,db.CellIx),Double](
-//    ("r3","r4") -> 0,
-//    ("r4","r5"),
-//    ("r8", "r9") -> 0
-    ("r5","r6") -> 0
+  val rules = Map[(db.CellIx, db.CellIx), Double](
+    //    ("r3","r4") -> 0,
+    //    ("r4","r5"),
+    //    ("r8", "r9") -> 0
+    ("r5", "r6") -> 0
 
   )
 
@@ -140,15 +145,15 @@ object ExtremeGeometricMF extends App {
     rules.get(col1 -> col2) match {
       case Some(add) =>
         val normalizer = numRows.toDouble + add
-        (b1,b2) match {
-          case (true,false) => 0.0
-          case (true,true) => (add + count(col1, col2, true , false) + count(col1, col2, true , true)) / normalizer
-          case (x,y) => count(col1,col2,x,y) / normalizer
+        (b1, b2) match {
+          case (true, false) => 0.0
+          case (true, true) => (add + count(col1, col2, true, false) + count(col1, col2, true, true)) / normalizer
+          case (x, y) => count(col1, col2, x, y) / normalizer
         }
       case _ =>
-        freq(col1,col2,b1,b2)
+        freq(col1, col2, b1, b2)
     }
- }
+  }
 
 
   //need to get counts from each row
@@ -160,12 +165,14 @@ object ExtremeGeometricMF extends App {
     }
   }
 
-  println(pairCounts.mkString("\n"))
-  println(singleCounts.mkString("\n"))
+  println(pairCounts.take(10).mkString("\n"))
+  println(singleCounts.take(10).mkString("\n"))
 
-  val regW = 0.001
-  val regS = 0.001
+  val regW = 0.1
+  val regS = 0.1
+  val regBias = 0.1
 
+  println("Building factors")
   //create pairwise factors
   for (col1Index <- 0 until colIds.length; col2Index <- col1Index + 1 until colIds.size) {
     val col1 = db.relations(col1Index)
@@ -174,8 +181,11 @@ object ExtremeGeometricMF extends App {
     val v1 = V(col1)
     val v2 = V(col2)
 
-    val s1 = scalingWeights(col1)
-    val s2 = scalingWeights(col2)
+    val s1 = colScales(col1)
+    val s2 = colScales(col2)
+
+    val eta1 = colBiases(col1)
+    val eta2 = colBiases(col2)
 
     //build 3 * 2 factors (1,1), (1,0), and (0,1)
     //First: (1,1)
@@ -183,57 +193,82 @@ object ExtremeGeometricMF extends App {
       val freq_b1b2 = ruleFreq(col1, col2, b1, b2)
       if (freq_b1b2 > 0) {
         val scale = freq_b1b2 // numCols// (numCols * numCols)
+        //biases
         //learn the left cell
-        fg.buildFactor(Seq(v1, v2, s1, s2))(_ map (_ => new VectorMsgs)) {
-          e => new LogPairwiseWeighted(e(0), e(1), e(2), e(3), scale, I(b1), I(b1), I(b2))
+        fg.buildFactor(Seq(v1, v2, s1, eta1))(_ map (_ => new VectorMsgs)) {
+          e => new LogPairwiseColWeightedBias(e(0), e(1), e(2), e(3), scale, I(b1), I(b1), I(b2))
         }
         //learn the right cell
-        fg.buildFactor(Seq(v1, v2, s1, s2))(_ map (_ => new VectorMsgs)) {
-          e => new LogPairwiseWeighted(e(1), e(0), e(3), e(2), scale, I(b2), I(b2), I(b1))
+        fg.buildFactor(Seq(v2, v1, s2, eta2))(_ map (_ => new VectorMsgs)) {
+          e => new LogPairwiseColWeightedBias(e(0), e(1), e(2), e(3), scale, I(b2), I(b2), I(b1))
         }
+
+//        //learn the left cell
+//        fg.buildFactor(Seq(v1, v2, s1, s2))(_ map (_ => new VectorMsgs)) {
+//          e => new LogPairwiseWeighted(e(0), e(1), e(2), e(3), scale, I(b1), I(b1), I(b2))
+//        }
+//        //learn the right cell
+//        fg.buildFactor(Seq(v1, v2, s1, s2))(_ map (_ => new VectorMsgs)) {
+//          e => new LogPairwiseWeighted(e(1), e(0), e(3), e(2), scale, I(b2), I(b2), I(b1))
+//        }
+
       }
     }
   }
 
-  //create L2 regularizer for columns
+  //create L2 regularizers
   for (col <- colIds) {
     val v = V(col)
     fg.buildFactor(Seq(v))(_ map (_ => new VectorMsgs)) {
       e => new L2Regularizer(e(0), regW)
     }
-  }
 
-  //create L2 regularizer for scaling weights
-  for (col <- colIds) {
-    val s = scalingWeights(col)
+    val s = colScales(col)
     fg.buildFactor(Seq(s))(_ map (_ => new VectorMsgs)) {
       e => new L2RegularizerOffset(e(0), new DenseTensor1(Array(1.0)), regS)
+    }
+
+    val eta = colBiases(col)
+    fg.buildFactor(Seq(eta))(_ map (_ => new VectorMsgs)) {
+      e => new L2Regularizer(e(0), regBias)
     }
   }
 
   fg.build()
-  //GradientBasedOptimizer(fg, new OnlineTrainer(_, new AdaGrad(), 100, 10))
+  println("Optimizing...")
+
+  //  GradientBasedOptimizer(fg, new OnlineTrainer(_, new AdaGrad(), 100, 100000))
   GradientBasedOptimizer(fg, new BatchTrainer(_, new AdaGrad(), 100))
 
   for (col <- colIds) {
-    println(s"$col: ${ scalingWeights(col).variable.asVector.b(0) } ${ V(col).variable.asVector.b }")
+    println(s"$col: ${ colScales(col).variable.asVector.b(0) } *  ${ V(col).variable.asVector.b } + ${colBiases(col).variable.asVector.b(0)}")
   }
 
-  def fillRowEmbeddings(): Unit = {
+  def fillActualEmbeddings(): Unit = {
     for (row <- rowIds) {
-      val result = new DenseTensor1(k)
+      val result = new DenseTensor1(k + 1)
       val cells = db.getBy2(row).toArray
       for ((col, _) <- cells) {
         val v = V(col).variable.asVector.b
-        result +=(v, scalingWeights(col).variable.asVector.b(0))
+        for (i <- 0 until k) result(i) = result(i) + v(i)
+        //result +=(v, colScales(col).variable.asVector.b(0))
       }
+      result(k) = 1.0
       A(row).variable.asVector.b = result
     }
+    for (col <- colIds) {
+      val v = V(col).variable.asVector.b
+      val s = colScales(col).variable.asVector.b(0)
+      val eta = colBiases(col).variable.asVector.b(0)
+      val result = new DenseTensor1(k + 1)
+      for (i <- 0 until k) result(i) = s * v(i)
+      result(k) = eta
+      V(col).variable.asVector.b = result
+    }
+
   }
 
-
-  fillRowEmbeddings()
-
+  fillActualEmbeddings()
   println("train:")
   println(db.toVerboseString(showTrain = true))
   println()
@@ -443,6 +478,67 @@ class LogPairwiseWeighted(col1EdgeToBePredicted: Edge, col2Edge: Edge,
     if (scale2Msgs.f2n.twoNorm > 10) {
       val k = 1
     }
+    val prob = math.exp(logProb)
+    scale * logProb
+  }
+}
+
+
+/**
+ * @author Sebastian Riedel
+ */
+class LogPairwiseColWeightedBias(col1EdgeToBePredicted: Edge, col2Edge: Edge,
+                                 scale1Edge: Edge, bias1Edge: Edge,
+                                 scale: Double = 1.0, truth: Double, b1: Double, b2: Double) extends Potential {
+
+  //col1Edge is the column we want to predict
+  //truth is the target truth value for the (pseudo) cell
+  assert(truth == b1)
+
+  //nodes of edges may change hence the def and not val.
+  def col1Var = col1EdgeToBePredicted.n.variable.asVector
+  def col2Var = col2Edge.n.variable.asVector
+  def scale1Var = scale1Edge.n.variable.asVector
+  def scale2Var = bias1Edge.n.variable.asVector
+
+  val col1Msgs   = col1EdgeToBePredicted.msgs.asVector
+  val col2Msgs   = col2Edge.msgs.asVector
+  val scale1Msgs = scale1Edge.msgs.asVector
+  val bias1Msgs = bias1Edge.msgs.asVector
+
+  override def valueAndGradientForAllEdges(): Double = {
+    val w1 = col1Msgs.n2f
+    val w2 = col2Msgs.n2f
+    val s1 = scale1Msgs.n2f
+    val e1 = bias1Msgs.n2f
+
+    if (col1Msgs.f2n == null) col1Msgs.f2n = new DenseTensor1(w1.size)
+    if (col2Msgs.f2n == null) col2Msgs.f2n = new DenseTensor1(w2.size)
+    if (scale1Msgs.f2n == null) scale1Msgs.f2n = new DenseTensor1(1)
+    if (bias1Msgs.f2n == null) bias1Msgs.f2n = new DenseTensor1(1)
+
+
+    val w1NormSquared = w1.twoNormSquared
+    val w1DotW2 = w1 dot w2
+    val phi = b1 * s1(0) * w1NormSquared + b2 * s1(0) * w1DotW2 + e1(0)
+    val logZ = math.log(1 + math.exp(phi))
+    val pi = math.exp(phi - logZ)
+    val rate = scale * (truth - pi)
+
+    col1Msgs.f2n := 0.0
+    col1Msgs.f2n +=(w1, rate * s1(0) * b1)
+    col1Msgs.f2n +=(w2, rate * s1(0) * b2)
+
+    col2Msgs.f2n := 0.0
+    col2Msgs.f2n +=(w1, rate * s1(0) * b2)
+
+    scale1Msgs.f2n(0) = rate * (b1 * w1NormSquared + b2 * w1DotW2)
+    bias1Msgs.f2n(0) = rate
+
+    val logProb = truth * phi - logZ
+//    if (bias1Msgs.f2n.twoNorm > 10) {
+//      val k = 1
+//    }
     val prob = math.exp(logProb)
     scale * logProb
   }
