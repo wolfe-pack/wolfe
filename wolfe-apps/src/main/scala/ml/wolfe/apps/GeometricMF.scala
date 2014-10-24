@@ -80,9 +80,9 @@ object ExtremeGeometricMF extends App {
 
   import Wolfe._
 
-  val k  = 3
+  val k  = 5
   val db = new TensorKB(k)
-  db.sampleTensor(10, 10, 0, 0.1)
+  db.sampleTensor(100, 10, 0, 0.2)
   //samples a matrix
   val fg   = db.toFactorGraph
   val data = db.cells
@@ -113,19 +113,42 @@ object ExtremeGeometricMF extends App {
     }
   }
 
-  //change counts
-  def addRule(body: db.CellIx, head: db.CellIx): Unit = {
-    val oldCount11 = pairCounts(body, head)
-    val oldCount1_ = singleCounts(body)
-    val newCount11 = math.max(oldCount1_, oldCount11)
-    val newCount_1 = singleCounts(head) + (newCount11 - oldCount11)
-    pairCounts(body -> head) = newCount11
-    singleCounts(head) = newCount_1
-  }
+//  //change counts
+//  def addRule(body: db.CellIx, head: db.CellIx): Unit = {
+//    val oldCount11 = pairCounts(body, head)
+//    val oldCount1_ = singleCounts(body)
+//    val newCount11 = math.max(oldCount1_, oldCount11)
+//    val newCount_1 = singleCounts(head) + (newCount11 - oldCount11)
+//    pairCounts(body -> head) = newCount11
+//    singleCounts(head) = newCount_1
+//  }
+
 
   def freq(col1: db.CellIx, col2: db.CellIx, b1: Boolean, b2: Boolean) = {
     count(col1, col2, b1, b2) / numRows.toDouble
   }
+
+  val rules = Map[(db.CellIx,db.CellIx),Double](
+//    ("r3","r4") -> 0,
+//    ("r4","r5"),
+//    ("r8", "r9") -> 0
+    ("r5","r6") -> 0
+
+  )
+
+  def ruleFreq(col1: db.CellIx, col2: db.CellIx, b1: Boolean, b2: Boolean) = {
+    rules.get(col1 -> col2) match {
+      case Some(add) =>
+        val normalizer = numRows.toDouble + add
+        (b1,b2) match {
+          case (true,false) => 0.0
+          case (true,true) => (add + count(col1, col2, true , false) + count(col1, col2, true , true)) / normalizer
+          case (x,y) => count(col1,col2,x,y) / normalizer
+        }
+      case _ =>
+        freq(col1,col2,b1,b2)
+    }
+ }
 
 
   //need to get counts from each row
@@ -140,7 +163,8 @@ object ExtremeGeometricMF extends App {
   println(pairCounts.mkString("\n"))
   println(singleCounts.mkString("\n"))
 
-  addRule("r9", "r10")
+  val regW = 0.001
+  val regS = 0.001
 
   //create pairwise factors
   for (col1Index <- 0 until colIds.length; col2Index <- col1Index + 1 until colIds.size) {
@@ -156,15 +180,16 @@ object ExtremeGeometricMF extends App {
     //build 3 * 2 factors (1,1), (1,0), and (0,1)
     //First: (1,1)
     for (b1 <- Seq(true, false); b2 <- Seq(true, false)) {
-      val count_b1b2 = freq(col1, col2, b1, b2)
-      if (count_b1b2 > 0) {
+      val freq_b1b2 = ruleFreq(col1, col2, b1, b2)
+      if (freq_b1b2 > 0) {
+        val scale = freq_b1b2 // numCols// (numCols * numCols)
         //learn the left cell
         fg.buildFactor(Seq(v1, v2, s1, s2))(_ map (_ => new VectorMsgs)) {
-          e => new LogPairwiseWeighted(e(0), e(1), e(2), e(3), count_b1b2, I(b1), I(b1), I(b2))
+          e => new LogPairwiseWeighted(e(0), e(1), e(2), e(3), scale, I(b1), I(b1), I(b2))
         }
         //learn the right cell
         fg.buildFactor(Seq(v1, v2, s1, s2))(_ map (_ => new VectorMsgs)) {
-          e => new LogPairwiseWeighted(e(1), e(0), e(3), e(2), count_b1b2, I(b2), I(b2), I(b1))
+          e => new LogPairwiseWeighted(e(1), e(0), e(3), e(2), scale, I(b2), I(b2), I(b1))
         }
       }
     }
@@ -174,7 +199,7 @@ object ExtremeGeometricMF extends App {
   for (col <- colIds) {
     val v = V(col)
     fg.buildFactor(Seq(v))(_ map (_ => new VectorMsgs)) {
-      e => new L2Regularizer(e(0), 0.1)
+      e => new L2Regularizer(e(0), regW)
     }
   }
 
@@ -182,13 +207,13 @@ object ExtremeGeometricMF extends App {
   for (col <- colIds) {
     val s = scalingWeights(col)
     fg.buildFactor(Seq(s))(_ map (_ => new VectorMsgs)) {
-      e => new L2RegularizerOffset(e(0), new DenseTensor1(Array(1.0)), 0.1)
+      e => new L2RegularizerOffset(e(0), new DenseTensor1(Array(1.0)), regS)
     }
   }
 
   fg.build()
   //GradientBasedOptimizer(fg, new OnlineTrainer(_, new AdaGrad(), 100, 10))
-  GradientBasedOptimizer(fg, new BatchTrainer(_, new AdaGrad(), 1000))
+  GradientBasedOptimizer(fg, new BatchTrainer(_, new AdaGrad(), 100))
 
   for (col <- colIds) {
     println(s"$col: ${ scalingWeights(col).variable.asVector.b(0) } ${ V(col).variable.asVector.b }")
