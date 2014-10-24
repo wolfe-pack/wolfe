@@ -42,9 +42,10 @@ class FreebaseReader {
     val startTime = System.currentTimeMillis()
     var count = 0
     var dcount = 0
-    for (line <- new GZipReader(filename)) {
+    val reader = if (filename.endsWith(".gz")) new GZipReader(filename) else io.Source.fromFile(filename).getLines
+    println("FILESIZE = " + reader.size)
+    for (line <- reader) {
       val cleaned = line.replaceAll("> +<", ">\t<").replaceAll("> +\"", ">\t\"")
-      println(cleaned)
       cleaned match {
         case INSTANCE_PATTERN(t, mid) => {
           coll.insert(MongoDBObject("mid" -> mid, "type" -> t))
@@ -105,7 +106,6 @@ class FreebaseReader {
     (coll find dateQuery).foreach { q =>
       val mid = q.get("arg1").toString()
       val name = getName(mid, coll).getOrElse("None")
-      println(mid + ":" + name)
       out.write(mid + ":" + name + "\t")
       val attributes = attributesOf(mid, coll)
       for (a <- attributes.keys) out.write(a + ":" + attributes(a) + ":" + getName(attributes(a)).getOrElse("None") + "\t")
