@@ -403,8 +403,9 @@ object FactorGraph {
       case _ => false
     }
     override def hashCode(): Int = {
-      val state = Seq(index)
-      state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
+      index
+//      val state = Seq(index)
+//      state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
     }
   }
 

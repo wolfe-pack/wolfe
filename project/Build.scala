@@ -49,6 +49,7 @@ object BuildSettings {
   val globalDependencies = libraryDependencies ++= Seq(
     "org.scalautils" % "scalautils_2.10" % "2.0",
     "org.scalatest" %% "scalatest" % "2.1.0" % "test",
+    "com.typesafe" % "config" % "1.2.1",
     "com.github.axel22" %% "scalameter" % "0.4",
     "com.nativelibs4java" %% "scalaxy-loops" % "0.3-SNAPSHOT" % "provided",
 //    "org.scala-lang" % "scala-compiler" % "2.10.3",
@@ -64,7 +65,8 @@ object BuildSettings {
     "org.json4s" %% "json4s-native" % "3.2.10",
     "org.mongodb" %% "casbah" % "2.5.0"
 
-    //    "net.liftweb" %% "lift-json" % "2.3"
+
+  //    "net.liftweb" %% "lift-json" % "2.3"
   )
 
   val coreDependencies = libraryDependencies ++= Seq(

@@ -50,6 +50,8 @@ object Util {
     math.abs(x - y) < eps
   }
 
+  def sig(x: Double) = 1.0 / (1.0 + math.exp(-x))
+
 }
 
 /**

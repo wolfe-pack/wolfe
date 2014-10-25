@@ -1,9 +1,10 @@
-package ml.wolfe.apps
+package ml.wolfe.apps.factorization
 
 import cc.factorie.la.DenseTensor1
-import cc.factorie.optimize.{BatchTrainer, AdaGrad, OnlineTrainer}
+import cc.factorie.optimize.{AdaGrad, BatchTrainer}
 import ml.wolfe.FactorGraph.Edge
-import ml.wolfe.{Wolfe, GradientBasedOptimizer}
+import ml.wolfe.GradientBasedOptimizer
+import ml.wolfe.apps.TensorKB
 import ml.wolfe.fg._
 
 import scala.collection.mutable
@@ -78,11 +79,27 @@ object GeometricMF extends App {
  */
 object ExtremeGeometricMF extends App {
 
-  import Wolfe._
+  import ml.wolfe.Wolfe._
 
   val k  = 2
+  val numRows = 10
+  val numCols = 10
+  val regW    = 0.1
+  val regS    = 0.1
+  val regBias = 0.1
+  val objNormalizer = 1.0 / (numCols * numCols)
+  val subSample = 1.0
+
   val db = new TensorKB(k)
-  db.sampleTensor(10, 10, 0, 0.2)
+
+  val rules = Map[(db.CellIx, db.CellIx), Double](
+    //    ("r3","r4") -> 0,
+    //    ("r4","r5"),
+    //    ("r8", "r9") -> 0
+    ("r5", "r6") -> 0
+  )
+
+  db.sampleTensor(numCols, numRows, 0, 0.2)
   //samples a matrix
   val fg   = db.toFactorGraph
   val data = db.cells
@@ -97,8 +114,6 @@ object ExtremeGeometricMF extends App {
   val pairCounts   = mutable.HashMap[(db.CellIx, db.CellIx), Int]() withDefaultValue 0
   val singleCounts = mutable.HashMap[db.CellIx, Int]() withDefaultValue 0
 
-  val numRows = rowIds.size
-  val numCols = colIds.size
 
   val colScales = colIds.map(i => {
     i -> fg.addVectorNode(1)
@@ -133,13 +148,7 @@ object ExtremeGeometricMF extends App {
     count(col1, col2, b1, b2) / numRows.toDouble
   }
 
-  val rules = Map[(db.CellIx, db.CellIx), Double](
-    //    ("r3","r4") -> 0,
-    //    ("r4","r5"),
-    //    ("r8", "r9") -> 0
-    ("r5", "r6") -> 0
 
-  )
 
   def ruleFreq(col1: db.CellIx, col2: db.CellIx, b1: Boolean, b2: Boolean) = {
     rules.get(col1 -> col2) match {
@@ -168,9 +177,6 @@ object ExtremeGeometricMF extends App {
   println(pairCounts.take(10).mkString("\n"))
   println(singleCounts.take(10).mkString("\n"))
 
-  val regW = 0.1
-  val regS = 0.1
-  val regBias = 0.1
 
   println("Building factors")
   //create pairwise factors
@@ -191,8 +197,9 @@ object ExtremeGeometricMF extends App {
     //First: (1,1)
     for (b1 <- Seq(true, false); b2 <- Seq(true, false)) {
       val freq_b1b2 = ruleFreq(col1, col2, b1, b2)
-      if (freq_b1b2 > 0) {
-        val scale = freq_b1b2 // numCols// (numCols * numCols)
+      val ignore = (!b1 || !b2) && (random.nextDouble() < (1.0 - subSample))
+      if (freq_b1b2 > 0 && !ignore) {
+        val scale = freq_b1b2 * objNormalizer// numCols// (numCols * numCols)
         //biases
         //learn the left cell
         fg.buildFactor(Seq(v1, v2, s1, eta1))(_ map (_ => new VectorMsgs)) {
@@ -203,14 +210,14 @@ object ExtremeGeometricMF extends App {
           e => new LogPairwiseColWeightedBias(e(0), e(1), e(2), e(3), scale, I(b2), I(b2), I(b1))
         }
 
-//        //learn the left cell
-//        fg.buildFactor(Seq(v1, v2, s1, s2))(_ map (_ => new VectorMsgs)) {
-//          e => new LogPairwiseWeighted(e(0), e(1), e(2), e(3), scale, I(b1), I(b1), I(b2))
-//        }
-//        //learn the right cell
-//        fg.buildFactor(Seq(v1, v2, s1, s2))(_ map (_ => new VectorMsgs)) {
-//          e => new LogPairwiseWeighted(e(1), e(0), e(3), e(2), scale, I(b2), I(b2), I(b1))
-//        }
+        //        //learn the left cell
+        //        fg.buildFactor(Seq(v1, v2, s1, s2))(_ map (_ => new VectorMsgs)) {
+        //          e => new LogPairwiseWeighted(e(0), e(1), e(2), e(3), scale, I(b1), I(b1), I(b2))
+        //        }
+        //        //learn the right cell
+        //        fg.buildFactor(Seq(v1, v2, s1, s2))(_ map (_ => new VectorMsgs)) {
+        //          e => new LogPairwiseWeighted(e(1), e(0), e(3), e(2), scale, I(b2), I(b2), I(b1))
+        //        }
 
       }
     }
@@ -220,17 +227,17 @@ object ExtremeGeometricMF extends App {
   for (col <- colIds) {
     val v = V(col)
     fg.buildFactor(Seq(v))(_ map (_ => new VectorMsgs)) {
-      e => new L2Regularizer(e(0), regW)
+      e => new L2Regularizer(e(0), regW * objNormalizer)
     }
 
     val s = colScales(col)
     fg.buildFactor(Seq(s))(_ map (_ => new VectorMsgs)) {
-      e => new L2RegularizerOffset(e(0), new DenseTensor1(Array(1.0)), regS)
+      e => new L2RegularizerOffset(e(0), new DenseTensor1(Array(1.0)), regS * objNormalizer)
     }
 
     val eta = colBiases(col)
     fg.buildFactor(Seq(eta))(_ map (_ => new VectorMsgs)) {
-      e => new L2Regularizer(e(0), regBias)
+      e => new L2Regularizer(e(0), regBias * objNormalizer)
     }
   }
 
@@ -238,11 +245,13 @@ object ExtremeGeometricMF extends App {
   println("Optimizing...")
 
   //  GradientBasedOptimizer(fg, new OnlineTrainer(_, new AdaGrad(), 100, 100000))
-  GradientBasedOptimizer(fg, new BatchTrainer(_, new AdaGrad(), 100))
+  GradientBasedOptimizer(fg, new BatchTrainer(_, new AdaGrad(), 1000))
 
   for (col <- colIds) {
-    println(s"$col: ${ colScales(col).variable.asVector.b(0) } *  ${ V(col).variable.asVector.b } + ${colBiases(col).variable.asVector.b(0)}")
+    println(s"$col: ${ colScales(col).variable.asVector.b(0) } *  ${ V(col).variable.asVector.b } + ${ colBiases(col).variable.asVector.b(0) }")
   }
+
+  println("Number of terms:" + fg.factors.size)
 
   def fillActualEmbeddings(): Unit = {
     for (row <- rowIds) {
@@ -426,9 +435,9 @@ class LogPairwiseTwoNorm(col1Edge: Edge, col2Edge: Edge,
 /**
  * @author Sebastian Riedel
  */
-class LogPairwiseWeighted(col1EdgeToBePredicted: Edge, col2Edge: Edge,
-                          scale1Edge: Edge, scale2Edge: Edge,
-                          scale: Double = 1.0, truth: Double, b1: Double, b2: Double) extends Potential {
+class LogPairwiseWeighted(val col1EdgeToBePredicted: Edge, val col2Edge: Edge,
+                          val scale1Edge: Edge, val scale2Edge: Edge,
+                          val scale: Double = 1.0, truth: Double, val b1: Double, val b2: Double) extends Potential {
 
   //col1Edge is the column we want to predict
   //truth is the target truth value for the (pseudo) cell
@@ -445,6 +454,10 @@ class LogPairwiseWeighted(col1EdgeToBePredicted: Edge, col2Edge: Edge,
   val scale1Msgs = scale1Edge.msgs.asVector
   val scale2Msgs = scale2Edge.msgs.asVector
 
+  val activeCount = b1 + b2
+  val b1Norm = if (activeCount == 0.0) 0.0 else b1 / activeCount
+  val b2Norm = if (activeCount == 0.0) 0.0 else b2 / activeCount
+
   override def valueAndGradientForAllEdges(): Double = {
     val w1 = col1Msgs.n2f
     val w2 = col2Msgs.n2f
@@ -459,20 +472,20 @@ class LogPairwiseWeighted(col1EdgeToBePredicted: Edge, col2Edge: Edge,
 
     val w1NormSquared = w1.twoNormSquared
     val w1DotW2 = w1 dot w2
-    val phi = b1 * s1(0) * w1NormSquared + b2 * s2(0) * w1DotW2
+    val phi = b1Norm * s1(0) * w1NormSquared + b2Norm * s2(0) * w1DotW2
     val logZ = math.log(1 + math.exp(phi))
     val pi = math.exp(phi - logZ)
     val rate = scale * (truth - pi)
 
     col1Msgs.f2n := 0.0
-    col1Msgs.f2n +=(w1, rate * s1(0) * b1)
-    col1Msgs.f2n +=(w2, rate * s2(0) * b2)
+    col1Msgs.f2n +=(w1, rate * s1(0) * b1Norm)
+    col1Msgs.f2n +=(w2, rate * s2(0) * b2Norm)
 
     col2Msgs.f2n := 0.0
-    col2Msgs.f2n +=(w1, rate * s2(0) * b2)
+    col2Msgs.f2n +=(w1, rate * s2(0) * b2Norm)
 
-    scale1Msgs.f2n(0) = rate * b1 * w1NormSquared
-    scale2Msgs.f2n(0) = rate * b2 * w1DotW2
+    scale1Msgs.f2n(0) = rate * b1Norm * w1NormSquared
+    scale2Msgs.f2n(0) = rate * b2Norm * w1DotW2
 
     val logProb = truth * phi - logZ
     if (scale2Msgs.f2n.twoNorm > 10) {
@@ -487,9 +500,9 @@ class LogPairwiseWeighted(col1EdgeToBePredicted: Edge, col2Edge: Edge,
 /**
  * @author Sebastian Riedel
  */
-class LogPairwiseColWeightedBias(col1EdgeToBePredicted: Edge, col2Edge: Edge,
-                                 scale1Edge: Edge, bias1Edge: Edge,
-                                 scale: Double = 1.0, truth: Double, b1: Double, b2: Double) extends Potential {
+class LogPairwiseColWeightedBias(val col1EdgeToBePredicted: Edge, val col2Edge: Edge,
+                                 val scale1Edge: Edge, val bias1Edge: Edge,
+                                 val scale: Double = 1.0, val truth: Double, val b1: Double, val b2: Double) extends Potential {
 
   //col1Edge is the column we want to predict
   //truth is the target truth value for the (pseudo) cell
@@ -504,7 +517,12 @@ class LogPairwiseColWeightedBias(col1EdgeToBePredicted: Edge, col2Edge: Edge,
   val col1Msgs   = col1EdgeToBePredicted.msgs.asVector
   val col2Msgs   = col2Edge.msgs.asVector
   val scale1Msgs = scale1Edge.msgs.asVector
-  val bias1Msgs = bias1Edge.msgs.asVector
+  val bias1Msgs  = bias1Edge.msgs.asVector
+
+  val activeCount = b1 + b2
+  val b1Norm = if (activeCount == 0.0) 0.0 else b1 / activeCount
+  val b2Norm = if (activeCount == 0.0) 0.0 else b2 / activeCount
+
 
   override def valueAndGradientForAllEdges(): Double = {
     val w1 = col1Msgs.n2f
@@ -520,25 +538,25 @@ class LogPairwiseColWeightedBias(col1EdgeToBePredicted: Edge, col2Edge: Edge,
 
     val w1NormSquared = w1.twoNormSquared
     val w1DotW2 = w1 dot w2
-    val phi = b1 * s1(0) * w1NormSquared + b2 * s1(0) * w1DotW2 + e1(0)
+    val phi = b1Norm * s1(0) * w1NormSquared + b2Norm * s1(0) * w1DotW2 + e1(0)
     val logZ = math.log(1 + math.exp(phi))
     val pi = math.exp(phi - logZ)
     val rate = scale * (truth - pi)
 
     col1Msgs.f2n := 0.0
-    col1Msgs.f2n +=(w1, rate * s1(0) * b1)
-    col1Msgs.f2n +=(w2, rate * s1(0) * b2)
+    if (b1 != 0.0) col1Msgs.f2n +=(w1, rate * s1(0) * b1Norm)
+    if (b2 != 0.0) col1Msgs.f2n +=(w2, rate * s1(0) * b2Norm)
 
     col2Msgs.f2n := 0.0
-    col2Msgs.f2n +=(w1, rate * s1(0) * b2)
+    if (b2 != 0.0) col2Msgs.f2n +=(w1, rate * s1(0) * b2Norm)
 
-    scale1Msgs.f2n(0) = rate * (b1 * w1NormSquared + b2 * w1DotW2)
+    scale1Msgs.f2n(0) = rate * (b1Norm * w1NormSquared + b2Norm * w1DotW2)
     bias1Msgs.f2n(0) = rate
 
     val logProb = truth * phi - logZ
-//    if (bias1Msgs.f2n.twoNorm > 10) {
-//      val k = 1
-//    }
+    //    if (bias1Msgs.f2n.twoNorm > 10) {
+    //      val k = 1
+    //    }
     val prob = math.exp(logProb)
     scale * logProb
   }
