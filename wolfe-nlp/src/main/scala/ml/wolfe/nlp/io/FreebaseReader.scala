@@ -43,7 +43,7 @@ class FreebaseReader {
     var count = 0
     var dcount = 0
     val reader = if (filename.endsWith(".gz")) new GZipReader(filename) else io.Source.fromFile(filename).getLines
-    println("FILESIZE = " + reader.size)
+//    println("FILESIZE = " + reader.size)
     for (line <- reader) {
       val cleaned = line.replaceAll("> +<", ">\t<").replaceAll("> +\"", ">\t\"")
       cleaned match {
