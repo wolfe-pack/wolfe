@@ -1,15 +1,9 @@
-package ml.wolfe.apps
+package ml.wolfe.apps.factorization
 
-import breeze.optimize.StochasticGradientDescent
-import cc.factorie.model.{WeightsMap, WeightsSet}
 import cc.factorie.optimize.{AdaGrad, OnlineTrainer}
-import ml.wolfe.FactorGraph.Node
-import ml.wolfe.{Wolfe, DenseVector, GradientBasedOptimizer, FactorGraph}
-import ml.wolfe.fg.{L2Regularization, VectorMsgs, CellLogisticLoss}
-
-import scala.annotation.tailrec
-import scala.collection.mutable
-import scala.util.Random
+import ml.wolfe.apps.TensorKB
+import ml.wolfe.fg.{CellLogisticLoss, L2Regularization, VectorMsgs}
+import ml.wolfe.{GradientBasedOptimizer, Wolfe}
 
 /**
  * @author Sebastian Riedel
@@ -55,7 +49,7 @@ object MatrixFactorization extends App {
 
 object WolfeStyleMF extends App {
 
-  import Wolfe._
+  import ml.wolfe.Wolfe._
   import ml.wolfe.macros.OptimizedOperators._
   case class Data(rel:String, arg1:String, arg2:String, target:Double)
 
