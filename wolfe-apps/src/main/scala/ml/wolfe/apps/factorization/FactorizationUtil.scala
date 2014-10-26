@@ -16,10 +16,10 @@ object FactorizationUtil {
     def observedTrue = relations.filter(_._2 > 0.5).map(_._1)
   }
 
-  def sampleRows(rows:Int, rels:Int, density:Double = 0.1)(implicit random:Random) = {
+  def sampleRows(rows: Int, rels: Int, density: Double = 0.1)(implicit random: Random) = {
     for (pair <- 0 until rows) yield {
-      val cells = for (rel <- 0 until rels; if random.nextDouble() <= density) yield ("r" + rel,1.0)
-      Row(pair.toString,pair.toString,cells)
+      val cells = for (rel <- 0 until rels; if random.nextDouble() <= density) yield ("r" + rel, 1.0)
+      Row(pair.toString, pair.toString, cells)
     }
   }
 
@@ -56,18 +56,18 @@ object FactorizationUtil {
          if cells.size >= minColCount) yield row.copy(relations = cells)
   }
 
-  case class PredictedFact(row:Row, relation:String, score:Double) {
-    override def toString = s"$score\t$relation\t${row.rowName}\t${row.observedTrue.mkString(" ")}"
-    def toUSchemaString = s"$score\t${row.arg1}\t${row.arg2}\tREL${"$NA"}\t$relation"
+  case class PredictedFact(row: Row, relation: String, score: Double) {
+    override def toString = s"$score\t$relation\t${ row.rowName }\t${ row.observedTrue.mkString(" ") }"
+    def toUSchemaString = s"$score\t${ row.arg1 }\t${ row.arg2 }\tREL${ "$NA" }\t$relation"
   }
 
-  def toRankedFacts(predictions:Seq[(Row,Row)]):Seq[PredictedFact] = {
-    val facts = for ((obs,guess) <- predictions; (rel,value) <- guess.relations) yield PredictedFact(obs,rel,value)
+  def toRankedFacts(predictions: Seq[(Row, Row)]): Seq[PredictedFact] = {
+    val facts = for ((obs, guess) <- predictions; (rel, value) <- guess.relations) yield PredictedFact(obs, rel, value)
     val sorted = facts.sortBy(-_.score)
     sorted
   }
 
-  def saveForUSchemaEval(facts:Seq[PredictedFact], file:File): Unit = {
+  def saveForUSchemaEval(facts: Seq[PredictedFact], file: File): Unit = {
     val out = new PrintStream(file)
     for (fact <- facts) {
       out.println(fact.toUSchemaString)
@@ -75,15 +75,16 @@ object FactorizationUtil {
     out.close()
   }
 
-  def renderPredictions(prediction:Seq[Row], truth:Seq[Row] = Seq.empty) = {
+  def renderPredictions(prediction: Seq[Row], truth: Seq[Row] = Seq.empty) = {
     import ml.wolfe.nlp.util.ANSIFormatter._
-    val relations = prediction.flatMap(_.relations.map(_._1)).distinct.sorted
+    val relations =
+      (prediction.flatMap(_.relations.map(_._1)) ++ truth.flatMap(_.relations.map(_._1))).distinct.sorted
     val colWidth = math.max(relations.map(_.toString.length).max + 1, 5)
     val firstColWidth = prediction.map(_.rowName.length).max + 1
 
-    val colFormat = "%"+colWidth+"s"
-    val firstColFormat = "%"+firstColWidth+"s"
-    val cellFormat = "%"+(colWidth-1)+"s "
+    val colFormat = "%" + colWidth + "s"
+    val firstColFormat = "%" + firstColWidth + "s"
+    val cellFormat = "%" + (colWidth - 1) + "s "
     val pFormat = "%4.2f"
 
     val sb = new mutable.StringBuilder()
@@ -91,10 +92,10 @@ object FactorizationUtil {
     relations.foreach(col => sb ++= colFormat.format(col))
     sb ++= "\n"
 
-    val truthMap = truth.map(r => (r.arg1,r.arg2) -> r).toMap
+    val truthMap = truth.map(r => (r.arg1, r.arg2) -> r).toMap
 
     for (row <- prediction) {
-      val trueRow = truthMap.get((row.arg1,row.arg2))
+      val trueRow = truthMap.get((row.arg1, row.arg2))
       sb ++= firstColFormat.format(row.rowName) + " "
       val col2value = row.relations.toMap withDefaultValue 0.0
       val col2trueValue = trueRow.map(_.relations.toMap).getOrElse(Map.empty)
