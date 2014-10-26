@@ -81,14 +81,14 @@ object ExtremeGeometricMF extends App {
 
   import ml.wolfe.Wolfe._
 
-  val k  = 2
-  val numRows = 10
-  val numCols = 10
-  val regW    = 0.1
-  val regS    = 0.1
-  val regBias = 0.1
+  val k             = 2
+  val numRows       = 10
+  val numCols       = 10
+  val regW          = 0.1
+  val regS          = 0.1
+  val regBias       = 0.1
   val objNormalizer = 1.0 / (numCols * numCols)
-  val subSample = 1.0
+  val subSample     = 1.0
 
   val db = new TensorKB(k)
 
@@ -96,7 +96,7 @@ object ExtremeGeometricMF extends App {
     //    ("r3","r4") -> 0,
     //    ("r4","r5"),
     //    ("r8", "r9") -> 0
-    ("r5", "r6") -> 0
+    //("r5", "r6") -> 0
   )
 
   db.sampleTensor(numCols, numRows, 0, 0.2)
@@ -149,7 +149,6 @@ object ExtremeGeometricMF extends App {
   }
 
 
-
   def ruleFreq(col1: db.CellIx, col2: db.CellIx, b1: Boolean, b2: Boolean) = {
     rules.get(col1 -> col2) match {
       case Some(add) =>
@@ -199,15 +198,15 @@ object ExtremeGeometricMF extends App {
       val freq_b1b2 = ruleFreq(col1, col2, b1, b2)
       val ignore = (!b1 || !b2) && (random.nextDouble() < (1.0 - subSample))
       if (freq_b1b2 > 0 && !ignore) {
-        val scale = freq_b1b2 * objNormalizer// numCols// (numCols * numCols)
+        val scale = freq_b1b2 * objNormalizer // numCols// (numCols * numCols)
         //biases
         //learn the left cell
         fg.buildFactor(Seq(v1, v2, s1, eta1))(_ map (_ => new VectorMsgs)) {
-          e => new LogPairwiseColWeightedBias(e(0), e(1), e(2), e(3), scale, I(b1), I(b1), I(b2))
+          e => new LogPairwiseScaleBias(e(0), e(1), e(2), e(3), scale, I(b1), I(b1), I(b2))
         }
         //learn the right cell
         fg.buildFactor(Seq(v2, v1, s2, eta2))(_ map (_ => new VectorMsgs)) {
-          e => new LogPairwiseColWeightedBias(e(0), e(1), e(2), e(3), scale, I(b2), I(b2), I(b1))
+          e => new LogPairwiseScaleBias(e(0), e(1), e(2), e(3), scale, I(b2), I(b2), I(b1))
         }
 
         //        //learn the left cell
@@ -455,8 +454,8 @@ class LogPairwiseWeighted(val col1EdgeToBePredicted: Edge, val col2Edge: Edge,
   val scale2Msgs = scale2Edge.msgs.asVector
 
   val activeCount = b1 + b2
-  val b1Norm = if (activeCount == 0.0) 0.0 else b1 / activeCount
-  val b2Norm = if (activeCount == 0.0) 0.0 else b2 / activeCount
+  val b1Norm      = if (activeCount == 0.0) 0.0 else b1 / activeCount
+  val b2Norm      = if (activeCount == 0.0) 0.0 else b2 / activeCount
 
   override def valueAndGradientForAllEdges(): Double = {
     val w1 = col1Msgs.n2f
@@ -500,29 +499,19 @@ class LogPairwiseWeighted(val col1EdgeToBePredicted: Edge, val col2Edge: Edge,
 /**
  * @author Sebastian Riedel
  */
-class LogPairwiseColWeightedBias(val col1EdgeToBePredicted: Edge, val col2Edge: Edge,
-                                 val scale1Edge: Edge, val bias1Edge: Edge,
-                                 val scale: Double = 1.0, val truth: Double, val b1: Double, val b2: Double) extends Potential {
+class LogPairwiseScaleBias(val col1EdgeToBePredicted: Edge, val col2Edge: Edge,
+                           val scale1Edge: Edge, val bias1Edge: Edge,
+                           val scale: Double = 1.0, val truth: Double,
+                           val b1: Double, val b2: Double) extends Potential {
 
   //col1Edge is the column we want to predict
   //truth is the target truth value for the (pseudo) cell
-  assert(truth == b1)
-
-  //nodes of edges may change hence the def and not val.
-  def col1Var = col1EdgeToBePredicted.n.variable.asVector
-  def col2Var = col2Edge.n.variable.asVector
-  def scale1Var = scale1Edge.n.variable.asVector
-  def scale2Var = bias1Edge.n.variable.asVector
+  //assert(truth == b1)
 
   val col1Msgs   = col1EdgeToBePredicted.msgs.asVector
   val col2Msgs   = col2Edge.msgs.asVector
   val scale1Msgs = scale1Edge.msgs.asVector
   val bias1Msgs  = bias1Edge.msgs.asVector
-
-  val activeCount = b1 + b2
-  val b1Norm = if (activeCount == 0.0) 0.0 else b1 / activeCount
-  val b2Norm = if (activeCount == 0.0) 0.0 else b2 / activeCount
-
 
   override def valueAndGradientForAllEdges(): Double = {
     val w1 = col1Msgs.n2f
@@ -538,19 +527,102 @@ class LogPairwiseColWeightedBias(val col1EdgeToBePredicted: Edge, val col2Edge: 
 
     val w1NormSquared = w1.twoNormSquared
     val w1DotW2 = w1 dot w2
-    val phi = b1Norm * s1(0) * w1NormSquared + b2Norm * s1(0) * w1DotW2 + e1(0)
+    val phi = b1 * s1(0) * w1NormSquared + b2 * s1(0) * w1DotW2 + e1(0)
     val logZ = math.log(1 + math.exp(phi))
     val pi = math.exp(phi - logZ)
     val rate = scale * (truth - pi)
 
     col1Msgs.f2n := 0.0
-    if (b1 != 0.0) col1Msgs.f2n +=(w1, rate * s1(0) * b1Norm)
-    if (b2 != 0.0) col1Msgs.f2n +=(w2, rate * s1(0) * b2Norm)
+    if (b1 != 0.0) col1Msgs.f2n +=(w1, rate * s1(0) * b1)
+    if (b2 != 0.0) col1Msgs.f2n +=(w2, rate * s1(0) * b2)
 
     col2Msgs.f2n := 0.0
-    if (b2 != 0.0) col2Msgs.f2n +=(w1, rate * s1(0) * b2Norm)
+    if (b2 != 0.0) col2Msgs.f2n +=(w1, rate * s1(0) * b2)
 
-    scale1Msgs.f2n(0) = rate * (b1Norm * w1NormSquared + b2Norm * w1DotW2)
+    scale1Msgs.f2n(0) = rate * (b1 * w1NormSquared + b2 * w1DotW2)
+    bias1Msgs.f2n(0) = rate
+
+    val logProb = truth * phi - logZ
+    //    if (bias1Msgs.f2n.twoNorm > 10) {
+    //      val k = 1
+    //    }
+    val prob = math.exp(logProb)
+    scale * logProb
+  }
+}
+
+class SingleColumnBias(val biasEdge:Edge, scale:Double, truth:Double) extends Potential {
+
+  import math._
+
+  val biasMsg = biasEdge.msgs.asVector
+  override def valueAndGradientForAllEdges() = {
+    if (biasMsg.f2n == null) biasMsg.f2n = new DenseTensor1(1)
+
+    val b = biasMsg.n2f(0)
+    val logZ = log(1 + exp(b))
+    val pi = exp(b - logZ)
+    val obj = truth * log(pi) + (1.0 - truth) * log(1.0 - pi)
+    biasMsg.f2n(0) = scale * (truth * (1.0 - pi) + (1.0 - truth) * (0.0 - pi))
+    scale * obj
+  }
+}
+
+
+/**
+ * @author Sebastian Riedel
+ */
+class LogPairwiseWeightedScaleBias(val col1EdgeToBePredicted: Edge, val col2Edge: Edge,
+                                   val scale1Edge: Edge, val bias1Edge: Edge,
+                                   val mult1Edge: Edge, val mult2Edge: Edge,
+                                   val scale: Double = 1.0, val truth: Double,
+                                   val b1: Double, val b2: Double) extends Potential {
+
+  //col1Edge is the column we want to predict
+  //truth is the target truth value for the (pseudo) cell
+  //assert(truth == b1)
+
+  val col1Msgs   = col1EdgeToBePredicted.msgs.asVector
+  val col2Msgs   = col2Edge.msgs.asVector
+  val scale1Msgs = scale1Edge.msgs.asVector
+  val bias1Msgs  = bias1Edge.msgs.asVector
+  val mult1Msgs  = mult1Edge.msgs.asVector
+  val mult2Msgs  = mult2Edge.msgs.asVector
+
+  override def valueAndGradientForAllEdges(): Double = {
+    val w1 = col1Msgs.n2f
+    val w2 = col2Msgs.n2f
+    val s1 = scale1Msgs.n2f(0)
+    val e1 = bias1Msgs.n2f(0)
+    val m1 = mult1Msgs.n2f(0)
+    val m2 = mult2Msgs.n2f(0)
+
+    if (col1Msgs.f2n == null) col1Msgs.f2n = new DenseTensor1(w1.size)
+    if (col2Msgs.f2n == null) col2Msgs.f2n = new DenseTensor1(w2.size)
+    if (scale1Msgs.f2n == null) scale1Msgs.f2n = new DenseTensor1(1)
+    if (bias1Msgs.f2n == null) bias1Msgs.f2n = new DenseTensor1(1)
+    if (mult1Msgs.f2n == null) mult1Msgs.f2n = new DenseTensor1(1)
+    if (mult2Msgs.f2n == null) mult2Msgs.f2n = new DenseTensor1(1)
+
+
+    val w1NormSquared = w1.twoNormSquared
+    val w1DotW2 = w1 dot w2
+    val phi = b1 * m1 * s1 * w1NormSquared + b2 * m2 * s1 * w1DotW2 + e1
+    val logZ = math.log(1 + math.exp(phi))
+    val pi = math.exp(phi - logZ)
+    val rate = scale * (truth - pi)
+
+    col1Msgs.f2n := 0.0
+    if (b1 != 0.0) col1Msgs.f2n +=(w1, rate * s1 * b1 * m1)
+    if (b2 != 0.0) col1Msgs.f2n +=(w2, rate * s1 * b2 * m1)
+
+    col2Msgs.f2n := 0.0
+    if (b2 != 0.0) col2Msgs.f2n +=(w1, rate * s1 * b2 * m2)
+
+    if (b1 != 0.0) mult1Msgs.f2n(0) = rate * b1 * s1 * w1NormSquared
+    if (b2 != 0.0) mult2Msgs.f2n(0) = rate * b2 * s1 * w1DotW2
+
+    scale1Msgs.f2n(0) = rate * (b1 * m1 * w1NormSquared + b2 * m2 * w1DotW2)
     bias1Msgs.f2n(0) = rate
 
     val logProb = truth * phi - logZ
