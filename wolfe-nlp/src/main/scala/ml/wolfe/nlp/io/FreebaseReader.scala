@@ -1,7 +1,6 @@
 package ml.wolfe.nlp.io
 
 import com.mongodb.casbah.Imports._
-import scala.collection.mutable.HashMap
 import java.io.FileWriter
 
 /**
@@ -20,15 +19,15 @@ class FreebaseReader {
   def mongoFromTriples(filename: String, port: Int = 27017, emptyKB: Boolean = true): MongoCollection = {
     println("Connecting to local Mongo database at port %d...".format(port))
     val mongoClient = MongoClient("localhost", port)
-      mongoClient.dropDatabase("FB")
     val db = mongoClient("FB")
-    println("Collections:")
+    println("Existing Collections:")
     println(db.collectionNames.map("\t" + _).mkString("\n"))
     if (!emptyKB) {
       println("Using existing indexes.")
       return db("FB")
     }
 
+    mongoClient.dropDatabase("FB")
     val coll = db("FB")
 
     // Specify indices
@@ -37,6 +36,7 @@ class FreebaseReader {
     coll.ensureIndex("arg2")
     coll.ensureIndex("type")
     coll.ensureIndex("attribute")
+    coll.ensureIndex("title")
 
     println("Constructing Freebase indices...")
     val startTime = System.currentTimeMillis()
@@ -58,7 +58,6 @@ class FreebaseReader {
           coll.insert(MongoDBObject("arg1" -> mid, "attribute" -> dateType, "arg2" -> date))
         }
         case TITLE_PATTERN(mid, title) => {
-          println("matched")
           coll.insert(MongoDBObject("arg1" -> mid, "attribute" -> "title", "arg2" -> title))
         }
         case _ =>
@@ -71,31 +70,94 @@ class FreebaseReader {
     println("There are %d rows with start dates.".format(coll.count(MongoDBObject("attribute" -> "start_date"))))
     println("Date patterns were found %d times".format(dcount))
     // (coll find MongoDBObject("named" -> "yes")).foreach { p => println(p)}
-    println(getName("m.081pw", coll))
     coll
   }
 
-  def getName(mid: String, coll: MongoCollection = collection): Option[String] = {
-    (coll findOne MongoDBObject("arg1" -> mid, "attribute" -> "title")) match {
-      case Some(record) => Some(record.get("arg2").toString())
+  def getMID(str: String): Seq[String] = {
+    val name = str.replaceAll(" ", "_")
+    (collection find MongoDBObject("attribute" -> "title", "arg2" -> name)).flatMap { m =>
+      if (m.contains("arg1")) Some(m.get("arg1").asInstanceOf[String])
+      else None
+    }.toSeq
+  }
+
+  def getRelation(str1: String, str2: String): Option[String] = {
+    val mids1 = getMID(str1)
+    val mids2 = getMID(str2)
+    if (mids1.nonEmpty && mids2.nonEmpty) {
+      // Do some selection from candidate MIDs - this could be a text similarity measure, random selection, or just first match
+      val mid1 = mids1.head
+      val mid2 = mids2.head
+      // Look for relations (attributes) shared by both MIDs
+      val m1 = collection findOne MongoDBObject("arg1" -> mid1, "arg2" -> mid2)
+      m1 match {
+        case Some(row) => return Some(row.get("attribute").asInstanceOf[String])
+        case _=> {
+          // No match found so try the opposite arg1/arg2s:
+          val m2 = collection findOne MongoDBObject("arg1" -> mid2, "arg2" -> mid1)
+          m2 match {
+            case Some(row) => return Some(row.get("attribute").asInstanceOf[String])
+            case _=> None
+          }
+        }
+      }
+    }
+    None
+  }
+
+  def getName(mid: String): Option[String] = {
+    collection findOne MongoDBObject("arg1" -> mid, "attribute" -> "title") match {
+      case Some(record) => Some(record.get("arg2").toString)
       case _ => None
     }
   }
 
-  def getAttribute(mid: String, attribute: String, coll: MongoCollection = collection): Option[String] = {
-    coll findOne MongoDBObject("arg1" -> mid, "attribute" -> attribute) match {
-      case Some(record) => Some(record.get("arg2").toString())
+  def getAttribute(mid: String, attribute: String): Option[String] = {
+    collection findOne MongoDBObject("arg1" -> mid, "attribute" -> attribute) match {
+      case Some(record) => Some(record.get("arg2").toString)
       case _ => None
     }
   }
 
-  def attributesOf(mid: String, coll: MongoCollection = collection): Map[String, String] = {
+  def attributesOf(mid: String): Map[String, String] = {
     val query = MongoDBObject("arg1" -> mid)
-    (coll find query).map { m =>
-      val t1 = m.getOrElse("attribute", "None").toString()
-      val t2 = m.getOrElse("arg2", "None").toString()
-      (t1 -> t2)
+    (collection find query).map { m =>
+      val t1 = m.getOrElse("attribute", "None").toString
+      val t2 = m.getOrElse("arg2", "None").toString
+      t1 -> t2
     }.filter(t => !(t._1 == "None" && t._2 == "None")).toMap
+  }
+
+  def load(filename: String, port: Int = 27017, init: Boolean = true) = {
+    collection = mongoFromTriples(filename, port, init)
+  }
+
+  def test() {
+    val mongoClient = MongoClient("localhost", 27017)
+    mongoClient.dropDatabase("TEST")
+    val db = mongoClient("TEST")
+    val coll = db("TEST")
+    collection = coll
+    // Set indexes
+    coll.ensureIndex("mid")
+    coll.ensureIndex("arg1")
+    coll.ensureIndex("arg2")
+    coll.ensureIndex("type")
+    coll.ensureIndex("attribute")
+    coll.ensureIndex("title")
+    // Add data
+    coll += DBObject("arg1" -> "m1", "attribute" -> "title", "arg2" -> "Barack_Obama")
+    coll += DBObject("arg1" -> "m2", "attribute" -> "title", "arg2" -> "United_States_of_America")
+    coll += DBObject("arg1" -> "m3", "attribute" -> "title", "arg2" -> "Michelle_Obama")
+    coll += DBObject("arg1" -> "m1", "attribute" -> "president_of", "arg2" -> "m2")
+    coll += DBObject("arg1" -> "m1", "attribute" -> "husband_of", "arg2" -> "m3")
+    // Query
+    println("Attributes of m1: " + attributesOf("m1"))
+    println("MID of 'Barack Obama': " + getMID("Barack Obama"))
+    println("MID of OOV: " + getMID("Barack"))
+    println("Relation between Barack Obama and US? " + getRelation("Barack Obama", "United States of America"))
+    println("Relation between Michelle and Barack? " + getRelation("Michelle Obama", "Barack Obama"))
+    println("Relation between Michelle and US? " + getRelation("Michelle Obama", "United States of America"))
   }
 
   def collectEvents(coll: MongoCollection = collection, eventFile: String = "events.txt") {
@@ -105,9 +167,9 @@ class FreebaseReader {
     val dateQuery = MongoDBObject("attribute" -> "start_date")
     (coll find dateQuery).foreach { q =>
       val mid = q.get("arg1").toString()
-      val name = getName(mid, coll).getOrElse("None")
+      val name = getName(mid).getOrElse("None")
       out.write(mid + ":" + name + "\t")
-      val attributes = attributesOf(mid, coll)
+      val attributes = attributesOf(mid)
       for (a <- attributes.keys) out.write(a + ":" + attributes(a) + ":" + getName(attributes(a)).getOrElse("None") + "\t")
       out.write("\n")
     }
@@ -115,8 +177,6 @@ class FreebaseReader {
     out.close()
     println("Event queries finished in %1.1fm".format(time/60))
   }
-
-  def load(filename: String, port: Int = 27017, init: Boolean = true) = collection = mongoFromTriples(filename, port, init)
 
 }
 
@@ -126,10 +186,12 @@ object FreebaseReader {
     val rebuild = args(1) == "true"
     val eventFile = args(2)
     val fb = new FreebaseReader
+//    fb.test
     fb.load(filename, init = rebuild)
     fb.collectEvents()
     println("Done.")
   }
+
 }
 
 
