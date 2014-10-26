@@ -1,7 +1,7 @@
 package ml.wolfe.apps.factorization
 
 import cc.factorie.la.DenseTensor1
-import cc.factorie.optimize.{AdaGrad, BatchTrainer}
+import cc.factorie.optimize.{LBFGS, AdaGrad, BatchTrainer}
 import com.typesafe.config.Config
 import ml.wolfe._
 import ml.wolfe.Wolfe._
@@ -17,7 +17,7 @@ import scala.collection.mutable
 case class PredicateEmbedding(rel: String, embedding: FactorieVector, scale: Double, bias: Double, weight: Double = 1.0)
 
 case class ProbLogicEmbeddings(embeddings: Map[String, PredicateEmbedding],
-                               rules: Rules = Rules(Map.empty,Map.empty), average: Boolean = false) {
+                               rules: Rules = Rules(Map.empty,Map.empty), average: Boolean = true) {
 
   def predict(observations: Seq[String], relation: String) = {
     val normalizer = if (average) observations.size.toDouble else 1.0
@@ -43,6 +43,10 @@ case class Rule2(rel1: String, rel2: String, probs: Map[(Boolean, Boolean), Doub
   def marg2(b2: Boolean) = probs(true, b2) + probs(false, b2)
   def cond12(b1: Boolean)(b2: Boolean) = probs(b1, b2) / marg1(b1)
   def cond21(b2: Boolean)(b1: Boolean) = probs(b1, b2) / marg1(b2)
+  override def toString =
+    s"""$rel1 $rel2
+      |${probs.mkString("  ","\n  ","")}
+    """.stripMargin
 }
 case class Rule1(rel:String, prob:Double)
 
@@ -183,7 +187,9 @@ object ProbLogicEmbedder {
     val maxIterations = conf.getInt("epl.opt-iterations")
 
     //  GradientBasedOptimizer(fg, new OnlineTrainer(_, new AdaGrad(), 100, 100000))
-    GradientBasedOptimizer(fg, new BatchTrainer(_, new AdaGrad(), maxIterations))
+    GradientBasedOptimizer(fg, new BatchTrainer(_, new AdaGrad(conf.getDouble("epl.ada-rate")), maxIterations))
+    //GradientBasedOptimizer(fg, new BatchTrainer(_, new LBFGS(), maxIterations))
+
 
     val embeddings = relations.map({ rel =>
       rel -> PredicateEmbedding(rel,
@@ -198,7 +204,7 @@ object ProbLogicEmbedder {
 }
 
 object RuleLearner {
-  def pairwiseRules(rows: Seq[Row]): Rules = {
+  def learn(rows: Seq[Row]): Rules = {
     val pairCounts = mutable.HashMap[(String, String), Int]() withDefaultValue 0
     val singleCounts = mutable.HashMap[String, Int]() withDefaultValue 0
 

@@ -49,12 +49,25 @@ object FactorizationUtil {
   }
 
   def filterRows(rows: Seq[Row], minRowCount: Int = 10, minColCount: Int = 2, relFilter: String => Boolean = _ => true): Seq[Row] = {
+    //rule: every row should have at least minColCount active cells, and each column needs minRowCount.
     val counts = new mutable.HashMap[String, Double]() withDefaultValue 0.0
     for (row <- rows; (rel, value) <- row.relations if relFilter(rel)) counts(rel) += value
     for (row <- rows;
          cells = row.relations.filter(c => counts(c._1) >= minRowCount)
          if cells.size >= minColCount) yield row.copy(relations = cells)
   }
+
+  def filterRowsPairwise(rows: Seq[Row], minPairCount:Int = 3, relFilter: String => Boolean = _ => true): Seq[Row] = {
+    //alternative: each relation should have at least one other relation with minPair
+    val counts = new mutable.HashMap[(String,String), Double]() withDefaultValue 0.0
+    for (row <- rows;
+         (rel1, value1) <- row.relations if relFilter(rel1);
+         (rel2, value2) <- row.relations if rel1 != rel2 && relFilter(rel2) ) counts(rel2 -> rel2) += value1 * value2
+    val maxCounts = counts.toSeq.groupBy(_._1._1).mapValues(_.view.map(_._2).max)
+    for (row <- rows;
+         cells = row.relations.filter(c => maxCounts(c._1) >= minPairCount)) yield row.copy(relations = cells)
+  }
+
 
   case class PredictedFact(row: Row, relation: String, score: Double) {
     override def toString = s"$score\t$relation\t${ row.rowName }\t${ row.observedTrue.mkString(" ") }"
@@ -65,6 +78,12 @@ object FactorizationUtil {
     val facts = for ((obs, guess) <- predictions; (rel, value) <- guess.relations) yield PredictedFact(obs, rel, value)
     val sorted = facts.sortBy(-_.score)
     sorted
+  }
+
+  def saveToFile(content:String, file:File): Unit = {
+    val out = new PrintStream(file)
+    out.println(content)
+    out.close()
   }
 
   def saveForUSchemaEval(facts: Seq[PredictedFact], file: File): Unit = {
