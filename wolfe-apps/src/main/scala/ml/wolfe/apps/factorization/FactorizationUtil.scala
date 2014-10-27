@@ -57,12 +57,12 @@ object FactorizationUtil {
          if cells.size >= minColCount) yield row.copy(relations = cells)
   }
 
-  def filterRowsPairwise(rows: Seq[Row], minPairCount:Int = 3, relFilter: String => Boolean = _ => true): Seq[Row] = {
+  def filterRowsPairwise(rows: Seq[Row], minPairCount:Int = 3): Seq[Row] = {
     //alternative: each relation should have at least one other relation with minPair
     val counts = new mutable.HashMap[(String,String), Double]() withDefaultValue 0.0
     for (row <- rows;
-         (rel1, value1) <- row.relations if relFilter(rel1);
-         (rel2, value2) <- row.relations if rel1 != rel2 && relFilter(rel2) ) counts(rel2 -> rel2) += value1 * value2
+         (rel1, value1) <- row.relations;
+         (rel2, value2) <- row.relations if rel1 != rel2) counts(rel2 -> rel2) += value1 * value2
     val maxCounts = counts.toSeq.groupBy(_._1._1).mapValues(_.view.map(_._2).max)
     for (row <- rows;
          cells = row.relations.filter(c => maxCounts(c._1) >= minPairCount)) yield row.copy(relations = cells)

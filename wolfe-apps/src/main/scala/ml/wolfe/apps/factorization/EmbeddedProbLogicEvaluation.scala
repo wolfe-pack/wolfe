@@ -19,7 +19,8 @@ object EmbeddedProbLogicEvaluation {
 
     //load raw data
     val trainRaw = FactorizationUtil.loadLiminFile(new File(conf.getString("epl.train")), relationFilter).take(2000)
-    val train = FactorizationUtil.filterRows(trainRaw.toSeq, 10, 2)
+    //val train = FactorizationUtil.filterRows(trainRaw.toSeq, 10, 2)
+    val train = FactorizationUtil.filterRowsPairwise(trainRaw.toSeq, 50)
     val trainRelations = train.flatMap(_.relations.map(_._1)).distinct.sorted
     val freebaseRelations = trainRelations.filter(_.startsWith("REL$"))
 
@@ -32,6 +33,9 @@ object EmbeddedProbLogicEvaluation {
 
     println("Extracting rules")
     val trainRules = RuleLearner.learn(train)
+    FactorizationUtil.saveToFile(trainRules.rules1.values.toSeq.sortBy(_.rel).mkString("\n"), new File("/tmp/rules1.txt"))
+    FactorizationUtil.saveToFile(trainRules.rules2.values.toSeq.sortBy(-_.probs(true,true)).mkString("\n"), new File("/tmp/rules2.txt"))
+
 
     println("Embedding rules")
     val ple = ProbLogicEmbedder.embed(trainRules)
@@ -43,8 +47,6 @@ object EmbeddedProbLogicEvaluation {
     println(predictedFacts.take(100).mkString("\n"))
     FactorizationUtil.saveForUSchemaEval(predictedFacts, new File("/tmp/ple.txt"))
     FactorizationUtil.saveToFile(predictedFacts.mkString("\n"), new File("/tmp/ranked.txt"))
-    FactorizationUtil.saveToFile(trainRules.rules1.values.toSeq.sortBy(_.rel).mkString("\n"), new File("/tmp/rules1.txt"))
-    FactorizationUtil.saveToFile(trainRules.rules2.values.toSeq.sortBy(-_.probs(true,true)).mkString("\n"), new File("/tmp/rules2.txt"))
 
 
 
@@ -80,18 +82,19 @@ object EmbeddedProbLogicPlayground {
 
       )
     )
-    val test = FactorizationUtil.sampleRows(10, 10, 0.2)
+    val test = FactorizationUtil.sampleRows(10, 3, 0.2)
 
 
     val ruleRelations = manualRules.rules2.values.flatMap(r => Seq(r.rel1, r.rel2)).toSeq.distinct.sorted
     val dataRelations = test.flatMap(_.observedTrue).distinct.sorted
 
-    val ple = ProbLogicEmbedder.embed(manualRules).copy(average = false) //ProbLogicEmbedder.embed(randomRules)
 
     val manualEmbeddings = ProbLogicEmbeddings(Map(
       "r0" -> PredicateEmbedding("r0", new DenseTensor1(Array(1.0, 0.0)), 1.0, -2.0, 10.0),
       "r1" -> PredicateEmbedding("r1", new DenseTensor1(Array(1.0 / sqrt(2), 1.0 / sqrt(2))), 1.0, 0.0, 1.0)
     ))
+    val ple = manualEmbeddings//ProbLogicEmbedder.embed(manualRules).copy(average = false) //ProbLogicEmbedder.embed(randomRules)
+
 
     val rulesData = RuleLearner.learn(test)
 
@@ -106,7 +109,7 @@ object EmbeddedProbLogicPlayground {
 
     println(FactorizationUtil.renderPredictions(predictionsData, test))
     println(FactorizationUtil.renderPredictions(predictionsRules, test))
-    println(ple.embeddings.values.mkString("\n"))
+    println(pleData.embeddings.values.mkString("\n"))
 
   }
 
