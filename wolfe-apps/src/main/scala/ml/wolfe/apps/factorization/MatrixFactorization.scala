@@ -13,15 +13,17 @@ import ml.wolfe.{GradientBasedOptimizer, Wolfe}
  * @author Sebastian Riedel
  */
 object MatrixFactorization extends App {
-  //val db = new TensorKB(k)
-  //db.sampleTensor(10, 10, 0, 0.1) //samples a matrix
-
   //implicit val conf = ConfigFactory.parseFile(new File("conf/epl.conf"))
   //val k = conf.getInt("epl.relation-dim")
   val k = 100
 
+  val db = new TensorKB(k)
+  db.sampleTensor(100, 100, 0, 0.1) //samples a matrix
 
-  val db = LoadNAACL(k)
+
+
+
+  //val db = LoadNAACL(k)
 
 
   val fg = db.toFactorGraph
@@ -48,22 +50,22 @@ object MatrixFactorization extends App {
 
   fg.build()
 
-  //GradientBasedOptimizer(fg, new BatchTrainer(_, new AdaGrad(rate = 0.1), 100))
-  GradientBasedOptimizer(fg, new OnlineTrainer(_, new AdaGrad(), 100, 10000))
+  GradientBasedOptimizer(fg, new BatchTrainer(_, new AdaGrad(), 100))
+  //GradientBasedOptimizer(fg, new OnlineTrainer(_, new AdaGrad(), 100, 10000))
 
   //GradientBasedOptimizer(fg, new OnlineTrainer(_, new AdaGrad(rate = 0.1), 100, 10000))
 
-  WriteNAACL(db)
+  //WriteNAACL(db)
 
 
-  /*
+
   println("train:")
   println(db.toVerboseString(showTrain = true))
   println()
 
   println("predicted:")
   println(db.toVerboseString())
-  */
+
 }
 
 

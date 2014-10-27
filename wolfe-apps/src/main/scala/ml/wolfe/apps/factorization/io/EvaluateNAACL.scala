@@ -53,7 +53,7 @@ object LoadNAACL extends App {
 
 
 object WriteNAACL extends App {
-  def apply(db: TensorDB, filePath: String = "nyt_pair.rank.txt"): Unit = {
+  def apply(db: TensorDB, filePath: String = "./data/out/predict.txt"): Unit = {
     val writer = new FileWriter(filePath)
     val testCellsWithPrediction = db.testCells.map(c => {
       val r = c.key1
@@ -76,8 +76,8 @@ object WriteNAACL extends App {
 
 
 object EvaluateNAACL extends App {
-  val configFile = if (args.length > 0) args(0) else "./wolfe-apps/conf/eval.conf"
-  val pathToLatestPredictions = if (args.length > 1) args(1) else "./wolfe-apps/data/out/predict.txt"
+  val configFile = if (args.length > 0) args(0) else "./conf/eval.conf"
+  val pathToLatestPredictions = if (args.length > 1) args(1) else "./data/out/predict.txt"
   val pathToLatest = pathToLatestPredictions.split("/").init.mkString("/")+"/"
   Conf.add(configFile)
   assert(!Conf.conf.entrySet().isEmpty, "Couldn't find configuration file.")
@@ -85,13 +85,13 @@ object EvaluateNAACL extends App {
   val rankFileNamesAndLabels = Seq(pathToLatestPredictions + ":latest",
     //"./out/bayesian/output.txt:Bayesian",
     //"./data/test-rockt-model-F.txt:F",
-    "./wolfe-apps/data/naacl2013/structured/test-mintz09.txt:Mintz09",
-    "./wolfe-apps/data/naacl2013/structured/test-yao11.txt:Yao11",
-    "./wolfe-apps/data/naacl2013/structured/test-surdeanu12.txt:Surdeanu12",
+    "./data/naacl2013/structured/test-mintz09.txt:Mintz09",
+    "./data/naacl2013/structured/test-yao11.txt:Yao11",
+    "./data/naacl2013/structured/test-surdeanu12.txt:Surdeanu12",
     //"./data/naacl2013/structured/test-riedel13-model-N.txt:N",
-    "./wolfe-apps/data/naacl2013/structured/test-riedel13-model-F.txt:Riedel13-F",
+    "./data/naacl2013/structured/test-riedel13-model-F.txt:Riedel13-F",
     //"./data/naacl2013/structured/test-riedel13-model-NFE.txt:NFE",
-    "./wolfe-apps/data/naacl2013/structured/test-riedel13-model-NF.txt:Riedel13-NF"
+    "./data/naacl2013/structured/test-riedel13-model-NF.txt:Riedel13-NF"
   )
   val rankFileNamesAndLabelsSplit = rankFileNamesAndLabels.map(name =>
     if (name.contains(":")) name.split(":")
