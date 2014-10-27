@@ -19,9 +19,9 @@ object EmbeddedProbLogicEvaluation {
     def relationFilter(rel: String) = rel.startsWith("path") || (rel.startsWith("REL$") && rel != "REL$NA")
 
     //load raw data
-    val trainRaw = FactorizationUtil.loadLiminFile(new File(conf.getString("epl.train")), relationFilter).take(2000)
-    //val train = FactorizationUtil.filterRows(trainRaw.toSeq, 10, 2)
-    val train = FactorizationUtil.filterRowsPairwise(trainRaw.toSeq, 50)
+    val trainRaw = FactorizationUtil.loadLiminFile(new File(conf.getString("epl.train")), relationFilter).take(10000)
+    val train = FactorizationUtil.filterRows(trainRaw.toSeq, 10, 2)
+    //val train = FactorizationUtil.filterRowsPairwise(trainRaw.toSeq, 50)
     val trainRelations = train.flatMap(_.relations.map(_._1)).distinct.sorted
     val freebaseRelations = trainRelations.filter(_.startsWith("REL$"))
 
@@ -83,7 +83,7 @@ object EmbeddedProbLogicPlayground {
 
       )
     )
-    val test = FactorizationUtil.sampleRows(10, 3, 0.2)
+    val test = FactorizationUtil.sampleRows(10, 5, 0.2)
 
 
     val ruleRelations = manualRules.rules2.values.flatMap(r => Seq(r.rel1, r.rel2)).toSeq.distinct.sorted
