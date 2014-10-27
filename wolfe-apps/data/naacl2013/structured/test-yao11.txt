@@ -1,0 +1,2048 @@
+0.9805866910012164	Lehigh University	Bethlehem	REL$/location/location/containedby	REL$/location/location/containedby
+0.9684192285991112	Mehdi Bazargan	Iran	REL$/people/person/nationality	REL$/people/person/nationality
+0.9478911018931165	Portland	Maine	REL$/location/location/containedby	REL$/location/location/containedby
+0.9410392067395598	Robert Ferguson	Continental	NA	REL$/business/person/company
+0.9139640935190597	Washington	Nevada	REL$/location/location/containedby	REL$/location/location/containedby
+0.9075347457713477	Yegor Gaidar	Russia	REL$/people/person/nationality	REL$/people/person/nationality
+0.8991752669032314	Marimba	Kim Polese	REL$/business/company/founders	REL$/business/company/founders
+0.8789158166165382	Kleinman	Yankees	NA	REL$/business/person/company
+0.8766541068362196	Salinas	America	NA	REL$/location/location/containedby
+0.8762341363444718	Loja	Southern Highlands	NA	REL$/location/location/containedby
+0.8732034763407606	University of New Haven	West Haven	REL$/location/location/containedby	REL$/location/location/containedby
+0.8439546187091798	Paris	France	REL$/film/film/country	REL$/location/location/containedby
+0.8100562844821366	Murray L. Weidenbaum	Washington University	NA	REL$/business/person/company
+0.7878209425106643	Rockland	Maine	REL$/location/location/containedby	REL$/location/location/containedby
+0.7740871533425985	Little Falls	Passaic County	REL$/location/hud_county_place/county	REL$/location/location/containedby
+0.7357304567182164	Hunter	New South Wales	NA	REL$/location/location/containedby
+0.729223946296239	Leon Edel	James	NA	REL$/book/author/works_written
+0.7199030176526832	Roland Huntford	Nansen	REL$/book/author/works_written	REL$/book/author/works_written
+0.7015544954591343	Winston Groom	Forrest Gump	REL$/book/author/book_editions_published	REL$/book/author/works_written
+0.6807806710965157	Jean-Pierre Levy	Paris	NA	REL$/people/deceased_person/place_of_death
+0.6601679335957963	Kutaisi	Georgia	REL$/location/location/containedby	REL$/location/location/containedby
+0.6516458838076636	Gordon Hill	Manhattan	NA	REL$/people/deceased_person/place_of_death
+0.6509317331664825	Linda McCartney	Tucson	REL$/people/deceased_person/place_of_death	REL$/people/deceased_person/place_of_death
+0.6390378921797228	Ed Lynch	Chicago	NA	REL$/people/person/place_lived
+0.6339415379173144	Isles of Scilly	Britain	NA	REL$/location/location/containedby
+0.6265425393990138	Victor Riesel	Manhattan	REL$/people/person/place_of_birth	REL$/people/deceased_person/place_of_death
+0.6265425393990138	Lilian Thomson Mowrer	Chicago	NA	REL$/people/deceased_person/place_of_death
+0.6265425393990138	Igor Tamm	Watch Hill	NA	REL$/people/deceased_person/place_of_death
+0.6265425393990138	Jean Gould	Perrysburg	NA	REL$/people/deceased_person/place_of_death
+0.6265425393990138	Robert Winthrop	Upper Brookville	NA	REL$/people/deceased_person/place_of_death
+0.6129014886203747	Irvin Stewart	Washington	NA	REL$/people/deceased_person/place_of_death
+0.6032241713644425	Pebble Beach	Washington	REL$/location/location/containedby	REL$/location/location/containedby
+0.6025217970594304	Friedelind Wagner	Ruhr	NA	REL$/people/deceased_person/place_of_death
+0.5814711004677341	Roger Rosenblatt	Life Itself	NA	REL$/book/author/works_written
+0.5792997271329756	Max Patkin	Paoli	NA	REL$/people/deceased_person/place_of_death
+0.5737792452525649	Mae Questel	Manhattan	NA	REL$/people/deceased_person/place_of_death
+0.5683521522426666	Federal	California	NA	REL$/location/location/containedby
+0.5661598501711645	James Joll	London	NA	REL$/people/deceased_person/place_of_death
+0.555417912908104	Hansel	East Germany	NA	REL$/location/location/containedby
+0.5390730074042986	Luciano Pavarotti	Italy	REL$/people/person/nationality	REL$/people/person/nationality
+0.5309102485314743	Peru	Cole Porter	NA	REL$/film/film/directed_by
+0.526041182966669	Trevor Nunn	Twelfth Night	NA	REL$/book/author/works_written
+0.5229682451793731	Erik Trinkaus	Neandertals	NA	REL$/book/author/works_written
+0.5172609982908906	Richard Taruskin	Stravinsky	NA	REL$/book/author/works_written
+0.5140727894572213	Peter Manso	Biography	NA	REL$/book/author/works_written
+0.5096337544470408	Sophia Antipolis	France	NA	REL$/location/location/containedby
+0.5069122800747435	Robinson	Riverdale	NA	REL$/people/person/place_of_birth
+0.5063563671781578	Austin Pendleton	Arvin Brown	NA	REL$/film/film/directed_by
+0.5035509091620508	David Jacobs	Knots Landing	NA	REL$/book/author/works_written
+0.4937190506389672	Edmund White	Skinned Alive	NA	REL$/book/author/works_written
+0.49153861321437364	Silvio Berlusconi	Milan	REL$/people/person/place_of_birth	REL$/people/person/place_of_birth
+0.48156071977772413	Pacific Heights	John Schlesinger	REL$/film/film/directed_by	REL$/film/film/directed_by
+0.47526661034058426	Marc Bazin	Haiti	NA	REL$/people/person/nationality
+0.46842108783764524	Goodenow	New York	NA	REL$/people/person/place_lived
+0.467093020534784	Seymour Martin Lipset	Stanford University	REL$/business/person/company	REL$/business/person/company
+0.46035305830224044	Control Data	Big Board	NA	REL$/organization/parent/child
+0.45610022056150257	Macbeth	Trevor Nunn	NA	REL$/film/film/directed_by
+0.45292890752284	Baker	Memphis	NA	REL$/people/person/place_of_birth
+0.45292890752284	Levy	Rockville Centre	NA	REL$/people/person/place_of_birth
+0.4488738541350086	Merlin	Robert Halmi Sr.	REL$/film/film/produced_by	REL$/film/film/produced_by
+0.44357246827834657	WSHU	Fairfield	NA	REL$/broadcast/broadcast/area_served
+0.43638858735058983	Clinton	Thompson	NA	REL$/location/location/containedby
+0.43638858735058983	O'Bannon	Goldsmith	NA	REL$/location/location/containedby
+0.43638858735058983	Carnahan	Kelly	NA	REL$/location/location/containedby
+0.43638858735058983	Clinton	Delamare	NA	REL$/location/location/containedby
+0.4267015432072179	Derrick Coleman	Syracuse	NA	REL$/location/location/containedby
+0.41823240622578944	LeRoy Collins	Tallahassee	REL$/people/person/place_lived	REL$/people/deceased_person/place_of_death
+0.41823240622578944	Sumner Locke Elliott	Manhattan	NA	REL$/people/deceased_person/place_of_death
+0.4163324039184312	Frank Rowlett	Rose Hill	NA	REL$/people/person/place_of_birth
+0.40817830866590316	Ronnie McAda	Army	NA	REL$/people/person/place_of_birth
+0.4042191223498303	Richard Rogers	Dome	REL$/book/author/works_written	REL$/business/person/company
+0.395825111956463	New York Mets	New York City	REL$/sports/sports_team/location	REL$/location/location/containedby
+0.38694371394204696	D. M. Thomas	White Hotel	NA	REL$/book/author/works_written
+0.3549867870366465	Long Island	Tampa	NA	REL$/location/location/containedby
+0.3503602296910039	Nationalist Party	China	NA	REL$/people/person/nationality
+0.3479445892419364	Tommy Svensson	Sweden	REL$/people/person/place_of_birth	REL$/people/person/nationality
+0.3414152277288761	Rangers	New York City	NA	REL$/people/person/place_lived
+0.3063047246992195	Mevlana	Turkey	REL$/film/film/country	REL$/location/location/containedby
+0.2900215234095183	Vittorio Craxi	Milan	REL$/people/person/place_lived	REL$/people/person/nationality
+0.2900215234095183	Pupi Avati	Italian	REL$/people/person/ethnicity	REL$/people/person/nationality
+0.2705105633559518	Owen Arthur	Barbados	REL$/people/person/place_of_birth	REL$/people/person/nationality
+0.24679485069609508	Suffern	New York	REL$/location/location/containedby	REL$/location/location/containedby
+0.23798587742571364	Michael Palin	Andrew McAlpine	NA	REL$/film/film/written_by
+0.23798587742571364	Mary Agnes Donoghue	Andrew McAlpine	NA	REL$/film/film/written_by
+0.23798587742571364	Thomas Ackerman	Scott Kroopf	NA	REL$/film/film/written_by
+0.23798587742571364	Christopher Koefoed	Penny Barrett	NA	REL$/film/film/written_by
+0.23798587742571364	Michael Palin	Patrick Cassavetti	NA	REL$/film/film/written_by
+0.22949308123283893	Wealth of Nations	Adam Smith	REL$/book/book_edition/author_editor	REL$/film/film/directed_by
+0.206060385002231	Sony Corporation of America	Sony Music Entertainment	REL$/organization/parent/child	REL$/organization/parent/child
+0.206060385002231	Walden	Henry David Thoreau	REL$/book/book_edition/author_editor	REL$/organization/parent/child
+0.16303418238330228	Park City	Ann Beattie	REL$/book/book_edition/author_editor	REL$/people/person/parents
+0.15050228545953714	Louis Comfort Tiffany	Charles Lewis Tiffany	REL$/people/person/parents	REL$/film/film/directed_by
+0.1481930895599835	John Semper	John F. Burnett	NA	REL$/book/author/works_written
+0.10437043666204623	Richard Nord	Lee Rich	NA	REL$/business/person/company
+0.10437043666204623	Roberts	Lauren Lloyd	NA	REL$/business/person/company
+-0.5109252165903302	William Ryan	EDO Corporation	NA	REL$/business/person/company
+-0.5524568533894718	Sunnyside	Westchester	NA	REL$/location/location/containedby
+-0.5588272815218731	John Fitzgerald	North America	NA	REL$/business/person/company
+-0.5604322958332518	California Angels	Yankee Stadium	NA	REL$/sports/sports_team/arena_stadium
+-0.5615812581723922	Low Memorial Library	Columbia University	REL$/location/location/containedby	REL$/business/person/company
+-0.5615812581723922	Joseph L. Kennedy	College of Technology	NA	REL$/business/person/company
+-0.5748829429789959	St Agnes	Brooklyn	NA	REL$/location/location/containedby
+-0.5766138477455776	Lauran Hoffman	Bar Girls	REL$/book/author/works_written	REL$/book/author/works_written
+-0.5824208802843744	Northern California	Chester	NA	REL$/location/us_county/hud_county_place
+-0.5854450347653289	Murray Gell-Mann	California Institute of Technology	REL$/business/person/company	REL$/business/person/company
+-0.5854450347653289	Zia Mian	Princeton	REL$/people/person/place_lived	REL$/business/person/company
+-0.5894544091793479	Canandaigua	Almaden	NA	REL$/organization/parent/child
+-0.5939193042609264	Bertie Ahern	Northern Ireland Assembly	NA	REL$/people/person/nationality
+-0.5954052903558655	Ron Perlman	Revlon	NA	REL$/business/person/company
+-0.6122829021986631	St. Luke	Roosevelt	NA	REL$/location/location/containedby
+-0.6137927347108842	Riordan Roett	Johns Hopkins University	REL$/business/person/company	REL$/business/person/company
+-0.615284928355478	Tipperary Hill	Syracuse	REL$/location/neighborhood/neighborhood_of	REL$/location/location/containedby
+-0.6158635455458195	Henry IV	JoAnne Akalaitis	NA	REL$/film/film/directed_by
+-0.63059248912846	Unisys	Sperry	NA	REL$/organization/parent/child
+-0.6311767723765932	Changle	Fujian Province	NA	REL$/location/location/containedby
+-0.6457323359070771	Mr. Raymond	Pratt Institute	NA	REL$/business/person/company
+-0.6466871084924831	John E. Chubb	Stanford University	NA	REL$/business/person/company
+-0.6466871084924831	Karen Lystra	University of California	NA	REL$/business/person/company
+-0.6466871084924831	James H. Stock	University of California	NA	REL$/business/person/company
+-0.6466871084924831	Paul M. Ong	University of California	NA	REL$/business/person/company
+-0.6482062176993673	WFMU	East Orange	NA	REL$/location/location/containedby
+-0.6531972836469307	Orlando Figes	Cambridge University	NA	REL$/business/person/company
+-0.6570745667097649	Insurance	Arizona	NA	REL$/location/location/containedby
+-0.6575013768037287	Vanderbilt Stadium	Nashville	REL$/location/location/containedby	REL$/location/location/containedby
+-0.6580700665676049	Administration	Israelis	NA	REL$/location/location/containedby
+-0.6621469009736938	Thurgood Marshall	Baltimore	REL$/people/person/place_of_birth	REL$/people/person/place_of_birth
+-0.6621469009736938	Miss Bishop	Washington	NA	REL$/people/person/place_of_birth
+-0.6630126279617912	Los Angeles	Syracuse	NA	REL$/location/location/containedby
+-0.6649725009032095	Humphrey	London	NA	REL$/people/person/place_of_birth
+-0.6718429611045316	DC Talk	Christian	NA	REL$/music/artist/origin
+-0.6739286501629926	Stephen S. Roach	Morgan Stanley	REL$/business/person/company	REL$/business/person/company
+-0.6856319713860086	Ted Fang	The Independent	NA	REL$/business/person/company
+-0.6924297780405051	Richard Watkins	Republican	NA	REL$/people/person/place_lived
+-0.6931501333015397	Alcoholics Anonymous	Dick B.	NA	REL$/people/person/place_lived
+-0.6963048266523628	Dublin	Toronto	NA	REL$/people/person/place_of_birth
+-0.700515488846007	Emily Rosenbaum	Fordham	NA	REL$/business/person/company
+-0.700515488846007	Tenafly	Columbia University	NA	REL$/business/person/company
+-0.700515488846007	Bernard Lefkowitz	Columbia	NA	REL$/business/person/company
+-0.700515488846007	Sylvain Cappell	New York University	REL$/business/person/company	REL$/business/person/company
+-0.701699859385473	Montclair	Oakland	REL$/location/location/containedby	REL$/location/location/containedby
+-0.704113925615542	Marcel Aubut	Quebec Nordiques	NA	REL$/sports/sports_team_owner/teams_owned
+-0.7091623205524376	Wave Hill	New Yorkers	NA	REL$/location/location/containedby
+-0.7108213306165527	David Bishop	MGM Home Entertainment	NA	REL$/business/person/company
+-0.7108213306165527	Terry Ellis	Imago Records	NA	REL$/business/person/company
+-0.7128589734394317	Munir Akram	Pakistan	REL$/people/person/nationality	REL$/people/person/nationality
+-0.7131975582851868	Christopher Young	Cyveillance	NA	REL$/business/person/company
+-0.7140864630304566	Mel Farr	Detroit	NA	REL$/people/person/place_of_birth
+-0.7157673905358092	Tom McCall	Republican	NA	REL$/people/person/place_lived
+-0.7186225000189566	Mike Caruso	Queens	REL$/people/person/place_lived	REL$/people/person/place_lived
+-0.7203314365385697	Willy Russell	Shirley Valentine	REL$/book/author/works_written	REL$/book/author/works_written
+-0.7206840261576007	Miller	Florida	REL$/location/location/containedby	REL$/location/location/containedby
+-0.721468995512748	Georgica	East Hampton	NA	REL$/location/location/containedby
+-0.721468995512748	Brownsville	Miami	NA	REL$/location/location/containedby
+-0.721468995512748	Warehouse Point	East Windsor	NA	REL$/location/location/containedby
+-0.7255133882558099	Stanley Fish	Duke University Press	NA	REL$/business/person/company
+-0.7271154834611495	Bennett Harrison	Carnegie Mellon University	NA	REL$/business/person/company
+-0.7271154834611495	Charles M. C. Lee	University of Michigan	NA	REL$/business/person/company
+-0.7271154834611495	Norton Zinder	Rockefeller University	NA	REL$/business/person/company
+-0.7271154834611495	Clark	University of Maryland	NA	REL$/business/person/company
+-0.7271154834611495	Arthur Mann	University of Puerto Rico	NA	REL$/business/person/company
+-0.7280213839277683	Democrat	Hackensack	NA	REL$/location/us_county/hud_county_place
+-0.7280213839277683	District	Far Rockaway	NA	REL$/location/us_county/hud_county_place
+-0.7295299220734284	William Maclay	Pennsylvania	NA	REL$/people/person/place_lived
+-0.7333107339888506	Mercedes-Benz	New York	NA	REL$/location/location/containedby
+-0.7338993331304482	Boston	Naples	NA	REL$/location/location/containedby
+-0.7342707891754972	Conecuh County	Mobile	NA	REL$/location/location/containedby
+-0.7355831754085999	Cesar Pelli	Petronas Twin Towers	NA	REL$/location/location/containedby
+-0.735663968434506	Budd Lake	Mount Olive	NA	REL$/location/location/containedby
+-0.7395379958264223	Bay Shore	Medellin	NA	REL$/location/location/containedby
+-0.7396621961912702	Toshiba	Massachusetts Institute of Technology	NA	REL$/business/person/company
+-0.7410913572657212	Arpin	Chicopee	NA	REL$/people/person/place_of_birth
+-0.7442482281555736	Burne-Jones	Birmingham	NA	REL$/people/person/place_of_birth
+-0.7442482281555736	Toussaint	Haiti	NA	REL$/people/person/place_of_birth
+-0.7473999097678137	Londonderry	Belfast	NA	REL$/book/book_edition/place_of_publication
+-0.7528649880014757	Laval	Montreal	NA	REL$/location/location/containedby
+-0.7546590817587681	Malta	Zurich	NA	REL$/location/location/containedby
+-0.7547394418119505	Max Howard	Warner Brothers	NA	REL$/business/person/company
+-0.7549114235442054	Federal	Chicago	NA	REL$/location/location/containedby
+-0.7623817744912293	Tom Kite	Austin	REL$/people/person/place_lived	REL$/people/person/place_of_birth
+-0.7627073534836638	Mother	Jackson	NA	REL$/location/location/containedby
+-0.7627392761162491	Jeff Brohm	Toronto	NA	REL$/people/person/place_lived
+-0.7645493770373537	St. Nicholas	Harlem	NA	REL$/location/location/containedby
+-0.7653796300868597	Chandra	Cambridge	NA	REL$/location/location/containedby
+-0.7655455856495186	CBC	Colorado	NA	REL$/location/location/containedby
+-0.7656927929506003	Staten Island	Florida	NA	REL$/location/location/containedby
+-0.7676437252917729	Mark Crispin Miller	Johns Hopkins University	NA	REL$/business/person/company
+-0.7686582821699718	Avi Shlaim	College	NA	REL$/business/person/company
+-0.7744711979025318	John Muir	Sierra	NA	REL$/book/author/works_written
+-0.7752822715516839	Savannah	New York	REL$/location/location/containedby	REL$/location/location/containedby
+-0.7762295044593818	Mayor	East Peoria	NA	REL$/people/person/place_of_birth
+-0.7778852363174495	Michael Lynton	Penguin	NA	REL$/business/person/company
+-0.7781062131559809	Pacific	Nicaragua	NA	REL$/location/location/containedby
+-0.7805685684613136	Bartow-Pell Mansion	Bronx	NA	REL$/location/location/containedby
+-0.780977659018876	Douglas Rodriguez	Florida	NA	REL$/people/person/place_of_birth
+-0.7810139108802094	Joseph	Academy	NA	REL$/business/person/company
+-0.7813219354638213	Sheraton	Chicago	NA	REL$/location/location/containedby
+-0.7815992005503598	Lake Forest High School	Dover	NA	REL$/location/location/containedby
+-0.7816132428682324	University of Wales	Imperial College London	NA	REL$/location/location/containedby
+-0.7819247596552276	Yogen Dalal	Mayfield Fund	REL$/business/person/company	REL$/business/person/company
+-0.7819746674365988	Tom Luddy	Telluride Film Festival	NA	REL$/business/person/company
+-0.7827341556109212	Philip S. Khoury	Middle East	NA	REL$/people/person/nationality
+-0.7887754188822785	Tretyakov Gallery	Moscow	REL$/location/location/containedby	REL$/location/location/containedby
+-0.7898569097193301	Celestine Sibley	Atlanta	NA	REL$/location/location/containedby
+-0.7911400823574082	Mike McGrady	Naked Came the Stranger	NA	REL$/book/author/works_written
+-0.7926190644541029	Mill Valley	Marin County	REL$/location/hud_county_place/county	REL$/location/location/containedby
+-0.7937185648769687	Russian	Brothers Karamazov	NA	REL$/book/author/works_written
+-0.7942441361468503	Charles Kennedy	Fox	NA	REL$/business/person/company
+-0.7954089261877598	University of Notre Dame	East	NA	REL$/location/location/containedby
+-0.7957878603126209	David Fanshel	Columbia University	NA	REL$/business/person/company
+-0.7962782920726184	David Nelson	Penguin	NA	REL$/business/person/company
+-0.7966822789740861	Seth Goldstein	Flatiron Partners	NA	REL$/business/person/company
+-0.7999591381222536	Billingsley	Spelman College	NA	REL$/business/person/company
+-0.8007379530881433	Surviving	Thornwood	NA	REL$/location/location/containedby
+-0.8010289562108136	James M. Jenness	North America	NA	REL$/business/person/company
+-0.801912264447412	Tozeur	Kairouan	NA	REL$/location/location/containedby
+-0.8042101373089614	Loup Garou	Cajun	NA	REL$/business/person/company
+-0.8042182173542862	Andre Harrell	Uptown	NA	REL$/business/person/company
+-0.804416310840658	John England	Tuscaloosa	NA	REL$/people/person/place_lived
+-0.8053213750387558	Town Hall	Heritage Foundation	NA	REL$/business/person/company
+-0.8061811928920626	Coast Guard	New York Harbor	NA	REL$/location/location/containedby
+-0.8065836999109544	Metuchen	Piscataway	NA	REL$/location/location/containedby
+-0.807441224774521	Waldorf-Astoria	BellSouth	NA	REL$/business/person/company
+-0.8098180230916303	Northeastern University	Dedham	NA	REL$/location/location/containedby
+-0.8102200354592188	John Small	Jamaica	NA	REL$/people/person/place_of_birth
+-0.8102200354592188	McMahon	Rochester	NA	REL$/people/person/place_of_birth
+-0.8122372085883693	Simpson	New York City	NA	REL$/location/location/containedby
+-0.8122467826930629	Seattle	Madison Square Garden	NA	REL$/sports/sports_team/arena_stadium
+-0.8125687694206449	E. E. Cummings	Santa Claus	NA	REL$/business/person/company
+-0.8138277412896987	Coalition	Homelessness	NA	REL$/location/location/containedby
+-0.8140495953378497	Donald Rubin	New York	NA	REL$/location/location/containedby
+-0.8146978900763654	Phil Gramm	Washington	NA	REL$/location/location/containedby
+-0.8159613478516531	First Lady	New York	NA	REL$/location/location/containedby
+-0.8160245790545988	Raymond Robinson	Jersey City	NA	REL$/people/person/place_lived
+-0.8160310342302384	Patriots	Soldier Field	NA	REL$/location/location/containedby
+-0.8173260492696199	Walter Turnbull	State University of New York	NA	REL$/business/person/company
+-0.8173474100640831	Barbara Cohen	Washington	NA	REL$/people/person/place_lived
+-0.818254386582417	Guanajuato	Mexico City	NA	REL$/location/location/containedby
+-0.8192924719338388	Warriors	Sweet	NA	REL$/location/location/containedby
+-0.8194809648098129	Britain	Common Market	NA	REL$/location/location/containedby
+-0.8202576062334503	Steve Bruce	Manchester	NA	REL$/location/location/containedby
+-0.8204810963529398	David Miles	Merrill Lynch	NA	REL$/business/person/company
+-0.8211379704047992	Franklin Watts	New York	NA	REL$/location/location/containedby
+-0.8214484184728912	Jackie	Connecticut	NA	REL$/location/location/containedby
+-0.8232499582988632	Robert Webster	Michigan State University	NA	REL$/business/person/company
+-0.824686548896549	Yvonne Roberts	Daily Telegraph	NA	REL$/business/person/company
+-0.824686548896549	Red Rock West	The New York Times	NA	REL$/business/person/company
+-0.824686548896549	Museum of Modern Art	The New York Times	NA	REL$/business/person/company
+-0.8263285629404828	Los Angeles	Eugene	NA	REL$/location/location/containedby
+-0.8267293658795271	David Smith	New Jersey	NA	REL$/location/location/containedby
+-0.827762178699606	Milan	Brooklyn	NA	REL$/location/location/containedby
+-0.8281464370993392	Monica Mancini	Henry Mancini	NA	REL$/people/person/parents
+-0.8287478704951705	Manhattan	Ridgewood	NA	REL$/location/location/containedby
+-0.8288010741978454	Rochus Gliese	Sunrise	NA	REL$/business/person/company
+-0.8294702743770191	Bosnia	Bonn	NA	REL$/location/location/containedby
+-0.8297253765646087	Alice Wong	New York	NA	REL$/business/person/company
+-0.8302347279443348	ABC	The View	NA	REL$/book/author/works_written
+-0.8306746567825727	West Coast	St. Helena	NA	REL$/location/location/containedby
+-0.8314895267134097	Berkeley	Northampton	NA	REL$/location/location/containedby
+-0.8314895267134097	Baltimore	Montpelier	NA	REL$/location/location/containedby
+-0.8318053699401041	Arts	France	NA	REL$/location/location/containedby
+-0.8330334428512511	Barry Sussman	The Washington Post	NA	REL$/business/person/company
+-0.8330334428512511	Andrew Hutchinson	The Daily Telegraph	NA	REL$/business/person/company
+-0.8330334428512511	John Huston Finley	The New York Times	NA	REL$/business/person/company
+-0.8339629791640095	Dole	Iraq	NA	REL$/location/location/containedby
+-0.8340430739141024	Keith Tkachuk	Jets	NA	REL$/people/person/nationality
+-0.8359988354158627	Pacifico	West Village	NA	REL$/location/location/containedby
+-0.8367564812903533	Ben Brantley	Pirandello	NA	REL$/book/author/works_written
+-0.8382630080286373	Rob Jones	Morgan Stanley	NA	REL$/business/person/company
+-0.838391875401092	Paul L. Tractenberg	Rutgers University	NA	REL$/business/person/company
+-0.838391875401092	Bruce Jackson	American Studies	NA	REL$/business/person/company
+-0.8386868003742916	Gwynedd Valley	Philadelphia	NA	REL$/location/location/containedby
+-0.8386868003742916	Fairview Mall	Scranton	NA	REL$/location/location/containedby
+-0.8386868003742916	Beavertown	Portland	NA	REL$/location/location/containedby
+-0.8387557639036622	Chris Washburn	North Carolina	NA	REL$/location/location/containedby
+-0.8392593191978134	Nepal	Appalachia	NA	REL$/location/location/containedby
+-0.8395721824581142	Palm	Manhattan	NA	REL$/location/location/containedby
+-0.840293121295422	Thomas Green	Massachusetts	NA	REL$/location/location/containedby
+-0.8425402160811231	Lycoming	Pennsylvania	NA	REL$/people/person/place_of_birth
+-0.8427237153713756	Luis Reyes	Manhattan	NA	REL$/people/person/place_lived
+-0.843364544154087	Monika	Judaism	NA	REL$/people/person/religion
+-0.8442367203629949	Water Mill	Bridgehampton	NA	REL$/location/location/containedby
+-0.8451085847317612	Brooklyn Academy of Music	Monsters of Grace	NA	REL$/location/location/containedby
+-0.8453891782763869	Michael Williams	Coventry	NA	REL$/people/person/place_lived
+-0.8454130189203655	Stony Point	Bunny	NA	REL$/location/location/containedby
+-0.845500894624857	Scott Rudin	Addams Family	NA	REL$/book/author/works_written
+-0.845521985484334	Cold Mountain	Underworld	NA	REL$/location/location/containedby
+-0.8458767643646932	Michael Gartner	The Tribune	NA	REL$/business/person/company
+-0.8465682761773662	Lions	Michigan	NA	REL$/location/location/containedby
+-0.8489161257104381	Jerry Tucker	New Directions	NA	REL$/location/location/containedby
+-0.8494677144364468	New Britain	Connecticut	REL$/location/location/containedby	REL$/location/location/containedby
+-0.8498625416238523	Steve Lucas	Bohemia	NA	REL$/people/person/place_lived
+-0.8498625416238523	Sandy Miller	Brooklyn	NA	REL$/people/person/place_lived
+-0.850791051691197	Moon Landrieu	Mayor	NA	REL$/location/location/containedby
+-0.8514112070624462	Stephen Booth	University of California	NA	REL$/business/person/company
+-0.8521982020336409	Lyndhurst	Jay Gould	NA	REL$/location/us_county/hud_county_place
+-0.8522042550685214	Germany	East Germany	NA	REL$/location/location/containedby
+-0.8529787070771685	Fair	Stephen Cole	NA	REL$/film/film/written_by
+-0.8531494982567345	Marilyn Oliva	Warren Street	NA	REL$/people/person/place_lived
+-0.8531494982567345	Jeff Morgan	North Fork	NA	REL$/people/person/place_lived
+-0.8545192808027703	Hightstown	East Windsor Regional School District	NA	REL$/location/location/containedby
+-0.8547580067803782	Florida	Vanderbilt University	NA	REL$/location/location/containedby
+-0.8552628957980687	Robert Alexander	Fleet	NA	REL$/people/person/place_lived
+-0.8554153711493174	Michael Quinlan	McDonald	NA	REL$/business/person/company
+-0.8562541823747127	Mandela	New York	NA	REL$/location/location/containedby
+-0.8569935457445612	Jacob	Yale	NA	REL$/location/location/containedby
+-0.8570206706506248	Schultz	Townsend	NA	REL$/people/person/place_lived
+-0.8571743871174627	George Bush	Japan	NA	REL$/location/location/containedby
+-0.8581229821530773	Harper	Dallas	NA	REL$/people/person/place_of_birth
+-0.8590595141633325	Casey Martin	Stanford	NA	REL$/location/location/containedby
+-0.8591848976670282	First Lady	Thailand	NA	REL$/location/location/containedby
+-0.8593785450636271	Dakota Territory	Chicago	NA	REL$/location/location/containedby
+-0.8596577374512705	Ontario	Caribbean	NA	REL$/location/location/containedby
+-0.86021549297425	Mark Collins	Houston	NA	REL$/location/location/containedby
+-0.860754636112378	Central Intelligence Agency	Joint Chiefs of Staff	NA	REL$/business/person/company
+-0.8610345875518802	Cambridge House	NYC	NA	REL$/location/location/containedby
+-0.8617576405091888	Boca Raton	Englewood Cliffs	NA	REL$/location/location/containedby
+-0.8621049147830855	Modern	Abby Aldrich Rockefeller	NA	REL$/location/location/containedby
+-0.862320384538675	Crain Communications Inc.	Advertising Age	NA	REL$/organization/parent/child
+-0.8624006603089382	Jasper	New Hyde Park	NA	REL$/location/location/containedby
+-0.8638260689627575	Andy Kaplan	Dodge	NA	REL$/people/person/place_of_birth
+-0.8645426787652017	East Hampton	Bubs	NA	REL$/location/location/containedby
+-0.8647774865343649	Aziz	French	NA	REL$/people/person/nationality
+-0.8653420443610653	Robert Trumbull	Times	NA	REL$/business/person/company
+-0.8658966101188845	Michael Stember	California	NA	REL$/people/person/place_of_birth
+-0.8673010881901952	Hartford	Garden	NA	REL$/sports/sports_team/arena_stadium
+-0.867458026088658	John Blair	Longview	NA	REL$/people/person/place_lived
+-0.8687366182465944	Olympia	Washington	REL$/location/location/containedby	REL$/location/location/containedby
+-0.8689627688620765	Fiesta Bowl	Cornhuskers	NA	REL$/location/location/containedby
+-0.8693803060758754	Joschka Fischer	Hesse	NA	REL$/people/person/nationality
+-0.8693852054521933	Roger Blackwell	Ohio State University	REL$/business/person/company	REL$/business/person/company
+-0.8695496168777928	Great Plains	Great Lakes	NA	REL$/location/location/containedby
+-0.8695596315183879	Susquehanna River	Harrisburg	NA	REL$/location/location/containedby
+-0.8700203098656496	Vincent Ward	New Zealand	REL$/people/person/nationality	REL$/location/location/containedby
+-0.8702871091604782	James Coates	Chicago Tribune	NA	REL$/book/author/works_written
+-0.8707865670615812	Edwards	Provo	NA	REL$/location/location/containedby
+-0.8710627664841472	Ms. Hinton	Vermont	NA	REL$/business/person/company
+-0.871469686276473	Lawson	Philadelphia	NA	REL$/people/person/place_of_birth
+-0.8716908490778259	Boston University	Maine	NA	REL$/location/location/containedby
+-0.8727028035383936	British Rail	Britain	NA	REL$/location/location/containedby
+-0.8729076414293085	Van Dyke	University of Nevada	NA	REL$/business/person/company
+-0.8730082064648477	Villepinte	Paris	NA	REL$/location/location/containedby
+-0.8732090455629301	Belo Horizonte	Sao Paulo	NA	REL$/location/location/containedby
+-0.8738061768186942	Barbara Clark	Assembly	NA	REL$/people/person/place_lived
+-0.87429217366879	Citrus Bowl	Ireland	NA	REL$/location/location/containedby
+-0.8748549613537516	Wieden	Portland	NA	REL$/location/location/containedby
+-0.8753936759982219	Don	Cleveland Browns	NA	REL$/location/location/containedby
+-0.8758509147535822	River Road	Hoboken	NA	REL$/location/location/containedby
+-0.8767906748344936	Lott	Pascagoula	NA	REL$/people/person/place_lived
+-0.8773387183959012	Richard Raysman	New York	NA	REL$/location/location/containedby
+-0.8773387183959012	Doris Ling-Cohan	New York City Transit Authority	NA	REL$/location/location/containedby
+-0.8777732815134531	East Lansing	Milwaukee	NA	REL$/location/location/containedby
+-0.8779192620552061	Tim Thomas	New Jersey	NA	REL$/location/location/containedby
+-0.8780722594195668	Donald Ferguson	Federal	NA	REL$/business/person/company
+-0.8782645624991053	Chris Spielman	Buffalo	NA	REL$/location/location/containedby
+-0.8786522592007471	Pennsylvania Avenue	Brooklyn	NA	REL$/location/location/containedby
+-0.8787508512077326	Mr. Diamond	University of Chicago	NA	REL$/business/person/company
+-0.8789677789247367	Rose Marie Bravo	Saks	NA	REL$/book/author/works_written
+-0.8794061241986278	Fleet	Shawmut	NA	REL$/organization/parent/child
+-0.8794311406174393	Bob Pursell	Communication Workers of America	NA	REL$/business/person/company
+-0.8801060621490877	Enniskillen	Bridgeport	NA	REL$/location/location/containedby
+-0.8801491166658775	Susan Jones	Arizona	NA	REL$/location/location/containedby
+-0.8802691982432066	Andrzej Rapaczynski	Central European University	NA	REL$/business/person/company
+-0.8814372172474296	Terence Dwyer	Valhalla	NA	REL$/people/person/place_lived
+-0.8814372172474296	Republican	Uniondale	NA	REL$/people/person/place_lived
+-0.8816315983405243	Polish	Finance	NA	REL$/location/location/containedby
+-0.881720994709796	Dale Brown	Wildcats	NA	REL$/location/location/containedby
+-0.8817494450897301	Karl Ulrich	Sloan	NA	REL$/business/person/company
+-0.882122343603388	Cahors	Manhattan	NA	REL$/location/location/containedby
+-0.8829724041455382	Yankee Stadium	East Rutherford	NA	REL$/location/location/containedby
+-0.8837029651326971	Trevor Ncube	The Gazette	NA	REL$/business/person/company
+-0.8837958810950566	Barber Shop	Bronx	NA	REL$/location/location/containedby
+-0.8842111924127797	Queens	Afghanistan	NA	REL$/location/location/containedby
+-0.8843170794672585	Cincinnati	Austin Peay	NA	REL$/location/location/containedby
+-0.8845399539624893	Pirates	Sooners	NA	REL$/location/location/containedby
+-0.8846398593832469	Greenwich Village	Assembly	NA	REL$/location/location/containedby
+-0.8853114021012651	Infinity	Baltimore	NA	REL$/location/location/containedby
+-0.8855913710608396	Stephen Low	IMAX	NA	REL$/business/person/company
+-0.8860863219860502	Bloom	Dallas	NA	REL$/location/location/containedby
+-0.8861409246073422	Michael Winerip	Magazine	NA	REL$/business/person/company
+-0.887380306584686	Box	Florida	NA	REL$/location/location/containedby
+-0.8874556183553817	Orlando Antigua	Bronx	NA	REL$/location/location/containedby
+-0.887602034742541	Travis Ford	Kentucky	NA	REL$/location/location/containedby
+-0.8877256286577021	Stuart Klipper	Antarctica	NA	REL$/location/location/containedby
+-0.8877623827074064	Persian Gulf	Derby	NA	REL$/location/location/containedby
+-0.8877722602418494	Luce	Time Inc.	NA	REL$/business/person/company
+-0.8878149458602027	Richard Meier	Brentwood	NA	REL$/location/location/containedby
+-0.8878508835445553	Richard Holloway	Scottish Episcopal Church	NA	REL$/business/person/company
+-0.8879099127555132	Paul Mellon	Washington	NA	REL$/location/location/containedby
+-0.8884331784133945	Indianapolis	Kentucky	NA	REL$/location/location/containedby
+-0.8888604915319206	Soils	Silesia	NA	REL$/location/location/containedby
+-0.8889100214167978	Ethiopia	League of Nations	NA	REL$/location/location/containedby
+-0.8889343171318389	Harrah	Casino Hotels	NA	REL$/business/person/company
+-0.8895075876399298	South Jamaica	New York	NA	REL$/location/location/containedby
+-0.8895191701878448	David Goldberg	New York City	NA	REL$/location/location/containedby
+-0.8895191701878448	David Goldstein	New York City	NA	REL$/location/location/containedby
+-0.8895856993070925	El Paso	Federal	NA	REL$/business/person/company
+-0.8897089894150635	Janet Reno	England	NA	REL$/location/location/containedby
+-0.8897219078877993	Bourse	Paris	NA	REL$/location/location/containedby
+-0.8900053658907687	Bangladesh	South Asian Association for Regional Cooperation	NA	REL$/location/location/containedby
+-0.8902613187267391	Joe DiMaggio	Italians	NA	REL$/location/location/containedby
+-0.8902763500498536	Westwood Studios	Las Vegas	REL$/business/company/place_founded	REL$/location/location/containedby
+-0.8903091856155969	Peter Tarnoff	Beijing	NA	REL$/location/location/containedby
+-0.8915106915623858	Navy	Colgate	NA	REL$/location/location/containedby
+-0.8915522124794562	Andy Cohen	New York	NA	REL$/location/location/containedby
+-0.8919529301604974	Sudan	Jersey City	NA	REL$/location/location/containedby
+-0.892126581799159	William Van Alen	Philadelphia	NA	REL$/people/person/place_lived
+-0.892126581799159	Mickey Kantor	Los Angeles	NA	REL$/people/person/place_lived
+-0.8923847208766355	Coughlin	Gatorade	NA	REL$/people/person/place_of_birth
+-0.8925920072038456	Owens	Princeton	NA	REL$/location/location/containedby
+-0.8928336798364208	Mike Simpson	Idaho	REL$/people/person/place_lived	REL$/people/person/place_lived
+-0.8928336798364208	Duke	Alaska	NA	REL$/people/person/place_lived
+-0.8933710859358234	Sicily	Bohemia	NA	REL$/location/location/containedby
+-0.8935356297594159	Amper	Telefonica	NA	REL$/business/person/company
+-0.8940827668620026	Bob McKay	Chicago	NA	REL$/people/person/place_of_birth
+-0.8944991369947888	Brazilians	Stanford Stadium	NA	REL$/location/location/containedby
+-0.8948451243811828	Vaccine	British	NA	REL$/business/person/company
+-0.8950389537792963	John Ash	Global Aviation	NA	REL$/business/person/company
+-0.8950389537792963	John McDaniel	KNHC	NA	REL$/business/person/company
+-0.8951990564500231	Don Padgett	Pinehurst	NA	REL$/location/location/containedby
+-0.8959543333645761	Mark McCormick	Essex Fells	NA	REL$/people/person/place_lived
+-0.8964996839123099	Minnesota	West Lafayette	NA	REL$/location/location/containedby
+-0.8966934817522372	Lans	Los Angeles	NA	REL$/people/person/place_lived
+-0.8967632279890895	Vaclav Havel	Opera	NA	REL$/book/author/works_written
+-0.8969087389363608	John Kowalski	Robert Morris College	NA	REL$/business/person/company
+-0.8969199392501437	Rossini	Paris	NA	REL$/location/location/containedby
+-0.8973285985586814	Gregg Bingham	California	NA	REL$/location/location/containedby
+-0.8976708842224258	Derby Line	Newport	NA	REL$/location/location/containedby
+-0.8977726915215495	North Korea	Korean Peninsula	NA	REL$/location/location/containedby
+-0.8979441608766842	Grand Duke	Miami	NA	REL$/location/location/containedby
+-0.8988711093061797	Run	Manhattan	NA	REL$/location/location/containedby
+-0.8988873144979568	Igor Larionov	Soviet Union	NA	REL$/people/person/nationality
+-0.8992749091246716	Gerald Benjamin	Senate	NA	REL$/people/person/place_lived
+-0.899409961160358	Orange County	Kiryas Joel	REL$/location/us_county/hud_county_place	REL$/location/location/containedby
+-0.8999560975042226	Internet	The Washington Post	NA	REL$/business/person/company
+-0.9000958592373445	James Loughran	Brooklyn College	NA	REL$/people/person/place_lived
+-0.900237667625376	Lieberman	Old Dominion	NA	REL$/location/location/containedby
+-0.9002943139773771	Democratic Party	National Party	NA	REL$/people/person/nationality
+-0.9005669414584099	Michael R. Taylor	Food Safety and Inspection Service	NA	REL$/business/person/company
+-0.9010472509479505	David Martin	Genentech	NA	REL$/business/person/company
+-0.9018615560953464	Ken Brown	New York	NA	REL$/people/person/place_of_birth
+-0.9033009674292778	St. Francis	Loretto	NA	REL$/location/location/containedby
+-0.9036869944262595	Michael Waldman	Public Citizen	NA	REL$/business/person/company
+-0.9037177119684904	Dallas	Galaxy	NA	REL$/location/location/containedby
+-0.9044039079538873	Bridgehampton	Long Island	NA	REL$/location/location/containedby
+-0.9045524121544934	Hanoi	Saigon	NA	REL$/location/location/containedby
+-0.9046249692310314	Stern	Los Angeles	NA	REL$/people/person/place_of_birth
+-0.9052852691946149	Hollinger	The News	NA	REL$/book/author/works_written
+-0.9054831977251413	Bryan Trottier	Islander	NA	REL$/location/location/containedby
+-0.9055669439780554	David Cohen	Queens College	NA	REL$/business/person/company
+-0.9055669439780554	Donald Foster	Vassar	NA	REL$/business/person/company
+-0.9056909736078714	John Weaver	San Antonio	NA	REL$/people/person/place_lived
+-0.9061707837492234	Scott Weiland	Creep	NA	REL$/business/person/company
+-0.9063788772527073	Jews	Jackson Heights	NA	REL$/location/location/containedby
+-0.9065687888370052	David X. Cohen	Simpsons	NA	REL$/business/person/company
+-0.9066412947692218	Carl Kruger	Canarsie	NA	REL$/people/person/place_lived
+-0.906749569819878	Charlestown	Catonsville	NA	REL$/location/location/containedby
+-0.9072293535271967	Betty Comden	Peter Pan	NA	REL$/book/author/works_written
+-0.9073748666313579	Mr. Thompson	City Hall	NA	REL$/location/location/containedby
+-0.9078384105653905	Li	San Juan	NA	REL$/location/location/containedby
+-0.9082408461860727	Patrick Tyler	Kurdistan	NA	REL$/location/location/containedby
+-0.9086752569088129	Huntingdon Life Sciences	East Millstone	NA	REL$/location/location/containedby
+-0.9097200554529479	Philadelphia Phillies	Bill Giles	REL$/sports/professional_sports_team/owner_s	REL$/location/location/containedby
+-0.9101062420815224	Hilary Bailey	British	NA	REL$/business/person/company
+-0.9101955894533619	Humphrey	Columbus	NA	REL$/location/location/containedby
+-0.9102320968199415	Lake Champlain	Hudson River	NA	REL$/location/location/containedby
+-0.9105042919228532	Franz-Josef Kniola	North Rhine-Westphalia	NA	REL$/people/person/nationality
+-0.9106658768821502	Tom Selleck	CBS	NA	REL$/business/person/company
+-0.9112102905283621	Los Lobos	La Bamba	REL$/music/composer/compositions	REL$/book/author/works_written
+-0.9113612696890027	Newark Bears	Yankee	NA	REL$/people/person/place_lived
+-0.9113772143935163	David Carney	New Hampshire	NA	REL$/location/location/containedby
+-0.9119128128268493	Daniel Myrick	New York	NA	REL$/location/location/containedby
+-0.9120434830900881	Notre Dame	West Virginia	NA	REL$/location/location/containedby
+-0.912640690887574	Vada Pinson	Cincinnati Reds	NA	REL$/location/location/containedby
+-0.912766434919726	Chappaqua	Bronxville	NA	REL$/location/location/containedby
+-0.9127825054695677	World Financial Center	Wall Street	NA	REL$/location/location/containedby
+-0.9129881334248844	Emerson	National Lawyers Guild	NA	REL$/business/person/company
+-0.9129881334248844	New York	Equality Now	NA	REL$/business/person/company
+-0.9129881334248844	Arabs	United States of America	NA	REL$/business/person/company
+-0.9130672302332069	Intermediate School	West	NA	REL$/location/location/containedby
+-0.9130672302332069	Apollo Theater	West	NA	REL$/location/location/containedby
+-0.9132253798810436	Alternative	Russians	NA	REL$/location/location/containedby
+-0.9142115084438668	Edgar	College Park	NA	REL$/people/person/place_lived
+-0.9142505182442898	Lefebvre	Colorado Avalanche	NA	REL$/people/person/nationality
+-0.9145128704827056	Hill	University of Oklahoma	NA	REL$/business/person/company
+-0.9147421354228518	Tokyo	Singapore	NA	REL$/location/location/containedby
+-0.91491208717809	John Greaves	Cobb	NA	REL$/location/location/containedby
+-0.9149529877313348	Frank G. Wisner	Geneva	NA	REL$/people/person/nationality
+-0.915176846690339	Gary	Freehold	NA	REL$/people/person/place_lived
+-0.9153198710620302	Ronald Lauder	New York	NA	REL$/people/person/place_lived
+-0.9154070075205676	Red Foxes	Siena	NA	REL$/location/location/containedby
+-0.915454945984918	Perot	Bradley	NA	REL$/location/location/containedby
+-0.9154730610839698	Stuart Ostrow	M. Butterfly	NA	REL$/book/author/works_written
+-0.9157341244332189	Pyxis	San Diego	NA	REL$/business/company/place_founded
+-0.9157341244332189	Bolar	Pittsburgh	NA	REL$/business/company/place_founded
+-0.9157341244332189	Circa	Copiague	NA	REL$/business/company/place_founded
+-0.9157341244332189	Pharmacopeia	Princeton	NA	REL$/business/company/place_founded
+-0.9157376959348167	Richard Stengel	Time	REL$/business/person/company	REL$/business/person/company
+-0.9159186016725775	Luis Polonia	Yanks	NA	REL$/people/person/nationality
+-0.9159907835965032	Nevada	Bally	NA	REL$/organization/parent/child
+-0.9161879381094747	Charleston	Mercer	NA	REL$/location/location/containedby
+-0.9161960241797088	Herbert Muschamp	Modernism	NA	REL$/business/person/company
+-0.9163900236002105	Apple Ridge	Mahwah	NA	REL$/location/location/containedby
+-0.9164623280886212	Linda Wong	Edison	NA	REL$/people/person/place_lived
+-0.9164623280886212	Fred Levin	Florida	NA	REL$/people/person/place_lived
+-0.9166526349136193	Steve McQueen	English	NA	REL$/people/person/place_of_birth
+-0.9168653252668139	Greg Gumbel	CBS	NA	REL$/business/person/company
+-0.9176779913994385	Wallace Harrison	Rockefeller Center	NA	REL$/business/person/company
+-0.9177331585127322	Barry Seal	Mena	NA	REL$/people/person/nationality
+-0.9177943946335355	Native	Spanish	NA	REL$/location/location/containedby
+-0.9179382110718248	Andrew Gonzalez	Brooklyn	NA	REL$/people/person/place_of_birth
+-0.9179890733090803	Ken Carey	Andy Carey	NA	REL$/book/author/works_written
+-0.9182311468536778	Spielman	Buffalo Bills	NA	REL$/location/location/containedby
+-0.9182346726257538	Cocteau	France	NA	REL$/people/person/nationality
+-0.9182595376117235	Kentucky	New Orleans	NA	REL$/location/location/containedby
+-0.9182966822360983	Robert Haley	Charleston	NA	REL$/location/location/containedby
+-0.9189480872191167	Rambus	Mountain View	NA	REL$/location/location/containedby
+-0.9189480872191167	Westmark	Dallas	NA	REL$/location/location/containedby
+-0.918956754357171	Brian Kennedy	Hertz	NA	REL$/business/person/company
+-0.919030155711624	Mostar	European Union	NA	REL$/location/location/containedby
+-0.9194158995226698	Harland Bartholomew	St. Louis	NA	REL$/people/person/nationality
+-0.9200006777261298	Michael Kazin	Woodrow Wilson International Center for Scholars	NA	REL$/business/person/company
+-0.9204931741007413	Frank G. Wisner	Egypt	NA	REL$/people/person/nationality
+-0.9206994787066	Mr. Jones	Ayden	NA	REL$/people/person/place_lived
+-0.9207154707915262	Betsy McCaughey Ross	Republican	NA	REL$/people/person/place_lived
+-0.9207992629388668	Louisville	Army	NA	REL$/location/location/containedby
+-0.9208218628845353	Hal Mumme	Kentucky	NA	REL$/people/person/place_lived
+-0.9208873875011185	Sleepy Hollow	Tim Burton	REL$/film/film/directed_by	REL$/film/film/directed_by
+-0.9208926777634285	Mr. Jackson	Mississippi	NA	REL$/location/location/containedby
+-0.9215690803821981	Tennessee Valley Authority	Alabama	NA	REL$/location/location/containedby
+-0.9217858629034436	Chuck McElroy	Colorado	NA	REL$/people/person/place_of_birth
+-0.9221580214715083	Crown Prince	Kuwait	NA	REL$/location/location/containedby
+-0.9222170459252071	Nestle	French	NA	REL$/location/location/containedby
+-0.9224203094851717	Tignanello	Chianti	NA	REL$/business/person/company
+-0.9230353315137433	Robert Paul	Miami	NA	REL$/people/person/place_lived
+-0.9234405281656718	Bruce Yandle	Clemson University	NA	REL$/location/location/containedby
+-0.9234697716502838	Jim Edwards	Louisville	NA	REL$/people/person/place_lived
+-0.9238395517566992	David Young	Reynolds	NA	REL$/business/person/company
+-0.9239834052590038	Laughs	Montreal	NA	REL$/location/location/containedby
+-0.9243765078795435	Gordon	Khartoum	NA	REL$/location/location/containedby
+-0.9244958761575351	Sabre	American Airlines	NA	REL$/people/person/nationality
+-0.9247510713338619	Stein	Harlem	NA	REL$/people/person/place_lived
+-0.9249193997117151	Messier	Ranger	NA	REL$/location/location/containedby
+-0.9251275100560733	Maryland	Eagles	NA	REL$/location/location/containedby
+-0.9254663266301233	Gu Wenda	New York	NA	REL$/location/location/containedby
+-0.9257304108034178	Henry Alexander	Bureau	NA	REL$/business/person/company
+-0.9257304108034178	Amp Lee	Warner	NA	REL$/business/person/company
+-0.926009901745573	Vladimir Konstantinov	Detroit	NA	REL$/people/person/nationality
+-0.9262411384881495	Bret Saberhagen	Minnesota	NA	REL$/location/location/containedby
+-0.9264777160212894	Magnum Photos	Paris	NA	REL$/location/location/containedby
+-0.9266987879367519	Garcia	Spain	NA	REL$/location/location/containedby
+-0.926808109583312	Robert Ballard	Lange	NA	REL$/business/person/company
+-0.9268319322424464	Clinton	House	NA	REL$/location/location/containedby
+-0.9273523031238409	Creighton	Lubbock	NA	REL$/location/location/containedby
+-0.9274917232554779	Hugh Culverhouse	Tampa Bay	NA	REL$/people/person/place_of_birth
+-0.9275525328586515	Donna Karan	Italy	NA	REL$/location/location/containedby
+-0.9275912020099504	Denver	Manhattan	NA	REL$/location/location/containedby
+-0.9280299856764594	New Orleans Saints	National Football League	REL$/sports/sports_team/league	REL$/sports/sports_team/league
+-0.9281532687981546	Paul Poiret	Paris	REL$/people/person/place_of_birth	REL$/location/location/containedby
+-0.9282276616306954	Yevgeny Sadovyi	Olympic	NA	REL$/sports/sports_team/league
+-0.9286374135133867	Bruce Gebhardt	Newark	NA	REL$/people/person/place_lived
+-0.9287401607152123	John Russell	Ancient Abbey	NA	REL$/book/author/works_written
+-0.9288787786550583	Bain	Villanova	NA	REL$/location/location/containedby
+-0.9288787786550583	Bart Oates	Redskins	NA	REL$/location/location/containedby
+-0.9291155744059563	Hawaiian	Aloha Airlines	NA	REL$/location/location/containedby
+-0.92916938290463	Sean McCann	Harvard	NA	REL$/people/person/nationality
+-0.9291738340471365	Stephen M. Ross	New York	NA	REL$/location/location/containedby
+-0.9295395158208742	Christopher Beck	New York	NA	REL$/business/person/company
+-0.9295704187571086	Mattingly	Yankee Stadium	NA	REL$/location/location/containedby
+-0.92981501998686	Wilson	AIDS	NA	REL$/business/person/company
+-0.9300260823088967	Bob Anderson	Congress	NA	REL$/people/person/place_lived
+-0.9300260823088967	Randall Terry	Congress	NA	REL$/people/person/place_lived
+-0.9301059225591759	Moody	Nassau	NA	REL$/business/person/company
+-0.9301479731640871	Lynda	Windsor	NA	REL$/location/location/containedby
+-0.9303504400139937	David Gray	New York City Ballet	NA	REL$/location/location/containedby
+-0.9304771564616885	Mann	Jets	NA	REL$/location/location/containedby
+-0.9305319034760521	Galatasaray	Turkey	NA	REL$/location/location/containedby
+-0.9307054096907166	Silicon Valley	America	NA	REL$/location/location/containedby
+-0.9307104710683147	California	Western	NA	REL$/location/location/containedby
+-0.9314502380235608	Rodriguez	Los Angeles	NA	REL$/location/location/containedby
+-0.931498631121591	Ralph Ellison	Charge	NA	REL$/book/author/works_written
+-0.9316252599062728	Peter Murphy	Atlantic City High School	NA	REL$/business/person/company
+-0.9316830267574091	Hobie Cat	Oceanside	NA	REL$/location/location/containedby
+-0.9320286596291473	Moscow	Syria	NA	REL$/location/location/containedby
+-0.9322392625986947	Newcastle	Liverpool	NA	REL$/location/location/containedby
+-0.9324398724116133	Wynn	Mirage	NA	REL$/sports/sports_team_owner/teams_owned
+-0.9324561105780945	ADP	Parsippany	NA	REL$/location/location/containedby
+-0.9324561105780945	Intel	Washington	NA	REL$/location/location/containedby
+-0.9325220790469244	Rich Dauer	Kansas City	NA	REL$/people/person/place_lived
+-0.9326898072761759	Mary Murphy	Our Lady of Good Counsel High School	NA	REL$/location/location/containedby
+-0.9330643576561966	Brandenburg	Justice	NA	REL$/location/location/containedby
+-0.9330681144215403	Tim Carvell	Spectator	NA	REL$/book/author/works_written
+-0.9333807282066081	Max Manus	Norwegian	NA	REL$/people/person/ethnicity
+-0.9333952171531971	Whitman	Southern California	NA	REL$/location/location/containedby
+-0.9335264988358528	Alfredo Rodriguez	Harlem	NA	REL$/book/author/works_written
+-0.9336708601680335	East Side	Congress	NA	REL$/location/location/containedby
+-0.9337465701141517	Bolivia	Operation Condor	NA	REL$/location/location/containedby
+-0.9337465701141517	Emperor	World War II	NA	REL$/location/location/containedby
+-0.9338836746569829	Navy	Sea Cliff	NA	REL$/location/location/containedby
+-0.9340185609258043	Marco Polo	Waldorf-Astoria	NA	REL$/location/location/containedby
+-0.9340413659903414	Marvin Rosen	Democratic National Committee	NA	REL$/business/person/company
+-0.9342935378920986	Andrea Gabor	New York	NA	REL$/location/location/containedby
+-0.9349967478782393	Tigers	Cotton Bowl	NA	REL$/location/location/containedby
+-0.9354808832235506	John Douglas	Federal Bureau of Investigation	NA	REL$/business/person/company
+-0.9355634906416448	Louis Feldman	Trinity	NA	REL$/business/person/company
+-0.9355654807077529	Jeremy Flint	Britain	NA	REL$/people/person/nationality
+-0.9360038401110296	Scott	Leucadia	NA	REL$/people/person/place_lived
+-0.9362074802905553	ARCTIC	Thief River Falls	NA	REL$/location/location/containedby
+-0.9362131693322572	Kansas City	Van Cortlandt Park	NA	REL$/location/location/containedby
+-0.9362131693322572	Bucknell	Franklin Field	NA	REL$/location/location/containedby
+-0.9362763848371034	Russian	Treasury	NA	REL$/location/location/containedby
+-0.9362861188926943	Holtz	Jets	NA	REL$/location/location/containedby
+-0.9363825579123618	Dean	Portage Lake	NA	REL$/location/location/containedby
+-0.9363825579123618	Wendy	Elmsford	NA	REL$/location/location/containedby
+-0.9365123120016084	Paul McCartney	London	REL$/music/artist/origin	REL$/people/person/place_of_birth
+-0.9367299957584354	Theresa Grentz	Rutgers	NA	REL$/business/person/company
+-0.9367922367216486	TNT	Strange Justice	NA	REL$/media_common/netflix_genre/titles
+-0.9369095285924715	Asher Naim	Ethiopia	NA	REL$/people/person/nationality
+-0.9371094252908738	Frenchman	Potato	NA	REL$/book/author/works_written
+-0.9371986102062672	Tom Pollock	Universal	NA	REL$/business/person/company
+-0.9372256613084802	Pacific Enterprises	Southern California Gas	REL$/organization/parent/child	REL$/organization/parent/child
+-0.9372345193715622	Ian Duncan	Seven Network	NA	REL$/business/person/company
+-0.9373331937160242	Silverman	Republican	NA	REL$/people/person/place_lived
+-0.937434360281697	Tribune Company	Compton	NA	REL$/book/author/works_written
+-0.9379429643897136	Americans	Oman	NA	REL$/location/location/containedby
+-0.9379969475162199	James Traub	Nation	NA	REL$/business/person/company
+-0.9380523273012291	Cesar Maia	Democratic Labor Party	NA	REL$/business/person/company
+-0.9381426058296201	Blue Jays	Greyhounds	NA	REL$/location/location/containedby
+-0.93827324832835	Yellow Arrow	New Directions	NA	REL$/location/location/containedby
+-0.9384237910208253	James G. Blaine	Grover Cleveland	NA	REL$/business/person/company
+-0.9385149469411068	Thomas C. Platt	Brooklyn	NA	REL$/business/person/company
+-0.9385863694870017	Alexander Turney Stewart	Garden City	NA	REL$/people/person/place_lived
+-0.9387037396473044	David Wharton	Southern California	NA	REL$/business/person/company
+-0.9391418093268197	Indira	Nehru	NA	REL$/film/film/directed_by
+-0.9392549254863186	Sunglasses	Irvine	NA	REL$/business/company/place_founded
+-0.939409811525993	David Phelps	Special Olympics	NA	REL$/business/person/company
+-0.9399431870636612	Massoud Barzani	Kurds	NA	REL$/location/location/containedby
+-0.9400020618110001	Lewis	Silver Charm	NA	REL$/business/person/company
+-0.9400083075457931	Zhu	China	NA	REL$/people/person/nationality
+-0.94044496129643	Linda Hall	Juilliard School	NA	REL$/business/person/company
+-0.94044496129643	musicians	Oberlin College	NA	REL$/business/person/company
+-0.9404915463427668	David Jenkins	GQ	NA	REL$/business/person/company
+-0.9405761490356782	Sega	Japan	NA	REL$/organization/parent/child
+-0.9405852089129638	Dean	Asheville	NA	REL$/location/location/containedby
+-0.9405852089129638	Thomas	Hoboken	NA	REL$/location/location/containedby
+-0.9409101203710311	Jews	Hudson Institute	NA	REL$/business/person/company
+-0.9409303025012391	Tennessee	George Mason	NA	REL$/location/location/containedby
+-0.9410822158031603	Mr. Jones	Los Angeles	NA	REL$/people/deceased_person/place_of_death
+-0.9411588722231262	Temptations	Chicago	NA	REL$/location/location/containedby
+-0.9412331734920919	Ramath Orah	Rabbi	NA	REL$/location/location/containedby
+-0.9416262430766009	Priscilla	San Francisco	NA	REL$/location/location/containedby
+-0.941688494557255	Baron	Madrid	NA	REL$/location/location/containedby
+-0.9417356406740959	Thomson	New Jersey	NA	REL$/location/location/containedby
+-0.9417356406740959	John Lister	New York City	NA	REL$/location/location/containedby
+-0.9418507178840233	Cotabato	Manila	NA	REL$/location/location/containedby
+-0.9420513952727491	George Butler	Georgetown	NA	REL$/location/location/containedby
+-0.9421857693473427	International House	Riverside Drive	NA	REL$/location/location/containedby
+-0.9421927311792448	Paul Sherwen	Motorola	NA	REL$/business/person/company
+-0.9424413874483107	Ursula Hegi	Nazism	NA	REL$/location/location/containedby
+-0.9424628451468895	Charles Town	Washington	NA	REL$/location/location/containedby
+-0.9426769004322515	Soleil	San Francisco	NA	REL$/location/location/containedby
+-0.9427783232881485	John Pinto	Michael Ryan	NA	REL$/people/person/nationality
+-0.942841792765666	Nancy Hollister	Republican	NA	REL$/people/person/place_lived
+-0.9428677101345141	Asia Pacific Economic Cooperation	APEC	NA	REL$/location/location/containedby
+-0.9429799853202573	Thierry Derocles	Front	NA	REL$/people/person/nationality
+-0.9432812493786019	Minnesota	Leech Lake	NA	REL$/location/location/containedby
+-0.9434404016999814	Exeter	Lindsay	NA	REL$/location/location/containedby
+-0.9436143425774374	Tom Prince	Buffalo	NA	REL$/location/location/containedby
+-0.9436143425774374	Alonzo Powell	Calgary	NA	REL$/location/location/containedby
+-0.9436546770677219	Lion	Australia	NA	REL$/people/person/nationality
+-0.9437486505481821	P.M.	Lafayette	NA	REL$/location/location/containedby
+-0.9438018833627453	Sonic	Smith	NA	REL$/people/person/nationality
+-0.9440528327836213	William Murray	Philip Morris Companies Inc.	NA	REL$/business/person/company
+-0.9442494794059941	Slade	Patriots	NA	REL$/location/location/containedby
+-0.9442494794059941	Alex Sanders	Cardinals	NA	REL$/location/location/containedby
+-0.9444009677647702	Tatsuya Sakuma	Washington	NA	REL$/location/location/containedby
+-0.9445532732324509	Chickasaw Mudd Puppies	Manhattan	NA	REL$/location/location/containedby
+-0.9446289177755554	Mike Piazza	National League	NA	REL$/sports/sports_team/league
+-0.9448046295578145	Mark Collins	Giants	NA	REL$/location/location/containedby
+-0.9450427857375368	Klin	Hammer	NA	REL$/location/location/containedby
+-0.9450632565968167	Britain	Malaya	NA	REL$/location/location/containedby
+-0.9454747799516232	Moore	Arizona	NA	REL$/location/location/containedby
+-0.945642396171602	Andrew Lees	Britain	NA	REL$/business/person/company
+-0.9456761743448721	Mike Lieberthal	Philadelphia	NA	REL$/people/person/place_lived
+-0.945842828733283	Todd Marinovich	Trojans	NA	REL$/people/person/place_of_birth
+-0.9459156848541878	Tour	Brittany	NA	REL$/people/person/nationality
+-0.9459969432345768	Guadalupe Loaeza	Mexico City	NA	REL$/location/location/containedby
+-0.9461344984197547	Reynolds	Oklahoma State University	NA	REL$/business/person/company
+-0.9462823932091572	Joyce Carol Oates	Oates	NA	REL$/book/author/book_editions_published
+-0.9464267490824565	Reggie Lewis	Boston	NA	REL$/location/location/containedby
+-0.9466989124908974	Houghton	Tokyo	NA	REL$/location/location/containedby
+-0.9467251089973826	Rego Park	Moscow	NA	REL$/location/location/containedby
+-0.9468236691845087	Matt O'Toole	Wilson	NA	REL$/business/person/company
+-0.9470891431273196	Janesville	Chevrolet	NA	REL$/location/location/containedby
+-0.9472316444011555	Grenadines	Havana	NA	REL$/location/location/containedby
+-0.9472316444011555	Pope	Havana	NA	REL$/location/location/containedby
+-0.9473169934924079	Mekong	Vietnamese	NA	REL$/location/location/containedby
+-0.9473947916272615	Twins	North Carolina	NA	REL$/location/location/containedby
+-0.9474362695298221	Bob Randall	Denver	NA	REL$/people/person/place_lived
+-0.9475205588392513	Christine Brooke-Rose	British	NA	REL$/people/person/ethnicity
+-0.9477184069316592	Alice Springs	Yulara	NA	REL$/location/location/containedby
+-0.9478135353751491	Clinton	Bible	NA	REL$/book/author/works_written
+-0.9478135353751491	Mother Teresa	Caesar	NA	REL$/book/author/works_written
+-0.9478522981091133	Augusta	Savannah	NA	REL$/location/location/containedby
+-0.9479147997070312	Philadelphia Eagles	Canton	NA	REL$/location/location/containedby
+-0.9479680540177391	McNary	Immigration and Naturalization Service	NA	REL$/business/person/company
+-0.9480051256880794	Bill Hart	Public Theater	NA	REL$/business/person/company
+-0.9480356478054079	Nickelodeon	Manhattan	NA	REL$/location/location/containedby
+-0.9480356478054079	Outback Steakhouse	Huntington	NA	REL$/location/location/containedby
+-0.9480983116489593	Timothy	Wyoming	NA	REL$/people/person/place_lived
+-0.9480983116489593	Peterson	Wakefield	NA	REL$/people/person/place_lived
+-0.9480983116489593	Robert Kennedy	Virginia	NA	REL$/people/person/place_lived
+-0.9481199481134268	Jim Brochu	ABC	NA	REL$/business/person/company
+-0.9482116321888253	Jay Levy	AIDS	NA	REL$/business/person/company
+-0.9483384818205448	Tracy Nelson	Manhattan	NA	REL$/location/location/containedby
+-0.948366012936599	North Hills	Allentown	NA	REL$/location/location/containedby
+-0.9484425530989048	Americans	Oak Ridge	NA	REL$/location/location/containedby
+-0.9485846800974551	Randolph	Nottoway	NA	REL$/location/location/containedby
+-0.9488352741276912	U.S.	Tibet	NA	REL$/location/location/containedby
+-0.9489315929607861	Poker	Washington	NA	REL$/location/location/containedby
+-0.9489708933665689	Navy Seals	Somalia	NA	REL$/location/location/containedby
+-0.9489766796478882	Bahrain	United Arab Emirates	NA	REL$/location/location/containedby
+-0.9490083157475095	John Read	Harvard	NA	REL$/business/person/company
+-0.9492433722514155	Watchung	Plainfield	NA	REL$/location/location/containedby
+-0.949324645733079	Pepin	Charlemagne	NA	REL$/people/person/place_lived
+-0.9496096587776598	Miho	I. M. Pei	NA	REL$/business/person/company
+-0.949813461904821	Bailey	Baton Rouge	NA	REL$/people/deceased_person/place_of_death
+-0.9499010369671945	European Parliament	European Community	NA	REL$/people/person/nationality
+-0.9499010369671945	Germany	Chile	NA	REL$/people/person/nationality
+-0.9499043336089736	Metropolitan Opera	Macbeth	NA	REL$/book/author/works_written
+-0.9500249687251833	Comptroller	Dallas	NA	REL$/location/location/containedby
+-0.9500249687251833	Carillon	Teaneck	NA	REL$/location/location/containedby
+-0.9500250639882033	David Wood	Oneida County	NA	REL$/business/person/company
+-0.9500790260866525	Johnnie Morton	Lions	NA	REL$/location/location/containedby
+-0.9502342614598331	Hicks	United Artists	NA	REL$/people/person/nationality
+-0.9504040026076956	General Electric	John Welch	NA	REL$/location/location/containedby
+-0.9504971963389837	Chile	Clodomiro Almeyda	NA	REL$/location/location/containedby
+-0.9506004291790247	Shuler	Saints	NA	REL$/location/location/containedby
+-0.9510347726927689	San Jose Sharks	National Hockey League	REL$/sports/sports_team/league	REL$/sports/sports_team/league
+-0.9510467478407604	Stephen Rea	Neil Jordan	NA	REL$/book/author/works_written
+-0.9511758628693914	Middlebury	Panthers	NA	REL$/location/location/containedby
+-0.9511758628693914	West Virginia	Eagles	NA	REL$/location/location/containedby
+-0.95140606425429	Republican National Convention	San Diego	NA	REL$/location/location/containedby
+-0.9514178620052381	Food and Drug Administration	Department of Health and Human Services	NA	REL$/location/location/containedby
+-0.9516304261480433	Atlanta	Garden	NA	REL$/sports/sports_team/arena_stadium
+-0.9516325391659611	S.A.	France	NA	REL$/location/location/containedby
+-0.9516520736929341	Thomas	Beulah	NA	REL$/location/location/containedby
+-0.9517149528539102	Troy Loney	National Hockey League	NA	REL$/sports/sports_team/league
+-0.9518787627128158	James Hooper	London	NA	REL$/business/person/company
+-0.951978718150028	Born	Sarah Lawrence College	NA	REL$/business/person/company
+-0.9520302373906506	Brookhaven	Island	NA	REL$/location/location/containedby
+-0.9522386830271837	Polar	South Street Seaport	NA	REL$/location/location/containedby
+-0.9522523196793322	Ferruccio Vitale	Grove	NA	REL$/book/author/works_written
+-0.9522661407275881	Buffalo	Canadian Football League	NA	REL$/sports/sports_team/league
+-0.952404485597784	Scudder	Boston	NA	REL$/business/company/place_founded
+-0.9525876263925498	Emmylou Harris	Irish	NA	REL$/location/location/containedby
+-0.9527864600393471	Yardbirds	Marquee	NA	REL$/location/location/containedby
+-0.9529336826762741	Smith	Toronto	NA	REL$/people/person/place_lived
+-0.9529392314481876	Soviet	Portugal	NA	REL$/location/location/containedby
+-0.9529853290435563	James Brooke	Havana	NA	REL$/location/location/containedby
+-0.9530876479317403	Alan Brown	Florida	NA	REL$/location/location/containedby
+-0.9530876479317403	Steve DeBerg	Miami	NA	REL$/location/location/containedby
+-0.9531361905871761	Sutton	Kentucky	REL$/location/location/containedby	REL$/people/person/place_lived
+-0.9531741854142758	Dick Cheney	Sean O'Keefe	NA	REL$/people/person/nationality
+-0.9533689225695805	Pace University	New York City	REL$/location/location/containedby	REL$/location/location/containedby
+-0.9535538665346759	David	University of Connecticut	NA	REL$/business/person/company
+-0.9535538665346759	Wescott	University of Chicago	NA	REL$/business/person/company
+-0.9537025008735569	Boston	Tiger Stadium	NA	REL$/sports/sports_team/arena_stadium
+-0.9537477359142954	Carlos Salinas	Monterrey	NA	REL$/location/location/containedby
+-0.9537867421466281	Technomics	Chicago	NA	REL$/location/location/containedby
+-0.9537867421466281	Pininfarina	Cambiano	NA	REL$/location/location/containedby
+-0.9538664392477028	Associated Press	Baghdad	NA	REL$/location/location/containedby
+-0.9539619428994925	Lambright	Husky Stadium	NA	REL$/location/location/containedby
+-0.9539956811678905	Fort Howard	Morgan Stanley	NA	REL$/location/location/containedby
+-0.9540406828652115	Fleet Financial Group	Kingston	NA	REL$/location/location/containedby
+-0.9540569599903386	Roger Staubach	Dallas	NA	REL$/location/location/containedby
+-0.9545132595080035	Carl Banks	Redskins	NA	REL$/location/location/containedby
+-0.9545132595080035	Chris Slade	Patriots	NA	REL$/location/location/containedby
+-0.9545204805059291	Administration	AIDS	NA	REL$/location/location/containedby
+-0.9545251220559671	de Klerk	New York	NA	REL$/location/location/containedby
+-0.9546180770570728	Angel	Red Hook	NA	REL$/people/person/nationality
+-0.9547265322435894	Robert S. Peck	American Civil Liberties Union	NA	REL$/location/location/containedby
+-0.9547700075583738	Bonn	Hamburg	NA	REL$/location/location/containedby
+-0.9547802493959441	Italian	World Trade Center	NA	REL$/book/book_edition/place_of_publication
+-0.9548377705768287	Sikhs	Bucharest	NA	REL$/location/location/containedby
+-0.9548683206444392	William Grimes	Waldorf-Astoria	NA	REL$/business/person/company
+-0.9548956200621833	Philadelphia	Bloomfield Hills	NA	REL$/location/location/containedby
+-0.9548956200621833	Stamford	Chicago	NA	REL$/location/location/containedby
+-0.9549445911411629	Boccaccio	Fiametta	NA	REL$/location/location/containedby
+-0.9549537553218534	Istvan Fodor	Hungarian National Museum	NA	REL$/business/person/company
+-0.9550013842789671	Christie	College of Charleston	NA	REL$/business/person/company
+-0.9550912989196717	Baptist Church	Madison Square Garden	NA	REL$/location/location/containedby
+-0.9554298872548661	Rue de Richelieu	Paris	REL$/transportation/road/major_cities	REL$/people/person/nationality
+-0.9555078439963528	Hewlett-Packard Company	PC	NA	REL$/organization/parent/child
+-0.9555458221706535	Salo	Bob Probert	NA	REL$/location/location/containedby
+-0.9557717109124317	David Kaufmann	Southland	NA	REL$/business/person/company
+-0.9558246110209627	Moore Park	Central Business District	NA	REL$/location/location/containedby
+-0.955877997762385	Zebedee Nungak	Inuk	NA	REL$/people/person/nationality
+-0.9558810714779207	Upper West Side	Lionel Hampton	NA	REL$/location/location/containedby
+-0.9558977866063415	Arlington National Cemetery	White House	NA	REL$/location/location/containedby
+-0.9560548789409331	Pistols	New York	NA	REL$/location/location/containedby
+-0.9561072944178425	Angola	Rwanda	NA	REL$/location/location/containedby
+-0.9561133044099074	Croats	Travnik	NA	REL$/location/location/containedby
+-0.9561915827602128	Israelis	Hussein	NA	REL$/location/location/containedby
+-0.9561969406004852	Sandy Dennis	Central Park	NA	REL$/people/person/place_of_birth
+-0.9563724571062279	Louis Banks	Time	NA	REL$/business/person/company
+-0.9564454491258558	Richard Riley	Democratic	NA	REL$/people/person/place_lived
+-0.9566497739061908	Bill Webb	Yankees	NA	REL$/people/person/place_of_birth
+-0.9568147979021735	Mr. Goodman	Herbert London	NA	REL$/book/author/works_written
+-0.9568416898302384	Utica	Vancouver	NA	REL$/location/location/containedby
+-0.9568853529757149	Prospect Street	New Haven	NA	REL$/location/location/containedby
+-0.9569207473099824	Murat Belge	Turkish	NA	REL$/people/person/ethnicity
+-0.9571531371225974	European	World War II	NA	REL$/location/location/containedby
+-0.9571536055407891	Barbara J. Raasch	Dallas	NA	REL$/people/person/place_lived
+-0.9571747695914846	Tarom	Boeing	NA	REL$/business/person/company
+-0.9572246834974621	Tony Meola	Alexi Lalas	NA	REL$/people/person/nationality
+-0.957245197406957	Miami	Recife	NA	REL$/location/location/containedby
+-0.957245197406957	Algiers	Marseilles	NA	REL$/location/location/containedby
+-0.957300511141544	English	University of Idaho	NA	REL$/business/person/company
+-0.9573135851856511	Occupational Safety and Health Administration	Department of Labor	NA	REL$/location/location/containedby
+-0.9573664895623382	Fritz Haber	Norwalk Hospital	NA	REL$/business/person/company
+-0.9575229734237481	Jim Ross Lightfoot	Iowa	NA	REL$/people/person/place_lived
+-0.9575351766271846	Royal Shakespeare Company	Cats	NA	REL$/book/author/works_written
+-0.9576425336371124	Gilberto Hernandez	Mexico	NA	REL$/people/person/nationality
+-0.9577135097282757	Dusk	Broadway	NA	REL$/people/person/place_lived
+-0.9577428189296829	News	Newsday	NA	REL$/business/person/company
+-0.9578103134246811	Blue Jays	Twins	NA	REL$/location/location/containedby
+-0.9578775765354782	Helmut Kohl	Wisconsin	NA	REL$/location/location/containedby
+-0.9579335278127966	Germans	Spain	NA	REL$/location/location/containedby
+-0.9579654625957132	Yevgeny Yevtushenko	Calvin Trillin	NA	REL$/book/author/book_editions_published
+-0.9579787536202791	Medicare	Los Angeles	NA	REL$/location/country/administrative_divisions
+-0.9580039932677726	Mike Medavoy	United Artists	NA	REL$/business/person/company
+-0.9580044090583112	Manhattan	Hackensack	NA	REL$/people/person/place_lived
+-0.9580458056410626	Puerto Rico	Harlem	NA	REL$/people/person/nationality
+-0.9582174018782494	Steven Norris	London	NA	REL$/people/person/place_of_birth
+-0.9583427336876112	Scott	Reds	NA	REL$/business/person/company
+-0.9583633703971495	Azzedine Alaia	Manhattan	NA	REL$/location/location/containedby
+-0.9583633703971495	House of Cards	Wheaton	NA	REL$/location/location/containedby
+-0.9583758365346084	Mr. Jones	Columbia College	NA	REL$/business/person/company
+-0.9583758365346084	Mr. Williams	Harvard College	NA	REL$/business/person/company
+-0.9584056926024722	David Hamilton	New York	NA	REL$/business/person/company
+-0.9585828310468726	James Levine	Sergiu Celibidache	NA	REL$/people/person/place_lived
+-0.9586077894944006	Michel Friedman	Germany	REL$/people/person/nationality	REL$/people/person/place_lived
+-0.9587320586815276	Hudson	Saratoga	NA	REL$/location/us_county/hud_county_place
+-0.9587537498968659	Chicago Bulls	Bethpage	NA	REL$/location/location/containedby
+-0.9588366898367889	Davis	Lions	NA	REL$/location/location/containedby
+-0.9588844791027502	Lucky Lady	Las Vegas	NA	REL$/location/location/containedby
+-0.9588955908312837	Pershing	Donaldson	NA	REL$/business/person/company
+-0.9592657053572582	Pete Gaudet	Blue Devils	NA	REL$/people/person/place_lived
+-0.9592926512242479	Carrollton	West Point	NA	REL$/location/location/containedby
+-0.9594067243800375	Israel	NBC News	NA	REL$/business/person/company
+-0.9594467490234375	U.S.	Belgrade	NA	REL$/location/location/containedby
+-0.9597155125864093	Prozac	New Yorker	NA	REL$/business/person/company
+-0.9597205741273312	Larry Dunn	Republican	NA	REL$/people/person/place_lived
+-0.9598241360019212	Red Mountain	Limited	NA	REL$/sports/sports_team_owner/teams_owned
+-0.9598847865731084	Jordan	Comiskey Park	NA	REL$/location/location/containedby
+-0.9598980652351471	Peter Zezel	Brian Rolston	NA	REL$/people/person/place_of_birth
+-0.9599161549681037	Orpheus	Jeffrey Kahane	NA	REL$/book/author/works_written
+-0.9600330511546263	Hampton Beach	Massachusetts	NA	REL$/location/location/containedby
+-0.9600330511546263	Charing Cross Road	Britain	NA	REL$/location/location/containedby
+-0.9600822689632198	Navy	South Pole	NA	REL$/location/location/containedby
+-0.9600822689632198	Georgia Dome	P.M.	NA	REL$/location/location/containedby
+-0.9601457392624011	Nancy Fogelson	Robert Falcon Scott	NA	REL$/book/author/works_written
+-0.9603011460143165	Best	Congress	NA	REL$/people/person/nationality
+-0.9604064711571745	E-Plus	Veba	NA	REL$/organization/parent/child
+-0.9604718659227262	Mira Sorvino	Mighty Aphrodite	NA	REL$/people/person/nationality
+-0.9606267342222579	Stuart	Morganville	NA	REL$/location/location/containedby
+-0.960697413999444	Art Wolfe	Capitol Hill	NA	REL$/location/location/containedby
+-0.9607805183186406	John Fox	Open Society Institute	NA	REL$/business/person/company
+-0.9607805183186406	Cao Yong	Asia Society	NA	REL$/business/person/company
+-0.9608370239830688	Serge Klarsfeld	French	NA	REL$/people/person/nationality
+-0.9608699801399724	Leon Lopez	Madrid	NA	REL$/people/person/place_lived
+-0.9610187420780972	Gulf	Paramount	NA	REL$/business/person/company
+-0.9610419820750468	Capitals	Richmond	NA	REL$/location/location/containedby
+-0.9611323465746658	Edgar Bronfman Jr	Seagram	NA	REL$/business/person/company
+-0.9611476003051439	National League	Denver	NA	REL$/location/location/containedby
+-0.9611530882736417	Ms. Hill	Oklahoma State University	NA	REL$/business/person/company
+-0.961326701271028	Ray Crockett	Denver	NA	REL$/location/location/containedby
+-0.9613366147388812	Tremblay	Devine	NA	REL$/location/location/containedby
+-0.9613685567308463	Masanori Murakami	San Francisco Giants	NA	REL$/people/person/place_lived
+-0.9614361619718399	Dennis Kimbro	Decatur	NA	REL$/people/person/place_lived
+-0.9614389333308968	Norman Thomas	American	NA	REL$/business/person/company
+-0.9614389333308968	W. C. Handy	Beale Street	NA	REL$/business/person/company
+-0.9614958404644047	Allen Wardwell	Christie	NA	REL$/business/person/company
+-0.9615204967562163	John Dean	Congress	NA	REL$/location/location/containedby
+-0.9615780050753262	Childe Hassam	Moran	NA	REL$/organization/parent/child
+-0.9616399432253249	Anthony	New York	NA	REL$/location/location/containedby
+-0.9616402416491036	Wayne	Virginia Tech	NA	REL$/business/person/company
+-0.9618581050511904	Kamenica	Albania	NA	REL$/location/location/containedby
+-0.9619865493200715	Barnes & Noble	Macy	NA	REL$/location/location/containedby
+-0.9620456028769702	Paris Match	French	NA	REL$/people/person/nationality
+-0.9620590648451682	Roger Neilson	Canadiens	NA	REL$/location/location/containedby
+-0.9620852552619525	Brazilians	Northeast	NA	REL$/location/location/containedby
+-0.9623402831438678	Kenyon College	Hackley	NA	REL$/business/person/company
+-0.9623418933157871	Box	Pacific Northwest	NA	REL$/location/location/containedby
+-0.9623582371670125	Mia Farrow	Alice	NA	REL$/location/location/containedby
+-0.9623842163928324	Dan E. Weisburd	Alliance	NA	REL$/business/person/company
+-0.9624618163586305	Pearson	McGraw-Hill	NA	REL$/business/person/company
+-0.9624955166107712	Israeli	Health	NA	REL$/business/person/company
+-0.9626712747624163	Robinson	Baltimore Orioles	NA	REL$/people/person/place_lived
+-0.9627245156201876	Roman Catholic	Franciszek Cardinal Macharski	NA	REL$/location/location/containedby
+-0.962750443445092	Ken Griffey Jr	Seattle Mariners	NA	REL$/people/person/place_lived
+-0.9627954649585712	Monksville Reservoir	Wanaque	NA	REL$/location/location/containedby
+-0.9628158410472972	Centre College	Louisville	NA	REL$/location/location/containedby
+-0.9628447214786682	West Coast	Dinard	NA	REL$/location/location/containedby
+-0.9629171352201508	Susan Meiselas	CD-ROM	NA	REL$/people/person/place_lived
+-0.9629180995184681	Linda Bloodworth-Thomason	Atlanta	NA	REL$/people/person/place_lived
+-0.9631221398639469	Nina	Warsaw	NA	REL$/people/person/place_lived
+-0.9632117802461321	Ridgefield	Lassus	NA	REL$/location/location/containedby
+-0.9632967475537827	Santa Fe Trail	Arkansas	NA	REL$/location/location/containedby
+-0.96329680385974	Arab	Beit Hanina	NA	REL$/location/location/containedby
+-0.9633253073213737	Greenwich Village	St. George	NA	REL$/location/location/containedby
+-0.963372335942624	Ben Nighthorse Campbell	Democrat	NA	REL$/people/person/place_lived
+-0.963381231847629	Ray Perkins	New England	NA	REL$/location/location/containedby
+-0.963381231847629	Bob Stoops	Gator	NA	REL$/location/location/containedby
+-0.9634023595786209	Benjamin Britten	English	NA	REL$/people/person/nationality
+-0.9634395778840394	Postal Service	Phelps Dodge	NA	REL$/people/person/nationality
+-0.9634741379239574	Sam	Encores	NA	REL$/location/location/containedby
+-0.9635150581912394	Pullman	Hartford	NA	REL$/location/location/containedby
+-0.9635637579619337	Germans	Communist Party	NA	REL$/business/person/company
+-0.9637168858717938	Haley	Jets	NA	REL$/location/location/containedby
+-0.9637371449239972	Andiamo	Broadway	NA	REL$/location/location/containedby
+-0.9637430612588278	Rupert Murdoch	TV Guide	NA	REL$/business/person/company
+-0.9637652183174114	Martina Ertl	Maribor	NA	REL$/people/person/nationality
+-0.9638750770053491	United States Army Corps of Engineers	Kuwait	NA	REL$/location/location/containedby
+-0.9639548711669187	Chad	Stanley	NA	REL$/location/location/containedby
+-0.9640361896997397	Charles Carlson	Hammond	NA	REL$/people/person/place_lived
+-0.9640461214126567	Piaggio	Fort Worth	NA	REL$/location/location/containedby
+-0.9640461214126567	Empire Airlines	Hayden Lake	NA	REL$/location/location/containedby
+-0.9640461214126567	Starwood	Phoenix	NA	REL$/location/location/containedby
+-0.9640739382577871	Blue Jays	Cleveland Indians	NA	REL$/location/location/containedby
+-0.9641134387340708	Medoc	Olympus	NA	REL$/location/location/containedby
+-0.9641524798979697	Manufacturers Hanover Corporation	New York	NA	REL$/organization/parent/child
+-0.9642012642283151	Betty	St. Louis	NA	REL$/people/person/place_lived
+-0.9642021535553829	Al D'Amato	Republican	NA	REL$/location/location/containedby
+-0.9642334359253948	Yasir Arafat	Salah Khalaf	NA	REL$/location/location/containedby
+-0.9643610203077163	Caravaggio	St. John	NA	REL$/book/author/works_written
+-0.9643736933910801	native	Rupert Murdoch	NA	REL$/business/person/company
+-0.9645700950718608	Joan Collins	Elizabeth	NA	REL$/people/person/place_lived
+-0.964578522034283	Apache Pass	Willcox	NA	REL$/location/location/containedby
+-0.9646607685970632	Scott Zolak	Patriots	NA	REL$/location/location/containedby
+-0.9646725062290137	Christine Bennett	Westchester County	NA	REL$/people/deceased_person/place_of_death
+-0.9646822313033877	Smith	Winter Games	NA	REL$/location/location/containedby
+-0.9647278383318032	Camelot	Peace Corps	NA	REL$/book/author/works_written
+-0.964747542228944	Mike Boddicker	Kansas City	NA	REL$/people/person/place_lived
+-0.964790818546675	John McNeill	Jesuit	NA	REL$/business/person/company
+-0.9648089688666428	Mary Kane	Destiny	NA	REL$/business/person/company
+-0.9648271925065299	De Beers	Endiama	NA	REL$/business/person/company
+-0.964895411930269	Brian Hill	San Marino	NA	REL$/people/person/place_lived
+-0.964902669581323	Area	Rachel	NA	REL$/location/location/containedby
+-0.9650671369564138	U.S.	MEXICO	NA	REL$/location/location/containedby
+-0.9651294341822175	Pierre Turgeon	Steve Thomas	NA	REL$/business/person/company
+-0.965138664635754	Bushes	Boca Grande	NA	REL$/people/person/place_lived
+-0.9651451621317724	America	Holland	NA	REL$/location/location/containedby
+-0.9651839910106158	de Klerk	African National Congress	NA	REL$/people/person/nationality
+-0.965218213207448	Brad	Los Angeles	NA	REL$/people/person/place_lived
+-0.9654412591390682	Cairo	Faten Hamama	NA	REL$/people/person/nationality
+-0.9656188882509865	Perugia	Foligno	NA	REL$/location/location/containedby
+-0.9656722510382805	Texan	Japan	NA	REL$/location/location/containedby
+-0.965724582968241	Tony Marsh	Republican	NA	REL$/people/person/place_lived
+-0.9657506433025924	Max	Italy	NA	REL$/location/location/containedby
+-0.9659613607734837	Latin America	British Petroleum	NA	REL$/business/person/company
+-0.9660191847795615	Western Union	Cuba	NA	REL$/location/location/containedby
+-0.9661654550677395	Ryutaro Hashimoto	Tokyo	REL$/people/deceased_person/place_of_death	REL$/people/person/nationality
+-0.9661761578124611	Tour of Britain	Leeds	NA	REL$/location/location/containedby
+-0.966359277085683	Mark Brown	Tokyo	NA	REL$/business/person/company
+-0.9664492858538238	Mary Lou	Manhattan	NA	REL$/people/person/place_lived
+-0.9664534123344307	Sara Adler	Ethical Culture	NA	REL$/people/person/place_lived
+-0.9665491086667293	World Cup	Innsbruck	NA	REL$/location/location/containedby
+-0.9665529506787873	Bordeaux	Tour	NA	REL$/business/person/company
+-0.9666285686772279	London	Selfridge	NA	REL$/location/us_county/county_seat
+-0.9666428362827933	Mason	Tulsa	NA	REL$/location/location/containedby
+-0.9666568806024114	Henry Luce	Sports Illustrated	NA	REL$/business/person/company
+-0.9668869846370662	Kosovo Liberation Army	Albania	NA	REL$/location/location/containedby
+-0.9669232539548663	Stu	Jeff	NA	REL$/location/location/containedby
+-0.9670123329075633	Liberal	Mount Vernon	NA	REL$/people/person/place_lived
+-0.9670277286138614	Sting	Charlotte Coliseum	NA	REL$/sports/sports_team/arena_stadium
+-0.9671188726028955	Vatican Library	Pope Nicholas V	NA	REL$/book/author/works_written
+-0.9671245942551981	Coyle	Ronald Reagan	NA	REL$/people/person/place_lived
+-0.967155643769673	Owen	Montreal Expos	NA	REL$/people/person/place_lived
+-0.9671934078203968	Dolphins	Baruch	NA	REL$/business/person/company
+-0.9673387412048144	Annan	Saddam	NA	REL$/location/location/containedby
+-0.9674128086776155	Anthony Minghella	World War II	NA	REL$/book/author/works_written
+-0.9674619275003055	Joint Chiefs of Staff	Bronx	NA	REL$/location/location/containedby
+-0.9674679918964181	Ringo	John Lennon	NA	REL$/book/author/works_written
+-0.9674744447735516	Hamza	Libya	NA	REL$/location/location/containedby
+-0.9676637794342716	Mike Wise	Notebook	NA	REL$/book/author/works_written
+-0.967685342432404	Chiquita Brands International	Democratic National Committee	NA	REL$/people/person/nationality
+-0.9677066316500702	Marius Russo	Dodgers	NA	REL$/people/person/place_lived
+-0.9677104593379131	ANGELS	Lance Parrish	NA	REL$/location/location/containedby
+-0.9677311181965357	Michael Birkin	Thomas L Harrison	NA	REL$/book/author/works_written
+-0.9677723126541711	Marcel Lachemann	California	NA	REL$/people/person/place_lived
+-0.9679423241042413	Tom Laidlaw	Kennedy	NA	REL$/people/person/nationality
+-0.9680202793502266	Uvira	Bukavu	NA	REL$/location/location/containedby
+-0.9680704897499297	Jean-Claude Rivest	Robert Bourassa	NA	REL$/people/person/nationality
+-0.9680742589374415	Mike Ross	Sacramento	NA	REL$/people/person/place_lived
+-0.9681941549924035	Jerusalem	Egypt	NA	REL$/people/person/nationality
+-0.9682067166296777	Cotton Mather	Nashville	NA	REL$/people/person/place_lived
+-0.9682316198814563	Lothar Osiander	Western Conference	NA	REL$/sports/sports_team/league
+-0.968266306360895	Washington	Taipei	NA	REL$/location/location/containedby
+-0.9682677283170742	Fritz	Hugo	NA	REL$/book/author/works_written
+-0.9682787026624089	Boys	Bedford-Stuyvesant	NA	REL$/location/location/containedby
+-0.9682981771220135	Marbury	Lincoln	NA	REL$/location/location/containedby
+-0.9683008509668743	Kurds	Islamic	NA	REL$/location/location/containedby
+-0.9683025459097966	Dorsey	Mephistopheles	NA	REL$/location/location/containedby
+-0.9683290128596957	Sierra	Tigers	NA	REL$/location/location/containedby
+-0.9683873406446043	American Jews	Yasir Arafat	NA	REL$/location/location/containedby
+-0.9683891218101895	Washington Capitals	Philadelphia	NA	REL$/location/location/containedby
+-0.9684235497935016	Woolf	Boston	NA	REL$/people/person/place_lived
+-0.9684981987169516	Charlie	Churchill Downs	NA	REL$/location/location/containedby
+-0.9685238985265853	Trump Organization	Trump Tower	NA	REL$/location/location/containedby
+-0.968537004101382	Edwin Gorter	Revolution	NA	REL$/people/person/place_lived
+-0.9685624858382177	Gregory Stone	WSB-TV	NA	REL$/people/person/place_lived
+-0.9685869589790095	Eric Johnston	Middle East	NA	REL$/people/person/nationality
+-0.9686092061720826	New Brunswick	Tunnel	NA	REL$/location/location/containedby
+-0.9686869682031185	United States Senator	Republican Party	NA	REL$/location/location/containedby
+-0.9687759282270507	Raymond Hood	Rockefeller Center	REL$/architecture/architect/structures_designed	REL$/book/author/works_written
+-0.9687823934939596	Alex Haynes	Ford Motor Company	NA	REL$/business/person/company
+-0.968791785663473	Liberal Party	Democrat	NA	REL$/people/person/nationality
+-0.9688500490990593	Oakley	American	NA	REL$/people/person/nationality
+-0.9688536027636556	Croatia	Prague	NA	REL$/location/location/containedby
+-0.9689091112701802	Rod Carew	Minnesota Twins	NA	REL$/location/location/containedby
+-0.968946052871582	Carlos Acosta	Post Office	NA	REL$/business/person/company
+-0.9690243819028325	Rick Cerone	Toronto	NA	REL$/people/person/place_lived
+-0.9691554163372185	Christmas Eve	Pickwick Papers	NA	REL$/location/location/containedby
+-0.9691689416744311	Nathan	Cincinnati	NA	REL$/people/person/place_lived
+-0.9692732842884262	Jimmy	Jill	NA	REL$/people/person/nationality
+-0.9693130996252887	Robert Welsh	Mr. Sweeney	NA	REL$/people/person/place_lived
+-0.9693239815175857	William Cunningham	Roman Catholic	NA	REL$/business/person/company
+-0.9693948571219069	Soviet	Beijing	NA	REL$/location/location/containedby
+-0.9693948571219069	Japanese	Brussels	NA	REL$/location/location/containedby
+-0.9694029564177316	Larry Bird	Jordan	NA	REL$/location/location/containedby
+-0.9694197644965622	Brooke White	Nordstrom	NA	REL$/business/person/company
+-0.9694448148949006	Kerr	San Jose	NA	REL$/people/person/place_lived
+-0.9694715421298972	Adele	Hartsdale	NA	REL$/people/person/place_lived
+-0.9695097927388948	Lufthansa	Canadian Airlines	NA	REL$/business/person/company
+-0.9696367591489344	Leopold	Games	NA	REL$/location/location/containedby
+-0.9696449618548111	Laguna Hills	Massachusetts	NA	REL$/location/location/containedby
+-0.9696551872627086	Broadway	Broad Street	NA	REL$/location/location/containedby
+-0.9696641191323592	Charlie Ward	Walter Camp	NA	REL$/book/author/works_written
+-0.9696883655961351	John Olerud	New York Mets	NA	REL$/business/person/company
+-0.9697760336783047	Malta	Roman Catholic	NA	REL$/location/location/containedby
+-0.9699247952227876	GTE	BBN Technologies	NA	REL$/business/person/company
+-0.9699590641697325	Brantt Myhres	Sharks	NA	REL$/location/location/containedby
+-0.969969170863374	Charles Black	Dole	NA	REL$/people/person/place_lived
+-0.970078907788161	Ralph	House	NA	REL$/people/person/nationality
+-0.9702435280061962	Eric Jackson	Adweek	NA	REL$/business/person/company
+-0.9702435280061962	John Fuller	Adweek	NA	REL$/business/person/company
+-0.9702435280061962	Charles Wolfe	Adweek	NA	REL$/business/person/company
+-0.9703334590184607	J. C. Penney	Westland Mall	NA	REL$/business/company/place_founded
+-0.9703827587729441	Republican	Western Hemisphere	NA	REL$/location/location/containedby
+-0.9703979017121999	William Mulholland	Irish	NA	REL$/people/person/nationality
+-0.9704131431395174	Picasso	Andre Breton	NA	REL$/book/author/works_written
+-0.9705346117927209	Syria	Lebanese Forces	NA	REL$/location/location/containedby
+-0.9705349829129886	Chekhov	Moscow	NA	REL$/book/author/works_written
+-0.9705738083337814	Double Platinum	Diana Ross	NA	REL$/film/film/written_by
+-0.9707021869751558	Arthur Cohn	Miramax	NA	REL$/business/person/company
+-0.9707021869751558	Michael Chinich	Gramercy Pictures	NA	REL$/business/person/company
+-0.9707593146878294	Bo Jackson	Kansas City	NA	REL$/people/person/place_lived
+-0.970760736212296	McClellan	Pennsylvania	NA	REL$/location/location/containedby
+-0.9707878771947541	Germany	Whitewright	NA	REL$/location/location/containedby
+-0.9708698754516217	John Charles	Virginia	NA	REL$/location/location/containedby
+-0.9708773851986883	Kali Rocha	Manhattan	NA	REL$/location/location/containedby
+-0.9709227601396703	Peter Clark	Canadian	NA	REL$/people/person/nationality
+-0.97095156643035	Richard Williamson	Bucs	NA	REL$/people/person/place_of_birth
+-0.97095156643035	Gregg Smith	Miami	NA	REL$/people/person/place_of_birth
+-0.9709647812604397	Mexico	Mexico City	REL$/location/country/administrative_divisions	REL$/location/country/administrative_divisions
+-0.9712335799127098	Annie	Manhattan	NA	REL$/location/location/containedby
+-0.9712432258002719	Epson	Seiko Epson Corporation	NA	REL$/organization/parent/child
+-0.9712780857580032	Air Force	Whiteman Air Force Base	NA	REL$/location/location/containedby
+-0.9714287767799367	IBM	Internet Explorer	NA	REL$/organization/parent/child
+-0.9714879145082069	Mary Ann	Manhattan	NA	REL$/people/person/place_lived
+-0.9714879145082069	Chadwick	Rockville Centre	NA	REL$/people/person/place_lived
+-0.9714993909679339	Keenan	Detroit	NA	REL$/people/person/place_of_birth
+-0.9715316477534448	Portland Trail Blazers	New York	NA	REL$/location/location/containedby
+-0.9716180323615087	Kendra	Montessori	NA	REL$/location/location/containedby
+-0.9716201592291418	Marcel Duchamp	Dada	NA	REL$/book/author/works_written
+-0.9716237908242504	Princeton	Green Party	NA	REL$/people/person/nationality
+-0.9716255387170961	Laura	Atlanta	NA	REL$/people/person/place_lived
+-0.9716255387170961	Lisa	Baldwin	NA	REL$/people/person/place_lived
+-0.9716255387170961	Esther	Metuchen	NA	REL$/people/person/place_lived
+-0.9716255387170961	Jane Shapiro	Coral Springs	NA	REL$/people/person/place_lived
+-0.9716560147667794	American Airlines	Boeing	NA	REL$/location/location/containedby
+-0.9717047857838771	Rams	Candlestick	NA	REL$/sports/sports_team/arena_stadium
+-0.9717312810023988	Jim McMahon	San Diego Chargers	NA	REL$/location/location/containedby
+-0.9717419511490547	Chang	Open	NA	REL$/people/person/nationality
+-0.9717703766818951	Dave Winfield	Tavern	NA	REL$/book/author/works_written
+-0.9718010448500304	Harbison	Baroque	NA	REL$/book/author/works_written
+-0.97191357118009	Hamas	Abu Nidal	NA	REL$/people/person/nationality
+-0.971936833282924	Jill	Reno	NA	REL$/people/person/place_lived
+-0.9719544669079099	Carey Schofield	British	NA	REL$/people/person/nationality
+-0.9720933670690801	Stamford	Yale University	NA	REL$/business/person/company
+-0.9721156824252891	Maillol	New York	NA	REL$/location/location/containedby
+-0.9721994934564192	Gaetano Ferro	Westport	NA	REL$/people/person/place_of_birth
+-0.9722509938451498	European Commission	Berlin	NA	REL$/location/location/containedby
+-0.9722789250299095	Kofi Annan	Jacques Chirac	NA	REL$/people/person/nationality
+-0.9723068876286758	Emigration	Havana	NA	REL$/location/location/containedby
+-0.9723068876286758	Unesco	Mexico City	NA	REL$/location/location/containedby
+-0.9723152488129568	Dudley Clendinen	Adam Nagourney	NA	REL$/book/author/works_written
+-0.9725048100889734	Adel Darwish	Middle East	NA	REL$/people/person/nationality
+-0.9725088980598744	Bronx	St. Barnabas High School	NA	REL$/business/person/company
+-0.9725239869327845	Williams	Hospital	NA	REL$/business/person/company
+-0.9725253382280814	William Finn	Playwrights Horizons	NA	REL$/book/author/works_written
+-0.9725511388062816	Ralph Bunche	United Nations	NA	REL$/people/person/place_of_birth
+-0.9727066506990764	Shanghai	Jewish	NA	REL$/location/location/containedby
+-0.9727483263589166	Berkeley	Nasdaq	NA	REL$/business/person/company
+-0.9727531052777307	Jerome Kersey	Trail Blazers	NA	REL$/location/location/containedby
+-0.9727593282764375	Garth Jax	Smith	NA	REL$/location/location/containedby
+-0.9727878684856833	Chris Chandler	Larry Centers	NA	REL$/location/location/containedby
+-0.9728116479584527	Hodgson	New York Jets	NA	REL$/location/location/containedby
+-0.9728690608266842	Snyder	Zuckerman	NA	REL$/business/person/company
+-0.9729397677970282	Michael Andersen	Orlando	NA	REL$/people/person/place_lived
+-0.9730020184423223	Muslim	Bihar	NA	REL$/location/location/containedby
+-0.9730237718234666	Hoosiers	National Collegiate Athletic Association	NA	REL$/location/location/containedby
+-0.9731194276906764	Peacocks	Texas	NA	REL$/location/location/containedby
+-0.9731938774365918	Otis Nixon	Montreal	NA	REL$/people/person/place_lived
+-0.9733098580549708	Socialist Party	Lionel Jospin	NA	REL$/people/person/nationality
+-0.9733098580549708	Socialist Party	Takako Doi	NA	REL$/people/person/nationality
+-0.9733545773394445	Robert Pinsky	Manhattan	NA	REL$/people/person/place_lived
+-0.9733545773394445	James Carr	Manhattan	NA	REL$/people/person/place_lived
+-0.9733998218864246	Les Aspin	Democratic	NA	REL$/people/person/place_lived
+-0.973411047032521	U.S.	Uruguay	NA	REL$/location/location/containedby
+-0.9735914737740408	Jack Anderson	Pacific Northwest Ballet	NA	REL$/book/author/works_written
+-0.9736280277845267	Olympic	Eugene	NA	REL$/location/location/containedby
+-0.9736332200109933	Gerald Riggs	Atlanta	NA	REL$/location/location/containedby
+-0.973655008518759	Strahan	National Football League	NA	REL$/sports/sports_team/league
+-0.9736926361831074	Diocese	Globe	NA	REL$/business/person/company
+-0.9737219233188276	Stephen Collins	Ashley Wilkes	NA	REL$/book/author/works_written
+-0.9737315840677536	Cynthia Rowley	Seventh Avenue	NA	REL$/location/location/containedby
+-0.9737644879567887	John Quincy Adams	Supreme Court	NA	REL$/people/person/nationality
+-0.973813093234385	Old Navy	Christmas Eve	NA	REL$/location/location/containedby
+-0.9738310600404577	Detroit Pistons	Portland Trail Blazers	NA	REL$/location/location/containedby
+-0.9739344777604937	Aquino	Americans	NA	REL$/location/location/containedby
+-0.9739772485922079	Royals	Danny Jackson	NA	REL$/location/location/containedby
+-0.9739935083495795	Ronald Reagan	Ireland	NA	REL$/book/author/works_written
+-0.9740763424145829	Santa Fe	Upper East Side	NA	REL$/location/location/containedby
+-0.9741320002590903	Garnett	Golden State Warriors	NA	REL$/location/location/containedby
+-0.9741635084270839	Jean Baudrillard	French	NA	REL$/people/person/nationality
+-0.9741651428242213	Dave Lewis	Detroit	NA	REL$/location/location/containedby
+-0.9741651428242213	Rod Rust	New England	NA	REL$/location/location/containedby
+-0.974169568616448	Cavaliers	Suns	NA	REL$/location/location/containedby
+-0.9741736438134696	Giovanni Cardinal Saldarini	Turin	NA	REL$/location/location/containedby
+-0.9741796290845269	Meyers	Sunnyvale	NA	REL$/people/person/place_lived
+-0.9742151641366295	ASK	Congress	NA	REL$/people/person/nationality
+-0.9742368453385516	Vikings	Canada	NA	REL$/location/location/containedby
+-0.9742672835781556	Grisbi	Jacques Becker	NA	REL$/people/person/nationality
+-0.9743618642532047	Jeff Beukeboom	Lowe	NA	REL$/people/person/place_of_birth
+-0.9743774721374066	Patricia Brown	Cincinnati	NA	REL$/people/person/place_lived
+-0.9743815673613858	Daniel Littlefield	English	NA	REL$/business/person/company
+-0.9743815673613858	Sacvan Bercovitch	English	NA	REL$/business/person/company
+-0.9743815673613858	Richard Ruland	English	NA	REL$/business/person/company
+-0.9744066837143059	Esa Tikkanen	New York Rangers	NA	REL$/location/location/containedby
+-0.9744131513874561	Ron Brown	American	NA	REL$/business/person/company
+-0.9744163296253664	Williams	Weston Field	NA	REL$/book/author/works_written
+-0.9745131020170675	Alice	English	NA	REL$/location/location/containedby
+-0.9745149558918063	ESPN	Cup	NA	REL$/sports/sports_team/league
+-0.9745854529401154	Oiler	Edmonton	NA	REL$/people/person/place_of_birth
+-0.9746142087262245	Graham	Spring Valley	NA	REL$/people/person/place_lived
+-0.974650730017709	Pristina	Macedonia	NA	REL$/location/location/containedby
+-0.9746871210982454	General American Transportation Corporation	Chicago	NA	REL$/location/location/containedby
+-0.9746939815676847	Democratic	Poughkeepsie	NA	REL$/location/location/containedby
+-0.9746943495977018	Chris Lee	Arlington Hotel	NA	REL$/book/author/works_written
+-0.9747488604072891	Peter Samuelson	British	NA	REL$/business/person/company
+-0.9747639206001528	Dave Odom	Wake Forest	NA	REL$/business/person/company
+-0.9747801128235583	David	Yankees	NA	REL$/location/location/containedby
+-0.9748722834617024	Icon	Russia	NA	REL$/location/location/containedby
+-0.9748830476703149	Coca-Cola	South Africa	NA	REL$/people/person/nationality
+-0.9751060545089597	Eric Plunk	Yankee	NA	REL$/people/person/place_lived
+-0.9751067533378532	Marlo Thomas	Mary Tyler Moore	NA	REL$/book/author/works_written
+-0.9751353442911729	Hanna Schygulla	German	NA	REL$/people/person/place_lived
+-0.9751371093752852	Bristol	Hamilton College	NA	REL$/business/person/company
+-0.975201178707407	Tre	Angela Bassett	NA	REL$/people/person/place_lived
+-0.9752154191707789	Wonderland	Joyce Theater	NA	REL$/book/author/works_written
+-0.9752466659206414	William Weaver	Loreto	NA	REL$/book/author/works_written
+-0.9752811480678799	Houston	Murphy	NA	REL$/organization/parent/child
+-0.9753697673093511	Eidos	San Francisco	NA	REL$/location/location/containedby
+-0.9753849270715199	Kerrigan	England	NA	REL$/book/author/works_written
+-0.9754219774056988	Glen Hanlon	Vancouver Canucks	NA	REL$/location/location/containedby
+-0.9754405381893285	Joe Montana	Pro Bowl	NA	REL$/location/location/containedby
+-0.9754602659715698	White Star	Roger Miller	NA	REL$/film/film/directed_by
+-0.975504540262803	Frank Saucier	Browns	NA	REL$/people/person/place_lived
+-0.9755425195618885	Fargo	Rangers	NA	REL$/people/person/place_lived
+-0.975585988835204	Tambo	Oliver Tambo	NA	REL$/people/person/nationality
+-0.975603664853016	Bonn	NATO	NA	REL$/location/location/containedby
+-0.9756135471585244	Rene Lachemann	Oakland	NA	REL$/people/person/place_lived
+-0.9756238137282703	Phoenix	Karl Malone	NA	REL$/location/location/containedby
+-0.9756641967465792	Deng Xiaoping	America	NA	REL$/book/written_work/subjects
+-0.9756796876319176	Surrealists	Picasso	NA	REL$/location/location/containedby
+-0.9757215361467851	Rene Saguisag	Aquino	NA	REL$/book/author/works_written
+-0.9757348061281854	Prep	Laura	NA	REL$/location/location/containedby
+-0.9757610761111365	Wolfe	Greenwich Village	NA	REL$/location/location/containedby
+-0.9758620082713538	Pat Verbeek	Ranger	NA	REL$/location/location/containedby
+-0.9759476017324139	Ethel	Santa Monica	NA	REL$/people/person/place_lived
+-0.9759582377153285	Surviving	Lois	NA	REL$/book/author/works_written
+-0.9759586224053448	American	Cracker	NA	REL$/location/location/containedby
+-0.9759788183359259	Australians	Ned Zelic	NA	REL$/people/person/nationality
+-0.9760148206705005	Cobb	Northeast	NA	REL$/sports/sports_team/league
+-0.9760569144122293	Memoirs	Jeff Siegel	NA	REL$/book/author/works_written
+-0.9761085571098663	Japanese	Denis Potvin	NA	REL$/film/film/directed_by
+-0.9761544905139404	Slavonic Dances	New York State Theater	NA	REL$/book/author/works_written
+-0.9761728324585672	Encyclopedia Britannica	Houston	NA	REL$/organization/parent/child
+-0.9761986091912473	Thanksgiving Day	Bears	NA	REL$/location/location/containedby
+-0.9762088026834992	Starks	Bulls	NA	REL$/people/person/place_lived
+-0.9762369112035688	Alibi	Johannesburg	NA	REL$/location/location/containedby
+-0.9762505172613877	Ottone	Nerone	NA	REL$/location/location/containedby
+-0.9762806871859752	Smith	Houston Rockets	NA	REL$/location/location/containedby
+-0.9763643062195688	Cole Porter	Mozart	NA	REL$/book/author/works_written
+-0.9764848709318265	Luella Bartley	British	NA	REL$/book/author/works_written
+-0.9765103929973281	Piet Zwart	Dutch	NA	REL$/people/person/nationality
+-0.976526058169469	Frank Bruno	Oliver McCall	NA	REL$/business/person/company
+-0.9765792597156994	Jesuit	Florence	NA	REL$/location/location/containedby
+-0.9765792597156994	Catholic	Center Moriches	NA	REL$/location/location/containedby
+-0.9765793712165569	Toms River	Greenville	NA	REL$/location/location/containedby
+-0.9766028550966618	John Harvey	British	NA	REL$/people/person/place_lived
+-0.9766050728117105	South Africa	Organization of African Unity	NA	REL$/business/person/company
+-0.9766803432519066	Americans	Drakensberg	NA	REL$/book/author/works_written
+-0.9766803432519066	FLORENCE	Medicis	NA	REL$/book/author/works_written
+-0.9766803432519066	Velvet Goldmine	Maryse Alberti	NA	REL$/book/author/works_written
+-0.9766825180606286	Cornelius Bennett	Reich	NA	REL$/people/person/place_lived
+-0.9767259487268547	Mark Jacobs	Westpac	NA	REL$/people/person/place_lived
+-0.976793867230744	ENCORE	United Nations	NA	REL$/people/person/place_lived
+-0.9768090999928766	West End	H. Rap Brown	NA	REL$/book/author/works_written
+-0.9768137928712655	Derek Smith	Redskins	NA	REL$/location/location/containedby
+-0.9768137928712655	Paul Roland	Columbia	NA	REL$/location/location/containedby
+-0.9768731510691744	Harley	Emmaus	NA	REL$/people/person/place_lived
+-0.9768969322856339	Keenan	Wayne Gretzky	NA	REL$/people/person/place_of_birth
+-0.9768991350217385	Dave Rubin	Rego Park	NA	REL$/book/author/works_written
+-0.976964225520645	Hollinger	Montreal	NA	REL$/organization/parent/child
+-0.9770016291129727	Ernie Hudson	Mr. Magoo	NA	REL$/location/us_county/county_seat
+-0.9771368091221188	University of Massachusetts	Legal Services Corporation	NA	REL$/business/person/company
+-0.9771598984078043	Steve LeVine	American	NA	REL$/people/person/nationality
+-0.9771627972502073	Taylor	Queens	NA	REL$/people/person/place_lived
+-0.9771686426108082	Koch	Koch Industries	NA	REL$/book/author/works_written
+-0.9771759190316164	Salk Institute	Louis I. Kahn	NA	REL$/location/location/containedby
+-0.9772329830783876	Fred Meyer	Republican	NA	REL$/people/person/place_lived
+-0.9772379721257201	Benjamin Britten	Myfanwy Piper	NA	REL$/book/author/works_written
+-0.9772434152583515	Minneapolis	Chris Mullin	NA	REL$/location/location/containedby
+-0.9773430103638251	Councilman	Conservative Party	NA	REL$/people/person/nationality
+-0.9773604010891658	Lake	Anne Lake Prescott	NA	REL$/location/location/containedby
+-0.9775009071519288	Guinness	Johnnie Walker	NA	REL$/book/author/works_written
+-0.9775284937406068	Graham	Philadelphia Eagles	NA	REL$/location/location/containedby
+-0.9775310384115165	Gandhi	Congress Party of India	NA	REL$/people/person/nationality
+-0.977533164761511	La Scala	Ball	NA	REL$/location/location/containedby
+-0.9776216025745663	Ford Credit	Chrysler	NA	REL$/location/location/containedby
+-0.9776310595209888	Levy	Big Ones	NA	REL$/book/author/book_editions_published
+-0.9776895796440287	Velvet Revolution	French Revolution	NA	REL$/book/author/works_written
+-0.9777424323464979	John Huang	Hongkong Chinese Bank	NA	REL$/business/person/company
+-0.9778368188389998	Watson	Christ	NA	REL$/business/person/company
+-0.9778661827054362	Mike Brim	Jets	NA	REL$/location/location/containedby
+-0.9779010270286987	Chicago White Sox	Burks	NA	REL$/location/location/containedby
+-0.9779101510736417	Pennsylvania Avenue	White House	NA	REL$/location/location/containedby
+-0.9779943595083462	Arturo Toscanini	Wanda	NA	REL$/book/author/works_written
+-0.9780357587768117	French Open	Russia	NA	REL$/people/person/nationality
+-0.9780359566023873	Mother Teresa	India	REL$/people/person/nationality	REL$/people/person/place_of_birth
+-0.9781335865493455	Jordan	Cardinals	NA	REL$/location/location/containedby
+-0.978134532309084	Gretchen Holbrook Gerzina	Janet Fitch	NA	REL$/book/author/works_written
+-0.9782274621496166	Joe Murphy	Blues	NA	REL$/people/person/nationality
+-0.9782459178709814	Jon Robin Baitz	Lear	NA	REL$/book/author/works_written
+-0.978293904466292	Scott Gottlieb	Kaplan	NA	REL$/book/author/works_written
+-0.9783703072268758	Gordon Gekko	Desmond Tutu	NA	REL$/book/author/works_written
+-0.9783730738681526	Ronald Reagan	Beijing	NA	REL$/people/person/nationality
+-0.9783764709979968	Colorado	Medicaid	NA	REL$/location/location/containedby
+-0.9784324597491724	Kirov	Britain	NA	REL$/location/location/containedby
+-0.978502998250121	Stacey King	Chicago	NA	REL$/location/location/containedby
+-0.978506603796719	Ted Breitenstein	Pittsburgh	NA	REL$/people/person/place_lived
+-0.978506603796719	Bums	Yankees	NA	REL$/people/person/place_lived
+-0.978529593158967	Milwaukee	Harley Davidson	NA	REL$/business/person/company
+-0.9785396184232034	Jack	Devers	NA	REL$/location/location/containedby
+-0.9785620552995299	Tim Robbins	Range Rover	NA	REL$/location/location/containedby
+-0.9785676667491894	Johnnie L. Cochran Jr.	Hitler	NA	REL$/people/person/place_lived
+-0.9785862181233024	Brooks	Ottawa	NA	REL$/location/location/containedby
+-0.9786014679233785	Arthur	Vanderbilt	NA	REL$/book/author/works_written
+-0.978603288259761	Jeff George	Oakland	NA	REL$/location/location/containedby
+-0.978621003215129	Verdi	Francesco Maria Piave	NA	REL$/book/author/works_written
+-0.9786259044734744	Martin Olav Sabo	Republicans	NA	REL$/location/location/containedby
+-0.9786631923470691	Sergei Nemchinov	New York Rangers	NA	REL$/location/location/containedby
+-0.9786723278557259	Rochester Hills	Open	NA	REL$/people/person/nationality
+-0.9787761189809739	Richard Grant	Roger Moore	NA	REL$/book/author/works_written
+-0.9787761189809739	William Lee Scott	Laura Dern	NA	REL$/book/author/works_written
+-0.9787761189809739	Alicia Silverstone	Christopher Walken	NA	REL$/book/author/works_written
+-0.9787764378967572	Brewers	Mike Matheny	NA	REL$/location/location/containedby
+-0.9788646921054838	Nintendo	Burnett	NA	REL$/business/person/company
+-0.9789169660363304	Claridge	Seagram	NA	REL$/business/person/company
+-0.9789222626507846	Wilt Chamberlain	San Francisco Warriors	NA	REL$/location/location/containedby
+-0.9789463500733687	Chuck Knoblauch	Derek Jeter	NA	REL$/business/person/company
+-0.9789463500733687	Mariano Rivera	Derek Jeter	NA	REL$/business/person/company
+-0.9789985233323723	Jack Parker	American	NA	REL$/business/person/company
+-0.9790463392829507	Capitol Hill	Microsoft	NA	REL$/business/person/company
+-0.9790592741218865	Joseph McCarthy	State Department	NA	REL$/business/person/company
+-0.979063306056524	Herbert Blomstedt	San Francisco Symphony	NA	REL$/book/author/works_written
+-0.9791093384568095	Stich	Wimbledon	NA	REL$/people/person/nationality
+-0.9791132979424717	Washington	Vilnius	NA	REL$/location/location/containedby
+-0.9791601181386693	Carl Douglas	Simpson	NA	REL$/business/person/company
+-0.9792425692569888	Martinique	Puerto Rico	NA	REL$/people/person/nationality
+-0.9793163723338608	Judith Lyons	Bayside	NA	REL$/people/person/place_lived
+-0.9793420895484992	Martina Hingis	Grand Slam	NA	REL$/people/person/nationality
+-0.9793512639622511	Paraguay	Juan Carlos Wasmosy	NA	REL$/people/person/nationality
+-0.9793739161759296	Virginia Woolf	Lytton Strachey	NA	REL$/location/location/containedby
+-0.9793764475337948	Claude Lemieux	Canadiens	NA	REL$/location/location/containedby
+-0.979390767275374	Norris	Connecticut	NA	REL$/location/location/containedby
+-0.9793978087422939	Malone	Jeff Van Gundy	NA	REL$/location/location/containedby
+-0.9794196220462061	Nelson Doubleday	Bertelsmann	NA	REL$/business/person/company
+-0.9794666675714444	New Jersey	Cleveland Cavaliers	NA	REL$/location/location/containedby
+-0.9794683526920911	Argentine	France	NA	REL$/location/location/containedby
+-0.9794683526920911	European	Liberia	NA	REL$/location/location/containedby
+-0.9794683526920911	Cuban	Israel	NA	REL$/location/location/containedby
+-0.9794988681000826	Hirsch	Martin Straka	NA	REL$/location/location/containedby
+-0.979602296585013	Starks	Garden	NA	REL$/location/location/containedby
+-0.9796323406915153	Jeans	Levi	NA	REL$/business/person/company
+-0.9797611406124817	Artur Axmann	Hitler Youth	NA	REL$/business/person/company
+-0.9797618061658009	Raptors	Harold Miner	NA	REL$/location/location/containedby
+-0.9798287504177031	Burger King	Hasbro	NA	REL$/business/person/company
+-0.979871830563765	Bobby Thomason	David Ramirez	NA	REL$/people/person/nationality
+-0.9798831363060987	New York City	North General Hospital	NA	REL$/location/location/containedby
+-0.9800249043497357	Davis	O'Neill	NA	REL$/location/location/containedby
+-0.9801739612481377	Sylvain Cote	Washington	NA	REL$/location/location/containedby
+-0.9802207463067928	Last Exit	Ronald Shannon Jackson	NA	REL$/book/author/works_written
+-0.9802439724938722	Armond Hill	National Basketball Association	NA	REL$/sports/sports_team/league
+-0.9802694428553872	Benjamin Edwards	Germantown	NA	REL$/people/person/place_lived
+-0.9802781297456048	Emperor Meiji	Matsumoto	NA	REL$/people/person/nationality
+-0.9802865748403577	Morton	Somers	NA	REL$/location/location/containedby
+-0.9802865748403577	James	Piermont	NA	REL$/location/location/containedby
+-0.9802865748403577	Norman	Stowe	NA	REL$/location/location/containedby
+-0.9802865748403577	Tim	Bakersfield	NA	REL$/location/location/containedby
+-0.9802865748403577	Joshua	Lyons	NA	REL$/location/location/containedby
+-0.9802865748403577	Vincent	Glen Ridge	NA	REL$/location/location/containedby
+-0.9802865748403577	Michael	Williston Park	NA	REL$/location/location/containedby
+-0.9802865748403577	Thomas	Holts Summit	NA	REL$/location/location/containedby
+-0.9802865748403577	Clark	Minneapolis	NA	REL$/location/location/containedby
+-0.9803521484718744	Chicago Cubs	Micah Bowie	NA	REL$/location/location/containedby
+-0.9803755185194077	Theresa Rebeck	Dome	NA	REL$/book/author/works_written
+-0.9804333084498256	Lard	Slow Food	NA	REL$/business/person/company
+-0.9804924492018395	Eagles	Standing Rock Indian Reservation	NA	REL$/business/person/company
+-0.9805340813791693	Michael Callen	Citicorp	NA	REL$/business/person/company
+-0.9805381710219221	Pedro	Mark Leiter	NA	REL$/location/location/containedby
+-0.9807144926693168	Henry	Sarah	NA	REL$/influence/influence_node/influenced_by
+-0.9807340192022636	United States Attorney	Bear Stearns	NA	REL$/location/location/containedby
+-0.9807487352396757	Anthony Lake	United Nations	NA	REL$/location/location/containedby
+-0.9807908721347508	Levy	Monticello	NA	REL$/book/author/works_written
+-0.980792936706795	Bethesda	Open	NA	REL$/book/author/works_written
+-0.9807952717759507	Bootstrap Institute	Fremont	NA	REL$/location/location/containedby
+-0.9808314594188184	Chris Nabholz	New York	NA	REL$/location/location/containedby
+-0.9809132636150564	New Yorkers	Gun Control	NA	REL$/business/person/company
+-0.9809138785667656	ESPN	MSNBC	NA	REL$/business/person/company
+-0.9809332109841525	Zapata Corporation	George Bush	NA	REL$/location/location/containedby
+-0.9809368230167469	Sky and Star	Murdoch	NA	REL$/business/person/company
+-0.980936951995265	CALIFORNIA ANGELS	Cleveland Gary	NA	REL$/location/location/containedby
+-0.9809449895511582	Gulf	Palestinians	NA	REL$/business/person/company
+-0.9809484246293392	Martha	Edward Albee	NA	REL$/book/author/works_written
+-0.9809885611575945	Bonilla	St. Louis	NA	REL$/location/location/containedby
+-0.9810320524516174	Christian Coalition	Chesapeake	NA	REL$/location/location/containedby
+-0.9810320524516174	National Rifle Association	Fairfax	NA	REL$/location/location/containedby
+-0.9810337639543609	Kansas City	John Wathan	NA	REL$/location/location/containedby
+-0.9810575547541084	Bukharan Jews	Corona	NA	REL$/location/location/containedby
+-0.9810920840863335	Allan Bristow	Johnson	NA	REL$/location/location/containedby
+-0.9811459152925779	Bullets	Heat	NA	REL$/location/location/containedby
+-0.9811890190898143	Vernice Smith	Arizona Cardinals	NA	REL$/location/location/containedby
+-0.9812199432874876	Lakers	Utah Jazz	NA	REL$/location/location/containedby
+-0.9812199432874876	San Antonio Spurs	Denver Nuggets	NA	REL$/location/location/containedby
+-0.9812315729448069	Suns	Rockets	NA	REL$/location/location/containedby
+-0.9812708980910249	Disney	Touchstone Pictures	NA	REL$/business/person/company
+-0.9812738124966018	Liar	Tom Brokaw	NA	REL$/book/book_edition/author_editor
+-0.9813348014795682	Cleveland Cavaliers	Utah Jazz	NA	REL$/location/location/containedby
+-0.9813615198438848	Marina	Juan Hernandez	NA	REL$/location/location/containedby
+-0.9814269874560355	Tarusa	Moscow	NA	REL$/location/location/containedby
+-0.9814307364943878	Gillian Anderson	Dana Scully	NA	REL$/book/author/works_written
+-0.9814661271607807	Richard Avedon	Paris	NA	REL$/location/location/containedby
+-0.9814661271607807	Harry	Burma	NA	REL$/location/location/containedby
+-0.9815255738401626	First Chicago Corporation	Continental	NA	REL$/organization/parent/child
+-0.9815263713162137	Linford Christie	Commonwealth Games	NA	REL$/business/person/company
+-0.9816101261136843	Greenwich	Gold Coast	NA	REL$/organization/parent/child
+-0.9816442695945673	Beck	America	NA	REL$/people/person/nationality
+-0.9816458377289096	Europe	War Department	NA	REL$/business/person/company
+-0.9816715071460566	Thomas Cook	Times Square	NA	REL$/location/location/containedby
+-0.9817040494817383	Sally Johnstone	Mountain Creek	NA	REL$/location/location/containedby
+-0.9817344734428817	Williams	Bullets	NA	REL$/location/location/containedby
+-0.9817361000636083	Spike Lee	Bedford-Stuyvesant	NA	REL$/people/person/place_lived
+-0.9817432261890066	Kennedy	Albuquerque	NA	REL$/location/location/containedby
+-0.9817596631394463	Ariel	AIDS	NA	REL$/location/location/containedby
+-0.9817705952854354	World War II	Cannes	NA	REL$/film/film/directed_by
+-0.9817844107945695	Jones Island	Jones Beach State Park	NA	REL$/location/location/containedby
+-0.9817844107945695	City Hall	Wall Street	NA	REL$/location/location/containedby
+-0.9818296869121796	Jeff Gordon	New Hampshire International Speedway	NA	REL$/people/person/nationality
+-0.9819108030115672	ARCO	California	NA	REL$/location/location/containedby
+-0.981951024985643	Texaco	West Africa	NA	REL$/location/location/containedby
+-0.9820512936181441	Nina	Italian	NA	REL$/people/person/nationality
+-0.9820512936181441	Garibaldi	Italian	NA	REL$/people/person/nationality
+-0.9820553669628164	American Institute of Chemical Engineers	American Chemical Society	NA	REL$/location/location/containedby
+-0.982075327374388	Nokia	Pizza Hut	NA	REL$/location/location/containedby
+-0.9820795160040641	Red Red Wine	UB40	NA	REL$/location/location/containedby
+-0.9821278740705076	New York Rangers	Kevin Hatcher	NA	REL$/location/location/containedby
+-0.9822325231634451	Benjamin Brafman	Peter Gatien	NA	REL$/book/author/works_written
+-0.9822335963221583	Lemieux	Detroit	NA	REL$/people/person/place_of_birth
+-0.9822899484472879	Waldorf-Astoria	Park Avenue	NA	REL$/location/location/containedby
+-0.9822988126936004	Christopher Lehmann-Haupt	The Island of the Colorblind	NA	REL$/book/author/works_written
+-0.9823692420925111	Lolita	Random House	NA	REL$/location/location/containedby
+-0.9824190091812894	First Boston	Sealy	NA	REL$/location/location/containedby
+-0.9824956449946912	Awadagin Pratt	Brahms	NA	REL$/book/author/works_written
+-0.9825346551083279	Alex Kotlowitz	The Wall Street Journal	NA	REL$/book/author/works_written
+-0.9825955415987678	Country Music Association	Manhattan	NA	REL$/location/location/containedby
+-0.9825955415987678	Progressive Policy Institute	Democrats	NA	REL$/location/location/containedby
+-0.9826512289413537	World War II	Yankees	NA	REL$/organization/parent/child
+-0.9826786122844833	Ron Harper	Stockton	NA	REL$/location/location/containedby
+-0.9827249154582142	Elizabeth Taylor	Wales	NA	REL$/book/author/works_written
+-0.9827378517899934	Jennings	Lynn Jennings	NA	REL$/book/author/works_written
+-0.9828099562128854	Washington Capitals	Milwaukee	NA	REL$/location/location/containedby
+-0.9828562802492287	Denver	Dikembe Mutombo	NA	REL$/people/person/place_lived
+-0.9829516182861748	Frederick Johnson	All Saints Episcopal Church	NA	REL$/location/location/containedby
+-0.9830043639181639	Eleanor	Great Gatsby	NA	REL$/book/author/works_written
+-0.9830055397181563	Astros	Los Angeles	NA	REL$/location/location/containedby
+-0.9830934893887944	Mr. Benson	Spencer W. Kimball	NA	REL$/book/author/works_written
+-0.9831040408059307	Don Baker	The Washington Post	NA	REL$/business/person/company
+-0.9831040408059307	U.F.O.	The New York Times	NA	REL$/business/person/company
+-0.9831290082238664	Al Sharpton	Senate	NA	REL$/location/location/containedby
+-0.9832135489534489	Defense	Roelf Meyer	NA	REL$/film/film/directed_by
+-0.9832312791949532	Hansel	Switch	NA	REL$/location/location/containedby
+-0.9832567263107375	Institute for Brewing Studies	Boulder	NA	REL$/business/company/place_founded
+-0.9832906279017617	Chauncey Billups	Colorado	NA	REL$/people/person/place_lived
+-0.9832930081544307	Lou Piniella	Bobby Meacham	NA	REL$/people/person/place_lived
+-0.9833409835082739	Sarah	Clinton County	NA	REL$/location/location/containedby
+-0.9833795383080505	San Francisco	Autodesk	NA	REL$/business/person/company
+-0.9834186414452846	Pittsburgh Pirates	Boston Braves	NA	REL$/location/location/containedby
+-0.9835263414886491	Rodin	Michelangelo	NA	REL$/business/person/company
+-0.9835640801429534	Cone	National League	NA	REL$/sports/sports_team/league
+-0.9835803490487824	Ken Wregget	Pittsburgh	NA	REL$/people/person/place_of_birth
+-0.9836334327288682	Quebec	Vancouver	NA	REL$/location/location/containedby
+-0.9836418513691866	Merrill Lynch	Paris	NA	REL$/organization/parent/child
+-0.9836528321204134	American	Frank Snepp	NA	REL$/film/film/directed_by
+-0.9837565597945515	Blue Jays	Kingdome	NA	REL$/location/location/containedby
+-0.9837614129374485	Ferguson	Moses Lake	NA	REL$/book/author/works_written
+-0.9837647773331313	Western Conference	Chicago Blackhawks	NA	REL$/location/location/containedby
+-0.9837658316221252	Sinclair Lewis	Nobel	NA	REL$/book/author/works_written
+-0.9837814227799545	Hank Greenberg	Jewish Publication Society	NA	REL$/business/person/company
+-0.983879602127581	Cassell	Danny Manning	NA	REL$/location/location/containedby
+-0.9839031093419334	Vin Baker	Milwaukee Bucks	NA	REL$/location/location/containedby
+-0.9839223761355416	Heat	Rony Seikaly	NA	REL$/location/location/containedby
+-0.9839653363988983	George Steinbrenner	Berra	NA	REL$/location/location/containedby
+-0.9839903906026092	Rockwell Automation	Allen-Bradley	NA	REL$/organization/parent/child
+-0.9841124298169828	Richard Yarborough	English	NA	REL$/people/person/place_lived
+-0.9841124298169828	Emily Toth	English	NA	REL$/people/person/place_lived
+-0.9841732046728443	Steppenwolf	Sam Shepard	NA	REL$/book/author/works_written
+-0.9842532520837932	Depression	California	NA	REL$/location/location/containedby
+-0.9843038693383878	Davie	Holtz	NA	REL$/people/person/place_lived
+-0.984312477725275	New Objectivity	Germany	NA	REL$/location/location/containedby
+-0.9843799934777882	Michael	Bulls	NA	REL$/location/location/containedby
+-0.9843846360430571	George Frazier	Esquire	NA	REL$/business/person/company
+-0.9844372271397854	Kings	Random House	NA	REL$/business/person/company
+-0.9845168579944538	Seattle	James Cotton	NA	REL$/location/location/containedby
+-0.9845232301899166	Downes	Olin	NA	REL$/people/person/parents
+-0.9845419456552811	Leningrad	St. Petersburg	NA	REL$/location/location/containedby
+-0.9845502997264932	Blue Jays	Cecil Fielder	NA	REL$/book/author/works_written
+-0.9845993492362294	Haydn	Ardsley	NA	REL$/people/person/place_of_birth
+-0.9846151904469789	William McLaughlin	Martin House	NA	REL$/people/person/place_lived
+-0.9846272641397473	Devils	Mike Van Ryn	NA	REL$/book/author/works_written
+-0.9846277705601991	George Steinbrenner	Howe	NA	REL$/location/location/containedby
+-0.9847097870354691	Evander Holyfield	Washington	NA	REL$/people/person/nationality
+-0.9847372148350912	Robin Renwick	British	NA	REL$/people/person/nationality
+-0.9847693185812936	Muslim	Gornji Vakuf	NA	REL$/location/location/containedby
+-0.9847785019168563	Barfield	Yankees	NA	REL$/people/person/place_lived
+-0.9847847120593979	Lakhdar Brahimi	Haiti	NA	REL$/location/location/containedby
+-0.9848304680075575	Keizo Obuchi	Atsushi Takahashi	NA	REL$/people/person/nationality
+-0.984873760001822	Mary Jones	Kershaw County School District	NA	REL$/book/author/works_written
+-0.9850380091010107	Federal Bureau of Investigation	San Juan	NA	REL$/people/person/place_of_birth
+-0.9850688581752233	Splash	Inn	NA	REL$/location/location/containedby
+-0.98511110095309	Astros	Rick Sutcliffe	NA	REL$/location/location/containedby
+-0.9851182572345452	II	Italian	NA	REL$/location/location/containedby
+-0.9851414035086808	Raymond Anderson	Miller	NA	REL$/business/person/company
+-0.9851593727121586	Dallas Stars	Texas Rangers	NA	REL$/location/location/containedby
+-0.9851829414611968	White & Case	Wall Street	NA	REL$/location/location/containedby
+-0.985199561190075	Wayne Gretzky	Europe	NA	REL$/people/person/place_of_birth
+-0.9852711517523745	Eric Friedman	Mad River	NA	REL$/people/person/place_lived
+-0.9852713825233909	Evangeline Bruce	David K. E. Bruce	NA	REL$/business/person/company
+-0.9852755665917383	Royal Shakespeare Company	Antony	NA	REL$/book/author/works_written
+-0.9853420660513559	Cary Grant	Mortimer	NA	REL$/book/author/works_written
+-0.985420632989668	Albanians	Belgrade	NA	REL$/location/location/containedby
+-0.9854242036869112	Vicki Hearne	Jane Goodall	NA	REL$/book/author/works_written
+-0.985465664234751	Henderson	American League Championship Series	NA	REL$/sports/sports_team/league
+-0.9854716750529842	Boston	Miami Heat	NA	REL$/location/location/containedby
+-0.9854767180901085	Richard Bernstein	East	NA	REL$/book/author/works_written
+-0.9854767180901085	Joyner	Beloved	NA	REL$/book/author/works_written
+-0.9854767180901085	Eric Asimov	Annie	NA	REL$/book/author/works_written
+-0.9854767180901085	Karen Angel	Apples	NA	REL$/book/author/works_written
+-0.9854767180901085	Stephen Holden	Ugly	NA	REL$/book/author/works_written
+-0.9854767180901085	Janet Maslin	Metroland	NA	REL$/book/author/works_written
+-0.9854767180901085	Stephen Holden	Cafe Society	NA	REL$/book/author/works_written
+-0.9854767180901085	Christopher Lehmann-Haupt	Bear	NA	REL$/book/author/works_written
+-0.9854767180901085	James Polk	Innocent Blood	NA	REL$/book/author/works_written
+-0.9854767180901085	Michiko Kakutani	Monkey Bridge	NA	REL$/book/author/works_written
+-0.9855441450143089	German	Bernhard Strigel	NA	REL$/film/film/directed_by
+-0.9855778100105991	Credit Suisse First Boston	Union Carbide	NA	REL$/location/location/containedby
+-0.9855879415442036	United	Muslims	NA	REL$/location/location/containedby
+-0.9856368587370179	Ellington	Charles Mingus	NA	REL$/book/author/works_written
+-0.9856563661891546	George Armstrong Custer	Battle of the Little Bighorn	NA	REL$/people/person/nationality
+-0.9857493972253618	National Commercial Bank	Bloomfield	NA	REL$/business/company/place_founded
+-0.9857589823065473	Mitchell	Buffalo	NA	REL$/location/location/containedby
+-0.9857589823065473	Armstead	Vikings	NA	REL$/location/location/containedby
+-0.9858180769566842	Chavez	Taylor	NA	REL$/location/location/containedby
+-0.9858241846177913	Kuwait	Syrian Arab Airlines	NA	REL$/location/location/containedby
+-0.9858365496834718	Beijing	Li Peng	NA	REL$/location/location/containedby
+-0.9858404101659699	Judaism	America	NA	REL$/location/location/containedby
+-0.9859295805133222	Harold	Boston	NA	REL$/location/location/containedby
+-0.9859788320413859	Calvin O. Butts	Democratic Party	NA	REL$/business/person/company
+-0.9859794129851961	Hernandez	Chicago White Sox	NA	REL$/location/location/containedby
+-0.985996881223057	Italian	Glamour	NA	REL$/location/location/containedby
+-0.9860255485454439	Lebanese	Elias Hrawi	NA	REL$/location/location/containedby
+-0.9860270896846999	Sam Nunn	Democrat	NA	REL$/people/person/place_lived
+-0.9860597736691922	Roy DeCarava	Modern	NA	REL$/business/person/company
+-0.986076938003301	Red Sox	Albert Belle	NA	REL$/location/location/containedby
+-0.986147039030561	Calpurnia	Julius Caesar	NA	REL$/book/author/works_written
+-0.9862450907356065	Leachman	Dick Modzelewski	NA	REL$/book/author/works_written
+-0.9862787687104	Rome	Pope	NA	REL$/location/location/containedby
+-0.9862830454622306	Martin	Sergi Bruguera	NA	REL$/people/person/nationality
+-0.9862830454622306	Wheaton	Sandon Stolle	NA	REL$/people/person/nationality
+-0.9862830454622306	Manuela	Amy Frazier	NA	REL$/people/person/nationality
+-0.9862830454622306	Jim Courier	Becker	NA	REL$/people/person/nationality
+-0.9862830454622306	Vince Spadea	Petr Korda	NA	REL$/people/person/nationality
+-0.9863025684165508	CBS	Young	NA	REL$/book/author/works_written
+-0.9863090143136101	Council	Boutros Boutros-Ghali	NA	REL$/location/location/containedby
+-0.9863190139579285	Haifa	Jacques Chirac	NA	REL$/film/film/directed_by
+-0.9863490274320207	Carmen	Julia Fischer	NA	REL$/film/film/directed_by
+-0.9863682277505103	Janos Starker	Cleveland	NA	REL$/book/author/works_written
+-0.986385909815219	Stolle	Alex O'Brien	NA	REL$/people/person/nationality
+-0.9863922902529174	Organization of American States	Inter-American Convention Against Corruption	NA	REL$/location/location/containedby
+-0.9864213494367194	Chevrolet	Geo	NA	REL$/location/location/containedby
+-0.9864320361773272	Gail Sheehy	Christmas	NA	REL$/book/author/works_written
+-0.9864592528995357	Honeywell	Minolta	NA	REL$/organization/parent/child
+-0.9864721190442065	Steinberg	Floyd Peters	NA	REL$/location/location/containedby
+-0.9864854216349134	Tours	United States Postal Service	NA	REL$/business/person/company
+-0.9864875158158043	Marlboro	Winston	NA	REL$/location/location/containedby
+-0.9865161494235202	Leonardo	Eli Whitney Museum	NA	REL$/business/person/company
+-0.9865195111042722	Social Democrats	Hans-Jochen Vogel	NA	REL$/film/film/directed_by
+-0.9865872570005622	McCarthy	Yankee	NA	REL$/location/location/containedby
+-0.9866638437116846	Mr. Carter	Pale	NA	REL$/people/person/place_of_birth
+-0.9866760039352626	Hawks	East	NA	REL$/sports/sports_team/league
+-0.9866952013451911	Citibank	Manila	NA	REL$/organization/parent/child
+-0.9867271876471517	Ages	Jane	NA	REL$/book/author/works_written
+-0.9867385979987193	Derrick Coleman	Shawn Bradley	NA	REL$/location/location/containedby
+-0.9867528580416696	OLD	Amsterdam	NA	REL$/location/location/containedby
+-0.986775747488261	Lott	Washington	NA	REL$/location/location/containedby
+-0.9867819343108899	Freud	Library of Congress	NA	REL$/business/person/company
+-0.986783130361398	Barry Pepper	Ryan	NA	REL$/location/location/containedby
+-0.9868180872551459	Free House	Preakness	NA	REL$/business/person/company
+-0.9868247315268321	Ronald Reagan	Britain	NA	REL$/location/location/containedby
+-0.9868275371365268	Newell	Stanley	NA	REL$/location/location/containedby
+-0.9868275371365268	Hartmarx	Robert	NA	REL$/location/location/containedby
+-0.9868371123198652	Warner Brothers	Steven Spielberg	NA	REL$/film/film/directed_by
+-0.9868516955443636	Western Hemisphere	Clinton	NA	REL$/location/location/containedby
+-0.98686503486961	Courbet	Napoleon	NA	REL$/location/location/containedby
+-0.9868675922306068	Kemp	Reggie Miller	NA	REL$/location/location/containedby
+-0.9869008058444835	Syrians	Clinton	NA	REL$/location/location/containedby
+-0.9869354077143528	James Richardson	Weston	NA	REL$/people/person/place_lived
+-0.986957030603579	Utah Jazz	Larry Miller	NA	REL$/location/location/containedby
+-0.9869845749156018	Christian	Chile	NA	REL$/location/location/containedby
+-0.9870295554885391	The Guardian	Frank Kermode	NA	REL$/film/film/directed_by
+-0.9870354596385333	Bob Johnson	Republican	NA	REL$/people/person/place_lived
+-0.9870368827500149	Tony DeMarco	Fernando Valenzuela	NA	REL$/book/author/works_written
+-0.9870659841331739	J. P. Morgan	Europe	NA	REL$/organization/parent/child
+-0.9870828686940925	Cambridge	Michael Porter	NA	REL$/film/film/directed_by
+-0.9871570938841436	John Hamilton Mortimer	English	NA	REL$/people/person/nationality
+-0.9872036065242878	Hugh Brogan	Richmond	NA	REL$/business/person/company
+-0.9872135151233262	Antonin Scalia	Jimmy Carter	NA	REL$/book/author/works_written
+-0.9872482815110772	Eero Saarinen	Yale	NA	REL$/book/author/works_written
+-0.9872516404485147	Albany	The New York Times	NA	REL$/business/person/company
+-0.9872846911429503	Hungarians	Russians	NA	REL$/people/person/place_lived
+-0.9872940538039254	Chiquita Brands International	Japan	NA	REL$/organization/parent/child
+-0.9873243924802613	Gleason	Joyce Randolph	NA	REL$/film/film/directed_by
+-0.987338559717752	Hill	Rosa Parks	NA	REL$/book/author/works_written
+-0.987345713857404	Michael Clemente	Pataki	NA	REL$/people/person/place_lived
+-0.9873683696904105	Unisys	Blue Hill	NA	REL$/organization/parent/child
+-0.9873980254346257	Anderson	Howell	NA	REL$/book/author/works_written
+-0.9874992732167924	European	Yves Klein	NA	REL$/film/film/directed_by
+-0.9874993838815944	Michael Feinstein	Ira Gershwin	NA	REL$/book/author/works_written
+-0.9875335175129295	America	Judy Shelton	NA	REL$/book/author/works_written
+-0.987551558324304	Edward Johnson	Lynch	NA	REL$/business/person/company
+-0.9875763036999334	American Express	New York City	NA	REL$/location/location/containedby
+-0.9875992392058376	Wimbledon	Graf	NA	REL$/people/person/nationality
+-0.9876044763510554	Timepiece	National Institute of Standards and Technology	NA	REL$/business/person/company
+-0.9876095595842701	Greece	Czechoslovakia	NA	REL$/location/location/containedby
+-0.9876867246494345	Dominican	Trujillo	NA	REL$/film/film/directed_by
+-0.9878548109618864	Eric Asimov	Sud	NA	REL$/business/person/company
+-0.9878843302359375	Steele	Carr	NA	REL$/book/author/works_written
+-0.9879488689466241	Swedish	Chinese	NA	REL$/location/location/containedby
+-0.9880303260780589	Miami	Eastern	NA	REL$/sports/sports_team/league
+-0.988067141010173	New York	Michael Aaron	NA	REL$/location/location/containedby
+-0.9880674009449165	William Hoffer	Jacob Heilbrunn	NA	REL$/book/author/works_written
+-0.9880790656667668	Chaya	Sandra Stone	NA	REL$/film/film/directed_by
+-0.9880916968391816	William Fay	Merrill Lynch	NA	REL$/business/person/company
+-0.9880916968391816	Robert F. Murphy	Lehman Brothers	NA	REL$/business/person/company
+-0.9880965413886177	Lott	White House	NA	REL$/book/author/works_written
+-0.9882404303998996	Timm Rosenbach	Cardinals	NA	REL$/people/person/place_lived
+-0.9882441846690107	Abass Bundu	Economic Community of West African States	NA	REL$/business/person/company
+-0.9882634270337836	Fabio	Italian	NA	REL$/book/author/works_written
+-0.9882929905160288	John Gielgud	Old	NA	REL$/book/author/works_written
+-0.9883184587341869	Edvin Wide	Olympic Games	NA	REL$/location/location/containedby
+-0.9883297351986592	Sam Johnson	House of Representatives	NA	REL$/book/author/works_written
+-0.9883702519200056	Leigh Steinberg	Marv Levy	NA	REL$/location/location/containedby
+-0.9883810155652364	Narciso Rodriguez	Rodriguez	NA	REL$/location/location/containedby
+-0.9884353264348639	Portia	Merchant of Venice	NA	REL$/book/author/works_written
+-0.9884761810343594	Lola	Broadway	NA	REL$/book/author/works_written
+-0.9885391912246284	Bonn	Iran	NA	REL$/location/location/containedby
+-0.9885703489847725	Geraldo Rivera	Stephen Gillers	NA	REL$/book/author/works_written
+-0.9886539373482837	Europe	State Department	NA	REL$/business/person/company
+-0.9886665963073478	Sands Point	Howard Gould	NA	REL$/film/film/directed_by
+-0.988669441012761	Suzanne Pillsbury	Andrew Hauptman	NA	REL$/book/author/works_written
+-0.9886805907916152	Charlotte	Richfield	NA	REL$/location/location/containedby
+-0.9886947398237176	Salt Lake City	Dan Majerle	NA	REL$/film/film/directed_by
+-0.9887031789467325	Chris McCarron	Artax	NA	REL$/business/person/company
+-0.9887587831148441	New Haven	Elm City	NA	REL$/location/location/containedby
+-0.988774422289568	Costantino Rocca	Philip Walton	NA	REL$/business/person/company
+-0.98877530801431	Texas Ranger	Yankees	NA	REL$/location/location/containedby
+-0.9887818477104611	European	Maastricht	NA	REL$/location/location/containedby
+-0.9887951195144788	Fernand Braudel	Sian Reynolds	NA	REL$/film/film/directed_by
+-0.9888280895037432	State Department	Jamaica	NA	REL$/location/location/containedby
+-0.9888591241228778	Albert Whittle	Scotland	NA	REL$/people/person/place_lived
+-0.9888614894085389	European Union	Renato Ruggiero	NA	REL$/location/location/containedby
+-0.9888705920328182	Depression	Herbert Hoover	NA	REL$/film/film/directed_by
+-0.9888807959551729	Don Mattingly	Yanks	NA	REL$/location/location/containedby
+-0.9888834711152785	Monroe	Red Smith	NA	REL$/film/film/directed_by
+-0.9888944240806957	Dartmouth	James Blackwell	NA	REL$/film/film/directed_by
+-0.9888957164393564	American	Lolita	NA	REL$/location/location/containedby
+-0.9889684271798587	Reynaldo Villalobos	James Newton Howard	NA	REL$/business/person/company
+-0.9889725848532057	Mariners	Ramiro Mendoza	NA	REL$/location/location/containedby
+-0.9889836854394156	American Booksellers Association	Jacob K. Javits Convention Center	NA	REL$/people/person/nationality
+-0.9890298525924581	Eugene Lee	Tony Award	NA	REL$/book/author/works_written
+-0.9890336174084576	New York City Ballet	Hlinka	NA	REL$/location/location/containedby
+-0.9890907196846861	Abraham Lincoln	John Cage	NA	REL$/film/film/directed_by
+-0.9891109992910844	Doc	Mariners	NA	REL$/book/author/works_written
+-0.9891491273286357	Polish	Zbigniew Herbert	NA	REL$/film/film/directed_by
+-0.9891515226594662	America West Airlines	Association of Flight Attendants	NA	REL$/business/person/company
+-0.9891787062792513	Mercer County	Republicans	NA	REL$/film/film/directed_by
+-0.9891827541864504	St. Martin	George W. Bush	NA	REL$/book/author/works_written
+-0.9891934863519105	Burbank	Andrea Thomas	NA	REL$/film/film/directed_by
+-0.9892704639306328	David Rosen	United Nations Headquarters	NA	REL$/business/person/company
+-0.9892787570011874	Scott Draper	Paul Goldstein	NA	REL$/people/person/nationality
+-0.9892946561133719	Berlin	Broadway	NA	REL$/book/author/works_written
+-0.9893031773915548	Paul Cavallini	Dallas	NA	REL$/location/location/containedby
+-0.9893505554143784	Blue Jays	Didier	NA	REL$/location/location/containedby
+-0.9893505554143784	Chicago White Sox	Huey	NA	REL$/location/location/containedby
+-0.9893986025073276	Joel Schumacher	Andrew Kevin Walker	NA	REL$/book/author/works_written
+-0.9894064337130505	Islanders	McCabe	NA	REL$/people/person/place_of_birth
+-0.9894556479358814	New York	Harold Ickes	NA	REL$/film/film/directed_by
+-0.9895302043868595	Manhattan	Fisher	NA	REL$/business/person/company
+-0.9895302043868595	New York	Henry Kaufman & Company	NA	REL$/business/person/company
+-0.9895306556807261	Nassau County	Colin Ferguson	NA	REL$/film/film/directed_by
+-0.9895341769216102	American	Kismayu	NA	REL$/business/person/company
+-0.9896743283338973	Roman Catholic	Bushwick	NA	REL$/location/location/containedby
+-0.9896743283338973	Roman Catholic	Bergen County	NA	REL$/location/location/containedby
+-0.9897201295950508	Andrew Marcus	Richard Robbins	NA	REL$/book/author/works_written
+-0.9897224272411627	Milburn	Ronnie Lott	NA	REL$/location/location/containedby
+-0.9897225072282597	Westchester	National Association for the Advancement of Colored People	NA	REL$/business/person/company
+-0.9897480037607436	Renny Harlin	Arts	NA	REL$/book/author/works_written
+-0.9898675206988233	Andrew	Broomfield	NA	REL$/people/person/place_lived
+-0.9898675206988233	Robert	Beverly Hills	NA	REL$/people/person/place_lived
+-0.9898675206988233	Roger	Bloomfield Hills	NA	REL$/people/person/place_lived
+-0.9898675206988233	Raymond	Montauk	NA	REL$/people/person/place_lived
+-0.9898675206988233	J. Herbert	Newport News	NA	REL$/people/person/place_lived
+-0.9898675206988233	Kenneth	Riverdale	NA	REL$/people/person/place_lived
+-0.9898675206988233	George	Flagler Beach	NA	REL$/people/person/place_lived
+-0.9898877836320287	De La Hoya	Joel	NA	REL$/business/person/company
+-0.98990936765986	Buffalo Sabres	Philadelphia	NA	REL$/location/location/containedby
+-0.9899105798337108	British	Ramsay MacDonald	NA	REL$/film/film/directed_by
+-0.9899121122757799	Robert Lang	Mike Richter	NA	REL$/people/person/place_of_birth
+-0.9899273683616796	Orfeo	Brooklyn Academy	NA	REL$/business/person/company
+-0.9899402638632804	Super Bowl XI	Washington	NA	REL$/location/location/containedby
+-0.9899405125230755	Keith Carradine	Will Rogers Follies	NA	REL$/book/author/works_written
+-0.9899554975920505	Lacy	Baseball Writers Association of America	NA	REL$/business/person/company
+-0.9900343037635048	Amelita Ramos	Fidel V. Ramos	NA	REL$/book/author/works_written
+-0.9900645280175535	Frank Viola	Pittsburgh	NA	REL$/people/person/place_lived
+-0.990075889816418	Borg	U.S. Open	NA	REL$/people/person/nationality
+-0.9901107402314159	Nintendo	Nintendo Entertainment System	NA	REL$/location/location/containedby
+-0.9901366134132993	Manhattan	Mindy Aloff	NA	REL$/film/film/directed_by
+-0.9901908822178511	Thelonious Monk	Village Gate	NA	REL$/music/artist/album
+-0.9901918651098955	Athens	Greeks	NA	REL$/location/location/containedby
+-0.9901975763690813	Noonan	Greg Gilbert	NA	REL$/people/person/place_of_birth
+-0.9903040661925185	New York City	Guyana	NA	REL$/location/location/containedby
+-0.9903093122389032	Mike Wallace	Frank Lloyd Wright	NA	REL$/business/person/company
+-0.9903268946978012	View From the Bridge	Strand	NA	REL$/book/author/works_written
+-0.9903284527938067	United States Agency for International Development	Zimbabwe	NA	REL$/location/location/containedby
+-0.9903284527938067	American Civil Liberties Union	Newark	NA	REL$/location/location/containedby
+-0.9903379010083327	Council of Economic Advisers	University of California	NA	REL$/business/person/company
+-0.9903407539409969	Cleveland	Hawks	NA	REL$/location/location/containedby
+-0.9903425352300523	Julie Jones	Metropolitan	NA	REL$/business/person/company
+-0.9903452233678426	Francois Mitterrand	Helmut Kohl	NA	REL$/book/author/works_written
+-0.9903536522087092	Reid	Connolly	NA	REL$/influence/influence_node/influenced_by
+-0.99035524358555	Heathers	Hudson Hawk	NA	REL$/location/location/containedby
+-0.9903563076531092	Lani Guinier	Clinton	NA	REL$/book/author/works_written
+-0.990401399824214	Ludovic Kennedy	British	NA	REL$/people/person/nationality
+-0.9904167316586795	Montana	Dave Krieg	NA	REL$/location/location/containedby
+-0.9904506320252195	Max Gottlieb	Grainne Marmion	NA	REL$/business/person/company
+-0.9904674317561187	Bob Dylan	Annie	NA	REL$/book/author/works_written
+-0.9904880190896883	Europeans	Congress of Vienna	NA	REL$/location/location/containedby
+-0.9904924699353982	Alps	Nest	NA	REL$/book/author/works_written
+-0.9905068267617875	Texas Instruments	United States International Trade Commission	NA	REL$/business/person/company
+-0.9905100977875442	Finley	Catfish	NA	REL$/book/author/works_written
+-0.9905383398061511	Nikita Khrushchev	United Nations	NA	REL$/location/location/containedby
+-0.9905678254485816	Alfonso Soriano	Posada	NA	REL$/location/location/containedby
+-0.9905681413935852	The New York Times	Siegel	NA	REL$/location/location/containedby
+-0.9905862796540666	Giants	Herschel Walker	NA	REL$/book/author/works_written
+-0.990592491788303	Gorchakov	Catacombs	NA	REL$/book/author/works_written
+-0.9906246323330157	Atlantic City	De La Hoya	NA	REL$/business/person/company
+-0.9906823261310228	Titus	Roman	NA	REL$/book/author/works_written
+-0.9906849444431245	Francis Davis	Sam Rivers	NA	REL$/book/author/works_written
+-0.9906849444431245	John Russell	Humphrey Spender	NA	REL$/book/author/works_written
+-0.9906854311322596	Barnes	William Griffin	NA	REL$/business/person/company
+-0.9907041210399838	Steven	Harold Ickes	NA	REL$/business/person/company
+-0.9909359406683029	Ernest Hemingway	Loyalists	NA	REL$/book/author/works_written
+-0.9909392469005266	Jeremy Thomas	Miramax Films	NA	REL$/business/person/company
+-0.9909392469005266	Howard Kazanjian	Warner Brothers	NA	REL$/business/person/company
+-0.9909392469005266	Gale Anne Hurd	Savoy Pictures	NA	REL$/business/person/company
+-0.9910349782652702	Western	Poznan	NA	REL$/location/location/containedby
+-0.9910678639329962	Mike Tyson	Bowe	NA	REL$/business/person/company
+-0.9911217641183677	Ku Klux Klan	Louisiana	NA	REL$/location/location/containedby
+-0.9911772100523938	Rhodes	Reeves	NA	REL$/business/person/company
+-0.9912083086652909	Ordway	Kentucky Derby	NA	REL$/business/person/company
+-0.9912732185950128	British	Edward Gray	NA	REL$/film/film/directed_by
+-0.9912949187804881	Taylor	Chavez	NA	REL$/location/location/containedby
+-0.9912991018498246	Simon Rattle	Avery Fisher Hall	NA	REL$/business/person/company
+-0.991304243024425	Mexican	Ozone Park	NA	REL$/location/location/containedby
+-0.991315589626477	Aikman	Dale Hellestrae	NA	REL$/business/person/company
+-0.9913700116515894	Fredericks	Olympic	NA	REL$/business/person/company
+-0.9913700116515894	Jackson	Olympic	NA	REL$/business/person/company
+-0.9914213683458305	West	Julius K. Nyerere	NA	REL$/film/film/directed_by
+-0.9914223265283832	Manhattan	Giuliani	NA	REL$/location/location/containedby
+-0.991422457384596	Ecuador	International Monetary Fund	NA	REL$/location/location/containedby
+-0.9914369280067064	Phillips	Pedro Martinez	NA	REL$/book/author/works_written
+-0.9914390472634461	Richard Klein	Americans	NA	REL$/location/location/containedby
+-0.9914665599982379	Bob Baffert	Santa Anita	NA	REL$/book/author/works_written
+-0.9914806207107455	Mura	Emperor Constantine	NA	REL$/book/author/works_written
+-0.9914938484306	Treasury	Merrill	NA	REL$/people/person/place_of_birth
+-0.9915325764856239	Wilson	William Jennings Bryan	NA	REL$/film/film/directed_by
+-0.9915576489495819	Rebecca	Broadway	NA	REL$/book/author/works_written
+-0.9916223896978779	Carl Hiaasen	Martin Cruz Smith	NA	REL$/book/author/works_written
+-0.9916223896978779	Scott	Joyce Carol Oates	NA	REL$/book/author/works_written
+-0.9916223896978779	Barry Schwabsky	Emmet Gowin	NA	REL$/book/author/works_written
+-0.9916223896978779	Brigitte Frase	Frederic Raphael	NA	REL$/book/author/works_written
+-0.9916799811458212	Gilbert	Giants	NA	REL$/people/person/place_lived
+-0.9917061398635336	Ingram Micro	Santa Ana	NA	REL$/business/company/place_founded
+-0.9917292062860087	Chicago Board of Trade	P.M.	NA	REL$/business/person/company
+-0.9918294993216619	Disney	Ron Miller	NA	REL$/film/film/directed_by
+-0.9918870748323356	Western	Mexico	NA	REL$/location/location/containedby
+-0.9918870748323356	Hungarian	Brussels	NA	REL$/location/location/containedby
+-0.9919043600638051	Viking Press	George C. Marshall	NA	REL$/film/film/directed_by
+-0.9919084036016621	German	Stettin	NA	REL$/location/location/containedby
+-0.9919211616274037	Steve Phillips	Phillips	NA	REL$/business/person/company
+-0.9919555696898457	Jon Anderson	Barnes & Noble	NA	REL$/business/person/company
+-0.9919878423334904	Suns	Manning	NA	REL$/location/location/containedby
+-0.9920125214557174	Red Sox	Tony Conigliaro	NA	REL$/location/location/containedby
+-0.99203365110535	Mexico State	Jim Hess	NA	REL$/film/film/directed_by
+-0.9920489967980931	Red	Vinland	NA	REL$/book/author/works_written
+-0.9920814154774271	Moscow	American Jewish Joint Distribution Committee	NA	REL$/business/person/company
+-0.9921139668113083	Pete Sampras	Jim Courier	NA	REL$/people/person/nationality
+-0.9921265067747113	John Healy	San Remo	NA	REL$/people/person/nationality
+-0.992192563519189	Talbots	Kmart	NA	REL$/location/location/containedby
+-0.9922019091003234	West End	Smokey Joe	NA	REL$/book/author/works_written
+-0.9922130486776086	Sherwood	Smith	NA	REL$/influence/influence_node/influenced_by
+-0.9922378321885958	Joan Mellen	Boyle	NA	REL$/film/film/directed_by
+-0.9922760524009778	Bush	Vincent	NA	REL$/book/author/works_written
+-0.9923025713112926	Flyers	Karl Dykhuis	NA	REL$/location/location/containedby
+-0.9923163168360748	Specialty Records	Sam Cooke	REL$/music/record_label/artist	REL$/film/film/directed_by
+-0.9923955492408216	Montana	Tampa Bay	NA	REL$/location/location/containedby
+-0.992409438708805	Kim	Pound	NA	REL$/book/author/works_written
+-0.9924936346384299	Arlington	Vincent Dole	NA	REL$/book/author/works_written
+-0.9925361875623518	James Brown	Adrienne	NA	REL$/book/author/works_written
+-0.9925640794866606	Lee	Kenneth	NA	REL$/book/author/works_written
+-0.9925640794866606	Charlotte	Albert	NA	REL$/book/author/works_written
+-0.9925648879230182	Deer Creek	United States Forest Service	NA	REL$/business/person/company
+-0.9925796539467971	David Wright	William Schuman	NA	REL$/book/author/works_written
+-0.9925985398328427	Frederic Edwin Church	Henry Wadsworth Longfellow	NA	REL$/business/person/company
+-0.9925985398328427	Hart	Lon L. Fuller	NA	REL$/business/person/company
+-0.9926099089570878	Rangers	Jason Muzzatti	NA	REL$/location/location/containedby
+-0.9926807267315707	Buffalo	Cornelius Bennett	NA	REL$/book/author/works_written
+-0.9927272989626466	Toronto Blue Jays	Dick Schofield	NA	REL$/location/location/containedby
+-0.9927387906467531	Harlem	Brooklyn Academy of Music	NA	REL$/business/person/company
+-0.9927605157884711	Yamaguchi	Kurt Browning	NA	REL$/location/location/containedby
+-0.9927763482134626	Jets	Ervin Randle	NA	REL$/book/author/works_written
+-0.9928494704234082	Dow	Museum of Fine Arts	NA	REL$/business/person/company
+-0.9928494704234082	Jeremy Adamson	Renwick Gallery	NA	REL$/business/person/company
+-0.9929290736321146	R. Taylor	John Dyson	NA	REL$/business/person/company
+-0.992994595998806	Conqueror	Battle of Hastings	NA	REL$/location/location/containedby
+-0.9930104725669228	Beverly	Kramer	NA	REL$/book/author/works_written
+-0.9930565698536692	Lionel Barrymore	Macbeth	NA	REL$/book/author/works_written
+-0.9930576438272786	Boston	Dave Gavitt	NA	REL$/location/location/containedby
+-0.993072411749121	Alexandre Daigle	Hartford	NA	REL$/people/person/place_of_birth
+-0.9930970619880582	Ray Aranha	Raymond	NA	REL$/location/location/containedby
+-0.9930999633044512	Serbian	Limassol	NA	REL$/location/location/containedby
+-0.9931394878136126	Jean Cocteau	French	NA	REL$/people/person/nationality
+-0.9932180839775013	Morrison	Lennox Lewis	NA	REL$/location/location/containedby
+-0.9932587608343505	Joseph Paxton	Harrison	NA	REL$/book/author/works_written
+-0.9932650988826994	Handley	Jeff Hostetler	NA	REL$/people/person/place_lived
+-0.9932810435048814	Hill	Helen	NA	REL$/book/author/works_written
+-0.9932810435048814	Martin	Christine	NA	REL$/book/author/works_written
+-0.9932810435048814	Mr. Jones	Stella	NA	REL$/book/author/works_written
+-0.9932845618651905	Lawrence Livermore National Laboratory	Federal	NA	REL$/location/location/containedby
+-0.9933049180493685	Messier	Gilmour	NA	REL$/location/location/containedby
+-0.9933278577425414	Public Theater	David Rabe	NA	REL$/film/film/directed_by
+-0.9933537605579246	Rudolph W. Giuliani	Andrew	NA	REL$/book/author/works_written
+-0.9933867051266766	Lonnie Young	Jets	NA	REL$/location/location/containedby
+-0.9934579004609412	Islander	Bill Torrey	NA	REL$/location/location/containedby
+-0.9935058628499499	Brad Johnson	Cris Carter	NA	REL$/location/location/containedby
+-0.9935430131256484	Kahlo	Cristina	NA	REL$/book/author/works_written
+-0.9935521236937792	Brewers	Duane Ward	NA	REL$/location/location/containedby
+-0.9935575791474244	Michigan	Tim Biakabutuka	NA	REL$/location/location/containedby
+-0.9935583698885733	Katzenbach	Lyndon B. Johnson	NA	REL$/business/person/company
+-0.9936339071254584	Don Beebe	Super Bowl	NA	REL$/location/location/containedby
+-0.99364527651106	Mark Vicente	Peter Hollywood	NA	REL$/business/person/company
+-0.9936621543299161	Jacobs	Browns	NA	REL$/location/location/containedby
+-0.9936751100406112	Ruth Morley	Eugene Lee	NA	REL$/book/author/works_written
+-0.9937175693648486	Bullets	John Williams	NA	REL$/location/location/containedby
+-0.9937873872414628	Tariq Aziz	Russians	NA	REL$/business/person/company
+-0.9938079593376878	Kings	Michael Smith	NA	REL$/book/author/works_written
+-0.9938084941338409	Montreal	Toque	NA	REL$/book/author/works_written
+-0.9938105351709897	St. Anne	Virgin Mary	NA	REL$/book/author/works_written
+-0.9938105351709897	Alice White	Thomas	NA	REL$/book/author/works_written
+-0.9938163649759947	Violin Concerto	Requiem	NA	REL$/book/author/works_written
+-0.9938354791974893	Sarah Greenwood	Sony Pictures Classics	NA	REL$/business/person/company
+-0.9938354791974893	Ferdinando Scarfiotti	Warner Brothers	NA	REL$/business/person/company
+-0.993848749161043	Bradshaw	Henderson	NA	REL$/location/location/containedby
+-0.993848749161043	Erik Kramer	Alonzo Mayes	NA	REL$/location/location/containedby
+-0.9938653756639318	O. J. Simpson	Nicole Brown Simpson	NA	REL$/book/author/works_written
+-0.9938713752598567	Ben Brantley	Lisa Kron	NA	REL$/book/author/works_written
+-0.9938713752598567	Brooke Allen	Exquisite Corpse	NA	REL$/book/author/works_written
+-0.9939057581914735	Hildegard	Paul	NA	REL$/book/author/works_written
+-0.9939431577420927	Vikings	Pittsburgh	NA	REL$/location/location/containedby
+-0.9939618293955103	Roberta Smith	Basquiat	NA	REL$/book/author/works_written
+-0.9939927179230336	Yankees	Andy Stankiewicz	NA	REL$/location/location/containedby
+-0.9940504470053383	Peter Sova	Dan Lupovitz	NA	REL$/book/author/works_written
+-0.9940627601003597	Washington	Wunder	NA	REL$/business/person/company
+-0.9941076795545136	Don Davis	Martin Lancaster	NA	REL$/book/author/works_written
+-0.9941168599298406	Cardinals	LeShon Johnson	NA	REL$/location/location/containedby
+-0.9941407653149567	Montgomery	Burrell	NA	REL$/book/author/works_written
+-0.994163404522097	Jerry Zaks	Scott McPherson	NA	REL$/influence/influence_node/influenced_by
+-0.9941649804261143	Irabu	Allen Watson	NA	REL$/book/author/works_written
+-0.9942249829577963	London	Lynne	NA	REL$/book/author/works_written
+-0.9942249829577963	Manhattan	Vicki	NA	REL$/book/author/works_written
+-0.9942347047805782	Fuller	Williams & Connolly	NA	REL$/business/person/company
+-0.9943129944212111	New Yorker	Declaration of Independence	NA	REL$/book/author/works_written
+-0.9943129944212111	NBC	Broadway	NA	REL$/book/author/works_written
+-0.9943494464544727	Kelso	Jim Williams	NA	REL$/book/author/works_written
+-0.9943811171457604	Greene	Rome	NA	REL$/business/person/company
+-0.9944214710050523	Orchard House	Louisa May Alcott	NA	REL$/film/film/directed_by
+-0.994426246185538	Grateful Dead	Bruce Hornsby	NA	REL$/film/film/directed_by
+-0.994464331083727	Todd Collins	Amani Toomer	NA	REL$/business/person/company
+-0.9945061357957166	Senate	Kaye	NA	REL$/business/person/company
+-0.9945768442144683	Childs	Jaguar	NA	REL$/book/author/works_written
+-0.9945768442144683	Brian	Ron Anderson	NA	REL$/book/author/works_written
+-0.9945797091498948	Ronnie Lott	Super Bowl	NA	REL$/location/location/containedby
+-0.9946201987438061	Ricardo Jacques Gale	Rachid Bouchareb	NA	REL$/business/person/company
+-0.9946328782064496	Miami	Kevin Gamble	NA	REL$/location/location/containedby
+-0.9946670562926612	Weathers	Brady Anderson	NA	REL$/book/author/works_written
+-0.9946691836018305	Mick Lally	Miley	NA	REL$/book/author/works_written
+-0.9946793646239641	Darren Lewis	Bud Black	NA	REL$/book/author/works_written
+-0.9947169874170592	Columbus Avenue	Beat Generation	NA	REL$/book/author/works_written
+-0.9947209063606341	Steve Gainer	Chris Davis	NA	REL$/book/author/works_written
+-0.9947242485861042	West	Jerod Ward	NA	REL$/location/location/containedby
+-0.9947600291941875	Keith Millard	Pro Bowl	NA	REL$/location/location/containedby
+-0.9947680270352217	Hugh Hefner	Marston	NA	REL$/book/author/works_written
+-0.9947713216682204	Lakers	Campbell	NA	REL$/location/location/containedby
+-0.9947799299518397	Don Baylor	Keith Lockhart	NA	REL$/book/author/works_written
+-0.9948050771399074	Polish	Baghdad	NA	REL$/location/location/containedby
+-0.9948244117474302	Spectator	Marvin R. Shanken	NA	REL$/location/location/containedby
+-0.9948487279494916	Dave Matthews Band	Roseland	NA	REL$/music/artist/album
+-0.9948487279494916	Glasses	Kitchen	NA	REL$/music/artist/album
+-0.9948678050120222	Toronto	Garden	NA	REL$/sports/sports_team/arena_stadium
+-0.9948952625542411	Brian Mitchell	Gregory Hines	NA	REL$/business/person/company
+-0.9949609872950174	Willie Randolph	Williams	NA	REL$/business/company/founders
+-0.9949839152963081	Howard	Jake Lloyd	NA	REL$/book/author/works_written
+-0.9950412053730017	Lenny Harris	John Hudek	NA	REL$/location/location/containedby
+-0.9950702724881924	Cora	Johnny	NA	REL$/book/author/works_written
+-0.995118362880345	Manhattan	O'Melveny & Myers	NA	REL$/business/person/company
+-0.995118362880345	Budapest	Warner Brothers	NA	REL$/business/person/company
+-0.995118362880345	Tokyo	Salomon Smith Barney	NA	REL$/business/person/company
+-0.995118362880345	Capitol Hill	Stanley Greenberg	NA	REL$/business/person/company
+-0.9951219002116487	German	Eisenach	NA	REL$/location/location/containedby
+-0.9951473398358388	Peter Cattaneo	Uberto Pasolini	NA	REL$/business/person/company
+-0.995148098489675	Amy	Christian	NA	REL$/film/film/directed_by
+-0.995148098489675	New York Press	Coco	NA	REL$/film/film/directed_by
+-0.9951501289419193	Childe Hassam	American	NA	REL$/business/person/company
+-0.9951684916110003	White Sox	Torre	NA	REL$/book/author/works_written
+-0.9951743197365392	Ramirez	Hargrove	NA	REL$/book/author/works_written
+-0.9951770868301795	Judy	Ashley	NA	REL$/book/author/works_written
+-0.9951770868301795	Joyce	Amy	NA	REL$/book/author/works_written
+-0.9951770868301795	Geraldine	Alan	NA	REL$/book/author/works_written
+-0.9952107118261765	Zimmer	George Bell	NA	REL$/book/author/works_written
+-0.9952209965257361	Latino	Benjamin Bratt	NA	REL$/film/film/directed_by
+-0.9952298507702475	Templeton	Mark Mobius	NA	REL$/location/location/containedby
+-0.9952436861083955	Tim Johnson	Democrat	NA	REL$/location/location/containedby
+-0.995268071681836	Simms	Lionel Manuel	NA	REL$/location/location/containedby
+-0.9952744810774125	Far East	BankAmerica	NA	REL$/film/film/directed_by
+-0.9953102772627849	Boston University	Robert Dougherty	NA	REL$/people/person/place_lived
+-0.995324511176779	Yugoslavia	Fiat	NA	REL$/location/location/containedby
+-0.9953542635748224	Oakland	Todd Van Poppel	NA	REL$/location/location/containedby
+-0.9953574244701857	Trail Blazers	Memorial Coliseum	NA	REL$/business/person/company
+-0.9953715726929332	Duke	Steve Wojciechowski	NA	REL$/location/location/containedby
+-0.9953905757759254	Beverly Hills	Christian Dior	NA	REL$/book/author/works_written
+-0.9954087619913271	Lou Piniella	Dibble	NA	REL$/book/author/works_written
+-0.9954173272544646	David Johnson	Gramercy Pictures	NA	REL$/business/person/company
+-0.9954173272544646	Stephen Gyllenhaal	Gramercy Pictures	NA	REL$/business/person/company
+-0.9954173272544646	Peter Cattaneo	Fox Searchlight Pictures	NA	REL$/business/person/company
+-0.9954173272544646	Kevin Lima	Walt Disney Pictures	NA	REL$/business/person/company
+-0.995438857302748	MaliVai Washington	Nicolas Kiefer	NA	REL$/people/person/nationality
+-0.995438857302748	Derrick Rostagno	Grant Connell	NA	REL$/people/person/nationality
+-0.995438857302748	Andre Agassi	David Wheaton	NA	REL$/people/person/nationality
+-0.995438857302748	McGrath	Martina Navratilova	NA	REL$/people/person/nationality
+-0.9954423400258455	Thomas Muster	French Open	NA	REL$/people/person/nationality
+-0.9954717406798408	State Department	Somalia	NA	REL$/location/location/containedby
+-0.9954813566746604	Jack N. Green	Terry Rawlings	NA	REL$/business/person/company
+-0.9955113350539103	Dolphins	Dallas	NA	REL$/location/location/containedby
+-0.9955545738641263	New York State	Federal Government	NA	REL$/location/location/containedby
+-0.9955813820741259	Aeneas Williams	Johnson	NA	REL$/book/author/works_written
+-0.9956016711872174	Americans	Tab Ramos	NA	REL$/book/author/works_written
+-0.9956050889383994	Ewing	Pat Riley	NA	REL$/book/author/works_written
+-0.9956133909930968	Michael Hurley	Mr. Weber	NA	REL$/location/location/containedby
+-0.9956182625086348	Steve Larmer	Madison Square Garden	NA	REL$/business/person/company
+-0.9956323977739862	Starks	Don Nelson	NA	REL$/book/author/works_written
+-0.9956435546139818	American Studies	Smithsonian Institution	NA	REL$/location/location/containedby
+-0.9956573834241393	Sharon Stone	Bill Macdonald	NA	REL$/book/author/works_written
+-0.9956692387703863	Washington	Immigration and Naturalization Service	NA	REL$/business/person/company
+-0.9957709129511997	Atlanta Braves	Dave Gallagher	NA	REL$/book/author/works_written
+-0.9958042489987455	Nick Zito	Champagne	NA	REL$/business/person/company
+-0.9958042489987455	David Frankel	Oscar	NA	REL$/business/person/company
+-0.9958042489987455	Jerry Bailey	Derby	NA	REL$/business/person/company
+-0.9958121399381747	Hersey Hawkins	Philadelphia	NA	REL$/location/location/containedby
+-0.9958802391622552	Kerwin Danley	Gilkey	NA	REL$/book/author/works_written
+-0.9958830478034149	Bushes	Reagans	NA	REL$/book/author/works_written
+-0.9958998645410978	Belcher	Bream	NA	REL$/book/author/works_written
+-0.9958998758915547	Yankees	Graeme Lloyd	NA	REL$/business/company/founders
+-0.9959388557159474	Grand Slam	Victory Gallop	NA	REL$/business/person/company
+-0.9959659044917083	Deutsch	Buckley	NA	REL$/location/location/containedby
+-0.9959728586566364	Gil Heredia	Hill	NA	REL$/book/author/works_written
+-0.9959795539183615	P.M.	Music Room	NA	REL$/business/person/company
+-0.9960328381513033	Dennis Conner	America	NA	REL$/people/person/nationality
+-0.9960602324343306	Dawson	Belinda	NA	REL$/book/author/works_written
+-0.9960712194386948	Laurence Fishburne	Ike Turner	NA	REL$/book/author/works_written
+-0.9960950108598239	Dallas	Michael Irvin	NA	REL$/location/location/containedby
+-0.996104583229689	Irving	Schwartz	NA	REL$/book/author/works_written
+-0.9961611062334789	Reich	Super Bowl	NA	REL$/location/location/containedby
+-0.996185473032089	Dubai	Citibank	NA	REL$/location/location/containedby
+-0.9962776347761082	Rob Johnson	Mike Thompson	NA	REL$/book/author/works_written
+-0.9963072947529876	Tino Martinez	Rick Krivda	NA	REL$/book/author/works_written
+-0.9963072947529876	Roberto Alomar	Bip Roberts	NA	REL$/book/author/works_written
+-0.9963655905306795	Rockies	Reed	NA	REL$/book/author/works_written
+-0.9963774559141022	Whitestone	Howard Weiss	NA	REL$/book/author/works_written
+-0.9964954215114274	Andy Pettitte	Rick Reed	NA	REL$/book/author/works_written
+-0.9965642752009242	New England	Vikings	NA	REL$/location/location/containedby
+-0.9965934178421694	Melodiya	Koch	NA	REL$/book/author/works_written
+-0.9965943401060278	Americans	Southerners	NA	REL$/book/author/works_written
+-0.9966062035607517	Roberto Kelly	Ryan	NA	REL$/book/author/works_written
+-0.9966068338782212	American	Montenegro	NA	REL$/location/location/containedby
+-0.9966195019317066	Quiet City	Maurice Peress	NA	REL$/location/location/containedby
+-0.9966210508558419	White House	Charles W. Colson	NA	REL$/book/author/works_written
+-0.9966210508558419	Frank	Henry Kissinger	NA	REL$/book/author/works_written
+-0.9966566305050526	British	Vitez	NA	REL$/location/location/containedby
+-0.9966672831435147	Martin	Brownlee	NA	REL$/book/author/works_written
+-0.9966909576685266	Anita Baker	Radio City Music Hall	NA	REL$/business/person/company
+-0.9966958443752377	Neil O'Donnell	Glenn Foley	NA	REL$/location/location/containedby
+-0.9967112914638983	Walton	Jay Haas	NA	REL$/book/author/works_written
+-0.996722389335711	Bryan Cox	Pro Bowl	NA	REL$/location/location/containedby
+-0.9967307567343379	Torre	Mike Hargrove	NA	REL$/book/author/works_written
+-0.9967578651980662	Haynes	Steve Lappas	NA	REL$/location/location/containedby
+-0.9967749972376657	Bledsoe	Jefferson	NA	REL$/book/author/works_written
+-0.9968112698945767	Leiter	Chipper Jones	NA	REL$/book/author/works_written
+-0.9968323616126035	Lange	Daniel Cosgrove	NA	REL$/business/person/company
+-0.9968564970010312	Administration	Roe	NA	REL$/book/author/works_written
+-0.9968627984702215	Jeff Maggert	Tom Byrum	NA	REL$/book/author/works_written
+-0.9968671577413495	TriBeCa	Douglas Elliman	NA	REL$/film/film/directed_by
+-0.9969096416557787	Green Bay Packers	Andy Reid	NA	REL$/location/location/containedby
+-0.9969173950497715	Kaypro	David Kay	NA	REL$/book/author/works_written
+-0.9969173950497715	Judith Light	Kathleen Chalfant	NA	REL$/book/author/works_written
+-0.9969198803407872	Steve Lappas	Thomas	NA	REL$/people/person/nationality
+-0.9969630748292638	Buck Williams	Riley	NA	REL$/book/author/works_written
+-0.9970158000632321	Malone	J. P.	NA	REL$/people/person/parents
+-0.9970172482008776	Joe Smith	Len Elmore	NA	REL$/book/author/works_written
+-0.9970257664114265	Republican	Mike Francis	NA	REL$/book/author/works_written
+-0.9970342593007212	George W. Bush	John Ellis	NA	REL$/book/author/works_written
+-0.9970490332002478	Post	Jimmy Carter	NA	REL$/book/author/works_written
+-0.9970490332002478	Pete Wilson	Bob Dole	NA	REL$/book/author/works_written
+-0.997059877001145	Pat Riley	Falk	NA	REL$/location/location/containedby
+-0.9970618416867226	Al Levitt	Lee Konitz	NA	REL$/business/person/company
+-0.9970654157702833	Republican	Steven Pierce	NA	REL$/book/author/works_written
+-0.9971068929140924	Hillwood	Tilles Center	NA	REL$/business/person/company
+-0.9971326962982342	Yankees	Mo Vaughn	NA	REL$/book/author/works_written
+-0.9971372546793354	Dwight Rhoden	Wesley Johnson	NA	REL$/book/author/works_written
+-0.9971400914440861	Nixon	James D. St. Clair	NA	REL$/book/author/works_written
+-0.9971475684560825	Venter	Steinberg	NA	REL$/book/author/works_written
+-0.9971487942483254	Council	Mayor	NA	REL$/location/location/containedby
+-0.9971671369871907	Cherie	Mary-Louise Parker	NA	REL$/book/author/works_written
+-0.9971709823175524	Oregon	Thomas Browne	NA	REL$/book/author/works_written
+-0.9972070307667315	Sam	Olivia	NA	REL$/book/author/works_written
+-0.9972314782592907	Tillman	Hampton	NA	REL$/location/location/containedby
+-0.9972314782592907	Ware	Erik Kramer	NA	REL$/location/location/containedby
+-0.9972581577086285	County	Clinton	NA	REL$/book/author/works_written
+-0.997275117914164	Simms	Joe Montana	NA	REL$/book/author/works_written
+-0.9972846176538196	Alexei Sultanov	Connecticut	NA	REL$/business/person/company
+-0.997297145615627	Savannah	George Bush	NA	REL$/book/author/works_written
+-0.9973120467830658	Willie Stargell	Bobby Bonilla	NA	REL$/book/author/works_written
+-0.9973430586957515	Clinton	Robert C. Byrd	NA	REL$/book/author/works_written
+-0.9973691893559705	Paul Griffiths	Amistad	NA	REL$/business/person/company
+-0.9973751411945113	Ann Powers	Elvis Costello	NA	REL$/business/person/company
+-0.9973751411945113	Jon Pareles	Tina Turner	NA	REL$/business/person/company
+-0.9973839473099927	Hispanic	Brooklyn	NA	REL$/location/location/containedby
+-0.9974188868048053	Bandshell	P.M.	NA	REL$/business/person/company
+-0.9974324078569332	Patriots	Meggett	NA	REL$/location/location/containedby
+-0.9974527142507238	Randy Myers	Paul O'Neill	NA	REL$/book/author/works_written
+-0.9975139205115612	Winterreise	William Parker	NA	REL$/business/person/company
+-0.997530899297161	Silverberg	Brewer	NA	REL$/book/author/works_written
+-0.997586149040137	Incontinence	David Salle	NA	REL$/location/location/containedby
+-0.9976252252038952	Indianapolis Colts	Gino Torretta	NA	REL$/location/location/containedby
+-0.9976466978892445	Orchestra	Yuri Temirkanov	NA	REL$/business/person/company
+-0.9977167090218806	Edgardo Alfonzo	Henderson	NA	REL$/book/author/works_written
+-0.997760409775033	Ron Carey	Hoffa	NA	REL$/location/location/containedby
+-0.997782597610462	Rudolph W. Giuliani	Howard Safir	NA	REL$/book/author/works_written
+-0.9977874469141159	Clinton	James Collins	NA	REL$/book/author/works_written
+-0.9978297996893863	Lewis	Tucker	NA	REL$/location/location/containedby
+-0.9979682459945701	Claire Smith	Pete Harnisch	NA	REL$/business/person/company
+-0.9980177530273787	Stu Jackson	Tucker	NA	REL$/location/location/containedby
+-0.9980306475723327	Democrats	Mr. Brown	NA	REL$/book/author/works_written
+-0.998065158742541	John Wetteland	Jeff Reboulet	NA	REL$/book/author/works_written
+-0.9980713019262871	George Foster	Lance Parrish	NA	REL$/book/author/works_written
+-0.9981542585270125	Clinton	Ronald Reagan	NA	REL$/book/author/works_written
+-0.998184403348458	Denver Broncos	Cleveland Browns	NA	REL$/people/person/place_lived
+-0.9982107815123197	Sam	Delia	NA	REL$/book/author/works_written
+-0.9982253765478514	Jackson	Kevin Garnett	NA	REL$/book/author/works_written
+-0.9983092596936612	Bailey	Bobby Knight	NA	REL$/book/author/works_written
+-0.9983689860089091	Saints	Rick Venturi	NA	REL$/book/author/works_written
+-0.9984212384237608	Chicago	Milwaukee	NA	REL$/sports/sports_team/location
+-0.9985007394625904	Chang	Edberg	NA	REL$/people/person/nationality
+-0.9985476615626059	Brandenburg Concerto	Manhattanville College	NA	REL$/business/person/company
+-0.9985613910547152	New York	Leningrad	NA	REL$/location/location/containedby
+-0.9985822745108863	Hoover	Coolidge	NA	REL$/book/author/works_written
+-0.9986449305656109	Jon Pareles	Marshall Crenshaw	NA	REL$/book/author/works_written
+-0.9986496356814478	Jack Anderson	Playhouse	NA	REL$/business/person/company
+-0.9986794235320425	Kraft	Myra	NA	REL$/book/author/works_written
+-0.9986838402673999	Long Island	American Cancer Society	NA	REL$/business/person/company
+-0.9986890736386437	Foley	Keyshawn Johnson	NA	REL$/location/location/containedby
+-0.9987039040684402	Riley	Murdock	NA	REL$/book/author/works_written
+-0.9987804195115996	Kenneth Conboy	Richard Trumka	NA	REL$/book/author/works_written
+-0.9988037560597802	Mason	Brian Johnson	NA	REL$/book/author/works_written
+-0.9988626008122719	Western	Kuwait	NA	REL$/location/location/containedby
+-0.9988856185424106	Frankie Fredericks	Michael Johnson	NA	REL$/location/location/containedby
+-0.998924750350538	Serbian	Yugoslavia	NA	REL$/location/location/containedby
+-0.9990233537888334	Walters	Chris Childs	NA	REL$/people/person/place_lived
+-0.9990968777608288	Ms. Hill	Mr. Brown	NA	REL$/book/author/works_written
+-0.9991344858923656	Christie Brinkley	Matt Dillon	NA	REL$/influence/influence_node/influenced_by
+-0.9991534492488271	Nelson	Stanley	NA	REL$/location/location/containedby
+-0.9991592091566197	Lee	Jackie Robinson	NA	REL$/book/author/works_written
+-0.9992180181681802	Reeves	Pepper Johnson	NA	REL$/people/person/place_lived
+-0.9992193380959398	Ann Powers	Donny Osmond	NA	REL$/book/author/works_written
+-0.9994529049490559	MacLean	Devils	NA	REL$/people/person/nationality
+-0.999624301558893	Paul Griffiths	Midori	NA	REL$/book/author/works_written

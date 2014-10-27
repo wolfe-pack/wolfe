@@ -14,6 +14,7 @@ object EmbeddedProbLogicEvaluation {
 
   def main(args: Array[String]) {
     implicit val conf = ConfigFactory.parseFile(new File("conf/epl.conf"))
+    assert(!conf.entrySet().isEmpty, "Couldn't find configuration file.")
 
     def relationFilter(rel: String) = rel.startsWith("path") || (rel.startsWith("REL$") && rel != "REL$NA")
 
