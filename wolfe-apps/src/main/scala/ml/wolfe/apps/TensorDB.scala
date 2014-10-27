@@ -136,6 +136,8 @@ class TensorDB(k: Int = 100) extends Tensor {
 
   private def sig(x: Double) = 1.0 / (1.0 + math.exp(-x))
 
+  def prob(key1: CellIx, key2: CellIx): Double = sig(vector1(key1).get dot vector2(key2).get)
+
   def toVerboseString(showTrain: Boolean = false) = {
     import ml.wolfe.nlp.util.ANSIFormatter._
 
@@ -194,6 +196,8 @@ class TensorDB(k: Int = 100) extends Tensor {
   def toIndexString = cellMap.mkString("\n") + s"\n---\n$ix1Map\n$ix2Map\n$ix3Map\n"
 
   def sampleTensor(num1: Int, num2: Int, num3: Int = 0, density: Double = 0.1) = {
+    require(cells.isEmpty)
+
     val rels = (1 to num1).map(i => s"r$i")
     val arg1s = (1 to num2).map(i => s"e$i")
     val arg2s = if (num3 > 0) (1 to num3).map(i => s"e$i") else List(DefaultIx)
