@@ -6,6 +6,7 @@ import ml.wolfe.FactorGraph.Edge
 import ml.wolfe.GradientBasedOptimizer
 import ml.wolfe.apps.TensorKB
 import ml.wolfe.fg._
+import math._
 
 import scala.collection.mutable
 
@@ -551,7 +552,7 @@ class LogPairwiseScaleBias(val col1EdgeToBePredicted: Edge, val col2Edge: Edge,
   }
 }
 
-class SingleColumnBias(val biasEdge:Edge, scale:Double, truth:Double) extends Potential {
+class SingleColumnBias(val biasEdge: Edge, scale: Double, truth: Double) extends Potential {
 
   import math._
 
@@ -634,5 +635,112 @@ class LogPairwiseWeightedScaleBias(val col1EdgeToBePredicted: Edge, val col2Edge
   }
 }
 
+class JointPotential(weights1: Edge, bias1: Edge, scale1: Edge, mult1: Edge,
+                     weights2: Edge, bias2: Edge, scale2: Edge, mult2: Edge,
+                     trueProbOf1Given2: Double, trueProbOf2Given1: Double, marg1: Double, marg2: Double,
+                     regWeights: Double, regBias: Double, regScale: Double, regMult: Double,
+                     priorBias: Double, priorScale: Double, priorMult: Double,
+                     arg1Coeff:Double, arg2Coeff:Double) extends Potential {
+
+  val weights1Msgs = weights1.msgs.asVector
+  val bias1Msgs    = bias1.msgs.asVector
+  val scale1Msgs   = scale1.msgs.asVector
+  val mult1Msgs    = mult1.msgs.asVector
+
+  val weights2Msgs = weights2.msgs.asVector
+  val bias2Msgs    = bias2.msgs.asVector
+  val scale2Msgs   = scale2.msgs.asVector
+  val mult2Msgs    = mult2.msgs.asVector
+
+
+  def initMsgs(k: Int): Unit = {
+    if (weights1Msgs.f2n == null) weights1Msgs.f2n = new DenseTensor1(k)
+    if (weights2Msgs.f2n == null) weights2Msgs.f2n = new DenseTensor1(k)
+    if (scale1Msgs.f2n == null) scale1Msgs.f2n = new DenseTensor1(1)
+    if (scale2Msgs.f2n == null) scale2Msgs.f2n = new DenseTensor1(1)
+    if (bias1Msgs.f2n == null) bias1Msgs.f2n = new DenseTensor1(1)
+    if (bias2Msgs.f2n == null) bias2Msgs.f2n = new DenseTensor1(1)
+    if (mult1Msgs.f2n == null) mult1Msgs.f2n = new DenseTensor1(1)
+    if (mult2Msgs.f2n == null) mult2Msgs.f2n = new DenseTensor1(1)
+
+    weights1Msgs.f2n := 0.0
+    weights2Msgs.f2n := 0.0
+    scale1Msgs.f2n := 0.0
+    scale2Msgs.f2n := 0.0
+    bias1Msgs.f2n := 0.0
+    bias2Msgs.f2n := 0.0
+    mult1Msgs.f2n := 0.0
+    mult2Msgs.f2n := 0.0
+  }
+
+  def logConditional(targetWeights: VectorMsgs, targetBias: VectorMsgs, targetScale: VectorMsgs,
+                     obsWeights: VectorMsgs, obsMult: VectorMsgs, trueProb: Double) = {
+    val tw = targetWeights.n2f
+    val tb = targetBias.n2f(0)
+    val ts = targetScale.n2f(0)
+
+    val ow = obsWeights.n2f
+    val om = obsMult.n2f(0)
+
+    val twDotOw = tw dot ow
+    val phi = twDotOw * om * ts + tb
+    val logZ = log(1 + exp(phi))
+    val probTrue = math.exp(phi - logZ)
+    val obj = trueProb * log(probTrue) + ((1.0 - trueProb) * log(1.0 - probTrue))
+    val trueRate = (1.0 - probTrue) * trueProb
+    val falseRate = (0.0 - probTrue) * (1.0 - trueProb)
+    val rate = trueRate + falseRate
+
+    targetWeights.f2n +=(ow, om * ts * rate)
+    targetScale.f2n(0) += twDotOw * om * rate
+    targetBias.f2n(0) += rate
+
+    obsWeights.f2n +=(tw, om * ts * rate)
+    obsMult.f2n(0) += twDotOw * ts * rate
+    obj
+  }
+
+  def marginal(targetBias: VectorMsgs, trueProb: Double, coeff:Double) = {
+    val b = targetBias.n2f(0)
+    val logZ = log(1 + exp(b))
+    val probTrue = math.exp(b - logZ)
+    val obj = (trueProb * log(probTrue) + (1.0 - trueProb) * log(1.0 - probTrue)) * coeff
+    val trueRate = (1.0 - probTrue) * trueProb * coeff
+    val falseRate = (0.0 - probTrue) * (1.0 - trueProb) * coeff
+    targetBias.f2n(0) += trueRate + falseRate
+    obj
+  }
+
+  def regularizers() = {
+    def sq(num: Double) = num * num
+    weights1Msgs.f2n +=(weights1Msgs.n2f, -regWeights * 2.0 * arg1Coeff)
+    weights2Msgs.f2n +=(weights2Msgs.n2f, -regWeights * 2.0 * arg2Coeff)
+    bias1Msgs.f2n(0) += -regBias * (bias1Msgs.n2f(0) - priorBias) * 2.0 * arg1Coeff
+    bias2Msgs.f2n(0) += -regBias * (bias2Msgs.n2f(0) - priorBias) * 2.0 * arg2Coeff
+    scale1Msgs.f2n(0) += -regScale * (scale1Msgs.n2f(0) - priorScale) * 2.0 * arg1Coeff
+    scale2Msgs.f2n(0) += -regScale * (scale2Msgs.n2f(0) - priorScale) * 2.0 * arg2Coeff
+
+    mult1Msgs.f2n(0) += -regMult * (mult1Msgs.n2f(0) - priorMult) * 2.0 * arg1Coeff
+    mult2Msgs.f2n(0) += -regMult * (mult2Msgs.n2f(0) - priorMult) * 2.0 * arg2Coeff
+    var result = 0.0
+    result += -regWeights * (weights1Msgs.n2f.twoNormSquared * arg1Coeff + weights2Msgs.n2f.twoNormSquared * arg2Coeff)
+    result += -regBias * (sq(bias1Msgs.n2f(0) - priorBias)* arg1Coeff + sq(bias2Msgs.n2f(0) - priorBias) * arg2Coeff)
+    result += -regMult * (sq(mult1Msgs.n2f(0) - priorMult)* arg1Coeff + sq(mult2Msgs.n2f(0) - priorMult) * arg2Coeff)
+    result += -regScale * (sq(scale1Msgs.n2f(0) - priorScale)* arg1Coeff + sq(scale2Msgs.n2f(0) - priorScale) * arg2Coeff)
+    result
+  }
+
+  override def valueAndGradientForAllEdges() = {
+    val k = weights1Msgs.n2f.size
+    initMsgs(k)
+    var result = 0.0
+    result += logConditional(weights1Msgs, bias1Msgs, scale1Msgs, weights2Msgs, mult2Msgs, trueProbOf1Given2)
+    result += logConditional(weights2Msgs, bias2Msgs, scale2Msgs, weights1Msgs, mult1Msgs, trueProbOf2Given1)
+    result += marginal(bias1Msgs, marg1, arg1Coeff)
+    result += marginal(bias2Msgs, marg2, arg2Coeff)
+    result += regularizers()
+    result
+  }
+}
 
 
