@@ -209,6 +209,12 @@ class TensorDB(k: Int = 100) extends Tensor {
     }
   }
 
+  def toInfoString =
+    s"""
+      |#cells: $numCells
+      |#train: ${trainCells.size}
+    """.stripMargin
+
   @tailrec
   final def sampleNode(col: CellIx, attempts: Int = 1000): Node = {
     if (isMatrix)
