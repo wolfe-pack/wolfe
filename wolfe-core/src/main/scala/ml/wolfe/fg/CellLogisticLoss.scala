@@ -31,8 +31,8 @@ class CellLogisticLoss(rowEdge: Edge, columnEdge: Edge, truth: Double = 1.0, val
   override def valueAndGradientForAllEdges(): Double = {
     val s = sig (rowMsgs.n2f dot columnMsgs.n2f)
     val (p, dir) = innerLossAndDirection(s)
-    rowMsgs.f2n = (columnMsgs.n2f * (1.0 - p) * dir) + regGradient(rowMsgs.n2f)
-    columnMsgs.f2n = (rowMsgs.n2f * (1.0 - p) * dir) + regGradient(columnMsgs.n2f)
+    rowMsgs.f2n = (columnMsgs.n2f * (1.0 - p) * dir) - regGradient(rowMsgs.n2f)
+    columnMsgs.f2n = (rowMsgs.n2f * (1.0 - p) * dir) - regGradient(columnMsgs.n2f)
     math.log(p) + regLoss(rowMsgs.n2f) + regLoss(columnMsgs.n2f)
   }
 }
