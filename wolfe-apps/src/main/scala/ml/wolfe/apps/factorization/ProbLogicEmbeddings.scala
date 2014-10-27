@@ -1,6 +1,7 @@
 package ml.wolfe.apps.factorization
 
 import cc.factorie.la.DenseTensor1
+import cc.factorie.model.WeightsSet
 import cc.factorie.optimize.{OnlineTrainer, LBFGS, AdaGrad, BatchTrainer}
 import com.typesafe.config.Config
 import ml.wolfe._
@@ -134,12 +135,16 @@ object ProbLogicEmbedder {
     }
 
     fg.build()
-    println("Optimizing...")
+    println(s"Optimizing... with ${fg.factors.size} terms")
 
     val maxIterations = conf.getInt("epl.opt-iterations")
 
-    //GradientBasedOptimizer(fg, new OnlineTrainer(_, new AdaGrad(), 10, 100))
-    GradientBasedOptimizer(fg, new BatchTrainer(_, new AdaGrad(conf.getDouble("epl.ada-rate")), maxIterations))
+    def trainer(weightsSet:WeightsSet) = conf.getString("epl.trainer") match {
+      case "batch" => new BatchTrainer(weightsSet, new AdaGrad(conf.getDouble("epl.ada-rate")), maxIterations)
+      case "online" => new OnlineTrainer(weightsSet, new AdaGrad(conf.getDouble("epl.ada-rate")), maxIterations)
+    }
+
+    GradientBasedOptimizer(fg, trainer(_))
     //GradientBasedOptimizer(fg, new BatchTrainer(_, new LBFGS(), maxIterations))
 
 
