@@ -86,6 +86,14 @@ object FactorizationUtil {
     out.close()
   }
 
+  def saveToFile[T](content:Iterable[T], file:File): Unit = {
+    val out = new PrintStream(file)
+    for (group <- content.grouped(1000))
+      out.println(group.mkString("\n"))
+    out.close()
+  }
+
+
   def saveForUSchemaEval(facts: Seq[PredictedFact], file: File): Unit = {
     val out = new PrintStream(file)
     for (fact <- facts) {

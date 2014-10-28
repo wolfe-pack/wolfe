@@ -14,12 +14,13 @@ object EmbeddedProbLogicEvaluation {
 
   def main(args: Array[String]) {
     implicit val conf = ConfigFactory.parseFile(new File("conf/epl.conf"))
+    implicit val random = new Random()
     assert(!conf.entrySet().isEmpty, "Couldn't find configuration file.")
 
     def relationFilter(rel: String) = rel.startsWith("path") || (rel.startsWith("REL$") && rel != "REL$NA")
 
     //load raw data
-    val trainRaw = FactorizationUtil.loadLiminFile(new File(conf.getString("epl.train")), relationFilter).take(10000)
+    val trainRaw = FactorizationUtil.loadLiminFile(new File(conf.getString("epl.train")), relationFilter)//.take(20000)
     val train = FactorizationUtil.filterRows(trainRaw.toSeq, 10, 2)
     //val train = FactorizationUtil.filterRowsPairwise(trainRaw.toSeq, 50)
     val trainRelations = train.flatMap(_.relations.map(_._1)).distinct.sorted
@@ -33,12 +34,21 @@ object EmbeddedProbLogicEvaluation {
     println(test.size)
 
     println("Extracting rules")
-    val trainRules = RuleLearner.learn(train)
+    val subSample = conf.getDouble("epl.subsample")
+    val trainRulesRaw = RuleLearner.learn(train)
+    val trainRulesSampled = trainRulesRaw.copy(
+      rules2 = trainRulesRaw.rules2.filterNot(_._2.probs(true, true) == 0.0 && random.nextDouble() > subSample))
+    val trainRules = RuleFilters.keep2ndOrder(trainRulesSampled)
+
+    println(s"Original rule count: ${trainRulesRaw.rules2.size}")
+    println(s"Filtered rule count: ${trainRules.rules2.size}")
+
+
     FactorizationUtil.saveToFile(trainRules.rules1.values.toSeq.sortBy(_.rel).mkString("\n"), new File("/tmp/rules1.txt"))
-    FactorizationUtil.saveToFile(trainRules.rules2.values.toSeq.sortBy(-_.probs(true,true)).mkString("\n"), new File("/tmp/rules2.txt"))
+    FactorizationUtil.saveToFile(trainRules.rules2.values.toSeq.sortBy(-_.probs(true, true)).take(10000), new File("/tmp/rules2.txt"))
 
 
-    println("Embedding rules")
+    println(s"Embedding ${ trainRules.rules2.size } rules")
     val ple = ProbLogicEmbedder.embed(trainRules)
 
     println("Prediction")
@@ -48,7 +58,6 @@ object EmbeddedProbLogicEvaluation {
     println(predictedFacts.take(100).mkString("\n"))
     FactorizationUtil.saveForUSchemaEval(predictedFacts, new File("/tmp/ple.txt"))
     FactorizationUtil.saveToFile(predictedFacts.mkString("\n"), new File("/tmp/ranked.txt"))
-
 
 
   }
@@ -94,7 +103,7 @@ object EmbeddedProbLogicPlayground {
       "r0" -> PredicateEmbedding("r0", new DenseTensor1(Array(1.0, 0.0)), 1.0, -2.0, 10.0),
       "r1" -> PredicateEmbedding("r1", new DenseTensor1(Array(1.0 / sqrt(2), 1.0 / sqrt(2))), 1.0, 0.0, 1.0)
     ))
-    val ple = manualEmbeddings//ProbLogicEmbedder.embed(manualRules).copy(average = false) //ProbLogicEmbedder.embed(randomRules)
+    val ple = manualEmbeddings //ProbLogicEmbedder.embed(manualRules).copy(average = false) //ProbLogicEmbedder.embed(randomRules)
 
 
     val rulesData = RuleLearner.learn(test)
@@ -139,6 +148,27 @@ object EmbeddedProbLogicPlayground {
   }
 }
 
+object RuleFilters {
+
+  import math._
+
+  def keep2ndOrder(rules: Rules) = {
+    val filtered = rules.rules2.filter(_._2.probs(true, true) > 0.0).map(p => p._1 -> p._2.probs(true, true))
+    val graph = filtered ++ filtered.map(p => p.copy(_1 = p._1.swap)) withDefaultValue 0.0
+    val arg1ToEdges = filtered.toList.groupBy(_._1._1) withDefaultValue Nil
+    val arg2ToEdges = filtered.toList.groupBy(_._1._2) withDefaultValue Nil
+
+    def expand(graph: Map[(String, String), Double]) = {
+      //go over all edges (e1,e2) and connect e1 to e3 for each (e2,e3)
+      val newEdges = for (((arg1, arg2), s1) <- graph;
+                          ((_, arg3), s2) <- arg1ToEdges(arg2)
+                          if arg3 != arg1 && !graph.contains((arg1, arg3))) yield (arg1, arg3) -> min(s1, s2)
+      graph ++ newEdges
+    }
+    val expanded = expand(graph)
+    rules.copy(rules2 = rules.rules2.filterKeys(expanded.contains))
+  }
+}
 
 
 
