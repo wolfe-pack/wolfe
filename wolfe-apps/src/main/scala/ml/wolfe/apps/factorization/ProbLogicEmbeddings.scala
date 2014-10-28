@@ -15,7 +15,9 @@ import scala.collection.mutable
 /**
  * @author Sebastian Riedel
  */
-case class PredicateEmbedding(rel: String, embedding: FactorieVector, scale: Double, bias: Double, weight: Double = 1.0)
+case class PredicateEmbedding(rel: String, embedding: FactorieVector,
+                              scale: Double, bias: Double, weight: Double = 1.0,
+                              observationFilter:String => Boolean = _ => true)
 
 case class ProbLogicEmbeddings(embeddings: Map[String, PredicateEmbedding],
                                rules: Rules = Rules(Map.empty, Map.empty), average: Boolean = true) {
@@ -26,7 +28,7 @@ case class ProbLogicEmbeddings(embeddings: Map[String, PredicateEmbedding],
       case None => 0.0
       case Some(embedding) =>
         var score = embedding.bias
-        for (obs <- observations; obsEmb <- embeddings.get(obs)) {
+        for (obs <- observations; if embedding.observationFilter(obs); obsEmb <- embeddings.get(obs)) {
           score += obsEmb.weight * embedding.scale * (embedding.embedding dot obsEmb.embedding) / normalizer // observations.size
         }
         val result = Util.sig(score)
@@ -46,7 +48,8 @@ case class Rules(rules2: Map[(String, String), Rule2], rules1: Map[String, Rule1
 
 
 }
-case class Rule2(rel1: String, rel2: String, probs: Map[(Boolean, Boolean), Double], scale: Double = 1) {
+case class Rule2(rel1: String, rel2: String, probs: Map[(Boolean, Boolean), Double], scale: Double = 1,
+                 count:Double = 1.0) {
   def marg1(b1: Boolean) = probs(b1, true) + probs(b1, false)
   def marg2(b2: Boolean) = probs(true, b2) + probs(false, b2)
   def prob2given1(b1: Boolean)(b2: Boolean) = probs(b1, b2) / marg1(b1)
@@ -55,6 +58,14 @@ case class Rule2(rel1: String, rel2: String, probs: Map[(Boolean, Boolean), Doub
     s"""$rel1 $rel2
       |${ probs.mkString("  ", "\n  ", "") }
     """.stripMargin
+
+  lazy val mutualInformation = {
+    probs(true,true) * math.log(probs(true,true) / (marg1(true) * marg2(true))) +
+    probs(true,false) * math.log(probs(true,false) / (marg1(true) * marg2(false))) +
+    probs(false,true) * math.log(probs(false,true) / (marg1(false) * marg2(true))) +
+    probs(false,false) * math.log(probs(false,false) / (marg1(false) * marg2(false)))
+  }
+
 }
 case class Rule1(rel: String, prob: Double)
 
@@ -95,7 +106,6 @@ object ProbLogicEmbedder {
     val colMults = relations.map(i => i -> fg.addVectorNode(1)).toMap
     val numberOfTerms = numRelations * (numRelations - 1) / 2.0
     val objNormalizer = 1.0 / numberOfTerms
-    val subSample = conf.getDouble("epl.subsample")
 
     println("Building factor graph")
 
@@ -147,13 +157,16 @@ object ProbLogicEmbedder {
     GradientBasedOptimizer(fg, trainer(_))
     //GradientBasedOptimizer(fg, new BatchTrainer(_, new LBFGS(), maxIterations))
 
-
+    //allowed observations for each predicate are only the relations we have seen together with the predicate
+    val allPairs = rules.rules2.keySet.flatMap(p => Set(p,p.swap))
+    val allowed = allPairs.groupBy(_._1).mapValues(_.map(_._2))
     val embeddings = relations.map({ rel =>
       rel -> PredicateEmbedding(rel,
         V(rel).variable.asVector.b,
         colScales(rel).variable.asVector.b(0),
         colBiases(rel).variable.asVector.b(0),
-        colMults(rel).variable.asVector.b(0))
+        colMults(rel).variable.asVector.b(0),
+        allowed(rel))
     })
     ProbLogicEmbeddings(embeddings.toMap, rules)
   }
@@ -330,7 +343,7 @@ object RuleLearner {
         (true, true) -> prob11, (true, false) -> prob10,
         (false, true) -> prob01, (false, false) -> prob00
       )
-      (rel1, rel2) -> Rule2(rel1, rel2, probs, 1.0)
+      (rel1, rel2) -> Rule2(rel1, rel2, probs, 1.0,count = normalizer)
     }
     val rules1 = for ((r, c) <- singleCounts) yield r -> Rule1(r, c / normalizer)
     Rules(rules2.toMap, rules1.toMap)
