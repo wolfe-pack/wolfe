@@ -202,6 +202,11 @@ object FreebaseReader {
 
 
 
+
+
+
+
+
 /*
       (coll find MongoDBObject("arg1" -> mid)).foreach { r =>
         if (r.contains("arg2") && r.contains("attribute")) {
