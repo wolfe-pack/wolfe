@@ -53,7 +53,7 @@ object MLN extends App {
     }
 
 
-    println(Timer.getTimeString(Timer.reported("foo")))
+    println(Timer.reportedVerbose("foo"))
   }
 
   def worldSamples:Seq[PartiallyObservedWorld] = Seq(

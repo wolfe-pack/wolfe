@@ -82,4 +82,18 @@ package object util {
     def getDouble(path: String): Double = conf.getDouble(path)
     def hasPath(path: String): Boolean = conf.hasPath(path)
   }
+
+  def getTimeString(seconds: Int): String = {
+    def buildTimeString(seconds: Int, acc: String): String = {
+      if (seconds < 60) acc + "%ds".format(seconds)
+      else if (seconds < 3600) acc + buildTimeString(seconds % 60, "%dm ".format(seconds / 60))
+      else if (seconds < 86400) acc + buildTimeString(seconds % 3600, "%dh ".format(seconds / 3600))
+      else if (seconds < 604800) acc + buildTimeString(seconds % 86400, "%dd ".format(seconds / 86400))
+      else if (seconds < 4233600) acc + buildTimeString(seconds % 604800, "%dw ".format(seconds / 604800))
+      else "very long"
+    }
+    buildTimeString(seconds, "")
+  }
+
+  def getTimeString(milliseconds: Long): String = getTimeString((milliseconds / 1000).toInt)
 }
