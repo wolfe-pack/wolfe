@@ -90,21 +90,33 @@ object Timer {
 
   def reportedVerbose(name: String): String = getTimeString(reported(name))
 
-  def getTimeString(seconds: Int): String = {
-    def buildTimeString(seconds: Int, acc: String): String = {
-      if (seconds < 60) acc + "%ds".format(seconds)
-      else if (seconds < 3600) acc + buildTimeString(seconds % 60, "%dm ".format(seconds / 60))
-      else if (seconds < 86400) acc + buildTimeString(seconds % 3600, "%dh ".format(seconds / 3600))
-      else if (seconds < 604800) acc + buildTimeString(seconds % 86400, "%dd ".format(seconds / 86400))
-      else if (seconds < 4233600) acc + buildTimeString(seconds % 604800, "%dw ".format(seconds / 604800))
-      else "very long"
-    }
-    buildTimeString(seconds, "")
-  }
-
-  def getTimeString(milliseconds: Long): String = getTimeString((milliseconds / 1000).toInt)
   override def toString = timings.map({case (name,time) => s"$name: ${getTimeString(time)}"}).mkString("\n")
 }
+
+
+class ProgressBar(goal: Int, reportInterval: Int = 1) {
+  private var completed: Int = _
+  private var startTime = 0l
+
+  def start() = {
+    startTime = System.currentTimeMillis()
+  }
+
+  def apply(msg: String = "", lineBreak: Boolean = false) {
+    if (completed == 0 && startTime == 0) start()
+    if (completed % reportInterval == 0) {
+      val percent = completed.toDouble / goal * 100
+      val diffTime = System.currentTimeMillis() - startTime
+      val estimatedTime = (((diffTime * (goal.toDouble / completed)) - diffTime) / 1000).toInt
+      print(msg + "\t[%6.2f".format(percent) + "%" + " %d/%d ".format(completed, goal) + "~" +
+      getTimeString(estimatedTime) + "]\r")
+      if (lineBreak) println()
+    }
+    if (goal == completed) println()
+    completed += 1
+  }
+}
+
 
 
 /**
