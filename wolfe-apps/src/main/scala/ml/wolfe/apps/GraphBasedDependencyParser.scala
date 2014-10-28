@@ -30,8 +30,7 @@ object GraphBasedDependencyParser extends App {
   }
 
   def depLocal(x: X)(y: Y)(e: (Int, Int)) = {
-    val ff = oneHot('d_ww ->(x.words(e._1), x.words(e._2)), I(y.deps(e)))
-    ff
+    oneHot('d_ww ->(x.words(e._1), x.words(e._2)), I(y.deps(e)))
   }
 
   def feats(x: X)(y: Y) = {
