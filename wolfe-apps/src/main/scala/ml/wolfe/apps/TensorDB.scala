@@ -215,17 +215,24 @@ class TensorDB(k: Int = 100) extends Tensor {
 
   def toInfoString =
     s"""
-      |#cells: $numCells
-      |#train: ${trainCells.size}
+      |#cols:    ${keys1.size}
+      |#rows:    ${keys2.size}
+      |#layers:  ${keys3.size}
+      |
+      |#cells:   $numCells (${numCells.toDouble / (keys1.size * keys2.size * (if (keys3.size > 0) keys3.size else 1))})
+      |#train:   ${trainCells.size} (${trainCells.size.toDouble / (keys1.size * keys2.size * (if (keys3.size > 0) keys3.size else 1))})
+      |#dev:     ${devCells.size} (${devCells.size.toDouble / (keys1.size * keys2.size * (if (keys3.size > 0) keys3.size else 1))})
+      |#test:    ${testCells.size} (${testCells.size.toDouble / (keys1.size * keys2.size * (if (keys3.size > 0) keys3.size else 1))})
     """.stripMargin
 
   @tailrec
+  //fixme: check if test cell!
   final def sampleNode(col: CellIx, attempts: Int = 1000): Node = {
     if (isMatrix)
       if (attempts == 0) ix2ToNodeMap(keys2(random.nextInt(keys2.size)))
       else {
         val row = keys2(random.nextInt(keys2.size))
-        if (get(col, row).isDefined) sampleNode(col, attempts - 1)
+        if (get(col, row).exists(_.cellType == CellType.Train)) sampleNode(col, attempts - 1)
         else ix2ToNodeMap(row)
       }
     else ???

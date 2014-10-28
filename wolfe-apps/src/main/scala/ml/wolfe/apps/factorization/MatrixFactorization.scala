@@ -1,14 +1,11 @@
 package ml.wolfe.apps.factorization
 
-import java.io.File
-
 import cc.factorie.la.DenseTensor1
-import cc.factorie.optimize.{BatchTrainer, AdaGrad, OnlineTrainer}
-import com.typesafe.config.ConfigFactory
+import cc.factorie.optimize.{AdaGrad, BatchTrainer, LBFGS, OnlineTrainer}
 import ml.wolfe.apps.TensorKB
-import ml.wolfe.apps.factorization.io.{WriteNAACL, LoadNAACL}
+import ml.wolfe.apps.factorization.io.{EvaluateNAACL, LoadNAACL, WriteNAACL}
 import ml.wolfe.fg.{CellLogisticLoss, L2Regularization, VectorMsgs}
-import ml.wolfe.macros.FactorieVectorHelper
+import ml.wolfe.util.Timer
 import ml.wolfe.{GradientBasedOptimizer, Wolfe}
 
 import scala.util.Random
@@ -20,27 +17,28 @@ object MatrixFactorization extends App {
   //implicit val conf = ConfigFactory.parseFile(new File("conf/epl.conf"))
   //val k = conf.getInt("epl.relation-dim")
   val k = 100
+  val λ = 0.01
 
+  val debug = false
+  val print = false
 
-  /*
-  val db = new TensorKB(k)
-  db.sampleTensor(100, 100, 0, 0.1) //samples a matrix
-  */
+  val db = if (debug) {
+    val tmp = new TensorKB(k)
+    //tmp.sampleTensor(4111, 41913, 0, 0.0006893674177440786) //samples a matrix
+    //tmp.sampleTensor(100, 100, 0, 0.1) //samples a matrix
+    tmp
+  } else LoadNAACL(k)
 
-  val db = LoadNAACL(k)
-
+  val rand = new Random(0l)
 
   val fg = db.toFactorGraph
-  val data = db.cells
+  val data = rand.shuffle(db.trainCells)
   val V = db.ix1ToNodeMap //cols
   val A = db.ix2ToNodeMap //rows
 
-  val rand = new Random(0l)
   def nextInit() = (rand.nextDouble() - 0.5) * 0.1
-  (V.values.view ++ A.values.view).foreach(n => {
-    val init = (0 until k).map(i => nextInit()).toArray
-    n.variable.asVector.b = new DenseTensor1(init)
-  })
+  (V.values.view ++ A.values.view).foreach(n =>
+    n.variable.asVector.b = new DenseTensor1((0 until k).map(i => nextInit()).toArray))
 
   //println(V.values.head.variable.asVector.b)
 
@@ -52,34 +50,44 @@ object MatrixFactorization extends App {
 
     //create positive fact factor
     fg.buildFactor(Seq(a, v))(_ map (_ => new VectorMsgs)) { 
-      e => new CellLogisticLoss(e(0), e(1), 1.0, 0.01) with L2Regularization
+      e => new CellLogisticLoss(e(0), e(1), 1.0, λ) with L2Regularization
     }
 
     //also create a sampled stochastic negative factor in the same column
     fg.buildStochasticFactor(Seq(v, db.sampleNode(colIx)))(_ map (_ => new VectorMsgs)) {
-      e => new CellLogisticLoss(e(0), e(1), 0.0, 0.01) with L2Regularization
+      e => new CellLogisticLoss(e(0), e(1), 0.0, λ) with L2Regularization
     }
   }
 
   fg.build()
 
-  //GradientBasedOptimizer(fg, new BatchTrainer(_, new AdaGrad(), 10))
-  GradientBasedOptimizer(fg, new OnlineTrainer(_, new AdaGrad(), 100, 10000))
+  println(
+    s"""
+       |λ: $λ
+       |k: $k
+       |
+     """.stripMargin)
+  println(db.toInfoString)
 
-  //GradientBasedOptimizer(fg, new OnlineTrainer(_, new AdaGrad(rate = 0.1), 100, 10000))
+  println("Optimizing...")
+  Timer.time("optimization") {
+    //GradientBasedOptimizer(fg, new BatchTrainer(_, new AdaGrad(), 100))
+    GradientBasedOptimizer(fg, new OnlineTrainer(_, new AdaGrad(rate = 1.0), 100, 200000))
+    //GradientBasedOptimizer(fg, new OnlineTrainer(_, new AdaGrad(rate = 0.1), 100, 100000))
+  }
+  println("Done after " + Timer.reportedVerbose("optimization"))
 
-  WriteNAACL(db)
+  if (debug && print) {
+    println("train:")
+    println(db.toVerboseString(showTrain = true))
+    println()
 
-
-  /*
-  println("train:")
-  println(db.toVerboseString(showTrain = true))
-  println()
-
-  println("predicted:")
-  println(db.toVerboseString())
-  */
-
+    println("predicted:")
+    println(db.toVerboseString())
+  } else {
+    WriteNAACL(db)
+    EvaluateNAACL.main(Array())
+  }
 }
 
 
