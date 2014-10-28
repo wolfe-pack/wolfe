@@ -18,62 +18,6 @@ import ml.wolfe.util._
  * @author Sebastian Riedel
  * @author rockt
  */
-object LoadNAACL extends App {
-  def apply(k: Int = 100): TensorKB = {
-    val kb = new TensorKB(k)
-
-    val zipFile = new java.util.zip.ZipFile(new File(this.getClass.getResource("/naacl2013.txt.zip").toURI))
-    import collection.JavaConverters._
-
-    val List(entry) = zipFile.entries.asScala.toList
-    val facts = io.Source.fromInputStream(zipFile.getInputStream(entry)).getLines()
-
-    for {
-      fact <- facts
-      Array(r, e1, e2, typ, target) = fact.split("\t")
-    } {
-      val cellType = typ match {
-        case "Train" => CellType.Train
-        case "Test" => CellType.Test
-        case "Dev" => CellType.Dev
-        case "Observed" => CellType.Observed
-      }
-      val cell = Cell(r, (e1, e2), DefaultIx, target.toDouble, cellType)
-      kb += cell
-    }
-
-    kb
-  }
-
-  val tensorKB = apply()
-
-  println(tensorKB.numCells)
-}
-
-
-
-object WriteNAACL extends App {
-  def apply(db: TensorDB, filePath: String = "./data/out/predict.txt"): Unit = {
-    val writer = new FileWriter(filePath)
-    val testCellsWithPrediction = db.testCells.map(c => {
-      val r = c.key1
-      val ep = c.key2
-
-      val p = db.prob(r, ep)
-
-      (c, p)
-    }).sortBy(-_._2)
-
-
-    testCellsWithPrediction.foreach { case (cell, p) =>
-      val (e1, e2) = cell.key2.asInstanceOf[(String, String)]
-      writer.write(s"$p\t$e1|$e2\t" + "REL$NA" + s"\t${cell.key1}\n")
-    }
-
-    writer.close()
-  }
-}
-
 
 object EvaluateNAACL extends App {
   val configFile = if (args.length > 0) args(0) else "./conf/eval.conf"
@@ -655,3 +599,61 @@ class Eval(val pattern: Regex) {
       precision, recall, avgPrecision, precisionCount, meanAvgPrecision, precisionAtK.mkString(", "))
   }
 }
+
+
+object LoadNAACL extends App {
+  def apply(k: Int = 100): TensorKB = {
+    val kb = new TensorKB(k)
+
+    val zipFile = new java.util.zip.ZipFile(new File(this.getClass.getResource("/naacl2013.txt.zip").toURI))
+    import collection.JavaConverters._
+
+    val List(entry) = zipFile.entries.asScala.toList
+    val facts = io.Source.fromInputStream(zipFile.getInputStream(entry)).getLines()
+
+    for {
+      fact <- facts
+      Array(r, e1, e2, typ, target) = fact.split("\t")
+    } {
+      val cellType = typ match {
+        case "Train" => CellType.Train
+        case "Test" => CellType.Test
+        case "Dev" => CellType.Dev
+        case "Observed" => CellType.Observed
+      }
+      val cell = Cell(r, (e1, e2), DefaultIx, target.toDouble, cellType)
+      kb += cell
+    }
+
+    kb
+  }
+
+  val tensorKB = apply()
+
+  println(tensorKB.numCells)
+}
+
+
+
+object WriteNAACL extends App {
+  def apply(db: TensorDB, filePath: String = "./data/out/predict.txt"): Unit = {
+    val writer = new FileWriter(filePath)
+    val testCellsWithPrediction = db.testCells.map(c => {
+      val r = c.key1
+      val ep = c.key2
+
+      val p = db.prob(r, ep)
+
+      (c, p)
+    }).sortBy(-_._2)
+
+
+    testCellsWithPrediction.foreach { case (cell, p) =>
+      val (e1, e2) = cell.key2.asInstanceOf[(String, String)]
+      writer.write(s"$p\t$e1|$e2\t" + "REL$NA" + s"\t${cell.key1}\n")
+    }
+
+    writer.close()
+  }
+}
+

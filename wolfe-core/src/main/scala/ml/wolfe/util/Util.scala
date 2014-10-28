@@ -88,6 +88,8 @@ object Timer {
 
   def reported(name: String): Long = timings.getOrElse(name, -1)
 
+  def reportedVerbose(name: String): String = getTimeString(reported(name))
+
   def getTimeString(seconds: Int): String = {
     def buildTimeString(seconds: Int, acc: String): String = {
       if (seconds < 60) acc + "%ds".format(seconds)
