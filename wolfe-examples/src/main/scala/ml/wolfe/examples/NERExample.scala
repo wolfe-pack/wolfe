@@ -178,10 +178,10 @@ object NERExample {
       s"""
         |Timings
         |-------
-        |Load: ${Timer.getTimeString(Timer.reported("load"))}
-        |Examples: ${Timer.getTimeString(Timer.reported("examples"))}
-        |Train: ${Timer.getTimeString(Timer.reported("train"))}
-        |Evaluate: ${Timer.getTimeString(Timer.reported("evaluate"))}
+        |Load: ${getTimeString(Timer.reported("load"))}
+        |Examples: ${getTimeString(Timer.reported("examples"))}
+        |Train: ${getTimeString(Timer.reported("train"))}
+        |Evaluate: ${getTimeString(Timer.reported("evaluate"))}
       """.stripMargin
     )
   }
