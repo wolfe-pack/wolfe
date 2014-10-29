@@ -11,16 +11,18 @@ import ml.wolfe.fg.VectorMsgs
 import ml.wolfe.util.Util
 
 import scala.collection.mutable
+import scala.util.Random
 
 /**
  * @author Sebastian Riedel
  */
 case class PredicateEmbedding(rel: String, embedding: FactorieVector,
                               scale: Double, bias: Double, weight: Double = 1.0,
-                              observationFilter:String => Boolean = _ => true)
+                              observationFilter: String => Boolean = _ => true)
 
 case class ProbLogicEmbeddings(embeddings: Map[String, PredicateEmbedding],
-                               rules: Rules = Rules(Map.empty, Map.empty), average: Boolean = true) {
+                               rules: Rules = Rules(Map.empty, Map.empty),
+                               average: Boolean = true) {
 
   def predict(observations: Seq[String], relation: String) = {
     val normalizer = if (average) observations.size.toDouble else 1.0
@@ -38,6 +40,29 @@ case class ProbLogicEmbeddings(embeddings: Map[String, PredicateEmbedding],
   def predictRow(observation: Row, targets: Seq[String]) = {
     observation.copy(relations = targets.map(r => r -> predict(observation.observedTrue, r)))
   }
+
+  lazy val pairwiseRules = {
+    val relations = embeddings.keys.toArray.sorted
+    val result = for (r1 <- 0 until relations.size; r2 <- r1 + 1 until relations.size) yield {
+      val rel1 = relations(r1)
+      val rel2 = relations(r2)
+      val emb1 = embeddings(rel1)
+      val emb2 = embeddings(rel2)
+      val prob1given2 = predict(Seq(rel2), rel1)
+      val prob2given1 = predict(Seq(rel1), rel2)
+      val prob1 = predict(Seq.empty, rel1)
+      val prob2 = predict(Seq.empty, rel2)
+      val probs = Map(
+        (true, true) -> prob1given2 * prob2, //todo: this may be different to using the other way around
+        (true, false) -> (1.0 - prob2given1) * prob1,
+        (false, true) -> (1.0 - prob1given2) * prob2,
+        (false, false) -> (1 - prob1) * (1 - prob2)
+      )
+      (rel1, rel2) -> Rule2(rel1, rel2, probs, trueTrueInconsistency = math.abs(prob1given2 * prob2 - prob2given1 * prob1))
+    }
+    result.toMap
+  }
+
 }
 
 case class Rules(rules2: Map[(String, String), Rule2], rules1: Map[String, Rule1]) {
@@ -46,24 +71,63 @@ case class Rules(rules2: Map[(String, String), Rule2], rules1: Map[String, Rule1
 
   def pairwiseRuleCount(rel: String) = rel2RuleArg1(rel).size + rel2RuleArg2(rel).size
 
+  def +(that: Rules): Rules = {
+    val keys = rules2.keySet ++ that.rules2.keySet
+    val result = for (k <- keys) yield (rules2.get(k), that.rules2.get(k)) match {
+      case (Some(r1), Some(r2)) => k -> (r1 + r2)
+      case (Some(r1), _) => k -> r1
+      case (_, Some(r2)) => k -> r2
+      case _ => sys.error("can't happen")
+    }
+    copy(rules2 = result.toMap)
+  }
+
 
 }
 case class Rule2(rel1: String, rel2: String, probs: Map[(Boolean, Boolean), Double], scale: Double = 1,
-                 count:Double = 1.0) {
+                 count: Double = 1.0, trueTrueInconsistency: Double = 0.0) {
   def marg1(b1: Boolean) = probs(b1, true) + probs(b1, false)
   def marg2(b2: Boolean) = probs(true, b2) + probs(false, b2)
   def prob2given1(b1: Boolean)(b2: Boolean) = probs(b1, b2) / marg1(b1)
   def prob1given2(b2: Boolean)(b1: Boolean) = probs(b1, b2) / marg2(b2)
   override def toString =
-    s"""$rel1 $rel2
-      |${ probs.mkString("  ", "\n  ", "") }
+    s"""$rel1 $rel2  ${ if (trueTrueInconsistency > 0.0) "(" + trueTrueInconsistency.toString + ")" else "" }
+      |p(r1|r2) = ${ prob1given2(true)(true) }
+      |p(r2|r1) = ${ prob2given1(true)(true) }
+      |p(r1)    = ${ marg1(true) }
+      |p(r2)    = ${ marg2(true) }
     """.stripMargin
 
   lazy val mutualInformation = {
-    probs(true,true) * math.log(probs(true,true) / (marg1(true) * marg2(true))) +
-    probs(true,false) * math.log(probs(true,false) / (marg1(true) * marg2(false))) +
-    probs(false,true) * math.log(probs(false,true) / (marg1(false) * marg2(true))) +
-    probs(false,false) * math.log(probs(false,false) / (marg1(false) * marg2(false)))
+    probs(true, true) * math.log(probs(true, true) / (marg1(true) * marg2(true))) +
+    probs(true, false) * math.log(probs(true, false) / (marg1(true) * marg2(false))) +
+    probs(false, true) * math.log(probs(false, true) / (marg1(false) * marg2(true))) +
+    probs(false, false) * math.log(probs(false, false) / (marg1(false) * marg2(false)))
+  }
+
+  def +(that: Rule2) = {
+    val newCount = count + that.count
+    val newProbs = for (b1 <- List(false, true); b2 <- List(false, true)) yield
+      (b1, b2) -> (probs(b1, b2) * count + that.probs(b1, b2) * that.count) / newCount
+    copy(probs = newProbs.toMap, count = newCount)
+  }
+
+  def klTerm(p1: Double, p2: Double) = if (p1 == 0.0) 0.0 else p1 * math.log(p1 / p2)
+
+  def prob1given2Inc(that: Rule2) = prob1given2(true)(true) - that.prob1given2(true)(true)
+
+  def condKL(that: Rule2) = {
+    klTerm(prob1given2(true)(true), that.prob1given2(true)(true)) +
+    klTerm(prob1given2(true)(false), that.prob1given2(true)(false)) +
+    klTerm(prob2given1(true)(true), that.prob2given1(true)(true)) +
+    klTerm(prob2given1(true)(false), that.prob2given1(true)(false))
+  }
+
+  def kl(that: Rule2) = {
+    klTerm(probs(true, true), that.probs(true, true)) +
+    klTerm(probs(true, false), that.probs(true, false)) +
+    klTerm(probs(false, true), that.probs(false, true)) +
+    klTerm(probs(false, true), that.probs(false, false))
   }
 
 }
@@ -86,6 +150,9 @@ object ProbLogicEmbedder {
 
   def embed(rules: Rules)(implicit conf: Config): ProbLogicEmbeddings = {
 
+    import FactorGraph.Node
+
+    val random = new Random(0)
     val relations = rules.rules2.values.flatMap(r => Seq(r.rel1, r.rel2)).distinct.sorted.toArray
     val numRelations = relations.size
     val fg = new FactorGraph
@@ -101,9 +168,17 @@ object ProbLogicEmbedder {
 
 
     val V = relations.map(r => r -> fg.addVectorNode(k, r)).toMap
-    val colScales = relations.map(i => i -> fg.addVectorNode(1)).toMap
-    val colBiases = relations.map(i => i -> fg.addVectorNode(1)).toMap
-    val colMults = relations.map(i => i -> fg.addVectorNode(1)).toMap
+    def emptyMap = Map.empty[String, Node] withDefaultValue null
+    val colScales = if (regS == Double.PositiveInfinity) emptyMap else relations.map(i => i -> fg.addVectorNode(1)).toMap
+    val colBiases = if (regBias == Double.PositiveInfinity) emptyMap else relations.map(i => i -> fg.addVectorNode(1)).toMap
+    val colMults = if (regMult == Double.PositiveInfinity) emptyMap else relations.map(i => i -> fg.addVectorNode(1)).toMap
+
+    //initialize
+    for (n <- V.values; i <- 0 until k) n.variable.asVector.b(i) = random.nextGaussian() * 0.01
+    for (n <- colScales.values) n.variable.asVector.b(0) = scalePrior
+    for (n <- colBiases.values) n.variable.asVector.b(0) = biasPrior
+    for (n <- colMults.values) n.variable.asVector.b(0) = multPrior
+
     val numberOfTerms = numRelations * (numRelations - 1) / 2.0
     val objNormalizer = 1.0 / numberOfTerms
 
@@ -145,11 +220,11 @@ object ProbLogicEmbedder {
     }
 
     fg.build()
-    println(s"Optimizing... with ${fg.factors.size} terms")
+    println(s"Optimizing... with ${ fg.factors.size } terms")
 
     val maxIterations = conf.getInt("epl.opt-iterations")
 
-    def trainer(weightsSet:WeightsSet) = conf.getString("epl.trainer") match {
+    def trainer(weightsSet: WeightsSet) = conf.getString("epl.trainer") match {
       case "batch" => new BatchTrainer(weightsSet, new AdaGrad(conf.getDouble("epl.ada-rate")), maxIterations)
       case "online" => new OnlineTrainer(weightsSet, new AdaGrad(conf.getDouble("epl.ada-rate")), maxIterations)
     }
@@ -158,14 +233,14 @@ object ProbLogicEmbedder {
     //GradientBasedOptimizer(fg, new BatchTrainer(_, new LBFGS(), maxIterations))
 
     //allowed observations for each predicate are only the relations we have seen together with the predicate
-    val allPairs = rules.rules2.keySet.flatMap(p => Set(p,p.swap))
+    val allPairs = rules.rules2.keySet.flatMap(p => Set(p, p.swap))
     val allowed = allPairs.groupBy(_._1).mapValues(_.map(_._2))
     val embeddings = relations.map({ rel =>
       rel -> PredicateEmbedding(rel,
         V(rel).variable.asVector.b,
-        colScales(rel).variable.asVector.b(0),
-        colBiases(rel).variable.asVector.b(0),
-        colMults(rel).variable.asVector.b(0),
+        if (regS == Double.PositiveInfinity) scalePrior else colScales(rel).variable.asVector.b(0),
+        if (regBias == Double.PositiveInfinity) biasPrior else colBiases(rel).variable.asVector.b(0),
+        if (regMult == Double.PositiveInfinity) multPrior else colMults(rel).variable.asVector.b(0),
         allowed(rel))
     })
     ProbLogicEmbeddings(embeddings.toMap, rules)
@@ -343,7 +418,7 @@ object RuleLearner {
         (true, true) -> prob11, (true, false) -> prob10,
         (false, true) -> prob01, (false, false) -> prob00
       )
-      (rel1, rel2) -> Rule2(rel1, rel2, probs, 1.0,count = normalizer)
+      (rel1, rel2) -> Rule2(rel1, rel2, probs, 1.0, count = normalizer)
     }
     val rules1 = for ((r, c) <- singleCounts) yield r -> Rule1(r, c / normalizer)
     Rules(rules2.toMap, rules1.toMap)
