@@ -13,11 +13,11 @@ import scala.collection.mutable
  */
 object GradientBasedOptimizer {
 
-  def apply(fg: FactorGraph, trainer: WeightsSet => Trainer, eps: Double = 0.01) {
+  def apply(fg: FactorGraph, trainer: WeightsSet => Trainer) {
     //initialize all n2f messages with zero or some random value
-    for (node <- fg.nodes) {
-      node.variable.initializeRandomly(eps)
-    }
+//    for (node <- fg.nodes) {
+//      node.variable.initializeRandomly(0.01)
+//    }
     val weightsSet = new WeightsSet
     val weightsKeys = new mutable.HashMap[FactorGraph.Node, Weights]()
     for (n <- fg.nodes) weightsKeys(n) = weightsSet.newWeights(n.variable.asVector.b)

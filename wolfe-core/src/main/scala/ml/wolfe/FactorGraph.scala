@@ -145,6 +145,7 @@ final class FactorGraph {
    * @return the added edge.
    */
   def addEdge(f: Factor, n: Node, indexInFactor: Int): Edge = {
+    if (n == null) return null
     val e = new Edge(n, f, n.variable.createMsgs())
     e.indexInFactor = indexInFactor
     n.edgeCount += 1
@@ -210,7 +211,7 @@ final class FactorGraph {
     val f = addFactor(label)
     val edges = nodes map (addEdge(f, _))
     val createdMsgs = msgs(edges)
-    for ((edge,msg) <- edges zip createdMsgs) edge.msgs = msg
+    for ((edge,msg) <- edges zip createdMsgs if edge != null) edge.msgs = msg
     val potential = pot(edges)
     f.potential = potential
     f

@@ -1,6 +1,6 @@
 package ml.wolfe.apps.factorization
 
-import java.io.{PrintStream, File}
+import java.io._
 
 import scala.collection.mutable
 import scala.io.Source
@@ -25,14 +25,14 @@ object FactorizationUtil {
 
   def loadLiminFile(file: File,
                     relationFilter: String => Boolean = _ => true,
-                    freebaseLabels: Seq[String] = Seq(), minObsCount: Int = 2): Iterator[Row] = {
+                    freebaseLabels: Seq[String] = Seq(), minObsCount: Int = 2,skipUnlabeled:Boolean = false): Iterator[Row] = {
     val source = Source.fromFile(file, "ISO-8859-1")
     for (line <- source.getLines();
          split = line.split("\t");
          arg1 = split(1);
          arg2 = split(2);
          filteredRelations = split.drop(3).filter(relationFilter)
-         if filteredRelations.size >= minObsCount
+         if filteredRelations.size >= minObsCount && (!skipUnlabeled || split(0) != "UNLABELED")
     ) yield {
       val asSet = filteredRelations.toSet
       //POSITIVE: entity pair in freebase, and one relation was seen
@@ -87,9 +87,9 @@ object FactorizationUtil {
   }
 
   def saveToFile[T](content:Iterable[T], file:File): Unit = {
-    val out = new PrintStream(file)
-    for (group <- content.grouped(1000))
-      out.println(group.mkString("\n"))
+    val out = new PrintWriter(new BufferedWriter(new FileWriter(file)))
+    for (line <- content)
+      out.println(line.toString)
     out.close()
   }
 
@@ -141,5 +141,42 @@ object FactorizationUtil {
     sb.toString()
 
   }
+
+  def filterRankedFile(dest: String, filterTuple: String, source: String) {
+    val allowed = new mutable.HashSet[Seq[Any]]()
+
+    val out = new PrintStream(dest)
+
+    for (line <- Source.fromFile(filterTuple).getLines(); if line.trim != "") {
+      val split = line.split("\t")
+      val tuple = if (split.size==2) Seq(split(0),split(1)) else Seq(split(1), split(2))
+      allowed += tuple
+    }
+    println(allowed.size)
+
+    def norm(label: String) = if (label.contains("/") && !label.startsWith("REL$")) "REL$" + label else label
+
+    for (line <- Source.fromFile(source).getLines()) {
+      val split = line.split("[\t]")
+      if (split(1).contains("|")) {
+        val tuple = split(1).split("\\|").toSeq
+        if (allowed(tuple)) out.println(split(0) + "\t" + tuple.mkString("\t") + "\t" + split.drop(2).map(norm).mkString("\t"))
+      } else {
+        val tuple = Seq(split(1), split(2))
+        if (allowed(tuple)) out.println(split.take(3).mkString("\t") + "\t" + split.drop(3).map(norm).mkString("\t"))
+      }
+    }
+
+    out.close()
+  }
+
+  def main(args: Array[String]) {
+    filterRankedFile(
+      "/tmp/ple-subsample.txt",
+      "/Users/sriedel/projects/spdb/naacl2013/nyt-freebase.test.subsample-10000.tuples.txt",
+      "/tmp/ple.txt"
+    )
+  }
+
 
 }
