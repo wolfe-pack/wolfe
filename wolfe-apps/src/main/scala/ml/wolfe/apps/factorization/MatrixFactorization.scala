@@ -26,8 +26,8 @@ object MatrixFactorization extends App {
   val fileName = "predict.txt"
 
   val k = 100
-  val λ = 0.01
-  val α = 0.1
+  val lambda = 0.01
+  val alpha = 0.1
   val maxIter = 200
 
   val debug = false
@@ -65,23 +65,23 @@ object MatrixFactorization extends App {
 
     //create positive fact factor
     fg.buildFactor(Seq(a, v))(_ map (_ => new VectorMsgs)) { 
-      //e => new CellLogisticLoss(e(0), e(1), 1.0, λ) with L2Regularization
-      e => new CellLogisticLoss(e(0), e(1), 0.9, λ) with L2Regularization
+      //e => new CellLogisticLoss(e(0), e(1), 1.0, lambda) with L2Regularization
+      e => new CellLogisticLoss(e(0), e(1), 0.9, lambda) with L2Regularization
     }
 
     //also create a sampled stochastic negative factor in the same column
     fg.buildStochasticFactor(Seq(v, db.sampleNode(colIx)))(_ map (_ => new VectorMsgs)) {
-      //e => new CellLogisticLoss(e(0), e(1), 0.0, λ) with L2Regularization
-      e => new CellLogisticLoss(e(0), e(1), 0.1, λ) with L2Regularization
+      //e => new CellLogisticLoss(e(0), e(1), 0.0, lambda) with L2Regularization
+      e => new CellLogisticLoss(e(0), e(1), 0.1, lambda) with L2Regularization
     }
   }
 
   fg.build()
 
   println(s"""Config:
-    |λ:        $λ
+    |λ:        $lambda
     |k:        $k
-    |α:        $α
+    |α:        $alpha
     |maxIter:  $maxIter""".stripMargin)
 
   println(db.toInfoString)
@@ -94,7 +94,7 @@ object MatrixFactorization extends App {
 
     //OnlineTrainer
     //GradientBasedOptimizer(fg, new OnlineTrainer(_, new ConstantLearningRate(baseRate = α), maxIter, fg.factors.size - 1) with ProgressLogging)
-    GradientBasedOptimizer(fg, new OnlineTrainer(_, new AdaGrad(rate = α), maxIter, fg.factors.size - 1) with ProgressLogging) //best
+    GradientBasedOptimizer(fg, new OnlineTrainer(_, new AdaGrad(rate = alpha), maxIter, fg.factors.size - 1) with ProgressLogging) //best
     //GradientBasedOptimizer(fg, new OnlineTrainer(_, new AdaMira(rate = α), maxIter, fg.factors.size - 1) with ProgressLogging)
 
     //GradientBasedOptimizer(fg, new BatchTrainer(_, new LBFGS(Double.MaxValue, Int.MaxValue), maxIter))
