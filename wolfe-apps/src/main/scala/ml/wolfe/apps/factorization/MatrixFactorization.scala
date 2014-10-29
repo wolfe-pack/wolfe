@@ -1,15 +1,16 @@
 package ml.wolfe.apps.factorization
 
-import java.io.File
+import java.io.{OutputStream, File}
 
 import cc.factorie.la.DenseTensor1
 import cc.factorie.optimize._
+import cc.factorie.util.{Logger, FastLogging}
 import ml.wolfe.FactorGraph.Edge
 import ml.wolfe.apps.TensorKB
 import ml.wolfe.apps.factorization.io.{EvaluateNAACL, LoadNAACL, WriteNAACL}
 import ml.wolfe.fg.L2Regularization
 import ml.wolfe.fg._
-import ml.wolfe.util.{ProgressBar, Timer}
+import ml.wolfe.util.{ProgressLogging, ProgressBar, Timer}
 import ml.wolfe.{GradientBasedOptimizer, Wolfe}
 
 import scala.util.Random
@@ -27,7 +28,6 @@ object MatrixFactorization extends App {
   val k = 100
   val λ = 0.01
   val α = 0.1
-  val initScale = 0.05
   val maxIter = 200
 
   val debug = false
@@ -45,6 +45,16 @@ object MatrixFactorization extends App {
   val data = rand.shuffle(db.trainCells)
   val V = db.ix1ToNodeMap //cols
   val A = db.ix2ToNodeMap //rows
+
+
+  //initialize embeddings
+  def nextInit() = (rand.nextDouble() - 0.5) * 0.1
+  (V.values.view ++ A.values.view).foreach(n =>
+    n.variable.asVector.b = new DenseTensor1((0 until k).map(i => nextInit()).toArray))
+
+  //println(V.values.head.variable.asVector.b)
+
+
 
   //most of this will potentially go into TensorKB
   for (d <- data) {
@@ -69,7 +79,6 @@ object MatrixFactorization extends App {
     |λ:        $λ
     |k:        $k
     |α:        $α
-    |initScale:$initScale
     |maxIter:  $maxIter""".stripMargin)
 
   println(db.toInfoString)
@@ -77,11 +86,11 @@ object MatrixFactorization extends App {
   println("Optimizing...")
   Timer.time("optimization") {
     //GradientBasedOptimizer(fg, new BatchTrainer(_, new AdaGrad(), maxIter, 200000), 0.01) //2nd best
-    //GradientBasedOptimizer(fg, new BatchTrainer(_, new AdaGrad(rate = α), maxIter), initScale)
-    //GradientBasedOptimizer(fg, new BatchTrainer(_, new ConstantLearningRate(baseRate = α), maxIter), initScale)
-    GradientBasedOptimizer(fg, new OnlineTrainer(_, new ConstantLearningRate(baseRate = α), maxIter, 200000)) //best
-    //GradientBasedOptimizer(fg, new OnlineTrainer(_, new AdaGrad(rate = α), maxIter, 200000), initScale)
-    //GradientBasedOptimizer(fg, new OnlineTrainer(_, new AdaMira(rate = α), maxIter, 200000), initScale)
+    //GradientBasedOptimizer(fg, new BatchTrainer(_, new AdaGrad(rate = α), maxIter))
+    //GradientBasedOptimizer(fg, new BatchTrainer(_, new ConstantLearningRate(baseRate = α), maxIter))
+    GradientBasedOptimizer(fg, new OnlineTrainer(_, new ConstantLearningRate(baseRate = α), maxIter, 200000) with ProgressLogging) //best
+    //GradientBasedOptimizer(fg, new OnlineTrainer(_, new AdaGrad(rate = α), maxIter, 200000))
+    //GradientBasedOptimizer(fg, new OnlineTrainer(_, new AdaMira(rate = α), maxIter, 200000))
   }
   println("Done after " + Timer.reportedVerbose("optimization"))
 

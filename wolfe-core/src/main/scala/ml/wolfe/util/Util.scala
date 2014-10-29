@@ -1,6 +1,8 @@
 package ml.wolfe.util
 
-import java.io.{PrintWriter, File, FileInputStream, InputStream}
+import java.io._
+
+import cc.factorie.util.{FastLogging, Logger}
 
 import scala.collection.mutable.ArrayBuffer
 import scala.io.Source
@@ -94,7 +96,9 @@ object Timer {
 }
 
 
-class ProgressBar(goal: Int, reportInterval: Int = 1) {
+class ProgressBar(goal: Int, reportInterval: Int = 1, outputStream: OutputStream = System.err) {
+  val printWriter = new PrintWriter(outputStream)
+
   private var completed: Int = _
   private var startTime = 0l
 
@@ -108,14 +112,30 @@ class ProgressBar(goal: Int, reportInterval: Int = 1) {
       val percent = completed.toDouble / goal * 100
       val diffTime = System.currentTimeMillis() - startTime
       val estimatedTime = (((diffTime * (goal.toDouble / completed)) - diffTime) / 1000).toInt
-      print(msg + "\t[%6.2f".format(percent) + "%" + " %d/%d ".format(completed, goal) + "~" +
-      getTimeString(estimatedTime) + "]\r")
-      if (lineBreak) println()
+      printWriter.print("\t[%6.2f".format(percent) + "%" + " %d/%d ".format(completed, goal) +
+        "%8s".format("~" + getTimeString(estimatedTime)) + "]\t" + msg + "\r")
+      if (lineBreak) printWriter.println()
     }
-    if (goal == completed) println()
+    if (goal == completed) printWriter.println()
     completed += 1
+    printWriter.flush()
   }
 }
+
+/**
+ * Hook into FACTORIE FastLogging that calls ProgressBar
+ */
+class ProgressLogger(maxIterations: Int, name:String, outputStream: => OutputStream = System.out) extends Logger(name, outputStream) {
+  val progressBar = new ProgressBar(maxIterations, 1, outputStream)
+  override def info(msg: => Any): Unit = progressBar(msg.toString, lineBreak = true)
+}
+
+trait ProgressLogging extends FastLogging {
+  def maxIterations(): Int
+  override val logger: Logger =
+    Logger.loggerMap.getOrElseUpdate(this.getClass.getName + "progress", new ProgressLogger(maxIterations(), this.getClass.getName + "progress"))
+}
+
 
 
 
