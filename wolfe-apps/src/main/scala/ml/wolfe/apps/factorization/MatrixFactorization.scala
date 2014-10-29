@@ -11,7 +11,7 @@ import ml.wolfe.apps.factorization.io.{EvaluateNAACL, LoadNAACL, WriteNAACL}
 import ml.wolfe.fg.L2Regularization
 import ml.wolfe.fg._
 import ml.wolfe.util.{ProgressLogging, ProgressBar, Timer}
-import ml.wolfe.{GradientBasedOptimizer, Wolfe}
+import ml.wolfe.{FactorieVector, GradientBasedOptimizer, Wolfe}
 
 import scala.util.Random
 
@@ -28,14 +28,14 @@ object MatrixFactorization extends App {
   val k = 100
   val λ = 0.01
   val α = 0.1
-  val maxIter = 10
+  val maxIter = 200
 
   val debug = false
-  val print = false
+  val print = true
 
   val db = if (debug) {
     val tmp = new TensorKB(k)
-    //tmp.sampleTensor(100, 100, 0, 0.1) //samples a matrix
+    tmp.sampleTensor(100, 100, 0, 0.1) //samples a matrix
     tmp
   } else LoadNAACL(k)
 
@@ -85,12 +85,13 @@ object MatrixFactorization extends App {
 
   println("Optimizing...")
   Timer.time("optimization") {
-    //GradientBasedOptimizer(fg, new BatchTrainer(_, new AdaGrad(), maxIter, 200000), 0.01) //2nd best
-    //GradientBasedOptimizer(fg, new BatchTrainer(_, new AdaGrad(rate = α), maxIter))
+    GradientBasedOptimizer(fg, new BatchTrainer(_, new AdaGrad(), maxIter) with ProgressLogging) //2nd best
+    //GradientBasedOptimizer(fg, new BatchTrainer(_, new AdaGrad(rate = α), maxIter) with ProgressLogging)
     //GradientBasedOptimizer(fg, new BatchTrainer(_, new ConstantLearningRate(baseRate = α), maxIter) with ProgressLogging)
-    GradientBasedOptimizer(fg, new OnlineTrainer(_, new ConstantLearningRate(baseRate = α), maxIter, fg.factors.size - 1) with ProgressLogging) //best
-    //GradientBasedOptimizer(fg, new OnlineTrainer(_, new AdaGrad(rate = α), maxIter, 200000))
-    //GradientBasedOptimizer(fg, new OnlineTrainer(_, new AdaMira(rate = α), maxIter, 200000))
+
+    //GradientBasedOptimizer(fg, new OnlineTrainer(_, new ConstantLearningRate(baseRate = α), maxIter, fg.factors.size - 1) with ProgressLogging) //best
+    //GradientBasedOptimizer(fg, new OnlineTrainer(_, new AdaGrad(rate = α), maxIter, fg.factors.size - 1) with ProgressLogging)
+    //GradientBasedOptimizer(fg, new OnlineTrainer(_, new AdaMira(rate = α), maxIter, fg.factors.size - 1) with ProgressLogging)
   }
   println("Done after " + Timer.reportedVerbose("optimization"))
 
@@ -110,56 +111,6 @@ object MatrixFactorization extends App {
     Process("pdflatex -interaction nonstopmode -shell-escape table.tex", new File(outputPath)).!!
   }
 }
-
-class SoftImplicationLoss(entityEdge: Edge, relation1Edge: Edge, relation2Edge: Edge, target: Double = 1.0, val λ: Double = 0.0) extends Potential with Regularization {
-  def eVar   = entityEdge.n.variable.asVector
-  def r1Var  = relation1Edge.n.variable.asVector
-  def r2Var  = relation2Edge.n.variable.asVector
-  val eMsgs  = entityEdge.msgs.asVector
-  val r1Msgs = relation1Edge.msgs.asVector
-  val r2Msgs = relation2Edge.msgs.asVector
-
-  def sig(x: Double) = 1.0 / (1.0 + math.exp(-x))
-
-  private def innerLossAndDirection(s: Double): (Double, Int) =
-    if (target >= s) (1 + s - target, 1)
-    else (1 + target - s, -1)
-
-  override def valueForCurrentSetting(): Double = {
-    val eVec = eVar.setting
-    val r1Vec = r1Var.setting
-    val r2Vec = r2Var.setting
-    val r1p = sig(eVec dot r1Vec)
-    val r2p = sig(eVec dot r2Vec)
-
-    val s = r1p * (r2p - 1) + 1
-
-    val p = innerLossAndDirection(s)._1
-    math.log(p) + regLoss(eVec) + regLoss(r1Vec) + regLoss(r2Vec)
-  }
-
-  override def valueAndGradientForAllEdges(): Double = {
-    val r1e = sig(eMsgs.n2f dot r1Msgs.n2f)
-    val r2e = sig(eMsgs.n2f dot r2Msgs.n2f)
-
-    val s = r1e * (r2e - 1) + 1
-    
-    val (p, dir) = innerLossAndDirection(s)
-
-    val δr1e_r1 = eMsgs.n2f * r1e * (1 - r1e)
-    val δr1e_e = r1Msgs.n2f * r1e * (1 - r1e)
-    val δr2e_r2 = eMsgs.n2f * r2e * (1 - r2e)
-    val δr2e_e = r2Msgs.n2f * r2e * (1 - r2e)
-
-    r1Msgs.f2n = ((δr1e_r1 * (r2e - 1)) * (1.0 - p) * dir) + regGradient(r1Msgs.n2f)
-    r2Msgs.f2n = ((δr2e_r2 * r1e) * (1.0 - p) * dir) + regGradient(r2Msgs.n2f)
-    eMsgs.f2n = ((δr2e_e * r1e + δr1e_e * (r2e - 1)) * (1.0 - p) * dir) + regGradient(eMsgs.n2f)
-
-    math.log(p) + regLoss(eMsgs.n2f) + regLoss(r1Msgs.n2f) + regLoss(r2Msgs.n2f)
-  }
-}
-
-
 
 object WolfeStyleMF extends App {
 
