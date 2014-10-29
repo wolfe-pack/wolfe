@@ -30,8 +30,8 @@ abstract class TwoPredicatesPotential(constEdge: Edge, predicate1Edge: Edge, pre
 
     val s = F(p1c, p2c)
 
-    val prob = innerLossAndDirection(s)._1
-    math.log(prob) + regLoss(c) + regLoss(p1) + regLoss(p2)
+    val loss = innerLossAndDirection(s)._1
+    math.log(loss) + regLoss(c) + regLoss(p1) + regLoss(p2)
   }
 
   override def valueAndGradientForAllEdges(): Double = {
@@ -40,18 +40,18 @@ abstract class TwoPredicatesPotential(constEdge: Edge, predicate1Edge: Edge, pre
 
     val s = F(p1c, p2c)
 
-    val (prob, dir) = innerLossAndDirection(s)
+    val (loss, dir) = innerLossAndDirection(s)
 
     val δp1c_p1 = cMsgs.n2f * p1c * (1 - p1c)
     val δp1c_c = p1Msgs.n2f * p1c * (1 - p1c)
     val δp2c_p2 = cMsgs.n2f * p2c * (1 - p2c)
     val δp2c_c = p2Msgs.n2f * p2c * (1 - p2c)
 
-    p1Msgs.f2n = (δF_p1(δp1c_p1, p2c) * (1.0 - prob) * dir) + regGradient(p1Msgs.n2f)
-    p2Msgs.f2n = (δF_p2(δp2c_p2, p1c) * (1.0 - prob) * dir) + regGradient(p2Msgs.n2f)
-    cMsgs.f2n = (δF_c(δp1c_c, p1c, δp2c_c, p2c) * (1.0 - prob) * dir) + regGradient(cMsgs.n2f)
+    p1Msgs.f2n = (calcδF_p1(δp1c_p1, p2c) * (1.0 / loss) * dir) + regGradient(p1Msgs.n2f)
+    p2Msgs.f2n = (calcδF_p2(δp2c_p2, p1c) * (1.0 / loss) * dir) + regGradient(p2Msgs.n2f)
+    cMsgs.f2n = (calcδF_c(δp2c_c, p1c, δp1c_c, p2c) * (1.0 / loss) * dir) + regGradient(cMsgs.n2f)
 
-    math.log(prob) + regLoss(cMsgs.n2f) + regLoss(p1Msgs.n2f) + regLoss(p2Msgs.n2f)
+    math.log(loss) + regLoss(cMsgs.n2f) + regLoss(p1Msgs.n2f) + regLoss(p2Msgs.n2f)
   }
 
   /**
@@ -65,16 +65,16 @@ abstract class TwoPredicatesPotential(constEdge: Edge, predicate1Edge: Edge, pre
    * Calculates gradient of [p1] in formula F.
    * @param δp1c_p1 gradient of [p1] in [p1(c)]
    * @param p2c score of [p2(c)]
-   * @return gradient of [p1]
+   * @return gradient of [p1]       
    */
-  def δF_p1(δp1c_p1: FactorieVector, p2c: Double): FactorieVector
+  def calcδF_p1(δp1c_p1: FactorieVector, p2c: Double): FactorieVector
   /**
    * Calculates gradient of [p2] in formula F.
    * @param δp2c_p2 gradient of [p2] in [p2(c)]
    * @param p1c score of [p1(c)]
    * @return gradient of [p2]
    */
-  def δF_p2(δp2c_p2: FactorieVector, p1c: Double): FactorieVector
+  def calcδF_p2(δp2c_p2: FactorieVector, p1c: Double): FactorieVector
   /**
    * Calculates gradient of [c] in formula F.
    * @param δp2c_c gradient of [c] in [p2(c)]
@@ -83,7 +83,7 @@ abstract class TwoPredicatesPotential(constEdge: Edge, predicate1Edge: Edge, pre
    * @param p2c score of [p2(c)]
    * @return gradient of [c]
    */
-  def δF_c(δp2c_c: FactorieVector, p1c: Double, δp1c_c: FactorieVector, p2c: Double): FactorieVector
+  def calcδF_c(δp2c_c: FactorieVector, p1c: Double, δp1c_c: FactorieVector, p2c: Double): FactorieVector
 }
 
 
@@ -91,9 +91,9 @@ class ImplPotential(constEdge: Edge, pred1Edge: Edge, pred2Edge: Edge, target: D
 extends TwoPredicatesPotential(constEdge, pred1Edge, pred2Edge, target, λ) {
   //[p₁(c) => p₂(c)] := [p₁(c)]*([p₂(c)] - 1) + 1
   def F(p1c: Double, p2c: Double) = p1c * (p2c - 1) + 1
-  def δF_p1(δp1c_p1: FactorieVector, p2c: Double) = δp1c_p1 * (p2c - 1)
-  def δF_p2(δp2c_p2: FactorieVector, p1c: Double) = δp2c_p2 * p1c
-  def δF_c(δp2c_c: FactorieVector, p1c: Double, δp1c_c: FactorieVector, p2c: Double) =
+  def calcδF_p1(δp1c_p1: FactorieVector, p2c: Double) = δp1c_p1 * (p2c - 1)
+  def calcδF_p2(δp2c_p2: FactorieVector, p1c: Double) = δp2c_p2 * p1c
+  def calcδF_c(δp2c_c: FactorieVector, p1c: Double, δp1c_c: FactorieVector, p2c: Double) =
     δp2c_c * p1c + δp1c_c * (p2c - 1)
 }
 
@@ -102,9 +102,9 @@ class ImplNegPotential(constEdge: Edge, pred1Edge: Edge, pred2Edge: Edge, target
 extends TwoPredicatesPotential(constEdge, pred1Edge, pred2Edge, target, λ) {
   //[p₁(c) => ¬p₂(c)] := [p₁(c)]*(-[p₂(c)]) + 1
   def F(p1c: Double, p2c: Double) = p1c * -p2c + 1
-  def δF_p1(δp1c_p1: FactorieVector, p2c: Double) = δp1c_p1 * -p2c
-  def δF_p2(δp2c_p2: FactorieVector, p1c: Double) = δp2c_p2 * -p1c
-  def δF_c(δp2c_c: FactorieVector, p1c: Double, δp1c_c: FactorieVector, p2c: Double) =
+  def calcδF_p1(δp1c_p1: FactorieVector, p2c: Double) = δp1c_p1 * -p2c
+  def calcδF_p2(δp2c_p2: FactorieVector, p1c: Double) = δp2c_p2 * -p1c
+  def calcδF_c(δp2c_c: FactorieVector, p1c: Double, δp1c_c: FactorieVector, p2c: Double) =
     δp2c_c * -p1c + δp1c_c * -p2c
 }
 
