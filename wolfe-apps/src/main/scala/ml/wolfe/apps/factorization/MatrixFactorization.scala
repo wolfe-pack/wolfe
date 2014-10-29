@@ -79,7 +79,7 @@ object MatrixFactorization extends App {
     //GradientBasedOptimizer(fg, new BatchTrainer(_, new AdaGrad(), maxIter, 200000), 0.01) //2nd best
     //GradientBasedOptimizer(fg, new BatchTrainer(_, new AdaGrad(rate = α), maxIter), initScale)
     //GradientBasedOptimizer(fg, new BatchTrainer(_, new ConstantLearningRate(baseRate = α), maxIter), initScale)
-    GradientBasedOptimizer(fg, new OnlineTrainer(_, new ConstantLearningRate(baseRate = α), maxIter, 200000), initScale) //best
+    GradientBasedOptimizer(fg, new OnlineTrainer(_, new ConstantLearningRate(baseRate = α), maxIter, 200000)) //best
     //GradientBasedOptimizer(fg, new OnlineTrainer(_, new AdaGrad(rate = α), maxIter, 200000), initScale)
     //GradientBasedOptimizer(fg, new OnlineTrainer(_, new AdaMira(rate = α), maxIter, 200000), initScale)
   }
