@@ -11,7 +11,7 @@ import ml.wolfe.apps.factorization.io.{EvaluateNAACL, LoadNAACL, WriteNAACL}
 import ml.wolfe.fg.L2Regularization
 import ml.wolfe.fg._
 import ml.wolfe.util.{ProgressLogging, ProgressBar, Timer}
-import ml.wolfe.{FactorieVector, GradientBasedOptimizer, Wolfe}
+import ml.wolfe.{DenseVector, FactorieVector, GradientBasedOptimizer, Wolfe}
 
 import scala.util.Random
 
@@ -48,9 +48,10 @@ object MatrixFactorization extends App {
 
 
   //initialize embeddings
-  def nextInit() = (rand.nextDouble() - 0.5) * 0.1
+  //def nextInit() = (rand.nextDouble() - 0.5) * 0.1
+  def nextInit() = rand.nextGaussian() * 0.1
   (V.values.view ++ A.values.view).foreach(n =>
-    n.variable.asVector.b = new DenseTensor1((0 until k).map(i => nextInit()).toArray))
+    n.variable.asVector.b = new DenseVector((0 until k).map(i => nextInit()).toArray))
 
   //println(V.values.head.variable.asVector.b)
 
@@ -64,12 +65,14 @@ object MatrixFactorization extends App {
 
     //create positive fact factor
     fg.buildFactor(Seq(a, v))(_ map (_ => new VectorMsgs)) { 
-      e => new CellLogisticLoss(e(0), e(1), 1.0, λ) with L2Regularization
+      //e => new CellLogisticLoss(e(0), e(1), 1.0, λ) with L2Regularization
+      e => new CellLogisticLoss(e(0), e(1), 0.9, λ) with L2Regularization
     }
 
     //also create a sampled stochastic negative factor in the same column
     fg.buildStochasticFactor(Seq(v, db.sampleNode(colIx)))(_ map (_ => new VectorMsgs)) {
-      e => new CellLogisticLoss(e(0), e(1), 0.0, λ) with L2Regularization
+      //e => new CellLogisticLoss(e(0), e(1), 0.0, λ) with L2Regularization
+      e => new CellLogisticLoss(e(0), e(1), 0.1, λ) with L2Regularization
     }
   }
 
@@ -85,13 +88,16 @@ object MatrixFactorization extends App {
 
   println("Optimizing...")
   Timer.time("optimization") {
-    GradientBasedOptimizer(fg, new BatchTrainer(_, new AdaGrad(), maxIter) with ProgressLogging) //2nd best
+    //BatchTrainer
     //GradientBasedOptimizer(fg, new BatchTrainer(_, new AdaGrad(rate = α), maxIter) with ProgressLogging)
     //GradientBasedOptimizer(fg, new BatchTrainer(_, new ConstantLearningRate(baseRate = α), maxIter) with ProgressLogging)
 
-    //GradientBasedOptimizer(fg, new OnlineTrainer(_, new ConstantLearningRate(baseRate = α), maxIter, fg.factors.size - 1) with ProgressLogging) //best
-    //GradientBasedOptimizer(fg, new OnlineTrainer(_, new AdaGrad(rate = α), maxIter, fg.factors.size - 1) with ProgressLogging)
+    //OnlineTrainer
+    //GradientBasedOptimizer(fg, new OnlineTrainer(_, new ConstantLearningRate(baseRate = α), maxIter, fg.factors.size - 1) with ProgressLogging)
+    GradientBasedOptimizer(fg, new OnlineTrainer(_, new AdaGrad(rate = α), maxIter, fg.factors.size - 1) with ProgressLogging) //best
     //GradientBasedOptimizer(fg, new OnlineTrainer(_, new AdaMira(rate = α), maxIter, fg.factors.size - 1) with ProgressLogging)
+
+    //GradientBasedOptimizer(fg, new BatchTrainer(_, new LBFGS(Double.MaxValue, Int.MaxValue), maxIter))
   }
   println("Done after " + Timer.reportedVerbose("optimization"))
 

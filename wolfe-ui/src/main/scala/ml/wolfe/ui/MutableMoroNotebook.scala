@@ -94,7 +94,7 @@ class MutableMoroNotebook extends MutableNotebook[MutableMoroNotebook] {
   }
 
   def pdflatex(text: String) = {
-    cells += Cell(cells.size, "pdflatex", Input(text, OutputFormats.string.toString))
+    cells += Cell(cells.size, "pdflatex", Input(text, OutputFormats.string.toString, Map("png" -> "true")))
     this
   }
 
