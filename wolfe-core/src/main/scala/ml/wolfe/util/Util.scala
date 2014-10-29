@@ -126,7 +126,8 @@ class ProgressBar(goal: Int, reportInterval: Int = 1, outputStream: OutputStream
  * Hook into FACTORIE FastLogging that calls ProgressBar
  */
 class ProgressLogger(maxIterations: Int, name:String, outputStream: => OutputStream = System.out) extends Logger(name, outputStream) {
-  val progressBar = new ProgressBar(maxIterations, 1, outputStream)
+  val logEveryN = if (Conf.hasPath("logEveryN")) Conf.getInt("logEveryN") else 1
+  val progressBar = new ProgressBar(maxIterations, logEveryN, outputStream)
   progressBar.start()
   override def info(msg: => Any): Unit = progressBar(msg.toString, lineBreak = true)
 }
