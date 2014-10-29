@@ -99,7 +99,7 @@ object Timer {
 class ProgressBar(goal: Int, reportInterval: Int = 1, outputStream: OutputStream = System.err) {
   val printWriter = new PrintWriter(outputStream)
 
-  private var completed: Int = _
+  private var completed: Int = 1
   private var startTime = 0l
 
   def start() = {
@@ -127,6 +127,7 @@ class ProgressBar(goal: Int, reportInterval: Int = 1, outputStream: OutputStream
  */
 class ProgressLogger(maxIterations: Int, name:String, outputStream: => OutputStream = System.out) extends Logger(name, outputStream) {
   val progressBar = new ProgressBar(maxIterations, 1, outputStream)
+  progressBar.start()
   override def info(msg: => Any): Unit = progressBar(msg.toString, lineBreak = true)
 }
 

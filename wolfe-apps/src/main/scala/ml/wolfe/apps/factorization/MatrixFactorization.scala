@@ -28,7 +28,7 @@ object MatrixFactorization extends App {
   val k = 100
   val λ = 0.01
   val α = 0.1
-  val maxIter = 200
+  val maxIter = 10
 
   val debug = false
   val print = false
@@ -87,8 +87,8 @@ object MatrixFactorization extends App {
   Timer.time("optimization") {
     //GradientBasedOptimizer(fg, new BatchTrainer(_, new AdaGrad(), maxIter, 200000), 0.01) //2nd best
     //GradientBasedOptimizer(fg, new BatchTrainer(_, new AdaGrad(rate = α), maxIter))
-    //GradientBasedOptimizer(fg, new BatchTrainer(_, new ConstantLearningRate(baseRate = α), maxIter))
-    GradientBasedOptimizer(fg, new OnlineTrainer(_, new ConstantLearningRate(baseRate = α), maxIter, 200000) with ProgressLogging) //best
+    //GradientBasedOptimizer(fg, new BatchTrainer(_, new ConstantLearningRate(baseRate = α), maxIter) with ProgressLogging)
+    GradientBasedOptimizer(fg, new OnlineTrainer(_, new ConstantLearningRate(baseRate = α), maxIter, fg.factors.size - 1) with ProgressLogging) //best
     //GradientBasedOptimizer(fg, new OnlineTrainer(_, new AdaGrad(rate = α), maxIter, 200000))
     //GradientBasedOptimizer(fg, new OnlineTrainer(_, new AdaMira(rate = α), maxIter, 200000))
   }
