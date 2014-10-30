@@ -48,5 +48,5 @@ object SoftLogicPotentialsSpec extends App {
   fg.factors.foreach(_.edges.foreach(e => e.msgs.asVector.n2f = e.n.variable.asVector.b))
 
   //gradient checking
-  fg.factors.map(_.potential).foreach(PotentialDebugger.checkGradients(_, debug = false))
+  fg.factors.map(_.potential).foreach(PotentialDebugger.checkGradients(_, debug = true))
 }

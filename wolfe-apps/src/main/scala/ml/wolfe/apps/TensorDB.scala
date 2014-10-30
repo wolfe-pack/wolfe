@@ -23,11 +23,24 @@ import scala.util.Random
 
 case class Cell(key1: Any, key2: Any = DefaultIx, key3: Any = DefaultIx, target: Double = 1.0, cellType: CellType = CellType.Train) {
   val key = (key1, key2, key3)
-  val train =     cellType == Train
-  val dev =       cellType == Dev
-  val test =      cellType == Test
-  val observed =  cellType == Observed
+  val train =    cellType == Train
+  val dev =      cellType == Dev
+  val test =     cellType == Test
+  val observed = cellType == Observed
 }
+
+trait Formula {
+  val predicates: Seq[Any]
+  def isFormula2 = predicates.size == 2
+}
+
+abstract class Formula2(p1: Any, p2: Any) extends Formula {
+  override val predicates: Seq[Any] = Seq(p1,p2)
+}
+
+case class Impl(p1: Any, p2: Any, target: Double = 1.0) extends Formula2(p1, p2)
+case class ImplNeg(p1: Any, p2: Any, target: Double = 1.0) extends Formula2(p1, p2)
+
 
 
 trait Tensor {
@@ -91,11 +104,15 @@ class TensorDB(k: Int = 100) extends Tensor {
 
   def ++=(cells: Seq[Cell]) = cells foreach (this += _)
 
-  def vector1(key1: CellIx) = ix1ToNodeMap.get(key1).map(_.variable.asVector.b)
-  def vector2(key2: CellIx) = ix2ToNodeMap.get(key2).map(_.variable.asVector.b)
-  def vector3(key3: CellIx) = ix3ToNodeMap.get(key3).map(_.variable.asVector.b)
-  def vector23(key23: (CellIx, CellIx)) = ix23ToNodeMap.get(key23).map(_.variable.asVector.b)
+  def node1(key1: CellIx) = ix1ToNodeMap.get(key1)
+  def node2(key2: CellIx) = ix2ToNodeMap.get(key2)
+  def node3(key3: CellIx) = ix3ToNodeMap.get(key3)
+  def node23(key23: (CellIx, CellIx)) = ix23ToNodeMap.get(key23)
 
+  def vector1(key1: CellIx) = node1(key1).map(_.variable.asVector.b)
+  def vector2(key2: CellIx) = node2(key2).map(_.variable.asVector.b)
+  def vector3(key3: CellIx) = node3(key3).map(_.variable.asVector.b)
+  def vector23(key23: (CellIx, CellIx)) = node23(key23).map(_.variable.asVector.b)
 
   def +=(cell: Cell) {
     cellMap += cell.key -> cell
@@ -122,6 +139,13 @@ class TensorDB(k: Int = 100) extends Tensor {
 
     cells append cell
   }
+
+  val formulae = new ArrayBuffer[Formula]()
+
+  def +=(formula: Formula) = formulae += formula
+
+  def formulaeByPredicate(predicate: CellIx): Seq[Formula] = formulae.filter(_.predicates.contains(predicate))
+
 
   def toFactorGraph: FactorGraph = {
     val fg = new FactorGraph()
@@ -215,18 +239,19 @@ class TensorDB(k: Int = 100) extends Tensor {
 
   def toInfoString =
     s"""
-      |#cols:    ${keys1.size}
-      |#rows:    ${keys2.size}
-      |#layers:  ${keys3.size}
+      |#cols:     ${keys1.size}
+      |#rows:     ${keys2.size}
+      |#layers:   ${keys3.size}
       |
-      |#cells:   $numCells (${numCells.toDouble / (keys1.size * keys2.size * (if (keys3.size > 0) keys3.size else 1))})
-      |#train:   ${trainCells.size} (${trainCells.size.toDouble / (keys1.size * keys2.size * (if (keys3.size > 0) keys3.size else 1))})
-      |#dev:     ${devCells.size} (${devCells.size.toDouble / (keys1.size * keys2.size * (if (keys3.size > 0) keys3.size else 1))})
-      |#test:    ${testCells.size} (${testCells.size.toDouble / (keys1.size * keys2.size * (if (keys3.size > 0) keys3.size else 1))})
+      |#cells:    $numCells (${numCells.toDouble / (keys1.size * keys2.size * (if (keys3.size > 0) keys3.size else 1))})
+      |#train:    ${trainCells.size} (${trainCells.size.toDouble / (keys1.size * keys2.size * (if (keys3.size > 0) keys3.size else 1))})
+      |#dev:      ${devCells.size} (${devCells.size.toDouble / (keys1.size * keys2.size * (if (keys3.size > 0) keys3.size else 1))})
+      |#test:     ${testCells.size} (${testCells.size.toDouble / (keys1.size * keys2.size * (if (keys3.size > 0) keys3.size else 1))})
+      |
+      |#formulae: ${formulae.size}
     """.stripMargin
 
   @tailrec
-  //fixme: check if test cell!
   final def sampleNode(col: CellIx, attempts: Int = 1000): Node = {
     if (isMatrix)
       if (attempts == 0) ix2ToNodeMap(keys2(random.nextInt(keys2.size)))
