@@ -11,7 +11,7 @@ import scala.util.Random
  */
 object FactorizationUtil {
 
-  case class Row(arg1: Any, arg2: Any, relations: Seq[(String, Double)]) {
+  case class Row(arg1: Any, arg2: Any, relations: Seq[(String, Double)], hidden:Set[String] = Set.empty) {
     def rowName = s"($arg1,$arg2)"
     def observedTrue = relations.filter(_._2 > 0.5).map(_._1)
   }

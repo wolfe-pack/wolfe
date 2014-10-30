@@ -1,21 +1,23 @@
 package ml.wolfe
 
 import cc.factorie.la.SmartGradientAccumulator
-import cc.factorie.model.WeightsSet
+import cc.factorie.model.{Weights, WeightsMap, WeightsSet}
 import cc.factorie.optimize._
 import cc.factorie.util.{GlobalLogging, LocalDoubleAccumulator}
+
+import scala.collection.mutable
 
 /**
  * @author Sebastian Riedel
  */
 object Learn {
 
-  def batch(optimizer:GradientOptimizer = new LBFGS())
-           (weights:WeightsSet) =
+  def batch(optimizer: GradientOptimizer = new LBFGS())
+           (weights: WeightsSet) =
     new BatchTrainer(weights, optimizer)
 
-  def online(maxIterations:Int = 10, optimizer:GradientOptimizer = new AdaGrad())
-            (weights:WeightsSet) = new WolfeOnlineTrainer(weights, optimizer, maxIterations)
+  def online(maxIterations: Int = 10, optimizer: GradientOptimizer = new AdaGrad())
+            (weights: WeightsSet) = new WolfeOnlineTrainer(weights, optimizer, maxIterations)
 
 }
 
@@ -29,7 +31,7 @@ object Learn {
  * @author Alexandre Passos
  */
 class WolfeOnlineTrainer(val weightsSet: WeightsSet, val optimizer: GradientOptimizer = new AdaGrad, val maxIterations: Int = 3, var logEveryN: Int = -1) extends Trainer with GlobalLogging {
-  var iteration = 0
+  var iteration        = 0
   val valueAccumulator = new LocalDoubleAccumulator
   override def processExamples(examples: Iterable[Example]): Unit = {
     if (logEveryN == -1) logEveryN = math.max(100, examples.size / 10)
@@ -53,8 +55,24 @@ class WolfeOnlineTrainer(val weightsSet: WeightsSet, val optimizer: GradientOpti
       valuesSeenSoFar += valueAccumulator.value
       optimizer.step(weightsSet, gradientAccumulator.getMap, valueAccumulator.value)
       timePerIteration += System.currentTimeMillis() - t0
-      i+=1
+      i += 1
     }
   }
   def isConverged = iteration >= maxIterations
+}
+
+trait UnitBallProjection extends GradientStep {
+
+  var weightsToNormalize = new mutable.HashSet[Weights]()
+
+  override def doGradStep(weights: WeightsSet, gradient: WeightsMap, rate: Double) = {
+
+    gradient.keys.foreach(k => {
+      weights(k) +=(gradient(k), rate)
+      if (weightsToNormalize(k)) {
+        weights(k).normalize()
+      }
+    })
+
+  }
 }

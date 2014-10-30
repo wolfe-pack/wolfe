@@ -13,14 +13,18 @@ import scala.collection.mutable
  */
 object GradientBasedOptimizer {
 
-  def apply(fg: FactorGraph, trainer: WeightsSet => Trainer) {
+  //projection is an ugly hack
+  def apply(fg: FactorGraph, trainer: WeightsSet => Trainer, projection:UnitBallProjection = null) {
     //initialize all n2f messages with zero or some random value
 //    for (node <- fg.nodes) {
 //      node.variable.initializeRandomly(0.01)
 //    }
     val weightsSet = new WeightsSet
     val weightsKeys = new mutable.HashMap[FactorGraph.Node, Weights]()
-    for (n <- fg.nodes) weightsKeys(n) = weightsSet.newWeights(n.variable.asVector.b)
+    for (n <- fg.nodes) {
+      weightsKeys(n) = weightsSet.newWeights(n.variable.asVector.b)
+      if (n.variable.asVector.unitVector && projection != null) projection.weightsToNormalize += weightsKeys(n)
+    }
     val examples = for (f <- fg.factors) yield new Example {
       val factor = f
       def accumulateValueAndGradient(value: DoubleAccumulator, gradient: WeightsMapAccumulator) = {
@@ -57,3 +61,5 @@ class ResamplingTrainer(fg:FactorGraph, self:Trainer) extends Trainer {
   }
   def isConverged = self.isConverged
 }
+
+
