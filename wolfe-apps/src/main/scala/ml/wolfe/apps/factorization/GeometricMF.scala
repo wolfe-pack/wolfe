@@ -640,7 +640,8 @@ class JointPotential(weights1: Edge, bias1: Edge, scale1: Edge, mult1: Edge,
                      trueProbOf1Given2: Double, trueProbOf2Given1: Double, marg1: Double, marg2: Double,
                      regWeights: Double, regBias: Double, regScale: Double, regMult: Double,
                      priorBias: Double, priorScale: Double, priorMult: Double,
-                     arg1Coeff: Double, arg2Coeff: Double) extends Potential {
+                     arg1Coeff: Double, arg2Coeff: Double,
+                     termWeight1:Double = 1.0, termWeight2:Double = 1.0) extends Potential {
 
   def nn[T1, T2](t: T1)(f: T1 => T2): T2 = if (t != null) f(t) else null.asInstanceOf[T2]
 
@@ -676,7 +677,7 @@ class JointPotential(weights1: Edge, bias1: Edge, scale1: Edge, mult1: Edge,
   }
 
   def logConditional(targetWeights: VectorMsgs, targetBias: VectorMsgs, targetScale: VectorMsgs,
-                     obsWeights: VectorMsgs, obsMult: VectorMsgs, trueProb: Double) = {
+                     obsWeights: VectorMsgs, obsMult: VectorMsgs, trueProb: Double, weight:Double = 1.0) = {
     val tw = targetWeights.n2f
     val tb = if (targetBias != null) targetBias.n2f(0) else priorBias
     val ts = if (targetScale != null) targetScale.n2f(0) else priorScale
@@ -691,7 +692,7 @@ class JointPotential(weights1: Edge, bias1: Edge, scale1: Edge, mult1: Edge,
     val obj = trueProb * log(probTrue) + ((1.0 - trueProb) * log(1.0 - probTrue))
     val trueRate = (1.0 - probTrue) * trueProb
     val falseRate = (0.0 - probTrue) * (1.0 - trueProb)
-    val rate = trueRate + falseRate
+    val rate = (trueRate + falseRate) * weight
 
     targetWeights.f2n +=(ow, om * ts * rate)
     if (targetScale != null) targetScale.f2n(0) += twDotOw * om * rate
@@ -740,8 +741,8 @@ class JointPotential(weights1: Edge, bias1: Edge, scale1: Edge, mult1: Edge,
     val k = weights1Msgs.n2f.size
     initMsgs(k)
     var result = 0.0
-    result += logConditional(weights1Msgs, bias1Msgs, scale1Msgs, weights2Msgs, mult2Msgs, trueProbOf1Given2)
-    result += logConditional(weights2Msgs, bias2Msgs, scale2Msgs, weights1Msgs, mult1Msgs, trueProbOf2Given1)
+    result += logConditional(weights1Msgs, bias1Msgs, scale1Msgs, weights2Msgs, mult2Msgs, trueProbOf1Given2,termWeight2)
+    result += logConditional(weights2Msgs, bias2Msgs, scale2Msgs, weights1Msgs, mult1Msgs, trueProbOf2Given1,termWeight1)
     result += marginal(bias1Msgs, marg1, arg1Coeff)
     result += marginal(bias2Msgs, marg2, arg2Coeff)
     result += regularizers()

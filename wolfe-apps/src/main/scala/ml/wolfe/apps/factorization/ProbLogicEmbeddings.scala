@@ -22,52 +22,59 @@ case class PredicateEmbedding(rel: String, embedding: FactorieVector,
 
 case class ProbLogicEmbeddings(embeddings: Map[String, PredicateEmbedding],
                                rules: Rules = Rules(Map.empty, Map.empty),
-                               average: Boolean = true) {
+                               average: Boolean = true, forceZero: Boolean = true) {
 
   def predict(observations: Seq[String], relation: String) = {
-    val normalizer = if (average) observations.size.toDouble else 1.0
     embeddings.get(relation) match {
       case None => 0.0
       case Some(embedding) =>
-        var score = embedding.bias
-        for (obs <- observations; if embedding.observationFilter(obs); obsEmb <- embeddings.get(obs)) {
-          score += obsEmb.weight * embedding.scale * (embedding.embedding dot obsEmb.embedding) / normalizer // observations.size
-        }
-        val result = Util.sig(score)
-        result
+        val filteredObs = observations.filter(embedding.observationFilter)
+        if (!forceZero || filteredObs.size > 0) {
+          val normalizer = if (average) filteredObs.size.toDouble else 1.0
+          var score = embedding.bias
+          for (obs <- filteredObs; obsEmb <- embeddings.get(obs)) {
+            score += obsEmb.weight * embedding.scale * (embedding.embedding dot obsEmb.embedding) / normalizer // observations.size
+          }
+          val result = Util.sig(score)
+          result
+        } else 0.0
     }
   }
   def predictRow(observation: Row, targets: Seq[String]) = {
     observation.copy(relations = targets.map(r => r -> predict(observation.observedTrue, r)))
   }
 
-  lazy val pairwiseRules = {
+  def pairwiseRules(relPairs: Iterable[(String, String)]) = {
     val relations = embeddings.keys.toArray.sorted
-    val result = for (r1 <- 0 until relations.size; r2 <- r1 + 1 until relations.size) yield {
-      val rel1 = relations(r1)
-      val rel2 = relations(r2)
-      val emb1 = embeddings(rel1)
-      val emb2 = embeddings(rel2)
+    val marginals = (for (r <- relations) yield r -> predict(Seq.empty, r)).toMap
+    val result = for ((rel1, rel2) <- relPairs;
+                      emb1 = embeddings(rel1);
+                      emb2 = embeddings(rel2)) yield {
       val prob1given2 = predict(Seq(rel2), rel1)
       val prob2given1 = predict(Seq(rel1), rel2)
-      val prob1 = predict(Seq.empty, rel1)
-      val prob2 = predict(Seq.empty, rel2)
+      val prob1 = marginals(rel1)
+      val prob2 = marginals(rel2)
       val probs = Map(
         (true, true) -> prob1given2 * prob2, //todo: this may be different to using the other way around
         (true, false) -> (1.0 - prob2given1) * prob1,
         (false, true) -> (1.0 - prob1given2) * prob2,
         (false, false) -> (1 - prob1) * (1 - prob2)
       )
-      (rel1, rel2) -> Rule2(rel1, rel2, probs, trueTrueInconsistency = math.abs(prob1given2 * prob2 - prob2given1 * prob1))
+      (rel1, rel2) -> Rule2(
+        rel1, rel2, probs,
+        trueTrueInconsistency = math.abs(prob1given2 * prob2 - prob2given1 * prob1),
+        cond1given2 = prob1given2, cond2given1 = prob2given1)
     }
     result.toMap
   }
 
 }
 
-case class Rules(rules2: Map[(String, String), Rule2], rules1: Map[String, Rule1]) {
+case class Rules(rules2: Map[(String, String), Rule2], rules1: Map[String, Rule1] = Map.empty) {
   lazy val rel2RuleArg1 = rules2.toSeq.groupBy(_._1._1) withDefaultValue Seq.empty
   lazy val rel2RuleArg2 = rules2.toSeq.groupBy(_._1._2) withDefaultValue Seq.empty
+
+  lazy val relations = rules2.keySet.map(_._1) ++ rules2.keySet.map(_._2)
 
   def pairwiseRuleCount(rel: String) = rel2RuleArg1(rel).size + rel2RuleArg2(rel).size
 
@@ -84,16 +91,20 @@ case class Rules(rules2: Map[(String, String), Rule2], rules1: Map[String, Rule1
 
 
 }
+
+
 case class Rule2(rel1: String, rel2: String, probs: Map[(Boolean, Boolean), Double], scale: Double = 1,
-                 count: Double = 1.0, trueTrueInconsistency: Double = 0.0) {
+                 count: Double = 1.0, trueTrueInconsistency: Double = 0.0, cond1given2: Double, cond2given1: Double) {
   def marg1(b1: Boolean) = probs(b1, true) + probs(b1, false)
   def marg2(b2: Boolean) = probs(true, b2) + probs(false, b2)
   def prob2given1(b1: Boolean)(b2: Boolean) = probs(b1, b2) / marg1(b1)
   def prob1given2(b2: Boolean)(b1: Boolean) = probs(b1, b2) / marg2(b2)
+
+  def cooccurCount = count * probs(true, true)
   override def toString =
     s"""$rel1 $rel2  ${ if (trueTrueInconsistency > 0.0) "(" + trueTrueInconsistency.toString + ")" else "" }
-      |p(r1|r2) = ${ prob1given2(true)(true) }
-      |p(r2|r1) = ${ prob2given1(true)(true) }
+      |p(r1|r2) = ${ cond1given2 }
+      |p(r2|r1) = ${ cond2given1 }
       |p(r1)    = ${ marg1(true) }
       |p(r2)    = ${ marg2(true) }
     """.stripMargin
@@ -107,14 +118,14 @@ case class Rule2(rel1: String, rel2: String, probs: Map[(Boolean, Boolean), Doub
 
   def +(that: Rule2) = {
     val newCount = count + that.count
-    val newProbs = for (b1 <- List(false, true); b2 <- List(false, true)) yield
+    val newProbs = for (b1 <- List(false, true).view; b2 <- List(false, true).view) yield
       (b1, b2) -> (probs(b1, b2) * count + that.probs(b1, b2) * that.count) / newCount
     copy(probs = newProbs.toMap, count = newCount)
   }
 
   def klTerm(p1: Double, p2: Double) = if (p1 == 0.0) 0.0 else p1 * math.log(p1 / p2)
 
-  def prob1given2Inc(that: Rule2) = prob1given2(true)(true) - that.prob1given2(true)(true)
+  def prob1given2Inc(that: Rule2) = cond1given2 - that.cond1given2
 
   def condKL(that: Rule2) = {
     klTerm(prob1given2(true)(true), that.prob1given2(true)(true)) +
@@ -165,7 +176,9 @@ object ProbLogicEmbedder {
     val scalePrior = conf.getDouble("epl.scale-prior")
     val biasPrior = conf.getDouble("epl.bias-prior")
     val multPrior = conf.getDouble("epl.mult-prior")
+    val weighTerms = conf.getBoolean("epl.weigh-terms")
 
+    val maxMarg = rules.rules2.view.flatMap(t => Iterator(t._2.marg1(true), t._2.marg2(true))).max
 
     val V = relations.map(r => r -> fg.addVectorNode(k, r)).toMap
     def emptyMap = Map.empty[String, Node] withDefaultValue null
@@ -213,7 +226,9 @@ object ProbLogicEmbedder {
               rule.marg1(true), rule.marg2(true),
               regW, regBias, regS, regMult,
               biasPrior, scalePrior, multPrior,
-              1.0 / relNormalizer1, 1.0 / relNormalizer2)
+              1.0 / relNormalizer1, 1.0 / relNormalizer2,
+              if (weighTerms) rule.marg1(true) / maxMarg else 1.0,
+              if (weighTerms) rule.marg2(true) / maxMarg else 1.0)
           }
         case _ =>
       }
@@ -242,146 +257,6 @@ object ProbLogicEmbedder {
         if (regBias == Double.PositiveInfinity) biasPrior else colBiases(rel).variable.asVector.b(0),
         if (regMult == Double.PositiveInfinity) multPrior else colMults(rel).variable.asVector.b(0),
         allowed(rel))
-    })
-    ProbLogicEmbeddings(embeddings.toMap, rules)
-  }
-
-}
-
-object OldProbLogicEmbedder {
-
-  def embed(rules: Rules)(implicit conf: Config): ProbLogicEmbeddings = {
-
-    val relations = rules.rules2.values.flatMap(r => Seq(r.rel1, r.rel2)).distinct.sorted.toArray
-    val numRelations = relations.size
-    val fg = new FactorGraph
-    val k = conf.getInt("epl.relation-dim")
-    val regW = conf.getDouble("epl.reg-embed")
-    val regS = conf.getDouble("epl.reg-scale")
-    val regBias = conf.getDouble("epl.reg-bias")
-    val regMult = conf.getDouble("epl.reg-mult")
-    val doNormB = conf.getBoolean("epl.norm-b")
-    val scalePrior = conf.getDouble("epl.scale-prior")
-    val biasPrior = conf.getDouble("epl.bias-prior")
-    val multPrior = conf.getDouble("epl.mult-prior")
-
-
-    val V = relations.map(r => r -> fg.addVectorNode(k, r)).toMap
-    val colScales = relations.map(i => i -> fg.addVectorNode(1)).toMap
-    val colBiases = relations.map(i => i -> fg.addVectorNode(1)).toMap
-    val colMults = relations.map(i => i -> fg.addVectorNode(1)).toMap
-    val objNormalizer = 1.0 / (numRelations * (numRelations - 1) / 2.0)
-    val subSample = conf.getDouble("epl.subsample")
-
-    println("Building factor graph")
-
-    for (rel1Index <- 0 until relations.length; rel2Index <- rel1Index + 1 until relations.size) {
-      val rel1 = relations(rel1Index)
-      val rel2 = relations(rel2Index)
-
-      val v1 = V(rel1)
-      val v2 = V(rel2)
-
-      val s1 = colScales(rel1)
-      val s2 = colScales(rel2)
-
-      val eta1 = colBiases(rel1)
-      val eta2 = colBiases(rel2)
-
-      val m1 = colMults(rel1)
-      val m2 = colMults(rel2)
-
-      rules.rules2.get((rel1, rel2)) match {
-        case Some(rule) =>
-          for (b <- Seq(true, false)) {
-            val cond = rule.prob1given2(true)(b)
-            if (cond > 0.0) {
-              val scale = cond * objNormalizer // numCols// (numCols * numCols)
-              fg.buildFactor(Seq(v1, v2, s1, eta1, m1, m2))(_ map (_ => new VectorMsgs)) {
-                e => new LogPairwiseWeightedScaleBias(e(0), e(1), e(2), e(3), e(4), e(5), scale, I(b), 0, 1)
-              }
-            }
-          }
-          for (b <- Seq(true, false)) {
-            val cond = rule.prob2given1(true)(b)
-            if (cond > 0.0) {
-              val scale = cond * objNormalizer // numCols// (numCols * numCols)
-              fg.buildFactor(Seq(v2, v1, s2, eta2, m2, m1))(_ map (_ => new VectorMsgs)) {
-                e => new LogPairwiseWeightedScaleBias(e(0), e(1), e(2), e(3), e(4), e(5), scale, I(b), 0, 1)
-              }
-            }
-          }
-
-
-        //          for (b1 <- Seq(true, false); b2 <- Seq(true, false)) {
-        //            val freq_b1b2 = rule.probs(b1, b2) * rule.scale
-        //            val ignore = (!b1 || !b2) && (random.nextDouble() < (1.0 - subSample))
-        //            val bNorm = if (doNormB && (b1 || b2)) I(b1) + I(b2) else 1.0
-        //            if (freq_b1b2 > 0.0 && !ignore) {
-        //              val scale = freq_b1b2 * objNormalizer // numCols// (numCols * numCols)
-        //              //learn the left cell
-        //              fg.buildFactor(Seq(v1, v2, s1, eta1, m1, m2))(_ map (_ => new VectorMsgs)) {
-        //                e => new LogPairwiseWeightedScaleBias(e(0), e(1), e(2), e(3), e(4), e(5), scale, I(b1), I(b1) / bNorm, I(b2) / bNorm)
-        //              }
-        //              //learn the right cell
-        //              fg.buildFactor(Seq(v2, v1, s2, eta2, m2, m1))(_ map (_ => new VectorMsgs)) {
-        //                e => new LogPairwiseWeightedScaleBias(e(0), e(1), e(2), e(3), e(4), e(5), scale, I(b2), I(b2) / bNorm, I(b1) / bNorm)
-        //              }
-        //            }
-        //          }
-        case _ =>
-      }
-    }
-
-    //create L2 regularizers
-    for (rel <- relations) {
-
-      val v = V(rel)
-      val s = colScales(rel)
-      val eta = colBiases(rel)
-      val mult = colMults(rel)
-
-      rules.rules1.get(rel).foreach(rule => {
-        fg.buildFactor(Seq(eta))(_ map (_ => new VectorMsgs)) {
-          e => new SingleColumnBias(e(0), objNormalizer, rule.prob)
-        }
-      })
-
-      //likelihood of marginals
-      fg.buildFactor(Seq(v))(_ map (_ => new VectorMsgs)) {
-        e => new L2Regularizer(e(0), regW * objNormalizer)
-      }
-
-      fg.buildFactor(Seq(s))(_ map (_ => new VectorMsgs)) {
-        e => new L2RegularizerOffset(e(0), new DenseTensor1(Array(scalePrior)), regS * objNormalizer)
-      }
-
-      fg.buildFactor(Seq(eta))(_ map (_ => new VectorMsgs)) {
-        e => new L2RegularizerOffset(e(0), new DenseTensor1(Array(biasPrior)), regBias * objNormalizer)
-      }
-
-      fg.buildFactor(Seq(mult))(_ map (_ => new VectorMsgs)) {
-        e => new L2RegularizerOffset(e(0), new DenseTensor1(Array(multPrior)), regMult * objNormalizer)
-      }
-
-    }
-
-    fg.build()
-    println("Optimizing...")
-
-    val maxIterations = conf.getInt("epl.opt-iterations")
-
-    //GradientBasedOptimizer(fg, new OnlineTrainer(_, new AdaGrad(), 10, 100))
-    GradientBasedOptimizer(fg, new BatchTrainer(_, new AdaGrad(conf.getDouble("epl.ada-rate")), maxIterations))
-    //GradientBasedOptimizer(fg, new BatchTrainer(_, new LBFGS(), maxIterations))
-
-
-    val embeddings = relations.map({ rel =>
-      rel -> PredicateEmbedding(rel,
-        V(rel).variable.asVector.b,
-        colScales(rel).variable.asVector.b(0),
-        colBiases(rel).variable.asVector.b(0),
-        colMults(rel).variable.asVector.b(0))
     })
     ProbLogicEmbeddings(embeddings.toMap, rules)
   }
@@ -418,7 +293,9 @@ object RuleLearner {
         (true, true) -> prob11, (true, false) -> prob10,
         (false, true) -> prob01, (false, false) -> prob00
       )
-      (rel1, rel2) -> Rule2(rel1, rel2, probs, 1.0, count = normalizer)
+      (rel1, rel2) -> Rule2(rel1, rel2, probs, 1.0, count = normalizer,
+        cond1given2 = prob11 / (prob01 + prob11),
+        cond2given1 = prob11 / (prob10 + prob11))
     }
     val rules1 = for ((r, c) <- singleCounts) yield r -> Rule1(r, c / normalizer)
     Rules(rules2.toMap, rules1.toMap)
