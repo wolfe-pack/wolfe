@@ -4,7 +4,8 @@ import java.io.{File, PrintWriter}
 
 import ml.wolfe.FactorGraph.{DirectedEdge, EdgeDirection, Factor, Node}
 import ml.wolfe.fg.{TupleMsgs, DiscreteMsgs, TupleVar, DiscreteVar}
-import org.sameersingh.htmlgen.{RawHTML, HTML}
+import org.sameersingh.htmlgen.Custom.Matrix
+import org.sameersingh.htmlgen.{DivConverter, RawHTML, HTML}
 import scala.language.implicitConversions
 
 /**
@@ -117,7 +118,7 @@ object D3Implicits {
       case Some(x) => x.group(3)
       case None => ""
     }
-    
+
 
     val nodes = fg.nodes.filter(nodeFilter)
     val factors = fg.factors.filter(_.edges.map(_.n).forall(nodeFilter))
@@ -559,4 +560,79 @@ object D3Implicits {
 
     writer.close()
   }
+
+  // ------ Image Processing ------
+  import java.awt.Image
+  import java.awt.image.BufferedImage
+  import java.net.URL
+  import javax.imageio.ImageIO
+  import javax.swing.ImageIcon
+  import java.awt.FlowLayout
+  import javax.swing.{JLabel, JFrame}
+
+  def readImage(url: String): BufferedImage = {
+    val img = ImageIO.read(new URL(url))
+    img
+  }
+
+  def displayImage(img: BufferedImage): Unit = {
+    val icon = new ImageIcon(img)
+    val frame = new JFrame()
+    frame.setLayout(new FlowLayout())
+    frame.setSize(img.getWidth + 10, img.getHeight + 35)
+    val lbl = new JLabel()
+    lbl.setIcon(icon)
+    frame.add(lbl)
+    frame.setVisible(true)
+    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE)
+  }
+
+  def resizeImage(img: BufferedImage, newW: Int) = {
+    val ratio = img.getHeight.toDouble / img.getWidth.toDouble
+    val tmp = img.getScaledInstance(newW, math.floor(ratio * 100).toInt, Image.SCALE_SMOOTH);
+    val dimg = new BufferedImage(newW, math.floor(ratio * 100).toInt, BufferedImage.TYPE_INT_ARGB);
+
+    val g2d = dimg.createGraphics()
+    g2d.drawImage(tmp, 0, 0, null)
+    g2d.dispose()
+
+    dimg
+  }
+
+  def binarizeImage(img: BufferedImage): BufferedImage = {
+    val gray = new BufferedImage(img.getWidth(), img.getHeight(),
+      BufferedImage.TYPE_BYTE_BINARY)
+
+    val g = gray.createGraphics()
+    g.drawImage(img, 0, 0, null)
+    gray
+  }
+
+  def saveImage(img: BufferedImage, path: String): Unit = {
+    val outputfile = new File(path)
+    ImageIO.write(img, "png", outputfile)
+  }
+
+  def imgToMatrix(img: BufferedImage): Matrix[Double] = {
+    val pixels = (0 until img.getHeight).map(y => {
+      (0 until img.getWidth).map(x => {
+        val pixel = img.getRGB(x,y)
+        // extract each color component
+        val red   = (pixel >>> 16) & 0xFF
+        val green = (pixel >>>  8) & 0xFF
+        val blue  = (pixel >>>  0) & 0xFF
+
+        // calc luminance in range 0.0 to 1.0; using SRGB luminance constants
+        val luminance = (red * 0.2126f + green * 0.7152f + blue * 0.0722f) / 255.toDouble
+        1.0-luminance
+      })
+    })
+    Matrix(pixels)
+  }
+
+  def imageURLToMatrix(url: String, width: Int = 50) = imgToMatrix(resizeImage(readImage(url), width))
+
+  case class Img(url: String)
+
+  implicit def imageToHTML(img: Img): HTML = DivConverter.convert(imageURLToMatrix(img.url))
 }
