@@ -4,6 +4,7 @@ import java.io.File
 
 import cc.factorie.la.DenseTensor1
 import com.typesafe.config.ConfigFactory
+import ml.wolfe.apps.factorization.FactorizationUtil.Row
 
 import scala.collection.immutable.HashMap
 import scala.collection.mutable
@@ -25,14 +26,20 @@ object EmbeddedProbLogicEvaluation {
     val trainRaw = FactorizationUtil.loadLiminFile(new File(conf.getString("epl.train")), relationFilter)
     val train = FactorizationUtil.filterRows(random.shuffle(trainRaw.toSeq), 5, 2)
     //val train = FactorizationUtil.filterRowsPairwise(trainRaw.toSeq, 50)
-    val trainRelations = train.flatMap(_.relations.map(_._1)).distinct.sorted
-    val freebaseRelations = Seq("REL$/book/book_edition/author_editor")//trainRelations.filter(_.startsWith("REL$"))
+
+    val unlabeledRaw = FactorizationUtil.loadLiminFile(new File(conf.getString("epl.unlabeled")), relationFilter, skipUnlabeled = true)
+    val unlabeled = FactorizationUtil.filterRows(unlabeledRaw.toSeq, 5, 2, !_.startsWith("REL$"))
+    val combined = if (conf.getBoolean("epl.use-unlabeled")) train ++ unlabeled else train
+
+
+    val trainRelations = combined.flatMap(_.relations.map(_._1)).distinct.sorted // REL$/book/book_edition/author_editor
+
+    val freebaseRelations = Seq("REL$/business/person/company")//trainRelations.filter(_.startsWith("REL$"))
     val surfacePatterns = trainRelations.filterNot(_.startsWith("REL$")).toSet
 
     val testRaw = FactorizationUtil.loadLiminFile(new File(conf.getString("epl.test")), relationFilter, skipUnlabeled = true)
     val test = FactorizationUtil.filterRows(testRaw.toSeq, 1, 1, surfacePatterns)
-    val unlabeledRaw = FactorizationUtil.loadLiminFile(new File(conf.getString("epl.unlabeled")), relationFilter, skipUnlabeled = true)
-    val unlabeled = FactorizationUtil.filterRows(unlabeledRaw.toSeq, 1, 2, surfacePatterns)
+
 
     println(trainRelations.size)
     println(train.size)
@@ -40,27 +47,23 @@ object EmbeddedProbLogicEvaluation {
     println(test.size)
 
     println("Extracting rules")
-    val trainRulesRaw = RuleLearner.learn(train)
-    val joinedRulesRaw = conf.getBoolean("epl.use-unlabeled") match {
-      case true => trainRulesRaw + RuleLearner.learn(unlabeled)
-      case false => trainRulesRaw
-    }
+    val trainRulesRaw = RuleLearner.learn(combined)
     val cooccurMin = conf.getDouble("epl.min-cooccur")
 
     println("Finding components")
-    val connected = RuleFilters.connectedComponents(joinedRulesRaw, cooccurMin)
+    val connected = RuleFilters.connectedComponents(trainRulesRaw, cooccurMin)
     val connectedFreebase = connected.filter(c => freebaseRelations.exists(c._1.nodes))
     println(s"Connected Components: ${ connected.size }")
     println(s"Connected Components with freebase relations: ${ connectedFreebase.size }")
     println(s"Total count of rules in components: ${connectedFreebase.view.map(_._2.rules2.size).sum}")
     FactorizationUtil.saveToFile(
-      connectedFreebase.map(_._1.nodes.toList.sorted.mkString("------\n  ", "\n  ","")),
+      connected.map(_._1.nodes.toList.sorted.mkString("------\n  ", "\n  ","")),
       new File("/tmp/components.txt"))
 
 
     val trainRules = Rules(connectedFreebase.map(_._2.rules2).reduce(_ ++ _))//RuleFilters.keep2ndOrder(joinedRulesRaw, cooccurMin)
 
-    println(s"Original rule count: ${ joinedRulesRaw.rules2.size }")
+    println(s"Original rule count: ${ trainRulesRaw.rules2.size }")
     println(s"Filtered rule count: ${ trainRules.rules2.size }")
 
 
@@ -81,7 +84,12 @@ object EmbeddedProbLogicEvaluation {
 
     println("Extracting learned rules")
     val learnedRules = ple.pairwiseRules(trainRules.rules2.keys)
-    val paired = for (r1 <- trainRules.rules2.values; r2 <- learnedRules.get(r1.rel1 -> r1.rel2)) yield (r1, r2, r2.prob1given2Inc(r1))
+    compareRules(learnedRules,trainRules.rules2)
+
+  }
+
+  def compareRules(rules2:Map[(String,String),Rule2],rules1:Map[(String,String),Rule2]) = {
+    val paired = for (r1 <- rules1.values; r2 <- rules2.get(r1.rel1 -> r1.rel2)) yield (r1, r2, r2.prob1given2Inc(r1))
     val printPaired = paired.toSeq.sortBy(-_._3).view.map(t => s"Mismatch: ${ t._3 }\n${ t._1 }\n${ t._2 }")
     val printPairedInv = paired.toSeq.sortBy(_._3).view.map(t => s"Mismatch: ${ t._3 }\n${ t._1 }\n${ t._2 }")
     FactorizationUtil.saveToFile(printPaired, new File("/tmp/rule-comparisons.txt"))
@@ -102,30 +110,14 @@ object EmbeddedProbLogicPlayground {
     implicit val conf = ConfigFactory.parseFile(new File("conf/epl-synth.conf")) withFallback ConfigFactory.parseFile(new File("conf/epl.conf"))
     implicit val random = new Random(0)
 
-    val ruleProb = Map(
-      (true, true) -> 0.1,
-      (true, false) -> 0.0,
-      (false, true) -> 0.1,
-      (false, false) -> 0.8
-    )
 
-    val manualRules = Rules(
-      Map(
-        ("r0", "r1") -> Rule2("r0", "r1", ruleProb, cond1given2 = 0.0, cond2given1 = 0.0),
-        ("r1", "r2") -> Rule2("r1", "r2", ruleProb, cond1given2 = 0.0, cond2given1 = 0.0)
-        //      ("r2", "r3") -> Rule("r2", "r3", ruleProb)
-      ),
-      Map(
-        "r0" -> Rule1("r0", 0.1),
-        "r1" -> Rule1("r1", 0.1),
-        "r2" -> Rule1("r1", 0.1)
-
-      )
-    )
     val test = FactorizationUtil.sampleRows(10, 10, 0.2)
+    val manualData = Seq(
+      Row("e1","e2",Seq("r1","r2").map(_ -> 1.0)),
+      Row("e3","e4",Seq("r2","r3").map(_ -> 1.0)),
+      Row("e5","e6",Seq("r4","r5").map(_ -> 1.0))
+    )
 
-
-    val ruleRelations = manualRules.rules2.values.flatMap(r => Seq(r.rel1, r.rel2)).toSeq.distinct.sorted
     val dataRelations = test.flatMap(_.observedTrue).distinct.sorted
 
 
@@ -135,20 +127,18 @@ object EmbeddedProbLogicPlayground {
     ))
     val ple = manualEmbeddings //ProbLogicEmbedder.embed(manualRules).copy(average = false) //ProbLogicEmbedder.embed(randomRules)
 
-
-    val rulesData = RuleLearner.learn(test)
+    val rulesData = RuleLearner.learn(manualData)
 
     val pleData = ProbLogicEmbedder.embed(rulesData)
+    val learnedRules = pleData.pairwiseRules(rulesData.rules2.keys)
 
-    val predictionsRules = for (row <- test) yield {
-      row.copy(relations = ruleRelations.map(r => r -> ple.predict(row.observedTrue, r)))
-    }
+    EmbeddedProbLogicEvaluation.compareRules(learnedRules,rulesData.rules2)
+
     val predictionsData = for (row <- test) yield {
       row.copy(relations = dataRelations.map(r => r -> pleData.predict(row.observedTrue, r)))
     }
 
     println(FactorizationUtil.renderPredictions(predictionsData, test))
-    println(FactorizationUtil.renderPredictions(predictionsRules, test))
     println(pleData.embeddings.values.mkString("\n"))
 
   }

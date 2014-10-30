@@ -8,7 +8,7 @@ import ml.wolfe._
 import ml.wolfe.Wolfe._
 import ml.wolfe.apps.factorization.FactorizationUtil.Row
 import ml.wolfe.fg.VectorMsgs
-import ml.wolfe.util.Util
+import ml.wolfe.util.{PotentialDebugger, Util}
 
 import scala.collection.mutable
 import scala.util.Random
@@ -80,7 +80,7 @@ case class Rules(rules2: Map[(String, String), Rule2], rules1: Map[String, Rule1
 
   def +(that: Rules): Rules = {
     val keys = rules2.keySet ++ that.rules2.keySet
-    val result = for (k <- keys) yield (rules2.get(k), that.rules2.get(k)) match {
+    val result = for (k <- keys.view) yield (rules2.get(k), that.rules2.get(k)) match {
       case (Some(r1), Some(r2)) => k -> (r1 + r2)
       case (Some(r1), _) => k -> r1
       case (_, Some(r2)) => k -> r2
@@ -177,17 +177,19 @@ object ProbLogicEmbedder {
     val biasPrior = conf.getDouble("epl.bias-prior")
     val multPrior = conf.getDouble("epl.mult-prior")
     val weighTerms = conf.getBoolean("epl.weigh-terms")
+    val unitBall = conf.getBoolean("epl.unit-ball")
 
     val maxMarg = rules.rules2.view.flatMap(t => Iterator(t._2.marg1(true), t._2.marg2(true))).max
 
     val V = relations.map(r => r -> fg.addVectorNode(k, r)).toMap
+    if (unitBall) for (n <- V.values) n.variable.asVector.unitVector = true
     def emptyMap = Map.empty[String, Node] withDefaultValue null
     val colScales = if (regS == Double.PositiveInfinity) emptyMap else relations.map(i => i -> fg.addVectorNode(1)).toMap
     val colBiases = if (regBias == Double.PositiveInfinity) emptyMap else relations.map(i => i -> fg.addVectorNode(1)).toMap
     val colMults = if (regMult == Double.PositiveInfinity) emptyMap else relations.map(i => i -> fg.addVectorNode(1)).toMap
 
     //initialize
-    for (n <- V.values; i <- 0 until k) n.variable.asVector.b(i) = random.nextGaussian() * 0.01
+    for (n <- V.values; i <- 0 until k) n.variable.asVector.b(i) = random.nextGaussian() * 1.0
     for (n <- colScales.values) n.variable.asVector.b(0) = scalePrior
     for (n <- colBiases.values) n.variable.asVector.b(0) = biasPrior
     for (n <- colMults.values) n.variable.asVector.b(0) = multPrior
@@ -197,6 +199,7 @@ object ProbLogicEmbedder {
 
     println("Building factor graph")
 
+    var numJointFactors = 0
     for (rel1Index <- 0 until relations.length; rel2Index <- rel1Index + 1 until relations.size) {
       val rel1 = relations(rel1Index)
       val rel2 = relations(rel2Index)
@@ -218,7 +221,7 @@ object ProbLogicEmbedder {
 
       rules.rules2.get((rel1, rel2)) match {
         case Some(rule) =>
-          fg.buildFactor(Seq(v1, eta1, s1, m1, v2, eta2, s2, m2))(_ map (_ => new VectorMsgs)) {
+          val factor = fg.buildFactor(Seq(v1, eta1, s1, m1, v2, eta2, s2, m2))(_ map (_ => new VectorMsgs)) {
             e => new JointPotential(
               e(0), e(1), e(2), e(3),
               e(4), e(5), e(6), e(7),
@@ -230,6 +233,9 @@ object ProbLogicEmbedder {
               if (weighTerms) rule.marg1(true) / maxMarg else 1.0,
               if (weighTerms) rule.marg2(true) / maxMarg else 1.0)
           }
+          //if (numJointFactors == 0) PotentialDebugger.checkGradients(factor.potential, debug = true)
+          numJointFactors += 1
+
         case _ =>
       }
     }
@@ -239,12 +245,17 @@ object ProbLogicEmbedder {
 
     val maxIterations = conf.getInt("epl.opt-iterations")
 
+
+    val step = new AdaGrad(conf.getDouble("epl.ada-rate")) with UnitBallProjection
+    //val step = new LBFGS() with UnitBallProjection
+
+
     def trainer(weightsSet: WeightsSet) = conf.getString("epl.trainer") match {
-      case "batch" => new BatchTrainer(weightsSet, new AdaGrad(conf.getDouble("epl.ada-rate")), maxIterations)
-      case "online" => new OnlineTrainer(weightsSet, new AdaGrad(conf.getDouble("epl.ada-rate")), maxIterations)
+      case "batch" => new BatchTrainer(weightsSet, step, maxIterations)
+      case "online" => new OnlineTrainer(weightsSet, step, maxIterations)
     }
 
-    GradientBasedOptimizer(fg, trainer(_))
+    GradientBasedOptimizer(fg, trainer(_),step)
     //GradientBasedOptimizer(fg, new BatchTrainer(_, new LBFGS(), maxIterations))
 
     //allowed observations for each predicate are only the relations we have seen together with the predicate
