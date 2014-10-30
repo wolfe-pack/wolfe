@@ -6,7 +6,7 @@ import cc.factorie.la.DenseTensor1
 import cc.factorie.optimize._
 import cc.factorie.util.{Logger, FastLogging}
 import ml.wolfe.FactorGraph.Edge
-import ml.wolfe.apps.TensorKB
+import ml.wolfe.apps.{ImplNeg, Impl, TensorKB}
 import ml.wolfe.apps.factorization.io.{EvaluateNAACL, LoadNAACL, WriteNAACL}
 import ml.wolfe.fg.L2Regularization
 import ml.wolfe.fg._
@@ -25,17 +25,22 @@ object MatrixFactorization extends App {
   val outputPath = "data/out/"
   val fileName = "predict.txt"
 
-  val k = 100
+  val k = 3
   val lambda = 0.01
   val alpha = 0.1
   val maxIter = 200
 
-  val debug = false
+  val debug = true
+  val formulae = true
   val print = true
 
   val db = if (debug) {
     val tmp = new TensorKB(k)
-    tmp.sampleTensor(100, 100, 0, 0.1) //samples a matrix
+    tmp.sampleTensor(10, 10, 0, 0.1) //samples a matrix
+    if (formulae) {
+      tmp += Impl("r3", "r4")
+      tmp += ImplNeg("r8", "r6")
+    }
     tmp
   } else LoadNAACL(k)
 
@@ -55,24 +60,54 @@ object MatrixFactorization extends App {
 
   //println(V.values.head.variable.asVector.b)
 
-
-
-  //most of this will potentially go into TensorKB
   for (d <- data) {
+    //colIx: relation
+    //rowIx: entity
     val (colIx, rowIx, _) = d.key
     val a = A(rowIx)
     val v = V(colIx)
 
     //create positive fact factor
     fg.buildFactor(Seq(a, v))(_ map (_ => new VectorMsgs)) { 
-      //e => new CellLogisticLoss(e(0), e(1), 1.0, lambda) with L2Regularization
-      e => new CellLogisticLoss(e(0), e(1), 0.9, lambda) with L2Regularization
+      e => new CellLogisticLoss(e(0), e(1), 1.0, lambda) with L2Regularization
+      //e => new CellLogisticLoss(e(0), e(1), 0.9, lambda) with L2Regularization
     }
 
     //also create a sampled stochastic negative factor in the same column
     fg.buildStochasticFactor(Seq(v, db.sampleNode(colIx)))(_ map (_ => new VectorMsgs)) {
-      //e => new CellLogisticLoss(e(0), e(1), 0.0, lambda) with L2Regularization
-      e => new CellLogisticLoss(e(0), e(1), 0.1, lambda) with L2Regularization
+      e => new CellLogisticLoss(e(0), e(1), 0.0, lambda) with L2Regularization
+      //e => new CellLogisticLoss(e(0), e(1), 0.1, lambda) with L2Regularization
+    }
+
+    //create formulae factors
+    for (formula <- db.formulaeByPredicate(colIx)) {
+      val cNode = v
+      if (formula.isFormula2) {
+        val Seq(p1, p2) = formula.predicates
+        val p1Node = db.node1(p1).get
+        val p2Node = db.node1(p2).get
+
+        formula match {
+          case Impl(_, _, target) =>
+            fg.buildFactor(Seq(cNode, p1Node, p2Node))(_ map (_ => new VectorMsgs)) {
+              e => new ImplPotential(e(0), e(1), e(2), target, lambda) with L2Regularization
+            }
+            //also inject the formula for a constant it hasn't been observed with
+            fg.buildStochasticFactor(Seq(db.sampleNode(colIx), p1Node, p2Node))(_ map (_ => new VectorMsgs)) {
+              e => new ImplPotential(e(0), e(1), e(2), target, lambda) with L2Regularization
+            }
+          case ImplNeg(_, _, target) =>
+            fg.buildFactor(Seq(cNode, p1Node, p2Node))(_ map (_ => new VectorMsgs)) {
+              e => new ImplNegPotential(e(0), e(1), e(2), target, lambda) with L2Regularization
+            }
+            //also inject the formula for a constant it hasn't been observed with
+            fg.buildStochasticFactor(Seq(db.sampleNode(colIx), p1Node, p2Node))(_ map (_ => new VectorMsgs)) {
+              e => new ImplNegPotential(e(0), e(1), e(2), target, lambda) with L2Regularization
+            }
+        }
+      } else {
+        ???
+      }
     }
   }
 

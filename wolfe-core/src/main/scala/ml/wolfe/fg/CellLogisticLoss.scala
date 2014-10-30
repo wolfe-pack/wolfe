@@ -7,7 +7,7 @@ import ml.wolfe.FactorieVector
 /**
  * @author Sebastian Riedel
  */
-class CellLogisticLoss(rowEdge: Edge, columnEdge: Edge, target: Double = 1.0, val λ: Double = 0.0) extends Potential with Regularization {
+class CellLogisticLoss(rowEdge: Edge, columnEdge: Edge, target: Double = 1.0, val lambda: Double = 0.0) extends Potential with Regularization {
   //nodes of edges may change hence the def and not val.
   def rowVar = rowEdge.n.variable.asVector
   def columnVar = columnEdge.n.variable.asVector
@@ -72,11 +72,11 @@ trait Regularization {
  * λ||x||²
  */
 trait L2Regularization extends Regularization {
-  val λ: Double
+  val lambda: Double
   override def regLoss(vector: FactorieVector): Double =
-    if (λ == 0) 0
-    else -λ * vector.twoNormSquared
+    if (lambda == 0) 0
+    else -lambda * vector.twoNormSquared
   override def regGradient(vector: FactorieVector): FactorieVector =
-    if (λ == 0) new SparseTensor1(vector.length)
-    else vector * λ * -2
+    if (lambda == 0) new SparseTensor1(vector.length)
+    else vector * lambda * -2
 }
