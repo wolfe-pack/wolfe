@@ -7,7 +7,7 @@ import ml.wolfe.FactorieVector
 /**
  * @author Sebastian Riedel
  */
-class CellLogisticLoss(rowEdge: Edge, columnEdge: Edge, target: Double = 1.0, val lambda: Double = 0.0) extends Potential with Regularization {
+class CellLogisticLoss(rowEdge: Edge, columnEdge: Edge, target: Double = 1.0, val lambda: Double = 0.0, weight: Double = 1.0) extends Potential with Regularization {
   //nodes of edges may change hence the def and not val.
   def rowVar = rowEdge.n.variable.asVector
   def columnVar = columnEdge.n.variable.asVector
@@ -25,15 +25,15 @@ class CellLogisticLoss(rowEdge: Edge, columnEdge: Edge, target: Double = 1.0, va
     val v = columnVar.setting
     val s = sig(a dot v)
     val loss = innerLossAndDirection(s)._1
-    math.log(loss) + regLoss(a) + regLoss(v)
+    math.log(loss) * weight + regLoss(a) + regLoss(v)
   }
 
   override def valueAndGradientForAllEdges(): Double = {
     val s = sig(rowMsgs.n2f dot columnMsgs.n2f)
     val (loss, dir) = innerLossAndDirection(s)
-    rowMsgs.f2n = (columnMsgs.n2f * (1.0 - loss) * dir) + regGradient(rowMsgs.n2f)
-    columnMsgs.f2n = (rowMsgs.n2f * (1.0 - loss) * dir) + regGradient(columnMsgs.n2f)
-    math.log(loss) + regLoss(rowMsgs.n2f) + regLoss(columnMsgs.n2f)
+    rowMsgs.f2n = (columnMsgs.n2f * (1.0 - loss) * dir) * weight + regGradient(rowMsgs.n2f)
+    columnMsgs.f2n = (rowMsgs.n2f * (1.0 - loss) * dir) * weight + regGradient(columnMsgs.n2f)
+    math.log(loss) * weight + regLoss(rowMsgs.n2f) + regLoss(columnMsgs.n2f)
   }
 }
 

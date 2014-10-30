@@ -275,13 +275,18 @@ final class FactorGraph {
    */
   def moveFactor(factor: Factor, newNodes: Seq[Node]) {
     require(newNodes.size == factor.edges.size)
-    for ((e, n) <- factor.edges zip newNodes) {
+
+    val freeEdges = factor.edges.filterNot(e => newNodes.contains(e.n))
+    val actuallyNewNodes = newNodes.filterNot(n => factor.edges.exists(_.n == n))
+
+    for ((e, n) <- freeEdges zip actuallyNewNodes) {
       //todo: some of the array recreation code may be a bottleneck.
       e.n.edges = e.n.edges.filter(_ != e)
       e.n.edgeCount -= 1
       e.n = n
       e.n.edgeCount += 1
       e.n.edges = e.n.edges :+ e
+
     }
   }
 
@@ -331,6 +336,26 @@ final class FactorGraph {
       |Edges:
       |${ edges.map(_.toVerboseString(fgPrinter)).mkString("\n") }
     """.stripMargin
+  }
+
+  def toInspectionString = {
+    val maxNode = nodes.maxBy(_.edges.size)
+    val minNode = nodes.minBy(_.edges.size)
+
+    val maxFactor = factors.maxBy(_.edges.size)
+    val minFactor = factors.minBy(_.edges.size)
+
+    s"""
+       |#nodes:           ${ nodes.size }
+       |#factors:         ${ factors.size }
+       |#edges:           ${ edges.size }
+       |avg node edges:   ${ nodes.map(_.edges.size).sum / nodes.size.toDouble }
+       |max node edges:   ${ maxNode.edges.size } ($maxNode, label: ${maxNode.variable.label})
+       |min node edges:   ${ minNode.edges.size } ($minNode, label: ${minNode.variable.label})
+       |avg factor edges: ${ factors.map(_.edges.size).sum / factors.size.toDouble }
+       |max factor edges: ${ maxFactor.edges.size } ($maxFactor)
+       |min factor edges: ${ minFactor.edges.size } ($minFactor)
+     """.stripMargin
   }
 
 

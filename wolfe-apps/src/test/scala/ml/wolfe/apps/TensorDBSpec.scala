@@ -1,5 +1,6 @@
 package ml.wolfe.apps
 
+import ml.wolfe.apps.factorization.{Cell, TensorDB}
 import org.scalatest.{FunSpec, Matchers, FreeSpec, WordSpec}
 
 import scala.util.Random

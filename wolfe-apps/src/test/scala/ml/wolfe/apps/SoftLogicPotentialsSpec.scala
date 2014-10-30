@@ -8,7 +8,7 @@ import ml.wolfe.fg.{L2Regularization, CellLogisticLoss, VectorMsgs}
 import scala.util.Random
 
 /**
- * Created by rockt on 29/10/2014.
+ * @author: rockt
  */
 object SoftLogicPotentialsSpec extends App {
   //building factor graph
@@ -27,12 +27,24 @@ object SoftLogicPotentialsSpec extends App {
     e => new CellLogisticLoss(e(0), e(1), 0.0, lambda) with L2Regularization
   }
 
+  fg.buildFactor(Seq(n1, n3))(_ map (_ => new VectorMsgs)) {
+    e => new CellLogisticLoss(e(0), e(1), 0.0, lambda, 0.5) with L2Regularization
+  }
+
   fg.buildFactor(Seq(n1, n2, n3))(_ map (_ => new VectorMsgs)) {
     e => new ImplPotential(e(0), e(1), e(2), 1.0, lambda) with L2Regularization
   }
 
+  fg.buildFactor(Seq(n1, n2, n3))(_ map (_ => new VectorMsgs)) {
+    e => new ImplPotential(e(0), e(1), e(2), 1.0, lambda, 10.0) with L2Regularization
+  }
+
   fg.buildFactor(Seq(n1, n3, n2))(_ map (_ => new VectorMsgs)) {
     e => new ImplNegPotential(e(0), e(1), e(2), 1.0, lambda) with L2Regularization
+  }
+
+  fg.buildFactor(Seq(n1, n3, n2))(_ map (_ => new VectorMsgs)) {
+    e => new ImplNegPotential(e(0), e(1), e(2), 1.0, lambda, 0.5) with L2Regularization
   }
 
   fg.build()

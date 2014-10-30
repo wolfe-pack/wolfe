@@ -4,7 +4,7 @@ import cc.factorie.la.DenseTensor1
 import cc.factorie.optimize.{AdaGrad, BatchTrainer}
 import ml.wolfe.FactorGraph.Edge
 import ml.wolfe.GradientBasedOptimizer
-import ml.wolfe.apps.TensorKB
+import ml.wolfe.apps.factorization.TensorKB
 import ml.wolfe.fg._
 import math._
 

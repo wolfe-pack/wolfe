@@ -1,10 +1,11 @@
 package ml.wolfe
 
-import java.io.{FileOutputStream, File}
+import java.io.{FileWriter, FileOutputStream, File}
 import java.nio.channels.Channels
 import java.util.Calendar
 import com.typesafe.config.{ConfigFactory, Config}
 import scala.collection.mutable.ArrayBuffer
+import scala.io.Source
 
 /**
  * @author sriedel
@@ -21,7 +22,7 @@ package object util {
   object Conf {
     lazy val targetSlots = conf.getString("target-slots").split(",").map(_.trim).toSet
     lazy val parentOutDir = {
-      val dir = new File(if (conf.hasPath("outDir")) conf.getString("outDir") else "out")
+      val dir = new File(if (conf.hasPath("outDir")) conf.getString("outDir") else "data/out")
       dir.mkdirs()
       dir
     }
@@ -44,13 +45,12 @@ package object util {
       }
       msDir.mkdirs()
 
+      //write config files to output directory
       for (resource <- addedResources) {
-        val stream = getClass.getResourceAsStream("/" + resource)
-        val in = Channels.newChannel(stream)
-        val out = new FileOutputStream(new File(msDir,resource)).getChannel
-        out.transferFrom(in,0l,Long.MaxValue)
-        out.close()
-        in.close()
+        val lines = Source.fromFile(resource).getLines()
+        val fileWriter = new FileWriter(msDir.getAbsolutePath + "/" + resource.split("/").last)
+        fileWriter.write(lines.mkString("\n"))
+        fileWriter.close()
       }
 
       createSymbolicLinkToLatest()

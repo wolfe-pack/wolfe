@@ -5,17 +5,16 @@ import ml.wolfe._
 import ml.wolfe.fg.{Regularization, Potential}
 
 /**
- * Created by rockt on 29/10/2014.
- */
-/**
  * A potential for a formula containing two predicates
  * @param constEdge edge to variable that refers to a constant
  * @param predicate1Edge edge to first predicate
  * @param predicate2Edge edge to second predicate
  * @param target target
  * @param lambda regularization parameter
+ * @author rockt
  */
-abstract class Formula2Potential(constEdge: Edge, predicate1Edge: Edge, predicate2Edge: Edge, target: Double = 1.0, val lambda: Double = 0.0) extends Potential with Regularization {
+abstract class Formula2Potential(constEdge: Edge, predicate1Edge: Edge, predicate2Edge: Edge, target: Double = 1.0,
+                                 val lambda: Double = 0.0, weight: Double = 1.0) extends Potential with Regularization {
   def cVar   = constEdge.n.variable.asVector
   def p1Var  = predicate1Edge.n.variable.asVector
   def p2Var  = predicate2Edge.n.variable.asVector
@@ -39,7 +38,7 @@ abstract class Formula2Potential(constEdge: Edge, predicate1Edge: Edge, predicat
     val s = F(p1c, p2c)
 
     val loss = innerLossAndDirection(s)._1
-    math.log(loss) + regLoss(c) + regLoss(p1) + regLoss(p2)
+    math.log(loss) * weight + regLoss(c) + regLoss(p1) + regLoss(p2)
   }
 
   override def valueAndGradientForAllEdges(): Double = {
@@ -55,11 +54,11 @@ abstract class Formula2Potential(constEdge: Edge, predicate1Edge: Edge, predicat
     val p2c_p2 = cMsgs.n2f * p2c * (1 - p2c)
     val p2c_c = p2Msgs.n2f * p2c * (1 - p2c)
 
-    p1Msgs.f2n = (calcF_p1(p1c_p1, p2c) * (1.0 / loss) * dir) + regGradient(p1Msgs.n2f)
-    p2Msgs.f2n = (calcF_p2(p2c_p2, p1c) * (1.0 / loss) * dir) + regGradient(p2Msgs.n2f)
-    cMsgs.f2n = (calcF_c(p2c_c, p1c, p1c_c, p2c) * (1.0 / loss) * dir) + regGradient(cMsgs.n2f)
+    p1Msgs.f2n = (calcF_p1(p1c_p1, p2c) * (1.0 / loss) * dir) * weight + regGradient(p1Msgs.n2f)
+    p2Msgs.f2n = (calcF_p2(p2c_p2, p1c) * (1.0 / loss) * dir) * weight + regGradient(p2Msgs.n2f)
+    cMsgs.f2n = (calcF_c(p2c_c, p1c, p1c_c, p2c) * (1.0 / loss) * dir) * weight + regGradient(cMsgs.n2f)
 
-    math.log(loss) + regLoss(cMsgs.n2f) + regLoss(p1Msgs.n2f) + regLoss(p2Msgs.n2f)
+    math.log(loss) * weight + regLoss(cMsgs.n2f) + regLoss(p1Msgs.n2f) + regLoss(p2Msgs.n2f)
   }
 
   /**
@@ -95,8 +94,8 @@ abstract class Formula2Potential(constEdge: Edge, predicate1Edge: Edge, predicat
 }
 
 
-class ImplPotential(constEdge: Edge, pred1Edge: Edge, pred2Edge: Edge, target: Double = 1.0, override val lambda: Double = 0.0)
-extends Formula2Potential(constEdge, pred1Edge, pred2Edge, target, lambda) {
+class ImplPotential(constEdge: Edge, pred1Edge: Edge, pred2Edge: Edge, target: Double = 1.0, override val lambda: Double = 0.0, weight: Double = 1.0)
+extends Formula2Potential(constEdge, pred1Edge, pred2Edge, target, lambda, weight) {
   //[p₁(c) => p₂(c)] := [p₁(c)]*([p₂(c)] - 1) + 1
   def F(p1c: Double, p2c: Double) = p1c * (p2c - 1) + 1
   def calcF_p1(p1c_p1: FactorieVector, p2c: Double) = p1c_p1 * (p2c - 1)
@@ -106,8 +105,8 @@ extends Formula2Potential(constEdge, pred1Edge, pred2Edge, target, lambda) {
 }
 
 
-class ImplNegPotential(constEdge: Edge, pred1Edge: Edge, pred2Edge: Edge, target: Double = 1.0, override val lambda: Double = 0.0)
-extends Formula2Potential(constEdge, pred1Edge, pred2Edge, target, lambda) {
+class ImplNegPotential(constEdge: Edge, pred1Edge: Edge, pred2Edge: Edge, target: Double = 1.0, override val lambda: Double = 0.0, weight: Double = 1.0)
+extends Formula2Potential(constEdge, pred1Edge, pred2Edge, target, lambda, weight) {
   //[p₁(c) => ¬p₂(c)] := [p₁(c)]*(-[p₂(c)]) + 1
   def F(p1c: Double, p2c: Double) = p1c * -p2c + 1
   def calcF_p1(p1c_p1: FactorieVector, p2c: Double) = p1c_p1 * -p2c
