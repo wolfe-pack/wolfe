@@ -5,12 +5,13 @@ import java.io.{OutputStream, File}
 import cc.factorie.la.DenseTensor1
 import cc.factorie.optimize._
 import cc.factorie.util.{Logger, FastLogging}
+import com.typesafe.config.ConfigFactory
 import ml.wolfe.FactorGraph.Edge
 import ml.wolfe.apps.{ImplNeg, Impl, TensorKB}
 import ml.wolfe.apps.factorization.io.{EvaluateNAACL, LoadNAACL, WriteNAACL}
 import ml.wolfe.fg.L2Regularization
 import ml.wolfe.fg._
-import ml.wolfe.util.{ProgressLogging, ProgressBar, Timer}
+import ml.wolfe.util.{Conf, ProgressLogging, ProgressBar, Timer}
 import ml.wolfe.{DenseVector, FactorieVector, GradientBasedOptimizer, Wolfe}
 
 import scala.util.Random
@@ -19,30 +20,36 @@ import scala.util.Random
  * @author Sebastian Riedel
  */
 object MatrixFactorization extends App {
-  //implicit val conf = ConfigFactory.parseFile(new File("conf/epl.conf"))
+  val debug = false //whether to use sampled matrices or the NAACL data
+  val loadFormulae = true //whether to use formulae or not
+  val print = false //whether to print the matrix (only do this for small ones!)
 
-  //todo: all of this should go into a config file
-  val outputPath = "data/out/"
-  val fileName = "predict.txt"
+  val confPath = if (args.size > 0) args(0) else "conf/mf.conf"
+  Conf.add(confPath)
+  implicit val conf = Conf
+  println("Using config at " + confPath)
 
-  val k = 3
-  val lambda = 0.01
-  val alpha = 0.1
-  val maxIter = 200
+  val outputPath = conf.getString("mf.outPath")
+  val fileName = conf.getString("mf.outFile")
 
-  val debug = true
-  val formulae = true
-  val print = true
+  val k = conf.getInt("mf.k")
+  val lambda = conf.getDouble("mf.lambda")
+  val alpha = conf.getDouble("mf.alpha")
+  val maxIter = conf.getInt("mf.maxIter")
+
+  val optimizer = conf.getString("mf.optimizer")
+  val batchTraining = conf.getBoolean("mf.batchTraining")
+
 
   val db = if (debug) {
     val tmp = new TensorKB(k)
     tmp.sampleTensor(10, 10, 0, 0.1) //samples a matrix
-    if (formulae) {
+    if (loadFormulae) {
       tmp += Impl("r3", "r4")
       tmp += ImplNeg("r8", "r6")
     }
     tmp
-  } else LoadNAACL(k)
+  } else LoadNAACL(k, loadFormulae)
 
   val rand = new Random(0l)
 
@@ -60,6 +67,7 @@ object MatrixFactorization extends App {
 
   //println(V.values.head.variable.asVector.b)
 
+  //fact factors
   for (d <- data) {
     //colIx: relation
     //rowIx: entity
@@ -78,8 +86,16 @@ object MatrixFactorization extends App {
       e => new CellLogisticLoss(e(0), e(1), 0.0, lambda) with L2Regularization
       //e => new CellLogisticLoss(e(0), e(1), 0.1, lambda) with L2Regularization
     }
+  }
 
-    //create formulae factors
+  //formulae factors
+  for (d <- data) {
+    //colIx: relation
+    //rowIx: entity
+    val (colIx, rowIx, _) = d.key
+    val a = A(rowIx)
+    val v = V(colIx)
+
     for (formula <- db.formulaeByPredicate(colIx)) {
       val cNode = v
       if (formula.isFormula2) {
@@ -109,30 +125,27 @@ object MatrixFactorization extends App {
         ???
       }
     }
+
   }
 
   fg.build()
 
-  println(s"""Config:
-    |λ:        $lambda
-    |k:        $k
-    |α:        $alpha
-    |maxIter:  $maxIter""".stripMargin)
 
   println(db.toInfoString)
 
+  val gradientOptimizer = optimizer match {
+    case "SGD" => new ConstantLearningRate(baseRate = alpha)
+    case "AdaGrad" => new AdaGrad(rate = alpha)
+    case "AdaMira" => new AdaMira(rate = alpha)
+    case "LBFGS" => new LBFGS(Double.MaxValue, Int.MaxValue) //rockt: not working atm
+  }
+
   println("Optimizing...")
   Timer.time("optimization") {
-    //BatchTrainer
-    //GradientBasedOptimizer(fg, new BatchTrainer(_, new AdaGrad(rate = α), maxIter) with ProgressLogging)
-    //GradientBasedOptimizer(fg, new BatchTrainer(_, new ConstantLearningRate(baseRate = α), maxIter) with ProgressLogging)
-
-    //OnlineTrainer
-    //GradientBasedOptimizer(fg, new OnlineTrainer(_, new ConstantLearningRate(baseRate = α), maxIter, fg.factors.size - 1) with ProgressLogging)
-    GradientBasedOptimizer(fg, new OnlineTrainer(_, new AdaGrad(rate = alpha), maxIter, fg.factors.size - 1) with ProgressLogging) //best
-    //GradientBasedOptimizer(fg, new OnlineTrainer(_, new AdaMira(rate = α), maxIter, fg.factors.size - 1) with ProgressLogging)
-
-    //GradientBasedOptimizer(fg, new BatchTrainer(_, new LBFGS(Double.MaxValue, Int.MaxValue), maxIter))
+    GradientBasedOptimizer(fg,
+      if (batchTraining) new BatchTrainer(_, gradientOptimizer, maxIter) with ProgressLogging
+      else new OnlineTrainer(_, gradientOptimizer, maxIter, fg.factors.size - 1) with ProgressLogging
+    )
   }
   println("Done after " + Timer.reportedVerbose("optimization"))
 

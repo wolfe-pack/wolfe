@@ -602,9 +602,10 @@ class Eval(val pattern: Regex) {
 
 
 object LoadNAACL extends App {
-  def apply(k: Int = 100): TensorKB = {
+  def apply(k: Int = 100, loadFormulae: Boolean = true): TensorKB = {
     val kb = new TensorKB(k)
 
+    //loading cells
     val zipFile = new java.util.zip.ZipFile(new File(this.getClass.getResource("/naacl2013.txt.zip").toURI))
     import collection.JavaConverters._
 
@@ -623,6 +624,24 @@ object LoadNAACL extends App {
       }
       val cell = Cell(r, (e1, e2), DefaultIx, target.toDouble, cellType)
       kb += cell
+    }
+
+    //loading formulae
+    if (loadFormulae && Conf.hasPath("formulaeFile")) {
+      val formulaePath = Conf.getString("formulaeFile")
+      println("Loading formulae form " + formulaePath)
+
+      val lines = io.Source.fromFile(formulaePath).getLines()
+
+      for {
+        line <- lines
+        if !line.isEmpty && !line.startsWith("//")
+        Array(head, tail) = line.split(" => ")
+        body = tail.split("\t").head
+      } body.head match {
+        case '!' => kb += ImplNeg(head, body.tail)
+        case _ => kb += Impl(head, body)
+      }
     }
 
     kb
