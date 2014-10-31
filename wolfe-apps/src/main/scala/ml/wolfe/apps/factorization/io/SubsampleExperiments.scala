@@ -28,25 +28,22 @@ object SubsampleExperiments extends App {
   )
 
   RunExperimentSeries(series, threads, confPath) { conf =>
-    ForkRunMatrixFactorization(conf)
+    import scala.sys.process._
+    val userDir = System.getProperty("user.dir")
+
+    //check whether in the right directory
+    val correctDir = if (userDir.endsWith("/wolfe")) userDir else userDir.split("/").init.mkString("/")
+
+    println(Process(Seq(
+      "sbt",
+      "project wolfe-apps",
+      "vmargs -Xmx8G",
+      s"run-main ml.wolfe.apps.factorization.MatrixFactorization $conf"), new File(correctDir)
+    ).!)
   }
 
   System.exit(0)
 }
 
-case class ForkRunMatrixFactorization(pathToConf: String = "conf/mf.conf") {
-  import scala.sys.process._
-  val userDir = System.getProperty("user.dir")
-
-  //check whether in run from the right directory
-  val correctDir = if (userDir.endsWith("/wolfe")) userDir else userDir.split("/").init.mkString("/")
-
-  println(Process(Seq(
-    "sbt",
-    "project wolfe-apps",
-    "vmargs -Xmx8G",
-    s"run-main ml.wolfe.apps.factorization.MatrixFactorization $pathToConf"), new File(correctDir)
-  ).!)
-}
 
 

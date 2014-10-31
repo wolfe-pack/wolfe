@@ -66,7 +66,6 @@ object RunExperimentSeries {
           val newConfPath = File.createTempFile(System.nanoTime().toString, null).getAbsolutePath
           OverrideConfig(c, newConfPath, confPath)
           body(newConfPath)
-          body(newConfPath)
         }
       }
     }
