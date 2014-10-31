@@ -1,0 +1,2999 @@
+//0	1.00	36	0.88	1422	curated
+path#poss|<-poss<-executive->appos->|appos:INV => REL$/business/person/company
+
+//1	1.00	26	0.95	2083	curated
+path#nn|<-nn<-city->prep->of->pobj->|pobj:INV => REL$/location/location/containedby
+
+//2	1.00	10	0.95	1708	curated
+path#rcmod|->rcmod->teach->prep->at->pobj->|pobj:INV => REL$/location/location/containedby
+
+//3	1.00	22	0.89	360	curated
+//path#appos|->appos->subsidiary->prep->of->pobj->|pobj:INV => REL$/organization/parent/child
+
+//4	1.00	11	0.89	377	curated
+path#appos|->appos->subsidiary->nn->|nn:INV => REL$/organization/parent/child
+
+//5	1.00	9	0.86	461	curated
+path#nn|<-nn<-division->prep->of->pobj->|pobj:INV => REL$/organization/parent/child
+
+//6	1.00	11	0.84	163	curated
+path#appos|->appos->co-founder->prep->of->pobj->|pobj:INV => REL$/business/company/founders
+
+//7	0.96	27	0.88	416	curated
+path#nn|<-nn<-unit->prep->of->pobj->|pobj:INV => REL$/organization/parent/child
+
+//8	0.96	50	0.87	422	curated
+path#appos|->appos->unit->prep->of->pobj->|pobj:INV => REL$/organization/parent/child
+
+//9	0.96	25	0.86	462	curated
+path#appos|->appos->division->prep->of->pobj->|pobj:INV => REL$/organization/parent/child
+
+//10	0.95	100	0.91	669	curated
+path#poss|<-poss<-minister->appos->|appos:INV => REL$/people/person/nationality
+
+//11	0.94	89	0.95	2069	curated
+path#nn|<-nn<-town->prep->of->pobj->|pobj:INV => REL$/location/location/containedby
+
+//12	0.93	29	0.95	2061	curated
+//path#nsubj|<-nsubj<-professor->prep->at->pobj->|pobj:INV => REL$/location/location/containedby
+
+//13	0.92	13	0.96	1851	curated
+path#nn|<-nn<-court->prep->in->pobj->|pobj:INV => REL$/location/location/containedby
+
+//14	0.92	13	0.94	2169	curated
+path#poss|<-poss<-region->nn->|nn:INV => REL$/location/location/containedby
+
+//15	0.92	12	0.95	2020	curated
+//path#nn|<-nn<-side->prep->of->pobj->|pobj:INV => REL$/location/location/containedby
+
+//16	0.92	59	0.92	825	curated
+//path#dobj|<-dobj<-review->prep->by->pobj->|pobj:INV => REL$/book/author/works_written
+
+//17	0.91	11	0.95	2025	curated
+//path#pobj|<-pobj<-to<-prep<-move->prep->to->pobj->|pobj:INV => REL$/location/location/containedby
+
+//18	0.91	22	0.95	2072	curated
+path#nsubj|<-nsubj<-beat->dobj->|dobj:INV => !REL$/location/location/containedby
+
+//19	0.88	17	0.82	631	curated
+//path#rcmod|->rcmod->own->prep->by->pobj->|pobj:INV => REL$/organization/parent/child
+
+//20	0.88	16	0.86	656	curated
+path#pobj|<-pobj<-to<-prep<-come->prep->from->pobj->|pobj:INV => !REL$/location/location/containedby
+
+//21	0.87	15	0.90	1411	curated
+//path#nsubj|<-nsubj<-name->dobj->|dobj:INV => REL$/business/person/company
+
+//22	0.87	15	0.84	1203	curated
+path#poss|<-poss<-chairman->appos->|appos:INV => REL$/business/person/company
+
+//23	0.87	15	0.96	1803	curated
+//path#nsubj|<-nsubj<-professor->appos->|appos:INV => REL$/location/location/containedby
+
+//24	0.85	20	0.94	1977	curated
+path#nn|<-nn<-suburb->prep->of->pobj->|pobj:INV => REL$/location/location/containedby
+
+//25	0.85	13	0.91	328	curated
+path#appos|->appos->producer->dep->|dep:INV => REL$/film/film/produced_by
+
+//26	0.84	31	0.95	1354	curated
+path#appos|->appos->college->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//27	0.82	11	0.87	657	curated
+path#pobj|<-pobj<-from<-prep<-move->prep->to->pobj->|pobj:INV => !REL$/location/location/containedby
+
+//28	0.82	22	0.87	406	curated
+//path#appos|->appos->part->prep->of->pobj->|pobj:INV => REL$/organization/parent/child
+
+//29	0.82	11	0.86	484	curated
+//path#rcmod|->rcmod->part->prep->of->pobj->|pobj:INV => REL$/organization/parent/child
+
+//30	0.81	27	0.83	173	curated
+path#appos|->appos->founder->prep->of->pobj->|pobj:INV => REL$/business/company/founders
+
+//31	0.80	15	0.82	592	curated
+path#poss|<-poss<-leader->appos->|appos:INV => REL$/people/person/nationality
+
+//32	0.79	24	0.82	604	curated
+path#pobj|<-pobj<-to<-prep<-move->prep->from->pobj->|pobj:INV => !REL$/location/location/containedby
+
+//33	0.79	91	0.95	1841	curated
+path#appos|->appos->city->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//34	0.79	14	0.81	796	curated
+path#pobj|<-pobj<-from<-prep<-fly->prep->to->pobj->|pobj:INV => !REL$/location/location/containedby
+
+//35	0.79	28	0.90	374	curated
+path#appos|->appos->director->dep->|dep:INV => REL$/film/film/directed_by
+
+//36	0.77	22	0.88	398	curated
+//path#partmod|->partmod->own->prep->by->pobj->|pobj:INV => REL$/organization/parent/child
+
+//37	0.77	101	0.95	1849	curated
+path#appos|->appos->town->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//38	0.76	33	0.93	606	curated
+path#nsubj|<-nsubj<-die->prep->at->pobj->hospital->prep->in->pobj->|pobj => REL$/people/deceased_person/place_of_death
+
+//39	0.75	16	0.93	1017	curated
+//path#pobj|<-pobj<-in<-prep<-have->nsubj->|nsubj:INV => REL$/location/location/containedby
+
+//40	0.75	12	0.92	1887	curated
+//path#pobj|<-pobj<-in<-prep<-live->prep->in->pobj->|pobj:INV => REL$/location/location/containedby
+
+//41	0.75	16	0.83	174	curated
+//path#appos|->appos->chairman->prep->of->pobj->|pobj:INV => REL$/business/company/founders
+
+//42	0.73	64	0.95	1375	curated
+path#appos|->appos->capital->poss->|poss => REL$/location/location/containedby
+
+//43	0.73	180	0.93	604	curated
+path#nsubj|<-nsubj<-die->prep->at->pobj->home->prep->in->pobj->|pobj => REL$/people/deceased_person/place_of_death
+
+//44	0.73	11	0.70	1260	curated
+//path#nn|<-nn<-president->appos->|appos:INV => REL$/business/person/company
+
+//45	0.73	33	0.89	1320	curated
+path#appos|->appos->institution->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//46	0.73	11	0.70	340	curated
+path#pobj|<-pobj<-in<-prep<-arrive->prep->from->pobj->|pobj:INV => !REL$/location/location/containedby
+
+//47	0.72	18	0.88	1850	curated
+path#nn|<-nn<-community->prep->of->pobj->|pobj:INV => REL$/location/location/containedby
+
+//48	0.71	7	0.91	660	curated
+path#nsubj|<-nsubj<-die->prep->in->pobj->hospital->prep->in->pobj->|pobj => REL$/people/deceased_person/place_of_death
+
+//49	0.71	17	0.78	236	curated
+//path#appos|->appos->executive->prep->of->pobj->|pobj:INV => REL$/business/company/founders
+
+//50	0.70	83	0.95	1319	curated
+path#appos|->appos->capital->prep->of->pobj->|pobj => REL$/location/location/containedby
+
+//51	0.68	19	0.94	1375	curated
+path#nsubj|<-nsubj<-city->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//52	0.68	60	0.95	1586	curated
+//path#appos|->appos->city->poss->|poss => REL$/location/location/containedby
+
+//53	0.68	78	0.93	1644	curated
+//path#dobj|<-dobj<-attend->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//54	0.67	39	0.88	201	curated
+path#appos|->appos->daughter->prep->of->pobj->|pobj => REL$/people/person/parents
+
+//55	0.67	12	0.89	195	curated
+//path#appos|->appos->daughter->poss->|poss => REL$/people/person/parents
+
+//56	0.67	51	0.94	1176	curated
+//path#appos|->appos->town->nn->|nn => REL$/location/location/containedby
+
+//57	0.67	12	0.89	841	curated
+//path#appos|->appos->state->poss->|poss => REL$/location/location/containedby
+
+//58	0.64	28	0.83	1477	curated
+//path#rcmod|->rcmod->include->dobj->|dobj:INV => REL$/location/location/containedby
+
+//59	0.64	36	0.92	1288	curated
+path#pobj|<-pobj<-at<-prep<-professor->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//60	0.64	216	0.91	668	curated
+path#nsubj|<-nsubj<-die->prep->in->pobj->|pobj => REL$/people/deceased_person/place_of_death
+
+//61	0.63	16	0.90	373	curated
+path#nn|<-nn<-film->dep->|dep:INV => REL$/film/film/directed_by
+
+//62	0.62	55	0.72	1215	curated
+//path#poss|<-poss<-president->appos->|appos:INV => REL$/people/person/nationality
+
+//63	0.62	47	0.90	378	curated
+path#poss|<-poss<-film->dep->|dep:INV => REL$/film/film/directed_by
+
+//64	0.62	13	0.94	1556	curated
+path#nn|<-nn<-village->prep->of->pobj->|pobj:INV => REL$/location/location/containedby
+
+//65	0.61	18	0.69	852	curated
+path#poss|<-poss<-section->nn->|nn:INV => REL$/location/location/containedby
+
+//66	0.61	33	0.92	1128	curated
+//path#prep|->prep->include->pobj->|pobj:INV => REL$/location/location/containedby
+
+//67	0.60	5	0.90	441	curated
+path#nsubj|<-nsubj<-dean->prep->of->pobj->|pobj => REL$/business/person/company
+
+//68	0.60	15	0.95	1507	curated
+//path#appos|->appos->village->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//69	0.60	15	0.65	438	curated
+path#pobj|<-pobj<-to<-prep<-return->prep->from->pobj->|pobj:INV => !REL$/location/location/containedby
+
+//70	0.60	10	0.85	780	curated
+//path#appos|->appos->delegate->prep->from->pobj->|pobj => REL$/people/person/nationality
+
+//71	0.60	100	0.90	378	curated
+//path#partmod|->partmod->direct->prep->by->pobj->|pobj => REL$/film/film/directed_by
+
+//72	0.60	5	0.83	951	curated
+//path#poss|<-poss<-poem->dep->|dep => REL$/book/author/works_written
+
+//73	0.59	22	0.88	210	curated
+//path#appos|->appos->son->poss->|poss => REL$/people/person/parents
+
+//74	0.59	63	0.88	207	curated
+//path#appos|->appos->son->prep->of->pobj->|pobj => REL$/people/person/parents
+
+//75	0.58	24	0.90	372	curated
+path#poss|<-poss<-movie->dep->|dep:INV => REL$/film/film/directed_by
+
+//76	0.57	28	0.95	1414	curated
+//path#pobj|<-pobj<-of<-prep<-town->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//77	0.57	7	0.93	1021	curated
+path#nn|<-nn<-reservation->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//78	0.57	7	0.92	1074	curated
+//path#appos|->appos->island->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//79	0.57	14	0.90	381	curated
+path#appos|->appos->director->prep->of->pobj->|pobj:INV => REL$/film/film/directed_by
+
+//80	0.56	25	0.84	338	curated
+//path#nsubj|<-nsubj<-capital->prep->of->pobj->|pobj => REL$/location/location/containedby
+
+//81	0.56	9	0.92	818	curated
+//path#appos|->appos->author->prep->of->pobj->book->dep->|dep => REL$/book/author/works_written
+
+//82	0.55	20	0.91	866	curated
+//path#poss|<-poss<-novel<-nsubj<-|nsubj => REL$/book/author/works_written
+
+//83	0.55	11	0.62	359	curated
+path#dobj|<-dobj<-leave->prep->for->pobj->|pobj:INV => !REL$/location/location/containedby
+
+//84	0.55	11	0.75	848	curated
+//path#nn|<-nn<-tribe->prep->of->pobj->|pobj => REL$/location/location/containedby
+
+//85	0.55	11	0.79	494	curated
+//path#nsubj|<-nsubj<-part->prep->of->pobj->|pobj:INV => REL$/organization/parent/child
+
+//86	0.54	101	0.89	858	curated
+//path#nn|<-nn<-region->prep->of->pobj->|pobj => REL$/location/location/containedby
+
+//87	0.53	15	0.90	1088	curated
+//path#nn|<-nn<-area->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//88	0.53	62	0.89	1024	curated
+//path#appos|->appos->school->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//89	0.53	19	0.73	952	curated
+path#poss|<-poss<-district->nn->|nn:INV => REL$/location/location/containedby
+
+//90	0.53	40	0.82	723	curated
+path#nn|<-nn<-neighborhood->prep->of->pobj->|pobj:INV => REL$/location/neighborhood/neighborhood_of
+
+//91	0.53	40	0.80	782	curated
+path#poss|<-poss<-neighborhood->nn->|nn:INV => REL$/location/neighborhood/neighborhood_of
+
+//92	0.52	23	0.90	380	curated
+//path#nsubjpass|<-nsubjpass<-direct->prep->by->pobj->|pobj => REL$/film/film/directed_by
+
+//93	0.52	23	0.81	138	curated
+//path#appos|->appos->station->prep->in->pobj->|pobj => REL$/broadcast/broadcast/area_served
+
+//94	0.51	75	0.92	836	curated
+//path#nsubj|<-nsubj<-author->prep->of->pobj->|pobj => REL$/book/author/works_written
+
+//95	0.50	241	0.82	856	curated
+path#nsubjpass|<-nsubjpass<-bear->prep->in->pobj->|pobj => REL$/people/person/place_of_birth
+
+//96	0.50	28	0.80	470	curated
+//path#appos|->appos->region->prep->of->pobj->|pobj => REL$/location/location/containedby
+
+//97	0.50	12	0.84	637	curated
+//path#nn|<-nn<-province->prep->of->pobj->|pobj => REL$/location/location/containedby
+
+//98	0.50	18	0.89	301	curated
+//path#appos|->appos->capital->nn->|nn => REL$/location/location/containedby
+
+//99	0.50	6	0.82	413	curated
+//path#dobj|<-dobj<-head->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//100	0.50	10	0.90	376	curated
+//path#rcmod|->rcmod->direct->prep->by->pobj->|pobj => REL$/film/film/directed_by
+
+//101	0.50	124	0.90	874	curated
+//path#appos|->appos->author->prep->of->pobj->|pobj => REL$/book/author/works_written
+
+//102	0.50	40	0.92	830	curated
+//path#poss|<-poss<-biography->prep->of->pobj->|pobj => REL$/book/author/works_written
+
+//103	0.48	25	0.83	1512	curated
+//path#appos|->appos->community->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//104	0.48	40	0.63	723	curated
+//path#nn|<-nn<-neighborhood->prep->of->pobj->|pobj:INV => REL$/location/location/containedby
+
+//105	0.48	40	0.66	782	curated
+//path#poss|<-poss<-neighborhood->nn->|nn:INV => REL$/location/location/containedby
+
+//106	0.47	153	0.92	652	curated
+path#appos|->appos->minister->poss->|poss => REL$/people/person/nationality
+
+//107	0.47	45	0.91	873	curated
+path#poss|<-poss<-book->dep->|dep => REL$/book/author/works_written
+
+//108	0.46	13	0.74	1504	curated
+path#appos|->appos->biologist->prep->at->pobj->|pobj => REL$/business/person/company
+
+//109	0.46	24	0.90	870	curated
+//path#poss|<-poss<-book<-nsubj<-|nsubj => REL$/book/author/works_written
+
+//110	0.45	22	0.89	986	curated
+//path#dobj|<-dobj<-enter->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//111	0.45	11	0.90	596	curated
+//path#appos|->appos->resort->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//112	0.45	11	0.82	838	curated
+//path#appos|->appos->champion->prep->from->pobj->|pobj => REL$/people/person/nationality
+
+//113	0.45	11	0.73	223	curated
+//path#rcmod|->rcmod->convert->prep->to->pobj->|pobj => REL$/people/person/religion
+
+//114	0.45	20	0.94	995	curated
+//path#appos|->appos->city->nn->|nn => REL$/location/location/containedby
+
+//115	0.44	27	0.83	458	curated
+//path#pobj|<-pobj<-to<-prep<-travel->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//116	0.44	9	0.91	696	curated
+//path#appos|->appos->estate->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//117	0.44	16	0.87	216	curated
+//path#nsubj|<-nsubj<-son->prep->of->pobj->|pobj => REL$/people/person/parents
+
+//118	0.43	30	0.93	765	curated
+//path#poss|<-poss<-play->dep->|dep => REL$/book/author/works_written
+
+//119	0.43	44	0.91	881	curated
+//path#appos|->appos->author->dep->|dep => REL$/book/author/works_written
+
+//120	0.43	14	0.71	548	curated
+//path#dobj|<-dobj<-design->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//121	0.43	7	0.80	615	curated
+//path#pobj|<-pobj<-on<-prep<-house->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//122	0.43	14	0.76	1064	curated
+//path#nn|<-nn<-home->prep->of->pobj->|pobj:INV => REL$/people/deceased_person/place_of_death
+
+//123	0.42	33	0.84	693	curated
+//path#pobj|<-pobj<-in<-prep<-bear->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//124	0.42	19	0.74	952	curated
+path#poss|<-poss<-district->nn->|nn:INV => REL$/location/neighborhood/neighborhood_of
+
+//125	0.42	19	0.80	924	curated
+path#appos|->appos->dean->prep->of->pobj->|pobj => REL$/business/person/company
+
+//126	0.42	55	0.91	864	curated
+//path#nsubj|<-nsubj<-author->dep->|dep => REL$/book/author/works_written
+
+//127	0.41	17	0.82	398	curated
+//path#advmod|->advmod->here->dep->in->pobj->|pobj => REL$/location/location/containedby
+
+//128	0.41	17	0.68	833	curated
+//path#dobj|<-dobj<-found->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//129	0.41	17	0.89	920	curated
+//path#rcmod|->rcmod->write->dobj->|dobj => REL$/book/author/works_written
+
+//130	0.41	44	0.91	364	curated
+//path#partmod|->partmod->write->prep->by->pobj->|pobj => REL$/film/film/directed_by
+
+//131	0.41	93	0.92	653	curated
+//path#appos|->appos->minister->prep->of->pobj->|pobj => REL$/people/person/nationality
+
+//132	0.40	42	0.81	758	curated
+path#appos|->appos->co-founder->prep->of->pobj->|pobj => REL$/business/person/company
+
+//133	0.40	92	0.90	872	curated
+//path#poss|<-poss<-novel->dep->|dep => REL$/book/author/works_written
+
+//134	0.40	20	0.87	584	curated
+//path#nn|<-nn<-region->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//135	0.40	5	0.86	769	curated
+//path#appos|->appos->hospital->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//136	0.40	20	0.84	806	curated
+//path#appos|->appos->ambassador->poss->|poss => REL$/people/person/nationality
+
+//137	0.40	5	0.84	266	curated
+path#partmod|->partmod->publish->prep->in->pobj->|pobj => !REL$/people/person/nationality
+
+//138	0.40	5	0.80	673	curated
+//path#appos|->appos->king->prep->of->pobj->|pobj => REL$/people/person/nationality
+
+//139	0.39	18	0.77	852	curated
+//path#poss|<-poss<-section->nn->|nn:INV => REL$/location/neighborhood/neighborhood_of
+
+//140	0.39	18	0.86	970	curated
+//path#appos|->appos->center->prep->of->pobj->|pobj => REL$/location/location/containedby
+
+//141	0.38	16	0.82	1592	curated
+//path#appos|->appos->area->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//142	0.38	8	0.90	878	curated
+//path#poss|<-poss<-book->appos->|appos => REL$/book/author/works_written
+
+//143	0.38	8	0.82	163	curated
+//path#nsubjpass|<-nsubjpass<-found->prep->by->pobj->|pobj => REL$/business/company/founders
+
+//144	0.38	16	0.76	146	curated
+//path#partmod|->partmod->design->prep->by->pobj->|pobj => REL$/architecture/structure/architect
+
+//145	0.37	19	0.90	580	curated
+//path#appos|->appos->city->prep->of->pobj->|pobj => REL$/location/location/containedby
+
+//146	0.37	19	0.78	503	curated
+//path#nsubj|<-nsubj<-place->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//147	0.37	19	0.91	857	curated
+//path#nn|<-nn<-novel->dep->|dep => REL$/book/author/works_written
+
+//148	0.37	397	0.76	1609
+//path#appos|->appos->executive->prep->of->pobj->|pobj => REL$/business/person/company
+
+//149	0.36	11	0.73	1398	curated
+path#appos|->appos->anthropologist->prep->at->pobj->|pobj => REL$/business/person/company
+
+//150	0.36	11	0.81	903	curated
+path#nsubj|<-nsubj<-executive->prep->of->pobj->|pobj => REL$/business/person/company
+
+//151	0.36	11	0.83	309
+//path#appos|->appos->producer->poss->|poss => REL$/location/location/containedby
+
+//152	0.36	33	0.91	729
+//path#nn|<-nn<-play->dep->|dep => REL$/book/author/works_written
+
+//153	0.36	14	0.76	909
+//path#nn|<-nn<-park->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//154	0.36	14	0.62	293
+//path#rcmod|->rcmod->have->nsubj->|nsubj:INV => REL$/location/location/containedby
+
+//155	0.36	14	0.60	442
+//path#pobj|<-pobj<-in<-prep<-be->nsubj->|nsubj:INV => REL$/location/location/containedby
+
+//156	0.36	14	0.73	583
+//path#appos|->appos->house->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//157	0.36	14	0.71	673
+//path#prep|->prep->in->pobj->game->nn->|nn => REL$/sports/sports_team/league
+
+//158	0.35	69	0.84	1207
+//path#appos|->appos->officer->prep->of->pobj->|pobj => REL$/business/person/company
+
+//159	0.35	69	0.67	781
+//path#nn|<-nn<-district->prep->of->pobj->|pobj => REL$/location/location/containedby
+
+//160	0.35	23	0.75	170
+//path#poss|<-poss<-opera->dep->|dep => REL$/music/composer/compositions
+
+//161	0.34	61	0.71	444
+//path#dobj|<-dobj<-visit->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//162	0.34	53	0.85	683
+//path#appos|->appos->neighborhood->prep->in->pobj->|pobj => REL$/location/neighborhood/neighborhood_of
+
+//163	0.33	6	0.76	1536
+//path#appos|->appos->physicist->nn->|nn => REL$/business/person/company
+
+//164	0.33	9	0.86	932
+//path#appos|->appos->physicist->prep->at->pobj->|pobj => REL$/business/person/company
+
+//165	0.33	12	0.61	1364
+//path#dep|->dep->professor->prep->at->pobj->|pobj => REL$/business/person/company
+
+//166	0.33	24	0.76	296
+//path#appos|->appos->home->prep->of->pobj->|pobj:INV => REL$/location/location/containedby
+
+//167	0.33	9	0.82	405
+//path#appos|->appos->park->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//168	0.33	9	0.61	227
+//path#partmod|->partmod->lead->prep->by->pobj->|pobj:INV => REL$/location/location/containedby
+
+//169	0.33	12	0.77	795
+//path#appos|->appos->home->nn->|nn => REL$/location/location/containedby
+
+//170	0.33	9	0.81	848
+//path#pobj|<-pobj<-at<-prep<-hold->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//171	0.33	9	0.82	363
+//path#appos|->appos->home->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//172	0.33	6	0.68	344
+//path#dobj|<-dobj<-direct->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//173	0.33	6	0.67	380
+//path#appos|->appos->producer->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//174	0.33	6	0.83	520
+//path#nn|<-nn<-subsidiary->appos->|appos => REL$/organization/parent/child
+
+//175	0.33	12	0.79	439
+//path#pobj|<-pobj<-in<-prep<-meet->prep->with->pobj->|pobj:INV => REL$/people/person/nationality
+
+//176	0.33	12	0.63	439
+//path#pobj|<-pobj<-in<-prep<-meet->prep->with->pobj->|pobj:INV => REL$/people/person/place_of_birth
+
+//177	0.33	6	0.87	673
+//path#nsubj|<-nsubj<-work->prep->on->pobj->|pobj => REL$/book/author/works_written
+
+//178	0.33	43	0.75	980
+//path#pobj|<-pobj<-to<-prep<-move->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//179	0.32	28	0.75	570
+//path#pobj|<-pobj<-to<-prep<-take->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//180	0.32	38	0.86	694
+//path#appos|->appos->partner->prep->at->pobj->|pobj => REL$/business/person/company
+
+//181	0.32	38	0.64	760
+//path#nn|<-nn<-district->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//182	0.32	203	0.79	1302
+//path#appos|->appos->executive->poss->|poss => REL$/business/person/company
+
+//183	0.31	13	0.72	870
+//path#appos|->appos->company->rcmod->own->dobj->|dobj => REL$/organization/parent/child
+
+//184	0.30	10	0.65	358
+//path#appos|->appos->designer->prep->for->pobj->|pobj => REL$/business/person/company
+
+//185	0.30	10	0.61	1215
+//path#appos|->appos->president->prep->of->pobj->group->poss->|poss => REL$/business/person/company
+
+//186	0.30	50	0.59	670
+//path#appos|->appos->neighborhood->nn->|nn => REL$/location/location/containedby
+
+//187	0.30	10	0.78	434
+//path#pobj|<-pobj<-of<-prep<-president->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//188	0.30	10	0.68	381
+//path#dobj|<-dobj<-use->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//189	0.30	10	0.80	424
+//path#appos|->appos->immigrant->prep->from->pobj->|pobj => REL$/people/person/nationality
+
+//190	0.30	10	0.93	785
+//path#appos|->appos->author->prep->of->pobj->biography->prep->of->pobj->|pobj => REL$/book/author/works_written
+
+//191	0.30	10	0.79	629
+//path#poss|<-poss<-adaptation->prep->of->pobj->|pobj => REL$/book/author/works_written
+
+//192	0.30	298	0.59	682
+//path#nn|<-nn<-section->prep->of->pobj->|pobj => REL$/location/location/containedby
+
+//193	0.30	27	0.65	628
+//path#nsubj|<-nsubj<-have->dobj->|dobj:INV => REL$/location/location/containedby
+
+//194	0.30	27	0.84	830
+//path#rcmod|->rcmod->die->prep->in->pobj->|pobj => REL$/people/deceased_person/place_of_death
+
+//195	0.29	17	0.68	605
+//path#appos|->appos->building->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//196	0.29	34	0.65	760
+//path#appos|->appos->section->prep->of->pobj->|pobj => REL$/location/location/containedby
+
+//197	0.29	21	0.73	1287
+//path#appos|->appos->chairwoman->prep->of->pobj->|pobj => REL$/business/person/company
+
+//198	0.29	7	0.63	541
+//path#dobj|<-dobj<-build->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//199	0.29	7	0.60	236
+//path#rcmod|->rcmod->announce->nsubj->|nsubj => REL$/location/location/containedby
+
+//200	0.29	7	0.60	167
+//path#pobj|<-pobj<-in<-prep<-play->nsubj->|nsubj => REL$/location/location/containedby
+
+//201	0.29	7	0.60	237
+//path#rcmod|->rcmod->run->prep->from->pobj->|pobj => REL$/location/location/containedby
+
+//202	0.29	7	0.55	301
+//path#appos|->appos->specialist->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//203	0.29	7	0.89	751
+//path#appos|->appos->chancellor->poss->|poss => REL$/people/person/nationality
+
+//204	0.29	7	0.80	921
+//path#appos|->appos->sophomore->prep->from->pobj->|pobj => REL$/people/person/place_of_birth
+
+//205	0.29	14	0.79	154
+//path#appos|->appos->station->nn->|nn => REL$/broadcast/broadcast/area_served
+
+//206	0.28	50	0.86	670
+//path#appos|->appos->neighborhood->nn->|nn => REL$/location/neighborhood/neighborhood_of
+
+//207	0.28	18	0.58	1850
+//path#nn|<-nn<-community->prep->of->pobj->|pobj:INV => REL$/location/neighborhood/neighborhood_of
+
+//208	0.28	130	0.61	679
+//path#nn|<-nn<-area->prep->of->pobj->|pobj => REL$/location/location/containedby
+
+//209	0.27	11	0.67	357
+//path#appos|->appos->partner->prep->with->pobj->|pobj => REL$/business/person/company
+
+//210	0.27	11	0.67	286
+//path#dep|<-dep<-name->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//211	0.27	11	0.75	822
+//path#appos|->appos->community->nn->|nn => REL$/location/location/containedby
+
+//212	0.27	11	0.89	844
+//path#poss|<-poss<-comedy->dep->|dep => REL$/book/author/works_written
+
+//213	0.27	11	0.91	834
+//path#nsubj|<-nsubj<-write<-dep<-|dep => REL$/book/author/works_written
+
+//214	0.27	11	0.93	769
+//path#appos|->appos->biographer->prep->of->pobj->|pobj => REL$/book/author/works_written
+
+//215	0.27	11	0.66	367
+//path#poss|<-poss<-founder->appos->|appos => REL$/business/company/founders
+
+//216	0.27	298	0.85	682
+//path#nn|<-nn<-section->prep->of->pobj->|pobj => REL$/location/neighborhood/neighborhood_of
+
+//217	0.27	172	0.69	914
+//path#nn|<-nn<-school->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//218	0.27	30	0.58	653
+//path#nn|<-nn<-part->prep->of->pobj->|pobj => REL$/location/location/containedby
+
+//219	0.27	15	0.83	275
+//path#advmod|->advmod->also->dep->in->pobj->|pobj => REL$/location/location/containedby
+
+//220	0.27	15	0.68	428
+//path#pobj|<-pobj<-to<-prep<-visit->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//221	0.27	49	0.74	450
+//path#nn|<-nn<-campus->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//222	0.26	19	0.49	749
+//path#poss|<-poss<-mayor->appos->|appos:INV => REL$/people/person/place_of_birth
+
+//223	0.26	42	0.81	590
+//path#appos|->appos->officer->prep->at->pobj->|pobj => REL$/business/person/company
+
+//224	0.26	42	0.81	531
+//path#poss|<-poss<-film->dep->|dep => REL$/book/author/works_written
+
+//225	0.26	27	0.65	1398
+//path#appos|->appos->professor->prep->of->pobj->study->prep->at->pobj->|pobj => REL$/business/person/company
+
+//226	0.26	27	0.67	647
+//path#pobj|<-pobj<-to<-prep<-send->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//227	0.26	39	0.64	500
+//path#nn|<-nn<-base->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//228	0.25	55	0.56	1215
+//path#poss|<-poss<-president->appos->|appos:INV => REL$/business/person/company
+
+//229	0.25	8	0.70	1124
+//path#appos|->appos->president->prep->of->pobj->operation->poss->|poss => REL$/business/person/company
+
+//230	0.25	20	0.80	675
+//path#appos|->appos->scientist->nn->|nn => REL$/business/person/company
+
+//231	0.25	12	0.60	502
+//path#rcmod|->rcmod->raise->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//232	0.25	8	0.71	194
+//path#nn|<-nn<-school->prep->on->pobj->|pobj => REL$/location/location/containedby
+
+//233	0.25	40	0.65	1172
+//path#pobj|<-pobj<-in<-prep<-live->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//234	0.25	12	0.55	282
+//path#pobj|<-pobj<-of<-prep<-owner->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//235	0.25	8	0.69	850
+//path#appos|->appos->councilman->nn->|nn => REL$/people/person/place_of_birth
+
+//236	0.25	24	0.72	398
+//path#appos|->appos->director->dep->|dep => REL$/book/author/works_written
+
+//237	0.25	8	0.91	787
+//path#poss|<-poss<-story->dep->|dep => REL$/book/author/works_written
+
+//238	0.25	8	0.60	369
+//path#dep|->dep->call->dep->|dep => REL$/book/author/works_written
+
+//239	0.24	49	0.66	1172
+//path#nsubj|<-nsubj<-teach->prep->at->pobj->|pobj => REL$/business/person/company
+
+//240	0.24	21	0.67	334
+//path#pobj|<-pobj<-at<-prep<-open->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//241	0.24	21	0.62	447
+//path#dobj|<-dobj<-run->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//242	0.24	21	0.72	864
+//path#poss|<-poss<-subsidiary->nn->|nn => REL$/organization/parent/child
+
+//243	0.24	21	0.65	272
+//path#appos|->appos->expert->prep->on->pobj->|pobj => REL$/book/author/works_written
+
+//244	0.24	384	0.72	1184
+//path#appos|->appos->chairman->prep->of->pobj->|pobj => REL$/business/person/company
+
+//245	0.24	17	0.60	1150
+//path#appos|->appos->president->prep->of->pobj->division->poss->|poss => REL$/business/person/company
+
+//246	0.24	17	0.53	489
+//path#dobj|<-dobj<-open->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//247	0.24	17	0.68	202
+//path#nn|<-nn<-festival->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//248	0.24	17	0.72	407
+//path#nn|<-nn<-estate->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//249	0.23	173	0.86	660
+//path#nn|<-nn<-neighborhood->prep->of->pobj->|pobj => REL$/location/neighborhood/neighborhood_of
+
+//250	0.23	26	0.59	496
+//path#appos|->appos->partner->prep->of->pobj->|pobj => REL$/business/person/company
+
+//251	0.23	13	0.63	775
+//path#nn|<-nn<-market->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//252	0.23	13	0.48	1083
+//path#nsubj|<-nsubj<-president->poss->|poss => REL$/people/person/nationality
+
+//253	0.23	53	0.59	683
+//path#appos|->appos->neighborhood->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//254	0.23	40	0.74	754
+//path#appos|->appos->parent->prep->of->pobj->|pobj => REL$/organization/parent/child
+
+//255	0.22	139	0.74	1186
+//path#appos|->appos->chairman->poss->|poss => REL$/business/person/company
+
+//256	0.22	9	0.80	271
+//path#poss|<-poss<-mother->appos->|appos => REL$/people/person/parents
+
+//257	0.22	9	0.64	227
+//path#partmod|->partmod->lead->prep->by->pobj->|pobj:INV => REL$/business/person/company
+
+//258	0.22	18	0.80	1135
+//path#rcmod|->rcmod->executive->prep->of->pobj->|pobj => REL$/business/person/company
+
+//259	0.22	9	0.72	259
+//path#advmod|->advmod->formerly->dep->of->pobj->|pobj => REL$/business/person/company
+
+//260	0.22	9	0.65	845
+//path#rcmod|->rcmod->head->prep->of->pobj->|pobj => REL$/business/person/company
+
+//261	0.22	9	0.65	1317
+//path#appos|->appos->psychologist->nn->|nn => REL$/business/person/company
+
+//262	0.22	9	0.64	241
+//path#nn|<-nn<-system->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//263	0.22	9	0.67	295
+//path#dobj|<-dobj<-buy->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//264	0.22	18	0.61	457
+//path#prep|->prep->in->pobj->area->nn->|nn => REL$/location/location/containedby
+
+//265	0.22	9	0.54	527
+//path#appos|->appos->coach->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//266	0.22	9	0.70	321
+//path#pobj|<-pobj<-at<-prep<-take->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//267	0.22	27	0.75	628
+//path#nsubj|<-nsubj<-have->dobj->|dobj:INV => REL$/people/person/nationality
+
+//268	0.22	9	0.86	554
+//path#appos|->appos->driver->prep->from->pobj->|pobj => REL$/people/person/nationality
+
+//269	0.22	9	0.73	227
+//path#partmod|->partmod->lead->prep->by->pobj->|pobj:INV => REL$/people/person/nationality
+
+//270	0.22	9	0.85	726
+//path#appos|->appos->minister->prep->in->pobj->|pobj => REL$/people/person/nationality
+
+//271	0.22	9	0.76	738
+//path#partmod|->partmod->know->prep->in->pobj->|pobj => REL$/people/person/nationality
+
+//272	0.22	9	0.52	726
+//path#appos|->appos->minister->prep->in->pobj->|pobj => REL$/people/person/place_of_birth
+
+//273	0.22	27	0.67	899
+//path#dobj|<-dobj<-write->prep->in->pobj->|pobj => REL$/book/author/works_written
+
+//274	0.22	173	0.57	660
+//path#nn|<-nn<-neighborhood->prep->of->pobj->|pobj => REL$/location/location/containedby
+
+//275	0.22	23	0.71	277
+//path#appos|->appos->partner->prep->in->pobj->|pobj => REL$/business/person/company
+
+//276	0.22	23	0.77	589
+//path#nsubj|<-nsubj<-win->prep->for->pobj->|pobj => REL$/book/author/works_written
+
+//277	0.21	14	0.81	772
+//path#pobj|<-pobj<-in<-prep<-school->appos->|appos => REL$/location/neighborhood/neighborhood_of
+
+//278	0.21	14	0.76	1015
+//path#appos|->appos->founder->nn->|nn => REL$/business/person/company
+
+//279	0.21	14	0.65	318
+//path#pobj|<-pobj<-to<-prep<-bring->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//280	0.21	14	0.83	442
+//path#pobj|<-pobj<-in<-prep<-be->nsubj->|nsubj:INV => REL$/people/person/nationality
+
+//281	0.21	14	0.81	604
+//path#appos|->appos->player->prep->from->pobj->|pobj => REL$/people/person/place_of_birth
+
+//282	0.21	47	0.72	511
+//path#pobj|<-pobj<-to<-prep<-go->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//283	0.21	890	0.60	1425
+//path#appos|->appos->professor->prep->at->pobj->|pobj => REL$/business/person/company
+
+//284	0.21	19	0.82	328
+//path#dobj|<-dobj<-overlook->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//285	0.21	67	0.78	859
+//path#appos|->appos->officer->poss->|poss => REL$/business/person/company
+
+//286	0.21	24	0.63	1369
+//path#appos|->appos->emeritus->prep->at->pobj->|pobj => REL$/business/person/company
+
+//287	0.21	24	0.74	307
+//path#nn|<-nn<-resort->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//288	0.21	97	0.62	1247
+//path#appos|->appos->historian->prep->at->pobj->|pobj => REL$/business/person/company
+
+//289	0.20	171	0.76	733
+//path#appos|->appos->founder->prep->of->pobj->|pobj => REL$/business/person/company
+
+//290	0.20	49	0.76	731
+//path#partmod|->partmod->bear->prep->in->pobj->|pobj => REL$/people/person/place_of_birth
+
+//291	0.20	15	0.60	1327
+//path#appos|->appos->professor->prep->at->pobj->school->poss->|poss => REL$/business/person/company
+
+//292	0.20	30	0.70	523
+//path#rcmod|->rcmod->found->dobj->|dobj => REL$/business/person/company
+
+//293	0.20	5	0.76	598
+//path#appos|->appos->professor->prep->from->pobj->|pobj => REL$/business/person/company
+
+//294	0.20	5	0.68	922
+//path#appos|->appos->president->prep->of->pobj->division->nn->|nn => REL$/business/person/company
+
+//295	0.20	5	0.66	804
+//path#appos|->appos->president->prep->for->pobj->sale->prep->at->pobj->|pobj => REL$/business/person/company
+
+//296	0.20	5	0.70	313
+//path#appos|->appos->producer->prep->at->pobj->|pobj => REL$/business/person/company
+
+//297	0.20	10	0.72	378
+//path#nsubj|<-nsubj<-found->dobj->|dobj => REL$/business/person/company
+
+//298	0.20	10	0.79	997
+//path#appos|->appos->executive->prep->for->pobj->|pobj => REL$/business/person/company
+
+//299	0.20	5	0.69	1108
+//path#rcmod|->rcmod->oversee->prep->at->pobj->|pobj => REL$/business/person/company
+
+//300	0.20	5	0.51	206
+//path#appos|->appos->chef->prep->in->pobj->|pobj => REL$/business/person/company
+
+//301	0.20	5	0.77	997
+//path#appos|->appos->president->prep->of->pobj->unit->nn->|nn => REL$/business/person/company
+
+//302	0.20	20	0.66	392
+//path#pobj|<-pobj<-at<-prep<-play->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//303	0.20	25	0.67	569
+//path#pobj|<-pobj<-at<-prep<-work->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//304	0.20	5	0.67	443
+//path#appos|->appos->chain->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//305	0.20	5	0.48	663
+//path#nsubj|<-nsubj<-bar->dobj->|dobj => REL$/location/location/containedby
+
+//306	0.20	10	0.69	667
+//path#appos|->appos->area->nn->|nn => REL$/location/location/containedby
+
+//307	0.20	15	0.63	370
+//path#pobj|<-pobj<-at<-prep<-show->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//308	0.20	5	0.53	344
+//path#appos|->appos->bishop->prep->of->pobj->|pobj => REL$/location/location/containedby
+
+//309	0.20	5	0.60	168
+//path#rcmod|->rcmod->offer->nsubj->|nsubj => REL$/location/location/containedby
+
+//310	0.20	15	0.60	433
+//path#nn|<-nn<-hospital->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//311	0.20	15	0.59	503
+//path#poss|<-poss<-program->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//312	0.20	5	0.61	141
+//path#nsubj|<-nsubj<-director->appos->|appos => REL$/location/location/containedby
+
+//313	0.20	5	0.61	256
+//path#nsubj|<-nsubj<-partner->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//314	0.20	5	0.58	178
+//path#prep|->prep->of->pobj->school->nn->|nn => REL$/location/location/containedby
+
+//315	0.20	5	0.57	318
+//path#appos|->appos->driver->nn->|nn => REL$/location/location/containedby
+
+//316	0.20	5	0.64	492
+//path#prep|->prep->in->pobj->town->prep->of->pobj->|pobj => REL$/location/location/containedby
+
+//317	0.20	5	0.76	648
+//path#nsubj|<-nsubj<-complete->dobj->acquisition->prep->of->pobj->|pobj => REL$/organization/parent/child
+
+//318	0.20	5	0.77	356
+//path#nn|<-nn<-agency->appos->|appos => REL$/organization/parent/child
+
+//319	0.20	5	0.77	427
+//path#nsubjpass|<-nsubjpass<-convict->prep->in->pobj->|pobj => REL$/people/deceased_person/place_of_death
+
+//320	0.20	5	0.64	344
+//path#appos|->appos->bishop->prep->of->pobj->|pobj => REL$/people/deceased_person/place_of_death
+
+//321	0.20	5	0.77	755
+//path#nsubj|<-nsubj<-live->prep->on->pobj->|pobj => REL$/people/deceased_person/place_of_death
+
+//322	0.20	5	0.60	266
+//path#partmod|->partmod->publish->prep->in->pobj->|pobj => REL$/people/deceased_person/place_of_death
+
+//323	0.20	5	0.68	250
+//path#appos|->appos->collector->nn->|nn => REL$/people/deceased_person/place_of_death
+
+//324	0.20	5	0.69	135
+//path#appos|->appos->writer->prep->from->pobj->|pobj => REL$/people/person/nationality
+
+//325	0.20	5	0.66	179
+//path#poss|<-poss<-photograph->prep->of->pobj->|pobj => REL$/people/person/nationality
+
+//326	0.20	5	0.49	265
+//path#appos|->appos->economist->prep->in->pobj->|pobj => REL$/people/person/nationality
+
+//327	0.20	5	0.72	260
+//path#appos|->appos->executive->prep->from->pobj->|pobj => REL$/people/person/nationality
+
+//328	0.20	5	0.54	206
+//path#appos|->appos->chef->prep->in->pobj->|pobj => REL$/people/person/place_of_birth
+
+//329	0.20	5	0.58	178
+//path#prep|->prep->of->pobj->school->nn->|nn => REL$/people/person/place_of_birth
+
+//330	0.20	5	0.58	282
+//path#rcmod|->rcmod->feature->dobj->|dobj => REL$/film/film/directed_by
+
+//331	0.20	50	0.89	815
+//path#nsubj|<-nsubj<-write->dobj->|dobj => REL$/book/author/works_written
+
+//332	0.20	5	0.91	845
+//path#poss|<-poss<-novel->appos->|appos => REL$/book/author/works_written
+
+//333	0.20	5	0.52	637
+//path#nsubj|<-nsubj<-declare->dobj->|dobj => REL$/book/author/works_written
+
+//334	0.20	5	0.80	347
+//path#poss|<-poss<-account->prep->of->pobj->|pobj => REL$/book/author/works_written
+
+//335	0.20	5	0.68	179
+//path#poss|<-poss<-photograph->prep->of->pobj->|pobj => REL$/book/author/works_written
+
+//336	0.20	5	0.48	265
+//path#appos|->appos->economist->prep->in->pobj->|pobj => REL$/book/author/works_written
+
+//337	0.20	5	0.57	219
+//path#appos|->appos->president->prep->in->pobj->|pobj => REL$/book/author/works_written
+
+//338	0.20	5	0.60	479
+//path#rcmod|->rcmod->hit->nsubj->|nsubj => REL$/book/author/works_written
+
+//339	0.20	5	0.51	339
+//path#nsubj|<-nsubj<-report->prep->for->pobj->|pobj => REL$/business/company/founders
+
+//340	0.20	5	0.53	374
+//path#nsubj|<-nsubj<-sing->prep->at->pobj->|pobj => REL$/music/composer/compositions
+
+//341	0.20	46	0.67	362
+//path#dobj|<-dobj<-leave->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//342	0.19	26	0.61	1345
+//path#appos|->appos->professor->dep->|dep => REL$/business/person/company
+
+//343	0.19	26	0.61	306
+//path#advmod|->advmod->back->dep->to->pobj->|pobj => REL$/location/location/containedby
+
+//344	0.19	68	0.57	667
+//path#nn|<-nn<-neighborhood->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//345	0.19	21	0.51	322
+//path#nn|<-nn<-professor->prep->at->pobj->|pobj => REL$/business/person/company
+
+//346	0.19	21	0.58	534
+//path#nsubj|<-nsubj<-operate->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//347	0.19	21	0.56	328
+//path#dep|<-dep<-call->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//348	0.19	21	0.72	352
+//path#appos|->appos->center->prep->from->pobj->|pobj => REL$/people/person/place_of_birth
+
+//349	0.19	16	0.45	558
+//path#appos|->appos->columnist->nn->|nn => REL$/business/person/company
+
+//350	0.19	16	0.64	384
+//path#pobj|<-pobj<-at<-prep<-perform->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//351	0.19	43	0.86	862
+//path#appos|->appos->creator->prep->of->pobj->|pobj => REL$/book/author/works_written
+
+//352	0.18	60	0.74	725
+//path#poss|<-poss<-unit->nn->|nn => REL$/organization/parent/child
+
+//353	0.18	11	0.77	822
+//path#appos|->appos->community->nn->|nn => REL$/location/neighborhood/neighborhood_of
+
+//354	0.18	11	0.69	302
+//path#appos|->appos->designer->prep->at->pobj->|pobj => REL$/business/person/company
+
+//355	0.18	66	0.77	1259
+//path#appos|->appos->executive->prep->at->pobj->|pobj => REL$/business/person/company
+
+//356	0.18	22	0.74	517
+//path#appos|->appos->officer->prep->for->pobj->|pobj => REL$/business/person/company
+
+//357	0.18	11	0.54	323
+//path#rcmod|->rcmod->be->nsubj->|nsubj:INV => REL$/business/person/company
+
+//358	0.18	11	0.66	1351
+//path#appos|->appos->colleague->prep->at->pobj->|pobj => REL$/business/person/company
+
+//359	0.18	11	0.54	222
+//path#pobj|<-pobj<-in<-prep<-defeat->dobj->|dobj => REL$/location/location/containedby
+
+//360	0.18	11	0.60	323
+//path#rcmod|->rcmod->be->nsubj->|nsubj:INV => REL$/location/location/containedby
+
+//361	0.18	11	0.52	415
+//path#rcmod|->rcmod->graduate->prep->from->pobj->|pobj => REL$/location/location/containedby
+
+//362	0.18	33	0.74	755
+//path#appos|->appos->company->prep->of->pobj->|pobj => REL$/organization/parent/child
+
+//363	0.18	11	0.63	253
+//path#poss|<-poss<-house->nn->|nn => REL$/people/deceased_person/place_of_death
+
+//364	0.18	22	0.62	596
+//path#rcmod|->rcmod->rule->dobj->|dobj => REL$/people/person/nationality
+
+//365	0.18	50	0.72	1285
+//path#appos|->appos->chief->prep->of->pobj->|pobj => REL$/business/person/company
+
+//366	0.18	100	0.41	867
+//path#nsubj|<-nsubj<-part->prep->of->pobj->|pobj => REL$/location/location/containedby
+
+//367	0.18	17	0.65	510
+//path#appos|->appos->lawyer->prep->at->pobj->|pobj => REL$/business/person/company
+
+//368	0.18	17	0.67	295
+//path#prep|->prep->in->pobj->section->prep->of->pobj->|pobj => REL$/location/location/containedby
+
+//369	0.18	17	0.78	227
+//path#appos|->appos->school->nn->|nn => REL$/location/location/containedby
+
+//370	0.18	17	0.55	460
+//path#poss|<-poss<-partner->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//371	0.18	17	0.55	379
+//path#prep|->prep->in->pobj->district->poss->|poss => REL$/location/location/containedby
+
+//372	0.18	74	0.58	722
+//path#appos|->appos->leader->poss->|poss => REL$/people/person/nationality
+
+//373	0.18	611	0.65	1753
+//path#appos|->appos->president->prep->of->pobj->|pobj => REL$/business/person/company
+
+//374	0.17	117	0.68	772
+//path#appos|->appos->native->nn->|nn => REL$/people/person/place_of_birth
+
+//375	0.17	47	0.88	378
+//path#poss|<-poss<-film->dep->|dep:INV => REL$/film/film/produced_by
+
+//376	0.17	53	0.59	529
+//path#pobj|<-pobj<-in<-prep<-be->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//377	0.17	130	0.85	679
+//path#nn|<-nn<-area->prep->of->pobj->|pobj => REL$/location/neighborhood/neighborhood_of
+
+//378	0.17	12	0.54	1887
+//path#pobj|<-pobj<-in<-prep<-live->prep->in->pobj->|pobj:INV => REL$/location/neighborhood/neighborhood_of
+
+//379	0.17	6	0.61	1219
+//path#rcmod|->rcmod->head->prep->at->pobj->|pobj => REL$/business/person/company
+
+//380	0.17	6	0.70	645
+//path#rcmod|->rcmod->take->prep->at->pobj->|pobj => REL$/business/person/company
+
+//381	0.17	6	0.61	1105
+//path#appos|->appos->co-president->prep->of->pobj->|pobj => REL$/business/person/company
+
+//382	0.17	6	0.57	282
+//path#appos|->appos->fan->nn->|nn => REL$/business/person/company
+
+//383	0.17	24	0.71	896
+//path#appos|->appos->emeritus->prep->of->pobj->|pobj => REL$/business/person/company
+
+//384	0.17	12	0.72	1038
+//path#rcmod|->rcmod->professor->prep->at->pobj->|pobj => REL$/business/person/company
+
+//385	0.17	6	0.66	181
+//path#appos|->appos->principal->prep->of->pobj->|pobj => REL$/business/person/company
+
+//386	0.17	6	0.53	467
+//path#nsubjpass|<-nsubjpass<-suspend->prep->by->pobj->|pobj => REL$/business/person/company
+
+//387	0.17	6	0.67	1007
+//path#appos|->appos->president->prep->of->pobj->group->nn->|nn => REL$/business/person/company
+
+//388	0.17	6	0.58	479
+//path#appos|->appos->conductor->prep->of->pobj->|pobj => REL$/business/person/company
+
+//389	0.17	6	0.80	495
+//path#nsubj|<-nsubj<-executive->prep->at->pobj->|pobj => REL$/business/person/company
+
+//390	0.17	18	0.59	442
+//path#nn|<-nn<-school->prep->of->pobj->|pobj => REL$/location/location/containedby
+
+//391	0.17	6	0.59	248
+//path#dep|<-dep<-be->nsubj->|nsubj => REL$/location/location/containedby
+
+//392	0.17	6	0.66	411
+//path#nsubjpass|<-nsubjpass<-set->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//393	0.17	12	0.57	200
+//path#appos|->appos->alumnus->nn->|nn => REL$/location/location/containedby
+
+//394	0.17	18	0.73	364
+//path#nn|<-nn<-gallery->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//395	0.17	6	0.60	228
+//path#pobj|<-pobj<-in<-prep<-use->nsubj->|nsubj => REL$/location/location/containedby
+
+//396	0.17	6	0.59	370
+//path#appos|->appos->commander->prep->of->pobj->force->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//397	0.17	6	0.51	459
+//path#poss|<-poss<-history->prep->of->pobj->|pobj => REL$/location/location/containedby
+
+//398	0.17	18	0.58	351
+//path#appos|->appos->institution->nn->|nn => REL$/location/location/containedby
+
+//399	0.17	36	0.57	799
+//path#rcmod|->rcmod->open->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//400	0.17	6	0.57	246
+//path#appos|->appos->administrator->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//401	0.17	6	0.55	394
+//path#pobj|<-pobj<-of<-prep<-museum->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//402	0.17	6	0.77	452
+//path#appos|->appos->town->prep->on->pobj->|pobj => REL$/location/location/containedby
+
+//403	0.17	6	0.65	271
+//path#appos|<-appos<-wife<-pobj<-by<-prep<-survive->dobj->son->prep->of->pobj->|pobj => REL$/location/location/containedby
+
+//404	0.17	6	0.57	330
+//path#dobj|<-dobj<-accuse->dobj->|dobj => REL$/location/location/containedby
+
+//405	0.17	6	0.56	108
+//path#dobj|<-dobj<-acquire->prep->for->pobj->|pobj => REL$/location/location/containedby
+
+//406	0.17	6	0.57	527
+//path#nsubj|<-nsubj<-propose->prep->to->pobj->|pobj => REL$/organization/parent/child
+
+//407	0.17	6	0.59	404
+//path#nsubj|<-nsubj<-agree->dobj->|dobj => REL$/organization/parent/child
+
+//408	0.17	6	0.66	323
+//path#nn|<-nn<-case->prep->in->pobj->|pobj => REL$/people/deceased_person/place_of_death
+
+//409	0.17	6	0.61	280
+//path#advmod|->advmod->also->dep->from->pobj->|pobj => REL$/people/person/nationality
+
+//410	0.17	18	0.56	558
+//path#nsubj|<-nsubj<-leader->prep->of->pobj->|pobj => REL$/people/person/nationality
+
+//411	0.17	6	0.52	579
+//path#rcmod|->rcmod->enter->dobj->|dobj => REL$/people/person/nationality
+
+//412	0.17	6	0.67	135
+//path#appos|->appos->brother->prep->of->pobj->|pobj => REL$/people/person/nationality
+
+//413	0.17	6	0.57	513
+//path#rcmod|->rcmod->immigrate->prep->from->pobj->|pobj => REL$/people/person/place_of_birth
+
+//414	0.17	6	0.53	459
+//path#poss|<-poss<-history->prep->of->pobj->|pobj => REL$/people/person/place_of_birth
+
+//415	0.17	6	0.71	230
+//path#nsubj|<-nsubj<-write->nsubj->|nsubj => REL$/people/person/place_of_birth
+
+//416	0.17	6	0.63	115
+//path#appos|->appos->superintendent->prep->in->pobj->|pobj => REL$/people/person/place_of_birth
+
+//417	0.17	24	0.59	296
+//path#appos|->appos->home->prep->of->pobj->|pobj:INV => REL$/sports/sports_team/arena_stadium
+
+//418	0.17	6	0.70	447
+//path#pobj|<-pobj<-of<-prep<-president->prep->at->pobj->|pobj => REL$/sports/sports_team/arena_stadium
+
+//419	0.17	6	0.76	627
+//path#nsubj|<-nsubj<-sell->prep->at->pobj->|pobj => REL$/sports/sports_team/arena_stadium
+
+//420	0.17	6	0.67	317
+//path#appos|->appos->affiliate->nn->|nn => REL$/broadcast/broadcast/area_served
+
+//421	0.17	6	0.38	1095
+//path#nsubj|<-nsubj<-professor->nn->|nn => REL$/book/author/works_written
+
+//422	0.17	6	0.83	459
+//path#poss|<-poss<-history->prep->of->pobj->|pobj => REL$/book/author/works_written
+
+//423	0.17	6	0.69	181
+//path#appos|->appos->principal->prep->of->pobj->|pobj => REL$/book/author/works_written
+
+//424	0.17	6	0.71	229
+//path#partmod|->partmod->create->prep->by->pobj->|pobj => REL$/business/company/founders
+
+//425	0.17	24	0.88	372
+//path#poss|<-poss<-movie->dep->|dep:INV => REL$/film/film/produced_by
+
+//426	0.16	43	0.70	270
+//path#nn|<-nn<-hotel->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//427	0.16	31	0.61	1421
+//path#appos|->appos->dean->prep->at->pobj->|pobj => REL$/business/person/company
+
+//428	0.16	31	0.61	449
+//path#poss|<-poss<-campus->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//429	0.16	50	0.71	639
+//path#appos|->appos->publisher->prep->of->pobj->|pobj => REL$/business/person/company
+
+//430	0.16	19	0.68	1244
+//path#appos|->appos->co-chairman->prep->of->pobj->|pobj => REL$/business/person/company
+
+//431	0.16	165	0.74	1289
+//path#appos|->appos->executive->nn->|nn => REL$/business/person/company
+
+//432	0.15	13	0.81	775
+//path#nn|<-nn<-market->prep->in->pobj->|pobj => REL$/location/neighborhood/neighborhood_of
+
+//433	0.15	78	0.63	1212
+//path#rcmod|->rcmod->teach->prep->at->pobj->|pobj => REL$/business/person/company
+
+//434	0.15	13	0.59	219
+//path#appos|<-appos<-president->appos->|appos => REL$/location/location/containedby
+
+//435	0.15	13	0.71	607
+//path#poss|<-poss<-offer->prep->for->pobj->|pobj => REL$/organization/parent/child
+
+//436	0.15	13	0.64	306
+//path#appos|->appos->living->prep->in->pobj->|pobj => REL$/people/deceased_person/place_of_death
+
+//437	0.15	13	0.61	665
+//path#rcmod|->rcmod->govern->dobj->|dobj => REL$/people/person/nationality
+
+//438	0.15	13	0.75	511
+//path#appos|->appos->junior->prep->from->pobj->|pobj => REL$/people/person/place_of_birth
+
+//439	0.15	13	0.51	251
+//path#appos|->appos->chef->nn->|nn => REL$/people/person/place_of_birth
+
+//440	0.15	125	0.70	984
+//path#nsubj|<-nsubj<-buy->dobj->|dobj => REL$/organization/parent/child
+
+//441	0.15	27	0.63	221
+//path#appos|->appos->designer->nn->|nn => REL$/business/person/company
+
+//442	0.15	162	0.62	1236
+//path#nsubj|<-nsubj<-professor->prep->at->pobj->|pobj => REL$/business/person/company
+
+//443	0.15	27	0.58	169
+//path#appos|->appos->graduate->nn->|nn => REL$/location/location/containedby
+
+//444	0.15	27	0.56	525
+//path#appos|->appos->man->poss->|poss => REL$/people/person/nationality
+
+//445	0.15	27	0.52	231
+//path#appos|->appos->mayor->poss->|poss => REL$/people/person/place_of_birth
+
+//446	0.15	95	0.67	475
+//path#appos|->appos->native->prep->of->pobj->|pobj => REL$/people/person/place_of_birth
+
+//447	0.15	34	0.82	760
+//path#appos|->appos->section->prep->of->pobj->|pobj => REL$/location/neighborhood/neighborhood_of
+
+//448	0.15	34	0.51	646
+//path#dobj|<-dobj<-coach->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//449	0.15	34	0.70	802
+//path#nsubj|<-nsubj<-pay->prep->for->pobj->|pobj => REL$/organization/parent/child
+
+//450	0.15	34	0.72	824
+//path#rcmod|->rcmod->acquire->dobj->|dobj => REL$/organization/parent/child
+
+//451	0.14	14	0.52	293
+//path#rcmod|->rcmod->have->nsubj->|nsubj:INV => REL$/business/person/company
+
+//452	0.14	7	0.72	465
+//path#nsubj|<-nsubj<-founder->prep->of->pobj->|pobj => REL$/business/person/company
+
+//453	0.14	7	0.39	751
+//path#appos|->appos->chancellor->poss->|poss => REL$/business/person/company
+
+//454	0.14	7	0.51	374
+//path#nsubj|<-nsubj<-direct->prep->at->pobj->|pobj => REL$/business/person/company
+
+//455	0.14	7	0.80	249
+//path#appos|->appos->employee->nn->|nn => REL$/business/person/company
+
+//456	0.14	7	0.53	433
+//path#rcmod|->rcmod->call->dobj->|dobj => REL$/business/person/company
+
+//457	0.14	7	0.51	222
+//path#appos|->appos->lobbyist->nn->|nn => REL$/business/person/company
+
+//458	0.14	7	0.57	270
+//path#nsubj|<-nsubj<-create->prep->for->pobj->|pobj => REL$/business/person/company
+
+//459	0.14	7	0.65	1326
+//path#appos|->appos->consultant->prep->at->pobj->|pobj => REL$/business/person/company
+
+//460	0.14	7	0.68	852
+//path#dep|->dep->chairman->prep->of->pobj->|pobj => REL$/business/person/company
+
+//461	0.14	91	0.55	423
+//path#nn|<-nn<-plant->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//462	0.14	7	0.34	655
+//path#appos|->appos->agency->prep->of->pobj->|pobj => REL$/location/location/containedby
+
+//463	0.14	7	0.61	92
+//path#appos|->appos->newspaper->poss->|poss => REL$/location/location/containedby
+
+//464	0.14	7	0.50	696
+//path#nsubj|<-nsubj<-run->prep->with->pobj->|pobj => REL$/location/location/containedby
+
+//465	0.14	7	0.57	185
+//path#appos|->appos->officer->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//466	0.14	7	0.53	661
+//path#rcmod|->rcmod->belong->prep->to->pobj->|pobj => REL$/location/location/containedby
+
+//467	0.14	7	0.60	323
+//path#dobj|<-dobj<-find->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//468	0.14	7	0.58	425
+//path#nsubj|<-nsubj<-coach->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//469	0.14	7	0.69	250
+//path#rcmod|->rcmod->build->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//470	0.14	7	0.55	422
+//path#nsubj|<-nsubj<-speak->prep->of->pobj->|pobj => REL$/location/location/containedby
+
+//471	0.14	14	0.60	382
+//path#nsubj|<-nsubj<-mile->prep->from->pobj->|pobj => REL$/location/location/containedby
+
+//472	0.14	14	0.51	604
+//path#appos|->appos->player->prep->from->pobj->|pobj => REL$/location/location/containedby
+
+//473	0.14	7	0.57	480
+//path#nsubj|<-nsubj<-score->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//474	0.14	7	0.58	348
+//path#nsubjpass|<-nsubjpass<-bury->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//475	0.14	7	0.70	118
+//path#appos|->appos->judge->nn->|nn => REL$/location/location/containedby
+
+//476	0.14	7	0.79	542
+//path#poss|<-poss<-club->nn->|nn => REL$/organization/parent/child
+
+//477	0.14	7	0.60	220
+//path#nsubjpass|<-nsubjpass<-shoot->prep->in->pobj->|pobj => REL$/people/deceased_person/place_of_death
+
+//478	0.14	14	0.55	591
+//path#nsubj|<-nsubj<-settle->prep->in->pobj->|pobj => REL$/people/deceased_person/place_of_death
+
+//479	0.14	7	0.61	375
+//path#poss|<-poss<-church->prep->in->pobj->|pobj => REL$/people/deceased_person/place_of_death
+
+//480	0.14	7	0.55	460
+//path#nn|<-nn<-company->prep->of->pobj->|pobj => REL$/people/deceased_person/place_of_death
+
+//481	0.14	7	0.65	348
+//path#nsubjpass|<-nsubjpass<-bury->prep->in->pobj->|pobj => REL$/people/deceased_person/place_of_death
+
+//482	0.14	7	0.51	542
+//path#poss|<-poss<-club->nn->|nn => REL$/people/deceased_person/place_of_death
+
+//483	0.14	14	0.62	293
+//path#rcmod|->rcmod->have->nsubj->|nsubj:INV => REL$/people/person/nationality
+
+//484	0.14	14	0.59	586
+//path#nsubj|<-nsubj<-figure->prep->in->pobj->|pobj => REL$/people/person/nationality
+
+//485	0.14	7	0.61	364
+//path#appos|->appos->archbishop->prep->of->pobj->|pobj => REL$/people/person/place_of_birth
+
+//486	0.14	7	0.59	185
+//path#appos|->appos->officer->prep->in->pobj->|pobj => REL$/people/person/place_of_birth
+
+//487	0.14	7	0.63	339
+//path#appos|->appos->detective->nn->|nn => REL$/people/person/place_of_birth
+
+//488	0.14	7	0.57	425
+//path#nsubj|<-nsubj<-coach->prep->in->pobj->|pobj => REL$/people/person/place_of_birth
+
+//489	0.14	7	0.68	154
+//path#appos|->appos->actor->nn->|nn => REL$/people/person/place_of_birth
+
+//490	0.14	7	0.70	134
+//path#appos|->appos->developer->nn->|nn => REL$/people/person/place_of_birth
+
+//491	0.14	14	0.61	153
+//path#appos|->appos->singer->nn->|nn => REL$/people/person/place_of_birth
+
+//492	0.14	7	0.61	348
+//path#nsubjpass|<-nsubjpass<-bury->prep->in->pobj->|pobj => REL$/people/person/place_of_birth
+
+//493	0.14	7	0.36	660
+//path#nsubj|<-nsubj<-die->prep->in->pobj->hospital->prep->in->pobj->|pobj => REL$/people/person/place_of_birth
+
+//494	0.14	7	0.63	118
+//path#appos|->appos->judge->nn->|nn => REL$/people/person/place_of_birth
+
+//495	0.14	7	0.59	201
+//path#appos|->appos->lawyer->partmod->represent->dobj->|dobj => REL$/people/person/religion
+
+//496	0.14	7	0.56	249
+//path#appos|->appos->employee->nn->|nn => REL$/book/author/works_written
+
+//497	0.14	7	0.53	377
+//path#rcmod|->rcmod->die->nsubj->|nsubj => REL$/book/author/works_written
+
+//498	0.14	14	0.77	193
+//path#partmod|->partmod->found->prep->by->pobj->|pobj => REL$/business/company/founders
+
+//499	0.14	14	0.29	381
+//path#appos|->appos->director->prep->of->pobj->|pobj:INV => REL$/business/company/founders
+
+//500	0.14	169	0.63	1051
+//path#appos|->appos->president->prep->at->pobj->|pobj => REL$/business/person/company
+
+//501	0.14	57	0.59	1045
+//path#nsubj|<-nsubj<-president->prep->of->pobj->|pobj => REL$/business/person/company
+
+//502	0.14	43	0.58	500
+//path#nn|<-nn<-camp->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//503	0.14	72	0.61	586
+//path#nn|<-nn<-station->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//504	0.14	95	0.56	343
+//path#appos|->appos->mayor->prep->of->pobj->|pobj => REL$/people/person/place_of_birth
+
+//505	0.14	44	0.64	889
+//path#nn|<-nn<-complex->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//506	0.14	185	0.65	1358
+//path#appos|->appos->head->prep->of->pobj->|pobj => REL$/business/person/company
+
+//507	0.14	37	0.42	427
+//path#appos|->appos->center->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//508	0.14	37	0.59	588
+//path#nsubj|<-nsubj<-arrive->prep->from->pobj->|pobj => REL$/people/person/nationality
+
+//509	0.13	82	0.66	749
+//path#rcmod|->rcmod->grow->prep->in->pobj->|pobj => REL$/people/person/place_of_birth
+
+//510	0.13	15	0.48	528
+//path#nsubj|<-nsubj<-member->nn->|nn => REL$/location/location/containedby
+
+//511	0.13	15	0.44	500
+//path#pobj|<-pobj<-in<-prep<-open->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//512	0.13	30	0.63	265
+//path#pobj|<-pobj<-at<-prep<-be->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//513	0.13	15	0.66	256
+//path#nn|<-nn<-coast->prep->of->pobj->|pobj => REL$/location/location/containedby
+
+//514	0.13	15	0.38	1411
+//path#nsubj|<-nsubj<-name->dobj->|dobj:INV => REL$/people/person/nationality
+
+//515	0.13	30	0.57	174
+//path#appos|->appos->dealer->nn->|nn => REL$/people/person/place_of_birth
+
+//516	0.13	15	0.59	240
+//path#nsubj|<-nsubj<-work->dobj->|dobj => REL$/book/author/works_written
+
+//517	0.13	83	0.79	933
+//path#rcmod|->rcmod->bear->prep->in->pobj->|pobj => REL$/people/person/place_of_birth
+
+//518	0.13	68	0.86	667
+//path#nn|<-nn<-neighborhood->prep->in->pobj->|pobj => REL$/location/neighborhood/neighborhood_of
+
+//519	0.13	38	0.78	1028
+//path#appos|->appos->chairman->prep->at->pobj->|pobj => REL$/business/person/company
+
+//520	0.13	69	0.81	781
+//path#nn|<-nn<-district->prep->of->pobj->|pobj => REL$/location/neighborhood/neighborhood_of
+
+//521	0.13	46	0.63	1278
+//path#appos|->appos->historian->nn->|nn => REL$/business/person/company
+
+//522	0.13	23	0.70	235
+//path#poss|<-poss<-school->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//523	0.13	23	0.56	394
+//path#dobj|<-dobj<-see->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//524	0.13	23	0.60	359
+//path#prep|->prep->in->pobj->state->nn->|nn => REL$/location/location/containedby
+
+//525	0.13	31	0.65	436
+//path#nsubj|<-nsubj<-flee->dobj->|dobj => REL$/people/person/nationality
+
+//526	0.13	55	0.64	891
+//path#rcmod|->rcmod->president->prep->of->pobj->|pobj => REL$/business/person/company
+
+//527	0.13	8	0.46	604
+//path#dobj|<-dobj<-claim->prep->off->pobj->waiver->prep->from->pobj->|pobj => REL$/location/neighborhood/neighborhood_of
+
+//528	0.13	8	0.57	357
+//path#nsubj|<-nsubj<-borrow->prep->from->pobj->|pobj => REL$/business/person/company
+
+//529	0.13	16	0.73	827
+//path#appos|->appos->researcher->nn->|nn => REL$/business/person/company
+
+//530	0.13	8	0.66	895
+//path#appos|->appos->president->dep->|dep => REL$/business/person/company
+
+//531	0.13	32	0.64	1179
+//path#appos|->appos->chairman->prep->of->pobj->department->prep->at->pobj->|pobj => REL$/business/person/company
+
+//532	0.13	8	0.78	543
+//path#appos|->appos->engineer->nn->|nn => REL$/business/person/company
+
+//533	0.13	8	0.47	555
+//path#appos|->appos->part->prep->of->pobj->unit->nn->|nn => REL$/business/person/company
+
+//534	0.13	32	0.76	675
+//path#appos|->appos->founder->poss->|poss => REL$/business/person/company
+
+//535	0.13	8	0.31	646
+//path#appos|->appos->unit->poss->|poss => REL$/business/person/company
+
+//536	0.13	8	0.63	236
+//path#pobj|<-pobj<-by<-prep<-design->prep->for->pobj->|pobj => REL$/business/person/company
+
+//537	0.13	8	0.62	789
+//path#appos|->appos->principal->prep->at->pobj->|pobj => REL$/business/person/company
+
+//538	0.13	8	0.68	164
+//path#appos|->appos->pilot->nn->|nn => REL$/business/person/company
+
+//539	0.13	8	0.49	192
+//path#appos|->appos->general->prep->for->pobj->|pobj => REL$/business/person/company
+
+//540	0.13	8	0.51	510
+//path#pobj|<-pobj<-in<-prep<-begin->nsubj->|nsubj => REL$/location/location/containedby
+
+//541	0.13	8	0.59	496
+//path#nn|<-nn<-tribe->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//542	0.13	32	0.63	515
+//path#nn|<-nn<-museum->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//543	0.13	8	0.58	303
+//path#nsubj|<-nsubj<-establish->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//544	0.13	8	0.56	552
+//path#nsubj|<-nsubj<-company->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//545	0.13	8	0.51	388
+//path#nsubj|<-nsubj<-continue->nsubj->|nsubj => REL$/location/location/containedby
+
+//546	0.13	8	0.57	524
+//path#nsubj|<-nsubj<-stop->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//547	0.13	16	0.57	283
+//path#nsubj|<-nsubj<-begin->nsubj->|nsubj => REL$/location/location/containedby
+
+//548	0.13	8	0.56	293
+//path#poss|<-poss<-project->nn->|nn => REL$/location/location/containedby
+
+//549	0.13	32	0.54	466
+//path#nn|<-nn<-home->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//550	0.13	8	0.48	957
+//path#nsubj|<-nsubj<-file->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//551	0.13	8	0.39	647
+//path#appos|->appos->manufacturer->nn->|nn => REL$/location/location/containedby
+
+//552	0.13	8	0.57	178
+//path#pobj|<-pobj<-at<-prep<-professor->appos->|appos => REL$/location/location/containedby
+
+//553	0.13	8	0.49	335
+//path#appos|->appos->general->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//554	0.13	8	0.47	369
+//path#appos|->appos->restaurant->poss->|poss => REL$/location/location/containedby
+
+//555	0.13	8	0.60	251
+//path#rcmod|->rcmod->take->prep->to->pobj->|pobj => REL$/location/location/containedby
+
+//556	0.13	8	0.56	299
+//path#partmod|->partmod->make->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//557	0.13	16	0.59	234
+//path#appos|->appos->house->nn->|nn => REL$/location/location/containedby
+
+//558	0.13	8	0.52	553
+//path#nsubj|<-nsubj<-point->prep->to->pobj->|pobj => REL$/location/location/containedby
+
+//559	0.13	8	0.55	490
+//path#nsubj|<-nsubj<-lure->dobj->|dobj => REL$/organization/parent/child
+
+//560	0.13	8	0.62	377
+//path#nsubj|<-nsubj<-leave->prep->to->pobj->|pobj => REL$/people/deceased_person/place_of_death
+
+//561	0.13	8	0.60	262
+//path#nsubj|<-nsubj<-die->prep->at->pobj->|pobj => REL$/people/deceased_person/place_of_death
+
+//562	0.13	8	0.39	591
+//path#appos|->appos->agency->poss->|poss => REL$/people/person/nationality
+
+//563	0.13	16	0.53	316
+//path#appos|->appos->historian->prep->of->pobj->|pobj => REL$/people/person/nationality
+
+//564	0.13	16	0.50	1017
+//path#pobj|<-pobj<-in<-prep<-have->nsubj->|nsubj:INV => REL$/people/person/nationality
+
+//565	0.13	8	0.52	335
+//path#appos|->appos->general->prep->in->pobj->|pobj => REL$/people/person/nationality
+
+//566	0.13	8	0.40	402
+//path#nn|<-nn<-article->prep->in->pobj->|pobj => REL$/people/person/nationality
+
+//567	0.13	8	0.68	134
+//path#nsubj|<-nsubj<-writer->prep->in->pobj->|pobj => REL$/people/person/nationality
+
+//568	0.13	8	0.57	303
+//path#nsubj|<-nsubj<-establish->prep->in->pobj->|pobj => REL$/people/person/place_of_birth
+
+//569	0.13	8	0.60	377
+//path#nsubj|<-nsubj<-leave->prep->to->pobj->|pobj => REL$/people/person/place_of_birth
+
+//570	0.13	8	0.60	122
+//path#appos|->appos->magazine->nn->|nn => REL$/people/person/place_of_birth
+
+//571	0.13	8	0.46	604
+//path#dobj|<-dobj<-claim->prep->off->pobj->waiver->prep->from->pobj->|pobj => REL$/people/person/place_of_birth
+
+//572	0.13	8	0.45	192
+//path#appos|->appos->general->prep->for->pobj->|pobj => REL$/people/person/place_of_birth
+
+//573	0.13	8	0.64	337
+//path#dobj|<-dobj<-lead->prep->at->pobj->|pobj => REL$/sports/sports_team/arena_stadium
+
+//574	0.13	8	0.61	131
+//path#appos|->appos->program->nn->|nn => REL$/book/author/works_written
+
+//575	0.13	8	0.73	312
+//path#nsubj|<-nsubj<-describe->nsubj->|nsubj => REL$/book/author/works_written
+
+//576	0.13	24	0.72	342
+//path#poss|<-poss<-movie->dep->|dep => REL$/book/author/works_written
+
+//577	0.13	8	0.50	427
+//path#poss|<-poss<-affair->prep->with->pobj->|pobj => REL$/book/author/works_written
+
+//578	0.13	8	0.68	304
+//path#rcmod|->rcmod->sell->nsubj->|nsubj => REL$/book/author/works_written
+
+//579	0.13	8	0.60	164
+//path#appos|->appos->pilot->nn->|nn => REL$/book/author/works_written
+
+//580	0.13	8	0.54	131
+//path#appos|->appos->widow->poss->|poss => REL$/book/author/works_written
+
+//581	0.13	8	0.61	177
+//path#appos|<-appos<-father->appos->|appos => REL$/book/author/works_written
+
+//582	0.13	8	0.54	531
+//path#appos|->appos->writer->prep->of->pobj->|pobj => REL$/book/author/works_written
+
+//583	0.13	8	0.44	369
+//path#appos|->appos->restaurant->poss->|poss => REL$/business/company/founders
+
+//584	0.13	16	0.88	373
+//path#nn|<-nn<-film->dep->|dep:INV => REL$/film/film/produced_by
+
+//585	0.13	8	0.63	261
+//path#nsubj|<-nsubj<-earn->prep->from->pobj->|pobj => REL$/architecture/structure/architect
+
+//586	0.13	8	0.64	261
+//path#nsubj|<-nsubj<-earn->prep->from->pobj->|pobj => REL$/sports/sports_team/league
+
+//587	0.13	8	0.58	303
+//path#nsubj|<-nsubj<-play->prep->on->pobj->|pobj => REL$/music/composer/compositions
+
+//588	0.12	98	0.52	415
+//path#nsubj|<-nsubj<-be->prep->to->pobj->|pobj => REL$/location/location/containedby
+
+//589	0.12	41	0.62	1238
+//path#appos|->appos->sociologist->prep->at->pobj->|pobj => REL$/business/person/company
+
+//590	0.12	41	0.51	976
+//path#appos|->appos->star->poss->|poss => REL$/people/person/nationality
+
+//591	0.12	25	0.63	1512
+//path#appos|->appos->community->prep->in->pobj->|pobj => REL$/location/neighborhood/neighborhood_of
+
+//592	0.12	25	0.59	462
+//path#dobj|<-dobj<-replace->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//593	0.12	25	0.64	672
+//path#nsubj|<-nsubj<-kill->prep->in->pobj->|pobj => REL$/people/deceased_person/place_of_death
+
+//594	0.12	17	0.66	682
+//path#appos|->appos->chief->prep->at->pobj->|pobj => REL$/business/person/company
+
+//595	0.12	17	0.64	418
+//path#nsubj|<-nsubj<-resign->prep->from->pobj->|pobj => REL$/business/person/company
+
+//596	0.12	17	0.55	1060
+//path#appos|->appos->director->prep->of->pobj->study->prep->at->pobj->|pobj => REL$/business/person/company
+
+//597	0.12	17	0.54	278
+//path#nn|<-nn<-shop->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//598	0.12	34	0.57	540
+//path#appos|->appos->member->prep->from->pobj->|pobj => REL$/people/person/nationality
+
+//599	0.12	17	0.61	340
+//path#appos|->appos->candidate->poss->|poss => REL$/people/person/nationality
+
+//600	0.12	17	0.53	836
+//path#appos|->appos->guard->prep->from->pobj->|pobj => REL$/people/person/place_of_birth
+
+//601	0.12	17	0.52	295
+//path#nsubj|<-nsubj<-mayor->prep->of->pobj->|pobj => REL$/people/person/place_of_birth
+
+//602	0.12	112	0.61	1359
+//path#appos|->appos->scientist->prep->at->pobj->|pobj => REL$/business/person/company
+
+//603	0.12	95	0.55	475
+//path#appos|->appos->native->prep->of->pobj->|pobj => REL$/people/person/nationality
+
+//604	0.12	26	0.60	574
+//path#rcmod|->rcmod->flee->dobj->|dobj => REL$/people/person/nationality
+
+//605	0.12	26	0.65	188
+//path#appos|->appos->artist->nn->|nn => REL$/people/person/place_of_birth
+
+//606	0.12	26	0.64	139
+//path#appos|->appos->architect->nn->|nn => REL$/people/person/place_of_birth
+
+//607	0.11	35	0.68	280
+//path#nn|<-nn<-film->dep->|dep => REL$/book/author/works_written
+
+//608	0.11	62	0.59	1529
+//path#appos|->appos->scholar->prep->at->pobj->|pobj => REL$/business/person/company
+
+//609	0.11	160	0.88	519
+//path#appos|->appos->owner->prep->of->pobj->|pobj => REL$/sports/sports_team_owner/teams_owned
+
+//610	0.11	9	0.42	428
+//path#prep|->prep->at->pobj->street->appos->|appos => REL$/location/neighborhood/neighborhood_of
+
+//611	0.11	9	0.64	848
+//path#pobj|<-pobj<-at<-prep<-hold->prep->in->pobj->|pobj => REL$/location/neighborhood/neighborhood_of
+
+//612	0.11	9	0.71	581
+//path#rcmod|->rcmod->build->dobj->|dobj => REL$/business/person/company
+
+//613	0.11	9	0.64	136
+//path#appos|->appos->researcher->prep->for->pobj->|pobj => REL$/business/person/company
+
+//614	0.11	9	0.61	244
+//path#rcmod|->rcmod->start->dobj->|dobj => REL$/business/person/company
+
+//615	0.11	9	0.53	263
+//path#poss|<-poss<-company->nn->|nn => REL$/business/person/company
+
+//616	0.11	36	0.42	347
+//path#appos|->appos->editor->prep->in->pobj->chief->prep->of->pobj->|pobj => REL$/business/person/company
+
+//617	0.11	18	0.57	201
+//path#appos|->appos->designer->prep->of->pobj->|pobj => REL$/business/person/company
+
+//618	0.11	9	0.36	794
+//path#appos|->appos->coach->prep->of->pobj->team->nn->|nn => REL$/business/person/company
+
+//619	0.11	9	0.61	176
+//path#appos|->appos->agent->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//620	0.11	9	0.56	425
+//path#nsubjpass|<-nsubjpass<-know->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//621	0.11	9	0.55	252
+//path#rcmod|->rcmod->start->prep->at->pobj->|pobj => REL$/location/location/containedby
+
+//622	0.11	9	0.50	365
+//path#appos|->appos->headquarters->prep->of->pobj->|pobj => REL$/location/location/containedby
+
+//623	0.11	9	0.50	433
+//path#rcmod|->rcmod->criticize->dobj->|dobj => REL$/location/location/containedby
+
+//624	0.11	9	0.50	485
+//path#rcmod|->rcmod->spend->nsubj->|nsubj => REL$/location/location/containedby
+
+//625	0.11	9	0.48	616
+//path#nsubj|<-nsubj<-build->prep->at->pobj->|pobj => REL$/location/location/containedby
+
+//626	0.11	9	0.67	420
+//path#appos|->appos->complex->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//627	0.11	9	0.53	517
+//path#nsubj|<-nsubj<-open->dobj->office->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//628	0.11	9	0.50	525
+//path#nsubj|<-nsubj<-end->prep->at->pobj->|pobj => REL$/location/location/containedby
+
+//629	0.11	9	0.49	271
+//path#poss|<-poss<-mother->appos->|appos => REL$/location/location/containedby
+
+//630	0.11	9	0.56	531
+//path#nn|<-nn<-laboratory->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//631	0.11	9	0.55	397
+//path#dep|->dep->come->nsubj->|nsubj => REL$/location/location/containedby
+
+//632	0.11	162	0.68	905
+//path#rcmod|->rcmod->own->dobj->|dobj => REL$/organization/parent/child
+
+//633	0.11	9	0.68	535
+//path#nsubj|<-nsubj<-offer->prep->for->pobj->|pobj => REL$/organization/parent/child
+
+//634	0.11	18	0.75	726
+//path#rcmod|->rcmod->kill->prep->in->pobj->|pobj => REL$/people/deceased_person/place_of_death
+
+//635	0.11	9	0.64	160
+//path#appos|->appos->architect->prep->in->pobj->|pobj => REL$/people/deceased_person/place_of_death
+
+//636	0.11	9	0.44	726
+//path#appos|->appos->minister->prep->in->pobj->|pobj => REL$/people/deceased_person/place_of_death
+
+//637	0.11	9	0.62	425
+//path#nsubjpass|<-nsubjpass<-know->prep->in->pobj->|pobj => REL$/people/person/nationality
+
+//638	0.11	9	0.57	239
+//path#rcmod|->rcmod->chief->poss->|poss => REL$/people/person/nationality
+
+//639	0.11	9	0.51	845
+//path#rcmod|->rcmod->head->prep->of->pobj->|pobj => REL$/people/person/nationality
+
+//640	0.11	9	0.57	372
+//path#appos|->appos->player->prep->in->pobj->|pobj => REL$/people/person/nationality
+
+//641	0.11	9	0.52	163
+//path#appos|->appos->dealer->prep->in->pobj->|pobj => REL$/people/person/nationality
+
+//642	0.11	9	0.34	818
+//path#appos|->appos->author->prep->of->pobj->book->dep->|dep => REL$/people/person/nationality
+
+//643	0.11	9	0.60	227
+//path#partmod|->partmod->lead->prep->by->pobj->|pobj:INV => REL$/people/person/place_of_birth
+
+//644	0.11	9	0.69	160
+//path#appos|->appos->architect->prep->in->pobj->|pobj => REL$/people/person/place_of_birth
+
+//645	0.11	9	0.61	107
+//path#appos|->appos->superintendent->poss->|poss => REL$/people/person/place_of_birth
+
+//646	0.11	9	0.27	1317
+//path#appos|->appos->psychologist->nn->|nn => REL$/people/person/place_of_birth
+
+//647	0.11	9	0.50	531
+//path#nn|<-nn<-laboratory->prep->in->pobj->|pobj => REL$/people/person/place_of_birth
+
+//648	0.11	9	0.44	710
+//path#appos|->appos->minister->prep->for->pobj->|pobj => REL$/people/person/place_of_birth
+
+//649	0.11	9	0.44	369
+//path#appos|->appos->secretary->prep->in->pobj->|pobj => REL$/people/person/place_of_birth
+
+//650	0.11	9	0.56	639
+//path#appos|->appos->politician->nn->|nn => REL$/people/person/religion
+
+//651	0.11	9	0.51	485
+//path#rcmod|->rcmod->spend->nsubj->|nsubj => REL$/book/author/works_written
+
+//652	0.11	9	0.74	220
+//path#rcmod|->rcmod->found->prep->by->pobj->|pobj => REL$/business/company/founders
+
+//653	0.11	9	0.58	325
+//path#rcmod|->rcmod->put->nsubj->|nsubj => REL$/film/film/produced_by
+
+//654	0.11	9	0.57	390
+//path#nsubj|<-nsubj<-show->nsubj->|nsubj => REL$/film/film/produced_by
+
+//655	0.11	9	0.56	220
+//path#rcmod|->rcmod->found->prep->by->pobj->|pobj => REL$/architecture/structure/architect
+
+//656	0.11	163	0.60	1009
+//path#nsubj|<-nsubj<-acquire->dobj->|dobj => REL$/organization/parent/child
+
+//657	0.11	251	0.61	1288
+//path#appos|->appos->professor->nn->|nn => REL$/business/person/company
+
+//658	0.11	28	0.68	367
+//path#appos|->appos->producer->prep->of->pobj->|pobj => REL$/business/person/company
+
+//659	0.11	28	0.53	377
+//path#appos|->appos->representative->prep->from->pobj->|pobj => REL$/people/person/place_of_birth
+
+//660	0.11	28	0.57	367
+//path#appos|->appos->producer->prep->of->pobj->|pobj => REL$/book/author/works_written
+
+//661	0.11	28	0.88	374
+//path#appos|->appos->director->dep->|dep:INV => REL$/film/film/produced_by
+
+//662	0.11	75	0.67	666
+//path#rcmod|->rcmod->be->prep->from->pobj->|pobj => REL$/people/person/place_of_birth
+
+//663	0.11	47	0.48	542
+//path#appos|->appos->scholar->nn->|nn => REL$/book/author/works_written
+
+//664	0.11	19	0.49	714
+//path#pobj|<-pobj<-from<-prep<-come->prep->to->pobj->|pobj => REL$/location/location/containedby
+
+//665	0.11	19	0.57	304
+//path#nsubj|<-nsubj<-give->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//666	0.11	19	0.52	381
+//path#dep|->dep->be->prep->with->pobj->|pobj => REL$/location/location/containedby
+
+//667	0.10	86	0.67	898
+//path#poss|<-poss<-acquisition->prep->of->pobj->|pobj => REL$/organization/parent/child
+
+//668	0.10	39	0.62	615
+//path#appos|->appos->head->prep->at->pobj->|pobj => REL$/business/person/company
+
+//669	0.10	39	0.73	857
+//path#poss|<-poss<-purchase->prep->of->pobj->|pobj => REL$/organization/parent/child
+
+//670	0.10	39	0.60	514
+//path#poss|<-poss<-series->nn->|nn => REL$/book/author/works_written
+
+//671	0.10	322	0.57	1274
+//path#appos|->appos->president->poss->|poss => REL$/business/person/company
+
+//672	0.10	88	0.67	704
+//path#rcmod|->rcmod->run->dobj->|dobj => REL$/business/person/company
+
+//673	0.10	59	0.52	555
+//path#nn|<-nn<-center->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//674	0.10	59	0.56	554
+//path#dobj|<-dobj<-represent->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//675	0.10	20	0.81	252
+//path#poss|<-poss<-father->appos->|appos => REL$/people/person/parents
+
+//676	0.10	40	0.68	1172
+//path#pobj|<-pobj<-in<-prep<-live->prep->in->pobj->|pobj => REL$/location/neighborhood/neighborhood_of
+
+//677	0.10	20	0.48	1977
+//path#nn|<-nn<-suburb->prep->of->pobj->|pobj:INV => REL$/location/neighborhood/neighborhood_of
+
+//678	0.10	10	0.48	564
+//path#nsubj|<-nsubj<-instruct->dobj->|dobj => REL$/business/person/company
+
+//679	0.10	20	0.61	1515
+//path#appos|->appos->researcher->prep->at->pobj->|pobj => REL$/business/person/company
+
+//680	0.10	30	0.40	349
+//path#appos|->appos->editor->prep->of->pobj->magazine->nn->|nn => REL$/business/person/company
+
+//681	0.10	10	0.71	178
+//path#appos|->appos->banker->nn->|nn => REL$/business/person/company
+
+//682	0.10	10	0.52	254
+//path#poss|<-poss<-family->nn->|nn => REL$/location/location/containedby
+
+//683	0.10	20	0.55	477
+//path#nsubj|<-nsubj<-get->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//684	0.10	10	0.58	315
+//path#nsubj|<-nsubj<-have->prep->from->pobj->|pobj => REL$/location/location/containedby
+
+//685	0.10	10	0.46	933
+//path#nsubj|<-nsubj<-compete->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//686	0.10	10	0.48	414
+//path#nn|<-nn<-government->prep->of->pobj->|pobj => REL$/location/location/containedby
+
+//687	0.10	30	0.46	1029
+//path#dobj|<-dobj<-choose->prep->over->pobj->|pobj => REL$/location/location/containedby
+
+//688	0.10	10	0.49	557
+//path#appos|->appos->woman->nn->|nn => REL$/location/location/containedby
+
+//689	0.10	10	0.61	194
+//path#appos|->appos->estate->nn->|nn => REL$/location/location/containedby
+
+//690	0.10	20	0.46	968
+//path#pobj|<-pobj<-to<-prep<-flight->prep->from->pobj->|pobj => REL$/location/location/containedby
+
+//691	0.10	10	0.59	275
+//path#nsubj|<-nsubj<-find->nsubj->|nsubj => REL$/location/location/containedby
+
+//692	0.10	10	0.52	633
+//path#poss|<-poss<-answer->prep->to->pobj->|pobj => REL$/location/location/containedby
+
+//693	0.10	10	0.50	518
+//path#rcmod|->rcmod->get->nsubj->|nsubj => REL$/location/location/containedby
+
+//694	0.10	10	0.54	490
+//path#dobj|<-dobj<-sue->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//695	0.10	10	0.54	292
+//path#nsubj|<-nsubj<-call->nsubj->|nsubj => REL$/location/location/containedby
+
+//696	0.10	10	0.56	341
+//path#dobj|<-dobj<-call->prep->in->pobj->|pobj => REL$/people/deceased_person/place_of_death
+
+//697	0.10	10	0.63	306
+//path#appos|->appos->man->prep->in->pobj->|pobj => REL$/people/person/nationality
+
+//698	0.10	10	0.61	469
+//path#appos|->appos->negotiator->poss->|poss => REL$/people/person/nationality
+
+//699	0.10	10	0.60	354
+//path#nsubj|<-nsubj<-perform->prep->in->pobj->|pobj => REL$/people/person/nationality
+
+//700	0.10	20	0.54	403
+//path#appos|->appos->leader->prep->from->pobj->|pobj => REL$/people/person/nationality
+
+//701	0.10	10	0.61	424
+//path#appos|->appos->immigrant->prep->from->pobj->|pobj => REL$/people/person/place_of_birth
+
+//702	0.10	10	0.54	306
+//path#appos|->appos->man->prep->in->pobj->|pobj => REL$/people/person/place_of_birth
+
+//703	0.10	10	0.60	341
+//path#nsubj|<-nsubj<-sit->prep->in->pobj->|pobj => REL$/people/person/place_of_birth
+
+//704	0.10	20	0.41	806
+//path#appos|->appos->ambassador->poss->|poss => REL$/people/person/place_of_birth
+
+//705	0.10	10	0.63	557
+//path#appos|->appos->woman->nn->|nn => REL$/people/person/place_of_birth
+
+//706	0.10	10	0.58	234
+//path#appos|->appos->legislator->prep->from->pobj->|pobj => REL$/people/person/place_of_birth
+
+//707	0.10	10	0.61	417
+//path#poss|<-poss<-apartment->nn->|nn => REL$/people/person/place_of_birth
+
+//708	0.10	10	0.60	178
+//path#appos|->appos->banker->nn->|nn => REL$/people/person/place_of_birth
+
+//709	0.10	10	0.56	151
+//path#appos|->appos->graduate->prep->of->pobj->|pobj => REL$/people/person/place_of_birth
+
+//710	0.10	10	0.50	626
+//path#appos|->appos->judge->prep->in->pobj->|pobj => REL$/people/person/place_of_birth
+
+//711	0.10	10	0.49	510
+//path#nsubjpass|<-nsubjpass<-sign->prep->by->pobj->|pobj => REL$/film/film/directed_by
+
+//712	0.10	10	0.54	491
+//path#partmod|->partmod->make->prep->by->pobj->|pobj => REL$/film/film/directed_by
+
+//713	0.10	10	0.66	326
+//path#nsubj|<-nsubj<-convert->prep->to->pobj->|pobj => REL$/people/person/religion
+
+//714	0.10	10	0.69	124
+//path#appos|->appos->father->prep->of->pobj->|pobj => REL$/book/author/works_written
+
+//715	0.10	10	0.49	453
+//path#nsubj|<-nsubj<-call->prep->in->pobj->|pobj => REL$/book/author/works_written
+
+//716	0.10	10	0.57	252
+//path#nsubj|<-nsubj<-do->nsubj->|nsubj => REL$/book/author/works_written
+
+//717	0.10	10	0.91	855
+//path#nn|<-nn<-book->dep->|dep => REL$/book/author/works_written
+
+//718	0.10	10	0.52	378
+//path#nsubj|<-nsubj<-found->dobj->|dobj => REL$/book/author/works_written
+
+//719	0.10	10	0.58	241
+//path#nsubj|<-nsubj<-sing->dobj->|dobj => REL$/book/author/works_written
+
+//720	0.10	10	0.88	376
+//path#rcmod|->rcmod->direct->prep->by->pobj->|pobj => REL$/film/film/produced_by
+
+//721	0.10	41	0.45	522
+//path#appos|->appos->west->prep->of->pobj->|pobj => REL$/location/location/containedby
+
+//722	0.10	41	0.56	471
+//path#nn|<-nn<-suburb->prep->of->pobj->|pobj => REL$/location/location/containedby
+
+//723	0.10	41	0.70	765
+//path#poss|<-poss<-division->nn->|nn => REL$/organization/parent/child
+
+//724	0.10	31	0.55	378
+//path#nn|<-nn<-house->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//725	0.10	31	0.54	487
+//path#nsubj|<-nsubj<-end->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//726	0.10	21	0.60	402
+//path#appos|->appos->administrator->prep->of->pobj->|pobj => REL$/business/person/company
+
+//727	0.10	21	0.43	1274
+//path#appos|->appos->winner->prep->over->pobj->|pobj => REL$/location/location/containedby
+
+//728	0.10	21	0.47	830
+//path#poss|<-poss<-policy->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//729	0.10	21	0.71	552
+//path#rcmod|->rcmod->operate->dobj->|dobj => REL$/organization/parent/child
+
+//730	0.10	21	0.64	352
+//path#appos|->appos->center->prep->from->pobj->|pobj => REL$/people/person/nationality
+
+//731	0.09	64	0.34	777
+//path#rcmod|->rcmod->part->prep->of->pobj->|pobj => REL$/location/location/containedby
+
+//732	0.09	32	0.51	390
+//path#poss|<-poss<-home->nn->|nn => REL$/location/location/containedby
+
+//733	0.09	32	0.71	791
+//path#appos|->appos->parent->poss->|poss => REL$/organization/parent/child
+
+//734	0.09	75	0.40	406
+//path#appos|->appos->restaurant->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//735	0.09	43	0.82	663
+//path#dobj|<-dobj<-face->prep->at->pobj->|pobj => REL$/sports/sports_team/arena_stadium
+
+//736	0.09	98	0.87	552
+//path#appos|->appos->owner->poss->|poss => REL$/sports/sports_team_owner/teams_owned
+
+//737	0.09	11	0.40	1031
+//path#amod|<-amod<-station->prep->in->pobj->|pobj => REL$/location/neighborhood/neighborhood_of
+
+//738	0.09	11	0.59	323
+//path#rcmod|->rcmod->be->nsubj->|nsubj:INV => REL$/location/neighborhood/neighborhood_of
+
+//739	0.09	11	0.83	466
+//path#pobj|<-pobj<-on<-prep<-be->prep->in->pobj->|pobj => REL$/location/neighborhood/neighborhood_of
+
+//740	0.09	11	0.56	638
+//path#rcmod|->rcmod->hold->prep->at->pobj->|pobj => REL$/business/person/company
+
+//741	0.09	11	0.64	264
+//path#appos|->appos->producer->prep->for->pobj->|pobj => REL$/business/person/company
+
+//742	0.09	11	0.64	378
+//path#rcmod|->rcmod->run->prep->at->pobj->|pobj => REL$/business/person/company
+
+//743	0.09	11	0.52	187
+//path#nsubj|<-nsubj<-correspondent->nn->|nn => REL$/business/person/company
+
+//744	0.09	11	0.64	1028
+//path#appos|->appos->executive->prep->with->pobj->|pobj => REL$/business/person/company
+
+//745	0.09	11	0.55	385
+//path#nsubj|<-nsubj<-switch->prep->to->pobj->|pobj => REL$/business/person/company
+
+//746	0.09	22	0.52	629
+//path#nsubj|<-nsubj<-visit->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//747	0.09	11	0.42	501
+//path#appos|->appos->town->prep->near->pobj->|pobj => REL$/location/location/containedby
+
+//748	0.09	11	0.60	277
+//path#nn|<-nn<-casino->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//749	0.09	11	0.53	532
+//path#rcmod|->rcmod->fight->dobj->|dobj => REL$/location/location/containedby
+
+//750	0.09	11	0.58	254
+//path#rcmod|->rcmod->direct->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//751	0.09	11	0.50	641
+//path#nsubj|<-nsubj<-begin->prep->to->pobj->|pobj => REL$/location/location/containedby
+
+//752	0.09	11	0.55	253
+//path#poss|<-poss<-house->nn->|nn => REL$/location/location/containedby
+
+//753	0.09	11	0.54	304
+//path#rcmod|->rcmod->head->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//754	0.09	11	0.52	521
+//path#nsubj|<-nsubj<-lead->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//755	0.09	22	0.47	178
+//path#nn|<-nn<-region->prep->of->pobj->|pobj:INV => REL$/location/location/containedby
+
+//756	0.09	11	0.50	634
+//path#nsubj|<-nsubj<-native->prep->of->pobj->|pobj => REL$/location/location/containedby
+
+//757	0.09	11	0.58	347
+//path#nsubj|<-nsubj<-return->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//758	0.09	22	0.53	534
+//path#dobj|<-dobj<-return->prep->to->pobj->|pobj => REL$/location/location/containedby
+
+//759	0.09	22	0.58	412
+//path#pobj|<-pobj<-of<-prep<-director->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//760	0.09	11	0.49	521
+//path#nsubjpass|<-nsubjpass<-admit->prep->to->pobj->|pobj => REL$/location/location/containedby
+
+//761	0.09	11	0.54	488
+//path#prep|->prep->in->pobj->region->nn->|nn => REL$/location/location/containedby
+
+//762	0.09	11	0.36	484
+//path#rcmod|->rcmod->part->prep->of->pobj->|pobj:INV => REL$/location/location/containedby
+
+//763	0.09	11	0.70	582
+//path#nsubj|<-nsubj<-make->dobj->bid->prep->for->pobj->|pobj => REL$/organization/parent/child
+
+//764	0.09	11	0.47	1260
+//path#nn|<-nn<-president->appos->|appos:INV => REL$/people/person/nationality
+
+//765	0.09	11	0.62	342
+//path#nsubj|<-nsubj<-star->prep->in->pobj->|pobj => REL$/people/person/nationality
+
+//766	0.09	11	0.52	428
+//path#nsubj|<-nsubj<-have->dobj->goal->prep->for->pobj->|pobj => REL$/people/person/nationality
+
+//767	0.09	11	0.59	379
+//path#appos|->appos->rookie->prep->from->pobj->|pobj => REL$/people/person/nationality
+
+//768	0.09	11	0.57	316
+//path#appos|->appos->agent->prep->from->pobj->|pobj => REL$/people/person/nationality
+
+//769	0.09	11	0.60	323
+//path#rcmod|->rcmod->be->nsubj->|nsubj:INV => REL$/people/person/nationality
+
+//770	0.09	11	0.51	767
+//path#rcmod|->rcmod->flee->prep->to->pobj->|pobj => REL$/people/person/nationality
+
+//771	0.09	11	0.57	238
+//path#nsubj|<-nsubj<-ambassador->prep->to->pobj->|pobj => REL$/people/person/nationality
+
+//772	0.09	11	0.56	286
+//path#dep|<-dep<-name->prep->in->pobj->|pobj => REL$/people/person/place_of_birth
+
+//773	0.09	11	0.57	254
+//path#rcmod|->rcmod->direct->prep->in->pobj->|pobj => REL$/people/person/place_of_birth
+
+//774	0.09	11	0.61	379
+//path#appos|->appos->rookie->prep->from->pobj->|pobj => REL$/people/person/place_of_birth
+
+//775	0.09	11	0.57	304
+//path#rcmod|->rcmod->head->prep->in->pobj->|pobj => REL$/people/person/place_of_birth
+
+//776	0.09	11	0.53	292
+//path#appos|->appos->strategist->prep->in->pobj->|pobj => REL$/people/person/place_of_birth
+
+//777	0.09	33	0.68	1128
+//path#nn|<-nn<-play->prep->at->pobj->|pobj => REL$/sports/sports_team/arena_stadium
+
+//778	0.09	11	0.58	323
+//path#rcmod|->rcmod->be->nsubj->|nsubj:INV => REL$/sports/sports_team/arena_stadium
+
+//779	0.09	22	0.51	444
+//path#nsubj|<-nsubj<-describe->prep->in->pobj->|pobj => REL$/book/author/works_written
+
+//780	0.09	11	0.56	293
+//path#nsubj|<-nsubj<-remember->dobj->|dobj => REL$/book/author/works_written
+
+//781	0.09	11	0.38	484
+//path#rcmod|->rcmod->part->prep->of->pobj->|pobj:INV => REL$/book/author/works_written
+
+//782	0.09	11	0.58	179
+//path#appos|->appos->widow->prep->of->pobj->|pobj => REL$/business/company/founders
+
+//783	0.09	134	0.42	442
+//path#appos|->appos->suburb->nn->|nn => REL$/location/location/containedby
+
+//784	0.09	45	0.43	999
+//path#pobj|<-pobj<-from<-prep<-trip->prep->to->pobj->|pobj => REL$/location/location/containedby
+
+//785	0.09	34	0.52	486
+//path#poss|<-poss<-operation->nn->|nn => REL$/location/location/containedby
+
+//786	0.09	68	0.49	576
+//path#nn|<-nn<-campaign->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//787	0.09	34	0.53	540
+//path#appos|->appos->member->prep->from->pobj->|pobj => REL$/people/person/place_of_birth
+
+//788	0.09	80	0.54	602
+//path#dobj|<-dobj<-join->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//789	0.09	46	0.49	277
+//path#appos|->appos->correspondent->nn->|nn => REL$/business/person/company
+
+//790	0.09	23	0.54	478
+//path#nsubj|<-nsubj<-see->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//791	0.09	46	0.50	715
+//path#dobj|<-dobj<-connect->prep->to->pobj->|pobj => REL$/location/location/containedby
+
+//792	0.09	23	0.58	170
+//path#poss|<-poss<-opera->dep->|dep => REL$/book/author/works_written
+
+//793	0.09	23	0.88	380
+//path#nsubjpass|<-nsubjpass<-direct->prep->by->pobj->|pobj => REL$/film/film/produced_by
+
+//794	0.09	81	0.59	1128
+//path#appos|->appos->president->prep->for->pobj->|pobj => REL$/business/person/company
+
+//795	0.09	70	0.44	828
+//path#appos|->appos->center->poss->|poss => REL$/location/location/containedby
+
+//796	0.09	82	0.62	1222
+//path#appos|->appos->economist->nn->|nn => REL$/business/person/company
+
+//797	0.09	47	0.39	329
+//path#appos|->appos->editor->poss->|poss => REL$/business/person/company
+
+//798	0.08	488	0.43	871
+//path#nsubj|<-nsubj<-be->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//799	0.08	12	0.74	795
+//path#appos|->appos->home->nn->|nn => REL$/location/neighborhood/neighborhood_of
+
+//800	0.08	12	0.49	439
+//path#pobj|<-pobj<-in<-prep<-meet->prep->with->pobj->|pobj:INV => REL$/business/person/company
+
+//801	0.08	48	0.53	394
+//path#appos|->appos->general->prep->of->pobj->|pobj => REL$/business/person/company
+
+//802	0.08	24	0.50	305
+//path#appos|->appos->lawyer->prep->with->pobj->|pobj => REL$/business/person/company
+
+//803	0.08	12	0.50	388
+//path#poss|<-poss<-firm->appos->|appos => REL$/business/person/company
+
+//804	0.08	12	0.59	305
+//path#appos|->appos->journalist->nn->|nn => REL$/business/person/company
+
+//805	0.08	12	0.48	344
+//path#appos|->appos->analyst->poss->|poss => REL$/business/person/company
+
+//806	0.08	12	0.66	914
+//path#nsubj|<-nsubj<-head->dobj->|dobj => REL$/business/person/company
+
+//807	0.08	12	0.55	620
+//path#dobj|<-dobj<-replace->prep->at->pobj->|pobj => REL$/business/person/company
+
+//808	0.08	12	0.53	270
+//path#prep|->prep->of->pobj->state->nn->|nn => REL$/business/person/company
+
+//809	0.08	12	0.70	495
+//path#appos|->appos->counsel->prep->of->pobj->|pobj => REL$/business/person/company
+
+//810	0.08	12	0.51	424
+//path#rcmod|->rcmod->begin->prep->at->pobj->|pobj => REL$/business/person/company
+
+//811	0.08	12	0.49	247
+//path#appos|->appos->counsel->prep->to->pobj->|pobj => REL$/business/person/company
+
+//812	0.08	12	0.51	439
+//path#pobj|<-pobj<-in<-prep<-meet->prep->with->pobj->|pobj:INV => REL$/location/location/containedby
+
+//813	0.08	36	0.51	569
+//path#rcmod|->rcmod->return->prep->to->pobj->|pobj => REL$/location/location/containedby
+
+//814	0.08	12	0.56	275
+//path#nsubj|<-nsubj<-introduce->prep->to->pobj->|pobj => REL$/location/location/containedby
+
+//815	0.08	24	0.56	622
+//path#rcmod|->rcmod->take->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//816	0.08	12	0.56	405
+//path#appos|->appos->drive->prep->from->pobj->|pobj => REL$/location/location/containedby
+
+//817	0.08	12	0.46	406
+//path#appos|->appos->director->prep->of->pobj->office->nn->|nn => REL$/location/location/containedby
+
+//818	0.08	36	0.50	839
+//path#nsubj|<-nsubj<-stay->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//819	0.08	24	0.50	424
+//path#nn|<-nn<-agency->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//820	0.08	12	0.51	373
+//path#appos|->appos->state->nn->|nn => REL$/location/location/containedby
+
+//821	0.08	12	0.63	499
+//path#pobj|<-pobj<-at<-prep<-run->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//822	0.08	12	0.57	229
+//path#nn|<-nn<-concert->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//823	0.08	12	0.55	270
+//path#prep|->prep->of->pobj->state->nn->|nn => REL$/location/location/containedby
+
+//824	0.08	12	0.42	397
+//path#pobj|<-pobj<-at<-prep<-chef->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//825	0.08	12	0.48	590
+//path#nsubj|<-nsubj<-condemn->dobj->|dobj => REL$/location/location/containedby
+
+//826	0.08	12	0.52	269
+//path#appos|->appos->catcher->poss->|poss => REL$/location/location/containedby
+
+//827	0.08	12	0.54	441
+//path#dobj|<-dobj<-follow->prep->to->pobj->|pobj => REL$/location/location/containedby
+
+//828	0.08	24	0.54	319
+//path#dep|->dep->win->nsubj->|nsubj => REL$/location/location/containedby
+
+//829	0.08	12	0.40	489
+//path#nn|<-nn<-senator->nn->|nn => REL$/location/location/containedby
+
+//830	0.08	12	0.61	388
+//path#poss|<-poss<-firm->appos->|appos => REL$/organization/parent/child
+
+//831	0.08	12	0.54	439
+//path#pobj|<-pobj<-in<-prep<-meet->prep->with->pobj->|pobj:INV => REL$/people/deceased_person/place_of_death
+
+//832	0.08	24	0.55	296
+//path#appos|->appos->home->prep->of->pobj->|pobj:INV => REL$/people/deceased_person/place_of_death
+
+//833	0.08	12	0.40	989
+//path#rcmod|->rcmod->president->poss->|poss => REL$/people/deceased_person/place_of_death
+
+//834	0.08	12	0.48	406
+//path#appos|->appos->director->prep->of->pobj->office->nn->|nn => REL$/people/person/nationality
+
+//835	0.08	12	0.60	273
+//path#appos|->appos->manager->prep->in->pobj->|pobj => REL$/people/person/nationality
+
+//836	0.08	12	0.51	989
+//path#rcmod|->rcmod->president->poss->|poss => REL$/people/person/nationality
+
+//837	0.08	24	0.55	296
+//path#appos|->appos->home->prep->of->pobj->|pobj:INV => REL$/people/person/place_of_birth
+
+//838	0.08	12	0.55	539
+//path#appos|->appos->assemblyman->prep->from->pobj->|pobj => REL$/people/person/place_of_birth
+
+//839	0.08	24	0.56	599
+//path#nn|<-nn<-program->prep->in->pobj->|pobj => REL$/broadcast/broadcast/area_served
+
+//840	0.08	12	0.54	129
+//path#poss|<-poss<-column->nn->|nn => REL$/book/author/works_written
+
+//841	0.08	169	0.59	1486
+//path#appos|->appos->expert->prep->at->pobj->|pobj => REL$/business/person/company
+
+//842	0.08	206	0.57	1136
+//path#appos|->appos->president->nn->|nn => REL$/business/person/company
+
+//843	0.08	245	0.52	1173
+//path#appos|->appos->director->prep->at->pobj->|pobj => REL$/business/person/company
+
+//844	0.08	49	0.60	1434
+//path#appos|->appos->specialist->prep->at->pobj->|pobj => REL$/business/person/company
+
+//845	0.08	37	0.44	463
+//path#appos|->appos->correspondent->prep->for->pobj->|pobj => REL$/business/person/company
+
+//846	0.08	62	0.47	631
+//path#appos|->appos->leader->prep->in->pobj->|pobj => REL$/people/person/nationality
+
+//847	0.08	137	0.51	636
+//path#rcmod|->rcmod->be->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//848	0.08	25	0.60	461
+//path#nn|<-nn<-school->appos->|appos => REL$/location/location/containedby
+
+//849	0.08	25	0.49	757
+//path#nsubj|<-nsubj<-announce->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//850	0.08	25	0.50	511
+//path#nsubj|<-nsubj<-transfer->prep->to->pobj->|pobj => REL$/location/location/containedby
+
+//851	0.08	25	0.51	580
+//path#poss|<-poss<-entry->prep->into->pobj->|pobj => REL$/location/location/containedby
+
+//852	0.08	25	0.56	515
+//path#dobj|<-dobj<-take->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//853	0.08	25	0.47	1027
+//path#dep|->dep->president->prep->of->pobj->|pobj => REL$/people/person/nationality
+
+//854	0.08	25	0.36	480
+//path#appos|->appos->spokesman->poss->|poss => REL$/people/person/nationality
+
+//855	0.08	75	0.83	617
+//path#pobj|<-pobj<-over<-prep<-victory->prep->at->pobj->|pobj => REL$/sports/sports_team/arena_stadium
+
+//856	0.08	25	0.79	818
+//path#nsubj|<-nsubj<-defeat->prep->at->pobj->|pobj => REL$/sports/sports_team/arena_stadium
+
+//857	0.08	25	0.59	332
+//path#pobj|<-pobj<-to<-prep<-go->prep->for->pobj->|pobj => REL$/book/author/works_written
+
+//858	0.08	25	0.53	448
+//path#partmod|->partmod->control->prep->by->pobj->|pobj => REL$/business/company/founders
+
+//859	0.08	100	0.88	378
+//path#partmod|->partmod->direct->prep->by->pobj->|pobj => REL$/film/film/produced_by
+
+//860	0.08	177	0.60	1381
+//path#appos|->appos->economist->prep->at->pobj->|pobj => REL$/business/person/company
+
+//861	0.08	76	0.67	536
+//path#nsubj|<-nsubj<-grow->prep->in->pobj->|pobj => REL$/people/person/place_of_birth
+
+//862	0.08	76	0.80	719
+//path#pobj|<-pobj<-to<-prep<-loss->prep->at->pobj->|pobj => REL$/sports/sports_team/arena_stadium
+
+//863	0.08	140	0.47	861
+//path#nsubj|<-nsubj<-fly->prep->to->pobj->|pobj => REL$/location/location/containedby
+
+//864	0.08	26	0.52	304
+//path#poss|<-poss<-show->nn->|nn => REL$/business/person/company
+
+//865	0.08	13	0.55	404
+//path#nsubjpass|<-nsubjpass<-hire->prep->by->pobj->|pobj => REL$/business/person/company
+
+//866	0.08	13	0.58	307
+//path#appos|->appos->counsel->poss->|poss => REL$/business/person/company
+
+//867	0.08	13	0.64	435
+//path#rcmod|->rcmod->oversee->dobj->|dobj => REL$/business/person/company
+
+//868	0.08	13	0.56	790
+//path#appos|->appos->official->prep->at->pobj->|pobj => REL$/business/person/company
+
+//869	0.08	13	0.44	492
+//path#poss|<-poss<-governor->appos->|appos:INV => REL$/business/person/company
+
+//870	0.08	13	0.51	364
+//path#nsubj|<-nsubj<-turn->prep->into->pobj->|pobj => REL$/business/person/company
+
+//871	0.08	13	0.64	271
+//path#appos|->appos->partner->nn->|nn => REL$/business/person/company
+
+//872	0.08	13	0.63	1119
+//path#nsubj|<-nsubj<-resign->prep->as->pobj->president->prep->of->pobj->|pobj => REL$/business/person/company
+
+//873	0.08	13	0.57	309
+//path#nsubjpass|<-nsubjpass<-arrest->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//874	0.08	13	0.52	193
+//path#appos|->appos->street->dep->|dep => REL$/location/location/containedby
+
+//875	0.08	13	0.54	279
+//path#rcmod|->rcmod->lead->prep->to->pobj->|pobj => REL$/location/location/containedby
+
+//876	0.08	13	0.49	550
+//path#rcmod|->rcmod->lead->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//877	0.08	13	0.49	268
+//path#appos|->appos->representative->prep->to->pobj->|pobj => REL$/location/location/containedby
+
+//878	0.08	13	0.46	802
+//path#advmod|->advmod->also->dep->of->pobj->|pobj => REL$/location/location/containedby
+
+//879	0.08	13	0.50	380
+//path#appos|->appos->safety->nn->|nn => REL$/location/location/containedby
+
+//880	0.08	26	0.47	802
+//path#nsubj|<-nsubj<-like->dobj->|dobj => REL$/location/location/containedby
+
+//881	0.08	13	0.45	492
+//path#poss|<-poss<-governor->appos->|appos:INV => REL$/location/location/containedby
+
+//882	0.08	13	0.55	310
+//path#rcmod|->rcmod->make->dobj->debut->nn->|nn => REL$/location/location/containedby
+
+//883	0.08	13	0.62	198
+//path#nn|<-nn<-theater->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//884	0.08	13	0.47	355
+//path#rcmod|->rcmod->secretary->poss->|poss => REL$/location/location/containedby
+
+//885	0.08	13	0.67	474
+//path#poss|<-poss<-site->nn->|nn => REL$/organization/parent/child
+
+//886	0.08	13	0.71	599
+//path#nsubj|<-nsubj<-purchase->dobj->|dobj => REL$/organization/parent/child
+
+//887	0.08	13	0.66	309
+//path#nsubjpass|<-nsubjpass<-arrest->prep->in->pobj->|pobj => REL$/people/deceased_person/place_of_death
+
+//888	0.08	13	0.60	509
+//path#appos|->appos->resident->prep->of->pobj->|pobj => REL$/people/deceased_person/place_of_death
+
+//889	0.08	26	0.55	386
+//path#nsubj|<-nsubj<-win->nsubj->|nsubj => REL$/people/person/nationality
+
+//890	0.08	13	0.60	550
+//path#rcmod|->rcmod->lead->prep->in->pobj->|pobj => REL$/people/person/nationality
+
+//891	0.08	13	0.61	140
+//path#appos|->appos->painter->amod->|amod => REL$/people/person/nationality
+
+//892	0.08	13	0.55	511
+//path#appos|->appos->junior->prep->from->pobj->|pobj => REL$/people/person/nationality
+
+//893	0.08	13	0.54	509
+//path#appos|->appos->resident->prep->of->pobj->|pobj => REL$/people/person/nationality
+
+//894	0.08	13	0.59	251
+//path#nsubj|<-nsubj<-shoot->dobj->|dobj => REL$/people/person/nationality
+
+//895	0.08	13	0.51	492
+//path#poss|<-poss<-governor->appos->|appos:INV => REL$/people/person/nationality
+
+//896	0.08	13	0.53	450
+//path#nsubj|<-nsubj<-grab->dobj->|dobj => REL$/people/person/nationality
+
+//897	0.08	39	0.56	388
+//path#poss|<-poss<-house->prep->in->pobj->|pobj => REL$/people/person/place_of_birth
+
+//898	0.08	13	0.51	665
+//path#rcmod|->rcmod->govern->dobj->|dobj => REL$/people/person/place_of_birth
+
+//899	0.08	13	0.55	143
+//path#appos|->appos->band->prep->from->pobj->|pobj => REL$/people/person/place_of_birth
+
+//900	0.08	13	0.48	355
+//path#rcmod|->rcmod->secretary->poss->|poss => REL$/people/person/place_of_birth
+
+//901	0.08	13	0.35	673
+//path#appos|->appos->branch->prep->of->pobj->|pobj => REL$/people/person/religion
+
+//902	0.08	13	0.56	251
+//path#nsubj|<-nsubj<-shoot->dobj->|dobj => REL$/book/author/works_written
+
+//903	0.08	40	0.44	1070
+//path#pobj|<-pobj<-from<-prep<-route->prep->to->pobj->|pobj => REL$/location/location/containedby
+
+//904	0.07	174	0.58	1122
+//path#appos|->appos->chairman->nn->|nn => REL$/business/person/company
+
+//905	0.07	27	0.62	628
+//path#nsubj|<-nsubj<-have->dobj->|dobj:INV => REL$/location/neighborhood/neighborhood_of
+
+//906	0.07	27	0.67	794
+//path#nsubj|<-nsubj<-chairman->prep->of->pobj->|pobj => REL$/business/person/company
+
+//907	0.07	27	0.58	509
+//path#nn|<-nn<-family->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//908	0.07	27	0.48	928
+//path#nn|<-nn<-victory->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//909	0.07	27	0.51	628
+//path#nsubj|<-nsubj<-have->dobj->|dobj:INV => REL$/people/person/place_of_birth
+
+//910	0.07	27	0.48	647
+//path#pobj|<-pobj<-to<-prep<-send->prep->in->pobj->|pobj => REL$/people/person/place_of_birth
+
+//911	0.07	27	0.53	395
+//path#nsubj|<-nsubj<-have->dep->|dep => REL$/book/author/works_written
+
+//912	0.07	55	0.53	572
+//path#appos|->appos->congressman->prep->from->pobj->|pobj => REL$/people/person/place_of_birth
+
+//913	0.07	28	0.46	226
+//path#appos|->appos->attorney->prep->for->pobj->|pobj => REL$/business/person/company
+
+//914	0.07	14	0.51	125
+//path#rcmod|->rcmod->design->dobj->|dobj => REL$/business/person/company
+
+//915	0.07	28	0.56	297
+//path#appos|->appos->chief->prep->for->pobj->|pobj => REL$/business/person/company
+
+//916	0.07	14	0.67	545
+//path#appos|->appos->head->poss->|poss => REL$/business/person/company
+
+//917	0.07	14	0.51	350
+//path#nsubj|<-nsubj<-conduct->prep->at->pobj->|pobj => REL$/business/person/company
+
+//918	0.07	42	0.33	717
+//path#poss|<-poss<-company->appos->|appos => REL$/business/person/company
+
+//919	0.07	14	0.49	628
+//path#rcmod|->rcmod->director->prep->of->pobj->|pobj => REL$/business/person/company
+
+//920	0.07	14	0.46	723
+//path#nsubj|<-nsubj<-start->prep->at->pobj->|pobj => REL$/business/person/company
+
+//921	0.07	14	0.56	174
+//path#rcmod|->rcmod->cover->dobj->|dobj => REL$/location/location/containedby
+
+//922	0.07	14	0.55	430
+//path#nn|<-nn<-trial->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//923	0.07	14	0.45	458
+//path#nn|<-nn<-state->prep->of->pobj->|pobj => REL$/location/location/containedby
+
+//924	0.07	14	0.53	507
+//path#nsubj|<-nsubj<-use->prep->to->pobj->|pobj => REL$/location/location/containedby
+
+//925	0.07	14	0.61	273
+//path#nn|<-nn<-judge->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//926	0.07	14	0.52	534
+//path#nsubj|<-nsubj<-draw->prep->from->pobj->|pobj => REL$/location/location/containedby
+
+//927	0.07	14	0.53	586
+//path#nsubj|<-nsubj<-figure->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//928	0.07	14	0.60	351
+//path#rcmod|->rcmod->meet->nsubj->|nsubj => REL$/location/location/containedby
+
+//929	0.07	14	0.54	390
+//path#appos|->appos->commander->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//930	0.07	14	0.45	219
+//path#appos|->appos->coordinator->prep->for->pobj->|pobj => REL$/location/location/containedby
+
+//931	0.07	14	0.51	591
+//path#nsubj|<-nsubj<-settle->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//932	0.07	14	0.57	772
+//path#pobj|<-pobj<-in<-prep<-school->appos->|appos => REL$/location/location/containedby
+
+//933	0.07	14	0.46	486
+//path#poss|<-poss<-group->nn->|nn => REL$/location/location/containedby
+
+//934	0.07	14	0.58	121
+//path#nsubj|<-nsubj<-write->prep->about->pobj->|pobj => REL$/people/deceased_person/place_of_death
+
+//935	0.07	14	0.56	390
+//path#appos|->appos->commander->prep->in->pobj->|pobj => REL$/people/deceased_person/place_of_death
+
+//936	0.07	14	0.51	296
+//path#nn|<-nn<-competition->prep->in->pobj->|pobj => REL$/people/person/nationality
+
+//937	0.07	14	0.50	612
+//path#appos|->appos->freshman->prep->from->pobj->|pobj => REL$/people/person/nationality
+
+//938	0.07	14	0.60	371
+//path#nsubj|<-nsubj<-travel->prep->from->pobj->|pobj => REL$/people/person/nationality
+
+//939	0.07	14	0.63	390
+//path#appos|->appos->commander->prep->in->pobj->|pobj => REL$/people/person/nationality
+
+//940	0.07	28	0.50	377
+//path#appos|->appos->representative->prep->from->pobj->|pobj => REL$/people/person/nationality
+
+//941	0.07	14	0.58	596
+//path#partmod|->partmod->visit->dobj->|dobj => REL$/people/person/nationality
+
+//942	0.07	14	0.60	107
+//path#appos|->appos->student->nn->|nn => REL$/people/person/place_of_birth
+
+//943	0.07	14	0.55	309
+//path#appos|->appos->member->prep->of->pobj->team->nn->|nn => REL$/people/person/place_of_birth
+
+//944	0.07	14	0.54	442
+//path#pobj|<-pobj<-in<-prep<-be->nsubj->|nsubj:INV => REL$/people/person/place_of_birth
+
+//945	0.07	14	0.62	371
+//path#nsubj|<-nsubj<-travel->prep->from->pobj->|pobj => REL$/people/person/place_of_birth
+
+//946	0.07	14	0.42	627
+//path#rcmod|->rcmod->leader->nn->|nn => REL$/people/person/place_of_birth
+
+//947	0.07	14	0.42	393
+//path#appos|->appos->publisher->nn->|nn => REL$/people/person/place_of_birth
+
+//948	0.07	14	0.46	277
+//path#appos|->appos->prosecutor->nn->|nn => REL$/people/person/place_of_birth
+
+//949	0.07	28	0.76	903
+//path#nsubj|<-nsubj<-beat->prep->at->pobj->|pobj => REL$/sports/sports_team/arena_stadium
+
+//950	0.07	14	0.79	723
+//path#nsubj|<-nsubj<-start->prep->at->pobj->|pobj => REL$/sports/sports_team/arena_stadium
+
+//951	0.07	28	0.55	1477
+//path#rcmod|->rcmod->include->dobj->|dobj:INV => REL$/film/film/directed_by
+
+//952	0.07	14	0.50	293
+//path#rcmod|->rcmod->have->nsubj->|nsubj:INV => REL$/book/author/works_written
+
+//953	0.07	14	0.60	156
+//path#poss|<-poss<-portrait->prep->of->pobj->|pobj => REL$/book/author/works_written
+
+//954	0.07	14	0.39	520
+//path#rcmod|->rcmod->write->prep->for->pobj->|pobj => REL$/book/author/works_written
+
+//955	0.07	28	0.55	1477
+//path#rcmod|->rcmod->include->dobj->|dobj:INV => REL$/film/film/produced_by
+
+//956	0.07	14	0.88	381
+//path#appos|->appos->director->prep->of->pobj->|pobj:INV => REL$/film/film/produced_by
+
+//957	0.07	14	0.30	381
+//path#appos|->appos->director->prep->of->pobj->|pobj:INV => REL$/architecture/structure/architect
+
+//958	0.07	283	0.50	833
+//path#appos|->appos->director->prep->of->pobj->|pobj => REL$/business/person/company
+
+//959	0.07	71	0.49	241
+//path#appos|<-appos<-son->prep->of->pobj->|pobj => REL$/location/location/containedby
+
+//960	0.07	43	0.56	668
+//path#nn|<-nn<-site->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//961	0.07	43	0.59	289
+//path#poss|<-poss<-version->prep->of->pobj->|pobj => REL$/book/author/works_written
+
+//962	0.07	72	0.70	586
+//path#nn|<-nn<-station->prep->in->pobj->|pobj => REL$/location/neighborhood/neighborhood_of
+
+//963	0.07	29	0.51	455
+//path#dobj|<-dobj<-win->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//964	0.07	58	0.44	479
+//path#advmod|->advmod->north->dep->of->pobj->|pobj => REL$/location/location/containedby
+
+//965	0.07	29	0.49	589
+//path#poss|<-poss<-meeting->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//966	0.07	29	0.60	203
+//path#rcmod|->rcmod->direct->dobj->|dobj => REL$/book/author/works_written
+
+//967	0.07	117	0.43	772
+//path#appos|->appos->native->nn->|nn => REL$/location/location/containedby
+
+//968	0.07	44	0.89	364
+//path#partmod|->partmod->write->prep->by->pobj->|pobj => REL$/film/film/produced_by
+
+//969	0.07	103	0.42	1173
+//path#pobj|<-pobj<-from<-prep<-flight->prep->to->pobj->|pobj => REL$/location/location/containedby
+
+//970	0.07	59	0.51	577
+//path#nsubj|<-nsubj<-make->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//971	0.07	15	0.52	593
+//path#nn|<-nn<-member->prep->in->pobj->|pobj => REL$/location/neighborhood/neighborhood_of
+
+//972	0.07	15	0.47	1803
+//path#nsubj|<-nsubj<-professor->appos->|appos:INV => REL$/location/neighborhood/neighborhood_of
+
+//973	0.07	15	0.45	979
+//path#dobj|<-dobj<-lead->prep->to->pobj->victory->prep->in->pobj->|pobj => REL$/location/neighborhood/neighborhood_of
+
+//974	0.07	15	0.50	99
+//path#pobj|<-pobj<-by<-prep<-produce<-dep<-director->dep->release->prep->by->pobj->|pobj => REL$/business/person/company
+
+//975	0.07	30	0.47	264
+//path#appos|->appos->general->poss->|poss => REL$/business/person/company
+
+//976	0.07	45	0.66	865
+//path#rcmod|->rcmod->chairman->prep->of->pobj->|pobj => REL$/business/person/company
+
+//977	0.07	15	0.53	592
+//path#poss|<-poss<-leader->appos->|appos:INV => REL$/business/person/company
+
+//978	0.07	15	0.43	543
+//path#rcmod|->rcmod->own->nsubj->|nsubj => REL$/business/person/company
+
+//979	0.07	15	0.49	503
+//path#poss|<-poss<-program->prep->in->pobj->|pobj => REL$/business/person/company
+
+//980	0.07	30	0.43	917
+//path#poss|<-poss<-policy->prep->toward->pobj->|pobj => REL$/location/location/containedby
+
+//981	0.07	60	0.50	764
+//path#nsubj|<-nsubj<-spend->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//982	0.07	15	0.59	286
+//path#nn|<-nn<-family->prep->of->pobj->|pobj => REL$/location/location/containedby
+
+//983	0.07	15	0.55	316
+//path#nsubj|<-nsubj<-offer->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//984	0.07	15	0.52	557
+//path#nsubj|<-nsubj<-dispatch->prep->to->pobj->|pobj => REL$/location/location/containedby
+
+//985	0.07	30	0.44	362
+//path#nsubj|<-nsubj<-governor->prep->of->pobj->|pobj => REL$/location/location/containedby
+
+//986	0.07	15	0.56	408
+//path#poss|<-poss<-vision->prep->of->pobj->|pobj => REL$/location/location/containedby
+
+//987	0.07	15	0.57	215
+//path#appos|->appos->club->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//988	0.07	15	0.55	350
+//path#nsubj|<-nsubj<-popular->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//989	0.07	15	0.50	616
+//path#nsubj|<-nsubj<-drive->prep->to->pobj->|pobj => REL$/location/location/containedby
+
+//990	0.07	15	0.49	418
+//path#poss|<-poss<-store->nn->|nn => REL$/location/location/containedby
+
+//991	0.07	15	0.50	514
+//path#nn|<-nn<-west->prep->of->pobj->|pobj => REL$/location/location/containedby
+
+//992	0.07	15	0.59	430
+//path#pobj|<-pobj<-to<-prep<-return->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//993	0.07	15	0.55	403
+//path#nsubj|<-nsubj<-win->dobj->control->prep->of->pobj->|pobj => REL$/organization/parent/child
+
+//994	0.07	15	0.49	592
+//path#poss|<-poss<-leader->appos->|appos:INV => REL$/people/deceased_person/place_of_death
+
+//995	0.07	15	0.55	439
+//path#rcmod|->rcmod->found->prep->in->pobj->|pobj => REL$/people/deceased_person/place_of_death
+
+//996	0.07	15	0.58	422
+//path#rcmod|->rcmod->help->dobj->|dobj => REL$/people/person/nationality
+
+//997	0.07	75	0.52	666
+//path#rcmod|->rcmod->be->prep->from->pobj->|pobj => REL$/people/person/nationality
+
+//998	0.07	15	0.40	1203
+//path#poss|<-poss<-chairman->appos->|appos:INV => REL$/people/person/nationality
+
+//999	0.07	15	0.58	436
+//path#appos|->appos->head->prep->in->pobj->|pobj => REL$/people/person/nationality
