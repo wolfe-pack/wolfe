@@ -100,11 +100,10 @@ object SubsampleExperiments extends App {
   Conf.add(OverrideConfig(Map("logFile" -> "wolfe-apps/data/out/experiments.log"), confPath + ".tmp", confPath))
 
   val series = Map(
-    //"mf.subsample" -> (0.1 to 1.0 by 0.1).toSeq
-    "mf.subsample" -> Seq(0.0001),
-    "mf.maxIter" -> Seq(10, 20),
-    "mf.optimizer" -> Seq("AdaGrad")
+    "mf.subsample" -> (0.1 to 1.0 by 0.1).toSeq,
+    "formulaeFile" -> Seq("None", "data/formulae/curated-50-100.txt")
   )
 
   RunSeriesOfExperiments(series, threads, confPath)
+  System.exit(0)
 }
