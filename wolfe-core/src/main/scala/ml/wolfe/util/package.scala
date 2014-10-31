@@ -83,7 +83,7 @@ package object util {
     def hasPath(path: String): Boolean = conf.hasPath(path)
   }
 
-  object OverrideConfig extends App {
+  object OverrideConfig {
     def apply(overrideWith: Map[String, Any], pathToNewConf: String = "conf/mf-overridden.conf", pathToOldConf: String = "conf/mf.conf"): Unit = {
       val conf = ConfigFactory.parseFile(new File(pathToOldConf)).entrySet().toString //string representations
                  .replaceAll("\"\\[|Config[^(]*\\(|\\]\"", "") //remove Config.*(
@@ -96,8 +96,14 @@ package object util {
       val fileWriter = new FileWriter(pathToNewConf)
       val newConfMap = overridden.toList.map { case (key, value) =>
         val keys = key.split("\\.").toList
-        if (keys.size > 1) (keys.head, keys.tail.mkString(".") + " = " + value)
-        else ("", keys.mkString(".") + " = " + value)
+        val escapedValue = value match {
+          case s: String => "\"" + s + "\""
+          case ss: Seq[String] => ss.map("\"" + _ + "\"")
+          case _ => value
+        }
+
+        if (keys.size > 1) (keys.head, keys.tail.mkString(".") + " = " + escapedValue)
+        else ("", keys.mkString(".") + " = " + escapedValue)
       }.groupBy(_._1).mapValues(_.map(_._2))
 
       newConfMap.keys.foreach(k => {
@@ -107,8 +113,6 @@ package object util {
 
       fileWriter.close()
     }
-
-    apply(Map("mf.subsample" -> 0.5, "mf.k" -> 50))
   }
 
   def getTimeString(seconds: Int): String = {

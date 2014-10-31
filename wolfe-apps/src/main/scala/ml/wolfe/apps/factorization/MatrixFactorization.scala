@@ -168,7 +168,7 @@ object MatrixFactorization extends App {
     import scala.sys.process._
     Process("pdflatex -interaction nonstopmode -shell-escape table.tex", new File(Conf.outDir.getAbsolutePath)).!!
 
-    if (Conf.hasPath("formulaeFile")) {
+    if (Conf.hasPath("formulaeFile") && Conf.getString("formulaeFile") != "None") {
       val formulaeFile = new File(Conf.getString("formulaeFile"))
       val lines = Source.fromFile(formulaeFile).getLines()
       val writer = new FileWriter(Conf.outDir.getAbsolutePath + "/" + formulaeFile.getAbsolutePath.split("/").last)
