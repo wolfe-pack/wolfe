@@ -632,7 +632,7 @@ object LoadNAACL extends App {
     }
 
     //loading formulae
-    if (Conf.hasPath("formulaeFile")) {
+    if (Conf.hasPath("formulaeFile") && Conf.getString("formulaeFile") != "None") {
       val formulaePath = Conf.getString("formulaeFile")
       println("Loading formulae form " + formulaePath)
 
