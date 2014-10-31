@@ -284,8 +284,13 @@ object ProbLogicEmbedder {
     //GradientBasedOptimizer(fg, new BatchTrainer(_, new LBFGS(), maxIterations))
 
     //allowed observations for each predicate are only the relations we have seen together with the predicate
-    val allPairs = rules.rules2.keySet.flatMap(p => Set(p, p.swap))
-    val allowed = allPairs.groupBy(_._1).mapValues(_.map(_._2))
+    val allowed = new mutable.HashMap[String,mutable.HashSet[String]]()
+    for ((r1,r2) <- rules.rules2.keys) {
+      allowed.getOrElseUpdate(r1, new mutable.HashSet[String]) += r2
+      allowed.getOrElseUpdate(r2, new mutable.HashSet[String]) += r1
+    }
+    //val allPairs = rules.rules2.keySet.flatMap(p => Set(p, p.swap))
+    //val allowed = allPairs.groupBy(_._1).mapValues(_.map(_._2))
     val embeddings = relations.map({ rel =>
       rel -> PredicateEmbedding(rel,
         V(rel).variable.asVector.b,
