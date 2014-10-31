@@ -47,7 +47,9 @@ object EmbeddedProbLogicEvaluation {
     println(test.size)
 
     println("Extracting rules")
-    val trainRulesRaw = RuleLearner.learn(combined)
+    val trainRulesRaw =
+      if (conf.getBoolean("epl.combine-datasets")) RuleLearner.learn(combined)
+      else RuleLearner.learn(train) + RuleLearner.learn(unlabeled)
     val cooccurMin = conf.getDouble("epl.min-cooccur")
 
     println("Finding components")
@@ -55,13 +57,13 @@ object EmbeddedProbLogicEvaluation {
     val connectedFreebase = connected.filter(c => freebaseRelations.exists(c._1.nodes))
     println(s"Connected Components: ${ connected.size }")
     println(s"Connected Components with freebase relations: ${ connectedFreebase.size }")
-    println(s"Total count of rules in components: ${connectedFreebase.view.map(_._2.rules2.size).sum}")
+    println(s"Total count of rules in components: ${ connectedFreebase.view.map(_._2.rules2.size).sum }")
     FactorizationUtil.saveToFile(
-      connected.map(_._1.nodes.toList.sorted.mkString("------\n  ", "\n  ","")),
+      connected.map(_._1.nodes.toList.sorted.mkString("------\n  ", "\n  ", "")),
       new File("/tmp/components.txt"))
 
 
-    val trainRulesBeforeSubsampling = Rules(connectedFreebase.map(_._2.rules2).reduce(_ ++ _))//RuleFilters.keep2ndOrder(joinedRulesRaw, cooccurMin)
+    val trainRulesBeforeSubsampling = Rules(connectedFreebase.map(_._2.rules2).reduce(_ ++ _)) //RuleFilters.keep2ndOrder(joinedRulesRaw, cooccurMin)
     val subsample = conf.getDouble("epl.subsample")
     val trainRules = Rules(trainRulesBeforeSubsampling.rules2.filter(p => p._2.cooccurCount >= 1 || random.nextDouble() < subsample))
     //val trainRulesFiltered = trainRules.copy(rules2 = trainRules.)
@@ -93,7 +95,7 @@ object EmbeddedProbLogicEvaluation {
 
   }
 
-  def compareRules(rules2:Map[(String,String),Rule2],rules1:Map[(String,String),Rule2]) = {
+  def compareRules(rules2: Map[(String, String), Rule2], rules1: Map[(String, String), Rule2]) = {
     val paired = for (r1 <- rules1.values; r2 <- rules2.get(r1.rel1 -> r1.rel2)) yield (r1, r2, r2.prob1given2Inc(r1))
     val printPaired = paired.toSeq.sortBy(-_._3).view.map(t => s"Mismatch: ${ t._3 }\n${ t._1 }\n${ t._2 }")
     val printPairedInv = paired.toSeq.sortBy(_._3).view.map(t => s"Mismatch: ${ t._3 }\n${ t._1 }\n${ t._2 }")
@@ -118,9 +120,9 @@ object EmbeddedProbLogicPlayground {
 
     val test = FactorizationUtil.sampleRows(10, 10, 0.2)
     val manualData = Seq(
-      Row("e1","e2",Seq("r1","r2").map(_ -> 1.0)),
-      Row("e3","e4",Seq("r2","r3").map(_ -> 1.0)),
-      Row("e5","e6",Seq("r4","r5").map(_ -> 1.0))
+      Row("e1", "e2", Seq("r1", "r2").map(_ -> 1.0)),
+      Row("e3", "e4", Seq("r2", "r3").map(_ -> 1.0)),
+      Row("e5", "e6", Seq("r4", "r5").map(_ -> 1.0))
     )
 
     val dataRelations = test.flatMap(_.observedTrue).distinct.sorted
@@ -137,7 +139,7 @@ object EmbeddedProbLogicPlayground {
     val pleData = ProbLogicEmbedder.embed(rulesData)
     val learnedRules = pleData.pairwiseRules(rulesData.rules2.keys)
 
-    EmbeddedProbLogicEvaluation.compareRules(learnedRules,rulesData.rules2)
+    EmbeddedProbLogicEvaluation.compareRules(learnedRules, rulesData.rules2)
 
     val predictionsData = for (row <- test) yield {
       row.copy(relations = dataRelations.map(r => r -> pleData.predict(row.observedTrue, r)))
@@ -196,13 +198,13 @@ object RuleFilters {
     rules.copy(rules2 = rules.rules2.filterKeys(expanded.contains))
   }
 
-  class Component(first:String) {
+  class Component(first: String) {
     val edges = new mutable.HashSet[(String, String)]
     val nodes = new mutable.HashSet[String]
     nodes += first
   }
 
-  def connectedComponents(rules: Rules, minCooccurCount: Double, filter:String =>Boolean = _ => true) = {
+  def connectedComponents(rules: Rules, minCooccurCount: Double, filter: String => Boolean = _ => true) = {
     val filtered = rules.rules2.filter(_._2.cooccurCount >= minCooccurCount - 0.0001).map(p => p._1 -> p._2.count * p._2.probs(true, true))
     val graph = filtered ++ filtered.map(p => p.copy(_1 = p._1.swap)) withDefaultValue 0.0
 
@@ -211,10 +213,10 @@ object RuleFilters {
       val c1 = components.getOrElseUpdate(a1, new Component(a1))
       val c2 = components.getOrElseUpdate(a2, new Component(a2))
       if (c1 == c2) {
-        c1.edges += ((a1,a2))
+        c1.edges += ((a1, a2))
       } else {
-        val (keep,discard) = if (c1.nodes.size > c2.nodes.size) (c1,c2) else (c2,c1)
-        keep.edges += ((a1,a2))
+        val (keep, discard) = if (c1.nodes.size > c2.nodes.size) (c1, c2) else (c2, c1)
+        keep.edges += ((a1, a2))
         keep.edges ++= discard.edges
         keep.nodes ++= discard.nodes
         for (n <- discard.nodes) components(n) = keep
