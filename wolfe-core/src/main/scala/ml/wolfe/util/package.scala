@@ -83,6 +83,34 @@ package object util {
     def hasPath(path: String): Boolean = conf.hasPath(path)
   }
 
+  object OverrideConfig extends App {
+    def apply(overrideWith: Map[String, Any], pathToNewConf: String = "conf/mf-overridden.conf", pathToOldConf: String = "conf/mf.conf"): Unit = {
+      val conf = ConfigFactory.parseFile(new File(pathToOldConf)).entrySet().toString //string representations
+                 .replaceAll("\"\\[|Config[^(]*\\(|\\]\"", "") //remove Config.*(
+                 .split("\\),").mkString("\n").drop(1).dropRight(2).split("\n").toList.map(_.trim) //clean up
+                 .map(s => s.split("=").head -> s.split("=").tail.mkString("=")) //map to key/value tuples
+                 .toMap
+
+      val overridden = conf ++ overrideWith
+
+      val fileWriter = new FileWriter(pathToNewConf)
+      val newConfMap = overridden.toList.map { case (key, value) =>
+        val keys = key.split("\\.").toList
+        if (keys.size > 1) (keys.head, keys.tail.mkString(".") + " = " + value)
+        else ("", keys.mkString(".") + " = " + value)
+      }.groupBy(_._1).mapValues(_.map(_._2))
+
+      newConfMap.keys.foreach(k => {
+        if (k.isEmpty) fileWriter.write(newConfMap(k).mkString("\n") + "\n")
+        else fileWriter.write(k + " {\n" + newConfMap(k).mkString("\t", "\n\t", "\n") + "}\n")
+      })
+
+      fileWriter.close()
+    }
+
+    apply(Map("mf.subsample" -> 0.5, "mf.k" -> 50))
+  }
+
   def getTimeString(seconds: Int): String = {
     def buildTimeString(seconds: Int, acc: String): String = {
       if (seconds < 60) acc + "%ds".format(seconds)

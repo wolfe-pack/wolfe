@@ -149,8 +149,8 @@ class TensorDB(k: Int = 100) extends Tensor {
     val fg = new FactorGraph()
 
     if (isMatrix) {
-      ix1ToNodeMap ++= keys1 map (key => key -> fg.addVectorNode(k))
-      ix2ToNodeMap ++= keys2 map (key => key -> fg.addVectorNode(k))
+      ix1ToNodeMap ++= keys1 map (key => key -> fg.addVectorNode(k, key.toString))
+      ix2ToNodeMap ++= keys2 map (key => key -> fg.addVectorNode(k, key.toString))
     } else ???
 
     fg
