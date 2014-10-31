@@ -34,16 +34,12 @@ object EmbeddedProbLogicEvaluation {
 
     val trainRelations = combined.flatMap(_.relations.map(_._1)).distinct.sorted // REL$/book/book_edition/author_editor
 
-    val freebaseRelations = Seq("REL$/business/person/company")//trainRelations.filter(_.startsWith("REL$"))
+    val freebaseRelations = trainRelations.filter(_.startsWith("REL$")) //Seq("REL$/business/person/company")//
     val surfacePatterns = trainRelations.filterNot(_.startsWith("REL$")).toSet
 
     val testRaw = FactorizationUtil.loadLiminFile(new File(conf.getString("epl.test")), relationFilter,
       skipUnlabeled = true, minObsCount = 1).toSeq
-    println(testRaw.find(_.arg1 == "Arthur Mann"))
     val test = FactorizationUtil.filterRows(testRaw, 1, 1, surfacePatterns)
-    println(test.find(_.arg1 == "Arthur Mann"))
-
-
 
     println(trainRelations.size)
     println(train.size)
@@ -86,9 +82,11 @@ object EmbeddedProbLogicEvaluation {
     FactorizationUtil.saveForUSchemaEval(predictedFacts, new File("/tmp/ple.txt"))
     FactorizationUtil.saveToFile(predictedFacts.mkString("\n"), new File("/tmp/ranked.txt"))
 
-    println("Extracting learned rules")
-    val learnedRules = ple.pairwiseRules(trainRules.rules2.keys)
-    compareRules(learnedRules,trainRules.rules2)
+    if (conf.getBoolean("epl.print-comparisons")) {
+      println("Extracting learned rules")
+      val learnedRules = ple.pairwiseRules(trainRules.rules2.keys)
+      compareRules(learnedRules, trainRules.rules2)
+    }
 
   }
 
