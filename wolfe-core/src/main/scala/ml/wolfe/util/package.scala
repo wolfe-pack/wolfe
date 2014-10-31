@@ -84,26 +84,30 @@ package object util {
   }
 
   object OverrideConfig {
-    def apply(overrideWith: Map[String, Any], pathToNewConf: String = "conf/mf-overridden.conf", pathToOldConf: String = "conf/mf.conf"): Unit = {
+    def apply(overrideWith: Map[String, Any], pathToNewConf: String = "conf/mf-overridden.conf", pathToOldConf: String = "conf/mf.conf"): String = {
       val conf = ConfigFactory.parseFile(new File(pathToOldConf)).entrySet().toString //string representations
-                 .replaceAll("\"\\[|Config[^(]*\\(|\\]\"", "") //remove Config.*(
+                 .replaceAll("\"\\[|(Simple)?Config[^(]*\\(|\\]\"", "") //remove Config.*(
                  .split("\\),").mkString("\n").drop(1).dropRight(2).split("\n").toList.map(_.trim) //clean up
                  .map(s => s.split("=").head -> s.split("=").tail.mkString("=")) //map to key/value tuples
                  .toMap
 
-      val overridden = conf ++ overrideWith
+      //println(ConfigFactory.parseFile(new File(pathToOldConf)).entrySet().toString)
+
+      val overridden = conf ++ overrideWith.map { case (key, value) => value match {
+        case s: String => key -> ("\"" + s + "\"")
+        case seq: Seq[_] => key -> ("[" + seq.map(a => {
+            if (a.isInstanceOf[String]) "\"" + a + "\"" else a
+          }).mkString(", ") + "]")
+        case _ => key -> value
+      }}.toMap
+
+      //println(overridden.mkString("\n"))
 
       val fileWriter = new FileWriter(pathToNewConf)
       val newConfMap = overridden.toList.map { case (key, value) =>
         val keys = key.split("\\.").toList
-        val escapedValue = value match {
-          case s: String => "\"" + s + "\""
-          case ss: Seq[String] => ss.map("\"" + _ + "\"")
-          case _ => value
-        }
-
-        if (keys.size > 1) (keys.head, keys.tail.mkString(".") + " = " + escapedValue)
-        else ("", keys.mkString(".") + " = " + escapedValue)
+        if (keys.size > 1) (keys.head, keys.tail.mkString(".") + " = " + value)
+        else ("", keys.mkString(".") + " = " + value)
       }.groupBy(_._1).mapValues(_.map(_._2))
 
       newConfMap.keys.foreach(k => {
@@ -112,6 +116,7 @@ package object util {
       })
 
       fileWriter.close()
+      pathToNewConf
     }
   }
 
