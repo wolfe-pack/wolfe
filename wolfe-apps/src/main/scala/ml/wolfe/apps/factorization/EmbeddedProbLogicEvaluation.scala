@@ -37,8 +37,12 @@ object EmbeddedProbLogicEvaluation {
     val freebaseRelations = Seq("REL$/business/person/company")//trainRelations.filter(_.startsWith("REL$"))
     val surfacePatterns = trainRelations.filterNot(_.startsWith("REL$")).toSet
 
-    val testRaw = FactorizationUtil.loadLiminFile(new File(conf.getString("epl.test")), relationFilter, skipUnlabeled = true)
-    val test = FactorizationUtil.filterRows(testRaw.toSeq, 1, 1, surfacePatterns)
+    val testRaw = FactorizationUtil.loadLiminFile(new File(conf.getString("epl.test")), relationFilter,
+      skipUnlabeled = true, minObsCount = 1).toSeq
+    println(testRaw.find(_.arg1 == "Arthur Mann"))
+    val test = FactorizationUtil.filterRows(testRaw, 1, 1, surfacePatterns)
+    println(test.find(_.arg1 == "Arthur Mann"))
+
 
 
     println(trainRelations.size)
