@@ -22,14 +22,14 @@ import ml.wolfe.util._
  */
 
 object EvaluateNAACL extends App {
-  val configFile = if (args.length > 0) args(0) else "./conf/eval.conf"
-  val pathToLatestPredictions = if (args.length > 1) args(1) else "./data/out/predict.txt"
+  val configFile = args.lift(0).getOrElse("./conf/eval.conf")
+  val pathToLatestPredictions = args.lift(1).getOrElse("./data/out/latest/predict.txt")
   val pathToLatest = pathToLatestPredictions.split("/").init.mkString("/")+"/"
   Conf.add(configFile)
   assert(!Conf.conf.entrySet().isEmpty, "Couldn't find configuration file.")
 
   val rankFileNamesAndLabels = Seq(pathToLatestPredictions + ":latest",
-    "./data/naacl2013/test-rockt-F.txt:rockt-F",
+    //"./data/naacl2013/structured/test-rockt-F.txt:rockt-F",
     "./data/naacl2013/structured/test-mintz09.txt:Mintz09",
     "./data/naacl2013/structured/test-yao11.txt:Yao11",
     "./data/naacl2013/structured/test-surdeanu12.txt:Surdeanu12",

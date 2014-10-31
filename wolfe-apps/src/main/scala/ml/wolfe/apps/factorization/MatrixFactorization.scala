@@ -26,8 +26,9 @@ object MatrixFactorization extends App {
   val loadFormulae = debug && true //whether forumlae should be sampled for debugging
   //val print = false //whether to print the matrix (only do this for small ones!)
 
-  val confPath = if (args.size > 0) args(0) else "conf/mf.conf"
+  val confPath = args.lift(0).getOrElse("conf/mf.conf")
   Conf.add(confPath)
+  Conf.outDir //sets up output directory
   implicit val conf = Conf
   println("Using " + confPath)
 
@@ -165,6 +166,7 @@ object MatrixFactorization extends App {
     println("predicted:")
     println(db.toVerboseString())
   } else {
+    Conf.createSymbolicLinkToLatest() //rewire symbolic link to latest (in case it got overwritten)
     val pathToPredict = Conf.outDir.getAbsolutePath + "/" + fileName
     WriteNAACL(db, pathToPredict)
     EvaluateNAACL.main(Array("./conf/eval.conf", pathToPredict))
