@@ -1,0 +1,149 @@
+//50	0.70	83	0.95	1319	curated
+path#appos|->appos->capital->prep->of->pobj->|pobj => REL$/location/location/containedby
+
+//51	0.68	19	0.94	1375	curated
+path#nsubj|<-nsubj<-city->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//52	0.68	60	0.95	1586	curated
+//path#appos|->appos->city->poss->|poss => REL$/location/location/containedby
+
+//53	0.68	78	0.93	1644	curated
+//path#dobj|<-dobj<-attend->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//54	0.67	39	0.88	201	curated
+path#appos|->appos->daughter->prep->of->pobj->|pobj => REL$/people/person/parents
+
+//55	0.67	12	0.89	195	curated
+//path#appos|->appos->daughter->poss->|poss => REL$/people/person/parents
+
+//56	0.67	51	0.94	1176	curated
+//path#appos|->appos->town->nn->|nn => REL$/location/location/containedby
+
+//57	0.67	12	0.89	841	curated
+//path#appos|->appos->state->poss->|poss => REL$/location/location/containedby
+
+//58	0.64	28	0.83	1477	curated
+//path#rcmod|->rcmod->include->dobj->|dobj:INV => REL$/location/location/containedby
+
+//59	0.64	36	0.92	1288	curated
+path#pobj|<-pobj<-at<-prep<-professor->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//60	0.64	216	0.91	668	curated
+//path#nsubj|<-nsubj<-die->prep->in->pobj->|pobj => REL$/people/deceased_person/place_of_death
+
+//61	0.63	16	0.90	373	curated
+path#nn|<-nn<-film->dep->|dep:INV => REL$/film/film/directed_by
+
+//62	0.62	55	0.72	1215	curated
+//path#poss|<-poss<-president->appos->|appos:INV => REL$/people/person/nationality
+
+//63	0.62	47	0.90	378	curated
+path#poss|<-poss<-film->dep->|dep:INV => REL$/film/film/directed_by
+
+//64	0.62	13	0.94	1556	curated
+path#nn|<-nn<-village->prep->of->pobj->|pobj:INV => REL$/location/location/containedby
+
+//65	0.61	18	0.69	852	curated
+path#poss|<-poss<-section->nn->|nn:INV => REL$/location/location/containedby
+
+//66	0.61	33	0.92	1128	curated
+//path#prep|->prep->include->pobj->|pobj:INV => REL$/location/location/containedby
+
+//67	0.60	5	0.90	441	curated
+path#nsubj|<-nsubj<-dean->prep->of->pobj->|pobj => REL$/business/person/company
+
+//68	0.60	15	0.95	1507	curated
+path#appos|->appos->village->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//69	0.60	15	0.65	438	curated
+//path#pobj|<-pobj<-to<-prep<-return->prep->from->pobj->|pobj:INV => REL$/location/location/containedby
+
+//70	0.60	10	0.85	780	curated
+//path#appos|->appos->delegate->prep->from->pobj->|pobj => REL$/people/person/nationality
+
+//71	0.60	100	0.90	378	curated
+//path#partmod|->partmod->direct->prep->by->pobj->|pobj => REL$/film/film/directed_by
+
+//72	0.60	5	0.83	951	curated
+//path#poss|<-poss<-poem->dep->|dep => REL$/book/author/works_written
+
+//73	0.59	22	0.88	210	curated
+//path#appos|->appos->son->poss->|poss => REL$/people/person/parents
+
+//74	0.59	63	0.88	207	curated
+//path#appos|->appos->son->prep->of->pobj->|pobj => REL$/people/person/parents
+
+//75	0.58	24	0.90	372	curated
+path#poss|<-poss<-movie->dep->|dep:INV => REL$/film/film/directed_by
+
+//76	0.57	28	0.95	1414	curated
+path#pobj|<-pobj<-of<-prep<-town->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//77	0.57	7	0.93	1021	curated
+path#nn|<-nn<-reservation->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//78	0.57	7	0.92	1074	curated
+//path#appos|->appos->island->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//79	0.57	14	0.90	381	curated
+path#appos|->appos->director->prep->of->pobj->|pobj:INV => REL$/film/film/directed_by
+
+//80	0.56	25	0.84	338	curated
+path#nsubj|<-nsubj<-capital->prep->of->pobj->|pobj => REL$/location/location/containedby
+
+//81	0.56	9	0.92	818	curated
+//path#appos|->appos->author->prep->of->pobj->book->dep->|dep => REL$/book/author/works_written
+
+//82	0.55	20	0.91	866	curated
+//path#poss|<-poss<-novel<-nsubj<-|nsubj => REL$/book/author/works_written
+
+//83	0.55	11	0.62	359	curated
+//path#dobj|<-dobj<-leave->prep->for->pobj->|pobj:INV => REL$/location/location/containedby
+
+//84	0.55	11	0.75	848	curated
+//path#nn|<-nn<-tribe->prep->of->pobj->|pobj => REL$/location/location/containedby
+
+//85	0.55	11	0.79	494	curated
+//path#nsubj|<-nsubj<-part->prep->of->pobj->|pobj:INV => REL$/organization/parent/child
+
+//86	0.54	101	0.89	858	curated
+//path#nn|<-nn<-region->prep->of->pobj->|pobj => REL$/location/location/containedby
+
+//87	0.53	15	0.90	1088	curated
+//path#nn|<-nn<-area->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//88	0.53	62	0.89	1024	curated
+path#appos|->appos->school->prep->in->pobj->|pobj => REL$/location/location/containedby
+
+//89	0.53	19	0.73	952	curated
+path#poss|<-poss<-district->nn->|nn:INV => REL$/location/location/containedby
+
+//90	0.53	40	0.82	723	curated
+path#nn|<-nn<-neighborhood->prep->of->pobj->|pobj:INV => REL$/location/neighborhood/neighborhood_of
+
+//91	0.53	40	0.80	782	curated
+path#poss|<-poss<-neighborhood->nn->|nn:INV => REL$/location/neighborhood/neighborhood_of
+
+//92	0.52	23	0.90	380	curated
+//path#nsubjpass|<-nsubjpass<-direct->prep->by->pobj->|pobj => REL$/film/film/directed_by
+
+//93	0.52	23	0.81	138	curated
+//path#appos|->appos->station->prep->in->pobj->|pobj => REL$/broadcast/broadcast/area_served
+
+//94	0.51	75	0.92	836	curated
+//path#nsubj|<-nsubj<-author->prep->of->pobj->|pobj => REL$/book/author/works_written
+
+//95	0.50	241	0.82	856	curated
+path#nsubjpass|<-nsubjpass<-bear->prep->in->pobj->|pobj => REL$/people/person/place_of_birth
+
+//96	0.50	28	0.80	470	curated
+//path#appos|->appos->region->prep->of->pobj->|pobj => REL$/location/location/containedby
+
+//97	0.50	12	0.84	637	curated
+//path#nn|<-nn<-province->prep->of->pobj->|pobj => REL$/location/location/containedby
+
+//98	0.50	18	0.89	301	curated
+//path#appos|->appos->capital->nn->|nn => REL$/location/location/containedby
+
+//99	0.50	6	0.82	413	curated
+//path#dobj|<-dobj<-head->prep->in->pobj->|pobj => REL$/location/location/containedby
