@@ -1,10 +1,13 @@
 package ml.wolfe.apps.factorization.io
 
 import java.io.{FileWriter, File}
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.concurrent.Executors
 
 import com.typesafe.config.{Config, ConfigFactory}
 import ml.wolfe.util.{OverrideConfig, Conf}
+import org.joda.time.LocalDate
 
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext
@@ -12,9 +15,9 @@ import scala.concurrent.ExecutionContext
 /**
  * @author rockt
  */
-object RunSeriesOfExperiments extends App {
+object RunSeriesOfExperiments {
   type Series = Map[String, Seq[Any]]
-  type Conf = Map[String, Any]
+  type Confs = Seq[Map[String, Any]]
 
   implicit class Crossable[X](xs: Traversable[X]) {
     def cross[Y](ys: Traversable[Y]) = for { x <- xs; y <- ys } yield Seq(x, y)
@@ -25,16 +28,30 @@ object RunSeriesOfExperiments extends App {
       }
   }
 
-  def apply(series: Series, threads: Int = 1): Unit = {
-    val confSeq: Seq[Conf] = series.map { case (key, value) =>
+  def apply(series: Series, threads: Int = 1, confPath: String = "wolfe-apps/conf/mf.conf"): Unit = {
+    val confSeq: Confs = series.map { case (key, value) =>
       (value zip (Stream continually Seq(key)).flatten).map(_.swap)
     }.foldLeft(Seq[Any](Nil)) { case (seqs, seq) => (seqs flatCross seq).toSeq }
-    .map { case seq: Seq[(String, Any)] => seq.toMap}
+                         .map { case seq: Seq[(String, Any)] => seq.toMap }
 
-    this.runConfs(confSeq, threads)
+    val confSeqWithCollectFields = if (Conf.hasPath("logFile")) {
+      val fields = confSeq.head.keys.toList
+      //write header to collectResults
+      val fileWriter = new FileWriter(Conf.getString("logFile"), true)
+      fileWriter.write("\n//" + new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new Date()) + "\t" + confPath + "\n")
+      fileWriter.write(fields.mkString("", "\t", "\t") + "MAP\twMAP\n")
+      fileWriter.flush()
+      fileWriter.close()
+
+      confSeq.map(_ ++ Map(
+        "logFields" -> fields
+      ))
+    } else confSeq
+
+    runConfs(confSeqWithCollectFields, threads, confPath)
   }
 
-  def runConfs(confs: Seq[Conf], threads: Int = 1): Unit = {
+  def runConfs(confs: Confs, threads: Int = 1, confPath: String = "wolfe-apps/conf/mf.conf"): Unit = {
     import scala.concurrent.{future, blocking, Future, Await}
     import scala.concurrent.duration._
 
@@ -52,7 +69,7 @@ object RunSeriesOfExperiments extends App {
       c => future {
         blocking {
           val newConfPath = File.createTempFile(System.nanoTime().toString, null).getAbsolutePath
-          OverrideConfig(c, newConfPath, "wolfe-apps/conf/mf.conf")
+          OverrideConfig(c, newConfPath, confPath)
           ForkRunMatrixFactorization(newConfPath)
         }
       }
@@ -64,13 +81,6 @@ object RunSeriesOfExperiments extends App {
     import scala.language.postfixOps
     Await.result(resultsFut, 365 days)
   }
-
-  val series = Map(
-    //"mf.subsample" -> Seq(0.001),
-    "mf.maxIter" -> Seq(2),
-    "formulaeFile" -> Seq("None", "data/formulae/curated-50-100.txt")
-  )
-  apply(series, 2)
 }
 
 case class ForkRunMatrixFactorization(pathToConf: String = "conf/mf.conf") {
@@ -81,4 +91,20 @@ case class ForkRunMatrixFactorization(pathToConf: String = "conf/mf.conf") {
     "vmargs -Xmx4G",
     s"run-main ml.wolfe.apps.factorization.MatrixFactorization $pathToConf"
   )).!)
+}
+
+object SubsampleExperiments extends App {
+  val confPath = args.lift(0).getOrElse("wolfe-apps/conf/mf.conf")
+  val threads = args.lift(1).getOrElse("1").toInt
+
+  Conf.add(OverrideConfig(Map("logFile" -> "wolfe-apps/data/out/experiments.log"), confPath + ".tmp", confPath))
+
+  val series = Map(
+    //"mf.subsample" -> (0.1 to 1.0 by 0.1).toSeq
+    "mf.subsample" -> Seq(0.0001),
+    "mf.maxIter" -> Seq(10, 20),
+    "mf.optimizer" -> Seq("AdaGrad")
+  )
+
+  RunSeriesOfExperiments(series, threads, confPath)
 }

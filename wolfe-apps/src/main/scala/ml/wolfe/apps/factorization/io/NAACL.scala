@@ -252,6 +252,18 @@ object EvaluationTool {
       def print(s: String) = out.write(s)
     }
 
+    if (Conf.hasPath("logFile") && Conf.getString("logFile") != "None") {
+      val fileWriter = new FileWriter(Conf.getString("logFile"), true)
+      val eval = perFileEvals.head
+      val fields =
+        if (Conf.hasPath("logFields")) Conf.getStringList("logFields")
+        else Nil
+      val fieldValues = fields.map(Conf.conf.getAnyRef)
+      fileWriter.write(fieldValues.mkString("", "\t", "\t") + s"${eval.averageMap()}\t${eval.globalMap()}\n")
+      fileWriter.flush()
+      fileWriter.close()
+    }
+
     //print overview table
     def printTextTable(out: FileWriter) {
       out.print("%-30s%-10s%-10s".format("Pattern", "Gold+", "Gold+-"))
