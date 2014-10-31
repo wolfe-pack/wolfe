@@ -314,7 +314,9 @@ object RuleLearner {
       val cells = row.relations
       for (cell <- cells) singleCounts(cell._1) += 1
       for (i <- 0 until cells.size; j <- i + 1 until cells.size) {
+        //todo: more sensible to sort relations here instead adding two versions.
         pairCounts(cells(i)._1 -> cells(j)._1) += 1
+        pairCounts(cells(j)._1 -> cells(i)._1) += 1
       }
     }
 
