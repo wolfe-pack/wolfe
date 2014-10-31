@@ -1,18 +1,12 @@
 package ml.wolfe.apps.factorization
 
-import java.io.{FileWriter, OutputStream, File}
+import java.io.{File, FileWriter}
 
-import cc.factorie.la.DenseTensor1
 import cc.factorie.optimize._
-import cc.factorie.util.{Logger, FastLogging}
-import com.typesafe.config.ConfigFactory
-import ml.wolfe.FactorGraph.Edge
-import ml.wolfe.apps.factorization.TensorKB
 import ml.wolfe.apps.factorization.io.{EvaluateNAACL, LoadNAACL, WriteNAACL}
-import ml.wolfe.fg.L2Regularization
-import ml.wolfe.fg._
-import ml.wolfe.util.{Conf, ProgressLogging, ProgressBar, Timer}
-import ml.wolfe.{DenseVector, FactorieVector, GradientBasedOptimizer, Wolfe}
+import ml.wolfe.fg.{L2Regularization, _}
+import ml.wolfe.util.{Conf, ProgressLogging, Timer}
+import ml.wolfe.{DenseVector, GradientBasedOptimizer, Wolfe}
 
 import scala.io.Source
 import scala.util.Random

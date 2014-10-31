@@ -53,6 +53,7 @@ object Util {
   }
 
   def sig(x: Double) = 1.0 / (1.0 + math.exp(-x))
+  def sq(x:Double) = x * x
 
 }
 

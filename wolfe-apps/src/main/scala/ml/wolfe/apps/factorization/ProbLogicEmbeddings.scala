@@ -22,7 +22,9 @@ case class PredicateEmbedding(rel: String, embedding: FactorieVector,
 
 case class ProbLogicEmbeddings(embeddings: Map[String, PredicateEmbedding],
                                rules: Rules = Rules(Map.empty, Map.empty),
-                               average: Boolean = true, forceZero: Boolean = true) {
+                               average: Boolean = true, forceZero: Boolean = true,
+                               usel2dist: Boolean = false, minWhenUsingL2Dist:Boolean = true) {
+
 
   def predict(observations: Seq[String], relation: String) = {
     embeddings.get(relation) match {
@@ -32,8 +34,22 @@ case class ProbLogicEmbeddings(embeddings: Map[String, PredicateEmbedding],
         if (!forceZero || filteredObs.size > 0) {
           val normalizer = if (average) filteredObs.size.toDouble else 1.0
           var score = embedding.bias
-          for (obs <- filteredObs; obsEmb <- embeddings.get(obs)) {
+          if (!usel2dist) for (obs <- filteredObs; obsEmb <- embeddings.get(obs)) {
             score += obsEmb.weight * embedding.scale * (embedding.embedding dot obsEmb.embedding) / normalizer // observations.size
+          } else {
+            //take the average
+            if (minWhenUsingL2Dist) {
+              val distances = for (obs <- filteredObs.view; obsEmb <- embeddings.get(obs).view) yield {
+                Util.sq(obsEmb.embedding.l2Similarity(embedding.embedding))
+              }
+              score -= distances.min
+            } else {
+              val result = new DenseTensor1(embedding.embedding)
+              for (obs <- filteredObs; obsEmb <- embeddings.get(obs)) {
+                result +=(obsEmb.embedding, -1.0 / normalizer) // observations.size
+              }
+              score -= result.twoNormSquared
+            }
           }
           val result = Util.sig(score)
           result
@@ -178,6 +194,7 @@ object ProbLogicEmbedder {
     val multPrior = conf.getDouble("epl.mult-prior")
     val weighTerms = conf.getBoolean("epl.weigh-terms")
     val unitBall = conf.getBoolean("epl.unit-ball")
+    val l2dist = conf.getBoolean("epl.l2-dist")
 
     val maxMarg = rules.rules2.view.flatMap(t => Iterator(t._2.marg1(true), t._2.marg2(true))).max
 
@@ -221,7 +238,7 @@ object ProbLogicEmbedder {
 
       rules.rules2.get((rel1, rel2)) match {
         case Some(rule) =>
-          val factor = fg.buildFactor(Seq(v1, eta1, s1, m1, v2, eta2, s2, m2))(_ map (_ => new VectorMsgs)) {
+          if (!l2dist) fg.buildFactor(Seq(v1, eta1, s1, m1, v2, eta2, s2, m2))(_ map (_ => new VectorMsgs)) {
             e => new JointPotential(
               e(0), e(1), e(2), e(3),
               e(4), e(5), e(6), e(7),
@@ -232,7 +249,15 @@ object ProbLogicEmbedder {
               1.0 / relNormalizer1, 1.0 / relNormalizer2,
               if (weighTerms) rule.marg1(true) / maxMarg else 1.0,
               if (weighTerms) rule.marg2(true) / maxMarg else 1.0)
-          }
+          } else
+            fg.buildFactor(Seq(v1, v2, eta1, eta2))(_ map (_ => new VectorMsgs)) {
+              e => new L2DistanceBasedPotential(
+                e(0), e(1), e(2), e(3),
+                rule.prob1given2(true)(true), rule.prob2given1(true)(true),
+                1.0,
+                regW, regBias, biasPrior,
+                1.0 / relNormalizer1, 1.0 / relNormalizer2)
+            }
           //if (numJointFactors == 0) PotentialDebugger.checkGradients(factor.potential, debug = true)
           numJointFactors += 1
 
@@ -255,7 +280,7 @@ object ProbLogicEmbedder {
       case "online" => new OnlineTrainer(weightsSet, step, maxIterations)
     }
 
-    GradientBasedOptimizer(fg, trainer(_),step)
+    GradientBasedOptimizer(fg, trainer(_), step)
     //GradientBasedOptimizer(fg, new BatchTrainer(_, new LBFGS(), maxIterations))
 
     //allowed observations for each predicate are only the relations we have seen together with the predicate
@@ -269,7 +294,7 @@ object ProbLogicEmbedder {
         if (regMult == Double.PositiveInfinity) multPrior else colMults(rel).variable.asVector.b(0),
         allowed(rel))
     })
-    ProbLogicEmbeddings(embeddings.toMap, rules)
+    ProbLogicEmbeddings(embeddings.toMap, rules, usel2dist = l2dist)
   }
 
 }

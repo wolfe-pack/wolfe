@@ -29,7 +29,7 @@ object EvaluateNAACL extends App {
   assert(!Conf.conf.entrySet().isEmpty, "Couldn't find configuration file.")
 
   val rankFileNamesAndLabels = Seq(pathToLatestPredictions + ":latest",
-    "./data/naacl2013/test-rockt-F.txt:rockt-F",
+    //"./data/naacl2013/test-rockt-F.txt:rockt-F",
     "./data/naacl2013/structured/test-mintz09.txt:Mintz09",
     "./data/naacl2013/structured/test-yao11.txt:Yao11",
     "./data/naacl2013/structured/test-surdeanu12.txt:Surdeanu12",

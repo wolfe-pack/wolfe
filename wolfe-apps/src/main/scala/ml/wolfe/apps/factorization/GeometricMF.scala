@@ -4,7 +4,6 @@ import cc.factorie.la.DenseTensor1
 import cc.factorie.optimize.{AdaGrad, BatchTrainer}
 import ml.wolfe.FactorGraph.Edge
 import ml.wolfe.GradientBasedOptimizer
-import ml.wolfe.apps.factorization.TensorKB
 import ml.wolfe.fg._
 import math._
 
@@ -641,7 +640,7 @@ class JointPotential(weights1: Edge, bias1: Edge, scale1: Edge, mult1: Edge,
                      regWeights: Double, regBias: Double, regScale: Double, regMult: Double,
                      priorBias: Double, priorScale: Double, priorMult: Double,
                      arg1Coeff: Double, arg2Coeff: Double,
-                     termWeight1:Double = 1.0, termWeight2:Double = 1.0) extends Potential {
+                     termWeight1: Double = 1.0, termWeight2: Double = 1.0) extends Potential {
 
   def nn[T1, T2](t: T1)(f: T1 => T2): T2 = if (t != null) f(t) else null.asInstanceOf[T2]
 
@@ -677,7 +676,7 @@ class JointPotential(weights1: Edge, bias1: Edge, scale1: Edge, mult1: Edge,
   }
 
   def logConditional(targetWeights: VectorMsgs, targetBias: VectorMsgs, targetScale: VectorMsgs,
-                     obsWeights: VectorMsgs, obsMult: VectorMsgs, trueProb: Double, weight:Double = 1.0) = {
+                     obsWeights: VectorMsgs, obsMult: VectorMsgs, trueProb: Double, weight: Double = 1.0) = {
     val tw = targetWeights.n2f
     val tb = if (targetBias != null) targetBias.n2f(0) else priorBias
     val ts = if (targetScale != null) targetScale.n2f(0) else priorScale
@@ -700,6 +699,9 @@ class JointPotential(weights1: Edge, bias1: Edge, scale1: Edge, mult1: Edge,
 
     obsWeights.f2n +=(tw, om * ts * rate)
     if (obsMult != null) obsMult.f2n(0) += twDotOw * ts * rate
+    if (obj.isNaN) {
+      println("NaN")
+    }
     obj
   }
 
@@ -741,13 +743,80 @@ class JointPotential(weights1: Edge, bias1: Edge, scale1: Edge, mult1: Edge,
     val k = weights1Msgs.n2f.size
     initMsgs(k)
     var result = 0.0
-    result += logConditional(weights1Msgs, bias1Msgs, scale1Msgs, weights2Msgs, mult2Msgs, trueProbOf1Given2,termWeight2)
-    result += logConditional(weights2Msgs, bias2Msgs, scale2Msgs, weights1Msgs, mult1Msgs, trueProbOf2Given1,termWeight1)
+    result += logConditional(weights1Msgs, bias1Msgs, scale1Msgs, weights2Msgs, mult2Msgs, trueProbOf1Given2, termWeight2)
+    result += logConditional(weights2Msgs, bias2Msgs, scale2Msgs, weights1Msgs, mult1Msgs, trueProbOf2Given1, termWeight1)
     result += marginal(bias1Msgs, marg1, arg1Coeff)
     result += marginal(bias2Msgs, marg2, arg2Coeff)
     result += regularizers()
     result
   }
+}
+
+class L2DistanceBasedPotential(w1Edge: Edge, w2Edge: Edge, bias1Edge: Edge, bias2Edge: Edge,
+                               prob1given2: Double, prob2given1: Double, scale: Double,
+                               regWeights: Double,
+                               regBias: Double,
+                               priorBias: Double,
+                               arg1Coeff: Double, arg2Coeff: Double) extends Potential {
+
+  val weights1Msgs = w1Edge.msgs.asVector
+  val weights2Msgs = w2Edge.msgs.asVector
+
+  val bias1Msgs = bias1Edge.msgs.asVector
+  val bias2Msgs = bias2Edge.msgs.asVector
+
+  override def valueAndGradientForAllEdges() = {
+    initMsgs(weights1Msgs.n2f.size)
+    var result = 0.0
+    result += conditionalGradient(weights1Msgs, weights2Msgs, bias1Msgs, prob1given2)
+    result += conditionalGradient(weights2Msgs, weights1Msgs, bias2Msgs, prob2given1)
+    result += regularizers()
+    result
+  }
+
+  def initMsgs(k: Int): Unit = {
+    if (weights1Msgs.f2n == null) weights1Msgs.f2n = new DenseTensor1(k)
+    if (weights2Msgs.f2n == null) weights2Msgs.f2n = new DenseTensor1(k)
+    if (bias1Msgs != null && bias1Msgs.f2n == null) bias1Msgs.f2n = new DenseTensor1(1)
+    if (bias2Msgs != null && bias2Msgs.f2n == null) bias2Msgs.f2n = new DenseTensor1(1)
+    weights1Msgs.f2n := 0.0
+    weights2Msgs.f2n := 0.0
+    if (bias1Msgs != null) bias1Msgs.f2n := 0.0
+    if (bias2Msgs != null) bias2Msgs.f2n := 0.0
+  }
+
+
+  def conditionalGradient(target: VectorMsgs, obs: VectorMsgs, targetBias: VectorMsgs, targetProb: Double) = {
+    val t = target.n2f
+    val o = obs.n2f
+    val eta = targetBias.n2f(0)
+    val dist = t.l2Similarity(o)
+    val dist2 = dist * dist
+    val phi = eta - dist2
+    val pi = exp(phi - log1p(exp(phi)))
+    val rate = (targetProb * (1.0 - pi) + (1 - targetProb) * (0.0 - pi)) * scale
+    val obj = scale * (targetProb * log(pi) + (1 - targetProb) * log(1.0 - pi))
+    target.f2n +=(o, 2 * rate)
+    target.f2n +=(t, -2 * rate)
+    obs.f2n +=(t, 2 * rate)
+    obs.f2n +=(o, -2 * rate)
+    targetBias.f2n(0) += rate
+    obj
+  }
+
+  def regularizers() = {
+    def sq(num: Double) = num * num
+    weights1Msgs.f2n +=(weights1Msgs.n2f, -regWeights * 2.0 * arg1Coeff * scale)
+    weights2Msgs.f2n +=(weights2Msgs.n2f, -regWeights * 2.0 * arg2Coeff * scale)
+    if (bias1Msgs != null) bias1Msgs.f2n(0) += -regBias * (bias1Msgs.n2f(0) - priorBias) * 2.0 * arg1Coeff * scale
+    if (bias2Msgs != null) bias2Msgs.f2n(0) += -regBias * (bias2Msgs.n2f(0) - priorBias) * 2.0 * arg2Coeff * scale
+    var result = 0.0
+    result += -regWeights * scale * (weights1Msgs.n2f.twoNormSquared * arg1Coeff + weights2Msgs.n2f.twoNormSquared * arg2Coeff)
+    if (bias1Msgs != null)
+      result += -regBias * scale * (sq(bias1Msgs.n2f(0) - priorBias) * arg1Coeff + sq(bias2Msgs.n2f(0) - priorBias) * arg2Coeff)
+    result
+  }
+
 }
 
 
