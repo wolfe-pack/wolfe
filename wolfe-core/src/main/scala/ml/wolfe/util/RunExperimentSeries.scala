@@ -23,7 +23,7 @@ object RunExperimentSeries {
       }
   }
 
-  def apply[T](series: Series, threads: Int = 1, confPath: String = "wolfe-apps/conf/mf.conf")(body: String => T): Unit = {
+  def apply(series: Series, threads: Int = 1, confPath: String = "wolfe-apps/conf/mf.conf")(body: String => Any): Unit = {
     val confSeq: Confs = series.map { case (key, value) =>
       (value zip (Stream continually Seq(key)).flatten).map(_.swap)
     }.foldLeft(Seq[Any](Nil)) { case (seqs, seq) => (seqs flatCross seq).toSeq }
@@ -46,7 +46,7 @@ object RunExperimentSeries {
     runConfs(confSeqWithCollectFields, threads, confPath)(body)
   }
 
-  private def runConfs[T](confs: Confs, threads: Int = 1, confPath: String = "wolfe-apps/conf/mf.conf")(body: String => T): Unit = {
+  private def runConfs(confs: Confs, threads: Int = 1, confPath: String = "wolfe-apps/conf/mf.conf")(body: String => Any): Unit = {
     import scala.concurrent.{future, blocking, Future, Await}
     import scala.concurrent.duration._
 
@@ -60,7 +60,7 @@ object RunExperimentSeries {
       def reportFailure(t: Throwable) {}
     }
 
-    val configsFut: Traversable[Future[T]] = confs.map {
+    val configsFut: Traversable[Future[Any]] = confs.map {
       c => future {
         blocking {
           val newConfPath = File.createTempFile(System.nanoTime().toString, null).getAbsolutePath
@@ -72,7 +72,7 @@ object RunExperimentSeries {
     }
 
     //waiting until experiments are finished; not longer than a year ;)
-    val resultsFut: Future[Traversable[T]] = Future.sequence(configsFut)
+    val resultsFut: Future[Traversable[Any]] = Future.sequence(configsFut)
     import scala.language.postfixOps
     Await.result(resultsFut, 365 days)
   }
