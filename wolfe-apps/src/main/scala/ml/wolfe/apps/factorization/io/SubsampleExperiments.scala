@@ -23,7 +23,7 @@ object SubsampleExperiments extends App {
   Conf.add(OverrideConfig(Map("logFile" -> logFilePath), confPath + ".tmp", confPath))
 
   val series = Map(
-    "mf.subsample" -> (0.1 to 1.0 by 0.1).toSeq,
+    "mf.subsample" -> (1 to 10).map(_ / 10.0).toSeq,
     "formulaeFile" -> Seq("None", "data/formulae/curated-50-100.txt")
   )
 
@@ -44,8 +44,9 @@ case class ForkRunMatrixFactorization(pathToConf: String = "conf/mf.conf") {
   println(Process(Seq(
     "sbt",
     "project wolfe-apps",
-    "vmargs -Xmx4G",
+    "vmargs -Xmx8G",
     s"run-main ml.wolfe.apps.factorization.MatrixFactorization $pathToConf"), new File(correctDir)
   ).!)
 }
+
 
