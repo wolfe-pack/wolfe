@@ -24,7 +24,7 @@ object EmbeddedProbLogicEvaluation {
 
     //load raw data
     val trainRaw = FactorizationUtil.loadLiminFile(new File(conf.getString("epl.train")), relationFilter)
-    val train = FactorizationUtil.filterRows(random.shuffle(trainRaw.toSeq), 5, 2)
+    val train = FactorizationUtil.filterRows(random.shuffle(trainRaw.toBuffer), 5, 2)
     //val train = FactorizationUtil.filterRowsPairwise(trainRaw.toSeq, 50)
 
     val unlabeledRaw = FactorizationUtil.loadLiminFile(new File(conf.getString("epl.unlabeled")), relationFilter, skipUnlabeled = true)
@@ -61,7 +61,10 @@ object EmbeddedProbLogicEvaluation {
       new File("/tmp/components.txt"))
 
 
-    val trainRules = Rules(connectedFreebase.map(_._2.rules2).reduce(_ ++ _))//RuleFilters.keep2ndOrder(joinedRulesRaw, cooccurMin)
+    val trainRulesBeforeSubsampling = Rules(connectedFreebase.map(_._2.rules2).reduce(_ ++ _))//RuleFilters.keep2ndOrder(joinedRulesRaw, cooccurMin)
+    val subsample = conf.getDouble("epl.subsample")
+    val trainRules = Rules(trainRulesBeforeSubsampling.rules2.filter(p => p._2.cooccurCount >= 1 || random.nextDouble() < subsample))
+    //val trainRulesFiltered = trainRules.copy(rules2 = trainRules.)
 
     println(s"Original rule count: ${ trainRulesRaw.rules2.size }")
     println(s"Filtered rule count: ${ trainRules.rules2.size }")

@@ -793,7 +793,9 @@ class L2DistanceBasedPotential(w1Edge: Edge, w2Edge: Edge, bias1Edge: Edge, bias
     val dist = t.l2Similarity(o)
     val dist2 = dist * dist
     val phi = eta - dist2
-    val pi = exp(phi - log1p(exp(phi)))
+    //val pi = exp(phi - log1p(exp(phi))) log1p seems really slow!
+    val pi = exp(phi - log(1.0 + exp(phi)))
+
     val rate = (targetProb * (1.0 - pi) + (1 - targetProb) * (0.0 - pi)) * scale
     val obj = scale * (targetProb * log(pi) + (1 - targetProb) * log(1.0 - pi))
     target.f2n +=(o, 2 * rate)
