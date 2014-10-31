@@ -2,7 +2,7 @@ package ml.wolfe.apps.factorization
 
 import cc.factorie.la.DenseTensor1
 import cc.factorie.model.WeightsSet
-import cc.factorie.optimize.{OnlineTrainer, LBFGS, AdaGrad, BatchTrainer}
+import cc.factorie.optimize._
 import com.typesafe.config.Config
 import ml.wolfe._
 import ml.wolfe.Wolfe._
@@ -23,7 +23,7 @@ case class PredicateEmbedding(rel: String, embedding: FactorieVector,
 case class ProbLogicEmbeddings(embeddings: Map[String, PredicateEmbedding],
                                rules: Rules = Rules(Map.empty, Map.empty),
                                average: Boolean = true, forceZero: Boolean = true,
-                               usel2dist: Boolean = false, minWhenUsingL2Dist:Boolean = true) {
+                               usel2dist: Boolean = false, minWhenUsingL2Dist: Boolean = true) {
 
 
   def predict(observations: Seq[String], relation: String) = {
@@ -95,14 +95,16 @@ case class Rules(rules2: Map[(String, String), Rule2], rules1: Map[String, Rule1
   def pairwiseRuleCount(rel: String) = rel2RuleArg1(rel).size + rel2RuleArg2(rel).size
 
   def +(that: Rules): Rules = {
-    val keys = rules2.keySet ++ that.rules2.keySet
-    val result = for (k <- keys.view) yield (rules2.get(k), that.rules2.get(k)) match {
-      case (Some(r1), Some(r2)) => k -> (r1 + r2)
-      case (Some(r1), _) => k -> r1
-      case (_, Some(r2)) => k -> r2
-      case _ => sys.error("can't happen")
+    val result = new mutable.HashMap[(String, String), Rule2]
+    for ((pair, r1) <- rules2) {
+      that.rules2.get(pair) match {
+        case Some(r2) => result(pair) = r1 + r2
+        case None => result(pair) = r1
+      }
     }
+    for ((pair, r2) <- that.rules2) if (!result.contains(pair)) result(pair) = r2
     copy(rules2 = result.toMap)
+
   }
 
 
@@ -134,9 +136,14 @@ case class Rule2(rel1: String, rel2: String, probs: Map[(Boolean, Boolean), Doub
 
   def +(that: Rule2) = {
     val newCount = count + that.count
-    val newProbs = for (b1 <- List(false, true).view; b2 <- List(false, true).view) yield
-      (b1, b2) -> (probs(b1, b2) * count + that.probs(b1, b2) * that.count) / newCount
-    copy(probs = newProbs.toMap, count = newCount)
+    def newProb(b1:Boolean,b2:Boolean) =  (probs(b1, b2) * count + that.probs(b1, b2) * that.count) / newCount
+    val newProbs = Map(
+      (true,true) -> newProb(true,true),
+      (true,false) -> newProb(true,false),
+      (false,true) -> newProb(false,true),
+      (false,false) -> newProb(false,false)
+    )
+    copy(probs = newProbs, count = newCount)
   }
 
   def klTerm(p1: Double, p2: Double) = if (p1 == 0.0) 0.0 else p1 * math.log(p1 / p2)
@@ -271,7 +278,8 @@ object ProbLogicEmbedder {
     val maxIterations = conf.getInt("epl.opt-iterations")
 
 
-    val step = new AdaGrad(conf.getDouble("epl.ada-rate")) with UnitBallProjection
+//        val step = new AdaGrad(conf.getDouble("epl.ada-rate")) with UnitBallProjection
+    val step = new AdaMira(conf.getDouble("epl.ada-rate")) with UnitBallProjection
     //val step = new LBFGS() with UnitBallProjection
 
 
@@ -284,8 +292,8 @@ object ProbLogicEmbedder {
     //GradientBasedOptimizer(fg, new BatchTrainer(_, new LBFGS(), maxIterations))
 
     //allowed observations for each predicate are only the relations we have seen together with the predicate
-    val allowed = new mutable.HashMap[String,mutable.HashSet[String]]()
-    for ((r1,r2) <- rules.rules2.keys) {
+    val allowed = new mutable.HashMap[String, mutable.HashSet[String]]()
+    for ((r1, r2) <- rules.rules2.keys) {
       allowed.getOrElseUpdate(r1, new mutable.HashSet[String]) += r2
       allowed.getOrElseUpdate(r2, new mutable.HashSet[String]) += r1
     }
