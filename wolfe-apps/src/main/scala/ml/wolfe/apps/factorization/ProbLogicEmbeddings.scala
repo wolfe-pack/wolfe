@@ -107,6 +107,13 @@ case class Rules(rules2: Map[(String, String), Rule2], rules1: Map[String, Rule1
 
   }
 
+  def withPriorCounts(priorCounts: Map[(Boolean, Boolean), Double]) = {
+    val normalizer = priorCounts.values.sum
+    val probs = priorCounts.mapValues(_ / normalizer)
+    val rule = Rule2("r1", "r2", probs, count = normalizer, cond1given2 = 0, cond2given1 = 0)
+    copy(rules2 = rules2.mapValues(_ + rule))
+  }
+
 
 }
 
@@ -136,15 +143,16 @@ case class Rule2(rel1: String, rel2: String, probs: Map[(Boolean, Boolean), Doub
 
   def +(that: Rule2) = {
     val newCount = count + that.count
-    def newProb(b1:Boolean,b2:Boolean) =  (probs(b1, b2) * count + that.probs(b1, b2) * that.count) / newCount
+    def newProb(b1: Boolean, b2: Boolean) = (probs(b1, b2) * count + that.probs(b1, b2) * that.count) / newCount
     val newProbs = Map(
-      (true,true) -> newProb(true,true),
-      (true,false) -> newProb(true,false),
-      (false,true) -> newProb(false,true),
-      (false,false) -> newProb(false,false)
+      (true, true) -> newProb(true, true),
+      (true, false) -> newProb(true, false),
+      (false, true) -> newProb(false, true),
+      (false, false) -> newProb(false, false)
     )
     copy(probs = newProbs, count = newCount)
   }
+
 
   def klTerm(p1: Double, p2: Double) = if (p1 == 0.0) 0.0 else p1 * math.log(p1 / p2)
 
@@ -278,7 +286,7 @@ object ProbLogicEmbedder {
     val maxIterations = conf.getInt("epl.opt-iterations")
 
 
-//        val step = new AdaGrad(conf.getDouble("epl.ada-rate")) with UnitBallProjection
+    //        val step = new AdaGrad(conf.getDouble("epl.ada-rate")) with UnitBallProjection
     val step = new AdaMira(conf.getDouble("epl.ada-rate")) with UnitBallProjection
     //val step = new LBFGS() with UnitBallProjection
 
@@ -314,7 +322,7 @@ object ProbLogicEmbedder {
 
 
 object RuleLearner {
-  def learn(rows: Seq[Row]): Rules = {
+  def learn(rows: Seq[Row], priorCounts: Map[(Boolean, Boolean), Double] = Map.empty withDefaultValue 0.0): Rules = {
     val pairCounts = mutable.HashMap[(String, String), Int]() withDefaultValue 0
     val singleCounts = mutable.HashMap[String, Int]() withDefaultValue 0
 
@@ -329,16 +337,16 @@ object RuleLearner {
     }
 
     val relations = singleCounts.keys.toArray.sorted
-    val normalizer = rows.size.toDouble
+    val normalizer = rows.size.toDouble + priorCounts.values.sum
     val rules2 = for (r1 <- 0 until relations.size; r2 <- r1 + 1 until relations.size) yield {
       val rel1 = relations(r1)
       val rel2 = relations(r2)
       val pairCount = pairCounts((rel1, rel2))
       val singleCount1 = singleCounts(rel1)
       val singleCount2 = singleCounts(rel2)
-      val prob11 = pairCount / normalizer
-      val prob10 = (singleCount1 - pairCounts(rel1, rel2)) / normalizer
-      val prob01 = (singleCount2 - pairCounts(rel1, rel2)) / normalizer
+      val prob11 = (pairCount + priorCounts(true, true)) / normalizer
+      val prob10 = ((singleCount1 - pairCounts(rel1, rel2)) + priorCounts(true, false)) / normalizer
+      val prob01 = ((singleCount2 - pairCounts(rel1, rel2)) + priorCounts(false, true)) / normalizer
       val prob00 = 1.0 - prob11 - prob10 - prob01
       val probs = Map(
         (true, true) -> prob11, (true, false) -> prob10,
