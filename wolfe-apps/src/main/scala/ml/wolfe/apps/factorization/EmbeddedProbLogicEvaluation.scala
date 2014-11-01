@@ -24,11 +24,11 @@ object EmbeddedProbLogicEvaluation {
 
     //load raw data
     val trainRaw = FactorizationUtil.loadLiminFile(new File(conf.getString("epl.train")), relationFilter)
-    val train = FactorizationUtil.filterRows(random.shuffle(trainRaw.toBuffer), 5, 2)
+    val train = FactorizationUtil.filterRows(random.shuffle(trainRaw.toBuffer), conf.getInt("epl.min-rows"), conf.getInt("epl.min-cols"))
     //val train = FactorizationUtil.filterRowsPairwise(trainRaw.toSeq, 50)
 
     val unlabeledRaw = FactorizationUtil.loadLiminFile(new File(conf.getString("epl.unlabeled")), relationFilter, skipUnlabeled = true)
-    val unlabeled = FactorizationUtil.filterRows(unlabeledRaw.toSeq, 5, 2, !_.startsWith("REL$"))
+    val unlabeled = FactorizationUtil.filterRows(unlabeledRaw.toSeq, conf.getInt("epl.min-rows"), conf.getInt("epl.min-cols"), !_.startsWith("REL$"))
     val combined = if (conf.getBoolean("epl.use-unlabeled")) train ++ unlabeled else train
 
 
@@ -46,10 +46,13 @@ object EmbeddedProbLogicEvaluation {
     println(unlabeled.size)
     println(test.size)
 
+    val priorRepulsion = conf.getDouble("epl.prior-repulsion")
+    val priorCounts = Map((true,false) -> priorRepulsion, (false,true) -> priorRepulsion) withDefaultValue 0.0
+
     println("Extracting rules")
     val trainRulesRaw =
-      if (conf.getBoolean("epl.combine-datasets")) RuleLearner.learn(combined)
-      else RuleLearner.learn(train) + RuleLearner.learn(unlabeled)
+      if (conf.getBoolean("epl.combine-datasets")) RuleLearner.learn(combined,priorCounts)
+      else RuleLearner.learn(train,priorCounts) + RuleLearner.learn(unlabeled,priorCounts)
     val cooccurMin = conf.getDouble("epl.min-cooccur")
 
     println("Finding components")
