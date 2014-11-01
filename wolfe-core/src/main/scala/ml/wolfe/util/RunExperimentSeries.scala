@@ -34,8 +34,7 @@ object RunExperimentSeries {
       //write header to collectResults
       val fileWriter = new FileWriter(Conf.getString("logFile"), true)
       fileWriter.write("\n//" + new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new Date()) + "\t" + confPath + "\n")
-      fileWriter.write(fields.mkString("", "\t", "\t") + "MAP\twMAP\n")
-      fileWriter.flush()
+      fileWriter.write("MAP\twMAP\t" + fields.mkString("", "\t", "\n"))
       fileWriter.close()
 
       confSeq.map(_ ++ Map(

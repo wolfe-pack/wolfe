@@ -100,6 +100,7 @@ object Timer {
 class ProgressBar(goal: Int, reportInterval: Int = 1, outputStream: OutputStream = System.err) {
   val printWriter = new PrintWriter(outputStream)
 
+  //fixme: can lead to getting stuck in ~very long
   private var completed: Int = 1
   private var startTime = 0l
 

@@ -98,29 +98,33 @@ object MatrixFactorization extends App {
       val cNode = v
       if (formula.isFormula2) {
         val Seq(p1, p2) = formula.predicates
-        val p1Node = db.node1(p1).get
-        val p2Node = db.node1(p2).get
 
-        formula match {
-          case Impl(_, _, target) =>
-            fg.buildFactor(Seq(cNode, p1Node, p2Node))(_ map (_ => new VectorMsgs)) {
-              e => new ImplPotential(e(0), e(1), e(2), target, lambda, formulaeWeight) with L2Regularization
-            }
-            (0 until unobservedPerF).foreach { i =>
-              fg.buildStochasticFactor(Seq(db.sampleNode(colIx), p1Node, p2Node))(_ map (_ => new VectorMsgs)) {
+        //can only inject formulae whose predicates exist
+        if (db.node1(p1).isDefined && db.node1(p2).isDefined) {
+          val p1Node = db.node1(p1).get
+          val p2Node = db.node1(p2).get
+
+          formula match {
+            case Impl(_, _, target) =>
+              fg.buildFactor(Seq(cNode, p1Node, p2Node))(_ map (_ => new VectorMsgs)) {
                 e => new ImplPotential(e(0), e(1), e(2), target, lambda, formulaeWeight) with L2Regularization
               }
-            }
+              (0 until unobservedPerF).foreach { i =>
+                fg.buildStochasticFactor(Seq(db.sampleNode(colIx), p1Node, p2Node))(_ map (_ => new VectorMsgs)) {
+                  e => new ImplPotential(e(0), e(1), e(2), target, lambda, formulaeWeight) with L2Regularization
+                }
+              }
 
-          case ImplNeg(_, _, target) =>
-            fg.buildFactor(Seq(cNode, p1Node, p2Node))(_ map (_ => new VectorMsgs)) {
-              e => new ImplNegPotential(e(0), e(1), e(2), target, lambda, formulaeWeight) with L2Regularization
-            }
-            (0 until unobservedPerF).foreach { i =>
-              fg.buildStochasticFactor(Seq(db.sampleNode(colIx), p1Node, p2Node))(_ map (_ => new VectorMsgs)) {
+            case ImplNeg(_, _, target) =>
+              fg.buildFactor(Seq(cNode, p1Node, p2Node))(_ map (_ => new VectorMsgs)) {
                 e => new ImplNegPotential(e(0), e(1), e(2), target, lambda, formulaeWeight) with L2Regularization
               }
-            }
+              (0 until unobservedPerF).foreach { i =>
+                fg.buildStochasticFactor(Seq(db.sampleNode(colIx), p1Node, p2Node))(_ map (_ => new VectorMsgs)) {
+                  e => new ImplNegPotential(e(0), e(1), e(2), target, lambda, formulaeWeight) with L2Regularization
+                }
+              }
+          }
         }
       } else {
         ???
