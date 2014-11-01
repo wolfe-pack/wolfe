@@ -9,22 +9,28 @@ import java.io.FileWriter
 
 // To use the FreebaseReader class you must first start a MongoDB process in the environment.
 // A simple way of doing this is the command: mongod --dbpath <path-to-DB-cache-directory>
-class FreebaseReader {
+class FreebaseReader(filename: String, port: Int = 27017, emptyKB: Boolean = false) {
   val INSTANCE_PATTERN  = """<http://rdf.freebase.com/ns/([^>]+)>\t<http://rdf.freebase.com/ns/type.type.instance>\t<http://rdf.freebase.com/ns/([^>]+)>.*""".r
   val ATTRIBUTE_PATTERN = """<http://rdf.freebase.com/ns/(m.[^>]+)>\t<http://rdf.freebase.com/ns/([^>]+)>\t<http://rdf.freebase.com/ns/(m.[^>]+)>.*""".r
   val DATE_PATTERN      = """<http://rdf.freebase.com/ns/(m.[^>]+)>\t<http://rdf.freebase.com/ns/time.event.([^_]+_date)>\t\"(.+)\".*""".r
   val TITLE_PATTERN     = """<http://rdf.freebase.com/ns/(m.[^>]+)>\t<http://rdf.freebase.com/key/wikipedia.en>\t\"(.+)\".*""".r
-  var collection = null.asInstanceOf[MongoCollection]
+  var collection =  mongoFromTriples //null.asInstanceOf[MongoCollection]
 
-  def mongoFromTriples(filename: String, port: Int = 27017, emptyKB: Boolean = true): MongoCollection = {
+  def mongoFromTriples: MongoCollection = {
     println("Connecting to local Mongo database at port %d...".format(port))
     val mongoClient = MongoClient("localhost", port)
     val db = mongoClient("FB")
     println("Existing Collections:")
     println(db.collectionNames.map("\t" + _).mkString("\n"))
+
     if (!emptyKB) {
-      println("Using existing indexes.")
-      return db("FB")
+      if (db.collectionExists("FB")) {
+        println("Using existing indexes.")
+        return db("FB")
+      }
+      else {
+        println("No existing collection exists.")
+      }
     }
 
     mongoClient.dropDatabase("FB")
@@ -73,6 +79,11 @@ class FreebaseReader {
     coll
   }
 
+  def getMIDs: Iterator[String] = {
+    val q = new MongoDBObject("mid" $exists true)
+    (collection find q).map { _.get("mid").asInstanceOf[String] }
+  }
+
   def getMID(str: String): Seq[String] = {
     val name = str.replaceAll(" ", "_")
     (collection find MongoDBObject("attribute" -> "title", "arg2" -> name)).flatMap { m =>
@@ -81,28 +92,27 @@ class FreebaseReader {
     }.toSeq
   }
 
-  def getRelation(str1: String, str2: String): Option[String] = {
+  def getRelation(str1: String, str2: String, undirected: Boolean = false): Option[String] = {
     val mids1 = getMID(str1)
     val mids2 = getMID(str2)
-    if (mids1.nonEmpty && mids2.nonEmpty) {
-      // Do some selection from candidate MIDs - this could be a text similarity measure, random selection, or just first match
-      val mid1 = mids1.head
-      val mid2 = mids2.head
-      // Look for relations (attributes) shared by both MIDs
-      val m1 = collection findOne MongoDBObject("arg1" -> mid1, "arg2" -> mid2)
-      m1 match {
-        case Some(row) => return Some(row.get("attribute").asInstanceOf[String])
-        case _=> {
-          // No match found so try the opposite arg1/arg2s:
-          val m2 = collection findOne MongoDBObject("arg1" -> mid2, "arg2" -> mid1)
-          m2 match {
-            case Some(row) => return Some(row.get("attribute").asInstanceOf[String])
-            case _=> None
-          }
+    if (mids1.isEmpty || mids2.isEmpty) return None
+    // Do some selection from candidate MIDs - this could be a text similarity measure, random selection, or just first match
+    val mid1 = mids1.head
+    val mid2 = mids2.head
+    // Look for relations (attributes) shared by both MIDs
+    val m1 = collection findOne MongoDBObject("arg1" -> mid1, "arg2" -> mid2)
+    m1 match {
+      case Some(row) => return Some(row.get("attribute").asInstanceOf[String])
+      case rev if undirected => {
+        // No match found so try the opposite arg1/arg2s:
+        val m2 = collection findOne MongoDBObject("arg1" -> mid2, "arg2" -> mid1)
+        m2 match {
+          case Some(row) => return Some(row.get("attribute").asInstanceOf[String])
+          case _=> None
         }
       }
+      case _=> None
     }
-    None
   }
 
   def getName(mid: String): Option[String] = {
@@ -127,17 +137,28 @@ class FreebaseReader {
       t1 -> t2
     }.filter(t => !(t._1 == "None" && t._2 == "None")).toMap
   }
-
-  def load(filename: String, port: Int = 27017, init: Boolean = true) = {
-    collection = mongoFromTriples(filename, port, init)
-  }
+//
+//  def load(filename: String, port: Int = 27017, init: Boolean = true) = {
+//    collection = mongoFromTriples(filename, port, init)
+//  }
 
   def test() {
+    // Set collection to the test collection
+  //  collection = testCollection
+    // Query
+    println("Attributes of m1: " + attributesOf("m1"))
+    println("MID of 'Barack Obama': " + getMID("Barack Obama"))
+    println("MID of OOV: " + getMID("Barack"))
+    println("Relation between Barack Obama and US? " + getRelation("Barack Obama", "United States of America"))
+    println("Relation between Michelle and Barack? " + getRelation("Michelle Obama", "Barack Obama"))
+    println("Relation between Michelle and US? " + getRelation("Michelle Obama", "United States of America"))
+  }
+
+  def testCollection: MongoCollection = {
     val mongoClient = MongoClient("localhost", 27017)
     mongoClient.dropDatabase("TEST")
     val db = mongoClient("TEST")
     val coll = db("TEST")
-    collection = coll
     // Set indexes
     coll.ensureIndex("mid")
     coll.ensureIndex("arg1")
@@ -151,13 +172,7 @@ class FreebaseReader {
     coll += DBObject("arg1" -> "m3", "attribute" -> "title", "arg2" -> "Michelle_Obama")
     coll += DBObject("arg1" -> "m1", "attribute" -> "president_of", "arg2" -> "m2")
     coll += DBObject("arg1" -> "m1", "attribute" -> "husband_of", "arg2" -> "m3")
-    // Query
-    println("Attributes of m1: " + attributesOf("m1"))
-    println("MID of 'Barack Obama': " + getMID("Barack Obama"))
-    println("MID of OOV: " + getMID("Barack"))
-    println("Relation between Barack Obama and US? " + getRelation("Barack Obama", "United States of America"))
-    println("Relation between Michelle and Barack? " + getRelation("Michelle Obama", "Barack Obama"))
-    println("Relation between Michelle and US? " + getRelation("Michelle Obama", "United States of America"))
+    coll
   }
 
   def collectEvents(coll: MongoCollection = collection, eventFile: String = "events.txt") {
@@ -181,14 +196,16 @@ class FreebaseReader {
 }
 
 object FreebaseReader {
+
   def main(args: Array[String]) = {
     val filename = args(0)
     val rebuild = args(1) == "true"
     val eventFile = args(2)
-    val fb = new FreebaseReader
-//    fb.test
-    fb.load(filename, init = rebuild)
-    fb.collectEvents()
+    println("DB file = " + filename)
+    val fb = new FreebaseReader(args(0), emptyKB = (args(1) == "true"))
+    fb.test
+//    fb.load(filename, init = rebuild)
+//    fb.collectEvents()
     println("Done.")
   }
 

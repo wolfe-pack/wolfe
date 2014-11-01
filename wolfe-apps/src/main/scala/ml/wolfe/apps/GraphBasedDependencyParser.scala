@@ -30,6 +30,10 @@ object GraphBasedDependencyParser extends App {
   }
 
   def depLocal(x: X)(y: Y)(e: (Int, Int)) = {
+    val slen = x.words.size
+    val distance = math.abs(e._1 - e._2)
+    val dir = if (e._1 < e._2) "RIGHT" else "LEFT"
+    oneHot('d_bias -> ("BIAS"), I(y.deps(e))) +
     oneHot('d_ww ->(x.words(e._1), x.words(e._2)), I(y.deps(e)))
   }
 
