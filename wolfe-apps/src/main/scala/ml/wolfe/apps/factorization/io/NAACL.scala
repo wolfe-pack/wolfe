@@ -259,8 +259,7 @@ object EvaluationTool {
         if (Conf.hasPath("logFields")) Conf.getStringList("logFields")
         else Nil
       val fieldValues = fields.map(Conf.conf.getAnyRef)
-      fileWriter.write(fieldValues.mkString("", "\t", "\t") + s"${eval.averageMap()}\t${eval.globalMap()}\n")
-      fileWriter.flush()
+      fileWriter.write(s"${eval.averageMap()}\t${eval.globalMap()}\t" + fieldValues.mkString("", "\t", "\n"))
       fileWriter.close()
     }
 
