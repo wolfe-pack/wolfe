@@ -3,7 +3,7 @@
 set terminal dumb enhanced
 #set term x11
 #set termoption enhanced
-set key right bottom
+set key right top
 
 if (!exists("fileName")) fileName='experiments'
 
@@ -11,18 +11,32 @@ set yrange [0.0:1.0]
 set ytics 0.1,0.1,1
 
 set xlabel "Fraction of Training Data"
-set ylabel "MAP/wMAP"
+set ylabel "MAP"
 
 dataMF = "< grep \"None\" ".fileName.".log"
 dataMFLogic = "< grep \"formulae\" ".fileName.".log"
 
-plot dataMF using 1:3 smooth unique linecolor rgb "blue" linetype 1 linewidth 3  title "MF",\
-     dataMFLogic using 1:3 smooth unique linecolor rgb "red" linetype 1 linewidth 3  title "MF+logic"
+plot dataMF using 3:1 smooth unique linecolor rgb "blue" linetype 1 linewidth 3  title "MF",\
+     dataMFLogic using 3:1 smooth unique linecolor rgb "red" linetype 1 linewidth 3  title "MF+logic"
 
 # Wrapup
 #set terminal pdf enhanced dashed size 3,3#1.75 #size 400,400
 set terminal png truecolor size 400,400
-set output fileName.".png"
-#set output fileName.".pdf"
+set output fileName."-MAP.png"
+#set output fileName."-MAP.pdf"
+refresh
+unset output
+
+
+set terminal dumb enhanced
+plot dataMF using 3:2 smooth unique linecolor rgb "blue" linetype 1 linewidth 3  title "MF",\
+     dataMFLogic using 3:2 smooth unique linecolor rgb "red" linetype 1 linewidth 3  title "MF+logic"
+
+# Wrapup
+set ylabel "wMAP"
+#set terminal pdf enhanced dashed size 3,3#1.75 #size 400,400
+set terminal png truecolor size 400,400
+set output fileName."-wMAP.png"
+#set output fileName."-wMAP.pdf"
 refresh
 unset output
