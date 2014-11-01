@@ -21,7 +21,10 @@ object SubsampleExperiments extends App {
   val formulaeFile = args.lift(1).getOrElse("data/formulae/curated.txt")
   val confPath = args.lift(2).getOrElse("conf/mf.conf")
   val logFilePath = args.lift(3).getOrElse("data/out/experiments.log")
-  //val runLogFilePath = args.lift(4).getOrElse("data/out/run.log")
+  val runLogFilePath = args.lift(4).getOrElse("data/out/run.log")
+  val runLogFile = new File(runLogFilePath)
+  runLogFile.createNewFile()
+ipi
 
   Conf.add(OverrideConfig(Map("logFile" -> logFilePath), confPath + ".tmp", confPath))
 
@@ -32,8 +35,10 @@ object SubsampleExperiments extends App {
     "formulaeFile" -> Seq("None", formulaeFile)
   ).mapValues(rand.shuffle(_))
 
+
   val progressBar = new ProgressBar(series.values.map(_.size).foldLeft(1)(_ * _), threads)
   progressBar.start()
+
 
   RunExperimentSeries(series, threads, confPath) { conf =>
     import scala.sys.process._
@@ -42,12 +47,12 @@ object SubsampleExperiments extends App {
     //check whether in the right directory
     val correctDir = if (userDir.endsWith("/wolfe")) userDir else userDir.split("/").init.mkString("/")
 
-    Process(Seq(
+    (Process(Seq(
       "sbt",
       "project wolfe-apps",
       "vmargs -Xmx8G",
       s"run-main ml.wolfe.apps.factorization.MatrixFactorization $conf"), new File(correctDir)
-    ).lines
+    ) #>> runLogFile).!!
 
     progressBar(conf)
   }
