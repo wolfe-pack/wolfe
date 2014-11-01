@@ -1,6 +1,6 @@
 package ml.wolfe.nlp
 
-import edu.arizona.sista.processors.corenlp.CoreNLPProcessor
+import edu.arizona.sista.processors.corenlp.{CoreNLPDocument, CoreNLPProcessor}
 
 /**
  * Convenience methods for processing NLP documents.
@@ -42,6 +42,24 @@ object SISTAProcessors {
   def annotate(text: String): Document = {
     val result = sistaCoreNLPProcessor.annotate(text)
     val sentences = result.sentences map SISTAConverter.toWolfeSentence
+    Document(text, sentences)
+  }
+
+  def annotate(text: String,
+               posTagger: Boolean=false,
+               lemmatizer: Boolean=false,
+               parser: Boolean=false,
+               ner: Boolean=false,
+               coreference: Boolean=false,
+               srl: Boolean = false): Document = {
+    val result = sistaCoreNLPProcessor.mkDocument(text)
+    if (posTagger) sistaCoreNLPProcessor.tagPartsOfSpeech(result)
+    if (parser) sistaCoreNLPProcessor.parse(result)
+    if (lemmatizer) sistaCoreNLPProcessor.lemmatize(result)
+    if (ner) sistaCoreNLPProcessor.recognizeNamedEntities(result)
+    if (srl) sistaCoreNLPProcessor.labelSemanticRoles(result)
+    if (coreference) sistaCoreNLPProcessor.resolveCoreference(result)
+    val sentences = result.sentences map SISTAConverter.toFullWolfeSentence
     Document(text, sentences)
   }
 

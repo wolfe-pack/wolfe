@@ -2,6 +2,7 @@ package ml.wolfe.nlp
 
 import edu.arizona.sista.processors.{Sentence => SISTASent}
 import edu.arizona.sista.processors.struct.Tree
+import scala.collection.mutable.ArrayBuffer
 
 /**
  * Conversion code for the SISTA processor package.
@@ -29,7 +30,10 @@ object SISTAConverter {
     val tokens = for (i <- 0 until sent.size) yield toWolfeToken(i, sent)
     val ctree = toWolfeConstituentTree(sent)
     val dtree = toWolfeDependencyTree(sent)
-    Sentence(tokens, syntax = new SyntaxAnnotation(tree = ctree, dependencies = dtree))
+    val entities = toWolfeEntities(sent)
+    Sentence(tokens,
+             ie = new IEAnnotation(entityMentions = entities, relationMentions = null, eventMentions = null),
+             syntax = new SyntaxAnnotation(tree = ctree, dependencies = dtree))
   }
 
   def toWolfeConstituentTree(sent: SISTASent): ConstituentTree = {
@@ -52,6 +56,32 @@ object SISTAConverter {
     }
     else {
       new ConstituentTree(new NonterminalNode(label = tree.value, head = tree.head), tree.children.get.map(treeToTree(_)))
+    }
+  }
+
+  def toWolfeEntities(sent: SISTASent): Seq[EntityMention] = {
+    sent.entities match {
+      case Some(entities) => {
+        var lastIndex = -1
+        var lastSymbol = "O"
+        val stored = new ArrayBuffer[EntityMention]
+        entities.zipWithIndex.foreach { case(label, idx) =>
+          if (idx == 0 && label != "O") lastIndex = 0
+          else if (label != lastSymbol && lastSymbol != "O") {
+            stored += new EntityMention(label, lastIndex, idx)
+            if (label != "O") lastIndex = idx
+          }
+          else if (label != lastSymbol && lastSymbol == "O") {
+            lastIndex = idx
+          }
+          else if (label != "O" && idx+1 == entities.size) {
+            stored += new EntityMention(label, lastIndex, idx)
+          }
+          lastSymbol = label
+        }
+        stored.toSeq
+      }
+      case _ => Seq()
     }
   }
 
