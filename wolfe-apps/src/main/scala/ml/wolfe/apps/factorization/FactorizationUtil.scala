@@ -3,6 +3,7 @@ package ml.wolfe.apps.factorization
 import java.io._
 
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 import scala.io.Source
 import scala.util.Random
 
@@ -11,7 +12,7 @@ import scala.util.Random
  */
 object FactorizationUtil {
 
-  case class Row(arg1: Any, arg2: Any, relations: Seq[(String, Double)], hidden:Set[String] = Set.empty) {
+  case class Row(arg1: Any, arg2: Any, relations: Seq[(String, Double)], hidden: Set[String] = Set.empty) {
     def rowName = s"($arg1,$arg2)"
     def observedTrue = relations.filter(_._2 > 0.5).map(_._1)
   }
@@ -25,7 +26,7 @@ object FactorizationUtil {
 
   def loadLiminFile(file: File,
                     relationFilter: String => Boolean = _ => true,
-                    freebaseLabels: Seq[String] = Seq(), minObsCount: Int = 2,skipUnlabeled:Boolean = false): Iterator[Row] = {
+                    freebaseLabels: Seq[String] = Seq(), minObsCount: Int = 2, skipUnlabeled: Boolean = false): Iterator[Row] = {
     val source = Source.fromFile(file, "ISO-8859-1")
     for (line <- source.getLines();
          split = line.split("\t");
@@ -34,6 +35,7 @@ object FactorizationUtil {
          filteredRelations = split.drop(3).filter(relationFilter)
          if filteredRelations.size >= minObsCount && (!skipUnlabeled || split(0) != "UNLABELED")
     ) yield {
+
       val asSet = filteredRelations.toSet
       //POSITIVE: entity pair in freebase, and one relation was seen
       //NEGATIVE: entity pair in freebase, but no relation was observed, this means that we can
@@ -52,14 +54,17 @@ object FactorizationUtil {
     //rule: every row should have at least minColCount active cells, and each column needs minRowCount.
     val counts = new mutable.HashMap[String, Double]() withDefaultValue 0.0
     for (row <- rows; (rel, value) <- row.relations if relFilter(rel)) counts(rel) += value
+
     for (row <- rows;
          cells = row.relations.filter(c => counts(c._1) >= minRowCount)
-         if cells.size >= minColCount) yield row.copy(relations = cells)
+         if cells.size >= minColCount) yield {
+      row.copy(relations = cells)
+    }
   }
 
-  def filterRowsPairwise(rows: Seq[Row], minPairCount:Int = 3): Seq[Row] = {
+  def filterRowsPairwise(rows: Seq[Row], minPairCount: Int = 3): Seq[Row] = {
     //alternative: each relation should have at least one other relation with minPair
-    val counts = new mutable.HashMap[(String,String), Double]() withDefaultValue 0.0
+    val counts = new mutable.HashMap[(String, String), Double]() withDefaultValue 0.0
     for (row <- rows;
          (rel1, value1) <- row.relations;
          (rel2, value2) <- row.relations if rel1 != rel2) counts(rel2 -> rel2) += value1 * value2
@@ -80,13 +85,13 @@ object FactorizationUtil {
     sorted
   }
 
-  def saveToFile(content:String, file:File): Unit = {
+  def saveToFile(content: String, file: File): Unit = {
     val out = new PrintStream(file)
     out.println(content)
     out.close()
   }
 
-  def saveToFile[T](content:Iterable[T], file:File): Unit = {
+  def saveToFile[T](content: Iterable[T], file: File): Unit = {
     val out = new PrintWriter(new BufferedWriter(new FileWriter(file)))
     for (line <- content)
       out.println(line.toString)
@@ -149,7 +154,7 @@ object FactorizationUtil {
 
     for (line <- Source.fromFile(filterTuple).getLines(); if line.trim != "") {
       val split = line.split("\t")
-      val tuple = if (split.size==2) Seq(split(0),split(1)) else Seq(split(1), split(2))
+      val tuple = if (split.size == 2) Seq(split(0), split(1)) else Seq(split(1), split(2))
       allowed += tuple
     }
     println(allowed.size)
