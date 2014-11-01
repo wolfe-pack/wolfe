@@ -24,7 +24,7 @@ object SubsampleExperiments extends App {
   val runLogFilePath = args.lift(4).getOrElse("data/out/run.log")
   val runLogFile = new File(runLogFilePath)
   runLogFile.createNewFile()
-ipi
+
 
   Conf.add(OverrideConfig(Map("logFile" -> logFilePath), confPath + ".tmp", confPath))
 
@@ -36,7 +36,7 @@ ipi
   ).mapValues(rand.shuffle(_))
 
 
-  val progressBar = new ProgressBar(series.values.map(_.size).foldLeft(1)(_ * _), threads)
+  val progressBar = new ProgressBar(series.values.map(_.size).foldLeft(1)(_ * _), 1)
   progressBar.start()
 
 
