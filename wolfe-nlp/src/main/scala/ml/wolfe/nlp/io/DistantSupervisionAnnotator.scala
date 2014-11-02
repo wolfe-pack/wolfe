@@ -4,7 +4,7 @@ import ml.wolfe.nlp.{Document, EntityMention, RelationMention, Sentence, SISTAPr
 /**
  * Created by narad on 10/29/14.
  */
-class DistantSupervisionAnnotator(docs: Iterable[Document], kbFile: String) extends FreebaseReader(kbFile, emptyKB = false) with Iterable[Document] {
+class DistantSupervisionAnnotator(docs: Iterable[Document], kbFile: String) extends FreebaseReader(kbFile, useExisting = true) with Iterable[Document] {
 
   def iterator = docs.map { d =>
     d.copy(sentences = d.sentences.map { s =>
