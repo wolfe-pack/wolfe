@@ -9,7 +9,7 @@ import java.io.FileWriter
 
 // To use the FreebaseReader class you must first start a MongoDB process in the environment.
 // A simple way of doing this is the command: mongod --dbpath <path-to-DB-cache-directory>
-class FreebaseReader(filename: String, port: Int = 27017, emptyKB: Boolean = false) {
+class FreebaseReader(filename: String, port: Int = 27017, useExisting: Boolean = true) {
   val INSTANCE_PATTERN  = """<http://rdf.freebase.com/ns/([^>]+)>\t<http://rdf.freebase.com/ns/type.type.instance>\t<http://rdf.freebase.com/ns/([^>]+)>.*""".r
   val ATTRIBUTE_PATTERN = """<http://rdf.freebase.com/ns/(m.[^>]+)>\t<http://rdf.freebase.com/ns/([^>]+)>\t<http://rdf.freebase.com/ns/(m.[^>]+)>.*""".r
   val DATE_PATTERN      = """<http://rdf.freebase.com/ns/(m.[^>]+)>\t<http://rdf.freebase.com/ns/time.event.([^_]+_date)>\t\"(.+)\".*""".r
@@ -23,7 +23,7 @@ class FreebaseReader(filename: String, port: Int = 27017, emptyKB: Boolean = fal
     println("Existing Collections:")
     println(db.collectionNames.map("\t" + _).mkString("\n"))
 
-    if (!emptyKB) {
+    if (useExisting) {
       if (db.collectionExists("FB")) {
         println("Using existing indexes.")
         return db("FB")
@@ -36,20 +36,10 @@ class FreebaseReader(filename: String, port: Int = 27017, emptyKB: Boolean = fal
     mongoClient.dropDatabase("FB")
     val coll = db("FB")
 
-    // Specify indices
-    coll.ensureIndex("mid")
-    coll.ensureIndex("arg1")
-    coll.ensureIndex("arg2")
-    coll.ensureIndex("type")
-    coll.ensureIndex("attribute")
-    coll.ensureIndex("title")
-
-    println("Constructing Freebase indices...")
+    println("Loading triples...")
     val startTime = System.currentTimeMillis()
     var count = 0
-    var dcount = 0
     val reader = if (filename.endsWith(".gz")) new GZipReader(filename) else io.Source.fromFile(filename).getLines
-//    println("FILESIZE = " + reader.size)
     for (line <- reader) {
       val cleaned = line.replaceAll("> +<", ">\t<").replaceAll("> +\"", ">\t\"")
       cleaned match {
@@ -60,7 +50,6 @@ class FreebaseReader(filename: String, port: Int = 27017, emptyKB: Boolean = fal
           coll.insert(MongoDBObject("arg1" -> mid1, "attribute" -> attribute, "arg2" -> mid2))
         }
         case DATE_PATTERN(mid, dateType, date) => {
-          dcount += 1
           coll.insert(MongoDBObject("arg1" -> mid, "attribute" -> dateType, "arg2" -> date))
         }
         case TITLE_PATTERN(mid, title) => {
@@ -72,10 +61,19 @@ class FreebaseReader(filename: String, port: Int = 27017, emptyKB: Boolean = fal
     }
     val time = (System.currentTimeMillis() - startTime) / 1000.0
     println("Finished loading Freebase triples (%d lines) in %1.1fm".format(count, time/60))
+    // Specify indices
+    coll.ensureIndex("mid")
+    coll.ensureIndex("arg1")
+    coll.ensureIndex("arg2")
+    coll.ensureIndex("type")
+    coll.ensureIndex("attribute")
+    coll.ensureIndex("title")
+
+    val itime = (System.currentTimeMillis() - startTime) / 1000.0
+    println("Finished constructing indices in %1.1fm".format(count, itime/60))
+
     println("There are %d mids.".format(coll.count("mid" $exists true)))
     println("There are %d rows with start dates.".format(coll.count(MongoDBObject("attribute" -> "start_date"))))
-    println("Date patterns were found %d times".format(dcount))
-    // (coll find MongoDBObject("named" -> "yes")).foreach { p => println(p)}
     coll
   }
 
@@ -137,14 +135,10 @@ class FreebaseReader(filename: String, port: Int = 27017, emptyKB: Boolean = fal
       t1 -> t2
     }.filter(t => !(t._1 == "None" && t._2 == "None")).toMap
   }
-//
-//  def load(filename: String, port: Int = 27017, init: Boolean = true) = {
-//    collection = mongoFromTriples(filename, port, init)
-//  }
 
   def test() {
     // Set collection to the test collection
-  //  collection = testCollection
+    collection = testCollection
     // Query
     println("Attributes of m1: " + attributesOf("m1"))
     println("MID of 'Barack Obama': " + getMID("Barack Obama"))
@@ -199,13 +193,13 @@ object FreebaseReader {
 
   def main(args: Array[String]) = {
     val filename = args(0)
-    val rebuild = args(1) == "true"
+    val useExisting = args(1) == "true"
     val eventFile = args(2)
     println("DB file = " + filename)
-    val fb = new FreebaseReader(args(0), emptyKB = (args(1) == "true"))
-    fb.test
+    val fb = new FreebaseReader(args(0), useExisting = useExisting)
+//    fb.test
 //    fb.load(filename, init = rebuild)
-//    fb.collectEvents()
+    fb.collectEvents()
     println("Done.")
   }
 
@@ -222,6 +216,13 @@ object FreebaseReader {
 
 
 
+
+
+
+//
+//  def load(filename: String, port: Int = 27017, init: Boolean = true) = {
+//    collection = mongoFromTriples(filename, port, init)
+//  }
 
 
 /*
