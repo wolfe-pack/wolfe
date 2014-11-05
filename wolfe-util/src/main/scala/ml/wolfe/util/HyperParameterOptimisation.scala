@@ -14,12 +14,12 @@ trait HyperParameterOptimisationAlgorithm {
   /**
    * The best set of parameters found
    */
-  val bestParameters: Map[String,Double]
+  val bestParameters: Map[String, Double]
 
   /**
    * Sequence of intermediate steps, each a tuple of score and parameters at that step
    */
-  val iterates: Seq[( Double, Map[String, Double] )]
+  val iterates: Seq[(Double, Map[String, Double])]
 
   /**
    * Optimise the problem, starting at the given starting points
@@ -27,12 +27,12 @@ trait HyperParameterOptimisationAlgorithm {
    * @param startingPoints A sequence of the starting points
    * @return The set of best parameters
    */
-  def optimise(problem : OptimisationProblem, startingPoints: Seq[Map[String, Double]]): Map[String,Double]
+  def optimise(problem: OptimisationProblem, startingPoints: Seq[Map[String, Double]]): Map[String, Double]
 
   /**
    * To be implemented
    */
-  def printConvergenceGraph()
+  def printConvergenceGraph(): Unit = ???
 
 }
 
