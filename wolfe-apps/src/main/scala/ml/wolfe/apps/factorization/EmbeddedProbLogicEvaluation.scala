@@ -4,9 +4,9 @@ import java.io.File
 
 import cc.factorie.la.DenseTensor1
 import com.typesafe.config.ConfigFactory
+import ml.wolfe.Wolfe._
 import ml.wolfe.apps.factorization.FactorizationUtil.Row
 
-import scala.collection.immutable.HashMap
 import scala.collection.mutable
 import scala.util.Random
 
@@ -14,6 +14,7 @@ import scala.util.Random
  * @author Sebastian Riedel
  */
 object EmbeddedProbLogicEvaluation {
+
 
   def main(args: Array[String]) {
     implicit val conf = ConfigFactory.parseFile(new File("conf/epl.conf"))
@@ -25,15 +26,14 @@ object EmbeddedProbLogicEvaluation {
     //load raw data
     val trainRaw = FactorizationUtil.loadLiminFile(new File(conf.getString("epl.train")), relationFilter)
     val train = FactorizationUtil.filterRows(random.shuffle(trainRaw.toBuffer), conf.getInt("epl.min-rows"), conf.getInt("epl.min-cols"))
-    //val train = FactorizationUtil.filterRowsPairwise(trainRaw.toSeq, 50)
 
     val unlabeledRaw = FactorizationUtil.loadLiminFile(new File(conf.getString("epl.unlabeled")), relationFilter, skipUnlabeled = true)
     val unlabeled = FactorizationUtil.filterRows(unlabeledRaw.toSeq, conf.getInt("epl.min-rows"), conf.getInt("epl.min-cols"), !_.startsWith("REL$"))
     val combined = if (conf.getBoolean("epl.use-unlabeled")) train ++ unlabeled else train
 
 
+    //relations
     val trainRelations = combined.flatMap(_.relations.map(_._1)).distinct.sorted // REL$/book/book_edition/author_editor
-
     val freebaseRelations = trainRelations.filter(_.startsWith("REL$")) //Seq("REL$/business/person/company")//
     val surfacePatterns = trainRelations.filterNot(_.startsWith("REL$")).toSet
 
@@ -47,12 +47,13 @@ object EmbeddedProbLogicEvaluation {
     println(test.size)
 
     val priorRepulsion = conf.getDouble("epl.prior-repulsion")
-    val priorCounts = Map((true,false) -> priorRepulsion, (false,true) -> priorRepulsion) withDefaultValue 0.0
+    val priorCounts = Map((true, false) -> priorRepulsion, (false, true) -> priorRepulsion) withDefaultValue 0.0
 
-    println("Extracting rules")
+    println("Extracting Binary rules")
     val trainRulesRaw =
-      if (conf.getBoolean("epl.combine-datasets")) RuleLearner.learn(combined,priorCounts)
-      else RuleLearner.learn(train,priorCounts) + RuleLearner.learn(unlabeled,priorCounts)
+      if (conf.getBoolean("epl.combine-datasets")) RuleLearner.learn(combined, priorCounts)
+      else RuleLearner.learn(train, priorCounts) + RuleLearner.learn(unlabeled, priorCounts)
+
     val cooccurMin = conf.getDouble("epl.min-cooccur")
 
     println("Finding components")
@@ -114,7 +115,7 @@ object EmbeddedProbLogicEvaluation {
 
 object EmbeddedProbLogicPlayground {
 
-  import math._
+  import scala.math._
 
   def manualRules(): Unit = {
     implicit val conf = ConfigFactory.parseFile(new File("conf/epl-synth.conf")) withFallback ConfigFactory.parseFile(new File("conf/epl.conf"))
@@ -178,9 +179,10 @@ object EmbeddedProbLogicPlayground {
   }
 }
 
+
 object RuleFilters {
 
-  import math._
+  import scala.math._
 
   def keep2ndOrder(rules: Rules,
                    minCooccurCount: Double) = {
@@ -232,6 +234,7 @@ object RuleFilters {
 
 
 }
+
 
 
 
