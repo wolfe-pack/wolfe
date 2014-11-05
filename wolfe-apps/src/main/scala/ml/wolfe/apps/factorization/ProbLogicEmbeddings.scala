@@ -4,11 +4,11 @@ import cc.factorie.la.DenseTensor1
 import cc.factorie.model.WeightsSet
 import cc.factorie.optimize._
 import com.typesafe.config.Config
-import ml.wolfe._
 import ml.wolfe.Wolfe._
+import ml.wolfe._
 import ml.wolfe.apps.factorization.FactorizationUtil.Row
 import ml.wolfe.fg.VectorMsgs
-import ml.wolfe.util.{PotentialDebugger, Util}
+import ml.wolfe.util.Util
 
 import scala.collection.mutable
 import scala.util.Random
@@ -18,7 +18,11 @@ import scala.util.Random
  */
 case class PredicateEmbedding(rel: String, embedding: FactorieVector,
                               scale: Double, bias: Double, weight: Double = 1.0,
-                              observationFilter: String => Boolean = _ => true)
+                              observationFilter: String => Boolean = _ => true) {
+  def distance(that: PredicateEmbedding) = {
+    Util.sq(embedding.l2Similarity(that.embedding))
+  }
+}
 
 case class ProbLogicEmbeddings(embeddings: Map[String, PredicateEmbedding],
                                rules: Rules = Rules(Map.empty, Map.empty),
@@ -120,6 +124,8 @@ case class Rules(rules2: Map[(String, String), Rule2], rules1: Map[String, Rule1
 
 case class Rule2(rel1: String, rel2: String, probs: Map[(Boolean, Boolean), Double], scale: Double = 1,
                  count: Double = 1.0, trueTrueInconsistency: Double = 0.0, cond1given2: Double, cond2given1: Double) {
+
+  assert(cond1given2 <= 1.0)
   def marg1(b1: Boolean) = probs(b1, true) + probs(b1, false)
   def marg2(b2: Boolean) = probs(true, b2) + probs(false, b2)
   def prob2given1(b1: Boolean)(b2: Boolean) = probs(b1, b2) / marg1(b1)
@@ -192,7 +198,7 @@ object ProbLogicEmbedder {
 
   def embed(rules: Rules)(implicit conf: Config): ProbLogicEmbeddings = {
 
-    import FactorGraph.Node
+    import ml.wolfe.FactorGraph.Node
 
     val random = new Random(0)
     val relations = rules.rules2.values.flatMap(r => Seq(r.rel1, r.rel2)).distinct.sorted.toArray
@@ -360,3 +366,4 @@ object RuleLearner {
     Rules(rules2.toMap, rules1.toMap)
   }
 }
+
