@@ -9,25 +9,25 @@ trait HyperParameterOptimisationAlgorithm {
   /**
    * the best score after optimising
    */
-  val bestScore: Double
+  var bestScore: Double
 
   /**
    * The best set of parameters found
    */
-  val bestParameters: Map[String, Double]
+  var bestParameters: Map[String, Double]
 
   /**
    * Sequence of intermediate steps, each a tuple of score and parameters at that step
    */
-  val iterates: Seq[(Double, Map[String, Double])]
+  var iterates: Seq[(Double, Map[String, Double])]
 
   /**
    * Optimise the problem, starting at the given starting points
    * @param problem The optimisation problem
-   * @param startingPoints A sequence of the starting points
+   * @param startingPoint The starting point of the algorithm
    * @return The set of best parameters
    */
-  def optimise(problem: OptimisationProblem, startingPoints: Seq[Map[String, Double]]): Map[String, Double]
+  def optimise(problem: OptimisationProblem, startingPoint: Map[String, Double]): Map[String, Double]
 
   /**
    * To be implemented
