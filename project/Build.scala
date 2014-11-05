@@ -145,7 +145,7 @@ object Build extends Build {
     id = "wolfe",
     base = file("."),
     settings = Project.defaultSettings ++ publishSettings ++ generalSettings ++ releaseSettings
-  ) aggregate(core, nlp, examples, apps, ui)
+  ) aggregate(core, nlp, examples, apps, ui, neural, util)
 
   lazy val core = Project(
     id = "wolfe-core",
@@ -160,6 +160,19 @@ object Build extends Build {
     base = file("wolfe-nlp"),
     settings = buildSettings ++ globalSettings ++ nlpDependencies
   ) dependsOn core % "test->test;compile->compile"
+  
+  lazy val neural = Project(
+    id = "wolfe-neural",
+    base = file("wolfe-neural"),
+    settings = buildSettings ++ globalSettings
+  ) dependsOn core % "test->test;compile->compile"
+
+  lazy val util = Project(
+    id = "wolfe-util",
+    base = file("wolfe-util"),
+    settings = buildSettings ++ globalSettings
+  ) dependsOn core % "test->test;compile->compile"
+
 
   lazy val examples = Project(
     id = "wolfe-examples",
