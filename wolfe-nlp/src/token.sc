@@ -20,7 +20,7 @@ class OneClassSVMPerInstanceLoss(weightsEdge:FactorGraph.Edge) extends Potential
   override def valueAndGradientForAllEdges() = {
     val currentWeights = weightsEdge.msgs.asVector.n2f
     weightsEdge.msgs.asVector.f2n = ??? //my gradient
-
+    ???
 
   }
 }

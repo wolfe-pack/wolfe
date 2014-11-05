@@ -2,7 +2,7 @@ import java.io.IOException
 import sbt._
 import sbt.Keys._
 import sbtrelease.ReleasePlugin._
-import scoverage.ScoverageSbtPlugin._
+//import scoverage.ScoverageSbtPlugin._
 import com.github.retronym.SbtOneJar.oneJarSettings
 
 object ShellPrompt {
@@ -130,9 +130,9 @@ object BuildSettings {
         Resolver.sonatypeRepo("releases")
       ),
       globalDependencies
-    ) ++ generalSettings ++ releaseSettings ++ publishSettings ++ instrumentSettings ++ oneJarSettings //++ coverallsSettings
+    ) ++ generalSettings ++ releaseSettings ++ publishSettings ++  oneJarSettings //++ coverallsSettings ++ instrumentSettings
 
-  ScoverageKeys.excludedPackages in ScoverageCompile := ".*;.*.*"
+//  ScoverageKeys.excludedPackages in ScoverageCompile := ".*;.*.*"
 }
 
 
