@@ -4,7 +4,7 @@ import org.scalatest.{Matchers, WordSpec}
 import scala.math._
 
 /**
- * Created by Ingolf Becker on 05/11/2014.
+ * Created by Andreas Vlachos on 05/11/2014.
  */
 class NelderMeadSpecs extends WordSpec with Matchers {
 
@@ -25,7 +25,10 @@ class NelderMeadSpecs extends WordSpec with Matchers {
         f = logZ - dot(self.K, x)
         return f
  */
-      val Fs: Seq[Map[String, Double]] = Seq(Map("A" -> 1.0, "B" -> 1.0, "C" -> 1.0),
+      //println(hyperparameters)
+
+      val Fs: Seq[Map[String, Double]] = Seq(
+        Map("A" -> 1.0, "B" -> 1.0, "C" -> 1.0),
         Map("A" -> 1.0, "B" -> 1.0, "C" -> 0.0),
         Map("A" -> 1.0, "B" -> 0.0, "C" -> 1.0),
         Map("A" -> 1.0, "B" -> 0.0, "C" -> 0.0),
@@ -33,27 +36,23 @@ class NelderMeadSpecs extends WordSpec with Matchers {
 
       val Ks: Map[String, Double] = Map("A" -> 1.0, "B" -> 0.3, "C" -> 0.5)
 
-      //var log_pdot : Map[String, Double] = Map("A" -> 0.0, "B" -> 0.0, "C" -> 0.0)
+      // F*hyperparam
+      //println("values")
+      //println(for (f <- Fs) yield
+      //  (for (key <- hyperparameters.keys.toSeq) yield hyperparameters(key)*f(key)))
 
-      //for (key <- hyperparameters.keys){
-      //  for (f <- Fs) {
-      //    log_pdot(key) += hyperparameters(key) * f(key)
-      //  }
-      //}
-
-      val log_pdot = (for (key <- hyperparameters.keys) yield (key, (for (f <- Fs) yield hyperparameters(key) * f(key)).sum)).toMap
-
-
-      var Z = 0.0
-      var Kx = 0.0
-
-      for (key <- hyperparameters.keys) {
-        Z += exp(log_pdot(key))
-        Kx += Ks(key) * hyperparameters(key)
-      }
-
-      log(Z) - Kx
-
+      val log_pdot = (for (f <- Fs) yield
+        (for (key <- hyperparameters.keys.toSeq) yield hyperparameters(key)*f(key)).sum)
+      // log(sum(exp(log_pdot)))
+      //println(log_pdot)
+      val logZ = log((for (value <- log_pdot) yield exp(value)).sum)
+      // K*x
+      val Kx = for (key <- hyperparameters.keys.toSeq) yield (hyperparameters(key) * Ks(key))
+      //println(logZ)
+      //println(Kx)
+      //println(Kx.sum)
+      //println(logZ - Kx.sum)
+      logZ - Kx.sum
     }
   }
   class RosenbrockProblem(hyperparams:Map[String, Double]) extends OptimisationProblem {
@@ -84,7 +83,7 @@ class NelderMeadSpecs extends WordSpec with Matchers {
 
   // This implements the unit test of SciPy
   "NelderMeadSimplex" should {
-    /*"find the correct solution for the toy Berger et al. (1996) problem" in {
+    "find the correct solution for the toy Berger et al. (1996) problem" in {
       val toyProblem: OptimisationProblem = new ToyProblem()
       val myOptimizer: HyperParameterOptimisationAlgorithm = new NelderMeadSimplex()
 
@@ -97,7 +96,7 @@ class NelderMeadSpecs extends WordSpec with Matchers {
       solutionFound("B") should be(-0.524869316  +- 1e-6)
       solutionFound("C") should be(0.487525860  +- 1e-6)
 
-    }*/
+    }
 
     "find the correct solution for the Rosenbrock function" in {
       // Set the starting point to 1.3, 0.7, 0.8, 1.9, 1.2]

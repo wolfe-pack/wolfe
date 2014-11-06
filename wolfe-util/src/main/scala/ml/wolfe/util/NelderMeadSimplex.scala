@@ -50,7 +50,7 @@ class NelderMeadSimplex extends HyperParameterOptimisationAlgorithm {
       this.iterates += bestElement
       val secondWorstElement = points.maxBy(_._1)
 
-      println(f"bestElement: ${bestElement._1}%.8f at ${bestElement._2("A")}%.8f, ${bestElement._2("B")}%.8f, ${bestElement._2("B")}%.8f")
+      println(f"bestElement: ${bestElement._1}%.8f at ${bestElement._2("A")}%.8f, ${bestElement._2("B")}%.8f, ${bestElement._2("C")}%.8f")
 
       def pointAlongVertex(centroid: Param, worstPoint: Param, scale: Double): Param =
         worstPoint.keys.map(x => (x, centroid(x) + scale * (worstPoint(x) - centroid(x)))).toMap
