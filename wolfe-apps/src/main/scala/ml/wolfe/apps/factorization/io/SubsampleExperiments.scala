@@ -18,18 +18,22 @@ import scala.util.Random
  */
 object SubsampleExperiments extends App {
   val threads = args.lift(0).getOrElse("1").toInt
+  // The file containing the formulas
   val formulaeFile = args.lift(1).getOrElse("data/formulae/curated.txt")
+  // The file containing the main configuration
   val confPath = args.lift(2).getOrElse("conf/mf.conf")
+  // The log files
   val logFilePath = args.lift(3).getOrElse("data/out/experiments.log")
   val runLogFilePath = args.lift(4).getOrElse("data/out/run.log")
   val runLogFile = new File(runLogFilePath)
   runLogFile.createNewFile()
 
-
+  //
   Conf.add(OverrideConfig(Map("logFile" -> logFilePath), confPath + ".tmp", confPath))
 
   val rand = new Random(0l)
 
+  // This generates a list of 0.1, 0.2... 1, and shuffles it (for some not so obvious reason)
   val series = Map(
     "mf.subsample" -> (1 to 10).map(_ / 10.0).toSeq,
     "formulaeFile" -> Seq("None", formulaeFile)
@@ -39,8 +43,11 @@ object SubsampleExperiments extends App {
   val progressBar = new ProgressBar(series.values.map(_.size).foldLeft(1)(_ * _), 1)
   progressBar.start()
 
+  // RunExp... generates function series1 that takes a function with a stringToAny map as input
+  val series1: ((String) => Any) => Unit = RunExperimentSeries(series, threads, confPath)
 
-  RunExperimentSeries(series, threads, confPath) { conf =>
+  // Series1 generates the configs which will then be executed
+  series1 { conf =>
     import scala.sys.process._
     val userDir = System.getProperty("user.dir")
 
