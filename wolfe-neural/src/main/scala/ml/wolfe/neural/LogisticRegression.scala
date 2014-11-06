@@ -12,30 +12,32 @@ import ml.wolfe.neural.math._
  * @param W internal weights
  * @param b biases
  */
-class LogisticRegression(var W: DenseMatrix[Double],
-                         var b: DenseVector[Double]) extends OutputLayer {
 
+
+
+
+class LogisticRegression(var W: DenseMatrix[Double],
+                         var b: DenseVector[Double],
+                         activation: (DenseMatrix[Double] => DenseMatrix[Double])) extends OutputLayer {
+
+  //math.softmax
 
   // variable, as it can be changed
 
   var X: DenseMatrix[Double] = null
 
-  def p_y_given_x(input: DenseMatrix[Double]): DenseMatrix[Double] = {
-    X = DenseMatrix.horzcat(DenseMatrix.ones[Double](input.rows, 1), input)
-    math.softmax(X * theta)
-  }
-
-
   // TODO implement generic prediction function (output function application)
-  def y_pred(input: DenseMatrix[Double]) = math.argmax(p_y_given_x(input))
+
+  def predict(input: DenseMatrix[Double]) = math.argmax(propagateForward(input))
 
   def propagateForward(input: DenseMatrix[Double]): DenseMatrix[Double] = {
     X = DenseMatrix.horzcat(DenseMatrix.ones[Double](input.rows, 1), input)
-    p_y_given_x(input)
-    //y_pred(X).toDenseMatrix
+    activation(X * theta)
   }
 
-  def propagateBackward() = ???
+  def propagateBackward() = {
+
+  }
 
 
   // TODO: find a nicer way to encode loss functions, errors and gradients to use them interchangeably
@@ -45,17 +47,17 @@ class LogisticRegression(var W: DenseMatrix[Double],
 
 
   // propagateBackwards
-  def gradient(input: DenseMatrix[Double], y: DenseVector[Double]) = {
+  def gradient(input: DenseMatrix[Double], y: DenseVector[Double]): DenseMatrix[Double] = {
     require(input.rows == y.length, "Number of data points and their labels is not equal!")
     val sigma = kroneckerDelta(input.rows, outputSize, y.map(_.toInt).iterator)
-    val p = p_y_given_x(input)
+    val p = propagateForward(input)
     (X.t * (sigma - p)) :* (-1.0 / input.rows)
   }
 
 
   // cost
   def negative_log_likelihood(input: DenseMatrix[Double], y: DenseVector[Double]): Double = {
-    val p = p_y_given_x(input)
+    val p = propagateForward(input)
     require(y.length == p.rows, "these thinglets disagree...which is awfully bad!")
     // or do this with elementwise kronecker matrix multiplications?
     var ll = 0.0
@@ -69,7 +71,7 @@ class LogisticRegression(var W: DenseMatrix[Double],
 
   // get errors from prediction
   def errors(input: DenseMatrix[Double], y: DenseVector[Double]): Double = {
-    val output = y_pred(input)
+    val output = predict(input)
     require(output.length == y.length)
     val neq = output :!= y
     neq.activeSize.toDouble / neq.length
