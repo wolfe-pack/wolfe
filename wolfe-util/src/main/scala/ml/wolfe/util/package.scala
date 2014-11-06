@@ -1,6 +1,7 @@
 package ml.wolfe
 
-import java.io.{File, FileWriter}
+import java.io.{IOException, File, FileWriter}
+import java.nio.file.{Paths, Path, Files}
 import java.util.Calendar
 
 import com.typesafe.config.{Config, ConfigFactory}
@@ -63,7 +64,12 @@ package object util {
     private var _conf: Config = ConfigFactory.parseFile(new File("conf/default.conf"))
 
     def createSymbolicLinkToLatest() =
-      Runtime.getRuntime.exec("/bin/ln -sfn %s %s".format(msDir.getAbsolutePath, latest.getAbsolutePath))
+      try {
+        Files.createLink(Paths.get(latest.getAbsolutePath), Paths.get(msDir.getAbsolutePath))
+      } catch {
+        case e: IOException => println("Can't create link")
+      }
+      //Runtime.getRuntime.exec("/bin/ln -sfn %s %s".format(msDir.getAbsolutePath, latest.getAbsolutePath))
 
     import scala.collection.JavaConversions._
 
