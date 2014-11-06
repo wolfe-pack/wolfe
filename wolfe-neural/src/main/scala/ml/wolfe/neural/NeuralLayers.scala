@@ -6,7 +6,7 @@ import breeze.linalg.{DenseVector, DenseMatrix}
  * Created by mbosnjak on 11/6/14.
  */
 
-trait Layer {
+trait NetworkLayer {
   // input is a must, determines inputSize
   val input: DenseMatrix[Double]
   val inputSize: Int = input.cols
@@ -25,7 +25,7 @@ trait Layer {
   //activation function? (in case of log reg...it is identity
 }
 
-trait OutputLayer extends Layer {
+trait OutputLayer extends NetworkLayer {
   def errors: Double
   // has error, loss, cost function
 }
@@ -49,7 +49,7 @@ class HiddenLayer(val input: DenseMatrix[Double],
                   hidden_size: Int = 10,
                   var W: DenseMatrix[Double] = null,
                   var b: DenseVector[Double] = null,
-                  activation: (Double => Double) = scala.math.tanh) extends Layer {
+                  activation: (Double => Double) = scala.math.tanh) extends NetworkLayer {
 
 //  def this(input: DenseVector[Double],
 //           hidden_size: Int,

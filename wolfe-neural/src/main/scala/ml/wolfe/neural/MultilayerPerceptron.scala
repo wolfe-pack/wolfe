@@ -9,11 +9,14 @@ import breeze.linalg.{DenseVector, DenseMatrix}
 // extends iterable of layers ? (check of last layer)
 // last layer needs to be non-hidden ?
 // parameters: sequence of layers  +  final layer ?
-class MultiLayerPerceptron {
+class MultiLayerPerceptron(layers: Seq[NetworkLayer]) {
+  assert(layers.head.isInstanceOf[HiddenLayer], "Input layer must be of type HiddenLayer (for now.)")
+  assert(layers.last.isInstanceOf[OutputLayer], "Output layer must be of type OutputLayer.")
 
 }
 
 object MultiLayerPerceptronPlayground extends App {
+
 
 
 //  val input = DenseMatrix((1.0,0.0),(0.0,1.0))
