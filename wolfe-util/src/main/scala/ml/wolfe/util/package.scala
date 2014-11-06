@@ -1,9 +1,10 @@
 package ml.wolfe
 
-import java.io.{FileWriter, FileOutputStream, File}
-import java.nio.channels.Channels
+import java.io.{File, FileWriter}
 import java.util.Calendar
-import com.typesafe.config.{ConfigFactory, Config}
+
+import com.typesafe.config.{Config, ConfigFactory}
+
 import scala.collection.mutable.ArrayBuffer
 import scala.io.Source
 
