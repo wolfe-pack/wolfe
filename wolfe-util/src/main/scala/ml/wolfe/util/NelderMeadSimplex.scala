@@ -3,14 +3,15 @@ package ml.wolfe.util
 import scala.collection.mutable
 
 /**
- * Created by Ingolf Becker on 05/11/2014.
+ * Implementation of the Nelder-Mead Algorithm for derivative free optimisation
+ * @author Ingolf Becker
  */
 class NelderMeadSimplex extends HyperParameterOptimisationAlgorithm {
   type Param = Map[String, Double]
 
-  override var bestScore     : Double                             = _
-  override var iterates      : Seq[(Double, Map[String, Double])] = _
-  override var bestParameters: Map[String, Double]                = _
+  override var bestScore     : Double                             = throw new InstantiationException("Optimise first!")
+  override var iterates      : mutable.Buffer[(Double, Param)] = throw new InstantiationException("Optimise first!")
+  override var bestParameters: Param                = throw new InstantiationException("Optimise first!")
   /**
    * Optimise the problem, starting at the given starting points
    * @param problem The optimisation problem
@@ -18,7 +19,7 @@ class NelderMeadSimplex extends HyperParameterOptimisationAlgorithm {
    * @return The set of best parameters
    */
   override def optimise(problem: OptimisationProblem, startingPoint: Param): Param = {
-    var dimensions = problem.parametersToOptimize.length
+    val dimensions = problem.parametersToOptimize.length
 
     println(f"Starting optimisation with $dimensions%d dimensions.")
     var points: mutable.ArrayBuffer[(Double, Param)] = new mutable.ArrayBuffer[(Double, Param)]()
@@ -27,7 +28,7 @@ class NelderMeadSimplex extends HyperParameterOptimisationAlgorithm {
     def modifyStartingPoint(start : Double): Double =
       if (start == 0.0) 0.00025 else 0.05 + start
 
-    val startingPoints = for (key <- startingPoint.keys) yield (startingPoint + (key -> (modifyStartingPoint(startingPoint(key)))))
+    val startingPoints = for (key <- startingPoint.keys) yield startingPoint + (key -> modifyStartingPoint(startingPoint(key)))
 
     // evaluate the starting points
     val evaluatedStartingPoints = for (x <- startingPoints) yield (problem.evaluate(x), x)
@@ -36,9 +37,8 @@ class NelderMeadSimplex extends HyperParameterOptimisationAlgorithm {
 
     points ++= evaluatedStartingPoints
 
-    def accumulate(acc: Param, element: (Double, Param)): Param = (
+    def accumulate(acc: Param, element: (Double, Param)): Param =
       element._2.keys.map(x=> (x, acc(x) + element._2(x) / dimensions)).toMap
-    )
 
     var error = 1.0
     while (error > 1e-12) {
@@ -46,14 +46,14 @@ class NelderMeadSimplex extends HyperParameterOptimisationAlgorithm {
       points -= worstElement
 
       val centroid = points.foldLeft(startingPoint.keys.map(x => (x, 0.0)).toMap)(accumulate)
-      var bestElement = points.minBy(_._1)
+      val bestElement = points.minBy(_._1)
+      this.iterates += bestElement
       val secondWorstElement = points.maxBy(_._1)
 
       println(f"bestElement: ${bestElement._1}%.8f at ${bestElement._2("A")}%.8f, ${bestElement._2("B")}%.8f, ${bestElement._2("B")}%.8f")
 
-      def pointAlongVertex(centroid: Param, worstPoint: Param, scale: Double): Param = (
+      def pointAlongVertex(centroid: Param, worstPoint: Param, scale: Double): Param =
         worstPoint.keys.map(x => (x, centroid(x) + scale * (worstPoint(x) - centroid(x)))).toMap
-      )
 
       val reflectionPoint = pointAlongVertex(centroid, worstElement._2, -1.0)
       val valueAtReflectionPoint = problem.evaluate(reflectionPoint)
@@ -94,14 +94,14 @@ class NelderMeadSimplex extends HyperParameterOptimisationAlgorithm {
         if (!found) {
           // Neither outside nor inside contraction was acceptable, shrink simplex toward best solution
 
-          def averageBetweenTwo(best: Param, other: (Double,Param)) : (Double, Param) = (
+          def averageBetweenTwo(best: Param, other: (Double,Param)) : (Double, Param) =
             if (best == other._2) {
               other
             } else {
               val newpoint = best.keys.map(x => (x, 0.5 * (best(x) + other._2(x)))).toMap
               (problem.evaluate(newpoint), newpoint)
             }
-          )
+
 
           points += worstElement
           points = points.map(x => averageBetweenTwo(bestElement._2,x))
@@ -110,10 +110,10 @@ class NelderMeadSimplex extends HyperParameterOptimisationAlgorithm {
       error = math.abs(points.maxBy(_._1)._1 - points.minBy(_._1)._1)
 
     }
-    this.bestParameters = points.last._2
-    this.bestScore = points.last._1
-
-    points.last._2
+    this.bestParameters = points.minBy(_._1)._2
+    this.bestScore = points.minBy(_._1)._1
+    this.iterates += points.minBy(_._1)
+    points.minBy(_._1)._2
 
   }
 

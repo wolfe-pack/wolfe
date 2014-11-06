@@ -1,5 +1,6 @@
 package ml.wolfe.util
 
+import scala.collection.mutable
 /**
  * The trait to be implemented of an Optimisation algorithm
  * Created by Ingolf Becker on 05/11/2014.
@@ -19,7 +20,7 @@ trait HyperParameterOptimisationAlgorithm {
   /**
    * Sequence of intermediate steps, each a tuple of score and parameters at that step
    */
-  var iterates: Seq[(Double, Map[String, Double])]
+  var iterates: mutable.Buffer[(Double, Map[String, Double])]
 
   /**
    * Optimise the problem, starting at the given starting points
