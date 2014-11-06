@@ -9,9 +9,9 @@ import scala.collection.mutable
 class NelderMeadSimplex extends HyperParameterOptimisationAlgorithm {
   type Param = Map[String, Double]
 
-  override var bestScore     : Double                             = throw new InstantiationException("Optimise first!")
-  override var iterates      : mutable.Buffer[(Double, Param)] = throw new InstantiationException("Optimise first!")
-  override var bestParameters: Param                = throw new InstantiationException("Optimise first!")
+  override var bestScore     : Double                             = Double.PositiveInfinity
+  override var iterates      : mutable.Buffer[(Double, Param)] = mutable.Buffer()
+  override var bestParameters: Param                = Map()
   /**
    * Optimise the problem, starting at the given starting points
    * @param problem The optimisation problem
@@ -41,7 +41,7 @@ class NelderMeadSimplex extends HyperParameterOptimisationAlgorithm {
       element._2.keys.map(x=> (x, acc(x) + element._2(x) / dimensions)).toMap
 
     var error = 1.0
-    while (error > 1e-12) {
+    while (error > 1e-14) {
       val worstElement = points.maxBy(_._1)
       points -= worstElement
 
