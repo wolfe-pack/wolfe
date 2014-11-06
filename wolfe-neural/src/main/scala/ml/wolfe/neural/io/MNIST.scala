@@ -1,15 +1,12 @@
-package uk.ac.ucl.cs.mr.io
+package ml.wolfe.neural.io
 
-import java.io.{DataInputStream, InputStream, File}
 import cc.factorie.la.{Tensor => TensorTrait, Tensor2}
 
-import scala.swing.Panel
 import swing.Swing._
 import swing._
 import scala.swing.event.WindowClosing
 import java.awt.{AlphaComposite, Color}
 import ml.wolfe.neural.{FactorieVector, FactorieTensor, FactorieMatrix}
-import ml.wolfe.neural.io.IDXReader
 
 /**
 * User: rockt
@@ -24,8 +21,10 @@ class Digit(val matrix: Tensor2, val label: Int) extends FactorieMatrix(matrix.d
 object MNIST {
   val testImageTensor = IDXReader.read("/MNIST/t10k-images.idx3-ubyte.zip") match { case t: FactorieTensor => t }
   val testLabelVector = IDXReader.read("/MNIST/t10k-labels.idx1-ubyte.zip") match { case v: FactorieVector => v }
+  val mlpTest = IDXReader.read("/Users/narad/Downloads/mnist.pkl.gz") match { case t: FactorieTensor => t }
   val test: Seq[Digit] = testImageTensor.inners.view.zipWithIndex.map(t => new Digit(t._1, testLabelVector(t._2).toInt))
 }
+
 
 object MNISTDrawer extends SimpleSwingApplication {
   val images = MNIST.test

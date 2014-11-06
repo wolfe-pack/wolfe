@@ -67,7 +67,6 @@ object GraphBasedDependencyParser extends App {
     val tokens = x.words.zip(x.tags).zipWithIndex.map { case((tw,tt),i) => Token(word = tw, offsets = CharOffsets(i,i), posTag = tt)}.tail
     val exp = expect(space(x))(model(w)(x))(y => sum(candidateDeps(x)) { e => oneHot(e, I(y.deps(e)))})
     val arcs = candidateDeps(x).flatMap { case(i,j) =>
-//      val exp = expect (space(x)) (model(w)(x)) (s => oneHot(0 -> 1, I(s.deps(i,j)))).get((0,1)).get
       exp(i -> j) match {
         case p if p > 0.5 => Some((j, i, null))
         case _ => None
@@ -97,6 +96,8 @@ object GraphBasedDependencyParser extends App {
 
 
 
+
+//      val exp = expect (space(x)) (model(w)(x)) (s => oneHot(0 -> 1, I(s.deps(i,j)))).get((0,1)).get
 
 
 // "/Users/narad/Documents/work/data/conll/2009/english/evaluation.txt"
