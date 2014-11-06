@@ -4,7 +4,7 @@ import org.scalatest.{Matchers, WordSpec}
 import scala.math._
 
 /**
- * Created by Andreas Vlachos on 05/11/2014.
+ * @author Andreas Vlachos
  */
 class NelderMeadSpecs extends WordSpec with Matchers {
 
@@ -42,12 +42,12 @@ class NelderMeadSpecs extends WordSpec with Matchers {
       //  (for (key <- hyperparameters.keys.toSeq) yield hyperparameters(key)*f(key)))
 
       val log_pdot = (for (f <- Fs) yield
-        (for (key <- hyperparameters.keys.toSeq) yield hyperparameters(key)*f(key)).sum)
+        for (key <- hyperparameters.keys.toSeq) yield hyperparameters(key)*f(key)).sum
       // log(sum(exp(log_pdot)))
       //println(log_pdot)
       val logZ = log((for (value <- log_pdot) yield exp(value)).sum)
       // K*x
-      val Kx = for (key <- hyperparameters.keys.toSeq) yield (hyperparameters(key) * Ks(key))
+      val Kx = for (key <- hyperparameters.keys.toSeq) yield hyperparameters(key) * Ks(key)
       //println(logZ)
       //println(Kx)
       //println(Kx.sum)
@@ -87,30 +87,26 @@ class NelderMeadSpecs extends WordSpec with Matchers {
       val toyProblem: OptimisationProblem = new ToyProblem()
       val myOptimizer: HyperParameterOptimisationAlgorithm = new NelderMeadSimplex()
 
-
+      val correctSolution = toyProblem.evaluate(Map("A" -> 0.0, "B" -> -0.524869316, "C" -> 0.487525860))
       // Set the starting point to 0
       val zeros: Map[String, Double] = Map("A" -> 0, "B" -> 0, "C" -> 0)
       myOptimizer.optimise(toyProblem, zeros)
-      val solutionFound = myOptimizer.bestParameters
-      solutionFound("A") should be(0.0 +- 1e-6)
-      solutionFound("B") should be(-0.524869316  +- 1e-6)
-      solutionFound("C") should be(0.487525860  +- 1e-6)
+      println(f"Error is ${correctSolution - myOptimizer.bestScore}%g")
+      myOptimizer.bestScore should be(correctSolution +- 1e-6)
 
     }
 
     "find the correct solution for the Rosenbrock function" in {
-      // Set the starting point to 1.3, 0.7, 0.8, 1.9, 1.2]
+
       val startingPoint: Map[String, Double] = Map("A" -> 1.3, "B" -> 0.7, "C" -> 0.8, "D" -> 1.9, "E" -> 1.2)
+      val solutionPoint: Map[String, Double] = startingPoint.keys.map((_,1.0)).toMap
       val toyProblem: OptimisationProblem = new RosenbrockProblem(startingPoint)
+      val correctSolution = toyProblem.evaluate(solutionPoint)
+
       val myOptimizer: HyperParameterOptimisationAlgorithm = new NelderMeadSimplex()
 
       myOptimizer.optimise(toyProblem, startingPoint)
-      val solutionFound = myOptimizer.bestParameters
-      solutionFound("A") should be(1.0  +- 1e-6)
-      solutionFound("B") should be(1.0  +- 1e-6)
-      solutionFound("C") should be(1.0 +- 1e-6)
-      solutionFound("D") should be(1.0  +- 1e-6)
-      solutionFound("E") should be(1.0  +- 1e-6)
+      myOptimizer.bestScore should be(correctSolution +- 1e-6)
     }
   }
 }
