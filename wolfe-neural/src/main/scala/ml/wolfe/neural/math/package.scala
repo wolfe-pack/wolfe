@@ -9,9 +9,47 @@ import breeze.stats.distributions.Rand
  */
 package object math {
 
-  object ActivationFunctions {
+  def softmax(M: DenseMatrix[Double]): DenseMatrix[Double] = {
+    for (i <- 0 to M.rows-1) {
+      val exprow = M(i,::).inner.map(scala.math.exp(_))
+      M(i,::) := exprow.t / exprow.sum
+    }
+    M
+  }
 
-    def kroneckerDelta(i: Int, j: Int): Double = if (i == j) 1.0 else 0.0
+  def argmax(M: DenseMatrix[Double]): DenseVector[Double] = {
+    val ret = DenseVector.zeros[Double](M.rows)
+    for (i <- 0 to M.rows-1) {
+      ret(i) = M(i, ::).inner.argmax
+    }
+    ret
+  }
+
+  def kroneckerDelta(i: Int, j: Int): Double = if (i == j) 1.0 else 0.0
+
+  def kroneckerDelta(rows: Int, cols: Int, iter: Iterator[(Int, Int)]): DenseMatrix[Double] = {
+    val sigma = DenseMatrix.zeros[Double](rows, cols)
+    for (it <- iter) {
+      sigma(it._1, it._2) = 1
+    }
+    sigma
+  }
+
+  object RegularizationFunctions {
+    def LpRegularization(v: DenseVector[Double], p: Double): Double = {
+      def Lp_fun: (Double => Double) = x => scala.math.pow(scala.math.abs(x), p)
+      scala.math.pow(v.map(Lp_fun).sum, 1.0 / p)
+    }
+    def L1Regularization(v: DenseVector[Double]): Double = {
+      scala.math.pow(v.map(x => x * x).sum, 0.5)
+    }
+    def L2Regularization(v: DenseVector[Double]): Double = {
+      v.map(scala.math.abs).sum
+    }
+
+  }
+
+  object ActivationFunctions {
 
     def softmax(v: DenseVector[Double]) = v.map(exp(_)) / v.sum
     def δ_softmax(v: DenseVector[Double], i: Int, j: Int) = v(i) * (kroneckerDelta(i,j) - v(j))

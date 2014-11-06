@@ -13,28 +13,9 @@ class MultiLayerPerceptron(layers: Seq[NetworkLayer]) {
   assert(layers.head.isInstanceOf[HiddenLayer], "Input layer must be of type HiddenLayer (for now.)")
   assert(layers.last.isInstanceOf[OutputLayer], "Output layer must be of type OutputLayer.")
 
+  // need to define a total cost, output + regularization?
 }
 
 object MultiLayerPerceptronPlayground extends App {
-
-
-
-//  val input = DenseMatrix((1.0,0.0),(0.0,1.0))
-//  val W = DenseMatrix((1.0,2.0),(2.0,1.0))
-//  val b = DenseVector[Double](1.0,1.0)
-//  val output_size = 2
-
-  //val lr = new LogisticRegression(input, W, b, output_size)
-
-//  val c = -b
-//
-//  println(b)
-//  println(c)
-//  println(c :!= b)
-
-
-
-
-
-
+  println("Hello MultiLayer Perceptron!")
 }
