@@ -9,25 +9,43 @@ import breeze.linalg.{DenseVector, DenseMatrix}
 class DeepTests extends WolfeSpec {
   "Logistic regression" should {
 
-    "Test case 1" in {
-      val x = DenseMatrix((2.0, 3.0), (2.0, 3.0), (4.0, 4.0), (5.0, -1.0), (4.0, 3.0))
-      val y = DenseVector(0.0, 1.0, 0.0, 2.0, 1.0)
-      val y1 = DenseVector(0.0, 1.0, 0.0, 2.0, 1.0)
-      val w = DenseMatrix((2.0, 2.0, 2.0), (6.0, 4.0, 3.0))
-      val b = DenseVector(1.0,2.0,3.0)
-      val lr = new LogisticRegression(x, w, b)
-      val learningRate = 0.02
-      println("errors: " + lr.errors(y1))
-      println("nll: " + lr.negative_log_likelihood(y1))
-      for (i <- 0 to 100) {
-        lr.theta = (lr.theta - (lr.grad(y1) :* learningRate))
-        println("nll: " + lr.negative_log_likelihood(y1))
-        println("errors: " + lr.errors(y1))
-      }
+    "XOR problem" in {
+      val input = DenseMatrix((0.0, 1.0))
 
-      1 should be (1)
+      val W = DenseMatrix((4.83, -4.63), (-4.83, 4.6))
+      val b = DenseVector(-2.82, -2.74)
+
+      val lr = new LogisticRegression(W, b)
+      val o = lr.propagateForward(input)
+
+      o(0,0) should be 7.410155028945898E-5
+      o(1,0) should be 0.9999258984497106
     }
-
   }
+
+  "Multilayer perceptron" should {
+    // example from http://www2.econ.iastate.edu/tesfatsi/NeuralNetworks.CheungCannonNotes.pdf
+    "XOR problem, forward case" in {
+      val input = DenseMatrix((0.0, 1.0))
+
+      val W = DenseMatrix((4.83, -4.63), (-4.83, 4.6))
+      val b = DenseVector(-2.82, -2.74)
+
+      val l1 = new HiddenLayer(W, b, math.ActivationFunctions.sigmoid)
+      val o1 = l1.propagateForward(input)
+
+      (o1(0,0) - 0.0005) should be < 1E-4
+      (o1(0,1) - 0.8653) should be < 1E-4
+
+      val W2 = DenseMatrix((5.73), (5.83))
+      val b2 = DenseVector(-2.86)
+
+      val l2 = new HiddenLayer(W2, b2, math.ActivationFunctions.sigmoid)
+      val o2 = l2.propagateForward(o1)
+
+      (o2(0,0) - 0.8991) should be < 1E-4
+    }
+  }
+
 }
 
