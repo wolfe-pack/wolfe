@@ -25,6 +25,8 @@ class MultiLayerPerceptron(layers: Seq[NetworkLayer]) {
 
 object MultiLayerPerceptronPlayground extends App {
 
+
+
 //
 //  val x = DenseMatrix((0.1, 0.1), (0.2,0.1), (0.3, 0.5))
 //

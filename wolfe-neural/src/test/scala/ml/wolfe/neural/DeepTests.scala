@@ -15,11 +15,11 @@ class DeepTests extends WolfeSpec {
       val W = DenseMatrix((4.83, -4.63), (-4.83, 4.6))
       val b = DenseVector(-2.82, -2.74)
 
-      val lr = new LogisticRegression(W, b)
+      val lr = new LogisticRegression(W, b, math.ActivationFunctions.softmax)
       val o = lr.propagateForward(input)
 
-      o(0,0) should be 7.410155028945898E-5
-      o(1,0) should be 0.9999258984497106
+      o(0,0) should be < 1E-4
+      (o(0,1) - 0.9999) should be < 1E-4
     }
   }
 

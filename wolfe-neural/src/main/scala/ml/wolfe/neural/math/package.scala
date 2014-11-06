@@ -9,14 +9,6 @@ import breeze.stats.distributions.Rand
  */
 package object math {
 
-  def softmax(M: DenseMatrix[Double]): DenseMatrix[Double] = {
-    for (i <- 0 to M.rows-1) {
-      val exprow = M(i,::).inner.map(scala.math.exp(_))
-      M(i,::) := exprow.t / exprow.sum
-    }
-    M
-  }
-
   def argmax(M: DenseMatrix[Double]): DenseVector[Double] = {
     val ret = DenseVector.zeros[Double](M.rows)
     for (i <- 0 to M.rows-1) {
@@ -51,8 +43,24 @@ package object math {
 
   object ActivationFunctions {
 
+    // matrix-based activation functions
+
+    def softmax(M: DenseMatrix[Double]): DenseMatrix[Double] = {
+      for (i <- 0 to M.rows-1) {
+        val exprow = M(i,::).inner.map(scala.math.exp(_))
+        M(i,::) := exprow.t / exprow.sum
+      }
+      M
+    }
+
+
+    // vector-based activation functions
+
     def softmax(v: DenseVector[Double]) = v.map(exp(_)) / v.sum
     def δ_softmax(v: DenseVector[Double], i: Int, j: Int) = v(i) * (kroneckerDelta(i,j) - v(j))
+
+
+    // single score -based activation functions
 
     def sigmoid(x: Double, alpha: Double) = 1.0 / (1.0 + exp(-x * alpha))
     def δ_sigmoid(x: Double, alpha: Double) = sigmoid(x, alpha) * (1 - sigmoid(x, alpha))

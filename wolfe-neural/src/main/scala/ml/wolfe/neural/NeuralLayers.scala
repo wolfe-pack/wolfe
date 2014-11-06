@@ -10,27 +10,23 @@ import breeze.linalg.{DenseVector, DenseMatrix}
 trait NetworkLayer {
   require(b.length == W.cols, "b and W don't convey the same number of features")
 
-  // input, connection weights, biases
-  var W: DenseMatrix[Double]
-  var b: DenseVector[Double]
+  var W: DenseMatrix[Double]                              // connection weights
+  var b: DenseVector[Double]                              // biases
 
   val inputSize: Int = W.rows
   val outputSize: Int = W.cols
 
-  //def propagateForward(input: DenseMatrix[Double]): DenseMatrix[Double]
+  def propagateForward(input: DenseMatrix[Double]): DenseMatrix[Double]
   //def backwardPropagate = ???
 
-
-  // concat b and W into theta, concat 1 and input into X
-  var theta = DenseMatrix.vertcat(b.toDenseMatrix, W)
-  //var X: DenseMatrix[Double]
-  // needs to produce an output
-  //def output: DenseMatrix[Double]
+  var theta = DenseMatrix.vertcat(b.toDenseMatrix, W)     // concat b and W into theta
+  var X: DenseMatrix[Double]                              // concat 1 and input into X
 }
 
 // TODO loss and cost functions?
 trait OutputLayer extends NetworkLayer {
   def errors(input: DenseMatrix[Double], y: DenseVector[Double]): Double
+  def predict(input: DenseMatrix[Double]): DenseVector[Double]
 }
 
 /**
