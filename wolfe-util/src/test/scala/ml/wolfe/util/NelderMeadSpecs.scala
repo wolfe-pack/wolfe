@@ -41,8 +41,8 @@ class NelderMeadSpecs extends WordSpec with Matchers {
       //println(for (f <- Fs) yield
       //  (for (key <- hyperparameters.keys.toSeq) yield hyperparameters(key)*f(key)))
 
-      val log_pdot = (for (f <- Fs) yield
-        for (key <- hyperparameters.keys.toSeq) yield hyperparameters(key)*f(key)).sum
+      val log_pdot = for (f <- Fs) yield
+        (for (key <- hyperparameters.keys.toSeq) yield hyperparameters(key) * f(key)).sum
       // log(sum(exp(log_pdot)))
       //println(log_pdot)
       val logZ = log((for (value <- log_pdot) yield exp(value)).sum)
