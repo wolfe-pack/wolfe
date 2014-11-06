@@ -1,12 +1,12 @@
 package ml.wolfe.util
 
-import ml.wolfe.WolfeSpec
+import org.scalatest.{Matchers, WordSpec}
 import scala.math._
 
 /**
  * Created by Ingolf Becker on 05/11/2014.
  */
-class NelderMeadSpecs extends WolfeSpec {
+class NelderMeadSpecs extends WordSpec with Matchers {
 
   class ToyProblem extends OptimisationProblem {
     override val parametersToOptimize: Seq[HyperParameter] = Seq(new HyperParameter("A"), new HyperParameter("B"), new HyperParameter("C"))

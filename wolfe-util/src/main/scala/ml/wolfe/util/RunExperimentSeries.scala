@@ -46,8 +46,8 @@ object RunExperimentSeries {
   }
 
   private def runConfs(confs: Confs, threads: Int = 1, confPath: String = "wolfe-apps/conf/mf.conf")(body: String => Any): Unit = {
-    import scala.concurrent.{future, blocking, Future, Await}
     import scala.concurrent.duration._
+    import scala.concurrent.{Await, Future, blocking, future}
 
     implicit val context = new ExecutionContext {
       val threadPool = Executors.newFixedThreadPool(threads)
