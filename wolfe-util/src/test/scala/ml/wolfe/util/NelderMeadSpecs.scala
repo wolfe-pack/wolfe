@@ -91,9 +91,9 @@ class NelderMeadSpecs extends WolfeSpec {
       val zeros: Map[String, Double] = Map("A" -> 0, "B" -> 0, "C" -> 0)
       myOptimizer.optimise(toyProblem, zeros)
       val solutionFound = myOptimizer.bestParameters
-      solutionFound("A") should be(0.0)
-      solutionFound("B") should be(-0.524869316)
-      solutionFound("C") should be(0.487525860)
+      solutionFound("A") should be(0.0 +- 1e-6)
+      solutionFound("B") should be(-0.524869316  +- 1e-6)
+      solutionFound("C") should be(0.487525860  +- 1e-6)
 
     }
 
@@ -105,11 +105,11 @@ class NelderMeadSpecs extends WolfeSpec {
       val startingPoint: Map[String, Double] = Map("A" -> 1.3, "B" -> 0.7, "C" -> 0.8, "D" -> 1.9, "E" -> 1.2)
       myOptimizer.optimise(toyProblem, startingPoint)
       val solutionFound = myOptimizer.bestParameters
-      solutionFound("A") should be(1.0)
-      solutionFound("B") should be(1.0)
-      solutionFound("C") should be(1.0)
-      solutionFound("D") should be(1.0)
-      solutionFound("E") should be(1.0)
+      solutionFound("A") should be(1.0  +- 1e-6)
+      solutionFound("B") should be(1.0  +- 1e-6)
+      solutionFound("C") should be(1.0 +- 1e-6)
+      solutionFound("D") should be(1.0  +- 1e-6)
+      solutionFound("E") should be(1.0  +- 1e-6)
     }
   }
 }
