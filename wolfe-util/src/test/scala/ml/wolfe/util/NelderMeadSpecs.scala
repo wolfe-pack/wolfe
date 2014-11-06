@@ -56,8 +56,10 @@ class NelderMeadSpecs extends WolfeSpec {
 
     }
   }
-  class RosenbrockProblem extends OptimisationProblem {
-    override val parametersToOptimize: Seq[HyperParameter] = _
+  class RosenbrockProblem(hyperparams:Map[String, Double]) extends OptimisationProblem {
+    override val parametersToOptimize =
+      ( for (paramName <- hyperparams.keys) yield new HyperParameter(paramName))
+
     /**
      * Evaluate the Rosenbrock function:
      * return sum(100.0*(x[1:]-x[:-1]**2.0)**2.0 + (1-x[:-1])**2.0)
@@ -98,11 +100,11 @@ class NelderMeadSpecs extends WolfeSpec {
     }
 
     "find the correct solution for the Rosenbrock function" in {
-      val toyProblem: OptimisationProblem = new RosenbrockProblem()
-      val myOptimizer: HyperParameterOptimisationAlgorithm = new NelderMeadSimplex()
-
       // Set the starting point to 1.3, 0.7, 0.8, 1.9, 1.2]
       val startingPoint: Map[String, Double] = Map("A" -> 1.3, "B" -> 0.7, "C" -> 0.8, "D" -> 1.9, "E" -> 1.2)
+      val toyProblem: OptimisationProblem = new RosenbrockProblem(startingPoint)
+      val myOptimizer: HyperParameterOptimisationAlgorithm = new NelderMeadSimplex()
+
       myOptimizer.optimise(toyProblem, startingPoint)
       val solutionFound = myOptimizer.bestParameters
       solutionFound("A") should be(1.0  +- 1e-6)
