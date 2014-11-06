@@ -9,72 +9,69 @@ import ml.wolfe.neural.math._
 
 /** Logistic regression layer / classifier
  *
- * @param input matrix of examples
  * @param W internal weights
  * @param b biases
  */
-class LogisticRegression(val input: DenseMatrix[Double],
-                         var W: DenseMatrix[Double],
+class LogisticRegression(var W: DenseMatrix[Double],
                          var b: DenseVector[Double]) extends OutputLayer {
 
 
-
   // variable, as it can be changed
-  var theta = DenseMatrix.vertcat(b.toDenseMatrix, W)
 
+  var X: DenseMatrix[Double] = null
 
-  var X = DenseMatrix.horzcat(DenseMatrix.ones[Double](input.rows, 1), input)
-
-
-  def p_y_given_x: DenseMatrix[Double] = math.softmax(X * theta)
-
-
-  def get_p_y_given_x(M: DenseMatrix[Double]): DenseMatrix[Double] = {
-    val Q = DenseMatrix.horzcat(DenseMatrix.ones[Double](M.rows, 1), M)
-    math.softmax(Q * theta)
+  def p_y_given_x(input: DenseMatrix[Double]): DenseMatrix[Double] = {
+    X = DenseMatrix.horzcat(DenseMatrix.ones[Double](input.rows, 1), input)
+    math.softmax(X * theta)
   }
 
 
-  def y_pred = math.argmax(p_y_given_x)
+  // TODO implement generic prediction function (output function application)
+  def y_pred(input: DenseMatrix[Double]) = math.argmax(p_y_given_x(input))
 
+  def propagateForward(input: DenseMatrix[Double]): DenseMatrix[Double] = {
+    X = DenseMatrix.horzcat(DenseMatrix.ones[Double](input.rows, 1), input)
+    p_y_given_x(input)
+    //y_pred(X).toDenseMatrix
+  }
 
-  def output = y_pred.toDenseMatrix
-
-
-  // provide a classify function for new examples
-  def classify(M: DenseMatrix[Double]) =
-    math.argmax(get_p_y_given_x(M))
+  def propagateBackward() = ???
 
 
   // TODO: find a nicer way to encode loss functions, errors and gradients to use them interchangeably
   // TODO: heavily test gradients
   // gradient for negative_log_likelihood
   // -(1/m) * sum(i=1:m, x(i) * ( I(y(i)=j) - p_y_given_x(i, y(i)) ) )
-  def grad(y: DenseVector[Double]) = {
-    // Identity-function-matrix with 1 only where row equals to an example, and column equals to the correct prediction
-    // for that example
-    kroneckerDelta(N, outputSize, y.map(_.toInt).iterator)
-    val sigma = DenseMatrix.zeros[Double](N, outputSize)
-    for (i <- 0 to N-1)
-      sigma(i, y(i).toInt) = 1
-    (X.t * (sigma - p_y_given_x)) :* (-1.0 / N)
+
+
+  // propagateBackwards
+  def gradient(input: DenseMatrix[Double], y: DenseVector[Double]) = {
+    require(input.rows == y.length, "Number of data points and their labels is not equal!")
+    val sigma = kroneckerDelta(input.rows, outputSize, y.map(_.toInt).iterator)
+    val p = p_y_given_x(input)
+    (X.t * (sigma - p)) :* (-1.0 / input.rows)
   }
 
 
-  def negative_log_likelihood(y: DenseVector[Double]): Double = {
-    require(y.length == p_y_given_x.rows)
+  // cost
+  def negative_log_likelihood(input: DenseMatrix[Double], y: DenseVector[Double]): Double = {
+    val p = p_y_given_x(input)
+    require(y.length == p.rows, "these thinglets disagree...which is awfully bad!")
+    // or do this with elementwise kronecker matrix multiplications?
     var ll = 0.0
     for (i <- 0 to y.length - 1 ) {
-      ll += scala.math.log(p_y_given_x(i, y(i).toInt))
+      ll += scala.math.log(p(i, y(i).toInt))
     }
     // mean instead of sum, makes learning rate less dependent on minibatch size
-    - ll / y.length.toDouble //N
+    - ll / y.length.toDouble
   }
 
 
-  def errors(y: DenseVector[Double]): Double = {
-    require(y_pred.length == y.length)
-    val neq = y_pred :!= y
+  // get errors from prediction
+  def errors(input: DenseMatrix[Double], y: DenseVector[Double]): Double = {
+    val output = y_pred(input)
+    require(output.length == y.length)
+    val neq = output :!= y
     neq.activeSize.toDouble / neq.length
   }
 
