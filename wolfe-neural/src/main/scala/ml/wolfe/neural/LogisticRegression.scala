@@ -1,12 +1,10 @@
 package ml.wolfe.neural
 
 import breeze.linalg._
-import breeze.numerics._
 
 /**
  * Created by mbosnjak on 11/5/14.
  */
-
 
 /** Logistic regression layer / classifier
  *
@@ -39,7 +37,7 @@ class LogisticRegression(val input: DenseMatrix[Double],
 
   def softmax(M: DenseMatrix[Double]): DenseMatrix[Double] = {
     for (i <- 0 to M.rows-1) {
-      val exprow = M(i,::).inner.map(math.exp(_))
+      val exprow = M(i,::).inner.map(scala.math.exp(_))
       M(i,::) := exprow.t / exprow.sum
     }
     M
@@ -90,7 +88,7 @@ class LogisticRegression(val input: DenseMatrix[Double],
     require(y.length == p_y_given_x.rows)
     var ll = 0.0
     for (i <- 0 to y.length - 1 ) {
-      ll += math.log(p_y_given_x(i, y(i).toInt))
+      ll += scala.math.log(p_y_given_x(i, y(i).toInt))
     }
     // mean instead of sum, makes learning rate less dependent on minibatch size
     - ll / y.length.toDouble //N
