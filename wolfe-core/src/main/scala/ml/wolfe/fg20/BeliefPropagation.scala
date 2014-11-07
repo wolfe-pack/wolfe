@@ -1,37 +1,55 @@
 package ml.wolfe.fg20
 
+import ml.wolfe._
 
 // ----------- Factor Graph ---------------
-class BPMsgs(dim: Int) {
-  val n2f = Array.ofDim[Double](dim)
-  val f2n = Array.ofDim[Double](dim)
+
+
+class MyImplies(premise: DiscVar[Boolean], consequent: DiscVar[Boolean]) extends BP.Pot {
+
+  def discVars = Array(premise, consequent)
+  def valueInBPFG(factor: BPFG#Factor) = {
+    val p = factor.discEdges(0)
+    val c = factor.discEdges(1)
+    if (!premise.dom(p.node.content.setting) || consequent.dom(c.node.content.setting)) 0.0 else Double.NegativeInfinity
+  }
+  def maxMarginalExpectationsAndObjective(factor: BPFG#Factor, dstExpectations: FactorieVector) = ???
+  def discMaxMarginalF2N(edge: BPFG#DiscEdge) = ???
 }
 
-class BPFG(problem: Problem) /*extends FG*/ {
-  type NodeContent = Array[Double]
-  type Msgs = BPMsgs
-  type FactorContent = Null
 
-  val discNodes = problem.discVars.map(v =>
-    v -> new Node[DiscVar[Any], NodeContent, Msgs](v, Array.ofDim[Double](v.dom.size))
-  ).toMap
-
-  def createFactor(pot:Potential) = {
-    val factor = new Factor[FactorContent, Msgs, Null, Null](pot, null)
-    def addEdge[VarType<:DiscVar[_]](node:Node[VarType, NodeContent, Msgs]): Edge[Msgs] = {
-      val msgs = new BPMsgs(node.variable.dom.size)
-      val edge =  new Edge[Msgs](node, factor, msgs)
-      node.edgesBuffer = edge :: node.edgesBuffer
-      edge
-    }
-    val discEdges = pot.discVars.map(v => addEdge(discNodes(v)))
-    factor.discEdges = discEdges
-    factor
+object BP {
+  trait Pot extends DiscPotential {
+    def valueInBPFG(factor: BPFG#Factor): Double
+    def discMaxMarginalF2N(edge: BPFG#DiscEdge)
+    def maxMarginalExpectationsAndObjective(factor:BPFG#Factor,dstExpectations: FactorieVector): Double
   }
+}
 
-  val factors = problem.pots.map(createFactor)
-  val discEdges = factors.flatMap(_.discEdges)
-  discNodes.foreach(_._2.build())
+
+class BPFG(val problem: Problem) extends FG {
+  class DiscNodeContent(var setting: Int,
+                        var belief: Array[Double])
+  class ContNodeContent(var setting:Double,
+                        var mean: Double,
+                        var dev: Double)
+  class FactorContent()
+  class DiscMsgs(size: Int) {
+    val f2n = Array.ofDim[Double](size)
+    val n2f = Array.ofDim[Double](size)
+  }
+  class ContMsgs()
+
+  type Pot = BP.Pot
+  def checkPot(potential: Potential) = potential match {
+    case pot: BP.Pot => pot
+    case _ => sys.error("BP Requires BP potentials")
+  }
+  def createDiscMsgs(variable: DiscVar[Any]) = new DiscMsgs(variable.dom.size)
+  def createDiscNodeContent(variable: DiscVar[Any]) = new DiscNodeContent(0, Array.ofDim[Double](variable.dom.size))
+  def createFactorContent(pot: Pot) = new FactorContent
+  def createContNodeContent(contVar: ContVar) = ???
+  def createContMsgs(contVar: ContVar) = ???
 }
 
 
@@ -43,29 +61,28 @@ object MaxProduct {
   val F2N = false
 
   def apply(fg: BPFG): MAPResult = {
-    def schedule:Seq[(Edge[BPMsgs], Direction)] = ???
+    def schedule: Seq[(BPFG#DiscEdge, Direction)] = ???
 
     for ((edge, direction) <- schedule) direction match {
       case N2F =>
-        updateN2F(edge)
+        updateDiscN2F(edge)
 
-      case F2N => edge.factor.pot match {
-            case p:MaxProductPotential => p.maxMarginalF2N(edge)
-          }
+      case F2N =>
+        edge.factor.pot.discMaxMarginalF2N(edge)
     }
 
-//    score = fg.factors.map(_.)
-    ???
+    //...
+
+    val gradient = new SparseVector(???)
+    val score = fg.factors.view.map(f => f.pot.maxMarginalExpectationsAndObjective(f,gradient)).sum
+    val discState = fg.problem.discVars.map(v => v -> v.dom(fg.discNodes(v).content.setting)).toMap[Var[Any],Any]
+    val contState = fg.problem.contVars.map(v => v -> fg.contNodes(v).content.setting)
+    MAPResult(new State(discState),score,gradient)
   }
 
-  def updateN2F(edge: Edge[BPMsgs]) = {
+  def updateDiscN2F(edge: BPFG#DiscEdge) = {
     for (i <- edge.msgs.n2f.indices)
-      edge.msgs.n2f(i) = (
-          for (e <- edge.node.edges if e != edge) yield e.msgs.f2n(i)
-        ).sum
+      edge.msgs.n2f(i) = { for (e <- edge.node.edges if e != edge) yield e.msgs.f2n(i) }.sum
   }
 }
 
-trait MaxProductPotential extends Potential {
-  def maxMarginalF2N(edge: Edge[BPMsgs]):Unit
-}
