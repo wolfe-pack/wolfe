@@ -83,7 +83,10 @@ trait FG {
     factor
   }
 
-  def checkPot(potential: Potential): Pot
+  private def checkPot(p: Potential): Pot =
+    if (acceptPotential.isDefinedAt(p)) acceptPotential(p) else sys.error("Unsupported potential")
+
+  def acceptPotential: PartialFunction[Potential,Pot]
 
   val factors   = problem.pots.map(p => createFactor(checkPot(p)))
   val discEdges = factors.flatMap(_.discEdges)
