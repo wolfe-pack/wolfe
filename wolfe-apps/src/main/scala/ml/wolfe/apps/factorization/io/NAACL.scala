@@ -23,7 +23,7 @@ import ml.wolfe.util._
 
 object EvaluateNAACL extends App {
   val configFile = args.lift(0).getOrElse("./conf/eval.conf")
-  val pathToLatestPredictions = args.lift(1).getOrElse("./data/out/latest/predict.txt")
+  val pathToLatestPredictions = args.lift(1).getOrElse("./data/out/" + Conf.getMostRecentOutDir + "/predict.txt")
   val pathToLatest = pathToLatestPredictions.split("/").init.mkString("/")+"/"
   Conf.add(configFile)
   assert(!Conf.conf.entrySet().isEmpty, "Couldn't find configuration file.")
@@ -39,9 +39,10 @@ object EvaluateNAACL extends App {
     "./data/naacl2013/structured/test-riedel13-model-NF.txt:Riedel13-NF"
   )
   val rankFileNamesAndLabelsSplit = rankFileNamesAndLabels.map(name =>
-    if (name.contains(":")) name.split(":")
+    if (name.substring(3).contains(":")) Array(name.substring(0,name.lastIndexOf(":")), name.substring(name.lastIndexOf(":")) +1)
     else Array(name, new File(name).getName)
   ).toSeq
+
   val rankFileNames = rankFileNamesAndLabelsSplit.map(_.apply(0))
   val labels = rankFileNamesAndLabelsSplit.map(_.apply(1))
   val rankFiles = rankFileNames.map(new File(_))
@@ -60,7 +61,8 @@ object EvaluationTool {
     val conf = Conf
     assert(!conf.conf.entrySet().isEmpty, "Couldn't find configuration file.")
 
-    val rankFileNamesAndLabels = args.lift(1).getOrElse("out/latest/nyt_pair.rank.txt") +: args.drop(2)
+
+    val rankFileNamesAndLabels = args.lift(1).getOrElse("out/" + conf.getMostRecentOutDir + "/nyt_pair.rank.txt") +: args.drop(2)
     val rankFileNamesAndLabelsSplit = rankFileNamesAndLabels.map(name =>
       if (name.contains(":")) name.split(":")
       else Array(name, new File(name).getName)
@@ -136,7 +138,7 @@ object EvaluationTool {
                extractFactFromLine: String => (List[String], String),
                poolDepth: Int,
                runDepth: Int,
-               pathToEvaluationOutput: String = "eval/") {
+               pathToEvaluationOutput: String = "eval/") = {
 
     val allowedFacts = new mutable.HashMap[Regex, mutable.HashSet[(List[String], String)]]()
     println("Collecting facts from rank files")
@@ -430,15 +432,18 @@ object EvaluationTool {
       chartRecallPrec.showLegend = true
       chartRecallPrec.x.label = "Recall"
       chartRecallPrec.y.label = "Precision"
-      chartRecallPrec.x.range_= (0,1.0)
-      chartRecallPrec.y.range_= (0,1.0)
+      chartRecallPrec.x.range_=(0, 1.0)
+      chartRecallPrec.y.range_=(0, 1.0)
       chartRecallPrec.legendPosX = LegendPosX.Right
       chartRecallPrec.legendPosY = LegendPosY.Top
       chartRecallPrec.size = Some(3.0, 3.0)
       val plotterRecallPrec = new GnuplotPlotter(chartRecallPrec)
-      plotterRecallPrec.pdf(pathToEvaluationOutput, "11pointPrecRecall")
+      try {
+        plotterRecallPrec.pdf(pathToEvaluationOutput, "11pointPrecRecall")
+      } catch {
+        case e: Exception => println("Could not draw precision graph, error message " + e.getMessage)
+      }
     }
-
 
 
 

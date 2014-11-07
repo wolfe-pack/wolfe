@@ -1,11 +1,11 @@
 package ml.wolfe.util
 
-import ml.wolfe.WolfeSpec
+import org.scalatest.{Matchers, WordSpec}
 
 /**
  * @author Sebastian Riedel
  */
-class LogCallsSpecs extends WolfeSpec {
+class LogCallsSpecs extends WordSpec with Matchers  {
 
   "A LogCalls annotation" should {
 //    "call the function passed into the annotation whenever the annotated function is entered " in {
@@ -68,3 +68,4 @@ class LogCallsSpecs extends WolfeSpec {
 //    }
   }
 }
+
