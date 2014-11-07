@@ -77,7 +77,7 @@ object MaxProduct {
     val score = fg.factors.view.map(f => f.pot.maxMarginalExpectationsAndObjective(f,gradient)).sum
     val discState = fg.problem.discVars.map(v => v -> v.dom(fg.discNodes(v).content.setting)).toMap[Var[Any],Any]
     val contState = fg.problem.contVars.map(v => v -> fg.contNodes(v).content.setting)
-    MAPResult(new State(discState),score,gradient)
+    MAPResult(new State(discState ++ contState),score,gradient)
   }
 
   def updateDiscN2F(edge: BPFG#DiscEdge) = {
