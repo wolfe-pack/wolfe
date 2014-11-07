@@ -11,6 +11,8 @@ trait Potential {
   def discVars: Array[DiscVar[Any]]
   def contVars: Array[ContVar]
   def vectVars: Array[VectVar]
+
+  def value(factor:Factor[_, _, _, _]):Double
 }
 
 trait DiscPotential extends Potential {
@@ -20,6 +22,12 @@ trait DiscPotential extends Potential {
 
 class ImpliesPotential(premise:DiscVar[Boolean],consequent:DiscVar[Boolean]) extends DiscPotential {
   def discVars = Array(premise,consequent)
+
+  def value(factor:Factor[_, _, _, _]): Double = {
+    0.0
+  }
 }
+
+
 
 case class Problem(discVars: Seq[DiscVar[Any]], contVars: Seq[ContVar], vectVars: Seq[VectVar], pots: Seq[Potential])
