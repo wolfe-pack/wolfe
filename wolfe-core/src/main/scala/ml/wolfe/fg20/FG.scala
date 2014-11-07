@@ -2,6 +2,7 @@ package ml.wolfe.fg20
 
 import ml.wolfe.FactorieVector
 
+import scala.reflect.ClassTag
 
 
 class State(map: Map[Var[Any], Any]) {
@@ -35,68 +36,45 @@ trait FG {
   ).toMap
 
 
+  abstract class Node[V <: Var[Any], E <: Edge[_, _] : ClassTag, NodeContent] {
+    var edges: Array[E] = null
+    def content: NodeContent
+    def variable: V
+    var buffer:List[E] = Nil
+    def build() { edges = buffer.toArray}
+  }
+  trait Edge[N <: Node[_, _,_], Msgs] {
+    def node: N
+    def factor: Factor
+    def msgs: Msgs
+  }
 
+  class DiscNode(val variable:DiscVar[Any], val content: DiscNodeContent) extends Node[DiscVar[Any], DiscEdge, DiscNodeContent]
+  class ContNode(val variable:ContVar, val content: ContNodeContent) extends Node[ContVar, ContEdge, ContNodeContent]
 
+  class DiscEdge(val node: DiscNode, val msgs: DiscMsgs,val factor:Factor) extends Edge[DiscNode,DiscMsgs]
+  class ContEdge(val node: ContNode, val msgs: ContMsgs,val factor:Factor) extends Edge[ContNode,ContMsgs]
 
-  class Factor(val pot: Pot, val content: FactorContent) {
+  class Factor(val pot:Pot, val content:FactorContent) {
     var discEdges: Array[DiscEdge] = null
     var contEdges: Array[ContEdge] = null
   }
 
-  class Edge[N<:Node[_],Msgs](val node: N, val factor: Factor)
-//  trait DiscEdgeTrait {
-//    def msgs:DiscMsgs
-//    def node:DiscNode
-//    def factor:Factor
-//  }
-  class DiscEdge(node:DiscNode,factor:Factor,val msgs:DiscMsgs) extends Edge(node,factor)
-  class ContEdge(node:ContNode,factor:Factor,val msgs:ContMsgs) extends Edge(node,factor)
-
-//  class Node[VarType <: Var[_], E<:Edge[_]](val variable: VarType) {
-//    var edgesBuffer: List[E]  = Nil
-//    var edges      : Array[E] = null
-//
-//    def build(): Unit = {
-//      edges = edgesBuffer.toArray
-//    }
-//  }
-
-  class Node[V <: Var[_]](val variable:V) {
-//    var edgesBuffer: List[E]  = Nil
-//    var edges      : Array[E] = null
-  }
-  
-//  class NodeNeighbors[E <: Edge[_]](){
-//    var edgesBuffer: List[E]  = Nil
-//    var edges      : Array[E] = null
-//  }
-
-  class DiscNode(variable:DiscVar[Any], val content:DiscNodeContent) extends Node(variable) {
-    var edgesBuffer: List[DiscEdge]  = Nil
-    var edges      : Array[DiscEdge] = null
-  }
-
-  class ContNode(variable:ContVar, val content:ContNodeContent) extends Node(variable) {
-    var edgesBuffer: List[ContEdge]  = Nil
-    var edges      : Array[ContEdge] = null
-  }
-
-
-  def createContMsgs(contVar: ContVar):ContMsgs
+  def createContMsgs(contVar: ContVar): ContMsgs
 
   def createFactor(pot: Pot) = {
     val factor = new Factor(pot, createFactorContent(pot))
 
     def addDiscEdge(node: DiscNode) = {
       val msgs = createDiscMsgs(node.variable)
-      val edge = new DiscEdge(node, factor, msgs)
-      node.edgesBuffer = edge :: node.edgesBuffer
+      val edge = new DiscEdge(node, msgs,factor)
+      node.buffer = edge :: node.buffer
       edge
     }
     def addContEdge(node: ContNode) = {
       val msgs = createContMsgs(node.variable)
-      val edge = new ContEdge(node, factor, msgs)
-      node.edgesBuffer = edge :: node.edgesBuffer
+      val edge = new ContEdge(node, msgs,factor)
+      node.buffer = edge :: node.buffer
       edge
     }
 
@@ -109,8 +87,8 @@ trait FG {
 
   val factors   = problem.pots.map(p => createFactor(checkPot(p)))
   val discEdges = factors.flatMap(_.discEdges)
-  discNodes.foreach(x => x._2.edges = x._2.edgesBuffer.toArray)
-  contNodes.foreach(x => x._2.edges = x._2.edgesBuffer.toArray)
+  discNodes.foreach(x => x._2.build())
+  contNodes.foreach(x => x._2.build())
 
 
 }
