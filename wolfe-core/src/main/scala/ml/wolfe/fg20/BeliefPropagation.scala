@@ -28,11 +28,11 @@ object BP {
 
 
 class BPFG(val problem: Problem) extends FG {
-  class DiscNodeContent(var setting: Int,
+  class DiscNodeContent(var setting: Int = 0,
                         var belief: Array[Double])
-  class ContNodeContent(var setting:Double,
-                        var mean: Double,
-                        var dev: Double)
+  class ContNodeContent(var setting:Double = 0.0,
+                        var mean: Double = 0.0,
+                        var dev: Double = 0.0)
   class FactorContent()
   class DiscMsgs(size: Int) {
     val f2n = Array.ofDim[Double](size)
@@ -45,10 +45,13 @@ class BPFG(val problem: Problem) extends FG {
     case pot: BP.Pot => pot
     case _ => sys.error("BP Requires BP potentials")
   }
+
+
+  def acceptPotential = {case pot: BP.Pot => pot}
   def createDiscMsgs(variable: DiscVar[Any]) = new DiscMsgs(variable.dom.size)
   def createDiscNodeContent(variable: DiscVar[Any]) = new DiscNodeContent(0, Array.ofDim[Double](variable.dom.size))
-  def createContNodeContent(contVar: ContVar) = ???
-  def createContMsgs(contVar: ContVar) = ???
+  def createContNodeContent(contVar: ContVar) = new ContNodeContent()
+  def createContMsgs(contVar: ContVar) = new ContMsgs()
 
   def createFactorContent(pot: Pot) = new FactorContent
 
@@ -58,20 +61,20 @@ class BPFG(val problem: Problem) extends FG {
 // ------------- Inference ---------------
 object MaxProduct {
 
-  type Direction = Boolean
-  val N2F = true
-  val F2N = false
+  type Forward = Boolean
 
   def apply(fg: BPFG): MAPResult = {
-    def schedule: Seq[(BPFG#DiscEdge, Direction)] = ???
+    def schedule: Seq[(BPFG#DiscEdge, Forward)] = ???
 
-    for ((edge, direction) <- schedule) direction match {
-      case N2F =>
+    for ((edge, forward) <- schedule) forward match {
+      case true  =>
         updateDiscN2F(edge)
 
-      case F2N =>
+      case false =>
         edge.factor.pot.discMaxMarginalF2N(edge)
     }
+
+
 
     //...
 
