@@ -7,12 +7,12 @@ class DiscVar[+T](val dom: Seq[T]) extends Var[T]
 class ContVar extends Var[Double]
 class VectVar extends Var[FactorieVector]
 
+
 trait Potential {
   def discVars: Array[DiscVar[Any]]
   def contVars: Array[ContVar]
   def vectVars: Array[VectVar]
 
-  def value(factor:Factor[_, _, _, _]):Double
 }
 
 trait DiscPotential extends Potential {
@@ -20,14 +20,18 @@ trait DiscPotential extends Potential {
   def vectVars = Array.empty
 }
 
+
+
 class ImpliesPotential(premise:DiscVar[Boolean],consequent:DiscVar[Boolean]) extends DiscPotential {
   def discVars = Array(premise,consequent)
 
-  def value(factor:Factor[_, _, _, _]): Double = {
-    0.0
-  }
+//  def value(factor:Factor[_, _, _, _]): Double = {
+//    0.0
+//  }
 }
 
 
 
-case class Problem(discVars: Seq[DiscVar[Any]], contVars: Seq[ContVar], vectVars: Seq[VectVar], pots: Seq[Potential])
+case class Problem(discVars: Seq[DiscVar[Any]], contVars: Seq[ContVar], vectVars: Seq[VectVar], pots: Seq[Potential]) {
+  def vars = discVars ++ contVars ++ vectVars
+}
