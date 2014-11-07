@@ -19,6 +19,12 @@ trait FG {
 
   def problem: Problem
 
+  def createDiscMsgs(variable: DiscVar[Any]): DiscMsgs
+  def createDiscNodeContent(variable: DiscVar[Any]): DiscNodeContent
+  def createContNodeContent(contVar: ContVar): ContNodeContent
+
+  def createFactorContent(pot: Pot): FactorContent
+
   val discNodes = problem.discVars.map(v =>
     v -> new DiscNode(v, createDiscNodeContent(v))
   ).toMap
@@ -30,11 +36,6 @@ trait FG {
 
 
 
-  def createDiscMsgs(variable: DiscVar[Any]): DiscMsgs
-  def createDiscNodeContent(variable: DiscVar[Any]): DiscNodeContent
-  def createContNodeContent(contVar: ContVar): ContNodeContent
-
-  def createFactorContent(pot: Pot): FactorContent
 
 
   class Factor(val pot: Pot, val content: FactorContent) {
@@ -42,7 +43,12 @@ trait FG {
     var contEdges: Array[ContEdge] = null
   }
 
-  class Edge[N<:Node](val node: N, val factor: Factor)
+  class Edge[N<:Node[_],Msgs](val node: N, val factor: Factor)
+//  trait DiscEdgeTrait {
+//    def msgs:DiscMsgs
+//    def node:DiscNode
+//    def factor:Factor
+//  }
   class DiscEdge(node:DiscNode,factor:Factor,val msgs:DiscMsgs) extends Edge(node,factor)
   class ContEdge(node:ContNode,factor:Factor,val msgs:ContMsgs) extends Edge(node,factor)
 
@@ -55,14 +61,22 @@ trait FG {
 //    }
 //  }
 
-  trait Node
+  class Node[V <: Var[_]](val variable:V) {
+//    var edgesBuffer: List[E]  = Nil
+//    var edges      : Array[E] = null
+  }
+  
+//  class NodeNeighbors[E <: Edge[_]](){
+//    var edgesBuffer: List[E]  = Nil
+//    var edges      : Array[E] = null
+//  }
 
-  class DiscNode(val variable:DiscVar[Any], val content:DiscNodeContent) extends Node {
+  class DiscNode(variable:DiscVar[Any], val content:DiscNodeContent) extends Node(variable) {
     var edgesBuffer: List[DiscEdge]  = Nil
     var edges      : Array[DiscEdge] = null
   }
 
-  class ContNode(val variable:ContVar, val content:ContNodeContent) extends Node {
+  class ContNode(variable:ContVar, val content:ContNodeContent) extends Node(variable) {
     var edgesBuffer: List[ContEdge]  = Nil
     var edges      : Array[ContEdge] = null
   }
