@@ -47,9 +47,11 @@ class BPFG(val problem: Problem) extends FG {
   }
   def createDiscMsgs(variable: DiscVar[Any]) = new DiscMsgs(variable.dom.size)
   def createDiscNodeContent(variable: DiscVar[Any]) = new DiscNodeContent(0, Array.ofDim[Double](variable.dom.size))
-  def createFactorContent(pot: Pot) = new FactorContent
   def createContNodeContent(contVar: ContVar) = ???
   def createContMsgs(contVar: ContVar) = ???
+
+  def createFactorContent(pot: Pot) = new FactorContent
+
 }
 
 

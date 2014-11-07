@@ -49,13 +49,13 @@ trait FG {
     def msgs: Msgs
   }
 
-  class DiscNode(val variable:DiscVar[Any], val content: DiscNodeContent) extends Node[DiscVar[Any], DiscEdge, DiscNodeContent]
-  class ContNode(val variable:ContVar, val content: ContNodeContent) extends Node[ContVar, ContEdge, ContNodeContent]
+  final class DiscNode(val variable:DiscVar[Any], val content: DiscNodeContent) extends Node[DiscVar[Any], DiscEdge, DiscNodeContent]
+  final class ContNode(val variable:ContVar, val content: ContNodeContent) extends Node[ContVar, ContEdge, ContNodeContent]
 
-  class DiscEdge(val node: DiscNode, val msgs: DiscMsgs,val factor:Factor) extends Edge[DiscNode,DiscMsgs]
-  class ContEdge(val node: ContNode, val msgs: ContMsgs,val factor:Factor) extends Edge[ContNode,ContMsgs]
+  final class DiscEdge(val node: DiscNode, val msgs: DiscMsgs,val factor:Factor) extends Edge[DiscNode,DiscMsgs]
+  final class ContEdge(val node: ContNode, val msgs: ContMsgs,val factor:Factor) extends Edge[ContNode,ContMsgs]
 
-  class Factor(val pot:Pot, val content:FactorContent) {
+  final class Factor(val pot:Pot, val content:FactorContent) {
     var discEdges: Array[DiscEdge] = null
     var contEdges: Array[ContEdge] = null
   }
