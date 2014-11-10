@@ -2,7 +2,6 @@ package ml.wolfe.fg20
 
 import ml.wolfe.FactorieVector
 
-import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 
 
@@ -10,13 +9,15 @@ class State(map: Map[Var[Any], Any]) {
   def apply[T](v: Var[T]): T = map(v).asInstanceOf[T]
 }
 case class MAPResult(state: State, score: Double, gradient: FactorieVector)
+case class MarginalResult(state: State, score: Double, gradient: FactorieVector)
 
 trait FG {
   type DiscNodeContent
   type ContNodeContent
   type FactorContent
-  type DiscMsgs
-  type ContMsgs
+  type Msgs
+  type DiscMsgs <: Msgs
+  type ContMsgs <: Msgs
   type Pot <: Potential
 
   def problem: Problem
@@ -53,9 +54,10 @@ trait FG {
   trait Edge {
     def node: Node
     def factor: Factor
+    def msgs:Msgs
   }
 
-  abstract class TypedNode[V <: Var[Any], E <: TypedEdge[_, _] : ClassTag, NodeContent] extends Node {
+  abstract class TypedNode[V <: Var[Any], E <: Edge : ClassTag, NodeContent] extends Node {
     var edges: Array[E] = null
     def edgeList = edges.toList
     def content: NodeContent
@@ -64,17 +66,17 @@ trait FG {
     def build() { edges = buffer.toArray }
   }
 
-  sealed trait TypedEdge[N <: TypedNode[_, _, _], Msgs] extends Edge {
+  sealed trait TypedEdge[N <: Node, TypedMsgs <: Msgs] extends Edge {
     def node: N
     def factor: Factor
-    def msgs: Msgs
+    def msgs: TypedMsgs
   }
 
   final class DiscNode(val variable: DiscVar[Any], val content: DiscNodeContent) extends TypedNode[DiscVar[Any], DiscEdge, DiscNodeContent]
   final class ContNode(val variable: ContVar, val content: ContNodeContent) extends TypedNode[ContVar, ContEdge, ContNodeContent]
 
   final class DiscEdge(val node: DiscNode, val msgs: DiscMsgs, val factor: Factor) extends TypedEdge[DiscNode, DiscMsgs]
-  final class ContEdge(val node: ContNode, val msgs: ContMsgs, val factor: Factor) extends TypedEdge[ContNode, ContMsgs]
+  final class ContEdge(val node: ContNode, val msgs: ContMsgs, val factor: Factor) extends TypedEdge[ContNode, ContMsgs] 
 
   final class Factor(val pot: Pot, val content: FactorContent) {
     var discEdges: Array[DiscEdge] = null
