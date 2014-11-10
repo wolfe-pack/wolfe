@@ -641,6 +641,7 @@ object LoadNAACL extends App {
         case "Dev" => CellType.Dev
         case "Observed" => CellType.Observed
       }
+
       //only subsamples FB relations
       if (subsample == 1.0 || cellType != CellType.Train || !r.startsWith("REL$") || rand.nextDouble() < subsample) {
         val cell = Cell(r, (e1, e2), DefaultIx, target.toDouble, cellType)
@@ -658,15 +659,21 @@ object LoadNAACL extends App {
       val start = if (Conf.hasPath("mf.formulaeStart")) Conf.getInt("mf.formulaeStart") else 0
       val end = if (Conf.hasPath("mf.formulaeEnd")) Conf.getInt("mf.formulaeEnd") else Int.MaxValue
 
-      var counter = -1
+      val formulae = lines.mkString("\n").split("\n\n")
 
       for {
-        line <- lines
-        if !line.isEmpty && !line.startsWith("//")
+        formulaEntry <- formulae
+        Array(stats, formula) = formulaEntry.split("\n")
       } {
-        counter += 1
-        if (start <= counter && counter <= end) {
-          val Array(head, tail) = line.split(" => ")
+
+        val Array(numberRaw, dataScore, dataPremises, mfScore, mfPremises) =
+          if (stats.split("\t").size == 5) stats.split("\t")
+          else stats.split("\t").init
+
+        val number = numberRaw.drop(2).toInt
+
+        if (!formula.startsWith("//") && start <= number && number <= end) {
+          val Array(head, tail) = formula.split(" => ")
           val body = tail.split("\t").head
           body.head match {
             case '!' => kb += ImplNeg(head, body.tail)
