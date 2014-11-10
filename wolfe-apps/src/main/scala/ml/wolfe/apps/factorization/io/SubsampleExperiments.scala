@@ -36,17 +36,21 @@ object SubsampleExperiments extends App {
   ).mapValues(rand.shuffle(_))
 
 
+  import scala.sys.process._
+  val userDir = System.getProperty("user.dir")
+
+  //check whether in the right directory
+  val correctDir = if (userDir.endsWith("/wolfe")) userDir else userDir.split("/").init.mkString("/")
+
+
+  //first compile project for all workers so that there will be no clashes
+  Process(Seq("sbt", "compile"), new File(correctDir)).!
+
+
   val progressBar = new ProgressBar(series.values.map(_.size).foldLeft(1)(_ * _), 1)
   progressBar.start()
 
-
   RunExperimentSeries(series, threads, confPath) { conf =>
-    import scala.sys.process._
-    val userDir = System.getProperty("user.dir")
-
-    //check whether in the right directory
-    val correctDir = if (userDir.endsWith("/wolfe")) userDir else userDir.split("/").init.mkString("/")
-
     (Process(Seq(
       "sbt",
       "project wolfe-apps",

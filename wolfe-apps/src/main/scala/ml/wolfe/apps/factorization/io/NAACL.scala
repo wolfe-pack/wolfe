@@ -641,7 +641,8 @@ object LoadNAACL extends App {
         case "Dev" => CellType.Dev
         case "Observed" => CellType.Observed
       }
-      if (subsample == 1.0 || cellType != CellType.Train || rand.nextDouble() < subsample) {
+      //only subsamples FB relations
+      if (subsample == 1.0 || cellType != CellType.Train || !r.startsWith("REL$") || rand.nextDouble() < subsample) {
         val cell = Cell(r, (e1, e2), DefaultIx, target.toDouble, cellType)
         kb += cell
       }

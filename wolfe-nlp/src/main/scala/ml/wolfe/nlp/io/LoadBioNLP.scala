@@ -64,7 +64,7 @@ object LoadBioNLP extends App {
 }
 
 object LoadBioNLPTest extends App {
-  val pathToBioNLP = args.lift(0).getOrElse("wolfe-nlp/data/bionlp")
+  val pathToBioNLP = args.lift(0).getOrElse("wolfe-nlp/data/bionlp-train")
   val jsonFiles = new File(pathToBioNLP).listFiles(new FilenameFilter {
     override def accept(dir: File, name: String): Boolean = name.endsWith(".json")
   }).toList
