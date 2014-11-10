@@ -1,12 +1,47 @@
 package ml.wolfe.fg20
 
-import ml.wolfe.WolfeSpec
+import ml.wolfe._
 import ml.wolfe.fg._
 
 /**
  * @author Sebastian Riedel
  */
 class BeliefPropagation20Specs extends WolfeSpec {
+
+  val potFunction: Array[Int] => Double = {
+    case Array(0, 0) => 1
+    case Array(0, 1) => 2
+    case Array(1, 0) => -3
+    case Array(1, 1) => 0
+  }
+  val v1 = new DiscVar(Seq(false,true))
+  val v2 = new DiscVar(Seq(false,true))
+  val fixedTable = TablePotential.table(Array(2, 2), potFunction)
+  val tablePot = new TablePotential(Array(v1,v2),fixedTable)
+
+  def sameVector(v1: FactorieVector, v2: FactorieVector, eps: Double = 0.00001) = {
+    v1.activeDomain.forall(i => math.abs(v1(i) - v2(i)) < eps) &&
+    v2.activeDomain.forall(i => math.abs(v1(i) - v2(i)) < eps)
+  }
+
+  "A BrufeForce algorithm" should {
+    "return the exact log partition function" in {
+      import math._
+      val problem = Problem(Seq(tablePot),Seq(v1,v2))
+      val bf = new BruteForce(problem)
+      val result = bf.inferMarginals()
+      val logZ = log(fixedTable.scores.map(exp).sum)
+      result.logZ should be (logZ)
+    }
+    "return the exact MAP value" in {
+      val problem = Problem(Seq(tablePot),Seq(v1,v2))
+      val bf = new BruteForce(problem)
+      val result = bf.inferMAP()
+      val max = fixedTable.scores.max
+      result.score should be (max)
+    }
+
+  }
 //
 //  val pot: Array[Int] => Double = {
 //    case Array(0, 0) => 1
