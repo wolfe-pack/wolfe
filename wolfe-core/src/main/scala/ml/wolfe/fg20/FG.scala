@@ -41,8 +41,8 @@ trait FG {
   lazy val edges     = factors.flatMap(_.edges)
   lazy val discEdges = factors.flatMap(_.discEdges)
 
-  discNodes.foreach(x => x._2.build())
-  contNodes.foreach(x => x._2.build())
+  discNodes.values.foreach(_.build())
+  contNodes.values.foreach(_.build())
 
   def nodes: Iterable[Node] = discNodes.values.view ++ contNodes.values.view
 
