@@ -9,13 +9,13 @@ import ml.wolfe._
 class MyImplies(premise: DiscVar[Boolean], consequent: DiscVar[Boolean]) extends MaxProduct.Potential {
 
   def discVars = Array(premise, consequent)
-  def valueInBPFG(factor: BPFG#Factor, weights: FactorieVector) = {
+  def valueInBPFG(factor: BeliefPropagationFG#Factor, weights: FactorieVector) = {
     val p = factor.discEdges(0)
     val c = factor.discEdges(1)
     if (!premise.dom(p.node.content.setting) || consequent.dom(c.node.content.setting)) 0.0 else Double.NegativeInfinity
   }
-  def maxMarginalExpectationsAndObjective(factor: BPFG#Factor, dstExpectations: FactorieVector) = ???
-  def discMaxMarginalF2N(edge: BPFG#DiscEdge, weights: FactorieVector) = ???
+  def maxMarginalExpectationsAndObjective(factor: BeliefPropagationFG#Factor, dstExpectations: FactorieVector) = ???
+  def discMaxMarginalF2N(edge: BeliefPropagationFG#DiscEdge, weights: FactorieVector) = ???
 }
 
 
@@ -29,7 +29,7 @@ trait Residuals extends FG {
 
 }
 
-trait BPFG extends Residuals {
+trait BeliefPropagationFG extends Residuals {
 
 
   class DiscNodeContent(var setting: Int = 0,
@@ -113,23 +113,22 @@ trait EdgePropagation extends Residuals with Scheduling {
 
 object MaxProduct {
   trait Potential extends DiscPotential {
-    def discMaxMarginalF2N(edge: BPFG#DiscEdge, weights: FactorieVector)
-    def contMaxMarginalF2N(edge: BPFG#ContEdge, weights: FactorieVector):Unit = hasNoContVars
-    def maxMarginalExpectationsAndObjective(factor: BPFG#Factor, dstExpectations: FactorieVector): Double
+    def discMaxMarginalF2N(edge: BeliefPropagationFG#DiscEdge, weights: FactorieVector)
+    def contMaxMarginalF2N(edge: BeliefPropagationFG#ContEdge, weights: FactorieVector):Unit = hasNoContVars
+    def maxMarginalExpectationsAndObjective(factor: BeliefPropagationFG#Factor, dstExpectations: FactorieVector): Double
   }
 }
 
 object SumProduct {
   trait Potential extends DiscPotential {
-    def discMarginalF2N(edge: BPFG#DiscEdge, weights: FactorieVector)
-    def contMarginalF2N(edge: BPFG#ContEdge, weights: FactorieVector):Unit = hasNoContVars
-    def marginalExpectationsAndObjective(factor: BPFG#Factor, dstExpectations: FactorieVector): Double
+    def discMarginalF2N(edge: BeliefPropagationFG#DiscEdge, weights: FactorieVector)
+    def contMarginalF2N(edge: BeliefPropagationFG#ContEdge, weights: FactorieVector):Unit = hasNoContVars
+    def marginalExpectationsAndObjective(factor: BeliefPropagationFG#Factor, dstExpectations: FactorieVector): Double
   }
 }
 
 
-// ------------- Inference ---------------
-class MaxProduct(val problem: Problem) extends BPFG with EdgePropagation {
+class MaxProduct(val problem: Problem) extends BeliefPropagationFG with EdgePropagation {
 
   type Pot = MaxProduct.Potential
 
@@ -154,8 +153,7 @@ class MaxProduct(val problem: Problem) extends BPFG with EdgePropagation {
 
 }
 
-// ------------- Inference ---------------
-class SumProduct(val problem: Problem) extends BPFG with EdgePropagation {
+class SumProduct(val problem: Problem) extends BeliefPropagationFG with EdgePropagation {
 
   type Pot = SumProduct.Potential
 
