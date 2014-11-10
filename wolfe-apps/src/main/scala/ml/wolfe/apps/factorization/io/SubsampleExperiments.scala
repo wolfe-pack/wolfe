@@ -31,7 +31,7 @@ object SubsampleExperiments extends App {
   val rand = new Random(0l)
 
   val series = Map(
-    "mf.subsample" -> (1 to 10).map(_ / 10.0).toSeq,
+    "mf.subsample" -> (0 to 10).map(_ / 10.0).toSeq,
     "formulaeFile" -> Seq("None", formulaeFile)
   ).mapValues(rand.shuffle(_))
 
@@ -41,7 +41,6 @@ object SubsampleExperiments extends App {
 
   //check whether in the right directory
   val correctDir = if (userDir.endsWith("/wolfe")) userDir else userDir.split("/").init.mkString("/")
-
 
   //first compile project for all workers so that there will be no clashes
   Process(Seq("sbt", "compile"), new File(correctDir)).!
