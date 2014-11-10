@@ -78,6 +78,16 @@ trait BeliefPropagationFG extends Residuals {
     }
   }
 
+  def updateBelief(node: Node) = {
+    node match {
+      case d: DiscNode =>
+        for (i <- d.variable.dom.indices)
+          d.content.belief(i) = { for (e <- d.edges) yield e.msgs.f2n(i) }.sum
+      case _ =>
+    }
+  }
+
+
 
 }
 
@@ -142,16 +152,23 @@ class MaxProduct(val problem: Problem) extends BeliefPropagationFG with EdgeProp
   }
 
 
-  def inferMAP(maxIterations: Int = 10, eps: Double = 0.0001)(weights: FactorieVector): MAPResult = {
+  def inferMAP(maxIterations: Int = 10, eps: Double = 0.0001)(weights: FactorieVector = new DenseVector(0)): MAPResult = {
     propagate(maxIterations, eps)(weights)
+    for (node <- nodes) {
+      updateBelief(node)
+      normalize(node)
+    }
     val gradient = new SparseVector(1000)
     val score = factors.view.map(f => f.pot.maxMarginalExpectationsAndObjective(f, gradient)).sum
     val discState = problem.discVars.map(v => v -> v.dom(discNodes(v).content.setting)).toMap[Var[Any], Any]
     val contState = problem.contVars.map(v => v -> contNodes(v).content.setting)
     val maxMarginals = discNodes.values.map(n => DiscBelief(n.variable) -> Distribution.disc(n.variable.dom, n.content.belief))
-
     MAPResult(new MapBasedState(discState ++ contState), score, gradient, new MapBasedState(maxMarginals.toMap))
   }
+
+  def normalize(node:Node) { node match {
+    case d:DiscNode => maxNormalize(d.content.belief)
+  }}
 
 }
 
@@ -170,10 +187,10 @@ class SumProduct(val problem: Problem) extends BeliefPropagationFG with EdgeProp
 
   def inferMarginals(maxIterations: Int = 10, eps: Double = 0.0001)(weights: FactorieVector): MarginalResult = {
     propagate(maxIterations, eps)(weights)
+    for (node <- nodes) updateBelief(node)
     val gradient = new SparseVector(1000)
     val logZ = factors.view.map(f => f.pot.marginalExpectationsAndObjective(f, gradient)).sum
     val marginals = discNodes.values.map(n => DiscBelief(n.variable) -> Distribution.disc(n.variable.dom, n.content.belief))
-
     MarginalResult(logZ, gradient,new MapBasedState(marginals.toMap))
   }
 

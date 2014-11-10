@@ -25,18 +25,18 @@ trait FG {
 
   def createFactorContent(pot: Pot): FactorContent
 
-  lazy val discNodes = problem.discVars.map(v =>
+  val discNodes = problem.discVars.map(v =>
     v -> new DiscNode(v, createDiscNodeContent(v))
   ).toMap
 
 
-  lazy val contNodes = problem.contVars.map(v =>
+  val contNodes = problem.contVars.map(v =>
     v -> new ContNode(v, createContNodeContent(v))
   ).toMap
 
-  lazy val factors   = problem.pots.map(p => createFactor(checkPot(p)))
-  lazy val edges     = factors.flatMap(_.edges)
-  lazy val discEdges = factors.flatMap(_.discEdges)
+  val factors   = problem.pots.map(p => createFactor(checkPot(p)))
+  val edges     = factors.flatMap(_.edges)
+  val discEdges = factors.flatMap(_.discEdges)
 
   discNodes.values.foreach(_.build())
   contNodes.values.foreach(_.build())

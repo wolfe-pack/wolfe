@@ -18,6 +18,17 @@ class BeliefPropagation20Specs extends WolfeSpec {
   val v2 = new DiscVar(Seq(false,true))
   val fixedTable = TablePotential.table(Array(2, 2), potFunction)
   val tablePot = new TablePotential(Array(v1,v2),fixedTable)
+  val simpleProblem = Problem(Seq(tablePot),Seq(v1,v2))
+
+  val xorFun = (arr:Array[Int]) => if ((arr(0)==1) ^ (arr(1)==1)) 0 else Double.NegativeInfinity
+  val xorPot = new TablePotential(Array(v1,v2),TablePotential.table(Array(2,2),xorFun))
+  val xorProblem = Problem(Seq(xorPot),Seq(v1,v2))
+
+    def chainProblem(length: Int) = {
+      val vars = for (i <- 0 until length) yield new DiscVar(Seq(false,true), "v" + i)
+      val pots = for ((v1, v2) <- vars.dropRight(1) zip vars.drop(1)) yield new TablePotential(Array(v1,v2), fixedTable)
+      Problem(pots,vars)
+    }
 
   def sameVector(v1: FactorieVector, v2: FactorieVector, eps: Double = 0.00001) = {
     v1.activeDomain.forall(i => math.abs(v1(i) - v2(i)) < eps) &&
@@ -27,8 +38,7 @@ class BeliefPropagation20Specs extends WolfeSpec {
   "A BrufeForce algorithm" should {
     "return the exact log partition function" in {
       import math._
-      val problem = Problem(Seq(tablePot),Seq(v1,v2))
-      val bf = new BruteForce(problem)
+      val bf = new BruteForce(simpleProblem)
       val result = bf.inferMarginals()
       val logZ = log(fixedTable.scores.map(exp).sum)
       result.logZ should be (logZ)
@@ -42,6 +52,42 @@ class BeliefPropagation20Specs extends WolfeSpec {
     }
 
   }
+
+    "A Max Product algorithm" should {
+      "return the exact max-marginals when given a single table potential" in {
+        val fg_mp = new MaxProduct(simpleProblem)
+        val fg_bf = new BruteForce(simpleProblem)
+
+        val mpResult = fg_mp.inferMAP(1)()
+        val bfResult = fg_bf.inferMAP()
+
+        mpResult.maxMarginals should be (bfResult.maxMarginals)
+      }
+      "choose a valid global max from a factor graph with multiple solutions" ignore {
+        val mp = new MaxProduct(xorProblem)
+        val result = mp.inferMAP()()
+        result.state(v1) should not be result.state(v2)
+      }
+
+      "return the exact max-marginals given a chain" in {
+        val chain = chainProblem(5)
+
+        val mp = new MaxProduct(chain).inferMAP()()
+        val bf = new BruteForce(chain).inferMAP()
+
+        mp.maxMarginals should be (bf.maxMarginals)
+
+      }
+
+      "return feature vectors of argmax state" in {
+        val chain = chainProblem(5)
+
+        val mp = new MaxProduct(chain).inferMAP()()
+        val bf = new BruteForce(chain).inferMAP()
+
+        sameVector(mp.gradient, bf.gradient) should be(true)
+      }
+    }
 //
 //  val pot: Array[Int] => Double = {
 //    case Array(0, 0) => 1

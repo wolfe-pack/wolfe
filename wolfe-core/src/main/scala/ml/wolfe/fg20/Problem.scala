@@ -3,7 +3,9 @@ package ml.wolfe.fg20
 import ml.wolfe._
 
 trait Var[+T]
-class DiscVar[+T](val dom: Seq[T]) extends Var[T]
+class DiscVar[+T](val dom: Seq[T],val name:String = "anon") extends Var[T] {
+  override def toString = name
+}
 class ContVar extends Var[Double]
 class VectVar extends Var[FactorieVector]
 
