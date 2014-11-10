@@ -13,6 +13,10 @@ trait Potential {
   def contVars: Array[ContVar]
   def vectVars: Array[VectVar]
 
+  def hasNoDiscVars = sys.error("This potential has no discrete variables")
+  def hasNoContVars = sys.error("This potential has no continuous variables")
+  def hasNoVectVars = sys.error("This potential has no vector variables")
+
 }
 
 trait DiscPotential extends Potential {
