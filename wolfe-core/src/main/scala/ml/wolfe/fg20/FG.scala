@@ -5,11 +5,8 @@ import ml.wolfe.FactorieVector
 import scala.reflect.ClassTag
 
 
-class State(map: Map[Var[Any], Any]) {
-  def apply[T](v: Var[T]): T = map(v).asInstanceOf[T]
-}
-case class MAPResult(state: State, score: Double, gradient: FactorieVector)
-case class MarginalResult(state: State, score: Double, gradient: FactorieVector)
+case class MAPResult(state: State, score: Double, gradient: FactorieVector, maxMarginals:State)
+case class MarginalResult(logZ: Double, gradient: FactorieVector, marginals:State)
 
 trait FG {
   type DiscNodeContent
