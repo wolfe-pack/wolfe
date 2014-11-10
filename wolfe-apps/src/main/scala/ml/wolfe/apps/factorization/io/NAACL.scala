@@ -655,14 +655,24 @@ object LoadNAACL extends App {
 
       val lines = Source.fromFile(formulaePath).getLines()
 
+      val start = if (Conf.hasPath("mf.formulaeStart")) Conf.getInt("mf.formulaeStart") else 0
+      val end = if (Conf.hasPath("mf.formulaeEnd")) Conf.getInt("mf.formulaeEnd") else Int.MaxValue
+
+      var counter = -1
+
       for {
         line <- lines
         if !line.isEmpty && !line.startsWith("//")
-        Array(head, tail) = line.split(" => ")
-        body = tail.split("\t").head
-      } body.head match {
-        case '!' => kb += ImplNeg(head, body.tail)
-        case _ => kb += Impl(head, body)
+      } {
+        counter += 1
+        if (start <= counter && counter <= end) {
+          val Array(head, tail) = line.split(" => ")
+          val body = tail.split("\t").head
+          body.head match {
+            case '!' => kb += ImplNeg(head, body.tail)
+            case _ => kb += Impl(head, body)
+          }
+        }
       }
     }
 

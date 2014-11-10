@@ -2,8 +2,8 @@ package ml.wolfe.apps
 
 import ml.wolfe.util.PotentialDebugger
 import ml.wolfe.{DenseVector, FactorGraph}
-import ml.wolfe.apps.factorization.{BPRPotential, ImplNegPotential, ImplPotential}
-import ml.wolfe.fg.{L2Regularization, CellLogisticLoss, VectorMsgs}
+import ml.wolfe.apps.factorization.{ImplNegPotential, ImplPotential}
+import ml.wolfe.fg.{BPRPotential, L2Regularization, CellLogisticLoss, VectorMsgs}
 
 import scala.util.Random
 
