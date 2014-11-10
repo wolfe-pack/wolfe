@@ -16,6 +16,7 @@ class MyImplies(premise: DiscVar[Boolean], consequent: DiscVar[Boolean]) extends
   }
   def maxMarginalExpectationsAndObjective(factor: BeliefPropagationFG#Factor, dstExpectations: FactorieVector) = ???
   def discMaxMarginalF2N(edge: BeliefPropagationFG#DiscEdge, weights: FactorieVector) = ???
+  def isLinear = false
 }
 
 
