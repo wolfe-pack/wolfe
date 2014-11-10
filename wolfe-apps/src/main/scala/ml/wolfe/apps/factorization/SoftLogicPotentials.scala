@@ -114,25 +114,3 @@ extends Formula2Potential(constEdge, pred1Edge, pred2Edge, target, lambda, weigh
   def calcF_c(p2c_c: FactorieVector, p1c: Double, p1c_c: FactorieVector, p2c: Double) =
     p2c_c * -p1c + p1c_c * -p2c
 }
-
-
-
-
-class BPRPotential(const1Edge: Edge, const2Edge: Edge, predEdge: Edge, target: Double = 1.0, val lambda: Double = 0.0) extends Potential with Regularization {
-  def c1Var  = const1Edge.n.variable.asVector
-  def c2Var  = const2Edge.n.variable.asVector
-  def pVar   = predEdge.n.variable.asVector
-  val c1Msgs = const1Edge.msgs.asVector
-  val c2Msgs = const2Edge.msgs.asVector
-  val pMsgs  = predEdge.msgs.asVector
-
-  def sig(x: Double) = 1.0 / (1.0 + math.exp(-x))
-
-  private def innerLossAndDirection(s: Double): (Double, Int) =
-    if (target >= s) (1 + s - target, 1)
-    else (1 + target - s, -1)
-
-  override def valueForCurrentSetting(): Double = ???
-
-  override def valueAndGradientForAllEdges(): Double = ???
-}

@@ -44,6 +44,7 @@ object MatrixFactorization extends App {
   val optimizer = conf.getString("mf.optimizer")
   val batchTraining = conf.getBoolean("mf.batchTraining")
 
+  val bpr = conf.getBoolean("mf.bpr")
 
   val db = if (debug) {
     val tmp = new TensorKB(k)
@@ -75,13 +76,18 @@ object MatrixFactorization extends App {
     val a = A(rowIx) //entity
     val v = V(colIx) //relation
 
-    fg.buildFactor(Seq(a, v))(_ map (_ => new VectorMsgs)) {
-      e => new CellLogisticLoss(e(0), e(1), 1.0, lambda, cellWeight) with L2Regularization
+    if (bpr) fg.buildStochasticFactor(Seq(a, db.sampleNode(colIx), v))(_ map (_ => new VectorMsgs)) {
+      e => new BPRPotential(e(0), e(1), e(2), 1.0, lambda) with L2Regularization
     }
+    else {
+      fg.buildFactor(Seq(a, v))(_ map (_ => new VectorMsgs)) {
+        e => new CellLogisticLoss(e(0), e(1), 1.0, lambda, cellWeight) with L2Regularization
+      }
 
-    (0 until negPerPos).foreach { i =>
-      fg.buildStochasticFactor(Seq(v, db.sampleNode(colIx)))(_ map (_ => new VectorMsgs)) {
-        e => new CellLogisticLoss(e(0), e(1), 0.0, lambda, cellWeight / negPerPos) with L2Regularization
+      (0 until negPerPos).foreach { i =>
+        fg.buildStochasticFactor(Seq(v, db.sampleNode(colIx)))(_ map (_ => new VectorMsgs)) {
+          e => new CellLogisticLoss(e(0), e(1), 0.0, lambda, cellWeight / negPerPos) with L2Regularization
+        }
       }
     }
   }
