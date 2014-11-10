@@ -48,13 +48,14 @@ trait FG {
 
   trait Node {
     def variable: Var[Any]
-    def edgeList:List[Edge]
+    def edgeList: List[Edge]
   }
 
   trait Edge {
     def node: Node
     def factor: Factor
-    def msgs:Msgs
+    def msgs: Msgs
+    def index: Int
   }
 
   abstract class TypedNode[V <: Var[Any], E <: Edge : ClassTag, NodeContent] extends Node {
@@ -75,8 +76,8 @@ trait FG {
   final class DiscNode(val variable: DiscVar[Any], val content: DiscNodeContent) extends TypedNode[DiscVar[Any], DiscEdge, DiscNodeContent]
   final class ContNode(val variable: ContVar, val content: ContNodeContent) extends TypedNode[ContVar, ContEdge, ContNodeContent]
 
-  final class DiscEdge(val node: DiscNode, val msgs: DiscMsgs, val factor: Factor) extends TypedEdge[DiscNode, DiscMsgs]
-  final class ContEdge(val node: ContNode, val msgs: ContMsgs, val factor: Factor) extends TypedEdge[ContNode, ContMsgs] 
+  final class DiscEdge(val node: DiscNode, val factor: Factor, val index:Int, val msgs: DiscMsgs) extends TypedEdge[DiscNode, DiscMsgs]
+  final class ContEdge(val node: ContNode, val factor: Factor, val index:Int, val msgs: ContMsgs) extends TypedEdge[ContNode, ContMsgs]
 
   final class Factor(val pot: Pot, val content: FactorContent) {
     var discEdges: Array[DiscEdge] = null
@@ -91,20 +92,20 @@ trait FG {
   def createFactor(pot: Pot): Factor = {
     val factor = new Factor(pot, createFactorContent(pot))
 
-    def addDiscEdge(node: DiscNode) = {
+    def addDiscEdge(node: DiscNode,index:Int) = {
       val msgs = createDiscMsgs(node.variable)
-      val edge = new DiscEdge(node, msgs, factor)
+      val edge = new DiscEdge(node,  factor,index, msgs)
       node.buffer = edge :: node.buffer
       edge
     }
-    def addContEdge(node: ContNode) = {
+    def addContEdge(node: ContNode,index:Int) = {
       val msgs = createContMsgs(node.variable)
-      val edge = new ContEdge(node, msgs, factor)
+      val edge = new ContEdge(node, factor, index, msgs)
       node.buffer = edge :: node.buffer
       edge
     }
-    factor.discEdges = pot.discVars.map(v => addDiscEdge(discNodes(v)))
-    factor.contEdges = pot.contVars.map(v => addContEdge(contNodes(v)))
+    factor.discEdges = pot.discVars.view.zipWithIndex.map(v => addDiscEdge(discNodes(v._1),v._2)).toArray
+    factor.contEdges = pot.contVars.view.zipWithIndex.map(v => addContEdge(contNodes(v._1),v._2)).toArray
     factor
   }
 
