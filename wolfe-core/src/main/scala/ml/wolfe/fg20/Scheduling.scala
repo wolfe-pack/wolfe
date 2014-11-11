@@ -65,7 +65,7 @@ trait Scheduling {
       scheduleAcc(nodes.toList, Set(), Seq())
     }
 
-    def schedule(factor: Factor): Seq[DirectedEdge] = schedule(factor.edges.head)
+    def schedule(factor: Factor): Seq[DirectedEdge] = schedule(factor.edges.next())
 
     def schedule(edge: Edge): Seq[DirectedEdge] = schedule(edge.node)
 
@@ -111,7 +111,7 @@ trait Scheduling {
                 case EdgeDirection.F2N =>
                   head.f.edges.
                   filterNot(e => e == head.edge || todo.view.map(_.edge).contains(e)).
-                  map(DirectedEdge(_, EdgeDirection.N2F))
+                  map(DirectedEdge(_, EdgeDirection.N2F)).toSeq
               }
 
               scheduleAcc(tail ++ parents, done + head.edge, parents ++ acc)
