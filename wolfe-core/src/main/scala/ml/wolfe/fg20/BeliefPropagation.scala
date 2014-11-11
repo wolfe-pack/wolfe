@@ -14,7 +14,7 @@ class MyImplies(premise: DiscVar[Boolean], consequent: DiscVar[Boolean]) extends
     val c = factor.discEdges(1)
     if (!premise.dom(p.node.content.setting) || consequent.dom(c.node.content.setting)) 0.0 else Double.NegativeInfinity
   }
-  def maxMarginalExpectationsAndObjective(factor: BeliefPropagationFG#Factor, dstExpectations: FactorieVector) = ???
+  def maxMarginalExpectationsAndObjective(factor: BeliefPropagationFG#Factor, dstExpectations: FactorieVector,weights:FactorieVector) = ???
   def discMaxMarginalF2N(edge: BeliefPropagationFG#DiscEdge, weights: FactorieVector) = ???
   def isLinear = false
 }
@@ -127,7 +127,9 @@ object MaxProduct {
   trait Potential extends DiscPotential {
     def discMaxMarginalF2N(edge: BeliefPropagationFG#DiscEdge, weights: FactorieVector)
     def contMaxMarginalF2N(edge: BeliefPropagationFG#ContEdge, weights: FactorieVector): Unit = hasNoContVars
-    def maxMarginalExpectationsAndObjective(factor: BeliefPropagationFG#Factor, dstExpectations: FactorieVector): Double
+    def maxMarginalExpectationsAndObjective(factor: BeliefPropagationFG#Factor,
+                                            dstExpectations: FactorieVector,
+                                            weights:FactorieVector): Double
   }
 }
 
@@ -150,7 +152,7 @@ class MaxProduct(val problem: Problem) extends BeliefPropagationFG with EdgeProp
     propagate(maxIterations, eps)(weights)
     for (node <- nodes) { updateBelief(node); normalizeBelief(node) }
     val gradient = new SparseVector(1000)
-    val score = factors.view.map(f => f.pot.maxMarginalExpectationsAndObjective(f, gradient)).sum
+    val score = factors.view.map(f => f.pot.maxMarginalExpectationsAndObjective(f, gradient, weights)).sum
     val discState = problem.discVars.map(v => v -> v.dom(discNodes(v).content.setting)).toMap[Var[Any], Any]
     val contState = problem.contVars.map(v => v -> contNodes(v).content.setting)
     val maxMarginals = discNodes.values.map(n => DiscBelief(n.variable) -> Distribution.disc(n.variable.dom, n.content.belief))
@@ -169,7 +171,9 @@ object SumProduct {
   trait Potential extends DiscPotential {
     def discMarginalF2N(edge: BeliefPropagationFG#DiscEdge, weights: FactorieVector)
     def contMarginalF2N(edge: BeliefPropagationFG#ContEdge, weights: FactorieVector): Unit = hasNoContVars
-    def marginalExpectationsAndObjective(factor: BeliefPropagationFG#Factor, dstExpectations: FactorieVector): Double
+    def marginalExpectationsAndObjective(factor: BeliefPropagationFG#Factor,
+                                         dstExpectations: FactorieVector,
+                                         weights:FactorieVector): Double
   }
 }
 
@@ -191,7 +195,7 @@ class SumProduct(val problem: Problem) extends BeliefPropagationFG with EdgeProp
     propagate(maxIterations, eps)(weights)
     for (node <- nodes) { updateBelief(node); normalizeBelief(node) }
     val gradient = new SparseVector(1000)
-    val logZ = factors.view.map(f => f.pot.marginalExpectationsAndObjective(f, gradient)).sum
+    val logZ = factors.view.map(f => f.pot.marginalExpectationsAndObjective(f, gradient,weights)).sum
     val marginals = discNodes.values.map(n => DiscBelief(n.variable) -> Distribution.disc(n.variable.dom, n.content.belief))
     MarginalResult(logZ, gradient, new MapBasedState(marginals.toMap))
   }

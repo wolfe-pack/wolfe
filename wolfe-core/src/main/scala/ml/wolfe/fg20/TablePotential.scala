@@ -28,6 +28,7 @@ object TablePotential {
     val dims = vars.map(_.dom.size)
     new TablePotential(vars, table(dims, pot))
   }
+
   def apply(vars: Array[DiscVar[Any]], table: Table) = {
     new TablePotential(vars, table)
   }
@@ -137,7 +138,9 @@ final class TablePotential(val discVars: Array[DiscVar[Any]], table: Table) exte
   def statsForCurrentSetting(factor: BruteForce#Factor) = isNotLinear
 
 
-  def maxMarginalExpectationsAndObjective(factor: BeliefPropagationFG#Factor, dstExpectations: FactorieVector) = {
+  def maxMarginalExpectationsAndObjective(factor: BeliefPropagationFG#Factor,
+                                          dstExpectations: FactorieVector,
+                                          weights:FactorieVector) = {
     // 1) go over all states, find max with respect to incoming messages
     var norm = Double.NegativeInfinity
     var maxScore = Double.NegativeInfinity
@@ -152,7 +155,9 @@ final class TablePotential(val discVars: Array[DiscVar[Any]], table: Table) exte
     maxScore
   }
 
-  override def marginalExpectationsAndObjective(factor: BeliefPropagationFG#Factor, dstExpectations: FactorieVector) = {
+  override def marginalExpectationsAndObjective(factor: BeliefPropagationFG#Factor,
+                                                dstExpectations: FactorieVector,
+                                                weights:FactorieVector) = {
     var localZ = 0.0
 
     //calculate local partition function
