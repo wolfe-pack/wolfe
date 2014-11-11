@@ -208,6 +208,7 @@ class SumProduct(val problem: Problem) extends BeliefPropagationFG with EdgeProp
 
 trait BeliefPropagationFG2 extends Residuals2 with EmptyFactorFG with NodeContentFG {
 
+  type NodeContent = Any
 
   class DiscNodeContent(var setting: Int = 0,
                         var belief: Array[Double])

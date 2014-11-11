@@ -115,10 +115,14 @@ trait FG {
 }
 
 trait NodeContentFG extends BasicFG {
-  type DiscNodeContent
-  type ContNodeContent
-  final class DiscNode(val variable: DiscVar[Any], val content: DiscNodeContent) extends TypedNode[DiscVar[Any], DiscEdge]
-  final class ContNode(val variable: ContVar, val content: ContNodeContent) extends TypedNode[ContVar, ContEdge]
+  type NodeContent
+  type DiscNodeContent <: NodeContent
+  type ContNodeContent <: NodeContent
+  trait NodeType extends Node {
+    def content:NodeContent
+  }
+  final class DiscNode(val variable: DiscVar[Any], val content: DiscNodeContent) extends TypedNode[DiscVar[Any], DiscEdge] with NodeType
+  final class ContNode(val variable: ContVar, val content: ContNodeContent) extends TypedNode[ContVar, ContEdge] with NodeType
 
   def createDiscNodeContent(variable: DiscVar[Any]): DiscNodeContent
   def createContNodeContent(contVar: ContVar): ContNodeContent
@@ -134,11 +138,11 @@ trait EdgeMsgsFG extends BasicFG {
   def createDiscMsgs(variable: DiscVar[Any]): DiscMsgs
   def createContMsgs(variable: ContVar): ContMsgs
 
-  trait EdgeWithMsgs extends Edge {
+  trait EdgeType extends Edge {
     def msgs:Msgs
   }
 
-  abstract class TypedEdgeWithMsgs[N <: Node,M <: Msgs] extends TypedEdge[N] with EdgeWithMsgs {
+  abstract class TypedEdgeWithMsgs[N <: Node,M <: Msgs] extends TypedEdge[N] with EdgeType {
     def msgs:M
   }
 
