@@ -1,31 +1,37 @@
 package ml.wolfe.fg20
 
+import ml.wolfe.fg.Junkify.Edge
+
+import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 
 trait BasicFG {
   type Pot <: Potential
 
-  type DiscEdge <: TypedEdge[DiscNode]
-  type ContEdge <: TypedEdge[ContNode]
-  type DiscNode <: TypedNode[DiscVar[Any],DiscEdge]
-  type ContNode <: TypedNode[ContVar,ContEdge]
   type FactorType <: Factor
+  type EdgeType <: Edge
+  type NodeType <: Node
+
+  type DiscEdge <: TypedEdge[DiscNode] with EdgeType
+  type ContEdge <: TypedEdge[ContNode] with EdgeType
+  type DiscNode <: TypedNode[DiscVar[Any],DiscEdge] with NodeType
+  type ContNode <: TypedNode[ContVar,ContEdge] with NodeType
 
   implicit def discEdgeTag: ClassTag[DiscEdge]
   implicit def contEdgeTag: ClassTag[ContEdge]
 
   trait Node {
     def variable: Var[Any]
-    def build()
-    def edgeList: List[Edge]
+    def edgeList: List[EdgeType]
   }
 
-  abstract class TypedNode[V <: Var[Any], E <: Edge : ClassTag] extends Node {
+  abstract class TypedNode[V <: Var[Any], E <: EdgeType : ClassTag] extends Node {
     def variable:V
     def edgeList = edges.toList
     private[BasicFG] var buffer: List[E] = Nil
     var edges: Array[E] = null
-    def build() { edges = buffer.toArray }
+    private[BasicFG] def build() { edges = buffer.toArray }
   }
 
   trait Edge {
@@ -42,7 +48,7 @@ trait BasicFG {
     def pot: Pot
     var discEdges: Array[DiscEdge] = null
     var contEdges: Array[ContEdge] = null
-    def edges = discEdges.view ++ contEdges.view
+    def edges = discEdges.iterator ++ contEdges.iterator
   }
 
   def problem: Problem
@@ -60,21 +66,49 @@ trait BasicFG {
 
   def createAndLinkFactor(p:Pot) = {
     val factor = createFactor(p)
-    factor.discEdges = (for ((v,i) <- p.discVars.view.zipWithIndex) yield createDiscEdge(discNodes(v),factor,i)).toArray
-    factor.contEdges = (for ((v,i) <- p.contVars.view.zipWithIndex) yield createContEdge(contNodes(v),factor,i)).toArray
-    factor.discEdges.foreach(e => e.node.buffer ::= e)
-    factor.contEdges.foreach(e => e.node.buffer ::= e)
-
+    createDiscEdges(factor)
+    createContEdges(factor)
     factor
   }
 
-  val discNodes = problem.discVars.map(v => v -> createDiscNode(v)).toMap
-  val contNodes = problem.contVars.map(v => v -> createContNode(v)).toMap
+  val discNodes = createDiscNodes()
+  val contNodes = createContNodes()
+
   val factors   = problem.pots.map(p => createAndLinkFactor(checkPot(p)))
-  val edges     = factors.flatMap(_.edges)
-  val discEdges = factors.flatMap(_.discEdges)
+  def edges     = factors.iterator.flatMap(_.edges)
+//  val discEdges = factors.flatMap(_.discEdges)
 
   discNodes.values.foreach(_.build())
   contNodes.values.foreach(_.build())
+
+  //---- These are hacks to make Intellij be able to parse this file, there are much nicer ways to do this otherwise
+
+  private def createDiscEdges(factor:FactorType): Unit = {
+    val result = new ArrayBuffer[DiscEdge]
+    for ((v,i) <- factor.pot.discVars.zipWithIndex) result += createDiscEdge(discNodes(v),factor, i)
+    factor.discEdges = result.toArray[DiscEdge](discEdgeTag)
+    factor.discEdges.foreach(e => e.node.buffer ::= e)
+  }
+
+  private def createContEdges(factor:FactorType): Unit = {
+    val result = new ArrayBuffer[ContEdge]
+    for ((v,i) <- factor.pot.contVars.zipWithIndex) result += createContEdge(contNodes(v),factor, i)
+    factor.contEdges = result.toArray[ContEdge](contEdgeTag)
+    factor.contEdges.foreach(e => e.node.buffer ::= e)
+  }
+
+
+  private def createDiscNodes() = {
+    val map = new mutable.HashMap[DiscVar[Any],DiscNode]
+    for (v <- problem.discVars) map(v) = createDiscNode(v)
+    Map() ++ map
+  }
+
+  private def createContNodes() = {
+    val map = new mutable.HashMap[ContVar,ContNode]
+    for (v <- problem.contVars) map(v) = createContNode(v)
+    Map() ++ map
+  }
+
 
 }
