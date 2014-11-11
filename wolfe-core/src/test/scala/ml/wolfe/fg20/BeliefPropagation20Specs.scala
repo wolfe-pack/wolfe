@@ -1,12 +1,13 @@
 package ml.wolfe.fg20
 
 import ml.wolfe._
-import ml.wolfe.fg._
+import org.scalautils.Equality
 
 /**
  * @author Sebastian Riedel
  */
 class BeliefPropagation20Specs extends WolfeSpec {
+
 
   val potFunction: Array[Int] => Double = {
     case Array(0, 0) => 1
@@ -37,7 +38,7 @@ class BeliefPropagation20Specs extends WolfeSpec {
 
   "A BrufeForce algorithm" should {
     "return the exact log partition function" in {
-      import math._
+      import scala.math._
       val bf = new BruteForce(simpleProblem)
       val result = bf.inferMarginals()
       val logZ = log(fixedTable.scores.map(exp).sum)
@@ -58,37 +59,63 @@ class BeliefPropagation20Specs extends WolfeSpec {
         val fg_mp = new MaxProduct(simpleProblem)
         val fg_bf = new BruteForce(simpleProblem)
 
-        val mpResult = fg_mp.inferMAP(1)()
+        val mpResult = fg_mp.inferMAP(1)
         val bfResult = fg_bf.inferMAP()
 
-        mpResult.maxMarginals should be (bfResult.maxMarginals)
+        mpResult.maxMarginals should equal (bfResult.maxMarginals)
       }
       "choose a valid global max from a factor graph with multiple solutions" ignore {
         val mp = new MaxProduct(xorProblem)
-        val result = mp.inferMAP()()
+        val result = mp.inferMAP()
         result.state(v1) should not be result.state(v2)
       }
 
       "return the exact max-marginals given a chain" in {
         val chain = chainProblem(5)
 
-        val mp = new MaxProduct(chain).inferMAP()()
+        val mp = new MaxProduct(chain).inferMAP()
         val bf = new BruteForce(chain).inferMAP()
 
-        mp.maxMarginals should be (bf.maxMarginals)
+        mp.maxMarginals should equal (bf.maxMarginals)
 
       }
 
       "return feature vectors of argmax state" in {
         val chain = chainProblem(5)
 
-        val mp = new MaxProduct(chain).inferMAP()()
+        val mp = new MaxProduct(chain).inferMAP()
         val bf = new BruteForce(chain).inferMAP()
 
         sameVector(mp.gradient, bf.gradient) should be(true)
       }
     }
-//
+
+    "A Sum Product algorithm" should {
+      "return the exact marginals when given a single table potential" in {
+        val fg_mp = new SumProduct(simpleProblem)
+        val fg_bf = new BruteForce(simpleProblem)
+
+        val mpResult = fg_mp.inferMarginals(1)
+        val bfResult = fg_bf.inferMarginals()
+
+        mpResult.marginals should equal (bfResult.marginals)
+      }
+
+      "return the exact marginals given a chain" in {
+        val chain = chainProblem(5)
+
+        val mp = new SumProduct(chain).inferMarginals()
+        val bf = new BruteForce(chain).inferMarginals()
+
+        mp.marginals should equal (bf.marginals)
+
+      }
+
+
+
+    }
+
+  //
 //  val pot: Array[Int] => Double = {
 //    case Array(0, 0) => 1
 //    case Array(0, 1) => 2
