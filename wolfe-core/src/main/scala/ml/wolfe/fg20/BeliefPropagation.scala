@@ -20,7 +20,6 @@ class MyImplies(premise: DiscVar[Boolean], consequent: DiscVar[Boolean]) extends
 }
 
 
-
 trait Residuals extends EdgeMsgsFG {
 
   trait Msgs {
@@ -92,7 +91,6 @@ trait BeliefPropagationFG extends Residuals with EmptyFactorFG with NodeContentF
   }
 
 
-
 }
 
 trait EdgePropagation extends Residuals with Scheduling {
@@ -134,7 +132,6 @@ object MaxProduct {
 }
 
 
-
 class MaxProduct(val problem: Problem) extends BeliefPropagationFG with EdgePropagation {
 
   type Pot = MaxProduct.Potential
@@ -149,12 +146,9 @@ class MaxProduct(val problem: Problem) extends BeliefPropagationFG with EdgeProp
   }
 
 
-  def inferMAP(maxIterations: Int = 10, eps: Double = 0.0001)(weights: FactorieVector = new DenseVector(0)): MAPResult = {
+  def inferMAP(maxIterations: Int = 10, eps: Double = 0.0001, weights: FactorieVector = new DenseVector(0)): MAPResult = {
     propagate(maxIterations, eps)(weights)
-    for (node <- nodes) {
-      updateBelief(node)
-      normalize(node)
-    }
+    for (node <- nodes) { updateBelief(node); normalizeBelief(node) }
     val gradient = new SparseVector(1000)
     val score = factors.view.map(f => f.pot.maxMarginalExpectationsAndObjective(f, gradient)).sum
     val discState = problem.discVars.map(v => v -> v.dom(discNodes(v).content.setting)).toMap[Var[Any], Any]
@@ -163,9 +157,11 @@ class MaxProduct(val problem: Problem) extends BeliefPropagationFG with EdgeProp
     MAPResult(new MapBasedState(discState ++ contState), score, gradient, new MapBasedState(maxMarginals.toMap))
   }
 
-  def normalize(node:Node) { node match {
-    case d:DiscNode => maxNormalize(d.content.belief)
-  }}
+  def normalizeBelief(node: Node) {
+    node match {
+      case d: DiscNode => maxNormalize(d.content.belief)
+    }
+  }
 
 }
 
@@ -191,15 +187,20 @@ class SumProduct(val problem: Problem) extends BeliefPropagationFG with EdgeProp
     }
   }
 
-  def inferMarginals(maxIterations: Int = 10, eps: Double = 0.0001)(weights: FactorieVector): MarginalResult = {
+  def inferMarginals(maxIterations: Int = 10, eps: Double = 0.0001, weights: FactorieVector = new DenseVector(0)): MarginalResult = {
     propagate(maxIterations, eps)(weights)
-    for (node <- nodes) updateBelief(node)
+    for (node <- nodes) { updateBelief(node); normalizeBelief(node) }
     val gradient = new SparseVector(1000)
     val logZ = factors.view.map(f => f.pot.marginalExpectationsAndObjective(f, gradient)).sum
     val marginals = discNodes.values.map(n => DiscBelief(n.variable) -> Distribution.disc(n.variable.dom, n.content.belief))
-    MarginalResult(logZ, gradient,new MapBasedState(marginals.toMap))
+    MarginalResult(logZ, gradient, new MapBasedState(marginals.toMap))
   }
 
+  def normalizeBelief(node: Node): Double = {
+    node match {
+      case d: DiscNode => normalizeLogProb(d.content.belief)
+    }
+  }
 }
 
 
