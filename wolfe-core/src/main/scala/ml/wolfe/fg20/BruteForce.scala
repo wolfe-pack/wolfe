@@ -5,27 +5,12 @@ import ml.wolfe.{FactorieVector, SparseVector, FactorGraph}
 import ml.wolfe.MoreArrayOps._
 
 
-trait NoMsgs extends FG {
-  class DiscMsgs extends Msgs
-  class ContMsgs extends Msgs
-  class Msgs
 
-  val emptyDiscMsgs = new DiscMsgs
-  val emptyContMsgs = new ContMsgs
 
-  def createDiscMsgs(variable: DiscVar[Any]) = emptyDiscMsgs
-  def createContMsgs(contVar: ContVar) = emptyContMsgs
-}
-
-trait NoFactorContent extends FG {
-  class FactorContent
-  val empty = new FactorContent
-  def createFactorContent(pot: Pot) = empty
-}
-
-class BruteForce(val problem: Problem) extends NoMsgs with NoFactorContent {
-  class DiscNodeContent(var setting: Int, var belief: Array[Double])
+class BruteForce(val problem: Problem) extends NodeContentFG with EmptyFactorFG with EmptyEdgeFG {
   type ContNodeContent = Nothing
+  type NodeContent = Any
+  class DiscNodeContent(var setting: Int, var belief: Array[Double])
   def createDiscNodeContent(variable: DiscVar[Any]) = new DiscNodeContent(0, Array.ofDim[Double](variable.dom.size))
   def createContNodeContent(contVar: ContVar) = sys.error("Can't do brute force with continuous variables")
   def acceptPotential = { case p: BruteForce.Potential => p }

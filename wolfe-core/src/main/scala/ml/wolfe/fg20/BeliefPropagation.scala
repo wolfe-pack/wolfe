@@ -20,7 +20,8 @@ class MyImplies(premise: DiscVar[Boolean], consequent: DiscVar[Boolean]) extends
 }
 
 
-trait Residuals extends FG {
+
+trait Residuals extends EdgeMsgsFG {
 
   trait Msgs {
     def saveCurrentAsLast()
@@ -29,17 +30,10 @@ trait Residuals extends FG {
 
 }
 
-trait Residuals2 extends EdgeMsgsFG {
+trait BeliefPropagationFG extends Residuals with EmptyFactorFG with NodeContentFG {
 
-  trait Msgs {
-    def saveCurrentAsLast()
-    def residual(): Double
-  }
 
-}
-
-trait BeliefPropagationFG extends Residuals {
-
+  type NodeContent = Any
 
   class DiscNodeContent(var setting: Int = 0,
                         var belief: Array[Double])
@@ -48,6 +42,7 @@ trait BeliefPropagationFG extends Residuals {
                         var mean: Double = 0.0,
                         var dev: Double = 0.0)
   class FactorContent()
+
 
   class DiscMsgs(size: Int) extends Msgs {
     val f2n     = Array.ofDim[Double](size)
@@ -121,7 +116,7 @@ trait EdgePropagation extends Residuals with Scheduling {
   }
 
   def residual() = {
-    edges.view.map(_.msgs.residual()).sum
+    edges.map(_.msgs.residual()).sum
   }
 
 
@@ -138,13 +133,6 @@ object MaxProduct {
   }
 }
 
-object SumProduct {
-  trait Potential extends DiscPotential {
-    def discMarginalF2N(edge: BeliefPropagationFG#DiscEdge, weights: FactorieVector)
-    def contMarginalF2N(edge: BeliefPropagationFG#ContEdge, weights: FactorieVector): Unit = hasNoContVars
-    def marginalExpectationsAndObjective(factor: BeliefPropagationFG#Factor, dstExpectations: FactorieVector): Double
-  }
-}
 
 
 class MaxProduct(val problem: Problem) extends BeliefPropagationFG with EdgePropagation {
@@ -181,6 +169,15 @@ class MaxProduct(val problem: Problem) extends BeliefPropagationFG with EdgeProp
 
 }
 
+object SumProduct {
+  trait Potential extends DiscPotential {
+    def discMarginalF2N(edge: BeliefPropagationFG#DiscEdge, weights: FactorieVector)
+    def contMarginalF2N(edge: BeliefPropagationFG#ContEdge, weights: FactorieVector): Unit = hasNoContVars
+    def marginalExpectationsAndObjective(factor: BeliefPropagationFG#Factor, dstExpectations: FactorieVector): Double
+  }
+}
+
+
 class SumProduct(val problem: Problem) extends BeliefPropagationFG with EdgePropagation {
 
   type Pot = SumProduct.Potential
@@ -206,66 +203,6 @@ class SumProduct(val problem: Problem) extends BeliefPropagationFG with EdgeProp
 }
 
 
-trait BeliefPropagationFG2 extends Residuals2 with EmptyFactorFG with NodeContentFG {
-
-  type NodeContent = Any
-
-  class DiscNodeContent(var setting: Int = 0,
-                        var belief: Array[Double])
-
-  class ContNodeContent(var setting: Double = 0.0,
-                        var mean: Double = 0.0,
-                        var dev: Double = 0.0)
-
-  class DiscMsgs(size: Int) extends Msgs {
-    val f2n     = Array.ofDim[Double](size)
-    val n2f     = Array.ofDim[Double](size)
-    val f2nLast = Array.ofDim[Double](size)
-    def saveCurrentAsLast(): Unit = {
-      set(f2nLast, f2n)
-    }
-    def residual() = sqDiff(f2n, f2nLast)
-  }
-
-  class ContMsgs() extends Msgs {
-    var mean    : Double = 0.0
-    var dev     : Double = 0.0
-    var lastMean: Double = 0.0
-    var lastDev : Double = 0.0
-    def saveCurrentAsLast() = {
-      lastMean = mean
-      lastDev = dev
-    }
-    def residual() = 0.0
-  }
-
-  def createDiscMsgs(variable: DiscVar[Any]) = new DiscMsgs(variable.dom.size)
-  def createContMsgs(contVar: ContVar) = new ContMsgs()
-
-  def createDiscNodeContent(variable: DiscVar[Any]) = new DiscNodeContent(0, Array.ofDim[Double](variable.dom.size))
-  def createContNodeContent(contVar: ContVar) = new ContNodeContent()
-
-  def updateN2F(edge: Edge) = {
-    edge match {
-      case d: DiscEdge =>
-        for (i <- d.msgs.n2f.indices)
-          d.msgs.n2f(i) = { for (e <- d.node.edges if e != edge) yield e.msgs.f2n(i) }.sum
-      case _ =>
-    }
-  }
-
-  def updateBelief(node: Node) = {
-    node match {
-      case d: DiscNode =>
-        for (i <- d.variable.dom.indices)
-          d.content.belief(i) = { for (e <- d.edges) yield e.msgs.f2n(i) }.sum
-      case _ =>
-    }
-  }
-
-
-
-}
 
 
 
