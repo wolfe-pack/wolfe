@@ -69,9 +69,9 @@ object LoadBioNLP extends App {
           val ListExtractor(args) = event("arguments")
           val arguments = args.map(a => {
             val MapExtractor(arg) = a
-            RoleMention("", EntityMention(arg("gold").toString, arg("begin").toString.toInt, arg("end").toString.toInt))
+            RoleMention("argument", EntityMention(arg("gold").toString, arg("begin").toString.toInt, arg("end").toString.toInt))
           }).toArray
-          EventMention("", entityMention, arguments)
+          EventMention("eventCandidate", entityMention, arguments)
         })
 
         Sentence(wolfeTokens, syntax = new SyntaxAnnotation(ConstituentTree.empty, wolfeDependencyTree), ie = new IEAnnotation(wolfeMentions, Nil, wolfeEventCandidates))
