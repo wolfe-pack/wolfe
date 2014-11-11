@@ -175,6 +175,8 @@ object MatrixFactorization extends App {
     WriteNAACL(db, pathToPredict)
     EvaluateNAACL.main(Array("./conf/eval.conf", pathToPredict))
 
+    db.writeVectors(Conf.outDir.getAbsolutePath + "/vectors.tsv")
+    
     import scala.sys.process._
     Process("pdflatex -interaction nonstopmode -shell-escape table.tex", new File(Conf.outDir.getAbsolutePath)).!!
 
