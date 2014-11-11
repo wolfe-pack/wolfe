@@ -29,6 +29,15 @@ trait Residuals extends FG {
 
 }
 
+trait Residuals2 extends EdgeMsgsFG {
+
+  trait Msgs {
+    def saveCurrentAsLast()
+    def residual(): Double
+  }
+
+}
+
 trait BeliefPropagationFG extends Residuals {
 
 
@@ -193,6 +202,67 @@ class SumProduct(val problem: Problem) extends BeliefPropagationFG with EdgeProp
     val marginals = discNodes.values.map(n => DiscBelief(n.variable) -> Distribution.disc(n.variable.dom, n.content.belief))
     MarginalResult(logZ, gradient,new MapBasedState(marginals.toMap))
   }
+
+}
+
+
+trait BeliefPropagationFG2 extends Residuals2 with EmptyFactorFG with NodeContentFG {
+
+
+  class DiscNodeContent(var setting: Int = 0,
+                        var belief: Array[Double])
+
+  class ContNodeContent(var setting: Double = 0.0,
+                        var mean: Double = 0.0,
+                        var dev: Double = 0.0)
+
+  class DiscMsgs(size: Int) extends Msgs {
+    val f2n     = Array.ofDim[Double](size)
+    val n2f     = Array.ofDim[Double](size)
+    val f2nLast = Array.ofDim[Double](size)
+    def saveCurrentAsLast(): Unit = {
+      set(f2nLast, f2n)
+    }
+    def residual() = sqDiff(f2n, f2nLast)
+  }
+
+  class ContMsgs() extends Msgs {
+    var mean    : Double = 0.0
+    var dev     : Double = 0.0
+    var lastMean: Double = 0.0
+    var lastDev : Double = 0.0
+    def saveCurrentAsLast() = {
+      lastMean = mean
+      lastDev = dev
+    }
+    def residual() = 0.0
+  }
+
+  def createDiscMsgs(variable: DiscVar[Any]) = new DiscMsgs(variable.dom.size)
+  def createContMsgs(contVar: ContVar) = new ContMsgs()
+
+  def createDiscNodeContent(variable: DiscVar[Any]) = new DiscNodeContent(0, Array.ofDim[Double](variable.dom.size))
+  def createContNodeContent(contVar: ContVar) = new ContNodeContent()
+
+  def updateN2F(edge: Edge) = {
+    edge match {
+      case d: DiscEdge =>
+        for (i <- d.msgs.n2f.indices)
+          d.msgs.n2f(i) = { for (e <- d.node.edges if e != edge) yield e.msgs.f2n(i) }.sum
+      case _ =>
+    }
+  }
+
+  def updateBelief(node: Node) = {
+    node match {
+      case d: DiscNode =>
+        for (i <- d.variable.dom.indices)
+          d.content.belief(i) = { for (e <- d.edges) yield e.msgs.f2n(i) }.sum
+      case _ =>
+    }
+  }
+
+
 
 }
 
