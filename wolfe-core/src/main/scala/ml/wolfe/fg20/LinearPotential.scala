@@ -60,16 +60,15 @@ final class LinearPotential(val discVars: Array[DiscVar[Any]],
     log(msgs.f2n) //todo: can this be done by logNormalize?
   }
 
-  def setting(factor: BruteForce#Factor) = factor.discEdges.view.map(_.node.content.setting)
 
   def score(factor: BruteForce#Factor, weights: FactorieVector) = {
-    val entry = TablePotential.settingToEntry(setting(factor), dims)
+    val entry = TablePotential.settingToEntry(factor.discSetting, dims)
     scoreEntry(entry, weights)
   }
 
 
   def statsForCurrentSetting(factor: BruteForce#Factor) = {
-    val entry = TablePotential.settingToEntry(setting(factor), dims)
+    val entry = TablePotential.settingToEntry(factor.discSetting, dims)
     vectors(entry)
   }
 

@@ -24,7 +24,14 @@ trait FG {
   trait BasicDiscNode extends TypedNode[DiscVar[Any], DiscEdge] {
     var setting  = 0
     var observed = false
-    def observe(value:Int,observed:Boolean = false): Unit = {
+
+    def :=(value:Int): Unit = {
+      setting = value
+      for (e <- edges) {
+        e.factor.discSetting(e.index) = value
+      }
+    }
+    def observe(value:Int,observed:Boolean = true): Unit = {
       setting = value
       this.observed = observed
       for (e <- edges) {
@@ -48,9 +55,10 @@ trait FG {
   abstract class TypedNode[V <: Var[Any], E <: EdgeType : ClassTag] extends Node {
     def variable: V
     def edgeList = edges.toList
-    private[FG] var buffer: List[E] = Nil
     var edges: Array[E] = null
+
     private[FG] def build() { edges = buffer.toArray }
+    private[FG] var buffer: List[E] = Nil
   }
 
   trait Edge {

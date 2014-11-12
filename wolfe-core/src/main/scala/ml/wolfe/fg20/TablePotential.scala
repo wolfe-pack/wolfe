@@ -128,7 +128,7 @@ final class TablePotential(val discVars: Array[DiscVar[Any]], table: Table) exte
   val dims       = discVars.map(_.dom.size)
 
   def score(factor: BruteForce#Factor, weights: FactorieVector) = {
-    val entry = TablePotential.settingToEntry(factor.discEdges.view.map(_.node.content.setting), dims)
+    val entry = TablePotential.settingToEntry(factor.discSetting, dims)
     scores(entry)
   }
 
