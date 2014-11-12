@@ -1,25 +1,32 @@
 package ml.wolfe.nlp.io
 
 /**
- * Created by narad on 9/3/14.
+ * @author narad
+ * @author mbosnjak
  */
-class MCTestReader(filename: String) extends Iterable[MultiQuestion] {
+class MCTestReader(tsvFilename: String, ansFilename: String) extends Iterable[MultiQuestion] {
   private val MC_LABELS = Array("A", "B", "C", "D")
 
   def iterator: Iterator[MultiQuestion] = {
-    val reader = io.Source.fromFile(filename).getLines()
-    reader.map{ l =>
+    val tsvReader = io.Source.fromFile(tsvFilename).getLines()
+    val ansReader = io.Source.fromFile(ansFilename).getLines()
+    val zippedReaders = tsvReader.zip(ansReader)
+
+    zippedReaders.map{ x =>
+      val l = x._1
+      val ans = x._2.split("\\s")
       val fields = l.split("\t")
       val id = fields(0)
       val author = fields(1)
       val passage = fields(2).replaceAll("\\\\newline", " ")
-      val questions = fields.slice(3, fields.size).grouped(5).map { g =>
+      val questions = fields.slice(3, fields.size).grouped(5).zip(ans.toIterator).map { case(g, t) =>
         val gi = g.head.split(": ")
         val (qt, q) = (gi(0), gi(1))
-        val as = g.tail.zipWithIndex.map { case(a,i) =>
-          AnswerChoice(MC_LABELS(i), a, false)
+        println(qt)
+        val as = g.tail.zipWithIndex.map { case(a, i) =>
+          AnswerChoice(MC_LABELS(i), a, t == MC_LABELS(i))
         }
-        new MultipleChoiceQuestion(q, as)
+        new MultipleChoiceQuestion(q, as, qt)
       }.toIterable
       MultiQuestion(id, author, passage, questions)
     }
@@ -29,8 +36,10 @@ class MCTestReader(filename: String) extends Iterable[MultiQuestion] {
 object MCTestReader {
 
   def main(args: Array[String]) {
-    for (q <- new MCTestReader(args(0))) {
-      println(q) + "\n"
+    val tsvFilename = args.lift(0).getOrElse("../mctest/data/MCTest/mc160.dev.tsv")
+    val ansFilename = args.lift(1).getOrElse("../mctest/data/MCTest/mc160.dev.ans")
+    for (q <- new MCTestReader(tsvFilename, ansFilename)) {
+      println(q + "\n")
     }
   }
 }
@@ -48,7 +57,7 @@ abstract case class Question(text: String) {
   def isCorrect(str: String): Boolean
 }
 
-class MultipleChoiceQuestion(text: String, choices: Seq[AnswerChoice]) extends Question(text) {
+class MultipleChoiceQuestion(text: String, choices: Seq[AnswerChoice], typ: String) extends Question(text) {
 
   def isCorrect(label: String): Boolean = {
     choices.exists{ c => c.label == label && c.isCorrect}
