@@ -30,7 +30,7 @@ object EntityAwareEvaluation {
 
   }
 
-  def unaryToBinary(unary:String) = unary.substring(3,unary.length - 2)
+  def unaryToBinary(unary: String) = unary.substring(3, unary.length - 2)
 
   def entitiesFromRows(rows: Seq[Row]) = {
     val result = new mutable.HashMap[Any, mutable.HashMap[String, Double]]
@@ -48,9 +48,21 @@ object EntityAwareEvaluation {
     result.map(p => p._1 -> Entity(p._1, p._2.toMap)).toMap
   }
 
-  def joinRules(rules:Seq[Rules]) = {
+  def joinRules(rules: Seq[Rules]) = {
 
-    ???
+    val result = new mutable.HashMap[(String, String), Rule2]
+    val singleCounts = new mutable.HashMap[String, Double] withDefaultValue 0.0
+    for (ruleMap <- rules.view.map(_.rules2)) {
+      for (((r1, r2), rule) <- ruleMap) {
+        result.get((r1, r2)) match {
+          case Some(oldRule) =>
+            result((r1, r2)) = oldRule + rule
+          case None =>
+            result((r1, r2)) = rule //todo: we should use updated single counts if seen in previous rule maps
+        }
+      }
+    }
+    Rules(result.toMap)
   }
 
   import EmbeddedProbLogicEvaluation._
@@ -95,7 +107,7 @@ object EntityAwareEvaluation {
     val entities = entitiesFromRows(train ++ unlabeled)
     FactorizationUtil.saveToFile(entities.values.toSeq.sortBy(_.entity.toString), new File("/tmp/entities.txt"))
     //val filteredEntities = entities.mapValues(e => e.copy(counts = e.counts.toSeq.sortBy(-_._2).take(5).toMap))
-    val filteredEntities = entities.mapValues(e => e.copy(counts = random.shuffle(e.counts.toSeq).take(20).toMap))
+    val filteredEntities = Map() ++ entities.mapValues(e => e.copy(counts = random.shuffle(e.counts.toSeq).take(20).toMap))
     FactorizationUtil.saveToFile(filteredEntities.values.toSeq.sortBy(_.entity.toString), new File("/tmp/filtered-entities.txt"))
     val testEntities = entitiesFromRows(test)
     FactorizationUtil.saveToFile(testEntities.values.toSeq.sortBy(_.entity.toString), new File("/tmp/test-entities.txt"))
@@ -113,11 +125,14 @@ object EntityAwareEvaluation {
     val rulesUnary = EntityRuleLearner.extractUnaryRules(filteredEntities, subSample = 0.01)
     FactorizationUtil.saveToFile(rulesUnary.rules2.values.toArray.sortBy(-_.probs(true, true)), new File("/tmp/unary.txt"))
     println("Extracting Unary-Binary rules")
-    val rulesUnary2BinaryTrain = EntityRuleLearner.extractRel2UnaryRules(filteredEntities, train, subSample = 0.01)
-    println(rulesUnary2BinaryTrain.rules2.get("A1#path#nsubj|<-nsubj<-have->dobj->|dobj:INV#2" -> "path#nn|<-nn<-station->prep->in->pobj->|pobj"))
-    val rulesUnary2BinaryUnlabeled = EntityRuleLearner.extractRel2UnaryRules(filteredEntities, unlabeled, subSample = 0.01)
-    println(rulesUnary2BinaryUnlabeled.rules2.get("A1#path#nsubj|<-nsubj<-have->dobj->|dobj:INV#2" -> "path#nn|<-nn<-station->prep->in->pobj->|pobj"))
-    val joined = trainRulesRaw + rulesUnary + rulesUnary2BinaryTrain + rulesUnary2BinaryUnlabeled
+    //val rulesUnary2BinaryTrain = EntityRuleLearner.extractRel2UnaryRules(filteredEntities, train, subSample = 0.01)
+    val rulesUnary2BinaryCombined = EntityRuleLearner.extractRel2UnaryRules(filteredEntities, train ++ unlabeled, subSample = 0.01)
+
+    //println(rulesUnary2BinaryTrain.rules2.get("A1#path#nsubj|<-nsubj<-have->dobj->|dobj:INV#2" -> "path#nn|<-nn<-station->prep->in->pobj->|pobj"))
+    //val rulesUnary2BinaryUnlabeled = EntityRuleLearner.extractRel2UnaryRules(filteredEntities, unlabeled, subSample = 0.01)
+    //println(rulesUnary2BinaryUnlabeled.rules2.get("A1#path#nsubj|<-nsubj<-have->dobj->|dobj:INV#2" -> "path#nn|<-nn<-station->prep->in->pobj->|pobj"))
+    //    val joined = joinRules(Seq(trainRulesRaw,rulesUnary,rulesUnary2BinaryTrain,rulesUnary2BinaryUnlabeled))//trainRulesRaw + rulesUnary + rulesUnary2BinaryTrain + rulesUnary2BinaryUnlabeled
+    val joined = joinRules(Seq(trainRulesRaw, rulesUnary, rulesUnary2BinaryCombined)) //trainRulesRaw + rulesUnary + rulesUnary2BinaryTrain + rulesUnary2BinaryUnlabeled
     println("unary+binary: " + joined.rules2.size)
     FactorizationUtil.saveToFile(joined.rules2.values.toSeq.sortBy(-_.cond1given2), new File("/tmp/unary-binary.txt"))
     println(joined.rules2.get("A1#path#nsubj|<-nsubj<-have->dobj->|dobj:INV#2" -> "path#nn|<-nn<-station->prep->in->pobj->|pobj"))
@@ -137,7 +152,7 @@ object EntityAwareEvaluation {
 
     println("Prediction")
 
-    val predictor = new EntityAwarePredictor(ple,testEntities)
+    val predictor = new EntityAwarePredictor(ple, testEntities)
     val predictedFacts = test flatMap (row => predictor.predictAll(row, freebaseRelations))
 
     FactorizationUtil.saveToFile(predictedFacts.sortBy(-_.fact.score), new File("/tmp/ent-facts.txt"))
@@ -172,7 +187,7 @@ object EntityRuleLearner {
   }
 
   def extractUnaryRules(entities: Map[Any, Entity],
-                        subSample:Double = 1.0,
+                        subSample: Double = 1.0,
                         priorCounts: Map[(Boolean, Boolean), Double] = Map.empty withDefaultValue 0.0) = {
 
     val pairCountsArg1 = mutable.HashMap[(String, String), Int]() withDefaultValue 0
@@ -180,9 +195,20 @@ object EntityRuleLearner {
     val singleCountsInArg1 = mutable.HashMap[String, Int]() withDefaultValue 0
     val singleCountsInArg2 = mutable.HashMap[String, Int]() withDefaultValue 0
 
+    println("Entities: " + entities.size)
     for (ent <- entities.values) {
       for (p <- ent.asArg1) singleCountsInArg1(p) += 1
       for (p <- ent.asArg2) singleCountsInArg2(p) += 1
+      if (ent.entity == "Nevada") {
+        println(ent.asArg1.mkString(","))
+      }
+      if (ent.entity == "OPEC") {
+        println(ent.asArg1.mkString(","))
+      }
+      if (ent.asArg1.contains("A1#path#nn|<-nn<-secretary->appos->|appos#1")) {
+        println(ent.entity)
+        println("Blah: " + singleCountsInArg1("A1#path#nn|<-nn<-secretary->appos->|appos#1"))
+      }
       for (p1 <- ent.asArg1; p2 <- ent.asArg1; if p1 != p2) {
         pairCountsArg1(p1 -> p2) += 1
       }
@@ -199,12 +225,19 @@ object EntityRuleLearner {
     for (i1 <- 0 until arg1s.size; i2 <- i1 + 1 until arg1s.size) {
       val a1 = arg1s(i1)
       val a2 = arg1s(i2)
+      if (a2 == "A1#path#nn|<-nn<-secretary->appos->|appos#1") {
+        println(toRule(a1, a2, pairCountsArg1(a1 -> a2), singleCountsInArg1(a1), singleCountsInArg1(a2), normalizer, priorCounts))
+      }
       if (pairCountsArg1(a1, a2) >= 1 || random.nextDouble() < subSample)
         result(a1 -> a2) = toRule(a1, a2, pairCountsArg1(a1 -> a2), singleCountsInArg1(a1), singleCountsInArg1(a2), normalizer, priorCounts)
     }
     for (i1 <- 0 until arg2s.size; i2 <- i1 + 1 until arg2s.size) {
       val a1 = arg2s(i1)
       val a2 = arg2s(i2)
+      if (a2 == "A1#path#nn|<-nn<-secretary->appos->|appos#2") {
+        println(toRule(a1, a2, pairCountsArg2(a1 -> a2), singleCountsInArg2(a1), singleCountsInArg2(a2), normalizer, priorCounts))
+      }
+
       if (pairCountsArg2(a1, a2) >= 1 || random.nextDouble() < subSample)
         result(a1 -> a2) = toRule(a1, a2, pairCountsArg2(a1 -> a2), singleCountsInArg2(a1), singleCountsInArg2(a2), normalizer, priorCounts)
     }
@@ -213,10 +246,9 @@ object EntityRuleLearner {
   }
 
 
-
   def extractRel2UnaryRules(entities: Map[Any, Entity],
                             rows: Seq[Row],
-                            subSample:Double = 1.0,
+                            subSample: Double = 1.0,
                             priorCounts: Map[(Boolean, Boolean), Double] = Map.empty withDefaultValue 0.0) = {
 
     val pairCounts = mutable.HashMap[(String, String), Int]() withDefaultValue 0
@@ -247,15 +279,24 @@ object EntityRuleLearner {
 
     val result = new mutable.HashMap[(String, String), Rule2]()
     for (rel <- singleCounts.keys;
-         arg <- singleCountsArgs.keys
-         if pairCounts(rel, arg) >= 1 || random.nextDouble() < subSample) {
-//      if (arg == "A2#path#dobj|<-dobj<-replace->prep->in->pobj->|pobj#2") {
-//        val rule = toRule(rel, arg, pairCounts(rel, arg), singleCounts(rel), singleCountsArgs(arg), normalizer, priorCounts)
-//        if (rule.cond1given2 > 0.9)
-//          println(rule)
-//      }
-      val (r1,r2) = if (rel.compareTo(arg) < 0) (rel,arg) else (arg,rel)
-      result((r1,r2)) = toRule(r1, r2, pairCounts(r1, r2), singleCounts(r1), singleCountsArgs(r2), normalizer, priorCounts)
+         arg <- singleCountsArgs.keys) {
+      val (r1, r2, counts1, counts2) =
+        if (rel.compareTo(arg) < 0)
+          (rel, arg, singleCounts(rel), singleCountsArgs(arg))
+        else
+          (arg, rel, singleCountsArgs(arg), singleCounts(rel))
+      if (pairCounts(r1, r2) >= 1 || random.nextDouble() < subSample) {
+        //        result(rel -> arg) = toRule(rel, arg, pairCounts(rel, arg), singleCounts(rel), singleCountsArgs(arg), normalizer, priorCounts)
+        result((r1, r2)) = toRule(r1, r2, pairCounts(r1, r2), counts1, counts2, normalizer, priorCounts)
+      }
+
+
+      //      if (arg == "A2#path#dobj|<-dobj<-replace->prep->in->pobj->|pobj#2") {
+      //        val rule = toRule(rel, arg, pairCounts(rel, arg), singleCounts(rel), singleCountsArgs(arg), normalizer, priorCounts)
+      //        if (rule.cond1given2 > 0.9)
+      //          println(rule)
+      //      }
+
     }
     println("Done!")
     Rules(result.toMap)
