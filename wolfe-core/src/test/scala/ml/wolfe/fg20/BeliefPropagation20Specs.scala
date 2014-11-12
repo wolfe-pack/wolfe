@@ -7,6 +7,7 @@ import ml.wolfe._
  */
 class BeliefPropagation20Specs extends WolfeSpec {
 
+  import math._
 
   val potFunction: Array[Int] => Double = {
     case Array(0, 0) => 1
@@ -62,6 +63,23 @@ class BeliefPropagation20Specs extends WolfeSpec {
       val max = fixedTable.scores.max
       result.score should be(max)
     }
+    "return the exact conditional MAP value in the presense of observations" in {
+      val problem = Problem(Seq(tablePot), Seq(v1, v2), observation = State.single(v1,true))
+      val bf = new BruteForce(problem)
+      val result = bf.inferMAP()
+      val max = 0
+      result.score should be(max)
+    }
+
+    "return the exact conditional logZ value in the presense of observations" in {
+      val problem = Problem(Seq(tablePot), Seq(v1, v2), observation = State.single(v1,true))
+      val bf = new BruteForce(problem)
+      val result = bf.inferMarginals()
+      val logZ = log(exp(0) + exp(-3))
+      result.logZ should be(logZ)
+    }
+
+
 
   }
 

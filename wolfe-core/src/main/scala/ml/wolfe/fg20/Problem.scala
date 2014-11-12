@@ -44,7 +44,10 @@ class ImpliesPotential(premise:DiscVar[Boolean],consequent:DiscVar[Boolean]) ext
 
 
 
-case class Problem(pots: Seq[Potential], discVars: Seq[DiscVar[Any]],
-                   contVars: Seq[ContVar] = Seq.empty, vectVars: Seq[VectVar] = Seq.empty) {
+case class Problem(pots: Seq[Potential],
+                   discVars: Seq[DiscVar[Any]],
+                   contVars: Seq[ContVar] = Seq.empty,
+                   vectVars: Seq[VectVar] = Seq.empty,
+                   observation:State = State.empty) {
   def vars = discVars ++ contVars ++ vectVars
 }

@@ -22,7 +22,7 @@ class BruteForce(val problem: Problem) extends NodeContentFG with EmptyFactorFG 
           if (!head.observed) for (setting <- head.variable.dom.indices) {
             head := setting
             loop(body)
-          }
+          } else loop(body)
         }
         loopOverSettings(tail, newLoop)
     }
