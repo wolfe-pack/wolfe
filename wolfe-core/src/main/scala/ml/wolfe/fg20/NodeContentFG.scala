@@ -5,6 +5,7 @@ import ml.wolfe.FactorieVector
 import scala.reflect.ClassTag
 
 
+case class ArgmaxResult(state: State, score: Double)
 case class MAPResult(state: State, score: Double, gradient: FactorieVector, maxMarginals: State)
 case class MarginalResult(logZ: Double, gradient: FactorieVector, marginals: State)
 
@@ -81,4 +82,12 @@ trait EmptyEdgeFG extends FG {
 trait EmptyFactorFG extends FG {
   final class FactorType(val pot: Pot) extends Factor
   def createFactor(pot: Pot) = new FactorType(pot)
+}
+
+trait EmptyNodeFG extends FG {
+  trait NodeType extends Node
+  final class DiscNode(val variable: DiscVar[Any]) extends BasicDiscNode with NodeType
+  final class ContNode(val variable: ContVar) extends BasicContNode with NodeType
+  def createDiscNode(v: DiscVar[Any]) = new DiscNode(v)
+  def createContNode(v: ContVar) = new ContNode(v)
 }

@@ -110,17 +110,20 @@ trait FG {
     factor
   }
 
-  def nodes = discNodes.values.iterator ++ contNodes.values.iterator
+  def nodes = var2DiscNode.values.iterator ++ var2ContNode.values.iterator
+  def discNodes = var2DiscNode.valuesIterator
+  def contNodes = var2ContNode.valuesIterator
   def edges = factors.iterator.flatMap(_.edges)
 
-  val discNodes = createDiscNodes()
-  val contNodes = createContNodes()
+
+  val var2DiscNode = createDiscNodes()
+  val var2ContNode = createContNodes()
 
   val factors = problem.pots.map(p => createAndLinkFactor(checkPot(p)))
   val statsFactors = problem.stats.map(p => createAndLinkFactor(checkPot(p),false))
 
-  discNodes.values.foreach(_.build())
-  contNodes.values.foreach(_.build())
+  var2DiscNode.values.foreach(_.build())
+  var2ContNode.values.foreach(_.build())
 
   setObservations()
 
@@ -128,7 +131,7 @@ trait FG {
     for (v <- problem.observation.domain) {
       v match {
         case d: DiscVar[_] =>
-          discNodes(d).observe(d.dom.indexOf(problem.observation(d)))
+          var2DiscNode(d).observe(d.dom.indexOf(problem.observation(d)))
       }
     }
   }
@@ -138,7 +141,7 @@ trait FG {
 
   private def createDiscEdges(factor: FactorType, linkToNormalFactors:Boolean = true): Unit = {
     val result = new ArrayBuffer[DiscEdge]
-    for ((v, i) <- factor.pot.discVars.zipWithIndex) result += createDiscEdge(discNodes(v), factor, i)
+    for ((v, i) <- factor.pot.discVars.zipWithIndex) result += createDiscEdge(var2DiscNode(v), factor, i)
     factor.discEdges = result.toArray[DiscEdge](discEdgeTag)
     if (linkToNormalFactors) factor.discEdges.foreach(e => e.node.buffer ::= e)
     else factor.discEdges.foreach(e => e.node.statsEdgeBuffer ::= e)
@@ -146,7 +149,7 @@ trait FG {
 
   private def createContEdges(factor: FactorType,linkToNormalFactors:Boolean = true): Unit = {
     val result = new ArrayBuffer[ContEdge]
-    for ((v, i) <- factor.pot.contVars.zipWithIndex) result += createContEdge(contNodes(v), factor, i)
+    for ((v, i) <- factor.pot.contVars.zipWithIndex) result += createContEdge(var2ContNode(v), factor, i)
     factor.contEdges = result.toArray[ContEdge](contEdgeTag)
     if (linkToNormalFactors) factor.contEdges.foreach(e => e.node.buffer ::= e)
     else factor.contEdges.foreach(e => e.node.statsEdgeBuffer ::= e)

@@ -33,7 +33,7 @@ class BruteForce(val problem: Problem) extends NodeContentFG with EmptyFactorFG 
   }
 
   def inferMAP(weights: FactorieVector = new DenseTensor1(0)): MAPResult = {
-    val nodes = discNodes.values.toList
+    val nodes = var2DiscNode.values.toList
     val loop = loopOverSettings(nodes)
     var maxScore = Double.NegativeInfinity
     for (n <- nodes) fill(n.content.belief, Double.NegativeInfinity)
@@ -66,7 +66,7 @@ class BruteForce(val problem: Problem) extends NodeContentFG with EmptyFactorFG 
   }
 
   def inferMarginals(weights: FactorieVector = new DenseTensor1(0)): MarginalResult = {
-    val nodes = discNodes.values.toList
+    val nodes = var2DiscNode.values.toList
     val loop = loopOverSettings(nodes)
     var Z = 0.0
     for (n <- nodes) fill(n.content.belief, 0.0)
