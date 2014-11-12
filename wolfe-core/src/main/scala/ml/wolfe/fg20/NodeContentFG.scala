@@ -41,37 +41,37 @@ trait EdgeMsgsFG extends FG {
     def msgs: Msgs
   }
 
-  abstract class TypedEdgeWithMsgs[N <: Node, M <: Msgs] extends TypedEdge[N] with EdgeType {
+  abstract class TypedEdgeWithMsgs[N <: NodeType, M <: Msgs] extends TypedEdge[N] with EdgeType {
     def msgs: M
   }
 
   final class DiscEdge(val node: DiscNode,
-                       val factor: Factor,
+                       val factor: FactorType,
                        val index: Int,
                        val msgs: DiscMsgs) extends TypedEdgeWithMsgs[DiscNode, DiscMsgs]
 
   final class ContEdge(val node: ContNode,
-                       val factor: Factor,
+                       val factor: FactorType,
                        val index: Int,
                        val msgs: ContMsgs) extends TypedEdgeWithMsgs[ContNode, ContMsgs]
 
-  def createDiscEdge(n: DiscNode, f: Factor, index: Int) = new DiscEdge(n, f, index, createDiscMsgs(n.variable))
-  def createContEdge(n: ContNode, f: Factor, index: Int) = new ContEdge(n, f, index, createContMsgs(n.variable))
+  def createDiscEdge(n: DiscNode, f: FactorType, index: Int) = new DiscEdge(n, f, index, createDiscMsgs(n.variable))
+  def createContEdge(n: ContNode, f: FactorType, index: Int) = new ContEdge(n, f, index, createContMsgs(n.variable))
 }
 
 trait EmptyEdgeFG extends FG {
   trait EdgeType extends Edge
 
   final class DiscEdge(val node: DiscNode,
-                       val factor: Factor,
+                       val factor: FactorType,
                        val index: Int) extends TypedEdge[DiscNode] with EdgeType
 
   final class ContEdge(val node: ContNode,
-                       val factor: Factor,
+                       val factor: FactorType,
                        val index: Int) extends TypedEdge[ContNode] with EdgeType
 
-  def createDiscEdge(n: DiscNode, f: Factor, index: Int) = new DiscEdge(n, f, index)
-  def createContEdge(n: ContNode, f: Factor, index: Int) = new ContEdge(n, f, index)
+  def createDiscEdge(n: DiscNode, f: FactorType, index: Int) = new DiscEdge(n, f, index)
+  def createContEdge(n: ContNode, f: FactorType, index: Int) = new ContEdge(n, f, index)
 
   def discEdgeTag = reflect.classTag[DiscEdge]
   def contEdgeTag = reflect.classTag[ContEdge]

@@ -49,6 +49,18 @@ object TablePotential {
     result
   }
 
+  final def settingToEntry(setting: Iterator[Int], dims: Array[Int]) = {
+    var result = 0
+    var i = 0
+    while (i < dims.length) {
+      result = setting.next() + result * dims(i)
+      i += 1
+    }
+    result
+  }
+
+
+
   def allSettings(dims: Array[Int], observations: Array[Boolean])(target: Array[Int])(body: Int => Unit): Unit = {
     val length = target.length
     var settingId = 0
@@ -119,7 +131,7 @@ final class TablePotential(val discVars: Array[DiscVar[Any]], table: Array[Doubl
   val dims = discVars.map(_.dom.size)
 
   def score(factor: FG#Factor, weights: FactorieVector) = {
-    val entry = TablePotential.settingToEntry(factor.discSetting, dims)
+    val entry = TablePotential.settingToEntry(factor.discEdges.iterator.map(_.node.setting), dims)
     table(entry)
   }
 
@@ -127,9 +139,10 @@ final class TablePotential(val discVars: Array[DiscVar[Any]], table: Array[Doubl
   def discMaxMarginalF2N(edge: BeliefPropagationFG#DiscEdge, weights: FactorieVector) = {
     val m = edge.msgs
     val factor = edge.factor
+
     fill(m.f2n, Double.NegativeInfinity)
 
-    TablePotential.allSettings(dims, factor.discObs)(factor.discSetting) { i =>
+    factor.iterateDiscSettings { i =>
       var score = table(i)
       val varValue = factor.discSetting(edge.index)
       for (j <- 0 until discVars.size; if j != edge.index) {
@@ -144,9 +157,10 @@ final class TablePotential(val discVars: Array[DiscVar[Any]], table: Array[Doubl
   def discMarginalF2N(edge: BeliefPropagationFG#DiscEdge, weights: FactorieVector) = {
     val m = edge.msgs
     val factor = edge.factor
+
     fill(m.f2n, 0.0)
 
-    TablePotential.allSettings(dims, factor.discObs)(factor.discSetting) { i =>
+    factor.iterateDiscSettings { i =>
       var score = table(i)
       val varValue = factor.discSetting(edge.index)
       for (j <- 0 until discVars.length; if j != edge.index) {
@@ -173,14 +187,14 @@ final class TablePotential(val discVars: Array[DiscVar[Any]], table: Array[Doubl
   def statsForCurrentSetting(factor: FG#Factor) = isNotLinear
 
 
-  def maxMarginalExpectationsAndObjective(factor: BeliefPropagationFG#Factor,
+  def maxMarginalExpectationsAndObjective(factor: BeliefPropagationFG#FactorType,
                                           dstExpectations: FactorieVector,
                                           weights: FactorieVector) = {
     // 1) go over all states, find max with respect to incoming messages
     var norm = Double.NegativeInfinity
     var maxScore = Double.NegativeInfinity
 
-    TablePotential.allSettings(dims, factor.discObs)(factor.discSetting) { i =>
+    factor.iterateDiscSettings { i =>
       val score = penalizedScore(factor, i, factor.discSetting)
       if (score > norm) {
         norm = score
@@ -190,13 +204,13 @@ final class TablePotential(val discVars: Array[DiscVar[Any]], table: Array[Doubl
     maxScore
   }
 
-  override def marginalExpectationsAndObjective(factor: BeliefPropagationFG#Factor,
+  override def marginalExpectationsAndObjective(factor: BeliefPropagationFG#FactorType,
                                                 dstExpectations: FactorieVector,
                                                 weights: FactorieVector) = {
     var localZ = 0.0
 
     //calculate local partition function
-    TablePotential.allSettings(dims, factor.discObs)(factor.discSetting) { i =>
+    factor.iterateDiscSettings { i =>
       val score = penalizedScore(factor, i, factor.discSetting)
       localZ += math.exp(score)
     }
@@ -204,7 +218,7 @@ final class TablePotential(val discVars: Array[DiscVar[Any]], table: Array[Doubl
     var linear = 0.0
     var entropy = 0.0
     //calculate linear contribution to objective and entropy
-    TablePotential.allSettings(dims, factor.discObs)(factor.discSetting) { i =>
+    factor.iterateDiscSettings { i =>
       val score = penalizedScore(factor, i, factor.discSetting)
       val prob = math.exp(score) / localZ
       linear += table(i) * prob

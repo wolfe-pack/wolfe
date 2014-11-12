@@ -12,8 +12,37 @@ trait Residuals extends EdgeMsgsFG {
 
 }
 
-trait BeliefPropagationFG extends Residuals with EmptyFactorFG with NodeContentFG {
+trait BeliefPropagationFG extends Residuals with NodeContentFG {
 
+  final class FactorType(val pot: Pot) extends Factor {
+
+    var discSetting: Array[Int]     = null
+    var discObs    : Array[Boolean] = null
+    var discDims   : Array[Int]     = null
+
+    def iterateDiscSettings(body: Int => Unit): Unit = {
+      updateBuffers()
+      TablePotential.allSettings(discDims, discObs)(discSetting)(body)
+    }
+
+    private[BeliefPropagationFG] var updated = false
+
+    private def updateBuffers(): Unit = {
+      if (!updated) {
+        discSetting = Array.ofDim[Int](discEdges.length)
+        discObs = Array.ofDim[Boolean](discEdges.length)
+        discDims = discEdges.map(_.node.variable.dom.size)
+        for (i <- 0 until discEdges.length)
+          if (discEdges(i).node.observed) {
+            discObs(i) = true
+            discSetting(i) = discEdges(i).node.setting
+          }
+        updated = true
+      }
+    }
+  }
+
+  def createFactor(pot: Pot) = new FactorType(pot)
 
   type NodeContent = Any
 
@@ -105,7 +134,7 @@ object MaxProduct {
   trait Potential extends DiscPotential {
     def discMaxMarginalF2N(edge: BeliefPropagationFG#DiscEdge, weights: FactorieVector)
     def contMaxMarginalF2N(edge: BeliefPropagationFG#ContEdge, weights: FactorieVector): Unit = hasNoContVars
-    def maxMarginalExpectationsAndObjective(factor: BeliefPropagationFG#Factor,
+    def maxMarginalExpectationsAndObjective(factor: BeliefPropagationFG#FactorType,
                                             dstExpectations: FactorieVector,
                                             weights: FactorieVector): Double
   }
@@ -149,7 +178,7 @@ object SumProduct {
   trait Potential extends DiscPotential {
     def discMarginalF2N(edge: BeliefPropagationFG#DiscEdge, weights: FactorieVector)
     def contMarginalF2N(edge: BeliefPropagationFG#ContEdge, weights: FactorieVector): Unit = hasNoContVars
-    def marginalExpectationsAndObjective(factor: BeliefPropagationFG#Factor,
+    def marginalExpectationsAndObjective(factor: BeliefPropagationFG#FactorType,
                                          dstExpectations: FactorieVector,
                                          weights: FactorieVector): Double
   }

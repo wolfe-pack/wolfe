@@ -6,6 +6,16 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 
+/**
+ * A factor graph is a bipartite graph with two types of vertices: nodes and factors.
+ * This implementation is tailored to represent sums of potentials over a set of variables. Here each node represents one
+ * variable, and each factor represents a potential.
+ *
+ * The FG class further supports different types of nodes: discrete, continuous, vector-based etc.
+ *
+ * FGs can be further customized to have specialized implementations of nodes, edges and factors. For example,
+ * a FG subclass can use edges to store messages from nodes to factor.
+ */
 trait FG {
   type Pot <: Potential
 
@@ -25,20 +35,11 @@ trait FG {
     var setting  = 0
     var observed = false
 
-    def :=(value:Int): Unit = {
-      setting = value
-      for (e <- edges) {
-        e.factor.discSetting(e.index) = value
-      }
-    }
-    def observe(value:Int,observed:Boolean = true): Unit = {
-      setting = value
+    def observe(setting:Int,observed:Boolean = true): Unit = {
+      this.setting = setting
       this.observed = observed
-      for (e <- edges) {
-        e.factor.discObs(e.index) = observed
-        e.factor.discSetting(e.index) = value
-      }
     }
+
   }
 
   trait BasicContNode extends TypedNode[ContVar, ContEdge]  {
@@ -62,12 +63,12 @@ trait FG {
   }
 
   trait Edge {
-    def node: Node
-    def factor: Factor
+    def node: NodeType
+    def factor: FactorType
     def index: Int
   }
 
-  trait TypedEdge[N <: Node] extends Edge {
+  trait TypedEdge[N <: NodeType] extends Edge {
     def node: N
   }
 
@@ -77,25 +78,14 @@ trait FG {
     var contEdges: Array[ContEdge] = null
     def edges = discEdges.iterator ++ contEdges.iterator
 
-    var discSetting:Array[Int] = null
-    var discObs:Array[Boolean] = null
-
-    var contSetting:Array[Double] = null
-    var contObs:Array[Boolean] = null
-    
-    private[FG] def setup(): Unit = {
-      discSetting = Array.ofDim[Int](discEdges.size)
-      discObs = Array.ofDim[Boolean](discEdges.size)
-    }
-
   }
 
   def problem: Problem
 
   def createDiscNode(v: DiscVar[Any]): DiscNode
   def createContNode(v: ContVar): ContNode
-  def createDiscEdge(n: DiscNode, f: Factor, index: Int): DiscEdge
-  def createContEdge(n: ContNode, f: Factor, index: Int): ContEdge
+  def createDiscEdge(n: DiscNode, f: FactorType, index: Int): DiscEdge
+  def createContEdge(n: ContNode, f: FactorType, index: Int): ContEdge
   def createFactor(pot: Pot): FactorType
 
   def acceptPotential: PartialFunction[Potential, Pot]
@@ -120,7 +110,6 @@ trait FG {
 
   discNodes.values.foreach(_.build())
   contNodes.values.foreach(_.build())
-  factors.foreach(_.setup())
 
   setObservations()
 

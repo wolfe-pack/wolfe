@@ -20,7 +20,7 @@ class BruteForce(val problem: Problem) extends NodeContentFG with EmptyFactorFG 
       case head :: tail =>
         def newLoop(body: () => Unit) {
           if (!head.observed) for (setting <- head.variable.dom.indices) {
-            head := setting
+            head.setting = setting
             loop(body)
           } else loop(body)
         }
@@ -52,7 +52,7 @@ class BruteForce(val problem: Problem) extends NodeContentFG with EmptyFactorFG 
     }
 
     for ((s, n) <- maxSetting zip nodes; if !n.observed) {
-      n := s
+      n.setting = s
       maxNormalize(n.content.belief)
     }
 
