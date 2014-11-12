@@ -27,6 +27,8 @@ final class LinearPotential(val discVars: Array[DiscVar[Any]],
     val msgs = edge.msgs
     fill(msgs.f2n, Double.NegativeInfinity)
 
+    //val projectedSettings = project(settings,edge.factor.observations)
+
     for (i <- 0 until settings.size) {
       val setting = settings(i)
       var score = scoreEntry(i, weights)
@@ -45,11 +47,11 @@ final class LinearPotential(val discVars: Array[DiscVar[Any]],
     val msgs = edge.msgs
     fill(msgs.f2n, 0.0)
 
-    for (i <- 0 until settings.size) {
+    for (i <- 0 until settings.length) {
       val setting = settings(i)
       var score = scoreEntry(i, weights)
       val varValue = setting(edge.index)
-      for (j <- 0 until discVars.size; if j != edge.index) {
+      for (j <- 0 until discVars.length; if j != edge.index) {
         score += edge.factor.discEdges(j).msgs.n2f(setting(j))
       }
       msgs.f2n(varValue) = msgs.f2n(varValue) + math.exp(score)
@@ -114,7 +116,7 @@ final class LinearPotential(val discVars: Array[DiscVar[Any]],
 
   def maxMarginalExpectationsAndObjective(factor: BeliefPropagationFG#Factor,
                                           dstExpectations: FactorieVector,
-                                          weights:FactorieVector) = {
+                                          weights: FactorieVector) = {
     var norm = Double.NegativeInfinity
     var maxScore = Double.NegativeInfinity
     var maxCount = 0
@@ -122,13 +124,13 @@ final class LinearPotential(val discVars: Array[DiscVar[Any]],
     //and count
     for (i <- (0 until entryCount).optimized) {
       val setting = settings(i)
-      val score = penalizedScore(factor,i, setting,weights)
+      val score = penalizedScore(factor, i, setting, weights)
       if (approxEqual(score, norm)) {
         maxCount += 1
       }
       else if (score > norm) {
         norm = score
-        maxScore = scoreEntry(i,weights)
+        maxScore = scoreEntry(i, weights)
         maxCount = 1
       }
     }
@@ -148,7 +150,7 @@ final class LinearPotential(val discVars: Array[DiscVar[Any]],
 
   def marginalExpectationsAndObjective(factor: BeliefPropagationFG#Factor,
                                        dstExpectations: FactorieVector,
-                                       weights: FactorieVector) =  {
+                                       weights: FactorieVector) = {
     var localZ = 0.0
     //calculate local partition function
     for (i <- (0 until entryCount).optimized) {
@@ -164,7 +166,7 @@ final class LinearPotential(val discVars: Array[DiscVar[Any]],
       val setting = settings(i)
       val score = penalizedScore(factor, i, setting, weights)
       val prob = math.exp(score - logZ)
-      linear += prob * scoreEntry(i,weights)
+      linear += prob * scoreEntry(i, weights)
       entropy -= prob * math.log(prob)
       dstExpectations +=(vectors(i), prob)
     }

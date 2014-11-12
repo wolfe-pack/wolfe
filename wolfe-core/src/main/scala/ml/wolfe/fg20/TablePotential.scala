@@ -1,5 +1,7 @@
 package ml.wolfe.fg20
 
+import java.util
+
 import ml.wolfe.MoreArrayOps._
 import ml.wolfe._
 
@@ -49,6 +51,29 @@ object TablePotential {
     result
   }
 
+  def allSettings(target: Array[Int], dims: Array[Int], observations: Array[Int])(body: => Unit): Unit = {
+    val length = target.length
+    util.Arrays.fill(target,0)
+    for (i <- 0 until length) if (observations(i) != -1) target(i) = observations(i)
+    var index = length - 1
+    while (index >= 0) {
+      //call body on current setting
+      body
+      //go back to the first element that hasn't yet reached its dimension, and reset everything until then
+      while (index >= 0 && target(index) == dims(index) - 1) {
+        if (observations(index) == -1) {
+          target(index) = 0
+        }
+        index -= 1
+      }
+      //increase setting by one if we haven't yet terminated
+      if (index >= 0) {
+        target(index) += 1
+        if (index < length - 1) index = length - 1
+      }
+    }
+  }
+
   /**
    * Turns an entry into a setting
    * @param entry the entry number.
@@ -64,6 +89,15 @@ object TablePotential {
       current = current / dims(dims.length - i - 1)
     }
     result
+  }
+
+  def main(args: Array[String]) {
+    val target = Array.ofDim[Int](3)
+    val dims = Array(2,3,3)
+    val obs = Array(-1,-1,-1)
+    allSettings(target,dims,obs) {
+      println(target.mkString(" "))
+    }
   }
 
 
@@ -92,7 +126,7 @@ final class TablePotential(val discVars: Array[DiscVar[Any]], table: Table) exte
     val m = edge.msgs
     fill(m.f2n, Double.NegativeInfinity)
 
-    for (i <- 0 until settings.size) {
+    for (i <- 0 until settings.length) {
       val setting = settings(i)
       var score = scores(i)
       val varValue = setting(edge.index)
@@ -109,11 +143,11 @@ final class TablePotential(val discVars: Array[DiscVar[Any]], table: Table) exte
     val m = edge.msgs
     fill(m.f2n, 0.0)
 
-    for (i <- 0 until settings.size) {
+    for (i <- 0 until settings.length) {
       val setting = settings(i)
       var score = scores(i)
       val varValue = setting(edge.index)
-      for (j <- 0 until discVars.size; if j != edge.index) {
+      for (j <- 0 until discVars.length; if j != edge.index) {
         score += edge.factor.discEdges(j).msgs.n2f(setting(j))
       }
       m.f2n(varValue) = m.f2n(varValue) + math.exp(score)
@@ -123,7 +157,6 @@ final class TablePotential(val discVars: Array[DiscVar[Any]], table: Table) exte
     //convert to log space
     log(m.f2n)
   }
-
 
 
   def penalizedScore(factor: BeliefPropagationFG#Factor, settingId: Int, setting: Array[Int]): Double = {
@@ -140,7 +173,7 @@ final class TablePotential(val discVars: Array[DiscVar[Any]], table: Table) exte
 
   def maxMarginalExpectationsAndObjective(factor: BeliefPropagationFG#Factor,
                                           dstExpectations: FactorieVector,
-                                          weights:FactorieVector) = {
+                                          weights: FactorieVector) = {
     // 1) go over all states, find max with respect to incoming messages
     var norm = Double.NegativeInfinity
     var maxScore = Double.NegativeInfinity
@@ -157,7 +190,7 @@ final class TablePotential(val discVars: Array[DiscVar[Any]], table: Table) exte
 
   override def marginalExpectationsAndObjective(factor: BeliefPropagationFG#Factor,
                                                 dstExpectations: FactorieVector,
-                                                weights:FactorieVector) = {
+                                                weights: FactorieVector) = {
     var localZ = 0.0
 
     //calculate local partition function
