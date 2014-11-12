@@ -22,7 +22,7 @@ class DistantSupervisionAnnotator(docs: Iterable[Document], kbFile: String) exte
   }.iterator
 
   // Should change to Iterator
-  def entityPairs(s: Sentence): Seq[((EntityMention, Int), (EntityMention, Int))] = {
+  def entityPairs(s: Sentence): IndexedSeq[((EntityMention, Int), (EntityMention, Int))] = {
     for (x <- s.ie.entityMentions.zipWithIndex; y <- s.ie.entityMentions.zipWithIndex) yield (x,y)
   }
 

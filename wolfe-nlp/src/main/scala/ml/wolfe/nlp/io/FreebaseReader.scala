@@ -82,12 +82,12 @@ class FreebaseReader(filename: String, port: Int = 27017, useExisting: Boolean =
     (collection find q).map { _.get("mid").asInstanceOf[String] }
   }
 
-  def getMID(str: String): Seq[String] = {
+  def getMID(str: String): IndexedSeq[String] = {
     val name = str.replaceAll(" ", "_")
     (collection find MongoDBObject("attribute" -> "title", "arg2" -> name)).flatMap { m =>
       if (m.contains("arg1")) Some(m.get("arg1").asInstanceOf[String])
       else None
-    }.toSeq
+    }.toIndexedSeq
   }
 
   def getRelation(str1: String, str2: String, undirected: Boolean = false): Option[String] = {
@@ -250,13 +250,13 @@ object FreebaseReader {
 
 
 
-//  def attributesOf(mid1: String, mid2: String, coll: MongoCollection): Seq[String] = {
+//  def attributesOf(mid1: String, mid2: String, coll: MongoCollection): IndexedSeq[String] = {
 //    (coll find MongoDBObject("arg1" -> mid1, "arg2" -> mid2)).flatMap { r =>
 //      r("attribute") match {
 //        case Some(attribute) => Some(attribute)
 //        case _ => None
 //      }
-//    }.toSeq
+//    }.toIndexedSeq
 //  }
 
 //  val query1 = MongoDBObject("type" -> "event.disaster")

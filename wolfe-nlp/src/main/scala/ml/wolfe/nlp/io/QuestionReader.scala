@@ -48,7 +48,7 @@ abstract case class Question(text: String) {
   def isCorrect(str: String): Boolean
 }
 
-class MultipleChoiceQuestion(text: String, choices: Seq[AnswerChoice]) extends Question(text) {
+class MultipleChoiceQuestion(text: String, choices: IndexedSeq[AnswerChoice]) extends Question(text) {
 
   def isCorrect(label: String): Boolean = {
     choices.exists{ c => c.label == label && c.isCorrect}

@@ -35,15 +35,15 @@ class OntoReader(dir: String, pattern: String = ".*") extends Iterable[Document]
 
   def mkOntoDocument(parseFile: String, corefFile: String, propFile: String = ""): Document = {
     println("Making Onto Document...")
-    val trees = new TreebankReader(parseFile).toSeq
+    val trees = new TreebankReader(parseFile).toIndexedSeq
     val corefs = mkIE(corefFile)
     val sentences = trees.zip(corefs).map{ case(t, ie) =>
-      Sentence(t.tokens.toSeq, syntax = SyntaxAnnotation(tree = t, dependencies = null), ie = ie)}
+      Sentence(t.tokens.toIndexedSeq, syntax = SyntaxAnnotation(tree = t, dependencies = null), ie = ie)}
     Document(source = "", sentences = sentences)
   }
 
-  def mkIE(corefFile: String): Seq[IEAnnotation] = {
-    scala.io.Source.fromFile(corefFile).getLines.toSeq.filter(!isMetaInfo(_)).map { line =>
+  def mkIE(corefFile: String): IndexedSeq[IEAnnotation] = {
+    scala.io.Source.fromFile(corefFile).getLines.toIndexedSeq.filter(!isMetaInfo(_)).map { line =>
       val entities = new ArrayBuffer[EntityMention]
       var count = 0
       var label = ""

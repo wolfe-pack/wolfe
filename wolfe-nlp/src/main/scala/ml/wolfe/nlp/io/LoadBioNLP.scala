@@ -52,7 +52,7 @@ object LoadBioNLP extends App {
         val wolfeMentions = mentions.map(m => {
           val MapExtractor(mention) = m
           EntityMention(mention("label").toString, mention("begin").toString.toInt, mention("end").toString.toInt)
-        })
+        }).toIndexedSeq
 
         val wolfeDependencyTreeArcs = deps.map(d => {
           val MapExtractor(dep) = d
@@ -72,9 +72,9 @@ object LoadBioNLP extends App {
             RoleMention("argument", EntityMention(arg("gold").toString, arg("begin").toString.toInt, arg("end").toString.toInt))
           }).toArray
           EventMention("eventCandidate", entityMention, arguments)
-        })
+        }).toIndexedSeq
 
-        Sentence(wolfeTokens, syntax = new SyntaxAnnotation(ConstituentTree.empty, wolfeDependencyTree), ie = new IEAnnotation(wolfeMentions, Nil, wolfeEventCandidates))
+        Sentence(wolfeTokens, syntax = new SyntaxAnnotation(ConstituentTree.empty, wolfeDependencyTree), ie = new IEAnnotation(wolfeMentions, IndexedSeq(), wolfeEventCandidates))
       }
     Document(txt, wolfeSentences)
   }

@@ -55,11 +55,11 @@ object SISTAConverter {
       new ConstituentTree(new PreterminalNode(label = tree.value, word = tree.children.get.head.value))
     }
     else {
-      new ConstituentTree(new NonterminalNode(label = tree.value, head = tree.head), tree.children.get.map(treeToTree(_)))
+      new ConstituentTree(new NonterminalNode(label = tree.value, head = tree.head), tree.children.get.map(treeToTree(_)).toList)
     }
   }
 
-  def toWolfeEntities(sent: SISTASent): Seq[EntityMention] = {
+  def toWolfeEntities(sent: SISTASent): IndexedSeq[EntityMention] = {
     sent.entities match {
       case Some(entities) => {
         var lastIndex = -1
@@ -79,9 +79,9 @@ object SISTAConverter {
           }
           lastSymbol = label
         }
-        stored.toSeq
+        stored.toIndexedSeq
       }
-      case _ => Seq()
+      case _ => IndexedSeq()
     }
   }
 

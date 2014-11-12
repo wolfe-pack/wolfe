@@ -13,7 +13,7 @@ object JsonIO {
     import org.json4s.native.Serialization.{read, write}
     implicit val formats = Serialization.formats(NoTypeHints)
     val token = Token("the", CharOffsets(0, 3))
-    val sentence = Sentence(Seq(token))
+    val sentence = Sentence(IndexedSeq(token))
     val ser = write(token)
 
     println(ser)
