@@ -7,34 +7,67 @@ import ml.wolfe.{FactorieVector, SingletonVector}
 
 import scalaxy.loops._
 
+
+case class Stats(settings: Array[Array[Int]], vectors: Array[FactorieVector])
+
+object LinearPotential {
+  def stats(dims: Array[Int], pot: Array[Int] => FactorieVector) = {
+    val obs = Array.fill[Boolean](dims.size)(false)
+    val target = Array.ofDim[Int](dims.size)
+    val result = Array.ofDim[FactorieVector](dims.product)
+    TablePotential.allSettings(dims,obs)(target) { i =>
+      result(i) = pot(target)
+    }
+    result
+  }
+
+  def sparse(entries: (Int, Double)*) = {
+    val result = new SparseTensor1(100)
+    for ((key, value) <- entries) result +=(key, value)
+    result
+  }
+
+  def singleton(key: Int, value: Double, dim: Int = 100) = {
+    new SingletonTensor1(dim, key, value)
+  }
+
+  def dense(dim: Int) = {
+    new DenseTensor1(dim)
+  }
+
+  def dense(dim: Int, entries: (Int, Double)*) = {
+    val result = new DenseTensor1(dim)
+    for ((index, value) <- entries) result(index) = value
+    result
+  }
+
+
+}
+
 /**
  * @author Sebastian Riedel
  */
 final class LinearPotential(val discVars: Array[DiscVar[Any]],
-                            val statistics: Stats) extends BruteForce.Potential
+                            val statistics: Array[FactorieVector]) extends BruteForce.Potential
                                                            with MaxProduct.Potential
                                                            with SumProduct.Potential {
 
-  import statistics._
-
-  val settings   = statistics.settings
-  val entryCount = settings.size
   val dims       = discVars.map(_.dom.size)
 
 
   def discMaxMarginalF2N(edge: BeliefPropagationFG#DiscEdge, weights: FactorieVector) = {
     //max over all settings
     val msgs = edge.msgs
+    val factor = edge.factor
     fill(msgs.f2n, Double.NegativeInfinity)
 
     //val projectedSettings = project(settings,edge.factor.observations)
 
-    for (i <- 0 until settings.size) {
-      val setting = settings(i)
+    TablePotential.allSettings(dims, factor.discObs)(factor.discSetting) { i =>
       var score = scoreEntry(i, weights)
-      val varValue = setting(edge.index)
+      val varValue = factor.discSetting(edge.index)
       for (j <- 0 until discVars.length; if j != edge.index) {
-        score += edge.factor.discEdges(j).msgs.n2f(setting(j))
+        score += edge.factor.discEdges(j).msgs.n2f(factor.discSetting(j))
       }
       msgs.f2n(varValue) = math.max(score, msgs.f2n(varValue))
     }
@@ -45,14 +78,15 @@ final class LinearPotential(val discVars: Array[DiscVar[Any]],
   def discMarginalF2N(edge: BeliefPropagationFG#DiscEdge, weights: FactorieVector) = {
 
     val msgs = edge.msgs
+    val factor = edge.factor
+
     fill(msgs.f2n, 0.0)
 
-    for (i <- 0 until settings.length) {
-      val setting = settings(i)
+    TablePotential.allSettings(dims, factor.discObs)(factor.discSetting) { i =>
       var score = scoreEntry(i, weights)
-      val varValue = setting(edge.index)
+      val varValue = factor.discSetting(edge.index)
       for (j <- 0 until discVars.length; if j != edge.index) {
-        score += edge.factor.discEdges(j).msgs.n2f(setting(j))
+        score += edge.factor.discEdges(j).msgs.n2f(factor.discSetting(j))
       }
       msgs.f2n(varValue) = msgs.f2n(varValue) + math.exp(score)
     }
@@ -69,12 +103,12 @@ final class LinearPotential(val discVars: Array[DiscVar[Any]],
 
   def statsForCurrentSetting(factor: BruteForce#Factor) = {
     val entry = TablePotential.settingToEntry(factor.discSetting, dims)
-    vectors(entry)
+    statistics(entry)
   }
 
 
   def scoreEntry(entry: Int, weights: FactorieVector) = {
-    vectors(entry) match {
+    statistics(entry) match {
       //todo: unclear why, but this manual dot product is faster than calling the singleton vector dot product
       //todo: which is doing the same thing.
       case singleton: SingletonVector =>
@@ -121,9 +155,8 @@ final class LinearPotential(val discVars: Array[DiscVar[Any]],
     var maxCount = 0
     //find maximum with respect to incoming messages
     //and count
-    for (i <- (0 until entryCount).optimized) {
-      val setting = settings(i)
-      val score = penalizedScore(factor, i, setting, weights)
+    TablePotential.allSettings(dims, factor.discObs)(factor.discSetting) { i =>
+      val score = penalizedScore(factor, i, factor.discSetting, weights)
       if (approxEqual(score, norm)) {
         maxCount += 1
       }
@@ -136,11 +169,10 @@ final class LinearPotential(val discVars: Array[DiscVar[Any]],
 
     // prob = 1/|maxs| for all maximums, add corresponding vector
     val prob = 1.0 / maxCount
-    for (i <- 0 until entryCount) {
-      val setting = settings(i)
-      val score = penalizedScore(factor, i, setting, weights)
+    TablePotential.allSettings(dims, factor.discObs)(factor.discSetting) { i =>
+      val score = penalizedScore(factor, i, factor.discSetting, weights)
       if (approxEqual(score, norm)) {
-        dstExpectations +=(vectors(i), prob)
+        dstExpectations +=(statistics(i), prob)
       }
     }
     maxScore
@@ -152,22 +184,20 @@ final class LinearPotential(val discVars: Array[DiscVar[Any]],
                                        weights: FactorieVector) = {
     var localZ = 0.0
     //calculate local partition function
-    for (i <- (0 until entryCount).optimized) {
-      val setting = settings(i)
-      val score = penalizedScore(factor, i, setting, weights)
+    TablePotential.allSettings(dims, factor.discObs)(factor.discSetting) { i =>
+      val score = penalizedScore(factor, i, factor.discSetting, weights)
       localZ += math.exp(score)
     }
     val logZ = math.log(localZ)
     var linear = 0.0
     var entropy = 0.0
     // prob = 1/|maxs| for all maximums, add corresponding vector
-    for (i <- 0 until entryCount) {
-      val setting = settings(i)
-      val score = penalizedScore(factor, i, setting, weights)
+    TablePotential.allSettings(dims, factor.discObs)(factor.discSetting) { i =>
+      val score = penalizedScore(factor, i, factor.discSetting, weights)
       val prob = math.exp(score - logZ)
       linear += prob * scoreEntry(i, weights)
       entropy -= prob * math.log(prob)
-      dstExpectations +=(vectors(i), prob)
+      dstExpectations +=(statistics(i), prob)
     }
     linear + entropy
   }
@@ -176,43 +206,4 @@ final class LinearPotential(val discVars: Array[DiscVar[Any]],
   def isLinear = true
 
   override def toString = "Linear " + discVars.map(_.name).mkString("(", ",", ")")
-}
-
-case class Stats(settings: Array[Array[Int]], vectors: Array[FactorieVector])
-
-object LinearPotential {
-  def stats(dims: Array[Int], pot: Array[Int] => FactorieVector) = {
-    val count = dims.product
-    val settings = Array.ofDim[Array[Int]](count)
-    val vectors = Array.ofDim[FactorieVector](count)
-    for (i <- (0 until count).optimized) {
-      val setting = TablePotential.entryToSetting(i, dims)
-      val vector = pot(setting)
-      settings(i) = setting
-      vectors(i) = vector
-    }
-    Stats(settings, vectors)
-  }
-
-  def sparse(entries: (Int, Double)*) = {
-    val result = new SparseTensor1(100)
-    for ((key, value) <- entries) result +=(key, value)
-    result
-  }
-
-  def singleton(key: Int, value: Double, dim: Int = 100) = {
-    new SingletonTensor1(dim, key, value)
-  }
-
-  def dense(dim: Int) = {
-    new DenseTensor1(dim)
-  }
-
-  def dense(dim: Int, entries: (Int, Double)*) = {
-    val result = new DenseTensor1(dim)
-    for ((index, value) <- entries) result(index) = value
-    result
-  }
-
-
 }
