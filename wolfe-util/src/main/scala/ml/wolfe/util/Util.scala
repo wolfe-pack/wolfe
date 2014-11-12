@@ -1,13 +1,14 @@
 package ml.wolfe.util
 
 import java.io._
+import java.util.concurrent.TimeUnit
 
 import cc.factorie.util.{FastLogging, Logger}
+import ml.wolfe.util._
 
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.io.Source
-import scala.collection.mutable
-import java.util.concurrent.TimeUnit
 
 /**
  * @author Sebastian Riedel
@@ -65,13 +66,14 @@ object Iris {
   implicit val classes = Seq(Label("Iris-setosa"), Label("Iris-versicolor"), Label("Iris-virginica"))
 
   case class Label(label: String)
-  case class IrisData(sepalLength: Double, sepalWidth: Double, petalLength: Double, petalWidth: Double, irisClass: Label)
+  case class IrisData(features:IrisFeatures, irisClass: Label)
+  case class IrisFeatures(sepalLength: Double, sepalWidth: Double, petalLength: Double, petalWidth: Double)
 
   def loadIris() = {
     val stream = Util.getStreamFromClassPathOrFile("ml/wolfe/datasets/iris/iris.data")
     val data = for (line <- Source.fromInputStream(stream).getLines().toBuffer if line.trim != "") yield {
       val Array(sl, sw, pl, pw, ic) = line.split(",")
-      IrisData(sl.toDouble, sw.toDouble, pl.toDouble, pw.toDouble, Label(ic))
+      IrisData(IrisFeatures(sl.toDouble, sw.toDouble, pl.toDouble, pw.toDouble), Label(ic))
     }
     stream.close()
     data
@@ -115,7 +117,7 @@ class ProgressBar(goal: Int, reportInterval: Int = 1, outputStream: OutputStream
       val diffTime = System.currentTimeMillis() - startTime
       val estimatedTime = (((diffTime * (goal.toDouble / completed)) - diffTime) / 1000).toInt
       printWriter.print("\t[%6.2f".format(percent) + "%" + " %d/%d ".format(completed, goal) +
-        "%8s".format("~" + getTimeString(estimatedTime)) + "]\t" + msg + "\r")
+      "%8s".format("~" + getTimeString(estimatedTime)) + "]\t" + msg + "\r")
       if (lineBreak) printWriter.println()
     }
     if (goal == completed) printWriter.println()
@@ -139,8 +141,6 @@ trait ProgressLogging extends FastLogging {
   override val logger: Logger =
     Logger.loggerMap.getOrElseUpdate(this.getClass.getName + "progress", new ProgressLogger(maxIterations(), this.getClass.getName + "progress"))
 }
-
-
 
 
 /**

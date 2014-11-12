@@ -1,9 +1,12 @@
 package ml.wolfe
 
-import java.io.{FileWriter, FileOutputStream, File}
-import java.nio.channels.Channels
+import java.io.{FileFilter, IOException, File, FileWriter}
+import java.nio.file.{Paths, Path, Files}
+import java.text.SimpleDateFormat
 import java.util.Calendar
-import com.typesafe.config.{ConfigFactory, Config}
+
+import com.typesafe.config.{Config, ConfigFactory}
+
 import scala.collection.mutable.ArrayBuffer
 import scala.io.Source
 
@@ -25,6 +28,21 @@ package object util {
       val dir = new File(if (conf.hasPath("outDir")) conf.getString("outDir") else "data/out")
       dir.mkdirs()
       dir
+    }
+    def getMostRecentOutDir() : File = {
+      val dateFolders = parentOutDir.listFiles(new FileFilter {
+        override def accept(pathname: File): Boolean = pathname.isDirectory
+      })
+      val formatter : SimpleDateFormat = new SimpleDateFormat("dd_MM_yyyy")
+      val dates = dateFolders.map(x => (x, formatter.parse(x.getName)))
+      val latestFolder = dates.maxBy(_._2)._1
+      val runs = latestFolder.listFiles(new FileFilter {
+        override def accept(pathname: File): Boolean = pathname.isDirectory()
+      })
+      val timeFormatter : SimpleDateFormat = new SimpleDateFormat("'run'_k_m_s_S")
+      val times = runs.map(x => (x, timeFormatter.parse(x.getName)))
+      val latestRun = times.maxBy(_._2)._1
+      latestRun
     }
     lazy val outDir = {
       val date = Calendar.getInstance()
@@ -62,7 +80,12 @@ package object util {
     private var _conf: Config = ConfigFactory.parseFile(new File("conf/default.conf"))
 
     def createSymbolicLinkToLatest() =
-      Runtime.getRuntime.exec("/bin/ln -sfn %s %s".format(msDir.getAbsolutePath, latest.getAbsolutePath))
+      try {
+        Files.createLink(Paths.get(latest.getAbsolutePath), Paths.get(msDir.getAbsolutePath))
+      } catch {
+        case e: IOException => println("Can't create link")
+      }
+      //Runtime.getRuntime.exec("/bin/ln -sfn %s %s".format(msDir.getAbsolutePath, latest.getAbsolutePath))
 
     import scala.collection.JavaConversions._
 

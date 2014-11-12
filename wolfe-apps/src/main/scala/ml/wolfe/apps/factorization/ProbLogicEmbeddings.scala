@@ -118,7 +118,6 @@ case class Rules(rules2: Map[(String, String), Rule2], rules1: Map[String, Rule1
     copy(rules2 = rules2.mapValues(_ + rule))
   }
 
-
 }
 
 

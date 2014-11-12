@@ -7,8 +7,9 @@ set key right top
 
 if (!exists("fileName")) fileName='experiments'
 
-set yrange [0.0:1.0]
+set yrange [0.0:0.8]
 set ytics 0.1,0.1,1
+set xtics 0.0,0.1,1
 
 set xlabel "Fraction of Training Data"
 set ylabel "MAP"
