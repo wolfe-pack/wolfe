@@ -140,8 +140,8 @@ object BratRenderer {
   def main(args: Array[String]) {
     val token1 = Token("A",null)
     val token2 = Token("man",null)
-    val sent = Sentence(Seq(token1,token2))
-    val html = BratRenderer.bratTokens(Document("A man",Seq(sent)))
+    val sent = Sentence(IndexedSeq(token1,token2))
+    val html = BratRenderer.bratTokens(Document("A man",IndexedSeq(sent)))
     val nb = new MutableMoroNotebook
 
     nb.html(html.source)
