@@ -9,15 +9,15 @@ import ml.wolfe.nlp.io._
  * @param relationMentions sequence of relation mentions found in the sentence.
  * @param eventMentions sequence of event mentions found in the sentence.
  */
-case class IEAnnotation(entityMentions: Seq[EntityMention],
-                        relationMentions: Seq[RelationMention],
-                        eventMentions: Seq[EventMention]) {}
+case class IEAnnotation(entityMentions: IndexedSeq[EntityMention],
+                        relationMentions: IndexedSeq[RelationMention],
+                        eventMentions: IndexedSeq[EventMention]) {}
 
 /**
  * Companion object for the IEAnnotation class.
  */
 object IEAnnotation {
-  val empty = IEAnnotation(Seq.empty,Seq.empty,Seq.empty)
+  val empty = IEAnnotation(IndexedSeq.empty,IndexedSeq.empty,IndexedSeq.empty)
 }
 
 /**
@@ -43,7 +43,7 @@ case class RelationMention(label: String, arg1: Int, arg2: Int, id: String = nul
  * @param trigger trigger word for the event.
  * @param arguments a sequence of argument roles.
  */
-case class EventMention(label: String, trigger: EntityMention, arguments: Seq[RoleMention], id: String = null) {}
+case class EventMention(label: String, trigger: EntityMention, arguments: IndexedSeq[RoleMention], id: String = null) {}
 
 /**
  * A role mention.
@@ -76,7 +76,7 @@ object SyntaxAnnotation {
  * A sparse dependency tree.  Not all arcs require a head.
  * @param arcs tuples of child, head, and label fields for each token with a head.
  */
-case class DependencyTree(tokens: Seq[Token], arcs: Seq[(Int,Int,String)]) {
+case class DependencyTree(tokens: IndexedSeq[Token], arcs: IndexedSeq[(Int,Int,String)]) {
   def crosses(a1: (Int,Int,String), a2: (Int,Int,String)): Boolean = crosses(a1._1, a1._2, a2._1, a2._2)
 
   def crosses(ii: Int, ij: Int, ik: Int, il: Int): Boolean = {
@@ -103,7 +103,7 @@ case class DependencyTree(tokens: Seq[Token], arcs: Seq[(Int,Int,String)]) {
  * Companion object for the DependencyTree class.
  */
 object DependencyTree {
-  val empty = DependencyTree(tokens = Seq(), arcs = Seq())
+  val empty = DependencyTree(tokens = IndexedSeq(), arcs = IndexedSeq())
 }
 
 /**
@@ -115,11 +115,11 @@ object DependencyTree {
  * Companion object for the ConstituentTree class.
  */
 object ConstituentTree {
-  val empty = ConstituentTree(node=null, children=Seq())
+  val empty = ConstituentTree(node=null, children=List())
 }
 
 
-case class ConstituentTree(node: ConstituentNode, children : Seq[ConstituentTree] = Seq()) {
+case class ConstituentTree(node: ConstituentNode, children : List[ConstituentTree] = List()) {
 
   def label: String = node.label
 
@@ -231,7 +231,7 @@ case class ConstituentTree(node: ConstituentNode, children : Seq[ConstituentTree
           println("right 0 markov")
           val blabel = if (node.label.startsWith("@")) node.label else "@%s".format(node.label)
           return new ConstituentTree(node, List[ConstituentTree](
-            children(0).binarize(mode),
+            children.head.binarize(mode),
             new ConstituentTree(new NonterminalNode(blabel), children.slice(1, children.size)).binarize(mode)))
         }
         case "LEFT_0MARKOV" => {
@@ -273,7 +273,7 @@ case class ConstituentTree(node: ConstituentNode, children : Seq[ConstituentTree
       })
   }
 
-  def unaryHelper(): Seq[ConstituentTree] = {
+  def unaryHelper(): List[ConstituentTree] = {
     if (children.size == 0) {
       return List(this)
     }

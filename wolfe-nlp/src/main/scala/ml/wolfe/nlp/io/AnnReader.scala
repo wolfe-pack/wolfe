@@ -44,7 +44,7 @@ class AnnReader(dir: String, pattern: String = ".*") extends Iterable[Document] 
       case T_WORD_PATTERN(id, name, start, end, ttext) => {
         EntityMention(name, start.toInt, end.toInt, id = id)
       }
-    }.toSeq
+    }.toIndexedSeq
 
     val d = SISTAProcessors.mkParsedDocument(text)
     d copy(sentences = d.sentences.map { s =>
@@ -52,7 +52,7 @@ class AnnReader(dir: String, pattern: String = ".*") extends Iterable[Document] 
     })
   }
 
-  def addEntities(s: Sentence, e: Seq[EntityMention]): Sentence = {
+  def addEntities(s: Sentence, e: IndexedSeq[EntityMention]): Sentence = {
     val entities = e.collect {
       case t if containsEntity(s, t) => {
         val si = s.tokens.indexWhere(_.offsets.start == t.start)
@@ -64,12 +64,12 @@ class AnnReader(dir: String, pattern: String = ".*") extends Iterable[Document] 
   }
 
   def addRelations(s: Sentence, annotations: Array[String]): Sentence = {
-    val relations = annotations.collect { CachedPartialFunction[String, RelationMention](containsRelation(s,_)) }.toSeq
+    val relations = annotations.collect { CachedPartialFunction[String, RelationMention](containsRelation(s,_)) }.toIndexedSeq
     s.copy(ie = s.ie.copy(relationMentions = relations))
   }
 
   def addEvents(s: Sentence, annotations: Array[String]): Sentence = {
-    val events = annotations.collect { CachedPartialFunction[String, EventMention](containsEvent(s,_)) }.toSeq
+    val events = annotations.collect { CachedPartialFunction[String, EventMention](containsEvent(s,_)) }.toIndexedSeq
     s.copy(ie = s.ie.copy(eventMentions = events))
   }
 
@@ -79,7 +79,7 @@ class AnnReader(dir: String, pattern: String = ".*") extends Iterable[Document] 
     si > -1 && ei > -1
   }
 
-  def containsRole(entities: Seq[EntityMention], a1: String, a2: String): Boolean = {
+  def containsRole(entities: IndexedSeq[EntityMention], a1: String, a2: String): Boolean = {
     val ai1 = entities.indexWhere(_.id == a1)
     val ai2 = entities.indexWhere(_.id == a2)
     ai1 > -1 && ai2 > -1
