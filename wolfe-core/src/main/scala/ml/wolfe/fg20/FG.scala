@@ -17,6 +17,10 @@ import scala.reflect.ClassTag
  * a FG subclass can use edges to store messages from nodes to factor.
  */
 trait FG {
+
+  /**
+   * The type of potentials on the factors of this factor graph.
+   */
   type Pot <: Potential
 
   type FactorType <: Factor
@@ -57,9 +61,15 @@ trait FG {
     def variable: V
     def edgeList = edges.toList
     var edges: Array[E] = null
+    var statsEdges: Array[E] = null
 
-    private[FG] def build() { edges = buffer.toArray }
+    private[FG] def build() {
+      edges = buffer.toArray
+      statsEdges = statsEdgeBuffer.toArray
+    }
     private[FG] var buffer: List[E] = Nil
+    private[FG] var statsEdgeBuffer: List[E] = Nil
+
   }
 
   trait Edge {
@@ -93,10 +103,10 @@ trait FG {
   private def checkPot(p: Potential): Pot =
     if (acceptPotential.isDefinedAt(p)) acceptPotential(p) else sys.error("Unsupported potential")
 
-  def createAndLinkFactor(p: Pot) = {
+  def createAndLinkFactor(p: Pot, linkEdges:Boolean = true) = {
     val factor = createFactor(p)
-    createDiscEdges(factor)
-    createContEdges(factor)
+    createDiscEdges(factor,linkEdges)
+    createContEdges(factor,linkEdges)
     factor
   }
 
@@ -107,6 +117,7 @@ trait FG {
   val contNodes = createContNodes()
 
   val factors = problem.pots.map(p => createAndLinkFactor(checkPot(p)))
+  val statsFactors = problem.stats.map(p => createAndLinkFactor(checkPot(p),false))
 
   discNodes.values.foreach(_.build())
   contNodes.values.foreach(_.build())
@@ -125,18 +136,20 @@ trait FG {
   //---- These are hacks to make Intellij be able to parse this file, there are much nicer ways to do this otherwise
 
 
-  private def createDiscEdges(factor: FactorType): Unit = {
+  private def createDiscEdges(factor: FactorType, linkToNormalFactors:Boolean = true): Unit = {
     val result = new ArrayBuffer[DiscEdge]
     for ((v, i) <- factor.pot.discVars.zipWithIndex) result += createDiscEdge(discNodes(v), factor, i)
     factor.discEdges = result.toArray[DiscEdge](discEdgeTag)
-    factor.discEdges.foreach(e => e.node.buffer ::= e)
+    if (linkToNormalFactors) factor.discEdges.foreach(e => e.node.buffer ::= e)
+    else factor.discEdges.foreach(e => e.node.statsEdgeBuffer ::= e)
   }
 
-  private def createContEdges(factor: FactorType): Unit = {
+  private def createContEdges(factor: FactorType,linkToNormalFactors:Boolean = true): Unit = {
     val result = new ArrayBuffer[ContEdge]
     for ((v, i) <- factor.pot.contVars.zipWithIndex) result += createContEdge(contNodes(v), factor, i)
     factor.contEdges = result.toArray[ContEdge](contEdgeTag)
-    factor.contEdges.foreach(e => e.node.buffer ::= e)
+    if (linkToNormalFactors) factor.contEdges.foreach(e => e.node.buffer ::= e)
+    else factor.contEdges.foreach(e => e.node.statsEdgeBuffer ::= e)
   }
 
 

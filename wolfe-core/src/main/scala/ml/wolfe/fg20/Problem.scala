@@ -37,6 +37,7 @@ case class Problem(pots: Seq[Potential],
                    discVars: Seq[DiscVar[Any]],
                    contVars: Seq[ContVar] = Seq.empty,
                    vectVars: Seq[VectVar] = Seq.empty,
-                   observation:State = State.empty) {
+                   observation:State = State.empty,
+                   stats:Seq[Potential] = Seq.empty) {
   def vars = discVars ++ contVars ++ vectVars
 }
