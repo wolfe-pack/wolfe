@@ -40,8 +40,6 @@ trait BeliefPropagationFG extends Residuals with EmptyFactorFG with NodeContentF
   class ContNodeContent(var setting: Double = 0.0,
                         var mean: Double = 0.0,
                         var dev: Double = 0.0)
-  class FactorContent()
-
 
   class DiscMsgs(size: Int) extends Msgs {
     val f2n     = Array.ofDim[Double](size)
@@ -70,7 +68,6 @@ trait BeliefPropagationFG extends Residuals with EmptyFactorFG with NodeContentF
   def createContNodeContent(contVar: ContVar) = new ContNodeContent()
   def createContMsgs(contVar: ContVar) = new ContMsgs()
 
-  def createFactorContent(pot: Pot) = new FactorContent
 
   def updateN2F(edge: Edge) = {
     edge match {
