@@ -11,8 +11,8 @@ class BruteForce(val problem: Problem) extends NodeContentFG with EmptyFactorFG 
   class DiscNodeContent(var belief: Array[Double])
   def createDiscNodeContent(variable: DiscVar[Any]) = new DiscNodeContent(Array.ofDim[Double](variable.dom.size))
   def createContNodeContent(contVar: ContVar) = sys.error("Can't do brute force with continuous variables")
-  def acceptPotential = { case p: BruteForce.Potential => p }
-  type Pot = BruteForce.Potential
+  def acceptPotential = { case p: Potential => p }
+  type Pot = Potential
 
   def loopOverSettings(nodes: List[DiscNode], loop: (() => Unit) => Unit = body => body()): (() => Unit) => Unit = {
     nodes match {
@@ -102,17 +102,3 @@ class BruteForce(val problem: Problem) extends NodeContentFG with EmptyFactorFG 
 
 }
 
-/**
- * Searches through all states of the factor graph.
- */
-object BruteForce {
-
-  trait Potential extends ml.wolfe.fg20.DiscPotential {
-    def score(factor: BruteForce#Factor, weights: FactorieVector): Double
-    def statsForCurrentSetting(factor: BruteForce#Factor): FactorieVector
-  }
-
-  import ml.wolfe.FactorGraph._
-
-
-}

@@ -48,8 +48,7 @@ object LinearPotential {
  * @author Sebastian Riedel
  */
 final class LinearPotential(val discVars: Array[DiscVar[Any]],
-                            val statistics: Array[FactorieVector]) extends BruteForce.Potential
-                                                           with MaxProduct.Potential
+                            val statistics: Array[FactorieVector]) extends MaxProduct.Potential
                                                            with SumProduct.Potential {
 
   val dims       = discVars.map(_.dom.size)
@@ -95,13 +94,13 @@ final class LinearPotential(val discVars: Array[DiscVar[Any]],
   }
 
 
-  def score(factor: BruteForce#Factor, weights: FactorieVector) = {
+  def score(factor: FG#Factor, weights: FactorieVector) = {
     val entry = TablePotential.settingToEntry(factor.discSetting, dims)
     scoreEntry(entry, weights)
   }
 
 
-  def statsForCurrentSetting(factor: BruteForce#Factor) = {
+  def statsForCurrentSetting(factor: FG#Factor) = {
     val entry = TablePotential.settingToEntry(factor.discSetting, dims)
     statistics(entry)
   }
