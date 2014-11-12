@@ -51,19 +51,16 @@ object TablePotential {
     result
   }
 
-  def allSettings(dims: Array[Int], observations: Array[Int])(target: Array[Int])(body: Int => Unit): Unit = {
+  def allSettings(dims: Array[Int], observations: Array[Boolean])(target: Array[Int])(body: Int => Unit): Unit = {
     val length = target.length
-    util.Arrays.fill(target,0)
     var settingId = 0
     var settingMultiplier = 1
     var index = length - 1
     //set observations
     while (index >= 0) {
-      if (observations(index) != -1) {
-        val value = observations(index)
-        target(index) = value
-        settingId += settingMultiplier * value
-      }
+      if (observations(index)) {
+        settingId += settingMultiplier * target(index)
+      } else target(index) = 0
       settingMultiplier *= dims(index)
       index -= 1
     }
@@ -73,8 +70,8 @@ object TablePotential {
       //call body on current setting
       body(settingId)
       //go back to the first element that hasn't yet reached its dimension, and reset everything until then
-      while (index >= 0 && (target(index) == dims(index) - 1 || observations(index) != -1)) {
-        if (observations(index) == -1) {
+      while (index >= 0 && (target(index) == dims(index) - 1 || observations(index))) {
+        if (!observations(index)) {
           settingId -= settingMultiplier * target(index)
           target(index) = 0
         }
@@ -93,6 +90,8 @@ object TablePotential {
       }
     }
   }
+
+
 
   /**
    * Turns an entry into a setting

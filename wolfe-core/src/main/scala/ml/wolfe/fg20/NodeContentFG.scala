@@ -16,8 +16,8 @@ trait NodeContentFG extends FG {
   trait NodeType extends Node {
     def content: NodeContent
   }
-  final class DiscNode(val variable: DiscVar[Any], val content: DiscNodeContent) extends TypedNode[DiscVar[Any], DiscEdge] with NodeType
-  final class ContNode(val variable: ContVar, val content: ContNodeContent) extends TypedNode[ContVar, ContEdge] with NodeType
+  final class DiscNode(val variable: DiscVar[Any], val content: DiscNodeContent) extends BasicDiscNode with NodeType
+  final class ContNode(val variable: ContVar, val content: ContNodeContent) extends BasicContNode with NodeType
 
   def createDiscNodeContent(variable: DiscVar[Any]): DiscNodeContent
   def createContNodeContent(contVar: ContVar): ContNodeContent

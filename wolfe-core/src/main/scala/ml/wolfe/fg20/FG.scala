@@ -15,11 +15,30 @@ trait FG {
 
   type DiscEdge <: TypedEdge[DiscNode] with EdgeType
   type ContEdge <: TypedEdge[ContNode] with EdgeType
-  type DiscNode <: TypedNode[DiscVar[Any], DiscEdge] with NodeType
-  type ContNode <: TypedNode[ContVar, ContEdge] with NodeType
+  type DiscNode <: BasicDiscNode with NodeType
+  type ContNode <: BasicContNode with NodeType
 
   implicit def discEdgeTag: ClassTag[DiscEdge]
   implicit def contEdgeTag: ClassTag[ContEdge]
+
+  trait BasicDiscNode extends TypedNode[DiscVar[Any], DiscEdge] {
+    var setting  = 0
+    var observed = false
+    def observe(value:Int,observed:Boolean = false): Unit = {
+      setting = value
+      this.observed = observed
+      for (e <- edges) {
+        e.factor.discObs(e.index) = observed
+        e.factor.discSetting(e.index) = value
+      }
+    }
+  }
+
+  trait BasicContNode extends TypedNode[ContVar, ContEdge]  {
+    var setting  = 0.0
+    var observed = false
+  }
+
 
   trait Node {
     def variable: Var[Any]
@@ -49,6 +68,15 @@ trait FG {
     var discEdges: Array[DiscEdge] = null
     var contEdges: Array[ContEdge] = null
     def edges = discEdges.iterator ++ contEdges.iterator
+
+    var discSetting:Array[Int] = null
+    var discObs:Array[Boolean] = null
+    
+    private[FG] def setup(): Unit = {
+      discSetting = Array.ofDim[Int](discEdges.size)
+      discObs = Array.ofDim[Boolean](discEdges.size)
+    }
+
   }
 
   def problem: Problem
@@ -71,17 +99,17 @@ trait FG {
     factor
   }
 
-  val discNodes = createDiscNodes()
-  val contNodes = createContNodes()
-
   def nodes = discNodes.values.iterator ++ contNodes.values.iterator
   def edges = factors.iterator.flatMap(_.edges)
 
+  val discNodes = createDiscNodes()
+  val contNodes = createContNodes()
+
   val factors = problem.pots.map(p => createAndLinkFactor(checkPot(p)))
-  //  val discEdges = factors.flatMap(_.discEdges)
 
   discNodes.values.foreach(_.build())
   contNodes.values.foreach(_.build())
+  factors.foreach(_.setup())
 
   //---- These are hacks to make Intellij be able to parse this file, there are much nicer ways to do this otherwise
 
