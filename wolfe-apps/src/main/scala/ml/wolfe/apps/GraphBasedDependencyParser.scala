@@ -2,7 +2,7 @@ package ml.wolfe.apps
 
 import cc.factorie.optimize.{LBFGS, AdaGrad, OnlineTrainer}
 import ml.wolfe.nlp.{CharOffsets, Token, DependencyTree}
-import ml.wolfe.{BeliefPropagation, Wolfe}
+import ml.wolfe.{FactorieVectorBuilder, BeliefPropagation, Wolfe}
 import ml.wolfe.fg.TreePotential
 
 /**
@@ -79,6 +79,8 @@ object GraphBasedDependencyParser extends App {
   val test = new CoNLLReader(args(1)).view.map(t => treeToInstance(t.syntax.dependencies))
 
   val w = argmin(vectors) { loss(train) }
+
+  val fv = new FactorieVectorBuilder {}
 
   println("Testing...")
   var correctArcs = 0
