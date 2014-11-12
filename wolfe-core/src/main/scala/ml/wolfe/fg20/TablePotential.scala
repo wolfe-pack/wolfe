@@ -51,25 +51,45 @@ object TablePotential {
     result
   }
 
-  def allSettings(target: Array[Int], dims: Array[Int], observations: Array[Int])(body: => Unit): Unit = {
+  def allSettings(dims: Array[Int], observations: Array[Int])(target: Array[Int])(body: Int => Unit): Unit = {
     val length = target.length
     util.Arrays.fill(target,0)
-    for (i <- 0 until length) if (observations(i) != -1) target(i) = observations(i)
+    var settingId = 0
+    var settingMultiplier = 1
     var index = length - 1
+    //set observations
+    while (index >= 0) {
+      if (observations(index) != -1) {
+        val value = observations(index)
+        target(index) = value
+        settingId += settingMultiplier * value
+      }
+      settingMultiplier *= dims(index)
+      index -= 1
+    }
+    settingMultiplier = 1
+    index = length - 1
     while (index >= 0) {
       //call body on current setting
-      body
+      body(settingId)
       //go back to the first element that hasn't yet reached its dimension, and reset everything until then
-      while (index >= 0 && target(index) == dims(index) - 1) {
+      while (index >= 0 && (target(index) == dims(index) - 1 || observations(index) != -1)) {
         if (observations(index) == -1) {
+          settingId -= settingMultiplier * target(index)
           target(index) = 0
         }
+        settingMultiplier *= dims(index)
         index -= 1
       }
       //increase setting by one if we haven't yet terminated
       if (index >= 0) {
         target(index) += 1
-        if (index < length - 1) index = length - 1
+        settingId += settingMultiplier
+        //depending on where we are in the array we bump up the settingId
+        if (index < length - 1) {
+          settingMultiplier = 1
+          index = length - 1
+        }
       }
     }
   }
@@ -91,14 +111,6 @@ object TablePotential {
     result
   }
 
-  def main(args: Array[String]) {
-    val target = Array.ofDim[Int](3)
-    val dims = Array(2,3,3)
-    val obs = Array(-1,-1,-1)
-    allSettings(target,dims,obs) {
-      println(target.mkString(" "))
-    }
-  }
 
 
 }
