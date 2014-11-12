@@ -5,13 +5,11 @@ import ml.wolfe.{FactorieVector, SparseVector, FactorGraph}
 import ml.wolfe.MoreArrayOps._
 
 
-
-
 class BruteForce(val problem: Problem) extends NodeContentFG with EmptyFactorFG with EmptyEdgeFG {
   type ContNodeContent = Nothing
   type NodeContent = Any
-  class DiscNodeContent(var setting: Int, var belief: Array[Double])
-  def createDiscNodeContent(variable: DiscVar[Any]) = new DiscNodeContent(0, Array.ofDim[Double](variable.dom.size))
+  class DiscNodeContent(var belief: Array[Double])
+  def createDiscNodeContent(variable: DiscVar[Any]) = new DiscNodeContent(Array.ofDim[Double](variable.dom.size))
   def createContNodeContent(contVar: ContVar) = sys.error("Can't do brute force with continuous variables")
   def acceptPotential = { case p: BruteForce.Potential => p }
   type Pot = BruteForce.Potential
@@ -21,8 +19,8 @@ class BruteForce(val problem: Problem) extends NodeContentFG with EmptyFactorFG 
       case Nil => (body: () => Unit) => loop(body)
       case head :: tail =>
         def newLoop(body: () => Unit) {
-          for (setting <- head.variable.dom.indices) {
-            head.content.setting = setting
+          if (!head.observed) for (setting <- head.variable.dom.indices) {
+            head := setting
             loop(body)
           }
         }
@@ -44,17 +42,17 @@ class BruteForce(val problem: Problem) extends NodeContentFG with EmptyFactorFG 
     loop { () =>
       val score = currentScore(weights)
       for (n <- nodes) {
-        n.content.belief(n.content.setting) = math.max(score, n.content.belief(n.content.setting))
+        n.content.belief(n.setting) = math.max(score, n.content.belief(n.setting))
       }
 
       if (score > maxScore) {
         maxScore = score
-        maxSetting = nodes.view.map(_.content.setting).toArray
+        maxSetting = nodes.view.map(_.setting).toArray
       }
     }
 
-    for ((s, n) <- maxSetting zip nodes) {
-      n.content.setting = s
+    for ((s, n) <- maxSetting zip nodes; if !n.observed) {
+      n := s
       maxNormalize(n.content.belief)
     }
 
@@ -62,7 +60,7 @@ class BruteForce(val problem: Problem) extends NodeContentFG with EmptyFactorFG 
     for (f <- factors; if f.pot.isLinear)
       gradient += f.pot.statsForCurrentSetting(f)
 
-    val state = nodes.map(n => n.variable -> n.variable.dom(n.content.setting))
+    val state = nodes.map(n => n.variable -> n.variable.dom(n.setting))
     val maxMarginals = nodes.map(n => DiscBelief(n.variable) -> Distribution.disc(n.variable.dom, n.content.belief))
     MAPResult(new MapBasedState(state.toMap), maxScore, gradient, new MapBasedState(maxMarginals.toMap))
   }
@@ -77,7 +75,7 @@ class BruteForce(val problem: Problem) extends NodeContentFG with EmptyFactorFG 
       val score = currentScore(weights)
       val prob = math.exp(score)
       for (n <- nodes) {
-        n.content.belief(n.content.setting) += prob
+        n.content.belief(n.setting) += prob
       }
       Z += prob
     }
