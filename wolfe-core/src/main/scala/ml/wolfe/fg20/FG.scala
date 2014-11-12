@@ -119,7 +119,19 @@ trait FG {
   contNodes.values.foreach(_.build())
   factors.foreach(_.setup())
 
+  setObservations()
+
+  def setObservations() {
+    for (v <- problem.observation.domain) {
+      v match {
+        case d: DiscVar[_] =>
+          discNodes(d).observe(d.dom.indexOf(problem.observation(d)))
+      }
+    }
+  }
+
   //---- These are hacks to make Intellij be able to parse this file, there are much nicer ways to do this otherwise
+
 
   private def createDiscEdges(factor: FactorType): Unit = {
     val result = new ArrayBuffer[DiscEdge]
