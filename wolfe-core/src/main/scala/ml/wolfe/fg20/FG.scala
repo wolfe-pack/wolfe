@@ -79,6 +79,9 @@ trait FG {
 
     var discSetting:Array[Int] = null
     var discObs:Array[Boolean] = null
+
+    var contSetting:Array[Double] = null
+    var contObs:Array[Boolean] = null
     
     private[FG] def setup(): Unit = {
       discSetting = Array.ofDim[Int](discEdges.size)

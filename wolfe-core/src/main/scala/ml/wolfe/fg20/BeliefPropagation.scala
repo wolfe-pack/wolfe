@@ -3,21 +3,6 @@ package ml.wolfe.fg20
 import ml.wolfe.MoreArrayOps._
 import ml.wolfe._
 
-// ----------- Factor Graph ---------------
-
-
-class MyImplies(premise: DiscVar[Boolean], consequent: DiscVar[Boolean]) extends MaxProduct.Potential {
-
-  def discVars = Array(premise, consequent)
-  def valueInBPFG(factor: BeliefPropagationFG#Factor, weights: FactorieVector) = {
-    if (!premise.dom(factor.discSetting(0)) || consequent.dom(factor.discSetting(1))) 0.0 else Double.NegativeInfinity
-  }
-  def maxMarginalExpectationsAndObjective(factor: BeliefPropagationFG#Factor, dstExpectations: FactorieVector, weights: FactorieVector) = ???
-  def discMaxMarginalF2N(edge: BeliefPropagationFG#DiscEdge, weights: FactorieVector) = ???
-  def isLinear = false
-}
-
-
 trait Residuals extends EdgeMsgsFG {
 
   trait Msgs {

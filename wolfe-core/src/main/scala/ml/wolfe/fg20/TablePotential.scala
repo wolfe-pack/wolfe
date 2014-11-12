@@ -1,7 +1,5 @@
 package ml.wolfe.fg20
 
-import java.util
-
 import ml.wolfe.MoreArrayOps._
 import ml.wolfe._
 
@@ -115,15 +113,12 @@ object TablePotential {
 case class Table(settings: Array[Array[Int]], scores: Array[Double])
 
 
-final class TablePotential(val discVars: Array[DiscVar[Any]], table: Array[Double]) extends BruteForce.Potential
-                                                                                            with MaxProduct.Potential
+final class TablePotential(val discVars: Array[DiscVar[Any]], table: Array[Double]) extends MaxProduct.Potential
                                                                                             with SumProduct.Potential {
-
-  import table._
 
   val dims = discVars.map(_.dom.size)
 
-  def score(factor: BruteForce#Factor, weights: FactorieVector) = {
+  def score(factor: FG#Factor, weights: FactorieVector) = {
     val entry = TablePotential.settingToEntry(factor.discSetting, dims)
     table(entry)
   }
@@ -175,7 +170,7 @@ final class TablePotential(val discVars: Array[DiscVar[Any]], table: Array[Doubl
   }
 
 
-  def statsForCurrentSetting(factor: BruteForce#Factor) = isNotLinear
+  def statsForCurrentSetting(factor: FG#Factor) = isNotLinear
 
 
   def maxMarginalExpectationsAndObjective(factor: BeliefPropagationFG#Factor,

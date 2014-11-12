@@ -29,7 +29,6 @@ class BeliefPropagation20Specs extends WolfeSpec {
     case Array(i, j) => LinearPotential.singleton(2 * i + j, 1.0)
   })
 
-
   def chainProblem(length: Int) = {
     val vars = for (i <- 0 until length) yield new DiscVar(Seq(false, true), "v" + i)
     val pots = for ((v1, v2) <- vars.dropRight(1) zip vars.drop(1)) yield new TablePotential(Array(v1, v2), scores)

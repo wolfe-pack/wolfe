@@ -17,6 +17,9 @@ trait Potential {
 
   def isLinear:Boolean
 
+  def score(factor: FG#Factor, weights: FactorieVector): Double
+  def statsForCurrentSetting(factor: FG#Factor): FactorieVector
+
   def hasNoDiscVars = sys.error("This potential has no discrete variables")
   def hasNoContVars = sys.error("This potential has no continuous variables")
   def hasNoVectVars = sys.error("This potential has no vector variables")
@@ -29,20 +32,6 @@ trait DiscPotential extends Potential {
   def contVars = Array.empty
   def vectVars = Array.empty
 }
-
-
-
-class ImpliesPotential(premise:DiscVar[Boolean],consequent:DiscVar[Boolean]) extends DiscPotential {
-  def discVars = Array(premise,consequent)
-
-
-//  def value(factor:Factor[_, _, _, _]): Double = {
-//    0.0
-//  }
-  def isLinear = false
-}
-
-
 
 case class Problem(pots: Seq[Potential],
                    discVars: Seq[DiscVar[Any]],
