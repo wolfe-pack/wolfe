@@ -35,7 +35,7 @@ class SettingsIteratorSpecs extends WolfeSpec {
     "iterate over all settings" in {
       val target = Array.ofDim[Int](3)
       val dims = Array(2,3,3)
-      val obs = Array(-1,-1,-1)
+      val obs = Array(false,false,false)
       allSettings(dims,obs)(target) { i =>
         for (j <- 0 until target.length) {
           target(j) should be (s233(i)(j))
@@ -44,9 +44,9 @@ class SettingsIteratorSpecs extends WolfeSpec {
     }
 
     "iterate over all settings consistent with observation" in {
-      val target = Array.ofDim[Int](3)
+      val target = Array(1,0,2)
       val dims = Array(2,3,3)
-      val obs = Array(1,-1,2)
+      val obs = Array(true,false,true)
       var count = 0
       allSettings(dims,obs)(target) { i =>
         for (j <- 0 until target.length) {
