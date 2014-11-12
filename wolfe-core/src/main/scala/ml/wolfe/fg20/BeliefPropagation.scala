@@ -160,9 +160,9 @@ class MaxProduct(val problem: Problem) extends BeliefPropagationFG with EdgeProp
     for (node <- nodes) { updateBelief(node); normalizeBelief(node) }
     val gradient = new SparseVector(1000)
     val score = factors.view.map(f => f.pot.maxMarginalExpectationsAndObjective(f, gradient, weights)).sum
-    val discState = problem.discVars.map(v => v -> v.dom(discNodes(v).setting)).toMap[Var[Any], Any]
-    val contState = problem.contVars.map(v => v -> contNodes(v).setting)
-    val maxMarginals = discNodes.values.map(n => DiscBelief(n.variable) -> Distribution.disc(n.variable.dom, n.content.belief))
+    val discState = problem.discVars.map(v => v -> v.dom(var2DiscNode(v).setting)).toMap[Var[Any], Any]
+    val contState = problem.contVars.map(v => v -> var2ContNode(v).setting)
+    val maxMarginals = var2DiscNode.values.map(n => DiscBelief(n.variable) -> Distribution.disc(n.variable.dom, n.content.belief))
     MAPResult(new MapBasedState(discState ++ contState), score, gradient, new MapBasedState(maxMarginals.toMap))
   }
 
@@ -203,7 +203,7 @@ class SumProduct(val problem: Problem) extends BeliefPropagationFG with EdgeProp
     for (node <- nodes) { updateBelief(node); normalizeBelief(node) }
     val gradient = new SparseVector(1000)
     val logZ = factors.view.map(f => f.pot.marginalExpectationsAndObjective(f, gradient, weights)).sum
-    val marginals = discNodes.values.map(n => DiscBelief(n.variable) -> Distribution.disc(n.variable.dom, n.content.belief))
+    val marginals = var2DiscNode.values.map(n => DiscBelief(n.variable) -> Distribution.disc(n.variable.dom, n.content.belief))
     val stats = new SparseVector(1000)
     for (f <- statsFactors) f.pot.marginalExpectationsAndObjective(f,stats,new SparseVector(0))
     MarginalResult(logZ, gradient, new MapBasedState(marginals.toMap))
