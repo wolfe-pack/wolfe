@@ -27,7 +27,7 @@ class CoNLLReader(filename: String) extends Iterable[Sentence]{
     }
   }
 
-  def fromCoNLL2009(lines: Seq[String]): Sentence = {
+  def fromCoNLL2009(lines: IndexedSeq[String]): Sentence = {
     // ID FORM LEMMA PLEMMA POS PPOS FEAT PFEAT HEAD PHEAD DEPREL PDEPREL FILLPRED PRED APREDs
     val cells = lines.map(_.split("\t"))
     val tokens = cells.map {c =>
@@ -37,7 +37,7 @@ class CoNLLReader(filename: String) extends Iterable[Sentence]{
     Sentence(tokens, syntax = SyntaxAnnotation(tree=null, dependencies=dependencies))
   }
 
-  def fromCoNLLX(lines: Seq[String]): Sentence = {
+  def fromCoNLLX(lines: IndexedSeq[String]): Sentence = {
     val cells = lines.map(_.split("\t"))
     val tokens = cells.map {c =>
       Token(c(1), CharOffsets(c(0).toInt,c(0).toInt), posTag = c(4), lemma = c(2))
@@ -46,11 +46,11 @@ class CoNLLReader(filename: String) extends Iterable[Sentence]{
     Sentence(tokens, syntax = SyntaxAnnotation(tree=null, dependencies=dependencies))
   }
 
-  def fromCoNLL2003(lines: Seq[String]): Sentence = {
+  def fromCoNLL2003(lines: IndexedSeq[String]): Sentence = {
     ???
   }
 
-  def fromCoNLL2000(lines: Seq[String]): Sentence = {
+  def fromCoNLL2000(lines: IndexedSeq[String]): Sentence = {
     ???
   }
 

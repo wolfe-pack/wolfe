@@ -64,7 +64,7 @@ object GraphBasedDependencyParser extends App {
   }
 
   def instanceToTree(x: X): DependencyTree = {
-    val tokens = x.words.zip(x.tags).zipWithIndex.map { case((tw,tt),i) => Token(word = tw, offsets = CharOffsets(i,i), posTag = tt)}.tail
+    val tokens = x.words.zip(x.tags).zipWithIndex.map { case((tw,tt),i) => Token(word = tw, offsets = CharOffsets(i,i), posTag = tt)}.tail.toIndexedSeq
     val exp = expect(space(x))(model(w)(x))(y => sum(candidateDeps(x)) { e => oneHot(e, I(y.deps(e)))})
     val arcs = candidateDeps(x).flatMap { case(i,j) =>
 //      val exp = expect (space(x)) (model(w)(x)) (s => oneHot(0 -> 1, I(s.deps(i,j)))).get((0,1)).get
@@ -86,7 +86,7 @@ object GraphBasedDependencyParser extends App {
   var predictedArcs = 0
   test.foreach { case(x,y) =>
     val tree = instanceToTree(x)
-    val gold = DependencyTree(tree.tokens, y.deps.map(d => (d._1._2, d._1._1, null)).toSeq)
+    val gold = DependencyTree(tree.tokens, y.deps.map(d => (d._1._2, d._1._1, null)).toIndexedSeq)
     val correct = tree.arcs.filter(gold.arcs.contains(_)).size
     correctArcs += correct
     predictedArcs += tree.size

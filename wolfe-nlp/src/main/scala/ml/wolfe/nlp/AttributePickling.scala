@@ -27,7 +27,7 @@ object AttributePickling {
 //
 //    println(unpickled)
 //
-//    //    val data = Sentence(Seq(Token("the", CharOffsets(0,3), attributes = Attributes(Lemma -> "blah"))))
+//    //    val data = Sentence(IndexedSeq(Token("the", CharOffsets(0,3), attributes = Attributes(Lemma -> "blah"))))
 //    //    val pickledData = data.pickle
 //    //    val unpickledData = pickledData.unpickle[Sentence]
 //    //    println(unpickledData)

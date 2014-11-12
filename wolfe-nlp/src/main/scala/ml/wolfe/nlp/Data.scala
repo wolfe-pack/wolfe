@@ -35,13 +35,13 @@ case class Token(word: String, offsets: CharOffsets, posTag: String = null, lemm
  * @param syntax syntactic annotation for the sentence.
  * @param ie information extraction style annotation for the sentence
  */
-case class Sentence(tokens: Seq[Token], syntax: SyntaxAnnotation = SyntaxAnnotation.empty, ie: IEAnnotation = IEAnnotation.empty) {
+case class Sentence(tokens: IndexedSeq[Token], syntax: SyntaxAnnotation = SyntaxAnnotation.empty, ie: IEAnnotation = IEAnnotation.empty) {
   def toText = tokens map (_.word) mkString " "
   def toTaggedText = tokens map (_.toTaggedText) mkString " "
   def document(implicit g:ObjectGraph) =
     g.receiveOrdered[Sentence,Document,Document]('sentences,this)((_,d) => d)
   def linkTokens(implicit graph: ObjectGraph) =
-    graph.link1toNOrdered[Sentence, Token, Seq[Token]]('tokens, this, tokens)
+    graph.link1toNOrdered[Sentence, Token, IndexedSeq[Token]]('tokens, this, tokens)
   def size = tokens.size
   def offsets = CharOffsets(tokens.head.offsets.start,tokens.last.offsets.end)
 }
