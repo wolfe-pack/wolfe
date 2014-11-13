@@ -10,13 +10,21 @@ import ml.wolfe.neural.math.ActivationFunctions
 // extends iterable of layers ? (check of last layer)
 // last layer needs to be non-hidden ?
 // parameters: sequence of layers  +  final layer ?
-class MultiLayerPerceptron(layers: Seq[NetworkLayer]) {
+class MultiLayerPerceptron(val layers: Seq[NetworkLayer]) {
   require(layers.head.isInstanceOf[HiddenLayer], "Input layer must be of type HiddenLayer (for now.)")
   require(layers.last.isInstanceOf[OutputLayer], "Output layer must be of type OutputLayer.")
 
   for (i <- 0 until layers.size - 2) {
     val slice = layers.view(i, i + 1)
     require(slice(0).outputSize == slice(1).inputSize, "Layers %d and %d don't agree in output - input sizes".format(i, i+1))
+  }
+
+  def predict(input: DenseMatrix[Double]): DenseVector[Double] = {
+    var cmat = input
+    for (l <- layers) {
+
+    }
+    ???
   }
 
 

@@ -26,7 +26,7 @@ class BackPropagation(network: MultiLayerPerceptron, input: DenseMatrix[Double],
 
   override def valueAndGradientForAllEdges(): Double = {
     prop()
-
+    1.0
   }
 
   override def mapF2N(): Unit = super.mapF2N()
@@ -36,11 +36,14 @@ class BackPropagation(network: MultiLayerPerceptron, input: DenseMatrix[Double],
 object BackProp extends App {
 
   // 3 Inputs x 4 Hidden = 12 weight params, 3 input params, and 4 bias params
-  val inputs = DenseVector[Double](Array(1.0, 2.0, 3.0))
-  val w1 = DenseMatrix[Double](DenseVector(Array(0.0, 0.0, 0.0)),
-                       DenseVector(Array(0.0, 0.0, 0.0)))
-  val b1 = DenseVector(Array(0.0, 0.0, 0.0))
-  val layer1 = new HiddenLayer(w1, b1, ActivationFunctions.sigmoid)
+//  val inputs = DenseVector[Double](Array(1.0, 2.0, 3.0))
+//  val w1 = DenseMatrix[Double, DenseVector[Double]](DenseVector(Array(0.0, 0.0, 0.0)),
+//                       DenseVector(Array(0.0, 0.0, 0.0)))
+//  val b1 = DenseVector(Array(0.0, 0.0, 0.0))
+//  val layer1 = new HiddenLayer(w1, b1, ActivationFunctions.sigmoid)
+//  val layer2 = new HiddenLayer(w1, b1, ActivationFunctions.sigmoid)
+////  val layer3 = new OutputLayer()
+//  val nn = new MultiLayerPerceptron(Array(l1, l2, l3))
 }
 
 object ExampleDBN extends App {
