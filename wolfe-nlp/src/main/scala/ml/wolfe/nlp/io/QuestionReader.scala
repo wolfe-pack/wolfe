@@ -22,7 +22,6 @@ class MCTestReader(tsvFilename: String, ansFilename: String) extends Iterable[Mu
       val questions = fields.slice(3, fields.size).grouped(5).zip(ans.toIterator).map { case(g, t) =>
         val gi = g.head.split(": ")
         val (qt, q) = (gi(0), gi(1))
-        println(qt)
         val as = g.tail.zipWithIndex.map { case(a, i) =>
           AnswerChoice(MC_LABELS(i), a, t == MC_LABELS(i))
         }
