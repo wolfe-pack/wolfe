@@ -96,6 +96,10 @@ object BuildSettings {
     "org.scala-lang" %% "scala-pickling" % "0.8.0"
   )
 
+  val neuralDependencies = libraryDependencies ++= Seq(
+    "org.scala-lang" % "scala-swing" % "2.10.0"
+  )
+  
   val appDependencies = libraryDependencies ++= Seq(
     //"pl.project13.scala" %% "rainbow" % "0.2"
   )
@@ -173,7 +177,7 @@ object Build extends Build {
   lazy val neural = Project(
     id = "wolfe-neural",
     base = file("wolfe-neural"),
-    settings = buildSettings ++ globalSettings
+    settings = buildSettings ++ globalSettings ++ neuralDependencies
   ) dependsOn core % "test->test;compile->compile"
 
   lazy val util = Project(

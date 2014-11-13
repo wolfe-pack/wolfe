@@ -2,7 +2,7 @@ package ml.wolfe.apps
 
 import cc.factorie.optimize.{LBFGS, AdaGrad, OnlineTrainer}
 import ml.wolfe.nlp.{CharOffsets, Token, DependencyTree}
-import ml.wolfe.{BeliefPropagation, Wolfe}
+import ml.wolfe.{FactorieVectorBuilder, BeliefPropagation, Wolfe}
 import ml.wolfe.fg.TreePotential
 
 /**
@@ -67,7 +67,6 @@ object GraphBasedDependencyParser extends App {
     val tokens = x.words.zip(x.tags).zipWithIndex.map { case((tw,tt),i) => Token(word = tw, offsets = CharOffsets(i,i), posTag = tt)}.tail.toIndexedSeq
     val exp = expect(space(x))(model(w)(x))(y => sum(candidateDeps(x)) { e => oneHot(e, I(y.deps(e)))})
     val arcs = candidateDeps(x).flatMap { case(i,j) =>
-//      val exp = expect (space(x)) (model(w)(x)) (s => oneHot(0 -> 1, I(s.deps(i,j)))).get((0,1)).get
       exp(i -> j) match {
         case p if p > 0.5 => Some((j, i, null))
         case _ => None
@@ -80,6 +79,8 @@ object GraphBasedDependencyParser extends App {
   val test = new CoNLLReader(args(1)).view.map(t => treeToInstance(t.syntax.dependencies))
 
   val w = argmin(vectors) { loss(train) }
+
+  val fv = new FactorieVectorBuilder {}
 
   println("Testing...")
   var correctArcs = 0
@@ -97,6 +98,8 @@ object GraphBasedDependencyParser extends App {
 
 
 
+
+//      val exp = expect (space(x)) (model(w)(x)) (s => oneHot(0 -> 1, I(s.deps(i,j)))).get((0,1)).get
 
 
 // "/Users/narad/Documents/work/data/conll/2009/english/evaluation.txt"
