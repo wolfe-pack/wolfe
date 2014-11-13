@@ -25,8 +25,9 @@ trait NetworkLayer {
 
 // TODO loss and cost functions?
 trait OutputLayer extends NetworkLayer {
+
   def errors(input: DenseMatrix[Double], y: DenseVector[Double]): Double
-  def predict(input: DenseMatrix[Double]): DenseVector[Double]
+
 }
 
 /**
