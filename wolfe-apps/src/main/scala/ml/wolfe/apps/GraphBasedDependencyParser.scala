@@ -80,7 +80,7 @@ object GraphBasedDependencyParser extends App {
 
   val w = argmin(vectors) { loss(train) }
 
-  val fv = new FactorieVectorBuilder {}
+ // val fv = new FactorieVectorBuilder {}
 
   println("Testing...")
   var correctArcs = 0
