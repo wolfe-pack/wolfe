@@ -9,8 +9,8 @@ import scala.util.Random
 /**
  * @author Sebastian Riedel
  */
-abstract class GibbsSampler(val problem: Problem)
-                           (implicit random: Random = new Random(0)) extends FG with NodeContentFG with EmptyEdgeFG {
+class GibbsSampler(val problem: Problem)
+                  (implicit random: Random = new Random(0)) extends FG with NodeContentFG with EmptyEdgeFG {
 
   class NodeContent
   final class DiscNodeContent(size: Int) extends NodeContent {
@@ -25,18 +25,19 @@ abstract class GibbsSampler(val problem: Problem)
   }
 
   final class FactorType(val pot: Pot) extends Factor {
-    var lastUpdate: Int            = -1
-    var lastVector: FactorieVector = null
-    var mean      : FactorieVector = null
+    var mean: FactorieVector = null
   }
 
 
+  type Pot = Potential
+
+  def acceptPotential = { case p: Potential => p }
   def createFactor(pot: Pot) = new FactorType(pot)
 
   def createDiscNodeContent(variable: DiscVar[Any]) = new DiscNodeContent(variable.dom.size)
   def createContNodeContent(contVar: ContVar) = new ContNodeContent
 
-  def inferMarginals(samples: Int, burnIn:Int = 0, weights: FactorieVector) = {
+  def inferMarginals(samples: Int, burnIn: Int = 0, weights: FactorieVector) = {
 
     //initialize
     for (n <- discNodes) {
@@ -47,7 +48,7 @@ abstract class GibbsSampler(val problem: Problem)
     //burnin
     for (sample <- 0 until burnIn) {
       for (n <- discNodes; if !n.observed) {
-        sampleDiscNode(weights, n, sample, true)
+        sampleDiscNode(weights, n, sample, burnIn = true)
       }
     }
 
@@ -56,12 +57,15 @@ abstract class GibbsSampler(val problem: Problem)
       for (n <- discNodes; if !n.observed) {
         sampleDiscNode(weights, n, sample)
       }
+      for (f <- factors; if f.pot.isLinear) {
+        addStats(sample, f)
+      }
     }
     //how to get partition function???
     //http://www.cc.gatech.edu/~mihail/D.lectures/jerrum96markov.pdf
     //make sure expectations are updated and consistent
-    for (n <- discNodes) syncAverage(n, samples - 1)
-    for (f <- factors; if f.pot.isLinear) syncStats(samples - 1, f)
+    for (n <- discNodes) syncAverage(n, samples)
+    for (f <- factors; if f.pot.isLinear) addStats(samples - 1, f)
 
     val marginals = var2DiscNode.values.map(n => DiscBelief(n.variable) -> Distribution.disc(n.variable.dom, n.content.belief))
     val gradient = new SparseVector(1000)
@@ -69,7 +73,7 @@ abstract class GibbsSampler(val problem: Problem)
     MarginalResult(0.0, gradient, new MapBasedState(marginals.toMap))
   }
 
-  def sampleDiscNode(weights: FactorieVector, n: DiscNode, sample: Int, burnIn:Boolean = false) {
+  def sampleDiscNode(weights: FactorieVector, n: DiscNode, sample: Int, burnIn: Boolean = false) {
     fill(n.content.probs, 0.0)
     val oldSetting = n.setting
     for (i <- 0 until n.variable.dom.size) {
@@ -79,28 +83,28 @@ abstract class GibbsSampler(val problem: Problem)
     }
     expNormalize(n.content.probs)
     val newSetting = nextDiscrete(n.content.probs)
-    if (!burnIn && newSetting != oldSetting) {
-      syncAverage(n, sample)
+    if (newSetting != oldSetting) {
       n.setting = newSetting
-      for (edge <- n.edges; if edge.factor.pot.isLinear) {
-        syncStats(sample, edge.factor)
-      }
+      if (!burnIn) syncAverage(n, sample)
     }
   }
 
-  def syncStats(sample: Int, factor: FactorType) {
+
+  //f = (f' * (n-1) + newStats) / n = f' * (n-1)/n + newStats / n
+  def addStats(sample: Int, factor: FactorType) {
     val newStats = factor.pot.statsForCurrentSetting(factor)
-    factor.mean *= factor.lastUpdate
-    factor.mean +=(newStats, sample - factor.lastUpdate)
-    factor.mean *= 1.0 / sample
-    factor.lastUpdate = sample
+    if (sample == 0) factor.mean = new SparseVector(0)
+    factor.mean *= sample / (sample + 1)
+    factor.mean +=(newStats, 1.0 / (sample + 1))
   }
 
+  //a = (a' * (lastUpdate) + (now - lastUpdate) * newStats) / now =  a' * lastUpdate/now + (now-lastUpdate)/now * newValue
   def syncAverage(n: DiscNode, sample: Int) {
     if (sample > n.content.lastUpdate) {
       for (i <- 0 until n.variable.dom.size) {
-        val rate = if (i == n.setting) 1.0 else 0.0
-        n.content.belief(i) = (n.content.belief(i) * n.content.lastUpdate + rate * (sample - n.content.lastUpdate)) / sample
+        n.content.belief(i) *= n.content.lastUpdate.toDouble / sample
+        if (i== n.setting)
+          n.content.belief(i) += (sample - n.content.lastUpdate).toDouble  / sample
       }
       n.content.lastUpdate = sample
     }
