@@ -25,15 +25,15 @@ class GibbsSamplerSpecs extends WolfeSpec {
         new LinearPotential(Array(v1, v2), stats),
         new LinearPotential(Array(v2, v3), stats),
         new LinearPotential(Array(v3, v1), stats),
-        new TablePotential(Array(v1), Array(0.0, 5.0)),
-        new TablePotential(Array(v2), Array(0.0, 3.0))
+        new TablePotential(Array(v1), Array(0.0, 1.0)),
+        new TablePotential(Array(v2), Array(0.0, 1.0))
       )
       val problem = Problem(pots, Seq(v1, v2, v3))
       val sampler = new GibbsSampler(problem)
       val result = sampler.inferMarginals(1000, 0, weights)
       val expected = new BruteForce(problem).inferMarginals(weights)
-      println(result.marginals)
-      println(expected.marginals)
+      println(result.marginals.toPrettyString)
+      println(expected.marginals.toPrettyString)
 
     }
   }

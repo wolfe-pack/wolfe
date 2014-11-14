@@ -61,7 +61,8 @@ class BruteForce(val problem: Problem) extends NodeContentFG with EmptyFactorFG 
       gradient += f.pot.statsForCurrentSetting(f)
 
     val state = nodes.map(n => n.variable -> n.variable.dom(n.setting))
-    val maxMarginals = nodes.map(n => DiscBelief(n.variable) -> Distribution.disc(n.variable.dom, n.content.belief))
+    val maxMarginals = nodes.map(n =>
+      DiscBelief(n.variable) -> Distribution.disc(n.variable.dom, n.content.belief.map(math.exp)))
     MAPResult(new MapBasedState(state.toMap), maxScore, gradient, new MapBasedState(maxMarginals.toMap))
   }
 
@@ -95,7 +96,8 @@ class BruteForce(val problem: Problem) extends NodeContentFG with EmptyFactorFG 
         gradient +=(f.pot.statsForCurrentSetting(f), prob)
     }
 
-    val marginals = nodes.map(n => DiscBelief(n.variable) -> Distribution.disc(n.variable.dom, n.content.belief))
+    val marginals = nodes.map(n =>
+      DiscBelief(n.variable) -> Distribution.disc(n.variable.dom, n.content.belief.map(math.exp)))
     MarginalResult(logZ, gradient, new MapBasedState(marginals.toMap))
   }
 

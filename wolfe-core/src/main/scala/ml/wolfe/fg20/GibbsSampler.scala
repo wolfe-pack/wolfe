@@ -81,11 +81,12 @@ class GibbsSampler(val problem: Problem)
       for (e <- n.edges)
         n.content.probs(i) += e.factor.pot.score(e.factor, weights)
     }
+    n.setting = oldSetting
     expNormalize(n.content.probs)
     val newSetting = nextDiscrete(n.content.probs)
     if (newSetting != oldSetting) {
-      n.setting = newSetting
       if (!burnIn) syncAverage(n, sample)
+      n.setting = newSetting
     }
   }
 
@@ -103,8 +104,8 @@ class GibbsSampler(val problem: Problem)
     if (sample > n.content.lastUpdate) {
       for (i <- 0 until n.variable.dom.size) {
         n.content.belief(i) *= n.content.lastUpdate.toDouble / sample
-        if (i== n.setting)
-          n.content.belief(i) += (sample - n.content.lastUpdate).toDouble  / sample
+        if (i == n.setting)
+          n.content.belief(i) += (sample - n.content.lastUpdate).toDouble / sample
       }
       n.content.lastUpdate = sample
     }
