@@ -6,11 +6,13 @@ import ml.wolfe.MoreArrayOps._
 
 
 class BruteForce(val problem: Problem) extends NodeContentFG with EmptyFactorFG with EmptyEdgeFG {
-  type ContNodeContent = Nothing
   type NodeContent = Any
+  type ContNodeContent = Nothing
+  type VectNodeContent = Nothing
   class DiscNodeContent(var belief: Array[Double])
   def createDiscNodeContent(variable: DiscVar[Any]) = new DiscNodeContent(Array.ofDim[Double](variable.dom.size))
   def createContNodeContent(contVar: ContVar) = sys.error("Can't do brute force with continuous variables")
+  def createVectNodeContent(vectVar: VectVar) = sys.error("Can't do brute force with vector variables")
   def acceptPotential = { case p: Potential => p }
   type Pot = Potential
 

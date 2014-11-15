@@ -1,5 +1,6 @@
 package ml.wolfe.fg20
 
+import ml.wolfe.FactorieVector
 import ml.wolfe.fg.Junkify.Edge
 
 import scala.collection.mutable
@@ -29,28 +30,31 @@ trait FG {
 
   type DiscEdge <: TypedEdge[DiscNode] with EdgeType
   type ContEdge <: TypedEdge[ContNode] with EdgeType
+  type VectEdge <: TypedEdge[VectNode] with EdgeType
   type DiscNode <: BasicDiscNode with NodeType
   type ContNode <: BasicContNode with NodeType
+  type VectNode <: BasicVectNode with NodeType
 
   implicit def discEdgeTag: ClassTag[DiscEdge]
   implicit def contEdgeTag: ClassTag[ContEdge]
+  implicit def vectEdgeTag: ClassTag[VectEdge]
 
   trait BasicDiscNode extends TypedNode[DiscVar[Any], DiscEdge] {
     var setting  = 0
-    var observed = false
 
     def observe(setting:Int,observed:Boolean = true): Unit = {
       this.setting = setting
       this.observed = observed
     }
-
   }
 
   trait BasicContNode extends TypedNode[ContVar, ContEdge]  {
     var setting  = 0.0
-    var observed = false
   }
 
+  trait BasicVectNode extends TypedNode[VectVar, VectEdge] {
+    var setting:FactorieVector = null
+  }
 
   trait Node {
     def variable: Var[Any]
@@ -59,6 +63,7 @@ trait FG {
 
   abstract class TypedNode[V <: Var[Any], E <: EdgeType : ClassTag] extends Node {
     def variable: V
+    var observed = false
     def edgeList = edges.toList
     var edges: Array[E] = null
     var statsEdges: Array[E] = null
@@ -86,7 +91,8 @@ trait FG {
     def pot: Pot
     var discEdges: Array[DiscEdge] = null
     var contEdges: Array[ContEdge] = null
-    def edges = discEdges.iterator ++ contEdges.iterator
+    var vectEdges: Array[VectEdge] = null
+    def edges = discEdges.iterator ++ contEdges.iterator ++ vectEdges.iterator
 
   }
 
@@ -94,8 +100,10 @@ trait FG {
 
   def createDiscNode(v: DiscVar[Any]): DiscNode
   def createContNode(v: ContVar): ContNode
+  def createVectNode(v: VectVar): VectNode
   def createDiscEdge(n: DiscNode, f: FactorType, index: Int): DiscEdge
   def createContEdge(n: ContNode, f: FactorType, index: Int): ContEdge
+  def createVectEdge(n: VectNode, f: FactorType, index: Int): VectEdge
   def createFactor(pot: Pot): FactorType
 
   def acceptPotential: PartialFunction[Potential, Pot]
@@ -107,23 +115,27 @@ trait FG {
     val factor = createFactor(p)
     createDiscEdges(factor,linkEdges)
     createContEdges(factor,linkEdges)
+    createVectEdges(factor,linkEdges)
     factor
   }
 
-  def nodes = var2DiscNode.values.iterator ++ var2ContNode.values.iterator
-  def discNodes = var2DiscNode.valuesIterator
-  def contNodes = var2ContNode.valuesIterator
+  def nodes = var2DiscNode.values.iterator ++ var2ContNode.values.iterator ++ var2VectNode.values.iterator
   def edges = factors.iterator.flatMap(_.edges)
 
+  def discNodes = var2DiscNode.valuesIterator
+  def contNodes = var2ContNode.valuesIterator
+  def vectNodes = var2DiscNode.valuesIterator
 
   val var2DiscNode = createDiscNodes()
   val var2ContNode = createContNodes()
+  val var2VectNode = createVectNodes()
 
   val factors = problem.pots.map(p => createAndLinkFactor(checkPot(p)))
   val statsFactors = problem.stats.map(p => createAndLinkFactor(checkPot(p),false))
 
   var2DiscNode.values.foreach(_.build())
   var2ContNode.values.foreach(_.build())
+  var2VectNode.values.foreach(_.build())
 
   setObservations()
 
@@ -155,6 +167,15 @@ trait FG {
     else factor.contEdges.foreach(e => e.node.statsEdgeBuffer ::= e)
   }
 
+  private def createVectEdges(factor: FactorType,linkToNormalFactors:Boolean = true): Unit = {
+    val result = new ArrayBuffer[VectEdge]
+    for ((v, i) <- factor.pot.vectVars.zipWithIndex) result += createVectEdge(var2VectNode(v), factor, i)
+    factor.vectEdges = result.toArray[VectEdge](vectEdgeTag)
+    if (linkToNormalFactors) factor.vectEdges.foreach(e => e.node.buffer ::= e)
+    else factor.vectEdges.foreach(e => e.node.statsEdgeBuffer ::= e)
+  }
+
+
 
   private def createDiscNodes() = {
     val map = new mutable.HashMap[DiscVar[Any], DiscNode]
@@ -167,6 +188,13 @@ trait FG {
     for (v <- problem.contVars) map(v) = createContNode(v)
     Map() ++ map
   }
+
+  private def createVectNodes() = {
+    val map = new mutable.HashMap[VectVar, VectNode]
+    for (v <- problem.vectVars) map(v) = createVectNode(v)
+    Map() ++ map
+  }
+
 
 
 }

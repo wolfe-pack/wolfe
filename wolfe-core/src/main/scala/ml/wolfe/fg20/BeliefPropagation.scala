@@ -51,6 +51,10 @@ trait BeliefPropagationFG extends Residuals with NodeContentFG {
   class ContNodeContent(var mean: Double = 0.0,
                         var dev: Double = 0.0)
 
+  class VectNodeContent(var mean: FactorieVector = null,
+                        var dev: FactorieVector = null)
+
+
   class DiscMsgs(size: Int) extends Msgs {
     val f2n     = Array.ofDim[Double](size)
     val n2f     = Array.ofDim[Double](size)
@@ -73,11 +77,20 @@ trait BeliefPropagationFG extends Residuals with NodeContentFG {
     def residual() = 0.0
   }
 
-  def createDiscMsgs(variable: DiscVar[Any]) = new DiscMsgs(variable.dom.size)
+  class VectMsgs() extends Msgs {
+    def saveCurrentAsLast() = {}
+    def residual() = 0.0
+  }
+
+
+
   def createDiscNodeContent(variable: DiscVar[Any]) = new DiscNodeContent(Array.ofDim[Double](variable.dom.size))
   def createContNodeContent(contVar: ContVar) = new ContNodeContent()
-  def createContMsgs(contVar: ContVar) = new ContMsgs()
+  def createVectNodeContent(vectVar: VectVar) = new VectNodeContent()
 
+  def createDiscMsgs(variable: DiscVar[Any]) = new DiscMsgs(variable.dom.size)
+  def createContMsgs(contVar: ContVar) = new ContMsgs()
+  def createVectMsgs(vectVar: VectVar) = new VectMsgs()
 
   def updateN2F(edge: Edge) = {
     edge match {
