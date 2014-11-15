@@ -15,8 +15,12 @@ class GradientBasedOptimizer(val problem: Problem) extends EdgeMsgsFG with Empty
   class Msgs
   class DiscMsgs() extends Msgs
   class ContMsgs(var current: Double = 0.0, var gradient: Double = 0.0) extends Msgs
+  class VectMsgs(var current: FactorieVector = null, var gradient: FactorieVector = null) extends Msgs
+
   def createDiscMsgs(variable: DiscVar[Any]) = new DiscMsgs
   def createContMsgs(variable: ContVar) = new ContMsgs()
+  def createVectMsgs(variable: VectVar) = new VectMsgs()
+
   type Pot = GradientBasedOptimizer.Potential
   def acceptPotential = { case p: GradientBasedOptimizer.Potential => p }
 

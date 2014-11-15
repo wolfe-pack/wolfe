@@ -24,6 +24,11 @@ class GibbsSampler(val problem: Problem)
     var lastUpdate = -1
   }
 
+
+  final class VectNodeContent() extends NodeContent {
+    var mean: FactorieVector = null
+  }
+
   final class FactorType(val pot: Pot) extends Factor {
     var mean: FactorieVector = null
   }
@@ -36,6 +41,7 @@ class GibbsSampler(val problem: Problem)
 
   def createDiscNodeContent(variable: DiscVar[Any]) = new DiscNodeContent(variable.dom.size)
   def createContNodeContent(contVar: ContVar) = new ContNodeContent
+  def createVectNodeContent(vectVar: VectVar) = new VectNodeContent
 
   def inferMarginals(samples: Int, burnIn: Int = 0, weights: FactorieVector) = {
 

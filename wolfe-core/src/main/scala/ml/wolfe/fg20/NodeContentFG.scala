@@ -14,29 +14,40 @@ trait NodeContentFG extends FG {
   type NodeContent
   type DiscNodeContent <: NodeContent
   type ContNodeContent <: NodeContent
+  type VectNodeContent <: NodeContent
+
   trait NodeType extends Node {
     def content: NodeContent
   }
   final class DiscNode(val variable: DiscVar[Any], val content: DiscNodeContent) extends BasicDiscNode with NodeType
   final class ContNode(val variable: ContVar, val content: ContNodeContent) extends BasicContNode with NodeType
+  final class VectNode(val variable: VectVar, val content: VectNodeContent) extends BasicVectNode with NodeType
+
 
   def createDiscNodeContent(variable: DiscVar[Any]): DiscNodeContent
   def createContNodeContent(contVar: ContVar): ContNodeContent
+  def createVectNodeContent(vectVar: VectVar): VectNodeContent
+
   def createDiscNode(v: DiscVar[Any]) = new DiscNode(v, createDiscNodeContent(v))
   def createContNode(v: ContVar) = new ContNode(v, createContNodeContent(v))
+  def createVectNode(v: VectVar) = new VectNode(v, createVectNodeContent(v))
+
 }
 
 trait EdgeMsgsFG extends FG {
   type Msgs
   type DiscMsgs <: Msgs
   type ContMsgs <: Msgs
+  type VectMsgs <: Msgs
 
   def createDiscMsgs(variable: DiscVar[Any]): DiscMsgs
   def createContMsgs(variable: ContVar): ContMsgs
+  def createVectMsgs(variable: VectVar): VectMsgs
+
 
   def discEdgeTag = reflect.classTag[DiscEdge]
   def contEdgeTag = reflect.classTag[ContEdge]
-
+  def vectEdgeTag = reflect.classTag[VectEdge]
 
   trait EdgeType extends Edge {
     def msgs: Msgs
@@ -56,8 +67,15 @@ trait EdgeMsgsFG extends FG {
                        val index: Int,
                        val msgs: ContMsgs) extends TypedEdgeWithMsgs[ContNode, ContMsgs]
 
+  final class VectEdge(val node: VectNode,
+                       val factor: FactorType,
+                       val index: Int,
+                       val msgs: VectMsgs) extends TypedEdgeWithMsgs[VectNode, VectMsgs]
+
+
   def createDiscEdge(n: DiscNode, f: FactorType, index: Int) = new DiscEdge(n, f, index, createDiscMsgs(n.variable))
   def createContEdge(n: ContNode, f: FactorType, index: Int) = new ContEdge(n, f, index, createContMsgs(n.variable))
+  def createVectEdge(n: VectNode, f: FactorType, index: Int) = new VectEdge(n, f, index, createVectMsgs(n.variable))
 }
 
 trait EmptyEdgeFG extends FG {
@@ -71,11 +89,18 @@ trait EmptyEdgeFG extends FG {
                        val factor: FactorType,
                        val index: Int) extends TypedEdge[ContNode] with EdgeType
 
+  final class VectEdge(val node: VectNode,
+                       val factor: FactorType,
+                       val index: Int) extends TypedEdge[VectNode] with EdgeType
+
+
   def createDiscEdge(n: DiscNode, f: FactorType, index: Int) = new DiscEdge(n, f, index)
   def createContEdge(n: ContNode, f: FactorType, index: Int) = new ContEdge(n, f, index)
+  def createVectEdge(n: VectNode, f: FactorType, index: Int) = new VectEdge(n, f, index)
 
   def discEdgeTag = reflect.classTag[DiscEdge]
   def contEdgeTag = reflect.classTag[ContEdge]
+  def vectEdgeTag = reflect.classTag[VectEdge]
 
 }
 
@@ -88,6 +113,9 @@ trait EmptyNodeFG extends FG {
   trait NodeType extends Node
   final class DiscNode(val variable: DiscVar[Any]) extends BasicDiscNode with NodeType
   final class ContNode(val variable: ContVar) extends BasicContNode with NodeType
+  final class VectNode(val variable: VectVar) extends BasicVectNode with NodeType
   def createDiscNode(v: DiscVar[Any]) = new DiscNode(v)
   def createContNode(v: ContVar) = new ContNode(v)
+  def createVectNode(v: VectVar) = new VectNode(v)
 }
+
