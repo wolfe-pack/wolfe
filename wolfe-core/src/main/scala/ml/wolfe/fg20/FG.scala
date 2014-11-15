@@ -124,7 +124,7 @@ trait FG {
 
   def discNodes = var2DiscNode.valuesIterator
   def contNodes = var2ContNode.valuesIterator
-  def vectNodes = var2DiscNode.valuesIterator
+  def vectNodes = var2VectNode.valuesIterator
 
   val var2DiscNode = createDiscNodes()
   val var2ContNode = createContNodes()

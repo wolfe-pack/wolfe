@@ -13,11 +13,11 @@ import scala.collection.mutable
  */
 class GradientBasedOptimizer(val problem: Problem) extends EdgeMsgsFG with EmptyFactorFG with EmptyNodeFG {
   class Msgs
-  class DiscMsgs() extends Msgs
+  type DiscMsgs = Nothing
   class ContMsgs(var current: Double = 0.0, var gradient: Double = 0.0) extends Msgs
   class VectMsgs(var current: FactorieVector = null, var gradient: FactorieVector = null) extends Msgs
 
-  def createDiscMsgs(variable: DiscVar[Any]) = new DiscMsgs
+  def createDiscMsgs(variable: DiscVar[Any]) = sys.error("Can't do gradient ascent with discrete variables")
   def createContMsgs(variable: ContVar) = new ContMsgs()
   def createVectMsgs(variable: VectVar) = new VectMsgs()
 
@@ -30,16 +30,26 @@ class GradientBasedOptimizer(val problem: Problem) extends EdgeMsgsFG with Empty
     for (n <- contNodes) {
       weightsKeys(n) = weightsSet.newWeights(new DenseTensor1(Array(n.setting)))
     }
+    for (n <- vectNodes) {
+      weightsKeys(n) = weightsSet.newWeights(n.setting)
+    }
     val examples = for (f <- factors) yield new Example {
       val factor = f
       def accumulateValueAndGradient(value: DoubleAccumulator, gradient: WeightsMapAccumulator) = {
         for (e <- f.contEdges) {
           e.msgs.current = weightsSet(weightsKeys(e.node)).asInstanceOf[FactorieVector](0)
         }
+        for (e <- f.vectEdges) {
+          e.msgs.current = weightsSet(weightsKeys(e.node)).asInstanceOf[FactorieVector]
+        }
         val v = f.pot.gradientAndValue(f)
         for (e <- f.contEdges) {
           gradient.accumulate(weightsKeys(e.node),new DenseTensor1(Array(e.msgs.gradient)), 1.0)
         }
+        for (e <- f.vectEdges) {
+          gradient.accumulate(weightsKeys(e.node),e.msgs.gradient, 1.0)
+        }
+
         value.accumulate(v)
       }
     }
@@ -50,8 +60,13 @@ class GradientBasedOptimizer(val problem: Problem) extends EdgeMsgsFG with Empty
     for (n <- contNodes) {
       n.setting = weightsSet(weightsKeys(n)).asInstanceOf[FactorieVector](0)
     }
+    for (n <- vectNodes) {
+      n.setting = weightsSet(weightsKeys(n)).asInstanceOf[FactorieVector]
+    }
+    val objective = factors.iterator.map(f => f.pot.score(f,new DenseVector(Array.empty[Double]))).sum
     val contState = contNodes.map(n => n.variable -> n.setting).toMap[Var[Any],Any]
-    ArgmaxResult(State(contState),0.0)
+    val vectState = vectNodes.map(n => n.variable -> n.setting).toMap[Var[Any],Any]
+    ArgmaxResult(State(contState ++ vectState),objective)
   }
 
 }
