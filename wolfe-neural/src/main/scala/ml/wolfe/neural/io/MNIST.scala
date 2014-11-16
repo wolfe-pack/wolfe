@@ -1,13 +1,90 @@
 package ml.wolfe.neural.io
 
-import cc.factorie.la.{Tensor => TensorTrait, Tensor2}
+import breeze.linalg.DenseMatrix
+import java.io.{FileInputStream, DataInputStream}
+import scala.collection.mutable.ArrayBuffer
 
-import swing.Swing._
-import swing._
-import scala.swing.event.WindowClosing
-import java.awt.{AlphaComposite, Color}
-import ml.wolfe.neural.{FactorieVector, FactorieTensor, FactorieMatrix}
+// Adapted to Scala from Gabe Johnson's code:
+// https://code.google.com/p/pen-ui/source/browse/trunk/skrui/src/org/six11/skrui/charrec/MNISTReader.java
 
+class MNISTReader(dataFile: String, labelFile: String) extends Iterable[(DenseMatrix[Double], Double)] {
+
+  def iterator = {
+    val labels = new DataInputStream(new FileInputStream(labelFile))
+    val images = new DataInputStream(new FileInputStream(dataFile))
+    val magicNumber1 = labels.readInt()
+    if (magicNumber1 != 2049) {
+      System.err.println("Label file has wrong magic number: " + magicNumber1 + " (should be 2049)")
+      System.exit(0)
+    }
+    val magicNumber2 = images.readInt()
+    if (magicNumber2 != 2051) {
+      System.err.println("Image file has wrong magic number: " + magicNumber2 + " (should be 2051)")
+      System.exit(0)
+    }
+    val numLabels = labels.readInt()
+    val numImages = images.readInt()
+    val numRows = images.readInt()
+    val numCols = images.readInt()
+    println("num labels = " + numLabels)
+    println("num images = " + numImages)
+    println("num rows = " + numRows)
+    println("num cols = " + numCols)
+    if (numLabels != numImages) {
+      System.err.println("Image file and label file do not contain the same number of entries.")
+      System.err.println("  Label file contains: " + numLabels)
+      System.err.println("  Image file contains: " + numImages)
+      System.exit(0)
+    }
+
+    val start = System.currentTimeMillis()
+    var numLabelsRead = 0
+    var numImagesRead = 0
+    val pairs = new ArrayBuffer[(DenseMatrix[Double], Double)]
+    while (labels.available() > 0 && numLabelsRead < numLabels) {
+      val labelByte = labels.readByte()
+      numLabelsRead += 1
+      val image = Array.ofDim[Double](numCols, numRows)
+      for (colIdx <- 0 until numCols) {
+        for (rowIdx <- 0 until numRows) {
+          image(colIdx)(rowIdx) = anyToDouble(images.readUnsignedByte())
+        }
+      }
+      numImagesRead += 1
+      val matrix = DenseMatrix(image.flatten)
+      // println(image.map(_.mkString(", ")).mkString("\n"))
+      pairs += ((matrix, anyToDouble(labelByte)))
+
+      // At this point, 'label' and 'image' agree and you can do whatever you like with them.
+
+      if (numLabelsRead % 10 == 0) {
+        System.out.print(".")
+      }
+      if ((numLabelsRead % 800) == 0) {
+        System.out.print(" " + numLabelsRead + " / " + numLabels)
+        val end = System.currentTimeMillis()
+        val elapsed = end - start
+        val minutes = elapsed / (1000 * 60)
+        val seconds = (elapsed / 1000) - (minutes * 60)
+        System.out.println("  " + minutes + " m " + seconds + " s ")
+      }
+    }
+    pairs.iterator
+  }
+
+  def anyToDouble(value: AnyVal): Double = value match {
+    case b: Byte => b.toDouble
+    case s: Short => s.toDouble
+    case i: Int => i.toDouble
+    case f: Float => f.toDouble
+    case d: Double => d
+  }
+}
+
+
+
+
+/*
 /**
 * User: rockt
 * Date: 11/20/13
@@ -85,3 +162,5 @@ class MNISTFrame(digits: Seq[Digit], rows: Int, cols: Int) extends Frame {
     }
   }
 }
+
+*/

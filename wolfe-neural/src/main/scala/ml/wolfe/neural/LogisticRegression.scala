@@ -15,16 +15,16 @@ import ml.wolfe.neural.math._
 
 
 
-
-class LogisticRegression(var W: DenseMatrix[Double],
-                         var b: DenseVector[Double],
-                         activation: (DenseMatrix[Double] => DenseMatrix[Double])) extends OutputLayer {
+/*
+class LogisticRegression(override var W: DenseMatrix[Double],
+                         override var b: DenseVector[Double],
+                         override val activation: (DenseMatrix[Double] => DenseMatrix[Double])) extends OutputLayer(W, b, activation) {
 
   //math.softmax
 
   // variable, as it can be changed
 
-  var X: DenseMatrix[Double] = null
+  override var X: DenseMatrix[Double] = null
 
   // TODO implement generic prediction function (output function application)
 
@@ -79,3 +79,5 @@ class LogisticRegression(var W: DenseMatrix[Double],
 
 }
 
+
+*/
