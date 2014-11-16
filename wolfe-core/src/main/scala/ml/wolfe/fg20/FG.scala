@@ -24,20 +24,54 @@ trait FG {
    */
   type Pot <: Potential
 
+  /**
+   * The factor type specifies the type of factors used in the FG. Subclasses can use this to store
+   * additional information in factors, such as statistics gathered in sampling, or a buffer that can be used
+   * for efficient calculation of outgoing messages.
+   */
   type FactorType <: Factor
+
+  /**
+   * Of what type are the edges between nodes and factors. Edges can contain messages, current gradients of variables
+   * etc.
+   */
   type EdgeType <: Edge
+
+  /**
+   * Of what type are the nodes in the factor graph. Subclasses can store additional information, such as inference
+   * results or counts etc.
+   */
   type NodeType <: Node
 
+  /**
+   * Edges between discrete nodes and factors.
+   */
   type DiscEdge <: TypedEdge[DiscNode] with EdgeType
-  type ContEdge <: TypedEdge[ContNode] with EdgeType
-  type VectEdge <: TypedEdge[VectNode] with EdgeType
-  type DiscNode <: BasicDiscNode with NodeType
-  type ContNode <: BasicContNode with NodeType
-  type VectNode <: BasicVectNode with NodeType
 
-  implicit def discEdgeTag: ClassTag[DiscEdge]
-  implicit def contEdgeTag: ClassTag[ContEdge]
-  implicit def vectEdgeTag: ClassTag[VectEdge]
+  /**
+   * Edges between continuous nodes and factors.
+   */
+  type ContEdge <: TypedEdge[ContNode] with EdgeType
+
+  /**
+   * Edges between vector nodes and factors.
+   */
+  type VectEdge <: TypedEdge[VectNode] with EdgeType
+
+  /**
+   * A Node representing a discrete variable.
+   */
+  type DiscNode <: BasicDiscNode with NodeType
+
+  /**
+   * A Node representing a continuous variable.
+   */
+  type ContNode <: BasicContNode with NodeType
+
+  /**
+   * A Node representing a vector variable.
+   */
+  type VectNode <: BasicVectNode with NodeType
 
   trait BasicDiscNode extends TypedNode[DiscVar[Any], DiscEdge] {
     var setting  = 0
@@ -194,6 +228,13 @@ trait FG {
     for (v <- problem.vectVars) map(v) = createVectNode(v)
     Map() ++ map
   }
+
+
+
+  //class tags allow us to create edge arrays without know the concrete array element class yet.
+  implicit def discEdgeTag: ClassTag[DiscEdge]
+  implicit def contEdgeTag: ClassTag[ContEdge]
+  implicit def vectEdgeTag: ClassTag[VectEdge]
 
 
 
