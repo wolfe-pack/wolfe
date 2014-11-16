@@ -8,7 +8,7 @@ trait Var[+T] {
 }
 class DiscVar[+T](val dom: Seq[T],val name:String = "anon") extends Var[T]
 class ContVar(val name:String = "anon") extends Var[Double]
-class VectVar(val name:String = "anon") extends Var[FactorieVector]
+class VectVar(val dim:Int, val name:String = "anon") extends Var[FactorieVector]
 
 
 trait Potential {
