@@ -84,7 +84,9 @@ case class DiscDistribution[T](domain:Seq[T], map:Map[T,Double]) extends Distrib
 
 
 
-case class DiscBelief[T](variable:DiscVar[T]) extends Var[DiscDistribution[T]]
+case class DiscBelief[T](variable:DiscVar[T]) extends Var[DiscDistribution[T]] {
+  def name = s"belief(${variable.name})"
+}
 
 
 /**

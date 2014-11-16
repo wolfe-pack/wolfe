@@ -2,12 +2,13 @@ package ml.wolfe.fg20
 
 import ml.wolfe._
 
-trait Var[+T]
-class DiscVar[+T](val dom: Seq[T],val name:String = "anon") extends Var[T] {
-  override def toString = name
+trait Var[+T] {
+  def name:String
+  override def toString = if (name != "anon") name else super.toString
 }
-class ContVar extends Var[Double]
-class VectVar extends Var[FactorieVector]
+class DiscVar[+T](val dom: Seq[T],val name:String = "anon") extends Var[T]
+class ContVar(val name:String = "anon") extends Var[Double]
+class VectVar(val name:String = "anon") extends Var[FactorieVector]
 
 
 trait Potential {
@@ -25,8 +26,9 @@ trait Potential {
   def hasNoVectVars = sys.error("This potential has no vector variables")
   def isNotLinear = sys.error("This potential is not linear")
 
-
 }
+
+
 
 trait DiscPotential extends Potential {
   def contVars = Array.empty
@@ -34,7 +36,7 @@ trait DiscPotential extends Potential {
 }
 
 case class Problem(pots: Seq[Potential],
-                   discVars: Seq[DiscVar[Any]],
+                   discVars: Seq[DiscVar[Any]] = Seq.empty,
                    contVars: Seq[ContVar] = Seq.empty,
                    vectVars: Seq[VectVar] = Seq.empty,
                    observation:State = State.empty,

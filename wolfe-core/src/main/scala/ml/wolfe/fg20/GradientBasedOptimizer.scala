@@ -2,7 +2,7 @@ package ml.wolfe.fg20
 
 import cc.factorie.la.{DenseTensor1, WeightsMapAccumulator}
 import cc.factorie.model.{Weights, WeightsSet}
-import cc.factorie.optimize.{Example, Trainer}
+import cc.factorie.optimize.{AdaGrad, OnlineTrainer, Example, Trainer}
 import cc.factorie.util.DoubleAccumulator
 import ml.wolfe._
 
@@ -14,8 +14,8 @@ import scala.collection.mutable
 class GradientBasedOptimizer(val problem: Problem) extends EdgeMsgsFG with EmptyFactorFG with EmptyNodeFG {
   class Msgs
   type DiscMsgs = Nothing
-  class ContMsgs(var current: Double = 0.0, var gradient: Double = 0.0) extends Msgs
-  class VectMsgs(var current: FactorieVector = null, var gradient: FactorieVector = null) extends Msgs
+  class ContMsgs(var gradient: Double = 0.0) extends Msgs
+  class VectMsgs(var gradient: FactorieVector = null) extends Msgs
 
   def createDiscMsgs(variable: DiscVar[Any]) = sys.error("Can't do gradient ascent with discrete variables")
   def createContMsgs(variable: ContVar) = new ContMsgs()
@@ -24,7 +24,7 @@ class GradientBasedOptimizer(val problem: Problem) extends EdgeMsgsFG with Empty
   type Pot = GradientBasedOptimizer.Potential
   def acceptPotential = { case p: GradientBasedOptimizer.Potential => p }
 
-  def argmax(trainer: WeightsSet => Trainer):ArgmaxResult = {
+  def argmax(trainer: WeightsSet => Trainer = w => new OnlineTrainer(w,new AdaGrad(),100)):ArgmaxResult = {
     val weightsSet = new WeightsSet
     val weightsKeys = new mutable.HashMap[Node, Weights]()
     for (n <- contNodes) {
@@ -37,10 +37,10 @@ class GradientBasedOptimizer(val problem: Problem) extends EdgeMsgsFG with Empty
       val factor = f
       def accumulateValueAndGradient(value: DoubleAccumulator, gradient: WeightsMapAccumulator) = {
         for (e <- f.contEdges) {
-          e.msgs.current = weightsSet(weightsKeys(e.node)).asInstanceOf[FactorieVector](0)
+          e.node.setting = weightsSet(weightsKeys(e.node)).asInstanceOf[FactorieVector](0)
         }
         for (e <- f.vectEdges) {
-          e.msgs.current = weightsSet(weightsKeys(e.node)).asInstanceOf[FactorieVector]
+          e.node.setting = weightsSet(weightsKeys(e.node)).asInstanceOf[FactorieVector]
         }
         val v = f.pot.gradientAndValue(f)
         for (e <- f.contEdges) {
