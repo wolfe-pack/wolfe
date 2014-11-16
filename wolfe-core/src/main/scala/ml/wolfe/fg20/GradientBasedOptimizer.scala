@@ -24,13 +24,19 @@ class GradientBasedOptimizer(val problem: Problem) extends EdgeMsgsFG with Empty
   type Pot = GradientBasedOptimizer.Potential
   def acceptPotential = { case p: GradientBasedOptimizer.Potential => p }
 
-  def argmax(trainer: WeightsSet => Trainer = w => new OnlineTrainer(w,new AdaGrad(),100)):ArgmaxResult = {
+  def argmax(trainer: WeightsSet => Trainer = w => new OnlineTrainer(w,new AdaGrad(),100),
+             init:State = State.empty):ArgmaxResult = {
     val weightsSet = new WeightsSet
     val weightsKeys = new mutable.HashMap[Node, Weights]()
+
     for (n <- contNodes) {
       weightsKeys(n) = weightsSet.newWeights(new DenseTensor1(Array(n.setting)))
     }
     for (n <- vectNodes) {
+      n.setting = init.get(n.variable) match {
+        case Some(v) => v
+        case None => new DenseVector(n.variable.dim)
+      }
       weightsKeys(n) = weightsSet.newWeights(n.setting)
     }
     val examples = for (f <- factors) yield new Example {
