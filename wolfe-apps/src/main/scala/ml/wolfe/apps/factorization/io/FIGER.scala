@@ -185,7 +185,7 @@ object EvaluateFIGER {
       new File(pathToPredictions) -> "Ours",
       new File("data/figer/figer.csv") -> "Figer"
     )
-    evaluate(rankFileNames, annotations.keys.toSet, pathToEvaluationOutput, 100)
+    evaluate(rankFileNames, annotations.keys.toSet, pathToEvaluationOutput + "/", 100)
   }
 }
 
