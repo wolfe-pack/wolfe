@@ -53,9 +53,10 @@ case class Sentence(tokens: IndexedSeq[Token], syntax: SyntaxAnnotation = Syntax
  * @param ir information retrieval annotations for document.
  */
 case class Document(source: String,
-                    sentences: Seq[Sentence],
-                    filename:Option[String] = None,
-                    ir:IRAnnotation = IRAnnotation.empty) {
+                    sentences: IndexedSeq[Sentence],
+                    filename: Option[String] = None,
+                    ir: IRAnnotation = IRAnnotation.empty,
+                    coref: CorefAnnotation = CorefAnnotation.empty) {
 
   def toText = sentences map (_.toText) mkString "\n"
   def toTaggedText = sentences map (_.toTaggedText) mkString "\n"
@@ -64,6 +65,27 @@ case class Document(source: String,
     g.link1toNOrdered[Document,Sentence,Seq[Sentence]]('sentences, this, sentences)
 
 }
+
+/**
+ * Class to represent coreference annotation
+ * @param mentions sequence of CorefMention elements
+ */
+case class CorefAnnotation(mentions: Seq[CorefMention] = Seq.empty)
+
+object CorefAnnotation {
+  val empty = CorefAnnotation()
+
+}
+
+/**
+ * Class to represent coreference mention
+ * @param clusterID ID of the cluster (chain) of connected mentions
+ * @param sentence sentence index
+ * @param head head of the coreference mention
+ * @param start starting index
+ * @param end ending index (points to the first token AFTER the mention)
+ */
+case class CorefMention(clusterID: Int, sentence: Int, head: Int, start: Int, end: Int)
 
 /**
  * Class to represent IR information for a document
@@ -80,17 +102,19 @@ object IRAnnotation {
 
 object Data {
   def main(args: Array[String]) {
-    val source = "My name is Wolfe."
+    val source = "Sally met Harry. She was a girl. He was not."
 
-    val result = SISTAProcessors.mkDocument(source)
+    val result = SISTAProcessors.annotate(source, true, true, true, true, true, true)
+
+    println("coreference result: " + result.coref)
 
     implicit val graph = new SimpleObjectGraph
 
     val s = result.sentences.head
     //s.linkTokens(graph) //build graph
 
-    println(s.tokens.head.sentence == s)
-    println(s.tokens.head.next.get == s.tokens(1))
+    //println(s.tokens.head.sentence == s)
+    //println(s.tokens.head.next.get == s.tokens(1))
 
     //    val result2 = SISTAProcessors.annotate(source)
     //

@@ -76,7 +76,7 @@ object LoadBioNLP extends App {
 
         Sentence(wolfeTokens, syntax = new SyntaxAnnotation(ConstituentTree.empty, wolfeDependencyTree), ie = new IEAnnotation(wolfeMentions, IndexedSeq(), wolfeEventCandidates))
       }
-    Document(txt, wolfeSentences)
+    Document(txt, wolfeSentences.toIndexedSeq)
   }
 }
 
