@@ -3,7 +3,7 @@ package ml.wolfe.apps.factorization
 import java.io.{File, FileWriter}
 
 import cc.factorie.optimize._
-import ml.wolfe.apps.factorization.io.{EvaluateNAACL, LoadNAACL, WriteNAACL}
+import ml.wolfe.apps.factorization.io._
 import ml.wolfe.fg.{L2Regularization, _}
 import ml.wolfe.util.{Conf, ProgressLogging, Timer}
 import ml.wolfe.{DenseVector, GradientBasedOptimizer, Wolfe}
@@ -25,6 +25,9 @@ object MatrixFactorization extends App {
   Conf.outDir //sets up output directory
   implicit val conf = Conf
   println("Using " + confPath)
+
+  val dataType = conf.getString("dataType")
+  assert(dataType == "naacl" || dataType == "figer", s"dataType $dataType should be 'naacl' or 'figer'.")
 
   val outputPath = conf.getString("outDir")
   val fileName = conf.getString("mf.outFile")
@@ -54,7 +57,10 @@ object MatrixFactorization extends App {
       tmp += ImplNeg("r8", "r6")
     }
     tmp
-  } else LoadNAACL(k, subsample)
+  } else dataType match {
+    case "naacl" => LoadNAACL(k, subsample)
+    case "figer" => LoadFIGER(k, subsample)
+  }
 
   val rand = new Random(0l)
 
@@ -172,16 +178,24 @@ object MatrixFactorization extends App {
   } else {
     Conf.createSymbolicLinkToLatest() //rewire symbolic link to latest (in case it got overwritten)
     val pathToPredict = Conf.outDir.getAbsolutePath + "/" + fileName
-    WriteNAACL(db, pathToPredict)
-    EvaluateNAACL.main(Array("./conf/eval.conf", pathToPredict))
+    dataType match {
+      case "naacl" => {
+        WriteNAACL(db, pathToPredict)
+        EvaluateNAACL.main(Array("./conf/eval.conf", pathToPredict))
+      }
+      case "figer" => {
+        WriteFIGER(db, pathToPredict)
+        EvaluateFIGER.main(Array("./conf/eval.conf", pathToPredict))
+      }
+    }
 
     db.writeVectors(Conf.outDir.getAbsolutePath + "/vectors.tsv")
     
     import scala.sys.process._
     Process("pdflatex -interaction nonstopmode -shell-escape table.tex", new File(Conf.outDir.getAbsolutePath)).!!
 
-    if (Conf.hasPath("formulaeFile") && Conf.getString("formulaeFile") != "None") {
-      val formulaeFile = new File(Conf.getString("formulaeFile"))
+    if (Conf.hasPath(dataType + ".formulaeFile") && Conf.getString(dataType + ".formulaeFile") != "None") {
+      val formulaeFile = new File(Conf.getString(dataType + ".formulaeFile"))
       val lines = Source.fromFile(formulaeFile).getLines()
       val writer = new FileWriter(Conf.outDir.getAbsolutePath + "/" + formulaeFile.getAbsolutePath.split("/").last)
       writer.write(lines.mkString("\n"))

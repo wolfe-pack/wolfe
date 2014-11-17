@@ -650,8 +650,8 @@ object LoadNAACL extends App {
     }
 
     //loading formulae
-    if (Conf.hasPath("formulaeFile") && Conf.getString("formulaeFile") != "None") {
-      val formulaePath = Conf.getString("formulaeFile")
+    if (Conf.hasPath("naacl.formulaeFile") && Conf.getString("naacl.formulaeFile") != "None") {
+      val formulaePath = Conf.getString("naacl.formulaeFile")
       println("Loading formulae form " + formulaePath)
 
       val lines = Source.fromFile(formulaePath).getLines()
