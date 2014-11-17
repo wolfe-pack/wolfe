@@ -1,6 +1,6 @@
 package ml.wolfe.neural
 
-import breeze.linalg.{DenseVector, DenseMatrix}
+import breeze.linalg.{DenseVector, DenseMatrix, sum}
 import scala.math._
 import breeze.stats.distributions.Rand
 
@@ -12,7 +12,7 @@ package object math {
   def argmax(M: DenseMatrix[Double]): DenseVector[Double] = {
     val ret = DenseVector.zeros[Double](M.rows)
     for (i <- 0 to M.rows-1) {
-      ret(i) = M(i, ::).inner.argmax
+      ret(i) = breeze.linalg.argmax(M(i, ::).inner)
     }
     ret
   }
@@ -30,13 +30,13 @@ package object math {
   object RegularizationFunctions {
     def LpRegularization(v: DenseVector[Double], p: Double): Double = {
       def Lp_fun: (Double => Double) = x => scala.math.pow(scala.math.abs(x), p)
-      scala.math.pow(v.map(Lp_fun).sum, 1.0 / p)
+      scala.math.pow(sum(v.map(Lp_fun)), 1.0 / p)
     }
     def L1Regularization(v: DenseVector[Double]): Double = {
-      scala.math.pow(v.map(x => x * x).sum, 0.5)
+      scala.math.pow(sum(v.map(x => x * x)), 0.5)
     }
     def L2Regularization(v: DenseVector[Double]): Double = {
-      v.map(scala.math.abs).sum
+      sum(v.map(scala.math.abs))
     }
 
   }
@@ -48,7 +48,7 @@ package object math {
     def softmax(M: DenseMatrix[Double]): DenseMatrix[Double] = {
       for (i <- 0 to M.rows-1) {
         val exprow = M(i,::).inner.map(scala.math.exp(_))
-        M(i,::) := exprow.t / exprow.sum
+        M(i,::) := exprow.t / sum(exprow)
       }
       M
     }
@@ -56,7 +56,9 @@ package object math {
 
     // vector-based activation functions
 
-    def softmax(v: DenseVector[Double]) = v.map(exp(_)) / v.sum
+
+
+    def softmax(v: DenseVector[Double]) = v.map(exp(_)) / sum(v)
     def δ_softmax(v: DenseVector[Double], i: Int, j: Int) = v(i) * (kroneckerDelta(i,j) - v(j))
 
 
