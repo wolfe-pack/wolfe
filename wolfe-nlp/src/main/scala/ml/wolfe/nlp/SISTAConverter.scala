@@ -1,6 +1,8 @@
 package ml.wolfe.nlp
 
 import edu.arizona.sista.processors.{Sentence => SISTASent}
+import edu.arizona.sista.processors.{CorefChains => SISTACorefChains}
+import edu.arizona.sista.processors.{CorefMention => SISTACorefMention}
 import edu.arizona.sista.processors.struct.Tree
 import scala.collection.mutable.ArrayBuffer
 
@@ -9,6 +11,13 @@ import scala.collection.mutable.ArrayBuffer
  * @author Sebastian Riedel
  */
 object SISTAConverter {
+
+  def toWolfeCoreference(chains: SISTACorefChains): Seq[CorefMention] = {
+    val ret = for ((chain, clusterID) <- chains.getChains.zipWithIndex; mention <- chain) yield {
+      CorefMention(clusterID, mention.sentenceIndex, mention.headIndex, mention.startOffset, mention.endOffset)
+    }
+    ret.toSeq
+  }
 
   def toWolfeSentence(sentence: SISTASent): Sentence = {
     val tokens = for (i <- 0 until sentence.size) yield toWolfeToken(i, sentence)
