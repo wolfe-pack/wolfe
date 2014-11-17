@@ -185,7 +185,7 @@ object MatrixFactorization extends App {
       }
       case "figer" => {
         WriteFIGER(db, pathToPredict)
-        EvaluateFIGER.main(Array("./conf/eval.conf", pathToPredict))
+        EvaluateFIGER.main(Array(pathToPredict, Conf.outDir.getAbsolutePath))
       }
     }
 

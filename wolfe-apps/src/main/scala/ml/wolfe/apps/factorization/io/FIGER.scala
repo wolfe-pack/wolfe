@@ -176,14 +176,14 @@ object EvaluateFIGER {
   }
 
   def main(args: Array[String]) {
-    // val pathToPredictions = if (args.length > 0) args(0) else "out/latest"
-    val pathToEvaluationOutput = if (args.length > 1) args(1) else "eval/unary/"
-    val annotations = readAnnotations("data/unary/uwash/gold.csv")
+    val pathToPredictions = if (args.length > 0) args(0) else "data/out/latest/predict.txt"
+    val pathToEvaluationOutput = if (args.length > 1) args(1) else Conf.outDir.getAbsolutePath
+    val annotations = readAnnotations("data/figer/gold.csv")
     val rankFileNames = Seq(
       // new File("eval/unary/unary.rank.0.001.txt") -> "0.001",
       // new File("eval/unary/unary.rank.0.1-NF.txt") -> "NF",
-      // new File(pathToPredictions + "/unary.rank.txt") -> "Ours",
-      new File("data/unary/uwash/test.csv") -> "Figer"
+      new File(pathToPredictions) -> "Ours",
+      new File("data/figer/figer.csv") -> "Figer"
     )
     evaluate(rankFileNames, annotations.keys.toSet, pathToEvaluationOutput, 100)
   }
