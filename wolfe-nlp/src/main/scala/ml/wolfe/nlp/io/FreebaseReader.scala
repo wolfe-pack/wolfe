@@ -9,6 +9,7 @@ import java.io.FileWriter
 
 // To use the FreebaseReader class you must first start a MongoDB process in the environment.
 // A simple way of doing this is the command: mongod --dbpath <path-to-DB-cache-directory>
+
 class FreebaseReader(filename: String, port: Int = 27017, useExisting: Boolean = true) {
   val INSTANCE_PATTERN  = """<http://rdf.freebase.com/ns/([^>]+)>\t<http://rdf.freebase.com/ns/type.type.instance>\t<http://rdf.freebase.com/ns/([^>]+)>.*""".r
   val ATTRIBUTE_PATTERN = """<http://rdf.freebase.com/ns/(m.[^>]+)>\t<http://rdf.freebase.com/ns/([^>]+)>\t<http://rdf.freebase.com/ns/(m.[^>]+)>.*""".r
