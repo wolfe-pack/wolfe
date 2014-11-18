@@ -160,7 +160,7 @@ class MaxProduct(val problem: Problem) extends BeliefPropagationFG with EdgeProp
 
   def acceptPotential = { case pot: MaxProduct.Potential => pot }
 
-  var deterministicRun = false
+  private var deterministicRun = false
 
   override def updateN2F(edge: Edge) = {
     if(deterministicRun) deterministicN2FAndSetting(edge)
@@ -194,8 +194,9 @@ class MaxProduct(val problem: Problem) extends BeliefPropagationFG with EdgeProp
       DiscBelief(n.variable) -> Distribution.disc(n.variable.dom, n.content.belief.map(math.exp)))
 
     deterministicRun = true
+    clearSettings()
     propagate(1, eps)(weights)
-    nodes.foreach(setToArgmax)
+    nodes.filter(! isFixedSetting(_)).foreach(setToArgmax)
     val discState = problem.discVars.map(v => v -> v.dom(var2DiscNode(v).setting)).toMap[Var[Any], Any]
     val contState = problem.contVars.map(v => v -> var2ContNode(v).setting)
     MAPResult(new MapBasedState(discState ++ contState), score, gradient, new MapBasedState(maxMarginals.toMap))
@@ -207,13 +208,23 @@ class MaxProduct(val problem: Problem) extends BeliefPropagationFG with EdgeProp
     }
   }
 
-  def setToArgmax(n: Node) {
-    n match {
-      case d: DiscNode =>
-        val scores = for (i <- d.variable.dom.indices) yield
-          (for (e <- d.edges) yield e.msgs.f2n(i)).sum
-        d.setting = d.variable.dom.indices.maxBy(scores)
-    }
+  def setToArgmax(n: Node):Unit = n match {
+    case d: DiscNode =>
+      val scores = for (i <- d.variable.dom.indices) yield
+        (for (e <- d.edges) yield e.msgs.f2n(i)).sum
+      d.setting = d.variable.dom.indices.maxBy(scores)
+  }
+
+  def clearSettings(): Unit = {
+    discNodes.foreach(_.setting = Int.MinValue)
+    contNodes.foreach(_.setting = Double.MinValue)
+    vectNodes.foreach(_.setting = null)
+  }
+
+  def isFixedSetting(n:Node) = n match {
+    case d: DiscNode => d.setting != Int.MinValue
+    case c: ContNode => c.setting != Double.MinValue
+    case v: VectNode => v.setting != null
   }
 
 }
