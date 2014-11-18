@@ -8,7 +8,7 @@ import ml.wolfe.fg.{L2Regularization, CellLogisticLoss, VectorMsgs}
 import scala.util.Random
 
 /**
- * @author: rockt
+ * @author rockt
  */
 object SoftLogicPotentialsSpec extends App {
   //building factor graph

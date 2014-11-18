@@ -20,6 +20,9 @@ object PotentialDebugger {
     potential.valueForCurrentSetting()
 
     nodes.foreach { case (node, δ) =>
+
+      //println(node.variable.asVector.b)
+
       if (debug) println(node + "\t" + node.variable.label)
 
       val v = node.variable.asVector.b
@@ -37,6 +40,9 @@ object PotentialDebugger {
         val scoreNeg = potential.valueForCurrentSetting()
 
         val δi = (scorePos - scoreNeg) / (2 * ε)
+
+        assert(δ.length == vPos.length)
+        assert(δ.length == vNeg.length)
 
         if (debug) {
           val error = if (δ(i) == 0.0 && δi == 0.0) 1.0 else δi / δ(i)

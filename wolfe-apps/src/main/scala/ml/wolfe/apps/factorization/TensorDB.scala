@@ -1,7 +1,7 @@
 package ml.wolfe.apps.factorization
 
 /**
- * @author: rockt
+ * @author rockt
  */
 object CellType extends Enumeration {
   type CellType = Value
@@ -82,6 +82,15 @@ class TensorDB(k: Int = 100) extends Tensor {
   val keys3 = new ArrayBuffer[CellIx]()
   val keys23 = new ArrayBuffer[CellIx]()
 
+  val cellIxToIntIx1 = new mutable.HashMap[CellIx, Int]()
+  val cellIxToIntIx2 = new mutable.HashMap[CellIx, Int]()
+  val cellIxToIntIx3 = new mutable.HashMap[CellIx, Int]()
+  val cellIxToIntIx23 = new mutable.HashMap[(CellIx, CellIx), Int]()
+
+  def dim1 = keys1.size
+  def dim2 = keys2.size
+  def dim3 = keys3.size
+
   def isEmpty = cells.isEmpty
   def isMatrix = keys1.size > 0 && keys2.size > 0 && keys3.isEmpty
   def isTensor = keys3.nonEmpty
@@ -117,19 +126,23 @@ class TensorDB(k: Int = 100) extends Tensor {
 
     val (key1, key2, key3) = cell.key
     ix1Map.getOrElseUpdate(key1, {
+      cellIxToIntIx1 += key1 -> keys1.size
       keys1 += key1
       new ListBuffer[(Any, Any)]()
     }) append (key2 -> key3)
     if (key2 != DefaultIx) ix2Map.getOrElseUpdate(key2, {
+      cellIxToIntIx2 += key2 -> keys2.size
       keys2 += key2
       new ListBuffer[(Any, Any)]()
     }) append (key1 -> key3)
     if (key3 != DefaultIx) {
       ix3Map.getOrElseUpdate(key3, {
+        cellIxToIntIx3 += key3 -> keys3.size
         keys3 += key3
         new ListBuffer[(Any, Any)]()
       }) append (key1 -> key2)
       ix23Map.getOrElseUpdate(key2 -> key3, {
+        cellIxToIntIx23 += (key2, key3) -> keys23.size
         keys23 += (key2 -> key3)
         new ListBuffer[Any]()
       }) append key1
