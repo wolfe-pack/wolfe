@@ -90,7 +90,7 @@ class BeliefPropagation20Specs extends WolfeSpec {
 
       mpResult.maxMarginals should equal(bfResult.maxMarginals)
     }
-    "choose a valid global max from a factor graph with multiple solutions" ignore {
+    "choose a valid global max from a factor graph with multiple solutions" in {
       val mp = new MaxProduct(xorProblem)
       val result = mp.inferMAP()
       result.state(v1) should not be result.state(v2)
