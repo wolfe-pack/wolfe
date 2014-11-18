@@ -92,7 +92,7 @@ trait BeliefPropagationFG extends Residuals with NodeContentFG {
   def createContMsgs(contVar: ContVar) = new ContMsgs()
   def createVectMsgs(vectVar: VectVar) = new VectMsgs()
 
-  def updateN2F(edge: Edge) = {
+  def updateN2FBySum(edge: Edge) = {
     edge match {
       case d: DiscEdge =>
         for (i <- d.msgs.n2f.indices)
@@ -160,6 +160,13 @@ class MaxProduct(val problem: Problem) extends BeliefPropagationFG with EdgeProp
 
   def acceptPotential = { case pot: MaxProduct.Potential => pot }
 
+  var deterministicRun = false
+
+  override def updateN2F(edge: Edge) = {
+    if(deterministicRun) deterministicN2FAndSetting(edge)
+    else updateN2FBySum(edge)
+  }
+
   def updateF2N(edge: Edge, weights: FactorieVector) = {
     edge match {
       case d: DiscEdge => edge.factor.pot.discMaxMarginalF2N(d, weights); d.msgs.saveCurrentAsLast()
@@ -167,22 +174,45 @@ class MaxProduct(val problem: Problem) extends BeliefPropagationFG with EdgeProp
     }
   }
 
+  def deterministicN2FAndSetting(edge: Edge) = {
+    setToArgmax(edge.node)
+    edge match {
+      case d: DiscEdge =>
+        fill(d.msgs.n2f, Double.NegativeInfinity)
+        d.msgs.n2f(d.node.setting) = 0
+      case _ =>
+    }
+  }
 
   def inferMAP(maxIterations: Int = 10, eps: Double = 0.0001, weights: FactorieVector = new DenseVector(0)): MAPResult = {
+    deterministicRun = false
     propagate(maxIterations, eps)(weights)
     for (node <- nodes) { updateBelief(node); normalizeBelief(node) }
     val gradient = new SparseVector(1000)
     val score = factors.view.map(f => f.pot.maxMarginalExpectationsAndObjective(f, gradient, weights)).sum
-    val discState = problem.discVars.map(v => v -> v.dom(var2DiscNode(v).setting)).toMap[Var[Any], Any]
-    val contState = problem.contVars.map(v => v -> var2ContNode(v).setting)
     val maxMarginals = var2DiscNode.values.map(n =>
       DiscBelief(n.variable) -> Distribution.disc(n.variable.dom, n.content.belief.map(math.exp)))
+
+    deterministicRun = true
+    propagate(1, eps)(weights)
+    nodes.foreach(setToArgmax)
+    val discState = problem.discVars.map(v => v -> v.dom(var2DiscNode(v).setting)).toMap[Var[Any], Any]
+    val contState = problem.contVars.map(v => v -> var2ContNode(v).setting)
     MAPResult(new MapBasedState(discState ++ contState), score, gradient, new MapBasedState(maxMarginals.toMap))
   }
 
   def normalizeBelief(node: Node) {
     node match {
       case d: DiscNode => maxNormalize(d.content.belief)
+    }
+  }
+
+  def setToArgmax(n: Node) {
+    n match {
+      case d: DiscNode =>
+        val scores = for (i <- d.variable.dom.indices) yield
+          (for (e <- d.edges) yield e.msgs.f2n(i)).sum
+        d.setting = d.variable.dom.indices.maxBy(scores)
     }
   }
 
@@ -204,6 +234,8 @@ class SumProduct(val problem: Problem) extends BeliefPropagationFG with EdgeProp
   type Pot = SumProduct.Potential
 
   def acceptPotential = { case pot: SumProduct.Potential => pot }
+
+  def updateN2F(edge: Edge) = updateN2FBySum(edge)
 
   def updateF2N(edge: Edge, weights: FactorieVector) = {
     edge match {
