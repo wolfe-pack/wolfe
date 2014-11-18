@@ -102,6 +102,9 @@ object BuildSettings {
   
   val appDependencies = libraryDependencies ++= Seq(
     //"pl.project13.scala" %% "rainbow" % "0.2"
+    "net.sandrogrzicic" %% "scalabuff-compiler" % "1.3.6",
+    "net.sandrogrzicic" %% "scalabuff-runtime" % "1.3.6",
+    "com.google.protobuf" % "protobuf-java" % "2.3.0"
   )
 
   val uiDependencies = libraryDependencies ++= Seq(
