@@ -48,8 +48,8 @@ trait BeliefPropagationFG extends Residuals with NodeContentFG {
 
   class DiscNodeContent(var belief: Array[Double])
 
-  class ContNodeContent(var mean: Double = 0.0,
-                        var dev: Double = 0.0)
+  class ContNodeContent(var mean: Double = 0.0, // todo: Move into MaxProduct/SumProduct
+                        var dev: Double = 0.0)  // as max-marginals are not a distribution)
 
   class VectNodeContent(var mean: FactorieVector = null,
                         var dev: FactorieVector = null)
@@ -117,7 +117,12 @@ trait EdgePropagation extends Residuals with Scheduling {
 
   lazy val scheduled = MPSchedulerImpl.schedule()
 
-  def propagate(maxIterations: Int, eps: Double)(weights: FactorieVector): Unit = {
+  def propagate:(Int, Double) => FactorieVector => Unit =
+    propagateSchedule(scheduled)
+
+  def propagateSchedule(schedule:Seq[DirectedEdge])
+                       (maxIterations: Int, eps: Double)
+                       (weights: FactorieVector) {
     var iteration = 0
     var converged = false
     while (iteration < maxIterations && !converged) {
@@ -143,6 +148,22 @@ trait EdgePropagation extends Residuals with Scheduling {
 
 }
 
+trait FwdBwdEdgePropagation extends EdgePropagation {
+
+  lazy val fwdSchedule = MPSchedulerImpl.scheduleForward()
+
+  lazy val bwdSchedule = fwdSchedule.reverse.map(_.swap)
+
+  override lazy val scheduled = fwdSchedule ++ bwdSchedule
+
+  def propagateFwd:(Int, Double) => FactorieVector => Unit =
+    propagateSchedule(fwdSchedule)
+
+  def propagateBwd:(Int, Double) => FactorieVector => Unit =
+    propagateSchedule(bwdSchedule)
+
+}
+
 object MaxProduct {
   trait Potential extends DiscPotential {
     def discMaxMarginalF2N(edge: BeliefPropagationFG#DiscEdge, weights: FactorieVector)
@@ -154,7 +175,7 @@ object MaxProduct {
 }
 
 
-class MaxProduct(val problem: Problem) extends BeliefPropagationFG with EdgePropagation {
+class MaxProduct(val problem: Problem) extends BeliefPropagationFG with FwdBwdEdgePropagation {
 
   type Pot = MaxProduct.Potential
 
@@ -195,7 +216,7 @@ class MaxProduct(val problem: Problem) extends BeliefPropagationFG with EdgeProp
 
     deterministicRun = true
     clearSettings()
-    propagate(1, eps)(weights)
+    propagateFwd(1, eps)(weights)
     nodes.filter(! isFixedSetting(_)).foreach(setToArgmax)
     val discState = problem.discVars.map(v => v -> v.dom(var2DiscNode(v).setting)).toMap[Var[Any], Any]
     val contState = problem.contVars.map(v => v -> var2ContNode(v).setting)
