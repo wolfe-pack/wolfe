@@ -51,13 +51,12 @@ case class MultiQuestion(id: String, author: String, passage: String, questions:
 }
 
 
-abstract case class Question(text: String) {
+//abstract case class Question(text: String) {
+//
+//  def isCorrect(str: String): Boolean
+//}
 
-  def isCorrect(str: String): Boolean
-}
-
-class MultipleChoiceQuestion(text: String, choices: IndexedSeq[AnswerChoice], typ: String) extends Question(text) {
-
+case class MultipleChoiceQuestion(text: String, choices: IndexedSeq[AnswerChoice], val typ: String) {
 
   def isCorrect(label: String): Boolean = {
     choices.exists{ c => c.label == label && c.isCorrect}
