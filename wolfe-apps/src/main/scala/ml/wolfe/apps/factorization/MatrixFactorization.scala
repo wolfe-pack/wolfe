@@ -16,7 +16,7 @@ import scala.util.Random
  * @author rockt
  */
 object MatrixFactorization extends App {
-  val debug = false //whether to use sampled matrices or the NAACL data
+  val debug = true //whether to use sampled matrices or the NAACL data
   val loadFormulae = debug && true //whether forumlae should be sampled for debugging
   //val print = false //whether to print the matrix (only do this for small ones!)
 
