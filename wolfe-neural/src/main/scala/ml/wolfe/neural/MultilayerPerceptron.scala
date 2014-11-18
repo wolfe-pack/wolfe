@@ -28,7 +28,14 @@ class MultiLayerPerceptron(val layers: Seq[NetworkLayer]) {
     ???
   }
 
-  def backprop(input: DenseMatrix[Double], outputs: DenseVector[Double], updateWeights: Boolean = true, iters: Int = 1, verbose: Boolean = false) = {
+  def paramSize: Int = layers.foldLeft(0){ case(sum, l) => sum + l.W.rows * l.W.cols }
+
+  def gradients: Seq[Double] = {
+    layers.foreach{ l => println("g:\n" + l.grads + "\n") }
+    layers.map(_.grads.toDenseVector.toArray).toSeq.flatten
+  }
+
+  def backprop(input: DenseMatrix[Double], outputs: DenseVector[Double], updateWeights: Boolean = true, iters: Int = 1, rate: Double = 0.9, verbose: Boolean = false) = {
     if (verbose) println("Performing backprop...")
     for (i <- 1 to iters) {
       if (verbose) println("Forward pass...")
@@ -54,7 +61,7 @@ class MultiLayerPerceptron(val layers: Seq[NetworkLayer]) {
       }
       if (verbose) println("Updating network weights...")
       if (updateWeights) {
-        for (layer <- layers) layer.updateWithCachedGradients(verbose=verbose)
+        for (layer <- layers) layer.updateWithCachedGradients(eta = rate, verbose=verbose)
       }
     }
   }
@@ -62,7 +69,7 @@ class MultiLayerPerceptron(val layers: Seq[NetworkLayer]) {
   // need to define a total cost, output + regularization?
 }
 
-object MultiLayerPerceptronPlayground extends App {   }
+// object MultiLayerPerceptronPlayground extends App {   }
 
 
 
