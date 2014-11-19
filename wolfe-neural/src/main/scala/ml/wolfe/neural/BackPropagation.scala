@@ -1,5 +1,6 @@
 package ml.wolfe.neural
 
+import cc.factorie.la.DenseTensor1
 import cc.factorie.optimize._
 import ml.wolfe.{GradientBasedOptimizer, FactorGraph}
 import ml.wolfe.FactorGraph._
@@ -61,6 +62,7 @@ object BackPropTest extends App {
     val paramSize = nn.paramSize
     println("Wrapping Neural Network with %d parameters.".format(paramSize))
     val v = fg.addVectorNode(dim = paramSize)
+    v.variable.asVector.b = new DenseTensor1(Array.ofDim[Double](paramSize))
     fg.buildFactor(Seq(v))(_ map (_ => new VectorMsgs)) { e =>
       new BackPropagationLoss(e.head, nn, inputs, outputs)
     }
