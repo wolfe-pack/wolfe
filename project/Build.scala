@@ -2,7 +2,9 @@ import java.io.IOException
 import sbt._
 import sbt.Keys._
 import sbtrelease.ReleasePlugin._
+
 //import scoverage.ScoverageSbtPlugin._
+
 import com.github.retronym.SbtOneJar.oneJarSettings
 
 object ShellPrompt {
@@ -52,8 +54,8 @@ object BuildSettings {
     "com.typesafe" % "config" % "1.2.1",
     "com.github.axel22" %% "scalameter" % "0.4",
     "com.nativelibs4java" %% "scalaxy-loops" % "0.3-SNAPSHOT" % "provided",
-//    "org.scala-lang" % "scala-compiler" % "2.10.3",
-//    "org.scala-lang" % "scala-library" % "2.10.3",
+    //    "org.scala-lang" % "scala-compiler" % "2.10.3",
+    //    "org.scala-lang" % "scala-library" % "2.10.3",
     "org.slf4j" % "slf4j-api" % "1.7.6",
     "org.slf4j" % "slf4j-simple" % "1.7.6",
     "org.apache.commons" % "commons-compress" % "1.8",
@@ -66,8 +68,15 @@ object BuildSettings {
     "org.mongodb" %% "casbah" % "2.5.0"
 
 
-  //    "net.liftweb" %% "lift-json" % "2.3"
+    //    "net.liftweb" %% "lift-json" % "2.3"
   )
+
+  val utilDependencies = libraryDependencies ++= Seq(
+    "cc.factorie" % "factorie" % "1.0",
+    "org.scalamacros" %% "quasiquotes" % "2.0.0"
+
+  )
+
 
   val coreDependencies = libraryDependencies ++= Seq(
     "net.sf.trove4j" % "trove4j" % "3.0.3",
@@ -83,12 +92,19 @@ object BuildSettings {
   )
 
   val nlpDependencies = libraryDependencies ++= Seq(
-    "edu.arizona.sista" % "processors" % "2.0",
+    "edu.arizona.sista" % "processors" % "3.3",
     "org.scala-lang" %% "scala-pickling" % "0.8.0"
   )
 
+  val neuralDependencies = libraryDependencies ++= Seq(
+    "org.scala-lang" % "scala-swing" % "2.10.0"
+  )
+  
   val appDependencies = libraryDependencies ++= Seq(
     //"pl.project13.scala" %% "rainbow" % "0.2"
+    "net.sandrogrzicic" %% "scalabuff-compiler" % "1.3.6",
+    "net.sandrogrzicic" %% "scalabuff-runtime" % "1.3.6",
+    "com.google.protobuf" % "protobuf-java" % "2.3.0"
   )
 
   val uiDependencies = libraryDependencies ++= Seq(
@@ -130,9 +146,9 @@ object BuildSettings {
         Resolver.sonatypeRepo("releases")
       ),
       globalDependencies
-    ) ++ generalSettings ++ releaseSettings ++ publishSettings ++  oneJarSettings //++ coverallsSettings ++ instrumentSettings
+    ) ++ generalSettings ++ releaseSettings ++ publishSettings ++ oneJarSettings //++ coverallsSettings ++ instrumentSettings
 
-//  ScoverageKeys.excludedPackages in ScoverageCompile := ".*;.*.*"
+  //  ScoverageKeys.excludedPackages in ScoverageCompile := ".*;.*.*"
 }
 
 
@@ -153,25 +169,27 @@ object Build extends Build {
     settings = buildSettings ++ globalSettings ++ coreDependencies ++ Seq(
       addCompilerPlugin("org.scalamacros" % "paradise" % "2.0.0" cross CrossVersion.full)
     )
-  )
+  ) dependsOn util % "test->test;compile->compile"
 
   lazy val nlp = Project(
     id = "wolfe-nlp",
     base = file("wolfe-nlp"),
     settings = buildSettings ++ globalSettings ++ nlpDependencies
   ) dependsOn core % "test->test;compile->compile"
-  
+
   lazy val neural = Project(
     id = "wolfe-neural",
     base = file("wolfe-neural"),
-    settings = buildSettings ++ globalSettings
+    settings = buildSettings ++ globalSettings ++ neuralDependencies
   ) dependsOn core % "test->test;compile->compile"
 
   lazy val util = Project(
     id = "wolfe-util",
     base = file("wolfe-util"),
-    settings = buildSettings ++ globalSettings
-  ) dependsOn core % "test->test;compile->compile"
+    settings = buildSettings ++ globalSettings ++ utilDependencies ++ Seq(
+      addCompilerPlugin("org.scalamacros" % "paradise" % "2.0.0" cross CrossVersion.full)
+    )
+  )
 
 
   lazy val examples = Project(
@@ -180,7 +198,8 @@ object Build extends Build {
     settings = buildSettings ++ globalSettings
   ) dependsOn(
   core % "test->test;compile->compile",
-  nlp % "test->test;compile->compile"
+  nlp % "test->test;compile->compile",
+  util % "test->test;compile->compile"
   )
 
   lazy val apps = Project(
@@ -189,7 +208,8 @@ object Build extends Build {
     settings = buildSettings ++ globalSettings ++ appDependencies
   ) dependsOn(
   core % "test->test;compile->compile",
-  nlp % "test->test;compile->compile"
+  nlp % "test->test;compile->compile",
+  util % "test->test;compile->compile"
   )
 
   lazy val ui = Project(

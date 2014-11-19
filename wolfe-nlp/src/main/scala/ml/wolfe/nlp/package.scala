@@ -12,13 +12,13 @@ import scala.language.implicitConversions
  */
 package object nlp {
 
-  implicit def toDoc(source:String) = Document(source, Seq(Sentence(Seq(Token(source,CharOffsets(0,source.length))))))
+  implicit def toDoc(source:String) = Document(source, IndexedSeq(Sentence(IndexedSeq(Token(source,CharOffsets(0,source.length))))))
 
   def normalizeDoc(doc:Document) = {
     makeDoc(doc.sentences.map(_.tokens.map(_.word)))
   }
 
-  def makeDoc(sentences:Seq[Seq[String]]) = {
+  def makeDoc(sentences:Seq[IndexedSeq[String]]) = {
     val source = sentences.map(_.mkString(" ")).mkString(" ")
     var start = 0
     val resultSentences = for (s <- sentences) yield {
@@ -29,7 +29,7 @@ package object nlp {
       }
       Sentence(tokens)
     }
-    Document(source, resultSentences)
+    Document(source, resultSentences.toIndexedSeq)
   }
 
   def loadTxt(file: File, codec: Codec = Codec("ISO8859-1")) = {

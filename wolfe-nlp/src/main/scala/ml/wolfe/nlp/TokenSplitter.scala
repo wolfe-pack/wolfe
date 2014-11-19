@@ -41,7 +41,7 @@ object TokenSplitter extends (Document => Document) {
         }
 
       }
-      Seq.empty ++ tokens
+      IndexedSeq.empty ++ tokens
     }
     doc.copy(sentences = doc.sentences.map(s => s.copy(tokens = s.tokens.flatMap(split))))
   }
@@ -82,7 +82,7 @@ object SentenceSplitter extends (Document => Document) {
             val punctToken = Token(text(offset).toString, CharOffsets(offset, offset + 1))
             tokens += newToken
             tokens += punctToken
-            sentences += Sentence(Seq.empty ++ tokens)
+            sentences += Sentence(IndexedSeq.empty ++ tokens)
             tokens.clear()
             offset += 1
             while (offset < end && Character.isWhitespace(text(offset))) { offset += 1 }

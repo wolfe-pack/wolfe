@@ -60,7 +60,8 @@ object SISTAProcessors {
     if (srl) sistaCoreNLPProcessor.labelSemanticRoles(result)
     if (coreference) sistaCoreNLPProcessor.resolveCoreference(result)
     val sentences = result.sentences map SISTAConverter.toFullWolfeSentence
-    Document(text, sentences)
+    val coref = SISTAConverter.toWolfeCoreference(result.coreferenceChains.get)
+    Document(text, sentences, coref = CorefAnnotation(coref))
   }
 
 
