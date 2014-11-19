@@ -10,6 +10,8 @@ object CellType extends Enumeration {
 
 case object DefaultIx
 
+import java.io.FileWriter
+
 import ml.wolfe.FactorGraph
 import ml.wolfe.FactorGraph.Node
 import ml.wolfe.apps.factorization.CellType._
@@ -246,6 +248,18 @@ class TensorDB(k: Int = 100) extends Tensor {
       |#test:     ${testCells.size} (${testCells.size.toDouble / (keys1.size * keys2.size * (if (keys3.size > 0) keys3.size else 1))})
       |#formulae: ${formulae.size}
     """.stripMargin
+
+
+  def writeVectors(filePath: String) = {
+    val writer = new FileWriter(filePath)
+    (ix1ToNodeMap ++ ix2ToNodeMap).foreach(p => {
+      val (name, node) = p
+      val vec = node.variable.asVector.b
+      writer.write(name + "\t" + vec.mkString("\t") + "\n")
+    })
+    writer.close()
+  }
+
 
   @tailrec
   final def sampleNode(col: CellIx, attempts: Int = 1000): Node = {

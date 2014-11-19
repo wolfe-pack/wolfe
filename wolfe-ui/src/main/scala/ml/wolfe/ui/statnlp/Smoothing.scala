@@ -117,7 +117,7 @@ object PrepareSmoothing {
     val sorted = counts.toSeq.sortBy(-_._2)
     println(sorted.take(10).mkString("\n"))
 
-    IO.saveTSV(sorted, countsFile)(c => Seq(c._1, c._2.toString))
+    IO.saveTSV(sorted, countsFile)(c => IndexedSeq(c._1, c._2.toString))
 
   }
 }

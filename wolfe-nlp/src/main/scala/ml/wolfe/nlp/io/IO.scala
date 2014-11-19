@@ -9,7 +9,7 @@ import scala.io.Source
  */
 object IO {
 
-  def saveTSV[T](coll:Iterable[T], file:File, delim:String = "\t")(mapper:T => Seq[String]) {
+  def saveTSV[T](coll:Iterable[T], file:File, delim:String = "\t")(mapper:T => IndexedSeq[String]) {
     val out = new PrintStream(file)
     for (e <- coll) out.println(mapper(e).mkString(delim))
     out.close()

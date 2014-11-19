@@ -231,7 +231,7 @@ object PrepareWikipediaCorpus {
     }
     val words = judgements.flatMap(j => j.word1 :: j.word2 :: Nil).distinct.sorted
     println(words)
-    IO.saveTSV(words, new File("/Users/sriedel/corpora/wordsim353/words.tab")) { Seq(_) }
+    IO.saveTSV(words, new File("/Users/sriedel/corpora/wordsim353/words.tab")) { IndexedSeq(_) }
 
     val wordSet = words.toSet
 

@@ -9,11 +9,13 @@ import java.io.FileWriter
 
 // To use the FreebaseReader class you must first start a MongoDB process in the environment.
 // A simple way of doing this is the command: mongod --dbpath <path-to-DB-cache-directory>
+
 class FreebaseReader(filename: String, port: Int = 27017, useExisting: Boolean = true) {
   val INSTANCE_PATTERN  = """<http://rdf.freebase.com/ns/([^>]+)>\t<http://rdf.freebase.com/ns/type.type.instance>\t<http://rdf.freebase.com/ns/([^>]+)>.*""".r
   val ATTRIBUTE_PATTERN = """<http://rdf.freebase.com/ns/(m.[^>]+)>\t<http://rdf.freebase.com/ns/([^>]+)>\t<http://rdf.freebase.com/ns/(m.[^>]+)>.*""".r
   val DATE_PATTERN      = """<http://rdf.freebase.com/ns/(m.[^>]+)>\t<http://rdf.freebase.com/ns/time.event.([^_]+_date)>\t\"(.+)\".*""".r
   val TITLE_PATTERN     = """<http://rdf.freebase.com/ns/(m.[^>]+)>\t<http://rdf.freebase.com/key/wikipedia.en>\t\"(.+)\".*""".r
+  val TEXT_PATTERN      = """<http://rdf.freebase.com/ns/common.topic.description>\t\"(.+)\".*""".r
   var collection =  mongoFromTriples //null.asInstanceOf[MongoCollection]
 
   def mongoFromTriples: MongoCollection = {
@@ -55,6 +57,9 @@ class FreebaseReader(filename: String, port: Int = 27017, useExisting: Boolean =
         case TITLE_PATTERN(mid, title) => {
           coll.insert(MongoDBObject("arg1" -> mid, "attribute" -> "title", "arg2" -> title))
         }
+        case TEXT_PATTERN(mid, text) => {
+          coll.insert(MongoDBObject("arg1" -> mid, "attribute" -> "text", "arg2" -> text))
+        }
         case _ =>
       }
       count += 1
@@ -82,21 +87,22 @@ class FreebaseReader(filename: String, port: Int = 27017, useExisting: Boolean =
     (collection find q).map { _.get("mid").asInstanceOf[String] }
   }
 
-  def getMID(str: String): Seq[String] = {
+  def getCandidateMIDs(str: String): IndexedSeq[String] = {
     val name = str.replaceAll(" ", "_")
     (collection find MongoDBObject("attribute" -> "title", "arg2" -> name)).flatMap { m =>
       if (m.contains("arg1")) Some(m.get("arg1").asInstanceOf[String])
       else None
-    }.toSeq
+    }.toIndexedSeq
   }
 
-  def getRelation(str1: String, str2: String, undirected: Boolean = false): Option[String] = {
-    val mids1 = getMID(str1)
-    val mids2 = getMID(str2)
+  def getRelation(str1: String, str2: String, desc: String = "", undirected: Boolean = false): Option[String] = {
+    val mids1 = getCandidateMIDs(str1)
+    val mids2 = getCandidateMIDs(str2)
     if (mids1.isEmpty || mids2.isEmpty) return None
     // Do some selection from candidate MIDs - this could be a text similarity measure, random selection, or just first match
-    val mid1 = mids1.head
-    val mid2 = mids2.head
+    val mid1 = if (desc.size > 1) rankMIDs(mids1, desc).head else mids1.head
+    val mid2 = if (desc.size > 1) rankMIDs(mids2, desc).head else mids2.head
+
     // Look for relations (attributes) shared by both MIDs
     val m1 = collection findOne MongoDBObject("arg1" -> mid1, "arg2" -> mid2)
     m1 match {
@@ -113,11 +119,19 @@ class FreebaseReader(filename: String, port: Int = 27017, useExisting: Boolean =
     }
   }
 
-  def getName(mid: String): Option[String] = {
-    collection findOne MongoDBObject("arg1" -> mid, "attribute" -> "title") match {
-      case Some(record) => Some(record.get("arg2").toString)
-      case _ => None
-    }
+  def rankMIDs(mids: Seq[String], desc: String): Seq[String] = {
+    mids.map { m =>
+      getDescription(m) match {
+        case Some(d) => (m, similarity(d, desc))
+        case _ => (m, 0.0)
+      }
+    }.sortBy(-1.0 * _._2).map(_._1)
+  }
+
+  def similarity(str1: String, str2: String): Double = {
+    val tokens1 = str1.split(" ").distinct
+    val tokens2 = str2.split(" ").distinct
+    tokens1.map(t => if (tokens2.contains(t)) 1.0 else 0.0).sum
   }
 
   def getAttribute(mid: String, attribute: String): Option[String] = {
@@ -125,6 +139,15 @@ class FreebaseReader(filename: String, port: Int = 27017, useExisting: Boolean =
       case Some(record) => Some(record.get("arg2").toString)
       case _ => None
     }
+  }
+
+  def getAllOfAttribute(mid: String, attribute: String): Seq[String] = {
+    val query = MongoDBObject("arg1" -> mid, "attribute" -> attribute)
+    (collection find query).flatMap { _ match {
+      case r if r.containsField("arg2") => Some(r.get("arg2").toString)
+      case _=> None
+      }
+    }.toSeq
   }
 
   def attributesOf(mid: String): Map[String, String] = {
@@ -136,13 +159,17 @@ class FreebaseReader(filename: String, port: Int = 27017, useExisting: Boolean =
     }.filter(t => !(t._1 == "None" && t._2 == "None")).toMap
   }
 
+  def getName(mid: String): Option[String] = getAttribute(mid, "title")
+
+  def getDescription(mid: String): Option[String] = getAttribute(mid, "text")
+
   def test() {
     // Set collection to the test collection
     collection = testCollection
     // Query
     println("Attributes of m1: " + attributesOf("m1"))
-    println("MID of 'Barack Obama': " + getMID("Barack Obama"))
-    println("MID of OOV: " + getMID("Barack"))
+    println("MID of 'Barack Obama': " + getCandidateMIDs("Barack Obama"))
+    println("MID of OOV: " + getCandidateMIDs("Barack"))
     println("Relation between Barack Obama and US? " + getRelation("Barack Obama", "United States of America"))
     println("Relation between Michelle and Barack? " + getRelation("Michelle Obama", "Barack Obama"))
     println("Relation between Michelle and US? " + getRelation("Michelle Obama", "United States of America"))
@@ -219,6 +246,25 @@ object FreebaseReader {
 
 
 
+/*
+  def getName(mid: String): Option[String] = {
+    collection findOne MongoDBObject("arg1" -> mid, "attribute" -> "title") match {
+      case Some(record) => Some(record.get("arg2").toString)
+      case _ => None
+    }
+  }
+
+  def getDescription(mid: String): Option[String] = {
+    collection findOne MongoDBObject("arg1" -> mid, "attribute" -> "text") match {
+      case Some(record) => Some(record.get("arg2").toString)
+      case _ => None
+    }
+  }
+
+ */
+
+
+
 //
 //  def load(filename: String, port: Int = 27017, init: Boolean = true) = {
 //    collection = mongoFromTriples(filename, port, init)
@@ -250,13 +296,13 @@ object FreebaseReader {
 
 
 
-//  def attributesOf(mid1: String, mid2: String, coll: MongoCollection): Seq[String] = {
+//  def attributesOf(mid1: String, mid2: String, coll: MongoCollection): IndexedSeq[String] = {
 //    (coll find MongoDBObject("arg1" -> mid1, "arg2" -> mid2)).flatMap { r =>
 //      r("attribute") match {
 //        case Some(attribute) => Some(attribute)
 //        case _ => None
 //      }
-//    }.toSeq
+//    }.toIndexedSeq
 //  }
 
 //  val query1 = MongoDBObject("type" -> "event.disaster")

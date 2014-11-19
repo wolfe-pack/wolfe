@@ -114,4 +114,3 @@ extends Formula2Potential(constEdge, pred1Edge, pred2Edge, target, lambda, weigh
   def calcF_c(p2c_c: FactorieVector, p1c: Double, p1c_c: FactorieVector, p2c: Double) =
     p2c_c * -p1c + p1c_c * -p2c
 }
-
