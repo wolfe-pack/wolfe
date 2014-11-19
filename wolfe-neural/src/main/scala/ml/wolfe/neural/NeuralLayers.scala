@@ -17,9 +17,9 @@ trait NetworkLayer {
   var dactivation: (Double => Double)
 
   var in: DenseMatrix[Double] = null
-  var theta: DenseMatrix[Double]  // concat b and W into theta
-  var X: DenseMatrix[Double]      // Cached outputs before activation
-  var XA: DenseMatrix[Double]     // Cached outputs after activation
+  var theta: DenseMatrix[Double] = null   // concat b and W into theta
+  var X: DenseMatrix[Double] = null      // Cached outputs before activation
+  var XA: DenseMatrix[Double] = null     // Cached outputs after activation
   var grads: DenseMatrix[Double] = null // Cached gradients from backward pass
 
   val inputSize: Int = W.rows
@@ -75,11 +75,6 @@ class HiddenLayer(var W: DenseMatrix[Double],
                   var activation: (Double => Double),
                   var dactivation: (Double => Double)) extends NetworkLayer {
 
-  var I: DenseMatrix[Double] = null
-  var X: DenseMatrix[Double] = null
-  var theta: DenseMatrix[Double] = null
-  var XA: DenseMatrix[Double] = null
-
   def gradient(outputs: DenseMatrix[Double], pw: DenseMatrix[Double], verbose: Boolean = true): DenseMatrix[Double] = {
     if (verbose) {
       println("Computing gradient in hidden layer...")
@@ -102,11 +97,8 @@ class OutputLayer(var W: DenseMatrix[Double],
                   var activation: (Double => Double),
                   var dactivation: (Double => Double)) extends NetworkLayer {
 
-  var X: DenseMatrix[Double] = null
-  var theta: DenseMatrix[Double] = null
-  var XA: DenseMatrix[Double] = null
 
-  def errors(input: DenseMatrix[Double], y: DenseVector[Double]): Double = 1.0
+  def errors(input: DenseMatrix[Double], y: DenseVector[Double]): Double = ???
 
   def gradient(outputs: DenseMatrix[Double], verbose: Boolean = true): DenseMatrix[Double] = {
     if (verbose) {
