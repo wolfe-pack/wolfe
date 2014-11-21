@@ -24,8 +24,9 @@ trait NetworkLayer {
 
   val inputSize: Int = W.rows
   val outputSize: Int = W.cols
+  val size = W.cols
 
-  def output(input: DenseMatrix[Double], verbose: Boolean = true): DenseMatrix[Double] = {
+  def output(input: DenseMatrix[Double], verbose: Boolean = false): DenseMatrix[Double] = {
     in = input // Cache input for backward pass
     X = input.t * W
     theta = (input.t * W) + b.toDenseMatrix
@@ -45,12 +46,30 @@ trait NetworkLayer {
     XA
   }
 
-  def updateWithCachedGradients(eta: Double = 0.90, verbose: Boolean = true) = {
+  def updateWithCachedGradients(eta: Double = 0.90, verbose: Boolean = false) = {
     if (verbose) {
       println("Computing parameter update with eta = %.2f...".format(eta))
     }
     val wUpdate = (in * grads.t) * eta
     val bUpdate = (grads.t * eta).toDenseVector
+    if (verbose) {
+      println("Weight Update (%d rows x %d columns):".format(wUpdate.rows, wUpdate.cols))
+      println(wUpdate)
+      println("Bias Update:")
+      println(bUpdate)
+      println
+    }
+    W = W + wUpdate
+    b += bUpdate
+  }
+
+  def updateWithGradients(gradients: DenseMatrix[Double], verbose: Boolean = false) = {
+    println("Update:\n" + gradients)
+    if (verbose) {
+      println("Applying parameter update with provided update...")
+    }
+    val wUpdate = (in * gradients.t)
+    val bUpdate = (gradients.t).toDenseVector
     if (verbose) {
       println("Weight Update (%d rows x %d columns):".format(wUpdate.rows, wUpdate.cols))
       println(wUpdate)
@@ -75,7 +94,7 @@ class HiddenLayer(var W: DenseMatrix[Double],
                   var activation: (Double => Double),
                   var dactivation: (Double => Double)) extends NetworkLayer {
 
-  def gradient(outputs: DenseMatrix[Double], pw: DenseMatrix[Double], verbose: Boolean = true): DenseMatrix[Double] = {
+  def gradient(outputs: DenseMatrix[Double], pw: DenseMatrix[Double], verbose: Boolean = false): DenseMatrix[Double] = {
     if (verbose) {
       println("Computing gradient in hidden layer...")
       println("Outputs (%d rows x %d columns):".format(outputs.rows, outputs.cols))
@@ -100,7 +119,7 @@ class OutputLayer(var W: DenseMatrix[Double],
 
   def errors(input: DenseMatrix[Double], y: DenseVector[Double]): Double = ???
 
-  def gradient(outputs: DenseMatrix[Double], verbose: Boolean = true): DenseMatrix[Double] = {
+  def gradient(outputs: DenseMatrix[Double], verbose: Boolean = false): DenseMatrix[Double] = {
     if (verbose) {
       println("Computing gradient in output layer...")
       println("Outputs (%d rows x %d columns):".format(outputs.rows, outputs.cols))

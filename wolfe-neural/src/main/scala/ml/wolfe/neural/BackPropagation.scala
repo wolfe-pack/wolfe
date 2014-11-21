@@ -21,8 +21,16 @@ class BackPropagationLoss(edge: Edge, network: MultiLayerPerceptron, input: Dens
   println(edge.f)
 
   override def valueAndGradientForAllEdges(): Double = {
+    println("f2n = " + e.f2n)
+    println("n2f = " + e.n2f)
     if (e.n2f != null) {
-      println(e.n2f.mkString(", "))
+      val updates = e.n2f.toArray
+      var i = 0
+      println("GG: " + e.n2f.mkString(", "))
+      for (layer <- network.layers) {
+        layer.updateWithGradients(DenseMatrix(updates.slice(i, i+layer.size)))
+        i += layer.size
+      }
     }
     else {
       println("Null Gradients...")
