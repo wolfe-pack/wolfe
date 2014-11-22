@@ -24,14 +24,6 @@ object TablePotential {
     Table(settings, scores)
   }
 
-  def apply(vars: Array[DiscVar[Any]], pot: Array[Int] => Double) = {
-    val dims = vars.map(_.dom.size)
-    new TablePotential(vars, table(dims, pot).scores)
-  }
-
-  def apply(vars: Array[DiscVar[Any]], table: Table) = {
-    new TablePotential(vars, table.scores)
-  }
 
 
   //todo: move these both into Util, to share code with LabelledTensor
@@ -124,112 +116,6 @@ object TablePotential {
 case class Table(settings: Array[Array[Int]], scores: Array[Double])
 
 
-final class TablePotential(val discVars: Array[DiscVar[Any]], table: Array[Double]) extends MaxProduct.Potential
-                                                                                            with SumProduct.Potential {
-
-  val dims = discVars.map(_.dom.size)
-
-  def score(factor: FG#Factor, weights: FactorieVector) = {
-    val entry = TablePotential.settingToEntry(factor.discEdges.iterator.map(_.node.setting), dims)
-    table(entry)
-  }
-
-
-  def discMaxMarginalF2N(edge: BeliefPropagationFG#DiscEdge, weights: FactorieVector) = {
-    val m = edge.msgs
-    val factor = edge.factor
-
-    fill(m.f2n, Double.NegativeInfinity)
-
-    factor.iterateDiscSettings { i =>
-      var score = table(i)
-      val varValue = factor.discSetting(edge.index)
-      for (j <- 0 until discVars.size; if j != edge.index) {
-        score += edge.factor.discEdges(j).msgs.n2f(factor.discSetting(j))
-      }
-      m.f2n(varValue) = math.max(score, m.f2n(varValue))
-    }
-    maxNormalize(m.f2n)
-  }
-
-
-  def discMarginalF2N(edge: BeliefPropagationFG#DiscEdge, weights: FactorieVector) = {
-    val m = edge.msgs
-    val factor = edge.factor
-
-    fill(m.f2n, 0.0)
-
-    factor.iterateDiscSettings { i =>
-      var score = table(i)
-      val varValue = factor.discSetting(edge.index)
-      for (j <- 0 until discVars.length; if j != edge.index) {
-        score += edge.factor.discEdges(j).msgs.n2f(factor.discSetting(j))
-      }
-      m.f2n(varValue) = m.f2n(varValue) + math.exp(score)
-    }
-    //normalize
-    normalize(m.f2n)
-    //convert to log space
-    log(m.f2n)
-  }
-
-
-  def penalizedScore(factor: BeliefPropagationFG#Factor, settingId: Int, setting: Array[Int]): Double = {
-    var score = table(settingId)
-    for (j <- 0 until factor.discEdges.length) {
-      score += factor.discEdges(j).msgs.n2f(setting(j))
-    }
-    score
-  }
-
-
-  def statsForCurrentSetting(factor: FG#Factor) = isNotLinear
-
-
-  def maxMarginalExpectationsAndObjective(factor: BeliefPropagationFG#FactorType,
-                                          dstExpectations: FactorieVector,
-                                          weights: FactorieVector) = {
-    // 1) go over all states, find max with respect to incoming messages
-    var norm = Double.NegativeInfinity
-    var maxScore = Double.NegativeInfinity
-
-    factor.iterateDiscSettings { i =>
-      val score = penalizedScore(factor, i, factor.discSetting)
-      if (score > norm) {
-        norm = score
-        maxScore = table(i)
-      }
-    }
-    maxScore
-  }
-
-  override def marginalExpectationsAndObjective(factor: BeliefPropagationFG#FactorType,
-                                                dstExpectations: FactorieVector,
-                                                weights: FactorieVector) = {
-    var localZ = 0.0
-
-    //calculate local partition function
-    factor.iterateDiscSettings { i =>
-      val score = penalizedScore(factor, i, factor.discSetting)
-      localZ += math.exp(score)
-    }
-
-    var linear = 0.0
-    var entropy = 0.0
-    //calculate linear contribution to objective and entropy
-    factor.iterateDiscSettings { i =>
-      val score = penalizedScore(factor, i, factor.discSetting)
-      val prob = math.exp(score) / localZ
-      linear += table(i) * prob
-      entropy -= math.log(prob) * prob
-    }
-    val obj = linear + entropy
-    obj
-  }
-
-  def isLinear = false
-}
-
 trait TableBasedProcessor extends MaxProduct.Processor with SumProduct.Processor {
 
   def dims: Array[Int]
@@ -292,6 +178,8 @@ final class TablePotential2(val discVars: Array[DiscVar[Any]], table: Array[Doub
 
   def processor() = new Proc
 
+
+  def isLinear = false
   final class Proc extends TableBasedProcessor {
 
     def dims = discDims
@@ -346,103 +234,11 @@ final class TablePotential2(val discVars: Array[DiscVar[Any]], table: Array[Doub
 
   }
 
+
+  def statsForCurrentSetting(factor: FG#Factor) = ???
   def score(factor: FG#Factor, weights: FactorieVector) = {
     val entry = TablePotential.settingToEntry(factor.discEdges.iterator.map(_.node.setting), discDims)
     table(entry)
   }
 
-
-  def discMaxMarginalF2N(edge: BeliefPropagationFG#DiscEdge, weights: FactorieVector) = {
-    val m = edge.msgs
-    val factor = edge.factor
-
-    fill(m.f2n, Double.NegativeInfinity)
-
-    factor.iterateDiscSettings { i =>
-      var score = table(i)
-      val varValue = factor.discSetting(edge.index)
-      for (j <- 0 until discVars.size; if j != edge.index) {
-        score += edge.factor.discEdges(j).msgs.n2f(factor.discSetting(j))
-      }
-      m.f2n(varValue) = math.max(score, m.f2n(varValue))
-    }
-    maxNormalize(m.f2n)
-  }
-
-
-  def discMarginalF2N(edge: BeliefPropagationFG#DiscEdge, weights: FactorieVector) = {
-    val m = edge.msgs
-    val factor = edge.factor
-
-    fill(m.f2n, 0.0)
-
-    factor.iterateDiscSettings { i =>
-      var score = table(i)
-      val varValue = factor.discSetting(edge.index)
-      for (j <- 0 until discVars.length; if j != edge.index) {
-        score += edge.factor.discEdges(j).msgs.n2f(factor.discSetting(j))
-      }
-      m.f2n(varValue) = m.f2n(varValue) + math.exp(score)
-    }
-    //normalize
-    normalize(m.f2n)
-    //convert to log space
-    log(m.f2n)
-  }
-
-  def penalizedScore(factor: BeliefPropagationFG#Factor, settingId: Int, setting: Array[Int]): Double = {
-    var score = table(settingId)
-    for (j <- 0 until factor.discEdges.length) {
-      score += factor.discEdges(j).msgs.n2f(setting(j))
-    }
-    score
-  }
-
-
-  def statsForCurrentSetting(factor: FG#Factor) = ??? //isNotLinear
-
-
-  def maxMarginalExpectationsAndObjective(factor: BeliefPropagationFG#FactorType,
-                                          dstExpectations: FactorieVector,
-                                          weights: FactorieVector) = {
-    // 1) go over all states, find max with respect to incoming messages
-    var norm = Double.NegativeInfinity
-    var maxScore = Double.NegativeInfinity
-
-    factor.iterateDiscSettings { i =>
-      val score = penalizedScore(factor, i, factor.discSetting)
-      if (score > norm) {
-        norm = score
-        maxScore = table(i)
-      }
-    }
-    maxScore
-  }
-
-  def marginalExpectationsAndObjective(factor: BeliefPropagationFG#FactorType,
-                                       dstExpectations: FactorieVector,
-                                       weights: FactorieVector) = {
-    var localZ = 0.0
-
-    //calculate local partition function
-    factor.iterateDiscSettings { i =>
-      val score = penalizedScore(factor, i, factor.discSetting)
-      localZ += math.exp(score)
-    }
-
-    var linear = 0.0
-    var entropy = 0.0
-    //calculate linear contribution to objective and entropy
-    factor.iterateDiscSettings { i =>
-      val score = penalizedScore(factor, i, factor.discSetting)
-      val prob = math.exp(score) / localZ
-      linear += table(i) * prob
-      entropy -= math.log(prob) * prob
-    }
-    val obj = linear + entropy
-    obj
-  }
-
-
-  def isLinear = false
 }

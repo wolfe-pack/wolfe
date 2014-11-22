@@ -18,8 +18,6 @@ trait Potential {
   def contVars: Array[ContVar]
   def vectVars: Array[VectVar]
 
-  def isLinear: Boolean
-
   def score(factor: FG#Factor, weights: FactorieVector): Double
   def statsForCurrentSetting(factor: FG#Factor): FactorieVector
 
@@ -27,6 +25,8 @@ trait Potential {
   def hasNoContVars = sys.error("This potential has no continuous variables")
   def hasNoVectVars = sys.error("This potential has no vector variables")
   def isNotLinear = sys.error("This potential is not linear")
+
+  def isLinear:Boolean
 
 }
 
