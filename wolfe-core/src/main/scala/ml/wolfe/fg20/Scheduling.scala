@@ -184,7 +184,7 @@ trait Scheduling2 {
           }
       }
 
-      scheduleAcc(nodes.toList, Set(), Seq())
+      scheduleAcc(nodes.filterNot(_.observed).toList, Set(), Seq())
     }
 
     def schedule(factor: Factor): Seq[DirectedEdge] = schedule(factor.edges.next())
@@ -228,18 +228,18 @@ trait Scheduling2 {
               val parents = head.direction match {
                 case EdgeDirection.N2F =>
                   head.n.edgeList.
-                  filterNot(e => e == head.edge || todo.view.map(_.edge).contains(e)).
+                  filterNot(e => e.node.observed || e == head.edge || todo.view.map(_.edge).contains(e)).
                   map(DirectedEdge(_, EdgeDirection.F2N))
                 case EdgeDirection.F2N =>
                   head.f.edges.
-                  filterNot(e => e == head.edge || todo.view.map(_.edge).contains(e)).
+                  filterNot(e => e.node.observed || e == head.edge || todo.view.map(_.edge).contains(e)).
                   map(DirectedEdge(_, EdgeDirection.N2F)).toSeq
               }
 
               scheduleAcc(tail ++ parents, done + head.edge, parents ++ acc)
             }
         }
-      val firstEdges = node.edgeList.map(DirectedEdge(_, EdgeDirection.F2N)).toList
+      val firstEdges = node.edgeList.iterator.filterNot(_.node.observed).map(DirectedEdge(_, EdgeDirection.F2N)).toList
       scheduleAcc(firstEdges, Set(), firstEdges)
     }
   }

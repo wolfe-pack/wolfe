@@ -209,7 +209,8 @@ final class LinearPotential(val discVars: Array[DiscVar[Any]],
  * @author Sebastian Riedel
  */
 final class LinearPotential2(val discVars: Array[DiscVar[Any]], weightsVar:VectVar,
-                             val statistics: Array[FactorieVector]) extends MaxProduct.ExpFamPotential {
+                             val statistics: Array[FactorieVector]) extends MaxProduct.ExpFamPotential
+                                                                            with SumProduct.ExpFamPotential {
 
   val discDims = discVars.map(_.dom.size)
   val contVars = Array.ofDim[ContVar](0)
@@ -217,7 +218,7 @@ final class LinearPotential2(val discVars: Array[DiscVar[Any]], weightsVar:VectV
 
   def processor() = new Proc
 
-  class Proc extends MaxProduct.ExpFamProcessor with TableBasedProcessor {
+  class Proc extends MaxProduct.ExpFamProcessor with SumProduct.ExpFamProcessor with TableBasedProcessor {
 
     def dims = discDims
 
@@ -256,6 +257,27 @@ final class LinearPotential2(val discVars: Array[DiscVar[Any]], weightsVar:VectV
       maxScore
     }
 
+
+    def marginalExpectationsAndObjective(partialSetting: PartialSetting, incoming: Msgs, dstExpectations: FactorieVector) = {
+      var localZ = 0.0
+      //calculate local partition function
+      TablePotential.allSettings(dims, partialSetting.discObs)(partialSetting.disc){ i =>
+        val score = penalizedScore(incoming,i, partialSetting)
+        localZ += math.exp(score)
+      }
+      val logZ = math.log(localZ)
+      var linear = 0.0
+      var entropy = 0.0
+      // prob = 1/|maxs| for all maximums, add corresponding vector
+      TablePotential.allSettings(dims, partialSetting.discObs)(partialSetting.disc){ i =>
+        val score = penalizedScore(incoming, i, partialSetting)
+        val prob = math.exp(score - logZ)
+        linear += prob * scoreTableEntry(i, partialSetting)
+        entropy -= prob * math.log(prob)
+        dstExpectations +=(statistics(i), prob)
+      }
+      linear + entropy
+    }
     def stats(setting: Setting) = {
       val entry = TablePotential.settingToEntry(setting.disc, dims)
       statistics(entry)

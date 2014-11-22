@@ -92,7 +92,7 @@ class BeliefPropagation20Specs extends WolfeSpec {
     }
 
     "return the exact conditional logZ value in the presence of observations" in {
-      val problem = Problem(Seq(tablePot),State.single(v1, true))
+      val problem = Problem(Seq(tablePot), State.single(v1, true))
       val bf = new BruteForce(problem)
       val result = bf.inferMarginals()
       val logZ = log(exp(0) + exp(-3))
@@ -240,6 +240,73 @@ class BeliefPropagation20Specs extends WolfeSpec {
       val bf = new BruteForce(chain).inferMarginals(weights)
 
       sameVector(mp.gradient, bf.gradient) should be(true)
+
+      println(mp.logZ)
+      println(bf.logZ)
+
+    }
+
+
+  }
+
+  "A Sum Product2 algorithm" should {
+    "return the exact marginals when given a single table potential" in {
+      val fg_mp = new SumProduct2(simpleProblem2)
+      val fg_bf = new BruteForce2(simpleProblem2)
+
+      val mpResult = fg_mp.inferMarginals(1)
+      val bfResult = fg_bf.inferMarginals()
+
+      mpResult.marginals should equal(bfResult.marginals)
+      mpResult.logZ should be (bfResult.logZ +- 0.0001)
+    }
+
+    "return the exact marginals given a chain" in {
+      val chain = chainProblem2(5)
+
+      val mp = new SumProduct2(chain).inferMarginals()
+      val bf = new BruteForce2(chain).inferMarginals()
+
+      mp.marginals should equal(bf.marginals)
+      mp.logZ should be (bf.logZ +- 0.0001)
+
+
+    }
+
+    "return expected feature vectors as gradient" in {
+
+      val chainOld = chainProblemWithFeatures(5)
+
+
+      val weightsVar = new VectVar(name = "w")
+      val chain = chainProblemWithFeatures2(5, weightsVar)
+      val weights = LinearPotential.dense(4, 0 -> 1.0, 1 -> 2.0, 2 -> -3, 3 -> 0)
+
+      chain.observation = State.single(weightsVar, weights)
+
+
+      val mpOld = new SumProduct(chainOld).inferMarginals(weights = weights)
+      val bfOld = new BruteForce(chainOld).inferMarginals(weights)
+
+      val mp = new SumProduct2(chain).inferMarginals()
+      val bf = new BruteForce2(chain).inferMarginals()
+
+      println(mp.marginals.toPrettyString)
+      println("----")
+      println(bf.marginals.toPrettyString)
+
+      println(mpOld.logZ)
+      println(mp.logZ)
+      println(bf.logZ)
+
+      println(bfOld.gradient.activeDomain.map(bfOld.gradient(_)).mkString(" "))
+      println(bf.gradient.activeDomain.map(bf.gradient(_)).mkString(" "))
+      println(mp.gradient.activeDomain.map(mp.gradient(_)).mkString(" "))
+
+
+      sameVector(mp.gradient, bf.gradient) should be(true)
+
+      mp.logZ should be (bf.logZ +- 0.0001)
     }
 
 

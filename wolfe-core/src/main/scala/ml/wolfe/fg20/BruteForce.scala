@@ -194,7 +194,7 @@ class BruteForce2(val problem: Problem) extends NodeContentFG2 with EmptyEdgeFG2
     MAPResult(new MapBasedState(state.toMap), maxScore, gradient, new MapBasedState(maxMarginals.toMap))
   }
 
-  def inferMarginals(weights: FactorieVector = new DenseTensor1(0)): MarginalResult = {
+  def inferMarginals(): MarginalResult = {
     syncFactorObservations()
 
     val nodes = var2DiscNode.values.toList
