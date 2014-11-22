@@ -274,10 +274,70 @@ class TensorDB(k: Int = 100) extends Tensor {
   }
 }
 
+trait Features extends TensorDB {
+  val featAlphabet1 = new mutable.HashMap[String, Int]()
+  val featNames1 = new ArrayBuffer[String]
+  val featAlphabet2 = new mutable.HashMap[String, Int]()
+  val featNames2 = new ArrayBuffer[String]
+  val featAlphabet3 = new mutable.HashMap[String, Int]()
+  val featNames3 = new ArrayBuffer[String]
+
+  val feat1Map = new mutable.HashMap[CellIx, mutable.LinkedHashSet[Int]]()
+  val feat2Map = new mutable.HashMap[CellIx, mutable.LinkedHashSet[Int]]()
+  val feat3Map = new mutable.HashMap[CellIx, mutable.LinkedHashSet[Int]]()
+  private var _frozen = false
+
+  var fnode1: Option[Node] = None
+  var fnode2: Option[Node] = None
+  var fnode3: Option[Node] = None
+
+  def fweights1 = fnode1.map(_.variable.asVector.b)
+  def fweights2 = fnode2.map(_.variable.asVector.b)
+  def fweights3 = fnode3.map(_.variable.asVector.b)
+
+  def featureIndex(feat: String, alpha: mutable.HashMap[String, Int], names: ArrayBuffer[String]): Int = alpha.getOrElseUpdate(feat,
+    if (_frozen) {
+      sys.error(s"Cannot find feature $feat, alhpabet is frozen.")
+      sys.exit(1)
+    } else {
+      val idx = names.size
+      names += feat
+      idx
+    })
+
+  def featureIndex1(feat: String) = featureIndex(feat, featAlphabet1, featNames1)
+  def featureIndex2(feat: String) = featureIndex(feat, featAlphabet2, featNames2)
+  def featureIndex3(feat: String) = featureIndex(feat, featAlphabet3, featNames3)
+
+  def numFeatures1 = featNames1.size
+  def numFeatures2 = featNames2.size
+  def numFeatures3 = featNames3.size
+
+  def addFeat1(key1: CellIx, feat: String) = {
+    val idx = featureIndex1(feat)
+    feat1Map.getOrElseUpdate(key1, new mutable.LinkedHashSet) += idx
+  }
+
+  def addFeat2(key2: CellIx, feat: String) = {
+    val idx = featureIndex2(feat)
+    feat2Map.getOrElseUpdate(key2, new mutable.LinkedHashSet) += idx
+  }
+
+  def addFeat3(key3: CellIx, feat: String) = {
+    val idx = featureIndex3(feat)
+    feat3Map.getOrElseUpdate(key3, new mutable.LinkedHashSet) += idx
+  }
+  override def toFactorGraph: FactorGraph = {
+    val fg = super.toFactorGraph
+    _frozen = true
+    fg
+  }
+}
+
 class TensorKB(k: Int = 100) extends TensorDB(k) {
   def relations = keys1
   def arg1s = keys2
   def arg2s = keys3
- 
+
   def getFact(relation: CellIx, entity1: CellIx, entity2: CellIx) = get(relation, entity1, entity2)
 }
