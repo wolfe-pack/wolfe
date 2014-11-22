@@ -1,8 +1,8 @@
 package ml.wolfe.fg20
 
 import cc.factorie.la.DenseTensor1
-import ml.wolfe.{FactorieVector, SparseVector, FactorGraph}
 import ml.wolfe.MoreArrayOps._
+import ml.wolfe.{FactorieVector, SparseVector}
 
 
 class BruteForce(val problem: Problem) extends NodeContentFG with EmptyFactorFG with EmptyEdgeFG {
@@ -110,19 +110,19 @@ class BruteForce(val problem: Problem) extends NodeContentFG with EmptyFactorFG 
 class BruteForce2(val problem: Problem) extends NodeContentFG2 with EmptyEdgeFG2 {
 
   class FactorType(val pot: Pot) extends Factor {
-    var setting = new Setting(pot.discVars.length, 0, 0)
+    var setting = new Setting(pot.discVars.length, pot.contVars.length, pot.vectVars.length)
   }
 
 
   def createFactor(pot: Pot) = new FactorType(pot)
 
   type NodeContent = Any
-  type ContNodeContent = Nothing
-  type VectNodeContent = Nothing
+  class ContNodeContent
+  class VectNodeContent
   class DiscNodeContent(var belief: Array[Double])
   def createDiscNodeContent(variable: DiscVar[Any]) = new DiscNodeContent(Array.ofDim[Double](variable.dom.size))
-  def createContNodeContent(contVar: ContVar) = sys.error("Can't do brute force with continuous variables")
-  def createVectNodeContent(vectVar: VectVar) = sys.error("Can't do brute force with vector variables")
+  def createContNodeContent(contVar: ContVar) = new ContNodeContent
+  def createVectNodeContent(vectVar: VectVar) = new VectNodeContent
   def acceptPotential = { case p: Potential2 => p }
   type Pot = Potential2
 
@@ -144,15 +144,18 @@ class BruteForce2(val problem: Problem) extends NodeContentFG2 with EmptyEdgeFG2
     }
   }
 
-  def currentScore(weights: FactorieVector) = {
+  def currentScore() = {
     factors.iterator.map(f => f.processor.score(f.setting)).sum
   }
 
   def syncFactorObservations(): Unit = {
     for (n <- discNodes; if n.observed; e <- n.edges) e.factor.setting.disc(e.index) = n.setting
+    for (c <- contNodes; if c.observed; e <- c.edges) e.factor.setting.cont(e.index) = c.setting
+    for (v <- vectNodes; if v.observed; e <- v.edges) e.factor.setting.vect(e.index) = v.setting
+
   }
 
-  def inferMAP(weights: FactorieVector = new DenseTensor1(0)): MAPResult = {
+  def inferMAP(): MAPResult = {
 
     //initialize observations in factor settings
     syncFactorObservations()
@@ -164,7 +167,7 @@ class BruteForce2(val problem: Problem) extends NodeContentFG2 with EmptyEdgeFG2
 
     var maxSetting: Array[Int] = null
     loop { () =>
-      val score = currentScore(weights)
+      val score = currentScore()
       for (n <- nodes) {
         n.content.belief(n.setting) = math.max(score, n.content.belief(n.setting))
       }
@@ -178,6 +181,7 @@ class BruteForce2(val problem: Problem) extends NodeContentFG2 with EmptyEdgeFG2
     for ((s, n) <- maxSetting zip nodes; if !n.observed) {
       n.setting = s
       maxNormalize(n.content.belief)
+      for (e <- n.edges) e.factor.setting.disc(e.index) = s
     }
 
     val gradient = new SparseVector(1000)
@@ -199,7 +203,7 @@ class BruteForce2(val problem: Problem) extends NodeContentFG2 with EmptyEdgeFG2
     for (n <- nodes) fill(n.content.belief, 0.0)
 
     loop { () =>
-      val score = currentScore(weights)
+      val score = currentScore()
       val prob = math.exp(score)
       for (n <- nodes) {
         n.content.belief(n.setting) += prob
@@ -216,7 +220,7 @@ class BruteForce2(val problem: Problem) extends NodeContentFG2 with EmptyEdgeFG2
     val gradient = new SparseVector(1000)
 
     loop { () =>
-      val score = currentScore(weights)
+      val score = currentScore()
       val prob = math.exp(score) / Z
       for ((f, s) <- expFamStats)
         gradient +=(s.stats(f.setting), prob)

@@ -20,16 +20,16 @@ class BeliefPropagation20Specs extends WolfeSpec {
   val v2            = new DiscVar(Seq(false, true))
   val scores        = Array(1.0, 2.0, -3.0, 0.0)
   val tablePot      = new TablePotential(Array(v1, v2), scores)
-  val simpleProblem = Problem(Seq(tablePot), Seq(v1, v2))
+  val simpleProblem = Problem(Seq(tablePot))
 
   val tablePot2      = new TablePotential2(Array(v1, v2), scores)
-  val simpleProblem2 = Problem(Seq(tablePot2), Seq(v1, v2))
+  val simpleProblem2 = Problem(Seq(tablePot2))
 
   val xorPot     = new TablePotential(Array(v1, v2), Array(Double.NegativeInfinity, 0, 0, Double.NegativeInfinity))
-  val xorProblem = Problem(Seq(xorPot), Seq(v1, v2))
+  val xorProblem = Problem(Seq(xorPot))
 
   val xorPot2     = new TablePotential2(Array(v1, v2), Array(Double.NegativeInfinity, 0, 0, Double.NegativeInfinity))
-  val xorProblem2 = Problem(Seq(xorPot2), Seq(v1, v2))
+  val xorProblem2 = Problem(Seq(xorPot2))
 
 
   val fixedStats = LinearPotential.stats(Array(2, 2), {
@@ -39,21 +39,29 @@ class BeliefPropagation20Specs extends WolfeSpec {
   def chainProblem(length: Int) = {
     val vars = for (i <- 0 until length) yield new DiscVar(Seq(false, true), "v" + i)
     val pots = for ((v1, v2) <- vars.dropRight(1) zip vars.drop(1)) yield new TablePotential(Array(v1, v2), scores)
-    Problem(pots, vars)
+    Problem(pots)
   }
 
   def chainProblem2(length: Int) = {
     val vars = for (i <- 0 until length) yield new DiscVar(Seq(false, true), "v" + i)
     val pots = for ((v1, v2) <- vars.dropRight(1) zip vars.drop(1)) yield new TablePotential2(Array(v1, v2), scores)
-    Problem(pots, vars)
+    Problem(pots)
   }
 
 
   def chainProblemWithFeatures(length: Int) = {
     val vars = for (i <- 0 until length) yield new DiscVar(Seq(false, true), "v" + i)
     val pots = for ((v1, v2) <- vars.dropRight(1) zip vars.drop(1)) yield new LinearPotential(Array(v1, v2), fixedStats)
-    Problem(pots, vars)
+    Problem(pots)
   }
+
+  def chainProblemWithFeatures2(length: Int, weightsVar: VectVar) = {
+    val vars = for (i <- 0 until length) yield new DiscVar(Seq(false, true), "v" + i)
+    val pots = for ((v1, v2) <- vars.dropRight(1) zip vars.drop(1)) yield
+      new LinearPotential2(Array(v1, v2), weightsVar, fixedStats)
+    Problem(pots)
+  }
+
 
   def sameVector(v1: FactorieVector, v2: FactorieVector, eps: Double = 0.00001) = {
     v1.activeDomain.forall(i => math.abs(v1(i) - v2(i)) < eps) &&
@@ -69,14 +77,14 @@ class BeliefPropagation20Specs extends WolfeSpec {
       result.logZ should be(logZ)
     }
     "return the exact MAP value" in {
-      val problem = Problem(Seq(tablePot), Seq(v1, v2))
+      val problem = Problem(Seq(tablePot))
       val bf = new BruteForce(problem)
       val result = bf.inferMAP()
       val max = scores.max
       result.score should be(max)
     }
     "return the exact conditional MAP value in the presence of observations" in {
-      val problem = Problem(Seq(tablePot), Seq(v1, v2), observation = State.single(v1, true))
+      val problem = Problem(Seq(tablePot), State.single(v1, true))
       val bf = new BruteForce(problem)
       val result = bf.inferMAP()
       val max = 0
@@ -84,7 +92,7 @@ class BeliefPropagation20Specs extends WolfeSpec {
     }
 
     "return the exact conditional logZ value in the presence of observations" in {
-      val problem = Problem(Seq(tablePot), Seq(v1, v2), observation = State.single(v1, true))
+      val problem = Problem(Seq(tablePot),State.single(v1, true))
       val bf = new BruteForce(problem)
       val result = bf.inferMarginals()
       val logZ = log(exp(0) + exp(-3))
@@ -101,14 +109,14 @@ class BeliefPropagation20Specs extends WolfeSpec {
       result.logZ should be(logZ)
     }
     "return the exact MAP value" in {
-      val problem = Problem(Seq(tablePot2), Seq(v1, v2))
+      val problem = Problem(Seq(tablePot2))
       val bf = new BruteForce2(problem)
       val result = bf.inferMAP()
       val max = scores.max
       result.score should be(max)
     }
     "return the exact conditional MAP value in the presence of observations" in {
-      val problem = Problem(Seq(tablePot2), Seq(v1, v2), observation = State.single(v1, true))
+      val problem = Problem(Seq(tablePot2), State.single(v1, true))
       val bf = new BruteForce2(problem)
       val result = bf.inferMAP()
       val max = 0
@@ -116,7 +124,7 @@ class BeliefPropagation20Specs extends WolfeSpec {
     }
 
     "return the exact conditional logZ value in the presence of observations" in {
-      val problem = Problem(Seq(tablePot2), Seq(v1, v2), observation = State.single(v1, true))
+      val problem = Problem(Seq(tablePot2), State.single(v1, true))
       val bf = new BruteForce2(problem)
       val result = bf.inferMarginals()
       val logZ = log(exp(0) + exp(-3))
@@ -189,11 +197,14 @@ class BeliefPropagation20Specs extends WolfeSpec {
     }
 
     "return feature vectors of argmax state" in {
-      val chain = chainProblemWithFeatures(5)
+      val weightsVar = new VectVar(name = "w")
+      val chain = chainProblemWithFeatures2(5, weightsVar)
       val weights = LinearPotential.dense(4, 0 -> 1.0, 1 -> 2.0, 2 -> -3, 3 -> 0)
 
-      val mp = new MaxProduct(chain).inferMAP(weights = weights)
-      val bf = new BruteForce(chain).inferMAP(weights)
+      chain.observation = State.single(weightsVar, weights)
+
+      val mp = new MaxProduct2(chain).inferMAP()
+      val bf = new BruteForce2(chain).inferMAP()
 
       sameVector(mp.gradient, bf.gradient) should be(true)
     }

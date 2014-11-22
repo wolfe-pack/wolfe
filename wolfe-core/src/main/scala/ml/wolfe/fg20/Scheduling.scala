@@ -129,7 +129,7 @@ trait Scheduling {
  */
 trait Scheduling2 {
 
-  this: FG =>
+  this: FG2 =>
 
   object EdgeDirection extends Enumeration {
     type EdgeDirection = Value

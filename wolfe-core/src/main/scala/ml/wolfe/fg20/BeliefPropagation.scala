@@ -12,6 +12,16 @@ trait Residuals extends EdgeMsgsFG {
 
 }
 
+trait Residuals2 extends EdgeMsgsFG2 {
+
+  trait Msgs {
+    def saveCurrentAsLast()
+    def residual(): Double
+  }
+
+}
+
+
 trait BeliefPropagationFG extends Residuals with NodeContentFG {
 
   final class FactorType(val pot: Pot) extends Factor {
@@ -148,25 +158,24 @@ trait EdgePropagation extends Residuals with Scheduling {
 
 }
 
-trait EdgePropagation2 extends Residuals with Scheduling2 {
+trait EdgePropagation2 extends Residuals2 with Scheduling2 {
 
   lazy val scheduled = MPSchedulerImpl.schedule()
 
-  def propagate: (Int, Double) => FactorieVector => Unit =
+  def propagate: (Int, Double) => Unit =
     propagateSchedule(scheduled)
 
   def propagateSchedule(schedule: Seq[DirectedEdge])
-                       (maxIterations: Int, eps: Double)
-                       (weights: FactorieVector) {
+                       (maxIterations: Int, eps: Double) {
     var iteration = 0
     var converged = false
     while (iteration < maxIterations && !converged) {
-      for (directedEdge <- scheduled) directedEdge.direction match {
+      for (directedEdge <- scheduled if !directedEdge.n.observed) directedEdge.direction match {
         case EdgeDirection.N2F =>
           updateN2F(directedEdge.edge)
 
-        case EdgeDirection.F2N =>
-          updateF2N(directedEdge.edge, weights)
+        case EdgeDirection.F2N  =>
+          updateF2N(directedEdge.edge)
       }
       iteration += 1
       converged = residual() < eps
@@ -178,7 +187,7 @@ trait EdgePropagation2 extends Residuals with Scheduling2 {
   }
 
 
-  def updateF2N(edge: Edge, weights: FactorieVector)
+  def updateF2N(edge: Edge)
   def updateN2F(edge: Edge)
 
 }
@@ -208,10 +217,10 @@ trait FwdBwdEdgePropagation2 extends EdgePropagation2 {
 
   override lazy val scheduled = fwdSchedule ++ bwdSchedule
 
-  def propagateFwd: (Int, Double) => FactorieVector => Unit =
+  def propagateFwd: (Int, Double) => Unit =
     propagateSchedule(fwdSchedule)
 
-  def propagateBwd: (Int, Double) => FactorieVector => Unit =
+  def propagateBwd: (Int, Double) => Unit =
     propagateSchedule(bwdSchedule)
 
 }
@@ -233,11 +242,16 @@ object MaxProduct {
 
   trait Potential2 extends fg20.Potential2 {type Proc <: Processor }
 
-  trait ExpFamProcessor extends Processor {
+  trait ExpFamProcessor extends fg20.ExpFamProcessor with Processor {
     def maxMarginalExpectationsAndObjective(partialSetting: PartialSetting,
                                             incoming: Msgs,
                                             dstExpectations: FactorieVector): Double
+    def maxMarginalObjective(partialSetting: PartialSetting, incoming: Msgs) = {
+      maxMarginalExpectationsAndObjective(partialSetting,incoming,new SparseVector(0))
+    }
   }
+
+  trait ExpFamPotential extends fg20.ExpFamPotential with Potential2 { type Proc <: ExpFamProcessor }
 
 }
 
@@ -375,7 +389,7 @@ class MaxProduct2(val problem: Problem) extends BeliefPropagationFG2 with FwdBwd
     else updateN2FBySum(edge)
   }
 
-  def updateF2N(edge: Edge, weights: FactorieVector) = {
+  def updateF2N(edge: Edge) = {
     val factor = edge.factor
     edge match {
       case d: DiscEdge =>
@@ -393,20 +407,24 @@ class MaxProduct2(val problem: Problem) extends BeliefPropagationFG2 with FwdBwd
     }
   }
 
-    def inferMAP(maxIterations: Int = 10, eps: Double = 0.0001, weights: FactorieVector = new DenseVector(0)): MAPResult = {
+    def inferMAP(maxIterations: Int = 10, eps: Double = 0.0001): MAPResult = {
       deterministicRun = false
-      propagate(maxIterations, eps)(weights)
-      for (node <- nodes) { updateBelief(node); normalizeBelief(node) }
+      propagate(maxIterations, eps)
+      for (node <- nodes; if !node.observed) { updateBelief(node); normalizeBelief(node) }
       val gradient = new SparseVector(1000)
       //val score = factors.view.map(f => f.pot.maxMarginalExpectationsAndObjective(f, gradient, weights)).sum
-      val score = factors.iterator.map(f => f.processor.maxMarginalObjective(f.partialSetting,f.incoming)).sum
+      //val score = factors.iterator.map(f => f.processor.maxMarginalObjective(f.partialSetting,f.incoming)).sum
+      val score = factors.iterator.map(f => f.processor match {
+        case p:MaxProduct.ExpFamProcessor => p.maxMarginalExpectationsAndObjective(f.partialSetting,f.incoming,gradient)
+        case p:MaxProduct.Processor => f.processor.maxMarginalObjective(f.partialSetting,f.incoming)
+      }).sum
       val maxMarginals = var2DiscNode.values.map(n =>
         DiscBelief(n.variable) -> Distribution.disc(n.variable.dom, n.content.belief.map(math.exp)))
 
       deterministicRun = true
       clearSettings()
-      propagateFwd(1, eps)(weights)
-      nodes.filter(! isFixedSetting(_)).foreach(setToArgmax)
+      propagateFwd(1, eps)
+      nodes.filter(n => !n.observed && !isFixedSetting(n)).foreach(setToArgmax)
       val discState = problem.discVars.map(v => v -> v.dom(var2DiscNode(v).setting)).toMap[Var[Any], Any]
       val contState = problem.contVars.map(v => v -> var2ContNode(v).setting)
       MAPResult(new MapBasedState(discState ++ contState), score, gradient, new MapBasedState(maxMarginals.toMap))
@@ -418,7 +436,7 @@ class MaxProduct2(val problem: Problem) extends BeliefPropagationFG2 with FwdBwd
     }
   }
 
-  def setToArgmax(n: Node): Unit = n match {
+  def setToArgmax(n: NodeType): Unit = n match {
     case d: DiscNode =>
       val scores = for (i <- d.variable.dom.indices) yield
         (for (e <- d.edges) yield e.msgs.f2n.msg(i)).sum
@@ -431,7 +449,7 @@ class MaxProduct2(val problem: Problem) extends BeliefPropagationFG2 with FwdBwd
     vectNodes.foreach(_.setting = null)
   }
 
-  def isFixedSetting(n: Node) = n match {
+  def isFixedSetting(n: NodeType) = n match {
     case d: DiscNode => d.setting != Int.MinValue
     case c: ContNode => c.setting != Double.MinValue
     case v: VectNode => v.setting != null
@@ -440,15 +458,13 @@ class MaxProduct2(val problem: Problem) extends BeliefPropagationFG2 with FwdBwd
 }
 
 
-trait BeliefPropagationFG2 extends Residuals with NodeContentFG {
+trait BeliefPropagationFG2 extends Residuals2 with NodeContentFG2 {
 
   type Pot <: Potential2
 
   final class FactorType(val pot: Pot) extends Factor {
 
     var partialSetting: PartialSetting = null // new PartialSetting()
-
-    val processor: pot.Proc = pot.processor()
 
     private[BeliefPropagationFG2] var updated = false
 
@@ -460,6 +476,18 @@ trait BeliefPropagationFG2 extends Residuals with NodeContentFG {
             partialSetting.discObs(i) = true
             partialSetting.disc(i) = discEdges(i).node.setting
           }
+        for (i <- 0 until contEdges.length) {
+          if (contEdges(i).node.observed) {
+            partialSetting.contObs(i) = true
+            partialSetting.cont(i) = contEdges(i).node.setting
+          }
+        }
+        for (i <- 0 until vectEdges.length) {
+          if (vectEdges(i).node.observed) {
+            partialSetting.vectObs(i) = true
+            partialSetting.vect(i) = vectEdges(i).node.setting
+          }
+        }
         updated = true
       }
     }
