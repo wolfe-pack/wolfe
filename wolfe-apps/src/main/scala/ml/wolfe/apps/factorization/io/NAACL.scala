@@ -21,36 +21,43 @@ import ml.wolfe.util._
  * @author rockt
  */
 
+
 object EvaluateNAACL extends App {
   val configFile = args.lift(0).getOrElse("./conf/eval.conf")
-  val pathToLatestPredictions = args.lift(1).getOrElse("./data/out/" + Conf.getMostRecentOutDir + "/predict.txt")
-  val pathToLatest = pathToLatestPredictions.split("/").init.mkString("/")+"/"
-  Conf.add(configFile)
-  assert(!Conf.conf.entrySet().isEmpty, "Couldn't find configuration file.")
+  val pathToLatestPredictions = args.lift(1).getOrElse("./data/out/" + Conf.getMostRecentOutDir + "/predict.txt") 
+  new EvaluateNAACL(configFile, pathToLatestPredictions).eval()
+}
 
-  val rankFileNamesAndLabels = Seq(pathToLatestPredictions + ":latest",
-    //"./data/naacl2013/structured/test-rockt-F.txt:rockt-F",
-    "./data/naacl2013/structured/test-mintz09.txt:Mintz09",
-    "./data/naacl2013/structured/test-yao11.txt:Yao11",
-    "./data/naacl2013/structured/test-surdeanu12.txt:Surdeanu12",
-    //"./data/naacl2013/structured/test-riedel13-model-N.txt:N",
-    "./data/naacl2013/structured/test-riedel13-model-F.txt:Riedel13-F",
-    //"./data/naacl2013/structured/test-riedel13-model-NFE.txt:NFE",
-    "./data/naacl2013/structured/test-riedel13-model-NF.txt:Riedel13-NF"
-  )
-  val rankFileNamesAndLabelsSplit = rankFileNamesAndLabels.map(name =>
-    if (name.substring(3).contains(":")) Array(name.substring(0,name.lastIndexOf(":")), name.substring(name.lastIndexOf(":")) +1)
-    else Array(name, new File(name).getName)
-  ).toSeq
+class EvaluateNAACL(configFile: String, pathToLatestPredictions: String) {
+  def eval(): Double = {
+    val pathToLatest = pathToLatestPredictions.split("/").init.mkString("/") + "/"
+    Conf.add(configFile)
+    assert(!Conf.conf.entrySet().isEmpty, "Couldn't find configuration file.")
 
-  val rankFileNames = rankFileNamesAndLabelsSplit.map(_.apply(0))
-  val labels = rankFileNamesAndLabelsSplit.map(_.apply(1))
-  val rankFiles = rankFileNames.map(new File(_))
-  val goldFile = new File(Conf.getString("eval.gold"))
-  val relPatterns = Conf.getStringList("eval.targets").map(_.r).toSeq
+    val rankFileNamesAndLabels = Seq(pathToLatestPredictions + ":latest",
+      //"./data/naacl2013/structured/test-rockt-F.txt:rockt-F",
+      "./data/naacl2013/structured/test-mintz09.txt:Mintz09",
+      "./data/naacl2013/structured/test-yao11.txt:Yao11",
+      "./data/naacl2013/structured/test-surdeanu12.txt:Surdeanu12",
+      //"./data/naacl2013/structured/test-riedel13-model-N.txt:N",
+      "./data/naacl2013/structured/test-riedel13-model-F.txt:Riedel13-F",
+      //"./data/naacl2013/structured/test-riedel13-model-NFE.txt:NFE",
+      "./data/naacl2013/structured/test-riedel13-model-NF.txt:Riedel13-NF"
+    )
+    val rankFileNamesAndLabelsSplit = rankFileNamesAndLabels.map(name =>
+      if (name.substring(3).contains(":")) Array(name.substring(0, name.lastIndexOf(":")), name.substring(name.lastIndexOf(":")) + 1)
+      else Array(name, new File(name).getName)
+    ).toSeq
 
-  //    evaluate(rankFiles, goldFile, new PrintStream("out/latest/eval.txt"), relPatterns, labels)
-  EvaluationTool.evaluateBinary(rankFiles, goldFile, System.out, relPatterns, labels, pathToGnuplotFile = pathToLatest)
+    val rankFileNames = rankFileNamesAndLabelsSplit.map(_.apply(0))
+    val labels = rankFileNamesAndLabelsSplit.map(_.apply(1))
+    val rankFiles = rankFileNames.map(new File(_))
+    val goldFile = new File(Conf.getString("eval.gold"))
+    val relPatterns = Conf.getStringList("eval.targets").map(_.r).toSeq
+
+    //    evaluate(rankFiles, goldFile, new PrintStream("out/latest/eval.txt"), relPatterns, labels)
+    EvaluationTool.evaluateBinary(rankFiles, goldFile, System.out, relPatterns, labels, pathToGnuplotFile = pathToLatest)
+  }
 }
 
 
@@ -118,7 +125,7 @@ object EvaluationTool {
 
   def evaluateBinary(rankFiles: Seq[File], gold: File, out: PrintStream,
                      relPatterns: Seq[Regex] = Conf.getStringList("eval.targets").toSeq.map(_.r),
-                     names: Seq[String], pathToGnuplotFile: String = "eval/") {
+                     names: Seq[String], pathToGnuplotFile: String = "eval/"): Double = {
     val poolDepth = Conf.conf.getInt("eval.pool-depth")
     val runDepth = Conf.conf.getInt("eval.run-depth")
     evaluate(rankFiles.zip(names).toSeq,
@@ -138,7 +145,7 @@ object EvaluationTool {
                extractFactFromLine: String => (List[String], String),
                poolDepth: Int,
                runDepth: Int,
-               pathToEvaluationOutput: String = "eval/") = {
+               pathToEvaluationOutput: String = "eval/"): Double = {
 
     val allowedFacts = new mutable.HashMap[Regex, mutable.HashSet[(List[String], String)]]()
     println("Collecting facts from rank files")
@@ -458,7 +465,7 @@ object EvaluationTool {
     //      }
     //    }
 
-
+    perFileEvals.head.globalMap()
   }
 
   def extractUnaryFactFromLine(line: String): (List[String], String) = {
