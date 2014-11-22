@@ -230,42 +230,67 @@ final class TablePotential(val discVars: Array[DiscVar[Any]], table: Array[Doubl
   def isLinear = false
 }
 
+trait TableBasedProcessor extends MaxProduct.Processor {
+
+  def dims: Array[Int]
+
+  def discMaxMarginalF2N(varIndex: Int, partialSetting: PartialSetting, incoming: Msgs, result: DiscMsg) = {
+    fill(result.msg, Double.NegativeInfinity)
+    TablePotential.allSettings(dims, partialSetting.discObs)(partialSetting.disc) { i =>
+      var score = scoreTableEntry(i, partialSetting)
+      val varValue = partialSetting.disc(varIndex)
+      for (j <- 0 until partialSetting.disc.length; if j != varIndex) {
+        score += incoming.disc(j).msg(partialSetting.disc(j))
+      }
+      result.msg(varValue) = math.max(score, result.msg(varValue))
+    }
+    maxNormalize(result.msg)
+  }
+
+  def scoreTableEntry(entry: Int, setting: Setting): Double
+
+  def penalizedScore(incoming: Msgs, settingId: Int, setting: PartialSetting): Double = {
+    var score = scoreTableEntry(settingId, setting)
+    for (j <- 0 until setting.disc.length; if !setting.discObs(j)) {
+      score += incoming.disc(j).msg(setting.disc(j))
+    }
+    score
+  }
+
+//  def score(setting: Setting) = {
+//    val entry = TablePotential.settingToEntry(setting.disc, dims)
+//    scoreTableEntry(entry, setting)
+//  }
+
+
+}
+
 final class TablePotential2(val discVars: Array[DiscVar[Any]], table: Array[Double]) extends MaxProduct.Potential2 with DiscPotential2 {
 
-  val dims = discVars.map(_.dom.size)
+  val discDims = discVars.map(_.dom.size)
 
   def processor() = new Proc
 
-  class Proc extends MaxProduct.Processor {
+  final class Proc extends TableBasedProcessor {
 
+    def dims = discDims
 
-    def discMaxMarginalF2N(varIndex: Int, partialSetting: PartialSetting, incoming: Msgs, result: DiscMsg) = {
-
-      fill(result.msg, Double.NegativeInfinity)
-
-      TablePotential.allSettings(dims, partialSetting.discObs)(partialSetting.disc) { i =>
-        var score = table(i)
-        val varValue = partialSetting.disc(varIndex)
-        for (j <- 0 until discVars.length; if j != varIndex) {
-          score += incoming.disc(j).msg(partialSetting.disc(j))
-        }
-        result.msg(varValue) = math.max(score, result.msg(varValue))
-      }
-      maxNormalize(result.msg)
-    }
-
-
-    def score(setting: Setting) = {
-      val entry = TablePotential.settingToEntry(setting.disc, dims)
+    def scoreTableEntry(entry: Int, setting: Setting) = {
       table(entry)
     }
+
+    def score(setting: Setting) = {
+      val entry = TablePotential.settingToEntry(setting.disc,dims)
+      table(entry)
+    }
+
     def maxMarginalObjective(partialSetting: PartialSetting, incoming: Msgs) = {
       // 1) go over all states, find max with respect to incoming messages
       var norm = Double.NegativeInfinity
       var maxScore = Double.NegativeInfinity
 
       TablePotential.allSettings(dims, partialSetting.discObs)(partialSetting.disc) { i =>
-        val score = penalizedScore2(incoming, i, partialSetting)
+        val score = penalizedScore(incoming, i, partialSetting)
         if (score > norm) {
           norm = score
           maxScore = table(i)
@@ -274,18 +299,10 @@ final class TablePotential2(val discVars: Array[DiscVar[Any]], table: Array[Doub
       maxScore
     }
 
-    def penalizedScore2(incoming: Msgs, settingId: Int, setting: PartialSetting): Double = {
-      var score = table(settingId)
-      for (j <- 0 until setting.disc.length; if !setting.discObs(j)) {
-        score += incoming.disc(j).msg(setting.disc(j))
-      }
-      score
-    }
-
   }
 
   def score(factor: FG#Factor, weights: FactorieVector) = {
-    val entry = TablePotential.settingToEntry(factor.discEdges.iterator.map(_.node.setting), dims)
+    val entry = TablePotential.settingToEntry(factor.discEdges.iterator.map(_.node.setting), discDims)
     table(entry)
   }
 

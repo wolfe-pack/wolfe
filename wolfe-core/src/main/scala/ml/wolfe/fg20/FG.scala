@@ -74,20 +74,20 @@ trait FG {
   type VectNode <: BasicVectNode with NodeType
 
   trait BasicDiscNode extends TypedNode[DiscVar[Any], DiscEdge] {
-    var setting  = 0
+    var setting = 0
 
-    def observe(setting:Int,observed:Boolean = true): Unit = {
+    def observe(setting: Int, observed: Boolean = true): Unit = {
       this.setting = setting
       this.observed = observed
     }
   }
 
-  trait BasicContNode extends TypedNode[ContVar, ContEdge]  {
-    var setting  = 0.0
+  trait BasicContNode extends TypedNode[ContVar, ContEdge] {
+    var setting = 0.0
   }
 
   trait BasicVectNode extends TypedNode[VectVar, VectEdge] {
-    var setting:FactorieVector = null
+    var setting: FactorieVector = null
   }
 
   trait Node {
@@ -99,14 +99,14 @@ trait FG {
     def variable: V
     var observed = false
     def edgeList = edges.toList
-    var edges: Array[E] = null
+    var edges     : Array[E] = null
     var statsEdges: Array[E] = null
 
     private[FG] def build() {
       edges = buffer.toArray
       statsEdges = statsEdgeBuffer.toArray
     }
-    private[FG] var buffer: List[E] = Nil
+    private[FG] var buffer         : List[E] = Nil
     private[FG] var statsEdgeBuffer: List[E] = Nil
 
   }
@@ -145,11 +145,11 @@ trait FG {
   private def checkPot(p: Potential): Pot =
     if (acceptPotential.isDefinedAt(p)) acceptPotential(p) else sys.error("Unsupported potential")
 
-  def createAndLinkFactor(p: Pot, linkEdges:Boolean = true) = {
+  def createAndLinkFactor(p: Pot, linkEdges: Boolean = true) = {
     val factor = createFactor(p)
-    createDiscEdges(factor,linkEdges)
-    createContEdges(factor,linkEdges)
-    createVectEdges(factor,linkEdges)
+    createDiscEdges(factor, linkEdges)
+    createContEdges(factor, linkEdges)
+    createVectEdges(factor, linkEdges)
     factor
   }
 
@@ -164,8 +164,8 @@ trait FG {
   val var2ContNode = createContNodes()
   val var2VectNode = createVectNodes()
 
-  val factors = problem.pots.map(p => createAndLinkFactor(checkPot(p)))
-  val statsFactors = problem.stats.map(p => createAndLinkFactor(checkPot(p),false))
+  val factors      = problem.pots.map(p => createAndLinkFactor(checkPot(p)))
+  val statsFactors = problem.stats.map(p => createAndLinkFactor(checkPot(p), false))
 
 
   var2DiscNode.values.foreach(_.build())
@@ -174,8 +174,9 @@ trait FG {
 
   setObservations()
 
-  def setObservations() {
-    for (v <- problem.observation.domain) {
+
+  def setObservations(state: State = problem.observation) {
+    for (v <- state.domain) {
       v match {
         case d: DiscVar[_] =>
           var2DiscNode(d).observe(d.dom.indexOf(problem.observation(d)))
@@ -186,7 +187,7 @@ trait FG {
   //---- These are hacks to make Intellij be able to parse this file, there are much nicer ways to do this otherwise
 
 
-  private def createDiscEdges(factor: FactorType, linkToNormalFactors:Boolean = true): Unit = {
+  private def createDiscEdges(factor: FactorType, linkToNormalFactors: Boolean = true): Unit = {
     val result = new ArrayBuffer[DiscEdge]
     for ((v, i) <- factor.pot.discVars.zipWithIndex) result += createDiscEdge(var2DiscNode(v), factor, i)
     factor.discEdges = result.toArray[DiscEdge](discEdgeTag)
@@ -194,7 +195,7 @@ trait FG {
     else factor.discEdges.foreach(e => e.node.statsEdgeBuffer ::= e)
   }
 
-  private def createContEdges(factor: FactorType,linkToNormalFactors:Boolean = true): Unit = {
+  private def createContEdges(factor: FactorType, linkToNormalFactors: Boolean = true): Unit = {
     val result = new ArrayBuffer[ContEdge]
     for ((v, i) <- factor.pot.contVars.zipWithIndex) result += createContEdge(var2ContNode(v), factor, i)
     factor.contEdges = result.toArray[ContEdge](contEdgeTag)
@@ -202,14 +203,13 @@ trait FG {
     else factor.contEdges.foreach(e => e.node.statsEdgeBuffer ::= e)
   }
 
-  private def createVectEdges(factor: FactorType,linkToNormalFactors:Boolean = true): Unit = {
+  private def createVectEdges(factor: FactorType, linkToNormalFactors: Boolean = true): Unit = {
     val result = new ArrayBuffer[VectEdge]
     for ((v, i) <- factor.pot.vectVars.zipWithIndex) result += createVectEdge(var2VectNode(v), factor, i)
     factor.vectEdges = result.toArray[VectEdge](vectEdgeTag)
     if (linkToNormalFactors) factor.vectEdges.foreach(e => e.node.buffer ::= e)
     else factor.vectEdges.foreach(e => e.node.statsEdgeBuffer ::= e)
   }
-
 
 
   private def createDiscNodes() = {
@@ -231,7 +231,6 @@ trait FG {
   }
 
 
-
   //class tags allow us to create edge arrays without know the concrete array element class yet.
   implicit def discEdgeTag: ClassTag[DiscEdge]
   implicit def contEdgeTag: ClassTag[ContEdge]
@@ -251,7 +250,7 @@ trait FG {
  * FGs can be further customized to have specialized implementations of nodes, edges and factors. For example,
  * a FG subclass can use edges to store messages from nodes to factor.
  */
-trait FG2 {
+trait FG2 extends ProblemListener {
 
   /**
    * The type of potentials on the factors of this factor graph.
@@ -308,39 +307,50 @@ trait FG2 {
   type VectNode <: BasicVectNode with NodeType
 
   trait BasicDiscNode extends TypedNode[DiscVar[Any], DiscEdge] {
-    var setting  = 0
+    var setting = 0
 
-    def observe(setting:Int,observed:Boolean = true): Unit = {
+    def observe(setting: Int, observed: Boolean = true): Unit = {
       this.setting = setting
       this.observed = observed
     }
   }
 
-  trait BasicContNode extends TypedNode[ContVar, ContEdge]  {
-    var setting  = 0.0
+  trait BasicContNode extends TypedNode[ContVar, ContEdge] {
+    var setting = 0.0
+    def observe(setting: Double, observed: Boolean = true): Unit = {
+      this.setting = setting
+      this.observed = observed
+    }
+
   }
 
   trait BasicVectNode extends TypedNode[VectVar, VectEdge] {
-    var setting:FactorieVector = null
+    var setting: FactorieVector = null
+    def observe(setting: FactorieVector, observed: Boolean = true): Unit = {
+      this.setting = setting
+      this.observed = observed
+    }
+
   }
 
   trait Node {
     def variable: Var[Any]
     def edgeList: List[EdgeType]
+    def observed:Boolean
   }
 
   abstract class TypedNode[V <: Var[Any], E <: EdgeType : ClassTag] extends Node {
     def variable: V
     var observed = false
     def edgeList = edges.toList
-    var edges: Array[E] = null
+    var edges     : Array[E] = null
     var statsEdges: Array[E] = null
 
     private[FG2] def build() {
       edges = buffer.toArray
       statsEdges = statsEdgeBuffer.toArray
     }
-    private[FG2] var buffer: List[E] = Nil
+    private[FG2] var buffer         : List[E] = Nil
     private[FG2] var statsEdgeBuffer: List[E] = Nil
 
   }
@@ -357,7 +367,7 @@ trait FG2 {
 
   abstract class Factor {
     val pot: Pot
-    val processor: pot.Proc = pot.processor()
+    val processor: pot.Proc        = pot.processor()
     var discEdges: Array[DiscEdge] = null
     var contEdges: Array[ContEdge] = null
     var vectEdges: Array[VectEdge] = null
@@ -379,11 +389,11 @@ trait FG2 {
   private def checkPot(p: Potential): Pot =
     if (acceptPotential.isDefinedAt(p)) acceptPotential(p) else sys.error("Unsupported potential")
 
-  def createAndLinkFactor(p: Pot, linkEdges:Boolean = true) = {
+  def createAndLinkFactor(p: Pot, linkEdges: Boolean = true) = {
     val factor = createFactor(p)
-    createDiscEdges(factor,linkEdges)
-    createContEdges(factor,linkEdges)
-    createVectEdges(factor,linkEdges)
+    createDiscEdges(factor, linkEdges)
+    createContEdges(factor, linkEdges)
+    createVectEdges(factor, linkEdges)
     factor
   }
 
@@ -394,25 +404,14 @@ trait FG2 {
   def contNodes = var2ContNode.valuesIterator
   def vectNodes = var2VectNode.valuesIterator
 
-  val var2DiscNode = createDiscNodes()
-  val var2ContNode = createContNodes()
-  val var2VectNode = createVectNodes()
-
-  val factors = problem.pots.map(p => createAndLinkFactor(checkPot(p)))
-  val statsFactors = problem.stats.map(p => createAndLinkFactor(checkPot(p),false))
 
 
-  var2DiscNode.values.foreach(_.build())
-  var2ContNode.values.foreach(_.build())
-  var2VectNode.values.foreach(_.build())
-
-  setObservations()
-
-  def setObservations() {
-    for (v <- problem.observation.domain) {
+  def setObservations(state: State = problem.observation) {
+    for (v <- state.domain) {
       v match {
-        case d: DiscVar[_] =>
-          var2DiscNode(d).observe(d.dom.indexOf(problem.observation(d)))
+        case d: DiscVar[_] => var2DiscNode(d).observe(d.dom.indexOf(problem.observation(d)))
+        case c: ContVar => var2ContNode(c).observe(state(c))
+        case v: VectVar => var2VectNode(v).observe(state(v))
       }
     }
   }
@@ -420,7 +419,7 @@ trait FG2 {
   //---- These are hacks to make Intellij be able to parse this file, there are much nicer ways to do this otherwise
 
 
-  private def createDiscEdges(factor: FactorType, linkToNormalFactors:Boolean = true): Unit = {
+  private def createDiscEdges(factor: FactorType, linkToNormalFactors: Boolean = true): Unit = {
     val result = new ArrayBuffer[DiscEdge]
     for ((v, i) <- factor.pot.discVars.zipWithIndex) result += createDiscEdge(var2DiscNode(v), factor, i)
     factor.discEdges = result.toArray[DiscEdge](discEdgeTag)
@@ -428,7 +427,7 @@ trait FG2 {
     else factor.discEdges.foreach(e => e.node.statsEdgeBuffer ::= e)
   }
 
-  private def createContEdges(factor: FactorType,linkToNormalFactors:Boolean = true): Unit = {
+  private def createContEdges(factor: FactorType, linkToNormalFactors: Boolean = true): Unit = {
     val result = new ArrayBuffer[ContEdge]
     for ((v, i) <- factor.pot.contVars.zipWithIndex) result += createContEdge(var2ContNode(v), factor, i)
     factor.contEdges = result.toArray[ContEdge](contEdgeTag)
@@ -436,14 +435,13 @@ trait FG2 {
     else factor.contEdges.foreach(e => e.node.statsEdgeBuffer ::= e)
   }
 
-  private def createVectEdges(factor: FactorType,linkToNormalFactors:Boolean = true): Unit = {
+  private def createVectEdges(factor: FactorType, linkToNormalFactors: Boolean = true): Unit = {
     val result = new ArrayBuffer[VectEdge]
     for ((v, i) <- factor.pot.vectVars.zipWithIndex) result += createVectEdge(var2VectNode(v), factor, i)
     factor.vectEdges = result.toArray[VectEdge](vectEdgeTag)
     if (linkToNormalFactors) factor.vectEdges.foreach(e => e.node.buffer ::= e)
     else factor.vectEdges.foreach(e => e.node.statsEdgeBuffer ::= e)
   }
-
 
 
   private def createDiscNodes() = {
@@ -465,11 +463,28 @@ trait FG2 {
   }
 
 
-
   //class tags allow us to create edge arrays without know the concrete array element class yet.
   implicit def discEdgeTag: ClassTag[DiscEdge]
   implicit def contEdgeTag: ClassTag[ContEdge]
   implicit def vectEdgeTag: ClassTag[VectEdge]
+  def observationChanged(obs: State) = {
+    setObservations(obs)
+  }
 
+  val var2DiscNode = createDiscNodes()
+  val var2ContNode = createContNodes()
+  val var2VectNode = createVectNodes()
+
+  val factors      = problem.pots.map(p => createAndLinkFactor(checkPot(p)))
+  val statsFactors = problem.stats.map(p => createAndLinkFactor(checkPot(p), false))
+
+
+  var2DiscNode.values.foreach(_.build())
+  var2ContNode.values.foreach(_.build())
+  var2VectNode.values.foreach(_.build())
+
+  setObservations()
+
+  problem.listeners += this
 
 }

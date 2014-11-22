@@ -73,7 +73,7 @@ class GradientBasedOptimizerSpecs extends WolfeSpec {
     "optimize a univariate quadratic objective" in {
       //f(x) = -x^2 + 4x
       val x = new ContVar("x")
-      val problem = Problem(Seq(new QuadraticTerm(x, -1.0), new LinearTerm(x, 4.0)), contVars = Seq(x))
+      val problem = Problem(Seq(new QuadraticTerm(x, -1.0), new LinearTerm(x, 4.0)))
       val optimizer = new GradientBasedOptimizer(problem)
       val result = optimizer.argmax(w => new OnlineTrainer(w, new AdaGrad(), 1000))
       result.state(x) should be(2.0 +- 0.01)
@@ -83,8 +83,7 @@ class GradientBasedOptimizerSpecs extends WolfeSpec {
       val x = new VectVar(2, "x")
       val problem = Problem(Seq(
         new MultivariateLinearTerm(x, new DenseTensor1(Array(4.0, 0.0))),
-        new MultivariateQuadraticTerm(x, -1.0)),
-        vectVars = Seq(x)
+        new MultivariateQuadraticTerm(x, -1.0))
       )
       val optimizer = new GradientBasedOptimizer(problem)
       val result = optimizer.argmax(w => new OnlineTrainer(w, new AdaGrad(), 10000))
