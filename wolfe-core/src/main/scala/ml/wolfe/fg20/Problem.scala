@@ -28,6 +28,53 @@ trait Potential {
 
 }
 
+class Setting(numDisc:Int, numCont:Int = 0, numVect:Int = 0) {
+  var disc = Array.ofDim[Int](numDisc)
+  var cont = Array.ofDim[Double](numCont)
+  var vect = Array.ofDim[FactorieVector](numVect)
+}
+
+class PartialSetting(numDisc:Int, numCont:Int = 0, numVect:Int = 0) {
+  var disc = Array.ofDim[Int](numDisc)
+  var cont = Array.ofDim[Double](numCont)
+  var vect = Array.ofDim[FactorieVector](numVect)
+
+  var discObs = Array.ofDim[Boolean](numDisc)
+  var contObs = Array.ofDim[Boolean](numCont)
+  var vectObs = Array.ofDim[Boolean](numVect)
+
+}
+
+
+trait Processor {
+  def score(setting:Setting):Double
+}
+
+trait Potential2 extends Potential {
+  type Proc <: Processor
+  def processor():Proc
+}
+
+trait Statistics {
+  def stats(setting:Setting):FactorieVector
+}
+
+trait ExpFamProcessor extends Statistics with Processor {
+  def score(setting: Setting) = setting.vect.last dot stats(setting)
+}
+
+trait ExpFamPotential extends Potential2 {
+  type Proc <: ExpFamProcessor
+
+}
+
+trait DiscPotential2 extends Potential2 {
+  val contVars: Array[ContVar] = Array.ofDim[ContVar](0)
+  val vectVars: Array[VectVar] = Array.ofDim[VectVar](0)
+}
+
+
+
 
 
 trait DiscPotential extends Potential {
@@ -43,3 +90,4 @@ case class Problem(pots: Seq[Potential],
                    stats:Seq[Potential] = Seq.empty) {
   def vars = discVars ++ contVars ++ vectVars
 }
+
