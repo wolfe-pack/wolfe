@@ -2,6 +2,8 @@ package ml.wolfe.fg20
 
 import ml.wolfe.MoreArrayOps._
 import ml.wolfe._
+import scalaxy.loops._
+
 
 trait Residuals extends EdgeMsgsFG {
 
@@ -174,7 +176,7 @@ trait EdgePropagation2 extends Residuals2 with Scheduling2 {
         case EdgeDirection.N2F =>
           updateN2F(directedEdge.edge)
 
-        case EdgeDirection.F2N  =>
+        case EdgeDirection.F2N =>
           updateF2N(directedEdge.edge)
       }
       iteration += 1
@@ -237,7 +239,7 @@ object MaxProduct {
 
   trait Processor extends fg20.Processor {
     def discMaxMarginalF2N(varIndex: Int, partialSetting: PartialSetting, incoming: Msgs, result: DiscMsg)
-    def maxMarginalObjective(partialSetting: PartialSetting, incoming: Msgs):Double
+    def maxMarginalObjective(partialSetting: PartialSetting, incoming: Msgs): Double
   }
 
   trait Potential2 extends fg20.Potential2 {type Proc <: Processor }
@@ -247,11 +249,11 @@ object MaxProduct {
                                             incoming: Msgs,
                                             dstExpectations: FactorieVector): Double
     def maxMarginalObjective(partialSetting: PartialSetting, incoming: Msgs) = {
-      maxMarginalExpectationsAndObjective(partialSetting,incoming,new SparseVector(0))
+      maxMarginalExpectationsAndObjective(partialSetting, incoming, new SparseVector(0))
     }
   }
 
-  trait ExpFamPotential extends fg20.ExpFamPotential with Potential2 { type Proc <: ExpFamProcessor }
+  trait ExpFamPotential extends fg20.ExpFamPotential with Potential2 {type Proc <: ExpFamProcessor }
 
 }
 
@@ -339,6 +341,25 @@ object SumProduct {
                                          dstExpectations: FactorieVector,
                                          weights: FactorieVector): Double
   }
+
+  trait Processor extends fg20.Processor {
+    def discMarginalF2N(varIndex: Int, partialSetting: PartialSetting, incoming: Msgs, result: DiscMsg)
+    def marginalObjective(partialSetting: PartialSetting, incoming: Msgs): Double
+  }
+
+  trait Potential2 extends fg20.Potential2 {type Proc <: Processor }
+
+  trait ExpFamProcessor extends fg20.ExpFamProcessor with Processor {
+    def marginalExpectationsAndObjective(partialSetting: PartialSetting,
+                                         incoming: Msgs,
+                                         dstExpectations: FactorieVector): Double
+    def marginalObjective(partialSetting: PartialSetting, incoming: Msgs) = {
+      marginalExpectationsAndObjective(partialSetting, incoming, new SparseVector(0))
+    }
+  }
+
+  trait ExpFamPotential extends fg20.ExpFamPotential with Potential2 {type Proc <: ExpFamProcessor }
+
 }
 
 
@@ -407,28 +428,26 @@ class MaxProduct2(val problem: Problem) extends BeliefPropagationFG2 with FwdBwd
     }
   }
 
-    def inferMAP(maxIterations: Int = 10, eps: Double = 0.0001): MAPResult = {
-      deterministicRun = false
-      propagate(maxIterations, eps)
-      for (node <- nodes; if !node.observed) { updateBelief(node); normalizeBelief(node) }
-      val gradient = new SparseVector(1000)
-      //val score = factors.view.map(f => f.pot.maxMarginalExpectationsAndObjective(f, gradient, weights)).sum
-      //val score = factors.iterator.map(f => f.processor.maxMarginalObjective(f.partialSetting,f.incoming)).sum
-      val score = factors.iterator.map(f => f.processor match {
-        case p:MaxProduct.ExpFamProcessor => p.maxMarginalExpectationsAndObjective(f.partialSetting,f.incoming,gradient)
-        case p:MaxProduct.Processor => f.processor.maxMarginalObjective(f.partialSetting,f.incoming)
-      }).sum
-      val maxMarginals = var2DiscNode.values.map(n =>
-        DiscBelief(n.variable) -> Distribution.disc(n.variable.dom, n.content.belief.map(math.exp)))
+  def inferMAP(maxIterations: Int = 10, eps: Double = 0.0001): MAPResult = {
+    deterministicRun = false
+    propagate(maxIterations, eps)
+    for (node <- nodes; if !node.observed) { updateBelief(node); normalizeBelief(node) }
+    val gradient = new SparseVector(1000)
+    val score = factors.iterator.map(f => f.processor match {
+      case p: MaxProduct.ExpFamProcessor => p.maxMarginalExpectationsAndObjective(f.partialSetting, f.incoming, gradient)
+      case p: MaxProduct.Processor => p.maxMarginalObjective(f.partialSetting, f.incoming)
+    }).sum
+    val maxMarginals = var2DiscNode.values.map(n =>
+      DiscBelief(n.variable) -> Distribution.disc(n.variable.dom, n.content.belief.map(math.exp)))
 
-      deterministicRun = true
-      clearSettings()
-      propagateFwd(1, eps)
-      nodes.filter(n => !n.observed && !isFixedSetting(n)).foreach(setToArgmax)
-      val discState = problem.discVars.map(v => v -> v.dom(var2DiscNode(v).setting)).toMap[Var[Any], Any]
-      val contState = problem.contVars.map(v => v -> var2ContNode(v).setting)
-      MAPResult(new MapBasedState(discState ++ contState), score, gradient, new MapBasedState(maxMarginals.toMap))
-    }
+    deterministicRun = true
+    clearSettings()
+    propagateFwd(1, eps)
+    nodes.filter(n => !n.observed && !isFixedSetting(n)).foreach(setToArgmax)
+    val discState = problem.discVars.map(v => v -> v.dom(var2DiscNode(v).setting)).toMap[Var[Any], Any]
+    val contState = problem.contVars.map(v => v -> var2ContNode(v).setting)
+    MAPResult(new MapBasedState(discState ++ contState), score, gradient, new MapBasedState(maxMarginals.toMap))
+  }
 
   def normalizeBelief(node: Node) {
     node match {
@@ -566,6 +585,59 @@ trait BeliefPropagationFG2 extends Residuals2 with NodeContentFG2 {
 
 
 }
+
+class SumProduct2(val problem: Problem) extends BeliefPropagationFG2 with EdgePropagation2 {
+
+  type Pot = SumProduct.Potential2
+
+  def entropy(discNode:DiscNode) = {
+    var result = 0.0
+    for (i <- (0 until discNode.content.belief.length).optimized) {
+      result -= math.exp(discNode.content.belief(i)) * discNode.content.belief(i) //messages are in log space
+    }
+    result
+  }
+
+  def acceptPotential = { case pot: SumProduct.Potential2 => pot }
+
+  def updateN2F(edge: Edge) = updateN2FBySum(edge)
+
+  def updateF2N(edge: Edge) = {
+    val factor = edge.factor
+    edge match {
+      case d: DiscEdge => edge.factor.processor.discMarginalF2N(edge.index, factor.partialSetting, factor.incoming, d.msgs.f2n); d.msgs.saveCurrentAsLast()
+    }
+  }
+
+  def inferMarginals(maxIterations: Int = 10, eps: Double = 0.0001): MarginalResult = {
+    propagate(maxIterations, eps)
+    println(scheduled.map(_.toString))
+    for (node <- nodes; if !node.observed) { updateBelief(node); normalizeBelief(node) }
+    val gradient = new SparseVector(1000)
+    var logZ = factors.iterator.map(f => f.processor match {
+      case p: SumProduct.ExpFamProcessor => p.marginalExpectationsAndObjective(f.partialSetting, f.incoming, gradient)
+      case p: SumProduct.Processor => p.marginalObjective(f.partialSetting, f.incoming)
+    }).sum
+
+    //we need to subtract doubly counted node entropies to calculate the bethe objective.
+    for (node <- discNodes) {
+      logZ += (1.0 - node.edges.size) * entropy(node)
+    }
+
+    val marginals = var2DiscNode.values.map(n =>
+      DiscBelief(n.variable) -> Distribution.disc(n.variable.dom, n.content.belief.map(math.exp)))
+    //val stats = new SparseVector(1000)
+    //for (f <- statsFactors) f.pot.marginalExpectationsAndObjective(f, stats, new SparseVector(0))
+    MarginalResult(logZ, gradient, new MapBasedState(marginals.toMap))
+  }
+
+  def normalizeBelief(node: Node): Double = {
+    node match {
+      case d: DiscNode => normalizeLogProb(d.content.belief)
+    }
+  }
+}
+
 
 
 

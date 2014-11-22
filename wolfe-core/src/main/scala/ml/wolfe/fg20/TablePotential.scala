@@ -230,7 +230,7 @@ final class TablePotential(val discVars: Array[DiscVar[Any]], table: Array[Doubl
   def isLinear = false
 }
 
-trait TableBasedProcessor extends MaxProduct.Processor {
+trait TableBasedProcessor extends MaxProduct.Processor with SumProduct.Processor {
 
   def dims: Array[Int]
 
@@ -246,6 +246,25 @@ trait TableBasedProcessor extends MaxProduct.Processor {
     }
     maxNormalize(result.msg)
   }
+
+  def discMarginalF2N(varIndex: Int, partialSetting: PartialSetting, incoming: Msgs, result: DiscMsg) = {
+
+    fill(result.msg, 0.0)
+
+    TablePotential.allSettings(dims, partialSetting.discObs)(partialSetting.disc) { i =>
+      var score = scoreTableEntry(i, partialSetting)
+      val varValue = partialSetting.disc(varIndex)
+      for (j <- 0 until partialSetting.disc.length; if j != varIndex) {
+        score += incoming.disc(j).msg(partialSetting.disc(j))
+      }
+      result.msg(varValue) = result.msg(varValue) + math.exp(score)
+    }
+    //normalize
+    normalize(result.msg)
+    //convert to log space
+    log(result.msg)
+  }
+
 
   def scoreTableEntry(entry: Int, setting: Setting): Double
 
@@ -265,7 +284,9 @@ trait TableBasedProcessor extends MaxProduct.Processor {
 
 }
 
-final class TablePotential2(val discVars: Array[DiscVar[Any]], table: Array[Double]) extends MaxProduct.Potential2 with DiscPotential2 {
+final class TablePotential2(val discVars: Array[DiscVar[Any]], table: Array[Double]) extends MaxProduct.Potential2
+                                                                                             with SumProduct.Potential2
+                                                                                             with DiscPotential2 {
 
   val discDims = discVars.map(_.dom.size)
 
@@ -298,6 +319,30 @@ final class TablePotential2(val discVars: Array[DiscVar[Any]], table: Array[Doub
       }
       maxScore
     }
+
+
+    def marginalObjective(partialSetting: PartialSetting, incoming: Msgs) = {
+      var localZ = 0.0
+
+      //calculate local partition function
+      TablePotential.allSettings(dims, partialSetting.discObs)(partialSetting.disc) { i =>
+        val score = penalizedScore(incoming, i, partialSetting)
+        localZ += math.exp(score)
+      }
+
+      var linear = 0.0
+      var entropy = 0.0
+      //calculate linear contribution to objective and entropy
+      TablePotential.allSettings(dims, partialSetting.discObs)(partialSetting.disc) { i =>
+        val score = penalizedScore(incoming, i, partialSetting)
+        val prob = math.exp(score) / localZ
+        linear += table(i) * prob
+        entropy -= math.log(prob) * prob
+      }
+      val obj = linear + entropy
+      obj
+    }
+
 
   }
 

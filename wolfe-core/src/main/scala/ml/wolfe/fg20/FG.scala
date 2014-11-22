@@ -337,6 +337,7 @@ trait FG2 extends ProblemListener {
     def variable: Var[Any]
     def edgeList: List[EdgeType]
     def observed:Boolean
+    override def toString = variable.name
   }
 
   abstract class TypedNode[V <: Var[Any], E <: EdgeType : ClassTag] extends Node {
@@ -372,6 +373,7 @@ trait FG2 extends ProblemListener {
     var contEdges: Array[ContEdge] = null
     var vectEdges: Array[VectEdge] = null
     def edges = discEdges.iterator ++ contEdges.iterator ++ vectEdges.iterator
+    override def toString = edges.map(_.node).mkString("(",",",")")
   }
 
   def problem: Problem
