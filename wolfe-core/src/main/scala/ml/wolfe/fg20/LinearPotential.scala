@@ -1,9 +1,8 @@
 package ml.wolfe.fg20
 
 import cc.factorie.la.{DenseTensor1, SingletonTensor1, SparseTensor1}
-import ml.wolfe.MoreArrayOps._
+import ml.wolfe.FactorieVector
 import ml.wolfe.util.Util.approxEqual
-import ml.wolfe.{FactorieVector, SingletonVector}
 
 
 case class Stats(settings: Array[Array[Int]], vectors: Array[FactorieVector])
@@ -55,12 +54,6 @@ final class LinearPotential(val discVars: Array[DiscVar[Any]], weightsVar:VectVa
 
   def processor() = new Proc
 
-
-  def score(factor: FG#Factor, weights: FactorieVector) = ???
-  def statsForCurrentSetting(factor: FG#Factor) = ???
-
-
-  def isLinear = true
   class Proc extends MaxProduct.ExpFamProcessor with SumProduct.ExpFamProcessor with TableBasedProcessor {
 
     def dims = discDims

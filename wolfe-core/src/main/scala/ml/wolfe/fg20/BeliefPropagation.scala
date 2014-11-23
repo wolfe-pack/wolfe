@@ -5,7 +5,7 @@ import ml.wolfe._
 import scalaxy.loops._
 
 
-trait Residuals extends EdgeMsgsFG {
+trait Residuals extends EdgeMsgsFactorGraph {
 
   trait Msgs {
     def saveCurrentAsLast()
@@ -14,19 +14,7 @@ trait Residuals extends EdgeMsgsFG {
 
 }
 
-trait Residuals2 extends EdgeMsgsFG2 {
-
-  trait Msgs {
-    def saveCurrentAsLast()
-    def residual(): Double
-  }
-
-}
-
-
-
-
-trait EdgePropagation2 extends Residuals2 with Scheduling2 {
+trait EdgePropagation extends Residuals with Scheduling {
 
   lazy val scheduled = MPSchedulerImpl.schedule()
 
@@ -62,7 +50,7 @@ trait EdgePropagation2 extends Residuals2 with Scheduling2 {
 
 
 
-trait FwdBwdEdgePropagation2 extends EdgePropagation2 {
+trait FwdBwdEdgePropagation extends EdgePropagation {
 
   lazy val fwdSchedule = MPSchedulerImpl.scheduleForward()
 
@@ -81,12 +69,13 @@ trait FwdBwdEdgePropagation2 extends EdgePropagation2 {
 
 object MaxProduct {
 
+  trait Potential extends fg20.Potential {type Proc <: Processor }
+  trait ExpFamPotential extends fg20.ExpFamPotential with Potential {type Proc <: ExpFamProcessor }
+
   trait Processor extends fg20.Processor {
     def discMaxMarginalF2N(varIndex: Int, partialSetting: PartialSetting, incoming: Msgs, result: DiscMsg)
     def maxMarginalObjective(partialSetting: PartialSetting, incoming: Msgs): Double
   }
-
-  trait Potential2 extends fg20.Potential2 {type Proc <: Processor }
 
   trait ExpFamProcessor extends fg20.ExpFamProcessor with Processor {
     def maxMarginalExpectationsAndObjective(partialSetting: PartialSetting,
@@ -97,19 +86,20 @@ object MaxProduct {
     }
   }
 
-  trait ExpFamPotential extends fg20.ExpFamPotential with Potential2 {type Proc <: ExpFamProcessor }
 
 }
 
 
 object SumProduct {
 
+  trait Potential extends fg20.Potential {type Proc <: Processor }
+  trait ExpFamPotential extends fg20.ExpFamPotential with Potential {type Proc <: ExpFamProcessor }
+
   trait Processor extends fg20.Processor {
     def discMarginalF2N(varIndex: Int, partialSetting: PartialSetting, incoming: Msgs, result: DiscMsg)
     def marginalObjective(partialSetting: PartialSetting, incoming: Msgs): Double
   }
 
-  trait Potential2 extends fg20.Potential2 {type Proc <: Processor }
 
   trait ExpFamProcessor extends fg20.ExpFamProcessor with Processor {
     def marginalExpectationsAndObjective(partialSetting: PartialSetting,
@@ -120,16 +110,15 @@ object SumProduct {
     }
   }
 
-  trait ExpFamPotential extends fg20.ExpFamPotential with Potential2 {type Proc <: ExpFamProcessor }
 
 }
 
 
-class MaxProduct2(val problem: Problem) extends BeliefPropagationFG2 with FwdBwdEdgePropagation2 {
+class MaxProduct(val problem: Problem) extends BeliefPropagationFactorGraph with FwdBwdEdgePropagation {
 
-  type Pot = MaxProduct.Potential2
+  type Pot = MaxProduct.Potential
 
-  def acceptPotential = { case pot: MaxProduct.Potential2 => pot }
+  def acceptPotential = { case pot: MaxProduct.Potential => pot }
 
   private var deterministicRun = false
 
@@ -205,15 +194,15 @@ class MaxProduct2(val problem: Problem) extends BeliefPropagationFG2 with FwdBwd
 }
 
 
-trait BeliefPropagationFG2 extends Residuals2 with NodeContentFG2 {
+trait BeliefPropagationFactorGraph extends Residuals with NodeContentFactorGraph {
 
-  type Pot <: Potential2
+  type Pot <: Potential
 
   final class FactorType(val pot: Pot) extends Factor {
 
     var partialSetting: PartialSetting = null // new PartialSetting()
 
-    private[BeliefPropagationFG2] var updated = false
+    private[BeliefPropagationFactorGraph] var updated = false
 
     def updateBuffers(): Unit = {
       if (!updated) {
@@ -314,9 +303,9 @@ trait BeliefPropagationFG2 extends Residuals2 with NodeContentFG2 {
 
 }
 
-class SumProduct2(val problem: Problem) extends BeliefPropagationFG2 with EdgePropagation2 {
+class SumProduct(val problem: Problem) extends BeliefPropagationFactorGraph with EdgePropagation {
 
-  type Pot = SumProduct.Potential2
+  type Pot = SumProduct.Potential
 
   def entropy(discNode:DiscNode) = {
     var result = 0.0
@@ -326,7 +315,7 @@ class SumProduct2(val problem: Problem) extends BeliefPropagationFG2 with EdgePr
     result
   }
 
-  def acceptPotential = { case pot: SumProduct.Potential2 => pot }
+  def acceptPotential = { case pot: SumProduct.Potential => pot }
 
   def updateN2F(edge: Edge) = updateN2FBySum(edge)
 

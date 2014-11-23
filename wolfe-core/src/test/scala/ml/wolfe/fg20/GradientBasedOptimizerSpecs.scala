@@ -9,31 +9,9 @@ import ml.wolfe.{FactorieVector, WolfeSpec}
  */
 class GradientBasedOptimizerSpecs extends WolfeSpec {
 
-  trait ContPotential extends GradientBasedOptimizer.Potential2
-                              with GradientBasedOptimizer.Processor
-                              with StatelessProcessor[ContPotential] {
-    def discVars = Array.empty
-    def vectVars = Array.empty
-    def isLinear = false
-    def statsForCurrentSetting(factor: FG#Factor) = isNotLinear
-//    def gradientAndValue(current: Setting, gradient: Setting) = ???
-//    def score(setting: Setting) = ???
-  }
 
-  trait VectPotential extends  GradientBasedOptimizer.Potential2
-                              with GradientBasedOptimizer.Processor
-                              with StatelessProcessor[VectPotential]{
-    def discVars = Array.empty
-    def contVars = Array.empty
-    def isLinear = false
-    def statsForCurrentSetting(factor: FG#Factor) = isNotLinear
-  }
-
-  class LinearTerm(val x: ContVar, val scale: Double) extends ContPotential  {
+  class LinearTerm(val x: ContVar, val scale: Double) extends ContPotential with GradientBasedOptimizer.Stateless {
     def contVars = Array(x)
-    def score(factor: FG#Factor, weights: FactorieVector) = {
-      factor.contEdges(0).node.setting * scale
-    }
     def gradientAndValue(current: Setting, gradient: Setting) = {
       gradient.cont(0) = scale
       score(current)
@@ -41,11 +19,8 @@ class GradientBasedOptimizerSpecs extends WolfeSpec {
     def score(setting: Setting) = setting.cont(0) * scale
   }
 
-  class QuadraticTerm(val x: ContVar, val scale: Double) extends ContPotential {
-    def contVars = Array(x)
-    def score(factor: FG#Factor, weights: FactorieVector) = {
-      factor.contEdges(0).node.setting * factor.contEdges(0).node.setting * scale
-    }
+  class QuadraticTerm(val x: ContVar, val scale: Double) extends ContPotential with GradientBasedOptimizer.Stateless {
+    val contVars = Array(x)
     def gradientAndValue(current: Setting, gradient: Setting) = {
       gradient.cont(0) = current.cont(0) * 2.0 * scale
       score(current)
@@ -53,12 +28,9 @@ class GradientBasedOptimizerSpecs extends WolfeSpec {
     def score(setting: Setting) = setting.cont(0) * setting.cont(0) * scale
   }
 
-
-  class MultivariateLinearTerm(val x: VectVar, val scale: FactorieVector) extends VectPotential {
-    def vectVars = Array(x)
-    def score(factor: FG#Factor, weights: FactorieVector) = {
-      factor.vectEdges(0).node.setting dot scale
-    }
+  class MultivariateLinearTerm(val x: VectVar, val scale: FactorieVector) extends VectPotential
+                                                                                  with GradientBasedOptimizer.Stateless {
+    val vectVars = Array(x)
     def gradientAndValue(current: Setting, gradient: Setting) = {
       gradient.vect(0) = scale
       score(current)
@@ -66,11 +38,9 @@ class GradientBasedOptimizerSpecs extends WolfeSpec {
     def score(setting: Setting) = setting.vect(0) dot scale
   }
 
-  class MultivariateQuadraticTerm(val x: VectVar, val scale: Double) extends VectPotential {
-    def vectVars = Array(x)
-    def score(factor: FG#Factor, weights: FactorieVector) = {
-      (factor.vectEdges(0).node.setting dot factor.vectEdges(0).node.setting) * scale
-    }
+  class MultivariateQuadraticTerm(val x: VectVar, val scale: Double) extends VectPotential
+                                                                             with GradientBasedOptimizer.Stateless {
+    val vectVars = Array(x)
     def gradientAndValue(current: Setting, gradient: Setting) = {
       gradient.vect(0) = current.vect(0) * scale * 2.0
       score(current)
@@ -97,8 +67,8 @@ class GradientBasedOptimizerSpecs extends WolfeSpec {
       )
       val optimizer = new GradientBasedOptimizer(problem)
       val result = optimizer.argmax(w => new OnlineTrainer(w, new AdaGrad(), 10000))
-      result.state(x)(0) should be (2.0 +- 0.01)
-      result.state(x)(1) should be (0.0 +- 0.01)
+      result.state(x)(0) should be(2.0 +- 0.01)
+      result.state(x)(1) should be(0.0 +- 0.01)
     }
   }
 

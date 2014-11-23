@@ -3,7 +3,7 @@ package ml.wolfe.fg20
 import ml.wolfe.MoreArrayOps._
 import ml.wolfe.SparseVector
 
-trait FactorSettings extends FG2 {
+trait FactorSettings extends FactorGraph {
 
   class FactorType(val pot: Pot) extends Factor {
     var setting = new Setting(pot.discVars.length, pot.contVars.length, pot.vectVars.length)
@@ -19,7 +19,7 @@ trait FactorSettings extends FG2 {
 
 }
 
-class BruteForce(val problem: Problem) extends NodeContentFG2 with EmptyEdgeFG2 with FactorSettings {
+class BruteForce(val problem: Problem) extends NodeContentFactorGraph with EmptyEdgeFactorGraph with FactorSettings {
 
 
 
@@ -32,8 +32,8 @@ class BruteForce(val problem: Problem) extends NodeContentFG2 with EmptyEdgeFG2 
   def createDiscNodeContent(variable: DiscVar[Any]) = new DiscNodeContent(Array.ofDim[Double](variable.dom.size))
   def createContNodeContent(contVar: ContVar) = new ContNodeContent
   def createVectNodeContent(vectVar: VectVar) = new VectNodeContent
-  def acceptPotential = { case p: Potential2 => p }
-  type Pot = Potential2
+  def acceptPotential = { case p: Potential => p }
+  type Pot = Potential
 
 
   val expFamStats = factors.map(f => f -> f.processor).collect({ case (f, s: Statistics) => (f, s) })

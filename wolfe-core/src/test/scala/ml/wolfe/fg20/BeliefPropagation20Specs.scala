@@ -89,7 +89,7 @@ class BeliefPropagation20Specs extends WolfeSpec {
 
   "A Max Product2 algorithm" should {
     "return the exact max-marginals when given a single table potential" in {
-      val fg_mp = new MaxProduct2(simpleProblem)
+      val fg_mp = new MaxProduct(simpleProblem)
       val fg_bf = new BruteForce(simpleProblem)
 
       val mpResult = fg_mp.inferMAP(1)
@@ -98,7 +98,7 @@ class BeliefPropagation20Specs extends WolfeSpec {
       mpResult.maxMarginals should equal(bfResult.maxMarginals)
     }
     "choose a valid global max from a factor graph with multiple solutions" in {
-      val mp = new MaxProduct2(xorProblem)
+      val mp = new MaxProduct(xorProblem)
       val result = mp.inferMAP()
       result.state(v1) should not be result.state(v2)
     }
@@ -106,7 +106,7 @@ class BeliefPropagation20Specs extends WolfeSpec {
     "return the exact max-marginals given a chain" in {
       val chain = chainProblem(5)
 
-      val mp = new MaxProduct2(chain).inferMAP()
+      val mp = new MaxProduct(chain).inferMAP()
       val bf = new BruteForce(chain).inferMAP()
 
       mp.maxMarginals should equal(bf.maxMarginals)
@@ -120,7 +120,7 @@ class BeliefPropagation20Specs extends WolfeSpec {
 
       chain.observation = State.single(weightsVar, weights)
 
-      val mp = new MaxProduct2(chain).inferMAP()
+      val mp = new MaxProduct(chain).inferMAP()
       val bf = new BruteForce(chain).inferMAP()
 
       sameVector(mp.gradient, bf.gradient) should be(true)
@@ -130,7 +130,7 @@ class BeliefPropagation20Specs extends WolfeSpec {
 
   "A Sum Product2 algorithm" should {
     "return the exact marginals when given a single table potential" in {
-      val fg_mp = new SumProduct2(simpleProblem)
+      val fg_mp = new SumProduct(simpleProblem)
       val fg_bf = new BruteForce(simpleProblem)
 
       val mpResult = fg_mp.inferMarginals(1)
@@ -143,7 +143,7 @@ class BeliefPropagation20Specs extends WolfeSpec {
     "return the exact marginals given a chain" in {
       val chain = chainProblem(5)
 
-      val mp = new SumProduct2(chain).inferMarginals()
+      val mp = new SumProduct(chain).inferMarginals()
       val bf = new BruteForce(chain).inferMarginals()
 
       mp.marginals should equal(bf.marginals)
@@ -161,7 +161,7 @@ class BeliefPropagation20Specs extends WolfeSpec {
       val chain = chainProblemWithFeatures(5, weightsVar)
       chain.observation = State.single(weightsVar, weights)
 
-      val mp = new SumProduct2(chain).inferMarginals()
+      val mp = new SumProduct(chain).inferMarginals()
       val bf = new BruteForce(chain).inferMarginals()
 
       sameVector(mp.gradient, bf.gradient) should be(true)

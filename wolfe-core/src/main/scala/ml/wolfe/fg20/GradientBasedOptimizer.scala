@@ -11,7 +11,7 @@ import scala.collection.mutable
 /**
  * @author Sebastian Riedel
  */
-class GradientBasedOptimizer(val problem: Problem) extends EmptyEdgeFG2 with EmptyNodeFG2 {
+class GradientBasedOptimizer(val problem: Problem) extends EmptyEdgeFactorGraph with EmptyNodeFactorGraph {
 
   class FactorType(val pot: Pot) extends Factor {
     var setting = new Setting(pot.discVars.length, pot.contVars.length, pot.vectVars.length)
@@ -21,8 +21,8 @@ class GradientBasedOptimizer(val problem: Problem) extends EmptyEdgeFG2 with Emp
 
   def createFactor(pot: Pot) = new FactorType(pot)
 
-  type Pot = GradientBasedOptimizer.Potential2
-  def acceptPotential = { case p: GradientBasedOptimizer.Potential2 => p }
+  type Pot = GradientBasedOptimizer.Potential
+  def acceptPotential = { case p: GradientBasedOptimizer.Potential => p }
 
   def argmax(trainer: WeightsSet => Trainer = w => new OnlineTrainer(w,new AdaGrad(),100),
              init:State = State.empty):ArgmaxResult = {
@@ -86,15 +86,14 @@ class GradientBasedOptimizer(val problem: Problem) extends EmptyEdgeFG2 with Emp
 }
 
 object GradientBasedOptimizer {
-  trait Potential extends ml.wolfe.fg20.Potential {
-    def gradientAndValue(factor: GradientBasedOptimizer#Factor):Double
-  }
 
   trait Processor extends fg20.Processor {
     def gradientAndValue(current:Setting, gradient:Setting):Double
   }
 
-  trait Potential2 extends fg20.Potential2 { type Proc <: Processor }
+  trait Potential extends fg20.Potential { type Proc <: Processor }
+
+  trait Stateless extends Potential with Processor with StatelessProcessor[Stateless]
 
 }
 

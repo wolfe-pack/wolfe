@@ -13,22 +13,6 @@ class ContVar(val name: String = "anon") extends Var[Double]
 class VectVar(val dim: Int = 0, val name: String = "anon") extends Var[FactorieVector]
 
 
-trait Potential {
-  def discVars: Array[DiscVar[Any]]
-  def contVars: Array[ContVar]
-  def vectVars: Array[VectVar]
-
-  def score(factor: FG#Factor, weights: FactorieVector): Double
-  def statsForCurrentSetting(factor: FG#Factor): FactorieVector
-
-  def hasNoDiscVars = sys.error("This potential has no discrete variables")
-  def hasNoContVars = sys.error("This potential has no continuous variables")
-  def hasNoVectVars = sys.error("This potential has no vector variables")
-  def isNotLinear = sys.error("This potential is not linear")
-
-  def isLinear:Boolean
-
-}
 
 class Setting(numDisc: Int, numCont: Int = 0, numVect: Int = 0) {
   var disc = Array.ofDim[Int](numDisc)
@@ -44,12 +28,16 @@ class PartialSetting(numDisc: Int, numCont: Int = 0, numVect: Int = 0) extends S
 
 }
 
-
 trait Processor {
   def score(setting: Setting): Double
 }
 
-trait Potential2 extends Potential {
+trait Potential {
+
+  def discVars: Array[DiscVar[Any]]
+  def contVars: Array[ContVar]
+  def vectVars: Array[VectVar]
+
   type Proc <: Processor
   def processor(): Proc
 
@@ -57,7 +45,7 @@ trait Potential2 extends Potential {
 
 }
 
-trait StatelessProcessor[This <: StatelessProcessor[This]] extends Potential2 with Processor {
+trait StatelessProcessor[This <: StatelessProcessor[This]] extends Potential with Processor {
   this: This =>
   type Proc = This
   def processor():This = this
@@ -72,23 +60,32 @@ trait ExpFamProcessor extends Statistics with Processor {
 }
 
 
-trait ExpFamPotential extends Potential2 {
+trait ExpFamPotential extends Potential {
   type Proc <: ExpFamProcessor
 
   def weights(setting: Setting) = setting.vect(setting.vect.length - 1)
 
 }
 
-trait DiscPotential2 extends Potential2 {
+trait DiscPotential extends Potential {
   val contVars: Array[ContVar] = Array.ofDim[ContVar](0)
   val vectVars: Array[VectVar] = Array.ofDim[VectVar](0)
 }
 
-
-trait DiscPotential extends Potential {
-  def contVars = Array.empty
-  def vectVars = Array.empty
+trait ContPotential extends Potential {
+  val discVars: Array[DiscVar[Any]] = Array.ofDim[DiscVar[Any]](0)
+  val vectVars: Array[VectVar] = Array.ofDim[VectVar](0)
 }
+
+trait VectPotential extends Potential {
+  val discVars: Array[DiscVar[Any]] = Array.ofDim[DiscVar[Any]](0)
+  val contVars: Array[ContVar] = Array.ofDim[ContVar](0)
+}
+
+
+
+
+
 
 trait ProblemListener {
   def observationChanged(obs:State)
