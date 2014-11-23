@@ -31,7 +31,7 @@ class MultiLayerPerceptron(val layers: Seq[NetworkLayer]) {
   def paramSize: Int = layers.foldLeft(0){ case(sum, l) => sum + l.W.rows * l.W.cols }
 
   def gradients: Seq[Double] = {
-    layers.foreach{ l => println("g:\n" + l.grads + "\n") }
+//    layers.foreach{ l => println("g:\n" + l.grads + "\n") }
     layers.map(_.grads.toDenseVector.toArray).toSeq.flatten
   }
 
