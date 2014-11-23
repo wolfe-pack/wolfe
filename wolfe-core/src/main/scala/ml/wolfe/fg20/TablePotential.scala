@@ -170,7 +170,7 @@ trait TableBasedProcessor extends MaxProduct.Processor with SumProduct.Processor
 
 }
 
-final class TablePotential2(val discVars: Array[DiscVar[Any]], table: Array[Double]) extends MaxProduct.Potential2
+final class TablePotential(val discVars: Array[DiscVar[Any]], table: Array[Double]) extends MaxProduct.Potential2
                                                                                              with SumProduct.Potential2
                                                                                              with DiscPotential2 {
 

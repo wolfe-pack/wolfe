@@ -20,10 +20,10 @@ class BeliefPropagation20Specs extends WolfeSpec {
   val v2            = new DiscVar(Seq(false, true))
   val scores        = Array(1.0, 2.0, -3.0, 0.0)
 
-  val tablePot      = new TablePotential2(Array(v1, v2), scores)
+  val tablePot      = new TablePotential(Array(v1, v2), scores)
   val simpleProblem = Problem(Seq(tablePot))
 
-  val xorPot     = new TablePotential2(Array(v1, v2), Array(Double.NegativeInfinity, 0, 0, Double.NegativeInfinity))
+  val xorPot     = new TablePotential(Array(v1, v2), Array(Double.NegativeInfinity, 0, 0, Double.NegativeInfinity))
   val xorProblem = Problem(Seq(xorPot))
 
 
@@ -34,7 +34,7 @@ class BeliefPropagation20Specs extends WolfeSpec {
 
   def chainProblem(length: Int) = {
     val vars = for (i <- 0 until length) yield new DiscVar(Seq(false, true), "v" + i)
-    val pots = for ((v1, v2) <- vars.dropRight(1) zip vars.drop(1)) yield new TablePotential2(Array(v1, v2), scores)
+    val pots = for ((v1, v2) <- vars.dropRight(1) zip vars.drop(1)) yield new TablePotential(Array(v1, v2), scores)
     Problem(pots)
   }
 
@@ -43,7 +43,7 @@ class BeliefPropagation20Specs extends WolfeSpec {
   def chainProblemWithFeatures(length: Int, weightsVar: VectVar) = {
     val vars = for (i <- 0 until length) yield new DiscVar(Seq(false, true), "v" + i)
     val pots = for ((v1, v2) <- vars.dropRight(1) zip vars.drop(1)) yield
-      new LinearPotential2(Array(v1, v2), weightsVar, fixedStats)
+      new LinearPotential(Array(v1, v2), weightsVar, fixedStats)
     Problem(pots)
   }
 

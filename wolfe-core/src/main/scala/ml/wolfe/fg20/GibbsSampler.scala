@@ -45,7 +45,9 @@ class GibbsSampler(val problem: Problem)
   def createContNodeContent(contVar: ContVar) = new ContNodeContent
   def createVectNodeContent(vectVar: VectVar) = new VectNodeContent
 
-  def inferMarginals(samples: Int, burnIn: Int = 0, weights: FactorieVector) = {
+  def inferMarginals(samples: Int, burnIn: Int = 0) = {
+
+    syncFactorObservations()
 
     //initialize
     for (n <- discNodes) {
@@ -56,32 +58,32 @@ class GibbsSampler(val problem: Problem)
     //burnin
     for (sample <- 0 until burnIn) {
       for (n <- discNodes; if !n.observed) {
-        sampleDiscNode(weights, n, sample, burnIn = true)
+        sampleDiscNode(n, sample, burnIn = true)
       }
     }
 
     //sample
     for (sample <- 0 until samples) {
       for (n <- discNodes; if !n.observed) {
-        sampleDiscNode(weights, n, sample)
+        sampleDiscNode(n, sample)
       }
       for (f <- factors) {
-        f.processor match { case p: ExpFamProcessor => addStats(sample, f, p) }
+        f.processor match { case p: ExpFamProcessor => addStats(sample, f, p) case _ => }
       }
     }
     //how to get partition function???
     //http://www.cc.gatech.edu/~mihail/D.lectures/jerrum96markov.pdf
     //make sure expectations are updated and consistent
     for (n <- discNodes) syncAverage(n, samples)
-    for (f <- factors) f.processor match { case p: ExpFamProcessor => addStats(samples - 1, f, p) }
+    for (f <- factors) f.processor match { case p: ExpFamProcessor => addStats(samples - 1, f, p) case _ => }
 
     val marginals = var2DiscNode.values.map(n => DiscBelief(n.variable) -> Distribution.disc(n.variable.dom, n.content.belief))
     val gradient = new SparseVector(1000)
-    for (f <- factors; if f.pot.isLinear) gradient += f.mean
+    for (f <- factors; if f.mean != null) gradient += f.mean
     MarginalResult(0.0, gradient, new MapBasedState(marginals.toMap))
   }
 
-  def sampleDiscNode(weights: FactorieVector, n: DiscNode, sample: Int, burnIn: Boolean = false) {
+  def sampleDiscNode(n: DiscNode, sample: Int, burnIn: Boolean = false) {
     fill(n.content.probs, 0.0)
     val oldSetting = n.setting
     for (i <- 0 until n.variable.dom.size) {
@@ -124,4 +126,11 @@ class GibbsSampler(val problem: Problem)
       n.content.lastUpdate = sample
     }
   }
+
+  def syncFactorObservations(): Unit = {
+    for (n <- discNodes; if n.observed; e <- n.edges) e.factor.setting.disc(e.index) = n.setting
+    for (c <- contNodes; if c.observed; e <- c.edges) e.factor.setting.cont(e.index) = c.setting
+    for (v <- vectNodes; if v.observed; e <- v.edges) e.factor.setting.vect(e.index) = v.setting
+  }
+
 }
