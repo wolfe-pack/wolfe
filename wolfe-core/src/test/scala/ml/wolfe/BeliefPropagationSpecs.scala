@@ -114,7 +114,7 @@ class BeliefPropagationSpecs extends WolfeSpec {
       BeliefPropagation(fg, 1)
       val v0 = fg.nodes(0).variable.asDiscrete
       val v1 = fg.nodes(1).variable.asDiscrete
-      v0.setting should not be(v1.setting)
+      v0.setting should not be v1.setting
     }
     "return the exact marginals given a chain" in {
       val fg_mp = chainFG(5)
