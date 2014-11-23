@@ -131,7 +131,7 @@ trait FactorGraph extends ProblemListener {
   }
 
   trait TypedEdge[N <: NodeType] extends Edge {
-    def node: N
+    var node: N
   }
 
   abstract class Factor {
@@ -179,12 +179,44 @@ trait FactorGraph extends ProblemListener {
     }
   }
 
+
+  /**
+   * this detaches a factor from its current nodes and then reattaches to the nodes corresponding
+   * to the potentials variables. Crucially, if the potential variables have changed
+   * since the last time the factor was attached, this connects the factor to new nodes.
+   * @param factor the factor to reattach.
+   */
+  protected def reattachFactor(factor:FactorType): Unit = {
+    for ((e,v) <- factor.discEdges.iterator zip factor.pot.discVars.iterator) {
+      e.node.buffer = e.node.buffer.filterNot(_ == e)
+      e.node.build()
+      val newNode = var2DiscNode(v)
+      e.node = newNode
+      e.node.buffer ::= e
+      e.node.build()
+    }
+    for ((e,v) <- factor.contEdges.iterator zip factor.pot.contVars.iterator) {
+      e.node.buffer = e.node.buffer.filterNot(_ == e)
+      e.node.build()
+      val newNode = var2ContNode(v)
+      e.node = newNode
+      e.node.buffer ::= e
+      e.node.build()
+    }
+    for ((e,v) <- factor.vectEdges.iterator zip factor.pot.vectVars.iterator) {
+      e.node.buffer = e.node.buffer.filterNot(_ == e)
+      e.node.build()
+      val newNode = var2VectNode(v)
+      e.node = newNode
+      e.node.buffer ::= e
+      e.node.build()
+    }
+  }
+
   //---- These are hacks to make Intellij be able to parse this file, there are much nicer ways to do this otherwise
-
-
   private def createDiscEdges(factor: FactorType, linkToNormalFactors: Boolean = true): Unit = {
     val result = new ArrayBuffer[DiscEdge]
-    for ((v, i) <- factor.pot.discVars.zipWithIndex) result += createDiscEdge(var2DiscNode(v), factor, i)
+    for ((v, i) <- factor.pot.discVars.iterator.zipWithIndex) result += createDiscEdge(var2DiscNode(v), factor, i)
     factor.discEdges = result.toArray[DiscEdge](discEdgeTag)
     if (linkToNormalFactors) factor.discEdges.foreach(e => e.node.buffer ::= e)
     else factor.discEdges.foreach(e => e.node.statsEdgeBuffer ::= e)
@@ -192,7 +224,7 @@ trait FactorGraph extends ProblemListener {
 
   private def createContEdges(factor: FactorType, linkToNormalFactors: Boolean = true): Unit = {
     val result = new ArrayBuffer[ContEdge]
-    for ((v, i) <- factor.pot.contVars.zipWithIndex) result += createContEdge(var2ContNode(v), factor, i)
+    for ((v, i) <- factor.pot.contVars.iterator.zipWithIndex) result += createContEdge(var2ContNode(v), factor, i)
     factor.contEdges = result.toArray[ContEdge](contEdgeTag)
     if (linkToNormalFactors) factor.contEdges.foreach(e => e.node.buffer ::= e)
     else factor.contEdges.foreach(e => e.node.statsEdgeBuffer ::= e)
@@ -200,7 +232,7 @@ trait FactorGraph extends ProblemListener {
 
   private def createVectEdges(factor: FactorType, linkToNormalFactors: Boolean = true): Unit = {
     val result = new ArrayBuffer[VectEdge]
-    for ((v, i) <- factor.pot.vectVars.zipWithIndex) result += createVectEdge(var2VectNode(v), factor, i)
+    for ((v, i) <- factor.pot.vectVars.iterator.zipWithIndex) result += createVectEdge(var2VectNode(v), factor, i)
     factor.vectEdges = result.toArray[VectEdge](vectEdgeTag)
     if (linkToNormalFactors) factor.vectEdges.foreach(e => e.node.buffer ::= e)
     else factor.vectEdges.foreach(e => e.node.statsEdgeBuffer ::= e)
@@ -239,6 +271,7 @@ trait FactorGraph extends ProblemListener {
   val var2VectNode = createVectNodes()
 
   val factors      = problem.pots.map(p => createAndLinkFactor(p))
+  val pot2Factor   = factors.map(f => f.pot -> f).toMap
   val statsFactors = problem.stats.map(p => createAndLinkFactor(p, false))
 
 

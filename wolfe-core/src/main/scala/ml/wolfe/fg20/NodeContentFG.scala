@@ -54,15 +54,15 @@ class Msgs(val disc:Array[DiscMsg],
 trait EmptyEdgeFactorGraph extends FactorGraph {
   trait EdgeType extends Edge
 
-  final class DiscEdge(val node: DiscNode,
+  final class DiscEdge(var node: DiscNode,
                        val factor: FactorType,
                        val index: Int) extends TypedEdge[DiscNode] with EdgeType
 
-  final class ContEdge(val node: ContNode,
+  final class ContEdge(var node: ContNode,
                        val factor: FactorType,
                        val index: Int) extends TypedEdge[ContNode] with EdgeType
 
-  final class VectEdge(val node: VectNode,
+  final class VectEdge(var node: VectNode,
                        val factor: FactorType,
                        val index: Int) extends TypedEdge[VectNode] with EdgeType
 
@@ -119,17 +119,17 @@ trait EdgeMsgsFactorGraph extends FactorGraph {
     def msgs: M
   }
 
-  final class DiscEdge(val node: DiscNode,
+  final class DiscEdge(var node: DiscNode,
                        val factor: FactorType,
                        val index: Int,
                        val msgs: DiscMsgs) extends TypedEdgeWithMsgs[DiscNode, DiscMsgs]
 
-  final class ContEdge(val node: ContNode,
+  final class ContEdge(var node: ContNode,
                        val factor: FactorType,
                        val index: Int,
                        val msgs: ContMsgs) extends TypedEdgeWithMsgs[ContNode, ContMsgs]
 
-  final class VectEdge(val node: VectNode,
+  final class VectEdge(var node: VectNode,
                        val factor: FactorType,
                        val index: Int,
                        val msgs: VectMsgs) extends TypedEdgeWithMsgs[VectNode, VectMsgs]
