@@ -45,7 +45,7 @@ object LinearPotential {
 /**
  * @author Sebastian Riedel
  */
-final class LinearPotential2(val discVars: Array[DiscVar[Any]], weightsVar:VectVar,
+final class LinearPotential(val discVars: Array[DiscVar[Any]], weightsVar:VectVar,
                              val statistics: Array[FactorieVector]) extends MaxProduct.ExpFamPotential
                                                                             with SumProduct.ExpFamPotential {
 
