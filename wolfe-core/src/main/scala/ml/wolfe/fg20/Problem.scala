@@ -57,6 +57,12 @@ trait Potential2 extends Potential {
 
 }
 
+trait StatelessProcessor[This <: StatelessProcessor[This]] extends Potential2 with Processor {
+  this: This =>
+  type Proc = This
+  def processor():This = this
+}
+
 trait Statistics {
   def stats(setting: Setting): FactorieVector
 }
