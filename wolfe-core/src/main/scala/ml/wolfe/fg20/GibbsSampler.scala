@@ -10,7 +10,7 @@ import scala.util.Random
  * @author Sebastian Riedel
  */
 class GibbsSampler(val problem: Problem)
-                  (implicit random: Random = new Random(0)) extends FG with NodeContentFG with EmptyEdgeFG {
+                  (implicit random: Random = new Random(0)) extends FG2 with NodeContentFG2 with EmptyEdgeFG2 {
 
   class NodeContent
   final class DiscNodeContent(size: Int) extends NodeContent {
@@ -31,12 +31,14 @@ class GibbsSampler(val problem: Problem)
 
   final class FactorType(val pot: Pot) extends Factor {
     var mean: FactorieVector = null
+    var setting              = pot.createSetting()
+
   }
 
 
-  type Pot = Potential
+  type Pot = Potential2
 
-  def acceptPotential = { case p: Potential => p }
+  def acceptPotential = { case p: Potential2 => p }
   def createFactor(pot: Pot) = new FactorType(pot)
 
   def createDiscNodeContent(variable: DiscVar[Any]) = new DiscNodeContent(variable.dom.size)
@@ -63,15 +65,15 @@ class GibbsSampler(val problem: Problem)
       for (n <- discNodes; if !n.observed) {
         sampleDiscNode(weights, n, sample)
       }
-      for (f <- factors; if f.pot.isLinear) {
-        addStats(sample, f)
+      for (f <- factors) {
+        f.processor match { case p: ExpFamProcessor => addStats(sample, f, p) }
       }
     }
     //how to get partition function???
     //http://www.cc.gatech.edu/~mihail/D.lectures/jerrum96markov.pdf
     //make sure expectations are updated and consistent
     for (n <- discNodes) syncAverage(n, samples)
-    for (f <- factors; if f.pot.isLinear) addStats(samples - 1, f)
+    for (f <- factors) f.processor match { case p: ExpFamProcessor => addStats(samples - 1, f, p) }
 
     val marginals = var2DiscNode.values.map(n => DiscBelief(n.variable) -> Distribution.disc(n.variable.dom, n.content.belief))
     val gradient = new SparseVector(1000)
@@ -84,8 +86,10 @@ class GibbsSampler(val problem: Problem)
     val oldSetting = n.setting
     for (i <- 0 until n.variable.dom.size) {
       n.setting = i
-      for (e <- n.edges)
-        n.content.probs(i) += e.factor.pot.score(e.factor, weights)
+      for (e <- n.edges) {
+        e.factor.setting.disc(e.index) = i
+        n.content.probs(i) += e.factor.processor.score(e.factor.setting)
+      }
     }
     n.setting = oldSetting
     expNormalize(n.content.probs)
@@ -93,13 +97,17 @@ class GibbsSampler(val problem: Problem)
     if (newSetting != oldSetting) {
       if (!burnIn) syncAverage(n, sample)
       n.setting = newSetting
+      for (e <- n.edges) {
+        e.factor.setting.disc(e.index) = newSetting
+      }
+
     }
   }
 
 
   //f = (f' * (n-1) + newStats) / n = f' * (n-1)/n + newStats / n
-  def addStats(sample: Int, factor: FactorType) {
-    val newStats = factor.pot.statsForCurrentSetting(factor)
+  def addStats(sample: Int, factor: FactorType, expFamProc: ExpFamProcessor) {
+    val newStats = expFamProc.stats(factor.setting)
     if (sample == 0) factor.mean = new SparseVector(0)
     factor.mean *= sample / (sample + 1)
     factor.mean +=(newStats, 1.0 / (sample + 1))

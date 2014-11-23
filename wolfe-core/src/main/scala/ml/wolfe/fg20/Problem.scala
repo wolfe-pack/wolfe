@@ -52,6 +52,9 @@ trait Processor {
 trait Potential2 extends Potential {
   type Proc <: Processor
   def processor(): Proc
+
+  def createSetting() = new Setting(discVars.size,contVars.size,vectVars.size)
+
 }
 
 trait Statistics {
