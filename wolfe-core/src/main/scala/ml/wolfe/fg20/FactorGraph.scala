@@ -144,7 +144,7 @@ trait FactorGraph extends ProblemListener {
     override def toString = edges.map(_.node).mkString("(",",",")")
   }
 
-  def problem: Problem
+  def problem: Problem[Pot]
 
   def createDiscNode(v: DiscVar[Any]): DiscNode
   def createContNode(v: ContVar): ContNode
@@ -153,11 +153,6 @@ trait FactorGraph extends ProblemListener {
   def createContEdge(n: ContNode, f: FactorType, index: Int): ContEdge
   def createVectEdge(n: VectNode, f: FactorType, index: Int): VectEdge
   def createFactor(pot: Pot): FactorType
-
-  def acceptPotential: PartialFunction[Potential, Pot]
-
-  private def checkPot(p: Potential): Pot =
-    if (acceptPotential.isDefinedAt(p)) acceptPotential(p) else sys.error("Unsupported potential")
 
   def createAndLinkFactor(p: Pot, linkEdges: Boolean = true) = {
     val factor = createFactor(p)
@@ -173,8 +168,6 @@ trait FactorGraph extends ProblemListener {
   def discNodes = var2DiscNode.valuesIterator
   def contNodes = var2ContNode.valuesIterator
   def vectNodes = var2VectNode.valuesIterator
-
-
 
   def setObservations(state: State = problem.observation) {
     for (v <- state.domain) {
@@ -245,8 +238,8 @@ trait FactorGraph extends ProblemListener {
   val var2ContNode = createContNodes()
   val var2VectNode = createVectNodes()
 
-  val factors      = problem.pots.map(p => createAndLinkFactor(checkPot(p)))
-  val statsFactors = problem.stats.map(p => createAndLinkFactor(checkPot(p), false))
+  val factors      = problem.pots.map(p => createAndLinkFactor(p))
+  val statsFactors = problem.stats.map(p => createAndLinkFactor(p, false))
 
 
   var2DiscNode.values.foreach(_.build())

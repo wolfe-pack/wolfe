@@ -36,12 +36,12 @@ trait ProblemListener {
   def observationChanged(obs:State)
 }
 
-class Problem(val pots: Seq[Potential],
+class Problem[+Pot <: Potential](val pots: Seq[Pot],
               val discVars: Seq[DiscVar[Any]] = Seq.empty,
               val contVars: Seq[ContVar] = Seq.empty,
               val vectVars: Seq[VectVar] = Seq.empty,
               obs:State = State.empty,
-              val stats: Seq[Potential] = Seq.empty) {
+              val stats: Seq[Pot] = Seq.empty) {
   def vars = discVars ++ contVars ++ vectVars
 
 
@@ -60,7 +60,7 @@ class Problem(val pots: Seq[Potential],
 }
 
 object Problem {
-  def apply(pots:Seq[Potential], obs:State = State.empty) = {
+  def apply[Pot <: Potential](pots:Seq[Pot], obs:State = State.empty) = {
     val discVars = pots.flatMap(_.discVars).distinct
     val contVars = pots.flatMap(_.contVars).distinct
     val vectVars = pots.flatMap(_.vectVars).distinct

@@ -19,7 +19,7 @@ trait FactorSettings extends FactorGraph {
 
 }
 
-class BruteForce(val problem: Problem) extends NodeContentFactorGraph with EmptyEdgeFactorGraph with FactorSettings {
+class BruteForce(val problem: Problem[Potential]) extends NodeContentFactorGraph with EmptyEdgeFactorGraph with FactorSettings {
 
 
 
@@ -32,7 +32,6 @@ class BruteForce(val problem: Problem) extends NodeContentFactorGraph with Empty
   def createDiscNodeContent(variable: DiscVar[Any]) = new DiscNodeContent(Array.ofDim[Double](variable.dom.size))
   def createContNodeContent(contVar: ContVar) = new ContNodeContent
   def createVectNodeContent(vectVar: VectVar) = new VectNodeContent
-  def acceptPotential = { case p: Potential => p }
   type Pot = Potential
 
 

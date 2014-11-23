@@ -114,11 +114,9 @@ object SumProduct {
 }
 
 
-class MaxProduct(val problem: Problem) extends BeliefPropagationFactorGraph with FwdBwdEdgePropagation {
+class MaxProduct(val problem: Problem[MaxProduct.Potential]) extends BeliefPropagationFactorGraph with FwdBwdEdgePropagation {
 
   type Pot = MaxProduct.Potential
-
-  def acceptPotential = { case pot: MaxProduct.Potential => pot }
 
   private var deterministicRun = false
 
@@ -303,7 +301,7 @@ trait BeliefPropagationFactorGraph extends Residuals with NodeContentFactorGraph
 
 }
 
-class SumProduct(val problem: Problem) extends BeliefPropagationFactorGraph with EdgePropagation {
+class SumProduct(val problem: Problem[SumProduct.Potential]) extends BeliefPropagationFactorGraph with EdgePropagation {
 
   type Pot = SumProduct.Potential
 
@@ -314,8 +312,6 @@ class SumProduct(val problem: Problem) extends BeliefPropagationFactorGraph with
     }
     result
   }
-
-  def acceptPotential = { case pot: SumProduct.Potential => pot }
 
   def updateN2F(edge: Edge) = updateN2FBySum(edge)
 
