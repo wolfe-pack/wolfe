@@ -52,6 +52,7 @@ class GradientBasedOptimizer(val problem: Problem[GradientBasedOptimizer.Potenti
 
   type Pot = GradientBasedOptimizer.Potential
 
+
   /**
    * Optimize the objective and return the argmax state and value.
    * @param trainer the trainer is the factorie optimizer this class uses internally.
@@ -59,7 +60,10 @@ class GradientBasedOptimizer(val problem: Problem[GradientBasedOptimizer.Potenti
    * @return an argmax result.
    */
   def argmax(trainer: WeightsSet => Trainer = w => new OnlineTrainer(w,new AdaGrad(),100),
-             init:State = State.empty):ArgmaxResult = {
+             init:State = State.empty,
+             stochastic:Seq[GradientBasedOptimizer.Potential] = Seq.empty):ArgmaxResult = {
+
+    this.stochastic = stochastic.map(pot2Factor)
     val weightsSet = new WeightsSet
     val weightsKeys = new mutable.HashMap[Node, Weights]()
 
@@ -124,16 +128,23 @@ class GradientBasedOptimizer(val problem: Problem[GradientBasedOptimizer.Potenti
 
   def createFactor(pot: Pot) = new FactorType(pot)
 
+  private var stochastic:Seq[FactorType] = Seq.empty
 
-}
-
-
-
-
-class ResamplingTrainer(fg:GradientBasedOptimizer, self:Trainer) extends Trainer {
-  def processExamples(examples: Iterable[Example]) = {
-    self.processExamples(examples)
-    //fg.sampleFactors()
+  class ResamplingTrainer(fg:GradientBasedOptimizer, self:Trainer) extends Trainer {
+    def processExamples(examples: Iterable[Example]) = {
+      self.processExamples(examples)
+      for (f <- stochastic) reattachFactor(f)
+    }
+    def isConverged = self.isConverged
   }
-  def isConverged = self.isConverged
+
 }
+
+class ExampleStochasticPot(v: => VectVar,w: => VectVar) extends GradientBasedOptimizer.Stateless with VectPotential {
+  def vectVars = Array(v,w)
+  def gradientAndValue(currentParameters: Setting, gradient: Setting) = ???
+  def score(setting: Setting) = ???
+}
+
+
+
