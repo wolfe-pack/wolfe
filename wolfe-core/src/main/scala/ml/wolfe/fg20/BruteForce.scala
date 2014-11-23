@@ -3,11 +3,24 @@ package ml.wolfe.fg20
 import ml.wolfe.MoreArrayOps._
 import ml.wolfe.SparseVector
 
-class BruteForce(val problem: Problem) extends NodeContentFG2 with EmptyEdgeFG2 {
+trait FactorSettings extends FG2 {
 
   class FactorType(val pot: Pot) extends Factor {
     var setting = new Setting(pot.discVars.length, pot.contVars.length, pot.vectVars.length)
   }
+
+  def syncFactorObservations(): Unit = {
+    for (n <- discNodes; if n.observed; e <- n.edges) e.factor.setting.disc(e.index) = n.setting
+    for (c <- contNodes; if c.observed; e <- c.edges) e.factor.setting.cont(e.index) = c.setting
+    for (v <- vectNodes; if v.observed; e <- v.edges) e.factor.setting.vect(e.index) = v.setting
+
+  }
+
+
+}
+
+class BruteForce(val problem: Problem) extends NodeContentFG2 with EmptyEdgeFG2 with FactorSettings {
+
 
 
   def createFactor(pot: Pot) = new FactorType(pot)
@@ -44,12 +57,6 @@ class BruteForce(val problem: Problem) extends NodeContentFG2 with EmptyEdgeFG2 
     factors.iterator.map(f => f.processor.score(f.setting)).sum
   }
 
-  def syncFactorObservations(): Unit = {
-    for (n <- discNodes; if n.observed; e <- n.edges) e.factor.setting.disc(e.index) = n.setting
-    for (c <- contNodes; if c.observed; e <- c.edges) e.factor.setting.cont(e.index) = c.setting
-    for (v <- vectNodes; if v.observed; e <- v.edges) e.factor.setting.vect(e.index) = v.setting
-
-  }
 
   def inferMAP(): MAPResult = {
 

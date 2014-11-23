@@ -194,6 +194,17 @@ trait EmptyNodeFG extends FG {
   def createVectNode(v: VectVar) = new VectNode(v)
 }
 
+trait EmptyNodeFG2 extends FG2 {
+  trait NodeType extends Node
+  final class DiscNode(val variable: DiscVar[Any]) extends BasicDiscNode with NodeType
+  final class ContNode(val variable: ContVar) extends BasicContNode with NodeType
+  final class VectNode(val variable: VectVar) extends BasicVectNode with NodeType
+  def createDiscNode(v: DiscVar[Any]) = new DiscNode(v)
+  def createContNode(v: ContVar) = new ContNode(v)
+  def createVectNode(v: VectVar) = new VectNode(v)
+}
+
+
 trait EdgeMsgsFG2 extends FG2 {
   type Msgs
   type DiscMsgs <: Msgs

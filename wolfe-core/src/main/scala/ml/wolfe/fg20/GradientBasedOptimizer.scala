@@ -11,18 +11,18 @@ import scala.collection.mutable
 /**
  * @author Sebastian Riedel
  */
-class GradientBasedOptimizer(val problem: Problem) extends EdgeMsgsFG with EmptyFactorFG with EmptyNodeFG {
-  class Msgs
-  type DiscMsgs = Nothing
-  class ContMsgs(var gradient: Double = 0.0) extends Msgs
-  class VectMsgs(var gradient: FactorieVector = null) extends Msgs
+class GradientBasedOptimizer(val problem: Problem) extends EmptyEdgeFG2 with EmptyNodeFG2 {
 
-  def createDiscMsgs(variable: DiscVar[Any]) = sys.error("Can't do gradient ascent with discrete variables")
-  def createContMsgs(variable: ContVar) = new ContMsgs()
-  def createVectMsgs(variable: VectVar) = new VectMsgs()
+  class FactorType(val pot: Pot) extends Factor {
+    var setting = new Setting(pot.discVars.length, pot.contVars.length, pot.vectVars.length)
+    var gradient = new Setting(pot.discVars.length, pot.contVars.length, pot.vectVars.length)
+  }
 
-  type Pot = GradientBasedOptimizer.Potential
-  def acceptPotential = { case p: GradientBasedOptimizer.Potential => p }
+
+  def createFactor(pot: Pot) = new FactorType(pot)
+
+  type Pot = GradientBasedOptimizer.Potential2
+  def acceptPotential = { case p: GradientBasedOptimizer.Potential2 => p }
 
   def argmax(trainer: WeightsSet => Trainer = w => new OnlineTrainer(w,new AdaGrad(),100),
              init:State = State.empty):ArgmaxResult = {
@@ -30,6 +30,10 @@ class GradientBasedOptimizer(val problem: Problem) extends EdgeMsgsFG with Empty
     val weightsKeys = new mutable.HashMap[Node, Weights]()
 
     for (n <- contNodes) {
+      n.setting = init.get(n.variable) match {
+        case Some(v) => v
+        case None => 0.0
+      }
       weightsKeys(n) = weightsSet.newWeights(new DenseTensor1(Array(n.setting)))
     }
     for (n <- vectNodes) {
@@ -39,21 +43,23 @@ class GradientBasedOptimizer(val problem: Problem) extends EdgeMsgsFG with Empty
       }
       weightsKeys(n) = weightsSet.newWeights(n.setting)
     }
+
     val examples = for (f <- factors) yield new Example {
       val factor = f
       def accumulateValueAndGradient(value: DoubleAccumulator, gradient: WeightsMapAccumulator) = {
+
         for (e <- f.contEdges) {
-          e.node.setting = weightsSet(weightsKeys(e.node)).asInstanceOf[FactorieVector](0)
+          f.setting.cont(e.index) = weightsSet(weightsKeys(e.node)).asInstanceOf[FactorieVector](0)
         }
         for (e <- f.vectEdges) {
-          e.node.setting = weightsSet(weightsKeys(e.node)).asInstanceOf[FactorieVector]
+          f.setting.vect(e.index) = weightsSet(weightsKeys(e.node)).asInstanceOf[FactorieVector]
         }
-        val v = f.pot.gradientAndValue(f)
+        val v = f.processor.gradientAndValue(f.setting,f.gradient)
         for (e <- f.contEdges) {
-          gradient.accumulate(weightsKeys(e.node),new DenseTensor1(Array(e.msgs.gradient)), 1.0)
+          gradient.accumulate(weightsKeys(e.node),new DenseTensor1(Array(f.gradient.cont(e.index))), 1.0)
         }
         for (e <- f.vectEdges) {
-          gradient.accumulate(weightsKeys(e.node),e.msgs.gradient, 1.0)
+          gradient.accumulate(weightsKeys(e.node),f.gradient.vect(e.index), 1.0)
         }
 
         value.accumulate(v)
@@ -65,11 +71,13 @@ class GradientBasedOptimizer(val problem: Problem) extends EdgeMsgsFG with Empty
     //set results
     for (n <- contNodes) {
       n.setting = weightsSet(weightsKeys(n)).asInstanceOf[FactorieVector](0)
+      for (e <- n.edges) e.factor.setting.cont(e.index) = n.setting
     }
     for (n <- vectNodes) {
       n.setting = weightsSet(weightsKeys(n)).asInstanceOf[FactorieVector]
+      for (e <- n.edges) e.factor.setting.vect(e.index) = n.setting
     }
-    val objective = factors.iterator.map(f => f.pot.score(f,new DenseVector(Array.empty[Double]))).sum
+    val objective = factors.iterator.map(f => f.processor.score(f.setting)).sum
     val contState = contNodes.map(n => n.variable -> n.setting).toMap[Var[Any],Any]
     val vectState = vectNodes.map(n => n.variable -> n.setting).toMap[Var[Any],Any]
     ArgmaxResult(State(contState ++ vectState),objective)

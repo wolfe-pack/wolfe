@@ -10,7 +10,7 @@ import scala.util.Random
  * @author Sebastian Riedel
  */
 class GibbsSampler(val problem: Problem)
-                  (implicit random: Random = new Random(0)) extends FG2 with NodeContentFG2 with EmptyEdgeFG2 {
+                  (implicit random: Random = new Random(0)) extends FG2 with NodeContentFG2 with EmptyEdgeFG2  {
 
   class NodeContent
   final class DiscNodeContent(size: Int) extends NodeContent {
@@ -32,7 +32,6 @@ class GibbsSampler(val problem: Problem)
   final class FactorType(val pot: Pot) extends Factor {
     var mean: FactorieVector = null
     var setting              = pot.createSetting()
-
   }
 
 
