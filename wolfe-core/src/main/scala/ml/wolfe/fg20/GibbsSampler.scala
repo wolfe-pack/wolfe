@@ -10,7 +10,7 @@ import scala.util.Random
  * @author Sebastian Riedel
  */
 class GibbsSampler(val problem: Problem)
-                  (implicit random: Random = new Random(0)) extends FG2 with NodeContentFG2 with EmptyEdgeFG2  {
+                  (implicit random: Random = new Random(0)) extends FactorGraph with NodeContentFactorGraph with EmptyEdgeFactorGraph  {
 
   class NodeContent
   final class DiscNodeContent(size: Int) extends NodeContent {
@@ -35,9 +35,9 @@ class GibbsSampler(val problem: Problem)
   }
 
 
-  type Pot = Potential2
+  type Pot = Potential
 
-  def acceptPotential = { case p: Potential2 => p }
+  def acceptPotential = { case p: Potential => p }
   def createFactor(pot: Pot) = new FactorType(pot)
 
   def createDiscNodeContent(variable: DiscVar[Any]) = new DiscNodeContent(variable.dom.size)

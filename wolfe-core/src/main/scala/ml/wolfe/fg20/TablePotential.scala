@@ -170,16 +170,14 @@ trait TableBasedProcessor extends MaxProduct.Processor with SumProduct.Processor
 
 }
 
-final class TablePotential(val discVars: Array[DiscVar[Any]], table: Array[Double]) extends MaxProduct.Potential2
-                                                                                             with SumProduct.Potential2
-                                                                                             with DiscPotential2 {
+final class TablePotential(val discVars: Array[DiscVar[Any]], table: Array[Double]) extends MaxProduct.Potential
+                                                                                             with SumProduct.Potential
+                                                                                             with DiscPotential {
 
   val discDims = discVars.map(_.dom.size)
 
   def processor() = new Proc
 
-
-  def isLinear = false
   final class Proc extends TableBasedProcessor {
 
     def dims = discDims
@@ -234,11 +232,5 @@ final class TablePotential(val discVars: Array[DiscVar[Any]], table: Array[Doubl
 
   }
 
-
-  def statsForCurrentSetting(factor: FG#Factor) = ???
-  def score(factor: FG#Factor, weights: FactorieVector) = {
-    val entry = TablePotential.settingToEntry(factor.discEdges.iterator.map(_.node.setting), discDims)
-    table(entry)
-  }
 
 }
