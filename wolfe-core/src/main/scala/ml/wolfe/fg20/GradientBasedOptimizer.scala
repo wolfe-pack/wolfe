@@ -47,7 +47,10 @@ object GradientBasedOptimizer {
  * Create an optimizer for the given problem.
  * @param problem the problem to optimize.
  */
-class GradientBasedOptimizer(val problem: Problem) extends EmptyEdgeFactorGraph with EmptyNodeFactorGraph {
+class GradientBasedOptimizer(val problem: Problem[GradientBasedOptimizer.Potential]) extends EmptyEdgeFactorGraph
+                                                           with EmptyNodeFactorGraph {
+
+  type Pot = GradientBasedOptimizer.Potential
 
   /**
    * Optimize the objective and return the argmax state and value.
@@ -120,9 +123,6 @@ class GradientBasedOptimizer(val problem: Problem) extends EmptyEdgeFactorGraph 
   }
 
   def createFactor(pot: Pot) = new FactorType(pot)
-
-  type Pot = GradientBasedOptimizer.Potential
-  def acceptPotential = { case p: GradientBasedOptimizer.Potential => p }
 
 
 }
