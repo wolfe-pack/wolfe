@@ -93,7 +93,7 @@ object GradientBasedOptimizer {
 
   trait Potential extends fg20.Potential { type Proc <: Processor }
 
-  trait Stateless extends Potential with Processor with StatelessProcessor[Stateless]
+  trait Stateless extends Potential with Processor with StatelessComputation[Stateless]
 
 }
 
