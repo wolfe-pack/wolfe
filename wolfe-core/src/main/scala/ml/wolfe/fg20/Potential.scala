@@ -19,7 +19,7 @@ import ml.wolfe._
  * The same potentials (as part of the same [[ml.wolfe.fg20.Problem]]) can be shared by several algorithms
  * at the same time. This requires that when a potential wants to maintain/cache a state for efficient
  * processing of computations such as gradients, it needs to be able to spawn new processors for each algorithm.
- * This is achieved by the [[ml.wolfe.fg20.Potential#processor]] method which returns a [[ml.wolfe.fg20.Processor]]
+ * This is achieved by the [[ml.wolfe.fg20.Potential# p r o c e s s o r]] method which returns a [[ml.wolfe.fg20.Processor]]
  * object dedicated to the algorithm. It's the processor which does all the work. This can creates
  * some overhead for Potentials that can do stateless computation, and hence there is a [[ml.wolfe.fg20.StatelessComputation]]
  * trait to simplify this case.
@@ -134,23 +134,34 @@ trait ExpFamPotential extends Potential {type Proc <: ExpFamProcessor }
  * Convenience trait for potentials that only connect discrete variables.
  */
 trait DiscPotential extends Potential {
-  val contVars: Array[ContVar] = Array.ofDim[ContVar](0)
-  val vectVars: Array[VectVar] = Array.ofDim[VectVar](0)
+  def contVars = Potential.emptyContVars
+  def vectVars = Potential.emptyVectVars
+
 }
 
 /**
  * Convenience trait for potentials that only connect continuous variables.
  */
 trait ContPotential extends Potential {
-  val discVars: Array[DiscVar[Any]] = Array.ofDim[DiscVar[Any]](0)
-  val vectVars: Array[VectVar]      = Array.ofDim[VectVar](0)
+  def discVars = Potential.emptyDiscVars
+  def vectVars = Potential.emptyVectVars
 }
 
 /**
  * Convenience trait for potentials that only connect vector variables.
  */
 trait VectPotential extends Potential {
-  val discVars: Array[DiscVar[Any]] = Array.ofDim[DiscVar[Any]](0)
-  val contVars: Array[ContVar]      = Array.ofDim[ContVar](0)
+  def discVars = Potential.emptyDiscVars
+  def contVars = Potential.emptyContVars
 }
 
+
+/**
+ * Companion object for potentials
+ */
+object Potential {
+  val emptyDiscVars = Array.ofDim[DiscVar[Any]](0)
+  val emptyContVars = Array.ofDim[ContVar](0)
+  val emptyVectVars = Array.ofDim[VectVar](0)
+
+}
