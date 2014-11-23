@@ -15,12 +15,18 @@ import scala.util.Random
  * @author Sebastian Riedel
  * @author rockt
  */
+
 object MatrixFactorization extends App {
-  val debug = false //whether to use sampled matrices or the NAACL data
+  val mf = new MatrixFactorization(args.lift(0).getOrElse("conf/mf.conf"))
+  val wMAP = mf.run()
+  println(wMAP)
+}
+
+class MatrixFactorization(confPath: String = "conf/mf.conf") {
+  val debug = false //whether to use a small synthetic matrix or actual data
   val loadFormulae = debug && true //whether forumlae should be sampled for debugging
   //val print = false //whether to print the matrix (only do this for small ones!)
 
-  val confPath = args.lift(0).getOrElse("conf/mf.conf")
   Conf.add(confPath)
   Conf.outDir //sets up output directory
   implicit val conf = Conf
@@ -159,48 +165,53 @@ object MatrixFactorization extends App {
     case "AvgPerceptron" => new AveragedPerceptron()
   }
 
-  println("Optimizing...")
-  Timer.time("optimization") {
-    GradientBasedOptimizer(fg,
-      if (batchTraining) new BatchTrainer(_, gradientOptimizer, maxIter) with ProgressLogging
-      else new OnlineTrainer(_, gradientOptimizer, maxIter, fg.factors.size - 1) with ProgressLogging
-    )
-  }
-  println("Done after " + Timer.reportedVerbose("optimization"))
 
-  if (debug) {
-    println("train:")
-    println(db.toVerboseString(showTrain = true))
-    println()
+  def run(): Double = {
+    println("Optimizing...")
+    Timer.time("optimization") {
+      GradientBasedOptimizer(fg,
+        if (batchTraining) new BatchTrainer(_, gradientOptimizer, maxIter) with ProgressLogging
+        else new OnlineTrainer(_, gradientOptimizer, maxIter, fg.factors.size - 1) with ProgressLogging
+      )
+    }
+    println("Done after " + Timer.reportedVerbose("optimization"))
 
-    println("predicted:")
-    println(db.toVerboseString())
-  } else {
-    Conf.createSymbolicLinkToLatest() //rewire symbolic link to latest (in case it got overwritten)
-    val pathToPredict = Conf.outDir.getAbsolutePath + "/" + fileName
-    dataType match {
-      case "naacl" => {
-        WriteNAACL(db, pathToPredict)
-        EvaluateNAACL.main(Array("./conf/eval.conf", pathToPredict))
+    var wMAP = 0.0
+
+    if (debug) {
+      println("train:")
+      println(db.toVerboseString(showTrain = true))
+      println()
+
+      println("predicted:")
+      println(db.toVerboseString())
+    } else {
+      Conf.createSymbolicLinkToLatest() //rewire symbolic link to latest (in case it got overwritten)
+      val pathToPredict = Conf.outDir.getAbsolutePath + "/" + fileName
+      dataType match {
+        case "naacl" =>
+          WriteNAACL(db, pathToPredict)
+          wMAP = new EvaluateNAACL("./conf/eval.conf", pathToPredict).eval()
+        case "figer" =>
+          WriteFIGER(db, pathToPredict)
+          EvaluateFIGER.main(Array(pathToPredict, Conf.outDir.getAbsolutePath))
       }
-      case "figer" => {
-        WriteFIGER(db, pathToPredict)
-        EvaluateFIGER.main(Array(pathToPredict, Conf.outDir.getAbsolutePath))
+
+      db.writeVectors(Conf.outDir.getAbsolutePath + "/vectors.tsv")
+
+      import scala.sys.process._
+      Process("pdflatex -interaction nonstopmode -shell-escape table.tex", new File(Conf.outDir.getAbsolutePath)).!!
+
+      if (Conf.hasPath(dataType + ".formulaeFile") && Conf.getString(dataType + ".formulaeFile") != "None") {
+        val formulaeFile = new File(Conf.getString(dataType + ".formulaeFile"))
+        val lines = Source.fromFile(formulaeFile).getLines()
+        val writer = new FileWriter(Conf.outDir.getAbsolutePath + "/" + formulaeFile.getAbsolutePath.split("/").last)
+        writer.write(lines.mkString("\n"))
+        writer.close()
       }
     }
 
-    db.writeVectors(Conf.outDir.getAbsolutePath + "/vectors.tsv")
-    
-    import scala.sys.process._
-    Process("pdflatex -interaction nonstopmode -shell-escape table.tex", new File(Conf.outDir.getAbsolutePath)).!!
-
-    if (Conf.hasPath(dataType + ".formulaeFile") && Conf.getString(dataType + ".formulaeFile") != "None") {
-      val formulaeFile = new File(Conf.getString(dataType + ".formulaeFile"))
-      val lines = Source.fromFile(formulaeFile).getLines()
-      val writer = new FileWriter(Conf.outDir.getAbsolutePath + "/" + formulaeFile.getAbsolutePath.split("/").last)
-      writer.write(lines.mkString("\n"))
-      writer.close()
-    }
+    wMAP
   }
 }
 
