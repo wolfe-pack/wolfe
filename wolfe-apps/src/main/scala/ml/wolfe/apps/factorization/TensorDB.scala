@@ -281,3 +281,42 @@ class TensorKB(k: Int = 100) extends TensorDB(k) {
  
   def getFact(relation: CellIx, entity1: CellIx, entity2: CellIx) = get(relation, entity1, entity2)
 }
+
+object LogicalInference {
+  def apply(db: TensorDB, formulaList: List[Formula] = Nil, newCellType: CellType = CellType.Train): Unit = {
+    var converged = false
+
+    /*
+    val formulae = if (formulaList.isEmpty) db.formulae.toList else formulaList
+    while (!converged) {
+      converged = true
+
+      for (formula <- formulae) formula match {
+        case Impl(p1, p2) =>
+          val cs = db.getBy1(p1)
+          cs.foreach(c => {
+            val (c1, c2) = c
+            val cellOpt = db.get(p2, c1, c2)
+
+            if (!cellOpt.isDefined) {
+              converged = false
+              db += Cell(p2, c1, c2, target = 1.0, cellType = newCellType)
+            }
+          })
+        case ImplNeg(p1, p2, _) =>
+          val cs = db.getBy1(p1)
+          cs.foreach(c => {
+            val (c1, c2) = c
+            val cellOpt = db.get(p2, c1, c2)
+
+            if (!cellOpt.isDefined) {
+              converged = false
+              db += Cell(p2, c1, c2, target = 0.0, cellType = newCellType)
+            }
+          })
+        case _ => ???
+      }
+    }
+    */
+  }
+}

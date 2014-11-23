@@ -20,9 +20,19 @@ class BackPropagationLoss(edge: Edge, network: MultiLayerPerceptron, input: Dens
   println(edge.n)
   println(edge.f)
 
+
+
   override def valueAndGradientForAllEdges(): Double = {
+    println("f2n = " + e.f2n)
+    println("n2f = " + e.n2f)
     if (e.n2f != null) {
-      println(e.n2f.mkString(", "))
+      val updates = e.n2f.toArray
+      var i = 0
+      println("GG: " + e.n2f.mkString(", "))
+      for (layer <- network.layers) {
+        layer.updateWithGradients(DenseMatrix(updates.slice(i, i+layer.size)))
+        i += layer.size
+      }
     }
     else {
       println("Null Gradients...")
@@ -75,6 +85,8 @@ object BackPropTest extends App {
       case "LBFGS" => new LBFGS(Double.MaxValue, Int.MaxValue) //rockt: not working atm
       case "AvgPerceptron" => new AveragedPerceptron()
     }
+
+    fg.build()
 
     Timer.time("optimization") {
       GradientBasedOptimizer(fg,new OnlineTrainer(_, gradientOptimizer, bpIters, fg.factors.size - 1) with ProgressLogging
