@@ -1,6 +1,6 @@
 package ml.wolfe.fg20
 
-import cc.factorie.optimize.{LBFGS, BatchTrainer, AdaGrad, OnlineTrainer}
+import cc.factorie.optimize.{BatchTrainer, LBFGS}
 import ml.wolfe.FactorieVector
 
 
