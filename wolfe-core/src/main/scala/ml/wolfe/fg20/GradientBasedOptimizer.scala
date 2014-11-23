@@ -9,21 +9,52 @@ import ml.wolfe._
 import scala.collection.mutable
 
 /**
+ * Optimizes an optimization problem using the gradient of the objective.
+ *
  * @author Sebastian Riedel
+ */
+object GradientBasedOptimizer {
+
+  /**
+   * Potentials which can be differentiated and which have a processor that
+   * can provide the gradient at a given parameter.
+   */
+  trait Potential extends fg20.Potential { type Proc <: Processor }
+
+  /**
+   * Potential processor for gradient based methods.
+   */
+  trait Processor extends fg20.Processor {
+
+    /**
+     * Calculate value and gradient and current setting. Gradient results are
+     * to be provided in-place by modifying the gradient argument.
+     * @param currentParameters the current parameters, i.e. assignment to the potential's variables.
+     * @param gradient put the gradient at the current parameters into this setting.
+     * @return the value at the current parameters.
+     */
+    def gradientAndValue(currentParameters:Setting, gradient:Setting):Double
+  }
+
+  /**
+   * A convenience trait for subclasses that calculate gradients in a stateless-manner.
+   */
+  trait Stateless extends Potential with Processor with StatelessComputation[Stateless]
+
+}
+
+/**
+ * Create an optimizer for the given problem.
+ * @param problem the problem to optimize.
  */
 class GradientBasedOptimizer(val problem: Problem) extends EmptyEdgeFactorGraph with EmptyNodeFactorGraph {
 
-  class FactorType(val pot: Pot) extends Factor {
-    var setting = new Setting(pot.discVars.length, pot.contVars.length, pot.vectVars.length)
-    var gradient = new Setting(pot.discVars.length, pot.contVars.length, pot.vectVars.length)
-  }
-
-
-  def createFactor(pot: Pot) = new FactorType(pot)
-
-  type Pot = GradientBasedOptimizer.Potential
-  def acceptPotential = { case p: GradientBasedOptimizer.Potential => p }
-
+  /**
+   * Optimize the objective and return the argmax state and value.
+   * @param trainer the trainer is the factorie optimizer this class uses internally.
+   * @param init the initial parameter set.
+   * @return an argmax result.
+   */
   def argmax(trainer: WeightsSet => Trainer = w => new OnlineTrainer(w,new AdaGrad(),100),
              init:State = State.empty):ArgmaxResult = {
     val weightsSet = new WeightsSet
@@ -83,19 +114,19 @@ class GradientBasedOptimizer(val problem: Problem) extends EmptyEdgeFactorGraph 
     ArgmaxResult(State(contState ++ vectState),objective)
   }
 
-}
-
-object GradientBasedOptimizer {
-
-  trait Processor extends fg20.Processor {
-    def gradientAndValue(current:Setting, gradient:Setting):Double
+  class FactorType(val pot: Pot) extends Factor {
+    var setting = new Setting(pot.discVars.length, pot.contVars.length, pot.vectVars.length)
+    var gradient = new Setting(pot.discVars.length, pot.contVars.length, pot.vectVars.length)
   }
 
-  trait Potential extends fg20.Potential { type Proc <: Processor }
+  def createFactor(pot: Pot) = new FactorType(pot)
 
-  trait Stateless extends Potential with Processor with StatelessComputation[Stateless]
+  type Pot = GradientBasedOptimizer.Potential
+  def acceptPotential = { case p: GradientBasedOptimizer.Potential => p }
+
 
 }
+
 
 
 
