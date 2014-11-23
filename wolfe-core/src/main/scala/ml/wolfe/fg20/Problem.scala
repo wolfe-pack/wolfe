@@ -28,61 +28,6 @@ class PartialSetting(numDisc: Int, numCont: Int = 0, numVect: Int = 0) extends S
 
 }
 
-trait Processor {
-  def score(setting: Setting): Double
-}
-
-trait Potential {
-
-  def discVars: Array[DiscVar[Any]]
-  def contVars: Array[ContVar]
-  def vectVars: Array[VectVar]
-
-  type Proc <: Processor
-  def processor(): Proc
-
-  def createSetting() = new Setting(discVars.size,contVars.size,vectVars.size)
-
-}
-
-trait StatelessProcessor[This <: StatelessProcessor[This]] extends Potential with Processor {
-  this: This =>
-  type Proc = This
-  def processor():This = this
-}
-
-trait Statistics {
-  def stats(setting: Setting): FactorieVector
-}
-
-trait ExpFamProcessor extends Statistics with Processor {
-  def score(setting: Setting) = setting.vect(setting.vect.length - 1) dot stats(setting)
-}
-
-
-trait ExpFamPotential extends Potential {
-  type Proc <: ExpFamProcessor
-
-  def weights(setting: Setting) = setting.vect(setting.vect.length - 1)
-
-}
-
-trait DiscPotential extends Potential {
-  val contVars: Array[ContVar] = Array.ofDim[ContVar](0)
-  val vectVars: Array[VectVar] = Array.ofDim[VectVar](0)
-}
-
-trait ContPotential extends Potential {
-  val discVars: Array[DiscVar[Any]] = Array.ofDim[DiscVar[Any]](0)
-  val vectVars: Array[VectVar] = Array.ofDim[VectVar](0)
-}
-
-trait VectPotential extends Potential {
-  val discVars: Array[DiscVar[Any]] = Array.ofDim[DiscVar[Any]](0)
-  val contVars: Array[ContVar] = Array.ofDim[ContVar](0)
-}
-
-
 
 
 
