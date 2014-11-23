@@ -81,7 +81,16 @@ object GradientBasedOptimizer {
   trait Potential extends ml.wolfe.fg20.Potential {
     def gradientAndValue(factor: GradientBasedOptimizer#Factor):Double
   }
+
+  trait Processor extends fg20.Processor {
+    def gradientAndValue(current:Setting, gradient:Setting):Double
+  }
+
+  trait Potential2 extends fg20.Potential2 { type Proc <: Processor }
+
 }
+
+
 
 class ResamplingTrainer(fg:GradientBasedOptimizer, self:Trainer) extends Trainer {
   def processExamples(examples: Iterable[Example]) = {

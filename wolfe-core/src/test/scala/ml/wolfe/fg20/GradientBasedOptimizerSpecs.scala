@@ -9,21 +9,29 @@ import ml.wolfe.{FactorieVector, WolfeSpec}
  */
 class GradientBasedOptimizerSpecs extends WolfeSpec {
 
-  trait ContPotential extends GradientBasedOptimizer.Potential {
+  trait ContPotential extends GradientBasedOptimizer.Potential
+                              with GradientBasedOptimizer.Potential2
+                              with GradientBasedOptimizer.Processor
+                              with StatelessProcessor[ContPotential] {
     def discVars = Array.empty
     def vectVars = Array.empty
     def isLinear = false
     def statsForCurrentSetting(factor: FG#Factor) = isNotLinear
+//    def gradientAndValue(current: Setting, gradient: Setting) = ???
+//    def score(setting: Setting) = ???
   }
 
-  trait VectPotential extends GradientBasedOptimizer.Potential {
+  trait VectPotential extends GradientBasedOptimizer.Potential
+                              with GradientBasedOptimizer.Potential2
+                              with GradientBasedOptimizer.Processor
+                              with StatelessProcessor[VectPotential]{
     def discVars = Array.empty
     def contVars = Array.empty
     def isLinear = false
     def statsForCurrentSetting(factor: FG#Factor) = isNotLinear
   }
 
-  class LinearTerm(val x: ContVar, val scale: Double) extends ContPotential {
+  class LinearTerm(val x: ContVar, val scale: Double) extends ContPotential  {
     def contVars = Array(x)
     def gradientAndValue(factor: GradientBasedOptimizer#Factor) = {
       factor.contEdges(0).msgs.gradient = scale
@@ -32,6 +40,11 @@ class GradientBasedOptimizerSpecs extends WolfeSpec {
     def score(factor: FG#Factor, weights: FactorieVector) = {
       factor.contEdges(0).node.setting * scale
     }
+    def gradientAndValue(current: Setting, gradient: Setting) = {
+      gradient.cont(0) = scale
+      score(current)
+    }
+    def score(setting: Setting) = setting.cont(0) * scale
   }
 
   class QuadraticTerm(val x: ContVar, val scale: Double) extends ContPotential {
@@ -43,6 +56,11 @@ class GradientBasedOptimizerSpecs extends WolfeSpec {
     def score(factor: FG#Factor, weights: FactorieVector) = {
       factor.contEdges(0).node.setting * factor.contEdges(0).node.setting * scale
     }
+    def gradientAndValue(current: Setting, gradient: Setting) = {
+      gradient.cont(0) = current.cont(0) * 2.0 * scale
+      score(current)
+    }
+    def score(setting: Setting) = setting.cont(0) * setting.cont(0) * scale
   }
 
 
@@ -55,6 +73,8 @@ class GradientBasedOptimizerSpecs extends WolfeSpec {
     def score(factor: FG#Factor, weights: FactorieVector) = {
       factor.vectEdges(0).node.setting dot scale
     }
+    def gradientAndValue(current: Setting, gradient: Setting) = ???
+    def score(setting: Setting) = ???
   }
 
   class MultivariateQuadraticTerm(val x: VectVar, val scale: Double) extends VectPotential {
@@ -66,6 +86,8 @@ class GradientBasedOptimizerSpecs extends WolfeSpec {
     def score(factor: FG#Factor, weights: FactorieVector) = {
       (factor.vectEdges(0).node.setting dot factor.vectEdges(0).node.setting) * scale
     }
+    def gradientAndValue(current: Setting, gradient: Setting) = ???
+    def score(setting: Setting) = ???
   }
 
 
