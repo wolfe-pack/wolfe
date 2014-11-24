@@ -3,6 +3,7 @@ package ml.wolfe.neural.io
 import java.io.{DataInputStream, File, InputStream}
 import cc.factorie.la.{Tensor => TensorTrait}
 import ml.wolfe.neural.{FactorieTensor, FactorieMatrix, FactorieVector}
+import scala.language.implicitConversions
 
 /**
  * User: rockt
