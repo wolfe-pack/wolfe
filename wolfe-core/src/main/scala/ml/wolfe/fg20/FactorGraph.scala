@@ -140,7 +140,7 @@ trait FactorGraph extends ProblemListener {
     var discEdges: Array[DiscEdge] = null
     var contEdges: Array[ContEdge] = null
     var vectEdges: Array[VectEdge] = null
-    def edges = discEdges.iterator ++ contEdges.iterator ++ vectEdges.iterator
+    def edges:Iterator[EdgeType] = discEdges.iterator ++ contEdges.iterator ++ vectEdges.iterator
     override def toString = edges.map(_.node).mkString("(",",",")")
   }
 
@@ -162,7 +162,7 @@ trait FactorGraph extends ProblemListener {
     factor
   }
 
-  def nodes = var2DiscNode.values.iterator ++ var2ContNode.values.iterator ++ var2VectNode.values.iterator
+  def nodes:Iterator[NodeType] = var2DiscNode.values.iterator ++ var2ContNode.values.iterator ++ var2VectNode.values.iterator
   def edges = factors.iterator.flatMap(_.edges)
 
   def discNodes = var2DiscNode.valuesIterator
