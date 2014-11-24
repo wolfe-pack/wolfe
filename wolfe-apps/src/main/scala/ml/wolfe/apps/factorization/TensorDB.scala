@@ -316,22 +316,17 @@ trait Features extends TensorDB {
 
   private var _frozen  = false
 
-  private var _fnode1: Option[Node] = None
-  private var _fnode2: Option[Node] = None
-  private var _fnode3: Option[Node] = None
+  private val _fnode1s: mutable.HashMap[CellIx, Node] = new mutable.HashMap()
+  private val _fnode2s: mutable.HashMap[CellIx, Node] = new mutable.HashMap()
 
-  def fnode1 = _fnode1
-  def fnode2 = _fnode2
-  def fnode3 = _fnode3
-  def fnodes = fnode1.toSeq ++ fnode2.toSeq ++ fnode3.toSeq
-
-  def fweights1 = _fnode1.map(_.variable.asVector.b)
-  def fweights2 = _fnode2.map(_.variable.asVector.b)
-  def fweights3 = _fnode3.map(_.variable.asVector.b)
+  def fnode1(key2: CellIx) = _fnode1s.get(key2)
+  def fnodes1 = _fnode1s.values
+  def fnode2(key1: CellIx) = _fnode2s.get(key1)
+  def fnodes2 = _fnode2s.values
 
   def featureIndex(feat: String, alpha: mutable.HashMap[String, Int], names: ArrayBuffer[String]): Int = alpha.getOrElseUpdate(feat,
     if (_frozen) {
-      sys.error(s"Cannot find feature $feat, alhpabet is frozen.")
+      sys.error(s"Cannot find feature $feat, alphabet is frozen.")
       sys.exit(1)
     } else {
       val idx = names.size
@@ -353,15 +348,46 @@ trait Features extends TensorDB {
     val idx = featureIndex3(feat)
     feat3Map.getOrElseUpdate(key3, new mutable.LinkedHashSet) += idx
   }
+
   override def toFactorGraph: FactorGraph = {
     val fg = super.toFactorGraph
     _frozen = true
     if (isMatrix) {
-      _fnode1 = Some(fg.addVectorNode(numFeatures1, "feats1"))
-      _fnode2 = Some(fg.addVectorNode(numFeatures2, "feats2"))
-      _fnode3 = Some(fg.addVectorNode(numFeatures3, "feats3"))
+      if(numFeatures1 > 0) {
+        for(key2 <- keys2) _fnode1s(key2) = fg.addVectorNode(numFeatures1, "feats1" + "_" + key2.toString)
+      }
+      if(numFeatures2 > 0) {
+        for(key1 <- keys1) _fnode2s(key1) = fg.addVectorNode(numFeatures2, "feats2" + "_" + key1.toString)
+      }
     } else ???
     fg
+  }
+
+  private def writeFeatureVector(filePath:String, names: Seq[String], nodes: Iterable[Node]): Unit = {
+    // names
+    val namesWriter = new FileWriter(filePath + ".names")
+    for(n <- names) namesWriter.write(n +"\n")
+    namesWriter.flush()
+    namesWriter.close()
+    // vectors
+    val writer = new FileWriter(filePath + ".vecs")
+    for(n <- nodes) {
+      val vec = n.variable.asVector.b
+      val name = n.variable.label
+      writer.write(name + "\t" + vec.mkString("\t") + "\n")
+    }
+    writer.flush()
+    writer.close()
+  }
+
+  override def writeVectors(filePath: String): Unit = {
+    super.writeVectors(filePath)
+    if (numFeatures1 > 0) {
+      writeFeatureVector(filePath + ".feats1", fnames1, fnodes1)
+    }
+    if (numFeatures2 > 0) {
+      writeFeatureVector(filePath + ".feats2", fnames2, fnodes2)
+    }
   }
 }
 
