@@ -275,25 +275,43 @@ class TensorDB(k: Int = 100) extends Tensor {
 }
 
 trait Features extends TensorDB {
-  val featAlphabet1 = new mutable.HashMap[String, Int]()
-  val featNames1 = new ArrayBuffer[String]
-  val featAlphabet2 = new mutable.HashMap[String, Int]()
-  val featNames2 = new ArrayBuffer[String]
-  val featAlphabet3 = new mutable.HashMap[String, Int]()
-  val featNames3 = new ArrayBuffer[String]
+  private val featAlphabet1 = new mutable.HashMap[String, Int]()
+  private val featAlphabet2 = new mutable.HashMap[String, Int]()
+  private val featAlphabet3 = new mutable.HashMap[String, Int]()
+  private val featNames1    = new ArrayBuffer[String]
+  private val featNames2    = new ArrayBuffer[String]
+  private val featNames3    = new ArrayBuffer[String]
 
-  val feat1Map = new mutable.HashMap[CellIx, mutable.LinkedHashSet[Int]]()
-  val feat2Map = new mutable.HashMap[CellIx, mutable.LinkedHashSet[Int]]()
-  val feat3Map = new mutable.HashMap[CellIx, mutable.LinkedHashSet[Int]]()
-  private var _frozen = false
+  def fnames1: Seq[String] = featNames1
+  def fnames2: Seq[String] = featNames2
+  def fnames3: Seq[String] = featNames3
 
-  var fnode1: Option[Node] = None
-  var fnode2: Option[Node] = None
-  var fnode3: Option[Node] = None
+  private val feat1Map = new mutable.HashMap[CellIx, mutable.LinkedHashSet[Int]]()
+  private val feat2Map = new mutable.HashMap[CellIx, mutable.LinkedHashSet[Int]]()
+  private val feat3Map = new mutable.HashMap[CellIx, mutable.LinkedHashSet[Int]]()
 
-  def fweights1 = fnode1.map(_.variable.asVector.b)
-  def fweights2 = fnode2.map(_.variable.asVector.b)
-  def fweights3 = fnode3.map(_.variable.asVector.b)
+  def featureIndex1(feat: String) = featureIndex(feat, featAlphabet1, featNames1)
+  def featureIndex2(feat: String) = featureIndex(feat, featAlphabet2, featNames2)
+  def featureIndex3(feat: String) = featureIndex(feat, featAlphabet3, featNames3)
+
+  def numFeatures1 = featNames1.size
+  def numFeatures2 = featNames2.size
+  def numFeatures3 = featNames3.size
+
+  private var _frozen  = false
+
+  private var _fnode1: Option[Node] = None
+  private var _fnode2: Option[Node] = None
+  private var _fnode3: Option[Node] = None
+
+  def fnode1 = _fnode1
+  def fnode2 = _fnode2
+  def fnode3 = _fnode3
+  def fnodes = fnode1.toSeq ++ fnode2.toSeq ++ fnode3.toSeq
+
+  def fweights1 = _fnode1.map(_.variable.asVector.b)
+  def fweights2 = _fnode2.map(_.variable.asVector.b)
+  def fweights3 = _fnode3.map(_.variable.asVector.b)
 
   def featureIndex(feat: String, alpha: mutable.HashMap[String, Int], names: ArrayBuffer[String]): Int = alpha.getOrElseUpdate(feat,
     if (_frozen) {
@@ -304,14 +322,6 @@ trait Features extends TensorDB {
       names += feat
       idx
     })
-
-  def featureIndex1(feat: String) = featureIndex(feat, featAlphabet1, featNames1)
-  def featureIndex2(feat: String) = featureIndex(feat, featAlphabet2, featNames2)
-  def featureIndex3(feat: String) = featureIndex(feat, featAlphabet3, featNames3)
-
-  def numFeatures1 = featNames1.size
-  def numFeatures2 = featNames2.size
-  def numFeatures3 = featNames3.size
 
   def addFeat1(key1: CellIx, feat: String) = {
     val idx = featureIndex1(feat)
@@ -330,6 +340,11 @@ trait Features extends TensorDB {
   override def toFactorGraph: FactorGraph = {
     val fg = super.toFactorGraph
     _frozen = true
+    if (isMatrix) {
+      _fnode1 = Some(fg.addVectorNode(numFeatures1, "feats1"))
+      _fnode2 = Some(fg.addVectorNode(numFeatures2, "feats2"))
+      _fnode3 = Some(fg.addVectorNode(numFeatures3, "feats3"))
+    } else ???
     fg
   }
 }
