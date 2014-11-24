@@ -82,8 +82,10 @@ class MatrixFactorization(confPath: String = "conf/mf.conf") {
   (V.values.view ++ A.values.view).foreach(n =>
     n.variable.asVector.b = new DenseVector((0 until k).map(i => nextInit()).toArray))
   if(useFeatures) db match {
-    case f: Features => f.fnodes.foreach(n =>
-      n.variable.asVector.b = new DenseVector((0 until k).map(i => nextInit()).toArray))
+    case f: Features => {
+      f.fnodes1.foreach(n => n.variable.asVector.b = new DenseVector((0 until f.numFeatures1).map(i => nextInit()).toArray))
+      f.fnodes2.foreach(n => n.variable.asVector.b = new DenseVector((0 until f.numFeatures2).map(i => nextInit()).toArray))
+    }
   }
 
 
