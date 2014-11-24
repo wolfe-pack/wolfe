@@ -12,6 +12,7 @@ case object DefaultIx
 
 import java.io.FileWriter
 
+import cc.factorie.la.SparseBinaryTensor1
 import ml.wolfe.FactorGraph
 import ml.wolfe.FactorGraph.Node
 import ml.wolfe.apps.factorization.CellType._
@@ -310,18 +311,30 @@ trait Features extends TensorDB {
   def featureIndex2(feat: String) = featureIndex(feat, featAlphabet2, featNames2)
   def featureIndex3(feat: String) = featureIndex(feat, featAlphabet3, featNames3)
 
+  def features1(key1: CellIx) = feat1Map.getOrElse(key1, Set.empty)
+  def features2(key2: CellIx) = feat2Map.getOrElse(key2, Set.empty)
+  def features3(key3: CellIx) = feat3Map.getOrElse(key3, Set.empty)
+
   def numFeatures1 = featNames1.size
   def numFeatures2 = featNames2.size
   def numFeatures3 = featNames3.size
 
   private var _frozen  = false
 
+  private val _fwnode1s: mutable.HashMap[CellIx, Node] = new mutable.HashMap()
+  private val _fwnode2s: mutable.HashMap[CellIx, Node] = new mutable.HashMap()
+
+  def fwnode1(key2: CellIx) = _fwnode1s.get(key2)
+  def fwnodes1 = _fwnode1s.values
+  def fwnode2(key1: CellIx) = _fwnode2s.get(key1)
+  def fwnodes2 = _fwnode2s.values
+
   private val _fnode1s: mutable.HashMap[CellIx, Node] = new mutable.HashMap()
   private val _fnode2s: mutable.HashMap[CellIx, Node] = new mutable.HashMap()
 
-  def fnode1(key2: CellIx) = _fnode1s.get(key2)
+  def fnode1(key1: CellIx) = _fnode1s.get(key1)
   def fnodes1 = _fnode1s.values
-  def fnode2(key1: CellIx) = _fnode2s.get(key1)
+  def fnode2(key2: CellIx) = _fnode2s.get(key2)
   def fnodes2 = _fnode2s.values
 
   def featureIndex(feat: String, alpha: mutable.HashMap[String, Int], names: ArrayBuffer[String]): Int = alpha.getOrElseUpdate(feat,
@@ -354,10 +367,26 @@ trait Features extends TensorDB {
     _frozen = true
     if (isMatrix) {
       if(numFeatures1 > 0) {
-        for(key2 <- keys2) _fnode1s(key2) = fg.addVectorNode(numFeatures1, "feats1" + "_" + key2.toString)
+        for(key1 <- keys1) {
+          val feats = features1(key1)
+          val fvector = new SparseBinaryTensor1(numFeatures1)
+          fvector ++= feats
+          val fnode = fg.addVectorNode(numFeatures1, "f1" + ":" + key1.toString)
+          fnode.variable.asVector.b = fvector
+          _fnode1s(key1) = fnode
+        }
+        for(key2 <- keys2) _fwnode1s(key2) = fg.addVectorNode(numFeatures1, "fw1" + ":" + key2.toString)
       }
       if(numFeatures2 > 0) {
-        for(key1 <- keys1) _fnode2s(key1) = fg.addVectorNode(numFeatures2, "feats2" + "_" + key1.toString)
+        for(key2 <- keys2) {
+          val feats = features2(key2)
+          val fvector = new SparseBinaryTensor1(numFeatures2)
+          fvector ++= feats
+          val fnode = fg.addVectorNode(numFeatures2, "f2" + ":" + key2.toString)
+          fnode.variable.asVector.b = fvector
+          _fnode2s(key2) = fnode
+        }
+        for(key1 <- keys1) _fwnode2s(key1) = fg.addVectorNode(numFeatures2, "fw2" + ":" + key1.toString)
       }
     } else ???
     fg
@@ -383,10 +412,10 @@ trait Features extends TensorDB {
   override def writeVectors(filePath: String): Unit = {
     super.writeVectors(filePath)
     if (numFeatures1 > 0) {
-      writeFeatureVector(filePath + ".feats1", fnames1, fnodes1)
+      writeFeatureVector(filePath + ".feats1", fnames1, fwnodes1)
     }
     if (numFeatures2 > 0) {
-      writeFeatureVector(filePath + ".feats2", fnames2, fnodes2)
+      writeFeatureVector(filePath + ".feats2", fnames2, fwnodes2)
     }
   }
 }
