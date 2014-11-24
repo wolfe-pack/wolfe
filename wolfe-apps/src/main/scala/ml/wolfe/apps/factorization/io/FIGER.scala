@@ -220,7 +220,7 @@ object LoadFIGER extends App {
       featureFilter, predictFilter, useFeatureFilter
     )
     labels ++= readFigerData(db, Conf.getString("figer.dataDir") + "/gold.pbf", CellType.Test, true,
-      featureFilter = featureFilter, predictFilter = predictFilter, useFeatureFilter = useFeatureFilter)
+      featureFilter = s => true, predictFilter = predictFilter, useFeatureFilter = useFeatureFilter)
     addMissingAnnotationsAsNegative(db, probNegLabels, _.startsWith("/"))
     println("[  Figer loaded with " + db.numCells + " cells, " + db.arg1s.size + " arg1s, " + db.arg2s.size + " arg2s, " + db.relations.size + " relations. ]")
     println(s"[  Labels: ${db.relations.filter(_.toString.startsWith("/")).size} ]")
@@ -286,9 +286,10 @@ object LoadFIGER extends App {
               val r = relationName
               db += Cell(r, e, DefaultIx, 1.0, CellType.Train) // these are never "dev" or "test"
             }
-            if (featureFilter(relationName)) {
-              // val idx = db.indexFeature(relationName)
-              // db.features(e).update(idx, 1.0)
+            if (featureFilter(relationName)) db match {
+              case dbf: Features => {
+                dbf.addFeat2(e, relationName)
+              }
             }
           }
         })
@@ -304,12 +305,18 @@ object LoadFIGER extends App {
   }
 
   def apply(k: Int = 100, subsample: Double = 1.0): TensorKB = {
-    val kb = new TensorKB(k)
+    val useFeatures = Conf.getBoolean("figer.use-features")
+    val kb = if(useFeatures) new TensorKB(k) with Features else new TensorKB(k)
     implicit val random = new Random(0)
 
     //loading cells
     // TODO: currently ignores subsample
-    val labels = loadFigerData(kb, s => false, s => true, s => false)
+    val labels = loadFigerData(kb, s => true, s => false, s => false)
+    if(useFeatures) {
+      kb match {
+        case dbf: Features => println(s"Figer data loaded with ${dbf.numFeatures2} features, such as: ${dbf.fnames2.take(10).mkString(", ")}")
+      }
+    }
 
     //loading formulae
     if (Conf.hasPath("figer.formulaeFile") && Conf.getString("figer.formulaeFile") != "None") {

@@ -34,6 +34,7 @@ class MatrixFactorization(confPath: String = "conf/mf.conf") {
 
   val dataType = conf.getString("dataType")
   assert(dataType == "naacl" || dataType == "figer", s"dataType $dataType should be 'naacl' or 'figer'.")
+  val useFeatures = dataType == "figer" && conf.getBoolean("figer.use-features")
 
   val outputPath = conf.getString("outDir")
   val fileName = conf.getString("mf.outFile")
@@ -80,6 +81,10 @@ class MatrixFactorization(confPath: String = "conf/mf.conf") {
   def nextInit() = rand.nextGaussian() * 0.1
   (V.values.view ++ A.values.view).foreach(n =>
     n.variable.asVector.b = new DenseVector((0 until k).map(i => nextInit()).toArray))
+  if(useFeatures) db match {
+    case f: Features => f.fnodes.foreach(n =>
+      n.variable.asVector.b = new DenseVector((0 until k).map(i => nextInit()).toArray))
+  }
 
 
   //fact factors
