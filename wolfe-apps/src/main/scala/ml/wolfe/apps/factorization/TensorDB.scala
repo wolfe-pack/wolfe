@@ -262,13 +262,29 @@ class TensorDB(k: Int = 100) extends Tensor {
 
 
   @tailrec
-  final def sampleNode(col: CellIx, attempts: Int = 1000): Node = {
+  final def sampleNodeFrom2(key1: CellIx, attempts: Int = 1000): Node = {
     if (isMatrix)
-      if (attempts == 0) ix2ToNodeMap(keys2(random.nextInt(keys2.size)))
-      else {
-        val row = keys2(random.nextInt(keys2.size))
-        if (get(col, row).exists(_.cellType == CellType.Train)) sampleNode(col, attempts - 1)
-        else ix2ToNodeMap(row)
+      if (attempts == 0) {
+        println("WARNING: Could not find negative cell 2 for key1: " + key1.toString)
+        ix2ToNodeMap(keys2(random.nextInt(keys2.size)))
+      } else {
+        val key2 = keys2(random.nextInt(keys2.size))
+        if (get(key1, key2).exists(_.cellType == CellType.Train)) sampleNodeFrom2(key1, attempts - 1)
+        else ix2ToNodeMap(key2)
+      }
+    else ???
+  }
+
+  @tailrec
+  final def sampleNodeFrom1(key2: CellIx, attempts: Int = 1000): Node = {
+    if (isMatrix)
+      if (attempts == 0) {
+        println("WARNING: Could not find negative cell 1 for key2: " + key2.toString)
+        ix1ToNodeMap(keys1(random.nextInt(keys1.size)))
+      } else {
+        val key1 = keys1(random.nextInt(keys1.size))
+        if (get(key1, key2).exists(_.cellType == CellType.Train)) sampleNodeFrom1(key2, attempts - 1)
+        else ix1ToNodeMap(key1)
       }
     else ???
   }

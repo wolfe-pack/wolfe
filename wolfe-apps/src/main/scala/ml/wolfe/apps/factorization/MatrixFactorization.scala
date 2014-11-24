@@ -93,7 +93,7 @@ class MatrixFactorization(confPath: String = "conf/mf.conf") {
     val a = A(rowIx) //entity
     val v = V(colIx) //relation
 
-    if (bpr) fg.buildStochasticFactor(Seq(a, db.sampleNode(colIx), v))(_ map (_ => new VectorMsgs)) {
+    if (bpr) fg.buildStochasticFactor(Seq(a, db.sampleNodeFrom2(colIx), v))(_ map (_ => new VectorMsgs)) {
       e => new BPRPotential(e(0), e(1), e(2), 1.0, lambda) with L2Regularization
     }
     else {
@@ -102,7 +102,7 @@ class MatrixFactorization(confPath: String = "conf/mf.conf") {
       }
 
       (0 until negPerPos).foreach { i =>
-        fg.buildStochasticFactor(Seq(v, db.sampleNode(colIx)))(_ map (_ => new VectorMsgs)) {
+        fg.buildStochasticFactor(Seq(v, db.sampleNodeFrom2(colIx)))(_ map (_ => new VectorMsgs)) {
           e => new CellLogisticLoss(e(0), e(1), 0.0, lambda, cellWeight / negPerPos) with L2Regularization
         }
       }
@@ -133,7 +133,7 @@ class MatrixFactorization(confPath: String = "conf/mf.conf") {
                 e => new ImplPotential(e(0), e(1), e(2), target, lambda, formulaeWeight) with L2Regularization
               }
               (0 until unobservedPerF).foreach { i =>
-                fg.buildStochasticFactor(Seq(db.sampleNode(colIx), p1Node, p2Node))(_ map (_ => new VectorMsgs)) {
+                fg.buildStochasticFactor(Seq(db.sampleNodeFrom2(colIx), p1Node, p2Node))(_ map (_ => new VectorMsgs)) {
                   e => new ImplPotential(e(0), e(1), e(2), target, lambda, formulaeWeight) with L2Regularization
                 }
               }
@@ -143,7 +143,7 @@ class MatrixFactorization(confPath: String = "conf/mf.conf") {
                 e => new ImplNegPotential(e(0), e(1), e(2), target, lambda, formulaeWeight) with L2Regularization
               }
               (0 until unobservedPerF).foreach { i =>
-                fg.buildStochasticFactor(Seq(db.sampleNode(colIx), p1Node, p2Node))(_ map (_ => new VectorMsgs)) {
+                fg.buildStochasticFactor(Seq(db.sampleNodeFrom2(colIx), p1Node, p2Node))(_ map (_ => new VectorMsgs)) {
                   e => new ImplNegPotential(e(0), e(1), e(2), target, lambda, formulaeWeight) with L2Regularization
                 }
               }
