@@ -57,8 +57,9 @@ object LogicalInferenceSpec extends App {
 
   println(db.toVerboseString())
 
-  LogicalInference(db)
+  LogicalInference(db, newCellType = CellType.Inferred)
 
   println(db.toVerboseString())
 
+  println("Inferred cells:\n" + db.inferredCells.mkString("\n"))
 }
