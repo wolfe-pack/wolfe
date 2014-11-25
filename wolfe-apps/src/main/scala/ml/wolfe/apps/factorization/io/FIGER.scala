@@ -304,14 +304,47 @@ object LoadFIGER extends App {
     labels.toSet
   }
 
+  def readColCounts: Map[String, Int] = {
+    val filename = "./data/unary/uwash/col_counts.txt"
+    val result = new mutable.HashMap[String, Int]()
+    for (l <- Source.fromFile(filename).getLines()) {
+      val split = l.split("\t")
+      assert(split.size == 2, l + ": " + split.mkString("(", ")(", ")"))
+      assert(!result.contains(split(0)))
+      result(split(0)) = split(1).toInt
+    }
+    result.toMap
+  }
+
   def apply(k: Int = 100, subsample: Double = 1.0): TensorKB = {
     val useFeatures = Conf.getBoolean("figer.use-features")
     val kb = if(useFeatures) new TensorKB(k) with Features else new TensorKB(k)
     implicit val random = new Random(0)
 
     //loading cells
+    val colCounts = LoadFIGER.readColCounts
+    val (minUseAsFeature, maxUseAsFeature) = Conf.getInt("figer.minUseAsFeature") -> Conf.getInt("figer.maxUseAsFeature")
+    val (minUseFeatureToPredict, maxUseFeatureToPredict) = Conf.getInt("figer.minUseFeatureToPredict") -> Conf.getInt("figer.maxUseFeatureToPredict")
+    val (minUseEmbedding, maxUseEmbedding) = Conf.getInt("figer.minUseEmbedding") -> Conf.getInt("figer.maxUseEmbedding")
+
+    def test(string: String, min: Int, max: Int): Boolean = {
+      val c = colCounts.getOrElse(string, 0)
+      // ignore min and max if they're less than zero
+      (min < 0 || c > min) && (max < 0 || c <= max)
+    }
+    /*
+    There are two modes supported currently:
+    - If useFeatures: then learn a simple classifier with embeddings for labels. Have only labels as columns, rest go as features
+    - If !useFeatures: then no features, normal embedding based model over all columns
+     */
+    //val labels = ReadUnary.loadFigerData(db, useFeatures && !_.startsWith("/"), !useFeatures || _.startsWith("/"), useFeatures && _.startsWith("/"))
     // TODO: currently ignores subsample
     val labels = loadFigerData(kb, s => true, s => false, s => false)
+    /*
+      s => !s.startsWith("/") && test(s, minUseAsFeature, maxUseAsFeature),
+      s => s.startsWith("/") || test(s, minUseEmbedding, maxUseEmbedding),
+      s => s.startsWith("/") || test(s, minUseFeatureToPredict, maxUseFeatureToPredict))
+    */
     if(useFeatures) {
       kb match {
         case dbf: Features => println(s"Figer data loaded with ${dbf.numFeatures2} features, such as: ${dbf.fnames2.take(10).mkString(", ")}")
