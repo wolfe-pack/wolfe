@@ -1,6 +1,7 @@
 package ml.wolfe.apps.factorization.io
 
 import java.io._
+import java.util.zip.GZIPInputStream
 
 import ml.wolfe.apps.factorization.CellType.CellType
 import ml.wolfe.apps.factorization._
@@ -211,16 +212,22 @@ object LoadFIGER extends App {
                     probDev: Double = Conf.getDouble("figer.prob-dev"),
                     probNegLabels: Double = Conf.getDouble("figer.prob-neg-labels")
                    )(implicit random: Random): Set[String] = {
-    println(s"$db, ${Conf}, ${CellType}, $sampleTrainEnts, $sampleTrainFacts, $probDev")
+    println(s"${db.toInfoString}, $sampleTrainEnts, $sampleTrainFacts, $probDev, $probNegLabels")
     val labels = new mutable.HashSet[String]
+    val testLabels = readFigerData(db, Conf.getString("figer.dataDir") + "/gold.pbf", CellType.Test, true,
+      featureFilter = s => true, predictFilter = predictFilter, useFeatureFilter = useFeatureFilter)
+    val testFeatures = db match {
+      case dbf: Features => dbf.fnames2.toSet[String]
+      case _ => Set.empty[String]
+    }
+    println(s"Test features (${testFeatures.size}): ${testFeatures.take(10).mkString(", ")}")
+    labels ++= testLabels
     labels ++= readFigerData(db, Conf.getString("figer.dataDir") + "/train.pbf", CellType.Train, false,
       sampleTrainEnts,
       sampleTrainFacts,
       probDev,
-      featureFilter, predictFilter, useFeatureFilter
+      s => featureFilter(s) || testFeatures(s), predictFilter, useFeatureFilter
     )
-    labels ++= readFigerData(db, Conf.getString("figer.dataDir") + "/gold.pbf", CellType.Test, true,
-      featureFilter = s => true, predictFilter = predictFilter, useFeatureFilter = useFeatureFilter)
     addMissingAnnotationsAsNegative(db, probNegLabels, _.startsWith("/"))
     println("[  Figer loaded with " + db.numCells + " cells, " + db.arg1s.size + " arg1s, " + db.arg2s.size + " arg2s, " + db.relations.size + " relations. ]")
     println(s"[  Labels: ${db.relations.filter(_.toString.startsWith("/")).size} ]")
@@ -283,6 +290,7 @@ object LoadFIGER extends App {
         mention.get.`features`.foreach(relationName => {
           if (random.nextDouble() < probFacts) {
             if (predictFilter(relationName) || useFeatureFilter(relationName)) {
+              assert(predictFilter(relationName) == useFeatureFilter(relationName))
               val r = relationName
               db += Cell(r, e, DefaultIx, 1.0, CellType.Train) // these are never "dev" or "test"
             }
@@ -305,9 +313,9 @@ object LoadFIGER extends App {
   }
 
   def readColCounts: Map[String, Int] = {
-    val filename = "./data/unary/uwash/col_counts.txt"
+    val filename = Conf.getString("figer.dataDir") + "/col_counts.txt.gz"
     val result = new mutable.HashMap[String, Int]()
-    for (l <- Source.fromFile(filename).getLines()) {
+    for (l <- Source.fromInputStream(new GZIPInputStream(new FileInputStream(filename))).getLines()) {
       val split = l.split("\t")
       assert(split.size == 2, l + ": " + split.mkString("(", ")(", ")"))
       assert(!result.contains(split(0)))
@@ -323,15 +331,17 @@ object LoadFIGER extends App {
 
     //loading cells
     val colCounts = LoadFIGER.readColCounts
+    println(s"Column counts for ${colCounts.size} features.")
     val (minUseAsFeature, maxUseAsFeature) = Conf.getInt("figer.minUseAsFeature") -> Conf.getInt("figer.maxUseAsFeature")
-    val (minUseFeatureToPredict, maxUseFeatureToPredict) = Conf.getInt("figer.minUseFeatureToPredict") -> Conf.getInt("figer.maxUseFeatureToPredict")
-    val (minUseEmbedding, maxUseEmbedding) = Conf.getInt("figer.minUseEmbedding") -> Conf.getInt("figer.maxUseEmbedding")
+    val predictPrefixes = Conf.getStringList("figer.predictPrefixes").toSet
+    val useFeaturesPrefixes = Conf.getStringList("figer.useFeatures").toSet
 
-    def test(string: String, min: Int, max: Int): Boolean = {
+    def testCount(string: String, min: Int, max: Int): Boolean = {
       val c = colCounts.getOrElse(string, 0)
       // ignore min and max if they're less than zero
       (min < 0 || c > min) && (max < 0 || c <= max)
     }
+    def testPrefix(string: String, prefixes: Set[String]): Boolean = prefixes.exists(string.startsWith(_))
     /*
     There are two modes supported currently:
     - If useFeatures: then learn a simple classifier with embeddings for labels. Have only labels as columns, rest go as features
@@ -339,12 +349,11 @@ object LoadFIGER extends App {
      */
     //val labels = ReadUnary.loadFigerData(db, useFeatures && !_.startsWith("/"), !useFeatures || _.startsWith("/"), useFeatures && _.startsWith("/"))
     // TODO: currently ignores subsample
-    val labels = loadFigerData(kb, s => true, s => false, s => false)
-    /*
-      s => !s.startsWith("/") && test(s, minUseAsFeature, maxUseAsFeature),
-      s => s.startsWith("/") || test(s, minUseEmbedding, maxUseEmbedding),
-      s => s.startsWith("/") || test(s, minUseFeatureToPredict, maxUseFeatureToPredict))
-    */
+    // val labels = loadFigerData(kb, s => true, s => false, s => false)
+    val labels = loadFigerData(kb,
+      s => !s.startsWith("/") && testCount(s, minUseAsFeature, maxUseAsFeature),
+      s => testPrefix(s, predictPrefixes),
+      s => testPrefix(s, useFeaturesPrefixes))
     if(useFeatures) {
       kb match {
         case dbf: Features => println(s"Figer data loaded with ${dbf.numFeatures2} features, such as: ${dbf.fnames2.take(10).mkString(", ")}")
