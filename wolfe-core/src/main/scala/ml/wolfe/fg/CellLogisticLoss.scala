@@ -123,6 +123,8 @@ trait L2Regularization extends Regularization {
 
 
 /**
+ * @author rockt
+ *
  * Bayesian Pairwise Ranking objective as in Rendle, Steffen, et al. "BPR: Bayesian personalized ranking from implicit feedback." Proceedings of the Twenty-Fifth Conference on Uncertainty in Artificial Intelligence. AUAI Press, 2009.
  *
  * @param const1Edge edge to node that represents an entity pair that has been observed in the relation

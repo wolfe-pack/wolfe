@@ -16,7 +16,7 @@ import scala.util.Random
 /**
  * Created by Ingolf on 06/11/2014.
  */
-object OptimiseHyperParameters extends App {
+object OptimiseMatrixFactorizationHyperParameters extends App {
   val mfp = new MatrixFactorisationProblem()
 
   val myOptimizer: HyperParameterOptimisationAlgorithm = new NelderMeadSimplex()
