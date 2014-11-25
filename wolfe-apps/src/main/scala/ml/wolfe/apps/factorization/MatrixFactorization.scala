@@ -35,7 +35,7 @@ class MatrixFactorization(confPath: String = "conf/mf.conf") {
 
   val dataType = conf.getString("dataType")
   assert(dataType == "naacl" || dataType == "figer", s"dataType $dataType should be 'naacl' or 'figer'.")
-  val useFeatures = dataType == "figer" && conf.getBoolean("figer.use-features")
+  val useFeatures = (dataType == "figer" && conf.getBoolean("figer.use-features")) || (dataType == "naacl" && conf.getBoolean("mf.use-features"))
 
   val outputPath = conf.getString("outDir")
   val fileName = conf.getString("mf.outFile")
@@ -82,7 +82,7 @@ class MatrixFactorization(confPath: String = "conf/mf.conf") {
   def nextInit() = rand.nextGaussian() * 0.1
   (colNodes.values.view ++ rowNodes.values.view).foreach(n =>
     n.variable.asVector.b = new DenseVector((0 until k).map(i => nextInit()).toArray))
-  if(useFeatures) db match {
+  if (useFeatures) db match {
     case f: Features => {
       f.fwnodes1.foreach(n => n.variable.asVector.b = new DenseVector((0 until f.numFeatures1).map(i => nextInit()).toArray))
       f.fwnodes2.foreach(n => n.variable.asVector.b = new DenseVector((0 until f.numFeatures2).map(i => nextInit()).toArray))
@@ -100,7 +100,7 @@ class MatrixFactorization(confPath: String = "conf/mf.conf") {
       e => new BPRPotential(e(0), e(1), e(2), 1.0, lambda) with L2Regularization
     }
     else {
-      if(useFeatures) db match {
+      if (useFeatures) db match {
         case dbf: Features => {
           // assumes only features on rows (weights for each column)
           val fwnode = dbf.fwnode2(colIx).get
