@@ -627,7 +627,7 @@ class Eval(val pattern: Regex) {
 
 object LoadNAACL extends App {
   def apply(k: Int = 100, subsample: Double = 1.0): TensorKB = {
-    val kb = new TensorKB(k)
+    val kb = if (Conf.getBoolean("mf.use-features")) new TensorKB(k) with Features else new TensorKB(k)
 
     //loading cells
     val zipFile = new java.util.zip.ZipFile(new File(this.getClass.getResource("/naacl2013.txt.zip").toURI))

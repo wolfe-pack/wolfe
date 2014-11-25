@@ -59,10 +59,18 @@ class TensorDB(k: Int = 100) extends Tensor {
    */
   val cells = new mutable.ListBuffer[Cell]()
 
+  val trainCells =  new mutable.ListBuffer[Cell]()
+  val devCells =  new mutable.ListBuffer[Cell]()
+  val testCells =  new mutable.ListBuffer[Cell]()
+  val observedCells =  new mutable.ListBuffer[Cell]()
+
+  //rockt: this doesn't allow overlapping cells!
+  /*
   def trainCells =    cells.filter(_.train)
   def devCells =      cells.filter(_.dev)
   def testCells =     cells.filter(_.test)
   def observedCells = cells.filter(_.observed)
+  */
 
   /**
    * @return number of cells in the tensor
@@ -139,6 +147,13 @@ class TensorDB(k: Int = 100) extends Tensor {
     }
 
     cells append cell
+
+    cell.cellType match {
+      case Train => trainCells append cell
+      case Dev => devCells append cell
+      case Test => testCells append cell
+      case Observed => observedCells append cell
+    }
   }
 
   val formulae = new ArrayBuffer[Formula]()
@@ -426,43 +441,4 @@ class TensorKB(k: Int = 100) extends TensorDB(k) {
   def arg2s = keys3
 
   def getFact(relation: CellIx, entity1: CellIx, entity2: CellIx) = get(relation, entity1, entity2)
-}
-
-object LogicalInference {
-  def apply(db: TensorDB, formulaList: List[Formula] = Nil, newCellType: CellType = CellType.Train): Unit = {
-    var converged = false
-
-    /*
-    val formulae = if (formulaList.isEmpty) db.formulae.toList else formulaList
-    while (!converged) {
-      converged = true
-
-      for (formula <- formulae) formula match {
-        case Impl(p1, p2) =>
-          val cs = db.getBy1(p1)
-          cs.foreach(c => {
-            val (c1, c2) = c
-            val cellOpt = db.get(p2, c1, c2)
-
-            if (!cellOpt.isDefined) {
-              converged = false
-              db += Cell(p2, c1, c2, target = 1.0, cellType = newCellType)
-            }
-          })
-        case ImplNeg(p1, p2, _) =>
-          val cs = db.getBy1(p1)
-          cs.foreach(c => {
-            val (c1, c2) = c
-            val cellOpt = db.get(p2, c1, c2)
-
-            if (!cellOpt.isDefined) {
-              converged = false
-              db += Cell(p2, c1, c2, target = 0.0, cellType = newCellType)
-            }
-          })
-        case _ => ???
-      }
-    }
-    */
-  }
 }

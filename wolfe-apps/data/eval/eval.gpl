@@ -36,7 +36,7 @@ plot dataMF using 3:2 smooth unique linecolor rgb "blue" linetype 1 linewidth 3 
 # Wrapup
 set ylabel "wMAP"
 #set terminal pdf enhanced dashed size 3,3#1.75 #size 400,400
-set terminal png truecolor size 400,400
+set terminal png truecolor size 500,500
 set output fileName."-wMAP.png"
 #set output fileName."-wMAP.pdf"
 refresh
