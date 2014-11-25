@@ -1,11 +1,11 @@
 package ml.wolfe.apps.factorization
 
 /**
- * @author: rockt
+ * @author rockt
  */
 object CellType extends Enumeration {
   type CellType = Value
-  val Train, Dev, Test, Observed = Value
+  val Train, Dev, Test, Observed, Inferred = Value
 }
 
 case object DefaultIx
@@ -63,14 +63,7 @@ class TensorDB(k: Int = 100) extends Tensor {
   val devCells =  new mutable.ListBuffer[Cell]()
   val testCells =  new mutable.ListBuffer[Cell]()
   val observedCells =  new mutable.ListBuffer[Cell]()
-
-  //rockt: this doesn't allow overlapping cells!
-  /*
-  def trainCells =    cells.filter(_.train)
-  def devCells =      cells.filter(_.dev)
-  def testCells =     cells.filter(_.test)
-  def observedCells = cells.filter(_.observed)
-  */
+  val inferredCells =  new mutable.ListBuffer[Cell]()
 
   /**
    * @return number of cells in the tensor
@@ -153,6 +146,7 @@ class TensorDB(k: Int = 100) extends Tensor {
       case Dev => devCells append cell
       case Test => testCells append cell
       case Observed => observedCells append cell
+      case Inferred => inferredCells append cell
     }
   }
 
