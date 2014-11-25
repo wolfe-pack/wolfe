@@ -1,6 +1,6 @@
 package ml.wolfe.fg
 
-import cc.factorie.la.SparseTensor1
+import cc.factorie.la.{SparseBinaryTensor1, SparseTensor1}
 import ml.wolfe.FactorGraph._
 import ml.wolfe.FactorieVector
 
@@ -34,6 +34,45 @@ class CellLogisticLoss(rowEdge: Edge, columnEdge: Edge, target: Double = 1.0, va
     val (loss, dir) = innerLossAndDirection(s)
     rowMsgs.f2n = (columnMsgs.n2f * (1.0 - loss) * dir) * weight + regGradient(rowMsgs.n2f)
     columnMsgs.f2n = (rowMsgs.n2f * (1.0 - loss) * dir) * weight + regGradient(columnMsgs.n2f)
+    math.log(loss) * weight + regLoss(rowMsgs.n2f) + regLoss(columnMsgs.n2f)
+  }
+}
+
+/**
+ * @author sameer
+ */
+class CellLogisticLossWithRowFeatures(rowEdge: Edge, columnEdge: Edge, val colFeatureWeights: Edge, val rowFeatures: Edge, target: Double = 1.0, lambda: Double = 0.0, weight: Double = 1.0)
+  extends CellLogisticLoss(rowEdge, columnEdge, target, lambda, weight) {
+  //nodes of edges may change hence the def and not val.
+  def columnFeatWeights = colFeatureWeights.n.variable.asVector
+  val columnFtrWMsgs = colFeatureWeights.msgs.asVector
+  def rowFeats = rowFeatures.n.variable.asVector
+  val rowFtrMsgs = rowFeatures.msgs.asVector
+
+  private def innerLossAndDirection(s: Double): (Double, Int) =
+    if (target >= s) (1 + s - target, 1)
+    else (1 + target - s, -1)
+
+  override def valueForCurrentSetting(): Double = {
+    val a = rowVar.setting
+    val v = columnVar.setting
+    val w = columnFeatWeights.setting
+    val f = rowFeats.b
+    val s = sig((a dot v) + (w dot f))
+    val loss = innerLossAndDirection(s)._1
+    math.log(loss) * weight + regLoss(a) + regLoss(v) + regLoss(w)
+  }
+
+  override def valueAndGradientForAllEdges(): Double = {
+    val s = sig((rowMsgs.n2f dot columnMsgs.n2f) + (rowFeats.b dot columnFtrWMsgs.n2f))
+    val (loss, dir) = innerLossAndDirection(s)
+    rowMsgs.f2n = (columnMsgs.n2f * (1.0 - loss) * dir) * weight + regGradient(rowMsgs.n2f)
+    columnMsgs.f2n = (rowMsgs.n2f * (1.0 - loss) * dir) * weight + regGradient(columnMsgs.n2f)
+    columnFtrWMsgs.f2n = new SparseTensor1(rowFeats.b.dim1) //regGradient(columnFtrWMsgs.n2f)
+    for(idx <- rowFeats.b.activeDomain) {
+      columnFtrWMsgs.f2n(idx) = columnFtrWMsgs.f2n(idx) + (1.0 - loss) * dir * weight
+    }
+    rowFtrMsgs.f2n = new SparseTensor1(rowFeats.b.dim1)
     math.log(loss) * weight + regLoss(rowMsgs.n2f) + regLoss(columnMsgs.n2f)
   }
 }
