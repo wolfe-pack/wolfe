@@ -2,6 +2,7 @@ package ml.wolfe.apps.factorization
 
 import java.io.{File, FileWriter}
 
+import cc.factorie.la.SparseBinaryTensor1
 import cc.factorie.optimize._
 import ml.wolfe.apps.factorization.io._
 import ml.wolfe.fg.{L2Regularization, _}
@@ -34,6 +35,7 @@ class MatrixFactorization(confPath: String = "conf/mf.conf") {
 
   val dataType = conf.getString("dataType")
   assert(dataType == "naacl" || dataType == "figer", s"dataType $dataType should be 'naacl' or 'figer'.")
+  val useFeatures = dataType == "figer" && conf.getBoolean("figer.use-features")
 
   val outputPath = conf.getString("outDir")
   val fileName = conf.getString("mf.outFile")
@@ -72,33 +74,60 @@ class MatrixFactorization(confPath: String = "conf/mf.conf") {
 
   val fg = db.toFactorGraph
   val data = rand.shuffle(db.trainCells)
-  val V = db.ix1ToNodeMap //cols
-  val A = db.ix2ToNodeMap //rows
+  val colNodes = db.ix1ToNodeMap //cols
+  val rowNodes = db.ix2ToNodeMap //rows
 
   //initialize embeddings
   //def nextInit() = (rand.nextDouble() - 0.5) * 0.1
   def nextInit() = rand.nextGaussian() * 0.1
-  (V.values.view ++ A.values.view).foreach(n =>
+  (colNodes.values.view ++ rowNodes.values.view).foreach(n =>
     n.variable.asVector.b = new DenseVector((0 until k).map(i => nextInit()).toArray))
+  if(useFeatures) db match {
+    case f: Features => {
+      f.fwnodes1.foreach(n => n.variable.asVector.b = new DenseVector((0 until f.numFeatures1).map(i => nextInit()).toArray))
+      f.fwnodes2.foreach(n => n.variable.asVector.b = new DenseVector((0 until f.numFeatures2).map(i => nextInit()).toArray))
+    }
+  }
 
 
   //fact factors
   for (d <- data) {
     val (colIx, rowIx, _) = d.key
-    val a = A(rowIx) //entity
-    val v = V(colIx) //relation
+    val r = rowNodes(rowIx) //entity
+    val c = colNodes(colIx) //relation
 
-    if (bpr) fg.buildStochasticFactor(Seq(a, db.sampleNode(colIx), v))(_ map (_ => new VectorMsgs)) {
+    if (bpr) fg.buildStochasticFactor(Seq(r, db.sampleNodeFrom2(colIx), c))(_ map (_ => new VectorMsgs)) {
       e => new BPRPotential(e(0), e(1), e(2), 1.0, lambda) with L2Regularization
     }
     else {
-      fg.buildFactor(Seq(a, v))(_ map (_ => new VectorMsgs)) {
-        e => new CellLogisticLoss(e(0), e(1), 1.0, lambda, cellWeight) with L2Regularization
-      }
+      if(useFeatures) db match {
+        case dbf: Features => {
+          // assumes only features on rows (weights for each column)
+          val fwnode = dbf.fwnode2(colIx).get
+          val fnode = dbf.fnode2(rowIx).get
+          fg.buildFactor(Seq(r, c, fwnode, fnode))(_ map (_ => new VectorMsgs)) {
+            e => new CellLogisticLossWithRowFeatures(e(0), e(1), e(2), e(3), 1.0, lambda, cellWeight) with L2Regularization
+          }
 
-      (0 until negPerPos).foreach { i =>
-        fg.buildStochasticFactor(Seq(v, db.sampleNode(colIx)))(_ map (_ => new VectorMsgs)) {
-          e => new CellLogisticLoss(e(0), e(1), 0.0, lambda, cellWeight / negPerPos) with L2Regularization
+          (0 until negPerPos).foreach { i =>
+            fg.buildStochasticFactor({
+              val nr = db.sampleNodeFrom2(colIx)
+              val nrfnode = dbf.fnode2(nr.variable.label).get
+              Seq(nr, c, fwnode, nrfnode)
+            })(_ map (_ => new VectorMsgs)) {
+              e => new CellLogisticLossWithRowFeatures(e(0), e(1), e(2), e(3), 0.0, lambda, cellWeight / negPerPos) with L2Regularization
+            }
+          }
+        }
+      } else {
+        fg.buildFactor(Seq(r, c))(_ map (_ => new VectorMsgs)) {
+          e => new CellLogisticLoss(e(0), e(1), 1.0, lambda, cellWeight) with L2Regularization
+        }
+
+        (0 until negPerPos).foreach { i =>
+          fg.buildStochasticFactor(Seq(c, db.sampleNodeFrom2(colIx)))(_ map (_ => new VectorMsgs)) {
+            e => new CellLogisticLoss(e(0), e(1), 0.0, lambda, cellWeight / negPerPos) with L2Regularization
+          }
         }
       }
     }
@@ -109,8 +138,8 @@ class MatrixFactorization(confPath: String = "conf/mf.conf") {
     //colIx: relation
     //rowIx: entity
     val (colIx, rowIx, _) = d.key
-    val a = A(rowIx)
-    val v = V(colIx)
+    val a = rowNodes(rowIx)
+    val v = colNodes(colIx)
 
     for (formula <- db.formulaeByPredicate(colIx)) {
       val cNode = v
@@ -128,7 +157,7 @@ class MatrixFactorization(confPath: String = "conf/mf.conf") {
                 e => new ImplPotential(e(0), e(1), e(2), target, lambda, formulaeWeight) with L2Regularization
               }
               (0 until unobservedPerF).foreach { i =>
-                fg.buildStochasticFactor(Seq(db.sampleNode(colIx), p1Node, p2Node))(_ map (_ => new VectorMsgs)) {
+                fg.buildStochasticFactor(Seq(db.sampleNodeFrom2(colIx), p1Node, p2Node))(_ map (_ => new VectorMsgs)) {
                   e => new ImplPotential(e(0), e(1), e(2), target, lambda, formulaeWeight) with L2Regularization
                 }
               }
@@ -138,7 +167,7 @@ class MatrixFactorization(confPath: String = "conf/mf.conf") {
                 e => new ImplNegPotential(e(0), e(1), e(2), target, lambda, formulaeWeight) with L2Regularization
               }
               (0 until unobservedPerF).foreach { i =>
-                fg.buildStochasticFactor(Seq(db.sampleNode(colIx), p1Node, p2Node))(_ map (_ => new VectorMsgs)) {
+                fg.buildStochasticFactor(Seq(db.sampleNodeFrom2(colIx), p1Node, p2Node))(_ map (_ => new VectorMsgs)) {
                   e => new ImplNegPotential(e(0), e(1), e(2), target, lambda, formulaeWeight) with L2Regularization
                 }
               }

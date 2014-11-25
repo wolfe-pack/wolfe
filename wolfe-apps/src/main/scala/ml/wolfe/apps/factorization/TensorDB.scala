@@ -12,6 +12,7 @@ case object DefaultIx
 
 import java.io.FileWriter
 
+import cc.factorie.la.SparseBinaryTensor1
 import ml.wolfe.FactorGraph
 import ml.wolfe.FactorGraph.Node
 import ml.wolfe.apps.factorization.CellType._
@@ -262,56 +263,89 @@ class TensorDB(k: Int = 100) extends Tensor {
 
 
   @tailrec
-  final def sampleNode(col: CellIx, attempts: Int = 1000): Node = {
+  final def sampleNodeFrom2(key1: CellIx, attempts: Int = 1000): Node = {
     if (isMatrix)
-      if (attempts == 0) ix2ToNodeMap(keys2(random.nextInt(keys2.size)))
-      else {
-        val row = keys2(random.nextInt(keys2.size))
-        if (get(col, row).exists(_.cellType == CellType.Train)) sampleNode(col, attempts - 1)
-        else ix2ToNodeMap(row)
+      if (attempts == 0) {
+        println("WARNING: Could not find negative cell 2 for key1: " + key1.toString)
+        ix2ToNodeMap(keys2(random.nextInt(keys2.size)))
+      } else {
+        val key2 = keys2(random.nextInt(keys2.size))
+        if (get(key1, key2).exists(_.cellType == CellType.Train)) sampleNodeFrom2(key1, attempts - 1)
+        else ix2ToNodeMap(key2)
+      }
+    else ???
+  }
+
+  @tailrec
+  final def sampleNodeFrom1(key2: CellIx, attempts: Int = 1000): Node = {
+    if (isMatrix)
+      if (attempts == 0) {
+        println("WARNING: Could not find negative cell 1 for key2: " + key2.toString)
+        ix1ToNodeMap(keys1(random.nextInt(keys1.size)))
+      } else {
+        val key1 = keys1(random.nextInt(keys1.size))
+        if (get(key1, key2).exists(_.cellType == CellType.Train)) sampleNodeFrom1(key2, attempts - 1)
+        else ix1ToNodeMap(key1)
       }
     else ???
   }
 }
 
 trait Features extends TensorDB {
-  val featAlphabet1 = new mutable.HashMap[String, Int]()
-  val featNames1 = new ArrayBuffer[String]
-  val featAlphabet2 = new mutable.HashMap[String, Int]()
-  val featNames2 = new ArrayBuffer[String]
-  val featAlphabet3 = new mutable.HashMap[String, Int]()
-  val featNames3 = new ArrayBuffer[String]
+  private val featAlphabet1 = new mutable.HashMap[String, Int]()
+  private val featAlphabet2 = new mutable.HashMap[String, Int]()
+  private val featAlphabet3 = new mutable.HashMap[String, Int]()
+  private val featNames1    = new ArrayBuffer[String]
+  private val featNames2    = new ArrayBuffer[String]
+  private val featNames3    = new ArrayBuffer[String]
 
-  val feat1Map = new mutable.HashMap[CellIx, mutable.LinkedHashSet[Int]]()
-  val feat2Map = new mutable.HashMap[CellIx, mutable.LinkedHashSet[Int]]()
-  val feat3Map = new mutable.HashMap[CellIx, mutable.LinkedHashSet[Int]]()
-  private var _frozen = false
+  def fnames1: Seq[String] = featNames1
+  def fnames2: Seq[String] = featNames2
+  def fnames3: Seq[String] = featNames3
 
-  var fnode1: Option[Node] = None
-  var fnode2: Option[Node] = None
-  var fnode3: Option[Node] = None
+  private val feat1Map = new mutable.HashMap[CellIx, mutable.LinkedHashSet[Int]]()
+  private val feat2Map = new mutable.HashMap[CellIx, mutable.LinkedHashSet[Int]]()
+  private val feat3Map = new mutable.HashMap[CellIx, mutable.LinkedHashSet[Int]]()
 
-  def fweights1 = fnode1.map(_.variable.asVector.b)
-  def fweights2 = fnode2.map(_.variable.asVector.b)
-  def fweights3 = fnode3.map(_.variable.asVector.b)
+  def featureIndex1(feat: String) = featureIndex(feat, featAlphabet1, featNames1)
+  def featureIndex2(feat: String) = featureIndex(feat, featAlphabet2, featNames2)
+  def featureIndex3(feat: String) = featureIndex(feat, featAlphabet3, featNames3)
+
+  def features1(key1: CellIx) = feat1Map.getOrElse(key1, Set.empty)
+  def features2(key2: CellIx) = feat2Map.getOrElse(key2, Set.empty)
+  def features3(key3: CellIx) = feat3Map.getOrElse(key3, Set.empty)
+
+  def numFeatures1 = featNames1.size
+  def numFeatures2 = featNames2.size
+  def numFeatures3 = featNames3.size
+
+  private var _frozen  = false
+
+  private val _fwnode1s: mutable.HashMap[CellIx, Node] = new mutable.HashMap()
+  private val _fwnode2s: mutable.HashMap[CellIx, Node] = new mutable.HashMap()
+
+  def fwnode1(key2: CellIx) = _fwnode1s.get(key2)
+  def fwnodes1 = _fwnode1s.values
+  def fwnode2(key1: CellIx) = _fwnode2s.get(key1)
+  def fwnodes2 = _fwnode2s.values
+
+  private val _fnode1s: mutable.HashMap[CellIx, Node] = new mutable.HashMap()
+  private val _fnode2s: mutable.HashMap[CellIx, Node] = new mutable.HashMap()
+
+  def fnode1(key1: CellIx) = _fnode1s.get(key1)
+  def fnodes1 = _fnode1s.values
+  def fnode2(key2: CellIx) = _fnode2s.get(key2)
+  def fnodes2 = _fnode2s.values
 
   def featureIndex(feat: String, alpha: mutable.HashMap[String, Int], names: ArrayBuffer[String]): Int = alpha.getOrElseUpdate(feat,
     if (_frozen) {
-      sys.error(s"Cannot find feature $feat, alhpabet is frozen.")
+      sys.error(s"Cannot find feature $feat, alphabet is frozen.")
       sys.exit(1)
     } else {
       val idx = names.size
       names += feat
       idx
     })
-
-  def featureIndex1(feat: String) = featureIndex(feat, featAlphabet1, featNames1)
-  def featureIndex2(feat: String) = featureIndex(feat, featAlphabet2, featNames2)
-  def featureIndex3(feat: String) = featureIndex(feat, featAlphabet3, featNames3)
-
-  def numFeatures1 = featNames1.size
-  def numFeatures2 = featNames2.size
-  def numFeatures3 = featNames3.size
 
   def addFeat1(key1: CellIx, feat: String) = {
     val idx = featureIndex1(feat)
@@ -327,10 +361,62 @@ trait Features extends TensorDB {
     val idx = featureIndex3(feat)
     feat3Map.getOrElseUpdate(key3, new mutable.LinkedHashSet) += idx
   }
+
   override def toFactorGraph: FactorGraph = {
     val fg = super.toFactorGraph
     _frozen = true
+    if (isMatrix) {
+      if(numFeatures1 > 0) {
+        for(key1 <- keys1) {
+          val feats = features1(key1)
+          val fvector = new SparseBinaryTensor1(numFeatures1)
+          fvector ++= feats
+          val fnode = fg.addVectorNode(numFeatures1, "f1" + ":" + key1.toString)
+          fnode.variable.asVector.b = fvector
+          _fnode1s(key1) = fnode
+        }
+        for(key2 <- keys2) _fwnode1s(key2) = fg.addVectorNode(numFeatures1, "fw1" + ":" + key2.toString)
+      }
+      if(numFeatures2 > 0) {
+        for(key2 <- keys2) {
+          val feats = features2(key2)
+          val fvector = new SparseBinaryTensor1(numFeatures2)
+          fvector ++= feats
+          val fnode = fg.addVectorNode(numFeatures2, "f2" + ":" + key2.toString)
+          fnode.variable.asVector.b = fvector
+          _fnode2s(key2) = fnode
+        }
+        for(key1 <- keys1) _fwnode2s(key1) = fg.addVectorNode(numFeatures2, "fw2" + ":" + key1.toString)
+      }
+    } else ???
     fg
+  }
+
+  private def writeFeatureVector(filePath:String, names: Seq[String], nodes: Iterable[Node]): Unit = {
+    // names
+    val namesWriter = new FileWriter(filePath + ".names")
+    for(n <- names) namesWriter.write(n +"\n")
+    namesWriter.flush()
+    namesWriter.close()
+    // vectors
+    val writer = new FileWriter(filePath + ".vecs")
+    for(n <- nodes) {
+      val vec = n.variable.asVector.b
+      val name = n.variable.label
+      writer.write(name + "\t" + vec.mkString("\t") + "\n")
+    }
+    writer.flush()
+    writer.close()
+  }
+
+  override def writeVectors(filePath: String): Unit = {
+    super.writeVectors(filePath)
+    if (numFeatures1 > 0) {
+      writeFeatureVector(filePath + ".feats1", fnames1, fwnodes1)
+    }
+    if (numFeatures2 > 0) {
+      writeFeatureVector(filePath + ".feats2", fnames2, fwnodes2)
+    }
   }
 }
 
