@@ -4,11 +4,12 @@ import ml.wolfe.apps.factorization.CellType.CellType
 
 /**
  * @author rockt
+ * Very basic logical inference. Assumes that the formulaList or the formulae in db are consistent.
+ * todo: can be sped up by not touching premises twice
  */
 object LogicalInference {
-  def apply(db: TensorDB, formulaList: List[Formula] = Nil, newCellType: CellType = CellType.Train): Unit = {
+  def apply(db: TensorDB, formulaList: List[Formula] = Nil, newCellType: CellType = CellType.Train, usePredictions: Boolean = false, threshold: Double = 0.5): Unit = {
     var converged = false
-
 
     val formulae = if (formulaList.isEmpty) db.formulae.toList else formulaList
     while (!converged) {
@@ -16,7 +17,7 @@ object LogicalInference {
 
       for (formula <- formulae) formula match {
         case Impl(p1, p2, _) =>
-          val cs = db.getBy1(p1)
+          val cs = if (usePredictions) db.getPredictedBy1(p1, threshold) else db.getBy1(p1)
           cs.foreach(c => {
             val (c1, c2) = c
             val cellOpt = db.get(p2, c1, c2)
@@ -27,7 +28,7 @@ object LogicalInference {
             }
           })
         case ImplNeg(p1, p2, _) =>
-          val cs = db.getBy1(p1)
+          val cs = if (usePredictions) db.getPredictedBy1(p1, threshold) else db.getBy1(p1)
           cs.foreach(c => {
             val (c1, c2) = c
             val cellOpt = db.get(p2, c1, c2)
@@ -57,7 +58,10 @@ object LogicalInferenceSpec extends App {
 
   println(db.toVerboseString())
 
-  LogicalInference(db, newCellType = CellType.Inferred)
+  //fixme: second baseline actually needs to go over *predicted* true premises
+  LogicalInference(db, newCellType = CellType.Inferred, usePredictions = true, threshold = 0.49)
+  //LogicalInference(db, newCellType = CellType.Inferred)
+
 
   println(db.toVerboseString())
 

@@ -65,10 +65,13 @@ class TensorDB(k: Int = 100) extends Tensor {
   val observedCells =  new mutable.ListBuffer[Cell]()
   val inferredCells =  new mutable.ListBuffer[Cell]()
 
+  //for efficient checking whether a test cell has an inferred value
+  val inferredCellsMap = new mutable.HashMap[(CellIx, CellIx), Cell]()
+
   /**
    * @return number of cells in the tensor
    */
-  def numCells = cells.size
+  def numCells = cells.size //fixme: overcounts if you have multiple cells (e.g. test and inferred) for the same key
 
 
   /**
@@ -103,6 +106,12 @@ class TensorDB(k: Int = 100) extends Tensor {
   def getBy2(key: CellIx) = ix2Map.getOrElse(key, List())
   def getBy3(key: CellIx) = ix3Map.getOrElse(key, List())
   def getBy23(key1: CellIx, key2: CellIx) = ix23Map.getOrElse(key1 -> key2, List())
+
+  def getPredictedBy1(key: CellIx, threshold: Double = 0.5) = keys2.filter(this.prob(key, _) >= threshold).map((_, DefaultIx))
+  def getPredictedBy2(key: CellIx, threshold: Double = 0.5) = keys1.filter(this.prob(key, _) >= threshold).map((_, DefaultIx))
+  //fixme: currently only applicable to matrices
+  def getPredictedBy3(key: CellIx, threshold: Double = 0.5) = ???
+  def getPredictedBy23(key1: CellIx, key2: CellIx, threshold: Double = 0.5) = ???
 
   def ++=(cells: Seq[Cell]) = cells foreach (this += _)
 
@@ -146,7 +155,9 @@ class TensorDB(k: Int = 100) extends Tensor {
       case Dev => devCells append cell
       case Test => testCells append cell
       case Observed => observedCells append cell
-      case Inferred => inferredCells append cell
+      case Inferred =>
+        inferredCells append cell
+        inferredCellsMap += (key1, key2) -> cell
     }
   }
 
