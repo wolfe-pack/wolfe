@@ -32,7 +32,8 @@ object SubsampleExperiments extends App {
 
   val series = Map(
     "mf.subsample" -> (0 to 10).map(_ / 10.0).toSeq,
-    "formulaeFile" -> Seq("None", formulaeFile)
+    //"formulaeFile" -> Seq("None", formulaeFile),
+    "mf.mode" -> Seq("mf", "low-rank-logic", "pre-inference", "post-inference", "pre-post-inference", "inference-only")
   ).mapValues(rand.shuffle(_))
 
 

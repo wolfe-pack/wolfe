@@ -657,7 +657,7 @@ object LoadNAACL extends App {
     }
 
     //loading formulae
-    if (Conf.hasPath("naacl.formulaeFile") && Conf.getString("naacl.formulaeFile") != "None") {
+    if (Conf.hasPath("naacl.formulaeFile") && (Conf.getString("naacl.formulaeFile") != "None" || Conf.getString("mf.mode") == "mf")) {
       val formulaePath = Conf.getString("naacl.formulaeFile")
       println("Loading formulae form " + formulaePath)
 
@@ -707,7 +707,8 @@ object WriteNAACL extends App {
       val r = c.key1
       val ep = c.key2
 
-      val p = db.prob(r, ep)
+      //if test cell has been inferred logically take target otherwise predict using distributed representation
+      val p = db.inferredCellsMap.get(r, ep).map(_.target).getOrElse(db.prob(r, ep))
 
       (c, p)
     }).sortBy(-_._2)
