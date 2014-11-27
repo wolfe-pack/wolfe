@@ -158,8 +158,8 @@ object Build extends Build {
 
   import BuildSettings._
 
-  lazy val jamr = RootProject(uri("git://github.com/jflanigan/jamr.git"))
-  lazy val berkNER = RootProject(uri("git://github.com/gregdurrett/berkeley-entity.git"))
+  lazy val jamr = ProjectRef(uri("git://github.com/jflanigan/jamr.git"), "jamr")
+  lazy val berkNER = ProjectRef(uri("git://github.com/gregdurrett/berkeley-entity.git"), "berkeley-entity")
 
   lazy val root = Project(
     id = "wolfe",
@@ -179,7 +179,7 @@ object Build extends Build {
     id = "wolfe-nlp",
     base = file("wolfe-nlp"),
     settings = buildSettings ++ globalSettings ++ nlpDependencies
-  ) dependsOn jamr dependsOn core % "test->test;compile->compile"
+  ) dependsOn jamr dependsOn berkNER dependsOn core % "test->test;compile->compile"
 
   lazy val neural = Project(
     id = "wolfe-neural",
