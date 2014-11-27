@@ -26,6 +26,8 @@ trait NetworkLayer {
   val outputSize: Int = W.cols
   val size = W.cols
 
+  def numNodes = outputSize
+
   def output(input: DenseMatrix[Double], verbose: Boolean = false): DenseMatrix[Double] = {
     in = input // Cache input for backward pass
     X = input.t * W
@@ -64,7 +66,8 @@ trait NetworkLayer {
   }
 
   def updateWithGradients(gradients: DenseMatrix[Double], verbose: Boolean = false) = {
-    println("Update:\n" + gradients)
+//    println("Update:\n" + gradients)
+//    println("In:\n" + in)
     if (verbose) {
       println("Applying parameter update with provided update...")
     }

@@ -65,7 +65,8 @@ object BuildSettings {
     "com.google.api-client" % "google-api-client" % "1.14.1-beta",
     "com.googlecode.json-simple" % "json-simple" % "1.1",
     "org.json4s" %% "json4s-native" % "3.2.10",
-    "org.mongodb" %% "casbah" % "2.5.0"
+    "org.mongodb" %% "casbah" % "2.5.0",
+    "edu.illinois.cs.cogcomp" % "IllinoisNerExtended" % "2.7"
 
 
     //    "net.liftweb" %% "lift-json" % "2.3"
@@ -143,7 +144,8 @@ object BuildSettings {
       resolvers ++= Seq(
         "IESL Release" at "https://dev-iesl.cs.umass.edu/nexus/content/groups/public",
         Resolver.sonatypeRepo("snapshots"),
-        Resolver.sonatypeRepo("releases")
+        Resolver.sonatypeRepo("releases"),
+        "UIUC Releases" at "http://cogcomp.cs.illinois.edu/m2repo"
       ),
       globalDependencies
     ) ++ generalSettings ++ releaseSettings ++ publishSettings ++ oneJarSettings //++ coverallsSettings ++ instrumentSettings
@@ -156,6 +158,8 @@ object Build extends Build {
 
   import BuildSettings._
 
+  lazy val jamr = RootProject(uri("git://github.com/jflanigan/jamr.git"))
+  lazy val berkNER = RootProject(uri("git://github.com/gregdurrett/berkeley-entity.git"))
 
   lazy val root = Project(
     id = "wolfe",
@@ -175,7 +179,7 @@ object Build extends Build {
     id = "wolfe-nlp",
     base = file("wolfe-nlp"),
     settings = buildSettings ++ globalSettings ++ nlpDependencies
-  ) dependsOn core % "test->test;compile->compile"
+  ) dependsOn jamr dependsOn core % "test->test;compile->compile"
 
   lazy val neural = Project(
     id = "wolfe-neural",
