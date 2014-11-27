@@ -1,5 +1,7 @@
 package ml.wolfe.nlp.io
 
+import ml.wolfe.nlp.{SISTAProcessors, SISTAConverter}
+
 /**
  * @author narad
  * @author mbosnjak
@@ -13,7 +15,9 @@ class MCTestReader(tsvFilename: String, ansFilename: String, rteFilename: String
     val ansReader = io.Source.fromFile(ansFilename).getLines()
     val zippedReaders = tsvReader.zip(ansReader)
     var rteq = if (rteFilename != null) {
-      io.Source.fromFile(rteFilename).getLines.collect { case RTE_REGEX(rq) => rq }.toList
+      io.Source.fromFile(rteFilename).getLines.collect { case RTE_REGEX(rq) =>
+        rq.replaceAll("&#39;", "'").replaceAll("&quot;", "\"").replaceAll("&amp;", "&")
+      }.toList
     }
     else {
       List[String]()
@@ -88,3 +92,38 @@ case class MultipleChoiceQuestion(text: String, choices: IndexedSeq[AnswerChoice
 }
 
 case class AnswerChoice(label: String, text: String, isCorrect: Boolean)
+
+
+// Temp location for some helper IO
+
+object DataToParseable extends App {
+
+  val input = new MCTestReader(args(0), args(1), args(2))
+
+  for (i <- input) {
+    val doc = SISTAProcessors.annotate(i.passage)
+    for (s <- doc.sentences) {
+      println(s.tokens.map(_.word).mkString(" "))
+    }
+    for (q <- i.questions) {
+      println(q.text)
+      for (c <- q.choices) println(c.text)
+    }
+    println
+  }
+
+}
+
+class AMRReader(filename: String) extends Iterable[AMR] {
+
+  def iterator = ???
+}
+
+class AMR {
+
+}
+
+class AMRNode {}
+
+class AMRConceptNode {}
+
