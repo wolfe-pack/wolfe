@@ -35,11 +35,14 @@ class MatrixFactorization(confPath: String = "conf/mf.conf") {
 
   val dataType = conf.getString("dataType")
   assert(dataType == "naacl" || dataType == "figer", s"dataType $dataType should be 'naacl' or 'figer'.")
-  val useFeatures = dataType == "figer" && conf.getBoolean("figer.use-features")
+  val useFeatures = (dataType == "figer" && conf.getBoolean("figer.use-features")) || (dataType == "naacl" && conf.getBoolean("mf.use-features"))
 
   val outputPath = conf.getString("outDir")
   val fileName = conf.getString("mf.outFile")
 
+  val mode = conf.getString("mf.mode")
+
+  //model parameters
   val k = conf.getInt("mf.k")
   val lambda = conf.getDouble("mf.lambda")
   val alpha = conf.getDouble("mf.alpha")
@@ -57,12 +60,17 @@ class MatrixFactorization(confPath: String = "conf/mf.conf") {
 
   val bpr = conf.getBoolean("mf.bpr")
 
+  val postInferenceThreshold = 0.5
+
+
   val db = if (debug) {
     val tmp = new TensorKB(k)
     tmp.sampleTensor(10, 10, 0, 0.1) //samples a matrix
     if (loadFormulae) {
       tmp += Impl("r3", "r4")
-      tmp += ImplNeg("r8", "r6")
+      tmp += Impl("r4", "r6")
+      tmp += Impl("r6", "r2")
+      //tmp += ImplNeg("r8", "r6")
     }
     tmp
   } else dataType match {
@@ -73,6 +81,10 @@ class MatrixFactorization(confPath: String = "conf/mf.conf") {
   val rand = new Random(0l)
 
   val fg = db.toFactorGraph
+
+  val trainDebugString = if (debug) db.toVerboseString(showTrain = true) else ""
+  if (mode == "pre-inference" || mode == "pre-post-inference") LogicalInference(db, newCellType = CellType.Train)
+
   val data = rand.shuffle(db.trainCells)
   val colNodes = db.ix1ToNodeMap //cols
   val rowNodes = db.ix2ToNodeMap //rows
@@ -82,7 +94,7 @@ class MatrixFactorization(confPath: String = "conf/mf.conf") {
   def nextInit() = rand.nextGaussian() * 0.1
   (colNodes.values.view ++ rowNodes.values.view).foreach(n =>
     n.variable.asVector.b = new DenseVector((0 until k).map(i => nextInit()).toArray))
-  if(useFeatures) db match {
+  if (useFeatures) db match {
     case f: Features => {
       f.fwnodes1.foreach(n => n.variable.asVector.b = new DenseVector((0 until f.numFeatures1).map(i => nextInit()).toArray))
       f.fwnodes2.foreach(n => n.variable.asVector.b = new DenseVector((0 until f.numFeatures2).map(i => nextInit()).toArray))
@@ -90,95 +102,97 @@ class MatrixFactorization(confPath: String = "conf/mf.conf") {
   }
 
 
-  //fact factors
-  for (d <- data) {
-    val (colIx, rowIx, _) = d.key
-    val r = rowNodes(rowIx) //entity
-    val c = colNodes(colIx) //relation
 
-    if (bpr) fg.buildStochasticFactor(Seq(r, db.sampleNodeFrom2(colIx), c))(_ map (_ => new VectorMsgs)) {
-      e => new BPRPotential(e(0), e(1), e(2), 1.0, lambda) with L2Regularization
-    }
-    else {
-      if(useFeatures) db match {
-        case dbf: Features => {
-          // assumes only features on rows (weights for each column)
-          val fwnode = dbf.fwnode2(colIx).get
-          val fnode = dbf.fnode2(rowIx).get
-          fg.buildFactor(Seq(r, c, fwnode, fnode))(_ map (_ => new VectorMsgs)) {
-            e => new CellLogisticLossWithRowFeatures(e(0), e(1), e(2), e(3), 1.0, lambda, cellWeight) with L2Regularization
+  //fact factors
+    for (d <- data) {
+      val (colIx, rowIx, _) = d.key
+      val r = rowNodes(rowIx) //entity
+      val c = colNodes(colIx) //relation
+
+      if (bpr) fg.buildStochasticFactor(Seq(r, db.sampleNodeFrom2(colIx), c))(_ map (_ => new VectorMsgs)) {
+        e => new BPRPotential(e(0), e(1), e(2), 1.0, lambda) with L2Regularization
+      }
+      else {
+        if (useFeatures) db match {
+          case dbf: Features => {
+            // assumes only features on rows (weights for each column)
+            val fwnode = dbf.fwnode2(colIx).get
+            val fnode = dbf.fnode2(rowIx).get
+            fg.buildFactor(Seq(r, c, fwnode, fnode))(_ map (_ => new VectorMsgs)) {
+              e => new CellLogisticLossWithRowFeatures(e(0), e(1), e(2), e(3), 1.0, lambda, cellWeight) with L2Regularization
+            }
+
+            (0 until negPerPos).foreach { i =>
+              fg.buildStochasticFactor({
+                val nr = db.sampleNodeFrom2(colIx)
+                val nrfnode = dbf.fnode2(nr.variable.label).get
+                Seq(nr, c, fwnode, nrfnode)
+              })(_ map (_ => new VectorMsgs)) {
+                e => new CellLogisticLossWithRowFeatures(e(0), e(1), e(2), e(3), 0.0, lambda, cellWeight / negPerPos) with L2Regularization
+              }
+            }
+          }
+        } else {
+          fg.buildFactor(Seq(r, c))(_ map (_ => new VectorMsgs)) {
+            e => new CellLogisticLoss(e(0), e(1), 1.0, lambda, cellWeight) with L2Regularization
           }
 
           (0 until negPerPos).foreach { i =>
-            fg.buildStochasticFactor({
-              val nr = db.sampleNodeFrom2(colIx)
-              val nrfnode = dbf.fnode2(nr.variable.label).get
-              Seq(nr, c, fwnode, nrfnode)
-            })(_ map (_ => new VectorMsgs)) {
-              e => new CellLogisticLossWithRowFeatures(e(0), e(1), e(2), e(3), 0.0, lambda, cellWeight / negPerPos) with L2Regularization
+            fg.buildStochasticFactor(Seq(c, db.sampleNodeFrom2(colIx)))(_ map (_ => new VectorMsgs)) {
+              e => new CellLogisticLoss(e(0), e(1), 0.0, lambda, cellWeight / negPerPos) with L2Regularization
             }
           }
         }
-      } else {
-        fg.buildFactor(Seq(r, c))(_ map (_ => new VectorMsgs)) {
-          e => new CellLogisticLoss(e(0), e(1), 1.0, lambda, cellWeight) with L2Regularization
-        }
+      }
+    }
 
-        (0 until negPerPos).foreach { i =>
-          fg.buildStochasticFactor(Seq(c, db.sampleNodeFrom2(colIx)))(_ map (_ => new VectorMsgs)) {
-            e => new CellLogisticLoss(e(0), e(1), 0.0, lambda, cellWeight / negPerPos) with L2Regularization
+    if (mode == "low-rank-logic") {
+      //formulae factors
+      for (d <- data) {
+        //colIx: relation
+        //rowIx: entity
+        val (colIx, rowIx, _) = d.key
+        val a = rowNodes(rowIx)
+        val v = colNodes(colIx)
+
+        for (formula <- db.formulaeByPredicate(colIx)) {
+          val cNode = v
+          if (formula.isFormula2) {
+            val Seq(p1, p2) = formula.predicates
+
+            //can only inject formulae whose predicates exist
+            if (db.node1(p1).isDefined && db.node1(p2).isDefined) {
+              val p1Node = db.node1(p1).get
+              val p2Node = db.node1(p2).get
+
+              formula match {
+                case Impl(_, _, target) =>
+                  fg.buildFactor(Seq(cNode, p1Node, p2Node))(_ map (_ => new VectorMsgs)) {
+                    e => new ImplPotential(e(0), e(1), e(2), target, lambda, formulaeWeight) with L2Regularization
+                  }
+                  (0 until unobservedPerF).foreach { i =>
+                    fg.buildStochasticFactor(Seq(db.sampleNodeFrom2(colIx), p1Node, p2Node))(_ map (_ => new VectorMsgs)) {
+                      e => new ImplPotential(e(0), e(1), e(2), target, lambda, formulaeWeight) with L2Regularization
+                    }
+                  }
+
+                case ImplNeg(_, _, target) =>
+                  fg.buildFactor(Seq(cNode, p1Node, p2Node))(_ map (_ => new VectorMsgs)) {
+                    e => new ImplNegPotential(e(0), e(1), e(2), target, lambda, formulaeWeight) with L2Regularization
+                  }
+                  (0 until unobservedPerF).foreach { i =>
+                    fg.buildStochasticFactor(Seq(db.sampleNodeFrom2(colIx), p1Node, p2Node))(_ map (_ => new VectorMsgs)) {
+                      e => new ImplNegPotential(e(0), e(1), e(2), target, lambda, formulaeWeight) with L2Regularization
+                    }
+                  }
+              }
+            }
+          } else {
+            ???
           }
         }
       }
     }
-  }
-
-  //formulae factors
-  for (d <- data) {
-    //colIx: relation
-    //rowIx: entity
-    val (colIx, rowIx, _) = d.key
-    val a = rowNodes(rowIx)
-    val v = colNodes(colIx)
-
-    for (formula <- db.formulaeByPredicate(colIx)) {
-      val cNode = v
-      if (formula.isFormula2) {
-        val Seq(p1, p2) = formula.predicates
-
-        //can only inject formulae whose predicates exist
-        if (db.node1(p1).isDefined && db.node1(p2).isDefined) {
-          val p1Node = db.node1(p1).get
-          val p2Node = db.node1(p2).get
-
-          formula match {
-            case Impl(_, _, target) =>
-              fg.buildFactor(Seq(cNode, p1Node, p2Node))(_ map (_ => new VectorMsgs)) {
-                e => new ImplPotential(e(0), e(1), e(2), target, lambda, formulaeWeight) with L2Regularization
-              }
-              (0 until unobservedPerF).foreach { i =>
-                fg.buildStochasticFactor(Seq(db.sampleNodeFrom2(colIx), p1Node, p2Node))(_ map (_ => new VectorMsgs)) {
-                  e => new ImplPotential(e(0), e(1), e(2), target, lambda, formulaeWeight) with L2Regularization
-                }
-              }
-
-            case ImplNeg(_, _, target) =>
-              fg.buildFactor(Seq(cNode, p1Node, p2Node))(_ map (_ => new VectorMsgs)) {
-                e => new ImplNegPotential(e(0), e(1), e(2), target, lambda, formulaeWeight) with L2Regularization
-              }
-              (0 until unobservedPerF).foreach { i =>
-                fg.buildStochasticFactor(Seq(db.sampleNodeFrom2(colIx), p1Node, p2Node))(_ map (_ => new VectorMsgs)) {
-                  e => new ImplNegPotential(e(0), e(1), e(2), target, lambda, formulaeWeight) with L2Regularization
-                }
-              }
-          }
-        }
-      } else {
-        ???
-      }
-    }
-
-  }
 
   fg.build()
 
@@ -189,7 +203,7 @@ class MatrixFactorization(confPath: String = "conf/mf.conf") {
   val gradientOptimizer = optimizer match {
     case "SGD" => new ConstantLearningRate(baseRate = alpha)
     case "AdaGrad" => new AdaGrad(rate = alpha)
-    case "AdaMira" => new AdaMira(rate = alpha)
+    case "AdaMira" => new AdaMira(rate = alpha) //rockt: doesn't seem to make a difference to AdaGrad
     case "LBFGS" => new LBFGS(Double.MaxValue, Int.MaxValue) //rockt: not working atm
     case "AvgPerceptron" => new AveragedPerceptron()
   }
@@ -198,10 +212,16 @@ class MatrixFactorization(confPath: String = "conf/mf.conf") {
   def run(): Double = {
     println("Optimizing...")
     Timer.time("optimization") {
-      GradientBasedOptimizer(fg,
-        if (batchTraining) new BatchTrainer(_, gradientOptimizer, maxIter) with ProgressLogging
-        else new OnlineTrainer(_, gradientOptimizer, maxIter, fg.factors.size - 1) with ProgressLogging
-      )
+      if (mode != "inference-only")
+        GradientBasedOptimizer(fg,
+          if (batchTraining) new BatchTrainer(_, gradientOptimizer, maxIter) with ProgressLogging
+          else new OnlineTrainer(_, gradientOptimizer, maxIter, fg.factors.size - 1) with ProgressLogging
+        )
+
+      if (mode == "post-inference" || mode == "pre-post-inference")
+        LogicalInference(db, newCellType = CellType.Inferred, usePredictions = true, threshold = postInferenceThreshold)
+      if (mode == "inference-only")
+        LogicalInference(db, newCellType = CellType.Inferred)
     }
     println("Done after " + Timer.reportedVerbose("optimization"))
 
@@ -209,9 +229,8 @@ class MatrixFactorization(confPath: String = "conf/mf.conf") {
 
     if (debug) {
       println("train:")
-      println(db.toVerboseString(showTrain = true))
+      println(trainDebugString)
       println()
-
       println("predicted:")
       println(db.toVerboseString())
     } else {
