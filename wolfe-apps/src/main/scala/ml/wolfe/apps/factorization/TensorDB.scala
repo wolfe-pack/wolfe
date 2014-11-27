@@ -1,11 +1,11 @@
 package ml.wolfe.apps.factorization
 
 /**
- * @author: rockt
+ * @author rockt
  */
 object CellType extends Enumeration {
   type CellType = Value
-  val Train, Dev, Test, Observed = Value
+  val Train, Dev, Test, Observed, Inferred = Value
 }
 
 case object DefaultIx
@@ -59,15 +59,19 @@ class TensorDB(k: Int = 100) extends Tensor {
    */
   val cells = new mutable.ListBuffer[Cell]()
 
-  def trainCells =    cells.filter(_.train)
-  def devCells =      cells.filter(_.dev)
-  def testCells =     cells.filter(_.test)
-  def observedCells = cells.filter(_.observed)
+  val trainCells =  new mutable.ListBuffer[Cell]()
+  val devCells =  new mutable.ListBuffer[Cell]()
+  val testCells =  new mutable.ListBuffer[Cell]()
+  val observedCells =  new mutable.ListBuffer[Cell]()
+  val inferredCells =  new mutable.ListBuffer[Cell]()
+
+  //for efficient checking whether a test cell has an inferred value
+  val inferredCellsMap = new mutable.HashMap[(CellIx, CellIx), Cell]()
 
   /**
    * @return number of cells in the tensor
    */
-  def numCells = cells.size
+  def numCells = cells.size //fixme: overcounts if you have multiple cells (e.g. test and inferred) for the same key
 
 
   /**
@@ -102,6 +106,12 @@ class TensorDB(k: Int = 100) extends Tensor {
   def getBy2(key: CellIx) = ix2Map.getOrElse(key, List())
   def getBy3(key: CellIx) = ix3Map.getOrElse(key, List())
   def getBy23(key1: CellIx, key2: CellIx) = ix23Map.getOrElse(key1 -> key2, List())
+
+  def getPredictedBy1(key: CellIx, threshold: Double = 0.5) = keys2.filter(this.prob(key, _) >= threshold).map((_, DefaultIx))
+  def getPredictedBy2(key: CellIx, threshold: Double = 0.5) = keys1.filter(this.prob(key, _) >= threshold).map((_, DefaultIx))
+  //fixme: currently only applicable to matrices
+  def getPredictedBy3(key: CellIx, threshold: Double = 0.5) = ???
+  def getPredictedBy23(key1: CellIx, key2: CellIx, threshold: Double = 0.5) = ???
 
   def ++=(cells: Seq[Cell]) = cells foreach (this += _)
 
@@ -139,6 +149,16 @@ class TensorDB(k: Int = 100) extends Tensor {
     }
 
     cells append cell
+
+    cell.cellType match {
+      case Train => trainCells append cell
+      case Dev => devCells append cell
+      case Test => testCells append cell
+      case Observed => observedCells append cell
+      case Inferred =>
+        inferredCells append cell
+        inferredCellsMap += (key1, key2) -> cell
+    }
   }
 
   val formulae = new ArrayBuffer[Formula]()
@@ -428,43 +448,4 @@ class TensorKB(k: Int = 100) extends TensorDB(k) {
   def arg2s = keys3
 
   def getFact(relation: CellIx, entity1: CellIx, entity2: CellIx) = get(relation, entity1, entity2)
-}
-
-object LogicalInference {
-  def apply(db: TensorDB, formulaList: List[Formula] = Nil, newCellType: CellType = CellType.Train): Unit = {
-    var converged = false
-
-    /*
-    val formulae = if (formulaList.isEmpty) db.formulae.toList else formulaList
-    while (!converged) {
-      converged = true
-
-      for (formula <- formulae) formula match {
-        case Impl(p1, p2) =>
-          val cs = db.getBy1(p1)
-          cs.foreach(c => {
-            val (c1, c2) = c
-            val cellOpt = db.get(p2, c1, c2)
-
-            if (!cellOpt.isDefined) {
-              converged = false
-              db += Cell(p2, c1, c2, target = 1.0, cellType = newCellType)
-            }
-          })
-        case ImplNeg(p1, p2, _) =>
-          val cs = db.getBy1(p1)
-          cs.foreach(c => {
-            val (c1, c2) = c
-            val cellOpt = db.get(p2, c1, c2)
-
-            if (!cellOpt.isDefined) {
-              converged = false
-              db += Cell(p2, c1, c2, target = 0.0, cellType = newCellType)
-            }
-          })
-        case _ => ???
-      }
-    }
-    */
-  }
 }
