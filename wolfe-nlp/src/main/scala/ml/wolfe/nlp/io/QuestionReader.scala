@@ -1,16 +1,27 @@
 package ml.wolfe.nlp.io
 
+import ml.wolfe.nlp.{SISTAProcessors, SISTAConverter}
+
 /**
  * @author narad
  * @author mbosnjak
  */
-class MCTestReader(tsvFilename: String, ansFilename: String) extends Iterable[MultiQuestion] {
+class MCTestReader(tsvFilename: String, ansFilename: String, rteFilename: String = null) extends Iterable[MultiQuestion] {
   private val MC_LABELS = Array("A", "B", "C", "D")
+  private val RTE_REGEX = """.*<h>([^<]*)</h>.*""".r
 
   def iterator: Iterator[MultiQuestion] = {
     val tsvReader = io.Source.fromFile(tsvFilename).getLines()
     val ansReader = io.Source.fromFile(ansFilename).getLines()
     val zippedReaders = tsvReader.zip(ansReader)
+    var rteq = if (rteFilename != null) {
+      io.Source.fromFile(rteFilename).getLines.collect { case RTE_REGEX(rq) =>
+        rq.replaceAll("&#39;", "'").replaceAll("&quot;", "\"").replaceAll("&amp;", "&")
+      }.toList
+    }
+    else {
+      List[String]()
+    }
 
     zippedReaders.map{ x =>
       val l = x._1
@@ -23,10 +34,20 @@ class MCTestReader(tsvFilename: String, ansFilename: String) extends Iterable[Mu
         val gi = g.head.split(": ")
         val (qt, q) = (gi(0), gi(1))
         val as = g.tail.zipWithIndex.map { case(a, i) =>
-          AnswerChoice(MC_LABELS(i), a, t == MC_LABELS(i))
+          if (rteq.isEmpty) {
+            AnswerChoice(MC_LABELS(i), a, t == MC_LABELS(i))
+          }
+          else {
+            val ta = rteq.head
+            rteq = rteq.tail
+            AnswerChoice(MC_LABELS(i), ta, t == MC_LABELS(i))
+          }
         }
         new MultipleChoiceQuestion(q, as, qt)
-      }.toIterable
+      }
+
+
+                      .toIterable
       MultiQuestion(id, author, passage, questions)
     }
   }
@@ -37,7 +58,8 @@ object MCTestReader {
   def main(args: Array[String]) {
     val tsvFilename = args.lift(0).getOrElse("../mctest/data/MCTest/mc160.dev.tsv")
     val ansFilename = args.lift(1).getOrElse("../mctest/data/MCTest/mc160.dev.ans")
-    for (q <- new MCTestReader(tsvFilename, ansFilename)) {
+    val rteFilename = args.lift(2).getOrElse(null)
+    for (q <- new MCTestReader(tsvFilename, ansFilename, rteFilename)) {
       println(q + "\n")
     }
   }
@@ -70,3 +92,38 @@ case class MultipleChoiceQuestion(text: String, choices: IndexedSeq[AnswerChoice
 }
 
 case class AnswerChoice(label: String, text: String, isCorrect: Boolean)
+
+
+// Temp location for some helper IO
+
+object DataToParseable extends App {
+
+  val input = new MCTestReader(args(0), args(1), args(2))
+
+  for (i <- input) {
+    val doc = SISTAProcessors.annotate(i.passage)
+    for (s <- doc.sentences) {
+      println(s.tokens.map(_.word).mkString(" "))
+    }
+    for (q <- i.questions) {
+      println(q.text)
+      for (c <- q.choices) println(c.text)
+    }
+    println
+  }
+
+}
+
+class AMRReader(filename: String) extends Iterable[AMR] {
+
+  def iterator = ???
+}
+
+class AMR {
+
+}
+
+class AMRNode {}
+
+class AMRConceptNode {}
+
