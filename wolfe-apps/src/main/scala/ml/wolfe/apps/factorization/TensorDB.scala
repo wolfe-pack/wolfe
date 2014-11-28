@@ -475,6 +475,7 @@ trait Features extends TensorDB {
           _fnode1s(key1) = fnode
         }
         for(key2 <- keys2) _fwnode1s(key2) = fg.addVectorNode(numFeatures1, "fw1" + ":" + key2.toString)
+        println(s"Feature 1 nodes added, ${_fnode1s.size} fnodes and ${_fwnode1s} weight nodes.")
       }
       if(numFeatures2 > 0) {
         for(key2 <- keys2) {
@@ -486,6 +487,7 @@ trait Features extends TensorDB {
           _fnode2s(key2) = fnode
         }
         for(key1 <- keys1) _fwnode2s(key1) = fg.addVectorNode(numFeatures2, "fw2" + ":" + key1.toString)
+        println(s"Feature 2 nodes added, ${_fnode2s.size} fnodes and ${_fwnode2s.size} weight nodes.")
       }
     } else ???
     fg

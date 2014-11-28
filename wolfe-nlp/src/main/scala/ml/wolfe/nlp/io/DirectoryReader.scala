@@ -1,7 +1,6 @@
 package ml.wolfe.nlp.io
 
 import java.io.File
-import scala.collection.mutable.ArrayBuffer
 
 /**
  * Created by narad on 7/31/14.
