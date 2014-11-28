@@ -24,7 +24,7 @@ object MatrixFactorization extends App {
 }
 
 class MatrixFactorization(confPath: String = "conf/mf.conf") {
-  val debug = false //whether to use a small synthetic matrix or actual data
+  val debug = true //whether to use a small synthetic matrix or actual data
   val loadFormulae = debug && true //whether forumlae should be sampled for debugging
   //val print = false //whether to print the matrix (only do this for small ones!)
 
@@ -95,10 +95,9 @@ class MatrixFactorization(confPath: String = "conf/mf.conf") {
   (colNodes.values.view ++ rowNodes.values.view).foreach(n =>
     n.variable.asVector.b = new DenseVector((0 until k).map(i => nextInit()).toArray))
   if (useFeatures) db match {
-    case f: Features => {
+    case f: Features =>
       f.fwnodes1.foreach(n => n.variable.asVector.b = new DenseVector((0 until f.numFeatures1).map(i => nextInit()).toArray))
       f.fwnodes2.foreach(n => n.variable.asVector.b = new DenseVector((0 until f.numFeatures2).map(i => nextInit()).toArray))
-    }
   }
 
 
@@ -233,6 +232,8 @@ class MatrixFactorization(confPath: String = "conf/mf.conf") {
       println()
       println("predicted:")
       println(db.toVerboseString())
+      if (Conf.getBoolean("serialize")) db.serialize(Conf.outDir.getAbsolutePath + "/serialized/")
+
     } else {
       Conf.createSymbolicLinkToLatest() //rewire symbolic link to latest (in case it got overwritten)
       val pathToPredict = Conf.outDir.getAbsolutePath + "/" + fileName
@@ -245,7 +246,9 @@ class MatrixFactorization(confPath: String = "conf/mf.conf") {
           EvaluateFIGER.main(Array(pathToPredict, Conf.outDir.getAbsolutePath))
       }
 
-      db.writeVectors(Conf.outDir.getAbsolutePath + "/vectors.tsv")
+      //db.writeVectors(Conf.outDir.getAbsolutePath + "/vectors.tsv")
+
+      if (Conf.getBoolean("serialize")) db.serialize(Conf.outDir.getAbsolutePath + "/serialized/")
 
       import scala.sys.process._
       Process("pdflatex -interaction nonstopmode -shell-escape table.tex", new File(Conf.outDir.getAbsolutePath)).!!
