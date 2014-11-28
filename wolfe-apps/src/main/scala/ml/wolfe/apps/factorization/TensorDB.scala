@@ -10,16 +10,22 @@ object CellType extends Enumeration {
 
 case object DefaultIx
 
+import java.io.File
 import java.io.FileWriter
 
+import cc.factorie.la.DenseTensor1
 import cc.factorie.la.SparseBinaryTensor1
 import ml.wolfe.FactorGraph
 import ml.wolfe.FactorGraph.Node
 import ml.wolfe.apps.factorization.CellType._
+import org.json4s.NoTypeHints
+import org.json4s.native.Serialization
 
 import scala.annotation.tailrec
 import scala.collection.mutable
+import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
+import scala.io.Source
 import scala.util.Random
 
 case class Cell(key1: Any, key2: Any = DefaultIx, key3: Any = DefaultIx, target: Double = 1.0, cellType: CellType = CellType.Train) {
@@ -33,14 +39,20 @@ case class Cell(key1: Any, key2: Any = DefaultIx, key3: Any = DefaultIx, target:
 trait Formula {
   val predicates: Seq[Any]
   def isFormula2 = predicates.size == 2
+  def apply(key: Any)(implicit db: TensorDB): Double
 }
 
 abstract class Formula2(p1: Any, p2: Any) extends Formula {
   override val predicates: Seq[Any] = Seq(p1,p2)
 }
 
-case class Impl(p1: Any, p2: Any, target: Double = 1.0) extends Formula2(p1, p2)
-case class ImplNeg(p1: Any, p2: Any, target: Double = 1.0) extends Formula2(p1, p2)
+case class Impl(p1: Any, p2: Any, target: Double = 1.0) extends Formula2(p1, p2) {
+  override def apply(key: Any)(implicit db: TensorDB): Double = db.prob(p1, key) * (db.prob(p2, key) - 1) + 1
+}
+
+case class ImplNeg(p1: Any, p2: Any, target: Double = 1.0) extends Formula2(p1, p2) {
+  override def apply(key: Any)(implicit db: TensorDB): Double = db.prob(p1, key) * -db.prob(p2, key) + 1
+}
 
 
 
@@ -271,6 +283,7 @@ class TensorDB(k: Int = 100) extends Tensor {
     """.stripMargin
 
 
+  @deprecated
   def writeVectors(filePath: String) = {
     val writer = new FileWriter(filePath)
     (ix1ToNodeMap ++ ix2ToNodeMap).foreach(p => {
@@ -280,7 +293,6 @@ class TensorDB(k: Int = 100) extends Tensor {
     })
     writer.close()
   }
-
 
   @tailrec
   final def sampleNodeFrom2(key1: CellIx, attempts: Int = 1000): Node = {
@@ -308,6 +320,73 @@ class TensorDB(k: Int = 100) extends Tensor {
         else ix1ToNodeMap(key1)
       }
     else ???
+  }
+
+  /**
+   * Only works if your tensor is indexed by Strings
+   * @param pathToDir path to directory where the serialized tensor will be stored
+   */
+  def serialize(pathToDir: String) = {
+    implicit val formats = Serialization.formats(NoTypeHints)
+
+    val dir = new File(pathToDir)
+    dir.mkdirs()
+
+    val cellWriter = new FileWriter(dir.getAbsolutePath + "/cells.txt")
+    //cells.foreach(c => cellWriter.write(Serialization.write(c) + "\n"))
+    cells.foreach(c => cellWriter.write(s"${c.key1}\t${c.key2}\t${c.key3}\t${c.target}\t${c.cellType}\n"))
+    cellWriter.close()
+
+    def writeVectors(ixToNodeMap: mutable.HashMap[CellIx, Node], writer: FileWriter): Unit = {
+      ixToNodeMap.foreach(t => {
+        val (ix, node) = t
+        val vec = node.variable.asVector.b.toArray
+        writer.write(ix + "\t" + Serialization.write(vec) + "\n")
+      })
+      writer.close()
+    }
+
+    writeVectors(ix1ToNodeMap, new FileWriter(dir.getAbsolutePath + "/rows.txt"))
+    writeVectors(ix2ToNodeMap, new FileWriter(dir.getAbsolutePath + "/cols.txt"))
+  }
+
+  def deserialize(pathToDir: String) = {
+    implicit val formats = Serialization.formats(NoTypeHints)
+
+    val dir = new File(pathToDir)
+    //Source.fromFile(dir.getAbsolutePath + "/cells.txt").getLines().foreach(l => Serialization.read[Cell](l))
+    Source.fromFile(dir.getAbsolutePath + "/cells.txt").getLines().foreach(l => {
+      val Array(key1String, key2String, key3String, targetString, cellTypeString) = l.split("\t")
+
+      val key1 = if (key1String == "DefaultIx") DefaultIx else key1String
+      val key2 = if (key2String == "DefaultIx") DefaultIx else key2String
+      val key3 = if (key3String == "DefaultIx") DefaultIx else key3String
+
+      val target = targetString.toDouble
+
+      val cellType = cellTypeString match {
+        case "Train" => CellType.Train
+        case "Dev" => CellType.Dev
+        case "Test" => CellType.Test
+        case "Observed" => CellType.Observed
+        case "Inferred" => CellType.Inferred
+      }
+
+      this += Cell(key1, key2, key3, target, cellType)
+    })
+
+    val fg = toFactorGraph
+    fg.build()
+
+    Source.fromFile(dir.getAbsolutePath + "/rows.txt").getLines().foreach(l => {
+      val Array(name, vec) = l.split("\t")
+      ix1ToNodeMap(name).variable.asVector.b = new DenseTensor1(Serialization.read[Array[Double]](vec))
+    })
+
+    Source.fromFile(dir.getAbsolutePath + "/cols.txt").getLines().foreach(l => {
+      val Array(name, vec) = l.split("\t")
+      ix2ToNodeMap(name).variable.asVector.b = new DenseTensor1(Serialization.read[Array[Double]](vec))
+    })
   }
 }
 

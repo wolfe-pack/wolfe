@@ -5,7 +5,7 @@ import cc.factorie.la.DenseTensor1
 /**
  * @author rockt
  */
-object InspectVectors extends App {
+object VectorInspector extends App {
   def calculateLengthsAndAngle(v1: DenseTensor1, v2: DenseTensor1): (Double, Double, Double) = {
     val length1 = math.sqrt(v1 dot v1)
     val length2 = math.sqrt(v2 dot v2)
@@ -41,7 +41,7 @@ object InspectVectors extends App {
 
   val debug = false
   val dropFormulae = 50
-  val numSamples = 10
+  val numSamples = 20
 
 
   val pairsOfRelations =
@@ -68,10 +68,17 @@ object InspectVectors extends App {
   println("Average length difference: " + top10AvgLengthDiff)
   println("Average angle: " + top10AvgAngle)
   println()
-  println(s"Least $numSamples implications")
+  println(s"Bottom $numSamples implications")
   val least10Stats = pairsOfRelations.takeRight(numSamples).map(t => printStats(t._1, t._2))
   val least10AvgLengthDiff = least10Stats.map(t => t._2 - t._1).sum / numSamples.toDouble
   val least10AvgAngle = least10Stats.map(_._3).sum / numSamples.toDouble
   println("Average length difference: " + least10AvgLengthDiff)
   println("Average angle: " + least10AvgAngle)
+}
+
+object VectorInspectorSpec extends App {
+  println(VectorInspector.calculateLengthsAndAngle(new DenseTensor1(Array(3.0, 0.0)), new DenseTensor1(Array(5.0, 5.0)))._3)
+  println(VectorInspector.calculateLengthsAndAngle(new DenseTensor1(Array(3.0, 4.0)), new DenseTensor1(Array(-8.0, 6.0)))._3)
+  println(VectorInspector.calculateLengthsAndAngle(new DenseTensor1(Array(5.0, 6.0)), new DenseTensor1(Array(-1.0, 4.0)))._3)
+  println(VectorInspector.calculateLengthsAndAngle(new DenseTensor1(Array(3.0, 5.0)), new DenseTensor1(Array(-1.0, 6.0)))._3)
 }
