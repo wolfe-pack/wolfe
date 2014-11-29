@@ -45,16 +45,18 @@ object LinearPotential {
  * @author Sebastian Riedel
  */
 final class LinearPotential(val discVars: Array[DiscVar[Any]], weightsVar:VectVar,
-                             val statistics: Array[FactorieVector]) extends MaxProduct.ExpFamPotential
-                                                                            with SumProduct.ExpFamPotential {
+                             val statistics: Array[FactorieVector]) extends SupportsExpFamMarginalization
+                                                                            with SupportsExpFamMaxMarginalization {
 
   val discDims = discVars.map(_.dom.size)
   val contVars = Array.ofDim[ContVar](0)
   val vectVars = Array(weightsVar)
 
-  def processor() = new Proc
+  def scorer() = new Proc
+  def marginalizer = new Proc
+  def maxMarginalizer = new Proc
 
-  class Proc extends MaxProduct.ExpFamProcessor with SumProduct.ExpFamProcessor with TableBasedProcessor {
+  class Proc extends ExpFamMarginalizer with ExpFamMaxMarginalizer with TableBasedProcessor with ExpFamScorer {
 
     def dims = discDims
 

@@ -20,10 +20,17 @@ import scala.reflect.ClassTag
  */
 trait FactorGraph extends ProblemListener {
 
+  fg =>
+
   /**
    * The type of potentials on the factors of this factor graph.
    */
   type Pot <: Potential
+
+  /**
+   * The type of processor used on factors
+   */
+  type Processor
 
   /**
    * The factor type specifies the type of factors used in the FG. Subclasses can use this to store
@@ -134,9 +141,11 @@ trait FactorGraph extends ProblemListener {
     var node: N
   }
 
+  def processor(pot:Pot):Processor
+
   abstract class Factor {
     val pot: Pot
-    val processor: pot.Proc        = pot.processor()
+    val processor: Processor       = fg.processor(pot)
     var discEdges: Array[DiscEdge] = null
     var contEdges: Array[ContEdge] = null
     var vectEdges: Array[VectEdge] = null

@@ -13,8 +13,10 @@ trait NetworkLayer {
 
   var W: DenseMatrix[Double]                              // connection weights
   var b: DenseVector[Double]                              // biases
-  var activation: (Double => Double)
-  var dactivation: (Double => Double)
+  var activation: ActivationFunction
+
+//  var activation: (Double => Double)
+//  var dactivation: (Double => Double)
 
   var in: DenseMatrix[Double] = null
   var theta: DenseMatrix[Double] = null   // concat b and W into theta
@@ -26,13 +28,20 @@ trait NetworkLayer {
   val outputSize: Int = W.cols
   val size = W.cols
 
+  def prev: Option[NetworkLayer]
+  def next: Option[NetworkLayer]
+
+  def idx: Int
+
+  def gradient(outputs: DenseMatrix[Double], loss: NeuralLossFunction, verbose: Boolean = false): DenseMatrix[Double]
+
   def numNodes = outputSize
 
   def output(input: DenseMatrix[Double], verbose: Boolean = false): DenseMatrix[Double] = {
     in = input // Cache input for backward pass
     X = input.t * W
     theta = (input.t * W) + b.toDenseMatrix
-    XA = theta.map(activation).t
+    XA = theta.map(activation.f).t
     if (verbose) {
       println("Input (%d rows x %d columns):".format(input.rows, input.cols))
       println(input)
@@ -94,42 +103,57 @@ trait NetworkLayer {
  */
 class HiddenLayer(var W: DenseMatrix[Double],
                   var b: DenseVector[Double],
-                  var activation: (Double => Double),
-                  var dactivation: (Double => Double)) extends NetworkLayer {
+                  var activation: ActivationFunction,
+                  pointer: (Int, NeuralNetwork)) extends NetworkLayer {
 
-  def gradient(outputs: DenseMatrix[Double], pw: DenseMatrix[Double], verbose: Boolean = false): DenseMatrix[Double] = {
+//                  var activation: (Double => Double),
+//                  var dactivation: (Double => Double)) extends NetworkLayer {
+
+//  def gradient(outputs: DenseMatrix[Double], pw: DenseMatrix[Double], loss: NeuralLossFunction, verbose: Boolean = false): DenseMatrix[Double] = {
+  def gradient(y: DenseMatrix[Double], loss: NeuralLossFunction, verbose: Boolean = false): DenseMatrix[Double] = {
     if (verbose) {
       println("Computing gradient in hidden layer...")
-      println("Outputs (%d rows x %d columns):".format(outputs.rows, outputs.cols))
-      println(outputs)
+      println("Desired Outputs (%d rows x %d columns):".format(y.rows, y.cols))
+      println(y)
       println
     }
-    grads = (pw * outputs) :* theta.map(dactivation)
+    grads = loss(this, y) //(pw * outputs) :* theta.map(dactivation)
     if (verbose) {
-      println("grads = " + outputs)
+      println("grads = " + y)
     }
     grads
   }
+
+  def idx = pointer._1
+
+  def layers = pointer._2.layers
+
+  def prev: Option[NetworkLayer] = if (idx > 0) Some(layers(idx - 1)) else None
+
+  def next: Option[NetworkLayer] = if (idx <= layers.size) Some(layers(idx + 1)) else None
 
 }
 
 // TODO loss and cost functions?
 class OutputLayer(var W: DenseMatrix[Double],
                   var b: DenseVector[Double],
-                  var activation: (Double => Double),
-                  var dactivation: (Double => Double)) extends NetworkLayer {
+                  var activation: ActivationFunction,
+                  pointer: (Int, NeuralNetwork)) extends NetworkLayer {
+
+//                  var activation: (Double => Double),
+//                  var dactivation: (Double => Double)) extends NetworkLayer {
 
 
   def errors(input: DenseMatrix[Double], y: DenseVector[Double]): Double = ???
 
-  def gradient(outputs: DenseMatrix[Double], verbose: Boolean = false): DenseMatrix[Double] = {
+  def gradient(y: DenseMatrix[Double], loss: NeuralLossFunction, verbose: Boolean = false): DenseMatrix[Double] = {
     if (verbose) {
       println("Computing gradient in output layer...")
-      println("Outputs (%d rows x %d columns):".format(outputs.rows, outputs.cols))
-      println(outputs)
+      println("Goal Outputs (%d rows x %d columns):".format(y.rows, y.cols))
+      println(y)
       println
     }
-    grads = (outputs - theta.map(activation)).t :* theta.map(dactivation)
+    grads = loss(this, y) //(y - theta.map(activation)).t :* theta.map(dactivation)
     if (verbose) {
       println("Gradients (%d rows x %d columns):".format(grads.rows, grads.cols))
       println(grads)
@@ -137,6 +161,15 @@ class OutputLayer(var W: DenseMatrix[Double],
     }
     grads
   }
+
+
+  def idx = pointer._1
+
+  def layers = pointer._2.layers
+
+  def prev: Option[NetworkLayer] = if (idx > 0) Some(layers(idx - 1)) else None
+
+  def next: Option[NetworkLayer] = if (idx <= layers.size) Some(layers(idx + 1)) else None
 }
 
 

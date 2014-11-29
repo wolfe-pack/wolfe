@@ -10,7 +10,7 @@ import ml.wolfe.{FactorieVector, WolfeSpec}
 class GradientBasedOptimizerSpecs extends WolfeSpec {
 
 
-  class LinearTerm(val x: ContVar, val scale: Double) extends ContPotential with GradientBasedOptimizer.Stateless {
+  class LinearTerm(val x: ContVar, val scale: Double) extends ContPotential with StatelessDifferentiable with StatelessScorer {
     def contVars = Array(x)
     def gradientAndValue(current: Setting, gradient: Setting) = {
       gradient.cont(0) = scale
@@ -19,7 +19,7 @@ class GradientBasedOptimizerSpecs extends WolfeSpec {
     def score(setting: Setting) = setting.cont(0) * scale
   }
 
-  class QuadraticTerm(val x: ContVar, val scale: Double) extends ContPotential with GradientBasedOptimizer.Stateless {
+  class QuadraticTerm(val x: ContVar, val scale: Double) extends ContPotential with StatelessDifferentiable with StatelessScorer  {
     val contVars = Array(x)
     def gradientAndValue(current: Setting, gradient: Setting) = {
       gradient.cont(0) = current.cont(0) * 2.0 * scale
@@ -29,7 +29,7 @@ class GradientBasedOptimizerSpecs extends WolfeSpec {
   }
 
   class MultivariateLinearTerm(val x: VectVar, val scale: FactorieVector) extends VectPotential
-                                                                                  with GradientBasedOptimizer.Stateless {
+                                                                                  with StatelessDifferentiable with StatelessScorer  {
     val vectVars = Array(x)
     def gradientAndValue(current: Setting, gradient: Setting) = {
       gradient.vect(0) = scale
@@ -39,7 +39,7 @@ class GradientBasedOptimizerSpecs extends WolfeSpec {
   }
 
   class MultivariateQuadraticTerm(val x: VectVar, val scale: Double) extends VectPotential
-                                                                             with GradientBasedOptimizer.Stateless {
+                                                                             with StatelessDifferentiable with StatelessScorer  {
     val vectVars = Array(x)
     def gradientAndValue(current: Setting, gradient: Setting) = {
       gradient.vect(0) = current.vect(0) * scale * 2.0

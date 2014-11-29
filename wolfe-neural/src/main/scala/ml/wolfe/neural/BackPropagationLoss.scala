@@ -8,7 +8,7 @@ import breeze.linalg.{DenseVector, DenseMatrix}
 /**
  * Created by narad on 11/5/14.
  */
-class BackPropagationLoss(edge: Edge, network: NeuralNetwork, input: DenseMatrix[Double], output: DenseVector[Double], rate: Double = 1.0) extends Potential  {
+class BackPropagationLoss(edge: Edge, network: NeuralNetwork, input: DenseMatrix[Double], output: DenseVector[Double], loss: NeuralLossFunction, rate: Double = 1.0) extends Potential  {
   println("Created BackProp Loss Factor.")
   val e = edge.msgs.asVector
 
@@ -26,7 +26,7 @@ class BackPropagationLoss(edge: Edge, network: NeuralNetwork, input: DenseMatrix
     else {
       println("Null Gradients...")
     }
-    network.backprop(input, output, updateWeights = false, rate = rate)
+    network.backprop(input, output, loss, updateWeights = false, rate = rate)
 //    println("gradient = " + network.gradients.mkString(", "))
     e.f2n = network.gradients
     println("Update to Variable: " + e.f2n.mkString(", "))
