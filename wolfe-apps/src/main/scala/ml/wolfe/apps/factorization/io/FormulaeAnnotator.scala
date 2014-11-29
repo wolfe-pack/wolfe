@@ -18,7 +18,7 @@ import scala.util.Random
 object Mentions {  
   val pathToMentions = new collection.mutable.HashMap[String, ArrayBuffer[String]]
 
-  def load(filePath: String = "./wolfe-apps/data/naacl2013/nyt-freebase.test.mentions.txt"): Unit = {
+  def load(filePath: String = "./data/naacl2013/nyt-freebase.test.mentions.txt"): Unit = {
     println("Loading sentences for dependency paths...")
 
     val progressBar = new ProgressBar(Source.fromFile(filePath, "iso-8859-1").getLines().size, 100000)
@@ -54,7 +54,7 @@ object Action extends Enumeration {
 object FormulaeAnnotator extends App {
   import Action._
 
-  val filePath = args.lift(0).getOrElse("./wolfe-apps/data/formulae/1000.txt")
+  val filePath = args.lift(0).getOrElse("./data/formulae/1000.txt")
   val reannotate = args.lift(1).getOrElse("false").toBoolean
   val skipUntil = args.lift(2).getOrElse("0").toInt
   val rhsFilter: String => Boolean = if (args.size > 3) s => !s.endsWith(args(3)) else s => true
@@ -63,6 +63,7 @@ object FormulaeAnnotator extends App {
   val backup = new FileWriter(filePath + ".old")
   backup.write(Source.fromFile(filePath, "iso-8859-1").getLines().mkString("\n"))
   backup.close()
+
   val rand = new Random(0l)
   val fileWriter = new FileWriter(filePath + ".tmp")
 
