@@ -1,7 +1,6 @@
 package ml.wolfe.fg20
 
 import ml.wolfe.MoreArrayOps._
-import ml.wolfe._
 
 import scalaxy.loops._
 
@@ -116,7 +115,7 @@ object TablePotential {
 case class Table(settings: Array[Array[Int]], scores: Array[Double])
 
 
-trait TableBasedProcessor extends MaxProduct.Processor with SumProduct.Processor {
+trait TableBasedProcessor extends Marginalizer with MaxMarginalizer {
 
   def dims: Array[Int]
 
@@ -162,23 +161,19 @@ trait TableBasedProcessor extends MaxProduct.Processor with SumProduct.Processor
     score
   }
 
-//  def score(setting: Setting) = {
-//    val entry = TablePotential.settingToEntry(setting.disc, dims)
-//    scoreTableEntry(entry, setting)
-//  }
-
-
 }
 
-final class TablePotential(val discVars: Array[DiscVar[Any]], table: Array[Double]) extends MaxProduct.Potential
-                                                                                             with SumProduct.Potential
+final class TablePotential(val discVars: Array[DiscVar[Any]], table: Array[Double]) extends SupportsMarginalization
+                                                                                             with SupportsMaxMarginalization
                                                                                              with DiscPotential {
 
   val discDims = discVars.map(_.dom.size)
 
-  def processor() = new Proc
+  def scorer() = new Proc
+  def marginalizer = new Proc
+  def maxMarginalizer = new Proc
 
-  final class Proc extends TableBasedProcessor {
+  final class Proc extends TableBasedProcessor with Scorer {
 
     def dims = discDims
 
