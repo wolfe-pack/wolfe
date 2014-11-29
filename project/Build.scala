@@ -45,7 +45,8 @@ object BuildSettings {
     scalaVersion := buildScalaVersion,
     scalacOptions := Seq("-unchecked", "-deprecation", "-feature"), //, "-Yrangepos"?
     shellPrompt := ShellPrompt.buildShellPrompt,
-    fork in run := true //use a fresh JVM for sbt run
+    fork in run := true, //use a fresh JVM for sbt run
+    connectInput in run := true //to use readLine after sbt run
   )
 
   val globalDependencies = libraryDependencies ++= Seq(
