@@ -24,7 +24,7 @@ object MatrixFactorization extends App {
 }
 
 class MatrixFactorization(confPath: String = "conf/mf.conf") {
-  val debug = true //whether to use a small synthetic matrix or actual data
+  val debug = false //whether to use a small synthetic matrix or actual data
   val loadFormulae = debug && true //whether forumlae should be sampled for debugging
   //val print = false //whether to print the matrix (only do this for small ones!)
 

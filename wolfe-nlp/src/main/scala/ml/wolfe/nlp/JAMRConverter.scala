@@ -1,7 +1,6 @@
 package ml.wolfe.nlp
 
 import java.io.FileWriter
-import edu.cmu.lti.nlp.amr._
 
 /**
  * Created by narad on 11/25/14.

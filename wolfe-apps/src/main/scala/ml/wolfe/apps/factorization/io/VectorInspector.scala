@@ -1,12 +1,14 @@
 package ml.wolfe.apps.factorization.io
 
 import cc.factorie.la.DenseTensor1
+import ml.wolfe.FactorieVector
+import ml.wolfe.apps.factorization.TensorDB
 
 /**
  * @author rockt
  */
 object VectorInspector extends App {
-  def calculateLengthsAndAngle(v1: DenseTensor1, v2: DenseTensor1): (Double, Double, Double) = {
+  def calculateLengthsAndAngle(v1: FactorieVector, v2: FactorieVector): (Double, Double, Double) = {
     val length1 = math.sqrt(v1 dot v1)
     val length2 = math.sqrt(v2 dot v2)
 
@@ -15,19 +17,21 @@ object VectorInspector extends App {
     (length1, length2, angle)
   }
 
-  val pathToVectors = args.lift(0).getOrElse("./wolfe-apps/data/out/latest/vectors.tsv")
-  val pathToAnnotatedFormulae = args.lift(1).getOrElse("./wolfe-apps/data/formulae/curated.txt")
-  val pathToAllFormulae = args.lift(2).getOrElse("./wolfe-apps/data/formulae/generated.txt")
+  val pathToDB = args.lift(0).getOrElse("./wolfe-apps/data/out/F")
 
-  val relationLines = io.Source.fromFile(pathToVectors).getLines().toList.filterNot(_.startsWith("("))
+  val db = new TensorDB(100)
+  println("Deserializing DB...")
+  db.deserialize(pathToDB + "/serialized/")
 
-  val relationToVector = relationLines.map(_.split("\t")).map(a =>
-    (a.head, new DenseTensor1(a.tail.map(_.toDouble)))
-  ).toMap
+  println("Analyzing vectors...")
+  //val pathToAnnotatedFormulae = args.lift(1).getOrElse("./wolfe-apps/data/formulae/curated.txt")
+  //val pathToAllFormulae = args.lift(2).getOrElse("./wolfe-apps/data/formulae/generated.txt")
+  val pathToAnnotatedFormulae = args.lift(1).getOrElse("./wolfe-apps/data/formulae/latest.txt")
+  val pathToAllFormulae = args.lift(2).getOrElse("./wolfe-apps/data/formulae/latest.txt")
 
   def printStats(premise: String, consequent: String): (Double, Double, Double) = {
-    val premiseVector = relationToVector(premise)
-    val consequentVector = relationToVector(consequent)
+    val premiseVector = db.vector1(premise).get
+    val consequentVector = db.vector1(consequent).get
 
     val (premiseLength, consequentLength, angle) = calculateLengthsAndAngle(premiseVector, consequentVector)
 
@@ -40,8 +44,8 @@ object VectorInspector extends App {
   }
 
   val debug = false
-  val dropFormulae = 50
-  val numSamples = 20
+  val dropFormulae = 0
+  val numSamples = 10
 
 
   val pairsOfRelations =
