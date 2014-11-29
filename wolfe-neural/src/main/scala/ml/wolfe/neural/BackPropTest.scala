@@ -28,10 +28,14 @@ object BackPropTest extends App {
     (1.9, 2.0))
   val b2 = DenseVector(-2.5, -5.0)
   val outputs = DenseVector(-0.8500, 0.7500)
-  val layer1 = new HiddenLayer(w1, b1, ActivationFunctions.sigmoid, ActivationFunctions.δ_sigmoid)
-  val layer2 = new OutputLayer(w2, b2, ActivationFunctions.tanh, ActivationFunctions.δ_tanh)
-  val nn = new NeuralNetwork(Array(layer1, layer2))
+  val nn = new NeuralNetwork
+  nn.addHiddenLayer(w1, b1, new SigmoidActivationFunction)
+  nn.addOutputLayer(w2, b2, new TanhActivationFunction)
+//  val layer1 = new HiddenLayer(w1, b1, ActivationFunctions.sigmoid, ActivationFunctions.δ_sigmoid)
+//  val layer2 = new OutputLayer(w2, b2, ActivationFunctions.tanh, ActivationFunctions.δ_tanh)
+//  val nn = new NeuralNetwork(Array(layer1, layer2))
   val bpIters = 50
+  val loss = new SquaredErrorLoss
 
   if (mode == "WOLFE") {
     val fg = new FactorGraph
@@ -40,7 +44,7 @@ object BackPropTest extends App {
     val v = fg.addVectorNode(dim = paramSize)
     v.variable.asVector.b = new DenseTensor1(Array.ofDim[Double](paramSize))
     fg.buildFactor(Seq(v))(_ map (_ => new VectorMsgs)) { e =>
-      new BackPropagationLoss(e.head, nn, inputs, outputs)
+      new BackPropagationLoss(e.head, nn, inputs, outputs, loss)
     }
     println("Graph = " + fg.toInspectionString)
 
@@ -62,6 +66,7 @@ object BackPropTest extends App {
 
   }
   else {
-    nn.backprop(inputs, outputs, iters = bpIters, updateWeights = true, rate = alpha, verbose = false)
+    nn.backprop(inputs, outputs, iters = bpIters, loss = loss, updateWeights = true, rate = alpha, verbose = false)
+//    nn.backprop(inputs, outputs, iters = bpIters, updateWeights = true, rate = alpha, verbose = false)
   }
 }

@@ -2,56 +2,53 @@ package ml.wolfe.fg20
 
 import cc.factorie.la.{DenseTensor1, WeightsMapAccumulator}
 import cc.factorie.model.{Weights, WeightsSet}
-import cc.factorie.optimize.{AdaGrad, OnlineTrainer, Example, Trainer}
+import cc.factorie.optimize.{AdaGrad, Example, OnlineTrainer, Trainer}
 import cc.factorie.util.DoubleAccumulator
 import ml.wolfe._
 
 import scala.collection.mutable
 
+
 /**
- * Optimizes an optimization problem using the gradient of the objective.
- *
- * @author Sebastian Riedel
+ * A processor that can calculate gradients of potentials.
  */
-object GradientBasedOptimizer {
-
+trait GradientCalculator {
   /**
-   * Potentials which can be differentiated and which have a processor that
-   * can provide the gradient at a given parameter.
+   * Calculate value and gradient and current setting. Gradient results are
+   * to be provided in-place by modifying the gradient argument.
+   * @param currentParameters the current parameters, i.e. assignment to the potential's variables.
+   * @param gradient put the gradient at the current parameters into this setting.
+   * @return the value at the current parameters.
    */
-  trait Potential extends fg20.Potential { type Proc <: Processor }
+  def gradientAndValue(currentParameters:Setting, gradient:Setting):Double
 
-  /**
-   * Potential processor for gradient based methods.
-   */
-  trait Processor extends fg20.Processor {
+}
 
-    /**
-     * Calculate value and gradient and current setting. Gradient results are
-     * to be provided in-place by modifying the gradient argument.
-     * @param currentParameters the current parameters, i.e. assignment to the potential's variables.
-     * @param gradient put the gradient at the current parameters into this setting.
-     * @return the value at the current parameters.
-     */
-    def gradientAndValue(currentParameters:Setting, gradient:Setting):Double
-  }
+/**
+ * Potentials which can be differentiated and which have a processor that
+ * can provide the gradient at a given parameter.
+ */
+trait Differentiable extends Potential {
+  def gradientCalculator: GradientCalculator
+}
 
-  /**
-   * A convenience trait for subclasses that calculate gradients in a stateless-manner.
-   */
-  trait Stateless extends Potential with Processor with StatelessComputation[Stateless]
-
+/**
+ * Convenience trait for potentials that require no states to calculate gradients.
+ */
+trait StatelessDifferentiable extends Differentiable with GradientCalculator {
+  def gradientCalculator = this
 }
 
 /**
  * Create an optimizer for the given problem.
  * @param problem the problem to optimize.
  */
-class GradientBasedOptimizer(val problem: Problem[GradientBasedOptimizer.Potential]) extends EmptyEdgeFactorGraph
+class GradientBasedOptimizer(val problem: Problem[Differentiable]) extends EmptyEdgeFactorGraph
                                                            with EmptyNodeFactorGraph {
 
-  type Pot = GradientBasedOptimizer.Potential
-
+  type Pot = Differentiable
+  type Processor = GradientCalculator
+  def processor(pot: Pot) = pot.gradientCalculator
 
   /**
    * Optimize the objective and return the argmax state and value.
@@ -61,7 +58,7 @@ class GradientBasedOptimizer(val problem: Problem[GradientBasedOptimizer.Potenti
    */
   def argmax(trainer: WeightsSet => Trainer = w => new OnlineTrainer(w,new AdaGrad(),100),
              init:State = State.empty,
-             stochastic:Seq[GradientBasedOptimizer.Potential] = Seq.empty):ArgmaxResult = {
+             stochastic:Seq[Differentiable] = Seq.empty):ArgmaxResult = {
 
     this.stochastic = stochastic.map(pot2Factor)
     val weightsSet = new WeightsSet
@@ -115,7 +112,7 @@ class GradientBasedOptimizer(val problem: Problem[GradientBasedOptimizer.Potenti
       n.setting = weightsSet(weightsKeys(n)).asInstanceOf[FactorieVector]
       for (e <- n.edges) e.factor.setting.vect(e.index) = n.setting
     }
-    val objective = factors.iterator.map(f => f.processor.score(f.setting)).sum
+    val objective = factors.iterator.map(f => f.processor.gradientAndValue(f.setting,f.gradient)).sum
     val contState = contNodes.map(n => n.variable -> n.setting).toMap[Var[Any],Any]
     val vectState = vectNodes.map(n => n.variable -> n.setting).toMap[Var[Any],Any]
     ArgmaxResult(State(contState ++ vectState),objective)
@@ -140,7 +137,7 @@ class GradientBasedOptimizer(val problem: Problem[GradientBasedOptimizer.Potenti
 
 }
 
-class ExampleStochasticPot(v: => VectVar,w: => VectVar) extends GradientBasedOptimizer.Stateless with VectPotential {
+class ExampleStochasticPot(v: => VectVar,w: => VectVar) extends StatelessDifferentiable with StatelessScorer with VectPotential {
   def vectVars = Array(v,w)
   def gradientAndValue(currentParameters: Setting, gradient: Setting) = ???
   def score(setting: Setting) = ???

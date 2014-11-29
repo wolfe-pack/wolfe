@@ -36,9 +36,10 @@ class GibbsSampler(val problem: Problem[Potential])
 
 
   type Pot = Potential
+  type Processor = Scorer
+  def processor(pot: Pot) = pot.scorer()
 
   def createFactor(pot: Pot) = new FactorType(pot)
-
   def createDiscNodeContent(variable: DiscVar[Any]) = new DiscNodeContent(variable.dom.size)
   def createContNodeContent(contVar: ContVar) = new ContNodeContent
   def createVectNodeContent(vectVar: VectVar) = new VectNodeContent
@@ -66,14 +67,14 @@ class GibbsSampler(val problem: Problem[Potential])
         sampleDiscNode(n, sample)
       }
       for (f <- factors) {
-        f.processor match { case p: ExpFamProcessor => addStats(sample, f, p) case _ => }
+        f.processor match { case p: ExpFamScorer => addStats(sample, f, p) case _ => }
       }
     }
     //how to get partition function???
     //http://www.cc.gatech.edu/~mihail/D.lectures/jerrum96markov.pdf
     //make sure expectations are updated and consistent
     for (n <- discNodes) syncAverage(n, samples)
-    for (f <- factors) f.processor match { case p: ExpFamProcessor => addStats(samples - 1, f, p) case _ => }
+    for (f <- factors) f.processor match { case p: ExpFamScorer => addStats(samples - 1, f, p) case _ => }
 
     val marginals = var2DiscNode.values.map(n => DiscBelief(n.variable) -> Distribution.disc(n.variable.dom, n.content.belief))
     val gradient = new SparseVector(1000)
@@ -106,7 +107,7 @@ class GibbsSampler(val problem: Problem[Potential])
 
 
   //f = (f' * (n-1) + newStats) / n = f' * (n-1)/n + newStats / n
-  def addStats(sample: Int, factor: FactorType, expFamProc: ExpFamProcessor) {
+  def addStats(sample: Int, factor: FactorType, expFamProc: ExpFamScorer) {
     val newStats = expFamProc.stats(factor.setting)
     if (sample == 0) factor.mean = new SparseVector(0)
     factor.mean *= sample / (sample + 1)

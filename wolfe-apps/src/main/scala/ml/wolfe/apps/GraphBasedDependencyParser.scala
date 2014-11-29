@@ -33,7 +33,7 @@ object GraphBasedDependencyParser extends App {
     val slen = x.words.size
     val distance = math.abs(e._1 - e._2)
     val dir = if (e._1 < e._2) "RIGHT" else "LEFT"
-    oneHot('d_bias -> ("BIAS"), I(y.deps(e))) +
+    oneHot('d_bias -> "BIAS", I(y.deps(e))) +
     oneHot('d_ww ->(x.words(e._1), x.words(e._2)), I(y.deps(e)))
   }
 
@@ -45,12 +45,12 @@ object GraphBasedDependencyParser extends App {
 
   @OutputFactorGraph
   @LogZByInference(BeliefPropagation.sumProductPow(3))
-  def model(w: Vector)(x: X)(y: Y) = (feats(x)(y) dot w)
+  def model(w: Vector)(x: X)(y: Y) = (feats(x)(y) dot w) + treeConstraint(y.deps)
 
   def localLoss(x: X, gold: Y)(w: Vector) =
     logZ(space(x)) { model(w)(x) } - model(w)(x)(gold)
 
-  @OptimizeByLearning(new OnlineTrainer(_, new AdaGrad, 20, -1))
+  @OptimizeByLearning(new OnlineTrainer(_, new AdaGrad, 5, -1))
   def loss(data: Seq[(X, Y)])(w: Vector) =
     sum(data) { i =>
       localLoss(i._1, i._2)(w)
@@ -75,8 +75,8 @@ object GraphBasedDependencyParser extends App {
     DependencyTree(tokens, arcs)
   }
 
-  val train = new CoNLLReader(args(0)).view.map(t => treeToInstance(t.syntax.dependencies))
-  val test = new CoNLLReader(args(1)).view.map(t => treeToInstance(t.syntax.dependencies))
+  val train = new CoNLLReader(args(0)).take(100).map(t => treeToInstance(t.syntax.dependencies))
+  val test = new CoNLLReader(args(1)).take(100).map(t => treeToInstance(t.syntax.dependencies))
 
   val w = argmin(vectors) { loss(train) }
 
