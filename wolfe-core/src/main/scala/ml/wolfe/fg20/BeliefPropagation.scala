@@ -67,56 +67,67 @@ trait FwdBwdEdgePropagation extends EdgePropagation {
 }
 
 
-object MaxProduct {
+trait MaxMarginalizer {
+  def discMaxMarginalF2N(varIndex: Int, partialSetting: PartialSetting, incoming: Msgs, result: DiscMsg)
+  def maxMarginalObjective(partialSetting: PartialSetting, incoming: Msgs): Double
+}
 
-  trait Potential extends fg20.Potential {type Proc <: Processor }
-  trait ExpFamPotential extends fg20.ExpFamPotential with Potential {type Proc <: ExpFamProcessor }
-
-  trait Processor extends fg20.Processor {
-    def discMaxMarginalF2N(varIndex: Int, partialSetting: PartialSetting, incoming: Msgs, result: DiscMsg)
-    def maxMarginalObjective(partialSetting: PartialSetting, incoming: Msgs): Double
+trait ExpFamMaxMarginalizer extends MaxMarginalizer {
+  def maxMarginalExpectationsAndObjective(partialSetting: PartialSetting,
+                                          incoming: Msgs,
+                                          dstExpectations: FactorieVector): Double
+  def maxMarginalObjective(partialSetting: PartialSetting, incoming: Msgs) = {
+    maxMarginalExpectationsAndObjective(partialSetting, incoming, new SparseVector(0))
   }
+}
 
-  trait ExpFamProcessor extends fg20.ExpFamProcessor with Processor {
-    def maxMarginalExpectationsAndObjective(partialSetting: PartialSetting,
-                                            incoming: Msgs,
-                                            dstExpectations: FactorieVector): Double
-    def maxMarginalObjective(partialSetting: PartialSetting, incoming: Msgs) = {
-      maxMarginalExpectationsAndObjective(partialSetting, incoming, new SparseVector(0))
-    }
+trait SupportsMaxMarginalization extends Potential {
+  def maxMarginalizer:MaxMarginalizer
+}
+
+trait SupportsExpFamMaxMarginalization extends SupportsMaxMarginalization {
+  def maxMarginalizer:ExpFamMaxMarginalizer
+}
+
+/**
+ * A processor that calculates marginal probabilities with respect to a potential.
+ */
+trait Marginalizer {
+  def discMarginalF2N(varIndex: Int, partialSetting: PartialSetting, incoming: Msgs, result: DiscMsg)
+  def marginalObjective(partialSetting: PartialSetting, incoming: Msgs): Double
+}
+
+trait ExpFamMarginalizer extends Marginalizer {
+  def marginalExpectationsAndObjective(partialSetting: PartialSetting,
+                                       incoming: Msgs,
+                                       dstExpectations: FactorieVector): Double
+  def marginalObjective(partialSetting: PartialSetting, incoming: Msgs) = {
+    marginalExpectationsAndObjective(partialSetting, incoming, new SparseVector(0))
   }
-
-
 }
 
 
-object SumProduct {
+/**
+ * A potential that can spawn marginalizers to calculate marginal probabilities and expectations
+ * regardint the potential.
+ */
+trait SupportsMarginalization extends Potential {
+  def marginalizer:Marginalizer
+}
 
-  trait Potential extends fg20.Potential {type Proc <: Processor }
-  trait ExpFamPotential extends fg20.ExpFamPotential with Potential {type Proc <: ExpFamProcessor }
-
-  trait Processor extends fg20.Processor {
-    def discMarginalF2N(varIndex: Int, partialSetting: PartialSetting, incoming: Msgs, result: DiscMsg)
-    def marginalObjective(partialSetting: PartialSetting, incoming: Msgs): Double
-  }
-
-
-  trait ExpFamProcessor extends fg20.ExpFamProcessor with Processor {
-    def marginalExpectationsAndObjective(partialSetting: PartialSetting,
-                                         incoming: Msgs,
-                                         dstExpectations: FactorieVector): Double
-    def marginalObjective(partialSetting: PartialSetting, incoming: Msgs) = {
-      marginalExpectationsAndObjective(partialSetting, incoming, new SparseVector(0))
-    }
-  }
-
-
+/**
+ * Marginalization for exponential family potentials.
+ */
+trait SupportsExpFamMarginalization extends SupportsMarginalization with ExpFamPotential {
+  def marginalizer:ExpFamMarginalizer
 }
 
 
-class MaxProduct(val problem: Problem[MaxProduct.Potential]) extends BeliefPropagationFactorGraph with FwdBwdEdgePropagation {
+class MaxProduct(val problem: Problem[SupportsMaxMarginalization]) extends BeliefPropagationFactorGraph with FwdBwdEdgePropagation {
 
-  type Pot = MaxProduct.Potential
+  type Pot = SupportsMaxMarginalization
+  type Processor = MaxMarginalizer
+  def processor(pot: Pot) = pot.maxMarginalizer
 
   private var deterministicRun = false
 
@@ -149,8 +160,8 @@ class MaxProduct(val problem: Problem[MaxProduct.Potential]) extends BeliefPropa
     for (node <- nodes; if !node.observed) { updateBelief(node); normalizeBelief(node) }
     val gradient = new SparseVector(1000)
     val score = factors.iterator.map(f => f.processor match {
-      case p: MaxProduct.ExpFamProcessor => p.maxMarginalExpectationsAndObjective(f.partialSetting, f.incoming, gradient)
-      case p: MaxProduct.Processor => p.maxMarginalObjective(f.partialSetting, f.incoming)
+      case p: ExpFamMaxMarginalizer => p.maxMarginalExpectationsAndObjective(f.partialSetting, f.incoming, gradient)
+      case p: MaxMarginalizer => p.maxMarginalObjective(f.partialSetting, f.incoming)
     }).sum
     val maxMarginals = var2DiscNode.values.map(n =>
       DiscBelief(n.variable) -> Distribution.disc(n.variable.dom, n.content.belief.map(math.exp)))
@@ -193,8 +204,6 @@ class MaxProduct(val problem: Problem[MaxProduct.Potential]) extends BeliefPropa
 
 
 trait BeliefPropagationFactorGraph extends Residuals with NodeContentFactorGraph {
-
-  type Pot <: Potential
 
   final class FactorType(val pot: Pot) extends Factor {
 
@@ -301,9 +310,11 @@ trait BeliefPropagationFactorGraph extends Residuals with NodeContentFactorGraph
 
 }
 
-class SumProduct(val problem: Problem[SumProduct.Potential]) extends BeliefPropagationFactorGraph with EdgePropagation {
+class SumProduct(val problem: Problem[SupportsMarginalization]) extends BeliefPropagationFactorGraph with EdgePropagation {
 
-  type Pot = SumProduct.Potential
+  type Pot = SupportsMarginalization
+  type Processor = Marginalizer
+  def processor(pot: Pot) = pot.marginalizer
 
   def entropy(discNode:DiscNode) = {
     var result = 0.0
@@ -328,8 +339,8 @@ class SumProduct(val problem: Problem[SumProduct.Potential]) extends BeliefPropa
     for (node <- nodes; if !node.observed) { updateBelief(node); normalizeBelief(node) }
     val gradient = new SparseVector(1000)
     var logZ = factors.iterator.map(f => f.processor match {
-      case p: SumProduct.ExpFamProcessor => p.marginalExpectationsAndObjective(f.partialSetting, f.incoming, gradient)
-      case p: SumProduct.Processor => p.marginalObjective(f.partialSetting, f.incoming)
+      case p: ExpFamMarginalizer => p.marginalExpectationsAndObjective(f.partialSetting, f.incoming, gradient)
+      case p: Marginalizer => p.marginalObjective(f.partialSetting, f.incoming)
     }).sum
 
     //we need to subtract doubly counted node entropies to calculate the bethe objective.

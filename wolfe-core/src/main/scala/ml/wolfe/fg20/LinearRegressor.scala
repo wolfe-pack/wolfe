@@ -23,7 +23,7 @@ class LinearRegressor[X](val weights: FactorieVector, val feat: X => FactorieVec
  * @param scale a scale the term is multipled with.
  */
 class L2NormLoss(val w: VectVar, val feats: FactorieVector,
-                 val y: Double, val scale: Double = 1.0) extends GradientBasedOptimizer.Stateless
+                 val y: Double, val scale: Double = 1.0) extends StatelessDifferentiable with StatelessScorer
                                                                  with VectPotential {
   val vectVars = Array(w)
 
@@ -43,7 +43,7 @@ class L2NormLoss(val w: VectVar, val feats: FactorieVector,
  * @param w weights variable
  * @param scale a scale the term is multiplied with.
  */
-class L2Regularizer(val w: VectVar, val scale: Double = 1.0) extends GradientBasedOptimizer.Stateless
+class L2Regularizer(val w: VectVar, val scale: Double = 1.0) extends StatelessDifferentiable with StatelessScorer
                                                                      with VectPotential {
   val vectVars = Array(w)
 

@@ -23,6 +23,8 @@ class BruteForce(val problem: Problem[Potential]) extends NodeContentFactorGraph
 
 
 
+  type Processor = Scorer
+  def processor(pot: Pot) = pot.scorer()
   def createFactor(pot: Pot) = new FactorType(pot)
 
   type NodeContent = Any
