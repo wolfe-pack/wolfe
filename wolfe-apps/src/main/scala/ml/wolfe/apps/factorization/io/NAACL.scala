@@ -673,18 +673,23 @@ object LoadNAACL extends App {
         Array(stats, formula) = formulaEntry.split("\n")
       } {
 
-        val Array(numberRaw, dataScore, dataPremises, mfScore, mfPremises) =
+        val Array(numberRaw, mfScore, dataScore, numPremises, mfPremises) =
           if (stats.split("\t").size == 5) stats.split("\t")
+          else if (stats.split("\t").size < 5) stats.split("\t") ++ Array("0.0")
           else stats.split("\t").init
 
         val number = numberRaw.drop(2).toInt
 
-        if (!formula.startsWith("//") && start <= number && number <= end) {
-          val Array(head, tail) = formula.split(" => ")
-          val body = tail.split("\t").head
-          body.head match {
-            case '!' => kb += ImplNeg(head, body.tail)
-            case _ => kb += Impl(head, body)
+        if (mfScore.toDouble >= Conf.getDouble("mf.minMFHint") &&
+            dataScore.toDouble >= Conf.getDouble("mf.minDataHint") &&
+            numPremises.toInt >= Conf.getInt("mf.minNumPremises")) {
+          if (!formula.startsWith("//") && start <= number && number <= end) {
+            val Array(head, tail) = formula.split(" => ")
+            val body = tail.split("\t").head
+            body.head match {
+              case '!' => kb += ImplNeg(head, body.tail)
+              case _ => kb += Impl(head, body)
+            }
           }
         }
       }
