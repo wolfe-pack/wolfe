@@ -1,11 +1,9 @@
-package ml.wolfe.apps.factorization.io
+package ml.wolfe.apps.factorization.util
 
 import java.io.FileWriter
 
 import ml.wolfe.apps.factorization.{Formula, Impl, ImplNeg, TensorKB}
-import ml.wolfe.util.{ProgressBar, Conf}
-
-import scala.util.Random
+import ml.wolfe.util.ProgressBar
 
 
 /**

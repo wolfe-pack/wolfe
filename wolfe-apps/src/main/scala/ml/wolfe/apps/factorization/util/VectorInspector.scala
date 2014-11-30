@@ -1,4 +1,4 @@
-package ml.wolfe.apps.factorization.io
+package ml.wolfe.apps.factorization.util
 
 import cc.factorie.la.DenseTensor1
 import ml.wolfe.FactorieVector
