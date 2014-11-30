@@ -86,7 +86,7 @@ path#appos|->appos->producer->dep->|dep:INV => REL$/film/film/produced_by
 //path#appos|->appos->daughter->poss->|poss => REL$/people/person/parents
 
 //30	0.94	0.62	47	curated
-//path#poss|<-poss<-film->dep->|dep:INV => REL$/film/film/directed_by
+path#poss|<-poss<-film->dep->|dep:INV => REL$/film/film/directed_by
 
 //31	0.94	0.42	55	curated
 //path#nsubj|<-nsubj<-author->dep->|dep => REL$/book/author/works_written
@@ -122,7 +122,7 @@ path#nn|<-nn<-film->dep->|dep:INV => REL$/film/film/directed_by
 path#nn|<-nn<-suburb->prep->of->pobj->|pobj:INV => REL$/location/location/containedby
 
 //42	0.93	0.67	39	curated
-//path#appos|->appos->daughter->prep->of->pobj->|pobj => REL$/people/person/parents
+path#appos|->appos->daughter->prep->of->pobj->|pobj => REL$/people/person/parents
 
 //43	0.93	0.50	124	curated
 //path#appos|->appos->author->prep->of->pobj->|pobj => REL$/book/author/works_written
@@ -149,7 +149,7 @@ path#nn|<-nn<-side->prep->of->pobj->|pobj:INV => REL$/location/location/containe
 //path#nsubjpass|<-nsubjpass<-direct->prep->by->pobj->|pobj => REL$/film/film/directed_by
 
 //51	0.93	0.64	216	curated
-//path#nsubj|<-nsubj<-die->prep->in->pobj->|pobj => REL$/people/deceased_person/place_of_death
+path#nsubj|<-nsubj<-die->prep->in->pobj->|pobj => REL$/people/deceased_person/place_of_death
 
 //52	0.93	0.53	40	curated
 path#poss|<-poss<-neighborhood->nn->|nn:INV => REL$/location/neighborhood/neighborhood_of
@@ -185,7 +185,7 @@ path#nsubj|<-nsubj<-die->prep->at->pobj->hospital->prep->in->pobj->|pobj => REL$
 //path#pobj|<-pobj<-to<-prep<-move->prep->to->pobj->|pobj:INV => REL$/location/location/containedby
 
 //63	0.91	0.47	45	curated
-//path#poss|<-poss<-book->dep->|dep => REL$/book/author/works_written
+path#poss|<-poss<-book->dep->|dep => REL$/book/author/works_written
 
 //64	0.91	0.91	22	curated
 //path#nsubj|<-nsubj<-beat->dobj->|dobj:INV => REL$/location/location/containedby
@@ -197,7 +197,7 @@ path#nsubj|<-nsubj<-die->prep->at->pobj->hospital->prep->in->pobj->|pobj => REL$
 path#nsubj|<-nsubj<-name->dobj->|dobj:INV => REL$/business/person/company
 
 //67	0.90	0.51	241	curated
-//path#nsubjpass|<-nsubjpass<-bear->prep->in->pobj->|pobj => REL$/people/person/place_of_birth
+path#nsubjpass|<-nsubjpass<-bear->prep->in->pobj->|pobj => REL$/people/person/place_of_birth
 
 //68	0.90	0.88	16	curated
 //path#pobj|<-pobj<-to<-prep<-come->prep->from->pobj->|pobj:INV => REL$/location/location/containedby
@@ -206,7 +206,7 @@ path#nsubj|<-nsubj<-name->dobj->|dobj:INV => REL$/business/person/company
 //path#pobj|<-pobj<-over<-prep<-victory->prep->at->pobj->|pobj => REL$/sports/sports_team/arena_stadium
 
 //70	0.90	0.48	153	curated
-//path#appos|->appos->minister->poss->|poss => REL$/people/person/nationality
+path#appos|->appos->minister->poss->|poss => REL$/people/person/nationality
 
 //71	0.90	0.77	101	curated
 //path#appos|->appos->town->prep->in->pobj->|pobj => REL$/location/location/containedby
@@ -266,7 +266,7 @@ path#nsubj|<-nsubj<-name->dobj->|dobj:INV => REL$/business/person/company
 //path#rcmod|->rcmod->write->dobj->|dobj => REL$/book/author/works_written
 
 //90	0.88	0.70	83	curated
-//path#appos|->appos->capital->prep->of->pobj->|pobj => REL$/location/location/containedby
+path#appos|->appos->capital->prep->of->pobj->|pobj => REL$/location/location/containedby
 
 //91	0.87	0.53	40	curated
 //path#poss|<-poss<-biography->prep->of->pobj->|pobj => REL$/book/author/works_written
@@ -281,7 +281,7 @@ path#nsubj|<-nsubj<-name->dobj->|dobj:INV => REL$/business/person/company
 //path#appos|->appos->director->dep->|dep:INV => REL$/film/film/produced_by
 
 //95	0.87	0.68	19	curated
-//path#nsubj|<-nsubj<-city->prep->in->pobj->|pobj => REL$/location/location/containedby
+path#nsubj|<-nsubj<-city->prep->in->pobj->|pobj => REL$/location/location/containedby
 
 //96	0.87	0.06	48	curated
 //path#appos|->appos->owner->nn->|nn => REL$/sports/sports_team_owner/teams_owned

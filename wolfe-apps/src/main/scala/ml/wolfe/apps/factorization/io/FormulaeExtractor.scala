@@ -109,8 +109,8 @@ object FormulaeExtractor extends App {
   println(db.toInfoString)
 
   val premises = db.relations
-  val consequents = db.relations.filter(consequentFilter)
-  //val consequents = db.relations
+  //val consequents = db.relations.filter(consequentFilter)
+  val consequents = db.relations
 
   val rows = db.trainCells.map(_.key2).distinct.map(List(_))
     //.map { case (ei, ej) => List(ei, ej) }
@@ -138,7 +138,7 @@ object FormulaeExtractor extends App {
   .filter(_._3 >= 10)
   .sortBy(-_._1)
   //.sortBy(-_._2)
-  .take(1000)
+  .take(100000)
   .zipWithIndex
   .foreach(z => {
     val (t, ix) = z

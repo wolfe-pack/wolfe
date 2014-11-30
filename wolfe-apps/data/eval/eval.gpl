@@ -37,17 +37,17 @@ plot mf using 3:1 smooth unique with linespoints ls 1 linewidth 3 title "matrix 
      post_inference using 3:1 smooth unique with linespoints ls 5 linewidth 3 title "post-inference"
 
 # Wrapup
-#set terminal pdf enhanced dashed size 3,3#1.75 #size 400,400
-set terminal png truecolor size 500,500
-set output fileName."-MAP.png"
-#set output fileName."-MAP.pdf"
+set terminal pdf enhanced dashed size 2.75,2 #1.75 #size 400,400
+#set terminal png truecolor size 500,500
+#set output fileName."-MAP.png"
+set output fileName."-MAP.pdf"
 refresh
 unset output
 
 
 set terminal dumb enhanced
 plot mf using 3:2 smooth unique with linespoints ls 1 linewidth 3 title "matrix factorization",\
-     low_rank_logic using 3:2 smooth unique with linespoints ls 2 linewidth 3 title "low-rank logic",\
+     low_rank_logic using 3:2 smooth unique with linespoints ls 2 linewidth 3 title "joint optimization",\
      inference_only using 3:2 smooth unique with linespoints ls 3 linewidth 3 title "inference only",\
      pre_inference using 3:2 smooth unique with linespoints ls 4 linewidth 3 title "pre-inference",\
      post_inference using 3:2 smooth unique with linespoints ls 5 linewidth 3 title "post-inference"
