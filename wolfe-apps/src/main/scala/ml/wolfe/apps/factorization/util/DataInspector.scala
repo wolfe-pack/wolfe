@@ -19,7 +19,8 @@ object DataInspector extends App {
   val paths = Seq(
     "path#nn|<-nn<-unit->prep->of->pobj->|pobj:INV",
     "path#appos|->appos->producer->dep->|dep:INV",
-    "path#nsubj|<-nsubj<-city->prep->in->pobj->|pobj"
+    "path#nsubj|<-nsubj<-city->prep->in->pobj->|pobj",
+    "path#pobj|<-pobj<-to<-prep<-move->prep->to->pobj->|pobj:INV"
   )
 
   paths.foreach(p => {
