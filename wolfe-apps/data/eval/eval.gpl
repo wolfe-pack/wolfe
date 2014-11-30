@@ -17,7 +17,7 @@ set yrange [0.0:0.7]
 set ytics 0.1,0.1,1
 set xtics 0.0,0.1,1
 
-set xlabel "Fraction of freebase training facts"
+set xlabel "Fraction of Freebase training facts"
 set ylabel "MAP"
 
 set grid ytics lt 0 lw 1 lc rgb "#bbbbbb"
@@ -30,11 +30,11 @@ pre_inference = "< grep \"pre-inference\" ".fileName.".log"
 post_inference = "< grep \"post-inference\" ".fileName.".log"
 pre_post_inference = "< grep \"pre-post-inference\" ".fileName.".log"
 
-plot mf using 3:1 smooth unique with linespoints ls 1 linewidth 3 title "matrix factorization",\
-     low_rank_logic using 3:1 smooth unique with linespoints ls 2 linewidth 3 title "low-rank logic",\
-     inference_only using 3:1 smooth unique with linespoints ls 3 linewidth 3 title "inference only",\
-     pre_inference using 3:1 smooth unique with linespoints ls 4 linewidth 3 title "pre-inference",\
-     post_inference using 3:1 smooth unique with linespoints ls 5 linewidth 3 title "post-inference"
+plot mf using 3:1 smooth unique with linespoints ls 1 linewidth 3 title "Matrix Factorization",\
+     low_rank_logic using 3:1 smooth unique with linespoints ls 2 linewidth 3 title "Joint Optimization",\
+     inference_only using 3:1 smooth unique with linespoints ls 3 linewidth 3 title "Logical Inference",\
+     pre_inference using 3:1 smooth unique with linespoints ls 4 linewidth 3 title "Pre-Inference",\
+     post_inference using 3:1 smooth unique with linespoints ls 5 linewidth 3 title "Post-Inference"
 
 # Wrapup
 set terminal pdf enhanced dashed size 2.75,2 #1.75 #size 400,400
@@ -46,11 +46,11 @@ unset output
 
 
 set terminal dumb enhanced
-plot mf using 3:2 smooth unique with linespoints ls 1 linewidth 3 title "matrix factorization",\
-     low_rank_logic using 3:2 smooth unique with linespoints ls 2 linewidth 3 title "joint optimization",\
-     inference_only using 3:2 smooth unique with linespoints ls 3 linewidth 3 title "inference only",\
-     pre_inference using 3:2 smooth unique with linespoints ls 4 linewidth 3 title "pre-inference",\
-     post_inference using 3:2 smooth unique with linespoints ls 5 linewidth 3 title "post-inference"
+plot mf using 3:2 smooth unique with linespoints ls 1 linewidth 3 title "Matrix Factorization",\
+     low_rank_logic using 3:2 smooth unique with linespoints ls 2 linewidth 3 title "Joint Optimization",\
+     inference_only using 3:2 smooth unique with linespoints ls 3 linewidth 3 title "Logical Inference",\
+     pre_inference using 3:2 smooth unique with linespoints ls 4 linewidth 3 title "Pre-Inference",\
+     post_inference using 3:2 smooth unique with linespoints ls 5 linewidth 3 title "Post-Inference"
 
 # Wrapup
 set ylabel "wMAP"
