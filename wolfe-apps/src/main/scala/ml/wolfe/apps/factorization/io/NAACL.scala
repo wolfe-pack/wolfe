@@ -671,8 +671,8 @@ object LoadNAACL extends App {
       for {
         formulaEntry <- formulae
         Array(stats, formula) = formulaEntry.split("\n")
+        if !Conf.getBoolean("mf.onlyAnnotated") || stats.endsWith("curated")
       } {
-
         val Array(numberRaw, mfScore, dataScore, numPremises, mfPremises) =
           if (stats.split("\t").size == 5) stats.split("\t")
           else if (stats.split("\t").size < 5) stats.split("\t") ++ Array("0.0")

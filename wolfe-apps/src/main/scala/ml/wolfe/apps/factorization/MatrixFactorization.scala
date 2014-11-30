@@ -250,6 +250,8 @@ class MatrixFactorization(confPath: String = "conf/mf.conf") {
 
       if (Conf.getBoolean("serialize")) db.serialize(Conf.outDir.getAbsolutePath + "/serialized/")
 
+
+
       import scala.sys.process._
       Process("pdflatex -interaction nonstopmode -shell-escape table.tex", new File(Conf.outDir.getAbsolutePath)).!!
 
