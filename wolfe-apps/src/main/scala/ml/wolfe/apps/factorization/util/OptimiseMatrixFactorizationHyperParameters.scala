@@ -1,16 +1,7 @@
-package ml.wolfe.apps.factorization.io
+package ml.wolfe.apps.factorization.util
 
-import java.io.{FileWriter, File}
-
-import cc.factorie.optimize._
-import ml.wolfe.GradientBasedOptimizer
 import ml.wolfe.apps.factorization._
-import ml.wolfe.fg.{L2Regularization, CellLogisticLoss, VectorMsgs}
 import ml.wolfe.util._
-import ml.wolfe.{DenseVector, GradientBasedOptimizer, Wolfe}
-
-import scala.io.Source
-import scala.util.Random
 
 
 /**

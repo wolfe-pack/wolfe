@@ -1,16 +1,9 @@
-package ml.wolfe.apps.factorization.io
+package ml.wolfe.apps.factorization.util
 
-import java.io.{BufferedWriter, FileWriter, File}
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.concurrent.Executors
+import java.io.File
 
-import com.typesafe.config.{Config, ConfigFactory}
-import ml.wolfe.util.{ProgressBar, RunExperimentSeries, OverrideConfig, Conf}
-import org.joda.time.LocalDate
+import ml.wolfe.util.{Conf, OverrideConfig, ProgressBar, RunExperimentSeries}
 
-import scala.collection.mutable
-import scala.concurrent.ExecutionContext
 import scala.util.Random
 
 /**
@@ -31,9 +24,11 @@ object SubsampleExperiments extends App {
   val rand = new Random(0l)
 
   val series = Map(
-    "mf.subsample" -> (0 to 10).map(_ / 10.0).toSeq,
+    //"mf.subsample" -> (0 to 10).map(_ / 10.0).toSeq,
+    "mf.subsample" -> (0 to 12).map(_ / 4.0).toSeq,
     //"formulaeFile" -> Seq("None", formulaeFile),
-    "mf.mode" -> Seq("mf", "low-rank-logic", "pre-inference", "post-inference", "pre-post-inference", "inference-only")
+    //"mf.mode" -> Seq("mf", "low-rank-logic", "pre-inference", "post-inference", "pre-post-inference", "inference-only")
+    "mf.mode" -> Seq("mf", "low-rank-logic", "pre-inference", "post-inference", "inference-only")
   ).mapValues(rand.shuffle(_))
 
 

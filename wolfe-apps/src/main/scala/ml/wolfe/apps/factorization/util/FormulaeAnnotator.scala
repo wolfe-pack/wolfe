@@ -1,7 +1,6 @@
-package ml.wolfe.apps.factorization.io
+package ml.wolfe.apps.factorization.util
 
 import java.io.FileWriter
-
 
 import ml.wolfe.nlp.util.ANSIFormatter._
 import ml.wolfe.util.ProgressBar
@@ -52,7 +51,7 @@ object Action extends Enumeration {
 }
 
 object FormulaeAnnotator extends App {
-  import Action._
+  import ml.wolfe.apps.factorization.util.Action._
 
   val filePath = args.lift(0).getOrElse("./data/formulae/1000.txt")
   val reannotate = args.lift(1).getOrElse("false").toBoolean
