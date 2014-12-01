@@ -687,8 +687,14 @@ object LoadNAACL extends App {
             val Array(head, tail) = formula.split(" => ")
             val body = tail.split("\t").head
             body.head match {
-              case '!' => kb += ImplNeg(head, body.tail)
-              case _ => kb += Impl(head, body)
+              case '!' =>
+                kb += ImplNeg(head, body.tail)
+                if (Conf.getBoolean("mf.force-symmetry"))
+                  kb += ImplNeg(body.tail, head)
+              case _ =>
+                kb += Impl(head, body)
+                if (Conf.getBoolean("mf.force-symmetry"))
+                  kb += Impl(body, head)
             }
           }
         }

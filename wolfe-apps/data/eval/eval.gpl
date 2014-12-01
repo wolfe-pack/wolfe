@@ -46,7 +46,7 @@ unset output
 
 set terminal dumb enhanced
 
-set object 1 rect from 0,0.3 to 0.3,0.6 lw 6 fs empty border lc rgb 'gold'
+set object 1 rect from 0,0.3 to 0.4,0.6 lw 6 fs empty border lc rgb 'gold'
 
 plot mf using 3:2 smooth unique with linespoints ls 1 linewidth 3 title "Matrix Factorization",\
      low_rank_logic using 3:2 smooth unique with linespoints ls 2 linewidth 3 title "Joint Optimization",\

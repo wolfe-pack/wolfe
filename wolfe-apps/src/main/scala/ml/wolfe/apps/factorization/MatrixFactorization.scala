@@ -151,6 +151,7 @@ class MatrixFactorization(confPath: String = "conf/mf.conf") {
         //colIx: relation
         //rowIx: entity
         val (colIx, rowIx, _) = d.key
+
         val a = rowNodes(rowIx)
         val v = colNodes(colIx)
 
@@ -170,7 +171,7 @@ class MatrixFactorization(confPath: String = "conf/mf.conf") {
                     e => new ImplPotential(e(0), e(1), e(2), target, lambda, formulaeWeight) with L2Regularization
                   }
                   (0 until unobservedPerF).foreach { i =>
-                    fg.buildStochasticFactor(Seq(db.sampleNodeFrom2(colIx), p1Node, p2Node))(_ map (_ => new VectorMsgs)) {
+                    fg.buildStochasticFactor(Seq(db.sampleNodeFrom2(colIx, sampleTestRows = Conf.getBoolean("mf.test-row-terms")), p1Node, p2Node))(_ map (_ => new VectorMsgs)) {
                       e => new ImplPotential(e(0), e(1), e(2), target, lambda, formulaeWeight) with L2Regularization
                     }
                   }
@@ -180,7 +181,7 @@ class MatrixFactorization(confPath: String = "conf/mf.conf") {
                     e => new ImplNegPotential(e(0), e(1), e(2), target, lambda, formulaeWeight) with L2Regularization
                   }
                   (0 until unobservedPerF).foreach { i =>
-                    fg.buildStochasticFactor(Seq(db.sampleNodeFrom2(colIx), p1Node, p2Node))(_ map (_ => new VectorMsgs)) {
+                    fg.buildStochasticFactor(Seq(db.sampleNodeFrom2(colIx, sampleTestRows = Conf.getBoolean("mf.test-row-terms")), p1Node, p2Node))(_ map (_ => new VectorMsgs)) {
                       e => new ImplNegPotential(e(0), e(1), e(2), target, lambda, formulaeWeight) with L2Regularization
                     }
                   }
