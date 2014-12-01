@@ -24,10 +24,8 @@ object VectorInspector extends App {
   db.deserialize(pathToDB + "/serialized/")
 
   println("Analyzing vectors...")
-  //val pathToAnnotatedFormulae = args.lift(1).getOrElse("./wolfe-apps/data/formulae/curated.txt")
-  //val pathToAllFormulae = args.lift(2).getOrElse("./wolfe-apps/data/formulae/generated.txt")
-  val pathToAnnotatedFormulae = args.lift(1).getOrElse("./wolfe-apps/data/formulae/latest.txt")
-  val pathToAllFormulae = args.lift(2).getOrElse("./wolfe-apps/data/formulae/latest.txt")
+  val pathToAnnotatedFormulae = args.lift(1).getOrElse("./wolfe-apps/data/formulae/1000.txt")
+  val pathToAllFormulae = args.lift(2).getOrElse("./wolfe-apps/data/formulae/10000.txt")
 
   def printStats(premise: String, consequent: String): (Double, Double, Double) = {
     val premiseVector = db.vector1(premise).get
