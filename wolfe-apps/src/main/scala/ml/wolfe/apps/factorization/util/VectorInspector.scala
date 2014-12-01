@@ -23,7 +23,7 @@ object VectorInspector extends App {
     (length1, length2, angle)
   }
 
-  val pathToDB = args.lift(0).getOrElse("./data/out/F-Joint")
+  val pathToDB = args.lift(0).getOrElse("./data/out/F-Pre")
 
   Conf.add(args.lift(1).getOrElse("./conf/mf.conf"))
 
@@ -95,9 +95,14 @@ object VectorInspector extends App {
   def analyzeAsymmetry() = {
     formulae.foreach {
       case Impl(p1, p2, _) =>
+        val (p1Length, p2Length, angle) = VectorInspector.calculateLengthsAndAngle(db.vector1(p1).get, db.vector1(p2).get)
+        val lengthDiff = p2Length - p1Length
         val (mfScore, numPremises) = FormulaeExtractor.formulaScoreMF(Impl(p1, p2), entityPairs)
         val (mfScoreInv, numPremisesInv) = FormulaeExtractor.formulaScoreMF(Impl(p2, p1), entityPairs)
-        println(s"$mfScore\t$numPremises\t$mfScoreInv\t$numPremisesInv\t$p1\t$p2")
+
+        println(f"%%4.2f [%%d]\t%%4.2f [%%d]\t%%6.4f\t%%6.4f\t%%6.4f\t%%4.2f°\t$p1\t$p2".format(
+          mfScore, numPremises, mfScoreInv, numPremisesInv, p1Length, p2Length, lengthDiff, angle
+        ))
     }
   }
 
