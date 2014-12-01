@@ -6,6 +6,7 @@ import java.util.Date
 import java.util.concurrent.Executors
 
 import scala.concurrent.ExecutionContext
+import RichCollections._
 
 /**
  * @author rockt
@@ -13,15 +14,6 @@ import scala.concurrent.ExecutionContext
 object RunExperimentSeries {
   type Series = Map[String, Seq[Any]]
   type Confs = Seq[Map[String, Any]]
-
-  implicit class Crossable[X](xs: Traversable[X]) {
-    def cross[Y](ys: Traversable[Y]) = for { x <- xs; y <- ys } yield Seq(x, y)
-    def flatCross[Y](ys: Traversable[Y]) =
-      for { x <- xs; y <- ys } yield x match {
-        case ls: Seq[_] => ls ++ Seq(y)
-        case _ => Seq(x, y)
-      }
-  }
 
   def apply(series: Series, threads: Int = 1, confPath: String = "wolfe-apps/conf/mf.conf")(body: String => Any): Unit = {
     val confSeq: Confs = series.map { case (key, value) =>

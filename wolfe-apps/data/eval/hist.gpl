@@ -1,0 +1,29 @@
+set terminal dumb enhanced
+#unset key
+
+binwidth=0.01
+bin(x,width)=width*floor(x/width)
+
+set xlabel "Distribution over length differences of implications"
+
+
+if (!exists("fileName")) fileName='lengths'
+
+mf_formulae = "< grep \"mf-formulae\" ".fileName.".txt"
+mf_sample = "< grep \"mf-sample\" ".fileName.".txt"
+joint_formulae = "< grep \"joint-formulae\" ".fileName.".txt"
+pre_formulae = "< grep \"pre-formulae\" ".fileName.".txt"
+
+plot mf_sample using (bin($1,binwidth)):(1.0) smooth freq with boxes title "mf-sample",\
+     mf_formulae using (bin($1,binwidth)):(1.0) smooth freq with boxes title "mf-formulae",\
+     pre_formulae using (bin($1,binwidth)):(1.0) smooth freq with boxes title "pre-formulae",\
+     joint_formulae using (bin($1,binwidth)):(1.0) smooth freq with boxes title "joint-formulae",\
+
+
+# Wrapup
+set terminal pdf enhanced size 2.75,2 #1.75 #size 400,400
+#set terminal png truecolor size 500,500
+#set output fileName.".png"
+set output fileName.".pdf"
+refresh
+unset output

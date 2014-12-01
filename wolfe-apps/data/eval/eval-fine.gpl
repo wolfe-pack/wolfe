@@ -15,11 +15,12 @@ load 'Set1.plt'
 if (!exists("fileName")) fileName='experiments'
 
 set style line 12 lc rgb '#bbbbbb' lt 1 lw 2
-set style line 13 lc rgb '#bbbbbb' lt 4 lw 1
+set style line 13 lc rgb '#cccccc' lt 4 lw 1
 set grid xtics mxtics ytics mytics back ls 12, ls 13
 
 
 set yrange [0.3:0.6]
+set mytics 4
 set ytics 0.1,0.1,1
 set mxtics 4
 set xtics 0.0,0.1,1
@@ -47,7 +48,7 @@ set output fileName."-MAP.pdf"
 refresh
 unset output
 
-set object 1 rect from 0,0.3 to 0.3,0.6 lw 6 fs empty border lc rgb 'gold'
+set object 1 rect from 0,0.3 to 0.4,0.6 lw 6 fs empty border lc rgb 'gold'
 
 
 set terminal dumb enhanced

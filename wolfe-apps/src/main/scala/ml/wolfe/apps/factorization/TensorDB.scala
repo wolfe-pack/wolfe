@@ -80,6 +80,10 @@ class TensorDB(k: Int = 100) extends Tensor {
   //for efficient checking whether a test cell has an inferred value
   val inferredCellsMap = new mutable.HashMap[(CellIx, CellIx), Cell]()
 
+  lazy val testIx1 = testCells.map(_.key1).toSet
+  lazy val testIx2 = testCells.map(_.key2).toSet
+  lazy val testIx3 = testCells.map(_.key3).toSet
+
   /**
    * @return number of cells in the tensor
    */
@@ -295,15 +299,17 @@ class TensorDB(k: Int = 100) extends Tensor {
   }
 
   @tailrec
-  final def sampleNodeFrom2(key1: CellIx, attempts: Int = 1000): Node = {
+  final def sampleNodeFrom2(key1: CellIx, attempts: Int = 1000, sampleTestRows: Boolean = true): Node = {
     if (isMatrix)
       if (attempts == 0) {
         println("WARNING: Could not find negative cell 2 for key1: " + key1.toString)
         ix2ToNodeMap(keys2(random.nextInt(keys2.size)))
       } else {
         val key2 = keys2(random.nextInt(keys2.size))
-        if (get(key1, key2).exists(_.cellType == CellType.Train)) sampleNodeFrom2(key1, attempts - 1)
-        else ix2ToNodeMap(key2)
+        if (get(key1, key2).exists(_.cellType == CellType.Train) || (!sampleTestRows && testIx2(key2)))
+          sampleNodeFrom2(key1, attempts - 1)
+        else
+          ix2ToNodeMap(key2)
       }
     else ???
   }
@@ -316,8 +322,10 @@ class TensorDB(k: Int = 100) extends Tensor {
         ix1ToNodeMap(keys1(random.nextInt(keys1.size)))
       } else {
         val key1 = keys1(random.nextInt(keys1.size))
-        if (get(key1, key2).exists(_.cellType == CellType.Train)) sampleNodeFrom1(key2, attempts - 1)
-        else ix1ToNodeMap(key1)
+        if (get(key1, key2).exists(_.cellType == CellType.Train))
+          sampleNodeFrom1(key2, attempts - 1)
+        else
+          ix1ToNodeMap(key1)
       }
     else ???
   }
