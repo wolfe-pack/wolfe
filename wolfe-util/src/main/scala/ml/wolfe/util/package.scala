@@ -7,6 +7,7 @@ import java.util.Calendar
 
 import com.typesafe.config.{Config, ConfigFactory}
 
+import scala.collection.Map
 import scala.collection.mutable.ArrayBuffer
 import scala.io.Source
 
@@ -29,7 +30,7 @@ package object util {
       dir.mkdirs()
       dir
     }
-    def getMostRecentOutDir() : File = {
+    def getMostRecentOutDir : File = {
       val dateFolders = parentOutDir.listFiles(new FileFilter {
         override def accept(pathname: File): Boolean = pathname.isDirectory
       })
@@ -37,7 +38,7 @@ package object util {
       val dates = dateFolders.map(x => (x, formatter.parse(x.getName)))
       val latestFolder = dates.maxBy(_._2)._1
       val runs = latestFolder.listFiles(new FileFilter {
-        override def accept(pathname: File): Boolean = pathname.isDirectory()
+        override def accept(pathname: File): Boolean = pathname.isDirectory
       })
       val timeFormatter : SimpleDateFormat = new SimpleDateFormat("'run'_k_m_s_S")
       val times = runs.map(x => (x, timeFormatter.parse(x.getName)))
@@ -66,7 +67,7 @@ package object util {
       //write config files to output directory
       for (resource <- addedResources) {
         val lines = Source.fromFile(resource).getLines()
-        val fileWriter = new FileWriter(msDir.getAbsolutePath + "/" + resource.split("/").last)
+        val fileWriter = new FileWriter(new File(msDir,resource.getName))
         fileWriter.write(lines.mkString("\n"))
         fileWriter.close()
       }
@@ -74,7 +75,7 @@ package object util {
       createSymbolicLinkToLatest()
       msDir
     }
-    val addedResources = new ArrayBuffer[String]
+    val addedResources = new ArrayBuffer[File]
     var msDir: File = _
     var latest: File = _
     private var _conf: Config = ConfigFactory.parseFile(new File("conf/default.conf"))
@@ -89,11 +90,15 @@ package object util {
 
     import scala.collection.JavaConversions._
 
-    def add(filePath: String) {
+    def add(filePath: File) {
       addedResources += filePath
       //_conf = ConfigFactory.parseResources(resources).withFallback(conf)
-      _conf = ConfigFactory.parseFile(new File(filePath)).withFallback(conf)
+      _conf = ConfigFactory.parseFile(filePath).withFallback(conf)
       _conf.resolve()
+    }
+
+    def add(filePath: String) {
+      this.add(new File(filePath))
     }
 
     def conf = _conf
@@ -107,7 +112,8 @@ package object util {
   }
 
   object OverrideConfig {
-    def apply(overrideWith: Map[String, Any], pathToNewConf: String = "conf/mf-overridden.conf", pathToOldConf: String = "conf/mf.conf"): String = {
+    def apply(overrideWith: Map[String, Any], pathToNewConf: String = "conf/mf-overridden.conf", pathToOldConf: String = "conf/mf.conf"): File = {
+
       val conf = ConfigFactory.parseFile(new File(pathToOldConf)).entrySet().toString //string representations
                  .replaceAll("\"\\[|(Simple)?Config[^(]*\\(|\\]\"", "") //remove Config.*(
                  .split("\\),").mkString("\n").drop(1).dropRight(2).split("\n").toList.map(_.trim) //clean up
@@ -119,14 +125,15 @@ package object util {
       val overridden = conf ++ overrideWith.map { case (key, value) => value match {
         case s: String => key -> ("\"" + s + "\"")
         case seq: Seq[_] => key -> ("[" + seq.map(a => {
-            if (a.isInstanceOf[String]) "\"" + a + "\"" else a
-          }).mkString(", ") + "]")
+          if (a.isInstanceOf[String]) "\"" + a + "\"" else a
+        }).mkString(", ") + "]")
         case _ => key -> value
-      }}.toMap
+      }
+      }.toMap
 
       //println(overridden.mkString("\n"))
 
-      val fileWriter = new FileWriter(pathToNewConf)
+      val fileWriter = new FileWriter(new File(pathToNewConf))
       val newConfMap = overridden.toList.map { case (key, value) =>
         val keys = key.split("\\.").toList
         if (keys.size > 1) (keys.head, keys.tail.mkString(".") + " = " + value)
@@ -139,7 +146,7 @@ package object util {
       })
 
       fileWriter.close()
-      pathToNewConf
+      new File(pathToNewConf)
     }
   }
 
