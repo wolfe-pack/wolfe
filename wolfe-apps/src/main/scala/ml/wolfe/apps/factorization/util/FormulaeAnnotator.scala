@@ -311,8 +311,8 @@ object CompareRanks extends App {
 */
 
 object FormulaeFilter extends App {
-  val filePath = args.lift(0).getOrElse("data/rules-curated-merged.txt")
-  val outputPath = args.lift(1).getOrElse("data/rules-filtered.txt")
+  val filePath = args.lift(0).getOrElse("data/formulae/10000.txt")
+  val outputPath = args.lift(1).getOrElse("data/formulae/10000-filtered.txt")
   val fileWriter = new FileWriter(outputPath)
 
   val rules = Source.fromFile(filePath, "iso-8859-1").getLines().mkString("\n").split("\n\n")
@@ -320,12 +320,14 @@ object FormulaeFilter extends App {
     rule <- rules
     Array(stats, formula) = rule.split("\n")
     tmp = stats.drop(2).split("\t")
-    if tmp.size > 5
-    Array(rank, dataProb, dataCount, mfProb, mfCount, "curated") = tmp
+    Array(rank, mfHint, dataHint, numPremises) = tmp
     if !formula.startsWith("//")
-    if dataProb.toDouble < 0.9 && dataCount.toInt < 100 && mfProb.toDouble < 0.9
+    Array(premise, consequent) = formula.split(" => ")
   } {
-    fileWriter.write(rule + "\n\n")
+    if (false && dataHint.toDouble > 0.75)
+      fileWriter.write(rule + "\n\n")
+    else if (dataHint.toDouble <= 0.01 && mfHint.toDouble >= 0.8)
+      fileWriter.write(stats + "\n" + premise + " => !" + consequent + "\n\n")
   }
 
   fileWriter.close()

@@ -4,7 +4,7 @@ set terminal dumb enhanced
 #set term x11
 #set termoption enhanced
 set key right center
-set key width -3.75
+#set key width -1.5
 set key spacing 1.0
 set key box
 
@@ -13,7 +13,8 @@ load 'Set1.plt'
 
 if (!exists("fileName")) fileName='experiments'
 
-set yrange [0.0:0.7]
+set yrange [0.0:0.65]
+set xrange [0.0:0.5]
 set ytics 0.1,0.1,1
 set xtics 0.0,0.1,1
 
@@ -46,18 +47,18 @@ unset output
 
 set terminal dumb enhanced
 
-set object 1 rect from 0,0.3 to 0.4,0.6 lw 6 fs empty border lc rgb 'gold'
+#set object 1 rect from 0,0.3 to 0.4,0.6 lw 6 fs empty border lc rgb 'gold'
 
-plot mf using 3:2 smooth unique with linespoints ls 1 linewidth 3 title "Matrix Factorization",\
-     low_rank_logic using 3:2 smooth unique with linespoints ls 2 linewidth 3 title "Joint Optimization",\
-     inference_only using 3:2 smooth unique with linespoints ls 3 linewidth 3 title "Logical Inference",\
-     pre_inference using 3:2 smooth unique with linespoints ls 4 linewidth 3 title "Pre-Inference",\
-     post_inference using 3:2 smooth unique with linespoints ls 5 linewidth 3 title "Post-Inference"
+plot mf using 3:2 smooth unique with linespoints ls 1 linewidth 3 title "MF",\
+     low_rank_logic using 3:2 smooth unique with linespoints ls 2 linewidth 3 title "Joint",\
+     inference_only using 3:2 smooth unique with linespoints ls 3 linewidth 3 title "Inf",\
+     pre_inference using 3:2 smooth unique with linespoints ls 4 linewidth 3 title "Pre",\
+     post_inference using 3:2 smooth unique with linespoints ls 5 linewidth 3 title "Post"
 
 
 # Wrapup
 set ylabel "wMAP"
-set terminal pdf enhanced dashed size 2.75,2 #1.75 #size 400,400
+set terminal pdf enhanced dashed size 2.75,3.25 #1.75 #size 400,400
 set output fileName."-wMAP.pdf"
 #set terminal png truecolor size 500,500
 #set output fileName."-wMAP.png"
