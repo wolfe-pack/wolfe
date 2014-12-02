@@ -23,7 +23,7 @@ object VectorInspector extends App {
     (length1, length2, angle)
   }
 
-  val pathToDB = args.lift(0).getOrElse("./data/out/F-Pre")
+  val pathToDB = args.lift(0).getOrElse("./data/out/F-Joint")
 
   Conf.add(args.lift(1).getOrElse("./conf/mf.conf"))
 
@@ -35,7 +35,7 @@ object VectorInspector extends App {
   val formulae = db2.formulae
 
 
-  def analyzeLenghtsAndAngles() = {
+  def analyzeLengthsAndAngles() = {
     println("Analyzing vectors...")
     val pathToAnnotatedFormulae = args.lift(1).getOrElse("./data/formulae/1000.txt")
     val pathToAllFormulae = args.lift(2).getOrElse("./data/formulae/10000.txt")
@@ -93,7 +93,7 @@ object VectorInspector extends App {
   val entityPairs = db.trainCells.map(_.key2).distinct.map(List(_))
 
   def analyzeAsymmetry() = {
-    formulae.foreach {
+    val tmp = formulae.map {
       case Impl(p1, p2, _) =>
         val (p1Length, p2Length, angle) = VectorInspector.calculateLengthsAndAngle(db.vector1(p1).get, db.vector1(p2).get)
         val lengthDiff = p2Length - p1Length
@@ -103,10 +103,16 @@ object VectorInspector extends App {
         println(f"%%4.2f [%%d]\t%%4.2f [%%d]\t%%6.4f\t%%6.4f\t%%6.4f\t%%4.2f°\t$p1\t$p2".format(
           mfScore, numPremises, mfScoreInv, numPremisesInv, p1Length, p2Length, lengthDiff, angle
         ))
+        (mfScore, mfScoreInv, angle, lengthDiff)
     }
+
+    println("Avg A=>B score:\t" + (tmp.map(_._1).sum / tmp.length.toDouble))
+    println("Avg B=>A score:\t" + (tmp.map(_._2).sum / tmp.length.toDouble))
+    println("Avg angle:\t" + (tmp.map(_._3).sum / tmp.length.toDouble))
+    println("Avg length diff:\t" + (tmp.map(_._4).sum / tmp.length.toDouble))
   }
 
-  //analyzeLenghtsAndAngles()
+  //analyzeLengthsAndAngles()
   analyzeAsymmetry()
 }
 
