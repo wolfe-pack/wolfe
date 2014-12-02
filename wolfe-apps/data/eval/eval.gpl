@@ -3,7 +3,7 @@
 set terminal dumb enhanced
 #set term x11
 #set termoption enhanced
-set key right center
+set key right bottom
 #set key width -1.5
 set key spacing 1.0
 set key box
@@ -13,16 +13,23 @@ load 'Set1.plt'
 
 if (!exists("fileName")) fileName='experiments'
 
-set yrange [0.0:0.65]
+
+set style line 12 lc rgb '#bbbbbb' lt 1 lw 2
+set style line 13 lc rgb '#cccccc' lt 4 lw 1
+set grid xtics mxtics ytics mytics back ls 12, ls 13
+
+
+set yrange [0.3:0.625]
 set xrange [0.0:0.5]
 set ytics 0.1,0.1,1
 set xtics 0.0,0.1,1
 
+set mytics 4
+set mxtics 4
+
 set xlabel "Fraction of Freebase training facts"
 set ylabel "MAP"
 
-set grid ytics lt 0 lw 1 lc rgb "#bbbbbb"
-set grid xtics lt 0 lw 1 lc rgb "#bbbbbb"
 
 mf = "< grep \"mf\" ".fileName.".log"
 low_rank_logic = "< grep \"low-rank-logic\" ".fileName.".log"
@@ -33,9 +40,9 @@ pre_post_inference = "< grep \"pre-post-inference\" ".fileName.".log"
 
 plot mf using 3:1 smooth unique with linespoints ls 1 linewidth 3 title "Matrix Factorization",\
      low_rank_logic using 3:1 smooth unique with linespoints ls 2 linewidth 3 title "Joint Optimization",\
-     inference_only using 3:1 smooth unique with linespoints ls 3 linewidth 3 title "Logical Inference",\
      pre_inference using 3:1 smooth unique with linespoints ls 4 linewidth 3 title "Pre-Inference",\
      post_inference using 3:1 smooth unique with linespoints ls 5 linewidth 3 title "Post-Inference"
+     #inference_only using 3:1 smooth unique with linespoints ls 3 linewidth 3 title "Logical Inference",\
 
 # Wrapup
 set terminal pdf enhanced dashed size 2.75,2 #1.75 #size 400,400
@@ -51,14 +58,14 @@ set terminal dumb enhanced
 
 plot mf using 3:2 smooth unique with linespoints ls 1 linewidth 3 title "MF",\
      low_rank_logic using 3:2 smooth unique with linespoints ls 2 linewidth 3 title "Joint",\
-     inference_only using 3:2 smooth unique with linespoints ls 3 linewidth 3 title "Inf",\
-     pre_inference using 3:2 smooth unique with linespoints ls 4 linewidth 3 title "Pre",\
-     post_inference using 3:2 smooth unique with linespoints ls 5 linewidth 3 title "Post"
+     pre_inference using 3:2 smooth unique with linespoints ls 9 linewidth 3 title "Pre",\
+     post_inference using 3:2 smooth unique with linespoints ls 3 linewidth 3 title "Post"
+     #inference_only using 3:2 smooth unique with linespoints ls 3 linewidth 3 title "Inf",\
 
 
 # Wrapup
 set ylabel "wMAP"
-set terminal pdf enhanced dashed size 2.75,3.25 #1.75 #size 400,400
+set terminal pdf enhanced dashed size 2.75,1.85 #1.75 #size 400,400
 set output fileName."-wMAP.pdf"
 #set terminal png truecolor size 500,500
 #set output fileName."-wMAP.png"
