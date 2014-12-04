@@ -42,7 +42,7 @@ class PerSentenceStructuredLoss(perInstanceScore: VectVar) extends Differentiabl
 
   val vectVars = Array(perInstanceScore)
 
-  val treePot = new ProjectiveTreePotential(10, null)
+  val treePot = new ProjectiveTreePotential(10, null, ???)
 
   class Proc extends GradientCalculator with Scorer {
     def gradientAndValue(currentParameters: Setting, gradient: Setting) = ???
