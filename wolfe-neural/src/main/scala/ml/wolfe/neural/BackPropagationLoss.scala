@@ -16,21 +16,26 @@ class BackPropagationLoss(edge: Edge, network: NeuralNetwork, input: DenseMatrix
     if (e.n2f.exists(_ != 0.0)) {
       val updates = e.n2f.toArray
       var i = 0
-      println("Update from Variable: " + e.n2f.mkString(", "))
+      println(e.n2f.size)
+      println("Update from Variable (size %d): ".format(e.n2f.size) + e.n2f.mkString(", "))
       for (layer <- network.layers) {
 //        println("layer = " + layer.size)
-        layer.updateWithGradients(DenseMatrix(updates.slice(i, i+layer.size)).t)
+ //       layer.updateWithGradients(DenseMatrix(updates.slice(i, i+layer.size)).t)
+        val j = i + (layer.W.rows * layer.W.cols)
+        layer.forcedUpdate(DenseMatrix(updates.slice(i, j)).t, DenseVector(updates.slice(j, j + layer.numNodes)), updates)  ///layer.size)).t)
         i += layer.size
       }
     }
-    else {
-      println("Null Gradients...")
-    }
-    network.backprop(input, output, loss, updateWeights = false, rate = rate)
-//    println("gradient = " + network.gradients.mkString(", "))
-    e.f2n = network.gradients
-    println("Update to Variable: " + e.f2n.mkString(", "))
-   0.0
+    val l = network.backprop(input, output, loss, updateWeights = false, rate = rate)
+  //  println("New backpop = " + network.gradients.mkString(", "))
+    e.f2n = network.layers.map { l =>
+      (l.in * l.grads.t).toDenseVector.toArray ++ l.grads.t
+    }.flatten
+
+    //network.gradients
+    println("Update to Variable (size %d): ".format(e.f2n.size) + e.f2n.mkString(", "))
+    println("Returning loss of %f".format(l))
+   l
   }
 }
 

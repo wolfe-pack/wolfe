@@ -77,7 +77,7 @@ object SISTAConverter {
         entities.zipWithIndex.foreach { case(label, idx) =>
           if (idx == 0 && label != "O") lastIndex = 0
           else if (label != lastSymbol && lastSymbol != "O") {
-            stored += new EntityMention(label, lastIndex, idx)
+            stored += new EntityMention(lastSymbol, lastIndex, idx)
             if (label != "O") lastIndex = idx
           }
           else if (label != lastSymbol && lastSymbol == "O") {
