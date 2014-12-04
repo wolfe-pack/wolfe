@@ -93,6 +93,7 @@ trait NetworkLayer {
     b += bUpdate
   }
 
+  // Direct updates for matrices from BackProp factor
   def forcedUpdate(gradients: DenseMatrix[Double], biasg: DenseVector[Double]) = {
     val gvals = gradients.toDenseVector.toArray
     val m = new DenseMatrix[Double](W.rows, W.cols, gvals)
