@@ -22,14 +22,14 @@ class BackPropagationLoss(edge: Edge, network: NeuralNetwork, input: DenseMatrix
 //        println("layer = " + layer.size)
  //       layer.updateWithGradients(DenseMatrix(updates.slice(i, i+layer.size)).t)
         val j = i + (layer.W.rows * layer.W.cols)
-        layer.forcedUpdate(DenseMatrix(updates.slice(i, j)).t, DenseVector(updates.slice(j, j + layer.numNodes)), updates)  ///layer.size)).t)
+        layer.forcedUpdate(DenseMatrix(updates.slice(i, j)).t, DenseVector(updates.slice(j, j + layer.numNodes))) //, updates)  ///layer.size)).t)
         i += layer.size
       }
     }
     val l = network.backprop(input, output, loss, updateWeights = false, rate = rate)
   //  println("New backpop = " + network.gradients.mkString(", "))
     e.f2n = network.layers.map { l =>
-      (l.in * l.grads.t).toDenseVector.toArray ++ l.grads.t
+      (l.in * l.grads.t).toDenseVector.toArray ++ l.grads.t.toDenseVector.toArray
     }.flatten
 
     //network.gradients

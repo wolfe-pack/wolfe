@@ -2,8 +2,7 @@ package ml.wolfe
 
 import cc.factorie.la._
 import cc.factorie.util.{DoubleSeq, RangeIntSeq, SparseDoubleSeq}
-import breeze.linalg.{CSCMatrix, Counter, DenseMatrix, SparseVector}
-import breeze.collection.mutable.SparseArray
+import breeze.linalg.{CSCMatrix, Counter}
 
 /**
  * User: rockt
