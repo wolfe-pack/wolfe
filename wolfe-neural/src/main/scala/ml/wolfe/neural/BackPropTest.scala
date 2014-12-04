@@ -14,7 +14,8 @@ import breeze.linalg.{DenseVector, DenseMatrix}
 object BackPropTest extends App {
 
   //  3 Inputs x 4 Hidden = 12 weight params, 3 input params, and 4 bias params
-  val mode = "NOT_WOLFE"
+  val mode = "WOLFE"
+  val verbose = true
   val optimizer = "SGD"
   val alpha = 0.9
   val inputs = DenseMatrix((1.0), (2.0), (3.0))
@@ -27,19 +28,21 @@ object BackPropTest extends App {
     (1.7, 1.8),
     (1.9, 2.0))
   val b2 = DenseVector(-2.5, -5.0)
-  val outputs = DenseVector(-0.8500, 0.7500)
+  val outputs = DenseVector(-0.9, 0.9)
   val nn = new NeuralNetwork
   nn.addHiddenLayer(w1, b1, new SigmoidActivationFunction)
   nn.addOutputLayer(w2, b2, new TanhActivationFunction)
-//  val layer1 = new HiddenLayer(w1, b1, ActivationFunctions.sigmoid, ActivationFunctions.δ_sigmoid)
-//  val layer2 = new OutputLayer(w2, b2, ActivationFunctions.tanh, ActivationFunctions.δ_tanh)
-//  val nn = new NeuralNetwork(Array(layer1, layer2))
-  val bpIters = 50
+  val bpIters = 500
   val loss = new SquaredErrorLoss
 
   if (mode == "WOLFE") {
     val fg = new FactorGraph
-    val paramSize = nn.paramSize
+//    val paramSize = nn.layers.map(_.numNodes).foldLeft(inputs.size)(_*_)
+    val paramSize = (Array(inputs.size) ++ nn.layers.map(_.numNodes)).sliding(2).map{ p => p(0) * p(1) }.sum + nn.layers.map(_.numNodes).sum
+
+//    val p1 = (Array(inputs.size) ++ nn.layers.map(_.numNodes))
+//    val p2 = p1.sliding(2).map{a => a(0) * a(1)}.sum
+
     println("Wrapping Neural Network with %d parameters.".format(paramSize))
     val v = fg.addVectorNode(dim = paramSize)
     v.variable.asVector.b = new DenseTensor1(Array.ofDim[Double](paramSize))
@@ -66,7 +69,15 @@ object BackPropTest extends App {
 
   }
   else {
-    nn.backprop(inputs, outputs, iters = bpIters, loss = loss, updateWeights = true, rate = alpha, verbose = false)
-//    nn.backprop(inputs, outputs, iters = bpIters, updateWeights = true, rate = alpha, verbose = false)
+    nn.backprop(inputs, outputs, iters = bpIters, loss = loss, updateWeights = true, rate = alpha, verbose = verbose)
   }
 }
+
+
+
+
+
+
+//  val layer1 = new HiddenLayer(w1, b1, ActivationFunctions.sigmoid, ActivationFunctions.δ_sigmoid)
+//  val layer2 = new OutputLayer(w2, b2, ActivationFunctions.tanh, ActivationFunctions.δ_tanh)
+//  val nn = new NeuralNetwork(Array(layer1, layer2))

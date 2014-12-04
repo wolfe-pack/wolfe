@@ -92,6 +92,17 @@ trait NetworkLayer {
     W = W + wUpdate
     b += bUpdate
   }
+
+  def forcedUpdate(gradients: DenseMatrix[Double], biasg: DenseVector[Double]) = {
+    val gvals = gradients.toDenseVector.toArray
+    val m = new DenseMatrix[Double](W.rows, W.cols, gvals)
+    println("m:")
+    println(m)
+    println("W:")
+    println(W)
+    W = W + m
+    b += biasg // (grads.t).toDenseVector
+  }
 }
 
 
