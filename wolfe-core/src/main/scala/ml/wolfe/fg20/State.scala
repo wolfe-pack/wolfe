@@ -1,5 +1,7 @@
 package ml.wolfe.fg20
 
+import scala.collection.mutable
+
 /**
  * A state maps Vars to values.
  *
@@ -121,6 +123,17 @@ object State {
 class MapBasedState(val map: Map[Var[Any], Any]) extends State {
   def get[T](Var: Var[T]) = map.get(Var).asInstanceOf[Option[T]]
   def domain = map.keySet
+}
+
+class MutableState extends State {
+  val map = new mutable.HashMap[Var[Any],Any]
+  def get[T](Var: Var[T]) = map.get(Var).asInstanceOf[Option[T]]
+  def domain = map.keySet.toSet
+
+  def ++=(that:State): Unit = {
+    that.domain.foreach(v => map(v) = that(v))
+  }
+
 }
 
 /**

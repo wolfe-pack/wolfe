@@ -82,11 +82,11 @@ trait ExpFamMaxMarginalizer extends MaxMarginalizer {
 }
 
 trait SupportsMaxMarginalization extends Potential {
-  def maxMarginalizer:MaxMarginalizer
+  def maxMarginalizer():MaxMarginalizer
 }
 
 trait SupportsExpFamMaxMarginalization extends SupportsMaxMarginalization {
-  def maxMarginalizer:ExpFamMaxMarginalizer
+  def maxMarginalizer():ExpFamMaxMarginalizer
 }
 
 /**
@@ -112,14 +112,21 @@ trait ExpFamMarginalizer extends Marginalizer {
  * regardint the potential.
  */
 trait SupportsMarginalization extends Potential {
-  def marginalizer:Marginalizer
+  def marginalizer():Marginalizer
+}
+
+/**
+ * Potential that can calculate its argmax.
+ */
+trait SupportsArgmax extends Potential {
+  def argmaxer():Argmaxer
 }
 
 /**
  * Marginalization for exponential family potentials.
  */
 trait SupportsExpFamMarginalization extends SupportsMarginalization with ExpFamPotential {
-  def marginalizer:ExpFamMarginalizer
+  def marginalizer():ExpFamMarginalizer
 }
 
 

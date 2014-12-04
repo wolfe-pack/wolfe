@@ -24,22 +24,8 @@ import ml.wolfe._
  *
  * @author Sebastian Riedel
  */
-trait Potential {
+trait Potential extends Clique {
 
-  /**
-   * @return an array of the discrete variables that this potential maintains.
-   */
-  def discVars: Array[DiscVar[Any]]
-
-  /**
-   * @return an array of the continuous variables that this potential maintains.
-   */
-  def contVars: Array[ContVar]
-
-  /**
-   * @return an array of the vector variables that this potential maintains.
-   */
-  def vectVars: Array[VectVar]
 
   /**
    * Spawn a new processor in charge of implementing the potential scoring function.
@@ -47,12 +33,77 @@ trait Potential {
    */
   def scorer(): Scorer
 
+}
+
+trait Clique {
+
+  /**
+   * @return an array of the discrete variables of this clique.
+   */
+  def discVars: Array[DiscVar[Any]]
+
+  /**
+   * @return an array of the continuous variables of this clique.
+   */
+  def contVars: Array[ContVar]
+
+  /**
+   * @return an array of the vector variables of this clique.
+   */
+  def vectVars: Array[VectVar]
+
   /**
    * Convenience method to create setting objects corresponding to the signature of the potential.
    * @return a setting that has as many discrete, continuous and vector settings as the potential has corresponding
    *         variables.
    */
-  def createSetting() = new Setting(discVars.size, contVars.size, vectVars.size)
+  def createSetting() = new Setting(discVars.length, contVars.length, vectVars.length)
+
+  def createPartialSetting() = new PartialSetting(discVars.length, contVars.length, vectVars.length)
+
+  /**
+   * Convert a setting to state.
+   * @param setting the setting to convert.
+   * @return a state that maps variables to values according to the
+   */
+  def toState(setting: Setting) = {
+    val disc = for ((v, i) <- discVars.iterator.zipWithIndex) yield v -> v.dom(setting.disc(i))
+    val cont = for ((v, i) <- contVars.iterator.zipWithIndex) yield v -> setting.cont(i)
+    val vect = for ((v, i) <- vectVars.iterator.zipWithIndex) yield v -> setting.vect(i)
+    State((disc ++ cont ++ vect).toMap)
+  }
+
+  /**
+   * Convert a state into a partial setting.
+   * @param state the state to convert.
+   * @return a partial setting in which only those slots are observed which correspond to variables
+   *         that have an assignment in the state.
+   */
+  def toPartialSetting(state:State) = {
+    val result = createPartialSetting()
+    for ((v, i) <- discVars.iterator.zipWithIndex) state.get(v).foreach(value => {
+      result.discObs(i) = true
+      result.disc(i) = v.dom.indexOf(value)
+    })
+    for ((v, i) <- contVars.iterator.zipWithIndex) state.get(v).foreach(value => {
+      result.contObs(i) = true
+      result.cont(i) = value
+    })
+    for ((v, i) <- vectVars.iterator.zipWithIndex) state.get(v).foreach(value => {
+      result.vectObs(i) = true
+      result.vect(i) = value
+    })
+    result
+  }
+
+  /**
+   * Create a new set of empty messages.
+   * @return empty messages for this clique.
+   */
+  def createMsgs() = new Msgs(
+    discVars.map(v => new DiscMsg(v.dom.size)).toArray,
+    discVars.map(v => new ContMsg()).toArray,
+    discVars.map(v => new VectMsg()).toArray)
 
 }
 
@@ -115,7 +166,7 @@ trait ExpFamScorer extends Statistics with Scorer {
  * An exponential family potential.
  */
 trait ExpFamPotential extends Potential {
-  def scorer():ExpFamScorer
+  def scorer(): ExpFamScorer
 }
 
 
@@ -151,6 +202,85 @@ object Potential {
   lazy val emptyDiscVars = Array.ofDim[DiscVar[Any]](0)
   lazy val emptyContVars = Array.ofDim[ContVar](0)
   lazy val emptyVectVars = Array.ofDim[VectVar](0)
+}
+
+/**
+ * An argmaxer can find the argmax of some function given observations and incoming messages.
+ */
+trait Argmaxer {
+  def argmax(observed: PartialSetting, incoming: Msgs, result: Setting, score: DoubleBuffer)
+}
+
+
+
+object Argmax {
+
+  /**
+   * Convenience method for argmax calculation that works with state objects instead of settings, and which always creates fresh
+   * objects.
+   * @param space the search space that defines the variables to search over, and is responsible for mapping states to values.
+   * @param pot the potential to argmax.
+   * @param observation the observed state.
+   * @return the result of an argmax.
+   */
+  def apply[T](space: SearchSpace[T], observation: State = State.empty)(pot: SupportsArgmax): T = {
+    val argmaxer = pot.argmaxer
+    val result = pot.createSetting()
+    val scoreBuffer = new DoubleBuffer()
+    argmaxer.argmax(pot.toPartialSetting(observation),pot.createMsgs(),result,scoreBuffer)
+    val state = pot.toState(result)
+    space.toValue(state)
+  }
+}
+
+/**
+ * A sum of potential functions forms a potential as well.
+ * @param args the arguments of the sum.
+ * @tparam P the type of argument potentials.
+ */
+class FlatSum[P <: Potential](val args: Seq[P]) extends Potential {
+  lazy val discVars = args.view.flatMap(_.discVars).distinct.toArray
+  lazy val contVars = args.view.flatMap(_.contVars).distinct.toArray
+  lazy val vectVars = args.view.flatMap(_.vectVars).distinct.toArray
+
+  lazy val discVar2Index = discVars.iterator.zipWithIndex.toMap
+  lazy val contVar2Index = contVars.iterator.zipWithIndex.toMap
+  lazy val vectVar2Index = vectVars.iterator.zipWithIndex.toMap
+
+  class ArgMap(val discArgs: Array[Int], contArgs: Array[Int], vectArgs: Array[Int])
+
+  lazy val argMaps = args.map(a => new ArgMap(
+    a.discVars.map(discVar2Index),
+    a.contVars.map(contVar2Index),
+    a.vectVars.map(vectVar2Index)))
+
+
+  def scorer() = new Scorer {
+
+    lazy val scorers = args.map(_.scorer())
+
+    def score(setting: Setting) = {
+      val scores = for (((arg, map), scorer) <- (args.iterator zip argMaps.iterator) zip scorers.iterator) yield {
+        val local = arg.createSetting()
+        for (i <- 0 until arg.discVars.length) local.disc(i) = setting.disc(map.discArgs(i))
+        for (i <- 0 until arg.contVars.length) local.cont(i) = setting.cont(map.discArgs(i))
+        for (i <- 0 until arg.vectVars.length) local.vect(i) = setting.vect(map.discArgs(i))
+        val localScore = scorer.score(local)
+        localScore
+      }
+      scores.sum
+    }
+  }
+}
+
+
+
+
+class GenericDiscretePotential(val discVars:Array[DiscVar[Any]], scoring:Setting => Double) extends DiscPotential {
+
+  def scorer() = new Scorer {
+    def score(setting: Setting) = scoring(setting)
+  }
 }
 
 
