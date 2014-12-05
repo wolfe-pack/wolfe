@@ -23,6 +23,15 @@ object TablePotential {
     Table(settings, scores)
   }
 
+  def apply(vars:Array[DiscVar[Any]],score:Setting => Double) = {
+    val dims = vars.map(_.dom.size)
+    val scores = Array.ofDim[Double](dims.product)
+    val setting = new Setting(vars.size)
+    allSettings(dims,Array.ofDim[Boolean](vars.size))(setting.disc) {i =>
+      scores(i) = score(setting)
+    }
+    new TablePotential(vars,scores)
+  }
 
 
   //todo: move these both into Util, to share code with LabelledTensor
@@ -115,7 +124,7 @@ object TablePotential {
 case class Table(settings: Array[Array[Int]], scores: Array[Double])
 
 
-trait TableBasedProcessor extends Marginalizer with MaxMarginalizer {
+trait TableBasedProcessor extends Marginalizer with MaxMarginalizer with Argmaxer {
 
   def dims: Array[Int]
 
@@ -130,6 +139,24 @@ trait TableBasedProcessor extends Marginalizer with MaxMarginalizer {
       result.msg(varValue) = math.max(score, result.msg(varValue))
     }
     maxNormalize(result.msg)
+  }
+
+
+  def argmax(observed: PartialSetting, incoming: Msgs, result: Setting, score: DoubleBuffer) = {
+    var maxScore = Double.NegativeInfinity
+    var maxSetting = -1
+    TablePotential.allSettings(dims, observed.discObs)(result.disc) { i =>
+      var score = scoreTableEntry(i, observed)
+      for (j <- 0 until observed.disc.length) {
+        score += incoming.disc(j).msg(observed.disc(j))
+      }
+      if (score > maxScore) {
+        maxSetting = i
+        maxScore = score
+      }
+    }
+    score.value = maxScore
+    TablePotential.entryToSetting(maxSetting,dims).copyToArray(result.disc)
   }
 
   def discMarginalF2N(varIndex: Int, partialSetting: PartialSetting, incoming: Msgs, result: DiscMsg) = {
@@ -165,13 +192,15 @@ trait TableBasedProcessor extends Marginalizer with MaxMarginalizer {
 
 final class TablePotential(val discVars: Array[DiscVar[Any]], table: Array[Double]) extends SupportsMarginalization
                                                                                              with SupportsMaxMarginalization
+                                                                                             with SupportsArgmax
                                                                                              with DiscPotential {
 
   val discDims = discVars.map(_.dom.size)
 
   def scorer() = new Proc
-  def marginalizer = new Proc
-  def maxMarginalizer = new Proc
+  def marginalizer() = new Proc
+  def maxMarginalizer() = new Proc
+  def argmaxer() = new Proc
 
   final class Proc extends TableBasedProcessor with Scorer {
 

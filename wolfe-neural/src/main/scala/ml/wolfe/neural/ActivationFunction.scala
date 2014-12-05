@@ -53,15 +53,14 @@ class SquaredErrorLoss extends NeuralLossFunction {
     println("idx = " + layer.idx)
     layer match {
       case h: HiddenLayer => {
-        println("hidden")
+//        println("hidden")
         // val lastW: DenseMatrix[Double] = layer.next.get.W
         (layer.next.get.W * y) :* layer.theta.map(layer.activation.df)
       }
       case o: OutputLayer => {
-        println("output")
+ //       println("output")
         (y - layer.theta.map(layer.activation.f)).t :* layer.theta.map(layer.activation.df)
       }
     }
-
   }
 }
