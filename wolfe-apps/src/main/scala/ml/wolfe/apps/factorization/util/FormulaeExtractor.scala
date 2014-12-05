@@ -21,7 +21,7 @@ object FormulaeExtractor extends App {
   }
 
   /**
-   * Calculates the weight of the formula based on matrix factorization predictions.
+   * Calculates the weight of the formula based on matrix factorization predictions on observed premises.
    */
   def formulaScoreMF(rule: Rule, pairs: Seq[List[Entity]], argFilter: List[Entity] => Boolean = e => true)(implicit db: SPDB): (Double, Int) = {
     val p1 = rule.predicates(0)
@@ -34,6 +34,19 @@ object FormulaeExtractor extends App {
     })
 
     (filteredRows.map(e => rule(e)).sum / filteredRows.size, filteredRows.size)
+  }
+
+  /**
+   * Calculates the weight of the formula based on matrix factorization predictions.
+   */
+  def formulaScoreMFPredicted(rule: Rule, pairs: Seq[List[Entity]], argFilter: List[Entity] => Boolean = e => true, threshold: Double = 0.1, onlyUnobserved: Boolean = true)(implicit db: SPDB): (Double, Int) = {
+    val p1 = rule.predicates(0)
+    val rows = db.getBy1(p1).map { case (ei, ej) => List(ei) }
+
+    //we only care about the score over true predicted premises
+    val filteredRows = rows.filter(argFilter).map(_.head).filter(e => db.prob(p1,e) >= threshold && (!onlyUnobserved || !db.get(p1, e).get.train))
+
+    if (filteredRows.isEmpty) (1.0, 0) else (filteredRows.map(e => rule(e)).sum / filteredRows.size, filteredRows.size)
   }
 
   /**
@@ -65,6 +78,12 @@ object FormulaeExtractor extends App {
     formulaScoreMF(Impl(r1,r2), pairs)
 
   def implNegScoreMF(r1: Relation, r2: Relation, pairs: Seq[List[Entity]])(implicit db: SPDB): (Double, Int) =
+    formulaScoreMF(ImplNeg(r1,r2), pairs)
+
+  def implScoreMFPredicted(r1: Relation, r2: Relation, pairs: Seq[List[Entity]])(implicit db: SPDB): (Double, Int) =
+    formulaScoreMF(Impl(r1,r2), pairs)
+
+  def implNegScoreMFPredicted(r1: Relation, r2: Relation, pairs: Seq[List[Entity]])(implicit db: SPDB): (Double, Int) =
     formulaScoreMF(ImplNeg(r1,r2), pairs)
 
   def implScoreData(r1: Relation, r2: Relation, pairs: Seq[List[Entity]])(implicit db: SPDB): (Double, Int) =

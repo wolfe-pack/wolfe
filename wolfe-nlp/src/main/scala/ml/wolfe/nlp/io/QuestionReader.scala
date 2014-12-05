@@ -96,34 +96,30 @@ case class AnswerChoice(label: String, text: String, isCorrect: Boolean)
 
 // Temp location for some helper IO
 
-object DataToParseable extends App {
+import scala.collection.mutable.ArrayBuffer
+object DataToParseable {
 
-  val input = new MCTestReader(args(0), args(1), args(2))
+  def main(args: Array[String]) = read(args(0), args(1), args(2))
 
-  for (i <- input) {
-    val doc = SISTAProcessors.annotate(i.passage)
-    for (s <- doc.sentences) {
-      println(s.tokens.map(_.word).mkString(" "))
+  def read(f1: String, f2: String, f3: String): Array[String] = {
+    val sb = new ArrayBuffer[String]
+    val input = new MCTestReader(f1, f2, f3)
+
+    for (i <- input) {
+      val doc = SISTAProcessors.annotate(i.passage)
+      for (s <- doc.sentences) {
+        sb += (s.tokens.map(_.word).mkString(" "))
+      }
+      for (q <- i.questions) {
+        sb += q.text // println(q.text)
+        for (c <- q.choices) println(c.text)
+      }
+ //     sb += "" // println
     }
-    for (q <- i.questions) {
-      println(q.text)
-      for (c <- q.choices) println(c.text)
-    }
-    println
+    println(sb.mkString("\n"))
+    sb.toArray
   }
-
 }
 
-class AMRReader(filename: String) extends Iterable[AMR] {
 
-  def iterator = ???
-}
-
-class AMR {
-
-}
-
-class AMRNode {}
-
-class AMRConceptNode {}
 

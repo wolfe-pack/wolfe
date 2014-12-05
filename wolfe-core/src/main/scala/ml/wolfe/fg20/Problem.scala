@@ -82,10 +82,16 @@ class VectVar(val dim: Int = 0, val name: String = "anon") extends Var[FactorieV
  * @param numVect number of vector assignments.
  */
 class Setting(numDisc: Int, numCont: Int = 0, numVect: Int = 0) {
-  var disc = Array.ofDim[Int](numDisc)
-  var cont = Array.ofDim[Double](numCont)
-  var vect = Array.ofDim[FactorieVector](numVect)
+  final var disc = Array.ofDim[Int](numDisc)
+  final var cont = Array.ofDim[Double](numCont)
+  final var vect = Array.ofDim[FactorieVector](numVect)
 }
+
+/**
+ * Class to store double results in.
+ * @param value the value to store.
+ */
+final class DoubleBuffer(var value:Double = 0.0)
 
 /**
  * A partial setting of a clique. The only observed or set values are
