@@ -3,12 +3,13 @@ package ml.wolfe.fg
 import cc.factorie.la.{SparseBinaryTensor1, SparseTensor1}
 import ml.wolfe.FactorGraph._
 import ml.wolfe.FactorieVector
+import ml.wolfe.util.Conf
 
 /**
  * @author Sebastian Riedel
  * @author rockt
  */
-class CellLogisticLoss(rowEdge: Edge, columnEdge: Edge, target: Double = 1.0, val lambda: Double = 0.0, weight: Double = 1.0) extends Potential with Regularization {
+class CellLogisticLoss(rowEdge: Edge, columnEdge: Edge, target: Double = 1.0, val lambda: Double = 0.0, weight: Double = 1.0, updateCol: Boolean = true) extends Potential with Regularization {
   //nodes of edges may change hence the def and not val.
   def rowVar = rowEdge.n.variable.asVector
   def columnVar = columnEdge.n.variable.asVector
@@ -33,7 +34,9 @@ class CellLogisticLoss(rowEdge: Edge, columnEdge: Edge, target: Double = 1.0, va
     val s = sig(rowMsgs.n2f dot columnMsgs.n2f)
     val (loss, dir) = innerLossAndDirection(s)
     rowMsgs.f2n = (columnMsgs.n2f * (1.0 - loss) * dir) * weight + regGradient(rowMsgs.n2f)
-    columnMsgs.f2n = (rowMsgs.n2f * (1.0 - loss) * dir) * weight + regGradient(columnMsgs.n2f)
+    columnMsgs.f2n =
+      if (updateCol) (rowMsgs.n2f * (1.0 - loss) * dir) * weight + regGradient(columnMsgs.n2f)
+      else new SparseTensor1(columnMsgs.n2f.length)
     math.log(loss) * weight + regLoss(rowMsgs.n2f) + regLoss(columnMsgs.n2f)
   }
 }

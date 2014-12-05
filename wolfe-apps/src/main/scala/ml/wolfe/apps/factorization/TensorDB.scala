@@ -3,15 +3,16 @@ package ml.wolfe.apps.factorization
 /**
  * @author rockt
  */
+import java.io.File
+import java.io.FileWriter
+
+import ml.wolfe.util.Conf
+
+
 object CellType extends Enumeration {
   type CellType = Value
   val Train, Dev, Test, Observed, Inferred = Value
 }
-
-case object DefaultIx
-
-import java.io.File
-import java.io.FileWriter
 
 import cc.factorie.la.DenseTensor1
 import cc.factorie.la.SparseBinaryTensor1
@@ -23,10 +24,24 @@ import org.json4s.native.Serialization
 
 import scala.annotation.tailrec
 import scala.collection.mutable
-import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import scala.io.Source
 import scala.util.Random
+
+case object DefaultIx
+
+object TensorDBImplicits {
+  implicit def stringToImpl(s: String): Formula2 = {
+    val Array(premise, consequent) = s.split(" => ")
+    consequent.head match {
+      case '!' => ImplNeg(premise, consequent.tail)
+      case _ => Impl(premise, consequent)
+    }
+  }
+
+  implicit def tuple2ToCell(tuple2: (Any, Any)): Cell = Cell(tuple2._1, tuple2._2)
+  implicit def tuple3ToCell(tuple3: (Any, Any, Any)): Cell = Cell(tuple3._1, tuple3._2, tuple3._3)
+}
 
 case class Cell(key1: Any, key2: Any = DefaultIx, key3: Any = DefaultIx, target: Double = 1.0, cellType: CellType = CellType.Train) {
   val key = (key1, key2, key3)
@@ -48,13 +63,13 @@ abstract class Formula2(p1: Any, p2: Any) extends Formula {
 
 case class Impl(p1: Any, p2: Any, target: Double = 1.0) extends Formula2(p1, p2) {
   override def apply(key: Any)(implicit db: TensorDB): Double = db.prob(p1, key) * (db.prob(p2, key) - 1) + 1
+  override def toString: String = p1 + " => " + p2
 }
 
 case class ImplNeg(p1: Any, p2: Any, target: Double = 1.0) extends Formula2(p1, p2) {
   override def apply(key: Any)(implicit db: TensorDB): Double = db.prob(p1, key) * -db.prob(p2, key) + 1
+  override def toString: String = p1 + " => !" + p2
 }
-
-
 
 trait Tensor {
   type CellIx = Any

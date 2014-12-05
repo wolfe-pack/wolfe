@@ -25,7 +25,7 @@ object SubsampleExperiments extends App {
 
   val series = Map(
     //"mf.subsample" -> (0 to 10).map(_ / 10.0).toSeq,
-    "mf.subsample" -> (0 to 16).map(_ / 40.0).toSeq,
+    "mf.subsample" -> (16 to 20).map(_ / 40.0).toSeq,
     //"formulaeFile" -> Seq("None", formulaeFile),
     //"mf.mode" -> Seq("mf", "low-rank-logic", "pre-inference", "post-inference", "pre-post-inference", "inference-only")
     "mf.mode" -> Seq("mf", "low-rank-logic", "pre-inference", "post-inference", "inference-only")

@@ -64,8 +64,10 @@ class MatrixFactorization(confPath: String = "conf/mf.conf") {
 
 
   val db = if (debug) {
-    val tmp = new TensorKB(k)
+    val tmp = new TensorKB(4)
     tmp.sampleTensor(10, 10, 0, 0.1) //samples a matrix
+    //tmp += Cell("r3", "r3-#premise")
+    //tmp += Cell("r4", "r4-#consequent")
     if (loadFormulae) {
       tmp += Impl("r3", "r4")
       tmp += Impl("r4", "r6")

@@ -53,8 +53,8 @@ final class LinearPotential(val discVars: Array[DiscVar[Any]], weightsVar:VectVa
   val vectVars = Array(weightsVar)
 
   def scorer() = new Proc
-  def marginalizer = new Proc
-  def maxMarginalizer = new Proc
+  def marginalizer() = new Proc
+  def maxMarginalizer() = new Proc
 
   class Proc extends ExpFamMarginalizer with ExpFamMaxMarginalizer with TableBasedProcessor with ExpFamScorer {
 
