@@ -28,14 +28,7 @@ To extend wolfe first clone this repository
 git clone git@github.com:wolfe-pack/wolfe.git
 ```
 
-Next generate a [Intellij Idea](https://www.jetbrains.com/idea/) project using [sbt](http://www.scala-sbt.org/)
-
-```
-sbt gen-idea
-```
-
-
-Now you can start working with wolfe in Intellij Idea. 
+Since sbt support has been integrated into [Intellij Idea](https://www.jetbrains.com/idea/) version 13, simply importing `wolfe` as a new project in Intellij Idea causes all dependencies to be resolved. Plus, Intellij Idea automatically refreshes the project when `Build.scala` is changed. 
 
 
 
