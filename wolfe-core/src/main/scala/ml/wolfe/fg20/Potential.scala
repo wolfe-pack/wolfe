@@ -239,15 +239,15 @@ object Argmax {
  * @tparam P the type of argument potentials.
  */
 class FlatSum[P <: Potential](val args: Seq[P]) extends Potential {
-  lazy val discVars = args.view.flatMap(_.discVars).distinct.toArray
-  lazy val contVars = args.view.flatMap(_.contVars).distinct.toArray
-  lazy val vectVars = args.view.flatMap(_.vectVars).distinct.toArray
+  lazy val discVars = args.flatMap(_.discVars).distinct.toArray//distinct does not work with iterators
+  lazy val contVars = args.flatMap(_.contVars).distinct.toArray
+  lazy val vectVars = args.flatMap(_.vectVars).distinct.toArray
 
   lazy val discVar2Index = discVars.iterator.zipWithIndex.toMap
   lazy val contVar2Index = contVars.iterator.zipWithIndex.toMap
   lazy val vectVar2Index = vectVars.iterator.zipWithIndex.toMap
 
-  class ArgMap(val discArgs: Array[Int], contArgs: Array[Int], vectArgs: Array[Int])
+  class ArgMap(val discArgs: Array[Int], val contArgs: Array[Int], val vectArgs: Array[Int])
 
   lazy val argMaps = args.map(a => new ArgMap(
     a.discVars.map(discVar2Index),
@@ -263,8 +263,8 @@ class FlatSum[P <: Potential](val args: Seq[P]) extends Potential {
       val scores = for (((arg, map), scorer) <- (args.iterator zip argMaps.iterator) zip scorers.iterator) yield {
         val local = arg.createSetting()
         for (i <- 0 until arg.discVars.length) local.disc(i) = setting.disc(map.discArgs(i))
-        for (i <- 0 until arg.contVars.length) local.cont(i) = setting.cont(map.discArgs(i))
-        for (i <- 0 until arg.vectVars.length) local.vect(i) = setting.vect(map.discArgs(i))
+        for (i <- 0 until arg.contVars.length) local.cont(i) = setting.cont(map.contArgs(i))
+        for (i <- 0 until arg.vectVars.length) local.vect(i) = setting.vect(map.vectArgs(i))
         val localScore = scorer.score(local)
         localScore
       }
@@ -273,6 +273,27 @@ class FlatSum[P <: Potential](val args: Seq[P]) extends Potential {
   }
 }
 
+class DifferentiableFlatSum[P <: StatelessDifferentiable](args:Seq[P]) extends FlatSum(args) with StatelessDifferentiable{ //rather define it as GradientCalculator ?
+  def gradientAndValue(currentParameters: Setting, gradient: Setting): Double = {
+    val totalUpdate = new Setting(discVars.length,contVars.length, vectVars.length)
+    val scores = for ((arg, map) <- args zip argMaps) yield { //could not get it to work with iterators (?)
+      val localUpdate = new Setting(arg.discVars.length,arg.contVars.length, arg.vectVars.length)
+      val local = arg.createSetting()
+      for (i <- 0 until arg.discVars.length) local.disc(i) = currentParameters.disc(map.discArgs(i))
+      for (i <- 0 until arg.contVars.length) local.cont(i) = currentParameters.cont(map.contArgs(i))
+      for (i <- 0 until arg.vectVars.length) local.vect(i) = currentParameters.vect(map.vectArgs(i))
+      val localScore = arg.gradientAndValue(currentParameters, localUpdate)
+      for (i <- 0 until arg.discVars.length) if (totalUpdate.disc(map.discArgs(i))!=null) totalUpdate.disc(map.discArgs(i)) += localUpdate.disc(i) else totalUpdate.disc(map.discArgs(i)) = localUpdate.disc(i) //todo be more efficient
+      for (i <- 0 until arg.contVars.length) if (totalUpdate.cont(map.contArgs(i))!=null) totalUpdate.cont(map.contArgs(i)) += localUpdate.cont(i) else totalUpdate.cont(map.contArgs(i)) = localUpdate.cont(i)
+      for (i <- 0 until arg.vectVars.length) if (totalUpdate.vect(map.vectArgs(i))!=null) totalUpdate.vect(map.vectArgs(i)) += localUpdate.vect(i) else totalUpdate.vect(map.vectArgs(i)) = localUpdate.vect(i)
+      localScore
+    }
+    for (i <- 0 until this.discVars.length) gradient.disc(i) = totalUpdate.disc(i) //todo, change only the ones that change
+    for (i <- 0 until this.contVars.length) gradient.cont(i) = totalUpdate.cont(i)
+    for (i <- 0 until this.vectVars.length) gradient.vect(i) = totalUpdate.vect(i)
+    scores.sum
+  }
+}
 
 
 
