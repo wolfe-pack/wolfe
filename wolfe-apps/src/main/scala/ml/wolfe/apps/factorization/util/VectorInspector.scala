@@ -23,7 +23,7 @@ object VectorInspector extends App {
     (length1, length2, angle)
   }
 
-  val pathToDB = args.lift(0).getOrElse("./data/out/F")
+  val pathToDB = args.lift(0).getOrElse("./data/out/F-Joint")
 
   Conf.add(args.lift(1).getOrElse("./conf/mf.conf"))
 
@@ -101,8 +101,10 @@ object VectorInspector extends App {
         val p2Vector = db.vector1(p2).get
         val (p1Length, p2Length, angle) = VectorInspector.calculateLengthsAndAngle(p1Vector, p2Vector)
         val lengthDiff = p2Length - p1Length
-        val (mfScore, numPremises) = FormulaeExtractor.formulaScoreMF(Impl(p1, p2), entityPairs)
-        val (mfScoreInv, numPremisesInv) = FormulaeExtractor.formulaScoreMF(Impl(p2, p1), entityPairs)
+        //val (mfScore, numPremises) = FormulaeExtractor.formulaScoreMF(Impl(p1, p2), entityPairs)
+        //val (mfScoreInv, numPremisesInv) = FormulaeExtractor.formulaScoreMF(Impl(p2, p1), entityPairs)
+        val (mfScore, numPremises) = FormulaeExtractor.formulaScoreMFPredicted(Impl(p1, p2), entityPairs)
+        val (mfScoreInv, numPremisesInv) = FormulaeExtractor.formulaScoreMFPredicted(Impl(p2, p1), entityPairs)
 
         //println(p1 + "\t" + p1Vector.toArray.mkString("\t"))
         //println(p2 + "\t" + p2Vector.toArray.mkString("\t"))
@@ -125,11 +127,11 @@ object VectorInspector extends App {
         (mfScore, mfScoreInv, angle, lengthDiff)
     }
 
+
     println("Avg A=>B score:\t" + (tmp.map(_._1).sum / tmp.length.toDouble))
     println("Avg B=>A score:\t" + (tmp.map(_._2).sum / tmp.length.toDouble))
     println("Avg angle:\t" + (tmp.map(_._3).sum / tmp.length.toDouble))
     println("Avg length diff:\t" + (tmp.map(_._4).sum / tmp.length.toDouble))
-
   }
 
   //analyzeLengthsAndAngles()

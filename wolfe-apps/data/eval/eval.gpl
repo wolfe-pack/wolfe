@@ -6,7 +6,8 @@ set terminal dumb enhanced
 set key right bottom
 #set key width -1.5
 set key spacing 1.0
-set key box
+set key box linewidth 3
+set border linewidth 3
 
 #load 'Spectral.plt'
 load 'Set1.plt'
