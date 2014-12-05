@@ -1,8 +1,9 @@
 package ml.wolfe.fg
 
-import cc.factorie.la.{SparseBinaryTensor1, SparseTensor1}
+import cc.factorie.la._
 import ml.wolfe.FactorGraph._
 import ml.wolfe.FactorieVector
+import ml.wolfe.DenseVector
 import ml.wolfe.util.Conf
 
 /**
@@ -173,5 +174,70 @@ class BPRPotential(const1Edge: Edge, const2Edge: Edge, predEdge: Edge, target: D
     pMsgs.f2n = (c1 - c2) * ((1.0 - loss) * dir) + regGradient(p)
 
     math.log(loss) + regLoss(c1) + regLoss(c2) + regLoss(p)
+  }
+}
+
+
+/**
+ * @author rockt
+ */
+class Tucker3LogisticLoss(coreEdge: Edge, rowEdge: Edge, columnEdge: Edge, layerEdge: Edge, target: Double = 1.0, val lambda: Double = 0.0, weight: Double = 1.0) extends Potential with Regularization {
+  type FactorieMatrix = DenseTensor2
+
+  implicit class Tensor3AsVector(inner: FactorieVector) {
+    def mode1Product(vector: FactorieVector): FactorieMatrix = ???
+    def mode2Product(vector: FactorieVector): FactorieMatrix = ???
+    def mode3Product(vector: FactorieVector): FactorieMatrix = ???
+  }
+
+  implicit class Tensor3AsMatrix(inner: FactorieMatrix) {
+    def mode1Product(vector: FactorieVector): FactorieVector = ???
+    def mode2Product(vector: FactorieVector): FactorieVector = ???
+    def mode3Product(vector: FactorieVector): FactorieVector = ???
+  }
+
+  implicit def tensorToVector(tensor: Tensor): FactorieVector = new DenseVector(tensor.asArray)
+
+  def coreVar    = coreEdge.n.variable.asVector
+  def rowVar     = rowEdge.n.variable.asVector
+  def columnVar  = columnEdge.n.variable.asVector
+  def layerVar   = layerEdge.n.variable.asVector
+  val coreMsgs   = coreEdge.msgs.asVector
+  val rowMsgs    = rowEdge.msgs.asVector
+  val columnMsgs = columnEdge.msgs.asVector
+  val layerMsgs  = layerEdge.msgs.asVector
+
+  def sig(x: Double) = 1.0 / (1.0 + math.exp(-x))
+
+  private def innerLossAndDirection(s: Double): (Double, Int) =
+    if (target >= s) (1 + s - target, 1)
+    else (1 + target - s, -1)
+
+  override def valueForCurrentSetting(): Double = {
+    val G = coreVar.setting
+    val p = columnVar.setting
+    val c1 = rowVar.setting
+    val c2 = layerVar.setting
+
+    val s = sig((G mode1Product p mode2Product c1) dot c2)
+    val loss = innerLossAndDirection(s)._1
+    math.log(loss) * weight + regLoss(G) + regLoss(p) + regLoss(c1) + regLoss(c2)
+  }
+
+  override def valueAndGradientForAllEdges(): Double = {
+    val G = coreMsgs.n2f
+    val p = columnMsgs.n2f
+    val c1 = rowMsgs.n2f
+    val c2 = layerMsgs.n2f
+
+    val s = sig((G mode1Product p mode2Product c1) dot c2)
+    val (loss, dir) = innerLossAndDirection(s)
+
+    coreMsgs.f2n = ((p outer c1 outer c2) * (1.0 - loss) * dir) * weight + regGradient(rowMsgs.n2f)
+    columnMsgs.f2n = ((G mode2Product c1 mode3Product c2) * (1.0 - loss) * dir) * weight + regGradient(columnMsgs.n2f)
+    rowMsgs.f2n = ((G mode1Product p mode3Product c2) * (1.0 - loss) * dir) * weight + regGradient(columnMsgs.n2f)
+    layerMsgs.f2n = ((G mode1Product p mode2Product c1) * (1.0 - loss) * dir) * weight + regGradient(columnMsgs.n2f)
+
+    math.log(loss) * weight + regLoss(G) + regLoss(p) + regLoss(c1) + regLoss(c2)
   }
 }
