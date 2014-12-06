@@ -30,11 +30,21 @@ class CoNLLReader(filename: String) extends Iterable[Sentence]{
   def fromCoNLL2009(lines: IndexedSeq[String]): Sentence = {
     // ID FORM LEMMA PLEMMA POS PPOS FEAT PFEAT HEAD PHEAD DEPREL PDEPREL FILLPRED PRED APREDs
     val cells = lines.map(_.split("\t"))
+    val cols = cells.head.size
     val tokens = cells.map {c =>
       Token(c(1), CharOffsets(c(0).toInt,c(0).toInt), posTag = c(4), lemma = c(2))
     }
+    val preds = cells.zipWithIndex.filter(_._1(12) == "Y").map{case(l,i) => Predicate(i, tokens(i), l(13))}
+    val argsets = (14 to 13 + preds.size).map { i =>
+      cells.zipWithIndex.flatMap{ case(row, ri) => row(i) match {
+        case "_" => None
+        case x => Some(SemanticRole(ri, x))
+      }}
+    }
+    val frames = preds.zip(argsets).map { case(p,a) => SemanticFrame(p, a)}
+    assert(preds.size == argsets.size)
     val dependencies = DependencyTree(tokens, cells.zipWithIndex.map{ case(c,i) => (i+1, c(8).toInt, c(10)) })
-    Sentence(tokens, syntax = SyntaxAnnotation(tree=null, dependencies=dependencies))
+    Sentence(tokens, syntax = SyntaxAnnotation(tree=null, dependencies=dependencies), ie = IEAnnotation.empty.copy(semanticFrames = frames))
   }
 
   def fromCoNLLX(lines: IndexedSeq[String]): Sentence = {
