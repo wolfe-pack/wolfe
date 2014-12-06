@@ -79,7 +79,7 @@ trait Clique {
    * @return a partial setting in which only those slots are observed which correspond to variables
    *         that have an assignment in the state.
    */
-  def toPartialSetting(state:State) = {
+  def toPartialSetting(state: State) = {
     val result = createPartialSetting()
     for ((v, i) <- discVars.iterator.zipWithIndex) state.get(v).foreach(value => {
       result.discObs(i) = true
@@ -212,7 +212,6 @@ trait Argmaxer {
 }
 
 
-
 object Argmax {
 
   /**
@@ -227,7 +226,7 @@ object Argmax {
     val argmaxer = pot.argmaxer
     val result = pot.createSetting()
     val scoreBuffer = new DoubleBuffer()
-    argmaxer.argmax(pot.toPartialSetting(observation),pot.createMsgs(),result,scoreBuffer)
+    argmaxer.argmax(pot.toPartialSetting(observation), pot.createMsgs(), result, scoreBuffer)
     val state = pot.toState(result)
     space.toValue(state)
   }
@@ -235,11 +234,12 @@ object Argmax {
 
 /**
  * A sum of potential functions forms a potential as well.
- * @param args the arguments of the sum.
  * @tparam P the type of argument potentials.
  */
-class FlatSum[P <: Potential](val args: Seq[P]) extends Potential {
-  lazy val discVars = args.flatMap(_.discVars).distinct.toArray//distinct does not work with iterators
+trait Sum[P <: Potential] extends Potential {
+  def args: Seq[P]
+  lazy val discVars = args.flatMap(_.discVars).distinct.toArray
+  //distinct does not work with iterators
   lazy val contVars = args.flatMap(_.contVars).distinct.toArray
   lazy val vectVars = args.flatMap(_.vectVars).distinct.toArray
 
@@ -253,7 +253,6 @@ class FlatSum[P <: Potential](val args: Seq[P]) extends Potential {
     a.discVars.map(discVar2Index),
     a.contVars.map(contVar2Index),
     a.vectVars.map(vectVar2Index)))
-
 
   def scorer() = new Scorer {
 
@@ -271,21 +270,27 @@ class FlatSum[P <: Potential](val args: Seq[P]) extends Potential {
       scores.sum
     }
   }
+
 }
 
-class DifferentiableFlatSum[P <: StatelessDifferentiable](args:Seq[P]) extends FlatSum(args) with StatelessDifferentiable{ //rather define it as GradientCalculator ?
+
+class FlatSum[P <: Potential](val args: Seq[P]) extends Sum[P]
+
+trait DifferentiableFlatSum[P <: StatelessDifferentiable] extends Sum[P] with StatelessDifferentiable {
+  //rather define it as GradientCalculator ?
   def gradientAndValue(currentParameters: Setting, gradient: Setting): Double = {
-    val totalUpdate = new Setting(discVars.length,contVars.length, vectVars.length)
-    val scores = for ((arg, map) <- args zip argMaps) yield { //could not get it to work with iterators (?)
-      val localUpdate = new Setting(arg.discVars.length,arg.contVars.length, arg.vectVars.length)
+    val totalUpdate = new Setting(discVars.length, contVars.length, vectVars.length)
+    val scores = for ((arg, map) <- args zip argMaps) yield {
+      //could not get it to work with iterators (?)
+      val localUpdate = new Setting(arg.discVars.length, arg.contVars.length, arg.vectVars.length)
       val local = arg.createSetting()
       for (i <- 0 until arg.discVars.length) local.disc(i) = currentParameters.disc(map.discArgs(i))
       for (i <- 0 until arg.contVars.length) local.cont(i) = currentParameters.cont(map.contArgs(i))
       for (i <- 0 until arg.vectVars.length) local.vect(i) = currentParameters.vect(map.vectArgs(i))
       val localScore = arg.gradientAndValue(currentParameters, localUpdate)
-      for (i <- 0 until arg.discVars.length) if (totalUpdate.disc(map.discArgs(i))!=null) totalUpdate.disc(map.discArgs(i)) += localUpdate.disc(i) else totalUpdate.disc(map.discArgs(i)) = localUpdate.disc(i) //todo be more efficient
-      for (i <- 0 until arg.contVars.length) if (totalUpdate.cont(map.contArgs(i))!=null) totalUpdate.cont(map.contArgs(i)) += localUpdate.cont(i) else totalUpdate.cont(map.contArgs(i)) = localUpdate.cont(i)
-      for (i <- 0 until arg.vectVars.length) if (totalUpdate.vect(map.vectArgs(i))!=null) totalUpdate.vect(map.vectArgs(i)) += localUpdate.vect(i) else totalUpdate.vect(map.vectArgs(i)) = localUpdate.vect(i)
+      for (i <- 0 until arg.discVars.length) if (totalUpdate.disc(map.discArgs(i)) != null) totalUpdate.disc(map.discArgs(i)) += localUpdate.disc(i) else totalUpdate.disc(map.discArgs(i)) = localUpdate.disc(i) //todo be more efficient
+      for (i <- 0 until arg.contVars.length) if (totalUpdate.cont(map.contArgs(i)) != null) totalUpdate.cont(map.contArgs(i)) += localUpdate.cont(i) else totalUpdate.cont(map.contArgs(i)) = localUpdate.cont(i)
+      for (i <- 0 until arg.vectVars.length) if (totalUpdate.vect(map.vectArgs(i)) != null) totalUpdate.vect(map.vectArgs(i)) += localUpdate.vect(i) else totalUpdate.vect(map.vectArgs(i)) = localUpdate.vect(i)
       localScore
     }
     for (i <- 0 until this.discVars.length) gradient.disc(i) = totalUpdate.disc(i) //todo, change only the ones that change
@@ -296,8 +301,7 @@ class DifferentiableFlatSum[P <: StatelessDifferentiable](args:Seq[P]) extends F
 }
 
 
-
-class GenericDiscretePotential(val discVars:Array[DiscVar[Any]], scoring:Setting => Double) extends DiscPotential {
+class GenericDiscretePotential(val discVars: Array[DiscVar[Any]], scoring: Setting => Double) extends DiscPotential {
 
   def scorer() = new Scorer {
     def score(setting: Setting) = scoring(setting)
