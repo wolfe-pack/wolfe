@@ -81,7 +81,7 @@ class OntoReader(dir: String, pattern: String = ".*") extends Iterable[Document]
         }
         count += 1
       }
-      IEAnnotation(entityMentions = entities, relationMentions = null, eventMentions = null)
+      IEAnnotation(entityMentions = entities, relationMentions = null, eventMentions = null, semanticFrames = null)
     }
   }
 

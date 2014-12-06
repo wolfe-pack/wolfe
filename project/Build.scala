@@ -180,7 +180,7 @@ object Build extends Build {
     id = "wolfe-nlp",
     base = file("wolfe-nlp"),
     settings = buildSettings ++ globalSettings ++ nlpDependencies
-  ) dependsOn jamr dependsOn core % "test->test;compile->compile"
+  ) dependsOn core % "test->test;compile->compile"
 
   lazy val neural = Project(
     id = "wolfe-neural",
