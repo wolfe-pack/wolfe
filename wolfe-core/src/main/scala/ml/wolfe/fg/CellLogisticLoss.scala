@@ -181,22 +181,8 @@ class BPRPotential(const1Edge: Edge, const2Edge: Edge, predEdge: Edge, target: D
 /**
  * @author rockt
  */
-class Tucker3LogisticLoss(coreEdge: Edge, rowEdge: Edge, columnEdge: Edge, layerEdge: Edge, target: Double = 1.0, val lambda: Double = 0.0, weight: Double = 1.0) extends Potential with Regularization {
-  type FactorieMatrix = DenseTensor2
-
-  implicit class Tensor3AsVector(inner: FactorieVector) {
-    def mode1Product(vector: FactorieVector): FactorieMatrix = ???
-    def mode2Product(vector: FactorieVector): FactorieMatrix = ???
-    def mode3Product(vector: FactorieVector): FactorieMatrix = ???
-  }
-
-  implicit class Tensor3AsMatrix(inner: FactorieMatrix) {
-    def mode1Product(vector: FactorieVector): FactorieVector = ???
-    def mode2Product(vector: FactorieVector): FactorieVector = ???
-    def mode3Product(vector: FactorieVector): FactorieVector = ???
-  }
-
-  implicit def tensorToVector(tensor: Tensor): FactorieVector = new DenseVector(tensor.asArray)
+class Tucker3CellLogisticLoss(coreEdge: Edge, rowEdge: Edge, columnEdge: Edge, layerEdge: Edge, target: Double = 1.0, val lambda: Double = 0.0, weight: Double = 1.0) extends Potential with Regularization {
+  import FactorieTensor3._
 
   def coreVar    = coreEdge.n.variable.asVector
   def rowVar     = rowEdge.n.variable.asVector
@@ -240,4 +226,42 @@ class Tucker3LogisticLoss(coreEdge: Edge, rowEdge: Edge, columnEdge: Edge, layer
 
     math.log(loss) * weight + regLoss(G) + regLoss(p) + regLoss(c1) + regLoss(c2)
   }
+}
+
+object FactorieTensor3 extends App {
+  type FactorieMatrix = Tensor2
+
+  implicit class Tensor3AsVector(inner: FactorieVector) {
+    def mode1Product(vector: FactorieVector): FactorieMatrix = ???
+    def mode2Product(vector: FactorieVector): FactorieMatrix = ???
+    def mode3Product(vector: FactorieVector): FactorieMatrix = ???
+
+    def toTensor3String(dim1: Int, dim2: Int, dim3: Int): String =
+      (0 until dim1).map(row =>
+        (0 until dim2).map(col => {
+          (0 until dim3).map(layer => {
+            inner(row * dim1 + col * dim2 + layer * dim3)
+          })
+        })
+      ).mkString("")
+  }
+
+  implicit class Tensor3AsMatrix(inner: FactorieMatrix) {
+    //def mode1Product(vector: FactorieVector): FactorieVector = ???
+    def mode2Product(vector: FactorieVector): FactorieVector = ???
+    def mode3Product(vector: FactorieVector): FactorieVector = ???
+  }
+
+  implicit def tensorToVector(tensor: Tensor): FactorieVector = new DenseVector(tensor.asArray)
+
+
+  val tensor3 = new DenseVector(Array(
+    1.0, 0.0,
+    0.0, 1.0,
+  //
+    0.0, 0.0,
+    1.0, 1.0
+  ))
+
+  println(tensor3.toTensor3String(2, 2, 2))
 }

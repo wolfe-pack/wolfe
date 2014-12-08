@@ -82,6 +82,9 @@ final class FactorGraph {
   var visualizationMessages: ArrayBuffer[Iterable[(DirectedEdge, Seq[Double])]] = null
   var visualizationSamples : ArrayBuffer[(Var[_], Any, Boolean)] = null
 
+  var beliefsHistory: ArrayBuffer[Array[Array[Double]]] = null
+  var valueHistory: ArrayBuffer[Double] = null
+
   /**
    * Adds a node for a variable of domain size `dim`
    * @param domain domain of the variable
@@ -371,14 +374,13 @@ final class FactorGraph {
     def loopyAcc(remainingFactors: List[Factor], trees: Set[Set[Node]]): Boolean =
       remainingFactors match {
         case Nil => false
-        case f :: tail => {
+        case f :: tail =>
           val neighbourTrees = f.edges.map { e => trees.find(_ contains e.n) match { case Some(x) => x; case None => sys.error("Something went wrong in isLoopy!") } }.toSet
           if (neighbourTrees.size != f.edges.length) true
           else {
             val newTrees = trees -- neighbourTrees + neighbourTrees.reduce(_ ++ _)
             loopyAcc(tail, newTrees)
           }
-        }
       }
     loopyAcc(factors.toList, nodes.map(Set(_)).toSet)
   }
@@ -394,7 +396,9 @@ final class FactorGraph {
     }
   }
 
+  def addBeliefsToHistory(beliefs: Seq[Array[Double]]) = beliefsHistory += beliefs.toArray
 
+  def addValueToHistory(value: Double*) = valueHistory ++= value
 }
 
 object FactorGraph {
