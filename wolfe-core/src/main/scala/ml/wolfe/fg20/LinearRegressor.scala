@@ -27,7 +27,7 @@ class L2NormLoss(val w: VectVar, val feats: FactorieVector,
                                                                  with VectPotential {
   val vectVars = Array(w)
 
-  def gradientAndValue(currentParameters: Setting, gradient: Setting) = {
+  def gradientAndValue(currentParameters: PartialSetting, gradient: Setting) = {
     val guess = score(currentParameters)
     gradient.vect(0) = feats * (scale * 2.0 * (y - guess))
     guess
@@ -47,7 +47,7 @@ class L2Regularizer(val w: VectVar, val scale: Double = 1.0) extends StatelessDi
                                                                      with VectPotential {
   val vectVars = Array(w)
 
-  def gradientAndValue(currentParameters: Setting, gradient: Setting) = {
+  def gradientAndValue(currentParameters: PartialSetting, gradient: Setting) = {
     gradient.vect(0) = currentParameters.vect(0) * (-2.0 * scale)
     score(currentParameters)
   }
@@ -77,7 +77,7 @@ object LinearRegressor {
     val loss = for ((y, f) <- instances) yield new L2NormLoss(weightsVar, f, y)
     val problem = Problem(new L2Regularizer(weightsVar, reg) :: loss)
     val optimizer = new GradientBasedOptimizer(problem)
-    val result = optimizer.argmax(new BatchTrainer(_, new LBFGS(), 100))
+    val result = optimizer.gradientBasedArgmax(new BatchTrainer(_, new LBFGS(), 100))
     new LinearRegressor(result.state(weightsVar), feat)
   }
 

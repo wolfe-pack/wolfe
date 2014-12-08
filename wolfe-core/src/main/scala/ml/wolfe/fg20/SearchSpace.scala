@@ -1,5 +1,7 @@
 package ml.wolfe.fg20
 
+import ml.wolfe.FactorieVector
+
 /**
  * A search space describes a set of possible values using a set of variables. Any setting to the search space's
  * variables can be mapped to a value in the search space. Likewise, any value in the search space can be mapped
@@ -21,12 +23,20 @@ trait SearchSpace[T] extends Clique {
 object AtomicSearchSpace {
   type Disc[T] = AtomicSearchSpace[T, DiscVar[T]]
   type Cont = AtomicSearchSpace[Double, ContVar]
+  type Vect = AtomicSearchSpace[FactorieVector, VectVar]
+
 }
 
 class AtomicSearchSpace[T, V <: Var[T]](val variable: V) extends SearchSpace[T] {
   def toValue(state: State) = state(variable)
   def observation(value: T) = State.single(variable, value)
   def variables = Iterator(variable)
+
+}
+
+object IndexedSeqSearchSpace {
+  type Disc[T] = IndexedSeqSearchSpace[T, AtomicSearchSpace.Disc[T]]
+  type Vect = IndexedSeqSearchSpace[FactorieVector, AtomicSearchSpace.Vect]
 
 }
 
