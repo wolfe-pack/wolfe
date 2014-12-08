@@ -195,6 +195,82 @@ class MatrixFactorization(confPath: String = "conf/mf.conf") {
         }
       }
     }
+  if (mode == "gen-fake-data") {
+    //formulae factors
+    var fidx = 0
+    val numFakeData = conf.getInt("mf.num-fake-data")
+    val weight = numFakeData * formulaeWeight
+    for (formula <- db.formulae) {
+      if (formula.isFormula2) {
+        val Seq(p1, p2) = formula.predicates
+        //can only inject formulae whose predicates exist
+        if (db.node1(p1).isDefined && db.node1(p2).isDefined) {
+          val p1Node = db.node1(p1).get
+          val p2Node = db.node1(p2).get
+
+          formula match {
+            case Impl(_, _, target) => {
+              println("Adding fake cells for formula: " + p1.toString + " -> " + p2.toString)
+              val e11 = fg.addVectorNode(k, "e11+" + fidx)
+              e11.variable.asVector.b = new DenseVector((0 until k).map(i => nextInit()).toArray)
+              fg.buildFactor(Seq(p1Node, e11))(_ map (_ => new VectorMsgs)) {
+                e => new CellLogisticLoss(e(0), e(1), 1.0, lambda, weight) with L2Regularization
+              }
+              fg.buildFactor(Seq(p2Node, e11))(_ map (_ => new VectorMsgs)) {
+                e => new CellLogisticLoss(e(0), e(1), 1.0, lambda, weight) with L2Regularization
+              }
+              val e01 = fg.addVectorNode(k, "e01+" + fidx)
+              e01.variable.asVector.b = new DenseVector((0 until k).map(i => nextInit()).toArray)
+              fg.buildFactor(Seq(p1Node, e01))(_ map (_ => new VectorMsgs)) {
+                e => new CellLogisticLoss(e(0), e(1), 0.0, lambda, weight) with L2Regularization
+              }
+              fg.buildFactor(Seq(p2Node, e01))(_ map (_ => new VectorMsgs)) {
+                e => new CellLogisticLoss(e(0), e(1), 1.0, lambda, weight) with L2Regularization
+              }
+              val e00 = fg.addVectorNode(k, "e00+" + fidx)
+              e00.variable.asVector.b = new DenseVector((0 until k).map(i => nextInit()).toArray)
+              fg.buildFactor(Seq(p1Node, e00))(_ map (_ => new VectorMsgs)) {
+                e => new CellLogisticLoss(e(0), e(1), 0.0, lambda, weight) with L2Regularization
+              }
+              fg.buildFactor(Seq(p2Node, e00))(_ map (_ => new VectorMsgs)) {
+                e => new CellLogisticLoss(e(0), e(1), 0.0, lambda, weight) with L2Regularization
+              }
+            }
+            case ImplNeg(_, _, target) => {
+              println("Adding fake cells for formula: " + p1.toString + " -> !" + p2.toString)
+              val e10 = fg.addVectorNode(k, "e10+" + fidx)
+              e10.variable.asVector.b = new DenseVector((0 until k).map(i => nextInit()).toArray)
+              fg.buildFactor(Seq(p1Node, e10))(_ map (_ => new VectorMsgs)) {
+                e => new CellLogisticLoss(e(0), e(1), 1.0, lambda, weight) with L2Regularization
+              }
+              fg.buildFactor(Seq(p2Node, e10))(_ map (_ => new VectorMsgs)) {
+                e => new CellLogisticLoss(e(0), e(1), 0.0, lambda, weight) with L2Regularization
+              }
+              val e01 = fg.addVectorNode(k, "e01+" + fidx)
+              e01.variable.asVector.b = new DenseVector((0 until k).map(i => nextInit()).toArray)
+              fg.buildFactor(Seq(p1Node, e01))(_ map (_ => new VectorMsgs)) {
+                e => new CellLogisticLoss(e(0), e(1), 0.0, lambda, weight) with L2Regularization
+              }
+              fg.buildFactor(Seq(p2Node, e01))(_ map (_ => new VectorMsgs)) {
+                e => new CellLogisticLoss(e(0), e(1), 1.0, lambda, weight) with L2Regularization
+              }
+              val e00 = fg.addVectorNode(k, "e00+" + fidx)
+              e00.variable.asVector.b = new DenseVector((0 until k).map(i => nextInit()).toArray)
+              fg.buildFactor(Seq(p1Node, e00))(_ map (_ => new VectorMsgs)) {
+                e => new CellLogisticLoss(e(0), e(1), 0.0, lambda, weight) with L2Regularization
+              }
+              fg.buildFactor(Seq(p2Node, e00))(_ map (_ => new VectorMsgs)) {
+                e => new CellLogisticLoss(e(0), e(1), 0.0, lambda, weight) with L2Regularization
+              }
+            }
+          }
+        }
+        fidx += 1
+      } else {
+        ???
+      }
+    }
+  }
 
   fg.build()
 

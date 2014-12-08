@@ -74,7 +74,7 @@ object LoadBioNLP extends App {
           EventMention("eventCandidate", entityMention, arguments)
         }).toIndexedSeq
 
-        Sentence(wolfeTokens, syntax = new SyntaxAnnotation(ConstituentTree.empty, wolfeDependencyTree), ie = new IEAnnotation(wolfeMentions, IndexedSeq(), wolfeEventCandidates))
+        Sentence(wolfeTokens, syntax = new SyntaxAnnotation(ConstituentTree.empty, wolfeDependencyTree), ie = new IEAnnotation(wolfeMentions, IndexedSeq(), wolfeEventCandidates, semanticFrames = null))
       }
     Document(txt, wolfeSentences.toIndexedSeq)
   }
