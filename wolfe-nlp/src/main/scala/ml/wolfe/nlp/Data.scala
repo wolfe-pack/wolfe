@@ -26,6 +26,7 @@ case class Token(word: String, offsets: CharOffsets, posTag: String = null, lemm
     graph.receiveOrdered[Token, Sentence, Option[Token]]('tokens, this)((i, s) => s.tokens.lift(i + 1))
   def prev(implicit graph: ObjectGraph) =
     graph.receiveOrdered[Token, Sentence, Option[Token]]('tokens, this)((i, s) => s.tokens.lift(i - 1))
+  def toPrettyString = if (posTag != null) word + "/" + posTag else word
 
 }
 
@@ -44,6 +45,14 @@ case class Sentence(tokens: IndexedSeq[Token], syntax: SyntaxAnnotation = Syntax
     graph.link1toNOrdered[Sentence, Token, IndexedSeq[Token]]('tokens, this, tokens)
   def size = tokens.size
   def offsets = CharOffsets(tokens.head.offsets.start,tokens.last.offsets.end)
+  def toPrettyString = tokens.map(_.toPrettyString).mkString(" ")
+
+  def toCoNLLString = {
+    tokens.zipWithIndex.map { case(t,i) =>
+      "%d\t%s\t%s\t%s\t%s\t%s".format(i+1, t.word, t.lemma, t.lemma, t.posTag, t.posTag)
+    }.mkString("\n")
+
+  }
 }
 
 /**
@@ -63,6 +72,7 @@ case class Document(source: String,
   def tokens = sentences flatMap (_.tokens)
   def $sentences(implicit g:ObjectGraph) =
     g.link1toNOrdered[Document,Sentence,Seq[Sentence]]('sentences, this, sentences)
+  def toPrettyString = sentences.map(_.toPrettyString).mkString("\n")
 
 }
 

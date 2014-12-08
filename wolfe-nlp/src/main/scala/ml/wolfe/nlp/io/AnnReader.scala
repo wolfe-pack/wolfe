@@ -46,7 +46,7 @@ class AnnReader(dir: String, pattern: String = ".*") extends Iterable[Document] 
       }
     }.toIndexedSeq
 
-    val d = SISTAProcessors.mkParsedDocument(text)
+    val d = SISTAProcessors.mkDocument(text)
     d copy(sentences = d.sentences.map { s =>
       addEvents(addRelations(addEntities(s, entities), annotations), annotations)
     })
@@ -60,7 +60,7 @@ class AnnReader(dir: String, pattern: String = ".*") extends Iterable[Document] 
         t.copy(start = si, end = ei)
       }
     }
-    s.copy(ie = IEAnnotation(entities, relationMentions = null, eventMentions = null))
+    s.copy(ie = IEAnnotation(entities, relationMentions = null, eventMentions = null, semanticFrames = null))
   }
 
   def addRelations(s: Sentence, annotations: Array[String]): Sentence = {
