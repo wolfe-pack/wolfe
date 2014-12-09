@@ -247,7 +247,6 @@ trait Sum[P <: Potential] extends Potential {
   lazy val contVar2Index = contVars.iterator.zipWithIndex.toMap
   lazy val vectVar2Index = vectVars.iterator.zipWithIndex.toMap
 
-  class ArgMap(val discArgs: Array[Int], val contArgs: Array[Int], val vectArgs: Array[Int])
 
   lazy val argMaps = args.map(a => new ArgMap(
     a.discVars.map(discVar2Index),
@@ -278,7 +277,7 @@ class FlatSum[P <: Potential](val args: Seq[P]) extends Sum[P]
 
 trait DifferentiableFlatSum[P <: StatelessDifferentiable] extends Sum[P] with StatelessDifferentiable {
   //rather define it as GradientCalculator ?
-  def gradientAndValue(currentParameters: Setting, gradient: Setting): Double = {
+  def gradientAndValue(currentParameters: PartialSetting, gradient: Setting): Double = {
     val totalUpdate = new Setting(discVars.length, contVars.length, vectVars.length)
     val scores = for ((arg, map) <- args zip argMaps) yield {
       //could not get it to work with iterators (?)

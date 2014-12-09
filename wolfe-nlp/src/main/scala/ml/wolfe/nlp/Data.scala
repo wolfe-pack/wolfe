@@ -3,6 +3,8 @@ package ml.wolfe.nlp
 import breeze.linalg.{SparseVector, DenseVector}
 import ml.wolfe.{SimpleIndex, Index}
 
+import scala.collection.mutable
+
 
 /**
  * Offsets for a natural language token.
@@ -51,8 +53,21 @@ case class Sentence(tokens: IndexedSeq[Token], syntax: SyntaxAnnotation = Syntax
     tokens.zipWithIndex.map { case(t,i) =>
       "%d\t%s\t%s\t%s\t%s\t%s".format(i+1, t.word, t.lemma, t.lemma, t.posTag, t.posTag)
     }.mkString("\n")
-
   }
+
+  /**
+   * Return a representation of the entity mentions as a sequence of BIO labels. This representation
+   * is different from CoNLL in that every mention begins with B-X.
+   */
+  def entityMentionsAsBIOSeq = {
+    val tokenIndex2Label = new mutable.HashMap[Int,String]() withDefaultValue "O"
+    for (m <- ie.entityMentions) {
+      tokenIndex2Label(m.start) = "B-" + m.label
+      for (i <- m.start + 1 until m.end) tokenIndex2Label(i) = "I-" + m.label
+    }
+    for (i <- 0 until tokens.size) yield tokenIndex2Label(i)
+  }
+
 }
 
 /**
@@ -73,6 +88,9 @@ case class Document(source: String,
   def $sentences(implicit g:ObjectGraph) =
     g.link1toNOrdered[Document,Sentence,Seq[Sentence]]('sentences, this, sentences)
   def toPrettyString = sentences.map(_.toPrettyString).mkString("\n")
+
+  def entityMentionsAsBIOSeq = sentences flatMap (_.entityMentionsAsBIOSeq)
+  def tokenWords = sentences flatMap (s => s.tokens.map(_.word))
 
 }
 

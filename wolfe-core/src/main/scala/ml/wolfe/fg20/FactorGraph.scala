@@ -151,6 +151,29 @@ trait FactorGraph extends ProblemListener {
     var vectEdges: Array[VectEdge] = null
     def edges:Iterator[EdgeType] = discEdges.iterator ++ contEdges.iterator ++ vectEdges.iterator
     override def toString = edges.map(_.node).mkString("(",",",")")
+
+    def createObservation() = {
+      val partialSetting = pot.createPartialSetting()
+      for (i <- 0 until discEdges.length)
+        if (discEdges(i).node.observed) {
+          partialSetting.discObs(i) = true
+          partialSetting.disc(i) = discEdges(i).node.setting
+        }
+      for (i <- 0 until contEdges.length) {
+        if (contEdges(i).node.observed) {
+          partialSetting.contObs(i) = true
+          partialSetting.cont(i) = contEdges(i).node.setting
+        }
+      }
+      for (i <- 0 until vectEdges.length) {
+        if (vectEdges(i).node.observed) {
+          partialSetting.vectObs(i) = true
+          partialSetting.vect(i) = vectEdges(i).node.setting
+        }
+      }
+      partialSetting
+    }
+
   }
 
   def problem: Problem[Pot]

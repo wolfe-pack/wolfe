@@ -9,10 +9,11 @@ import ml.wolfe.nlp.io._
  * @param relationMentions sequence of relation mentions found in the sentence.
  * @param eventMentions sequence of event mentions found in the sentence.
  */
-case class IEAnnotation(entityMentions: IndexedSeq[EntityMention],
-                        relationMentions: IndexedSeq[RelationMention],
-                        eventMentions: IndexedSeq[EventMention],
-                        semanticFrames: IndexedSeq[SemanticFrame]) {
+case class IEAnnotation(entityMentions: IndexedSeq[EntityMention]=IndexedSeq.empty,
+                        relationMentions: IndexedSeq[RelationMention]=IndexedSeq.empty,
+                        eventMentions: IndexedSeq[EventMention]=IndexedSeq.empty,
+                        semanticFrames: IndexedSeq[SemanticFrame]= IndexedSeq.empty) {
+
 }
 
 /**
@@ -29,7 +30,9 @@ object IEAnnotation {
  * @param end index to the token that ends the entity span.
  * @param id mention-specific identifier of the entity span.
  */
-case class EntityMention(label: String, start: Int, end: Int, id: String = null) {}
+case class EntityMention(label: String, start: Int, end: Int, id: String = null) {
+  def expandRight(howMuch:Int = 1) = copy(end = end + howMuch)
+}
 
 /**
  * A directed relation mention.

@@ -134,7 +134,7 @@ class MaxProduct(val problem: Problem[SupportsMaxMarginalization]) extends Belie
 
   type Pot = SupportsMaxMarginalization
   type Processor = MaxMarginalizer
-  def processor(pot: Pot) = pot.maxMarginalizer
+  def processor(pot: Pot) = pot.maxMarginalizer()
 
   private var deterministicRun = false
 
@@ -220,24 +220,7 @@ trait BeliefPropagationFactorGraph extends Residuals with NodeContentFactorGraph
 
     def updateBuffers(): Unit = {
       if (!updated) {
-        partialSetting = new PartialSetting(discEdges.length, contEdges.length, vectEdges.length)
-        for (i <- 0 until discEdges.length)
-          if (discEdges(i).node.observed) {
-            partialSetting.discObs(i) = true
-            partialSetting.disc(i) = discEdges(i).node.setting
-          }
-        for (i <- 0 until contEdges.length) {
-          if (contEdges(i).node.observed) {
-            partialSetting.contObs(i) = true
-            partialSetting.cont(i) = contEdges(i).node.setting
-          }
-        }
-        for (i <- 0 until vectEdges.length) {
-          if (vectEdges(i).node.observed) {
-            partialSetting.vectObs(i) = true
-            partialSetting.vect(i) = vectEdges(i).node.setting
-          }
-        }
+        partialSetting = createObservation()
         updated = true
       }
     }
