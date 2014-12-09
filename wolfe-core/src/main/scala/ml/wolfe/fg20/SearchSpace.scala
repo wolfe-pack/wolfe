@@ -25,6 +25,8 @@ object AtomicSearchSpace {
   type Cont = AtomicSearchSpace[Double, ContVar]
   type Vect = AtomicSearchSpace[FactorieVector, VectVar]
 
+  def constDisc[T](value:T) = new Disc[T](new DiscVar[T](Seq(value)))
+
 }
 
 class AtomicSearchSpace[T, V <: Var[T]](val variable: V) extends SearchSpace[T] {
