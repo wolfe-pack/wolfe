@@ -343,6 +343,8 @@ class MatrixFactorization(confPath: String = "conf/mf.conf") {
       }
     }
 
+    //println(fg.valueHistory.mkString("\n"))
+
     wMAP
   }
 }

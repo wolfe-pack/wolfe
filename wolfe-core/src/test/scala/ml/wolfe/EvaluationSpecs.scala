@@ -11,6 +11,8 @@ class EvaluationSpecs extends WolfeSpec {
   def i = Token("", chunk = "I-something")
   def o = Token("", chunk = "O")
 
+  //fixme: Token and EntityMention don't have the same end ix semantics
+
   "Mention Evaluator " should {
     "treat BIII as a single mention" in {
       def s = Sentence(Seq(b, i, i, i))
