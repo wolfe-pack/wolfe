@@ -14,7 +14,7 @@ object GridExampleHistory {
   type Image = Map[(Int, Int), Boolean]
 
   def main(args: Array[String]) {
-    val n = 2
+    val n = 10
     val l_w = 1.0
     val g_w = 0.1
     def pixels = (0 until n) x (0 until n)
@@ -40,7 +40,7 @@ object GridExampleHistory {
 
     val fg = FactorGraphBuffer.get()
     println("Value history:\n" + fg.valueHistory.zipWithIndex.map(_.swap).mkString("\n"))
-    println("Marginals:\n" + fg.beliefsHistory.zipWithIndex.map(_.swap).mkString("\n"))
+    println("Belief history:\n" + fg.beliefsHistory.zipWithIndex.map(_.swap).mkString("\n"))
 
   }
 

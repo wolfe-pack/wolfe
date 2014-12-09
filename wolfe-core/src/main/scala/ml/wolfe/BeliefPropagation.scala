@@ -88,7 +88,7 @@ object BeliefPropagation {
           fg.addMessagesToVisualization(fg.edges, EdgeDirection.N2F)
 
         if (buildHistory) {
-          fg.addValueToHistory(fg.factors.map(_.potential.valueForCurrentSetting()).sum)
+          fg.addValueToHistory()
           fg.addBeliefsToHistory(fg.nodes.filter(_.variable.isInstanceOf[DiscreteVar[_]]).map(_.variable.asDiscrete.b))
         }
       } else {
@@ -98,14 +98,14 @@ object BeliefPropagation {
             updateF2N(edge, bpType == Sum)
             fg.addMessagesToVisualization(Seq(edge), EdgeDirection.F2N)
             if (buildHistory) {
-              fg.addValueToHistory(fg.factors.map(_.potential.valueForCurrentSetting()).sum)
+              fg.addValueToHistory()
               fg.addBeliefsToHistory(fg.nodes.filter(_.variable.isInstanceOf[DiscreteVar[_]]).map(_.variable.asDiscrete.b))
             }
           case DirectedEdge(edge, EdgeDirection.N2F) =>
             updateN2F(edge)
             fg.addMessagesToVisualization(Seq(edge), EdgeDirection.N2F)
             if (buildHistory) {
-              fg.addValueToHistory(fg.factors.map(_.potential.valueForCurrentSetting()).sum)
+              fg.addValueToHistory()
               fg.addBeliefsToHistory(fg.nodes.filter(_.variable.isInstanceOf[DiscreteVar[_]]).map(_.variable.asDiscrete.b))
             }
         }
