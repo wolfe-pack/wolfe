@@ -6,6 +6,8 @@ import ml.wolfe.nlp.io.{ChunkReader, CoNLLReader}
 import ml.wolfe.nlp._
 import ml.wolfe.util.ProgressBar
 
+import scala.annotation.tailrec
+import scala.collection.mutable
 import scala.collection.mutable.{ListBuffer, ArrayBuffer}
 
 /**
@@ -44,17 +46,33 @@ object CoNLLHackReader extends App {
 
   def entityToString(entity: EntityMention, sentence: Sentence): String = sentence.tokens.slice(entity.start, entity.end).map(_.word).mkString(" ")
 
+  //todo: debug
+  def shortestPathString(e1: EntityMention, e2: EntityMention, s: Sentence): String = {
+    val arcs = s.syntax.dependencies.arcs
+
+    val from = e1.start
+    val to = e2.end
+
+    def breadthFirst(todo: List[(Int, Int, String)], acc: List[(Int, Int, String)]): List[(Int, Int, String)] = {
+      if (todo.isEmpty) acc //fixme this is actually an error that should never occur
+      else if (acc.last._1 == to || acc.last._2 == to) acc
+      else if (acc.isEmpty) todo.filter(a => a._1 == from || a._2 == from).map(a => breadthFirst(todo.filterNot(_ == a), List(a))).minBy(_.length)
+      else todo.filter(arc => acc.last._2 == arc._1 || acc.last._1 == arc._2).map(a => breadthFirst(todo.filterNot(_ == a), a :: acc)).minBy(_.length)
+    }
+
+    "path#" + breadthFirst(arcs.toList, Nil).map(a => s.tokens(a._1).word + "->" + a._3 + "->" + s.tokens(a._2).word).mkString(" ")
+  }
+
   def writePatterns(doc: Document, writer: FileWriter): Unit = {
     //println(doc)
     for {
-      sentence <- doc.sentences
-      entities = sentence.ie.entityMentions
-      dependencies = sentence.syntax.dependencies
-      e1 <- entities
-      e2 <- entities
+      s <- doc.sentences
+      es = s.ie.entityMentions
+      e1 <- es
+      e2 <- es
       if e1 != e2
     } {
-      writer.write(s"path#\t${entityToString(e1, sentence)}\t${entityToString(e2, sentence)}\tTrain\t1.0\n")
+      writer.write(s"${shortestPathString(e1, e2, s)}\t${entityToString(e1, s)}\t${entityToString(e2, s)}\tTrain\t1.0\n")
     }
   }
 
