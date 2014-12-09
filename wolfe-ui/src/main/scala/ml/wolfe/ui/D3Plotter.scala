@@ -47,6 +47,7 @@ object D3Plotter {
         |
         |#$id svg {
         |  height: 400px;
+        |  width: 100%
         |}
       """.stripMargin
 

@@ -85,13 +85,48 @@ class Setting(numDisc: Int, numCont: Int = 0, numVect: Int = 0) {
   final var disc = Array.ofDim[Int](numDisc)
   final var cont = Array.ofDim[Double](numCont)
   final var vect = Array.ofDim[FactorieVector](numVect)
+
+
+  def fillObserved(observed: PartialSetting) = {
+    for (i <- 0 until disc.length; if observed.discObs(i)) disc(i) = observed.disc(i)
+    for (i <- 0 until cont.length; if observed.contObs(i)) cont(i) = observed.cont(i)
+    for (i <- 0 until vect.length; if observed.vectObs(i)) vect(i) = observed.vect(i)
+  }
+
+  def copyFrom(that: Setting, mapFromThisIndextoThatIndex: ArgMap): Unit = {
+    for (i <- 0 until disc.length) disc(i) = that.disc(mapFromThisIndextoThatIndex.discArgs(i))
+    for (i <- 0 until cont.length) cont(i) = that.cont(mapFromThisIndextoThatIndex.contArgs(i))
+    for (i <- 0 until vect.length) vect(i) = that.vect(mapFromThisIndextoThatIndex.vectArgs(i))
+  }
+
+  def *=(scale: Double): Unit = {
+    for (i <- 0 until cont.length) cont(i) *= scale
+    for (i <- 0 until vect.length) vect(i) *= scale
+  }
+
+  def copyTo(that: Setting, mapFromThisIndextoThatIndex: ArgMap): Unit = {
+    for (i <- 0 until disc.length) that.disc(mapFromThisIndextoThatIndex.discArgs(i)) = disc(i)
+    for (i <- 0 until cont.length) that.cont(mapFromThisIndextoThatIndex.contArgs(i)) = cont(i)
+    for (i <- 0 until vect.length) that.vect(mapFromThisIndextoThatIndex.vectArgs(i)) = vect(i)
+  }
+
+  def observeIn(that: PartialSetting, mapFromThisIndextoThatIndex: ArgMap, observed: Boolean = true): Unit = {
+    for (i <- 0 until disc.length) that.discObs(mapFromThisIndextoThatIndex.discArgs(i)) = observed
+    for (i <- 0 until cont.length) that.contObs(mapFromThisIndextoThatIndex.contArgs(i)) = observed
+    for (i <- 0 until vect.length) that.vectObs(mapFromThisIndextoThatIndex.vectArgs(i)) = observed
+  }
+
+
 }
+
+class ArgMap(val discArgs: Array[Int], val contArgs: Array[Int], val vectArgs: Array[Int])
+
 
 /**
  * Class to store double results in.
  * @param value the value to store.
  */
-final class DoubleBuffer(var value:Double = 0.0)
+final class DoubleBuffer(var value: Double = 0.0)
 
 /**
  * A partial setting of a clique. The only observed or set values are
@@ -105,6 +140,7 @@ final class PartialSetting(numDisc: Int, numCont: Int = 0, numVect: Int = 0) ext
   var discObs = Array.ofDim[Boolean](numDisc)
   var contObs = Array.ofDim[Boolean](numCont)
   var vectObs = Array.ofDim[Boolean](numVect)
+
 
 }
 
