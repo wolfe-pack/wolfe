@@ -3,6 +3,7 @@ package ml.wolfe
 import java.io.{File, PrintWriter}
 
 import ml.wolfe.FactorGraph.{DirectedEdge, EdgeDirection, Factor, Node}
+import ml.wolfe.Wolfe.FactorGraphBuffer
 import ml.wolfe.fg.{TupleMsgs, DiscreteMsgs, TupleVar, DiscreteVar}
 import org.sameersingh.htmlgen.Custom.Matrix
 import org.sameersingh.htmlgen.{DivConverter, RawHTML, HTML}
@@ -536,6 +537,12 @@ object D3Implicits {
                regexFilter:String = ".*") = {
     val html = $d3fg(fg, 1200, 800, _.variable.label.matches(regexFilter), true)
     save(html, file)
+  }
+
+  def factorGraphURL(implicit fg:FactorGraphBuffer) = new HTML {
+    new File("public/docs/tmp/").mkdir()
+    saveD3Graph(fg.get(),"public/docs/tmp/factorgraph.html")
+    def source = s"""<a href="/assets/docs/tmp/factorgraph.html">Fullscreen Factor Graph</a>"""
   }
 
   def saveD3BarChart(v:Wolfe.Vector,
