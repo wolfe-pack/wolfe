@@ -59,7 +59,7 @@ case class Sentence(tokens: IndexedSeq[Token], syntax: SyntaxAnnotation = Syntax
    * Return a representation of the entity mentions as a sequence of BIO labels. This representation
    * is different from CoNLL in that every mention begins with B-X.
    */
-  def entityAsBIOSeq = {
+  def entityMentionsAsBIOSeq = {
     val tokenIndex2Label = new mutable.HashMap[Int,String]() withDefaultValue "O"
     for (m <- ie.entityMentions) {
       tokenIndex2Label(m.start) = "B-" + m.label
@@ -88,6 +88,10 @@ case class Document(source: String,
   def $sentences(implicit g:ObjectGraph) =
     g.link1toNOrdered[Document,Sentence,Seq[Sentence]]('sentences, this, sentences)
   def toPrettyString = sentences.map(_.toPrettyString).mkString("\n")
+
+  def entityMentionsAsBIOSeq = sentences flatMap (_.entityMentionsAsBIOSeq)
+  def tokenWords = sentences flatMap (s => s.tokens.map(_.word))
+
 }
 
 /**
