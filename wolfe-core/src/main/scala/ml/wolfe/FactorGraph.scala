@@ -396,9 +396,11 @@ final class FactorGraph {
     }
   }
 
+  def aggregatedValue() = factors.map(_.potential.valueForCurrentSetting()).sum
+
   def addBeliefsToHistory(beliefs: Seq[Array[Double]]) = beliefsHistory += beliefs.toArray
 
-  def addValueToHistory(value: Double*) = valueHistory ++= value
+  def addValueToHistory() = valueHistory += aggregatedValue()
 }
 
 object FactorGraph {
