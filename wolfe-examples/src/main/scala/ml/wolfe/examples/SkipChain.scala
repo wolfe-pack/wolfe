@@ -1,7 +1,8 @@
 package ml.wolfe.examples
 
+import ml.wolfe.nlp.io.CoNLLReader
 import ml.wolfe.nlp.{SentenceSplitter, TokenSplitter}
-import ml.wolfe.{DualDecomposition, Wolfe}
+import ml.wolfe.{D3Implicits, DualDecomposition, Wolfe}
 
 /**
  * @author Sebastian Riedel
@@ -18,8 +19,6 @@ object SkipChain extends App{
     ("Denver","B-PER") -> 0.1,
     ("John","B-PER") -> 3.0,
     ("B-PER","I-PER") -> 2.0,
-    ("B-PER","O") -> 0.0,
-    ("O","I-PER") -> -2.0,
     ('lowercase,"O") -> 2.0,
     (",","O") -> 1.0,
     "O" -> 1.0
@@ -61,5 +60,12 @@ object SkipChain extends App{
   println(skipChain(weights,words)(prediction))
   println(skipChain(weights,words)(fixed))
   println(fixed)
+
+  D3Implicits.saveD3Graph(FactorGraphBuffer.get(),"/tmp/fg.html")
+
+  //println(D3Implicits.factorGraphURL(FactorGraphBuffer).source)
+
+  val result = CoNLLReader.appendMentions(doc,prediction)
+  println(result)
 
 }
