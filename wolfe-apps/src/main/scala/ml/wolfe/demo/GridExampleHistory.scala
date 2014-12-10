@@ -1,6 +1,6 @@
 package ml.wolfe.demo
 
-import ml.wolfe.BeliefPropagation
+import ml.wolfe.{GibbsSampling, BeliefPropagation}
 import ml.wolfe.util.Timer
 
 /**
@@ -23,7 +23,8 @@ object GridExampleHistory {
     def vertical(y: Image) = sum(0 until n - 1) { i => sum(0 until n) { j => g_w * I(y(i, j) == y(i + 1, j)) } }
     def horizontal(y: Image) = sum(0 until n) { i => sum(0 until n - 1) { j => g_w * I(y(i, j) == y(i, j + 1)) } }
 
-    @LogZByInference(BeliefPropagation.sumProduct(10, buildHistory = true))
+    //@LogZByInference(BeliefPropagation.sumProduct(10, buildHistory = true))
+    @LogZByInference(GibbsSampling(_, 100, buildHistory = true))
     def grid(x: Image)(y: Image) = local(x)(y) + vertical(y) + horizontal(y)
     def stats(y: Image) = sum(pixels) { p => oneHot(p, I(y(p))) }
 
@@ -39,9 +40,8 @@ object GridExampleHistory {
     import ml.wolfe.Wolfe._
 
     val fg = FactorGraphBuffer.get()
-    println("Value history:\n" + fg.valueHistory.zipWithIndex.map(_.swap).mkString("\n"))
-    println("Belief history:\n" + fg.beliefsHistory.zipWithIndex.map(_.swap).mkString("\n"))
-
+    if (fg.valueHistory != null) println("Value history:\n" + fg.valueHistory.zipWithIndex.map(_.swap).mkString("\n"))
+    if (fg.beliefsHistory != null) println("Belief history:\n" + fg.beliefsHistory.zipWithIndex.map(_.swap).mkString("\n"))
   }
 
 }

@@ -61,7 +61,7 @@ object MentionEvaluator {
     reduced
   }
 
-  implicit def collectMentions[T <: Sentence](t: T, getLabel: Token=>Label): Set[Mention] = {
+  implicit def collectMentions[T <: Sentence](t: T, getLabel: Token => Label): Set[Mention] = {
     t.tokens.zipWithIndex.foldLeft(ListBuffer[Mention]())((mentions: ListBuffer[Mention], tokenWithIndex) => {
       val (token, ix) = tokenWithIndex
       val label = getLabel(token).label.name
