@@ -645,5 +645,5 @@ object D3Implicits {
 
   case class Img(url: String)
 
-  implicit def imageToHTML(img: Img): HTML = DivConverter.convert(imageURLToMatrix(img.url))
+  implicit def imageToHTML(img: Img, width: Int = 50): HTML = DivConverter.convert(imageURLToMatrix(img.url, width))
 }
