@@ -18,24 +18,19 @@ object SkipChainLearn extends App {
   val (test, train) = ml.wolfe.nlp.io.CoNLLReader.asDocs(corpus, " ").take(1000).toIndexedSeq.splitAt(10)
   val labels        = train.flatMap(_.entityMentionsAsBIOSeq).distinct
 
-  val locations  = Set("Denver", "Dallas")
-  val firstNames = Set("John")
-  val lastNames  = Set("Denver")
-  val puncts     = Set(",", ".", "?", ";")
+type Words = Seq[String]
+type Ners = Seq[String]
 
-  type Words = Seq[String]
-  type Ners = Seq[String]
-
-  def space(words: Words) = seqsOfLength(words.length, labels)
-  def feats(words: Words)(ner: Ners) =
-    sum(0 until words.size) { i => oneHot(ner(i)) } +
-    sum(0 until words.size) { i => oneHot(words(i) -> ner(i)) } +
-    sum(0 until words.size) { i => oneHot('lowercase -> ner(i), I(words(i).head.isLower)) } +
-    sum(0 until words.size) { i => oneHot('firstName -> ner(i), I(firstNames(words(i)))) } +
-    sum(0 until words.size) { i => oneHot('lastName -> ner(i), I(lastNames(words(i)))) } +
-    sum(0 until words.size) { i => oneHot('location -> ner(i), I(locations(words(i)))) } +
-    sum(0 until words.size) { i => oneHot('punct -> ner(i), I(puncts(words(i)))) } +
-    sum(0 until words.size - 1) { i => oneHot(ner(i) -> ner(i + 1)) }
+def space(words: Words) = seqsOfLength(words.length, labels)
+def feats(words: Words)(ner: Ners) =
+  sum(0 until words.size) { i => oneHot(ner(i)) } +
+  sum(0 until words.size) { i => oneHot(words(i) -> ner(i)) } +
+  sum(0 until words.size) { i => oneHot('lowercase -> ner(i), I(words(i).head.isLower)) } +
+  sum(0 until words.size) { i => oneHot('firstName -> ner(i), I(firstNames(words(i)))) } +
+  sum(0 until words.size) { i => oneHot('lastName -> ner(i), I(lastNames(words(i)))) } +
+  sum(0 until words.size) { i => oneHot('location -> ner(i), I(locations(words(i)))) } +
+  sum(0 until words.size) { i => oneHot('punct -> ner(i), I(puncts(words(i)))) } +
+  sum(0 until words.size - 1) { i => oneHot(ner(i) -> ner(i + 1)) }
 
   def crf(w: Vector, words: Words)(ners: Ners) =
     w dot feats(words)(ners)
@@ -69,7 +64,7 @@ object SkipChainLearn extends App {
   println(accuracy(testPairs.map(_._2), testPredictions))
 
 
-  println(CoNLLReader.appendMentions(train(1), trainPredictions(1)))
-  println(CoNLLReader.appendMentions(test(1), testPredictions(1)))
+  println(appendMentions(train(1), trainPredictions(1)))
+  println(appendMentions(test(1), testPredictions(1)))
 
 }

@@ -1,7 +1,7 @@
 package ml.wolfe.examples
 
 import ml.wolfe.nlp.io.CoNLLReader
-import ml.wolfe.nlp.{SentenceSplitter, TokenSplitter}
+import ml.wolfe.nlp.{Sentence, Document, SentenceSplitter, TokenSplitter}
 import ml.wolfe.{D3Implicits, DualDecomposition, Wolfe}
 
 /**
@@ -61,7 +61,7 @@ object SkipChain extends App {
 
   //println(D3Implicits.factorGraphURL(FactorGraphBuffer).source)
 
-  val result = CoNLLReader.appendMentions(doc, prediction)
+  val result = appendMentions(doc, prediction)
   println(result)
 
 }
@@ -83,6 +83,20 @@ object SkipChainUtil {
     ('punct, "O") -> 1.0,
     ("B-PER", "I-PER") -> 2.0,
     "O" -> 1.0)
+
+  def appendMentions(doc: Document, tags: Seq[String]) = {
+    def append(sentences: List[Sentence], tags: Seq[String], result: List[Sentence] = Nil): List[Sentence] = {
+      sentences match {
+        case Nil => result
+        case h :: t =>
+          val mentions = CoNLLReader.collectMentions(tags.take(h.tokens.size))
+          val appended = h.copy(ie = h.ie.copy(entityMentions = h.ie.entityMentions ++ mentions))
+          append(t, tags.drop(h.tokens.size), appended :: result)
+      }
+    }
+    doc.copy(sentences = append(doc.sentences.toList,tags).reverse.toIndexedSeq)
+  }
+
 
   def accuracy(gold: Seq[Seq[String]], guess: Seq[Seq[String]]) =
     (gold.iterator.flatten zip guess.iterator.flatten).map { case (y, yp) => I(y == yp) }.sum / gold.map(_.size).sum

@@ -109,18 +109,6 @@ object CoNLLReader {
 
 
 
-  def appendMentions(doc: Document, tags: Seq[String]) = {
-    def append(sentences: List[Sentence], tags: Seq[String], result: List[Sentence] = Nil): List[Sentence] = {
-      sentences match {
-        case Nil => result
-        case h :: t =>
-          val mentions = collectMentions(tags.take(h.tokens.size))
-          val appended = h.copy(ie = h.ie.copy(entityMentions = h.ie.entityMentions ++ mentions))
-          append(t, tags.drop(h.tokens.size), appended :: result)
-      }
-    }
-    doc.copy(sentences = append(doc.sentences.toList,tags).reverse.toIndexedSeq)
-  }
 
 
   def main(args: Array[String]) {
