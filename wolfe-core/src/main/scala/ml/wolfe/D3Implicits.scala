@@ -1,8 +1,10 @@
 package ml.wolfe
 
 import java.io.{File, PrintWriter}
+import java.util.UUID
 
 import ml.wolfe.FactorGraph.{DirectedEdge, EdgeDirection, Factor, Node}
+import ml.wolfe.Wolfe.FactorGraphBuffer
 import ml.wolfe.fg.{TupleMsgs, DiscreteMsgs, TupleVar, DiscreteVar}
 import org.sameersingh.htmlgen.Custom.Matrix
 import org.sameersingh.htmlgen.{DivConverter, RawHTML, HTML}
@@ -68,7 +70,7 @@ object D3Implicits {
 |				var barSpace = $barSpace;
 |
 |				var svg = d3.select("#$id").append("svg")
-|       .attr("height", d3.entries(data).length * (barHeight + barSpace))
+|       //.attr("height", d3.entries(data).length * (barHeight + barSpace))
 |				.attr("width", $width)
 |       .attr("class", "barchart")
 |
@@ -536,6 +538,15 @@ object D3Implicits {
                regexFilter:String = ".*") = {
     val html = $d3fg(fg, 1200, 800, _.variable.label.matches(regexFilter), true)
     save(html, file)
+  }
+
+  def factorGraphURL(implicit fg:FactorGraphBuffer) = new HTML {
+    val dir = new File("public/docs/tmp/")
+    val tmp = new File(dir,"factorgraph_" + UUID.randomUUID().toString + ".html")
+    dir.mkdir()
+    tmp.deleteOnExit()
+    saveD3Graph(fg.get(),tmp.getAbsolutePath)
+    def source = s"""<a href="/assets/docs/tmp/${tmp.getName}">Fullscreen Factor Graph</a>"""
   }
 
   def saveD3BarChart(v:Wolfe.Vector,

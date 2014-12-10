@@ -7,7 +7,9 @@ import scala.collection.mutable.ListBuffer
 /**
  * Created by narad on 8/12/14.
  */
-class CoNLLReader(filename: String, delim:String="\t") extends Iterable[Sentence] {
+class CoNLLReader(filename: String, delim: String = "\t") extends Iterable[Sentence] {
+
+  import CoNLLReader._
 
   def iterator: Iterator[Sentence] = {
     val reader = new ChunkReader(filename)
@@ -61,7 +63,7 @@ class CoNLLReader(filename: String, delim:String="\t") extends Iterable[Sentence
 
   def fromCoNLL2003(lines: IndexedSeq[String]): Sentence = {
     val cells = lines.map(_.split(" "))
-    def join(sofar:List[Token],c:Array[String]):List[Token] = sofar match {
+    def join(sofar: List[Token], c: Array[String]): List[Token] = sofar match {
       case Nil => Token(c(0), CharOffsets(0, c(0).length), posTag = c(1)) :: Nil
       case h :: t => Token(c(0), CharOffsets(h.offsets.end + 1, h.offsets.end + 1 + c(0).length), posTag = c(1)) :: h :: t
     }
@@ -77,6 +79,13 @@ class CoNLLReader(filename: String, delim:String="\t") extends Iterable[Sentence
   }
 
 
+}
+
+object CoNLLReader {
+
+  def asDocs(fileName: String, delim: String = " ") = new CoNLLReader(fileName, delim).map({
+    case sentence => Document(sentence.toText, IndexedSeq(sentence))
+  })
 
   def collectMentions(t: Seq[String]): Seq[EntityMention] = {
     t.zipWithIndex.foldLeft(ListBuffer[EntityMention]())((mentions: ListBuffer[EntityMention], tokenWithIndex) => {
@@ -85,34 +94,28 @@ class CoNLLReader(filename: String, delim:String="\t") extends Iterable[Sentence
 
       prefix match {
         case "O" => mentions
-        case "B" => mentions :+ EntityMention(labelType,ix, ix+1)
+        case "B" => mentions :+ EntityMention(labelType, ix, ix + 1)
         case "I" =>
-          if (mentions.isEmpty) mentions :+ EntityMention(labelType,ix, ix+1)
+          if (mentions.isEmpty) mentions :+ EntityMention(labelType, ix, ix + 1)
           else {
             val last = mentions.last
-            if (last.end == ix - 1 && last.label == labelType)
+            if (last.end == ix && last.label == labelType)
               mentions.updated(mentions.length - 1, mentions.last.expandRight(1))
-            else mentions :+ EntityMention(labelType,ix, ix+1)
+            else mentions :+ EntityMention(labelType, ix, ix + 1)
           }
-      }}).toSeq
+      }
+    }).toSeq
   }
 
 
 
-}
-
-object CoNLLReader {
-
-  def asDocs(fileName:String,delim:String = " ") = new CoNLLReader(fileName,delim).map({
-    case sentence => Document(sentence.toText,IndexedSeq(sentence))
-  })
 
 
   def main(args: Array[String]) {
-    val data = new CoNLLReader("/Users/sriedel/corpora/conll03/eng.train"," ").take(100).toIndexedSeq
-    val doc = Document(data(1).toText,IndexedSeq(data(1)))
-    println(data(1))
+      val data = new CoNLLReader("/Users/sriedel/corpora/conll03/eng.train", " ").take(100).toIndexedSeq
+      val doc = Document(data(1).toText, IndexedSeq(data(1)))
+      println(data(1))
 
 
+    }
   }
-}
