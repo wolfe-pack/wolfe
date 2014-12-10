@@ -600,8 +600,8 @@ object D3Implicits {
 
   def resizeImage(img: BufferedImage, newW: Int) = {
     val ratio = img.getHeight.toDouble / img.getWidth.toDouble
-    val tmp = img.getScaledInstance(newW, math.floor(ratio * 100).toInt, Image.SCALE_SMOOTH);
-    val dimg = new BufferedImage(newW, math.floor(ratio * 100).toInt, BufferedImage.TYPE_INT_ARGB);
+    val tmp = img.getScaledInstance(newW, math.floor(ratio * newW).toInt, Image.SCALE_SMOOTH);
+    val dimg = new BufferedImage(newW, math.floor(ratio * newW).toInt, BufferedImage.TYPE_INT_ARGB);
 
     val g2d = dimg.createGraphics()
     g2d.drawImage(tmp, 0, 0, null)
