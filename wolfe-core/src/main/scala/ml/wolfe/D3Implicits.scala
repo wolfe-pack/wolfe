@@ -51,7 +51,7 @@ object D3Implicits {
 
 
   // ----- Implicits -------------------------------------------------------------------
-  def barChart(v:Wolfe.Vector) : HTML = {
+  def bars(v:Wolfe.Vector) : HTML = {
     val id = "VEC" + Math.abs(v.hashCode()).toString
     val dataid = id + "_data"
     val nonZero = v.filter(_._2 != 0).sortBy(_.toString())
@@ -70,7 +70,7 @@ object D3Implicits {
 |				var barSpace = $barSpace;
 |
 |				var svg = d3.select("#$id").append("svg")
-|       .attr("height", d3.entries(data).length * (barHeight + barSpace))
+|       //.attr("height", d3.entries(data).length * (barHeight + barSpace))
 |				.attr("width", $width)
 |       .attr("class", "barchart")
 |
