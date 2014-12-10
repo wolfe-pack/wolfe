@@ -1,6 +1,7 @@
 package ml.wolfe
 
 import java.io.{File, PrintWriter}
+import java.util.UUID
 
 import ml.wolfe.FactorGraph.{DirectedEdge, EdgeDirection, Factor, Node}
 import ml.wolfe.Wolfe.FactorGraphBuffer
@@ -540,9 +541,12 @@ object D3Implicits {
   }
 
   def factorGraphURL(implicit fg:FactorGraphBuffer) = new HTML {
-    new File("public/docs/tmp/").mkdir()
-    saveD3Graph(fg.get(),"public/docs/tmp/factorgraph.html")
-    def source = s"""<a href="/assets/docs/tmp/factorgraph.html">Fullscreen Factor Graph</a>"""
+    val dir = new File("public/docs/tmp/")
+    val tmp = new File(dir,"factorgraph_" + UUID.randomUUID().toString + ".html")
+    dir.mkdir()
+    tmp.deleteOnExit()
+    saveD3Graph(fg.get(),tmp.getAbsolutePath)
+    def source = s"""<a href="/assets/docs/tmp/${tmp.getName}">Fullscreen Factor Graph</a>"""
   }
 
   def saveD3BarChart(v:Wolfe.Vector,
