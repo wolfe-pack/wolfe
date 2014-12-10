@@ -3,6 +3,7 @@ package ml.wolfe.fg20
 import cc.factorie.Factorie.DenseTensor1
 import cc.factorie.app.nlp.parse.ProjectiveGraphBasedParser
 import ml.wolfe.{FactorieVector, Wolfe, WolfeSpec}
+import org.scalatest.{FlatSpec, WordSpec}
 
 /**
  * @author Sebastian Riedel
@@ -113,5 +114,12 @@ class IntermediateLayerSpecs extends WolfeSpec {
     }
 
   }
+
+}
+
+
+class Test extends FlatSpec {
+
+
 
 }

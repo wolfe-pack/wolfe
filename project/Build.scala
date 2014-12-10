@@ -53,7 +53,7 @@ object BuildSettings {
     "org.scalautils" % "scalautils_2.10" % "2.0",
     "org.scalatest" %% "scalatest" % "2.1.0" % "test",
     "com.typesafe" % "config" % "1.2.1",
-    "com.github.axel22" %% "scalameter" % "0.4",
+//    "com.github.axel22" %% "scalameter" % "0.4",
     "com.nativelibs4java" %% "scalaxy-loops" % "0.3-SNAPSHOT" % "provided",
     //    "org.scala-lang" % "scala-compiler" % "2.10.3",
     //    "org.scala-lang" % "scala-library" % "2.10.3",
@@ -129,7 +129,7 @@ object BuildSettings {
         import ml.wolfe.Wolfe._
         import ml.wolfe.macros.OptimizedOperators._
                          """
-    )
+    ) ++ net.virtualvoid.sbt.graph.Plugin.graphSettings
 
   def vmargs = Command.args("vmargs", "<name>") {
     (state, args) =>
