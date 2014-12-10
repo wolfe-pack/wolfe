@@ -51,7 +51,7 @@ object D3Implicits {
 
 
   // ----- Implicits -------------------------------------------------------------------
-  def bars(v:Wolfe.Vector) : HTML = {
+  def barChart(v:Wolfe.Vector) : HTML = {
     val id = "VEC" + Math.abs(v.hashCode()).toString
     val dataid = id + "_data"
     val nonZero = v.filter(_._2 != 0).sortBy(_.toString())
