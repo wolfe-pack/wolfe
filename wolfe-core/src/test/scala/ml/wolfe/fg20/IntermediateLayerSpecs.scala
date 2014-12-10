@@ -3,6 +3,7 @@ package ml.wolfe.fg20
 import cc.factorie.Factorie.DenseTensor1
 import cc.factorie.app.nlp.parse.ProjectiveGraphBasedParser
 import ml.wolfe.{FactorieVector, Wolfe, WolfeSpec}
+import org.scalatest.{FlatSpec, WordSpec}
 
 /**
  * @author Sebastian Riedel
@@ -42,7 +43,7 @@ class IntermediateLayerSpecs extends WolfeSpec {
     "support a perceptron loss" ignore {
 
       val labels = new AtomicSearchSpace.Disc[Boolean](new DiscVar(Seq(false, true)))
-      val weights = new AtomicSearchSpace.Vect(new VectVar(1,"weights"))
+      val weights = new AtomicSearchSpace.Vect(new VectVar(1, "weights"))
 
       def feat(value: Boolean) = new DenseTensor1(Array(if (value) 1.0 else 0.0))
 
@@ -57,14 +58,16 @@ class IntermediateLayerSpecs extends WolfeSpec {
 
       def observed(weights: AtomicSearchSpace.Vect)(label: Boolean) =
         new DifferentiableWithObservation() {
-          val observation = labels.toPartialSetting(State.single(labels.variable, label))
-          val self        = classifier[Boolean](labels, weights, feat)
+          val constLabel  = AtomicSearchSpace.constDisc(label)
+          val observation = labels.toPartialSetting(State.single(constLabel.variable, label))
+          val self        = classifier[Boolean](constLabel, weights, feat)
         }
 
       def negLoss(weights: AtomicSearchSpace.Vect) =
-        new FlatSum(Seq(
-          maxPot(weights),
-          ScaledPotential.scaleDifferentiable(observed(weights)(true), -1.0))) with SupportsArgmax {
+        new Sum[Differentiable] with SupportsArgmax {
+          val args = Seq(
+            maxPot(weights),
+            ScaledPotential.scaleDifferentiable(observed(weights)(true), -1.0))
           def argmaxer() = new GradientBasedArgmaxer(this)
         }
 
@@ -111,5 +114,12 @@ class IntermediateLayerSpecs extends WolfeSpec {
     }
 
   }
+
+}
+
+
+class Test extends FlatSpec {
+
+
 
 }

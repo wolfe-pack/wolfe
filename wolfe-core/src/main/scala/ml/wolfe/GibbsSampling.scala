@@ -13,9 +13,10 @@ import scala.util.Random
  */
 object GibbsSampling {
 
-  def apply(fg:FactorGraph, iterations:Int = 10000) = {
+  def apply(fg:FactorGraph, iterations:Int = 10000, buildHistory: Boolean = false) = {
     fg.expectations = new SparseVector(10000)
     fg.visualizationSamples = new ArrayBuffer[(Var[_], Any, Boolean)]
+    fg.valueHistory = new ArrayBuffer[Double]()
 
     val unobservedNodes = fg.nodes.filterNot(_.variable.isObserved)
 
@@ -26,6 +27,11 @@ object GibbsSampling {
       for (f <- fg.expectationFactors) {
         fg.expectations += f.potential.statsForCurrentSetting()
       }
+
+      if (buildHistory) {
+        fg.addValueToHistory()
+      }
+
     }
 
     fg.expectations /= iterations

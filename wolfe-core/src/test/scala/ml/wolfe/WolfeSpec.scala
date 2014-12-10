@@ -33,7 +33,4 @@ trait WolfeSpec extends WordSpec with Matchers {
   }
 
 
-
-
-
 }
