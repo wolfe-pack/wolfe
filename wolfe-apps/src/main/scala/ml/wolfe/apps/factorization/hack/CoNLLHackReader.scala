@@ -49,7 +49,8 @@ object CoNLLHackReader extends App {
       }}).toSeq
   }
 
-  def entityToString(entity: EntityMention, sentence: Sentence): String = sentence.tokens.slice(entity.start, entity.end).map(_.word).mkString(" ")
+  def entityToString(entity: EntityMention, sentence: Sentence): String =
+    sentence.tokens.slice(entity.start, entity.end).map(_.word).mkString(" ") + "#" + entity.label
 
   //todo: debug
   def shortestPathString(e1: EntityMention, e2: EntityMention, s: Sentence): String = {
@@ -122,8 +123,8 @@ object CoNLLHackReader extends App {
   }
 
 
-  //CoNLLHackReader(args.lift(0).getOrElse("./data/bbc/Publico_prb_parsed.conll"), args.lift(1).getOrElse("./data/bbc/matrix_publico.txt"))
-  CoNLLHackReader(args.lift(0).getOrElse("./data/bbc/BBC_ner_parsed.conll"), args.lift(1).getOrElse("./data/bbc/matrix_bbc.txt"))
+  CoNLLHackReader(args.lift(0).getOrElse("./data/bbc/Publico_prb_parsed.conll"), args.lift(1).getOrElse("./data/bbc/matrix_publico.txt"))
+  //CoNLLHackReader(args.lift(0).getOrElse("./data/bbc/BBC_ner_parsed.conll"), args.lift(1).getOrElse("./data/bbc/matrix_bbc.txt"))
 }
 
 
