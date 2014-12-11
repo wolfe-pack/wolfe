@@ -52,36 +52,25 @@ object CoNLLHackReader extends App {
   def entityToString(entity: EntityMention, sentence: Sentence): String =
     sentence.tokens.slice(entity.start, entity.end).map(_.word).mkString(" ") + "#" + entity.label
 
-  //todo: debug
-  def shortestPathString(e1: EntityMention, e2: EntityMention, s: Sentence): String = {
-    /*
-    val arcs = s.syntax.dependencies.arcs
-
-    val from = e1.start
-    val to = e2.end
-
-    def breadthFirst(todo: List[(Int, Int, String)], acc: List[(Int, Int, String)]): List[(Int, Int, String)] = {
-      if (todo.isEmpty) acc //fixme this is actually an error that should never occur
-      else if (acc.last._1 == to || acc.last._2 == to) acc
-      else if (acc.isEmpty) todo.filter(a => a._1 == from || a._2 == from).map(a => breadthFirst(todo.filterNot(_ == a), List(a))).minBy(_.length)
-      else todo.filter(arc => acc.last._2 == arc._1 || acc.last._1 == arc._2).map(a => breadthFirst(todo.filterNot(_ == a), a :: acc)).minBy(_.length)
-    }
-
-    "path#" + breadthFirst(arcs.toList, Nil).map(a => s.tokens(a._1).word + "->" + a._3 + "->" + s.tokens(a._2).word).mkString(" ")
-    */
-    "path"
-  }
-
   def writePatterns(doc: Document, writer: FileWriter): Unit = {
-    //println(doc)
     for {
       s <- doc.sentences
       es = s.ie.entityMentions
       e1 <- es
       e2 <- es
-      if e1 != e2 && e1.start < e2.start
+      if e1 != e2 //&& e1.start < e2.start
+      //todo: need to consider all token indices of an entity?
     } {
-      writer.write(s"${shortestPathString(e1, e2, s)}\t${entityToString(e1, s)}\t${entityToString(e2, s)}\tTrain\t1.0\n")
+      val path = DepUtils.findPath(e1.start, e2.start, s)._2
+      if (!path.startsWith("[EXCEPTION") && path != "junk") {
+        println(path)
+        println(entityToString(e1, s))
+        println(DepUtils.findPath(e1.start, e2.start, s)._3.mkString("\n"))
+        println(entityToString(e2, s))
+        println()
+
+        writer.write(s"path#$path\t${ entityToString(e1, s) }\t${ entityToString(e2, s) }\tTrain\t1.0\n")
+      }
     }
   }
 
@@ -123,43 +112,57 @@ object CoNLLHackReader extends App {
   }
 
 
-  CoNLLHackReader(args.lift(0).getOrElse("./data/bbc/Publico_prb_parsed.conll"), args.lift(1).getOrElse("./data/bbc/matrix_publico.txt"))
-  //CoNLLHackReader(args.lift(0).getOrElse("./data/bbc/BBC_ner_parsed.conll"), args.lift(1).getOrElse("./data/bbc/matrix_bbc.txt"))
+  //CoNLLHackReader(args.lift(0).getOrElse("./data/bbc/Publico_prb_parsed.conll"), args.lift(1).getOrElse("./data/bbc/matrix_publico.txt"))
+  CoNLLHackReader(args.lift(0).getOrElse("./data/bbc/BBC_ner_parsed.conll"), args.lift(1).getOrElse("./data/bbc/matrix_bbc.txt"))
 }
 
 
-/*
+
 /**
  * @author lmyao
  * @author rockt
  */
 object DepUtils {
   val FEASIBLEPOS = Set("NN", "NNP", "NNS", "NNPS", "VB", "VBD", "VBZ", "VBG", "VBN", "VBP", "RB", "RBR", "RBS", "IN", "TO", "JJ", "JJR", "JJS", "PRP", "PRP$")
-  val JUNKLABELS = Set("conj", "ccomp", "parataxis", "xcomp", "pcomp", "advcl", "punct", "infmod", "cop", "abbrev", "neg", "det", "prt")     //I remove 'rcmod', Limin Yao , path staring with adv should be excluded
+  //I remove 'rcmod', Limin Yao , path staring with adv should be excluded
+  val JUNKLABELS = Set("conj", "ccomp", "parataxis", "xcomp", "pcomp", "advcl", "punct", "infmod", "cop", "abbrev", "neg", "det", "prt")
   val CONTENTPOS = Set("NN", "NNP", "NNS", "NNPS", "VB", "VBD", "VBZ", "VBG", "VBN", "VBP", "PRP", "PRP$", "RB", "RBR", "RBS", "JJ", "JJR", "JJS")
   val JUNKROOT = Set("say", "describe", "tell")
+  //rockt: not sure what these suffixes are used for
   val SUFFIX = Set("Jr.", "II", "Jr", "d.l.", "D.L.", "d.l", "D.L")
 
-  // find all the ancestors of a node in order to find common ancestor of two nodes, called by find_path
-  def findAncestors(ancestors: util.Stack[Int], id: Int, depTree: ParseTree) {
+  
+  def parentIndex(id: Int, depTree: DependencyTree): Int =
+    depTree.arcs.find(a => a._2 == id).map(_._1).getOrElse(-1)
 
+  //rockt: unsure about the semantics of this method
+  def getLabel(id: Int, depTree: DependencyTree): String =
+    depTree.arcs.find(a => a._1 == id).map(_._3).getOrElse(s"[EXCEPTION: no label found for $id]")
+
+  def getNERLabel(id: Int, s: Sentence): String =
+    s.ie.entityMentions.find(e => e.start <= id && id <= e.end).map(_.label).getOrElse(s"[EXCEPTION: no ner tag found for $id]")
+    
+  // find all the ancestors of a node in order to find common ancestor of two nodes, called by find_path
+  def findAncestors(ancestors: util.Stack[Int], id: Int, depTree: DependencyTree) {
     //due to parsing error, there are may be more than one roots, todo:
     //val rootEdge = depTree.modifiers(sentence.root).first
 
-    var cur = id
-    ancestors.push(cur)
-    while (depTree.parentIndex(cur) != -1) {
+    var current = id
+    ancestors.push(current)
+    while (parentIndex(current, depTree) != -1) {
       //sentence.root's index is -1
-      cur = depTree.parentIndex(cur)
-      ancestors.push(cur)
+      current = parentIndex(current, depTree)
+      ancestors.push(current)
     }
   }
 
 
   //find the path from a source node to a dest node and the relationship, denoted by ->-><-<-  source != dest
   //return the rootOfPath and PathString
-  def findPath(source: Int, dest: Int, depTree: ParseTree): (String, String, Seq[(Token, String)]) = {
-    val tokens = depTree.sentence.tokens
+  def findPath(source: Int, dest: Int, sentence: Sentence): (String, String, Seq[(Token, String)]) = {
+    val depTree = sentence.syntax.dependencies
+    val tokens = depTree.tokens
+    
     val srctmp = new util.Stack[Int] //source queue
     val srcStack = new util.Stack[Int]
     val destStack = new util.Stack[Int]
@@ -170,16 +173,18 @@ object DepUtils {
     var junk = false // for indicating junk path
     var res = ""
     //find common ancestor
-    var common_ancestor: Int = -1
+    var commonAncestor: Int = -1
     while (!srcStack.empty && !destStack.empty && srcStack.peek == destStack.peek) {
-      common_ancestor = srcStack.peek
+      commonAncestor = srcStack.peek
       srcStack.pop
       destStack.pop
     }
 
-    if (common_ancestor == -1) {
-      path += ((depTree.rootChild, "exception"))
-      return ("null", "exception", path)
+    if (commonAncestor == -1) {
+      //fixme: should use root token instead; depTree.rootChild
+      val exception = s"[EXCEPTION: no common ancestor found between $source and $dest]"
+      path += tokens.head -> exception
+      return ("null", exception, path)
     }
 
     //reverse the order of nodes in srcStack by a tmp stack
@@ -191,37 +196,53 @@ object DepUtils {
     //get nodes from srctmp, destStack and fill in path, todo:without source and dest node, find lemmas for each word using stanford pipeline annotator
     while (!srctmp.empty) {
       val top = srctmp.pop
-      if (!FEASIBLEPOS.contains(tokens(top).attr[PosTag].value)) junk = true
-      val label = depTree.label(top).categoryValue.toLowerCase
+      if (!FEASIBLEPOS.contains(tokens(top).posTag)) junk = true
+
+      val label = getLabel(top, depTree).toLowerCase
       if (JUNKLABELS.contains(label)) junk = true
-      path += ((tokens(top), label))
+
+      path += tokens(top) -> label
+      
       if (top != source) {
-        if (tokens(top).attr[NerTag].value != "O") res += tokens(top).attr[NerTag].value + "<-" + label + "<-"
-        else if(SUFFIX.contains(tokens(top).string)) res += tokens(top).attr[NerTag].value + "<-" + label + "<-"
-        else  res += tokens(top).attr[Lemma].value + "<-" + label + "<-"
+        if (getNERLabel(top, sentence) != "O")
+          res += getNERLabel(top, sentence) + "<-" + label + "<-"
+        else if (SUFFIX.contains(getNERLabel(top, sentence)))
+          res += getNERLabel(top, sentence) + "<-" + label + "<-"
+        else
+          res += tokens(top).lemma + "<-" + label + "<-"
       }
       else
         res += "<-" + label + "<-"
     }
-    path += ((tokens(common_ancestor), "rootOfPath")) //this is common ancestor of source and dest , // tokens(top).lemma, todo
-    if(JUNKROOT.contains(tokens(common_ancestor).attr[Lemma].value.toLowerCase))  {junk = true;     }
-    if (common_ancestor != source && common_ancestor != dest) {
-      if (tokens(common_ancestor).attr[NerTag].value != "O") res += tokens(common_ancestor).attr[NerTag].value
-      else if(SUFFIX.contains(tokens(common_ancestor).string)) res += tokens(common_ancestor).attr[NerTag].value
-      else res += tokens(common_ancestor).attr[Lemma].value
+
+    path += tokens(commonAncestor) -> "rootOfPath" //this is common ancestor of source and dest , // tokens(top).lemma, todo
+
+    if (JUNKROOT.contains(tokens(commonAncestor).lemma.toLowerCase))
+      junk = true
+
+    if (commonAncestor != source && commonAncestor != dest) {
+      if (getNERLabel(commonAncestor, sentence) != "O") res += getNERLabel(commonAncestor, sentence)
+      else if(SUFFIX.contains(getNERLabel(commonAncestor, sentence))) res += getNERLabel(commonAncestor, sentence)
+      else res += tokens(commonAncestor).lemma
     }
+
     while (!destStack.empty) {
       val top = destStack.pop
-      if (!FEASIBLEPOS.contains(tokens(top).attr[PosTag].value)) {junk = true;  }
-      val label = depTree.label(top).categoryValue.toLowerCase
-      if (JUNKLABELS.contains(label)) {junk = true;    }
-      path += ((tokens(top), label))
+      if (!FEASIBLEPOS.contains(tokens(top).posTag))
+        junk = true
+
+      val label = getLabel(top, depTree).toLowerCase
+      if (JUNKLABELS.contains(label))
+        junk = true
+
+      path += tokens(top) -> label
+
       if (top != dest) {
         //if (tokens(top).attr[NerTag].value != "O") junk = true //named entity should not appear on the path
         //if (SUFFIX.contains(tokens(top).string)) junk = true //suffix should not appear on the path
-        if (tokens(top).attr[NerTag].value != "O") res += "->" + label + "->" + tokens(top).attr[NerTag].value
-        else if(SUFFIX.contains(tokens(top).string)) res += "->" + label + "->" + tokens(top).attr[NerTag].value
-        else res += "->" + label + "->" + tokens(top).attr[Lemma].value
+        if (getNERLabel(top, sentence) != "O") res += "->" + label + "->" + getNERLabel(top, sentence)
+        else if(SUFFIX.contains(getNERLabel(top, sentence))) res += "->" + label + "->" + getNERLabel(top, sentence)
+        else res += "->" + label + "->" + tokens(top).lemma
 
       }
       else
@@ -230,135 +251,85 @@ object DepUtils {
 
 
     var content = false //path includes source and dest tokens, there should be content words between them
-    val numContentWords = path.map(_._1).map(_.attr[PosTag].value).filter(CONTENTPOS.contains(_)).size
+    val numContentWords = path.map(_._1).map(_.posTag).count(CONTENTPOS.contains)
 
     if (numContentWords > 1) content = true // else {println("Junk content!")}
     if (!junk && !content) junk = true //heuristics for freebase candidate generation
 
-    if(path.map(_._1).map(_.string).filter(_.matches("[\\?\"\\[]")).size > 0) junk = true
-
-    if(path(0)._2 == "adv") junk = true
-    if(path(0)._2 == "name" && path.reverse(0)._2 == "name") junk = true
-    if(path(0)._2 == "sbj" && path.last._2 == "sbj") junk = true
+    if (path.map(_._1).map(_.word).exists(_.matches("[\\?\"\\[]")))
+      junk = true
+    if (path(0)._2 == "adv")
+      junk = true
+    if (path(0)._2 == "name" && path.reverse(0)._2 == "name")
+      junk = true
+    if (path(0)._2 == "sbj" && path.last._2 == "sbj")
+      junk = true
 
     //filter out junk according to DIRT, rule 2, any dependency relation must connect two content words
     if (junk) {
-      path += ((depTree.rootChild, "junk"))
+      //fixme: should use root token instead; depTree.rootChild
+      path += tokens.head -> "junk"
       return ("null", "junk", path)
     } //comment this out for generating freebase instances
 
-    (tokens(common_ancestor).attr[Lemma].value.toLowerCase, res.toLowerCase, path)
-  }
-
-  //find out mention of the SF entity in the sentence, output a mention
-  def findOneArg(entstr : String, slot: Mention, sentence : Sentence) : Mention = {
-    val words = entstr.split("[-\\s]")
-    val abbr = words.map(_.substring(0,1)).mkString("")
-    val candidates = new ArrayBuffer[Mention]
-    val depTree = sentence.attr[ParseTree]
-    for(token <- sentence.tokens.filter(_.attr[NerTag].value != "O")){
-      if(entstr.contains(token.string) || (abbr.matches("^[A-Z]+$") && token.string.compareTo(abbr) == 0 ) ){  //second condition for handling abbr.
-      var ancestor = token.sentencePosition
-        while(depTree.parentIndex (ancestor) != -1  &&
-        entstr.contains(sentence.tokens(depTree.parentIndex(ancestor)).string)
-        )
-        {
-          ancestor = depTree.parentIndex(ancestor)
-        }
-        var tokenEnd = sentence.tokens(ancestor).position
-        var tokenStart = token.position
-        if(tokenEnd < tokenStart){
-          val tmp = tokenEnd
-          tokenEnd = tokenStart
-          tokenStart = tmp
-        }
-        val mention = new Mention
-        mention.docId := sentence.document.name
-        mention.tokenBegin := tokenStart
-        mention.tokenEnd := tokenEnd
-        mention.charBegin := sentence.document.tokens(tokenStart).stringStart
-        mention.charEnd := sentence.document.tokens(tokenEnd).stringEnd
-
-        //mention.phrase := sentence.document.string.slice(mention.charBegin.value, mention.charEnd())
-        mention.phrase := entstr
-        candidates += mention
-      }
-    }
-
-    val slotHead = EntityMentionUtils.headOfMention(slot,sentence)
-    var maxDis = sentence.tokens.size
-    var res : Mention = null
-    for(mention <- candidates){
-      val dist = math.abs(EntityMentionUtils.headOfMention(mention,sentence)-slotHead)
-      if(dist < maxDis){
-        maxDis = dist
-        res = mention
-      }
-    }
-
-    //    //for debugging:
-    //    if(res != null)
-    //      println(entstr + "\t" + slot.phrase() + "\t" + res.phrase() )
-
-    //    if(res == null){
-    //      for(token <- sentence.tokens.filter(x => (x.attr[PosTag].value == "PRP$" || x.attr[PosTag].value == "PRP")) ) {//still some errors here, it can only be linked to non-person
-    //        val mention = new Mention
-    //        mention.charBegin := token.stringStart
-    //        mention.charEnd := token.stringEnd
-    //        mention.tokenBegin := token.position
-    //        mention.tokenEnd := token.position
-    //        //mention.phrase := token.string
-    //        mention.phrase := entstr
-    //        candidates += mention
-    //      }
-    //    }
-    //    maxDis = sentence.tokens.size
-    //    for(mention <- candidates){
-    //      val dist = math.abs(EntityMentionUtils.headOfMention(mention,sentence)-slotHead)
-    //      if(dist < maxDis){
-    //        maxDis = dist
-    //        res = mention
-    //      }
-    //    }
-    return res
-  }
-
-  def findOneArg(entstr : String, sentence : Sentence) : Seq[Mention] = {
-    val words = entstr.split("[-\\s]")
-    val abbr = words.map(_.substring(0,1)).mkString("")
-    val candidates = new ArrayBuffer[Mention]
-    val depTree = sentence.attr[ParseTree]
-    for(token <- sentence.tokens.filter(_.attr[NerTag].value != "O")){
-      if(entstr.contains(token.string) || (abbr.matches("^[A-Z]+$") && token.string.compareTo(abbr) == 0 ) ){  //second condition for handling abbr.
-      var ancestor = token.sentencePosition
-        while(depTree.parentIndex (ancestor) != -1  &&
-        entstr.contains(sentence.tokens(depTree.parentIndex(ancestor)).string)
-        )
-        {
-          ancestor = depTree.parentIndex(ancestor)
-        }
-        var tokenEnd = sentence.tokens(ancestor).position
-        var tokenStart = token.position
-        if(tokenEnd < tokenStart){
-          val tmp = tokenEnd
-          tokenEnd = tokenStart
-          tokenStart = tmp
-        }
-        val mention = new Mention
-        mention.docId := sentence.document.name
-        mention.tokenBegin := tokenStart
-        mention.tokenEnd := tokenEnd
-        mention.charBegin := sentence.document.tokens(tokenStart).stringStart
-        mention.charEnd := sentence.document.tokens(tokenEnd).stringEnd
-
-        mention.phrase := sentence.document.string.slice(mention.charBegin(), mention.charEnd())
-        mention.canonical := entstr
-        candidates += mention
-      }
-    }
-
-    return candidates
+    (tokens(commonAncestor).lemma.toLowerCase, res.toLowerCase, path)
   }
 }
-*/
 
+object DepUtilsSpec extends App {
+  val deps = Seq(
+    Token("For",CharOffsets(1,1),"IN","for") -> (1,9,"ADV"),
+    Token("more",CharOffsets(2,2),"JJR","more") -> (2,4,"DEP"),
+    Token("than",CharOffsets(3,3),"IN","than") -> (3,4,"DEP"),
+    Token("35",CharOffsets(4,4),"CD","35") -> (4,5,"NMOD"),
+    Token("years",CharOffsets(5,5),"NNS","years") -> (5,1,"PMOD"),
+    Token(",",CharOffsets(6,6),",",",") -> (6,9,"P"),
+    Token("Ronnie",CharOffsets(7,7),"NNP","ronnie") -> (7,8,"NAME"),
+    Token("Biggs",CharOffsets(8,8),"NNP","Biggs") -> (8,9,"SBJ"),
+    Token("thumbed",CharOffsets(9,9),"VBD","thumbed") -> (9,0,"ROOT"),
+    Token("his",CharOffsets(10,10),"PRP$","his") -> (10,11,"NMOD"),
+    Token("nose",CharOffsets(11,11),"NN","nose") -> (11,9,"OBJ"),
+    Token("at",CharOffsets(12,12),"IN","at") -> (12,11,"LOC"),
+    Token("attempts",CharOffsets(13,13),"NNS","attempt") -> (13,12,"PMOD"),
+    Token("to",CharOffsets(14,14),"TO","to") -> (14,13,"NMOD"),
+    Token("bring",CharOffsets(15,15),"VB","bring") -> (15,14,"IM"),
+    Token("him",CharOffsets(16,16),"PRP","him") -> (16,15,"OBJ"),
+    Token("back",CharOffsets(17,17),"RB","back") -> (17,15,"DIR"),
+    Token("to",CharOffsets(18,18),"TO","to") -> (18,15,"DIR"),
+    Token("Britain",CharOffsets(19,19),"NNP","britain") -> (19,18,"PMOD"),
+    Token("to",CharOffsets(20,20),"TO","to") -> (20,15,"PRP"),
+    Token("serve",CharOffsets(21,21),"VB","serve") -> (21,20,"IM"),
+    Token("his",CharOffsets(22,22),"PRP$","his") -> (22,23,"NMOD"),
+    Token("sentence",CharOffsets(23,23),"NN","sentence") -> (23,21,"OBJ"),
+    Token("for",CharOffsets(24,24),"IN","for") -> (24,23,"NMOD"),
+    Token("the",CharOffsets(25,25),"DT","the") -> (25,28,"NMOD"),
+    Token("Great",CharOffsets(26,26),"NNP","great") -> (26,27,"NAME"),
+    Token("Train",CharOffsets(27,27),"NNP","train") -> (27,28,"NMOD"),
+    Token("Robbery",CharOffsets(28,28),"NN","Robbery") -> (28,24,"PMOD"),
+    Token(".",CharOffsets(29,29),".",".") -> (29,9,"P")
+  ).toIndexedSeq
+    
+  val tokens = deps.map(_._1)
+  val arcs = deps.map(_._2)
+        
+  val sentence = Sentence(tokens,
+    SyntaxAnnotation(null, DependencyTree(tokens, arcs)),
+      IEAnnotation(Vector(
+        EntityMention("PER",6,8,null), 
+        EntityMention("LOC",18,19,null), 
+        EntityMention("ORG",25,28,null)),Vector(),Vector(),Vector()
+      )
+    )
+  
+  //println(sentence)
+
+  (6 to 8).foreach { i =>
+    (18 to 19).foreach { j =>
+      println(DepUtils.findPath(i, j, sentence)._2)
+      (25 to 28).foreach { k =>
+        println(DepUtils.findPath(i, k, sentence)._2)
+        println(DepUtils.findPath(j, k, sentence)._2)
+      }
+    }
+  }
+}
