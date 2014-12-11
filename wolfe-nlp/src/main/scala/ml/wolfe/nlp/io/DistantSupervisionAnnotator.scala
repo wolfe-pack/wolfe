@@ -15,7 +15,7 @@ class DistantSupervisionAnnotator extends FreebaseReader(filename = null, useExi
       val relations = entityPairs(s).flatMap { case ((e1,i), (e2,j)) =>
         val e1str = words.slice(e1.start, e1.end).mkString(" ")
         val e2str = words.slice(e2.start, e2.end).mkString(" ")
-        getRelation(e1str, e2str) match {
+        getRelationFromNames(e1str, e2str) match {
           case Some(r) => Some(RelationMention(r, i, j))
           case _=> None
         }

@@ -95,14 +95,17 @@ class FreebaseReader(filename: String, port: Int = 27017, useExisting: Boolean =
     }.toIndexedSeq
   }
 
-  def getRelation(str1: String, str2: String, desc: String = "", undirected: Boolean = false): Option[String] = {
+  def getRelationFromNames(str1: String, str2: String, desc: String = "", undirected: Boolean = false): Option[String] = {
     val mids1 = getCandidateMIDs(str1)
     val mids2 = getCandidateMIDs(str2)
     if (mids1.isEmpty || mids2.isEmpty) return None
     // Do some selection from candidate MIDs - this could be a text similarity measure, random selection, or just first match
     val mid1 = if (desc.size > 1) rankMIDs(mids1, desc).head else mids1.head
     val mid2 = if (desc.size > 1) rankMIDs(mids2, desc).head else mids2.head
+    getRelationFromMIDs(mid1, mid2, undirected)
+  }
 
+  def getRelationFromMIDs(mid1: String, mid2: String, undirected: Boolean = false): Option[String] = {
     // Look for relations (attributes) shared by both MIDs
     val m1 = collection findOne MongoDBObject("arg1" -> mid1, "arg2" -> mid2)
     m1 match {
@@ -170,9 +173,9 @@ class FreebaseReader(filename: String, port: Int = 27017, useExisting: Boolean =
     println("Attributes of m1: " + attributesOf("m1"))
     println("MID of 'Barack Obama': " + getCandidateMIDs("Barack Obama"))
     println("MID of OOV: " + getCandidateMIDs("Barack"))
-    println("Relation between Barack Obama and US? " + getRelation("Barack Obama", "United States of America"))
-    println("Relation between Michelle and Barack? " + getRelation("Michelle Obama", "Barack Obama"))
-    println("Relation between Michelle and US? " + getRelation("Michelle Obama", "United States of America"))
+    println("Relation between Barack Obama and US? " + getRelationFromNames("Barack Obama", "United States of America"))
+    println("Relation between Michelle and Barack? " + getRelationFromNames("Michelle Obama", "Barack Obama"))
+    println("Relation between Michelle and US? " + getRelationFromNames("Michelle Obama", "United States of America"))
   }
 
   def testCollection: MongoCollection = {
