@@ -13,6 +13,7 @@ import ml.wolfe.util.ProgressBar
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.{ListBuffer, ArrayBuffer}
+import scala.io.Source
 
 /**
  * @author rockt
@@ -77,41 +78,52 @@ object CoNLLHackReader extends App {
       es = s.ie.entityMentions
       e1 <- es
       e2 <- es
-      if e1 != e2
+      if e1 != e2 && e1.start < e2.start
     } {
       writer.write(s"${shortestPathString(e1, e2, s)}\t${entityToString(e1, s)}\t${entityToString(e2, s)}\tTrain\t1.0\n")
     }
   }
 
   def apply(inputFileName: String, outputFileName: String, delim: String = "\t"): Unit = {
-    val reader = new ChunkReader(inputFileName)
+    val linesIterator = Source.fromFile(inputFileName).getLines().buffered
     val writer = new FileWriter(outputFileName)
 
-    val progressBar = new ProgressBar(reader.iterator.length, 10000)
+    println("Estimating completion time...")
+    val progressBar = new ProgressBar(Source.fromFile(inputFileName).getLines().size, 100000)
     progressBar.start()
 
+
+    println("Start processing...")
     var id = ""
     var sentenceBuffer = new ArrayBuffer[Sentence]()
+    var linesBuffer = new ArrayBuffer[String]()
 
-    reader.toStream.foreach { s =>
-      val lines = s.split("\n")
-
-      if (lines.head.startsWith("#")) {
+    linesIterator.toStream.foreach { l =>
+      if (l.isEmpty) {
+        sentenceBuffer += fromCoNLLHack(linesBuffer)
+        linesBuffer = new ArrayBuffer[String]()
+      } else if (l.startsWith("#")) {
         writePatterns(Document(sentenceBuffer.map(_.toText).mkString(" "), sentenceBuffer, Some(id)), writer)
-        id = lines.head
+        id = l
         sentenceBuffer = new ArrayBuffer[Sentence]()
-        sentenceBuffer += fromCoNLLHack(lines.filterNot(l => l.startsWith("#begin") || l.startsWith("#end") || l.isEmpty))
-      } else sentenceBuffer += fromCoNLLHack(lines)
+        linesBuffer = new ArrayBuffer[String]()
+        sentenceBuffer += fromCoNLLHack(linesBuffer.filterNot(l => l.startsWith("#begin") || l.startsWith("#end") || l.isEmpty))
+      } else {
+        //sentenceBuffer += fromCoNLLHack(linesBuffer)
+        linesBuffer += l
+      }
 
       progressBar()
     }
+
+    println("Done!")
 
     writer.close()
   }
 
 
-  CoNLLHackReader(args.lift(0).getOrElse("./data/bbc/Publico_prb_parsed.conll"), args.lift(1).getOrElse("./data/bbc/matrix_publico.txt"))
-  //CoNLLHackReader(args.lift(0).getOrElse("./data/bbc/BBC_ner_parsed.conll"), args.lift(1).getOrElse("./data/bbc/matrix_bbc.txt"))
+  //CoNLLHackReader(args.lift(0).getOrElse("./data/bbc/Publico_prb_parsed.conll"), args.lift(1).getOrElse("./data/bbc/matrix_publico.txt"))
+  CoNLLHackReader(args.lift(0).getOrElse("./data/bbc/BBC_ner_parsed.conll"), args.lift(1).getOrElse("./data/bbc/matrix_bbc.txt"))
 }
 
 
