@@ -24,7 +24,7 @@ object MatrixFactorization extends App {
 }
 
 class MatrixFactorization(confPath: String = "conf/mf.conf") {
-  val debug = true //whether to use a small synthetic matrix or actual data
+  val debug = false //whether to use a small synthetic matrix or actual data
   val loadFormulae = debug && true //whether forumlae should be sampled for debugging
   //val print = false //whether to print the matrix (only do this for small ones!)
 
@@ -34,7 +34,7 @@ class MatrixFactorization(confPath: String = "conf/mf.conf") {
   println("Using " + confPath)
 
   val dataType = conf.getString("dataType")
-  assert(dataType == "naacl" || dataType == "figer", s"dataType $dataType should be 'naacl' or 'figer'.")
+  assert(dataType == "naacl" || dataType == "figer" || dataType == "tsv", s"dataType $dataType should be 'naacl' or 'figer' or 'tsv'.")
   val useFeatures = (dataType == "figer" && conf.getBoolean("figer.use-features")) || (dataType == "naacl" && conf.getBoolean("mf.use-features"))
 
   val outputPath = conf.getString("outDir")
@@ -78,6 +78,7 @@ class MatrixFactorization(confPath: String = "conf/mf.conf") {
   } else dataType match {
     case "naacl" => LoadNAACL(k, subsample)
     case "figer" => LoadFIGER(k, subsample)
+    case "tsv" => LoadTSV(k, subsample)
   }
 
   val rand = new Random(0l)
@@ -323,6 +324,7 @@ class MatrixFactorization(confPath: String = "conf/mf.conf") {
         case "figer" =>
           WriteFIGER(db, pathToPredict)
           EvaluateFIGER.main(Array(pathToPredict, Conf.outDir.getAbsolutePath))
+        case "tsv" => //todo: write out predictions (for all cells?)
       }
 
       //db.writeVectors(Conf.outDir.getAbsolutePath + "/vectors.tsv")
