@@ -24,7 +24,7 @@ import ml.wolfe.util._
 
 object EvaluateNAACL extends App {
   val configFile = args.lift(0).getOrElse("./conf/eval.conf")
-  val pathToLatestPredictions = args.lift(1).getOrElse("./data/out/" + Conf.getMostRecentOutDir + "/predict.txt") 
+  val pathToLatestPredictions = args.lift(1).getOrElse("./data/out/" + Conf.getMostRecentOutDir + "/predict.txt")
   new EvaluateNAACL(configFile, pathToLatestPredictions).eval()
 }
 
@@ -630,11 +630,18 @@ object LoadNAACL extends App {
     val kb = if (Conf.getBoolean("mf.use-features")) new TensorKB(k) with Features else new TensorKB(k)
 
     //loading cells
-    val zipFile = new java.util.zip.ZipFile(new File(this.getClass.getResource("/naacl2013.txt.zip").toURI))
-    import collection.JavaConverters._
+    val inputFile = "/" + Conf.getString("inputFile")
+    var facts = Iterator[String]()
 
-    val List(entry) = zipFile.entries.asScala.toList
-    val facts = Source.fromInputStream(zipFile.getInputStream(entry)).getLines()
+    if (inputFile.endsWith(".zip")) {
+      val zipFile = new java.util.zip.ZipFile(new File(this.getClass.getResource(inputFile).toURI))
+      import collection.JavaConverters._
+
+      val List(entry) = zipFile.entries.asScala.toList
+      facts = Source.fromInputStream(zipFile.getInputStream(entry)).getLines()
+    } else {
+      facts = Source.fromFile(inputFile).getLines()
+    }
 
     val rand = new Random(0l)
 
@@ -710,7 +717,6 @@ object LoadNAACL extends App {
 }
 
 
-
 object WriteNAACL extends App {
   def apply(db: TensorDB, filePath: String = "./data/out/predict.txt"): Unit = {
     val writer = new FileWriter(filePath)
@@ -725,9 +731,10 @@ object WriteNAACL extends App {
     }).sortBy(-_._2)
 
 
-    testCellsWithPrediction.foreach { case (cell, p) =>
-      val (e1, e2) = cell.key2.asInstanceOf[(String, String)]
-      writer.write(s"$p\t$e1|$e2\t" + "REL$NA" + s"\t${cell.key1}\n")
+    testCellsWithPrediction.foreach {
+      case (cell, p) =>
+        val (e1, e2) = cell.key2.asInstanceOf[(String, String)]
+        writer.write(s"$p\t$e1|$e2\t" + "REL$NA" + s"\t${ cell.key1 }\n")
     }
     writer.close()
   }
