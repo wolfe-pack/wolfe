@@ -24,7 +24,7 @@ import ml.wolfe.util._
 
 object EvaluateNAACL extends App {
   val configFile = args.lift(0).getOrElse("./conf/eval.conf")
-  val pathToLatestPredictions = args.lift(1).getOrElse("./data/out/" + Conf.getMostRecentOutDir + "/predict.txt") 
+  val pathToLatestPredictions = args.lift(1).getOrElse("./data/out/" + Conf.getMostRecentOutDir + "/predict.txt")
   new EvaluateNAACL(configFile, pathToLatestPredictions).eval()
 }
 
