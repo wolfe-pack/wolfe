@@ -630,18 +630,11 @@ object LoadNAACL extends App {
     val kb = if (Conf.getBoolean("mf.use-features")) new TensorKB(k) with Features else new TensorKB(k)
 
     //loading cells
-    val inputFile = "/" + Conf.getString("inputFile")
-    var facts = Iterator[String]()
+    val zipFile = new java.util.zip.ZipFile(new File(this.getClass.getResource("/naacl2013.txt.zip").toURI))
+    import collection.JavaConverters._
 
-    if (inputFile.endsWith(".zip")) {
-      val zipFile = new java.util.zip.ZipFile(new File(this.getClass.getResource(inputFile).toURI))
-      import collection.JavaConverters._
-
-      val List(entry) = zipFile.entries.asScala.toList
-      facts = Source.fromInputStream(zipFile.getInputStream(entry)).getLines()
-    } else {
-      facts = Source.fromFile(inputFile).getLines()
-    }
+    val List(entry) = zipFile.entries.asScala.toList
+    val facts = Source.fromInputStream(zipFile.getInputStream(entry)).getLines()
 
     val rand = new Random(0l)
 
@@ -717,6 +710,7 @@ object LoadNAACL extends App {
 }
 
 
+
 object WriteNAACL extends App {
   def apply(db: TensorDB, filePath: String = "./data/out/predict.txt"): Unit = {
     val writer = new FileWriter(filePath)
@@ -731,10 +725,9 @@ object WriteNAACL extends App {
     }).sortBy(-_._2)
 
 
-    testCellsWithPrediction.foreach {
-      case (cell, p) =>
-        val (e1, e2) = cell.key2.asInstanceOf[(String, String)]
-        writer.write(s"$p\t$e1|$e2\t" + "REL$NA" + s"\t${ cell.key1 }\n")
+    testCellsWithPrediction.foreach { case (cell, p) =>
+      val (e1, e2) = cell.key2.asInstanceOf[(String, String)]
+      writer.write(s"$p\t$e1|$e2\t" + "REL$NA" + s"\t${cell.key1}\n")
     }
     writer.close()
   }
