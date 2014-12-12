@@ -55,21 +55,19 @@ object CoNLLHackReader extends App {
   def writePatterns(doc: Document, writer: FileWriter): Unit = {
     for {
       s <- doc.sentences
+      //tmp = { println(s.toText) }
       es = s.ie.entityMentions
       e1 <- es
       e2 <- es
       if e1 != e2 //&& e1.start < e2.start
-      //todo: need to consider all token indices of an entity?
     } {
-      val path = DepUtils.findPath(e1.start, e2.start, s)._2
-      if (!path.startsWith("[EXCEPTION") && path != "junk") {
-        println(path)
-        println(entityToString(e1, s))
-        println(DepUtils.findPath(e1.start, e2.start, s)._3.mkString("\n"))
-        println(entityToString(e2, s))
-        println()
+      val (rootOfPath, pathString, path) = DepUtils.findPath(DepUtils.headOfMention(e1, s), DepUtils.headOfMention(e2, s), s)
+      if (!pathString.startsWith("[EXCEPTION") && pathString != "junk" && path.size < 10) {
+        val outputLine = s"path#|$pathString|\t${ entityToString(e1, s) }\t${ entityToString(e2, s) }\tTrain\t1.0\n"
+        //println(outputLine)
+        //println(path.mkString("\n"))
 
-        writer.write(s"path#$path\t${ entityToString(e1, s) }\t${ entityToString(e2, s) }\tTrain\t1.0\n")
+        writer.write(outputLine)
       }
     }
   }
@@ -140,7 +138,7 @@ object DepUtils {
     depTree.arcs.find(a => a._1 == id).map(_._3).getOrElse(s"[EXCEPTION: no label found for $id]")
 
   def getNERLabel(id: Int, s: Sentence): String =
-    s.ie.entityMentions.find(e => e.start <= id && id <= e.end).map(_.label).getOrElse(s"[EXCEPTION: no ner tag found for $id]")
+    s.ie.entityMentions.find(e => e.start <= id && id <= e.end).map(_.label).getOrElse("O")
     
   // find all the ancestors of a node in order to find common ancestor of two nodes, called by find_path
   def findAncestors(ancestors: util.Stack[Int], id: Int, depTree: DependencyTree) {
@@ -161,8 +159,9 @@ object DepUtils {
   //return the rootOfPath and PathString
   def findPath(source: Int, dest: Int, sentence: Sentence): (String, String, Seq[(Token, String)]) = {
     val depTree = sentence.syntax.dependencies
-    val tokens = depTree.tokens
-    
+    val tokens = sentence.tokens
+    def getToken(ix: Int) = tokens(ix - 1)
+
     val srctmp = new util.Stack[Int] //source queue
     val srcStack = new util.Stack[Int]
     val destStack = new util.Stack[Int]
@@ -193,56 +192,60 @@ object DepUtils {
       srctmp.push(top)
     }
 
+    //println("Tokens:\n" + sentence.tokens.mkString("\n"))
+
     //get nodes from srctmp, destStack and fill in path, todo:without source and dest node, find lemmas for each word using stanford pipeline annotator
     while (!srctmp.empty) {
       val top = srctmp.pop
-      if (!FEASIBLEPOS.contains(tokens(top).posTag)) junk = true
+      if (!FEASIBLEPOS.contains(getToken(top).posTag)) junk = true
 
       val label = getLabel(top, depTree).toLowerCase
       if (JUNKLABELS.contains(label)) junk = true
 
-      path += tokens(top) -> label
+      path += getToken(top) -> label
       
       if (top != source) {
+        //println("# " + top + "\t" + getNERLabel(top, sentence))
         if (getNERLabel(top, sentence) != "O")
           res += getNERLabel(top, sentence) + "<-" + label + "<-"
         else if (SUFFIX.contains(getNERLabel(top, sentence)))
           res += getNERLabel(top, sentence) + "<-" + label + "<-"
-        else
-          res += tokens(top).lemma + "<-" + label + "<-"
+        else {
+          res += getToken(top).lemma + "<-" + label + "<-"
+        }
       }
       else
         res += "<-" + label + "<-"
     }
 
-    path += tokens(commonAncestor) -> "rootOfPath" //this is common ancestor of source and dest , // tokens(top).lemma, todo
+    path += getToken(commonAncestor) -> "rootOfPath" //this is common ancestor of source and dest , // tokens(top).lemma, todo
 
-    if (JUNKROOT.contains(tokens(commonAncestor).lemma.toLowerCase))
+    if (JUNKROOT.contains(getToken(commonAncestor).lemma.toLowerCase))
       junk = true
 
     if (commonAncestor != source && commonAncestor != dest) {
       if (getNERLabel(commonAncestor, sentence) != "O") res += getNERLabel(commonAncestor, sentence)
       else if(SUFFIX.contains(getNERLabel(commonAncestor, sentence))) res += getNERLabel(commonAncestor, sentence)
-      else res += tokens(commonAncestor).lemma
+      else res += getToken(commonAncestor).lemma
     }
 
     while (!destStack.empty) {
       val top = destStack.pop
-      if (!FEASIBLEPOS.contains(tokens(top).posTag))
+      if (!FEASIBLEPOS.contains(getToken(top).posTag))
         junk = true
 
       val label = getLabel(top, depTree).toLowerCase
       if (JUNKLABELS.contains(label))
         junk = true
 
-      path += tokens(top) -> label
+      path += getToken(top) -> label
 
       if (top != dest) {
         //if (tokens(top).attr[NerTag].value != "O") junk = true //named entity should not appear on the path
         //if (SUFFIX.contains(tokens(top).string)) junk = true //suffix should not appear on the path
         if (getNERLabel(top, sentence) != "O") res += "->" + label + "->" + getNERLabel(top, sentence)
         else if(SUFFIX.contains(getNERLabel(top, sentence))) res += "->" + label + "->" + getNERLabel(top, sentence)
-        else res += "->" + label + "->" + tokens(top).lemma
+        else res += "->" + label + "->" + getToken(top).lemma
 
       }
       else
@@ -253,8 +256,17 @@ object DepUtils {
     var content = false //path includes source and dest tokens, there should be content words between them
     val numContentWords = path.map(_._1).map(_.posTag).count(CONTENTPOS.contains)
 
-    if (numContentWords > 1) content = true // else {println("Junk content!")}
+
+
+    //println(path.map(_._1).map(_.posTag).filter(CONTENTPOS.contains))
+    //rockt: increased this to 2a
+    if (numContentWords > 2) content = true // else {println("Junk content!")}
+    //if (numContentWords > 1) content = true // else {println("Junk content!")}
+
     if (!junk && !content) junk = true //heuristics for freebase candidate generation
+
+    //rockt: we only care about paths with content
+    if (!content) junk = true
 
     if (path.map(_._1).map(_.word).exists(_.matches("[\\?\"\\[]")))
       junk = true
@@ -272,7 +284,32 @@ object DepUtils {
       return ("null", "junk", path)
     } //comment this out for generating freebase instances
 
-    (tokens(commonAncestor).lemma.toLowerCase, res.toLowerCase, path)
+    (getToken(commonAncestor).lemma.toLowerCase, res.toLowerCase, path)
+  }
+
+
+  def headOfMention(mention: EntityMention, sentence: Sentence): Int = {
+    // find out the head of this mention
+    val depTree = sentence.syntax.dependencies
+    val beginTokenPosition = mention.start
+    val untilTokenPosition = mention.end + 1
+
+    var head = 0
+    if (untilTokenPosition - beginTokenPosition == 1) head = beginTokenPosition
+
+    else {
+      //find each token's ancestors which are in the entitymention, choose the rightmost one
+      head = beginTokenPosition
+
+      for (i <- beginTokenPosition until untilTokenPosition) {
+        var ancestor = i
+        while (parentIndex(ancestor, depTree) < untilTokenPosition && parentIndex(ancestor, depTree) >= beginTokenPosition)
+          ancestor = parentIndex(ancestor, depTree)
+        if (ancestor > head) head = ancestor
+      }
+    }
+
+    head
   }
 }
 
