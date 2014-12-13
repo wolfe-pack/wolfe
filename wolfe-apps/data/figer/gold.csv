@@ -1,0 +1,563 @@
+UW_000	/organization/educational_institution	/organization
+Department of Chemistry_001	/education/department	/organization
+American Association for the Advancement of Science_002	/organization
+AAAS_003	/organization
+AAAS_004	/organization
+Science_005	/written_work
+Science Translational Medicine_006	/written_work
+Fellows_007	/title
+AAAS_008	/organization
+UW_009	/organization/educational_institution	/organization
+AAAS_010	/organization
+Paul Hopkins_011	/person
+Hopkins_012	/person
+UW_013	/organization/educational_institution	/organization
+Department of Chemistry_014	/education/department
+Daniel T. Chiu_015	/person
+Daniel R. Gamelin_016	/person
+Karen I. Goldberg_017	/person
+Bruce H. Robinson_018	/person
+Gamelin_019	/person
+Hopkins_020	/person
+Bruce Robinson_021	/person
+Gamelin_022	/person	/person/author
+Chiu_023	/person
+Goldberg_024	/person
+Fellows Forum_025	/event
+Vancouver_026	/location	/location/city
+B.C_027	/location	/location/province
+The Fellows Forum_028	/event
+Feb. 16 – 20_029	/time
+UW_030	/organization/educational_institution	/organization
+Charles Campbell_031	/person	/person/author
+E. Virginia Armbrust_032	/person
+School of Oceanography_033	/organization	/organization/educational_institution
+Neil M. Nathanson_034	/person
+Department of Pharmacology_035	/organization	/education/department
+Danny Shen_036	/person
+Jashvant Unadkat_037	/person
+School of Pharmacy_038	/organization	/organization/educational_institution
+Michael Schick_039	/person
+Department of Physics_040	/organization	/education/department
+Federal Way_041	/location	/location/city
+Blue Moon_042	/location
+Pacific Highway South_043	/location	/transportation/road
+U.S. Attorney ’s Office_044	/organization	/government_agency
+Friday_045	/time
+Wednesday_046	/time
+Blue Moon_047	/location
+Blue Moon_048	/location
+Thursday_049	/time
+Friday_050	/time
+U.S. Immigration and Customs Enforcement_051	/government_agency	/organization
+U.S. Attorney_052	/title
+Jenny A. Durkan_053	/person
+Thursday_054	/time
+Chang Young Kim_055	/person
+Milton_056	/location	/location/city
+Yeun Jeong Mun_057	/person
+Mun_058	/person
+Thursday_059	/time
+Miyoung Roberts_060	/person
+Federal Way_061	/location	/location/city
+Jung San So_062	/person
+Seattle_063	/location/city	/location
+Raymond Jung_064	/person
+Federal Way_065	/location/city	/location
+Kwang Frank Lee_066	/person
+Federal Way_067	/location/city	/location
+Thursday_068	/time
+Sung Hee Han_069	/person
+Hee Jae Cho_070	/person
+Federal Way_071	/location/city	/location
+Han_072	/person
+Blue Moon_073	/location
+Cho_074	/person
+Cho_075	/person
+Los Angeles_076	/location	/location/city
+November 2009_077	/time
+Seattle police_078	/government_agency	/organization
+Kim_079	/person
+Kim_080	/person
+United States_081	/location	/location/country
+Kim_082	/person
+Seattle City Council_083	/government/government
+Mayor Mike McGinn_084	/person	/person/politician
+NBA_085	/organization/sports_league	/organization
+Seattle_086	/location/city	/location
+the Mayor 's Office_087	/government_agency
+Councilmember Richard Conlin_088	/person	/person/politician
+McGinn_089	/person
+July_090	/time
+Carl Hirsh_091	/person
+McGinn_092	/person
+Hirsh_093	/person
+Sodo District_094	/location
+The Seattle Times_095	/organization/company	/news_agency	/organization
+December_096	/time
+NBA_097	/organization/sports_league	/organization
+Seattle_098	/location/city	/location
+Councilmember Sally Clark_099	/person	/person/politician
+McGinn_100	/person
+Friday_101	/time
+Seattle_102	/location/city	/location
+The Times_103	/organization/company	/news_agency	/organization
+December_104	/time
+San Francisco_105	/location/city	/location	/location/county
+Christopher Hansen_106	/person
+Seattle_107	/location	/location/city
+McGinn_108	/person
+Hirsh_109	/person
+Hugh Spitzer_110	/person
+September_111	/time
+Initiative 91_112	/written_work
+The Seattle Times_113	/organization/company	/news_agency	/organization
+Public Records Act_114	/law
+December_115	/time
+McGinn_116	/person
+February_117	/time
+Friday_118	/time
+Seattle_119	/location/city	/location
+I-91_120	/written_work
+McGinn_121	/person
+McGinn_122	/person
+City Council_123	/government_agency
+Clark_124	/person
+Hirsh_125	/person
+Sonics_126	/organization/sports_team
+Clark_127	/person
+Hirsh_128	/person
+Sonics_129	/organization/sports_team
+Howard Schultz_130	/person
+KeyArena_131	/building/sports_facility	/building	/location
+Schultz_132	/person
+Clay Bennett_133	/person
+Bennett_134	/person
+NBA_135	/organization/sports_league	/organization	/organization/company
+Oklahoma City_136	/location/city	/location
+KeyArena_137	/building/sports_facility	/building	/location
+NBA_138	/organization/sports_league	/organization	/organization/company
+NHL_139	/organization/sports_league	/organization	/organization/company
+Hirsh_140	/person
+Friday_141	/time
+Hirsh_142	/person
+Stafford Sports_143	/organization
+New Jersey_144	/location	/location/province
+San Antonio Spurs_145	/organization/sports_team
+AT&T Center_146	/building/sports_facility	/building	/location
+Orlando_147	/location	/location/city
+Orlando Magic_148	/organization	/organization/sports_team
+Madison Square Garden_149	/location	/building	/organization/company	/building/sports_facility
+New York City_150	/location	/location/city
+Hirsh_151	/person
+NBA_152	/organization/sports_league	/organization
+New Jersey Nets_153	/organization	/organization/sports_team
+Brooklyn_154	/location/city	/location
+Hirsh_155	/person
+Hansen_156	/organization/company
+Hansen_157	/organization/company
+Occidental Avenue South_158	/location	/transportation/road
+South Massachusetts_159	/location	/transportation/road
+South Holgate_160	/location	/transportation/road
+San Antonio_161	/organization	/organization/sports_team
+The AT&T Center_162	/location	/building	/building/sports_facility
+Spurs_163	/organization/sports_team
+WNBA_164	/organization/sports_league	/organization
+Silver Stars_165	/organization/sports_team
+American Hockey League_166	/organization/sports_league	/organization
+Rampage_167	/organization/sports_team
+Spurs_168	/organization/sports_team
+San Antonio_169	/location/city	/location
+Rick Pych_170	/person
+San Antonio Spurs_171	/organization/sports_team
+Hirsh_172	/person
+Seattle_173	/location	/location/city
+McGinn_174	/person	/person/politician
+August_175	/time
+Christian Sinderman_176	/person
+Seattle_177	/location	/location/city
+Sinderman_178	/person
+U-District_179	/location
+UW School of Social Work_180	/location	/organization	/organization/educational_institution
+Sanctuary Art Center_181	/location	/building	/organization
+University Lutheran Church-based_182	/organization	/location
+Jamie Lee_183	/person
+Sanctuary Art Center_184	/location	/building	/organization
+Interagency Academy_185	/organization	/organization/educational_institution
+Seattle_186	/location/city	/location
+UW School of Social Work_187	/location	/organization	/organization/educational_institution
+Jan. 11_188	/time
+March 15_189	/time
+Madeline Galbraith_190	/person
+School of Social Work_191	/organization	/organization/educational_institution
+Galbraith_192	/person
+Michael Winans_193	/person
+UW_194	/organization	/organization/educational_institution
+Winans_195	/person
+Sanctuary_196	/organization
+Galbraith_197	/person
+Lee_198	/person
+Sanctuary Art Center_199	/building	/organization
+Seattle_200	/location	/location/city
+Feb. 14_201	/time
+Sanctuary_202	/organization
+Lee_203	/person
+Kevin McGuff_204	/person	/person/coach
+Huskies_205	/organization/sports_team	/organization
+Washington State_206	/organization	/organization/sports_team
+Pullman_207	/location
+Wash._208	/location	/location/province
+UW_209	/organization	/organization/educational_institution
+Cougars_210	/organization/sports_team	/organization
+McGuff_211	/person
+Regina Rogers_212	/person	/person/athlete
+Utah_213	/organization	/organization/sports_team
+Saturday_214	/time
+Rogers_215	/person	/person/athlete
+UW_216	/organization	/organization/educational_institution
+Washington State_217	/organization/sports_team	/organization
+Rogers_218	/person
+Rogers ’_219	/person
+Marjie Heard_220	/person	/person/athlete
+Talia Walton_221	/person	/person/athlete
+Huskies_222	/organization/sports_team	/organization
+Washington State_223	/organization/sports_team	/organization
+Rogers_224	/person
+Mackenzie Argens_225	/person	/person/athlete
+Mollie Williams_226	/person	/person/athlete
+Argens_227	/person
+Cougars_228	/organization/sports_team
+Rogers_229	/person	/person/athlete
+Williams_230	/person
+UW_231	/organization	/organization/educational_institution
+Heard_232	/person	/person/athlete
+Huskies_233	/organization/sports_team
+Cougar_234	/organization/sports_team
+Saturday_235	/time
+UW_236	/organization/sports_team
+Bay Area_237	/location
+Stanford_238	/organization/sports_team
+Cal_239	/organization/sports_team
+Cougars_240	/organization/sports_team
+McGuff_241	/person
+Washington State_242	/organization/sports_team
+The Cougars_243	/organization/sports_team
+June Daugherty_244	/person	/person/coach
+the Huskies_245	/organization/sports_team
+Rogers_246	/person	/person/athlete
+Jazmine Davis_247	/person	/person/athlete
+McGuff_248	/person
+Rogers_249	/person	/person/athlete
+Huskies_250	/organization/sports_team
+Cougars_251	/organization/sports_team
+Washington State_252	/location	/organization/sports_team
+Safeway_253	/organization/company	/building
+U-District_254	/location
+Real Change_255	/written_work
+Edward McClain_256	/person
+McClain_257	/person
+Jackson , Miss._258	/location
+Chicago_259	/location	/location/city
+bachelor ’s degree_260	/education/educational_degree
+Northern Illinois University_261	/location	/organization	/organization/educational_institution
+Concordia University_262	/organization/educational_institution	/location	/organization
+Canada_263	/location	/location/country
+Minnesota_264	/location	/location/province
+McClain_265	/person
+Real Change_266	/written_work
+Ed_267	/person
+Harris_268	/person
+Real Change_269	/organization/company
+McClain_270	/person
+McClain_271	/person
+McClain_272	/person
+Sara Osborne_273	/person
+Safeway_274	/organization/company	/organization
+Osborne_275	/person
+McClain_276	/person
+McClain_277	/person
+Safeway_278	/location	/organization	/organization/company
+McClain_279	/person
+Osborne_280	/person
+McClain_281	/person
+Safeway_282	/organization/company	/organization
+McClain_283	/person
+The Seattle Coalition on Homelessness_284	/organization
+Seattle_285	/location/city	/location
+McClain_286	/person
+McClain_287	/person
+McClain_288	/person
+Safeway_289	/location	/location/city	/organization	/organization/company
+Real Change_290	/organization/company
+McClain_291	/person
+Safeway_292	/organization	/organization/company	/building
+UW School of Law Innocence Project Northwest ( IPNW ) Clinic_293	/location	/organization	/organization/educational_institution
+Washington State_294	/location	/location/province
+House Bill 2221_295	/law
+Amy Shebeck_296	/person
+Thomas Hudson_297	/person
+Caroline Bercier_298	/person
+Michael Windle_299	/person
+House Committee on Judiciary ’s public hearing_300	/event
+IPNW_301	/organization
+UW Law ’s Legislative Advocacy Clinic_302	/location	/organization
+IPNW_303	/organization
+Shebeck_304	/person
+Legislature_305	/organization
+Hudson_306	/person
+Lara Zarowsky_307	/person
+IPNW_308	/organization
+Zarowsky_309	/person
+Ted Bradford_310	/person
+Alan Northrop_311	/person
+Larry Davis_312	/person
+IPNW_313	/organization
+Shebeck_314	/person
+Bradford_315	/person
+Washington_316	/location	/location/province
+Court of Appeals_317	/government_agency
+Northrop_318	/person
+Davis_319	/person
+Shebeck_320	/person
+IPNW_321	/organization
+Rep. Tina Orwall_322	/person	/person/politician
+Hudson_323	/person
+Hudson_324	/person
+Shebeck_325	/person
+Northrop_326	/person
+Shebeck_327	/person
+Hudson_328	/person
+IPNW_329	/organization
+Zarowsky_330	/person
+Zarowsky_331	/person
+Washington state_332	/location	/location/province
+Zarowsky_333	/person
+Hudson_334	/person
+Hudson_335	/person
+Zarowsky_336	/person
+Marek Wieczorek_337	/person	/person/artist
+“_338	/art
+The Desire of the Museum_339	/art
+Whitney Museum_340	/location	/organization	/building
+New York_341	/location	/location/city
+Wieczorek_342	/person
+New York_343	/location	/location/city
+Netherlands_344	/location	/location/country
+Wieczorek_345	/person
+Freudian lens_346	/person
+Whitney Museum ’s Independent Study Program_347	/organization	/organization/educational_institution
+Carel Balth_348	/person	/person/artist
+Wieczorek_349	/person
+Balth_350	/person
+New York_351	/location	/location/city
+Balth_352	/person
+Laser Paintings_353	/art
+Wieczorek_354	/person
+Balth_355	/person
+Amsterdam_356	/location	/location/city
+Wieczorek_357	/person
+Wieczorek_358	/person
+Henry Art Gallery_359	/location	/building
+Balth_360	/person
+Videowatercolors_361	/art
+Henry Art Gallery_362	/location	/building
+Balth_363	/person
+Wieczorek ’s_364	/person
+Marek_365	/person
+Betsey Brock_366	/person	/person/artist
+Henry Art Gallery_367	/location	/building
+Wieczorek_368	/person
+Balth_369	/person
+Wieczorek_370	/person
+Balth_371	/person
+Balth_372	/person
+Wieczorek_373	/person
+Balth_374	/person
+Balth_375	/person
+Videowatercolor_376	/art
+Moving II_377	/art
+Balth_378	/person
+Wieczorek_379	/person
+Wieczorek_380	/person
+Balth_381	/person
+Balth_382	/person
+Artwork without the Tulipman_383	/art
+Balth_384	/person
+Wieczorek_385	/person
+Balth_386	/person
+Wieczorek_387	/person
+The Seattle Times_388	/organization	/organization/company	/written_work	/news_agency
+Balth_389	/person
+Wieczorek_390	/person
+Balth_391	/person
+Wieczorek_392	/person
+Wieczorek_393	/person
+ASUW Board of Directors_394	/organization
+South Asian_395	/people/ethnicity	/location
+Asian Student Commission_396	/organization
+ASC_397	/organization
+ASC_398	/organization
+ASUW Joint Commission Committee_399	/organization
+Divya Ramachandra_400	/person
+Indian Student Association_401	/organization
+ISA_402	/organization
+ASC_403	/organization
+South Asian_404	/location
+East Asian_405	/location
+Ramachandra_406	/person
+ASC_407	/organization
+Ramachandra_408	/person
+Ramashandra_409	/person
+ASUW_410	/organization
+South Asian_411	/location
+Jonathan Winn_412	/person
+ASUW_413	/organization
+ASUW_414	/organization
+Winn_415	/person
+Winn_416	/person
+ASC_417	/organization
+Director Melvin Taing_418	/person
+Jan. 18_419	/time
+ASC_420	/organization
+Taing_421	/person
+UW Office of the Registrar_422	/organization
+Asian_423	/people/ethnicity
+Asian-American_424	/people/ethnicity
+ASC_425	/organization
+ASC_426	/organization
+ASC_427	/organization
+Pacific Islander Student Commission_428	/organization
+Taing_429	/person
+ASC_430	/organization
+Taing_431	/person
+South Asian_432	/people/ethnicity	/location
+Asian Student Commission_433	/organization
+ASC_434	/organization
+Taing_435	/person
+Taing_436	/person
+Ramachandra_437	/person
+Bhangra Bash_438	/event
+Bhangra Bash_439	/event
+Ramachandra_440	/person
+South Asian_441	/people/ethnicity	/location
+Seattle_442	/location/city	/location
+William Heisel_443	/person
+Institute for Health Metrics and Evaluation_444	/organization
+IHME_445	/organization
+Foster School of Business_446	/organization	/organization/educational_institution
+IHME_447	/organization
+Global Health Nexus_448	/organization
+Washington Global Health Alliance_449	/organization
+Foster School of Business_450	/organization	/organization/educational_institution
+Global Social Entrepreneurship Competition_451	/event
+Heisel_452	/person
+March_453	/time
+Bill & Melinda Gates Foundation_454	/organization
+Seattle Children ’s Hospital_455	/location	/building	/building/hospital
+IHME_456	/organization
+Heisel_457	/person
+Jamie Choe_458	/person
+Choe_459	/person
+Ali Baba_460	/organization
+India_461	/location	/location/country
+Choe_462	/person
+Alyssa Taylor_463	/person
+Taylor_464	/person
+Adirondack Park Agency_465	/organization	/government_agency
+Adirondack Club and Resort_466	/building/hotel
+Terry Martino_467	/person
+Tupper Lakers_468	/person
+APA_469	/organization
+Gerald Delaney_470	/person
+Local Government Review Board_471	/organization
+Michael Scaringe_472	/person
+Franklin County Court_473	/government_agency
+Judge Robert Main_474	/person
+Scaringe_475	/person
+Brian Barrett_476	/person
+Lake Placid_477	/location/city	/location
+Judge Main_478	/person
+Bruce Cox_479	/person
+Barrett_480	/person
+Saranac Lake Youth Center_481	/organization
+Barrett_482	/person
+Mary Rain_483	/person
+Ogdensburg_484	/location/city	/location
+Barrett_485	/person
+Scaringe_486	/person
+Mr. Scaringe_487	/person
+Ms. Rain_488	/person
+Rain_489	/person
+Barrett_490	/person
+Scaringe_491	/person
+Judge Main_492	/person
+Rain_493	/person
+Scaringe_494	/person
+Barrett_495	/person
+Judge Main_496	/person
+Spencer Anderson_497	/person	/person/doctor
+U.S. Army_498	/military	/organization
+Billings_499	/location/city	/location
+Spencer_500	/person	/person/soldier
+Spencer_501	/person	/person/soldier
+Army_502	/military	/organization
+Iraq_503	/location/country	/location
+German shepherds_504	/living_thing	/livingthing/animal
+Belgian malinois_505	/living_thing	/livingthing/animal
+Baxter Creek Veterinary Clinic_506	/building	/building/hospital
+Spencer_507	/person
+acupuncture_508	/medicine/medical_treatment
+Army_509	/military	/organization
+Spencer_510	/person	/person/soldier
+Bozeman_511	/location/city	/location
+Spencer_512	/person
+Jennifer Leight_513	/person
+Newfoundland_514	/living_thing	/livingthing/animal
+Spencer_515	/person
+Leight_516	/person
+Leight_517	/person
+Bridger Canyon_518	/location
+Bridger Bowl ski area_519	/location
+Northwestern Energy_520	/organization	/organization/company
+Claudia Rapkoch_521	/person
+Bridger Bowl_522	/location
+Facebook_523	/internet/website	/organization/company	/organization
+Bridger_524	/organization	/organization/company
+Sony_525	/organization	/organization/company
+Sony_526	/organization	/organization/company
+UHS-I_527	/product
+Sony_528	/organization	/organization/company
+CES_529	/event
+SD Association_530	/organization
+SD_531	/product
+EyeFi_532	/product
+PhotographyBlog_533	/internet/website
+SanDisk_534	/organization	/organization/company
+Lexar_535	/organization	/organization/company
+CES_536	/event
+Lexar_537	/organization	/organization/company
+Sony_538	/organization	/organization/company
+Port-au-Prince_539	/location/city	/location
+Haiti_540	/location/country	/location
+Maggie Steber_541	/person	/person/artist
+Haiti_542	/location/country	/location
+FotoKonbit_543	/organization
+United Nations_544	/organization
+Steber_545	/person
+FotoKonbit_546	/organization
+Holga_547	/product	/product/camera
+Haitians_548	/location/country	/location
+Steber_549	/person
+Haitians_550	/location/country	/location
+College of Medical , Veterinary & Life Sciences_551	/organization	/organization/educational_institution
+University of Glasgow_552	/organization	/organization/educational_institution
+Glasgow_553	/location/city	/location
+UK_554	/location/country	/location
+Companion Animal Society_555	/organization
+New Zealand Veterinary Association_556	/organization
+New Zealand_557	/location/country	/location
+anaesthesia_558	/medicine/symptom
+analgesia_559	/medicine/symptom
+Unitec Institute of Technology_560	/organization/educational_institution	/organization
+Auckland_561	/location/city	/location
+New Zealand_562	/location/country	/location

@@ -1,6 +1,6 @@
 package ml.wolfe.apps
 
-import ml.wolfe.apps.factorization.{Cell, TensorDB}
+import ml.wolfe.apps.factorization.{Impl, TensorKB, Cell, TensorDB}
 import org.scalatest.{FunSpec, Matchers, FreeSpec, WordSpec}
 
 import scala.util.Random
@@ -53,5 +53,28 @@ class TensorDBSpec extends WordSpec with Matchers {
 
       println(tensor.toVerboseString(showTrain = true))
     }
+
+    "be serializable and deserializable" in {
+      val db = new TensorDB(5)
+      db.sampleTensor(10, 10, 0, 0.1) //samples a matrix
+      db += Impl("r3", "r4")
+      db += Impl("r4", "r6")
+      db += Impl("r6", "r2")
+
+      val fg = db.toFactorGraph
+      fg.build()
+
+      db.serialize("/tmp/serialized/")
+
+
+      val db2 = new TensorDB(5)
+      db2.deserialize("/tmp/serialized/")
+
+      db.cells.size == db2.cells.size
+      db.keys1.size == db2.keys1.size
+      db.keys2.size == db2.keys2.size
+      db.keys3.size == db2.keys3.size
+    }
   }
 }
+

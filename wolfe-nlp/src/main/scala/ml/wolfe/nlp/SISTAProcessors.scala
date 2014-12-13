@@ -42,8 +42,21 @@ object SISTAProcessors {
   def annotate(text: String): Document = {
     val result = sistaCoreNLPProcessor.annotate(text)
     val sentences = result.sentences map SISTAConverter.toWolfeSentence
-    Document(text, sentences)
+    val coref = SISTAConverter.toWolfeCoreference(result.coreferenceChains.get)
+    Document(text, sentences, coref = CorefAnnotation(coref))
   }
+
+  /**
+   * Calls the SISTA CoreNLP components as specified by the arguments
+   * @param text the text to process
+   * @param posTagger part-of-speech tagger
+   * @param lemmatizer lemmatizer
+   * @param parser constituent and dependency parses
+   * @param ner named entity recognition
+   * @param coreference coreference resolution
+   * @param srl (NOT SUPPORTED BY CoreNLP) semantic role labeling
+   * @return fully annotated document
+   */
 
   def annotate(text: String,
                posTagger: Boolean=false,
@@ -57,11 +70,15 @@ object SISTAProcessors {
     if (parser) sistaCoreNLPProcessor.parse(result)
     if (lemmatizer) sistaCoreNLPProcessor.lemmatize(result)
     if (ner) sistaCoreNLPProcessor.recognizeNamedEntities(result)
-    if (srl) sistaCoreNLPProcessor.labelSemanticRoles(result)
-    if (coreference) sistaCoreNLPProcessor.resolveCoreference(result)
+    // NO SRL SUPPORT IN CoreNLP
+    // if (srl) sistaCoreNLPProcessor.labelSemanticRoles(result)
+    if (coreference) {
+      require(posTagger && lemmatizer && ner && parser, "Coreference resolution requires execution of POS tagger, lemmatizer, NER and parser")
+      sistaCoreNLPProcessor.resolveCoreference(result)
+    }
     val sentences = result.sentences map SISTAConverter.toFullWolfeSentence
-    Document(text, sentences)
+    val coref = SISTAConverter.toWolfeCoreference(result.coreferenceChains.get)
+    Document(text, sentences, coref = CorefAnnotation(coref))
   }
-
 
 }

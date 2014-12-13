@@ -37,17 +37,17 @@ object BeliefPropagation {
   import BPType._
   import BPSchedule._
 
-  def maxProduct(maxIteration: Int, schedule: BPSchedule = Auto, gradientAndObjective: Boolean = true)
-                (fg: FactorGraph) = apply(fg, maxIteration, schedule, Max, gradientAndObjective)
-  def sumProduct(maxIteration: Int, schedule: BPSchedule = Auto, gradientAndObjective: Boolean = true)
-                (fg: FactorGraph) = apply(fg, maxIteration, schedule, Sum, gradientAndObjective)
-  def maxProductPow(maxIteration: Int, gradientAndObjective: Boolean = true)
-                (fg: FactorGraph) = apply(fg, maxIteration, Pow, Max, gradientAndObjective)
-  def sumProductPow(maxIteration: Int, gradientAndObjective: Boolean = true)
-                (fg: FactorGraph) = apply(fg, maxIteration, Pow, Sum, gradientAndObjective)
+  def maxProduct(maxIteration: Int, schedule: BPSchedule = Auto, gradientAndObjective: Boolean = true, buildHistory: Boolean = false)
+                (fg: FactorGraph) = apply(fg, maxIteration, schedule, Max, gradientAndObjective, buildHistory)
+  def sumProduct(maxIteration: Int, schedule: BPSchedule = Auto, gradientAndObjective: Boolean = true, buildHistory: Boolean = false)
+                (fg: FactorGraph) = apply(fg, maxIteration, schedule, Sum, gradientAndObjective, buildHistory)
+  def maxProductPow(maxIteration: Int, gradientAndObjective: Boolean = true, buildHistory: Boolean = false)
+                (fg: FactorGraph) = apply(fg, maxIteration, Pow, Max, gradientAndObjective, buildHistory)
+  def sumProductPow(maxIteration: Int, gradientAndObjective: Boolean = true, buildHistory: Boolean = false)
+                (fg: FactorGraph) = apply(fg, maxIteration, Pow, Sum, gradientAndObjective, buildHistory)
   def junctionTreeMaxProduct(gradientAndObjective: Boolean = true)
                 (fg: FactorGraph) = onJunctionTree(fg, Sum, gradientAndObjective = gradientAndObjective)
-  def junctionTreeSumProduct(gradientAndObjective: Boolean = true)
+  def junctionTreeSumProduct(gradientAndObjective: Boolean = true, buildHistory: Boolean = false)
                 (fg: FactorGraph) = onJunctionTree(fg, Max, gradientAndObjective = gradientAndObjective)
 
   /**
@@ -59,7 +59,8 @@ object BeliefPropagation {
   def apply(fg: FactorGraph, maxIteration: Int,
             schedule: BPSchedule = Auto,
             bpType:BPType = BPType.Max,
-            gradientAndObjective: Boolean = true) {
+            gradientAndObjective: Boolean = true,
+            buildHistory: Boolean = false) {
 
     val forwardEdges = schedule match {
       case Auto => MPSchedulerImpl.scheduleForward(fg)
@@ -74,27 +75,46 @@ object BeliefPropagation {
     var hasConverged = false
     fg.visualizationMessages = ArrayBuffer[Iterable[(DirectedEdge, Seq[Double])]]()
 
+    fg.valueHistory = ArrayBuffer[Double]()
+    fg.beliefsHistory = ArrayBuffer[Array[Array[Double]]]()
+
     var i = 0
     while (!hasConverged && (i < maxIteration || maxIteration == -1)) {
 
       if(schedule == Pow) {
         for(f <- fg.factors) powF2N(f, bpType == Sum)
-        fg.addMessagesToVisualization(fg.edges, EdgeDirection.F2N)
+          fg.addMessagesToVisualization(fg.edges, EdgeDirection.F2N)
         for(n <- fg.nodes) powN2F(n)
-        fg.addMessagesToVisualization(fg.edges, EdgeDirection.N2F)
+          fg.addMessagesToVisualization(fg.edges, EdgeDirection.N2F)
+
+        if (buildHistory) {
+          fg.addValueToHistory()
+          fg.addBeliefsToHistory(fg.nodes.filter(_.variable.isInstanceOf[DiscreteVar[_]]).map(_.variable.asDiscrete.b))
+        }
       } else {
         def edges = if (bpType == MaxOnly && i == maxIteration - 1) forwardEdges else forwardBackwardEdges
         for (e <- forwardBackwardEdges) e match {
           case DirectedEdge(edge, EdgeDirection.F2N) =>
             updateF2N(edge, bpType == Sum)
             fg.addMessagesToVisualization(Seq(edge), EdgeDirection.F2N)
+            if (buildHistory) {
+              fg.addValueToHistory()
+              fg.addBeliefsToHistory(fg.nodes.filter(_.variable.isInstanceOf[DiscreteVar[_]]).map(_.variable.asDiscrete.b))
+            }
           case DirectedEdge(edge, EdgeDirection.N2F) =>
             updateN2F(edge)
             fg.addMessagesToVisualization(Seq(edge), EdgeDirection.N2F)
+            if (buildHistory) {
+              fg.addValueToHistory()
+              fg.addBeliefsToHistory(fg.nodes.filter(_.variable.isInstanceOf[DiscreteVar[_]]).map(_.variable.asDiscrete.b))
+            }
         }
       }
 
+
+
       hasConverged = converged(fg, convergenceThreshold)
+
       i = i + 1
     }
 
@@ -153,10 +173,10 @@ object BeliefPropagation {
   def onJunctionTree(fg: FactorGraph, bpType: BPType = Max, gradientAndObjective: Boolean = true, forceJunctionTree: Boolean = false) {
     if (!forceJunctionTree && !fg.isLoopy) {
       LoggerUtil.once(LoggerUtil.warn, "Junction tree belief propagation called on a non-loopy graph. Ignoring.")
-      apply(fg, 1, schedule = Auto, bpType, gradientAndObjective)
+      apply(fg, 1, Auto, bpType, gradientAndObjective)
     } else {
       val jt = Junkify(fg)
-      apply(jt, 1, schedule = Auto, bpType, gradientAndObjective)
+      apply(jt, 1, Auto, bpType, gradientAndObjective)
       if (gradientAndObjective) {
         fg.value = jt.value
         fg.gradient = jt.gradient

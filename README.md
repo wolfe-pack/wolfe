@@ -3,7 +3,7 @@
 <!-- [![Coverage Status](https://coveralls.io/repos/wolfe-pack/wolfe/badge.png)](https://coveralls.io/r/wolfe-pack/wolfe) -->
 Please note that Wolfe is in very early alpha stage, so use it at your own risk.
 Installation
-============
+=============
 The easiest way to start a wolfe project is via [g8](https://github.com/n8han/giter8):
 ```
 g8 wolfe-pack/wolfe
@@ -20,4 +20,15 @@ libraryDependencies ++= Seq(
   "ml.wolfe" %% "wolfe-examples" % "0.3.0"
 )
 ```
+
+Extending Wolfe
+===============
+To extend wolfe first clone this repository
+```
+git clone git@github.com:wolfe-pack/wolfe.git
+```
+
+Since sbt support has been integrated into [Intellij Idea](https://www.jetbrains.com/idea/) version 13, simply importing `wolfe` as a new project in Intellij Idea causes all dependencies to be resolved. Plus, Intellij Idea automatically refreshes the project when `Build.scala` is changed. 
+
+
 

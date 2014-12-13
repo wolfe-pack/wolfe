@@ -5,12 +5,15 @@ import org.json4s._
 import org.json4s.native.JsonParser._
 
 /**
- * Created by mbosnjak on 10/28/14.
+ * @author mbosnjak
  */
 
 // Algebra Word Problems reader
 // for "Learning to Automatically Solve Algebra Word Problems" data
 // downloadable at: http://groups.csail.mit.edu/rbg/code/wordprobs/questions.json
+
+case class AlgebraProblem(id: Int, question: String, equations: Iterable[String], solutions: Iterable[Double])
+
 
 class AlgebraProblemReader(filename: String) extends Iterable[AlgebraProblem] {
 
@@ -30,7 +33,6 @@ class AlgebraProblemReader(filename: String) extends Iterable[AlgebraProblem] {
         val solutions = lSolutions.map(_.asInstanceOf[JDouble].num).toIterable
         AlgebraProblem(iIndex.toInt, sQuestion, equations, solutions)
       }
-
     list.asInstanceOf[List[AlgebraProblem]].toIterator
   }
 }
@@ -42,6 +44,3 @@ object AlgebraProblemReader {
     }
   }
 }
-
-
-case class AlgebraProblem(id: Int, question: String, equations: Iterable[String], solutions: Iterable[Double])

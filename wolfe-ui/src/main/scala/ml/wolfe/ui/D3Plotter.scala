@@ -1,6 +1,9 @@
 package ml.wolfe.ui
 
+import java.io.{File, PrintWriter}
+
 import org.sameersingh.htmlgen.RawHTML
+import org.sameersingh.scalaplot.Style.Color
 import org.sameersingh.scalaplot.{XYSeries, XYChart, Chart}
 
 /**
@@ -25,7 +28,8 @@ object D3Plotter {
          |{
          |  values: ${seriesDataToJson(series)},
          |  key: "${series.name}",
-         |  color: '$color'
+         |  color: '$color',
+         |  area: false
          |}
        """.stripMargin
 
@@ -47,6 +51,7 @@ object D3Plotter {
         |
         |#$id svg {
         |  height: 400px;
+        |  width: 100%
         |}
       """.stripMargin
 
@@ -63,7 +68,7 @@ object D3Plotter {
         |     else
         |        return "";
         |};
-        |var linearFormat = d3.format('.00f');
+        |var linearFormat = d3.format('.02f');
         |
       """.stripMargin
 
@@ -122,11 +127,36 @@ object D3Plotter {
   }
 
   def main(args: Array[String]) {
+    val output = new PrintWriter(new File("d3plot.html"))
+    output.println(
+      """
+        |<html>
+        |<head>
+        |    <!--link rel="stylesheet" type="text/css" href="htmlgen.css"/>
+        |    <link rel="stylesheet" type="text/css" href="file:///Users/sameer/Work/src/research/wolfe/wolfenstein/public/javascripts/bootstrap/css/bootstrap.min.css"/>
+        |    <script type="text/javascript" src="file:///Users/sameer/Work/src/research/wolfe/wolfenstein/public/javascripts/jquery-1.9.0.min.js"></script>
+        |    <script type="text/javascript" src="d3utils.js"></script-->
+        |    <script type="text/javascript" src="http://d3js.org/d3.v3.js"></script>
+        |    <script type="text/javascript" src="file:///Users/sameer/Work/src/research/wolfe/wolfenstein/public/javascripts/nv.d3.min.js"></script>
+        |    <link rel="stylesheet" type="text/css" href="file:///Users/sameer/Work/src/research/wolfe/wolfenstein/public/stylesheets/nv.d3.css"/>
+        |</head>
+        |
+        |<body style="background-color: #333">
+      """.stripMargin)
+
     import org.sameersingh.scalaplot.Implicits._
     val x = 0.0 until 2.0 * math.Pi by 0.1
     val y = x map (_ => 0.5)
-    val chart = xyChart(x ->(math.sin(_)),x=Axis("freq",log=true))
+    val chart = xyChart(x -> Seq(Yf(math.sin, "sin"), Yf(math.cos, "cos", color = Color.Blue), Yf(math.tan, "tan", lw = 3.0)),x=Axis("freq",log=false))
     val chart2 = Seq(Y(y,"y"))
+    output.println(lineplot(chart).source)
+    output.println(
+      """
+        |</body>
+        |</html>
+      """.stripMargin)
+    output.flush()
+    output.close()
   }
 
 }

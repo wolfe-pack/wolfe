@@ -1,8 +1,10 @@
 package ml.wolfe
 
 import java.io.{File, PrintWriter}
+import java.util.UUID
 
 import ml.wolfe.FactorGraph.{DirectedEdge, EdgeDirection, Factor, Node}
+import ml.wolfe.Wolfe.FactorGraphBuffer
 import ml.wolfe.fg.{TupleMsgs, DiscreteMsgs, TupleVar, DiscreteVar}
 import org.sameersingh.htmlgen.Custom.Matrix
 import org.sameersingh.htmlgen.{DivConverter, RawHTML, HTML}
@@ -68,7 +70,7 @@ object D3Implicits {
 |				var barSpace = $barSpace;
 |
 |				var svg = d3.select("#$id").append("svg")
-|       .attr("height", d3.entries(data).length * (barHeight + barSpace))
+|       //.attr("height", d3.entries(data).length * (barHeight + barSpace))
 |				.attr("width", $width)
 |       .attr("class", "barchart")
 |
@@ -538,6 +540,15 @@ object D3Implicits {
     save(html, file)
   }
 
+  def factorGraphURL(implicit fg:FactorGraphBuffer) = new HTML {
+    val dir = new File("public/docs/tmp/")
+    val tmp = new File(dir,"factorgraph_" + UUID.randomUUID().toString + ".html")
+    dir.mkdir()
+    tmp.deleteOnExit()
+    saveD3Graph(fg.get(),tmp.getAbsolutePath)
+    def source = s"""<a href="/assets/docs/tmp/${tmp.getName}">Fullscreen Factor Graph</a>"""
+  }
+
   def saveD3BarChart(v:Wolfe.Vector,
              file:String = defaultLocation + "/vector.html") = {
     val html = barChart(v)
@@ -589,8 +600,8 @@ object D3Implicits {
 
   def resizeImage(img: BufferedImage, newW: Int) = {
     val ratio = img.getHeight.toDouble / img.getWidth.toDouble
-    val tmp = img.getScaledInstance(newW, math.floor(ratio * 100).toInt, Image.SCALE_SMOOTH);
-    val dimg = new BufferedImage(newW, math.floor(ratio * 100).toInt, BufferedImage.TYPE_INT_ARGB);
+    val tmp = img.getScaledInstance(newW, math.floor(ratio * newW).toInt, Image.SCALE_SMOOTH);
+    val dimg = new BufferedImage(newW, math.floor(ratio * newW).toInt, BufferedImage.TYPE_INT_ARGB);
 
     val g2d = dimg.createGraphics()
     g2d.drawImage(tmp, 0, 0, null)
@@ -634,5 +645,5 @@ object D3Implicits {
 
   case class Img(url: String)
 
-  implicit def imageToHTML(img: Img): HTML = DivConverter.convert(imageURLToMatrix(img.url))
+  implicit def imageToHTML(img: Img, width: Int = 50): HTML = DivConverter.convert(imageURLToMatrix(img.url, width))
 }

@@ -4,7 +4,7 @@ import ml.wolfe.nlp.{CharOffsets, Document, IRAnnotation, Sentence, Token}
 /**
  * Created by narad on 9/10/14.
  */
-class TDTReader(dir: String, iformat: String = "UTF-8") extends Iterable[(Seq[String], Document)] {
+class TDTReader(dir: String, iformat: String = "UTF-8") extends Iterable[(IndexedSeq[String], Document)] {
   val DOC_PATTERN = """<TDTID>(.*)</TDTID>""".r
   val PARAGRAPH_PATTERN = """<P>(.*)</P>""".r
 
@@ -14,22 +14,22 @@ class TDTReader(dir: String, iformat: String = "UTF-8") extends Iterable[(Seq[St
     cells(1) ->(cells(0), cells(3))
   }.toArray
 
-  def iterator: Iterator[(Seq[String], Document)] = {
+  def iterator: Iterator[(IndexedSeq[String], Document)] = {
     try {
       new ChunkReader(dir + "tdt-corpus.sgml", delim="</DOC>").map { chunk =>
         val docID = (DOC_PATTERN findFirstMatchIn chunk).get.group(1)
         val paragraphs = (PARAGRAPH_PATTERN findAllIn chunk).matchData.map(_.group(1).trim)
         val sents = paragraphs.map{p =>
           Sentence(tokens=p.split(" ").zipWithIndex.map{case(w,i) => Token(w,CharOffsets(i,i))})
-        }.toSeq
-        val entities = labels.filter(_._1 == docID).map(_._2._1).toSeq
+        }.toIndexedSeq
+        val entities = labels.filter(_._1 == docID).map(_._2._1).toIndexedSeq
         (entities, Document(source=null, sentences = sents, ir = IRAnnotation(docLabel = Some(docID))))
       }.iterator
     }
     catch {
       case e: Exception => {
         System.err.println("Error in XML reading:\n" + e.getStackTrace.mkString("\n"))
-        Iterator[(Seq[String], Document)]()
+        Iterator[(IndexedSeq[String], Document)]()
       }
     }
   }

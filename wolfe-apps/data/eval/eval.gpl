@@ -3,40 +3,72 @@
 set terminal dumb enhanced
 #set term x11
 #set termoption enhanced
-set key right top
+set key right bottom
+#set key width -1.5
+set key spacing 1.0
+set key box linewidth 3
+set border linewidth 3
+
+#load 'Spectral.plt'
+load 'Set1.plt'
 
 if (!exists("fileName")) fileName='experiments'
 
-set yrange [0.0:1.0]
-set ytics 0.1,0.1,1
 
-set xlabel "Fraction of Training Data"
+set style line 12 lc rgb '#bbbbbb' lt 1 lw 2
+set style line 13 lc rgb '#cccccc' lt 4 lw 1
+set grid xtics mxtics ytics mytics back ls 12, ls 13
+
+
+set yrange [0.3:0.625]
+set xrange [0.0:0.5]
+set ytics 0.1,0.1,1
+set xtics 0.0,0.1,1
+
+set mytics 4
+set mxtics 4
+
+set xlabel "Fraction of Freebase training facts"
 set ylabel "MAP"
 
-dataMF = "< grep \"None\" ".fileName.".log"
-dataMFLogic = "< grep \"formulae\" ".fileName.".log"
 
-plot dataMF using 3:1 smooth unique linecolor rgb "blue" linetype 1 linewidth 3  title "MF",\
-     dataMFLogic using 3:1 smooth unique linecolor rgb "red" linetype 1 linewidth 3  title "MF+logic"
+mf = "< grep \"mf\" ".fileName.".log"
+low_rank_logic = "< grep \"low-rank-logic\" ".fileName.".log"
+inference_only = "< grep \"inference-only\" ".fileName.".log"
+pre_inference = "< grep \"pre-inference\" ".fileName.".log"
+post_inference = "< grep \"post-inference\" ".fileName.".log"
+pre_post_inference = "< grep \"pre-post-inference\" ".fileName.".log"
+
+plot mf using 3:1 smooth unique with linespoints ls 1 linewidth 3 title "Matrix Factorization",\
+     low_rank_logic using 3:1 smooth unique with linespoints ls 2 linewidth 3 title "Joint Optimization",\
+     pre_inference using 3:1 smooth unique with linespoints ls 4 linewidth 3 title "Pre-Inference",\
+     post_inference using 3:1 smooth unique with linespoints ls 5 linewidth 3 title "Post-Inference"
+     #inference_only using 3:1 smooth unique with linespoints ls 3 linewidth 3 title "Logical Inference",\
 
 # Wrapup
-#set terminal pdf enhanced dashed size 3,3#1.75 #size 400,400
-set terminal png truecolor size 400,400
-set output fileName."-MAP.png"
-#set output fileName."-MAP.pdf"
+set terminal pdf enhanced dashed size 2.75,2 #1.75 #size 400,400
+#set terminal png truecolor size 500,500
+#set output fileName."-MAP.png"
+set output fileName."-MAP.pdf"
 refresh
 unset output
 
-
 set terminal dumb enhanced
-plot dataMF using 3:2 smooth unique linecolor rgb "blue" linetype 1 linewidth 3  title "MF",\
-     dataMFLogic using 3:2 smooth unique linecolor rgb "red" linetype 1 linewidth 3  title "MF+logic"
+
+#set object 1 rect from 0,0.3 to 0.4,0.6 lw 6 fs empty border lc rgb 'gold'
+
+plot mf using 3:2 smooth unique with linespoints ls 1 linewidth 3 title "MF",\
+     low_rank_logic using 3:2 smooth unique with linespoints ls 2 linewidth 3 title "Joint",\
+     pre_inference using 3:2 smooth unique with linespoints ls 9 linewidth 3 title "Pre",\
+     post_inference using 3:2 smooth unique with linespoints ls 3 linewidth 3 title "Post"
+     #inference_only using 3:2 smooth unique with linespoints ls 3 linewidth 3 title "Inf",\
+
 
 # Wrapup
 set ylabel "wMAP"
-#set terminal pdf enhanced dashed size 3,3#1.75 #size 400,400
-set terminal png truecolor size 400,400
-set output fileName."-wMAP.png"
-#set output fileName."-wMAP.pdf"
+set terminal pdf enhanced dashed size 2.75,1.85 #1.75 #size 400,400
+set output fileName."-wMAP.pdf"
+#set terminal png truecolor size 500,500
+#set output fileName."-wMAP.png"
 refresh
 unset output
