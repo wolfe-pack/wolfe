@@ -16,6 +16,12 @@ import ml.wolfe.util._
 import scala.io.Source
 import scala.util.Random
 
+
+object BreezeConverter {
+  implicit def breezeToFactorieVector(breezeVector: breeze.linalg.DenseVector[Double]): FactorieVector =
+    new DenseTensor1(breezeVector.toArray)
+}
+
 //rockt: could rho be a doublevar instead of a vectorvar?
 //rockt: might be necessary to put l2 regularization into this factor as well
 //fixme: get rid of idx, since it is only used for debugging
@@ -43,77 +49,63 @@ class OneClassSVMPerInstanceLoss(weightsEdge: FactorGraph.Edge, rhoEdge: FactorG
   }
 }
 
-//rockt: this guy should have a vectorized implementation!
-class l2reg(weightsEdge: FactorGraph.Edge, nu: Double, m: Int) extends Potential {
-  override def valueForCurrentSetting(): Double = {
-    val currentWeights = weightsEdge.n.variable.asVector.setting
+class LowRankRegularizer(weightsEdges: Seq[FactorGraph.Edge], epsilon: Double, gamma: Double) extends Potential {
 
-    -(currentWeights dot currentWeights) * nu * m * 0.5
-  }
-
-
-  override def valueAndGradientForAllEdges() = {
-    val currentWeights = weightsEdge.msgs.asVector.n2f
-
-    // Set gradient for w.w
-    weightsEdge.msgs.asVector.f2n = new DenseTensor1(currentWeights.length)
-    for (j <- 0 until currentWeights.length) {
-      weightsEdge.msgs.asVector.f2n(j) = -nu * m * currentWeights(j)
-    }
-    -(currentWeights dot currentWeights) * nu * m * 0.5
-  }
-}
-
-class lowRankreg(weightsEdges: Seq[FactorGraph.Edge], epsilon: Double, gamma: Double) extends Potential {
-
-  lazy val R = weightsEdges(0).msgs.asVector.n2f.length
+  lazy val numClassifiers = weightsEdges.size
+  lazy val numWeights = weightsEdges(0).msgs.asVector.n2f.length
 
 
   override def valueForCurrentSetting(): Double = ???
 
 
   override def valueAndGradientForAllEdges() = {
-    val W = DenseMatrix.zeros[Double](R, R)
+    import BreezeConverter._
+
+    val W = DenseMatrix.zeros[Double](numWeights, numClassifiers)
+
 
     //rockt: might be vectorizable as well
-    for (j <- 0 until R) {
-      for (i <- 0 until R)
-      W(i, j) = weightsEdges(j).msgs.asVector.n2f(i)
+    //building W, slow!
+    for (col <- 0 until numClassifiers) {
+      for (row <- 0 until numWeights)
+      W(row, col) = weightsEdges(col).msgs.asVector.n2f(row)
     }
 
+    //numWeights × numWeights matrix
     val A: DenseMatrix[Double] = W * W.t
-    val M = A + DenseMatrix.eye[Double](R) * epsilon
 
-    val Minv = inv(M) //todo: let's see what happens
+    //WW^T + εI
+    val M = A + DenseMatrix.eye[Double](numWeights) * epsilon
 
+    //(WW^T + εI)^(1/2)
     val (lambdas, _, v) = eig(M)
-
-    for (i <- 0 until R) {
+    for (i <- 0 until numWeights) {
       lambdas(i) = math.sqrt(lambdas(i))
     }
     val temp: DenseMatrix[Double] = v * diag(lambdas)
     val rootM: DenseMatrix[Double] = temp * v.t
+
+    //(WW^T + εI)^(1/2) / tr((WW^T + εI)^(1/2))
     val D: DenseMatrix[Double] = rootM / trace(rootM)
 
-    //Set gradient for: w dot (inv(D)w)
-    for (i <- 0 until R) {
-      weightsEdges(i).msgs.asVector.f2n = new DenseTensor1(R)
-    }
 
-    for (j <- 0 until R) {
-      val w = W(::, j)
-      val temp1 = D \ w
-      for (k <- 0 until R) {
-        weightsEdges(j).msgs.asVector.f2n(k) = -temp1(k) * gamma
-      }
-    }
-
+    /*
     //for the loss need to sum these over R
     (for (t <- 0 until R) yield {
       val w = W(::, t)
       val temp3 = w.t * gamma
       val temp4 = D \ w
       temp3 * temp4
+    }).sum
+    */
+
+    (for (i <- 0 until numClassifiers) yield {
+      val w = W(::, i)
+      val temp1 = D \ w
+
+      weightsEdges(i).msgs.asVector.f2n = -temp1 * (gamma / 2.0)
+
+      w.t * (gamma / 2.0) * temp1
     }).sum
   }
 }
@@ -136,8 +128,10 @@ object OCSVM extends App {
   val subsample = 1.0
   val alpha = conf.getDouble("mf.alpha")
   val maxIter = conf.getInt("mf.maxIter")
-  val gamma = 0 //low-rank regularization
+
+  val gamma = 0.01 //low-rank regularization
   val epsilon = 1e-9
+
   val fileName = conf.getString("mf.outFile")
 
 
@@ -361,19 +355,10 @@ object OCSVM extends App {
         edges => new OneClassSVMPerInstanceLoss(edges(0), edges(1), data(j).xs.getSparseRow(ix), target, nu)
       )
     }
-
-    /*
-    for (i <- 0 until m) {
-      fg.buildFactor(Seq(weightnodes(j), rhonodes(j)))(_ => Seq(new VectorMsgs, new VectorMsgs))(
-        edges => new OneClassSVMPerInstanceLoss(edges(0), edges(1), data(j).xs.getSparseRow(i), data(j).y(i), nu)
-      )
-    }
-    */
-    //fg.buildFactor(Seq(weightnodes(j)))(_ => Seq(new VectorMsgs))(edges => new l2reg(edges(0), nu, m))
   }
 
 
-  //fg.buildFactor(weightnodes) (edges => for(_ <- edges) yield new VectorMsgs) (edges => new lowRankreg(edges, epsilon, gamma))
+  fg.buildFactor(weightnodes) (edges => for(_ <- edges) yield new VectorMsgs) (edges => new LowRankRegularizer(edges, epsilon, gamma))
 
   //D3Implicits.saveD3Graph(fg)
 
@@ -458,12 +443,10 @@ object OCSVM extends App {
     Conf.createSymbolicLinkToLatest() //rewire symbolic link to latest (in case it got overwritten)
     val pathToPredict = Conf.outDir.getAbsolutePath + "/" + fileName
 
-    val fileWriter = new FileWriter(pathToPredict)
 
     val predictions =
       (0 until R).flatMap(col => {
         val relation = ixToRelationMap(col)
-
 
         for {
           row <- 0 until matrix.dim2
@@ -483,11 +466,12 @@ object OCSVM extends App {
         }
       }).sortBy(-_._1)
 
-    predictions.foreach { case (p, es, r) => {
-        val Array(e1,e2) = es.toString.tail.init.split(",")
-        fileWriter.write(s"$p\t$e1|$e2\t$r\t$r\n")
-      }
+    val fileWriter = new FileWriter(pathToPredict)
+    predictions.foreach { case (p, es, r) =>
+      val Array(e1,e2) = es.toString.tail.init.split(",")
+      fileWriter.write(s"$p\t$e1|$e2\t$r\t$r\n")
     }
+
     fileWriter.close()
 
 
@@ -540,7 +524,6 @@ object OCSVMGradientChecking extends App {
     edges => new OneClassSVMPerInstanceLoss(edges(0), edges(1), data2, 1.0, nu)
   )
 
-  fg.buildFactor(Seq(n1))(_ => Seq(new VectorMsgs))(edges => new l2reg(edges(0), nu, 2))
 
 
   //fg.buildFactor(Seq(n1,n3)) (edges => for(_ <- edges) yield new VectorMsgs) (edges => new lowRankreg(edges, 0.00001, 0.1))
