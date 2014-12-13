@@ -20,7 +20,7 @@ class ChunkReader(filename: String, delim: String="^[ \t]*$", iencoding: String=
   }
 
   def readNext(lines: Array[String]): String = {
-    var start = processed
+    val start = processed
     while (processed < lines.size) {
       val line = lines(processed)
       processed += 1
@@ -29,15 +29,15 @@ class ChunkReader(filename: String, delim: String="^[ \t]*$", iencoding: String=
       }
     }
     if (start == processed) {
-      reset
-      return null
+      reset()
+      null
     }
     else {
-      return lines.slice(start, processed).mkString("\n")
+      lines.slice(start, processed).mkString("\n")
     }
   }
 
-  def reset = processed = 0
+  def reset() = processed = 0
 }
 
 object ChunkReader {

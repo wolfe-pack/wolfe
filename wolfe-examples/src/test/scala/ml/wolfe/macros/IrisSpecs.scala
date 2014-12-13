@@ -3,7 +3,7 @@ package ml.wolfe.macros
 import ml.wolfe.{BeliefPropagation, Wolfe, WolfeSpec}
 import scala.util.Random
 import cc.factorie.optimize.{Perceptron, OnlineTrainer}
-import ml.wolfe.util.Evaluator
+import ml.wolfe.util.{Iris, Evaluator}
 
 /**
  * @author Sebastian Riedel
@@ -18,17 +18,17 @@ class IrisSpecs extends WolfeSpec {
       import Library._
 
       //sample space of all possible Iris data values
-      def space = Wolfe.all(IrisData)
+      def space = Wolfe.all(IrisData)(Wolfe.all(IrisFeatures) x Iris.classes)
 
       //define what the observed part of the data is
       def observed(d: IrisData) = d.copy(irisClass = hidden)
 
       //feature function on data
       def features(data: IrisData) =
-        oneHot('sl -> data.irisClass, data.sepalLength) +
-        oneHot('sw -> data.irisClass, data.sepalWidth) +
-        oneHot('pl -> data.irisClass, data.petalLength) +
-        oneHot('pw -> data.irisClass, data.petalWidth)
+        oneHot('sl -> data.irisClass, data.features.sepalLength) +
+        oneHot('sw -> data.irisClass, data.features.sepalWidth) +
+        oneHot('pl -> data.irisClass, data.features.petalLength) +
+        oneHot('pw -> data.irisClass, data.features.petalWidth)
 
       //the linear model
       @OptimizeByInference(BeliefPropagation(_, 1))

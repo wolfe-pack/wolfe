@@ -3,6 +3,7 @@ package ml.wolfe.apps.factorization
 import ml.wolfe.FactorGraph.Edge
 import ml.wolfe._
 import ml.wolfe.fg.{Regularization, Potential}
+import ml.wolfe.util.Conf
 
 /**
  * A potential for a formula containing two predicates
@@ -56,7 +57,12 @@ abstract class Formula2Potential(constEdge: Edge, predicate1Edge: Edge, predicat
 
     p1Msgs.f2n = (calcF_p1(p1c_p1, p2c) * (1.0 / loss) * dir) * weight + regGradient(p1Msgs.n2f)
     p2Msgs.f2n = (calcF_p2(p2c_p2, p1c) * (1.0 / loss) * dir) * weight + regGradient(p2Msgs.n2f)
-    cMsgs.f2n = (calcF_c(p2c_c, p1c, p1c_c, p2c) * (1.0 / loss) * dir) * weight + regGradient(cMsgs.n2f)
+    cMsgs.f2n =
+      if (Conf.getBoolean("mf.inject-rows"))
+        (calcF_c(p2c_c, p1c, p1c_c, p2c) * (1.0 / loss) * dir) * weight + regGradient(cMsgs.n2f)
+      else
+        new SparseVector(cMsgs.n2f.length)
+
 
     math.log(loss) * weight + regLoss(cMsgs.n2f) + regLoss(p1Msgs.n2f) + regLoss(p2Msgs.n2f)
   }
@@ -114,4 +120,3 @@ extends Formula2Potential(constEdge, pred1Edge, pred2Edge, target, lambda, weigh
   def calcF_c(p2c_c: FactorieVector, p1c: Double, p1c_c: FactorieVector, p2c: Double) =
     p2c_c * -p1c + p1c_c * -p2c
 }
-

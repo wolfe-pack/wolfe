@@ -1,26 +1,53 @@
 package ml.wolfe.nlp.io
 
+import ml.wolfe.nlp.{SISTAProcessors, SISTAConverter}
+
 /**
- * Created by narad on 9/3/14.
+ * @author narad
+ * @author mbosnjak
  */
-class MCTestReader(filename: String) extends Iterable[MultiQuestion] {
+class MCTestReader(tsvFilename: String, ansFilename: String, rteFilename: String = null) extends Iterable[MultiQuestion] {
   private val MC_LABELS = Array("A", "B", "C", "D")
+  private val RTE_REGEX = """.*<h>([^<]*)</h>.*""".r
 
   def iterator: Iterator[MultiQuestion] = {
-    val reader = io.Source.fromFile(filename).getLines()
-    reader.map{ l =>
+    val tsvReader = io.Source.fromFile(tsvFilename).getLines()
+    val ansReader = io.Source.fromFile(ansFilename).getLines()
+    val zippedReaders = tsvReader.zip(ansReader)
+    var rteq = if (rteFilename != null) {
+      io.Source.fromFile(rteFilename).getLines.collect { case RTE_REGEX(rq) =>
+        rq.replaceAll("&#39;", "'").replaceAll("&quot;", "\"").replaceAll("&amp;", "&")
+      }.toList
+    }
+    else {
+      List[String]()
+    }
+
+    zippedReaders.map{ x =>
+      val l = x._1
+      val ans = x._2.split("\\s")
       val fields = l.split("\t")
       val id = fields(0)
       val author = fields(1)
       val passage = fields(2).replaceAll("\\\\newline", " ")
-      val questions = fields.slice(3, fields.size).grouped(5).map { g =>
+      val questions = fields.slice(3, fields.size).grouped(5).zip(ans.toIterator).map { case(g, t) =>
         val gi = g.head.split(": ")
         val (qt, q) = (gi(0), gi(1))
-        val as = g.tail.zipWithIndex.map { case(a,i) =>
-          AnswerChoice(MC_LABELS(i), a, false)
+        val as = g.tail.zipWithIndex.map { case(a, i) =>
+          if (rteq.isEmpty) {
+            AnswerChoice(MC_LABELS(i), a, t == MC_LABELS(i))
+          }
+          else {
+            val ta = rteq.head
+            rteq = rteq.tail
+            AnswerChoice(MC_LABELS(i), ta, t == MC_LABELS(i))
+          }
         }
-        new MultipleChoiceQuestion(q, as)
-      }.toIterable
+        new MultipleChoiceQuestion(q, as, qt)
+      }
+
+
+                      .toIterable
       MultiQuestion(id, author, passage, questions)
     }
   }
@@ -29,8 +56,11 @@ class MCTestReader(filename: String) extends Iterable[MultiQuestion] {
 object MCTestReader {
 
   def main(args: Array[String]) {
-    for (q <- new MCTestReader(args(0))) {
-      println(q) + "\n"
+    val tsvFilename = args.lift(0).getOrElse("../mctest/data/MCTest/mc160.dev.tsv")
+    val ansFilename = args.lift(1).getOrElse("../mctest/data/MCTest/mc160.dev.ans")
+    val rteFilename = args.lift(2).getOrElse(null)
+    for (q <- new MCTestReader(tsvFilename, ansFilename, rteFilename)) {
+      println(q + "\n")
     }
   }
 }
@@ -43,12 +73,12 @@ case class MultiQuestion(id: String, author: String, passage: String, questions:
 }
 
 
-abstract case class Question(text: String) {
+//abstract case class Question(text: String) {
+//
+//  def isCorrect(str: String): Boolean
+//}
 
-  def isCorrect(str: String): Boolean
-}
-
-class MultipleChoiceQuestion(text: String, choices: Seq[AnswerChoice]) extends Question(text) {
+case class MultipleChoiceQuestion(text: String, choices: IndexedSeq[AnswerChoice], val typ: String) {
 
   def isCorrect(label: String): Boolean = {
     choices.exists{ c => c.label == label && c.isCorrect}
@@ -62,3 +92,34 @@ class MultipleChoiceQuestion(text: String, choices: Seq[AnswerChoice]) extends Q
 }
 
 case class AnswerChoice(label: String, text: String, isCorrect: Boolean)
+
+
+// Temp location for some helper IO
+
+import scala.collection.mutable.ArrayBuffer
+object DataToParseable {
+
+  def main(args: Array[String]) = read(args(0), args(1), args(2))
+
+  def read(f1: String, f2: String, f3: String): Array[String] = {
+    val sb = new ArrayBuffer[String]
+    val input = new MCTestReader(f1, f2, f3)
+
+    for (i <- input) {
+      val doc = SISTAProcessors.annotate(i.passage)
+      for (s <- doc.sentences) {
+        sb += (s.tokens.map(_.word).mkString(" "))
+      }
+      for (q <- i.questions) {
+        sb += q.text // println(q.text)
+        for (c <- q.choices) println(c.text)
+      }
+ //     sb += "" // println
+    }
+    println(sb.mkString("\n"))
+    sb.toArray
+  }
+}
+
+
+

@@ -2,7 +2,7 @@ package ml.wolfe.apps
 
 import cc.factorie.optimize.{LBFGS, AdaGrad, OnlineTrainer}
 import ml.wolfe.nlp.{CharOffsets, Token, DependencyTree}
-import ml.wolfe.{BeliefPropagation, Wolfe}
+import ml.wolfe.{FactorieVectorBuilder, BeliefPropagation, Wolfe}
 import ml.wolfe.fg.TreePotential
 
 /**
@@ -33,7 +33,7 @@ object GraphBasedDependencyParser extends App {
     val slen = x.words.size
     val distance = math.abs(e._1 - e._2)
     val dir = if (e._1 < e._2) "RIGHT" else "LEFT"
-    oneHot('d_bias -> ("BIAS"), I(y.deps(e))) +
+    oneHot('d_bias -> "BIAS", I(y.deps(e))) +
     oneHot('d_ww ->(x.words(e._1), x.words(e._2)), I(y.deps(e)))
   }
 
@@ -45,12 +45,12 @@ object GraphBasedDependencyParser extends App {
 
   @OutputFactorGraph
   @LogZByInference(BeliefPropagation.sumProductPow(3))
-  def model(w: Vector)(x: X)(y: Y) = (feats(x)(y) dot w)
+  def model(w: Vector)(x: X)(y: Y) = (feats(x)(y) dot w) + treeConstraint(y.deps)
 
   def localLoss(x: X, gold: Y)(w: Vector) =
     logZ(space(x)) { model(w)(x) } - model(w)(x)(gold)
 
-  @OptimizeByLearning(new OnlineTrainer(_, new AdaGrad, 20, -1))
+  @OptimizeByLearning(new OnlineTrainer(_, new AdaGrad, 5, -1))
   def loss(data: Seq[(X, Y)])(w: Vector) =
     sum(data) { i =>
       localLoss(i._1, i._2)(w)
@@ -64,10 +64,9 @@ object GraphBasedDependencyParser extends App {
   }
 
   def instanceToTree(x: X): DependencyTree = {
-    val tokens = x.words.zip(x.tags).zipWithIndex.map { case((tw,tt),i) => Token(word = tw, offsets = CharOffsets(i,i), posTag = tt)}.tail
+    val tokens = x.words.zip(x.tags).zipWithIndex.map { case((tw,tt),i) => Token(word = tw, offsets = CharOffsets(i,i), posTag = tt)}.tail.toIndexedSeq
     val exp = expect(space(x))(model(w)(x))(y => sum(candidateDeps(x)) { e => oneHot(e, I(y.deps(e)))})
     val arcs = candidateDeps(x).flatMap { case(i,j) =>
-//      val exp = expect (space(x)) (model(w)(x)) (s => oneHot(0 -> 1, I(s.deps(i,j)))).get((0,1)).get
       exp(i -> j) match {
         case p if p > 0.5 => Some((j, i, null))
         case _ => None
@@ -76,17 +75,19 @@ object GraphBasedDependencyParser extends App {
     DependencyTree(tokens, arcs)
   }
 
-  val train = new CoNLLReader(args(0)).view.map(t => treeToInstance(t.syntax.dependencies))
-  val test = new CoNLLReader(args(1)).view.map(t => treeToInstance(t.syntax.dependencies))
+  val train = new CoNLLReader(args(0)).take(100).map(t => treeToInstance(t.syntax.dependencies))
+  val test = new CoNLLReader(args(1)).take(100).map(t => treeToInstance(t.syntax.dependencies))
 
   val w = argmin(vectors) { loss(train) }
+
+ // val fv = new FactorieVectorBuilder {}
 
   println("Testing...")
   var correctArcs = 0
   var predictedArcs = 0
   test.foreach { case(x,y) =>
     val tree = instanceToTree(x)
-    val gold = DependencyTree(tree.tokens, y.deps.map(d => (d._1._2, d._1._1, null)).toSeq)
+    val gold = DependencyTree(tree.tokens, y.deps.map(d => (d._1._2, d._1._1, null)).toIndexedSeq)
     val correct = tree.arcs.filter(gold.arcs.contains(_)).size
     correctArcs += correct
     predictedArcs += tree.size
@@ -97,6 +98,8 @@ object GraphBasedDependencyParser extends App {
 
 
 
+
+//      val exp = expect (space(x)) (model(w)(x)) (s => oneHot(0 -> 1, I(s.deps(i,j)))).get((0,1)).get
 
 
 // "/Users/narad/Documents/work/data/conll/2009/english/evaluation.txt"
