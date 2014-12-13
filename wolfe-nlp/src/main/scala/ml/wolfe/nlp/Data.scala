@@ -29,6 +29,7 @@ case class Token(word: String, offsets: CharOffsets, posTag: String = null, lemm
   def prev(implicit graph: ObjectGraph) =
     graph.receiveOrdered[Token, Sentence, Option[Token]]('tokens, this)((i, s) => s.tokens.lift(i - 1))
   def toPrettyString = if (posTag != null) word + "/" + posTag else word
+  def idx = offsets.start // Should replace with index lookup in ObjectGraph
 
 }
 
@@ -48,7 +49,6 @@ case class Sentence(tokens: IndexedSeq[Token], syntax: SyntaxAnnotation = Syntax
   def size = tokens.size
   def offsets = CharOffsets(tokens.head.offsets.start,tokens.last.offsets.end)
   def toPrettyString = tokens.map(_.toPrettyString).mkString(" ")
-  def idx = offsets.start
 
   def toCoNLLString = {
     tokens.zipWithIndex.map { case(t,i) =>

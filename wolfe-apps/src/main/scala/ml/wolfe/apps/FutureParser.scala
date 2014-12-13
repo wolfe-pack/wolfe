@@ -28,7 +28,7 @@ object FutureParser extends App {
 
   def candidateDeps(x: X) = { val n = x.words.size; for (h <- 0 until n; m <- 1 until n; if h != m) yield (h, m) }
 
-  def learn[X](data: Seq[(X, Double)], reg: Double = 0.1)(feat: X => FactorieVector): LinearRegressor[X] = {
+ // def learn[X](data: Seq[(X, Double)], reg: Double = 0.1)(feat: X => FactorieVector): LinearRegressor[X] = {  }
 
 }
 
