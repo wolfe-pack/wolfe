@@ -48,6 +48,7 @@ case class Sentence(tokens: IndexedSeq[Token], syntax: SyntaxAnnotation = Syntax
   def size = tokens.size
   def offsets = CharOffsets(tokens.head.offsets.start,tokens.last.offsets.end)
   def toPrettyString = tokens.map(_.toPrettyString).mkString(" ")
+  def idx = offsets.start
 
   def toCoNLLString = {
     tokens.zipWithIndex.map { case(t,i) =>
