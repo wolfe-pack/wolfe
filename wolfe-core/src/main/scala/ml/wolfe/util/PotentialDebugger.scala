@@ -12,7 +12,7 @@ import scala.util.Random
  * Created by rockt on 29/10/2014.
  */
 object PotentialDebugger {
-  def checkGradients(potential: Potential, ε: Double = 0.00001, debug: Boolean = false): Unit = {
+  def checkGradients(potential: Potential, εTmp: Double = 0.00001, debug: Boolean = false): Unit = {
     val f = potential.factor
     potential.valueAndGradientForAllEdges()
     val nodes = f.edges.map(edge => (edge.n, edge.msgs.asVector.f2n))
@@ -26,6 +26,10 @@ object PotentialDebugger {
       if (debug) println(node + "\t" + node.variable.label)
 
       val v = node.variable.asVector.b
+
+      val vMin = v.map(math.abs).min
+      val ε = if (vMin == 0.0) εTmp else math.min(vMin / 100.0, εTmp)
+
       (0 until v.length).foreach(i => {
         val vPos = new DenseVector(v)
         val vNeg = new DenseVector(v)
@@ -45,7 +49,8 @@ object PotentialDebugger {
         assert(δ.length == vNeg.length)
 
         if (debug) {
-          val error = if (δ(i) == 0.0 && δi == 0.0) 1.0 else δi / δ(i)
+          val error = if (δ(i) === 0.0 +- ε && δi === 0.0 +- ε) 1.0 else δi / δ(i)
+          if (error !== 1.0 +- ε) println(v)
           println("calc: %12.8f\tactual: %12.8f\terr: %12.8f".format(δ(i),δi,error))
         }
 
