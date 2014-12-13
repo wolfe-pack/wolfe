@@ -1,59 +1,45 @@
 package ml.wolfe.apps
 
+import java.io.{FileWriter, File}
+import javax.management.relation.Relation
+
 import breeze.linalg._
 import breeze.numerics._
 import cc.factorie.la._
 import cc.factorie.optimize.{ConstantLearningRate, AdaGrad, OnlineTrainer}
 import ml.wolfe._
-import ml.wolfe.apps.factorization.MatrixFactorization._
 import ml.wolfe.apps.factorization._
-import ml.wolfe.apps.factorization.io.LoadNAACL
-import ml.wolfe.fg.{L2Regularization, CellLogisticLoss, Potential, VectorMsgs}
-import ml.wolfe.util.{PotentialDebugger, Conf}
+import ml.wolfe.apps.factorization.io.{EvaluateNAACL, WriteNAACL, LoadNAACL}
+import ml.wolfe.fg._
+import ml.wolfe.util._
 
+import scala.io.Source
 import scala.util.Random
 
 //rockt: could rho be a doublevar instead of a vectorvar?
 //rockt: might be necessary to put l2 regularization into this factor as well
 //fixme: get rid of idx, since it is only used for debugging
 class OneClassSVMPerInstanceLoss(weightsEdge: FactorGraph.Edge, rhoEdge: FactorGraph.Edge,
-                                 val xs: FactorieVector, val y: Double, val nu: Double, val idx: Int = 0) extends Potential {
-
-
+                                 val x: FactorieVector, val y: Double, val nu: Double) extends Potential {
   override def valueForCurrentSetting(): Double = {
-    val currentWeights = weightsEdge.n.variable.asVector.setting
-    val currentRho = rhoEdge.n.variable.asVector.setting(0)
-
-    //println(currentWeights)
-    //println(currentRho)
-
-    -math.max((1 - nu) * currentRho - (currentWeights dot xs) * y, -nu * currentRho)
+    val w = weightsEdge.n.variable.asVector.setting    
+    val rho = rhoEdge.n.variable.asVector.setting(0)
+    -math.max((1 - nu) * rho - (w dot x) * y, -nu * rho) - (nu/2.0) * w.twoNormSquared
   }
 
   override def valueAndGradientForAllEdges() = {
-    val currentWeights = weightsEdge.msgs.asVector.n2f
-    val currentRho = rhoEdge.msgs.asVector.n2f(0)
+    val w = weightsEdge.msgs.asVector.n2f
+    val rho = rhoEdge.msgs.asVector.n2f(0)
 
-    // Set gradients for W
-    weightsEdge.msgs.asVector.f2n = new DenseTensor1(currentWeights.length)
-    for (j <- 0 until currentWeights.length) {
-      weightsEdge.msgs.asVector.f2n(j) =
-      if (currentRho >= (currentWeights dot xs) * y) xs(j) * y
-      else 0
+    if (rho >= (w dot x)) {
+      weightsEdge.msgs.asVector.f2n = (w * -nu) + x
+      rhoEdge.msgs.asVector.f2n = new DenseTensor1(Array(nu - 1))
+    } else {
+      weightsEdge.msgs.asVector.f2n = w * -nu
+      rhoEdge.msgs.asVector.f2n = new DenseTensor1(Array(nu))
     }
 
-    // Set gradient for rho
-    rhoEdge.msgs.asVector.f2n = new DenseTensor1(Array(
-      if (currentRho >= (currentWeights dot xs) * y) -1 + nu
-      else nu
-    ))
-
-    //    println(currentRho)
-    //    if(idx==1 && currentRho < (currentWeights dot xs) * y ) {
-    //      println("omgzz")
-    //    }
-    // Return value
-    -math.max((1 - nu) * currentRho - (currentWeights dot xs) * y, -nu * currentRho)
+    -math.max((1 - nu) * rho - (w dot x) * y, -nu * rho) - (nu/2.0) * w.twoNormSquared
   }
 }
 
@@ -134,20 +120,37 @@ class lowRankreg(weightsEdges: Seq[FactorGraph.Edge], epsilon: Double, gamma: Do
 
 case class XY(xs: Seq[FactorieVector], y: FactorieVector)
 
-case class XYNew(xs: Tensor2, y: FactorieVector)
+case class XYNew(xs: Tensor2, y: FactorieVector, relation: Any)
 
 object OCSVM extends App {
-  val nu = 0.5
+  val confPath = args.lift(0).getOrElse("conf/mf-oc.conf")
+  Conf.add(confPath)
+  Conf.outDir //sets up output directory
+  implicit val conf = Conf
+  println("Using " + confPath)
+
+  val nu = conf.getDouble("mf.lambda")
+  //val nu = 0.00001
+
+  val k = 0
+  val subsample = 1.0
+  val alpha = conf.getDouble("mf.alpha")
+  val maxIter = conf.getInt("mf.maxIter")
   val gamma = 0 //low-rank regularization
   val epsilon = 1e-9
+  val fileName = conf.getString("mf.outFile")
 
-/*  def tens(vals: Double*) = new DenseTensor1(vals.toArray)
 
-  val debug = true //whether to use sampled matrices or the NAACL data
+  val debug = false //whether to use sampled matrices or the NAACL data
   val loadFormulae = debug && true //whether forumlae should be sampled for debugging
   //val print = false //whether to print the matrix (only do this for small ones!)
 
 
+  /*
+  val k = 100
+  val subsample = 1.0
+
+  println("Loading NAACL data...")
   val matrix = if (debug) {
     val tmp = new TensorKB()
     tmp.sampleTensor(10, 10, 0, 0.4) //samples a matrix
@@ -157,12 +160,41 @@ object OCSVM extends App {
     }
     tmp
   } else LoadNAACL(k, subsample)
+
+
   */
 
+  val matrix =
+      if (debug) {
+      val tmp = new TensorKB()
+      tmp.sampleTensor(6, 4, 0, 0.5) //samples a matrix
+      tmp.toFactorGraph
+      println(tmp.toVerboseString(true))
 
 
+    /*
+  matrix += Cell("r1", "e2")
+  matrix += Cell("r2", "e2")
+  matrix += Cell("r3", "e2")
+  matrix += Cell("r4", "e2")
+  matrix += Cell("r5", "e2")
+  //matrix += Cell("r2", "e1")
+  matrix += Cell("r3", "e1")
+  matrix += Cell("r3", "e3")
+  matrix += Cell("r3", "e4")
+  matrix += Cell("r4", "e4")
+  */
+
+    /*
   val matrix = new TensorKB()
-  matrix += Cell("r0", "e0")
+
+  (0 until 6).foreach(i => matrix += Cell("r"+i, "e"+i))
+  matrix += Cell("r5", "e0")
+  matrix += Cell("r3", "e1")
+  */
+
+    /*
+  //matrix += Cell("r0", "e0")
   matrix += Cell("r2", "e0")
 
   matrix += Cell("r0", "e1")
@@ -173,17 +205,35 @@ object OCSVM extends App {
 
   matrix += Cell("r0", "e3")
   matrix += Cell("r2", "e3")
+  */
+
+    /*
+  matrix += Cell("r0", "e0")
+  matrix += Cell("r0", "e1")
+  matrix += Cell("r0", "e2")
+  matrix += Cell("r0", "e3")
+
+  matrix += Cell("r1", "e0")
+  matrix += Cell("r1", "e1")
+  matrix += Cell("r1", "e2")
+
+  //matrix += Cell("r2", "e3")
+  matrix += Cell("r2", "e3")
+  */
+    tmp
+  } else LoadNAACL(k, subsample)
 
 
-  matrix.toFactorGraph
+  val numCols = matrix.keys1.size
+  val numRows = matrix.keys2.size
 
-  println(matrix.toVerboseString())
-
-
-  def dbToXYNew(db: TensorKB): Seq[XYNew] = {
-    for (r <- db.relations) yield {
+  def dbToXYNew(db: TensorKB, relFilter: Any => Boolean = rel => true): Seq[XYNew] = {
+    for (r <- db.relations; if relFilter(r)) yield {
       val matrix = new SparseBinaryTensor2(db.dim2, db.dim1)
       val y = new SparseTensor1(db.dim2)
+
+      val progressBar = new ProgressBar(db.getBy1(r).size, 10)
+      progressBar.start()
 
       db.getBy1(r).foreach(t => {
         val tCurrentIx = db.cellIxToIntIx2(t._1)
@@ -193,19 +243,54 @@ object OCSVM extends App {
           val rIx = db.cellIxToIntIx1(rNew._1)
           matrix.update(tCurrentIx, rIx, 1.0)
         })
+
+        progressBar(t.toString())
       })
 
-      XYNew(matrix, y)
+      XYNew(matrix, y, r)
     }
   }
 
-  val data = dbToXYNew(matrix)
+  println(matrix.toInfoString)
 
+
+  println("Generating training data...")
+
+  lazy val testRelations = Seq(
+    "person/company",
+    "location/containedby",
+    "person/nationality"/*,
+    "author/works_written",
+    "parent/child",
+    "person/place_of_birth",
+    "person/place_of_death",
+    "neighborhood/neighborhood_of",
+    "person/parents",
+    "company/founders",
+    "sports_team/league",
+    "team_owner/teams_owned",
+    "team/arena_stadium",
+    "film/directed_by",
+    "roadcast/area_served",
+    "structure/architect",
+    "composer/compositions",
+    "person/religion",
+    "film/produced_by"*/
+  ).toSet
+
+  def testRelationFilter(r: Any) = testRelations.exists(s => r.toString.contains(s))
+
+
+  val data = dbToXYNew(matrix, r => debug || testRelationFilter(r))
+
+  println("Training " + data.size + " classifiers...")
 
   import PimpMyFactorie._
 
+
   /*
-  for (datum <- data) {
+  for ((datum, ix) <- data.zipWithIndex) {
+    println(ix)
     val matrix = datum.xs
     val y = datum.y
 
@@ -216,6 +301,7 @@ object OCSVM extends App {
     println()
   }
   */
+
 
 
   /*
@@ -235,7 +321,11 @@ object OCSVM extends App {
   */
 
 
+  println("Building factor graph...")
+
   val R           = data.length
+  val ixToRelationMap = (0 until R).map(ix => ix -> data(ix).relation).toMap
+
   val fg          = new FactorGraph()
   val weightnodes = for (i <- 0 until R) yield fg.addVectorNode(R, "weight" + i)
   val rhonodes    = for (i <- 0 until R) yield fg.addVectorNode(1, "rho" + i)
@@ -243,13 +333,18 @@ object OCSVM extends App {
   val rand = new Random(0l)
 
   rhonodes.foreach(rho => {
-    val rhoValue = new DenseTensor1(Array(rand.nextGaussian()))
+    val rhoValue = new DenseTensor1(Array(rand.nextGaussian() * 0.1))
+    //val rhoValue = new DenseTensor1(Array(0.0))
     rho.variable.asVector.b = rhoValue
     rho.variable.asVector.setting = rhoValue
   })
 
-  weightnodes.foreach(w => {
-    val wValue = new DenseTensor1((0 until R).map(i => rand.nextGaussian()).toArray)
+  weightnodes.zipWithIndex.foreach(t => {
+    val (w, ix) = t
+    val wValue = new DenseTensor1((0 until numCols).map(i => {
+      if (i != ix) rand.nextGaussian() * 0.1
+      else 0.0
+    }).toArray)
     w.variable.asVector.b = wValue
     w.variable.asVector.setting = wValue
   })
@@ -259,77 +354,156 @@ object OCSVM extends App {
 
   for (j <- 0 until R) {
     val m = data(j).xs.dim1
-    for (i <- 0 until m) {
+    val y = data(j).y
+
+    y.activeElements.foreach { case (ix, target) =>
       fg.buildFactor(Seq(weightnodes(j), rhonodes(j)))(_ => Seq(new VectorMsgs, new VectorMsgs))(
-        edges => new OneClassSVMPerInstanceLoss(edges(0), edges(1), data(j).xs.getSparseRow(i), data(j).y(i), nu, j)
+        edges => new OneClassSVMPerInstanceLoss(edges(0), edges(1), data(j).xs.getSparseRow(ix), target, nu)
       )
     }
+
+    /*
+    for (i <- 0 until m) {
+      fg.buildFactor(Seq(weightnodes(j), rhonodes(j)))(_ => Seq(new VectorMsgs, new VectorMsgs))(
+        edges => new OneClassSVMPerInstanceLoss(edges(0), edges(1), data(j).xs.getSparseRow(i), data(j).y(i), nu)
+      )
+    }
+    */
     //fg.buildFactor(Seq(weightnodes(j)))(_ => Seq(new VectorMsgs))(edges => new l2reg(edges(0), nu, m))
   }
 
 
   //fg.buildFactor(weightnodes) (edges => for(_ <- edges) yield new VectorMsgs) (edges => new lowRankreg(edges, epsilon, gamma))
 
-  D3Implicits.saveD3Graph(fg)
+  //D3Implicits.saveD3Graph(fg)
 
   fg.build()
 
+  println(fg.toInspectionString)
 
+
+  println("Optimizing...")
 
   GradientBasedOptimizer(fg,
-    new OnlineTrainer(_, new AdaGrad(rate = 0.1), 1000, fg.factors.size - 1)
+    new OnlineTrainer(_, new AdaGrad(rate = alpha), maxIter, fg.factors.size - 1) with ProgressLogging
     //new OnlineTrainer(_, new ConstantLearningRate(baseRate = 0.05), 1000, fg.factors.size - 1)
   )
 
   //fg.factors.map(_.potential).foreach(PotentialDebugger.checkGradients(_, debug = true))
 
 
-  for (w <- weightnodes) {
-    println(w.variable.label + "\t" + w.variable.asVector.b)
-  }
+  if (debug) {
+    for (w <- weightnodes) {
+      println(w.variable.label + "\t" + w.variable.asVector.b)
+    }
 
-  for (rho <- rhonodes) {
-    println(rho.variable.label + "\t" + rho.variable.asVector.b)
-  }
-
-
-  print("\t")
-  for (col <- 0 until matrix.dim1) print(matrix.keys1(col) + "\t")
-  println()
-
-  for (row <- 0 until matrix.dim2) {
-    print(matrix.keys2(row) + "\t")
-    for (col <- 0 until matrix.dim1) {
-      val wj = weightnodes(col).variable.asVector.b
+    for (rho <- rhonodes) {
+      println(rho.variable.label + "\t" + rho.variable.asVector.b)
+    }
 
 
-      val rhoj = rhonodes(col).variable.asVector.b(0)
 
-      val r = matrix.keys1(col)
-      val tuple = matrix.keys2(row)
+    println("indices:\n" + matrix.cellIxToIntIx1.mkString("\n"))
 
-      val x = new SparseTensor1(matrix.dim1)
+    print("\t")
+    for (col <- 0 until matrix.dim1) print(matrix.keys1(col) + "\t")
+    println()
 
-      val ts = matrix.getBy2(tuple).map(t => matrix.cellIxToIntIx1(t._1)).foreach(ix => {
-        x.update(ix, 1.0)
-      })
-      x.update(col, 0.0)
+    for (row <- 0 until matrix.dim2) {
+      print(matrix.keys2(row) + "\t")
+      for (col <- 0 until matrix.dim1) {
+        val wj = weightnodes(col).variable.asVector.b
+        val rhoj = rhonodes(col).variable.asVector.b(0)
+        val r = matrix.keys1(col)
 
-      /*
-      println(wj.size)
-      println(wj.toPrettyString)
-      println(x.size)
-      println(x.toPrettyString)
+        val tuple = matrix.keys2(row)
+        val x = new SparseTensor1(matrix.dim1)
+
+        matrix.getBy2(tuple).map(t => matrix.cellIxToIntIx1(t._1)).foreach(ix => {
+          if (col != ix)
+            x.update(ix, 1.0)
+        })
+        //x.update(col, 0.0) //todo: why doesn't overwriting with 0 work in FACTORIE?
+
+        /*
+      println(s"col $col row $row")
+      println("w:\n" + wj.toPrettyString)
+      println("x:\n" + x.toPrettyString)
+      println("rho:\t" + rhoj)
+      println()
       */
 
-      print("%-10.5f\t".format((x dot wj) - rhoj))
-      //print("%-10.5f\t".format(x dot wj))
+        print("%-10.5f\t".format((wj dot x) - rhoj))
+        //print("%-10.5f\t".format(wj dot x))
+      }
+      println()
     }
-    println()
+
+
+    println(matrix.toVerboseString(true))
+
+    //fg.factors.map(_.potential).foreach(PotentialDebugger.checkGradients(_, debug = true))
+
+  } else {
+    /*
+    println(rhonodes.head.variable.asVector.b)
+    println(weightnodes.head.variable.asVector.b.size)
+    println(weightnodes.head.variable.asVector.b.toArray.mkString("\n"))
+    */
+
+
+
+
+
+    Conf.createSymbolicLinkToLatest() //rewire symbolic link to latest (in case it got overwritten)
+    val pathToPredict = Conf.outDir.getAbsolutePath + "/" + fileName
+
+    val fileWriter = new FileWriter(pathToPredict)
+
+    val predictions =
+      (0 until R).flatMap(col => {
+        val relation = ixToRelationMap(col)
+
+
+        for {
+          row <- 0 until matrix.dim2
+          tuple = matrix.keys2(row)
+          if matrix.getFact(relation, tuple, DefaultIx).exists(_.test)
+          wj = weightnodes(col).variable.asVector.b
+          rhoj = rhonodes(col).variable.asVector.b(0)
+        } yield {
+
+          val x = new SparseTensor1(matrix.dim1)
+          matrix.getBy2(tuple).map(t => matrix.cellIxToIntIx1(t._1)).foreach(ix => {
+            if (col != ix)
+              x.update(ix, 1.0)
+          })
+
+          ((wj dot x) - rhoj, tuple, relation)
+        }
+      }).sortBy(-_._1)
+
+    predictions.foreach { case (p, es, r) => {
+        val Array(e1,e2) = es.toString.tail.init.split(",")
+        fileWriter.write(s"$p\t$e1|$e2\t$r\t$r\n")
+      }
+    }
+    fileWriter.close()
+
+
+    EvaluateNAACL.main(Array("./conf/eval.conf", pathToPredict))
+
+    import scala.sys.process._
+    Process("pdflatex -interaction nonstopmode -shell-escape table.tex", new File(Conf.outDir.getAbsolutePath)).!!
+
+    if (Conf.hasPath("formulaeFile") && Conf.getString("formulaeFile") != "None") {
+      val formulaeFile = new File(Conf.getString("formulaeFile"))
+      val lines = Source.fromFile(formulaeFile).getLines()
+      val writer = new FileWriter(Conf.outDir.getAbsolutePath + "/" + formulaeFile.getAbsolutePath.split("/").last)
+      writer.write(lines.mkString("\n"))
+      writer.close()
+    }
   }
-
-  println(matrix.toVerboseString())
-
 }
 
 object OCSVMGradientChecking extends App {

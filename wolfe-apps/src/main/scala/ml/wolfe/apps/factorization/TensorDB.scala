@@ -151,6 +151,16 @@ class TensorDB(k: Int = 100) extends Tensor {
     cells append cell
   }
 
+  def -=(cell: Cell) = {
+    cells -= cell
+    keys1 -= cell
+    keys2 -= cell
+    keys3 -= cell
+    keys23 -= cell
+
+    cellMap.find(_._2 == cell).map(t => cellMap.remove(t._1))
+  }
+
   val formulae = new ArrayBuffer[Formula]()
 
   def +=(formula: Formula) = formulae += formula
