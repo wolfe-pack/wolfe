@@ -344,10 +344,6 @@ class MatrixFactorization(confPath: String = "conf/mf.conf") {
         writer.close()
       }
     }
-
-    //println(fg.valueHistory.mkString("\n"))
-
-    wMAP
   }
 }
 
