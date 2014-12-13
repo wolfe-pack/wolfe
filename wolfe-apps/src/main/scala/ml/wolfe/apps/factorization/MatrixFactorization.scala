@@ -313,7 +313,6 @@ class MatrixFactorization(confPath: String = "conf/mf.conf") {
       println("predicted:")
       println(db.toVerboseString())
       if (Conf.getBoolean("serialize")) db.serialize(Conf.outDir.getAbsolutePath + "/serialized/")
-
     } else {
       Conf.createSymbolicLinkToLatest() //rewire symbolic link to latest (in case it got overwritten)
       val pathToPredict = Conf.outDir.getAbsolutePath + "/" + fileName
@@ -344,6 +343,8 @@ class MatrixFactorization(confPath: String = "conf/mf.conf") {
         writer.close()
       }
     }
+
+    wMAP
   }
 }
 
