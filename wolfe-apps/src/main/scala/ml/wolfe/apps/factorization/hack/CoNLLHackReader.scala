@@ -1,6 +1,6 @@
 package ml.wolfe.apps.factorization.hack
 
-import java.io.FileWriter
+import java.io.{File, FileWriter}
 import java.util
 import java.util.Stack
 
@@ -136,8 +136,8 @@ object CoNLLHackReader extends App {
   if (args.size > 0) {
     CoNLLHackReader(args(0), writer, english = false)
   } else {
-    CoNLLHackReader(args.lift(0).getOrElse("./data/bbc/bbc_latest.conll"), writer, english = true)
-    CoNLLHackReader(args.lift(0).getOrElse("./data/bbc/bbc.conll"), writer, english = true)
+    CoNLLHackReader("./data/bbc/bbc_latest.conll", writer, english = true)
+    CoNLLHackReader("./data/bbc/bbc.conll", writer, english = true)
     //fixme
     //CoNLLHackReader(args.lift(0).getOrElse("./data/bbc/publico.conll"), writer, english = false)
   }
@@ -413,8 +413,11 @@ object DepUtilsSpec extends App {
 }
 
 object EntityHackNormalization extends App {
-  def loadEntityMap(filePath: String): Map[String, (String, String)] =
-    Source.fromFile(filePath).getLines().map(_.split("\t")).map(a => (a.head, (a.tail.head, a.last))).toMap
+  def loadEntityMap(filePath: String): Map[String, (String, String)] = {
+    if (new File(filePath).exists())
+      Source.fromFile(filePath).getLines().map(_.split("\t")).map(a => (a.head, (a.tail.head, a.last))).toMap
+    else Map[String, (String, String)]()
+  }
 
   lazy val englishMap = loadEntityMap("./data/bbc/normalized_english.tsv")
   lazy val portugueseMap = loadEntityMap("./data/bbc/normalized_portuguese.tsv")

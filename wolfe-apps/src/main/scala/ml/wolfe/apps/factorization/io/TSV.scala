@@ -10,11 +10,11 @@ import scala.util.Random
  * @author rockt
  */
 object LoadTSV extends App {
-  def apply(k: Int = 100, subsample: Double = 1.0, db: TensorKB = null): TensorKB = {
+  def apply(k: Int = 100, subsample: Double = 1.0, db: TensorKB = null, filePath: String = Conf.getString("inputFile")): TensorKB = {
     val kb = if (db != null) db else new TensorKB(k)
     val rand = new Random(0l)
 
-    val lines = Source.fromFile(Conf.getString("inputFile")).getLines()
+    val lines = Source.fromFile(filePath).getLines()
 
     val progressBar = new ProgressBar(Source.fromFile(Conf.getString("inputFile")).getLines().size, 100000)
     progressBar.start()

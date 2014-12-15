@@ -11,16 +11,21 @@ import ml.wolfe.util.Conf
 object MatrixFilter extends App {
   val confPath = args.lift(0).getOrElse("./conf/mf-hack.conf")
 
+  val matricesToAdd = if (args.size > 2) args.tail.tail else Array("./data/bbc/matrix_freebase.txt")
+
   Conf.add(confPath)
   Conf.outDir //sets up output directory
   implicit val conf = Conf
   println("Using " + confPath)
   println("Loading...")
-
   val kb = LoadTSV()
-
   println(kb.toInfoString)
 
+  println("Loading additional data...")
+  matricesToAdd.foreach(fileName => LoadTSV(db = kb, filePath = fileName))
+  println(kb.toInfoString)
+
+  println("Filtering...")
   val filteredKB = new TensorKB()
 
   val frequentRows = kb.keys2.filter(key2 => kb.getBy2(key2).size > 5).toSet
@@ -30,9 +35,12 @@ object MatrixFilter extends App {
     kb.cells.filter(c => frequentCols(c.key1) && frequentRows(c.key2))
     .foreach(cell => filteredKB += cell)
 
+
+
+
   println(filteredKB.toInfoString)
 
-  val fileWriter = new FileWriter(args.lift(1).getOrElse("./data/bbc/matrix_filtered.txt"))
+  val fileWriter = new FileWriter(args.lift(1).getOrElse("./data/bbc/matrix_final.txt"))
   filteredKB.cells.foreach(cell => {
     val (e1, e2) = cell.key2
     fileWriter.write(s"${cell.key1}\t$e1\t$e2\t${cell.cellType}\t${cell.target}\n")
