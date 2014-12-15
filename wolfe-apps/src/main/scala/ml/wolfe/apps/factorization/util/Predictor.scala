@@ -7,7 +7,7 @@ import ml.wolfe.apps.factorization.{DefaultIx, TensorKB}
  */
 object Predictor extends App {
   val pathToMatrix = args.lift(0).getOrElse("./data/out/bbc/serialized/")
-  val relations = if (args.size > 1) args.tail else Array("path#|->nmod->per->pmod->involvement->nmod->about->sbj->|")
+  val relations = if (args.size > 1) args.tail else Array("REL$/location/country/capital")
 
   println("Loading db...")
   val kb = new TensorKB(100)
