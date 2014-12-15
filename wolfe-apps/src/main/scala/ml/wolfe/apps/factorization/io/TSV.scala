@@ -1,7 +1,7 @@
 package ml.wolfe.apps.factorization.io
 
 import ml.wolfe.apps.factorization.{DefaultIx, Cell, CellType, TensorKB}
-import ml.wolfe.util.Conf
+import ml.wolfe.util.{ProgressBar, Conf}
 
 import scala.io.Source
 import scala.util.Random
@@ -15,6 +15,9 @@ object LoadTSV extends App {
     val rand = new Random(0l)
 
     val lines = Source.fromFile(Conf.getString("inputFile")).getLines()
+
+    val progressBar = new ProgressBar(Source.fromFile(Conf.getString("inputFile")).getLines().size, 100000)
+    progressBar.start()
 
     for {
       fact <- lines
@@ -31,6 +34,8 @@ object LoadTSV extends App {
         val cell = Cell(r, (e1, e2), DefaultIx, target.toDouble, cellType)
         kb += cell
       }
+
+      progressBar(r)
     }
 
     kb
