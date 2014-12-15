@@ -159,7 +159,7 @@ object CoNLLHackReader extends App {
   val writer = new FileWriter(args.lift(1).getOrElse("./data/bbc/matrix_multi.txt"))
 
   if (args.size > 0) {
-    CoNLLHackReader(args(0), writer, english = false)
+    CoNLLHackReader(args(0), writer, english = args(2).toBoolean)
   } else {
     //uses words between and around tokens
     CoNLLHackReader(args.lift(0).getOrElse("./data/bbc/publico.conll"), writer, english = false)
