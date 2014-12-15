@@ -6,6 +6,8 @@ import ml.wolfe.apps.factorization.TensorKB
 import ml.wolfe.util.Conf
 
 /**
+ * Reads in a huge sparse matrix and filters it.
+ * Can also be used to add more data to the matrix (e.g. freebase facts).
  * @author rockt
  */
 object MatrixFilter extends App {
@@ -41,6 +43,9 @@ object MatrixFilter extends App {
   fileWriter.close()
 }
 
+/**
+ * Shows stats about the matrix, e.g., what freebase relations are in there.
+ */
 object MatrixInspector extends App {
   val kb = LoadTSV(filePath = args.lift(0).getOrElse("./data/bbc/matrix_final.txt"))
   println(kb.toInfoString)

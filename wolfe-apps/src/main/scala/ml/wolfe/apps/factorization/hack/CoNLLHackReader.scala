@@ -18,6 +18,7 @@ import scala.collection.mutable.{ListBuffer, ArrayBuffer}
 import scala.io.Source
 
 /**
+ * Reads in multilingual conll files (english, portuguese, latvian).
  * @author rockt
  */
 object CoNLLHackReader extends App {
@@ -438,6 +439,9 @@ object DepUtilsSpec extends App {
   }
 }
 
+/**
+ * Singleton that keeps mapping from entity mentions to Freebase ids around.
+ */
 object EntityHackNormalization {
   val idToCanonical = new mutable.HashMap[String, String]
 
