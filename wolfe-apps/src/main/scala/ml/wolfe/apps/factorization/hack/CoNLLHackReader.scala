@@ -80,17 +80,41 @@ object CoNLLHackReader extends App {
       val normE1 = toCanonical(e1String + "#" + e1.label)
       val normE2 = toCanonical(e2String + "#" + e2.label)
 
-      val (rootOfPath, pathString, path) = DepUtils.findPath(DepUtils.headOfMention(e1, s), DepUtils.headOfMention(e2, s), s, english)
 
-      //println(pathString)
+      if (english) {
+        val (rootOfPath, pathString, path) = DepUtils.findPath(DepUtils.headOfMention(e1, s), DepUtils.headOfMention(e2, s), s, english)
 
-      if (!pathString.startsWith("[EXCEPTION") && pathString != "junk" && path.size <= 5) {
-        val outputLine = s"path#|$pathString|\t$normE1\t$normE2\tTrain\t1.0\n"
+        //println(pathString)
 
-        //println(s.toText)
-        //print(outputLine)
+        if (!pathString.startsWith("[EXCEPTION") && pathString != "junk" && path.size <= 5) {
+          val outputLine = s"eng_path#|$pathString|\t$normE1\t$normE2\tTrain\t1.0\n"
 
-        writer.write(outputLine)
+          //println(s.toText)
+          //print(outputLine)
+
+          writer.write(outputLine)
+        }
+      } else {
+        //portuguese
+        val (first, second) = if (e1.start < e2.start) (e1, e2) else (e2, e1)
+
+        val tokens = s.tokens
+
+        val numBetween = tokens.slice(first.end, second.start).size
+        val before = tokens.slice(0, first.start).takeRight(2).map(_.word).mkString("-")
+        val between = tokens.slice(first.end, second.start).map(_.word).mkString("-")
+        val after = tokens.slice(second.end, tokens.size).take(2).map(_.word).mkString("-")
+
+
+        if (2 <= numBetween && numBetween < 5) {
+          val inv = if (first == e1) "" else ":INV"
+          val BB = s"$before-#1-$between-#2"
+          val B = s"#1-$between-#2"
+          val BA = s"#1-$between-#2-$after"
+          writer.write(s"por_words#|$BB$inv|\t$normE1\t$normE2\tTrain\t1.0\n")
+          writer.write(s"por_words#|$B$inv|\t$normE1\t$normE2\tTrain\t1.0\n")
+          writer.write(s"por_words#|$BA$inv|\t$normE1\t$normE2\tTrain\t1.0\n")
+        }
       }
     }
   }
@@ -131,15 +155,17 @@ object CoNLLHackReader extends App {
   }
 
 
-  val writer = new FileWriter(args.lift(1).getOrElse("./data/bbc/matrix.txt"))
+  val writer = new FileWriter(args.lift(1).getOrElse("./data/bbc/matrix_multi.txt"))
 
   if (args.size > 0) {
     CoNLLHackReader(args(0), writer, english = false)
   } else {
+    //uses words between and around tokens
+    CoNLLHackReader(args.lift(0).getOrElse("./data/bbc/publico.conll"), writer, english = false)
+
+    //uses dependency paths
     CoNLLHackReader("./data/bbc/bbc_latest.conll", writer, english = true)
     CoNLLHackReader("./data/bbc/bbc.conll", writer, english = true)
-    //fixme
-    //CoNLLHackReader(args.lift(0).getOrElse("./data/bbc/publico.conll"), writer, english = false)
   }
 
   writer.close()

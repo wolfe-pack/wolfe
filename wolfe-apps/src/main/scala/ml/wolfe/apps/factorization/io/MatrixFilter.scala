@@ -9,12 +9,14 @@ import ml.wolfe.util.Conf
  * @author rockt
  */
 object MatrixFilter extends App {
-  val filePath = args.lift(0).getOrElse("./data/bbc/matrix_bbc_only.txt")
+  val filePath = args.lift(0).getOrElse("./data/bbc/matrix_multi_all.txt")
   println("Loading...")
   val kb = LoadTSV(filePath = filePath)
   println(kb.toInfoString)
 
-  val matricesToAdd = if (args.size > 2) args.tail.tail else Array("./data/bbc/matrix_freebase.txt")
+  val matricesToAdd = if (args.size > 2) args.tail.tail else Array(
+    "./data/bbc/matrix_freebase.txt"
+  )
   println("Loading additional data...")
   matricesToAdd.foreach(fileName => LoadTSV(db = kb, filePath = fileName))
   println(kb.toInfoString)
