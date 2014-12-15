@@ -18,7 +18,7 @@ case class DependencyTree(tokens: IndexedSeq[Token], arcs: IndexedSeq[(Int,Int,S
 
   def hasHead(i: Int, j: Int) = arcs.exists(n => n._1 == i && n._2 == j)
 
-  def headOf(j: Int) = arcs.find(_._1 == j) match {
+  def headOf(i: Int) = arcs.find(_._1 == i) match {
     case Some(x) => Some(x._2)
     case _ => None
   }
