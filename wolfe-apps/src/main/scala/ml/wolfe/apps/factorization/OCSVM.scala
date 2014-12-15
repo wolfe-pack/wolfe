@@ -1,15 +1,12 @@
-package ml.wolfe.apps
+package ml.wolfe.apps.factorization
 
-import java.io.{FileWriter, File}
-import javax.management.relation.Relation
+import java.io.{File, FileWriter}
 
 import breeze.linalg._
-import breeze.numerics._
 import cc.factorie.la._
-import cc.factorie.optimize.{ConstantLearningRate, AdaGrad, OnlineTrainer}
+import cc.factorie.optimize.{AdaGrad, OnlineTrainer}
 import ml.wolfe._
-import ml.wolfe.apps.factorization._
-import ml.wolfe.apps.factorization.io.{EvaluateNAACL, WriteNAACL, LoadNAACL}
+import ml.wolfe.apps.factorization.io.{EvaluateNAACL, LoadNAACL}
 import ml.wolfe.fg._
 import ml.wolfe.util._
 
@@ -50,6 +47,7 @@ class OneClassSVMPerInstanceLoss(weightsEdge: FactorGraph.Edge, rhoEdge: FactorG
 }
 
 class LowRankRegularizer(weightsEdges: Seq[FactorGraph.Edge], epsilon: Double, gamma: Double) extends Potential {
+  import BreezeConverter._
 
   lazy val numClassifiers = weightsEdges.size
   lazy val numWeights = weightsEdges(0).msgs.asVector.n2f.length
@@ -59,7 +57,6 @@ class LowRankRegularizer(weightsEdges: Seq[FactorGraph.Edge], epsilon: Double, g
 
 
   override def valueAndGradientForAllEdges() = {
-    import BreezeConverter._
 
     val W = DenseMatrix.zeros[Double](numWeights, numClassifiers)
 
@@ -115,6 +112,9 @@ case class XY(xs: Seq[FactorieVector], y: FactorieVector)
 case class XYNew(xs: Tensor2, y: FactorieVector, relation: Any)
 
 object OCSVM extends App {
+  import BreezeConverter._
+  import ml.wolfe.apps.PimpMyFactorie._
+
   val confPath = args.lift(0).getOrElse("conf/mf-oc.conf")
   Conf.add(confPath)
   Conf.outDir //sets up output directory
@@ -278,8 +278,6 @@ object OCSVM extends App {
   val data = dbToXYNew(matrix, r => debug || testRelationFilter(r))
 
   println("Training " + data.size + " classifiers...")
-
-  import PimpMyFactorie._
 
 
   /*
