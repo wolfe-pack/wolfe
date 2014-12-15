@@ -8,6 +8,10 @@ import ml.wolfe.util.Conf
 /**
  * Reads in a huge sparse matrix and filters it.
  * Can also be used to add more data to the matrix (e.g. freebase facts).
+ *
+ * args0: input matrix
+ * args1: output matrix
+ * args2-: additional freebase relations
  * @author rockt
  */
 object MatrixFilter extends App {
