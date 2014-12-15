@@ -133,11 +133,14 @@ object CoNLLHackReader extends App {
 
   val writer = new FileWriter(args.lift(1).getOrElse("./data/bbc/matrix.txt"))
 
-  CoNLLHackReader(args.lift(0).getOrElse("./data/bbc/bbc_latest.conll"), writer, english = true)
-  CoNLLHackReader(args.lift(0).getOrElse("./data/bbc/bbc.conll"), writer, english = true)
-
-  //fixme
-  //CoNLLHackReader(args.lift(0).getOrElse("./data/bbc/publico.conll"), writer, english = false)
+  if (args.size > 0) {
+    CoNLLHackReader(args(0), writer, english = false)
+  } else {
+    CoNLLHackReader(args.lift(0).getOrElse("./data/bbc/bbc_latest.conll"), writer, english = true)
+    CoNLLHackReader(args.lift(0).getOrElse("./data/bbc/bbc.conll"), writer, english = true)
+    //fixme
+    //CoNLLHackReader(args.lift(0).getOrElse("./data/bbc/publico.conll"), writer, english = false)
+  }
 
   writer.close()
 }
