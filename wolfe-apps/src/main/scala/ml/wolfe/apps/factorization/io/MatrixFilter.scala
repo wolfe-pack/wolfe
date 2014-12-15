@@ -9,18 +9,12 @@ import ml.wolfe.util.Conf
  * @author rockt
  */
 object MatrixFilter extends App {
-  val confPath = args.lift(0).getOrElse("./conf/mf-hack.conf")
-
-  val matricesToAdd = if (args.size > 2) args.tail.tail else Array("./data/bbc/matrix_freebase.txt")
-
-  Conf.add(confPath)
-  Conf.outDir //sets up output directory
-  implicit val conf = Conf
-  println("Using " + confPath)
+  val filePath = args.lift(0).getOrElse("./data/bbc/matrix_bbc_only.txt")
   println("Loading...")
-  val kb = LoadTSV()
+  val kb = LoadTSV(filePath = filePath)
   println(kb.toInfoString)
 
+  val matricesToAdd = if (args.size > 2) args.tail.tail else Array("./data/bbc/matrix_freebase.txt")
   println("Loading additional data...")
   matricesToAdd.foreach(fileName => LoadTSV(db = kb, filePath = fileName))
   println(kb.toInfoString)
@@ -28,15 +22,12 @@ object MatrixFilter extends App {
   println("Filtering...")
   val filteredKB = new TensorKB()
 
-  val frequentRows = kb.keys2.filter(key2 => kb.getBy2(key2).size > 5).toSet
-  val frequentCols = kb.keys1.filter(key1 => kb.getBy1(key1).size > 10).toSet
+  val frequentRows = kb.keys2.filter(key2 => kb.getBy2(key2).size > 10).toSet
+  val frequentCols = kb.keys1.filter(key1 => kb.getBy1(key1).size > 25).toSet
 
   val filteredCells =
     kb.cells.filter(c => frequentCols(c.key1) && frequentRows(c.key2))
     .foreach(cell => filteredKB += cell)
-
-
-
 
   println(filteredKB.toInfoString)
 
@@ -46,4 +37,12 @@ object MatrixFilter extends App {
     fileWriter.write(s"${cell.key1}\t$e1\t$e2\t${cell.cellType}\t${cell.target}\n")
   })
   fileWriter.close()
+}
+
+object MatrixInspector extends App {
+  val kb = LoadTSV(filePath = args.lift(0).getOrElse("./data/bbc/matrix_final.txt"))
+  println(kb.toInfoString)
+
+  val freebaseRelations = kb.keys1.filter(_.toString.startsWith("REL$"))
+  freebaseRelations.foreach(println)
 }

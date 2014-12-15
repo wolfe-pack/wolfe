@@ -16,7 +16,7 @@ object LoadTSV extends App {
 
     val lines = Source.fromFile(filePath).getLines()
 
-    val progressBar = new ProgressBar(Source.fromFile(Conf.getString("inputFile")).getLines().size, 100000)
+    val progressBar = new ProgressBar(Source.fromFile(filePath).getLines().size, 100000)
     progressBar.start()
 
     for {
