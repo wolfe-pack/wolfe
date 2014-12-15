@@ -438,10 +438,15 @@ object DepUtilsSpec extends App {
   }
 }
 
-object EntityHackNormalization extends App {
+object EntityHackNormalization {
+  val idToCanonical = new mutable.HashMap[String, String]
+
   def loadEntityMap(filePath: String): Map[String, (String, String)] = {
     if (new File(filePath).exists())
-      Source.fromFile(filePath).getLines().map(_.split("\t")).map(a => (a.head, (a.tail.head, a.last))).toMap
+      Source.fromFile(filePath).getLines().map(_.split("\t")).map(a => {
+        idToCanonical += a.tail.head -> a.last
+        (a.head, (a.tail.head, a.last))
+      }).toMap
     else Map[String, (String, String)]()
   }
 
@@ -451,8 +456,14 @@ object EntityHackNormalization extends App {
   def normalizeEnglish(name: String): Option[(String, String)] = englishMap.get(name)
   def normalizePortuguese(name: String): Option[(String, String)] = portugueseMap.get(name)
 
+  def init() = {
+    englishMap
+    portugueseMap
+  }
 
-  englishMap.keys.take(100).foreach(k => println("[" + k + "]"))
+  def getCanonical(id: String): String = idToCanonical.getOrElse(id, "n/A")
+
+  //englishMap.keys.take(100).foreach(k => println("[" + k + "]"))
 
   //println(portugueseMap.head)
 }
