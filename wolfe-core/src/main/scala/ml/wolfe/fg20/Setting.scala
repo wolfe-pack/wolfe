@@ -1,5 +1,7 @@
 package ml.wolfe.fg20
 
+import java.util
+
 import ml.wolfe._
 
 import scala.collection.mutable.ListBuffer
@@ -19,38 +21,47 @@ class Setting(numDisc: Int, numCont: Int = 0, numVect: Int = 0) {
   final var vect = Array.ofDim[FactorieVector](numVect)
 
 
-  def fillObserved(observed: PartialSetting) = {
+  final def fillObserved(observed: PartialSetting) = {
     for (i <- 0 until disc.length; if observed.discObs(i)) disc(i) = observed.disc(i)
     for (i <- 0 until cont.length; if observed.contObs(i)) cont(i) = observed.cont(i)
     for (i <- 0 until vect.length; if observed.vectObs(i)) vect(i) = observed.vect(i)
   }
 
-  def copyFrom(that: Setting, mapFromThisIndextoThatIndex: ArgMap): Unit = {
+  final def copyFrom(that: Setting, mapFromThisIndextoThatIndex: ArgMap): Unit = {
     for (i <- 0 until disc.length) disc(i) = that.disc(mapFromThisIndextoThatIndex.discArgs(i))
     for (i <- 0 until cont.length) cont(i) = that.cont(mapFromThisIndextoThatIndex.contArgs(i))
     for (i <- 0 until vect.length) vect(i) = that.vect(mapFromThisIndextoThatIndex.vectArgs(i))
   }
 
-  def *=(scale: Double): Unit = {
+  final def *=(scale: Double): Unit = {
     for (i <- 0 until cont.length) cont(i) *= scale
     for (i <- 0 until vect.length) vect(i) *= scale
   }
-  def :=(value: Double): Unit = {
+  final def :=(value: Double): Unit = {
     for (i <- 0 until cont.length) cont(i) = 0.0
     for (i <- 0 until vect.length) if (vect(i) != null) vect(i) := 0.0
   }
 
 
-  def copyTo(that: Setting, mapFromThisIndextoThatIndex: ArgMap): Unit = {
+  final def copyTo(that: Setting, mapFromThisIndextoThatIndex: ArgMap): Unit = {
     for (i <- 0 until disc.length) that.disc(mapFromThisIndextoThatIndex.discArgs(i)) = disc(i)
     for (i <- 0 until cont.length) that.cont(mapFromThisIndextoThatIndex.contArgs(i)) = cont(i)
     for (i <- 0 until vect.length) that.vect(mapFromThisIndextoThatIndex.vectArgs(i)) = vect(i)
   }
 
-  def observeIn(that: PartialSetting, mapFromThisIndextoThatIndex: ArgMap, observed: Boolean = true): Unit = {
+  final def observeIn(that: PartialSetting, mapFromThisIndextoThatIndex: ArgMap, observed: Boolean = true): Unit = {
     for (i <- 0 until disc.length) that.discObs(mapFromThisIndextoThatIndex.discArgs(i)) = observed
     for (i <- 0 until cont.length) that.contObs(mapFromThisIndextoThatIndex.contArgs(i)) = observed
     for (i <- 0 until vect.length) that.vectObs(mapFromThisIndextoThatIndex.vectArgs(i)) = observed
+  }
+
+  final def inverseObserveIn(that: PartialSetting, mapFromThisIndextoThatIndex: ArgMap, observed: Boolean = true): Unit = {
+    util.Arrays.fill(that.discObs, observed)
+    util.Arrays.fill(that.contObs, observed)
+    util.Arrays.fill(that.vectObs, observed)
+    for (i <- 0 until disc.length) that.discObs(mapFromThisIndextoThatIndex.discArgs(i)) = !observed
+    for (i <- 0 until cont.length) that.contObs(mapFromThisIndextoThatIndex.contArgs(i)) = !observed
+    for (i <- 0 until vect.length) that.vectObs(mapFromThisIndextoThatIndex.vectArgs(i)) = !observed
   }
 
 
@@ -68,7 +79,7 @@ final class PartialSetting(numDisc: Int, numCont: Int = 0, numVect: Int = 0) ext
   var contObs = Array.ofDim[Boolean](numCont)
   var vectObs = Array.ofDim[Boolean](numVect)
 
-  private def toMapping(observed:Array[Boolean]) = {
+  private def toMapping(observed: Array[Boolean]) = {
     val result = new ListBuffer[Int]
     var offset = 0
     for (i <- 0 until observed.length) {
@@ -82,7 +93,7 @@ final class PartialSetting(numDisc: Int, numCont: Int = 0, numVect: Int = 0) ext
       that.disc(mapFromThisIndextoThatIndex.discArgs(i)) = disc(i)
       that.discObs(i) = true
     }
-    for (i <- 0 until cont.length; if contObs(i)){
+    for (i <- 0 until cont.length; if contObs(i)) {
       that.cont(mapFromThisIndextoThatIndex.contArgs(i)) = cont(i)
       that.contObs(i) = true
     }
@@ -97,7 +108,7 @@ final class PartialSetting(numDisc: Int, numCont: Int = 0, numVect: Int = 0) ext
       that.disc(i) = disc(i)
       that.discObs(i) = true
     }
-    for (i <- 0 until cont.length; if contObs(i)){
+    for (i <- 0 until cont.length; if contObs(i)) {
       that.cont(i) = cont(i)
       that.contObs(i) = true
     }
@@ -109,7 +120,7 @@ final class PartialSetting(numDisc: Int, numCont: Int = 0, numVect: Int = 0) ext
 
 
   def fromObservedToAllMapping() = {
-    new ArgMap(toMapping(discObs),toMapping(contObs),toMapping(vectObs))
+    new ArgMap(toMapping(discObs), toMapping(contObs), toMapping(vectObs))
   }
 
 }

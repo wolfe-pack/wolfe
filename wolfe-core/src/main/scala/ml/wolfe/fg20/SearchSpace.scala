@@ -27,6 +27,7 @@ object AtomicSearchSpace {
 
   def disc[T](name:String,dom:Seq[T]) = new Disc[T](new DiscVar[T](dom,name))
   def cont(name:String) = new Cont(new ContVar(name))
+  def vect(name:String, dim:Int) = new Vect(new VectVar(dim, name))
 
   def constDisc[T](value:T) = new Disc[T](new DiscVar[T](Seq(value)))
 
