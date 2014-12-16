@@ -18,6 +18,7 @@ import scala.collection.mutable.{ListBuffer, ArrayBuffer}
 import scala.io.Source
 
 /**
+ * Reads in multilingual conll files (english, portuguese, latvian).
  * @author rockt
  */
 object CoNLLHackReader extends App {
@@ -158,7 +159,7 @@ object CoNLLHackReader extends App {
   val writer = new FileWriter(args.lift(1).getOrElse("./data/bbc/matrix_multi.txt"))
 
   if (args.size > 0) {
-    CoNLLHackReader(args(0), writer, english = false)
+    CoNLLHackReader(args(0), writer, english = args(2).toBoolean)
   } else {
     //uses words between and around tokens
     CoNLLHackReader(args.lift(0).getOrElse("./data/bbc/publico.conll"), writer, english = false)
@@ -438,6 +439,9 @@ object DepUtilsSpec extends App {
   }
 }
 
+/**
+ * Singleton that keeps mapping from entity mentions to Freebase ids around.
+ */
 object EntityHackNormalization {
   val idToCanonical = new mutable.HashMap[String, String]
 
