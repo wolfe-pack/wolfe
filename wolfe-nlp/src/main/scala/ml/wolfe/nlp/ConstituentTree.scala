@@ -293,7 +293,9 @@ case class ConstituentTree(node: ConstituentNode, children : List[ConstituentTre
   def spansAt(i: Int, j: Int): Iterable[Span] = spans(i)(j).toIterable
 }
 
-abstract class ConstituentNode(val label: String) {
+trait ConstituentNode {
+
+  def label:String
 
   def isNonterminal: Boolean = this match {
     case x: NonterminalNode => true
@@ -306,14 +308,14 @@ abstract class ConstituentNode(val label: String) {
   }
 }
 
-case class NonterminalNode(override val label: String, head: Int = -1) extends ConstituentNode(label) {
+case class NonterminalNode(label: String, head: Int = -1) extends ConstituentNode {
 
   override def isNonterminal = true
 
   override def isPreterminal = false
 }
 
-case class PreterminalNode(override val label: String, word: String) extends ConstituentNode(label) {
+case class PreterminalNode(label: String, word: String) extends ConstituentNode {
 
   override def isNonterminal = false
 

@@ -36,6 +36,8 @@ class QuadraticTerm(val x: ContVar, val scale: Double) extends ContPotential wit
   def score(setting: Setting) = setting.cont(0) * setting.cont(0) * scale
 }
 
+class BilinearTerm(val x1:ContVar, val x2:ContVar)
+
 class MultivariateLinearTerm(val x: VectVar, val scale: FactorieVector) extends VectPotential
                                                                                 with StatelessDifferentiable with StatelessScorer  {
   val vectVars = Array(x)
