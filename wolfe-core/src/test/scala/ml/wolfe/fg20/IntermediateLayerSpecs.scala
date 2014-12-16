@@ -1,7 +1,7 @@
 package ml.wolfe.fg20
 
 import cc.factorie.Factorie.DenseTensor1
-import ml.wolfe.{FactorieVector, Wolfe, WolfeSpec}
+import ml.wolfe.{FactorieVector, WolfeSpec}
 import org.scalatest.FlatSpec
 
 /**
@@ -23,6 +23,17 @@ class IntermediateLayerSpecs extends WolfeSpec {
       new QuadraticTerm(space.space2.variable, -1.0),
       new LinearTerm(space.space2.variable, 4.0))
   }
+
+  def feat(value: Boolean) = new DenseTensor1(Array(if (value) 1.0 else -1.0))
+
+  def classifier[T](label: AtomicSearchSpace.Disc[T], weights: AtomicSearchSpace.Vect, feat: T => FactorieVector) =
+    new LinearClassiferPotential(label, weights, feat)
+
+  def maxPot(weights: AtomicSearchSpace.Vect, labels: =>AtomicSearchSpace.Disc[Boolean]) =
+    new DifferentiableMaxPotential[LinearClassiferPotential[Boolean]] {
+      lazy val objective = classifier(labels, weights, feat)
+      def notOptimized = weights
+    }
 
 
   "A Sum" should {
@@ -68,24 +79,14 @@ class IntermediateLayerSpecs extends WolfeSpec {
 
   "A MaxPotential" should {
     "calculate its gradient" in {
-      val labels = AtomicSearchSpace.disc("labels", Seq(false, true))
+      def labels = AtomicSearchSpace.disc("labels", Seq(false, true))
       val weights = AtomicSearchSpace.vect("weight", 1)
-      def feat(value: Boolean) = new DenseTensor1(Array(if (value) 1.0 else -1.0))
 
-      def classifier[T](label: AtomicSearchSpace.Disc[T], weights: AtomicSearchSpace.Vect, feat: T => FactorieVector) =
-        new LinearClassiferPotential(label, weights, feat)
+      val result1 = Gradient(weights, State.single(weights.variable, new DenseTensor1(Array(1.0))))(maxPot(weights, labels))
+      val result2 = Gradient(weights, State.single(weights.variable, new DenseTensor1(Array(-1.0))))(maxPot(weights, labels))
 
-      def maxPot(weights: AtomicSearchSpace.Vect) =
-        new DifferentiableMaxPotential[LinearClassiferPotential[Boolean]] {
-          lazy val objective = classifier(labels, weights, feat)
-          def notOptimized = weights
-        }
-
-      val result1 = Gradient(weights, State.single(weights.variable, new DenseTensor1(Array(1.0))))(maxPot(weights))
-      val result2 = Gradient(weights, State.single(weights.variable, new DenseTensor1(Array(-1.0))))(maxPot(weights))
-
-      result1(0) should be (1.0)
-      result2(0) should be (-1.0)
+      result1(0) should be(1.0)
+      result2(0) should be(-1.0)
 
     }
   }
