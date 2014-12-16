@@ -38,32 +38,52 @@ class FreebaseReader(filename: String, port: Int = 27017, useExisting: Boolean =
     mongoClient.dropDatabase("FB")
     val coll = db("FB")
 
+
+
     println("Loading triples...")
     val startTime = System.currentTimeMillis()
     var count = 0
     val reader = if (filename.endsWith(".gz")) new GZipReader(filename) else io.Source.fromFile(filename).getLines
-    for (line <- reader) {
-      val cleaned = line.replaceAll("> +<", ">\t<").replaceAll("> +\"", ">\t\"")
-      cleaned match {
-        case INSTANCE_PATTERN(t, mid) => {
-          coll.insert(MongoDBObject("mid" -> mid, "type" -> t))
+
+
+
+    for (lines <- reader.grouped(1000000)) {
+      val bulkBuilder = coll.initializeUnorderedBulkOperation
+      for (line <- lines) {
+        val cleaned = line.replaceAll("> +<", ">\t<").replaceAll("> +\"", ">\t\"")
+        cleaned match {
+          case INSTANCE_PATTERN(t, mid) => {
+            bulkBuilder.insert(MongoDBObject("mid" -> mid, "type" -> t))
+          }
+          case ATTRIBUTE_PATTERN(mid1, attribute, mid2) => {
+            bulkBuilder.insert(MongoDBObject("arg1" -> mid1, "attribute" -> attribute, "arg2" -> mid2))
+          }
+          case DATE_PATTERN(mid, dateType, date) => {
+            bulkBuilder.insert(MongoDBObject("arg1" -> mid, "attribute" -> dateType, "arg2" -> date))
+          }
+          case TITLE_PATTERN(mid, title) => {
+            bulkBuilder.insert(MongoDBObject("arg1" -> mid, "attribute" -> "title", "arg2" -> title))
+          }
+          case TEXT_PATTERN(mid, text) => {
+            bulkBuilder.insert(MongoDBObject("arg1" -> mid, "attribute" -> "text", "arg2" -> text))
+          }
+          case _ =>
         }
-        case ATTRIBUTE_PATTERN(mid1, attribute, mid2) => {
-          coll.insert(MongoDBObject("arg1" -> mid1, "attribute" -> attribute, "arg2" -> mid2))
-        }
-        case DATE_PATTERN(mid, dateType, date) => {
-          coll.insert(MongoDBObject("arg1" -> mid, "attribute" -> dateType, "arg2" -> date))
-        }
-        case TITLE_PATTERN(mid, title) => {
-          coll.insert(MongoDBObject("arg1" -> mid, "attribute" -> "title", "arg2" -> title))
-        }
-        case TEXT_PATTERN(mid, text) => {
-          coll.insert(MongoDBObject("arg1" -> mid, "attribute" -> "text", "arg2" -> text))
-        }
-        case _ =>
+        count += 1
       }
-      count += 1
+      print("Count: " + count / 1000000 + "M")
+      try {
+        val exec = bulkBuilder.execute
+        println("...Inserted: " + exec.getInsertedCount)
+      } catch {
+        case e => println("..." + e.getMessage)
+      }
+
+
+
     }
+
+
     val time = (System.currentTimeMillis() - startTime) / 1000.0
     println("Finished loading Freebase triples (%d lines) in %1.1fm".format(count, time/60))
     // Specify indices
@@ -75,7 +95,7 @@ class FreebaseReader(filename: String, port: Int = 27017, useExisting: Boolean =
     coll.ensureIndex("title")
 
     val itime = (System.currentTimeMillis() - startTime) / 1000.0
-    println("Finished constructing indices in %1.1fm".format(count, itime/60))
+    println("Finished constructing indices in %1.1fm".format(itime / 60.0))
 
     println("There are %d mids.".format(coll.count("mid" $exists true)))
     println("There are %d rows with start dates.".format(coll.count(MongoDBObject("attribute" -> "start_date"))))
@@ -222,11 +242,11 @@ class FreebaseReader(filename: String, port: Int = 27017, useExisting: Boolean =
 object FreebaseReader {
 
   def main(args: Array[String]) = {
-    val filename = args(0)
-    val useExisting = args(1) == "true"
-    val eventFile = args(2)
+    val filename = "/Volumes/My Passport/freebase-rdf-latest.gz"
+    val useExisting = false
+    //val eventFile = args(2)
     println("DB file = " + filename)
-    val fb = new FreebaseReader(args(0), useExisting = useExisting)
+    val fb = new FreebaseReader(filename, useExisting = useExisting)
 //    fb.test
 //    fb.load(filename, init = rebuild)
     fb.collectEvents()
