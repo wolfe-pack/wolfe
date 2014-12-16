@@ -16,12 +16,24 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.{ListBuffer, ArrayBuffer}
 import scala.io.Source
+import ml.wolfe.apps.factorization.hack.Language.Language
 
 /**
  * Reads in multilingual conll files (english, portuguese, latvian).
  * @author rockt
  */
+
+object Language extends Enumeration {
+  type Language = Value
+  val english, portuguese, latvian = Value
+}
+
+
+
 object CoNLLHackReader extends App {
+
+
+
   def fromCoNLLHack(lines: IndexedSeq[String]): Sentence = {
     // ID FORM LEMMA POS PPOS - DEPHEAD DEPLABEL NERLABEL
     val cells = lines.filterNot(_.isEmpty).map(_.split("\t"))
@@ -55,7 +67,7 @@ object CoNLLHackReader extends App {
   def entityToString(entity: EntityMention, sentence: Sentence): String =
     sentence.tokens.slice(entity.start, entity.end).map(_.word).mkString(" ")
 
-  def writePatterns(doc: Document, writer: FileWriter, english: Boolean): Unit = {
+  def writePatterns(doc: Document, writer: FileWriter, language: Language): Unit = {
     //println("writing pattern for " + doc.filename.get)
     for {
       s <- doc.sentences
@@ -69,9 +81,11 @@ object CoNLLHackReader extends App {
       val e2String = entityToString(e2, s)
 
       def toCanonical(name: String): String = {
-        val normOpt =
-          if (english) EntityHackNormalization.normalizeEnglish(name)
-          else EntityHackNormalization.normalizePortuguese(name)
+        val normOpt = language match {
+          case Language.english => EntityHackNormalization.normalizeEnglish(name)
+          case Language.portuguese => EntityHackNormalization.normalizePortuguese(name)
+          case Language.latvian => EntityHackNormalization.normalizeLatvian(name)
+        }
 
         //if (normOpt.isDefined) println(name + "\t" + normOpt.get)
 
@@ -82,21 +96,34 @@ object CoNLLHackReader extends App {
       val normE2 = toCanonical(e2String + "#" + e2.label)
 
 
-      if (english) {
-        val (rootOfPath, pathString, path) = DepUtils.findPath(DepUtils.headOfMention(e1, s), DepUtils.headOfMention(e2, s), s, english)
+      if (language == Language.english || language == Language.latvian) {
 
+        val (rootOfPath, pathString, path) = DepUtils.findPath(DepUtils.headOfMention(e1, s), DepUtils.headOfMention(e2, s), s, language == Language.english)
         //println(pathString)
-
         if (!pathString.startsWith("[EXCEPTION") && pathString != "junk" && path.size <= 5) {
-          val outputLine = s"eng_path#|$pathString|\t$normE1\t$normE2\tTrain\t1.0\n"
-
+          val lang = language match {
+            case Language.english => "eng"
+            case Language.latvian => "lat"
+            case _ => "unk"
+          }
+          val outputLine = lang + s"_path#|$pathString|\t$normE1\t$normE2\tTrain\t1.0\n"
           //println(s.toText)
           //print(outputLine)
-
           writer.write(outputLine)
         }
-      } else {
-        //portuguese
+      } else if (language == Language.latvian) {
+        val (rootOfPath, pathString, path) = DepUtils.findPath(DepUtils.headOfMention(e1, s), DepUtils.headOfMention(e2, s), s, false)
+        //println(pathString)
+        if (!pathString.startsWith("[EXCEPTION") && pathString != "junk" && path.size <= 5) {
+          val outputLine = s"lat_path#|$pathString|\t$normE1\t$normE2\tTrain\t1.0\n"
+          //println(s.toText)
+          //print(outputLine)
+          writer.write(outputLine)
+        }
+
+
+      } else if (language == Language.portuguese) {
+        //portuguese, latvian?
         val (first, second) = if (e1.start < e2.start) (e1, e2) else (e2, e1)
 
         val tokens = s.tokens
@@ -120,7 +147,7 @@ object CoNLLHackReader extends App {
     }
   }
 
-  def apply(inputFileName: String, writer: FileWriter, english: Boolean = true, delim: String = "\t"): Unit = {
+  def apply(inputFileName: String, writer: FileWriter, language: Language, delim: String = "\t"): Unit = {
     val linesIterator = Source.fromFile(inputFileName).getLines().buffered
 
     println("Estimating completion time...")
@@ -138,7 +165,7 @@ object CoNLLHackReader extends App {
         sentenceBuffer += fromCoNLLHack(linesBuffer)
         linesBuffer = new ArrayBuffer[String]()
       } else if (l.startsWith("#")) {
-        writePatterns(Document(sentenceBuffer.map(_.toText).mkString(" "), sentenceBuffer, Some(id)), writer, english)
+        writePatterns(Document(sentenceBuffer.map(_.toText).mkString(" "), sentenceBuffer, Some(id)), writer, language)
         id = l
         sentenceBuffer = new ArrayBuffer[Sentence]()
         linesBuffer = new ArrayBuffer[String]()
@@ -156,17 +183,22 @@ object CoNLLHackReader extends App {
   }
 
 
-  val writer = new FileWriter(args.lift(1).getOrElse("./data/bbc/matrix_multi.txt"))
+  val writer = new FileWriter("./wolfe-apps/data/bbc/all_languages_matrix.txt")
 
   if (args.size > 0) {
-    CoNLLHackReader(args(0), writer, english = args(2).toBoolean)
+    val language = args(2) match {
+      case "english" => Language.english
+      case "portuguese" => Language.portuguese
+      case "latvian" => Language.latvian
+    }
+    CoNLLHackReader(args(0), writer, language = language)
   } else {
-    //uses words between and around tokens
-    CoNLLHackReader(args.lift(0).getOrElse("./data/bbc/publico.conll"), writer, english = false)
-
-    //uses dependency paths
-    CoNLLHackReader("./data/bbc/bbc_latest.conll", writer, english = true)
-    CoNLLHackReader("./data/bbc/bbc.conll", writer, english = true)
+    // portuguese (uses words between and around tokens)
+    CoNLLHackReader(args.lift(0).getOrElse("./wolfe-apps/data/bbc/portuguese.conll"), writer, Language.portuguese)
+    // english (uses dependency paths)
+    CoNLLHackReader("./wolfe-apps/data/bbc/english.conll", writer, Language.english)
+    // latvian (uses dependency paths) ignoring
+    //CoNLLHackReader("./wolfe-apps/data/bbc/latvian.conll", writer, Language.latvian)
   }
 
   writer.close()
@@ -454,11 +486,13 @@ object EntityHackNormalization {
     else Map[String, (String, String)]()
   }
 
-  lazy val englishMap = loadEntityMap("./data/bbc/normalized_english.tsv")
-  lazy val portugueseMap = loadEntityMap("./data/bbc/normalized_portuguese.tsv")
+  lazy val englishMap = loadEntityMap("./data/bbc/english_entities.tsv")
+  lazy val portugueseMap = loadEntityMap("./data/bbc/portuguese_entities.tsv")
+  lazy val latvianMap = loadEntityMap("./data/bbc/latvian_entities.tsv")
 
   def normalizeEnglish(name: String): Option[(String, String)] = englishMap.get(name)
   def normalizePortuguese(name: String): Option[(String, String)] = portugueseMap.get(name)
+  def normalizeLatvian(name: String): Option[(String, String)] = latvianMap.get(name)
 
   def init() = {
     englishMap
