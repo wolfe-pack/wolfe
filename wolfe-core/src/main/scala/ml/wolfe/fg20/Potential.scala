@@ -76,21 +76,22 @@ trait Clique {
   /**
    * Convert a state into a partial setting.
    * @param state the state to convert.
+   * @param observed should the variables with assignments be observed or not.
    * @return a partial setting in which only those slots are observed which correspond to variables
    *         that have an assignment in the state.
    */
-  def toPartialSetting(state: State) = {
+  def toPartialSetting(state: State, observed:Boolean = true) = {
     val result = createPartialSetting()
     for ((v, i) <- discVars.iterator.zipWithIndex) state.get(v).foreach(value => {
-      result.discObs(i) = true
+      result.discObs(i) = observed
       result.disc(i) = v.dom.indexOf(value)
     })
     for ((v, i) <- contVars.iterator.zipWithIndex) state.get(v).foreach(value => {
-      result.contObs(i) = true
+      result.contObs(i) = observed
       result.cont(i) = value
     })
     for ((v, i) <- vectVars.iterator.zipWithIndex) state.get(v).foreach(value => {
-      result.vectObs(i) = true
+      result.vectObs(i) = observed
       result.vect(i) = value
     })
     result
@@ -223,11 +224,23 @@ object Argmax {
    * @return the result of an argmax.
    */
   def apply[T](space: SearchSpace[T], observation: State = State.empty)(pot: SupportsArgmax): T = {
-    val argmaxer = pot.argmaxer
+    val argmaxer = pot.argmaxer()
     val result = pot.createSetting()
     val scoreBuffer = new DoubleBuffer()
     argmaxer.argmax(pot.toPartialSetting(observation), pot.createMsgs(), result, scoreBuffer)
     val state = pot.toState(result)
+    space.toValue(state)
+  }
+}
+
+object Gradient {
+
+  def apply[T](space:SearchSpace[T],at:State = State.empty, observed:Set[Var[Any]] = Set.empty)(pot:Differentiable):T = {
+    val calc = pot.gradientCalculator()
+    val result = pot.createSetting()
+    val params = pot.toPartialSetting(at,false)
+    calc.gradientAndValue(params,result)
+    val state = pot.toState(result).withDefault
     space.toValue(state)
   }
 }
@@ -275,27 +288,41 @@ trait Sum[P <: Potential] extends Potential {
 
 class FlatSum[P <: Potential](val args: Seq[P]) extends Sum[P]
 
-trait DifferentiableFlatSum[P <: StatelessDifferentiable] extends Sum[P] with StatelessDifferentiable {
+trait DifferentiableSum[P <: Differentiable] extends Sum[P] with Differentiable {
   //rather define it as GradientCalculator ?
-  def gradientAndValue(currentParameters: PartialSetting, gradient: Setting): Double = {
-    val totalUpdate = new Setting(discVars.length, contVars.length, vectVars.length)
-    val scores = for ((arg, map) <- args zip argMaps) yield {
-      //could not get it to work with iterators (?)
-      val localUpdate = new Setting(arg.discVars.length, arg.contVars.length, arg.vectVars.length)
-      val local = arg.createSetting()
-      for (i <- 0 until arg.discVars.length) local.disc(i) = currentParameters.disc(map.discArgs(i))
-      for (i <- 0 until arg.contVars.length) local.cont(i) = currentParameters.cont(map.contArgs(i))
-      for (i <- 0 until arg.vectVars.length) local.vect(i) = currentParameters.vect(map.vectArgs(i))
-      val localScore = arg.gradientAndValue(currentParameters, localUpdate)
-      for (i <- 0 until arg.discVars.length) if (totalUpdate.disc(map.discArgs(i)) != null) totalUpdate.disc(map.discArgs(i)) += localUpdate.disc(i) else totalUpdate.disc(map.discArgs(i)) = localUpdate.disc(i) //todo be more efficient
-      for (i <- 0 until arg.contVars.length) if (totalUpdate.cont(map.contArgs(i)) != null) totalUpdate.cont(map.contArgs(i)) += localUpdate.cont(i) else totalUpdate.cont(map.contArgs(i)) = localUpdate.cont(i)
-      for (i <- 0 until arg.vectVars.length) if (totalUpdate.vect(map.vectArgs(i)) != null) totalUpdate.vect(map.vectArgs(i)) += localUpdate.vect(i) else totalUpdate.vect(map.vectArgs(i)) = localUpdate.vect(i)
-      localScore
+  sum =>
+
+
+  override def gradientCalculator(): GradientCalculator = new GradientCalculator {
+    class PerTerm(val pot:Differentiable) {
+      val calc = pot.gradientCalculator()
+      val localUpdate = new Setting(pot.discVars.length, pot.contVars.length, pot.vectVars.length)
+      val local = pot.createPartialSetting()
+
     }
-    for (i <- 0 until this.discVars.length) gradient.disc(i) = totalUpdate.disc(i) //todo, change only the ones that change
-    for (i <- 0 until this.contVars.length) gradient.cont(i) = totalUpdate.cont(i)
-    for (i <- 0 until this.vectVars.length) gradient.vect(i) = totalUpdate.vect(i)
-    scores.sum
+    val terms = args.map(new PerTerm(_))
+    val totalUpdate = new Setting(discVars.length, contVars.length, vectVars.length)
+
+    override def gradientAndValue(currentParameters: PartialSetting, gradient: Setting): Double = {
+      totalUpdate := 0.0
+      var totalSum = 0.0
+      for ((arg, map) <- terms.iterator zip argMaps.iterator) {
+        //could not get it to work with iterators (?)
+        arg.local.copyFrom(currentParameters,map)
+        totalSum += arg.calc.gradientAndValue(arg.local, arg.localUpdate)
+        for (i <- 0 until arg.pot.discVars.length) if (totalUpdate.disc(map.discArgs(i)) != null)
+          totalUpdate.disc(map.discArgs(i)) += arg.localUpdate.disc(i) else totalUpdate.disc(map.discArgs(i)) = arg.localUpdate.disc(i) //todo be more efficient
+        for (i <- 0 until arg.pot.contVars.length) if (totalUpdate.cont(map.contArgs(i)) != null)
+          totalUpdate.cont(map.contArgs(i)) += arg.localUpdate.cont(i) else totalUpdate.cont(map.contArgs(i)) = arg.localUpdate.cont(i)
+        for (i <- 0 until arg.pot.vectVars.length) if (totalUpdate.vect(map.vectArgs(i)) != null)
+          totalUpdate.vect(map.vectArgs(i)) += arg.localUpdate.vect(i) else totalUpdate.vect(map.vectArgs(i)) = arg.localUpdate.vect(i)
+      }
+      //why not directly editing the gradient?
+      for (i <- 0 until sum.discVars.length) gradient.disc(i) = totalUpdate.disc(i) //todo, change only the ones that change
+      for (i <- 0 until sum.contVars.length) gradient.cont(i) = totalUpdate.cont(i)
+      for (i <- 0 until sum.vectVars.length) gradient.vect(i) = totalUpdate.vect(i)
+      totalSum
+    }
   }
 }
 

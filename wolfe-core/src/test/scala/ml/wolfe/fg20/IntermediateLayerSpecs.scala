@@ -1,16 +1,71 @@
 package ml.wolfe.fg20
 
 import cc.factorie.Factorie.DenseTensor1
-import cc.factorie.app.nlp.parse.ProjectiveGraphBasedParser
 import ml.wolfe.{FactorieVector, Wolfe, WolfeSpec}
-import org.scalatest.{FlatSpec, WordSpec}
+import org.scalatest.FlatSpec
 
 /**
  * @author Sebastian Riedel
  */
 class IntermediateLayerSpecs extends WolfeSpec {
 
-  import Wolfe._
+  import ml.wolfe.Wolfe._
+
+  def doublePairSpace = ProductSearchSpace2[Double, Double, AtomicSearchSpace.Cont, AtomicSearchSpace.Cont](
+    AtomicSearchSpace.cont("x"), AtomicSearchSpace.cont("y"))
+
+  //f(x) = -x^2 + 4x
+  trait SimpleSum extends Sum[Differentiable] {
+    def space: ProductSearchSpace2[Double, Double, AtomicSearchSpace.Cont, AtomicSearchSpace.Cont, (Double, Double)]
+    val args = Seq(
+      new QuadraticTerm(space.space1.variable, -1.0),
+      new LinearTerm(space.space1.variable, 4.0),
+      new QuadraticTerm(space.space2.variable, -1.0),
+      new LinearTerm(space.space2.variable, 4.0))
+  }
+
+
+  "A Sum" should {
+    "calculate its gradient for continuous variables" in {
+      val pairSpace = doublePairSpace
+      val sum = new SimpleSum with DifferentiableSum[Differentiable] {
+        def space = pairSpace
+      }
+      val current = State(Map(pairSpace.space1.variable -> 1.0, pairSpace.space2.variable -> 3.0)) //-2*x + 4
+      val gradient = Gradient(pairSpace, current)(sum)
+      gradient should be((2.0, -2.0))
+    }
+    "calculate its argmax for differentiable arguments using a gradient based methos" in {
+      val pairSpace = doublePairSpace
+      val sum = new SimpleSum with SupportsArgmax {
+        def space = pairSpace
+        def argmaxer(): Argmaxer = new GradientBasedArgmaxer(this)
+      }
+      val condition = State(Map(pairSpace.space2.variable -> 1.0))
+      val result = Argmax(pairSpace, condition)(sum)
+      result._1 should be(2.0 +- 0.01)
+      result._2 should be(1.0)
+    }
+  }
+
+  "A potential with observation" should {
+    "calculate its gradient" in {
+      //todo: tangle variables for more coverage
+      val ySpace = AtomicSearchSpace.cont("y")
+      val observed = new DifferentiableWithObservation {
+        lazy val observation = pairSpace.toPartialSetting(State.single(xSpace.variable,2.0))
+        lazy val xSpace    = AtomicSearchSpace.cont("x")
+        lazy val pairSpace = ProductSearchSpace2[Double, Double, AtomicSearchSpace.Cont, AtomicSearchSpace.Cont](xSpace, ySpace)
+        lazy val self = new SimpleSum with DifferentiableSum[Differentiable] {
+          def space = pairSpace
+        }
+      }
+      val at = State(Map(ySpace.variable -> 1.0))
+      val result = Gradient(ySpace,at)(observed)
+      result should be (2.0)
+    }
+  }
+
 
   "The argmax operator" should {
     "support a table potential and a case class search space" in {
@@ -119,7 +174,6 @@ class IntermediateLayerSpecs extends WolfeSpec {
 
 
 class Test extends FlatSpec {
-
 
 
 }

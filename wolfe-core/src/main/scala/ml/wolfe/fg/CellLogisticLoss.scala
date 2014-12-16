@@ -5,6 +5,8 @@ import ml.wolfe.FactorGraph._
 import ml.wolfe.FactorieVector
 import ml.wolfe.DenseVector
 import ml.wolfe.util.Conf
+import scala.language.implicitConversions
+
 
 /**
  * @author Sebastian Riedel
