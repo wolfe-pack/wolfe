@@ -1,6 +1,6 @@
 package ml.wolfe.apps.factorization.hack
 
-import java.io.FileWriter
+import java.io.{File, FileWriter}
 import java.util
 import java.util.Stack
 
@@ -9,6 +9,8 @@ import cc.factorie.app.nlp.parse.ParseTree
 import ml.wolfe.nlp.io.{ChunkReader, CoNLLReader}
 import ml.wolfe.nlp._
 import ml.wolfe.util.ProgressBar
+import org.json4s.NoTypeHints
+import org.json4s.native.Serialization
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -16,6 +18,7 @@ import scala.collection.mutable.{ListBuffer, ArrayBuffer}
 import scala.io.Source
 
 /**
+ * Reads in multilingual conll files (english, portuguese, latvian).
  * @author rockt
  */
 object CoNLLHackReader extends App {
@@ -50,9 +53,10 @@ object CoNLLHackReader extends App {
   }
 
   def entityToString(entity: EntityMention, sentence: Sentence): String =
-    sentence.tokens.slice(entity.start, entity.end).map(_.word).mkString(" ") + "#" + entity.label
+    sentence.tokens.slice(entity.start, entity.end).map(_.word).mkString(" ")
 
-  def writePatterns(doc: Document, writer: FileWriter): Unit = {
+  def writePatterns(doc: Document, writer: FileWriter, english: Boolean): Unit = {
+    //println("writing pattern for " + doc.filename.get)
     for {
       s <- doc.sentences
       //tmp = { println(s.toText) }
@@ -61,20 +65,63 @@ object CoNLLHackReader extends App {
       e2 <- es
       if e1 != e2 //&& e1.start < e2.start
     } {
-      val (rootOfPath, pathString, path) = DepUtils.findPath(DepUtils.headOfMention(e1, s), DepUtils.headOfMention(e2, s), s)
-      if (!pathString.startsWith("[EXCEPTION") && pathString != "junk" && path.size < 10) {
-        val outputLine = s"path#|$pathString|\t${ entityToString(e1, s) }\t${ entityToString(e2, s) }\tTrain\t1.0\n"
-        //println(outputLine)
-        //println(path.mkString("\n"))
+      val e1String = entityToString(e1, s)
+      val e2String = entityToString(e2, s)
 
-        writer.write(outputLine)
+      def toCanonical(name: String): String = {
+        val normOpt =
+          if (english) EntityHackNormalization.normalizeEnglish(name)
+          else EntityHackNormalization.normalizePortuguese(name)
+
+        //if (normOpt.isDefined) println(name + "\t" + normOpt.get)
+
+        normOpt.map(_._1).getOrElse(name)
+      }
+
+      val normE1 = toCanonical(e1String + "#" + e1.label)
+      val normE2 = toCanonical(e2String + "#" + e2.label)
+
+
+      if (english) {
+        val (rootOfPath, pathString, path) = DepUtils.findPath(DepUtils.headOfMention(e1, s), DepUtils.headOfMention(e2, s), s, english)
+
+        //println(pathString)
+
+        if (!pathString.startsWith("[EXCEPTION") && pathString != "junk" && path.size <= 5) {
+          val outputLine = s"eng_path#|$pathString|\t$normE1\t$normE2\tTrain\t1.0\n"
+
+          //println(s.toText)
+          //print(outputLine)
+
+          writer.write(outputLine)
+        }
+      } else {
+        //portuguese
+        val (first, second) = if (e1.start < e2.start) (e1, e2) else (e2, e1)
+
+        val tokens = s.tokens
+
+        val numBetween = tokens.slice(first.end, second.start).size
+        val before = tokens.slice(0, first.start).takeRight(2).map(_.word).mkString("-")
+        val between = tokens.slice(first.end, second.start).map(_.word).mkString("-")
+        val after = tokens.slice(second.end, tokens.size).take(2).map(_.word).mkString("-")
+
+
+        if (2 <= numBetween && numBetween < 5) {
+          val inv = if (first == e1) "" else ":INV"
+          val BB = s"$before-#1-$between-#2"
+          val B = s"#1-$between-#2"
+          val BA = s"#1-$between-#2-$after"
+          writer.write(s"por_words#|$BB$inv|\t$normE1\t$normE2\tTrain\t1.0\n")
+          writer.write(s"por_words#|$B$inv|\t$normE1\t$normE2\tTrain\t1.0\n")
+          writer.write(s"por_words#|$BA$inv|\t$normE1\t$normE2\tTrain\t1.0\n")
+        }
       }
     }
   }
 
-  def apply(inputFileName: String, outputFileName: String, delim: String = "\t"): Unit = {
+  def apply(inputFileName: String, writer: FileWriter, english: Boolean = true, delim: String = "\t"): Unit = {
     val linesIterator = Source.fromFile(inputFileName).getLines().buffered
-    val writer = new FileWriter(outputFileName)
 
     println("Estimating completion time...")
     val progressBar = new ProgressBar(Source.fromFile(inputFileName).getLines().size, 100000)
@@ -91,7 +138,7 @@ object CoNLLHackReader extends App {
         sentenceBuffer += fromCoNLLHack(linesBuffer)
         linesBuffer = new ArrayBuffer[String]()
       } else if (l.startsWith("#")) {
-        writePatterns(Document(sentenceBuffer.map(_.toText).mkString(" "), sentenceBuffer, Some(id)), writer)
+        writePatterns(Document(sentenceBuffer.map(_.toText).mkString(" "), sentenceBuffer, Some(id)), writer, english)
         id = l
         sentenceBuffer = new ArrayBuffer[Sentence]()
         linesBuffer = new ArrayBuffer[String]()
@@ -106,12 +153,23 @@ object CoNLLHackReader extends App {
 
     println("Done!")
 
-    writer.close()
   }
 
 
-  //CoNLLHackReader(args.lift(0).getOrElse("./data/bbc/Publico_prb_parsed.conll"), args.lift(1).getOrElse("./data/bbc/matrix_publico.txt"))
-  CoNLLHackReader(args.lift(0).getOrElse("./data/bbc/BBC_ner_parsed.conll"), args.lift(1).getOrElse("./data/bbc/matrix_bbc.txt"))
+  val writer = new FileWriter(args.lift(1).getOrElse("./data/bbc/matrix_multi.txt"))
+
+  if (args.size > 0) {
+    CoNLLHackReader(args(0), writer, english = args(2).toBoolean)
+  } else {
+    //uses words between and around tokens
+    CoNLLHackReader(args.lift(0).getOrElse("./data/bbc/publico.conll"), writer, english = false)
+
+    //uses dependency paths
+    CoNLLHackReader("./data/bbc/bbc_latest.conll", writer, english = true)
+    CoNLLHackReader("./data/bbc/bbc.conll", writer, english = true)
+  }
+
+  writer.close()
 }
 
 
@@ -131,7 +189,8 @@ object DepUtils {
 
   
   def parentIndex(id: Int, depTree: DependencyTree): Int =
-    depTree.arcs.find(a => a._2 == id).map(_._1).getOrElse(-1)
+    //depTree.arcs.find(a => a._2 == id).map(_._1).getOrElse(-1)
+    depTree.headOf(id).getOrElse(-1)
 
   //rockt: unsure about the semantics of this method
   def getLabel(id: Int, depTree: DependencyTree): String =
@@ -147,6 +206,7 @@ object DepUtils {
 
     var current = id
     ancestors.push(current)
+
     while (parentIndex(current, depTree) != -1) {
       //sentence.root's index is -1
       current = parentIndex(current, depTree)
@@ -157,15 +217,18 @@ object DepUtils {
 
   //find the path from a source node to a dest node and the relationship, denoted by ->-><-<-  source != dest
   //return the rootOfPath and PathString
-  def findPath(source: Int, dest: Int, sentence: Sentence): (String, String, Seq[(Token, String)]) = {
+  def findPath(source: Int, dest: Int, sentence: Sentence, english: Boolean): (String, String, Seq[(Token, String)]) = {
     val depTree = sentence.syntax.dependencies
     val tokens = sentence.tokens
-    def getToken(ix: Int) = tokens(ix - 1)
+    def getToken(ix: Int) =
+      if (ix == 0) Token("DEP-ROOT-DUMMY", CharOffsets(-1, -1), "DEP-ROOT-DUMMY", "DEP-ROOT-DUMMY")
+      else tokens(ix - 1)
 
     val srctmp = new util.Stack[Int] //source queue
     val srcStack = new util.Stack[Int]
     val destStack = new util.Stack[Int]
     val path = new ArrayBuffer[(Token, String)]
+
     findAncestors(destStack, dest, depTree)
     findAncestors(srcStack, source, depTree)
 
@@ -197,10 +260,10 @@ object DepUtils {
     //get nodes from srctmp, destStack and fill in path, todo:without source and dest node, find lemmas for each word using stanford pipeline annotator
     while (!srctmp.empty) {
       val top = srctmp.pop
-      if (!FEASIBLEPOS.contains(getToken(top).posTag)) junk = true
+      if (english && !FEASIBLEPOS.contains(getToken(top).posTag)) junk = true
 
       val label = getLabel(top, depTree).toLowerCase
-      if (JUNKLABELS.contains(label)) junk = true
+      if (english && JUNKLABELS.contains(label)) junk = true
 
       path += getToken(top) -> label
       
@@ -208,7 +271,7 @@ object DepUtils {
         //println("# " + top + "\t" + getNERLabel(top, sentence))
         if (getNERLabel(top, sentence) != "O")
           res += getNERLabel(top, sentence) + "<-" + label + "<-"
-        else if (SUFFIX.contains(getNERLabel(top, sentence)))
+        else if (english && SUFFIX.contains(getNERLabel(top, sentence)))
           res += getNERLabel(top, sentence) + "<-" + label + "<-"
         else {
           res += getToken(top).lemma + "<-" + label + "<-"
@@ -218,24 +281,26 @@ object DepUtils {
         res += "<-" + label + "<-"
     }
 
-    path += getToken(commonAncestor) -> "rootOfPath" //this is common ancestor of source and dest , // tokens(top).lemma, todo
+    //this is common ancestor of source and dest , // tokens(top).lemma, todo
+    path += getToken(commonAncestor) -> "rootOfPath"
 
-    if (JUNKROOT.contains(getToken(commonAncestor).lemma.toLowerCase))
+
+    if (english && JUNKROOT.contains(getToken(commonAncestor).lemma.toLowerCase))
       junk = true
 
     if (commonAncestor != source && commonAncestor != dest) {
       if (getNERLabel(commonAncestor, sentence) != "O") res += getNERLabel(commonAncestor, sentence)
-      else if(SUFFIX.contains(getNERLabel(commonAncestor, sentence))) res += getNERLabel(commonAncestor, sentence)
+      else if (english && SUFFIX.contains(getNERLabel(commonAncestor, sentence))) res += getNERLabel(commonAncestor, sentence)
       else res += getToken(commonAncestor).lemma
     }
 
     while (!destStack.empty) {
       val top = destStack.pop
-      if (!FEASIBLEPOS.contains(getToken(top).posTag))
+      if (english && !FEASIBLEPOS.contains(getToken(top).posTag))
         junk = true
 
       val label = getLabel(top, depTree).toLowerCase
-      if (JUNKLABELS.contains(label))
+      if (english && JUNKLABELS.contains(label))
         junk = true
 
       path += getToken(top) -> label
@@ -244,7 +309,7 @@ object DepUtils {
         //if (tokens(top).attr[NerTag].value != "O") junk = true //named entity should not appear on the path
         //if (SUFFIX.contains(tokens(top).string)) junk = true //suffix should not appear on the path
         if (getNERLabel(top, sentence) != "O") res += "->" + label + "->" + getNERLabel(top, sentence)
-        else if(SUFFIX.contains(getNERLabel(top, sentence))) res += "->" + label + "->" + getNERLabel(top, sentence)
+        else if (english && SUFFIX.contains(getNERLabel(top, sentence))) res += "->" + label + "->" + getNERLabel(top, sentence)
         else res += "->" + label + "->" + getToken(top).lemma
 
       }
@@ -260,29 +325,30 @@ object DepUtils {
 
     //println(path.map(_._1).map(_.posTag).filter(CONTENTPOS.contains))
     //rockt: increased this to 2a
-    if (numContentWords > 2) content = true // else {println("Junk content!")}
+    if (numContentWords > 2 || !english) content = true // else {println("Junk content!")}
     //if (numContentWords > 1) content = true // else {println("Junk content!")}
 
-    if (!junk && !content) junk = true //heuristics for freebase candidate generation
 
-    //rockt: we only care about paths with content
-    if (!content) junk = true
+    if (english) {
+      //rockt: we only care about paths with content
+      if (!content) junk = true //heuristics for freebase candidate generation
 
-    if (path.map(_._1).map(_.word).exists(_.matches("[\\?\"\\[]")))
-      junk = true
-    if (path(0)._2 == "adv")
-      junk = true
-    if (path(0)._2 == "name" && path.reverse(0)._2 == "name")
-      junk = true
-    if (path(0)._2 == "sbj" && path.last._2 == "sbj")
-      junk = true
+      if (path.map(_._1).map(_.word).exists(_.matches("[\\?\"\\[]")))
+        junk = true
+      if (path(0)._2 == "adv")
+        junk = true
+      if (path(0)._2 == "name" && path.reverse(0)._2 == "name")
+        junk = true
+      if (path(0)._2 == "sbj" && path.last._2 == "sbj")
+        junk = true
 
-    //filter out junk according to DIRT, rule 2, any dependency relation must connect two content words
-    if (junk) {
-      //fixme: should use root token instead; depTree.rootChild
-      path += tokens.head -> "junk"
-      return ("null", "junk", path)
-    } //comment this out for generating freebase instances
+      //filter out junk according to DIRT, rule 2, any dependency relation must connect two content words
+      if (junk) {
+        //fixme: should use root token instead; depTree.rootChild
+        path += tokens.head -> "junk"
+        return ("null", "junk", path)
+      } //comment this out for generating freebase instances
+    }
 
     (getToken(commonAncestor).lemma.toLowerCase, res.toLowerCase, path)
   }
@@ -303,8 +369,10 @@ object DepUtils {
 
       for (i <- beginTokenPosition until untilTokenPosition) {
         var ancestor = i
-        while (parentIndex(ancestor, depTree) < untilTokenPosition && parentIndex(ancestor, depTree) >= beginTokenPosition)
+        while (parentIndex(ancestor, depTree) < untilTokenPosition && parentIndex(ancestor, depTree) >= beginTokenPosition) {
+          //println(s"$mention $beginTokenPosition $untilTokenPosition $head $ancestor ${parentIndex(ancestor, depTree)}")
           ancestor = parentIndex(ancestor, depTree)
+        }
         if (ancestor > head) head = ancestor
       }
     }
@@ -362,11 +430,44 @@ object DepUtilsSpec extends App {
 
   (6 to 8).foreach { i =>
     (18 to 19).foreach { j =>
-      println(DepUtils.findPath(i, j, sentence)._2)
+      println(DepUtils.findPath(i, j, sentence, true)._2)
       (25 to 28).foreach { k =>
-        println(DepUtils.findPath(i, k, sentence)._2)
-        println(DepUtils.findPath(j, k, sentence)._2)
+        println(DepUtils.findPath(i, k, sentence, true)._2)
+        println(DepUtils.findPath(j, k, sentence, true)._2)
       }
     }
   }
+}
+
+/**
+ * Singleton that keeps mapping from entity mentions to Freebase ids around.
+ */
+object EntityHackNormalization {
+  val idToCanonical = new mutable.HashMap[String, String]
+
+  def loadEntityMap(filePath: String): Map[String, (String, String)] = {
+    if (new File(filePath).exists())
+      Source.fromFile(filePath).getLines().map(_.split("\t")).map(a => {
+        idToCanonical += a.tail.head -> a.last
+        (a.head, (a.tail.head, a.last))
+      }).toMap
+    else Map[String, (String, String)]()
+  }
+
+  lazy val englishMap = loadEntityMap("./data/bbc/normalized_english.tsv")
+  lazy val portugueseMap = loadEntityMap("./data/bbc/normalized_portuguese.tsv")
+
+  def normalizeEnglish(name: String): Option[(String, String)] = englishMap.get(name)
+  def normalizePortuguese(name: String): Option[(String, String)] = portugueseMap.get(name)
+
+  def init() = {
+    englishMap
+    portugueseMap
+  }
+
+  def getCanonical(id: String): String = idToCanonical.getOrElse(id, "n/A")
+
+  //englishMap.keys.take(100).foreach(k => println("[" + k + "]"))
+
+  //println(portugueseMap.head)
 }
