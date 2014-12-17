@@ -59,7 +59,27 @@ trait Clique {
    */
   def createSetting() = new Setting(discVars.length, contVars.length, vectVars.length)
 
-  def createPartialSetting() = new PartialSetting(discVars.length, contVars.length, vectVars.length)
+  def createPartialSetting():PartialSetting = new PartialSetting(discVars.length, contVars.length, vectVars.length)
+
+  /**
+   * Create a partial setting where the observed indices are defined by the observed variables in the state.
+   * @param state the state corresponding to the observation.
+   */
+  def createPartialSetting(state: State):PartialSetting = {
+    val result = createPartialSetting()
+    def fill[T, V <: Var[_]](variable: Var[_], vars: Array[V], obs: Array[Boolean], tgt: Array[T], value: T) = {
+      val index = vars.indexOf(variable)
+      obs(index) = true
+      tgt(index) = value
+    }
+    for (k <- state.domain) k match {
+      case x: ContVar => fill[Double, ContVar](x, contVars, result.contObs, result.cont, state(x))
+      case x: DiscVar[_] => fill[Int, DiscVar[Any]](x, discVars, result.contObs, result.disc, x.dom.indexOf(state(x)))
+      case x: VectVar => fill[FactorieVector, VectVar](x, vectVars, result.vectObs, result.vect, state(x))
+    }
+    result
+  }
+
 
   /**
    * Convert a setting to state.
@@ -80,7 +100,7 @@ trait Clique {
    * @return a partial setting in which only those slots are observed which correspond to variables
    *         that have an assignment in the state.
    */
-  def toPartialSetting(state: State, observed:Boolean = true) = {
+  def toPartialSetting(state: State, observed: Boolean = true) = {
     val result = createPartialSetting()
     for ((v, i) <- discVars.iterator.zipWithIndex) state.get(v).foreach(value => {
       result.discObs(i) = observed
@@ -235,11 +255,11 @@ object Argmax {
 
 object Gradient {
 
-  def apply[T](space:SearchSpace[T],at:State = State.empty, observed:Set[Var[Any]] = Set.empty)(pot:Differentiable):T = {
+  def apply[T](space: SearchSpace[T], at: State = State.empty, observed: Set[Var[Any]] = Set.empty)(pot: Differentiable): T = {
     val calc = pot.gradientCalculator()
     val result = pot.createSetting()
-    val params = pot.toPartialSetting(at,false)
-    calc.gradientAndValue(params,result)
+    val params = pot.toPartialSetting(at, false)
+    calc.gradientAndValue(params, result)
     val state = pot.toState(result).withDefault
     space.toValue(state)
   }
@@ -294,13 +314,13 @@ trait DifferentiableSum[P <: Differentiable] extends Sum[P] with Differentiable 
 
 
   override def gradientCalculator(): GradientCalculator = new GradientCalculator {
-    class PerTerm(val pot:Differentiable) {
-      val calc = pot.gradientCalculator()
+    class PerTerm(val pot: Differentiable) {
+      val calc        = pot.gradientCalculator()
       val localUpdate = new Setting(pot.discVars.length, pot.contVars.length, pot.vectVars.length)
-      val local = pot.createPartialSetting()
+      val local       = pot.createPartialSetting()
 
     }
-    val terms = args.map(new PerTerm(_))
+    val terms       = args.map(new PerTerm(_))
     val totalUpdate = new Setting(discVars.length, contVars.length, vectVars.length)
 
     override def gradientAndValue(currentParameters: PartialSetting, gradient: Setting): Double = {
@@ -308,14 +328,17 @@ trait DifferentiableSum[P <: Differentiable] extends Sum[P] with Differentiable 
       var totalSum = 0.0
       for ((arg, map) <- terms.iterator zip argMaps.iterator) {
         //could not get it to work with iterators (?)
-        arg.local.copyFrom(currentParameters,map)
+        arg.local.copyFrom(currentParameters, map)
         totalSum += arg.calc.gradientAndValue(arg.local, arg.localUpdate)
         for (i <- 0 until arg.pot.discVars.length) if (totalUpdate.disc(map.discArgs(i)) != null)
-          totalUpdate.disc(map.discArgs(i)) += arg.localUpdate.disc(i) else totalUpdate.disc(map.discArgs(i)) = arg.localUpdate.disc(i) //todo be more efficient
+          totalUpdate.disc(map.discArgs(i)) += arg.localUpdate.disc(i)
+        else totalUpdate.disc(map.discArgs(i)) = arg.localUpdate.disc(i) //todo be more efficient
         for (i <- 0 until arg.pot.contVars.length) if (totalUpdate.cont(map.contArgs(i)) != null)
-          totalUpdate.cont(map.contArgs(i)) += arg.localUpdate.cont(i) else totalUpdate.cont(map.contArgs(i)) = arg.localUpdate.cont(i)
+          totalUpdate.cont(map.contArgs(i)) += arg.localUpdate.cont(i)
+        else totalUpdate.cont(map.contArgs(i)) = arg.localUpdate.cont(i)
         for (i <- 0 until arg.pot.vectVars.length) if (totalUpdate.vect(map.vectArgs(i)) != null)
-          totalUpdate.vect(map.vectArgs(i)) += arg.localUpdate.vect(i) else totalUpdate.vect(map.vectArgs(i)) = arg.localUpdate.vect(i)
+          totalUpdate.vect(map.vectArgs(i)) += arg.localUpdate.vect(i)
+        else totalUpdate.vect(map.vectArgs(i)) = arg.localUpdate.vect(i)
       }
       //why not directly editing the gradient?
       for (i <- 0 until sum.discVars.length) gradient.disc(i) = totalUpdate.disc(i) //todo, change only the ones that change
