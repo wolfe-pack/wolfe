@@ -76,8 +76,14 @@ object SyntaxAnnotation {
 
 case class SRLAnnotation(frames: Seq[SemanticFrame]) {}
 
-case class SemanticFrame(predicate: Predicate, roles: Seq[SemanticRole]) {}
+case class SemanticFrame(predicate: Predicate, roles: Seq[SemanticRole]) {
 
-case class Predicate(idx: Int, word: Token, sense: String)
+  override def toString = {
+    "Predicate %d (%s):\n%s".format(predicate.idx, predicate.token.word,
+      roles.map(r => "  %s --> %d".format(r.role, r.idx)).mkString("\n"))
+  }
+}
+
+case class Predicate(idx: Int, token: Token, sense: String)
 
 case class SemanticRole(idx: Int, role: String)
