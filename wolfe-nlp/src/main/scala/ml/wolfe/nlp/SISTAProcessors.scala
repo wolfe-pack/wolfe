@@ -77,8 +77,8 @@ object SISTAProcessors {
       sistaCoreNLPProcessor.resolveCoreference(result)
     }
     val sentences = result.sentences map SISTAConverter.toFullWolfeSentence
-    val coref = SISTAConverter.toWolfeCoreference(result.coreferenceChains.get)
-    Document(text, sentences, coref = CorefAnnotation(coref))
+    val corefSeq = result.coreferenceChains.map(c => SISTAConverter.toWolfeCoreference(c))
+    Document(text, sentences, coref = corefSeq.map(CorefAnnotation(_)).getOrElse(CorefAnnotation.empty))
   }
 
 }
