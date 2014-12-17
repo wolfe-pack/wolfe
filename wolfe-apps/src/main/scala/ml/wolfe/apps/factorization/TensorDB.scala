@@ -5,6 +5,7 @@ package ml.wolfe.apps.factorization
  */
 import java.io.File
 import java.io.FileWriter
+import scala.language.implicitConversions
 
 import ml.wolfe.util.Conf
 
