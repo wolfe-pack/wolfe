@@ -2,6 +2,7 @@ package ml.wolfe.util
 
 import scala.collection.IterableLike
 import scala.collection.generic.CanBuildFrom
+import scala.language.implicitConversions
 
 /**
  * @author rockt

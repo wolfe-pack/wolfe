@@ -37,8 +37,13 @@ trait State {
    *         or the value assigned to the Var in the passed state.
    */
   def +(state: State) = new State {
-    def get[V](Var: Var[V]) = self.get(Var).orElse(state.get(Var))
+    def get[V](variable: Var[V]) = self.get(variable).orElse(state.get(variable))
     def domain = self.domain ++ state.domain
+  }
+  
+  def withDefault = new State {
+    def get[V](variable: Var[V]) = self.get(variable).orElse(Some(variable.default))
+    def domain: Set[Var[Any]] = self.domain
   }
 
   /**
@@ -88,6 +93,7 @@ case class DiscDistribution[T](domain:Seq[T], map:Map[T,Double]) extends Distrib
 
 case class DiscBelief[T](variable:DiscVar[T]) extends Var[DiscDistribution[T]] {
   def name = s"belief(${variable.name})"
+  override def default: DiscDistribution[T] = DiscDistribution(Seq.empty,Map.empty)
 }
 
 

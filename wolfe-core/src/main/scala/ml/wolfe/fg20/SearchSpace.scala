@@ -25,6 +25,10 @@ object AtomicSearchSpace {
   type Cont = AtomicSearchSpace[Double, ContVar]
   type Vect = AtomicSearchSpace[FactorieVector, VectVar]
 
+  def disc[T](name:String,dom:Seq[T]) = new Disc[T](new DiscVar[T](dom,name))
+  def cont(name:String) = new Cont(new ContVar(name))
+  def vect(name:String, dim:Int) = new Vect(new VectVar(dim, name))
+
   def constDisc[T](value:T) = new Disc[T](new DiscVar[T](Seq(value)))
 
 }
@@ -101,4 +105,9 @@ class ProductSearchSpace2[T1, T2, S1 <: SearchSpace[T1], S2 <: SearchSpace[T2], 
   def variables = space1.variables ++ space2.variables
 }
 
+object ProductSearchSpace2 {
+
+  def apply[T1,T2,S1 <: SearchSpace[T1], S2 <: SearchSpace[T2]](space1: S1,space2: S2) =
+    new ProductSearchSpace2[T1,T2,S1,S2,(T1,T2)](space1,space2, (x1:T1,x2:T2) => (x1,x2), _._1, _._2)
+}
 

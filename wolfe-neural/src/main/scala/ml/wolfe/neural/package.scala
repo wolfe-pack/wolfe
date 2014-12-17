@@ -3,6 +3,7 @@ package ml.wolfe
 import cc.factorie.la._
 import cc.factorie.util.{DoubleSeq, RangeIntSeq, SparseDoubleSeq}
 import breeze.linalg.{CSCMatrix, Counter}
+import scala.language.implicitConversions
 
 /**
  * User: rockt
