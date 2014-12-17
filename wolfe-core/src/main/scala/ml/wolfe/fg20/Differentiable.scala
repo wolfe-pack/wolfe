@@ -36,7 +36,17 @@ class QuadraticTerm(val x: ContVar, val scale: Double) extends ContPotential wit
   def score(setting: Setting) = setting.cont(0) * setting.cont(0) * scale
 }
 
-class BilinearTerm(val x1:ContVar, val x2:ContVar)
+class BilinearTerm(val x1:ContVar, val x2:ContVar) extends ContPotential with StatelessDifferentiable with StatelessScorer {
+  val contVars = Array(x1,x2)
+  def score(setting: Setting) = {
+    setting.cont(0) * setting.cont(1)
+  }
+  def gradientAndValue(currentParameters: PartialSetting, gradient: Setting): Double = {
+    if (!currentParameters.contObs(0)) gradient.cont(0) = currentParameters.cont(1)
+    if (!currentParameters.contObs(1)) gradient.cont(1) = currentParameters.cont(0)
+    score(currentParameters)
+  }
+}
 
 class MultivariateLinearTerm(val x: VectVar, val scale: FactorieVector) extends VectPotential
                                                                                 with StatelessDifferentiable with StatelessScorer  {

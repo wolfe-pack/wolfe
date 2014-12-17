@@ -29,7 +29,7 @@ class IntermediateLayerSpecs extends WolfeSpec {
   def classifier[T](label: AtomicSearchSpace.Disc[T], weights: AtomicSearchSpace.Vect, feat: T => FactorieVector) =
     new LinearClassiferPotential(label, weights, feat)
 
-  def maxPot(weights: AtomicSearchSpace.Vect, labels: =>AtomicSearchSpace.Disc[Boolean]) =
+  def maxPot(weights: AtomicSearchSpace.Vect, labels: => AtomicSearchSpace.Disc[Boolean]) =
     new DifferentiableMaxPotential[LinearClassiferPotential[Boolean]] {
       lazy val objective = classifier(labels, weights, feat)
       def notOptimized = weights
@@ -63,17 +63,19 @@ class IntermediateLayerSpecs extends WolfeSpec {
     "calculate its gradient" in {
       //todo: tangle variables for more coverage
       val ySpace = AtomicSearchSpace.cont("y")
+      //f(x,y) = x * y + y^2
+      //d f(x,y) / dy = x + 2y
+      //d f(2,1) / dy = 2 + 2 * 1 = 4
       val observed = new DifferentiableWithObservation {
-        lazy val observation = pairSpace.toPartialSetting(State.single(xSpace.variable, 2.0))
         lazy val xSpace      = AtomicSearchSpace.cont("x")
-        lazy val pairSpace   = ProductSearchSpace2[Double, Double, AtomicSearchSpace.Cont, AtomicSearchSpace.Cont](xSpace, ySpace)
-        lazy val self        = new SimpleSum with DifferentiableSum[Differentiable] {
-          def space = pairSpace
+        lazy val self        = new DifferentiableSum[Differentiable] {
+          lazy val args = Seq(new BilinearTerm(xSpace.variable, ySpace.variable), new QuadraticTerm(ySpace.variable,1.0))
         }
+        lazy val observation = self.createPartialSetting(State.single(xSpace.variable, 2.0))
       }
       val at = State(Map(ySpace.variable -> 1.0))
       val result = Gradient(ySpace, at)(observed)
-      result should be(2.0)
+      result should be(4.0)
     }
   }
 
