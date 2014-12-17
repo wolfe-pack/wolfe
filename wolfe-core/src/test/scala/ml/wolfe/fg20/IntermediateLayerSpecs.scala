@@ -94,9 +94,7 @@ class IntermediateLayerSpecs extends WolfeSpec {
         lazy val args = Seq(arg1,arg2)
       }
       val result = Gradient(weights,State.single(weights.variable,new DenseTensor1(Array(-1.0))))(loss)
-      println(result)
-
-
+      result(0) should be (-2.0)
     }
   }
 
