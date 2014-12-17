@@ -1,16 +1,98 @@
 package ml.wolfe.fg20
 
 import cc.factorie.Factorie.DenseTensor1
-import cc.factorie.app.nlp.parse.ProjectiveGraphBasedParser
-import ml.wolfe.{FactorieVector, Wolfe, WolfeSpec}
-import org.scalatest.{FlatSpec, WordSpec}
+import ml.wolfe.{FactorieVector, WolfeSpec}
+import org.scalatest.FlatSpec
 
 /**
  * @author Sebastian Riedel
  */
 class IntermediateLayerSpecs extends WolfeSpec {
 
-  import Wolfe._
+  import ml.wolfe.Wolfe._
+
+  def doublePairSpace = ProductSearchSpace2[Double, Double, AtomicSearchSpace.Cont, AtomicSearchSpace.Cont](
+    AtomicSearchSpace.cont("x"), AtomicSearchSpace.cont("y"))
+
+  //f(x) = -x^2 + 4x
+  trait SimpleSum extends Sum[Differentiable] {
+    def space: ProductSearchSpace2[Double, Double, AtomicSearchSpace.Cont, AtomicSearchSpace.Cont, (Double, Double)]
+    val args = Seq(
+      new QuadraticTerm(space.space1.variable, -1.0),
+      new LinearTerm(space.space1.variable, 4.0),
+      new QuadraticTerm(space.space2.variable, -1.0),
+      new LinearTerm(space.space2.variable, 4.0))
+  }
+
+  def feat(value: Boolean) = new DenseTensor1(Array(if (value) 1.0 else -1.0))
+
+  def classifier[T](label: AtomicSearchSpace.Disc[T], weights: AtomicSearchSpace.Vect, feat: T => FactorieVector) =
+    new LinearClassiferPotential(label, weights, feat)
+
+  def maxPot(weights: AtomicSearchSpace.Vect, labels: => AtomicSearchSpace.Disc[Boolean]) =
+    new DifferentiableMaxPotential[LinearClassiferPotential[Boolean]] {
+      lazy val objective = classifier(labels, weights, feat)
+      def notOptimized = weights
+    }
+
+
+  "A Sum" should {
+    "calculate its gradient for continuous variables" in {
+      val pairSpace = doublePairSpace
+      val sum = new SimpleSum with DifferentiableSum[Differentiable] {
+        def space = pairSpace
+      }
+      val current = State(Map(pairSpace.space1.variable -> 1.0, pairSpace.space2.variable -> 3.0)) //-2*x + 4
+      val gradient = Gradient(pairSpace, current)(sum)
+      gradient should be((2.0, -2.0))
+    }
+    "calculate its argmax for differentiable arguments using a gradient based methos" in {
+      val pairSpace = doublePairSpace
+      val sum = new SimpleSum with SupportsArgmax {
+        def space = pairSpace
+        def argmaxer(): Argmaxer = new GradientBasedArgmaxer(this)
+      }
+      val condition = State(Map(pairSpace.space2.variable -> 1.0))
+      val result = Argmax(pairSpace, condition)(sum)
+      result._1 should be(2.0 +- 0.01)
+      result._2 should be(1.0)
+    }
+  }
+
+  "A potential with observation" should {
+    "calculate its gradient" in {
+      //todo: tangle variables for more coverage
+      val ySpace = AtomicSearchSpace.cont("y")
+      //f(x,y) = x * y + y^2
+      //d f(x,y) / dy = x + 2y
+      //d f(2,1) / dy = 2 + 2 * 1 = 4
+      val observed = new DifferentiableWithObservation {
+        lazy val xSpace      = AtomicSearchSpace.cont("x")
+        lazy val self        = new DifferentiableSum[Differentiable] {
+          lazy val args = Seq(new BilinearTerm(xSpace.variable, ySpace.variable), new QuadraticTerm(ySpace.variable,1.0))
+        }
+        lazy val observation = self.createPartialSetting(State.single(xSpace.variable, 2.0))
+      }
+      val at = State(Map(ySpace.variable -> 1.0))
+      val result = Gradient(ySpace, at)(observed)
+      result should be(4.0)
+    }
+  }
+
+  "A MaxPotential" should {
+    "calculate its gradient" in {
+      def labels = AtomicSearchSpace.disc("labels", Seq(false, true))
+      val weights = AtomicSearchSpace.vect("weight", 1)
+
+      val result1 = Gradient(weights, State.single(weights.variable, new DenseTensor1(Array(1.0))))(maxPot(weights, labels))
+      val result2 = Gradient(weights, State.single(weights.variable, new DenseTensor1(Array(-1.0))))(maxPot(weights, labels))
+
+      result1(0) should be(1.0)
+      result2(0) should be(-1.0)
+
+    }
+  }
+
 
   "The argmax operator" should {
     "support a table potential and a case class search space" in {
@@ -40,61 +122,61 @@ class IntermediateLayerSpecs extends WolfeSpec {
       }
     }
 
-    "support a perceptron loss" ignore {
-
-      val labels = new AtomicSearchSpace.Disc[Boolean](new DiscVar(Seq(false, true)))
-      val weights = new AtomicSearchSpace.Vect(new VectVar(1, "weights"))
-
-      def feat(value: Boolean) = new DenseTensor1(Array(if (value) 1.0 else 0.0))
-
-      def classifier[T](label: AtomicSearchSpace.Disc[T], weights: AtomicSearchSpace.Vect, feat: T => FactorieVector) =
-        new LinearClassiferPotential(label, weights, feat)
-
-      def maxPot(weights: AtomicSearchSpace.Vect) =
-        new DifferentiableMaxPotential[LinearClassiferPotential[Boolean]] {
-          val objective = classifier(labels, weights, feat)
-          def notOptimized = weights
-        }
-
-      def observed(weights: AtomicSearchSpace.Vect)(label: Boolean) =
-        new DifferentiableWithObservation() {
-          val constLabel  = AtomicSearchSpace.constDisc(label)
-          val observation = labels.toPartialSetting(State.single(constLabel.variable, label))
-          val self        = classifier[Boolean](constLabel, weights, feat)
-        }
-
-      def negLoss(weights: AtomicSearchSpace.Vect) =
-        new Sum[Differentiable] with SupportsArgmax {
-          val args = Seq(
-            maxPot(weights),
-            ScaledPotential.scaleDifferentiable(observed(weights)(true), -1.0))
-          def argmaxer() = new GradientBasedArgmaxer(this)
-        }
-
-      val toMaximize = negLoss(weights)
-
-      val result = Argmax(weights)(toMaximize)
-
-
-
-
-
-
-
-      //given an instance model, calculate its argmax and return statistics of winning settings for exp fam potentials
-      //inner potential needs a stats(incoming,result) method
-      //this is used to calculate gradients
-      //then gradient-based optimizer is
-      //def classifier(weights:AtomicSearchSpace.Vect, feats:AtomicSearchSpace.Vect, label:AtomicSearchSpace.Disc[T]) = ...
-      //val inner = new LinearPotential(labelSpace,weightSpace) ...
-      //val max = new MaxPotential(weightSpace,classifier) //needs SupportsArgmax inner potential.
-      // max potentials maxes all variables of the inner potentials different to the variables of the max potential.
-      //val loss = new Minus(max,inner.condition(label = gold))
-      //linearPotential.gradientCalculator().gradient(observeHiddenVars) should be doable.
-      //or val loss = new Minus(max, new LinearPotential(restrictedSearchSpace,weightSpace)?
-      //val result = Argmax(weightsSpace)(loss)
-      //trait Potential { def observed:PartialSetting = UnobservedSetting(...) }
-    }
+    //    "support a perceptron loss" ignore {
+    //
+    //      val labels = new AtomicSearchSpace.Disc[Boolean](new DiscVar(Seq(false, true)))
+    //      val weights = new AtomicSearchSpace.Vect(new VectVar(1, "weights"))
+    //
+    //      def feat(value: Boolean) = new DenseTensor1(Array(if (value) 1.0 else 0.0))
+    //
+    //      def classifier[T](label: AtomicSearchSpace.Disc[T], weights: AtomicSearchSpace.Vect, feat: T => FactorieVector) =
+    //        new LinearClassiferPotential(label, weights, feat)
+    //
+    //      def maxPot(weights: AtomicSearchSpace.Vect) =
+    //        new DifferentiableMaxPotential[LinearClassiferPotential[Boolean]] {
+    //          val objective = classifier(labels, weights, feat)
+    //          def notOptimized = weights
+    //        }
+    //
+    //      def observed(weights: AtomicSearchSpace.Vect)(label: Boolean) =
+    //        new DifferentiableWithObservation() {
+    //          val constLabel  = AtomicSearchSpace.constDisc(label)
+    //          val observation = labels.toPartialSetting(State.single(constLabel.variable, label))
+    //          val self        = classifier[Boolean](constLabel, weights, feat)
+    //        }
+    //
+    //      def negLoss(weights: AtomicSearchSpace.Vect) =
+    //        new Sum[Differentiable] with SupportsArgmax {
+    //          val args = Seq(
+    //            maxPot(weights),
+    //            ScaledPotential.scaleDifferentiable(observed(weights)(true), -1.0))
+    //          def argmaxer() = new GradientBasedArgmaxer(this)
+    //        }
+    //
+    //      val toMaximize = negLoss(weights)
+    //
+    //      val result = Argmax(weights)(toMaximize)
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //      //given an instance model, calculate its argmax and return statistics of winning settings for exp fam potentials
+    //      //inner potential needs a stats(incoming,result) method
+    //      //this is used to calculate gradients
+    //      //then gradient-based optimizer is
+    //      //def classifier(weights:AtomicSearchSpace.Vect, feats:AtomicSearchSpace.Vect, label:AtomicSearchSpace.Disc[T]) = ...
+    //      //val inner = new LinearPotential(labelSpace,weightSpace) ...
+    //      //val max = new MaxPotential(weightSpace,classifier) //needs SupportsArgmax inner potential.
+    //      // max potentials maxes all variables of the inner potentials different to the variables of the max potential.
+    //      //val loss = new Minus(max,inner.condition(label = gold))
+    //      //linearPotential.gradientCalculator().gradient(observeHiddenVars) should be doable.
+    //      //or val loss = new Minus(max, new LinearPotential(restrictedSearchSpace,weightSpace)?
+    //      //val result = Argmax(weightsSpace)(loss)
+    //      //trait Potential { def observed:PartialSetting = UnobservedSetting(...) }
+    //    }
 
 
 
@@ -119,7 +201,6 @@ class IntermediateLayerSpecs extends WolfeSpec {
 
 
 class Test extends FlatSpec {
-
 
 
 }

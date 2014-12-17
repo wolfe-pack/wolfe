@@ -23,17 +23,17 @@ class MCTestReader(tsvFilename: String, ansFilename: String, rteFilename: String
       List[String]()
     }
 
-    zippedReaders.map{ x =>
+    zippedReaders.map { x =>
       val l = x._1
       val ans = x._2.split("\\s")
       val fields = l.split("\t")
       val id = fields(0)
       val author = fields(1)
       val passage = fields(2).replaceAll("\\\\newline", " ")
-      val questions = fields.slice(3, fields.size).grouped(5).zip(ans.toIterator).map { case(g, t) =>
+      val questions = fields.slice(3, fields.size).grouped(5).zip(ans.toIterator).map { case (g, t) =>
         val gi = g.head.split(": ")
         val (qt, q) = (gi(0), gi(1))
-        val as = g.tail.zipWithIndex.map { case(a, i) =>
+        val as = g.tail.zipWithIndex.map { case (a, i) =>
           if (rteq.isEmpty) {
             AnswerChoice(MC_LABELS(i), a, t == MC_LABELS(i))
           }
@@ -81,7 +81,7 @@ case class MultiQuestion(id: String, author: String, passage: String, questions:
 case class MultipleChoiceQuestion(text: String, choices: IndexedSeq[AnswerChoice], val typ: String) {
 
   def isCorrect(label: String): Boolean = {
-    choices.exists{ c => c.label == label && c.isCorrect}
+    choices.exists { c => c.label == label && c.isCorrect}
   }
 
   override def toString = {
@@ -97,9 +97,10 @@ case class AnswerChoice(label: String, text: String, isCorrect: Boolean)
 // Temp location for some helper IO
 
 import scala.collection.mutable.ArrayBuffer
+
 object DataToParseable {
 
-  def main(args: Array[String]) = read(args(0), args(1), args(2))
+  def main(args: Array[String]) { read(args(0), args(1), args(2)) }
 
   def read(f1: String, f2: String, f3: String): Array[String] = {
     val sb = new ArrayBuffer[String]
@@ -114,7 +115,7 @@ object DataToParseable {
         sb += q.text // println(q.text)
         for (c <- q.choices) println(c.text)
       }
- //     sb += "" // println
+      //     sb += "" // println
     }
     println(sb.mkString("\n"))
     sb.toArray

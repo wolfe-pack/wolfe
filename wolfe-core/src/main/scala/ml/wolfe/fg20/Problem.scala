@@ -2,7 +2,7 @@ package ml.wolfe.fg20
 
 import ml.wolfe._
 
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.{ListBuffer, ArrayBuffer}
 
 /**
  * A Problem definition, consisting of a set of variables, a sequence of potential terms that involve these
@@ -52,6 +52,7 @@ object Problem {
 trait Var[+T] {
   def name: String
   override def toString = if (name != "anon") name else super.toString
+  def default:T
 }
 /**
  * A discrete variable.
@@ -59,91 +60,26 @@ trait Var[+T] {
  * @param name the name of the variable.
  * @tparam T the type of the values that can be assigned to this variable.
  */
-class DiscVar[+T](val dom: Seq[T], val name: String = "anon") extends Var[T]
+class DiscVar[+T](val dom: Seq[T], val name: String = "anon") extends Var[T]{
+  override def default: T = dom.head
+}
 
 /**
  * A continuous variable.
  * @param name the name of the variable.
  */
-class ContVar(val name: String = "anon") extends Var[Double]
+class ContVar(val name: String = "anon") extends Var[Double]{
+  def default = 0.0
+}
 
 /**
  * A vector variable.
  * @param dim the dimension of the vector.
  * @param name the name of the variable.
  */
-class VectVar(val dim: Int = 0, val name: String = "anon") extends Var[FactorieVector]
-
-
-/**
- * A setting of a clique of discrete, continuous and vector variables.
- * @param numDisc number of discrete assignments.
- * @param numCont number of continuous assignments.
- * @param numVect number of vector assignments.
- */
-class Setting(numDisc: Int, numCont: Int = 0, numVect: Int = 0) {
-  final var disc = Array.ofDim[Int](numDisc)
-  final var cont = Array.ofDim[Double](numCont)
-  final var vect = Array.ofDim[FactorieVector](numVect)
-
-
-  def fillObserved(observed: PartialSetting) = {
-    for (i <- 0 until disc.length; if observed.discObs(i)) disc(i) = observed.disc(i)
-    for (i <- 0 until cont.length; if observed.contObs(i)) cont(i) = observed.cont(i)
-    for (i <- 0 until vect.length; if observed.vectObs(i)) vect(i) = observed.vect(i)
-  }
-
-  def copyFrom(that: Setting, mapFromThisIndextoThatIndex: ArgMap): Unit = {
-    for (i <- 0 until disc.length) disc(i) = that.disc(mapFromThisIndextoThatIndex.discArgs(i))
-    for (i <- 0 until cont.length) cont(i) = that.cont(mapFromThisIndextoThatIndex.contArgs(i))
-    for (i <- 0 until vect.length) vect(i) = that.vect(mapFromThisIndextoThatIndex.vectArgs(i))
-  }
-
-  def *=(scale: Double): Unit = {
-    for (i <- 0 until cont.length) cont(i) *= scale
-    for (i <- 0 until vect.length) vect(i) *= scale
-  }
-
-  def copyTo(that: Setting, mapFromThisIndextoThatIndex: ArgMap): Unit = {
-    for (i <- 0 until disc.length) that.disc(mapFromThisIndextoThatIndex.discArgs(i)) = disc(i)
-    for (i <- 0 until cont.length) that.cont(mapFromThisIndextoThatIndex.contArgs(i)) = cont(i)
-    for (i <- 0 until vect.length) that.vect(mapFromThisIndextoThatIndex.vectArgs(i)) = vect(i)
-  }
-
-  def observeIn(that: PartialSetting, mapFromThisIndextoThatIndex: ArgMap, observed: Boolean = true): Unit = {
-    for (i <- 0 until disc.length) that.discObs(mapFromThisIndextoThatIndex.discArgs(i)) = observed
-    for (i <- 0 until cont.length) that.contObs(mapFromThisIndextoThatIndex.contArgs(i)) = observed
-    for (i <- 0 until vect.length) that.vectObs(mapFromThisIndextoThatIndex.vectArgs(i)) = observed
-  }
-
-
+class VectVar(val dim: Int = 0, val name: String = "anon") extends Var[FactorieVector] {
+  def default = new SparseVector(dim)
 }
-
-class ArgMap(val discArgs: Array[Int], val contArgs: Array[Int], val vectArgs: Array[Int])
-
-
-/**
- * Class to store double results in.
- * @param value the value to store.
- */
-final class DoubleBuffer(var value: Double = 0.0)
-
-/**
- * A partial setting of a clique. The only observed or set values are
- * those at the indices for which the corresponding *Obs array returns true.
- * @param numDisc number of discrete assignments.
- * @param numCont number of continuous assignments.
- * @param numVect number of vector assignments.
- */
-final class PartialSetting(numDisc: Int, numCont: Int = 0, numVect: Int = 0) extends Setting(numDisc, numCont, numVect) {
-
-  var discObs = Array.ofDim[Boolean](numDisc)
-  var contObs = Array.ofDim[Boolean](numCont)
-  var vectObs = Array.ofDim[Boolean](numVect)
-
-
-}
-
 
 /**
  * A problem listener can be notified to changes to a problem (such as different observations).

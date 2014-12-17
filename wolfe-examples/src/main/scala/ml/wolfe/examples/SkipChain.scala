@@ -71,11 +71,11 @@ object SkipChainUtil {
   import Wolfe._
 
   val labels     = Seq("O", "B-PER", "B-LOC", "I-PER", "I-LOC")
-  val locations  = Set("Denver","Dallas")
+  val locations  = Set("Denver", "Dallas")
   val firstNames = Set("John")
   val lastNames  = Set("Denver")
   val puncts     = Set(",", ".", "?", ";")
-  val weights   = Vector(
+  val weights    = Vector(
     ('location, "B-LOC") -> 1.1,
     ('lastName, "B-PER") -> 1.0,
     ('firstName, "B-PER") -> 3.0,
@@ -94,7 +94,7 @@ object SkipChainUtil {
           append(t, tags.drop(h.tokens.size), appended :: result)
       }
     }
-    doc.copy(sentences = append(doc.sentences.toList,tags).reverse.toIndexedSeq)
+    doc.copy(sentences = append(doc.sentences.toList, tags).reverse.toIndexedSeq)
   }
 
 
@@ -102,4 +102,26 @@ object SkipChainUtil {
     (gold.iterator.flatten zip guess.iterator.flatten).map { case (y, yp) => I(y == yp) }.sum / gold.map(_.size).sum
 
 
+  def main(args: Array[String]) {
+    import ml.wolfe.Wolfe._
+    import ml.wolfe.macros.OptimizedOperators._
+
+    def space(words: Seq[String]) =
+      seqsOfLength(words.length, Seq("O", "LOC", "CONF"))
+    def feats(words: Seq[String])(ner: Seq[String]) =
+      sum(0 until words.size) { i => oneHot(words(i) -> ner(i)) } +
+      sum(0 until words.size - 1) { i => oneHot(ner(i) -> ner(i + 1)) }
+    def crf(weights: Vector, words: Seq[String])(ner: Seq[String]) =
+      weights dot feats(words)(ner)
+    def svmNegLoss(words: Seq[String], gold: Seq[String])(weights: Vector) =
+      crf(weights, words)(gold) - max(space(words)) { y =>
+        crf(weights, words)(y) +
+        sum(0 until words.size) { i => -1.0 * I(gold(i) == y(i)) }
+      }
+    val x = Seq("NIPS", "at", "Montreal")
+    argmax(vectors) { svmNegLoss(x, Seq("CONF", "O", "LOC")) }
+  }
+
 }
+
+

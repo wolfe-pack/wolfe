@@ -38,11 +38,11 @@ class CoNLLReader(filename: String, delim: String = "\t") extends Iterable[Sente
     val tokens = cells.map { c =>
       Token(c(1), CharOffsets(c(0).toInt, c(0).toInt), posTag = c(4), lemma = c(2))
     }
-    val preds = cells.zipWithIndex.filter(_._1(12) == "Y").map { case (l, i) => Predicate(i, tokens(i), l(13)) }
+    val preds = cells.zipWithIndex.filter(_._1(12) == "Y").map { case (l, i) => Predicate(i+1, tokens(i), l(13)) }
     val argsets = (14 to 13 + preds.size).map { i =>
       cells.zipWithIndex.flatMap { case (row, ri) => row(i) match {
         case "_" => None
-        case x => Some(SemanticRole(ri, x))
+        case x => Some(SemanticRole(ri+1, x))
       }
       }
     }
