@@ -51,10 +51,19 @@ case class Sentence(tokens: IndexedSeq[Token], syntax: SyntaxAnnotation = Syntax
   def toPrettyString = tokens.map(_.toPrettyString).mkString(" ")
 
   def toCoNLLString = {
+    // ID FORM LEMMA PLEMMA POS PPOS FEAT PFEAT HEAD PHEAD DEPREL PDEPREL FILLPRED PRED APREDs
+    val numPreds = ie.semanticFrames.size
     tokens.zipWithIndex.map { case(t,i) =>
       if (syntax.dependencies != null) {
         val head = syntax.dependencies.headOf(i+1).getOrElse(-1)
-        "%d\t%s\t%s\t%s\t%s\t%s\t%d\t%d".format(i+1, t.word, t.lemma, t.lemma, t.posTag, t.posTag, head, head)
+        val morph = "-|-|-|-"
+        val sense = ie.semanticFrames.find(_.predicate.idx == i+1) match {
+          case Some(frame) => frame.predicate.sense
+          case _ => "_"
+        }
+        val hasPred = if (sense != "_") "Y" else "_"
+        val roles = ie.semanticFrames.map(f => if (f.roles.exists(_.idx == i+1)) f.roles.find(_.idx == i+1).get.role else "_")
+        Seq(i+1, t.word, t.lemma, t.lemma, t.posTag, t.posTag, morph, morph, head, head, hasPred, sense, roles.mkString("\t")).mkString("\t")
       }
       else {
         "%d\t%s\t%s\t%s\t%s\t%s".format(i+1, t.word, t.lemma, t.lemma, t.posTag, t.posTag)
