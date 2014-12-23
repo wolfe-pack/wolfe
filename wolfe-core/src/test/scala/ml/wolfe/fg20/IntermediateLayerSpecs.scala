@@ -39,7 +39,7 @@ class IntermediateLayerSpecs extends WolfeSpec {
   "A Sum" should {
     "calculate its gradient for continuous variables" in {
       val pairSpace = doublePairSpace
-      val sum = new SimpleSum with DifferentiableSum[Differentiable] {
+      val sum = new SimpleSum with DifferentiableSum {
         def space = pairSpace
       }
       val current = State(Map(pairSpace.space1.variable -> 1.0, pairSpace.space2.variable -> 3.0)) //-2*x + 4
@@ -61,14 +61,11 @@ class IntermediateLayerSpecs extends WolfeSpec {
 
   "A potential with observation" should {
     "calculate its gradient" in {
-      //todo: tangle variables for more coverage
       val ySpace = AtomicSearchSpace.cont("y")
       //f(x,y) = x * y + y^2
-      //d f(x,y) / dy = x + 2y
-      //d f(2,1) / dy = 2 + 2 * 1 = 4
       val observed = new DifferentiableWithObservation {
         lazy val xSpace      = AtomicSearchSpace.cont("x")
-        lazy val self        = new DifferentiableSum[Differentiable] {
+        lazy val self        = new DifferentiableSum {
           lazy val args = Seq(new BilinearTerm(xSpace.variable, ySpace.variable), new QuadraticTerm(ySpace.variable,1.0))
         }
         lazy val observation = self.createPartialSetting(State.single(xSpace.variable, 2.0))
@@ -76,6 +73,28 @@ class IntermediateLayerSpecs extends WolfeSpec {
       val at = State(Map(ySpace.variable -> 1.0))
       val result = Gradient(ySpace, at)(observed)
       result should be(4.0)
+    }
+  }
+
+  "A perceptron loss" should {
+    "calculate its gradient" in {
+      def labels = AtomicSearchSpace.disc("labels", Seq(false,true))
+      val weights = AtomicSearchSpace.vect("weights", 1)
+
+      val loss = new DifferentiableSum {
+        lazy val arg1 = maxPot(weights,labels)
+        lazy val arg2 = new ScaledDifferentablePotential[Differentiable] {
+          def scale: Double = -1
+          lazy val self = new DifferentiableWithObservation {
+            lazy val observedLabel = AtomicSearchSpace.constDisc(true)
+            lazy val observation = self.toPartialSetting(State.single(observedLabel.variable,true))
+            lazy val self = classifier(observedLabel, weights, feat)
+          }
+        }
+        lazy val args = Seq(arg1,arg2)
+      }
+      val result = Gradient(weights,State.single(weights.variable,new DenseTensor1(Array(-1.0))))(loss)
+      result(0) should be (-2.0)
     }
   }
 
