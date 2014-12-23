@@ -1,7 +1,6 @@
 package ml.wolfe.nlp
 
-import breeze.linalg.{SparseVector, DenseVector}
-import ml.wolfe.{SimpleIndex, Index}
+import breeze.linalg.SparseVector
 
 import scala.collection.mutable
 

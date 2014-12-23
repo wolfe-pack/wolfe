@@ -308,7 +308,7 @@ trait Sum[P <: Potential] extends Potential {
 
 class FlatSum[P <: Potential](val args: Seq[P]) extends Sum[P]
 
-trait DifferentiableSum[P <: Differentiable] extends Sum[P] with Differentiable {
+trait DifferentiableSum extends Sum[Differentiable] with Differentiable {
   //rather define it as GradientCalculator ?
   sum =>
 

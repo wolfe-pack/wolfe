@@ -96,8 +96,8 @@ object BuildSettings {
   )
 
   val nlpDependencies = libraryDependencies ++= Seq(
-    "edu.arizona.sista" % "processors" % "3.3",
-    "org.scala-lang" %% "scala-pickling" % "0.8.0"
+    "edu.arizona.sista" % "processors" % "3.3"
+   // "org.scala-lang" %% "scala-pickling" % "0.8.0"
   )
 
   val neuralDependencies = libraryDependencies ++= Seq(

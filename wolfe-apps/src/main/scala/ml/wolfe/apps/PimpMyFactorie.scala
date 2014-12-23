@@ -3,6 +3,7 @@ package ml.wolfe.apps
 import cc.factorie.la._
 import scala.Array
 import cc.factorie.util.SparseDoubleSeq
+import scala.language.implicitConversions
 
 /**
  * @author rockt
