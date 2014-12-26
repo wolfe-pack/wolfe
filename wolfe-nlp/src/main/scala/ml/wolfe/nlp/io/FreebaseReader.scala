@@ -102,7 +102,7 @@ class FreebaseReader(collection: MongoCollection) {
 
   def test() {
     // Set collection to the test collection
-    collection = testCollection
+ //   collection = testCollection
     // Query
     println("Attributes of m1: " + attributesOf("m1"))
     println("MID of 'Barack Obama': " + getCandidateMIDs("Barack Obama"))
@@ -258,13 +258,13 @@ object FreebaseReader {
   }
 
   def interactive() = {
-    val scanner = new java.util.Scanner(System.in)
-    print("Enter MongoDB Query\n>")
-    val q = scanner.nextLine()
-    q match {
-      case
-    }
-    print("Executing query <%s>".format(q))
+//    val scanner = new java.util.Scanner(System.in)
+//    print("Enter MongoDB Query\n>")
+//    val q = scanner.nextLine()
+//    q match {
+//      case
+//    }
+//    print("Executing query <%s>".format(q))
   }
 
 }

@@ -5,7 +5,8 @@ import java.io.{File, FileWriter}
 /**
  * Created by narad on 10/29/14.
  */
-class DistantSupervisionAnnotator extends FreebaseReader(filename = null, useExisting = true) {
+class DistantSupervisionAnnotator { //extends FreebaseReader(filename = null, useExisting = true) {
+  val fbr = FreebaseReader.loadFromDB()
 
   def annotate(docs: Iterable[Document]): Iterable[Document] = docs.map(annotate(_))
 
@@ -15,7 +16,7 @@ class DistantSupervisionAnnotator extends FreebaseReader(filename = null, useExi
       val relations = entityPairs(s).flatMap { case ((e1,i), (e2,j)) =>
         val e1str = words.slice(e1.start, e1.end).mkString(" ")
         val e2str = words.slice(e2.start, e2.end).mkString(" ")
-        getRelationFromNames(e1str, e2str) match {
+        fbr.getRelationFromNames(e1str, e2str) match {
           case Some(r) => Some(RelationMention(r, i, j))
           case _=> None
         }
@@ -59,9 +60,9 @@ object DistantSupervisionAnnotator extends App{
   def test = {
     val sents = Array("Barack Obama was inaugurated as the 51st President of the United States of America and then New York New York.")
     val docs = sents.map(SISTAProcessors.annotate(_, posTagger = true, parser = true, lemmatizer = true, ner = true))
-    annotator.test
-    for (a <- annotator.annotate(docs)) {
-      println(a)
-    }
+//    annotator.test
+//    for (a <- annotator.annotate(docs)) {
+//      println(a)
+//    }
   }
 }
