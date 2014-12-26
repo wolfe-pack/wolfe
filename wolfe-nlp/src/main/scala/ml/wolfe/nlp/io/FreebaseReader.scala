@@ -3,6 +3,8 @@ package ml.wolfe.nlp.io
 import com.mongodb.casbah.Imports._
 import java.io.FileWriter
 
+import scala.util.matching.Regex
+
 /**
  * Created by narad on 9/11/14.
  */
@@ -10,97 +12,9 @@ import java.io.FileWriter
 // To use the FreebaseReader class you must first start a MongoDB process in the environment.
 // A simple way of doing this is the command: mongod --dbpath <path-to-DB-cache-directory>
 
-class FreebaseReader(filename: String, port: Int = 27017, useExisting: Boolean = true) {
-  val INSTANCE_PATTERN  = """<http://rdf.freebase.com/ns/([^>]+)>\t<http://rdf.freebase.com/ns/type.type.instance>\t<http://rdf.freebase.com/ns/([^>]+)>.*""".r
-  val ATTRIBUTE_PATTERN = """<http://rdf.freebase.com/ns/(m.[^>]+)>\t<http://rdf.freebase.com/ns/([^>]+)>\t<http://rdf.freebase.com/ns/(m.[^>]+)>.*""".r
-  val DATE_PATTERN      = """<http://rdf.freebase.com/ns/(m.[^>]+)>\t<http://rdf.freebase.com/ns/time.event.([^_]+_date)>\t\"(.+)\".*""".r
-  val TITLE_PATTERN     = """<http://rdf.freebase.com/ns/(m.[^>]+)>\t<http://rdf.freebase.com/key/wikipedia.en>\t\"(.+)\".*""".r
-  val TEXT_PATTERN      = """<http://rdf.freebase.com/ns/common.topic.description>\t\"(.+)\".*""".r
-  var collection =  mongoFromTriples //null.asInstanceOf[MongoCollection]
-
-  def mongoFromTriples: MongoCollection = {
-    println("Connecting to local Mongo database at port %d...".format(port))
-    val mongoClient = MongoClient("localhost", port)
-    val db = mongoClient("FB")
-    println("Existing Collections:")
-    println(db.collectionNames.map("\t" + _).mkString("\n"))
-
-    if (useExisting) {
-      if (db.collectionExists("FB")) {
-        println("Using existing indexes.")
-        return db("FB")
-      }
-      else {
-        println("No existing collection exists.")
-      }
-    }
-
-    mongoClient.dropDatabase("FB")
-    val coll = db("FB")
-
-
-
-    println("Loading triples...")
-    val startTime = System.currentTimeMillis()
-    var count = 0
-    val reader = if (filename.endsWith(".gz")) new GZipReader(filename) else io.Source.fromFile(filename).getLines
-
-
-
-    for (lines <- reader.grouped(1000000)) {
-      val bulkBuilder = coll.initializeUnorderedBulkOperation
-      for (line <- lines) {
-        val cleaned = line.replaceAll("> +<", ">\t<").replaceAll("> +\"", ">\t\"")
-        cleaned match {
-          case INSTANCE_PATTERN(t, mid) => {
-            bulkBuilder.insert(MongoDBObject("mid" -> mid, "type" -> t))
-          }
-          case ATTRIBUTE_PATTERN(mid1, attribute, mid2) => {
-            bulkBuilder.insert(MongoDBObject("arg1" -> mid1, "attribute" -> attribute, "arg2" -> mid2))
-          }
-          case DATE_PATTERN(mid, dateType, date) => {
-            bulkBuilder.insert(MongoDBObject("arg1" -> mid, "attribute" -> dateType, "arg2" -> date))
-          }
-          case TITLE_PATTERN(mid, title) => {
-            bulkBuilder.insert(MongoDBObject("arg1" -> mid, "attribute" -> "title", "arg2" -> title))
-          }
-          case TEXT_PATTERN(mid, text) => {
-            bulkBuilder.insert(MongoDBObject("arg1" -> mid, "attribute" -> "text", "arg2" -> text))
-          }
-          case _ =>
-        }
-        count += 1
-      }
-      print("Count: " + count / 1000000 + "M")
-      try {
-        val exec = bulkBuilder.execute
-        println("...Inserted: " + exec.getInsertedCount)
-      } catch {
-        case e => println("..." + e.getMessage)
-      }
-
-
-
-    }
-
-
-    val time = (System.currentTimeMillis() - startTime) / 1000.0
-    println("Finished loading Freebase triples (%d lines) in %1.1fm".format(count, time/60))
-    // Specify indices
-    coll.ensureIndex("mid")
-    coll.ensureIndex("arg1")
-    coll.ensureIndex("arg2")
-    coll.ensureIndex("type")
-    coll.ensureIndex("attribute")
-    coll.ensureIndex("title")
-
-    val itime = (System.currentTimeMillis() - startTime) / 1000.0
-    println("Finished constructing indices in %1.1fm".format(itime / 60.0))
-
-    println("There are %d mids.".format(coll.count("mid" $exists true)))
-    println("There are %d rows with start dates.".format(coll.count(MongoDBObject("attribute" -> "start_date"))))
-    coll
-  }
+class FreebaseReader(collection: MongoCollection) {
+  //filename: String, port: Int = 27017, useExisting: Boolean = true) {
+//  var collection =  mongoFromTriples //null.asInstanceOf[MongoCollection]
 
   def getMIDs: Iterator[String] = {
     val q = new MongoDBObject("mid" $exists true)
@@ -237,20 +151,120 @@ class FreebaseReader(filename: String, port: Int = 27017, useExisting: Boolean =
     println("Event queries finished in %1.1fm".format(time/60))
   }
 
+//  def findAllIn(s: Map[String, String]): Seq[String] = findAllIn(new MongoDBObject(s))
+//
+//  def findAllIn(q: MongoDBObject): Seq[String] = {
+//
+//  }
+
 }
 
 object FreebaseReader {
+  // Loading Patterns
+  val INSTANCE_PATTERN  = """<http://rdf.freebase.com/ns/([^>]+)>\t<http://rdf.freebase.com/ns/type.type.instance>\t<http://rdf.freebase.com/ns/([^>]+)>.*""".r
+  val ATTRIBUTE_PATTERN = """<http://rdf.freebase.com/ns/(m.[^>]+)>\t<http://rdf.freebase.com/ns/([^>]+)>\t<http://rdf.freebase.com/ns/(m.[^>]+)>.*""".r
+  val DATE_PATTERN      = """<http://rdf.freebase.com/ns/(m.[^>]+)>\t<http://rdf.freebase.com/ns/time.event.([^_]+_date)>\t\"(.+)\".*""".r
+  val TITLE_PATTERN     = """<http://rdf.freebase.com/ns/(m.[^>]+)>\t<http://rdf.freebase.com/key/wikipedia.en>\t\"(.+)\".*""".r
+  val TEXT_PATTERN      = """<http://rdf.freebase.com/ns/common.topic.description>\t\"(.+)\".*""".r
+
+  // Interactive Patterns
+  val METH_PATTERN_1 = """getCandidateMIDs\([^.*]\)""".r
 
   def main(args: Array[String]) = {
-    val filename = "/Volumes/My Passport/freebase-rdf-latest.gz"
-    val useExisting = false
-    //val eventFile = args(2)
-    println("DB file = " + filename)
-    val fb = new FreebaseReader(filename, useExisting = useExisting)
-//    fb.test
-//    fb.load(filename, init = rebuild)
-    fb.collectEvents()
-    println("Done.")
+    if (args(0) == "interactive") {
+      interactive()
+    }
+    else {
+//      val filename = "/Volumes/My Passport/freebase-rdf-latest.gz"
+//      val useExisting = false
+//      //val eventFile = args(2)
+//      println("DB file = " + filename)
+//      val fb = new FreebaseReader(filename, useExisting = useExisting)
+//      //    fb.test
+//      //    fb.load(filename, init = rebuild)
+//      fb.collectEvents()
+//      println("Done.")
+    }
+  }
+
+  def loadFromDB(port: Int = 27017): FreebaseReader = {
+    println("Connecting to local Mongo database at port %d...".format(port))
+    val mongoClient = MongoClient("localhost", port)
+    val db = mongoClient("FB")
+    println("Existing Collections:")
+    println(db.collectionNames.map("\t" + _).mkString("\n"))
+    new FreebaseReader(db("FB"))
+  }
+
+  def loadFromFile(filename: String, port: Int = 27017): FreebaseReader = {
+    println("Loading triples...")
+    val mongoClient = MongoClient("localhost", port)
+    val db = mongoClient("FB")
+    mongoClient.dropDatabase("FB")
+    val coll = db("FB")
+    val startTime = System.currentTimeMillis()
+    var count = 0
+    val reader = if (filename.endsWith(".gz")) new GZipReader(filename) else io.Source.fromFile(filename).getLines
+
+    for (lines <- reader.grouped(1000000)) {
+      val bulkBuilder = coll.initializeUnorderedBulkOperation
+      for (line <- lines) {
+        val cleaned = line.replaceAll("> +<", ">\t<").replaceAll("> +\"", ">\t\"")
+        cleaned match {
+          case INSTANCE_PATTERN(t, mid) => {
+            bulkBuilder.insert(MongoDBObject("mid" -> mid, "type" -> t))
+          }
+          case ATTRIBUTE_PATTERN(mid1, attribute, mid2) => {
+            bulkBuilder.insert(MongoDBObject("arg1" -> mid1, "attribute" -> attribute, "arg2" -> mid2))
+          }
+          case DATE_PATTERN(mid, dateType, date) => {
+            bulkBuilder.insert(MongoDBObject("arg1" -> mid, "attribute" -> dateType, "arg2" -> date))
+          }
+          case TITLE_PATTERN(mid, title) => {
+            bulkBuilder.insert(MongoDBObject("arg1" -> mid, "attribute" -> "title", "arg2" -> title))
+          }
+          case TEXT_PATTERN(mid, text) => {
+            bulkBuilder.insert(MongoDBObject("arg1" -> mid, "attribute" -> "text", "arg2" -> text))
+          }
+          case _ =>
+        }
+        count += 1
+      }
+      print("Count: " + count / 1000000 + "M")
+      try {
+        val exec = bulkBuilder.execute
+        println("...Inserted: " + exec.getInsertedCount)
+      } catch {
+        case e: Throwable => println("..." + e.getMessage)
+      }
+    }
+
+    val time = (System.currentTimeMillis() - startTime) / 1000.0
+    println("Finished loading Freebase triples (%d lines) in %1.1fm".format(count, time/60))
+    // Specify indices
+    coll.ensureIndex("mid")
+    coll.ensureIndex("arg1")
+    coll.ensureIndex("arg2")
+    coll.ensureIndex("type")
+    coll.ensureIndex("attribute")
+    coll.ensureIndex("title")
+
+    val itime = (System.currentTimeMillis() - startTime) / 1000.0
+    println("Finished constructing indices in %1.1fm".format(itime / 60.0))
+
+    println("There are %d mids.".format(coll.count("mid" $exists true)))
+    println("There are %d rows with start dates.".format(coll.count(MongoDBObject("attribute" -> "start_date"))))
+    new FreebaseReader(coll)
+  }
+
+  def interactive() = {
+    val scanner = new java.util.Scanner(System.in)
+    print("Enter MongoDB Query\n>")
+    val q = scanner.nextLine()
+    q match {
+      case
+    }
+    print("Executing query <%s>".format(q))
   }
 
 }
@@ -265,6 +279,29 @@ object FreebaseReader {
 
 
 
+
+
+
+
+
+
+
+
+
+/*
+    if (useExisting) {
+      if (db.collectionExists("FB")) {
+        println("Using existing indexes.")
+        return db("FB")
+      }
+      else {
+        println("No existing collection exists.")
+      }
+    }
+    mongoClient.dropDatabase("FB")
+    val coll = db("FB")
+    coll
+ */
 
 
 
