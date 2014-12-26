@@ -44,6 +44,11 @@ case class DependencyTree(tokens: IndexedSeq[Token], arcs: Seq[(Int,Int,String)]
     case _ => None
   }
 
+  def labelOf(i: Int) = arcs.find(_._1 == i) match {
+    case Some(x) => Some(x._3)
+    case _ => None
+  }
+
   def isProjective = !arcs.exists(a1 => arcs.exists(a2 => crosses(a1,a2)))
 
   override def toString = arcs.mkString("\n")

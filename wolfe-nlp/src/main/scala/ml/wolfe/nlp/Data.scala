@@ -55,6 +55,7 @@ case class Sentence(tokens: IndexedSeq[Token], syntax: SyntaxAnnotation = Syntax
     tokens.zipWithIndex.map { case(t,i) =>
       if (syntax.dependencies != null) {
         val head = syntax.dependencies.headOf(i+1).getOrElse(-1)
+        val headLabel = syntax.dependencies.labelOf(i+1).getOrElse("null")
         val morph = "-|-|-|-"
         val sense = ie.semanticFrames.find(_.predicate.idx == i+1) match {
           case Some(frame) => frame.predicate.sense
@@ -62,7 +63,8 @@ case class Sentence(tokens: IndexedSeq[Token], syntax: SyntaxAnnotation = Syntax
         }
         val hasPred = if (sense != "_") "Y" else "_"
         val roles = ie.semanticFrames.map(f => if (f.roles.exists(_.idx == i+1)) f.roles.find(_.idx == i+1).get.role else "_")
-        Seq(i+1, t.word, t.lemma, t.lemma, t.posTag, t.posTag, morph, morph, head, head, hasPred, sense, roles.mkString("\t")).mkString("\t")
+        Seq(i+1, t.word, t.lemma, t.lemma, t.posTag, t.posTag, morph, morph, head, head,
+            headLabel, headLabel, hasPred, sense, roles.mkString("\t")).mkString("\t")
       }
       else {
         "%d\t%s\t%s\t%s\t%s\t%s".format(i+1, t.word, t.lemma, t.lemma, t.posTag, t.posTag)
