@@ -24,25 +24,57 @@ class OntoReader(dir: String, pattern: String = ".*") extends Iterable[Document]
     fgroups.keys.filter(k => k.matches(pattern) && fgroups(k).size > 1).iterator.map { f =>
       if (new File(f + ".coref").exists()) {
         // OntoNotes 5.0
-        mkOntoDocument(f + ".parse", f + ".coref", f + ".prop")
+        mkOnto5Document(f + ".parse", f + ".coref", f + ".prop", f + ".sense")
       }
       else {
         // OntoNotes 2.0/3.0
-        mkOntoDocument(f + ".parse", f + ".name")
+        mkOnto2Document(f + ".parse", f + ".name")
       }
     }
   }
 
-  def mkOntoDocument(parseFile: String, corefFile: String, propFile: String = ""): Document = {
+  def mkOnto5Document(parseFile: String, corefFile: String, propFile: String, senseFile: String): Document = {
     println("Making Onto Document...")
     val trees = new TreebankReader(parseFile).toIndexedSeq
-    val corefs = mkIE(corefFile)
+    val corefs = mkIE(corefFile, propFile)
+//    val frames = mkFrames(propFile)
     val sentences = trees.zip(corefs).map{ case(t, ie) =>
       Sentence(t.tokens.toIndexedSeq, syntax = SyntaxAnnotation(tree = t, dependencies = null), ie = ie)}
     Document(source = "", sentences = sentences)
   }
 
-  def mkIE(corefFile: String): IndexedSeq[IEAnnotation] = {
+  def mkOnto2Document(parseFile: String, nerFile: String): Document = ???
+
+  // Returns a list of sentence ID and frame pairs
+  // Does not handle all the crazy forms:
+  // bn/cnn/00/cnn_0005@0005@cnn@bn@en@on ... 13:0-rel 0:1*12:0-ARG0 14:1-ARG1 16:1-ARG2
+  def mkFrames(propFile: String): Seq[(Int, SemanticFrame)] = {
+    val F_PATTERN = """([0-9]+):([0-9]+)[^\-]*\-(.*)""".r
+    val frames = scala.io.Source.fromFile(propFile).getLines.toSeq.map { line =>
+      println(line)
+      val cols = line.split(" ")
+      val sid = cols(1).toInt
+      val tid = cols(2).toInt
+      val prop = cols(4)
+      val sense = cols(5)
+      val pred = Predicate(tid, Token("TMP", CharOffsets(-1,-1)), sense)
+      val roles = (7 until cols.size).map { cidx =>
+        val F_PATTERN(s,e,r) = cols(cidx)
+        SemanticRole(s.toInt, r)
+      }
+      (sid, SemanticFrame(pred, roles))
+    }
+    frames
+  }
+
+  def mkIE(corefFile: String, propFile: String): IndexedSeq[IEAnnotation] = {
+    val frames = mkFrames(propFile).groupBy(_._1)
+    mkCoref(corefFile).zipWithIndex.map { case(ie, idx) =>
+      ie.copy(semanticFrames = if (frames.contains(idx)) frames(idx).map(_._2).toIndexedSeq else IndexedSeq())
+    }
+  }
+
+  def mkCoref(corefFile: String): IndexedSeq[IEAnnotation] = {
     scala.io.Source.fromFile(corefFile).getLines.toIndexedSeq.filter(!isMetaInfo(_)).map { line =>
       val entities = new ArrayBuffer[EntityMention]
       var count = 0

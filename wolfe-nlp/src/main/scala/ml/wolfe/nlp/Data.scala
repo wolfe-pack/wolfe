@@ -1,6 +1,7 @@
 package ml.wolfe.nlp
 
 import breeze.linalg.SparseVector
+import edu.berkeley.nlp.entity.ConllDocReader
 
 import scala.collection.mutable
 
@@ -145,6 +146,7 @@ object IRAnnotation {
 }
 
 
+
 object Data {
   def main(args: Array[String]) {
     val source = "Sally met Harry. She was a girl. He was not."
@@ -156,6 +158,8 @@ object Data {
     implicit val graph = new SimpleObjectGraph
 
     val s = result.sentences.head
+
+    val cr = new ConllDocReader(null)
     //s.linkTokens(graph) //build graph
 
     //println(s.tokens.head.sentence == s)

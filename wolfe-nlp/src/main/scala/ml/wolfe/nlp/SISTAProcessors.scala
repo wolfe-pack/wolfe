@@ -64,15 +64,16 @@ object SISTAProcessors {
                parser: Boolean=false,
                ner: Boolean=false,
                coreference: Boolean=false,
-               srl: Boolean = false): Document = {
+               srl: Boolean = false,
+               prereqs: Boolean = false): Document = {
     val result = sistaCoreNLPProcessor.mkDocument(text)
-    if (posTagger) sistaCoreNLPProcessor.tagPartsOfSpeech(result)
-    if (parser) sistaCoreNLPProcessor.parse(result)
-    if (lemmatizer) sistaCoreNLPProcessor.lemmatize(result)
-    if (ner) sistaCoreNLPProcessor.recognizeNamedEntities(result)
+    if (posTagger || (prereqs && (coreference || parser))) sistaCoreNLPProcessor.tagPartsOfSpeech(result)
+    if (parser || (prereqs && coreference)) sistaCoreNLPProcessor.parse(result)
+    if (lemmatizer || (prereqs && coreference)) sistaCoreNLPProcessor.lemmatize(result)
+    if (ner || (prereqs && coreference)) sistaCoreNLPProcessor.recognizeNamedEntities(result)
     // NO SRL SUPPORT IN CoreNLP
     // if (srl) sistaCoreNLPProcessor.labelSemanticRoles(result)
-    if (coreference) {
+    if (coreference && !prereqs) {
       require(posTagger && lemmatizer && ner && parser, "Coreference resolution requires execution of POS tagger, lemmatizer, NER and parser")
       sistaCoreNLPProcessor.resolveCoreference(result)
     }
