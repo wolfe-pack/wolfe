@@ -38,15 +38,26 @@ object LinearPotential {
     result
   }
 
+  def apply(weights: VectVar, vars: Array[DiscVar[Any]], stats: Setting => FactorieVector) = {
+    val dims = vars.map(_.dom.size)
+    val resultStats = Array.ofDim[FactorieVector](dims.product)
+    val setting = new Setting(vars.size)
+    TablePotential.allSettings(dims, Array.ofDim[Boolean](vars.size))(setting.disc) { i =>
+      resultStats(i) = stats(setting)
+    }
+    new LinearPotential(vars, weights, resultStats)
+  }
+
 
 }
 
 /**
  * @author Sebastian Riedel
  */
-final class LinearPotential(val discVars: Array[DiscVar[Any]], weightsVar:VectVar,
-                             val statistics: Array[FactorieVector]) extends SupportsExpFamMarginalization
-                                                                            with SupportsExpFamMaxMarginalization {
+final class LinearPotential(val discVars: Array[DiscVar[Any]], weightsVar: VectVar,
+                            val statistics: Array[FactorieVector]) extends SupportsExpFamMarginalization
+                                                                           with SupportsExpFamMaxMarginalization
+                                                                           with Differentiable {
 
   val discDims = discVars.map(_.dom.size)
   val contVars = Array.ofDim[ContVar](0)
@@ -55,6 +66,7 @@ final class LinearPotential(val discVars: Array[DiscVar[Any]], weightsVar:VectVa
   def scorer() = new Proc
   def marginalizer() = new Proc
   def maxMarginalizer() = new Proc
+  def gradientCalculator(): GradientCalculator = ???
 
   class Proc extends ExpFamMarginalizer with ExpFamMaxMarginalizer with TableBasedProcessor with ExpFamScorer {
 
@@ -72,21 +84,21 @@ final class LinearPotential(val discVars: Array[DiscVar[Any]], weightsVar:VectVa
       var maxCount = 0
       //find maximum with respect to incoming messages
       //and count
-      TablePotential.allSettings(dims, partialSetting.discObs)(partialSetting.disc){ i =>
-        val score = penalizedScore(incoming,i, partialSetting)
+      TablePotential.allSettings(dims, partialSetting.discObs)(partialSetting.disc) { i =>
+        val score = penalizedScore(incoming, i, partialSetting)
         if (approxEqual(score, norm)) {
           maxCount += 1
         }
         else if (score > norm) {
           norm = score
-          maxScore = scoreTableEntry(i,partialSetting)
+          maxScore = scoreTableEntry(i, partialSetting)
           maxCount = 1
         }
       }
 
       // prob = 1/|maxs| for all maximums, add corresponding vector
       val prob = 1.0 / maxCount
-      TablePotential.allSettings(dims, partialSetting.discObs)(partialSetting.disc){ i =>
+      TablePotential.allSettings(dims, partialSetting.discObs)(partialSetting.disc) { i =>
         val score = penalizedScore(incoming, i, partialSetting)
         if (approxEqual(score, norm)) {
           dstExpectations +=(statistics(i), prob)
@@ -99,15 +111,15 @@ final class LinearPotential(val discVars: Array[DiscVar[Any]], weightsVar:VectVa
     def marginalExpectationsAndObjective(partialSetting: PartialSetting, incoming: Msgs, dstExpectations: FactorieVector) = {
       var localZ = 0.0
       //calculate local partition function
-      TablePotential.allSettings(dims, partialSetting.discObs)(partialSetting.disc){ i =>
-        val score = penalizedScore(incoming,i, partialSetting)
+      TablePotential.allSettings(dims, partialSetting.discObs)(partialSetting.disc) { i =>
+        val score = penalizedScore(incoming, i, partialSetting)
         localZ += math.exp(score)
       }
       val logZ = math.log(localZ)
       var linear = 0.0
       var entropy = 0.0
       // prob = 1/|maxs| for all maximums, add corresponding vector
-      TablePotential.allSettings(dims, partialSetting.discObs)(partialSetting.disc){ i =>
+      TablePotential.allSettings(dims, partialSetting.discObs)(partialSetting.disc) { i =>
         val score = penalizedScore(incoming, i, partialSetting)
         val prob = math.exp(score - logZ)
         linear += prob * scoreTableEntry(i, partialSetting)

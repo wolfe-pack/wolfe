@@ -24,14 +24,14 @@ object ScaledPotential {
     def self = p
   }
 
-  def scaleDifferentiable[P <: Differentiable](p:P, scaleToUse:Double) = new ScaledDifferentablePotential[P] {
+  def scaleDifferentiable[P <: Differentiable](p:P, scaleToUse:Double) = new ScaledDifferentable[P] {
     def scale = scaleToUse
     def self = p
   }
 
 }
 
-trait ScaledDifferentablePotential[P <: Differentiable] extends ScaledPotential[P] with Differentiable {
+trait ScaledDifferentable[P <: Differentiable] extends ScaledPotential[P] with Differentiable {
   def gradientCalculator = new GradientCalculator {
 
     val selfGradientCalculator = self.gradientCalculator()
@@ -44,6 +44,18 @@ trait ScaledDifferentablePotential[P <: Differentiable] extends ScaledPotential[
     }
   }
 }
+
+trait ScaledSupportsArgmax[P <: SupportsArgmax] extends ScaledPotential[P] with SupportsArgmax {
+  def argmaxer(): Argmaxer = new Argmaxer {
+    val selfArgmaxer = self.argmaxer()
+    def argmax(observed: PartialSetting, incoming: Msgs, result: Setting, score: DoubleBuffer): Unit = {
+      require(scale > 0.0, "Scale needs to be positive to support argmax")
+      selfArgmaxer.argmax(observed,incoming,result,score)
+      score.value = scale * score.value
+    }
+  }
+}
+
 
 trait ProxyPotential[P <: Potential] extends Potential {
   def self:P
