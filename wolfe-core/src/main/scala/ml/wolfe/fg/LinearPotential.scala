@@ -3,7 +3,7 @@ package ml.wolfe.fg
 import ml.wolfe.{SingletonVector, FactorGraph, FactorieVector}
 import ml.wolfe.FactorGraph.{FGPrinter, Edge}
 import ml.wolfe.MoreArrayOps._
-import scalaxy.loops._
+// import scalaxy.loops._
 import cc.factorie.la.{SingletonTensor, SingletonTensor1, DenseTensor1, SparseTensor1}
 import ml.wolfe.util.Util.approxEqual
 
@@ -61,13 +61,13 @@ final class LinearPotential(val edges: Array[Edge], val statistics: Stats, fg: F
       val score = scoreEntry(i)
       fill(scores, score)
       //val varValue = setting(edge.indexInFactor)
-      for (j <- (0 until edges.size).optimized) {
+      for (j <- (0 until edges.size)) {
         val n2f_j = edges(j).msgs.asDiscrete.n2f(setting(j))
-        for (k <- (0 until edges.size).optimized)
+        for (k <- (0 until edges.size))
           if (j != k) scores(k) += n2f_j
       }
 
-      for(j <- (0 until edges.size).optimized)
+      for(j <- (0 until edges.size))
         msgss(j).f2n(setting(j)) += math.exp(scores(j))
     }
     msgss.foreach(m => {
@@ -82,7 +82,7 @@ final class LinearPotential(val edges: Array[Edge], val statistics: Stats, fg: F
     var maxScore = Double.NegativeInfinity
     var maxSetting = Array.ofDim[Int](edges.size)
 
-    for (i <- (0 until settings.size).optimized) {
+    for (i <- (0 until settings.size)) {
       var score = scoreFun(i)
       if(score > maxScore) {
         maxScore = score
@@ -94,12 +94,12 @@ final class LinearPotential(val edges: Array[Edge], val statistics: Stats, fg: F
   }
 
   override def mapF2N() = {
-    for (j <- (0 until edges.size).optimized)
+    for (j <- (0 until edges.size))
       fill(msgss(j).f2n, 0)
 
     val maxSetting = computeMAP()
 
-    for (j <- (0 until edges.size).optimized)
+    for (j <- (0 until edges.size))
       msgss(j).f2n(maxSetting(j)) = 1
   }
 
@@ -160,7 +160,7 @@ final class LinearPotential(val edges: Array[Edge], val statistics: Stats, fg: F
     var maxCount = 0
     //find maximum with respect to incoming messages
     //and count
-    for (i <- (0 until entryCount).optimized) {
+    for (i <- (0 until entryCount)) {
       val setting = settings(i)
       val score = penalizedScore(i, setting)
       if (approxEqual(score, norm)) {
@@ -188,7 +188,7 @@ final class LinearPotential(val edges: Array[Edge], val statistics: Stats, fg: F
   override def marginalExpectationsAndObjective(dstExpectations: FactorieVector) = {
     var localZ = 0.0
     //calculate local partition function
-    for (i <- (0 until entryCount).optimized) {
+    for (i <- (0 until entryCount)) {
       val setting = settings(i)
       val score = penalizedScore(i, setting)
       localZ += math.exp(score)
@@ -233,7 +233,7 @@ object LinearPotential {
     val count = dims.product
     val settings = Array.ofDim[Array[Int]](count)
     val vectors = Array.ofDim[FactorieVector](count)
-    for (i <- (0 until count).optimized) {
+    for (i <- (0 until count)) {
       val setting = TablePotential.entryToSetting(i, dims)
       val vector = pot(setting)
       settings(i) = setting

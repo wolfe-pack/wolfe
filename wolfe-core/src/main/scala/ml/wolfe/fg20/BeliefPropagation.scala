@@ -2,8 +2,9 @@ package ml.wolfe.fg20
 
 import ml.wolfe.MoreArrayOps._
 import ml.wolfe._
-import scalaxy.loops._
+//import scalaxy.loops._
 
+// import scalaxy.streams.optimize
 
 trait Residuals extends EdgeMsgsFactorGraph {
 
@@ -308,7 +309,7 @@ class SumProduct(val problem: Problem[SupportsMarginalization]) extends BeliefPr
 
   def entropy(discNode:DiscNode) = {
     var result = 0.0
-    for (i <- (0 until discNode.content.belief.length).optimized) {
+    for (i <- (0 until discNode.content.belief.length)) {
       result -= math.exp(discNode.content.belief(i)) * discNode.content.belief(i) //messages are in log space
     }
     result

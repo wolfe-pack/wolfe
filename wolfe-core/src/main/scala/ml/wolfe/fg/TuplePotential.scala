@@ -5,7 +5,7 @@ import ml.wolfe.FactorGraph.{Factor, FGPrinter, Edge, Node}
 import ml.wolfe.{FactorGraph, FactorieVector}
 import ml.wolfe.MoreArrayOps._
 import ml.wolfe.util.Multidimensional._
-import scalaxy.loops._
+
 import ml.wolfe.util.Util.approxEqual
 
 /**
@@ -101,7 +101,7 @@ final class GroupPotential(val componentPotentials: Array[DiscretePotential], va
     var maxScore = Double.NegativeInfinity
     var maxPenalisedScore = Double.NegativeInfinity
     var maxCount:Int = 0
-    for(i <- (0 until scorePairs.array.length).optimized) {
+    for(i <- (0 until scorePairs.array.length)) {
       if (approxEqual(scorePairs.array(i)._2, maxPenalisedScore)) {
         maxCount = maxCount + 1
        } else if(scorePairs.array(i)._2 > maxPenalisedScore) {

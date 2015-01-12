@@ -8,7 +8,6 @@ import ml.wolfe.util.Multidimensional._
 import scala.math._
 import scala.util.Random
 
-import scalaxy.loops._
 
 /**
  * @author luke
@@ -44,7 +43,7 @@ class TupleVar(val componentNodes:Array[Node]) extends Var[Seq[(DiscreteVar[_], 
 
   override def entropy() = { //todo: Will BP overestimate entropy because of shared variables? Does this matter?
     var result = 0.0
-    for (i <- (0 until b.length).optimized) {
+    for (i <- (0 until b.length)) {
       result -= math.exp(b(i)) * b(i) //messages are in log space
     }
     result
@@ -85,8 +84,8 @@ class TupleVar(val componentNodes:Array[Node]) extends Var[Seq[(DiscreteVar[_], 
     if(! fixedSetting || overwrite) {
       var maxScore = Double.NegativeInfinity
       val scores = IN.clone()
-      for (e <- (0 until node.edges.length).optimized)
-        scores += node.edges(e).msgs.asTuple.f2n
+        for (e <- (0 until node.edges.length))
+          scores += node.edges(e).msgs.asTuple.f2n
       setting = scores.maxIndex
     }
   }

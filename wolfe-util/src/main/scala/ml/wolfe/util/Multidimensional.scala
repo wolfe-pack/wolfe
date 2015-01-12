@@ -2,7 +2,9 @@ package ml.wolfe.util
 
 import scala.annotation.tailrec
 import scala.reflect.ClassTag
-import scalaxy.loops._
+//import scalaxy.loops._
+//import scalaxy.streams.optimize
+
 
 /**
  * @author luke
@@ -170,7 +172,7 @@ object Multidimensional { //todo: views!
       if (this.labels.toSeq == destination.labels.toSeq) {
         if(this.labels.toSeq == that.labels.toSeq) {
           //All arrays are of the same dimension, and indexed the same way
-          for (i <- (0 until destination.array.length).optimized)
+          for (i <- (0 until destination.array.length))
             destination.array(i) = op(this.array(i), that.array(i))
         } else {
           if(this.labels.length == that.labels.length) LoggerUtil.once(LoggerUtil.warn,

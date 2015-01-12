@@ -3,11 +3,10 @@ package ml.wolfe.fg
 import ml.wolfe.FactorGraph.{Node, Edge}
 import ml.wolfe.MoreArrayOps._
 import ml.wolfe.{Wolfe, FactorieVector, FactorGraph}
-import scalaxy.loops._
+// import scalaxy.loops._
 import scala.util.Random
 import cc.factorie.la.DenseTensor1
 import math._
-
 
 /**
  * @author Sebastian Riedel
@@ -77,7 +76,7 @@ class DiscreteVar[T](var domain: Array[T], override val label:String = "") exten
 
   override def entropy() = {
     var result = 0.0
-    for (i <- (0 until b.length).optimized) {
+    for (i <- (0 until b.length)) {
       result -= math.exp(b(i)) * b(i) //messages are in log space
     }
     result
@@ -101,36 +100,35 @@ class DiscreteVar[T](var domain: Array[T], override val label:String = "") exten
     val node = edge.n
     val m = edge.msgs.asDiscrete
     System.arraycopy(in, 0, m.n2f, 0, m.n2f.length)
-    for (i <- (0 until dim).optimized) {
-      for (e <- (0 until node.edges.length).optimized; if e != edge.indexInNode)
+    for (i <- (0 until dim)) {
+      for (e <- (0 until node.edges.length); if e != edge.indexInNode)
         m.n2f(i) += node.edges(e).msgs.asDiscrete.f2n(i)
     }
   }
 
   override def powN2F() = {
     val sums = in.clone()
-    for (i <- (0 until dim).optimized)
-      for (e <- (0 until node.edges.length).optimized)
-        sums(i) += node.edges(e).msgs.asDiscrete.f2n(i)
+      for (i <- (0 until dim))
+        for (e <- (0 until node.edges.length))
+          sums(i) += node.edges(e).msgs.asDiscrete.f2n(i)
 
-    for (i <- (0 until dim).optimized)
-      for (e <- (0 until node.edges.length).optimized)
-        node.edges(e).msgs.asDiscrete.n2f(i) = sums(i) - node.edges(e).msgs.asDiscrete.n2f(i)
+      for (i <- (0 until dim))
+        for (e <- (0 until node.edges.length))
+          node.edges(e).msgs.asDiscrete.n2f(i) = sums(i) - node.edges(e).msgs.asDiscrete.n2f(i)
   }
 
   override def updateDualN2F(edge:Edge, stepSize:Double) = {
     val m = edge.msgs.asDiscrete
-    for(i <- (0 until m.n2f.size).optimized)
-      m.n2f(i) = m.n2f(i) - stepSize * (m.f2n(i) - b(i))
-  }
+    for(i <- (0 until m.n2f.size))
+      m.n2f(i) = m.n2f(i) - stepSize * (m.f2n(i) - b(i)) }
 
   var fixedSetting = false
   override def fixMapSetting(overwrite:Boolean = false):Unit = {
     if(! fixedSetting || overwrite) {
       var maxScore = Double.NegativeInfinity
-      for (i <- (0 until dim).optimized) {
+      for (i <- (0 until dim)) {
         var score = in(i)
-        for (e <- (0 until node.edges.length).optimized)
+        for (e <- (0 until node.edges.length))
           score += node.edges(e).msgs.asDiscrete.f2n(i)
         if (score > maxScore) {
           maxScore = score

@@ -2,7 +2,7 @@ package ml.wolfe.fg
 
 import breeze.linalg._
 import ml.wolfe.MoreArrayOps._
-import scalaxy.loops._
+// import scalaxy.loops._
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -44,8 +44,8 @@ trait AD3GenericPotential extends DiscretePotential {
     // todo: cache solution (see page 15)
     // M'a
     val Mta = DenseVector.zeros[Double](settings.length)
-    for (k <- (0 until vars.size).optimized) {
-      for (i <- (0 until settings.length).optimized) {
+    for (k <- (0 until vars.size)) {
+      for (i <- (0 until settings.length)) {
         Mta(i) += vars(k).b(settings(i)(k))
         Mta(i) += msgss(k).n2f(settings(i)(k)) / stepSize
       }
@@ -59,7 +59,7 @@ trait AD3GenericPotential extends DiscretePotential {
         ANull
       } else {
         val rhsKKT = DenseVector.vertcat(Mta(activeSet).toDenseVector, DenseVector.ones[Double](1))
-        for (i <- (0 until activeSet.size).optimized) {
+        for (i <- (0 until activeSet.size)) {
           val entry = TablePotential.settingToEntry(settings(activeSet(i)), dims)
           rhsKKT(i) += scores(entry) / stepSize
         }
@@ -105,12 +105,12 @@ trait AD3GenericPotential extends DiscretePotential {
 
     }
 
-    for (j <- (0 until msgss.size).optimized)
+    for (j <- (0 until msgss.size))
       fill(msgss(j).f2n, 0)
 
     for(r <- activeSet) {
       val setting = settings(r)
-      for (j <- (0 until msgss.size).optimized)
+      for (j <- (0 until msgss.size))
         msgss(j).f2n(setting(j)) += solution(r)
     }
   }
@@ -171,8 +171,8 @@ trait AD3GenericPotential extends DiscretePotential {
       // At this point the matrix basis is out of order - we need to swap the final two dimensions
       // (corresponding to tau and v(r), respectively)
       val n = activeSet.length
-      for(i <- (0 until n+2).optimized) { val x = AInv(i, n+1); AInv(i, n+1) = AInv(i, n); AInv(i, n) = x }
-      for(i <- (0 until n+2).optimized) { val x = AInv(n+1, i); AInv(n+1, i) = AInv(n, i); AInv(n, i) = x }
+      for(i <- (0 until n+2)) { val x = AInv(i, n+1); AInv(i, n+1) = AInv(i, n); AInv(i, n) = x }
+      for(i <- (0 until n+2)) { val x = AInv(n+1, i); AInv(n+1, i) = AInv(n, i); AInv(n, i) = x }
     }
 
   }
@@ -185,14 +185,14 @@ trait AD3GenericPotential extends DiscretePotential {
     val B = CSCMatrix.Builder
 
     // Permutation
-    for(i <- (0 until n+1).optimized) {
+    for(i <- (0 until n+1)) {
       val x = AInv(i, s)
-      for(j <- (s until n).optimized) AInv(i, j) = AInv(i, j+1)
+      for(j <- (s until n)) AInv(i, j) = AInv(i, j+1)
       AInv(i, n) = x
     }
-    for(i <- (0 until n+1).optimized) {
+    for(i <- (0 until n+1)) {
       val x = AInv(s, i)
-      for(j <- (s until n).optimized) AInv(j, i) = AInv(j+1, i)
+      for(j <- (s until n)) AInv(j, i) = AInv(j+1, i)
       AInv(n, i) = x
     }
 
@@ -232,9 +232,9 @@ trait AD3GenericPotential extends DiscretePotential {
 
   private def getA():DenseMatrix[Double] = {
     val A = DenseMatrix.zeros[Double](activeSet.size + 1, activeSet.size + 1)
-    for (i <- (0 until activeSet.length).optimized) {
-      for (j <- (0 until activeSet.length).optimized)
-        for (k <- (0 until vars.size).optimized)
+    for (i <- (0 until activeSet.length)) {
+      for (j <- (0 until activeSet.length))
+        for (k <- (0 until vars.size))
           if (settings(activeSet(i))(k) == settings(activeSet(j))(k)) A(i, j) += 1
       A(activeSet.size, i) = 1
       A(i, activeSet.size) = 1

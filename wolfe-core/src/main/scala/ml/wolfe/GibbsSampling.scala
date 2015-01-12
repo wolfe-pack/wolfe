@@ -5,7 +5,7 @@ import ml.wolfe.fg.{CantProposeException, ContinuousVar, DiscreteVar, Var}
 
 import scala.collection.mutable.ArrayBuffer
 import scala.math._
-import scalaxy.loops._
+// import scalaxy.loops._
 import scala.util.Random
 
 /**
@@ -20,7 +20,7 @@ object GibbsSampling {
 
     val unobservedNodes = fg.nodes.filterNot(_.variable.isObserved)
 
-    for(i <- (0 until iterations).optimized) {
+    for(i <- (0 until iterations)) {
       //println( (for(n <- fg.nodes if !n.variable.isObserved) yield n.variable.label + ": " + n.variable.value).mkString("    ") + "\n")
       val n = unobservedNodes(Random.nextInt(unobservedNodes.length))
       sample(n.variable, fg)
