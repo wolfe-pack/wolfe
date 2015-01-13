@@ -2,7 +2,7 @@ package ml.wolfe.fg20
 
 import ml.wolfe.MoreArrayOps._
 
-import scalaxy.loops._
+//import scalaxy.loops._
 
 
 /**
@@ -14,7 +14,7 @@ object TablePotential {
     val count = dims.product
     val settings = Array.ofDim[Array[Int]](count)
     val scores = Array.ofDim[Double](count)
-    for (i <- (0 until count).optimized) {
+    for (i <- (0 until count)) { //.optimized) {
       val setting = TablePotential.entryToSetting(i, dims)
       val score = pot(setting)
       settings(i) = setting
@@ -43,7 +43,7 @@ object TablePotential {
    */
   final def settingToEntry(setting: Seq[Int], dims: Array[Int]) = {
     var result = 0
-    for (i <- (0 until dims.length).optimized) {
+    for (i <- (0 until dims.length)) { // .optimized) {
       result = setting(i) + result * dims(i)
     }
     result
@@ -110,7 +110,7 @@ object TablePotential {
   final def entryToSetting(entry: Int, dims: Array[Int]) = {
     val result = Array.ofDim[Int](dims.length)
     var current = entry
-    for (i <- (0 until dims.length).optimized) {
+    for (i <- (0 until dims.length)) { // .optimized) {
       val value = current % dims(dims.length - i - 1)
       result(dims.length - i - 1) = value
       current = current / dims(dims.length - i - 1)
