@@ -1,13 +1,14 @@
 package ml.wolfe.macros
 
-import scala.reflect.macros.Context
+import scala.reflect.macros.blackbox
+import scala.reflect.macros.blackbox.Context
 import scala.collection.mutable
 
 
 /**
  * A group of general purpose transformers defined with respect to some universe.
  */
-trait Transformers[C<:Context] extends SymbolRepository[C]{
+trait Transformers[C<:blackbox.Context] extends SymbolRepository[C]{
 
   this: HasContext[C] =>
 

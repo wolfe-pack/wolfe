@@ -141,7 +141,7 @@ trait MetaGradientCalculators[C <: Context] extends MetaStructures[C]
           println(score + " vs " + _graph.value)
 
      */
-    Good(MetaGradientCalculator(className, context.resetAllAttrs(classDef)))
+    Good(MetaGradientCalculator(className, context.untypecheck(classDef)))
 
   }
 

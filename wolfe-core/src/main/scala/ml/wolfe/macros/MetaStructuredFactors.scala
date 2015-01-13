@@ -196,7 +196,7 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C]
             case Apply(TypeApply(f, _), funArgs) => Apply(f, funArgs)
             case TypeApply(s: Select, _) => s
           })
-          val reset = context.resetAllAttrs(removeTypes)
+          val reset = context.untypecheck(removeTypes)
           EdgeData(Seq(), reset)
 
       }
