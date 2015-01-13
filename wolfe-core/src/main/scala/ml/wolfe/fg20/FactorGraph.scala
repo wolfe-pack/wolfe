@@ -194,7 +194,10 @@ trait FactorGraph extends ProblemListener {
     factor
   }
 
-  def nodes:Iterator[NodeType] = var2DiscNode.values.iterator ++ var2ContNode.values.iterator ++ var2VectNode.values.iterator
+  def nodes:Iterator[NodeType] =
+    var2DiscNode.values.iterator.asInstanceOf[Iterator[NodeType]] ++
+    var2ContNode.values.iterator.asInstanceOf[Iterator[NodeType]] ++
+    var2VectNode.values.iterator.asInstanceOf[Iterator[NodeType]]
   def edges = factors.iterator.flatMap(_.edges)
 
   def discNodes = var2DiscNode.valuesIterator
