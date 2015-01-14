@@ -50,8 +50,8 @@ object BuildSettings {
   )
 
   val globalDependencies = libraryDependencies ++= Seq(
-    "org.scalautils" % "scalautils_2.10" % "2.0",
-    "org.scalatest" %% "scalatest" % "3.0.0-SNAP4" % "test",
+    "org.scalautils" % "scalautils_2.11" % "2.1.5",
+    "org.scalatest" % "scalatest_2.11" % "2.2.1" % "test",
     "com.typesafe" % "config" % "1.2.1",
 //    "com.github.axel22" %% "scalameter" % "0.4",
 //    "com.nativelibs4java" %% "scalaxy-loops" % "0.3-SNAPSHOT" % "provided",
@@ -84,7 +84,6 @@ object BuildSettings {
 
   )
 
-
   val coreDependencies = libraryDependencies ++= Seq(
     "net.sf.trove4j" % "trove4j" % "3.0.3",
     "cc.factorie" % "factorie_2.11" % "1.1",
@@ -104,7 +103,7 @@ object BuildSettings {
   )
 
   val neuralDependencies = libraryDependencies ++= Seq(
-    "org.scala-lang" % "scala-swing" % "2.10.0"
+    "org.scala-lang" % "scala-swing" % "2.11.0-M7"
   )
   
   val appDependencies = libraryDependencies ++= Seq(
