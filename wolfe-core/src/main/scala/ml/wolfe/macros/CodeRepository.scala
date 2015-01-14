@@ -49,7 +49,7 @@ trait CodeRepository[C <: blackbox.Context] extends HasContext[C] with Transform
             val withContext = context :: args
             val result = method.invoke(instance, withContext: _*).asInstanceOf[context.Expr[Any]]
             val returnType = TypeTree(symbol.asMethod.returnType)
-            Some(DefDef(NoMods, symbol.name, Nil, params, returnType, result.tree))
+            Some(DefDef(NoMods, symbol.name.toTermName, Nil, params, returnType, result.tree))
 //            None
           case None => None
         }
