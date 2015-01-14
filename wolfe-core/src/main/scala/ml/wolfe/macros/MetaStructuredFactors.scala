@@ -51,7 +51,7 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C]
     lazy val setupChildren = for (i <- factors.indices) yield
       q"val ${ fieldNames(i) } = new ${ factors(i).className }(..$childArgs)"
 
-    lazy val classDef = q"""
+    lazy val classDef:Tree = q"""
       final class $className(..$constructorArgs) extends ml.wolfe.macros.StructuredFactor[${ structure.argType }] {
         ..$argClasses
         ..$setupChildren
@@ -109,7 +109,7 @@ trait MetaStructuredFactors[C <: Context] extends MetaStructures[C]
 
     val setupChildren = tupleProcessor(keyDomNames, tmpNames, q"new ${ child.className }(..$childArgs)")
 
-    val classDef = q"""
+    val classDef:Tree = q"""
       final class $className(..$ownParams) extends ml.wolfe.macros.StructuredFactor[${ structure.argType }] {
         ..$domainDefs
         ${ child.classDef }

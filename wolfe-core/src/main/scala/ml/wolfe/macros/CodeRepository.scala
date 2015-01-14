@@ -1,5 +1,6 @@
 package ml.wolfe.macros
 
+import scala.collection.mutable
 import scala.language.existentials
 import scala.language.experimental.macros
 import scala.reflect.macros.blackbox
@@ -36,13 +37,15 @@ trait CodeRepository[C <: blackbox.Context] extends HasContext[C] with Transform
             val shortName = symbol.name.encoded
             val methods = loaded.getDeclaredMethods
             val method = methods.find(_.getName == shortName).get
-            val params = symbol.asMethod.paramss.map(_.map(p => {
+            val symbols = new mutable.HashMap[ValDef,Symbol]
+            val params = symbol.asMethod.paramLists.map(_.map(p => {
               val vd = ValDef(NoMods, p.name.toTermName, TypeTree(p.typeSignature), EmptyTree)
-              vd.symbol = p
+              symbols(vd) = p
+              //vd.symbol = p
               vd
             }))
             val args = params.flatMap(_.map(p => {
-              val tree = Ident(p.symbol)
+              val tree = Ident(symbols(p))
               val expr = context.Expr[Any](tree)
               expr
             }))
