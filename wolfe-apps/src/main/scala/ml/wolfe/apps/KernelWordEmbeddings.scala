@@ -2,8 +2,6 @@ package ml.wolfe.apps
 
 import java.io.{FileWriter, BufferedWriter, PrintWriter, File}
 
-import scalaxy.loops._
-
 import ml.wolfe.Wolfe
 import ml.wolfe.nlp.io.IO
 
@@ -58,13 +56,13 @@ object KernelWordEmbeddings {
 
   def matchKernel(c1: Context, c2: Context) = {
     var sum = 0.0
-    for (i <- (0 until c1.words.length).optimized) if (c1.words(i) == c2.words(i)) sum += 1
+    for (i <- (0 until c1.words.length)) if (c1.words(i) == c2.words(i)) sum += 1
     sum
   }
 
   def pairwiseKernel(c1: Context, c2: Context) = {
     var sum = 0.0
-    for (i <- (0 until c1.words.length).optimized; j <- (0 until c2.words.length).optimized)
+    for (i <- (0 until c1.words.length); j <- (0 until c2.words.length))
       if (c1.words(i) == c2.words(j)) sum += wordWeights(c1.words(i))
     sum
   }

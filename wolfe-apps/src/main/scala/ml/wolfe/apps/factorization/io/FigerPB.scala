@@ -163,7 +163,7 @@ object FigerPB {
   }
 
   object Mention {
-    @reflect.BeanProperty val defaultInstance = new Mention()
+    @beans.BeanProperty val defaultInstance = new Mention()
 
     def parseFrom(data: Array[Byte]): Mention = defaultInstance.mergeFrom(data)
     def parseFrom(data: Array[Byte], offset: Int, length: Int): Mention = defaultInstance.mergeFrom(data, offset, length)
@@ -260,7 +260,7 @@ object FigerPB {
     }
 
     object Dependency {
-      @reflect.BeanProperty val defaultInstance = new Dependency()
+      @beans.BeanProperty val defaultInstance = new Dependency()
 
       def parseFrom(data: Array[Byte]): Dependency = defaultInstance.mergeFrom(data)
       def parseFrom(data: Array[Byte], offset: Int, length: Int): Dependency = defaultInstance.mergeFrom(data, offset, length)

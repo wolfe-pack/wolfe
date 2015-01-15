@@ -39,8 +39,10 @@ trait CodeRepository[C <: blackbox.Context] extends HasContext[C] with Transform
             val method = methods.find(_.getName == shortName).get
             val symbols = new mutable.HashMap[ValDef,Symbol]
             val params = symbol.asMethod.paramLists.map(_.map(p => {
-              val vd = ValDef(NoMods, p.name.toTermName, TypeTree(p.typeSignature), EmptyTree)
+              //val vd = ValDef(NoMods, p.name.toTermName, TypeTree(p.typeSignature), EmptyTree)
+              val vd = context.internal.valDef(p)
               symbols(vd) = p
+              //todo: not setting the parameter symbol breaks things downstream
               //vd.symbol = p
               vd
             }))
