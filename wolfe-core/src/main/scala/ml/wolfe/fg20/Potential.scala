@@ -35,6 +35,9 @@ trait Potential extends Clique {
 
 }
 
+/**
+ * A clique of variables of different types.
+ */
 trait Clique {
 
   /**
@@ -127,6 +130,17 @@ trait Clique {
     discVars.map(v => new VectMsg()).toArray)
 
 }
+
+/**
+ * Basic helpers for cliques.
+ */
+object Clique {
+  val empty = new SimpleClique()
+}
+
+class SimpleClique(val discVars: Array[DiscVar[Any]] = Array.empty,
+                   val contVars: Array[ContVar] = Array.empty,
+                   val vectVars:Array[VectVar] = Array.empty) extends Clique
 
 /**
  * A Scorer is in charge of calculating the scores that a potential assigns to each state.

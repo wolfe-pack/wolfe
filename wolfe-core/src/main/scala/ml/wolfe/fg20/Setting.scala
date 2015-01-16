@@ -42,7 +42,6 @@ class Setting(numDisc: Int, numCont: Int = 0, numVect: Int = 0) {
     for (i <- 0 until vect.length) if (vect(i) != null) vect(i) := 0.0
   }
 
-
   final def copyTo(that: Setting, mapFromThisIndextoThatIndex: ArgMap): Unit = {
     for (i <- 0 until disc.length) that.disc(mapFromThisIndextoThatIndex.discArgs(i)) = disc(i)
     for (i <- 0 until cont.length) that.cont(mapFromThisIndextoThatIndex.contArgs(i)) = cont(i)
@@ -62,6 +61,17 @@ class Setting(numDisc: Int, numCont: Int = 0, numVect: Int = 0) {
     for (i <- 0 until disc.length) that.discObs(mapFromThisIndextoThatIndex.discArgs(i)) = !observed
     for (i <- 0 until cont.length) that.contObs(mapFromThisIndextoThatIndex.contArgs(i)) = !observed
     for (i <- 0 until vect.length) that.vectObs(mapFromThisIndextoThatIndex.vectArgs(i)) = !observed
+  }
+
+  def epsEquals(eps: Double, that: Setting): Boolean = {
+    if (disc.length != that.disc.length) return false
+    if (cont.length != that.cont.length) return false
+    if (vect.length != that.vect.length) return false
+
+    for (i <- 0 until disc.length) if (disc(i) != that.disc(i)) return false
+    for (i <- 0 until cont.length) if (math.abs(cont(i) - that.cont(i)) > eps) return false
+    for (i <- 0 until vect.length; j <- 0 until vect(i).size) if (math.abs(vect(i)(j) - that.vect(i)(j)) > eps) return false
+    true
   }
 
 
@@ -132,4 +142,16 @@ final class PartialSetting(numDisc: Int, numCont: Int = 0, numVect: Int = 0) ext
  */
 final class DoubleBuffer(var value: Double = 0.0)
 
+/**
+ * Class that represents a mapping from variable indices in one clique to indices in another clique
+ */
 class ArgMap(val discArgs: Array[Int], val contArgs: Array[Int], val vectArgs: Array[Int])
+
+object ArgMap {
+  def offset(clique: Clique, discOffset: Int = 0, contOffset: Int = 0, vectOffset: Int = 0) = {
+    new ArgMap(
+      clique.discVars.indices.map(_ + discOffset).toArray,
+      clique.contVars.indices.map(_ + contOffset).toArray,
+      clique.vectVars.indices.map(_ + vectOffset).toArray)
+  }
+}
