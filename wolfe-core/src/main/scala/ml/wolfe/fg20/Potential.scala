@@ -55,6 +55,12 @@ trait Clique {
    */
   def vectVars: Array[VectVar]
 
+
+  /**
+   * @return all variables.
+   */
+  def vars = discVars.iterator ++ contVars.iterator ++ vectVars.iterator
+
   /**
    * Convenience method to create setting objects corresponding to the signature of the potential.
    * @return a setting that has as many discrete, continuous and vector settings as the potential has corresponding
@@ -136,6 +142,22 @@ trait Clique {
  */
 object Clique {
   val empty = new SimpleClique()
+
+  def merge(cliques:Seq[Clique]) = {
+    new SimpleClique(
+      cliques.flatMap(_.discVars).distinct.toArray,
+      cliques.flatMap(_.contVars).distinct.toArray,
+      cliques.flatMap(_.vectVars).distinct.toArray)
+  }
+
+  def create(vars:Seq[Var[Any]]) = {
+    new SimpleClique(
+      vars.collect({case v:DiscVar[_] => v}).toArray,
+      vars.collect({case v:ContVar => v}).toArray,
+      vars.collect({case v:VectVar => v}).toArray
+    )
+  }
+
 }
 
 class SimpleClique(val discVars: Array[DiscVar[Any]] = Array.empty,
