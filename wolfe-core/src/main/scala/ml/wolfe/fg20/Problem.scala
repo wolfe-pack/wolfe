@@ -60,7 +60,7 @@ trait Var[+T] {
  * @param name the name of the variable.
  * @tparam T the type of the values that can be assigned to this variable.
  */
-class DiscVar[+T](val dom: Seq[T], val name: String = "anon") extends Var[T]{
+class DiscVar[+T](val dom: IndexedSeq[T], val name: String = "anon") extends Var[T]{
   override def default: T = dom.head
 }
 

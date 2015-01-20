@@ -25,11 +25,11 @@ object AtomicSearchSpace {
   type Cont = AtomicSearchSpace[Double, ContVar]
   type Vect = AtomicSearchSpace[FactorieVector, VectVar]
 
-  def disc[T](name:String,dom:Seq[T]) = new Disc[T](new DiscVar[T](dom,name))
+  def disc[T](name:String,dom:IndexedSeq[T]) = new Disc[T](new DiscVar[T](dom,name))
   def cont(name:String) = new Cont(new ContVar(name))
-  def vect(name:String, dim:Int) = new Vect(new VectVar(dim, name))
+  def vect(name:String, dim:Int = -1) = new Vect(new VectVar(dim, name))
 
-  def constDisc[T](value:T) = new Disc[T](new DiscVar[T](Seq(value)))
+  def constDisc[T](value:T) = new Disc[T](new DiscVar[T](IndexedSeq(value)))
 
 }
 
@@ -43,6 +43,8 @@ class AtomicSearchSpace[T, V <: Var[T]](val variable: V) extends SearchSpace[T] 
 object IndexedSeqSearchSpace {
   type Disc[T] = IndexedSeqSearchSpace[T, AtomicSearchSpace.Disc[T]]
   type Vect = IndexedSeqSearchSpace[FactorieVector, AtomicSearchSpace.Vect]
+
+
 
 }
 
