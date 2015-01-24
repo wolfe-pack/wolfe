@@ -116,7 +116,12 @@ case class Document(source: String,
  * Class to represent coreference annotation
  * @param mentions sequence of CorefMention elements
  */
-case class CorefAnnotation(mentions: Seq[CorefMention] = Seq.empty)
+case class CorefAnnotation(mentions: Seq[CorefMention] = Seq.empty) {
+
+  def hasMention(s: Int, i: Int, j: Int): Boolean = {
+    mentions.exists(m => m.sentence == s && m.start == i && m.end == j)
+  }
+}
 
 object CorefAnnotation {
   val empty = CorefAnnotation()
@@ -127,11 +132,11 @@ object CorefAnnotation {
  * Class to represent coreference mention
  * @param clusterID ID of the cluster (chain) of connected mentions
  * @param sentence sentence index
- * @param head head of the coreference mention
  * @param start starting index
  * @param end ending index (points to the first token AFTER the mention)
+ * @param head head of the coreference mention
  */
-case class CorefMention(clusterID: Int, sentence: Int, head: Int, start: Int, end: Int)
+case class CorefMention(clusterID: Int, sentence: Int, start: Int, end: Int, head: Int = -1)
 
 /**
  * Class to represent IR information for a document
