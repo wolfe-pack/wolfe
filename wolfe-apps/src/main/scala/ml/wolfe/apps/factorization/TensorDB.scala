@@ -79,7 +79,7 @@ trait Tensor {
   def get(key1: CellIx, key2: CellIx = DefaultIx, key3: CellIx = DefaultIx): Option[Cell]
 }
 
-class TensorDB(k: Int = 100) extends Tensor {
+class TensorDB(val k: Int = 100) extends Tensor {
   val random = new Random(0l)
 
   /**
