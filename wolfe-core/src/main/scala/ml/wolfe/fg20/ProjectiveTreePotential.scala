@@ -6,8 +6,8 @@ package ml.wolfe.fg20
  * @author Sebastian Riedel
  */
 class ProjectiveTreePotential(val slen: Int,
-                              val edges: GraphSearchSpace.Disc[Boolean],
-                              val scores: GraphSearchSpace.Cont) extends Potential with SupportsArgmax {
+                              val edges: GraphDomain.Disc[Boolean],
+                              val scores: GraphDomain.Cont) extends Potential with SupportsArgmax {
 
   import ProjectiveTreePotential._
 

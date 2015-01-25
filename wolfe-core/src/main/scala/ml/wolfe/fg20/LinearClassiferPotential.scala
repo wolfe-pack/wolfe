@@ -5,8 +5,8 @@ import ml.wolfe.FactorieVector
 /**
  * @author Sebastian Riedel
  */
-class LinearClassiferPotential[T](labelSpace: AtomicSearchSpace.Disc[T],
-                                  weightSpace: AtomicSearchSpace.Vect,
+class LinearClassiferPotential[T](labelSpace: AtomicDomain.Disc[T],
+                                  weightSpace: AtomicDomain.Vect,
                                   features: T => FactorieVector) extends Potential
                                                                          with SupportsArgmax
                                                                          with Differentiable {

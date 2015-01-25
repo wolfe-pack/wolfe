@@ -9,10 +9,12 @@ import ml.wolfe.FactorieVector
  *
  * @author Sebastian Riedel
  */
-trait SearchSpace[T] extends Clique {
+trait Domain[T] extends Clique {
+  type Value = T
   def variables: Iterator[Var[Any]]
   def toValue(state: State): T
-  def observation(value: T): State
+  def toValue(setting:Setting):Value = toValue(toState(setting))
+  def observation(value: Value): State
 
   def discVars = variables.collect({ case d: DiscVar[_] => d }).toArray
   def contVars = variables.collect({ case c: ContVar => c }).toArray
@@ -20,10 +22,10 @@ trait SearchSpace[T] extends Clique {
 
 }
 
-object AtomicSearchSpace {
-  type Disc[T] = AtomicSearchSpace[T, DiscVar[T]]
-  type Cont = AtomicSearchSpace[Double, ContVar]
-  type Vect = AtomicSearchSpace[FactorieVector, VectVar]
+object AtomicDomain {
+  type Disc[T] = AtomicDomain[T, DiscVar[T]]
+  type Cont = AtomicDomain[Double, ContVar]
+  type Vect = AtomicDomain[FactorieVector, VectVar]
 
   def disc[T](name:String,dom:IndexedSeq[T]) = new Disc[T](new DiscVar[T](dom,name))
   def cont(name:String) = new Cont(new ContVar(name))
@@ -33,24 +35,24 @@ object AtomicSearchSpace {
 
 }
 
-class AtomicSearchSpace[T, V <: Var[T]](val variable: V) extends SearchSpace[T] {
+class AtomicDomain[T, V <: Var[T]](val variable: V) extends Domain[T] {
   def toValue(state: State) = state(variable)
   def observation(value: T) = State.single(variable, value)
   def variables = Iterator(variable)
 
 }
 
-object IndexedSeqSearchSpace {
-  type Disc[T] = IndexedSeqSearchSpace[T, AtomicSearchSpace.Disc[T]]
-  type Vect = IndexedSeqSearchSpace[FactorieVector, AtomicSearchSpace.Vect]
+object IndexedSeqDomain {
+  type Disc[T] = IndexedSeqDomain[T, AtomicDomain.Disc[T]]
+  type Vect = IndexedSeqDomain[FactorieVector, AtomicDomain.Vect]
 
 
 
 }
 
-class IndexedSeqSearchSpace[T, S <: SearchSpace[T]](val size: Int,
+class IndexedSeqDomain[T, S <: Domain[T]](val size: Int,
                                                     elementSpace: String => S,
-                                                    val name: String = "anon") extends SearchSpace[IndexedSeq[T]] {
+                                                    val name: String = "anon") extends Domain[IndexedSeq[T]] {
   lazy val seq = Range(0, size).map(i => elementSpace(name + "(" + i + ")"))
   def toValue(state: State) = seq.map(_.toValue(state))
   def observation(value: IndexedSeq[T]) = ???
@@ -58,15 +60,15 @@ class IndexedSeqSearchSpace[T, S <: SearchSpace[T]](val size: Int,
 
 }
 
-object GraphSearchSpace {
-  type Disc[T] = GraphSearchSpace[T, AtomicSearchSpace.Disc[T]]
-  type Cont = GraphSearchSpace[Double, AtomicSearchSpace.Cont]
+object GraphDomain {
+  type Disc[T] = GraphDomain[T, AtomicDomain.Disc[T]]
+  type Cont = GraphDomain[Double, AtomicDomain.Cont]
 }
 
-class GraphSearchSpace[V, S <: SearchSpace[V]](val sources: Range,
+class GraphDomain[V, S <: Domain[V]](val sources: Range,
                                                val targets: Range,
                                                valueSpace: String => S,
-                                               val name: String = "anon") extends SearchSpace[Map[(Int, Int), V]] {
+                                               val name: String = "anon") extends Domain[Map[(Int, Int), V]] {
   val sourceCount = sources.size
   val targetCount = sources.size
   def variables = ???
@@ -75,14 +77,14 @@ class GraphSearchSpace[V, S <: SearchSpace[V]](val sources: Range,
   final def offset(src: Int, tgt: Int) = src * sources.size + tgt
 }
 
-object MapSearchSpace {
-  type Disc[K, T] = MapSearchSpace[K, T, AtomicSearchSpace.Disc[T]]
-  type Cont[K] = MapSearchSpace[K, Double, AtomicSearchSpace.Cont]
+object MapDomain {
+  type Disc[K, T] = MapDomain[K, T, AtomicDomain.Disc[T]]
+  type Cont[K] = MapDomain[K, Double, AtomicDomain.Cont]
 }
 
-class MapSearchSpace[K, V, VS <: SearchSpace[V]](keys: Iterable[K],
+class MapDomain[K, V, VS <: Domain[V]](keys: Iterable[K],
                                                  valueSpace: String => VS,
-                                                 val name: String = "anon") extends SearchSpace[Map[K, V]] {
+                                                 val name: String = "anon") extends Domain[Map[K, V]] {
   lazy val map = keys.map(k => k -> valueSpace(name + "(" + k + ")")).toMap
   def toValue(state: State) = map.mapValues(_.toValue(state))
   def observation(value: Map[K, V]) = {
@@ -97,19 +99,19 @@ class MapSearchSpace[K, V, VS <: SearchSpace[V]](keys: Iterable[K],
 
 }
 
-class ProductSearchSpace2[T1, T2, S1 <: SearchSpace[T1], S2 <: SearchSpace[T2], P](val space1: S1,
+class ProductDomain2[T1, T2, S1 <: Domain[T1], S2 <: Domain[T2], P](val space1: S1,
                                                                                    val space2: S2,
                                                                                    val ctr: (T1, T2) => P,
                                                                                    val arg1: P => T1,
-                                                                                   val arg2: P => T2) extends SearchSpace[P] {
+                                                                                   val arg2: P => T2) extends Domain[P] {
   def toValue(state: State) = ctr(space1.toValue(state), space2.toValue(state))
   def observation(value: P) = space1.observation(arg1(value)) + space2.observation(arg2(value))
   def variables = space1.variables ++ space2.variables
 }
 
-object ProductSearchSpace2 {
+object ProductDomain2 {
 
-  def apply[T1,T2,S1 <: SearchSpace[T1], S2 <: SearchSpace[T2]](space1: S1,space2: S2) =
-    new ProductSearchSpace2[T1,T2,S1,S2,(T1,T2)](space1,space2, (x1:T1,x2:T2) => (x1,x2), _._1, _._2)
+  def apply[T1,T2,S1 <: Domain[T1], S2 <: Domain[T2]](space1: S1,space2: S2) =
+    new ProductDomain2[T1,T2,S1,S2,(T1,T2)](space1,space2, (x1:T1,x2:T2) => (x1,x2), _._1, _._2)
 }
 

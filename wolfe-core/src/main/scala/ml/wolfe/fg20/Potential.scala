@@ -280,7 +280,7 @@ object Argmax {
    * @param observation the observed state.
    * @return the result of an argmax.
    */
-  def apply[T](space: SearchSpace[T], observation: State = State.empty)(pot: SupportsArgmax): T = {
+  def apply[T](space: Domain[T], observation: State = State.empty)(pot: SupportsArgmax): T = {
     val argmaxer = pot.argmaxer()
     val result = pot.createSetting()
     val scoreBuffer = new DoubleBuffer()
@@ -292,7 +292,7 @@ object Argmax {
 
 object Gradient {
 
-  def apply[T](space: SearchSpace[T], at: State = State.empty, observed: Set[Var[Any]] = Set.empty)(pot: Differentiable): T = {
+  def apply[T](space: Domain[T], at: State = State.empty, observed: Set[Var[Any]] = Set.empty)(pot: Differentiable): T = {
     val calc = pot.gradientCalculator()
     val result = pot.createSetting()
     val params = pot.toPartialSetting(at, false)
