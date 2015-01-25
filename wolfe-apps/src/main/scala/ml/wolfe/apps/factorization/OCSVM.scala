@@ -16,16 +16,31 @@ import scala.io.Source
 import scala.util.Random
 
 
-object BreezeConverter {
+object OCSVMImplicits {
   implicit def breezeToFactorieVector(breezeVector: breeze.linalg.DenseVector[Double]): FactorieVector =
     new DenseTensor1(breezeVector.toArray)
+
+  implicit class ElementWiseVectorMul(self: Tensor1) {
+    def :* (other: Tensor1): Tensor1 = other match {
+      case s: SparseIndexedTensor1 => {
+        val newSelf = self.copy
+
+        s.activeElements.foreach(elem => {
+          val (ix, value) = elem
+          newSelf.update(ix, value * self(ix))
+        })
+        newSelf
+      }
+    }
+  }
 }
+
 
 //rockt: could rho be a doublevar instead of a vectorvar?
 //rockt: might be necessary to put l2 regularization into this factor as well
 //fixme: get rid of idx, since it is only used for debugging
 class OneClassSVMPerInstanceLoss(weightsEdge: FactorGraph.Edge, rhoEdge: FactorGraph.Edge,
-                                 val x: FactorieVector, val y: Double, val nu: Double) extends Potential {
+                                 val x: FactorieVector, val y: Double, val nu: Double, mask: FactorieVector) extends Potential {
   override def valueForCurrentSetting(): Double = {
     val w = weightsEdge.n.variable.asVector.setting    
     val rho = rhoEdge.n.variable.asVector.setting(0)
@@ -33,14 +48,33 @@ class OneClassSVMPerInstanceLoss(weightsEdge: FactorGraph.Edge, rhoEdge: FactorG
   }
 
   override def valueAndGradientForAllEdges() = {
+    import OCSVMImplicits._
+
     val w = weightsEdge.msgs.asVector.n2f
+
+    //assert(x.activeElements.map(_._1).toSet subsetOf mask.activeElements.map(_._1).toSet)
+
     val rho = rhoEdge.msgs.asVector.n2f(0)
 
     if (rho >= (w dot x)) {
-      weightsEdge.msgs.asVector.f2n = (w * -nu) + x
+      //weightsEdge.msgs.asVector.f2n = (w * -nu) + x
+
+      /*
+      println("x:                    " + x.toString())
+      println("m:                    " + mask.toString())
+      println("m * -nu:              " + (mask * -nu).toString())
+      println("w:                    " + w.toString())
+      println("w * (mask * -nu):     " + (w :* (mask * -nu)).toString())
+      println("w * (mask * -nu) + x: " + ((w :* (mask * -nu)) + x).toString())
+      println()
+      */
+
+      weightsEdge.msgs.asVector.f2n = (w :* (mask * -nu)) + x
+
       rhoEdge.msgs.asVector.f2n = new DenseTensor1(Array(nu - 1))
     } else {
-      weightsEdge.msgs.asVector.f2n = w * -nu
+      //weightsEdge.msgs.asVector.f2n = w * -nu
+      weightsEdge.msgs.asVector.f2n = w :* (mask * -nu)
       rhoEdge.msgs.asVector.f2n = new DenseTensor1(Array(nu))
     }
 
@@ -49,7 +83,7 @@ class OneClassSVMPerInstanceLoss(weightsEdge: FactorGraph.Edge, rhoEdge: FactorG
 }
 
 class LowRankRegularizer(weightsEdges: Seq[FactorGraph.Edge], epsilon: Double, gamma: Double) extends Potential {
-  import BreezeConverter._
+  import OCSVMImplicits._
 
   lazy val numClassifiers = weightsEdges.size
   lazy val numWeights = weightsEdges(0).msgs.asVector.n2f.length
@@ -72,7 +106,8 @@ class LowRankRegularizer(weightsEdges: Seq[FactorGraph.Edge], epsilon: Double, g
     val M = A + DenseMatrix.eye[Double](numWeights) * epsilon
 
     //(WW^T + εI)^(1/2)
-    val (lambdas, _, v) = eig(M)
+    val (lambdas, _, v) = eig(M) //fixme: runtime bottleneck
+    //val (lambdas, v) = eigSym(M) //fixme: runtime bottleneck
     for (i <- 0 until numWeights) {
       lambdas(i) = math.sqrt(lambdas(i))
     }
@@ -80,7 +115,9 @@ class LowRankRegularizer(weightsEdges: Seq[FactorGraph.Edge], epsilon: Double, g
     val rootM: DenseMatrix[Double] = temp * v.t
 
     //(WW^T + εI)^(1/2) / tr((WW^T + εI)^(1/2))
+    //fixme
     val D: DenseMatrix[Double] = rootM / trace(rootM)
+    //val D: DenseMatrix[Double] = (DenseMatrix.eye[Double](numWeights)) :* 3.0 //sanity check
 
     (for (i <- 0 until numClassifiers) yield {
       val w = W(::, i)
@@ -111,15 +148,25 @@ class LowRankRegularizer(weightsEdges: Seq[FactorGraph.Edge], epsilon: Double, g
     val M = A + DenseMatrix.eye[Double](numWeights) * epsilon
 
     //(WW^T + εI)^(1/2)
-    val (lambdas, _, v) = eig(M)
+    val (lambdas, _, v) = eig(M) //fixme: runtime bottleneck
+    //val (lambdas, v) = eigSym(M) //fixme: runtime bottleneck
     for (i <- 0 until numWeights) {
       lambdas(i) = math.sqrt(lambdas(i))
     }
     val temp: DenseMatrix[Double] = v * diag(lambdas)
     val rootM: DenseMatrix[Double] = temp * v.t
 
+    /*
+    val TMP = cholesky(M)
+    val (u, s, _) = svd(TMP)
+    val rootM = (u * s) * u.t
+    */
+
     //(WW^T + εI)^(1/2) / tr((WW^T + εI)^(1/2))
+    //fixme
     val D: DenseMatrix[Double] = rootM / trace(rootM)
+    //val D: DenseMatrix[Double] = (DenseMatrix.eye[Double](numWeights)) :* 3.0 //sanity check
+
 
     (for (i <- 0 until numClassifiers) yield {
       val w = W(::, i)
@@ -134,10 +181,10 @@ class LowRankRegularizer(weightsEdges: Seq[FactorGraph.Edge], epsilon: Double, g
 
 case class XY(xs: Seq[FactorieVector], y: FactorieVector)
 
-case class XYNew(xs: Tensor2, y: FactorieVector, relation: Any)
+case class XYNew(xs: Tensor2, y: FactorieVector, relation: Any, featureMask: FactorieVector)
 
 object OCSVM extends App {
-  import BreezeConverter._
+  import OCSVMImplicits._
   import ml.wolfe.apps.PimpMyFactorie._
 
   val confPath = args.lift(0).getOrElse("conf/mf-oc.conf")
@@ -160,8 +207,8 @@ object OCSVM extends App {
   val fileName = conf.getString("mf.outFile")
 
 
-  val debug = true //whether to use sampled matrices or the NAACL data
-  val loadFormulae = debug && true //whether forumlae should be sampled for debugging
+  val debug = conf.getBoolean("mf.debug") //whether to use sampled matrices or the NAACL data
+  //val loadFormulae = debug && true //whether forumlae should be sampled for debugging
   //val print = false //whether to print the matrix (only do this for small ones!)
 
 
@@ -186,7 +233,8 @@ object OCSVM extends App {
   val matrix =
       if (debug) {
       val tmp = new TensorKB()
-      tmp.sampleTensor(6, 4, 0, 0.5) //samples a matrix
+      //tmp.sampleTensor(6, 4, 0, 0.5) //samples a matrix
+      tmp.sampleTensor(10, 10, 0, 0.25) //samples a matrix
       tmp.toFactorGraph
       println(tmp.toVerboseString(true))
 
@@ -249,8 +297,9 @@ object OCSVM extends App {
   def dbToXYNew(db: TensorKB, relFilter: Any => Boolean = rel => true): Seq[XYNew] = {
     for (r <- db.relations; if relFilter(r)) yield {
       val matrix = new SparseBinaryTensor2(db.dim2, db.dim1)
-      val y = new SparseTensor1(db.dim2)
-
+      val y = new SparseBinaryTensor1(db.dim2)
+      val featureMask = new SparseTensor1(db.dim1) //all indices of features we have seen for this relation
+      
       val progressBar = new ProgressBar(db.getBy1(r).size, 10)
       progressBar.start()
 
@@ -261,12 +310,20 @@ object OCSVM extends App {
         db.getBy2(t._1).filterNot(_._1 == r).foreach(rNew => {
           val rIx = db.cellIxToIntIx1(rNew._1)
           matrix.update(tCurrentIx, rIx, 1.0)
+          featureMask.update(rIx, 1.0)
         })
 
         progressBar(t.toString())
       })
 
-      XYNew(matrix, y, r)
+      /*
+      println(r)
+      println(matrix.toPrettyString)
+      println(featureMask.toPrettyString)
+      println()
+      */
+
+      XYNew(matrix, y, r, featureMask)
     }
   }
 
@@ -294,10 +351,12 @@ object OCSVM extends App {
     "structure/architect",
     "composer/compositions",
     "person/religion",
-    "film/produced_by"*/
+    "film/produced_by" */
   ).toSet
 
   def testRelationFilter(r: Any) = testRelations.exists(s => r.toString.contains(s))
+  //def testRelationFilter(r: Any) = matrix.getBy1(r).size < 5
+  //def testRelationFilter(r: Any) = true
 
 
   val data = dbToXYNew(matrix, r => debug || testRelationFilter(r))
@@ -358,10 +417,20 @@ object OCSVM extends App {
 
   weightnodes.zipWithIndex.foreach(t => {
     val (w, ix) = t
+
+    val wValue = new DenseTensor1(numCols)
+
+    data(ix).featureMask.activeElements.foreach(elem => {
+      val fix = elem._1
+      wValue.update(fix, rand.nextGaussian() * 0.1)
+    })
+
+    /*
     val wValue = new DenseTensor1((0 until numCols).map(i => {
       if (i != ix) rand.nextGaussian() * 0.1
       else 0.0
     }).toArray)
+    */
     w.variable.asVector.b = wValue
     w.variable.asVector.setting = wValue
   })
@@ -372,16 +441,17 @@ object OCSVM extends App {
   for (j <- 0 until R) {
     val m = data(j).xs.dim1
     val y = data(j).y
+    val mask = data(j).featureMask
 
     y.activeElements.foreach { case (ix, target) =>
       fg.buildFactor(Seq(weightnodes(j), rhonodes(j)))(_ => Seq(new VectorMsgs, new VectorMsgs))(
-        edges => new OneClassSVMPerInstanceLoss(edges(0), edges(1), data(j).xs.getSparseRow(ix), target, nu)
+        edges => new OneClassSVMPerInstanceLoss(edges(0), edges(1), data(j).xs.getSparseRow(ix), target, nu, mask)
       )
     }
   }
 
-
-  fg.buildFactor(weightnodes) (edges => for(_ <- edges) yield new VectorMsgs) (edges => new LowRankRegularizer(edges, epsilon, gamma))
+  if (gamma != 0)
+    fg.buildFactor(weightnodes) (edges => for(_ <- edges) yield new VectorMsgs) (edges => new LowRankRegularizer(edges, epsilon, gamma))
 
   //D3Implicits.saveD3Graph(fg)
 
@@ -450,10 +520,8 @@ object OCSVM extends App {
 
     println(matrix.toVerboseString(true))
 
-    //fg.factors.map(_.potential).foreach(PotentialDebugger.checkGradients(_, debug = true))
-
-
-    fg.factors.map(_.potential).foreach(PotentialDebugger.checkGradients(_, debug = false))
+    fg.factors.map(_.potential).foreach(PotentialDebugger.checkGradients(_, debug = true, sparseMode = true))
+    //fg.factors.map(_.potential).foreach(PotentialDebugger.checkGradients(_, debug = false, sparseMode = true))
 
   } else {
     /*
@@ -513,6 +581,8 @@ object OCSVM extends App {
       writer.write(lines.mkString("\n"))
       writer.close()
     }
+
+    //fg.factors.map(_.potential).foreach(PotentialDebugger.checkGradients(_, debug = true, sparseMode = true))
   }
 }
 
@@ -542,6 +612,7 @@ object OCSVMGradientChecking extends App {
   */
 
 
+  /*
   fg.buildFactor(Seq(n1, n2))(_ => Seq(new VectorMsgs, new VectorMsgs))(
     edges => new OneClassSVMPerInstanceLoss(edges(0), edges(1), data, 1.0, nu)
   )
@@ -549,7 +620,7 @@ object OCSVMGradientChecking extends App {
   fg.buildFactor(Seq(n3, n4))(_ => Seq(new VectorMsgs, new VectorMsgs))(
     edges => new OneClassSVMPerInstanceLoss(edges(0), edges(1), data2, 1.0, nu)
   )
-
+  */
 
 
   fg.buildFactor(Seq(n1,n3)) (edges => for(_ <- edges) yield new VectorMsgs) (edges => new LowRankRegularizer(edges, 0.00001, 0.1))
@@ -580,3 +651,15 @@ object OCSVMGradientChecking extends App {
   fg.factors.map(_.potential).foreach(PotentialDebugger.checkGradients(_, debug = true))
 }
 
+object ElemMulTest extends App {
+  import OCSVMImplicits._
+  import ml.wolfe.apps.PimpMyFactorie._
+  
+  val w = new DenseTensor1(Array(1.0, 2.0, 3.0, 4.0))
+  val x = new SparseTensor1(w.dim1)
+  x.update(1, 3.0)
+  x.update(3, 5.0)
+
+  println((w :* x).toPrettyString)
+  println((w :* x).toPrettyString)
+}
