@@ -6,9 +6,9 @@ import ml.wolfe.fg20.{Domain, IndexedSeqDomain, AtomicDomain}
  * @author riedel
  */
 package object term {
-  type Potential2[D1<: Domain[_], D2 <:Domain[_] ] = Potential[Tuple2Domain[_,_,D1,D2]]
-  type DoubleSeqDom = IndexedSeqDomain[Double,AtomicDomain.Cont]
-//  type Potential = Term[Double,AtomicSearchSpace.Cont]
+  type Potential2[D1<: Dom, D2 <:Dom] = Potential[Tuple2Domain[D1,D2]]
+  type DoubleSeqDom = SeqDom[DoubleDom]
+//  type Potential[P] = Fun[P,DoubleDom]
 //  type ComposedPotential = Composed[Double,AtomicSearchSpace.Cont]
 
 }

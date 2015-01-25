@@ -90,6 +90,7 @@ trait Clique {
   }
 
 
+
   /**
    * Convert a setting to state.
    * @param setting the setting to convert.

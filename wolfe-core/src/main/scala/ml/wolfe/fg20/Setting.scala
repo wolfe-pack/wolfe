@@ -42,6 +42,12 @@ class Setting(numDisc: Int, numCont: Int = 0, numVect: Int = 0) {
     for (i <- 0 until vect.length) if (vect(i) != null) vect(i) := 0.0
   }
 
+  final def :=(that:Setting): Unit = {
+    for (i <- 0 until disc.length) disc(i) = that.disc(i)
+    for (i <- 0 until cont.length) cont(i) = that.cont(i)
+    for (i <- 0 until vect.length) vect(i) = that.vect(i)
+  }
+
   final def copyTo(that: Setting, mapFromThisIndextoThatIndex: ArgMap): Unit = {
     for (i <- 0 until disc.length) that.disc(mapFromThisIndextoThatIndex.tgtDisc(i)) = disc(i)
     for (i <- 0 until cont.length) that.cont(mapFromThisIndextoThatIndex.tgtCont(i)) = cont(i)
@@ -74,8 +80,30 @@ class Setting(numDisc: Int, numCont: Int = 0, numVect: Int = 0) {
     true
   }
 
-
 }
+
+object Setting {
+  def merge(settings:Array[Setting], result:Setting) = {
+    var cont = 0
+    var disc = 0
+    var vect = 0
+    for (setting <- settings) {
+      for (i <- 0 until setting.disc.length) {
+        result.disc(disc) = setting.disc(i)
+        disc += 1
+      }
+      for (i <- 0 until setting.cont.length) {
+        result.cont(cont) = setting.cont(i)
+        cont += 1
+      }
+      for (i <- 0 until setting.vect.length) {
+        result.vect(vect) = setting.vect(i)
+        vect += 1
+      }
+    }
+  }
+}
+
 /**
  * A partial setting of a clique. The only observed or set values are
  * those at the indices for which the corresponding *Obs array returns true.

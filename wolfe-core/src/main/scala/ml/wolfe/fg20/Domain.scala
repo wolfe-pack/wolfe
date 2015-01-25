@@ -14,11 +14,16 @@ trait Domain[T] extends Clique {
   def variables: Iterator[Var[Any]]
   def toValue(state: State): T
   def toValue(setting:Setting):Value = toValue(toState(setting))
-  def observation(value: Value): State
+  def toState(value: Value): State
 
   def discVars = variables.collect({ case d: DiscVar[_] => d }).toArray
   def contVars = variables.collect({ case c: ContVar => c }).toArray
   def vectVars = variables.collect({ case v: VectVar => v }).toArray
+
+  def createPartialSetting(state:Value):PartialSetting = {
+    createPartialSetting(toState(state))
+  }
+
 
 }
 
@@ -37,7 +42,7 @@ object AtomicDomain {
 
 class AtomicDomain[T, V <: Var[T]](val variable: V) extends Domain[T] {
   def toValue(state: State) = state(variable)
-  def observation(value: T) = State.single(variable, value)
+  def toState(value: T) = State.single(variable, value)
   def variables = Iterator(variable)
 
 }
@@ -55,7 +60,7 @@ class IndexedSeqDomain[T, S <: Domain[T]](val size: Int,
                                                     val name: String = "anon") extends Domain[IndexedSeq[T]] {
   lazy val seq = Range(0, size).map(i => elementSpace(name + "(" + i + ")"))
   def toValue(state: State) = seq.map(_.toValue(state))
-  def observation(value: IndexedSeq[T]) = ???
+  def toState(value: IndexedSeq[T]) = ???
   def variables = seq.iterator.flatMap(_.variables)
 
 }
@@ -72,7 +77,7 @@ class GraphDomain[V, S <: Domain[V]](val sources: Range,
   val sourceCount = sources.size
   val targetCount = sources.size
   def variables = ???
-  def observation(value: Map[(Int, Int), V]) = ???
+  def toState(value: Map[(Int, Int), V]) = ???
   def toValue(state: State) = ???
   final def offset(src: Int, tgt: Int) = src * sources.size + tgt
 }
@@ -87,10 +92,10 @@ class MapDomain[K, V, VS <: Domain[V]](keys: Iterable[K],
                                                  val name: String = "anon") extends Domain[Map[K, V]] {
   lazy val map = keys.map(k => k -> valueSpace(name + "(" + k + ")")).toMap
   def toValue(state: State) = map.mapValues(_.toValue(state))
-  def observation(value: Map[K, V]) = {
+  def toState(value: Map[K, V]) = {
     val result = new MutableState
     for ((k, v) <- map) {
-      val state = v.observation(value(k))
+      val state = v.toState(value(k))
       result ++= state
     }
     result
@@ -105,7 +110,7 @@ class ProductDomain2[T1, T2, S1 <: Domain[T1], S2 <: Domain[T2], P](val space1: 
                                                                                    val arg1: P => T1,
                                                                                    val arg2: P => T2) extends Domain[P] {
   def toValue(state: State) = ctr(space1.toValue(state), space2.toValue(state))
-  def observation(value: P) = space1.observation(arg1(value)) + space2.observation(arg2(value))
+  def toState(value: P) = space1.toState(arg1(value)) + space2.toState(arg2(value))
   def variables = space1.variables ++ space2.variables
 }
 

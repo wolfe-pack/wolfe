@@ -263,7 +263,7 @@ class IntermediateLayerSpecs extends WolfeSpec {
       val model = new ProjectiveTreePotential(slen, treeSpace, scoreSpace)
 
       //def model(xy:XY) = treePotential(slen,graph,scores)
-      Argmax(treeSpace, scoreSpace.observation(Map((0, 0) -> 2.3)))(model)
+      Argmax(treeSpace, scoreSpace.toState(Map((0, 0) -> 2.3)))(model)
 
 
     }
