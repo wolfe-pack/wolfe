@@ -2,7 +2,11 @@ package ml.wolfe.fg20
 
 import cc.factorie.la.DenseTensor1
 
+import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 import scala.math._
+
+
 
 /**
  * A neural unit is a deterministic potential which enforces a set of output variables to be
@@ -11,11 +15,31 @@ import scala.math._
  */
 trait NeuralUnit extends Potential {
 
+  /**
+   * The set of input variables (or "neurons" here)
+   * @return input neurons.
+   */
   def input: Clique
 
+  /**
+   * The set of output variables (or "neurons" here)
+   * @return output neurons.
+   */
   def output: Clique
 
+  /**
+   * The set of parameter variables.
+   * @return parameter variables.
+   */
   def params: Clique
+
+
+  /**
+   * The propagator defines how the unit propagates input activation and parameters to output activation.
+   * This is the main method different types of units need to implement to define their behaviour.
+   * @return a propagator.
+   */
+  def propagator(): Propagator
 
   lazy val discVars = input.discVars ++ params.discVars ++ output.discVars
   lazy val contVars = input.contVars ++ params.contVars ++ output.contVars
@@ -33,21 +57,19 @@ trait NeuralUnit extends Potential {
     input.vectVars.size + params.vectVars.size)
 
 
-  def propagator(): Propagator
-
   def scorer(): Scorer = new Scorer {
-    val propa = propagator()
-    val inputSetting = input.createSetting()
+    val propa          = propagator()
+    val inputSetting   = input.createSetting()
     val expectedOutput = output.createSetting()
-    val actualOutput = output.createSetting()
-    val paramsSetting = params.createSetting()
+    val actualOutput   = output.createSetting()
+    val paramsSetting  = params.createSetting()
 
     def score(setting: Setting): Double = {
       inputSetting.copyFrom(setting, inputMap)
       paramsSetting.copyFrom(setting, paramsMap)
       expectedOutput.copyFrom(setting, outputMap)
-      propa.forward(inputSetting,paramsSetting,actualOutput)
-      if (actualOutput.epsEquals(0.0001,expectedOutput)) 0.0 else Double.NegativeInfinity
+      propa.forward(inputSetting, paramsSetting, actualOutput)
+      if (actualOutput.epsEquals(0.0001, expectedOutput)) 0.0 else Double.NegativeInfinity
     }
   }
 }
@@ -64,9 +86,77 @@ trait Propagator {
 }
 
 
-//trait NeuralNetwork extends NeuralUnit with Sum[NeuralUnit] {
-//
-//}
+trait NeuralNetwork extends NeuralUnit {
+  def units: Seq[NeuralUnit]
+
+  lazy val params = new SimpleClique(
+    units.flatMap(_.params.discVars).distinct.toArray,
+    units.flatMap(_.params.contVars).distinct.toArray,
+    units.flatMap(_.params.vectVars).distinct.toArray)
+
+
+  val paramVar2Units  = units.flatMap(u => u.params.vars.map(_ -> u)).groupBy(_._1).mapValues(_.map(_._2))
+  val inputVar2Units  = units.flatMap(u => u.input.vars.map(_ -> u)).groupBy(_._1).mapValues(_.map(_._2))
+  val outputVar2Units = units.flatMap(u => u.output.vars.map(_ -> u)).groupBy(_._1).mapValues(_.map(_._2))
+
+  val sources = vars.filter(v => !outputVar2Units.contains(v) && !paramVar2Units.contains(v)).toSeq
+  val sinks   = vars.filter(v => !inputVar2Units.contains(v) && !paramVar2Units.contains(v)).toSeq
+
+  val input  = Clique.create(sources)
+  val output = Clique.create(sinks)
+
+  def propagator() = new Propagator {
+    val dag = new DAG
+
+    def forward(input: Setting, params: Setting, output: Setting): Unit = {
+      //map input to the input cliques of the sources
+      //then pass messages on edges upwards
+    }
+    def backward(inputActivation: Setting, outputError: Setting, paramsGradient: Setting, inputError: Setting): Unit = {
+
+    }
+  }
+
+
+  //build DAG, find sources (inputs) and sinks (outputs)
+  class DAG {
+
+    class Node(val unit: NeuralUnit) {
+
+      val parents  = new ArrayBuffer[(Node, CliqueMapping)]
+      val children = new ArrayBuffer[(Node, CliqueMapping)]
+
+      val outActivation = unit.output.createSetting()
+      val outError      = unit.output.createSetting()
+
+      val inActivation = unit.input.createSetting()
+      val inError      = unit.input.createSetting()
+
+      val paramsSetting  = unit.params.createSetting()
+      val paramsGradient = unit.params.createSetting()
+
+      def propagateActivationToParents(): Unit = {
+        //for each output activation set all parent input cliques
+        for ((parent, mapping) <- parents) mapping.copyForward(outActivation, parent.inActivation)
+      }
+    }
+
+    val nodes = units.map(u => u -> new Node(u)).toMap
+    for (u <- units; n = nodes(u)) {
+      //find outgoing units
+      n.parents ++= u.output.vars.flatMap(v => inputVar2Units(v)).toSeq.distinct.map(
+        p => nodes(p) -> CliqueMapping(u.output,p.input) )
+      n.children ++= u.input.vars.flatMap(v => outputVar2Units(v)).toSeq.distinct.map(
+        c => nodes(c) -> CliqueMapping(u.input, c.output)
+      )
+    }
+
+
+
+  }
+
+
+}
 
 trait NeuralLoss extends Differentiable {
   def unit: NeuralUnit
@@ -87,7 +177,7 @@ class SigmoidUnit(val in: VectVar, val out: VectVar) extends NeuralUnit {
 
   import ml.wolfe.fg20.SigmoidUnit._
 
-  val input = new SimpleClique(vectVars = Array(in))
+  val input  = new SimpleClique(vectVars = Array(in))
   val output = new SimpleClique(vectVars = Array(out))
 
   def params = Clique.empty
