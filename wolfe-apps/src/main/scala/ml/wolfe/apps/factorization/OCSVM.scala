@@ -7,6 +7,8 @@ import cc.factorie.la._
 import cc.factorie.optimize.{AdaGrad, OnlineTrainer}
 import ml.wolfe._
 import ml.wolfe.apps.factorization.io.{EvaluateNAACL, LoadNAACL}
+
+//import ml.wolfe.apps.factorization.io.{EvaluateNAACL, LoadNAACL}
 import ml.wolfe.fg._
 import ml.wolfe.util._
 
@@ -53,13 +55,47 @@ class LowRankRegularizer(weightsEdges: Seq[FactorGraph.Edge], epsilon: Double, g
   lazy val numWeights = weightsEdges(0).msgs.asVector.n2f.length
 
 
-  override def valueForCurrentSetting(): Double = ???
+  override def valueForCurrentSetting(): Double = {
+    val W = DenseMatrix.zeros[Double](numWeights, numClassifiers)
+
+    //rockt: might be vectorizable as well
+    //building W, slow!
+    for (col <- 0 until numClassifiers) {
+      for (row <- 0 until numWeights)
+        W(row, col) = weightsEdges(col).n.variable.asVector.setting(row) //.msgs.asVector.n2f(row)
+    }
+
+    //numWeights × numWeights matrix
+    val A: DenseMatrix[Double] = W * W.t
+
+    //WW^T + εI
+    val M = A + DenseMatrix.eye[Double](numWeights) * epsilon
+
+    //(WW^T + εI)^(1/2)
+    val (lambdas, _, v) = eig(M)
+    for (i <- 0 until numWeights) {
+      lambdas(i) = math.sqrt(lambdas(i))
+    }
+    val temp: DenseMatrix[Double] = v * diag(lambdas)
+    val rootM: DenseMatrix[Double] = temp * v.t
+
+    //(WW^T + εI)^(1/2) / tr((WW^T + εI)^(1/2))
+    val D: DenseMatrix[Double] = rootM / trace(rootM)
+
+    (for (i <- 0 until numClassifiers) yield {
+      val w = W(::, i)
+      val temp1 = D \ w
+
+      //weightsEdges(i).msgs.asVector.f2n = -temp1 * (gamma / 2.0)
+
+      w.t * gamma * -temp1
+    }).sum
+  }
+
 
 
   override def valueAndGradientForAllEdges() = {
-
     val W = DenseMatrix.zeros[Double](numWeights, numClassifiers)
-
 
     //rockt: might be vectorizable as well
     //building W, slow!
@@ -85,24 +121,13 @@ class LowRankRegularizer(weightsEdges: Seq[FactorGraph.Edge], epsilon: Double, g
     //(WW^T + εI)^(1/2) / tr((WW^T + εI)^(1/2))
     val D: DenseMatrix[Double] = rootM / trace(rootM)
 
-
-    /*
-    //for the loss need to sum these over R
-    (for (t <- 0 until R) yield {
-      val w = W(::, t)
-      val temp3 = w.t * gamma
-      val temp4 = D \ w
-      temp3 * temp4
-    }).sum
-    */
-
     (for (i <- 0 until numClassifiers) yield {
       val w = W(::, i)
       val temp1 = D \ w
 
-      weightsEdges(i).msgs.asVector.f2n = -temp1 * (gamma / 2.0)
+      weightsEdges(i).msgs.asVector.f2n = -temp1 * (gamma * 2)
 
-      w.t * (gamma / 2.0) * temp1
+      w.t * gamma * -temp1
     }).sum
   }
 }
@@ -129,13 +154,13 @@ object OCSVM extends App {
   val alpha = conf.getDouble("mf.alpha")
   val maxIter = conf.getInt("mf.maxIter")
 
-  val gamma = 0.01 //low-rank regularization
+  val gamma = conf.getDouble("mf.gamma") //low-rank regularization
   val epsilon = 1e-9
 
   val fileName = conf.getString("mf.outFile")
 
 
-  val debug = false //whether to use sampled matrices or the NAACL data
+  val debug = true //whether to use sampled matrices or the NAACL data
   val loadFormulae = debug && true //whether forumlae should be sampled for debugging
   //val print = false //whether to print the matrix (only do this for small ones!)
 
@@ -427,6 +452,9 @@ object OCSVM extends App {
 
     //fg.factors.map(_.potential).foreach(PotentialDebugger.checkGradients(_, debug = true))
 
+
+    fg.factors.map(_.potential).foreach(PotentialDebugger.checkGradients(_, debug = false))
+
   } else {
     /*
     println(rhonodes.head.variable.asVector.b)
@@ -489,21 +517,21 @@ object OCSVM extends App {
 }
 
 object OCSVMGradientChecking extends App {
+
+
   val fg = new FactorGraph()
-  val n1 = fg.addVectorNode(2, "w1")
+  val n1 = fg.addVectorNode(3, "w1")
   val n2 = fg.addVectorNode(1, "rho1")
-  val n3 = fg.addVectorNode(2, "w2")
+  val n3 = fg.addVectorNode(3, "w2")
   val n4 = fg.addVectorNode(1, "rho2")
+  val n5 = fg.addVectorNode(3, "w3")
+  val n6 = fg.addVectorNode(1, "rho3")
 
   val nu = 0.5
 
   val data = new SparseBinaryTensor1(2)
   data.update(0, 1.0)
-  /*
-  data.update(10, 1.0)
-  data.update(45, 1.0)
-  data.update(70, 1.0)
-  */
+
 
   val data2 = new SparseBinaryTensor1(2)
   data.update(1, 1.0)
@@ -524,7 +552,9 @@ object OCSVMGradientChecking extends App {
 
 
 
-  //fg.buildFactor(Seq(n1,n3)) (edges => for(_ <- edges) yield new VectorMsgs) (edges => new lowRankreg(edges, 0.00001, 0.1))
+  fg.buildFactor(Seq(n1,n3)) (edges => for(_ <- edges) yield new VectorMsgs) (edges => new LowRankRegularizer(edges, 0.00001, 0.1))
+
+
 
   fg.build()
 

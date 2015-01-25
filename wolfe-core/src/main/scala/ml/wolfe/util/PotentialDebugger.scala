@@ -50,7 +50,7 @@ object PotentialDebugger {
 
         if (debug) {
           val error = if (δ(i) === 0.0 +- ε && δi === 0.0 +- ε) 1.0 else δi / δ(i)
-          if (error !== 1.0 +- ε) println(v)
+          //if (error !== 1.0 +- ε) println(v)
           println("calc: %12.8f\tactual: %12.8f\terr: %12.8f".format(δ(i),δi,error))
         }
 
