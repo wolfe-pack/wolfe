@@ -18,7 +18,9 @@ class ExpectationSpecs extends WolfeSpec {
 
   "return the expectations of a bernoulli variable" in {
     val actual = OptimizedOperators.expect(bools) { bernoulli(0.7) } { oneHot(_) }
-    actual should equal(Vector(true -> 0.7, false -> 0.3))
+    val expected = Vector(true -> 0.7, false -> 0.3)
+    actual.keys.foreach { k => actual(k) should be (expected(k) +- 0.0001)}
+    // actual should equal(Vector(true -> 0.7, false -> 0.3))
   }
 
   "return the expectations of a one-node sample space and atomic objective" in {
@@ -47,8 +49,8 @@ class ExpectationSpecs extends WolfeSpec {
     }
     val actual = OptimizedOperators.expect(space) { potential } { stats }
     val expected = BruteForceOperators.expect(space) { potential } { stats }
-
-    actual should equal (expected)
+    actual.keys.foreach { k => actual(k) should be (expected(k) +- 0.0001)}
+ //   actual should equal (expected)
   }
 
 

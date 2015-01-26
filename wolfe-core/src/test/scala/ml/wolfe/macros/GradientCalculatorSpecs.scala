@@ -2,13 +2,14 @@ package ml.wolfe.macros
 
 import ml.wolfe.{Wolfe, WolfeSpec}
 import Wolfe._
-import org.scalautils.Equality
+import org.scalautils.{Tolerance, Equality}
 
 /**
  * @author Sebastian Riedel
  */
 class GradientCalculatorSpecs extends WolfeSpec {
 
+  private val eps = 0.0001
 
   "A gradient calculator" should {
     "return 0 gradient for a constant function" in {
@@ -67,8 +68,6 @@ class GradientCalculatorSpecs extends WolfeSpec {
       v should be(2.0)
     }
 
-
-
     "return a subgradient of a max expression formulated using argmax " in {
       import OptimizedOperators._
       case class Data(x: Symbol, y: Symbol)
@@ -102,8 +101,7 @@ class GradientCalculatorSpecs extends WolfeSpec {
       val Z = (space map (s => math.exp(model(weights)(s)))).sum
       val expectations = (space map (s => feat(s) * (math.exp(model(weights)(s)) / Z))).sum
       v should be(math.log(Z) +- 0.0001)
-      g should equal (expectations)
-
+      g.keys.foreach(k => g(k) should be(expectations(k) +- eps))
     }
 
 
