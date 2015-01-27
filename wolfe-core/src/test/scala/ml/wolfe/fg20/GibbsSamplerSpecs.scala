@@ -13,7 +13,7 @@ class GibbsSamplerSpecs extends WolfeSpec {
   "A Gibbs Sampler" should {
     "converge to true marginals" in {
       implicit val random = new Random(0)
-      val booleans = Seq(false, true)
+      val booleans = IndexedSeq(false, true)
       val v1 = new DiscVar(booleans, "v1")
       val v2 = new DiscVar(booleans, "v2")
       val v3 = new DiscVar(booleans, "v3")

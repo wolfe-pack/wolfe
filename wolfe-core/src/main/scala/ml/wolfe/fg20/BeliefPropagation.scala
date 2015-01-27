@@ -131,7 +131,9 @@ trait SupportsExpFamMarginalization extends SupportsMarginalization with ExpFamP
 }
 
 
-class MaxProduct(val problem: Problem[SupportsMaxMarginalization]) extends BeliefPropagationFactorGraph with FwdBwdEdgePropagation {
+class MaxProduct(val problem: Problem[SupportsMaxMarginalization],
+                 val maxIterations: Int = 10,
+                 val eps: Double = 0.0001) extends BeliefPropagationFactorGraph with FwdBwdEdgePropagation with Argmaxer {
 
   type Pot = SupportsMaxMarginalization
   type Processor = MaxMarginalizer
@@ -162,7 +164,7 @@ class MaxProduct(val problem: Problem[SupportsMaxMarginalization]) extends Belie
     }
   }
 
-  def inferMAP(maxIterations: Int = 10, eps: Double = 0.0001): MAPResult = {
+  def inferMAP(maxIterations: Int = maxIterations, eps: Double = eps): MAPResult = {
     deterministicRun = false
     propagate(maxIterations, eps)
     for (node <- nodes; if !node.observed) { updateBelief(node); normalizeBelief(node) }
@@ -182,6 +184,11 @@ class MaxProduct(val problem: Problem[SupportsMaxMarginalization]) extends Belie
     val contState = problem.contVars.map(v => v -> var2ContNode(v).setting)
     MAPResult(new MapBasedState(discState ++ contState), score, gradient, new MapBasedState(maxMarginals.toMap))
   }
+
+  def argmax(observed: PartialSetting, incoming: fg20.Msgs, result: Setting, score: DoubleBuffer): Unit = {
+
+  }
+
 
   def normalizeBelief(node: Node) {
     node match {

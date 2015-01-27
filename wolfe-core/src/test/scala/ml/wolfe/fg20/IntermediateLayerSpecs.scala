@@ -1,7 +1,7 @@
 package ml.wolfe.fg20
 
 import cc.factorie.Factorie.DenseTensor1
-import ml.wolfe.{FactorieVector, WolfeSpec}
+import ml.wolfe.{FactorieConverter, SimpleIndex, FactorieVector, WolfeSpec}
 import org.scalatest.FlatSpec
 
 /**
@@ -66,7 +66,7 @@ class IntermediateLayerSpecs extends WolfeSpec {
       val observed = new DifferentiableWithObservation {
         lazy val xSpace      = AtomicSearchSpace.cont("x")
         lazy val self        = new DifferentiableSum {
-          lazy val args = Seq(new BilinearTerm(xSpace.variable, ySpace.variable), new QuadraticTerm(ySpace.variable,1.0))
+          lazy val args = Seq(new BilinearTerm(xSpace.variable, ySpace.variable), new QuadraticTerm(ySpace.variable, 1.0))
         }
         lazy val observation = self.createPartialSetting(State.single(xSpace.variable, 2.0))
       }
@@ -78,29 +78,83 @@ class IntermediateLayerSpecs extends WolfeSpec {
 
   "A perceptron loss" should {
     "calculate its gradient" in {
-      def labels = AtomicSearchSpace.disc("labels", Seq(false,true))
+      def labels = AtomicSearchSpace.disc("labels", IndexedSeq(false, true))
       val weights = AtomicSearchSpace.vect("weights", 1)
 
       val loss = new DifferentiableSum {
-        lazy val arg1 = maxPot(weights,labels)
-        lazy val arg2 = new ScaledDifferentablePotential[Differentiable] {
+        lazy val arg1 = maxPot(weights, labels)
+        lazy val arg2 = new ScaledDifferentable[Differentiable] {
           def scale: Double = -1
           lazy val self = new DifferentiableWithObservation {
             lazy val observedLabel = AtomicSearchSpace.constDisc(true)
-            lazy val observation = self.toPartialSetting(State.single(observedLabel.variable,true))
-            lazy val self = classifier(observedLabel, weights, feat)
+            lazy val observation   = self.toPartialSetting(State.single(observedLabel.variable, true))
+            lazy val self          = classifier(observedLabel, weights, feat)
           }
         }
-        lazy val args = Seq(arg1,arg2)
+        lazy val args = Seq(arg1, arg2)
       }
-      val result = Gradient(weights,State.single(weights.variable,new DenseTensor1(Array(-1.0))))(loss)
-      result(0) should be (-2.0)
+      val result = Gradient(weights, State.single(weights.variable, new DenseTensor1(Array(-1.0))))(loss)
+      result(0) should be(-2.0)
     }
+  }
+
+  "A linear chain" should {
+    "calculate its argmax" in {
+      val index = new SimpleIndex
+
+      def pairwise(weights: AtomicSearchSpace.Vect,
+                   labels: IndexedSeqSearchSpace[String, AtomicSearchSpace.Disc[String]],
+                   words: IndexedSeq[String]) =
+        new DifferentiableSum {
+          lazy val args = for (i <- 0 until words.size - 1) yield
+            LinearPotential(weights.variable, Array(labels.seq(i).variable, labels.seq(i + 1).variable),
+              setting => {
+                val label1 = labels.seq(i).variable.dom(setting.disc(0))
+                val label2 = labels.seq(i + 1).variable.dom(setting.disc(1))
+                FactorieConverter.toFreshFactorieSparseVector(oneHot(label1 -> label2), index)
+              })
+
+        }
+
+      def local(weights: AtomicSearchSpace.Vect,
+                labels: IndexedSeqSearchSpace[String, AtomicSearchSpace.Disc[String]],
+                words: IndexedSeq[String]) =
+        new DifferentiableSum {
+          lazy val args = for (i <- 0 until words.size) yield
+            LinearPotential(weights.variable, Array(labels.seq(i).variable), setting => {
+              val label = labels.seq(i).variable.dom(setting.disc(0))
+              FactorieConverter.toFreshFactorieSparseVector(oneHot(words(i) -> label), index)
+            })
+        }
+
+      def crf(weights: AtomicSearchSpace.Vect,
+              labels: IndexedSeqSearchSpace[String, AtomicSearchSpace.Disc[String]],
+              words: IndexedSeq[String]) = new DifferentiableSum with SupportsArgmax {
+        //lazy val args = Seq(local(weights, labels, words), pairwise(weights, labels, words))
+        lazy val args = local(weights, labels, words).args ++ pairwise(weights, labels, words).args
+        def argmaxer(): Argmaxer = new MaxProduct(Problem(args))
+      }
+
+      val weights = AtomicSearchSpace.vect("w")
+      val words = IndexedSeq("The", "cat", "sat", "on", "the", "mat")
+      val labels = new IndexedSeqSearchSpace[String, AtomicSearchSpace.Disc[String]](
+        words.size,
+        n => AtomicSearchSpace.disc("label" + n, IndexedSeq("N", "V", "I")))
+
+      val model = crf(weights, labels, words)
+
+
+
+
+
+    }
+
+
   }
 
   "A MaxPotential" should {
     "calculate its gradient" in {
-      def labels = AtomicSearchSpace.disc("labels", Seq(false, true))
+      def labels = AtomicSearchSpace.disc("labels", IndexedSeq(false, true))
       val weights = AtomicSearchSpace.vect("weight", 1)
 
       val result1 = Gradient(weights, State.single(weights.variable, new DenseTensor1(Array(1.0))))(maxPot(weights, labels))
@@ -117,8 +171,8 @@ class IntermediateLayerSpecs extends WolfeSpec {
     "support a table potential and a case class search space" in {
       case class XY(x: String, y: String)
       val space = new ProductSearchSpace2(
-        new AtomicSearchSpace[String, DiscVar[String]](new DiscVar(Seq("painter"))),
-        new AtomicSearchSpace[String, DiscVar[String]](new DiscVar(Seq("noun", "verb"))),
+        new AtomicSearchSpace[String, DiscVar[String]](new DiscVar(IndexedSeq("painter"))),
+        new AtomicSearchSpace[String, DiscVar[String]](new DiscVar(IndexedSeq("noun", "verb"))),
         (x: String, y: String) => XY(x, y), (xy: XY) => xy.x, (xy: XY) => xy.y)
 
       //def model(xy:XY) = I(xy.x == "painter" && xy.y == "noun")
@@ -131,7 +185,7 @@ class IntermediateLayerSpecs extends WolfeSpec {
       result should be(XY("painter", "noun"))
     }
     "support a flat sum" ignore {
-      def bool(name: String) = new AtomicSearchSpace.Disc[Boolean](new DiscVar(Seq(false, true), name))
+      def bool(name: String) = new AtomicSearchSpace.Disc[Boolean](new DiscVar(IndexedSeq(false, true), name))
       val space = new IndexedSeqSearchSpace[Boolean, AtomicSearchSpace.Disc[Boolean]](3, bool)
       val arg1 = TablePotential(Array(space.seq(0).variable, space.seq(1).variable), s => I(s.disc(0) == s.disc(1)))
       val arg2 = TablePotential(Array(space.seq(1).variable, space.seq(2).variable), s => I(s.disc(0) == s.disc(1)))
@@ -200,7 +254,7 @@ class IntermediateLayerSpecs extends WolfeSpec {
 
 
     "support a projective tree potential" ignore {
-      def bool(name: String) = new AtomicSearchSpace[Boolean, DiscVar[Boolean]](new DiscVar(Seq(false, true), name))
+      def bool(name: String) = new AtomicSearchSpace[Boolean, DiscVar[Boolean]](new DiscVar(IndexedSeq(false, true), name))
       def double(name: String) = new AtomicSearchSpace[Double, ContVar](new ContVar(name))
       val slen = 5
       val edges = for (h <- 0 until slen; m <- 1 until slen; if h != m) yield (h, m)
