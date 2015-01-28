@@ -44,14 +44,13 @@ object MatrixFactorization2 extends App {
         case c if data(r)(c) == 1 =>
           def sampledRow = rows(random.nextInt(rows.length))
 
-          /*
           new FlatSum[Differentiable](Seq(
             new MFLogisticPotential(sampledRow, cols(c), 0.0),
             new L2Regularization(0.01, sampledRow, cols(c))
           )) with DifferentiableSum
-          */
 
-          new MFLogisticPotential(sampledRow, cols(c), 0.0)
+
+          //new MFLogisticPotential(sampledRow, cols(c), 0.0)
       }
     })
 
