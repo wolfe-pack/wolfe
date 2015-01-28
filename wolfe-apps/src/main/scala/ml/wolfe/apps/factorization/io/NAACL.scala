@@ -731,5 +731,28 @@ object WriteNAACL extends App {
     }
     writer.close()
   }
+
+  def writeTripletFormat(db: TensorDB, filePathPrefix: String = "./data/out/triplet-"): Unit = {
+    Seq("train", "valid", "test").foreach(s => {
+      val writer = new FileWriter(filePathPrefix + s + ".txt")
+
+      val cells = s match {
+        case "train" => db.trainCells
+        case "valid" => db.devCells
+        case "test" => db.testCells
+      }
+
+      cells.filter(_.target == 1.0).foreach(c => {
+        val (e1, e2) = c.key2
+        writer.write(s"$e1\t${c.key1}\t$e2\n")
+      })
+
+      writer.close()
+    })
+  }
+
+  Conf.add(args.lift(0).getOrElse("conf/mf.conf"))
+  val db = LoadNAACL(100, 1.0)
+  writeTripletFormat(db)
 }
 

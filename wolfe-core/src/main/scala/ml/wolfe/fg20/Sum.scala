@@ -28,9 +28,9 @@ trait Sum[P <: Potential] extends Potential {
     def score(setting: Setting) = {
       val scores = for (((arg, map), scorer) <- (args.iterator zip argMaps.iterator) zip scorers.iterator) yield {
         val local = arg.createSetting()
-        for (i <- 0 until arg.discVars.length) local.disc(i) = setting.disc(map.discArgs(i))
-        for (i <- 0 until arg.contVars.length) local.cont(i) = setting.cont(map.contArgs(i))
-        for (i <- 0 until arg.vectVars.length) local.vect(i) = setting.vect(map.vectArgs(i))
+        for (i <- 0 until arg.discVars.length) local.disc(i) = setting.disc(map.tgtDisc(i))
+        for (i <- 0 until arg.contVars.length) local.cont(i) = setting.cont(map.tgtCont(i))
+        for (i <- 0 until arg.vectVars.length) local.vect(i) = setting.vect(map.tgtVect(i))
         val localScore = scorer.score(local)
         localScore
       }
@@ -65,15 +65,15 @@ trait DifferentiableSum extends Sum[Differentiable] with Differentiable {
         //could not get it to work with iterators (?)
         arg.local.copyFrom(currentParameters, map)
         totalSum += arg.calc.gradientAndValue(arg.local, arg.localUpdate)
-        for (i <- 0 until arg.pot.discVars.length) if (totalUpdate.disc(map.discArgs(i)) != null)
-          totalUpdate.disc(map.discArgs(i)) += arg.localUpdate.disc(i)
-        else totalUpdate.disc(map.discArgs(i)) = arg.localUpdate.disc(i) //todo be more efficient
-        for (i <- 0 until arg.pot.contVars.length) if (totalUpdate.cont(map.contArgs(i)) != null)
-          totalUpdate.cont(map.contArgs(i)) += arg.localUpdate.cont(i)
-        else totalUpdate.cont(map.contArgs(i)) = arg.localUpdate.cont(i)
-        for (i <- 0 until arg.pot.vectVars.length) if (totalUpdate.vect(map.vectArgs(i)) != null)
-          totalUpdate.vect(map.vectArgs(i)) += arg.localUpdate.vect(i)
-        else totalUpdate.vect(map.vectArgs(i)) = arg.localUpdate.vect(i)
+        for (i <- 0 until arg.pot.discVars.length) if (totalUpdate.disc(map.tgtDisc(i)) != null)
+          totalUpdate.disc(map.tgtDisc(i)) += arg.localUpdate.disc(i)
+        else totalUpdate.disc(map.tgtDisc(i)) = arg.localUpdate.disc(i) //todo be more efficient
+        for (i <- 0 until arg.pot.contVars.length) if (totalUpdate.cont(map.tgtCont(i)) != null)
+          totalUpdate.cont(map.tgtCont(i)) += arg.localUpdate.cont(i)
+        else totalUpdate.cont(map.tgtCont(i)) = arg.localUpdate.cont(i)
+        for (i <- 0 until arg.pot.vectVars.length) if (totalUpdate.vect(map.tgtVect(i)) != null)
+          totalUpdate.vect(map.tgtVect(i)) += arg.localUpdate.vect(i)
+        else totalUpdate.vect(map.tgtVect(i)) = arg.localUpdate.vect(i)
       }
       //why not directly editing the gradient?
       for (i <- 0 until sum.discVars.length) gradient.disc(i) = totalUpdate.disc(i) //todo, change only the ones that change

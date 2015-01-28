@@ -11,9 +11,9 @@ trait WithObservation[P<:Potential] extends Potential {
   
   val fromThisToSelf = observation.fromObservedToAllMapping()
 
-  val discVars = fromThisToSelf.discArgs.map(self.discVars)
-  val contVars = fromThisToSelf.contArgs.map(self.contVars)
-  val vectVars = fromThisToSelf.vectArgs.map(self.vectVars)
+  val discVars = fromThisToSelf.tgtDisc.map(self.discVars)
+  val contVars = fromThisToSelf.tgtCont.map(self.contVars)
+  val vectVars = fromThisToSelf.tgtVect.map(self.vectVars)
 
   override def scorer() = new Scorer{
     val selfSetting = self.createPartialSetting()
