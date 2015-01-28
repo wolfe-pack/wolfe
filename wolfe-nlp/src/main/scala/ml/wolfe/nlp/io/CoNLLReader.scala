@@ -191,6 +191,10 @@ class CoNLL2011Reader(filename: String, delim: String = "\t") extends Iterable[D
     }.toIndexedSeq
     Document(source = chunks.mkString("\n"), sentences = sents, coref = CorefAnnotation(mentions = mentions.toSeq))
   }
+
+  def stackReader(l: List[String]): List[(Int, Int, String)] = {
+    ???
+  }
 }
 
 

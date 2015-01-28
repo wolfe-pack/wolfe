@@ -121,6 +121,10 @@ case class CorefAnnotation(mentions: Seq[CorefMention] = Seq.empty) {
   def hasMention(s: Int, i: Int, j: Int): Boolean = {
     mentions.exists(m => m.sentence == s && m.start == i && m.end == j)
   }
+
+  def mentionTokens(m: CorefMention, d: Document): IndexedSeq[Token] = {
+    d.sentences(m.sentence).tokens.slice(m.start, m.end)
+  }
 }
 
 object CorefAnnotation {
