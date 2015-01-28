@@ -217,6 +217,10 @@ class CoNLL2011Reader(filename: String, delim: String = "\t") extends Iterable[D
 //      }.toSeq
 
 
+class CoNLL2099Reader extends App {
+
+}
+
 object CoNLL2011Reader extends App {
   for (c <- new CoNLL2011Reader(args(0))) {
     val dummy = "blah"
