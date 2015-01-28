@@ -7,7 +7,7 @@ import java.io.File
 import java.io.FileWriter
 import scala.language.implicitConversions
 
-import ml.wolfe.util.Conf
+import ml.wolfe.util.{ANSIFormatter, Conf}
 
 
 object CellType extends Enumeration {
@@ -239,7 +239,7 @@ class TensorDB(val k: Int = 100) extends Tensor {
   def prob(key1: CellIx, key2: CellIx): Double = sig(vector1(key1).get dot vector2(key2).get)
 
   def toVerboseString(showTrain: Boolean = false) = {
-    import ml.wolfe.nlp.util.ANSIFormatter._
+    import ANSIFormatter._
 
     val cols = keys1
     val rows = if (isMatrix) keys2 else keys23
