@@ -140,7 +140,17 @@ object CorefAnnotation {
  * @param end ending index (points to the first token AFTER the mention)
  * @param head head of the coreference mention
  */
-case class CorefMention(clusterID: Int, sentence: Int, start: Int, end: Int, head: Int = -1)
+case class CorefMention(clusterID: Int, sentence: Int, start: Int, end: Int, head: Int = -1) {
+
+  override def toString = {
+    "[COREF MENTION\n" +
+    "  START: %d\n".format(start) +
+    "  END: %d\n".format(end) +
+      (if (head >= 0) "  HEAD: %d\n".format(head) else "") +
+    "  SENTENCE: %d\n".format(sentence) +
+    "  CLUSTER: %d]\n".format(clusterID)
+  }
+}
 
 /**
  * Class to represent IR information for a document

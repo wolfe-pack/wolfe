@@ -172,9 +172,11 @@ class CoNLL2011Reader(filename: String, delim: String = "\t") extends Iterable[D
 
 
     val mentions = new ArrayBuffer[CorefMention]
+    var chunkFilename: Option[String] = None
     val corefs = chunks.zipWithIndex.map { case(chunk, sidx) =>
       val grid = chunk.split("\n").map(_.replaceAll(" +", "\t").split("\t"))
       val slen = grid.size
+      chunkFilename = Some(grid(0)(0))
       val CSTART_PATTERN = """\(([0-9]+)""".r
       val CEND_PATTERN = """([0-9]+)\)""".r
       val buffer = new ArrayBuffer[(Int, Int)]
@@ -182,14 +184,14 @@ class CoNLL2011Reader(filename: String, delim: String = "\t") extends Iterable[D
         val ccell = grid(i).last
         buffer ++= (CSTART_PATTERN findAllIn ccell).matchData.toArray.map(m => (i, m.group(1).toInt))
         val imentions = (CEND_PATTERN findAllIn ccell).matchData.toArray.map(m => (i, m.group(1).toInt)).foreach { e =>
-          val sidx = buffer.indexWhere(_._2 == e._2)
-          val s = buffer(sidx)
-          buffer.remove(sidx)
+          val stidx = buffer.indexWhere(_._2 == e._2)
+          val s = buffer(stidx)
+          buffer.remove(stidx)
           mentions += CorefMention(s._2, sidx, s._1, e._1+1)
         }
       }
     }.toIndexedSeq
-    Document(source = chunks.mkString("\n"), sentences = sents, coref = CorefAnnotation(mentions = mentions.toSeq))
+    Document(source = chunks.mkString("\n"), filename = chunkFilename, sentences = sents, coref = CorefAnnotation(mentions = mentions.toSeq))
   }
 
   def stackReader(l: List[String]): List[(Int, Int, String)] = {
@@ -222,9 +224,28 @@ class CoNLL2099Reader extends App {
 }
 
 object CoNLL2011Reader extends App {
-  for (c <- new CoNLL2011Reader(args(0))) {
-    val dummy = "blah"
-    //println(c) + "\n"
+  for (t <- new CoNLL2011Reader(args(0))) {
+    println(t.sentences.size + "\t" + t.coref.mentions.map(_.clusterID).distinct.size)
+    t.coref.mentions.zipWithIndex.foreach { case(c, cidx) =>
+      val dist = t.coref.mentions.slice(0, cidx).reverse.find(_.clusterID == c.clusterID) match {
+        case Some(m) => {
+/*
+          println("Mention: " + c + "\n  -- links to --  \n" + m)
+          println("REF: " + t.coref.mentionTokens(c, t).mkString(" "))
+          println("ANT: " + t.coref.mentionTokens(m, t).mkString(" "))
+          println("DOC: " + t.filename)
+*/
+//          println("REF Sentence: " + t.sentences(c.sentence).tokens.mkString(" "))
+//          println("ANT Sentence: " + t.sentences(m.sentence).tokens.mkString(" "))
+//          println("Sentence size: " + t.sentences(c.sentence).size)
+//          println("Mentions in Sentence: " + t.coref.mentions.filter(_.sentence == c.sentence).mkString("\n"))
+          println
+          cidx - t.coref.mentions.indexOf(m)
+        }
+        case _ => 0
+      }
+      println("D: " + dist)
+    }
   }
 }
 
