@@ -1,4 +1,4 @@
-package ml.wolfe.nlp.util
+package ml.wolfe.util
 
 /**
  * Created by rockt on 19/09/2014.
@@ -7,7 +7,7 @@ package ml.wolfe.nlp.util
 object ANSIFormatter {
   implicit class ANSIString(string: String) {
 
-    import Console._
+    import scala.Console._
 
     private def apply(modifier: String) = modifier + string + RESET
 

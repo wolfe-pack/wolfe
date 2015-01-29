@@ -1,8 +1,9 @@
 package ml.wolfe.nlp
 
-import ml.wolfe.nlp.io.ConstituentTreeFactory
+import ml.wolfe.nlp.io.{TreebankReaderOptions, ConstituentTreeFactory}
 
 import scala.collection.mutable.ArrayBuffer
+import scala.util.matching.Regex
 
 /**
  * Created by narad on 12/5/14.
@@ -361,5 +362,52 @@ case class Span(left: Int, right: Int, label: String, var height: Int=0) {
  * Companion object for the ConstituentTree class.
  */
 object ConstituentTree {
+  private val TOKEN_PATTERN = """ *\( *([^ \(]+) ([^ \)]+) *\).*""".r
+  private val CONSTITUENT_PATTERN = """ *\( *([^ ]+) .*""".r
+  private val EMPTY_PATTERN = """ *\( .*""".r
+  private val DOUBLE_PAREN_PATTERN = """ *\( *\(+.*""".r
+
   val empty = ConstituentTree(node=null, children=List())
+
+  def stringToTree(str: String, options: TreebankReaderOptions = TreebankReaderOptions.default): ConstituentTree = {
+    str match {
+      case DOUBLE_PAREN_PATTERN() => {
+        val children = subexpressions(str).map(stringToTree(_, options))
+        return ConstituentTreeFactory.buildTree(label=options.DEFAULT_LABEL, children=children)
+      }
+      case TOKEN_PATTERN(tag, word) => {
+        ConstituentTreeFactory.buildTree(label=tag, word=word)
+      }
+      case CONSTITUENT_PATTERN(label) => {
+        val children = subexpressions(str).map(stringToTree(_, options))
+        return ConstituentTreeFactory.buildTree(label=label, children=children)
+      }
+      case EMPTY_PATTERN() => {
+        val children = subexpressions(str).map(stringToTree(_, options))
+        return ConstituentTreeFactory.buildTree(label=options.DEFAULT_LABEL, children=children)
+      }
+      case _ => {
+        if (str != null) System.err.println("Not recognized: %s".format(str))
+        return null.asInstanceOf[ConstituentTree]
+      }
+    }
+  }
+
+  def subexpressions(str: String, ldelim: Char='(', rdelim: Char=')'): List[String] = {
+    val subs = new ArrayBuffer[String]
+    var count = -1; var start = 0
+    str.zipWithIndex.foreach { case(letter, index) =>
+      if (letter == ldelim) {
+        count += 1
+        if (count == 1)
+          start = index
+      }
+      else if (letter == rdelim) {
+        count -= 1
+        if (count == 0)
+          subs += str.substring(start, index+1)
+      }
+    }
+    subs.toList
+  }
 }

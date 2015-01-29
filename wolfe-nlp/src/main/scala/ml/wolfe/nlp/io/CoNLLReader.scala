@@ -1,21 +1,28 @@
 package ml.wolfe.nlp.io
 
 import ml.wolfe.nlp._
-
-import scala.collection.mutable.ListBuffer
+import scala.collection.mutable
+import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
 /**
  * Created by narad on 8/12/14.
  */
 class CoNLLReader(filename: String, delim: String = "\t") extends Iterable[Sentence] {
 
-  import CoNLLReader._
+  def isNumber(str: String): Boolean = {
+    str.matches("[0-9]+")
+  }
 
   def iterator: Iterator[Sentence] = {
     val reader = new ChunkReader(filename)
     reader.iterator.map { s =>
       val lines = s.split("\n")
-      val numFields = lines.head.split(delim).size
+      val cols = lines.head.split(delim)
+      val numFields = cols.size
+      //      if (isNumber(cols(1)) && isNumber(cols(2))) {
+      //        // Identified as a file from the CoNLL 2011 Coreference Task
+      //        fromCoNLL2011(lines)
+      //      }
       if (numFields >= 12)
       // Identified as a file from the CoNLL SRL tasks of 2008/2009
         fromCoNLL2009(lines)
@@ -30,6 +37,7 @@ class CoNLLReader(filename: String, delim: String = "\t") extends Iterable[Sente
         fromCoNLL2000(lines)
     }
   }
+
 
   def fromCoNLL2009(lines: IndexedSeq[String]): Sentence = {
     // ID FORM LEMMA PLEMMA POS PPOS FEAT PFEAT HEAD PHEAD DEPREL PDEPREL FILLPRED PRED APREDs
@@ -70,15 +78,13 @@ class CoNLLReader(filename: String, delim: String = "\t") extends Iterable[Sente
 
     val tokens = cells.foldLeft(List.empty[Token])(join).reverse
     val ner = cells.map(_.apply(3))
-    val mentions = collectMentions(ner)
+    val mentions = CoNLLReader.collectMentions(ner)
     Sentence(tokens.toIndexedSeq, ie = IEAnnotation(entityMentions = mentions.toIndexedSeq))
   }
 
   def fromCoNLL2000(lines: IndexedSeq[String]): Sentence = {
     ???
   }
-
-
 }
 
 object CoNLLReader {
@@ -107,15 +113,151 @@ object CoNLLReader {
     }).toSeq
   }
 
-
-
-
-
   def main(args: Array[String]) {
-      val data = new CoNLLReader("/Users/sriedel/corpora/conll03/eng.train", " ").take(100).toIndexedSeq
-      val doc = Document(data(1).toText, IndexedSeq(data(1)))
-      println(data(1))
+    val data = new CoNLLReader("/Users/sriedel/corpora/conll03/eng.train", " ").take(100).toIndexedSeq
+    val doc = Document(data(1).toText, IndexedSeq(data(1)))
+    println(data(1))
+  }
+}
+
+class CoNLL2011Reader(filename: String, delim: String = "\t") extends Iterable[Document] {
+
+  def iterator: Iterator[Document] = {
+    val files = new ChunkReader(filename).toArray.map(_.split("\n").filter(!_.startsWith("#")).mkString("\n")).groupBy { c =>
+      val l = c.split("\n")//.filter(!_.startsWith("#"))
+      if (l.isEmpty || l.size == 1) {
+        null
+      }
+      else {
+        val first = l.head
+        first.substring(0, first.indexOf(" "))
+      }
+    }
+    files.keys.filter(_ != null).map{f => mkCoNLL2011Document(files(f))}.iterator
+  }
+
+  def mkCoNLL2011Document(chunks: Array[String]): Document = {
+    val sents = chunks.map { chunk =>
+      //      println(chunk + "\n")
+      val grid = chunk.split("\n").map(_.replaceAll(" +", "\t").split("\t"))
+      //      println(grid(0).mkString(", "))
+      //      println("lines = " + grid.size)
+      //      println("cols = " + grid(0).size)
+      //      println
+      val words = (0 until grid.size).map(grid(_)(3))
+      val pos = (0 until grid.size).map(grid(_)(4))
+      val lemma = (0 until grid.size).map(grid(_)(6))
+      val tokens = words.zip(pos).zipWithIndex.map { case (p, i) => Token(p._1, CharOffsets(i, i + 1), p._2, lemma = lemma(i))}
+      val csyntax = (0 until grid.size).map(grid(_)(5))
+      val ner = ((0 until grid.size).map(grid(_)(10))).map(s => if (!s.contains("*")) s.replaceFirst("\\)", "*)") else s)
+
+      val csyntaxCleaned = csyntax.mkString(" ").replaceAll("\\*", " * ").replaceAll("\\(", " ( ").replaceAll("\\)", " ) ").replaceAll(" +", " ")
+      var tc = -1
+      val csyntaxStr = csyntaxCleaned.map(c => if (c == '*') {tc += 1; "(" + pos(tc) + " " + words(tc) + ")"} else c.toString).mkString("")
+      val ctree = ConstituentTree.stringToTree(csyntaxStr)
+      assert(ctree != null, "Null constituent tree")
+
+      val nerCleaned = ner.mkString(" ").replaceAll("\\*", " * ").replaceAll("\\(", " ( ").replaceAll("\\)", " ) ").replaceAll(" +", " ")
+
+      var nc = -1
+      val nerStr = "(XX " + nerCleaned.map(c => if (c == '*') {nc += 1; "(XX " + words(nc) + ")"} else c.toString).mkString("") + ")"
+      val nertree = ConstituentTree.stringToTree(nerStr)
+      assert(nertree != null, "Null NER tree")
+      val mentions = nertree.toSpans.view.filter(_.label != "XX").map(s => EntityMention(s.label, s.start, s.end))
+
+      val sense = (0 until grid.size).map(grid(_)(7))
+      Sentence(tokens, syntax = SyntaxAnnotation(tree = ctree, dependencies = null))
+    }.toIndexedSeq
 
 
+
+    val mentions = new ArrayBuffer[CorefMention]
+    var chunkFilename: Option[String] = None
+    val corefs = chunks.zipWithIndex.map { case(chunk, sidx) =>
+      val grid = chunk.split("\n").map(_.replaceAll(" +", "\t").split("\t"))
+      val slen = grid.size
+      chunkFilename = Some(grid(0)(0))
+      val CSTART_PATTERN = """\(([0-9]+)""".r
+      val CEND_PATTERN = """([0-9]+)\)""".r
+      val buffer = new ArrayBuffer[(Int, Int)]
+      (0 until slen).foreach { i =>
+        val ccell = grid(i).last
+        buffer ++= (CSTART_PATTERN findAllIn ccell).matchData.toArray.map(m => (i, m.group(1).toInt))
+        val imentions = (CEND_PATTERN findAllIn ccell).matchData.toArray.map(m => (i, m.group(1).toInt)).foreach { e =>
+          val stidx = buffer.indexWhere(_._2 == e._2)
+          val s = buffer(stidx)
+          buffer.remove(stidx)
+          mentions += CorefMention(s._2, sidx, s._1, e._1+1)
+        }
+      }
+    }.toIndexedSeq
+    Document(source = chunks.mkString("\n"), filename = chunkFilename, sentences = sents, coref = CorefAnnotation(mentions = mentions.toSeq))
+  }
+
+  def stackReader(l: List[String]): List[(Int, Int, String)] = {
+    ???
+  }
+}
+
+
+/*      (5  59
+      (8 44
+       9 44)
+      10 59)
+      */
+
+//      println("STARTS: " + starts.mkString(", "))
+//      println("ENDS: " + ends.mkString(", "))
+//      var mentions = new ArrayBuffer[CorefMention]
+//      for (w <- 0 until slen; i <- 0 until slen if (w+i) < slen) {
+//
+//      }
+//      val mentions = starts.map { s =>
+//        val e = ends.find(e => s._2 == e._2).get
+//        ends = ends.filter(_ != e)
+//        CorefMention(s._2, sidx, s._2, e._2)
+//      }.toSeq
+
+
+class CoNLL2099Reader extends App {
+
+}
+
+object CoNLL2011Reader extends App {
+  for (t <- new CoNLL2011Reader(args(0))) {
+    println(t.sentences.size + "\t" + t.coref.mentions.map(_.clusterID).distinct.size)
+    t.coref.mentions.zipWithIndex.foreach { case(c, cidx) =>
+      val dist = t.coref.mentions.slice(0, cidx).reverse.find(_.clusterID == c.clusterID) match {
+        case Some(m) => {
+/*
+          println("Mention: " + c + "\n  -- links to --  \n" + m)
+          println("REF: " + t.coref.mentionTokens(c, t).mkString(" "))
+          println("ANT: " + t.coref.mentionTokens(m, t).mkString(" "))
+          println("DOC: " + t.filename)
+*/
+//          println("REF Sentence: " + t.sentences(c.sentence).tokens.mkString(" "))
+//          println("ANT Sentence: " + t.sentences(m.sentence).tokens.mkString(" "))
+//          println("Sentence size: " + t.sentences(c.sentence).size)
+//          println("Mentions in Sentence: " + t.coref.mentions.filter(_.sentence == c.sentence).mkString("\n"))
+          println
+          cidx - t.coref.mentions.indexOf(m)
+        }
+        case _ => 0
+      }
+      println("D: " + dist)
     }
   }
+}
+
+
+
+
+//      cells.zipWithIndex.filter(_._1(6) == "Y").map { case (l, i) => Predicate(i+1, tokens(i), l(13)) }
+//      val argsets = (14 to 13 + preds.size).map { i =>
+//        cells.zipWithIndex.flatMap { case (row, ri) => row(i) match {
+//          case "_" => None
+//          case x => Some(SemanticRole(ri+1, x))
+//        }
+//        }
+//      }
+//      val frames = preds.zip(argsets).map { case (p, a) => SemanticFrame(p, a) }

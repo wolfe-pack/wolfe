@@ -14,7 +14,7 @@ object SISTAConverter {
 
   def toWolfeCoreference(chains: SISTACorefChains): Seq[CorefMention] = {
     val ret = for ((chain, clusterID) <- chains.getChains.zipWithIndex; mention <- chain) yield {
-      CorefMention(clusterID, mention.sentenceIndex, mention.headIndex, mention.startOffset, mention.endOffset)
+      CorefMention(clusterID, mention.sentenceIndex, mention.startOffset, mention.endOffset, mention.headIndex)
     }
     ret.toSeq
   }

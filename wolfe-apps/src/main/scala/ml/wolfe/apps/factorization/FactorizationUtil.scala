@@ -2,6 +2,8 @@ package ml.wolfe.apps.factorization
 
 import java.io._
 
+import ml.wolfe.util.ANSIFormatter
+
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.io.Source
@@ -108,7 +110,7 @@ object FactorizationUtil {
   }
 
   def renderPredictions(prediction: Seq[Row], truth: Seq[Row] = Seq.empty) = {
-    import ml.wolfe.nlp.util.ANSIFormatter._
+    import ANSIFormatter._
     val relations =
       (prediction.flatMap(_.relations.map(_._1)) ++ truth.flatMap(_.relations.map(_._1))).distinct.sorted
     val colWidth = math.max(relations.map(_.toString.length).max + 1, 5)
