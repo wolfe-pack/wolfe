@@ -37,6 +37,12 @@ class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0) {
     for (i <- 0 until cont.length) cont(i) *= scale
     for (i <- 0 until vect.length) vect(i) *= scale
   }
+  final def +=(that: Setting): Unit = {
+    for (i <- 0 until cont.length) cont(i) += that.cont(i)
+    for (i <- 0 until vect.length) vect(i) += that.vect(i)
+  }
+
+
   final def :=(value: Double): Unit = {
     for (i <- 0 until cont.length) cont(i) = 0.0
     for (i <- 0 until vect.length) if (vect(i) != null) vect(i) := 0.0

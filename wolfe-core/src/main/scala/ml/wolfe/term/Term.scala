@@ -9,21 +9,35 @@ case class Offsets(discOff: Int = 0, contOff: Int = 0, vectOff: Int = 0) {
   def +(disc: Int, cont: Int, vect: Int) = Offsets(discOff + disc, contOff + cont, vectOff + vect)
   def +(that: Offsets, scale: Int = 1) =
     Offsets(discOff + scale * that.discOff, contOff + scale * that.contOff, vectOff + scale * that.vectOff)
-  def *(scale:Int) = Offsets(scale * discOff, scale * contOff, scale * vectOff)
+  def *(scale: Int) = Offsets(scale * discOff, scale * contOff, scale * vectOff)
 }
 case class Ranges(from: Offsets, to: Offsets) {
   def copy(src: Setting, tgt: Setting): Unit = {
     arraycopy(src.disc, from.discOff, tgt.disc, 0, to.discOff - from.discOff)
     arraycopy(src.cont, from.contOff, tgt.cont, 0, to.contOff - from.contOff)
     arraycopy(src.vect, from.vectOff, tgt.vect, 0, to.vectOff - from.vectOff)
-
   }
+
+  def addInto(src: Setting, tgt: Setting): Unit = {
+    for (i <- 0 until numCont) {
+      tgt.cont(from.contOff + i) += src.cont(i)
+    }
+    for (i <- 0 until numVect) {
+      tgt.vect(from.vectOff + i) += src.vect(i)
+    }
+  }
+
+
+  def numDisc = to.discOff - from.discOff
+  def numCont = to.contOff - from.contOff
+  def numVect = to.vectOff - from.vectOff
 }
 
 trait Term[+D <: Dom] {
   val domain: D
   def evaluator(): Evaluator
   def vars: Seq[Var[Dom]]
+  def atoms: Atoms
   def apply(args: Seq[Any]): domain.Value = {
     val ev = evaluator()
     val output = domain.createSetting()
@@ -31,15 +45,27 @@ trait Term[+D <: Dom] {
     ev.eval(argSettings.toArray, output)
     domain.toValue(output)
   }
-  def differentiator(variable: Var[Dom]): Differentiator
+  def differentiator(withRespectTo: Seq[Var[Dom]]): Differentiator
 }
 
+
 trait Var[+D <: Dom] extends Term[D] {
-  def name:String
+  self =>
+  def name: String
   def ranges: Ranges
   def owner: Var[Dom]
-  def vars = ???
-  def differentiator(variable: Var[Dom]) = ???
+  def vars = if (owner == null) Seq(this) else Seq(owner)
+  def differentiator(wrt: Seq[Var[Dom]]) = new Differentiator {
+    def term = self
+    def withRespectTo = wrt
+    val e = evaluator()
+    def forwardProp(current: Array[Setting]) = {
+      ranges.copy(current(0), activation)
+    }
+    def backProp(error: Setting, gradient: Array[Setting]) = {
+      ranges.addInto(error,gradient(0))
+    }
+  }
   def evaluator() = new Evaluator {
     val r = ranges
     def eval(inputs: Array[Setting], output: Setting) = {
@@ -61,18 +87,17 @@ trait Dom {
     result
   }
   def createSetting(): Setting = new Setting(lengths.discOff, lengths.contOff, lengths.vectOff)
-  def variable(name:String, offsets: Offsets = Offsets(), owner: Var[Dom] = null): Variable
+  def variable(name: String, offsets: Offsets = Offsets(), owner: Var[Dom] = null): Variable
 
   def lengths: Offsets
 
 }
 
 object Dom {
-  val vectors = new VectorDom
   val doubles = new DoubleDom
 }
 
-class VectorDom extends Dom {
+class VectorDom(val dim:Int) extends Dom {
   type Value = FactorieVector
   type Variable = VectorVar
 
@@ -82,20 +107,32 @@ class VectorDom extends Dom {
     setting.vect(offsets.vectOff)
   def copyValue(value: Value, setting: Setting, offsets: Offsets) =
     setting.vect(offsets.vectOff) = value
-  def variable(name:String, offsets: Offsets, owner: Var[Dom]) = VectorVar(name, owner, this, offsets.vectOff)
+  def variable(name: String, offsets: Offsets, owner: Var[Dom]) = VectorVar(name, owner, this, offsets.vectOff)
 }
 
-case class VectorVar(name:String, owner: Var[Dom], domain: VectorDom, offset: Int) extends Var[VectorDom] {
+case class Atoms(disc: Seq[DiscVar[Any]] = Nil, cont: Seq[DoubleVar] = Nil, vect: Seq[VectorVar] = Nil) {
+  def ++(that: Atoms) = copy(disc = disc ++ that.disc, cont = cont ++ that.cont, vect = vect ++ that.vect)
+  def merge(that: Atoms) = copy(
+    disc = (disc ++ that.disc).distinct,
+    cont = (cont ++ that.cont).distinct,
+    vect = (vect ++ that.vect).distinct)
+}
+
+case class VectorVar(name: String, owner: Var[Dom], domain: VectorDom, offset: Int) extends Var[VectorDom] {
   val ranges = Ranges(Offsets(0, 0, offset), Offsets(0, 0, offset + 1))
+  def atoms = Atoms(vect = List(this))
 }
-case class DoubleVar(name:String, owner: Var[Dom], domain: DoubleDom, offset: Int) extends Var[DoubleDom] {
+case class DoubleVar(name: String, owner: Var[Dom], domain: DoubleDom, offset: Int) extends Var[DoubleDom] {
   val ranges = Ranges(Offsets(0, offset, 0), Offsets(0, offset + 1, 0))
+  def atoms = Atoms(cont = List(this))
+
 }
 
-case class DiscVar[T](name:String, owner: Var[Dom], domain: DiscreteDom[T], offset: Int) extends Var[DiscreteDom[T]] {
+case class DiscVar[T](name: String, owner: Var[Dom], domain: DiscreteDom[T], offset: Int) extends Var[DiscreteDom[T]] {
   val ranges = Ranges(Offsets(offset, 0, 0), Offsets(offset + 1, 0, 0))
-}
+  def atoms = Atoms(disc = List(this.asInstanceOf[DiscVar[Any]]))
 
+}
 
 class DoubleDom extends Dom {
   type Value = Double
@@ -105,7 +142,7 @@ class DoubleDom extends Dom {
     setting.cont(offsets.contOff) = value
   val lengths = Offsets(0, 1, 0)
   type Variable = DoubleVar
-  def variable(name:String, offsets: Offsets = Offsets(), owner: Var[Dom]) = DoubleVar(name, owner, this, offsets.contOff)
+  def variable(name: String, offsets: Offsets = Offsets(), owner: Var[Dom]) = DoubleVar(name, owner, this, offsets.contOff)
 }
 
 class DiscreteDom[T](val values: IndexedSeq[T]) extends Dom {
@@ -116,7 +153,7 @@ class DiscreteDom[T](val values: IndexedSeq[T]) extends Dom {
     setting.disc(offsets.discOff) = values.indexOf(value)
   val lengths = Offsets(1, 0, 0)
   type Variable = DiscVar[T]
-  def variable(name:String, offsets: Offsets = Offsets(), owner: Var[Dom]) = DiscVar(name, owner, this, offsets.discOff)
+  def variable(name: String, offsets: Offsets = Offsets(), owner: Var[Dom]) = DiscVar(name, owner, this, offsets.discOff)
 }
 
 class SeqDom[D <: Dom](val elementDom: D, val length: Int) extends Dom {
@@ -135,26 +172,29 @@ class SeqDom[D <: Dom](val elementDom: D, val length: Int) extends Dom {
   }
   val lengths = elementDom.lengths * length
   type Variable = SeqVar[D]
-  def variable(name:String, offsets: Offsets = Offsets(), owner: Var[Dom]) = SeqVar(name, this,offsets,owner)
+  def variable(name: String, offsets: Offsets = Offsets(), owner: Var[Dom]) = SeqVar(name, this, offsets, owner)
 }
 
-case class SeqVar[D <: Dom](name:String, domain: SeqDom[D], offsets: Offsets = Offsets(), owner: Var[Dom]) extends Var[SeqDom[D]] {
+case class SeqVar[D <: Dom](name: String, domain: SeqDom[D], offsets: Offsets = Offsets(), owner: Var[Dom]) extends Var[SeqDom[D]] {
 
-  val ranges = Ranges(offsets, offsets +(domain.elementDom.lengths, domain.length))
+
+  def atoms = elements.view.map(_.atoms).foldLeft(Atoms())(_ ++ _)
+  val ranges   = Ranges(offsets, offsets +(domain.elementDom.lengths, domain.length))
   val elements = for (i <- 0 until domain.length) yield
-    domain.elementDom.variable(s"$name($i)", offsets + (domain.elementDom.lengths,i),owner)
+    domain.elementDom.variable(s"$name($i)", offsets +(domain.elementDom.lengths, i), if (owner == null) this else owner)
 
 }
 
-case class Tuple2Var[D1 <: Dom, D2 <: Dom](name:String, domain:Tuple2Dom[D1,D2],offsets:Offsets, owner:Var[Dom]) extends Var[Tuple2Dom[D1,D2]] {
-  val ranges = Ranges(offsets,offsets + domain.dom1.lengths + domain.dom2.lengths)
-  val _1 = domain.dom1.variable(name + "._1",offsets,owner)
-  val arg2 = domain.dom2.variable(name + "._2",offsets + domain.dom1.lengths,owner)
+case class Tuple2Var[D1 <: Dom, D2 <: Dom](name: String, domain: Tuple2Dom[D1, D2], offsets: Offsets, owner: Var[Dom]) extends Var[Tuple2Dom[D1, D2]] {
+  val ranges = Ranges(offsets, offsets + domain.dom1.lengths + domain.dom2.lengths)
+  val _1     = domain.dom1.variable(name + "._1", offsets, if (owner == null) this else owner)
+  val _2     = domain.dom2.variable(name + "._2", offsets + domain.dom1.lengths, if (owner == null) this else owner)
+  def atoms = _1.atoms ++ _2.atoms
 }
 
 class Tuple2Dom[D1 <: Dom, D2 <: Dom](val dom1: D1, val dom2: D2) extends Dom {
   type Value = (dom1.Value, dom2.Value)
-  type Variable = Tuple2Var[D1,D2]
+  type Variable = Tuple2Var[D1, D2]
   val lengths = dom1.lengths + dom2.lengths
   def toValue(setting: Setting, offsets: Offsets = Offsets()) = {
     val arg1 = dom1.toValue(setting, offsets)
@@ -165,10 +205,9 @@ class Tuple2Dom[D1 <: Dom, D2 <: Dom](val dom1: D1, val dom2: D2) extends Dom {
     dom1.copyValue(value._1, setting)
     dom2.copyValue(value._2, setting, dom1.lengths)
   }
-  def variable(name:String, offsets: Offsets, owner: Var[Dom]) = Tuple2Var(name, this,offsets,owner)
+  def variable(name: String, offsets: Offsets, owner: Var[Dom]) =
+    Tuple2Var(name, this, offsets, owner)
 }
-
-
 
 
 trait Evaluator {
@@ -180,7 +219,26 @@ trait Argmaxer {
 }
 
 trait Differentiator {
-  def gradient(observed: Setting, current: Setting, outputError: Setting, gradient: Setting, value: Setting)
+  def term: Term[Dom]
+  def withRespectTo: Seq[Var[Dom]]
+  lazy val conditionedOn = term.vars.filterNot(withRespectTo.contains)
+
+  lazy val activation = term.domain.createSetting()
+  lazy val eval       = term.evaluator()
+
+  //updates the activation
+  def forwardProp(current: Array[Setting])
+  def backProp(error: Setting, gradient: Array[Setting])
+
+  def addGradientAndValue(current: Array[Setting], outputError: Setting, gradient: Array[Setting], value: Setting): Unit = {
+    //call forward propagate on term with current assignment to free variables
+    forwardProp(current)
+    //then backward propagate
+    backProp(outputError, gradient)
+    //also return the value
+    value := activation
+  }
+
 }
 
 
@@ -191,7 +249,7 @@ class VariableMapping(val srcIndex: Array[Int], val tgtIndex: Array[Int]) {
 }
 
 object VariableMapping {
-  def apply(src: Array[Var[Dom]], tgt: Array[Var[Dom]]) = {
+  def apply(src: Seq[Var[Dom]], tgt: Seq[Var[Dom]]) = {
     val pairs = src.indices.view.map(i => i -> tgt.indexOf(src(i))).filter(_._2 != -1).toArray
     val (srcIndex, tgtIndex) = (pairs.map(_._1), pairs.map(_._2))
     new VariableMapping(srcIndex, tgtIndex)
@@ -207,20 +265,20 @@ class Constant[D <: Dom](val domain: D, val value: D#Value) extends Term[D] {
       output := result
     }
   }
-  def differentiator(variable: Var[Dom]) = ???
+  def atoms = Atoms()
+  def differentiator(withRespectTo: Seq[Var[Dom]]) = ???
 }
 
 
 trait NAryOperator[D <: Dom] extends Term[D] {
-  val vars = arguments.flatMap(_.vars).toSeq.distinct
-  def arguments: Seq[Term[Dom]]
+
+  self =>
+
+  lazy val vars = arguments.flatMap(_.vars).toSeq.distinct
+  def arguments: IndexedSeq[Term[Dom]]
   def composer(): Evaluator
-  def evaluator() = new Evaluator {
-    val argOutputs = arguments.map(_.domain.createSetting()).toArray
-    val argInputs  = arguments.map(_.vars.map(_.domain.createSetting()).toArray)
-    val this2Arg   = arguments.map(a => VariableMapping(vars.toArray, a.vars.toArray))
-    val argEvals   = arguments.map(_.evaluator())
-    val comp       = composer()
+  def evaluator() = new Evaluator with Composer {
+    val comp = composer()
     def eval(inputs: Array[Setting], output: Setting) = {
       for (i <- 0 until arguments.length) {
         this2Arg(i).copyForward(inputs, argInputs(i))
@@ -229,36 +287,89 @@ trait NAryOperator[D <: Dom] extends Term[D] {
       comp.eval(argOutputs, output)
     }
   }
+  def atoms = arguments.map(_.atoms).foldLeft(Atoms())(_ ++ _)
+
+  trait Composer {
+    val argOutputs = arguments.map(_.domain.createSetting()).toArray
+    val argInputs  = arguments.map(_.vars.map(_.domain.createSetting()).toArray)
+    val this2Arg   = arguments.map(a => VariableMapping(vars, a.vars)).toArray
+    val argEvals   = arguments.map(_.evaluator()).toArray
+  }
+
+  trait NAryDifferentiator extends Differentiator with Composer {
+    def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]): Unit
+
+    val term           = self
+    val argErrors      = arguments.map(_.domain.createSetting()).toArray
+    val argGradients   = arguments.map(_.vars.map(_.domain.createSetting()).toArray).toArray
+    val argDiffs       = arguments.map(_.differentiator(withRespectTo)).toArray
+    val argActivations = argDiffs.map(_.activation)
+    val comp           = composer()
+
+
+    //updates the activation of this term and all sub terms
+    def forwardProp(current: Array[Setting]) = {
+      for (i <- 0 until arguments.length) {
+        this2Arg(i).copyForward(current, argInputs(i))
+        argDiffs(i).forwardProp(argInputs(i))
+      }
+      comp.eval(argActivations, activation)
+
+    }
+
+    def backProp(error: Setting, gradient: Array[Setting]) = {
+      localBackProp(argActivations, error, argErrors)
+      for (i <- 0 until arguments.size) {
+        if (arguments(i).vars.exists(withRespectTo.contains))
+          argDiffs(i).backProp(argErrors(i), gradient)
+      }
+    }
+  }
+
 }
 
 
 class DotProduct[T1 <: Term[VectorDom], T2 <: Term[VectorDom]](val arg1: T1, val arg2: T2) extends NAryOperator[DoubleDom] {
 
+  self =>
+
   val domain    = Dom.doubles
-  val arguments = Seq(arg1, arg2)
+  val arguments = IndexedSeq(arg1, arg2)
   def composer() = new Evaluator {
     def eval(inputs: Array[Setting], output: Setting) = {
       output.cont(0) = inputs(0).vect(0) dot inputs(1).vect(1)
     }
   }
-  def differentiator(variable: Var[Dom]) = new Differentiator {
-    val d1 = arg1.differentiator(variable)
-    val d2 = arg2.differentiator(variable)
-    def gradient(fixed: Setting, current: Setting, outputError: Setting, gradient: Setting, value: Setting) = {
-      //evaluate
+
+
+  def differentiator(wrt: Seq[Var[Dom]]) = new NAryDifferentiator {
+
+    def withRespectTo = wrt
+
+
+    def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]): Unit = {
+      val scale = outError.cont(0)
+      gradient(0).vect(0) +=(argOutputs(1).vect(0), scale)
+      gradient(1).vect(0) +=(argOutputs(0).vect(0), scale)
     }
   }
+
 }
 
 
 object Playground {
 
   def main(args: Array[String]) {
-    val pair = new Tuple2Dom(Dom.vectors, Dom.vectors).variable("pair")
-    val x = Dom.vectors.variable("x")
-    val c = new Constant[VectorDom](Dom.vectors, new DenseTensor1(Array(1.0)))
+    val X = new VectorDom(1)
+    val XX = new Tuple2Dom(X, X)
+    val pair = XX.variable("pair")
+    val x = X.variable("x")
     val dot = new DotProduct(x, pair._1)
-    val diff = dot.differentiator(x)
+    val diff = dot.differentiator(Seq(x))
+
+    println(dot.vars)
+
+    //val result = dot(Seq())
 
   }
 }
