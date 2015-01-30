@@ -15,7 +15,7 @@ import scala.collection.mutable.ListBuffer
  * @param numCont number of continuous assignments.
  * @param numVect number of vector assignments.
  */
-class Setting(numDisc: Int, numCont: Int = 0, numVect: Int = 0) {
+class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0) {
   final var disc = Array.ofDim[Int](numDisc)
   final var cont = Array.ofDim[Double](numCont)
   final var vect = Array.ofDim[FactorieVector](numVect)
