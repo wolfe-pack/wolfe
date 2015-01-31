@@ -290,16 +290,22 @@ object VariableMapping {
 }
 
 class Constant[D <: Dom](val domain: D, val value: D#Value) extends Term[D] {
+  self =>
   val vars      = Seq.empty
   val evaluator = new Evaluator {
-    val result = domain.createSetting()
-    domain.copyValue(value.asInstanceOf[domain.Value], result)
+    val result = domain.toSetting(value.asInstanceOf[domain.Value])
     def eval(inputs: Array[Setting], output: Setting) = {
       output := result
     }
   }
   def atoms = Atoms()
-  def differentiator(withRespectTo: Seq[Var[Dom]]) = ???
+  def differentiator(wrt: Seq[Var[Dom]]) = new Differentiator {
+    val result = domain.toSetting(value.asInstanceOf[domain.Value])
+    def forwardProp(current: Array[Setting]) = activation := result
+    def term = self
+    def withRespectTo = wrt
+    def backProp(error: Setting, gradient: Array[Setting]) = {}
+  }
 }
 
 
@@ -432,8 +438,8 @@ object TermImplicits {
 
   implicit class RichPotential(term: Potential) {
     def +(that: Potential) = new Sum(IndexedSeq(term, that))
-    def *(that: Potential):Product = new Product(IndexedSeq(term, that))
-    def *(that: Double):Product = this * new Constant[DoubleDom](Dom.doubles, that)
+    def *(that: Potential): Product = new Product(IndexedSeq(term, that))
+    def *(that: Double): Product = this * new Constant[DoubleDom](Dom.doubles, that)
   }
 
   implicit class RichTerm[D <: Dom](val term: Term[D]) {

@@ -86,17 +86,16 @@ class TermSpecs extends WolfeSpec with Explicitly {
     "evaluate to the product of its arguments" in {
       val x = doubles.variable("x")
       val y = doubles.variable("y")
-      val term = x * y * x
-      term(2.0, 3.0) should be(12.0)
+      val term = x * y * x * 0.5
+      term(2.0, 3.0) should be(6.0)
     }
     "calculate its gradient" in {
       val x = doubles.variable("x")
       val y = doubles.variable("y")
-      val term = x * y * x
-      term.gradient(x, 2.0, 3.0) should be (12.0)
-      term.gradient(y, 2.0, 3.0) should be (4.0)
+      val term = x * y * x * 0.5
+      term.gradient(x, 2.0, 3.0) should be (6.0)
+      term.gradient(y, 2.0, 3.0) should be (2.0)
     }
-
   }
 
 
