@@ -1,12 +1,11 @@
 package ml.wolfe.term
 
 import ml.wolfe.WolfeSpec
-import org.scalautils.Explicitly
 
 /**
  * @author riedel
  */
-class TermSpecs extends WolfeSpec with Explicitly {
+class TermSpecs extends WolfeSpec {
 
   import ml.wolfe.term.TermImplicits._
   import ml.wolfe.util.Math._
@@ -22,6 +21,15 @@ class TermSpecs extends WolfeSpec with Explicitly {
       val x = vectors(2).variable("x")
       val result = x.gradient(x, vector(2.0, 1.0))
       result should equal(vector(1.0, 1.0))
+    }
+  }
+
+  "A double variable term" should {
+    "provide its argmax" in {
+      val x = doubles.variable("x")
+      val y = doubles.variable("y")
+      x.argmax(x) should be(Double.PositiveInfinity)
+      x.argmax(y, 2.0) should be(2.0)
     }
   }
 
@@ -93,8 +101,8 @@ class TermSpecs extends WolfeSpec with Explicitly {
       val x = doubles.variable("x")
       val y = doubles.variable("y")
       val term = x * y * x * 0.5
-      term.gradient(x, 2.0, 3.0) should be (6.0)
-      term.gradient(y, 2.0, 3.0) should be (2.0)
+      term.gradient(x, 2.0, 3.0) should be(6.0)
+      term.gradient(y, 2.0, 3.0) should be(2.0)
     }
   }
 

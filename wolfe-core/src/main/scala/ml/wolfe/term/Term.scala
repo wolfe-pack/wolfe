@@ -1,44 +1,30 @@
 package ml.wolfe.term
 
+import java.lang.System._
+
 import cc.factorie.la.DenseTensor1
 import ml.wolfe.FactorieVector
 import ml.wolfe.fg20._
-import System._
 import ml.wolfe.util.Math._
 
-case class Offsets(discOff: Int = 0, contOff: Int = 0, vectOff: Int = 0) {
-  def +(disc: Int, cont: Int, vect: Int) = Offsets(discOff + disc, contOff + cont, vectOff + vect)
-  def +(that: Offsets, scale: Int = 1) =
-    Offsets(discOff + scale * that.discOff, contOff + scale * that.contOff, vectOff + scale * that.vectOff)
-  def *(scale: Int) = Offsets(scale * discOff, scale * contOff, scale * vectOff)
-}
-case class Ranges(from: Offsets, to: Offsets) {
-  def copy(src: Setting, tgt: Setting): Unit = {
-    arraycopy(src.disc, from.discOff, tgt.disc, 0, to.discOff - from.discOff)
-    arraycopy(src.cont, from.contOff, tgt.cont, 0, to.contOff - from.contOff)
-    arraycopy(src.vect, from.vectOff, tgt.vect, 0, to.vectOff - from.vectOff)
-  }
-
-  def addInto(src: Setting, tgt: Setting): Unit = {
-    for (i <- 0 until numCont) {
-      tgt.cont(from.contOff + i) += src.cont(i)
-    }
-    for (i <- 0 until numVect) {
-      tgt.vect(from.vectOff + i) += src.vect(i)
-    }
-  }
-
-
-  def numDisc = to.discOff - from.discOff
-  def numCont = to.contOff - from.contOff
-  def numVect = to.vectOff - from.vectOff
-}
 
 trait Term[+D <: Dom] {
   val domain: D
-  def evaluator(): Evaluator
   def vars: Seq[Var[Dom]]
+  def evaluator(): Evaluator
+  def differentiator(wrt: Seq[Var[Dom]]): Differentiator
+  def argmaxer(wrt:Seq[Var[Dom]]):Argmaxer = sys.error("Argmax only defined on real valued terms")
   def atoms: Atoms
+
+  def argmax[V <: Dom](wrt:Var[V],args:Any*):wrt.domain.Value = {
+    val am = argmaxer(Seq(wrt))
+    val observed = vars.filter(_ != wrt)
+    val observedSettings = for ((a,v) <- args zip observed) yield v.domain.toSetting(a.asInstanceOf[v.domain.Value])
+    val result = wrt.domain.createSetting()
+    am.argmax(observedSettings.toArray, observed.map(_.domain.createMsgs()).toArray, Array(result))
+    wrt.domain.toValue(result)
+  }
+
   def apply(args: Any*): domain.Value = {
     val ev = evaluator()
     val output = domain.createSetting()
@@ -46,9 +32,8 @@ trait Term[+D <: Dom] {
     ev.eval(argSettings.toArray, output)
     domain.toValue(output)
   }
-  def differentiator(wrt: Seq[Var[Dom]]): Differentiator
 
-  def gradient[D <: Dom](wrt: Var[D], args: Any*): wrt.domain.Value = {
+  def gradient[V <: Dom](wrt: Var[V], args: Any*): wrt.domain.Value = {
     gradient(args, wrt = Seq(wrt))(0).asInstanceOf[wrt.domain.Value]
   }
 
@@ -101,6 +86,7 @@ trait Dom {
     result
   }
   def createSetting(): Setting = new Setting(lengths.discOff, lengths.contOff, lengths.vectOff)
+  def createMsgs() = new Msgs(null,null,null)
   def createZeroSetting(): Setting = {
     val result = createSetting()
     copyValue(zero, result)
@@ -148,9 +134,15 @@ case class VectorVar(name: String, owner: Var[Dom], domain: VectorDom, offset: I
   def atoms = Atoms(vect = List(this))
 }
 case class DoubleVar(name: String, owner: Var[Dom], domain: DoubleDom, offset: Int) extends Var[DoubleDom] {
+  self =>
   val ranges = Ranges(Offsets(0, offset, 0), Offsets(0, offset + 1, 0))
   def atoms = Atoms(cont = List(this))
-
+  override def argmaxer(wrt: Seq[Var[Dom]]) = new Argmaxer {
+    val contained = wrt.contains(self)
+    def argmax(observed: Array[Setting], msgs: Array[Msgs], result: Array[Setting]) = {
+      result(0).cont(0) = if (contained)  Double.PositiveInfinity else observed(0).cont(0)
+    }
+  }
 }
 
 case class DiscVar[T](name: String, owner: Var[Dom], domain: DiscreteDom[T], offset: Int) extends Var[DiscreteDom[T]] {
@@ -249,7 +241,7 @@ trait Evaluator {
 }
 
 trait Argmaxer {
-  def argmax(observed: Setting, result: Setting)
+  def argmax(observed: Array[Setting], msgs: Array[Msgs], result: Array[Setting])
 }
 
 trait Differentiator {
@@ -518,3 +510,32 @@ object Playground {
 
   }
 }
+
+case class Offsets(discOff: Int = 0, contOff: Int = 0, vectOff: Int = 0) {
+  def +(disc: Int, cont: Int, vect: Int) = Offsets(discOff + disc, contOff + cont, vectOff + vect)
+  def +(that: Offsets, scale: Int = 1) =
+    Offsets(discOff + scale * that.discOff, contOff + scale * that.contOff, vectOff + scale * that.vectOff)
+  def *(scale: Int) = Offsets(scale * discOff, scale * contOff, scale * vectOff)
+}
+case class Ranges(from: Offsets, to: Offsets) {
+  def copy(src: Setting, tgt: Setting): Unit = {
+    arraycopy(src.disc, from.discOff, tgt.disc, 0, to.discOff - from.discOff)
+    arraycopy(src.cont, from.contOff, tgt.cont, 0, to.contOff - from.contOff)
+    arraycopy(src.vect, from.vectOff, tgt.vect, 0, to.vectOff - from.vectOff)
+  }
+
+  def addInto(src: Setting, tgt: Setting): Unit = {
+    for (i <- 0 until numCont) {
+      tgt.cont(from.contOff + i) += src.cont(i)
+    }
+    for (i <- 0 until numVect) {
+      tgt.vect(from.vectOff + i) += src.vect(i)
+    }
+  }
+
+
+  def numDisc = to.discOff - from.discOff
+  def numCont = to.contOff - from.contOff
+  def numVect = to.vectOff - from.vectOff
+}
+
