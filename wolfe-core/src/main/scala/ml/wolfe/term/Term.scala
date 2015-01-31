@@ -4,6 +4,7 @@ import cc.factorie.la.DenseTensor1
 import ml.wolfe.FactorieVector
 import ml.wolfe.fg20._
 import System._
+import ml.wolfe.util.Math._
 
 case class Offsets(discOff: Int = 0, contOff: Int = 0, vectOff: Int = 0) {
   def +(disc: Int, cont: Int, vect: Int) = Offsets(discOff + disc, contOff + cont, vectOff + vect)
@@ -47,7 +48,7 @@ trait Term[+D <: Dom] {
   }
   def differentiator(withRespectTo: Seq[Var[Dom]]): Differentiator
 
-  def gradient[D <: Dom](wrt:Var[D],args: Any*): wrt.domain.Value = {
+  def gradient[D <: Dom](wrt: Var[D], args: Any*): wrt.domain.Value = {
     gradient(args, wrt = Seq(wrt))(0).asInstanceOf[wrt.domain.Value]
   }
 
@@ -102,7 +103,7 @@ trait Dom {
   def createSetting(): Setting = new Setting(lengths.discOff, lengths.contOff, lengths.vectOff)
   def createZeroSetting(): Setting = {
     val result = createSetting()
-    copyValue(zero,result)
+    copyValue(zero, result)
     result
   }
   def variable(name: String, offsets: Offsets = Offsets(), owner: Var[Dom] = null): Variable
@@ -132,7 +133,7 @@ class VectorDom(val dim: Int) extends Dom {
     setting.vect(offsets.vectOff) = value
   def variable(name: String, offsets: Offsets, owner: Var[Dom]) = VectorVar(name, owner, this, offsets.vectOff)
   def one = new DenseTensor1(dim, 1.0)
-  def zero = new DenseTensor1(dim,0.0)
+  def zero = new DenseTensor1(dim, 0.0)
 }
 
 case class Atoms(disc: Seq[DiscVar[Any]] = Nil, cont: Seq[DoubleVar] = Nil, vect: Seq[VectorVar] = Nil) {
@@ -239,8 +240,8 @@ class Tuple2Dom[D1 <: Dom, D2 <: Dom](val dom1: D1, val dom2: D2) extends Dom {
   }
   def variable(name: String, offsets: Offsets, owner: Var[Dom]) =
     Tuple2Var(name, this, offsets, owner)
-  def one = (dom1.one,dom2.one)
-  def zero = (dom1.zero,dom2.zero)
+  def one = (dom1.one, dom2.one)
+  def zero = (dom1.zero, dom2.zero)
 }
 
 
@@ -260,7 +261,6 @@ trait Differentiator {
   lazy val activation = term.domain.createSetting()
   lazy val eval       = term.evaluator()
 
-  //updates the activation
   def forwardProp(current: Array[Setting])
   def backProp(error: Setting, gradient: Array[Setting])
 
@@ -330,7 +330,7 @@ trait Composed[D <: Dom] extends Term[D] {
     val argEvals   = arguments.map(_.evaluator()).toArray
   }
 
-  trait NAryDifferentiator extends Differentiator with Composer {
+  trait ComposedDifferentiator extends Differentiator with Composer {
     def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]): Unit
 
     val term           = self
@@ -362,6 +362,25 @@ trait Composed[D <: Dom] extends Term[D] {
 
 }
 
+class Sigmoid[T <: Term[DoubleDom]](val arg: T) extends Composed[DoubleDom] {
+  self =>
+
+  val arguments = IndexedSeq(arg)
+  val domain    = Dom.doubles
+  def composer() = new Evaluator {
+    def eval(inputs: Array[Setting], output: Setting) = {
+      output.cont(0) = sigmoid(inputs(0).cont(0))
+    }
+  }
+  def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
+    def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]) = {
+      val sigm = sigmoid(argOutputs(0).cont(0))
+      val result = (1.0 - sigm) * sigm * outError.cont(0)
+      gradient(0).cont(0) += result
+    }
+    def withRespectTo = wrt
+  }
+}
 
 class DotProduct[T1 <: Term[VectorDom], T2 <: Term[VectorDom]](val arg1: T1, val arg2: T2) extends Composed[DoubleDom] {
 
@@ -376,7 +395,7 @@ class DotProduct[T1 <: Term[VectorDom], T2 <: Term[VectorDom]](val arg1: T1, val
   }
 
 
-  def differentiator(wrt: Seq[Var[Dom]]) = new NAryDifferentiator {
+  def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
 
     def withRespectTo = wrt
 
@@ -394,16 +413,18 @@ object TermImplicits {
 
   def vector(values: Double*) = new DenseTensor1(values.toArray)
 
-  implicit class RichTerm[D <: Dom](val term:Term[D]) {
-    def apply(args:Any*) = term.apply(args)
+  def sigm[T <: Term[DoubleDom]](term:T) = new Sigmoid(term)
+
+  implicit class RichTerm[D <: Dom](val term: Term[D]) {
+    def apply(args: Any*) = term.apply(args)
   }
 
   implicit class RichDom[D <: Dom](val dom: Dom) {
     def x[D2 <: Dom](that: D2) = new Tuple2Dom(dom, that)
   }
 
-  implicit class RichVectTerm(val vect:Term[VectorDom]) {
-    def dot(that:Term[VectorDom]) = new DotProduct(vect,that)
+  implicit class RichVectTerm(val vect: Term[VectorDom]) {
+    def dot(that: Term[VectorDom]) = new DotProduct(vect, that)
   }
 
 }

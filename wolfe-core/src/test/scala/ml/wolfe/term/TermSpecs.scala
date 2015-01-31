@@ -62,8 +62,15 @@ class TermSpecs extends WolfeSpec with Explicitly {
       dot.gradient(x, vector(2.0, 3.0), vector(1.0, 2.0)) should equal (vector(1.0,2.0))
       dot.gradient(y, vector(2.0, 3.0), vector(1.0, 2.0)) should equal (vector(2.0,3.0))
     }
-
   }
 
+  "A sigmoid function" should {
+    "provide a logistic loss matrix factorization objective" in {
+      val x = Dom.vectors(2).variable("x")
+      val y = Dom.vectors(2).variable("y")
+      val term = sigm(x dot y)
+      term(vector(1.0,2.0),vector(2.0,3.0)) should equal (ml.wolfe.util.Math.sigmoid(8.0))
+    }
+  }
 
 }
