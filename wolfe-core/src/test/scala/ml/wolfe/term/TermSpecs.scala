@@ -9,6 +9,7 @@ import org.scalautils.Explicitly
 class TermSpecs extends WolfeSpec with Explicitly {
 
   import ml.wolfe.term.TermImplicits._
+  import ml.wolfe.util.Math._
 
   "An vector variable term" should {
     "evaluate to a vector" in {
@@ -59,17 +60,26 @@ class TermSpecs extends WolfeSpec with Explicitly {
       val x = Dom.vectors(2).variable("x")
       val y = Dom.vectors(2).variable("y")
       val dot = x dot y
-      dot.gradient(x, vector(2.0, 3.0), vector(1.0, 2.0)) should equal (vector(1.0,2.0))
-      dot.gradient(y, vector(2.0, 3.0), vector(1.0, 2.0)) should equal (vector(2.0,3.0))
+      dot.gradient(x, vector(2.0, 3.0), vector(1.0, 2.0)) should equal(vector(1.0, 2.0))
+      dot.gradient(y, vector(2.0, 3.0), vector(1.0, 2.0)) should equal(vector(2.0, 3.0))
     }
   }
 
-  "A sigmoid function" should {
+  "Composing log, sigmoid and dot prodcuts" should {
     "provide a logistic loss matrix factorization objective" in {
       val x = Dom.vectors(2).variable("x")
       val y = Dom.vectors(2).variable("y")
-      val term = sigm(x dot y)
-      term(vector(1.0,2.0),vector(2.0,3.0)) should equal (ml.wolfe.util.Math.sigmoid(8.0))
+      val term = log(sigm(x dot y))
+      term(vector(1.0, 2.0), vector(2.0, 3.0)) should equal(math.log(sigmoid(8.0)))
+    }
+
+    "provide the gradient of a logistic loss matrix factorization objective" in {
+      val x = Dom.vectors(2).variable("x")
+      val y = Dom.vectors(2).variable("y")
+      val term = log(sigm(x dot y))
+      val result = term.gradient(x, vector(1.0, 2.0), vector(2.0, 3.0))
+      val prob = sigmoid(8.0)
+      result should equal (vector(2.0, 3.0) * (1.0 - prob))
     }
   }
 

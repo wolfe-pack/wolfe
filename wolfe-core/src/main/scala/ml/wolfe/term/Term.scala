@@ -46,7 +46,7 @@ trait Term[+D <: Dom] {
     ev.eval(argSettings.toArray, output)
     domain.toValue(output)
   }
-  def differentiator(withRespectTo: Seq[Var[Dom]]): Differentiator
+  def differentiator(wrt: Seq[Var[Dom]]): Differentiator
 
   def gradient[D <: Dom](wrt: Var[D], args: Any*): wrt.domain.Value = {
     gradient(args, wrt = Seq(wrt))(0).asInstanceOf[wrt.domain.Value]
@@ -362,6 +362,8 @@ trait Composed[D <: Dom] extends Term[D] {
 
 }
 
+
+
 class Sigmoid[T <: Term[DoubleDom]](val arg: T) extends Composed[DoubleDom] {
   self =>
 
@@ -377,6 +379,20 @@ class Sigmoid[T <: Term[DoubleDom]](val arg: T) extends Composed[DoubleDom] {
       val sigm = sigmoid(argOutputs(0).cont(0))
       val result = (1.0 - sigm) * sigm * outError.cont(0)
       gradient(0).cont(0) += result
+    }
+    def withRespectTo = wrt
+  }
+}
+
+class Log[T <: Potential](val arg:T) extends Composed[DoubleDom] {
+  val arguments = IndexedSeq(arg)
+  val domain = Dom.doubles
+  def composer() = new Evaluator {
+    def eval(inputs: Array[Setting], output: Setting) = output.cont(0) = math.log(inputs(0).cont(0))
+  }
+  def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
+    def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]) = {
+      gradient(0).cont(0) += outError.cont(0) * 1.0 / argOutputs(0).cont(0)
     }
     def withRespectTo = wrt
   }
@@ -413,7 +429,9 @@ object TermImplicits {
 
   def vector(values: Double*) = new DenseTensor1(values.toArray)
 
-  def sigm[T <: Term[DoubleDom]](term:T) = new Sigmoid(term)
+  def sigm[T <: Potential](term:T) = new Sigmoid(term)
+
+  def log[T <: Potential](term:T) = new Log(term)
 
   implicit class RichTerm[D <: Dom](val term: Term[D]) {
     def apply(args: Any*) = term.apply(args)
