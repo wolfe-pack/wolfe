@@ -38,7 +38,7 @@ trait Term[+D <: Dom] {
   def evaluator(): Evaluator
   def vars: Seq[Var[Dom]]
   def atoms: Atoms
-  def apply(args: Seq[Any]): domain.Value = {
+  def apply(args: Any*): domain.Value = {
     val ev = evaluator()
     val output = domain.createSetting()
     val argSettings = for ((a, v) <- args zip vars) yield v.domain.toSetting(a.asInstanceOf[v.domain.Value])
@@ -46,6 +46,20 @@ trait Term[+D <: Dom] {
     domain.toValue(output)
   }
   def differentiator(withRespectTo: Seq[Var[Dom]]): Differentiator
+
+  def gradient[D <: Dom](wrt:Var[D],args: Any*): wrt.domain.Value = {
+    gradient(args, wrt = Seq(wrt))(0).asInstanceOf[wrt.domain.Value]
+  }
+
+  def gradient(args: Seq[Any], error: domain.Value = domain.one, wrt: Seq[Var[Dom]] = vars): Seq[Any] = {
+    val diff = differentiator(wrt)
+    val errorSetting = domain.toSetting(error)
+    val argSettings = for ((a, v) <- args zip vars) yield v.domain.toSetting(a.asInstanceOf[v.domain.Value])
+    val result = vars.map(_.domain.createZeroSetting()).toArray
+    val output = domain.createZeroSetting()
+    diff.addGradientAndValue(argSettings.toArray, errorSetting, result, output)
+    for ((s, v) <- result zip vars) yield v.domain.toValue(s)
+  }
 }
 
 
@@ -58,12 +72,11 @@ trait Var[+D <: Dom] extends Term[D] {
   def differentiator(wrt: Seq[Var[Dom]]) = new Differentiator {
     def term = self
     def withRespectTo = wrt
-    val e = evaluator()
     def forwardProp(current: Array[Setting]) = {
       ranges.copy(current(0), activation)
     }
     def backProp(error: Setting, gradient: Array[Setting]) = {
-      ranges.addInto(error,gradient(0))
+      ranges.addInto(error, gradient(0))
     }
   }
   def evaluator() = new Evaluator {
@@ -87,17 +100,27 @@ trait Dom {
     result
   }
   def createSetting(): Setting = new Setting(lengths.discOff, lengths.contOff, lengths.vectOff)
+  def createZeroSetting(): Setting = {
+    val result = createSetting()
+    copyValue(zero,result)
+    result
+  }
   def variable(name: String, offsets: Offsets = Offsets(), owner: Var[Dom] = null): Variable
 
   def lengths: Offsets
 
+  def one: Value
+  def zero: Value
+
+
 }
 
 object Dom {
+  def vectors(dim: Int) = new VectorDom(dim)
   val doubles = new DoubleDom
 }
 
-class VectorDom(val dim:Int) extends Dom {
+class VectorDom(val dim: Int) extends Dom {
   type Value = FactorieVector
   type Variable = VectorVar
 
@@ -108,6 +131,8 @@ class VectorDom(val dim:Int) extends Dom {
   def copyValue(value: Value, setting: Setting, offsets: Offsets) =
     setting.vect(offsets.vectOff) = value
   def variable(name: String, offsets: Offsets, owner: Var[Dom]) = VectorVar(name, owner, this, offsets.vectOff)
+  def one = new DenseTensor1(dim, 1.0)
+  def zero = new DenseTensor1(dim,0.0)
 }
 
 case class Atoms(disc: Seq[DiscVar[Any]] = Nil, cont: Seq[DoubleVar] = Nil, vect: Seq[VectorVar] = Nil) {
@@ -143,6 +168,8 @@ class DoubleDom extends Dom {
   val lengths = Offsets(0, 1, 0)
   type Variable = DoubleVar
   def variable(name: String, offsets: Offsets = Offsets(), owner: Var[Dom]) = DoubleVar(name, owner, this, offsets.contOff)
+  def one = 1.0
+  def zero = 0.0
 }
 
 class DiscreteDom[T](val values: IndexedSeq[T]) extends Dom {
@@ -154,6 +181,8 @@ class DiscreteDom[T](val values: IndexedSeq[T]) extends Dom {
   val lengths = Offsets(1, 0, 0)
   type Variable = DiscVar[T]
   def variable(name: String, offsets: Offsets = Offsets(), owner: Var[Dom]) = DiscVar(name, owner, this, offsets.discOff)
+  def one = values.last
+  def zero = values.head
 }
 
 class SeqDom[D <: Dom](val elementDom: D, val length: Int) extends Dom {
@@ -173,6 +202,9 @@ class SeqDom[D <: Dom](val elementDom: D, val length: Int) extends Dom {
   val lengths = elementDom.lengths * length
   type Variable = SeqVar[D]
   def variable(name: String, offsets: Offsets = Offsets(), owner: Var[Dom]) = SeqVar(name, this, offsets, owner)
+  def one = for (i <- 0 until length) yield elementDom.one
+  def zero = for (i <- 0 until length) yield elementDom.zero
+
 }
 
 case class SeqVar[D <: Dom](name: String, domain: SeqDom[D], offsets: Offsets = Offsets(), owner: Var[Dom]) extends Var[SeqDom[D]] {
@@ -207,6 +239,8 @@ class Tuple2Dom[D1 <: Dom, D2 <: Dom](val dom1: D1, val dom2: D2) extends Dom {
   }
   def variable(name: String, offsets: Offsets, owner: Var[Dom]) =
     Tuple2Var(name, this, offsets, owner)
+  def one = (dom1.one,dom2.one)
+  def zero = (dom1.zero,dom2.zero)
 }
 
 
@@ -270,7 +304,7 @@ class Constant[D <: Dom](val domain: D, val value: D#Value) extends Term[D] {
 }
 
 
-trait NAryOperator[D <: Dom] extends Term[D] {
+trait Composed[D <: Dom] extends Term[D] {
 
   self =>
 
@@ -300,8 +334,8 @@ trait NAryOperator[D <: Dom] extends Term[D] {
     def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]): Unit
 
     val term           = self
-    val argErrors      = arguments.map(_.domain.createSetting()).toArray
-    val argGradients   = arguments.map(_.vars.map(_.domain.createSetting()).toArray).toArray
+    val argErrors      = arguments.map(_.domain.createZeroSetting()).toArray
+    val argGradients   = arguments.map(_.vars.map(_.domain.createZeroSetting()).toArray).toArray
     val argDiffs       = arguments.map(_.differentiator(withRespectTo)).toArray
     val argActivations = argDiffs.map(_.activation)
     val comp           = composer()
@@ -329,7 +363,7 @@ trait NAryOperator[D <: Dom] extends Term[D] {
 }
 
 
-class DotProduct[T1 <: Term[VectorDom], T2 <: Term[VectorDom]](val arg1: T1, val arg2: T2) extends NAryOperator[DoubleDom] {
+class DotProduct[T1 <: Term[VectorDom], T2 <: Term[VectorDom]](val arg1: T1, val arg2: T2) extends Composed[DoubleDom] {
 
   self =>
 
@@ -337,7 +371,7 @@ class DotProduct[T1 <: Term[VectorDom], T2 <: Term[VectorDom]](val arg1: T1, val
   val arguments = IndexedSeq(arg1, arg2)
   def composer() = new Evaluator {
     def eval(inputs: Array[Setting], output: Setting) = {
-      output.cont(0) = inputs(0).vect(0) dot inputs(1).vect(1)
+      output.cont(0) = inputs(0).vect(0) dot inputs(1).vect(0)
     }
   }
 
@@ -356,8 +390,27 @@ class DotProduct[T1 <: Term[VectorDom], T2 <: Term[VectorDom]](val arg1: T1, val
 
 }
 
+object TermImplicits {
+
+  def vector(values: Double*) = new DenseTensor1(values.toArray)
+
+  implicit class RichTerm[D <: Dom](val term:Term[D]) {
+    def apply(args:Any*) = term.apply(args)
+  }
+
+  implicit class RichDom[D <: Dom](val dom: Dom) {
+    def x[D2 <: Dom](that: D2) = new Tuple2Dom(dom, that)
+  }
+
+  implicit class RichVectTerm(val vect:Term[VectorDom]) {
+    def dot(that:Term[VectorDom]) = new DotProduct(vect,that)
+  }
+
+}
 
 object Playground {
+
+  def vector(values: Seq[Double]) = new DenseTensor1(values.toArray)
 
   def main(args: Array[String]) {
     val X = new VectorDom(1)
@@ -368,6 +421,8 @@ object Playground {
     val diff = dot.differentiator(Seq(x))
 
     println(dot.vars)
+    println(dot(Seq(vector(Seq(2.0)), (vector(Seq(10.0)), vector(Seq(2.0))))))
+
 
     //val result = dot(Seq())
 
