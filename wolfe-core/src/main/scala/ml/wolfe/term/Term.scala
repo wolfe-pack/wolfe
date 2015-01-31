@@ -117,7 +117,6 @@ trait Dom {
 }
 
 object Dom {
-  def vectors(dim: Int) = new VectorDom(dim)
   val doubles = new DoubleDom
 }
 
@@ -363,12 +362,10 @@ trait Composed[D <: Dom] extends Term[D] {
 }
 
 
-
-class Sigmoid[T <: Term[DoubleDom]](val arg: T) extends Composed[DoubleDom] {
+class Sigmoid[T <: Term[DoubleDom]](val arg: T) extends ComposedPotential {
   self =>
 
   val arguments = IndexedSeq(arg)
-  val domain    = Dom.doubles
   def composer() = new Evaluator {
     def eval(inputs: Array[Setting], output: Setting) = {
       output.cont(0) = sigmoid(inputs(0).cont(0))
@@ -384,9 +381,8 @@ class Sigmoid[T <: Term[DoubleDom]](val arg: T) extends Composed[DoubleDom] {
   }
 }
 
-class Log[T <: Potential](val arg:T) extends Composed[DoubleDom] {
+class Log[T <: Potential](val arg: T) extends ComposedPotential {
   val arguments = IndexedSeq(arg)
-  val domain = Dom.doubles
   def composer() = new Evaluator {
     def eval(inputs: Array[Setting], output: Setting) = output.cont(0) = math.log(inputs(0).cont(0))
   }
@@ -398,11 +394,10 @@ class Log[T <: Potential](val arg:T) extends Composed[DoubleDom] {
   }
 }
 
-class DotProduct[T1 <: Term[VectorDom], T2 <: Term[VectorDom]](val arg1: T1, val arg2: T2) extends Composed[DoubleDom] {
+class DotProduct[T1 <: Term[VectorDom], T2 <: Term[VectorDom]](val arg1: T1, val arg2: T2) extends ComposedPotential {
 
   self =>
 
-  val domain    = Dom.doubles
   val arguments = IndexedSeq(arg1, arg2)
   def composer() = new Evaluator {
     def eval(inputs: Array[Setting], output: Setting) = {
@@ -427,11 +422,19 @@ class DotProduct[T1 <: Term[VectorDom], T2 <: Term[VectorDom]](val arg1: T1, val
 
 object TermImplicits {
 
+  val doubles = Dom.doubles
+  def vectors(dim: Int) = new VectorDom(dim)
   def vector(values: Double*) = new DenseTensor1(values.toArray)
 
-  def sigm[T <: Potential](term:T) = new Sigmoid(term)
+  def sigm[T <: Potential](term: T) = new Sigmoid(term)
 
-  def log[T <: Potential](term:T) = new Log(term)
+  def log[T <: Potential](term: T) = new Log(term)
+
+  implicit class RichPotential(term: Potential) {
+    def +(that: Potential) = new Sum(IndexedSeq(term, that))
+    def *(that: Potential):Product = new Product(IndexedSeq(term, that))
+    def *(that: Double):Product = this * new Constant[DoubleDom](Dom.doubles, that)
+  }
 
   implicit class RichTerm[D <: Dom](val term: Term[D]) {
     def apply(args: Any*) = term.apply(args)
@@ -447,6 +450,47 @@ object TermImplicits {
 
 }
 
+trait ComposedPotential extends Potential with Composed[DoubleDom] {
+  val domain = Dom.doubles
+}
+
+class Sum(val arguments: IndexedSeq[Potential]) extends ComposedPotential {
+  def composer() = new Evaluator {
+    def eval(inputs: Array[Setting], output: Setting) = {
+      output.cont(0) = 0.0
+      for (i <- 0 until inputs.length)
+        output.cont(0) += inputs(i).cont(0)
+    }
+  }
+  def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
+    def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]) = {
+      for (i <- 0 until argOutputs.length)
+        gradient(i).cont(0) += outError.cont(0)
+    }
+    def withRespectTo = wrt
+  }
+}
+class Product(val arguments: IndexedSeq[Potential]) extends ComposedPotential {
+  def composer() = new Evaluator {
+    def eval(inputs: Array[Setting], output: Setting) = {
+      output.cont(0) = 1.0
+      for (i <- 0 until inputs.length)
+        output.cont(0) *= inputs(i).cont(0)
+    }
+  }
+  def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
+    def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]) = {
+      var total = outError.cont(0)
+      for (i <- 0 until argOutputs.length)
+        total *= argOutputs(i).cont(0)
+      for (i <- 0 until argOutputs.length)
+        gradient(i).cont(0) += total / argOutputs(i).cont(0)
+    }
+    def withRespectTo = wrt
+  }
+}
+
+
 object Playground {
 
   def vector(values: Seq[Double]) = new DenseTensor1(values.toArray)
@@ -461,6 +505,7 @@ object Playground {
 
     println(dot.vars)
     println(dot(Seq(vector(Seq(2.0)), (vector(Seq(10.0)), vector(Seq(2.0))))))
+
 
 
     //val result = dot(Seq())
