@@ -135,9 +135,15 @@ class TermSpecs extends WolfeSpec {
 
   "A term with discrete variables" should {
     "provide its argmax" in {
-      val dom = bools x bools
-      val result = argmax(dom) {x => I(x._1 && x._2)}
+      val result = argmax(bools x bools) {x => I(x._1 && x._2)}
       result should be (true,true)
+    }
+    "provide a partial argmax" in {
+      val x = bools.variable("x")
+      val y = bools.variable("y")
+      val term = I(x === y)
+      term.argmax(x, true) should be (true)
+      term.argmax(x, false) should be (false)
     }
   }
 

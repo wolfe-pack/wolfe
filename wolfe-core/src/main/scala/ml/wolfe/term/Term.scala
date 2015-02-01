@@ -463,7 +463,11 @@ object TermImplicits {
   implicit class RichBoolTerm(term: BoolTerm) {
     def &&(that: BoolTerm) = new And(term, that)
     def ||(that: BoolTerm) = new Or(term, that)
-    def ->(that: BoolTerm) = new Implies(term, that)
+    def -->(that: BoolTerm) = new Implies(term, that)
+  }
+
+  implicit class RichDiscreteTerm[T](term:DiscreteTerm[T]) {
+    def ===(that:DiscreteTerm[T]) = new DiscreteEquals(term,that)
   }
 
   implicit class RichTerm[D <: Dom](val term: Term[D]) {
@@ -602,6 +606,11 @@ trait BinaryDiscreteOperator[D <: Dom, A <: Dom] extends Composed[D] {
     }
   }
   def differentiator(wrt: Seq[Var[Dom]]) = ???
+}
+
+class DiscreteEquals[T](var arg1:DiscreteTerm[T],var arg2:DiscreteTerm[T]) extends BinaryDiscreteOperator[BoolDom,DiscreteDom[T]] {
+  val domain = Dom.bools
+  def op(a1: Int, a2: Int) = if (a1 == a2) 1 else 0
 }
 
 class And(val arg1: BoolTerm, val arg2: BoolTerm) extends BinaryDiscreteOperator[BoolDom, BoolDom] {
