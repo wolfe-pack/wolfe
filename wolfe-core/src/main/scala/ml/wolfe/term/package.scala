@@ -7,6 +7,7 @@ import ml.wolfe.fg20.{Domain, IndexedSeqDomain, AtomicDomain}
  */
 package object term {
   type DoubleTerm = Term[DoubleDom]
+  type VectorTerm = Term[VectorDom]
   type BoolDom = DiscreteDom[Boolean]
   type BoolTerm = Term[BoolDom]
   type DiscreteTerm[T] = Term[DiscreteDom[T]]

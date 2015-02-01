@@ -85,8 +85,8 @@ class TermSpecs extends WolfeSpec {
       val x = doubles.variable("x")
       val y = doubles.variable("y")
       val term = x + y + x
-      term.gradient(x, 10.0, 5.0) should be(2.0)
       term.gradient(y, 10.0, 5.0) should be(1.0)
+      term.gradient(x, 10.0, 5.0) should be(2.0)
     }
   }
 
@@ -145,6 +145,23 @@ class TermSpecs extends WolfeSpec {
       term.argmax(x, true) should be (true)
       term.argmax(x, false) should be (false)
     }
+  }
+
+  "A max term" should {
+    "evaluate to the maximum over its domain" in {
+      val x = bools.variable("x")
+      val term = max(bools) { y => I(y && x)}
+      term(false) should be (0.0)
+      term(true) should be (1.0)
+    }
+
+    "provide its sub-gradient" in {
+      val weights = vectors(2).variable("w")
+      val term = max(bools) { label => I(label) * (weights dot vector(1,2))}
+      val result = term.gradient(weights, vector(1,1))
+      result should equal (vector(1,2))
+    }
+
   }
 
 }
