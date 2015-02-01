@@ -110,8 +110,8 @@ class TermSpecs extends WolfeSpec {
     "evaluate to 0 if a predicate is false, and 1 otherwise" in {
       val x = bools.variable("x")
       val term = I(x)
-      term(false) should be (0.0)
-      term(true) should be (1.0)
+      term(false) should be(0.0)
+      term(true) should be(1.0)
     }
   }
 
@@ -135,15 +135,15 @@ class TermSpecs extends WolfeSpec {
 
   "A term with discrete variables" should {
     "provide its argmax" in {
-      val result = argmax(bools x bools) {x => I(x._1 && x._2)}
-      result should be (true,true)
+      val result = argmax(bools x bools) { x => I(x._1 && x._2)}
+      result should be(true, true)
     }
     "provide a partial argmax" in {
       val x = bools.variable("x")
       val y = bools.variable("y")
       val term = I(x === y)
-      term.argmax(x, true) should be (true)
-      term.argmax(x, false) should be (false)
+      term.argmax(x, true) should be(true)
+      term.argmax(x, false) should be(false)
     }
   }
 
@@ -151,15 +151,15 @@ class TermSpecs extends WolfeSpec {
     "evaluate to the maximum over its domain" in {
       val x = bools.variable("x")
       val term = max(bools) { y => I(y && x)}
-      term(false) should be (0.0)
-      term(true) should be (1.0)
+      term(false) should be(0.0)
+      term(true) should be(1.0)
     }
 
     "provide its sub-gradient" in {
       val weights = vectors(2).variable("w")
-      val term = max(bools) { label => I(label) * (weights dot vector(1,2))}
-      val result = term.gradient(weights, vector(1,1))
-      result should equal (vector(1,2))
+      val term = max(bools) { label => I(label) * (weights dot vector(1, 2))}
+      term.gradient(weights, vector(1, 1)) should equal(vector(1, 2))
+      term.gradient(weights, vector(1, -1)) should equal(vector(0, 0))
     }
 
   }
