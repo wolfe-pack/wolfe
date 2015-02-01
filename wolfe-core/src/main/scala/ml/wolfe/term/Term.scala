@@ -13,13 +13,21 @@ trait Term[+D <: Dom] {
   def vars: Seq[Var[Dom]]
   def evaluator(): Evaluator
   def differentiator(wrt: Seq[Var[Dom]]): Differentiator
-  def argmaxer(wrt:Seq[Var[Dom]]):Argmaxer = sys.error("Argmax only defined on real valued terms")
   def atoms: Atoms
 
-  def argmax[V <: Dom](wrt:Var[V],args:Any*):wrt.domain.Value = {
+
+  def argmaxer(wrt: Seq[Var[Dom]]): Argmaxer = {
+    //todo: this could be type safe, for example by adding the argmax method to the RichDoubleTerm
+    if (!domain.isDouble) sys.error("Argmax only supported for real valued terms")
+    else if (wrt.forall(_.domain.isDiscrete)) new ExhaustiveSearchArgmaxer(this.asInstanceOf[DoubleTerm], wrt) else ???
+
+  }
+
+
+  def argmax[V <: Dom](wrt: Var[V], args: Any*): wrt.domain.Value = {
     val am = argmaxer(Seq(wrt))
     val observed = vars.filter(_ != wrt)
-    val observedSettings = for ((a,v) <- args zip observed) yield v.domain.toSetting(a.asInstanceOf[v.domain.Value])
+    val observedSettings = for ((a, v) <- args zip observed) yield v.domain.toSetting(a.asInstanceOf[v.domain.Value])
     val result = wrt.domain.createSetting()
     am.argmax(observedSettings.toArray, observed.map(_.domain.createMsgs()).toArray, Array(result))
     wrt.domain.toValue(result)
@@ -86,7 +94,7 @@ trait Dom {
     result
   }
   def createSetting(): Setting = new Setting(lengths.discOff, lengths.contOff, lengths.vectOff)
-  def createMsgs() = new Msgs(null,null,null)
+  def createMsgs() = new Msgs(null, null, null)
   def createZeroSetting(): Setting = {
     val result = createSetting()
     copyValue(zero, result)
@@ -96,6 +104,11 @@ trait Dom {
 
   def lengths: Offsets
 
+  def isDiscrete = lengths.contOff == 0 && lengths.vectOff == 0
+  def isContinuous = lengths.discOff == 0
+  def isDouble = lengths.contOff == 1 && lengths.discOff == 0 && lengths.vectOff == 0
+
+
   def one: Value
   def zero: Value
 
@@ -104,6 +117,7 @@ trait Dom {
 
 object Dom {
   val doubles = new DoubleDom
+  val bools   = TermImplicits.discrete(false, true)
 }
 
 class VectorDom(val dim: Int) extends Dom {
@@ -140,7 +154,7 @@ case class DoubleVar(name: String, owner: Var[Dom], domain: DoubleDom, offset: I
   override def argmaxer(wrt: Seq[Var[Dom]]) = new Argmaxer {
     val contained = wrt.contains(self)
     def argmax(observed: Array[Setting], msgs: Array[Msgs], result: Array[Setting]) = {
-      result(0).cont(0) = if (contained)  Double.PositiveInfinity else observed(0).cont(0)
+      result(0).cont(0) = if (contained) Double.PositiveInfinity else observed(0).cont(0)
     }
   }
 }
@@ -148,6 +162,7 @@ case class DoubleVar(name: String, owner: Var[Dom], domain: DoubleDom, offset: I
 case class DiscVar[T](name: String, owner: Var[Dom], domain: DiscreteDom[T], offset: Int) extends Var[DiscreteDom[T]] {
   val ranges = Ranges(Offsets(offset, 0, 0), Offsets(offset + 1, 0, 0))
   def atoms = Atoms(disc = List(this.asInstanceOf[DiscVar[Any]]))
+
 
 }
 
@@ -360,7 +375,7 @@ trait Composed[D <: Dom] extends Term[D] {
 }
 
 
-class Sigmoid[T <: Term[DoubleDom]](val arg: T) extends ComposedPotential {
+class Sigmoid[T <: Term[DoubleDom]](val arg: T) extends ComposedDoubleTerm {
   self =>
 
   val arguments = IndexedSeq(arg)
@@ -379,7 +394,7 @@ class Sigmoid[T <: Term[DoubleDom]](val arg: T) extends ComposedPotential {
   }
 }
 
-class Log[T <: Potential](val arg: T) extends ComposedPotential {
+class Log[T <: DoubleTerm](val arg: T) extends ComposedDoubleTerm {
   val arguments = IndexedSeq(arg)
   def composer() = new Evaluator {
     def eval(inputs: Array[Setting], output: Setting) = output.cont(0) = math.log(inputs(0).cont(0))
@@ -392,7 +407,7 @@ class Log[T <: Potential](val arg: T) extends ComposedPotential {
   }
 }
 
-class DotProduct[T1 <: Term[VectorDom], T2 <: Term[VectorDom]](val arg1: T1, val arg2: T2) extends ComposedPotential {
+class DotProduct[T1 <: Term[VectorDom], T2 <: Term[VectorDom]](val arg1: T1, val arg2: T2) extends ComposedDoubleTerm {
 
   self =>
 
@@ -421,25 +436,42 @@ class DotProduct[T1 <: Term[VectorDom], T2 <: Term[VectorDom]](val arg1: T1, val
 object TermImplicits {
 
   val doubles = Dom.doubles
+  val bools   = Dom.bools
   def vectors(dim: Int) = new VectorDom(dim)
+  def discrete[T](args: T*) = new DiscreteDom[T](args.toIndexedSeq)
   def vector(values: Double*) = new DenseTensor1(values.toArray)
 
-  def sigm[T <: Potential](term: T) = new Sigmoid(term)
+  def sigm[T <: DoubleTerm](term: T) = new Sigmoid(term)
 
-  def log[T <: Potential](term: T) = new Log(term)
+  def log[T <: DoubleTerm](term: T) = new Log(term)
 
-  implicit class RichPotential(term: Potential) {
-    def +(that: Potential) = new Sum(IndexedSeq(term, that))
-    def *(that: Potential): Product = new Product(IndexedSeq(term, that))
-    def *(that: Double): Product = this * new Constant[DoubleDom](Dom.doubles, that)
+  def I[T <: BoolTerm](term: T) = new Iverson(term)
+
+  implicit def doubleToConstant(d: Double): Constant[DoubleDom] = new Constant[DoubleDom](Dom.doubles, d)
+
+  def argmax[D <: Dom](dom: D)(obj: dom.Variable => DoubleTerm): dom.Value = {
+    val variable = dom.variable("_hidden")
+    val term = obj(variable)
+    term.argmax(variable).asInstanceOf[dom.Value]
+  }
+
+  implicit class RichDoubleTerm(term: DoubleTerm) {
+    def +(that: DoubleTerm) = new Sum(IndexedSeq(term, that))
+    def *(that: DoubleTerm): Product = new Product(IndexedSeq(term, that))
+  }
+
+  implicit class RichBoolTerm(term: BoolTerm) {
+    def &&(that: BoolTerm) = new And(term, that)
+    def ||(that: BoolTerm) = new Or(term, that)
+    def ->(that: BoolTerm) = new Implies(term, that)
   }
 
   implicit class RichTerm[D <: Dom](val term: Term[D]) {
     def apply(args: Any*) = term.apply(args)
   }
 
-  implicit class RichDom[D <: Dom](val dom: Dom) {
-    def x[D2 <: Dom](that: D2) = new Tuple2Dom(dom, that)
+  implicit class RichDom[D <: Dom](val dom: D) {
+    def x[D2 <: Dom](that: D2) = new Tuple2Dom[D, D2](dom, that)
   }
 
   implicit class RichVectTerm(val vect: Term[VectorDom]) {
@@ -448,11 +480,16 @@ object TermImplicits {
 
 }
 
-trait ComposedPotential extends Potential with Composed[DoubleDom] {
+trait ComposedDoubleTerm extends DoubleTerm with Composed[DoubleDom] {
   val domain = Dom.doubles
 }
 
-class Sum(val arguments: IndexedSeq[Potential]) extends ComposedPotential {
+trait UnaryTerm[T <: Term[Dom], D <: Dom] extends Composed[D] {
+  def arg: T
+  val arguments = IndexedSeq(arg)
+}
+
+class Sum(val arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm {
   def composer() = new Evaluator {
     def eval(inputs: Array[Setting], output: Setting) = {
       output.cont(0) = 0.0
@@ -468,7 +505,7 @@ class Sum(val arguments: IndexedSeq[Potential]) extends ComposedPotential {
     def withRespectTo = wrt
   }
 }
-class Product(val arguments: IndexedSeq[Potential]) extends ComposedPotential {
+class Product(val arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm {
   def composer() = new Evaluator {
     def eval(inputs: Array[Setting], output: Setting) = {
       output.cont(0) = 1.0
@@ -493,17 +530,22 @@ object Playground {
 
   def vector(values: Seq[Double]) = new DenseTensor1(values.toArray)
 
+  import TermImplicits._
+
   def main(args: Array[String]) {
-    val X = new VectorDom(1)
-    val XX = new Tuple2Dom(X, X)
-    val pair = XX.variable("pair")
-    val x = X.variable("x")
-    val dot = new DotProduct(x, pair._1)
-    val diff = dot.differentiator(Seq(x))
 
-    println(dot.vars)
-    println(dot(Seq(vector(Seq(2.0)), (vector(Seq(10.0)), vector(Seq(2.0))))))
+    val test = argmax(doubles) { x => x}
+    println(test)
 
+    //    val X = new VectorDom(1)
+    //    val XX = new Tuple2Dom(X, X)
+    //    val pair = XX.variable("pair")
+    //    val x = X.variable("x")
+    //    val dot = new DotProduct(x, pair._1)
+    //    val diff = dot.differentiator(Seq(x))
+    //
+    //    println(dot.vars)
+    //    println(dot(Seq(vector(Seq(2.0)), (vector(Seq(10.0)), vector(Seq(2.0))))))
 
 
     //val result = dot(Seq())
@@ -533,9 +575,48 @@ case class Ranges(from: Offsets, to: Offsets) {
     }
   }
 
-
   def numDisc = to.discOff - from.discOff
   def numCont = to.contOff - from.contOff
   def numVect = to.vectOff - from.vectOff
 }
+
+class Iverson[T <: BoolTerm](val arg: T) extends UnaryTerm[T, DoubleDom] with ComposedDoubleTerm {
+  def composer() = new Evaluator {
+    def eval(inputs: Array[Setting], output: Setting) = {
+      output.cont(0) = if (inputs(0).disc(0) == 0) 0.0 else 1.0
+    }
+  }
+  def differentiator(wrt: Seq[Var[Dom]]) = ???
+}
+
+trait BinaryDiscreteOperator[D <: Dom, A <: Dom] extends Composed[D] {
+
+  def arg1: Term[A]
+  def arg2: Term[A]
+  def op(a1: Int, a2: Int): Int
+
+  val arguments = IndexedSeq(arg1, arg2)
+  def composer() = new Evaluator {
+    def eval(inputs: Array[Setting], output: Setting) = {
+      output.disc(0) = op(inputs(0).disc(0), inputs(1).disc(0))
+    }
+  }
+  def differentiator(wrt: Seq[Var[Dom]]) = ???
+}
+
+class And(val arg1: BoolTerm, val arg2: BoolTerm) extends BinaryDiscreteOperator[BoolDom, BoolDom] {
+  def op(a1: Int, a2: Int) = if (a1 != 0 && a2 != 0) 1 else 0
+  val domain = Dom.bools
+}
+
+class Or(val arg1: BoolTerm, val arg2: BoolTerm) extends BinaryDiscreteOperator[BoolDom, BoolDom] {
+  def op(a1: Int, a2: Int) = if (a1 != 0 || a2 != 0) 1 else 0
+  val domain = Dom.bools
+}
+
+class Implies(val arg1: BoolTerm, val arg2: BoolTerm) extends BinaryDiscreteOperator[BoolDom, BoolDom] {
+  def op(a1: Int, a2: Int) = if (a1 == 0 || a2 != 0) 1 else 0
+  val domain = Dom.bools
+}
+
 

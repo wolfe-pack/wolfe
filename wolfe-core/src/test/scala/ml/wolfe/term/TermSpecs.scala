@@ -106,6 +106,14 @@ class TermSpecs extends WolfeSpec {
     }
   }
 
+  "An iverson bracket" should {
+    "evaluate to 0 if a predicate is false, and 1 otherwise" in {
+      val x = bools.variable("x")
+      val term = I(x)
+      term(false) should be (0.0)
+      term(true) should be (1.0)
+    }
+  }
 
   "Composing log, sigmoid and dot prodcuts" should {
     "provide a logistic loss matrix factorization objective" in {
@@ -122,6 +130,14 @@ class TermSpecs extends WolfeSpec {
       val result = term.gradient(x, vector(1.0, 2.0), vector(2.0, 3.0))
       val prob = sigmoid(8.0)
       result should equal(vector(2.0, 3.0) * (1.0 - prob))
+    }
+  }
+
+  "A term with discrete variables" should {
+    "provide its argmax" in {
+      val dom = bools x bools
+      val result = argmax(dom) {x => I(x._1 && x._2)}
+      result should be (true,true)
     }
   }
 
