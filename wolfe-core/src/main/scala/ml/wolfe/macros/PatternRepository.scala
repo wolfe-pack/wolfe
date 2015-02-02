@@ -1,13 +1,14 @@
 package ml.wolfe.macros
 
-import scala.reflect.macros.Context
+import scala.reflect.macros.blackbox
+import scala.reflect.macros.blackbox.Context
 import ml.wolfe.Wolfe._
 import scala.Some
 
 /**
  * @author Sebastian Riedel
  */
-trait PatternRepository[C <: Context] extends SymbolRepository[C] with CodeRepository[C] {
+trait PatternRepository[C <: blackbox.Context] extends SymbolRepository[C] with CodeRepository[C] {
 
   import context.universe._
 

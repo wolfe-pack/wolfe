@@ -2,7 +2,7 @@ package ml
 
 import cc.factorie.la.{SingletonTensor1, DenseTensor1, SparseTensor1, Tensor1}
 import cc.factorie.maths.ArrayOps
-import scalaxy.loops._
+// import scalaxy.streams.optimize
 
 
 /**
@@ -25,11 +25,11 @@ package object wolfe {
     def sqDiff(a1: A, a2: A) = {
       require(a1.length == a2.length)
       var x:Double = 0
-      for(i <- (0 until a1.length).optimized) x += (a1(i) - a2(i)) * (a1(i) - a2(i))
+      for(i <- (0 until a1.length)) x += (a1(i) - a2(i)) * (a1(i) - a2(i))
       x
     }
     def log(s:A) {
-      for (i <- (0 until s.length).optimized) s(i) = math.log(s(i))
+      for (i <- (0 until s.length)) s(i) = math.log(s(i))
     }
 
     def fill(s: A, v: Double) { java.util.Arrays.fill(s, v) }

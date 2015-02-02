@@ -2,7 +2,8 @@ package ml.wolfe.apps.factorization.util
 
 import java.io.FileWriter
 
-import ml.wolfe.nlp.util.ANSIFormatter._
+import ml.wolfe.util.{ANSIFormatter, ProgressBar}
+import ANSIFormatter._
 import ml.wolfe.util.ProgressBar
 
 import scala.collection.mutable.ArrayBuffer

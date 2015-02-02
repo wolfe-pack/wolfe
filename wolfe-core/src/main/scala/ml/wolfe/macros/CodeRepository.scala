@@ -1,8 +1,10 @@
 package ml.wolfe.macros
 
+import scala.collection.mutable
 import scala.language.existentials
 import scala.language.experimental.macros
-import scala.reflect.macros.Context
+import scala.reflect.macros.blackbox
+import scala.reflect.macros.blackbox.Context
 
 
 /**
@@ -10,7 +12,7 @@ import scala.reflect.macros.Context
  * function calls of anonymous functions with the right hand side of the anonymous function where parameters are
  * replaced with the function application arguments.
  */
-trait CodeRepository[C <: Context] extends HasContext[C] with Transformers[C] with SymbolRepository[C] {
+trait CodeRepository[C <: blackbox.Context] extends HasContext[C] with Transformers[C] with SymbolRepository[C] {
 
   import context.universe._
 
@@ -35,20 +37,24 @@ trait CodeRepository[C <: Context] extends HasContext[C] with Transformers[C] wi
             val shortName = symbol.name.encoded
             val methods = loaded.getDeclaredMethods
             val method = methods.find(_.getName == shortName).get
-            val params = symbol.asMethod.paramss.map(_.map(p => {
-              val vd = ValDef(NoMods, p.name.toTermName, TypeTree(p.typeSignature), EmptyTree)
-              vd.symbol = p
+            val symbols = new mutable.HashMap[ValDef,Symbol]
+            val params = symbol.asMethod.paramLists.map(_.map(p => {
+              //val vd = ValDef(NoMods, p.name.toTermName, TypeTree(p.typeSignature), EmptyTree)
+              val vd = context.internal.valDef(p)
+              symbols(vd) = p
+              //todo: not setting the parameter symbol breaks things downstream
+              //vd.symbol = p
               vd
             }))
             val args = params.flatMap(_.map(p => {
-              val tree = Ident(p.symbol)
+              val tree = Ident(symbols(p))
               val expr = context.Expr[Any](tree)
               expr
             }))
             val withContext = context :: args
             val result = method.invoke(instance, withContext: _*).asInstanceOf[context.Expr[Any]]
             val returnType = TypeTree(symbol.asMethod.returnType)
-            Some(DefDef(NoMods, symbol.name, Nil, params, returnType, result.tree))
+            Some(DefDef(NoMods, symbol.name.toTermName, Nil, params, returnType, result.tree))
 //            None
           case None => None
         }
@@ -132,10 +138,10 @@ object CodeRepository {
    */
   def inlineMacro[T](t: T, times: Int = 1): String = macro inlineMacroImpl[T]
 
-  def inlineMacroImpl[T: c.WeakTypeTag](c: Context)(t: c.Expr[T], times: c.Expr[Int]): c.Expr[String] = {
+  def inlineMacroImpl[T: c.WeakTypeTag](c: blackbox.Context)(t: c.Expr[T], times: c.Expr[Int]): c.Expr[String] = {
 
     val repo = new ContextHelper[c.type](c) with CodeRepository[c.type] //{val context:c.type = c}
-    val evalTimes = c.eval(c.Expr[Int](c.resetAllAttrs(times.tree)))
+    val evalTimes = c.eval(c.Expr[Int](c.untypecheck(times.tree)))
     val result = for (inlined <- repo.inlineN(evalTimes, t.tree)) yield inlined.toString()
     c.literal(result.toString)
   }

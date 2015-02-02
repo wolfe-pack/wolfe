@@ -1,6 +1,9 @@
 package ml.wolfe.util
 
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging._
+import com.typesafe.scalalogging.slf4j.LazyLogging
+
+//.slf4j.Logging
 
 import scala.annotation.StaticAnnotation
 import scala.language.experimental.macros
@@ -12,7 +15,7 @@ import scala.reflect.macros.Context
  * In VM Properties: -Dorg.slf4j.simpleLogger.defaultLogLevel=DEBUG
  *
  */
-object LoggerUtil extends Logging {
+object LoggerUtil extends LazyLogging {
 
   def getLogger = logger.underlying
 

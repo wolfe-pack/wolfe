@@ -60,7 +60,7 @@ trait MetaAtomicStructuredFactors[C <: Context] {
       """
     lazy val loop       = transformer(loopSettingsNoDuplicates(transformedPointers) { perSetting })
 
-    lazy val classDef = q"""
+    lazy val classDef:Tree = q"""
       final class $className(..$constructorArgs) extends ml.wolfe.macros.StructuredFactor[${ structure.argType }] {
         val nodes:Array[ml.wolfe.FactorGraph.Node] = $nodes.toList.distinct.filter(! _.variable.isObserved).toArray
         val vars = nodes.map(_.variable.asDiscrete)
@@ -133,7 +133,7 @@ trait MetaAtomicStructuredFactors[C <: Context] {
 
     def inject(term: Tree) = context.resetLocalAttrs(injectStructure(term, matcher))
 
-    lazy val classDef = q"""
+    lazy val classDef:Tree = q"""
       final class $className(..$constructorArgs) extends ml.wolfe.macros.StructuredFactor[${ structure.argType }] {
         val nodes:Array[ml.wolfe.FactorGraph.Node] = $nodes.toList.distinct.toArray
         val vars = nodes.map(_.variable)

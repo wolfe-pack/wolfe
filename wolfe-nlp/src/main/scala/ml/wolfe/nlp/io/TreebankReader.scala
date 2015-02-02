@@ -18,6 +18,7 @@ class TreebankReader(filename: String, options: TreebankReaderOptions = new Defa
     t.children.map(transformer.transformTree(_)).iterator
   }
 
+  // Double in ConstituentTree Object for now
   def stringToTree(str: String, options: TreebankReaderOptions): ConstituentTree = {
     str match {
       case DOUBLE_PAREN_PATTERN() => {
@@ -111,6 +112,11 @@ abstract class TreebankReaderOptions {
   def REMOVE_UNARY_CHAINS: Boolean
 
   def UNIFY_NONTERMS: Boolean
+}
+
+object TreebankReaderOptions {
+
+  def default = new DefaultTreebankReaderOptions
 }
 
 class DefaultTreebankReaderOptions extends TreebankReaderOptions {

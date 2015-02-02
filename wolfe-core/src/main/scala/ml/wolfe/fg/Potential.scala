@@ -4,7 +4,7 @@ import ml.wolfe.FactorGraph._
 import ml.wolfe.FactorieVector
 import ml.wolfe.util.Multidimensional._
 import scala.util.Random
-import scalaxy.loops._
+// import scalaxy.loops._
 /**
  * @author Sebastian Riedel
  */
@@ -81,7 +81,7 @@ trait DiscretePotential extends Potential {
     val k = edge.indexInFactor
     val v = vars(k)
     val scores = Array.ofDim[Double](v.dim)
-    for(i <- (0 until v.dim).optimized) {
+    for(i <- (0 until v.dim)) {
       setting(k) = i
       scores(i) = math.exp(valueForSetting(setting))
     }

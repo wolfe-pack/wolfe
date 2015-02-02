@@ -136,7 +136,14 @@ class BeliefPropagation20Specs extends WolfeSpec {
       val mpResult = fg_mp.inferMarginals(1)
       val bfResult = fg_bf.inferMarginals()
 
-      mpResult.marginals should equal(bfResult.marginals)
+      // println("SUMP2 CHECK")
+      // println(mpResult.marginals.getClass)
+      // println(bfResult.marginals.getClass)
+     // println(areEqual(mpResult.marginals, bfResult.marginals))
+
+
+      //mpResult.marginals should equal(bfResult.marginals)
+      stateEq.areEqual(mpResult.marginals, bfResult.marginals) should be (true)
       mpResult.logZ should be (bfResult.logZ +- 0.0001)
     }
 
@@ -146,14 +153,14 @@ class BeliefPropagation20Specs extends WolfeSpec {
       val mp = new SumProduct(chain).inferMarginals()
       val bf = new BruteForce(chain).inferMarginals()
 
-      mp.marginals should equal(bf.marginals)
+      // mp.marginals should equal(bf.marginals)
+      stateEq.areEqual(mp.marginals, bf.marginals) should be (true)
       mp.logZ should be (bf.logZ +- 0.0001)
 
 
     }
 
     "return expected feature vectors as gradient" in {
-
 
       val weightsVar = new VectVar(name = "w")
       val weights = LinearPotential.dense(4, 0 -> 1.0, 1 -> 2.0, 2 -> -3, 3 -> 0)

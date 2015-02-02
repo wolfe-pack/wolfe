@@ -11,6 +11,8 @@ class OptimizeByLearningSpecs extends WolfeSpec {
   import OptimizedOperators._
   import Wolfe._
 
+  private val eps = 0.0001
+
   "An argmax operator" should {
     "return the argmax of the MAP log-likelihood (perceptron)" in {
       implicit val space = Range(0, 5)
@@ -69,7 +71,8 @@ class OptimizeByLearningSpecs extends WolfeSpec {
       val mu = BruteForceOperators.expect(space)(model(w))(features)
       val empirical = sum(data)( i => features(i) * (1.0 / data.size) )
       //check if moments match!
-      mu should equal (empirical)
+      //mu should equal (empirical)
+      mu.keys.foreach(key => mu(key) should be(empirical(key) +- eps))
     }
 
 

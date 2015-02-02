@@ -3,7 +3,7 @@ package ml.wolfe.fg
 import ml.wolfe.FactorGraph._
 import ml.wolfe.util.Multidimensional._
 import scala.collection.mutable.ArrayBuffer
-import scalaxy.loops._
+//import scalaxy.loops._
 import ml.wolfe.MoreArrayOps._
 import ml.wolfe.FactorieVector
 import breeze.linalg.{Transpose, DenseVector, DenseMatrix, MatrixSingularException}
@@ -17,7 +17,7 @@ object TablePotential {
     val count = dims.product
     val settings = Array.ofDim[Array[Int]](count)
     val scores = Array.ofDim[Double](count)
-    for (i <- (0 until count).optimized) {
+    for (i <- (0 until count)) {
       val setting = TablePotential.entryToSetting(i, dims)
       val score = pot(setting)
       settings(i) = setting
@@ -44,7 +44,7 @@ object TablePotential {
    */
   final def settingToEntry(setting: Seq[Int], dims: Array[Int]) = {
     var result = 0
-    for (i <- (0 until dims.length).optimized) {
+    for (i <- (0 until dims.length)) {
       result = setting(i) + result * dims(i)
     }
     result
@@ -59,7 +59,7 @@ object TablePotential {
   final def entryToSetting(entry: Int, dims: Array[Int]) = {
     val result = Array.ofDim[Int](dims.length)
     var current = entry
-    for (i <- (0 until dims.length).optimized) {
+    for (i <- (0 until dims.length)) {
       val value = current % dims(dims.length - i - 1)
       result(dims.length - i - 1) = value
       current = current / dims(dims.length - i - 1)
@@ -156,7 +156,7 @@ final class TablePotential(edges: Array[Edge], table: Table) extends DiscretePot
     var maxScore = Double.NegativeInfinity
     var maxSetting = Array.ofDim[Int](edges.size)
 
-    for (i <- (0 until settings.size).optimized) {
+    for (i <- (0 until settings.size)) {
       var score = scoreFun(i)
       if(score > maxScore) {
         maxScore = score
@@ -168,20 +168,20 @@ final class TablePotential(edges: Array[Edge], table: Table) extends DiscretePot
   }
 
   override def mapF2N() = {
-    for (j <- (0 until edges.size).optimized)
-      fill(msgss(j).f2n, 0)
+      for (j <- (0 until edges.size))
+        fill(msgss(j).f2n, 0)
 
-    val maxSetting = computeMAP()
+      val maxSetting = computeMAP()
 
-    for (j <- (0 until edges.size).optimized)
-      msgss(j).f2n(maxSetting(j)) = 1
+      for (j <- (0 until edges.size))
+        msgss(j).f2n(maxSetting(j)) = 1
   }
 
   override def maxMarginalExpectationsAndObjective(result: FactorieVector) = {
     // 1) go over all states, find max with respect to incoming messages
     var norm = Double.NegativeInfinity
     var maxScore = Double.NegativeInfinity
-    for (i <- (0 until entryCount).optimized) {
+    for (i <- (0 until entryCount)) {
       val setting = settings(i)
       val score = penalizedScore(i, setting)
       if (score > norm) {
@@ -196,21 +196,21 @@ final class TablePotential(edges: Array[Edge], table: Table) extends DiscretePot
     var localZ = 0.0
 
     //calculate local partition function
-    for (i <- (0 until entryCount).optimized) {
-      val setting = settings(i)
-      val score = penalizedScore(i, setting)
-      localZ += math.exp(score)
+      for (i <- (0 until entryCount)) {
+        val setting = settings(i)
+        val score = penalizedScore(i, setting)
+        localZ += math.exp(score)
     }
 
     var linear = 0.0
     var entropy = 0.0
     //calculate linear contribution to objective and entropy
-    for (i <- (0 until entryCount).optimized) {
-      val setting = settings(i)
-      val score = penalizedScore(i, setting)
-      val prob = math.exp(score) / localZ
-      linear += scores(i) * prob
-      entropy -= math.log(prob) * prob
+      for (i <- (0 until entryCount)) {
+        val setting = settings(i)
+        val score = penalizedScore(i, setting)
+        val prob = math.exp(score) / localZ
+        linear += scores(i) * prob
+        entropy -= math.log(prob) * prob
     }
     val obj = linear + entropy
     obj

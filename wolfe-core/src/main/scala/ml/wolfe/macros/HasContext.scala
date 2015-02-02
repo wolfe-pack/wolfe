@@ -1,6 +1,7 @@
 package ml.wolfe.macros
 
-import scala.reflect.macros.Context
+import scala.reflect.macros.blackbox
+import scala.reflect.macros.blackbox.Context
 
 /**
  * This trait represents classes that work with respect to a specific Context. If you have generic functionality
@@ -9,7 +10,7 @@ import scala.reflect.macros.Context
  *
  * @author Sebastian Riedel
  */
-trait HasContext[C <: Context] {
+trait HasContext[C <: blackbox.Context] {
   val context: C
 
   import context.universe._

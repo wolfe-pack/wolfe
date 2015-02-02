@@ -3,7 +3,7 @@ package ml.wolfe
 import ml.wolfe.FactorGraph.{EdgeDirection, DirectedEdge, Node, Factor}
 import ml.wolfe.fg.AD3GenericPotential
 import scala.collection.mutable.ArrayBuffer
-import scalaxy.loops._
+// import scalaxy.loops._
 
 /**
  * Dual decomposition with projected subgradient, AD3, ..
@@ -97,7 +97,7 @@ object DualDecomposition {
 
   private def primalResidual(fg: FactorGraph) = {
     var r:Double = 0
-    for(i <- (0 until fg.nodes.length).optimized) {
+    for(i <- (0 until fg.nodes.length)) {
       for (e <- fg.nodes(i).edges)
         r += MoreArrayOps.sqDiff(e.msgs.asDiscrete.f2n, fg.nodes(i).variable.asDiscrete.b)
     }
@@ -106,7 +106,7 @@ object DualDecomposition {
 
   private def dualResidual(fg: FactorGraph, previousBeliefs: Array[Array[Double]]) = {
     var r:Double = 0
-    for(i <- (0 until fg.nodes.length).optimized)
+    for(i <- (0 until fg.nodes.length))
       r += fg.nodes(i).edges.length * MoreArrayOps.sqDiff(previousBeliefs(i), fg.nodes(i).variable.asDiscrete.b)
     r
   }

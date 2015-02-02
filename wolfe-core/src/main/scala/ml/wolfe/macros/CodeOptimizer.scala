@@ -1,23 +1,24 @@
 package ml.wolfe.macros
 
-import scala.reflect.macros.Context
+import scala.reflect.macros.blackbox
+import scala.reflect.macros.blackbox.Context
 
 /**
  * @author Sebastian Riedel
  */
-trait CodeOptimizer[C <: Context] extends HasContext[C]
-                                          with CodeRepository[C]
-                                          with PatternRepository[C]
-                                          with Transformers[C]{
+trait CodeOptimizer[C <: blackbox.Context] extends HasContext[C]
+                                                   with CodeRepository[C]
+                                                   with PatternRepository[C]
+                                                   with Transformers[C] {
 
   import context.universe._
 
   def toOptimizedFactorieVector(wolfeVector: Tree, index: Tree): Tree = wolfeVector match {
-    case Sum(b@BuilderTrees(dom, filter, obj, _,_)) if filter == EmptyTree =>
-      val Function(List(arg),body) = normalize(obj)
-//      val domTyp = iterableArgumentType(freshlyTyped(dom))
-//      val domTyp = iterableArgumentType(dom)
-//      val domTyp = iterableArgumentType(dom)
+    case Sum(b@BuilderTrees(dom, filter, obj, _, _)) if filter == EmptyTree =>
+      val Function(List(arg), body) = normalize(obj)
+      //      val domTyp = iterableArgumentType(freshlyTyped(dom))
+      //      val domTyp = iterableArgumentType(dom)
+      //      val domTyp = iterableArgumentType(dom)
 
       body match {
         case q"ml.wolfe.Wolfe.oneHot($oneHotIndex,$oneHotValue)" =>
@@ -30,7 +31,7 @@ trait CodeOptimizer[C <: Context] extends HasContext[C]
             }
             result
           """
-          context.resetAllAttrs(code)
+          context.untypecheck(code)
         case _ => q"ml.wolfe.FactorieConverter.toFreshFactorieSparseVector($wolfeVector,$index)"
       }
     case FlattenedPlus(args) =>
@@ -39,15 +40,15 @@ trait CodeOptimizer[C <: Context] extends HasContext[C]
         case q"ml.wolfe.Wolfe.oneHot($oneHotIndex,$oneHotValue)" =>
           q"{val value = $oneHotValue; if (value != 0.0) result +=($index.apply($oneHotIndex),$oneHotValue)}"
         case _ =>
-          val argVector = toOptimizedFactorieVector(arg,index)
+          val argVector = toOptimizedFactorieVector(arg, index)
           q"result += $argVector"
       }
       val result = q"result"
       val all = (init :: commands) :+ result
       q"{..$all}"
-    case ApplyPlus(arg1,arg2) =>
-      val arg1Vector = toOptimizedFactorieVector(arg1,index)
-      val arg2Vector = toOptimizedFactorieVector(arg2,index)
+    case ApplyPlus(arg1, arg2) =>
+      val arg1Vector = toOptimizedFactorieVector(arg1, index)
+      val arg2Vector = toOptimizedFactorieVector(arg2, index)
       val code = q"""
         val result = new cc.factorie.la.SparseTensor1($arg1.size + $arg2.size)
         result.ensureCapacity($arg1.size + $arg2.size)
@@ -67,7 +68,7 @@ trait CodeOptimizer[C <: Context] extends HasContext[C]
 
   def optimizeFactorieVector(factorieVector: Tree) = factorieVector match {
     case q"ml.wolfe.FactorieConverter.toFreshFactorieSparseVector($wolfeVector,$index)" =>
-      toOptimizedFactorieVector(wolfeVector,index)
+      toOptimizedFactorieVector(wolfeVector, index)
     case _ => factorieVector
   }
 

@@ -4,7 +4,7 @@ import java.io.{FileInputStream, File, PrintStream, InputStream}
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import ml.wolfe.nlp.util.ANSIFormatter
+import ml.wolfe.util.ANSIFormatter
 
 import scala.collection.mutable
 import scala.collection.mutable.{HashSet, HashMap}

@@ -38,30 +38,33 @@ object ShellPrompt {
 object BuildSettings {
   val buildName         = "wolfe"
   val buildOrganization = "ml.wolfe"
-  val buildScalaVersion = "2.10.4"
+  val buildScalaVersion = "2.11.4"
 
   val buildSettings = Defaults.defaultSettings ++ Seq(
     organization := buildOrganization,
     scalaVersion := buildScalaVersion,
-    scalacOptions := Seq("-unchecked", "-deprecation", "-feature"), //, "-Yrangepos"?
+    scalacOptions := Seq("-unchecked", "-deprecation", "-feature"),//, "-Ylog-classpath"), //, "-Yrangepos"?
     shellPrompt := ShellPrompt.buildShellPrompt,
     fork in run := true, //use a fresh JVM for sbt run
     connectInput in run := true //to use readLine after sbt run
   )
 
   val globalDependencies = libraryDependencies ++= Seq(
-    "org.scalautils" % "scalautils_2.10" % "2.0",
-    "org.scalatest" %% "scalatest" % "2.1.0" % "test",
+    "org.scalautils" % "scalautils_2.11" % "2.1.5",
+    "org.scalatest" % "scalatest_2.11" % "2.2.1" % "test",
     "com.typesafe" % "config" % "1.2.1",
 //    "com.github.axel22" %% "scalameter" % "0.4",
-    "com.nativelibs4java" %% "scalaxy-loops" % "0.3-SNAPSHOT" % "provided",
+//    "com.nativelibs4java" %% "scalaxy-loops" % "0.3-SNAPSHOT" % "provided",
+//    "com.nativelibs4java" % "scalaxy-streams_2.11" % "0.3.2",
+//    "com.nativelibs4java" %% "scalaxy-loops" % "0.3.3" % "provided",
     //    "org.scala-lang" % "scala-compiler" % "2.10.3",
     //    "org.scala-lang" % "scala-library" % "2.10.3",
     "org.slf4j" % "slf4j-api" % "1.7.6",
     "org.slf4j" % "slf4j-simple" % "1.7.6",
     "org.apache.commons" % "commons-compress" % "1.8",
-    "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.2.3",
-    "com.typesafe" % "scalalogging-slf4j_2.10" % "1.1.0",
+//    "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.4.0-rc1",
+ //   "com.typesafe" % "scalalogging-slf4j_2.10" % "1.1.0",
+    "com.typesafe.scala-logging" % "scala-logging-slf4j_2.11" % "2.1.2",
     "com.google.apis" % "google-api-services-freebase" % "v1-rev31-1.13.2-beta",
     "com.google.api-client" % "google-api-client" % "1.14.1-beta",
     "com.googlecode.json-simple" % "json-simple" % "1.1",
@@ -76,16 +79,15 @@ object BuildSettings {
   )
 
   val utilDependencies = libraryDependencies ++= Seq(
-    "cc.factorie" % "factorie" % "1.0",
-    "org.scalamacros" %% "quasiquotes" % "2.0.0"
+    "cc.factorie" % "factorie_2.11" % "1.1"
+//    "org.scalamacros" %% "quasiquotes" % "2.0.0"
 
   )
 
-
   val coreDependencies = libraryDependencies ++= Seq(
     "net.sf.trove4j" % "trove4j" % "3.0.3",
-    "cc.factorie" % "factorie" % "1.0",
-    "org.scalamacros" %% "quasiquotes" % "2.0.0",
+    "cc.factorie" % "factorie_2.11" % "1.1",
+//    "org.scalamacros" %% "quasiquotes" % "2.0.0",
     "org.scalanlp" %% "breeze" % "0.8.1",
     "org.scalanlp" %% "breeze-natives" % "0.8.1",
     "org.sameersingh.htmlgen" % "htmlgen" % "0.1.1"
@@ -101,13 +103,13 @@ object BuildSettings {
   )
 
   val neuralDependencies = libraryDependencies ++= Seq(
-    "org.scala-lang" % "scala-swing" % "2.10.0"
+    "org.scala-lang" % "scala-swing" % "2.11.0-M7"
   )
   
   val appDependencies = libraryDependencies ++= Seq(
     //"pl.project13.scala" %% "rainbow" % "0.2"
-    "net.sandrogrzicic" %% "scalabuff-compiler" % "1.3.6",
-    "net.sandrogrzicic" %% "scalabuff-runtime" % "1.3.6",
+    "net.sandrogrzicic" %% "scalabuff-compiler" % "1.3.8",
+    "net.sandrogrzicic" %% "scalabuff-runtime" % "1.3.8",
     "com.google.protobuf" % "protobuf-java" % "2.3.0"
   )
 
@@ -174,7 +176,7 @@ object Build extends Build {
     id = "wolfe-core",
     base = file("wolfe-core"),
     settings = buildSettings ++ globalSettings ++ coreDependencies ++ Seq(
-      addCompilerPlugin("org.scalamacros" % "paradise" % "2.0.0" cross CrossVersion.full)
+      addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0-M1" cross CrossVersion.full)
     )
   ) dependsOn util % "test->test;compile->compile"
 
@@ -194,7 +196,7 @@ object Build extends Build {
     id = "wolfe-util",
     base = file("wolfe-util"),
     settings = buildSettings ++ globalSettings ++ utilDependencies ++ Seq(
-      addCompilerPlugin("org.scalamacros" % "paradise" % "2.0.0" cross CrossVersion.full)
+      addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0-M1" cross CrossVersion.full)
     )
   )
 
