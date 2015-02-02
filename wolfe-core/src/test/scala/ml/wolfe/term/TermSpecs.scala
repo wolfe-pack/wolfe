@@ -175,11 +175,20 @@ class TermSpecs extends WolfeSpec {
 
   "A sequence term" should {
     "evaluate to a sequence" in {
-      implicit val dom = seqs(doubles, 3)
+      val dom = seqs(doubles, 3)
       val x = doubles.variable("x")
       val y = doubles.variable("y")
-      val term = seq(dom)(x,y,x)
-      term(1.0,2.0) should be (Seq(1.0,2.0,1.0))
+      val term = seq(dom)(x, y, x)
+      term(1.0, 2.0) should be(Seq(1.0, 2.0, 1.0))
+    }
+
+    "provide its gradient" in {
+      val dom = seqs(doubles, 3)
+      val x = doubles.variable("x")
+      val y = doubles.variable("y")
+      val term = seq(dom)(x, y, x)
+      term.gradient(x,10.0,3.0) should be (2.0)
+      term.gradient(y,10.0,3.0) should be (1.0)
     }
   }
 

@@ -150,7 +150,7 @@ case class SeqVar[D <: Dom](name: String, domain: SeqDom[D],
 
   def atoms = elements.view.map(_.atoms).foldLeft(Atoms())(_ ++ _)
 
-  val ranges = Ranges(offsets, offsets +(domain.elementDom.lengths, domain.length))
+  val ranges   = Ranges(offsets, offsets +(domain.elementDom.lengths, domain.length))
   val elements = for (i <- 0 until domain.length) yield
     domain.elementDom.variable(s"$name($i)", offsets +(domain.elementDom.lengths, i), if (owner == null) this else owner)
 
@@ -164,7 +164,6 @@ trait SeqTerm[D <: Dom] extends Term[SeqDom[D]] {
 }
 
 abstract class SeqTermImpl[D <: Dom] extends Composed[SeqDom[D]] with SeqTerm[D] {
-  //todo: introduce variable element domains or require that all arguments have the same domain
   def arguments = elements
 
   def composer() = new Evaluator {
@@ -180,8 +179,13 @@ abstract class SeqTermImpl[D <: Dom] extends Composed[SeqDom[D]] with SeqTerm[D]
     def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]) = {
       //each argument will get its error signal from a subsection of the outError
       for (i <- 0 until argOutputs.length) {
-
-        gradient(i) += ???
+        val offsets = domain.elementDom.lengths * i
+        for (j <- 0 until domain.elementDom.lengths.contOff) {
+          gradient(i).cont(j) += outError.cont(offsets.contOff + j)
+        }
+        for (j <- 0 until domain.elementDom.lengths.vectOff) {
+          gradient(i).vect(j) += outError.vect(offsets.vectOff + j)
+        }
       }
     }
 
@@ -196,8 +200,8 @@ trait Tuple2Term[D1 <: Dom, D2 <: Dom] extends Term[Tuple2Dom[D1, D2]] {
   def _2: domain.dom2.TermType
 }
 
-trait Tuple2TermImpl[D1 <:Dom, D2 <: Dom] extends Tuple2Term[D1,D2] with Composed[Tuple2Dom[D1,D2]] {
-  def arguments = IndexedSeq(_1,_2)
+trait Tuple2TermImpl[D1 <: Dom, D2 <: Dom] extends Tuple2Term[D1, D2] with Composed[Tuple2Dom[D1, D2]] {
+  def arguments = IndexedSeq(_1, _2)
 
   def composer() = ???
 
@@ -209,7 +213,7 @@ case class Tuple2Var[D1 <: Dom, D2 <: Dom](name: String,
                                            offsets: Offsets,
                                            owner: Var[Dom]) extends Var[Tuple2Dom[D1, D2]] with Tuple2Term[D1, D2] {
 
-  val ranges = Ranges(offsets, offsets + domain.dom1.lengths + domain.dom2.lengths)
+  val ranges                   = Ranges(offsets, offsets + domain.dom1.lengths + domain.dom2.lengths)
   val _1: domain.dom1.TermType = domain.dom1.variable(name + "._1", offsets, if (owner == null) this else owner)
   val _2: domain.dom2.TermType = domain.dom2.variable(name + "._2", offsets + domain.dom1.lengths, if (owner == null) this else owner)
 
@@ -279,7 +283,7 @@ object VariableMapping {
 
 class Constant[D <: Dom](val domain: D, val value: D#Value) extends Term[D] {
   self =>
-  val vars = Seq.empty
+  val vars      = Seq.empty
   val evaluator = new Evaluator {
     val result = domain.toSetting(value.asInstanceOf[domain.Value])
 
@@ -330,19 +334,19 @@ trait Composed[D <: Dom] extends Term[D] {
 
   trait Composer {
     val argOutputs = arguments.map(_.domain.createSetting()).toArray
-    val argInputs = arguments.map(_.vars.map(_.domain.createSetting()).toArray)
-    val this2Arg = arguments.map(a => VariableMapping(vars, a.vars)).toArray
-    val argEvals = arguments.map(_.evaluator()).toArray
+    val argInputs  = arguments.map(_.vars.map(_.domain.createSetting()).toArray)
+    val this2Arg   = arguments.map(a => VariableMapping(vars, a.vars)).toArray
+    val argEvals   = arguments.map(_.evaluator()).toArray
   }
 
   trait ComposedDifferentiator extends Differentiator with Composer {
 
-    val term = self
-    val argErrors = arguments.map(_.domain.createZeroSetting()).toArray
-    val argGradients = arguments.map(_.vars.map(_.domain.createZeroSetting()).toArray).toArray
-    val argDiffs = arguments.map(createDifferentiator).toArray
+    val term           = self
+    val argErrors      = arguments.map(_.domain.createZeroSetting()).toArray
+    val argGradients   = arguments.map(_.vars.map(_.domain.createZeroSetting()).toArray).toArray
+    val argDiffs       = arguments.map(createDifferentiator).toArray
     val argActivations = argDiffs.map(_.activation)
-    val comp = composer()
+    val comp           = composer()
 
     def createDifferentiator(term: Term[Dom]) =
       if (term.vars.exists(withRespectTo.contains)) term.differentiator(withRespectTo)
@@ -441,7 +445,6 @@ class DotProduct[T1 <: Term[VectorDom], T2 <: Term[VectorDom]](val arg1: T1, val
   }
 
 }
-
 
 
 trait ComposedDoubleTerm extends DoubleTerm with Composed[DoubleDom] {

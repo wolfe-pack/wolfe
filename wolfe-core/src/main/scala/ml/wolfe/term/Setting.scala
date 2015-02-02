@@ -16,11 +16,10 @@ class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0) {
   final var cont = Array.ofDim[Double](numCont)
   final var vect = Array.ofDim[FactorieVector](numVect)
 
-  final def copyTo(target: Setting, offsets: Offsets, length: Int = 1): Unit = {
-    if (disc.length > 0) System.arraycopy(disc, 0, target.disc, offsets.discOff * length, disc.length)
-    if (cont.length > 0) System.arraycopy(cont, 0, target.cont, offsets.contOff * length, cont.length)
-    if (vect.length > 0) System.arraycopy(vect, 0, target.vect, offsets.vectOff * length, vect.length)
-
+  final def copyTo(target: Setting, targetOffsets: Offsets, length: Int = 1): Unit = {
+    if (disc.length > 0) System.arraycopy(disc, 0, target.disc, targetOffsets.discOff * length, disc.length)
+    if (cont.length > 0) System.arraycopy(cont, 0, target.cont, targetOffsets.contOff * length, cont.length)
+    if (vect.length > 0) System.arraycopy(vect, 0, target.vect, targetOffsets.vectOff * length, vect.length)
   }
 
   final def fillObserved(observed: PartialSetting) = {
