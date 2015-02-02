@@ -20,7 +20,7 @@ object TermImplicits {
 
   def seqs[D <: Dom](elements: D, length: Int) = new SeqDom(elements, length)
 
-  def seq[E<:Dom](dom:SeqDom[E])(elems:dom.elementDom.TermType*) = new SeqTermImpl[E] {
+  def seq[E<:Dom](dom:SeqDom[E])(elems:dom.elementDom.Term*) = new SeqTermImpl[E] {
 
       val domain:dom.type = dom
       def elements = elems.toIndexedSeq
@@ -33,7 +33,7 @@ object TermImplicits {
 
   def I[T <: BoolTerm](term: T) = new Iverson(term)
 
-  implicit def genericToConstant[T,D<:TypedDom[T]](t:T)(implicit dom:D):dom.TermType = dom.const(t)
+  implicit def genericToConstant[T,D<:TypedDom[T]](t:T)(implicit dom:D):dom.Term = dom.const(t)
 
   //implicit def seqToConstant[T,D<:TypedDom[T]](seq:IndexedSeq[T])(implicit dom:SeqDom[D]):dom.TermType = dom.const(seq)
 

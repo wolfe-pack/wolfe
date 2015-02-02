@@ -8,8 +8,8 @@ import ml.wolfe.fg20.Msgs
 trait Dom {
   type Value
   type This <: Dom
-  type TermType <: Term[This]
-  type Variable <: Var[This] with TermType
+  type Term <: term.Term[This]
+  type Variable <: Var[This] with Term
 
   def toValue(setting: Setting, offsets: Offsets = Offsets()): Value
   def copyValue(value: Value, setting: Setting, offsets: Offsets = Offsets())
@@ -27,7 +27,7 @@ trait Dom {
     result
   }
   def variable(name: String, offsets: Offsets = Offsets(), owner: Var[Dom] = null): Variable
-  def const(value:Value):TermType
+  def const(value:Value):Term
 
   def lengths: Offsets
 
@@ -50,7 +50,7 @@ object Dom {
 class VectorDom(val dim: Int) extends Dom {
   type Value = FactorieVector
   type Variable = VectorVar
-  type TermType = VectorTerm
+  type Term = VectorTerm
   type This = VectorDom
 
   val lengths = Offsets(0, 0, 1)
@@ -68,7 +68,7 @@ class VectorDom(val dim: Int) extends Dom {
 
 class DoubleDom extends Dom {
   type Value = Double
-  type TermType = DoubleTerm
+  type Term = DoubleTerm
   type This = DoubleDom
   def toValue(setting: Setting, offsets: Offsets = Offsets()) =
     setting.cont(offsets.contOff)
@@ -86,7 +86,7 @@ class DoubleDom extends Dom {
 class DiscreteDom[T](val values: IndexedSeq[T]) extends Dom {
   type Value = T
   type This = DiscreteDom[T]
-  type TermType = Term[DiscreteDom[T]]
+  type Term = term.Term[DiscreteDom[T]]
   def toValue(setting: Setting, offsets: Offsets = Offsets()) =
     values(setting.disc(offsets.discOff))
   def copyValue(value: Value, setting: Setting, offsets: Offsets = Offsets()) =
@@ -107,7 +107,7 @@ class SeqDom[D <: Dom](val elementDom: D, val length: Int) extends Dom {
   self =>
 
   type Value = IndexedSeq[elementDom.Value]
-  type TermType = SeqTerm[D]
+  type Term = SeqTerm[D]
   type Variable = SeqVar[D]
   type This = SeqDom[D]
 
@@ -131,7 +131,7 @@ class SeqDom[D <: Dom](val elementDom: D, val length: Int) extends Dom {
     lazy val elements = for (i <- 0 until self.length) yield domain.elementDom.const(value(i))
   }
 
-  def apply(args:elementDom.TermType*) = new SeqTermImpl[D] {
+  def apply(args:elementDom.Term*) = new SeqTermImpl[D] {
     def elements = args.toIndexedSeq
     val domain:self.type = self
   }
@@ -142,7 +142,7 @@ class Tuple2Dom[D1 <: Dom, D2 <: Dom](val dom1: D1, val dom2: D2) extends Dom {
   self =>
   type Value = (dom1.Value, dom2.Value)
   type Variable = Tuple2Var[D1, D2]
-  type TermType = Tuple2Term[D1,D2]
+  type Term = Tuple2Term[D1,D2]
   type This = Tuple2Dom[D1,D2]
   val lengths = dom1.lengths + dom2.lengths
   def toValue(setting: Setting, offsets: Offsets = Offsets()) = {

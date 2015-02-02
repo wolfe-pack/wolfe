@@ -157,7 +157,7 @@ case class SeqVar[D <: Dom](name: String, domain: SeqDom[D],
 }
 
 trait SeqTerm[D <: Dom] extends Term[SeqDom[D]] {
-  def elements: IndexedSeq[domain.elementDom.TermType]
+  def elements: IndexedSeq[domain.elementDom.Term]
 
   def apply(index: Int) = elements(index)
 
@@ -199,8 +199,8 @@ abstract class SeqTermImpl[D <: Dom] extends Composed[SeqDom[D]] with SeqTerm[D]
 }
 
 trait Tuple2Term[D1 <: Dom, D2 <: Dom] extends Term[Tuple2Dom[D1, D2]] {
-  def _1: domain.dom1.TermType
-  def _2: domain.dom2.TermType
+  def _1: domain.dom1.Term
+  def _2: domain.dom2.Term
 }
 
 trait Tuple2TermImpl[D1 <: Dom, D2 <: Dom] extends Tuple2Term[D1, D2] with Composed[Tuple2Dom[D1, D2]] {
@@ -217,8 +217,8 @@ case class Tuple2Var[D1 <: Dom, D2 <: Dom](name: String,
                                            owner: Var[Dom]) extends Var[Tuple2Dom[D1, D2]] with Tuple2Term[D1, D2] {
 
   val ranges                   = Ranges(offsets, offsets + domain.dom1.lengths + domain.dom2.lengths)
-  val _1: domain.dom1.TermType = domain.dom1.variable(name + "._1", offsets, if (owner == null) this else owner)
-  val _2: domain.dom2.TermType = domain.dom2.variable(name + "._2", offsets + domain.dom1.lengths, if (owner == null) this else owner)
+  val _1: domain.dom1.Term = domain.dom1.variable(name + "._1", offsets, if (owner == null) this else owner)
+  val _2: domain.dom2.Term = domain.dom2.variable(name + "._2", offsets + domain.dom1.lengths, if (owner == null) this else owner)
 
   def atoms = _1.atoms ++ _2.atoms
 }

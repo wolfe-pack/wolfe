@@ -91,7 +91,7 @@ class TermSpecs extends WolfeSpec {
 
     "should be expressable through the sum operator" in {
       val dom = seqs(bools, 3)
-      def model(y: dom.TermType) = sum(0 until dom.length) { i => I(y(i))}
+      def model(y: dom.Term) = sum(0 until dom.length) { i => I(y(i))}
       val y = dom.variable("y")
       model(y)(IndexedSeq(false, true, true)) should be(2.0)
     }
@@ -171,7 +171,7 @@ class TermSpecs extends WolfeSpec {
     "maximize over a structured search space" in {
       implicit val labels = discrete("V", "N")
       val sequences = seqs(labels, 2)
-      def model(y: sequences.TermType) =
+      def model(y: sequences.Term) =
         I(y(0) === "V") * 2.0 +
         I(y(1) === "N") * 1.0
       val result = max(sequences) {model}
@@ -205,10 +205,10 @@ class TermSpecs extends WolfeSpec {
       implicit val Scores = seqs(doubles, 3)
       implicit val Output = seqs(bools, 3)
 
-      def model(scores: Scores.TermType)(y: Output.TermType) =
+      def model(scores: Scores.Term)(y: Output.Term) =
         sum(0 until y.length) { i => I(y(i)) * scores(i)}
 
-      def loss(gold:Output.TermType)(scores:Scores.TermType) =
+      def loss(gold:Output.Term)(scores:Scores.Term) =
         max(Output) { model(scores)} - model(scores)(gold)
 
       val term = loss(IndexedSeq(true,false,true))(IndexedSeq(1.0,1.0,-1.0))
