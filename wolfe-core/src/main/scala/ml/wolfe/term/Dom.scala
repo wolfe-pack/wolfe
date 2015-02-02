@@ -127,9 +127,15 @@ class SeqDom[D <: Dom](val elementDom: D, val length: Int) extends Dom {
   def zero = for (i <- 0 until length) yield elementDom.zero
 
   def const(value: Value) = new SeqTermImpl[D] {
-    val domain:self.type = self
-    val elements = for (i <- 0 until length) yield domain.elementDom.const(value(i))
+    lazy val domain:self.type = self
+    lazy val elements = for (i <- 0 until self.length) yield domain.elementDom.const(value(i))
   }
+
+  def apply(args:elementDom.TermType*) = new SeqTermImpl[D] {
+    def elements = args.toIndexedSeq
+    val domain:self.type = self
+  }
+
 }
 
 class Tuple2Dom[D1 <: Dom, D2 <: Dom](val dom1: D1, val dom2: D2) extends Dom {

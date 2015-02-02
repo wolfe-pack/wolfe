@@ -90,10 +90,10 @@ class TermSpecs extends WolfeSpec {
     }
 
     "should be expressable through the sum operator" in {
-      val dom = seqs(bools,3)
-      def model(y:dom.TermType) = sum(0 until dom.length) { i => I(y(i)) }
+      val dom = seqs(bools, 3)
+      def model(y: dom.TermType) = sum(0 until dom.length) { i => I(y(i))}
       val y = dom.variable("y")
-      model(y)(IndexedSeq(false,true,true)) should be (2.0)
+      model(y)(IndexedSeq(false, true, true)) should be(2.0)
     }
   }
 
@@ -177,6 +177,7 @@ class TermSpecs extends WolfeSpec {
       val result = max(sequences) {model}
       result() should be(3.0)
     }
+
   }
 
   "A sequence term" should {
@@ -193,8 +194,27 @@ class TermSpecs extends WolfeSpec {
       val x = doubles.variable("x")
       val y = doubles.variable("y")
       val term = seq(dom)(x, y, x)
-      term.gradient(x,10.0,3.0) should be (2.0)
-      term.gradient(y,10.0,3.0) should be (1.0)
+      term.gradient(x, 10.0, 3.0) should be(2.0)
+      term.gradient(y, 10.0, 3.0) should be(1.0)
+    }
+
+  }
+
+  "A structured loss" should {
+    "be parametrizable by a structured score" in {
+      implicit val Scores = seqs(doubles, 3)
+      implicit val Output = seqs(bools, 3)
+
+      def model(scores: Scores.TermType)(y: Output.TermType) =
+        sum(0 until y.length) { i => I(y(i)) * scores(i)}
+
+      def loss(gold:Output.TermType)(scores:Scores.TermType) =
+        max(Output) { model(scores)} + model(scores)(gold) * (-1.0)
+
+      val term = loss(Output.const(IndexedSeq(true,false,true)))(Scores.const(IndexedSeq(1.0,1.0,-1.0)))
+
+      println(term())
+
     }
   }
 
