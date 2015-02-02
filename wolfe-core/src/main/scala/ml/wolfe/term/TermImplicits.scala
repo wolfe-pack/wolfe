@@ -20,14 +20,11 @@ object TermImplicits {
 
   def seqs[D <: Dom](elements: D, length: Int) = new SeqDom(elements, length)
 
-  def seq[D <: Dom : SeqDom] = new AnyRef {
-    val dom = implicitly[SeqDom[D]]
-    def apply(elems:dom.elementDom.TermType*) = new SeqTermImpl[D] {
+  def seq[E<:Dom](dom:SeqDom[E])(elems:dom.elementDom.TermType*) = new SeqTermImpl[E] {
 
       val domain:dom.type = dom
-
       def elements = elems.toIndexedSeq
-    }
+
   }
 
   def sigm[T <: DoubleTerm](term: T) = new Sigmoid(term)
@@ -35,6 +32,8 @@ object TermImplicits {
   def log[T <: DoubleTerm](term: T) = new Log(term)
 
   def I[T <: BoolTerm](term: T) = new Iverson(term)
+
+  //implicit def seqToSeqTerm[E <: Dom : SeqDom](elems:Seq[Term[E]]) = seq(implicitly[SeqDom[E]])(elems: _*)
 
   implicit def doubleToConstant(d: Double): Constant[DoubleDom] = new Constant[DoubleDom](Dom.doubles, d)
 

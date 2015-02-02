@@ -177,7 +177,9 @@ class TermSpecs extends WolfeSpec {
     "evaluate to a sequence" in {
       implicit val dom = seqs(doubles, 3)
       val x = doubles.variable("x")
-
+      val y = doubles.variable("y")
+      val term = seq(dom)(x,y,x)
+      term(1.0,2.0) should be (Seq(1.0,2.0,1.0))
     }
   }
 

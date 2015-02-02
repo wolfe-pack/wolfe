@@ -16,10 +16,10 @@ class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0) {
   final var cont = Array.ofDim[Double](numCont)
   final var vect = Array.ofDim[FactorieVector](numVect)
 
-  final def copyTo(target:Setting, offsets: Offsets, length:Int = 1): Unit = {
-    System.arraycopy(disc,0,target,offsets.discOff * length, disc.length)
-    System.arraycopy(cont,0,target,offsets.contOff * length, cont.length)
-    System.arraycopy(vect,0,target,offsets.vectOff * length, vect.length)
+  final def copyTo(target: Setting, offsets: Offsets, length: Int = 1): Unit = {
+    if (disc.length > 0) System.arraycopy(disc, 0, target.disc, offsets.discOff * length, disc.length)
+    if (cont.length > 0) System.arraycopy(cont, 0, target.cont, offsets.contOff * length, cont.length)
+    if (vect.length > 0) System.arraycopy(vect, 0, target.vect, offsets.vectOff * length, vect.length)
 
   }
 
@@ -50,7 +50,7 @@ class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0) {
     for (i <- 0 until vect.length) if (vect(i) != null) vect(i) := 0.0
   }
 
-  final def :=(that:Setting): Unit = {
+  final def :=(that: Setting): Unit = {
     for (i <- 0 until disc.length) disc(i) = that.disc(i)
     for (i <- 0 until cont.length) cont(i) = that.cont(i)
     for (i <- 0 until vect.length) vect(i) = that.vect(i)
@@ -91,7 +91,7 @@ class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0) {
 }
 
 object Setting {
-  def merge(settings:Array[Setting], result:Setting) = {
+  def merge(settings: Array[Setting], result: Setting) = {
     var cont = 0
     var disc = 0
     var vect = 0
