@@ -209,11 +209,11 @@ class TermSpecs extends WolfeSpec {
         sum(0 until y.length) { i => I(y(i)) * scores(i)}
 
       def loss(gold:Output.TermType)(scores:Scores.TermType) =
-        max(Output) { model(scores)} + model(scores)(gold) * (-1.0)
+        max(Output) { model(scores)} - model(scores)(gold)
 
-      val term = loss(Output.const(IndexedSeq(true,false,true)))(Scores.const(IndexedSeq(1.0,1.0,-1.0)))
+      val term = loss(IndexedSeq(true,false,true))(IndexedSeq(1.0,1.0,-1.0))
 
-      println(term())
+      term() should be (2.0)
 
     }
   }

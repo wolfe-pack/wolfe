@@ -33,14 +33,18 @@ object TermImplicits {
 
   def I[T <: BoolTerm](term: T) = new Iverson(term)
 
+  implicit def genericToConstant[T,D<:TypedDom[T]](t:T)(implicit dom:D):dom.TermType = dom.const(t)
+
+  //implicit def seqToConstant[T,D<:TypedDom[T]](seq:IndexedSeq[T])(implicit dom:SeqDom[D]):dom.TermType = dom.const(seq)
+
   //implicit def seqToSeqTerm[E <: Dom : SeqDom](elems:Seq[Term[E]]) = seq(implicitly[SeqDom[E]])(elems: _*)
 
   implicit def doubleToConstant(d: Double): Constant[DoubleDom] = new Constant[DoubleDom](Dom.doubles, d)
 
   implicit def vectToConstant(d: FactorieVector): Constant[VectorDom] = new Constant[VectorDom](vectors(d.dim1), d)
 
-  implicit def discToConstant[T: DiscreteDom](value: T): Constant[DiscreteDom[T]] =
-    new Constant[DiscreteDom[T]](implicitly[DiscreteDom[T]], value)
+//  implicit def discToConstant[T: DiscreteDom](value: T): Constant[DiscreteDom[T]] =
+//    new Constant[DiscreteDom[T]](implicitly[DiscreteDom[T]], value)
 
 //  def argmax[D <: Dom](dom: D)(obj: dom.Variable => DoubleTerm): dom.Value = {
 //    val variable = dom.variable("_hidden")
@@ -64,7 +68,7 @@ object TermImplicits {
 
   implicit class RichDoubleTerm(term: DoubleTerm) {
     def +(that: DoubleTerm) = new Sum(IndexedSeq(term, that))
-
+    def -(that:DoubleTerm) = new Sum(IndexedSeq(term, that * (-1.0)))
     def *(that: DoubleTerm): Product = new Product(IndexedSeq(term, that))
   }
 
