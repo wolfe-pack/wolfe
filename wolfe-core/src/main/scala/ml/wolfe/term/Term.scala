@@ -84,59 +84,6 @@ trait Var[+D <: Dom] extends Term[D] {
 }
 
 
-trait Dom {
-  type Value
-  type Variable <: Var[Dom]
-  def toValue(setting: Setting, offsets: Offsets = Offsets()): Value
-  def copyValue(value: Value, setting: Setting, offsets: Offsets = Offsets())
-
-  def toSetting(value: Value): Setting = {
-    val result = createSetting()
-    copyValue(value, result)
-    result
-  }
-  def createSetting(): Setting = new Setting(lengths.discOff, lengths.contOff, lengths.vectOff)
-  def createMsgs() = new Msgs(null, null, null)
-  def createZeroSetting(): Setting = {
-    val result = createSetting()
-    copyValue(zero, result)
-    result
-  }
-  def variable(name: String, offsets: Offsets = Offsets(), owner: Var[Dom] = null): Variable
-
-  def lengths: Offsets
-
-  def isDiscrete = lengths.contOff == 0 && lengths.vectOff == 0
-  def isContinuous = lengths.discOff == 0
-  def isDouble = lengths.contOff == 1 && lengths.discOff == 0 && lengths.vectOff == 0
-
-
-  def one: Value
-  def zero: Value
-
-
-}
-
-object Dom {
-  val doubles = new DoubleDom
-  val bools   = TermImplicits.discrete(false, true)
-}
-
-class VectorDom(val dim: Int) extends Dom {
-  type Value = FactorieVector
-  type Variable = VectorVar
-
-  val lengths = Offsets(0, 0, 1)
-
-  def toValue(setting: Setting, offsets: Offsets) =
-    setting.vect(offsets.vectOff)
-  def copyValue(value: Value, setting: Setting, offsets: Offsets) =
-    setting.vect(offsets.vectOff) = value
-  def variable(name: String, offsets: Offsets, owner: Var[Dom]) = VectorVar(name, owner, this, offsets.vectOff)
-  def one = new DenseTensor1(dim, 1.0)
-  def zero = new DenseTensor1(dim, 0.0)
-}
-
 case class Atoms(disc: Seq[DiscVar[Any]] = Nil, cont: Seq[DoubleVar] = Nil, vect: Seq[VectorVar] = Nil) {
   def ++(that: Atoms) = copy(disc = disc ++ that.disc, cont = cont ++ that.cont, vect = vect ++ that.vect)
   def merge(that: Atoms) = copy(
@@ -175,91 +122,63 @@ case class DiscVar[T](name: String, owner: Var[Dom], domain: DiscreteDom[T], off
 
 }
 
-class DoubleDom extends Dom {
-  type Value = Double
-  def toValue(setting: Setting, offsets: Offsets = Offsets()) =
-    setting.cont(offsets.contOff)
-  def copyValue(value: Value, setting: Setting, offsets: Offsets = Offsets()) =
-    setting.cont(offsets.contOff) = value
-  val lengths = Offsets(0, 1, 0)
-  type Variable = DoubleVar
-  def variable(name: String, offsets: Offsets = Offsets(), owner: Var[Dom]) = DoubleVar(name, owner, this, offsets.contOff)
-  def one = 1.0
-  def zero = 0.0
-}
 
-class DiscreteDom[T](val values: IndexedSeq[T]) extends Dom {
-  type Value = T
-  def toValue(setting: Setting, offsets: Offsets = Offsets()) =
-    values(setting.disc(offsets.discOff))
-  def copyValue(value: Value, setting: Setting, offsets: Offsets = Offsets()) =
-    setting.disc(offsets.discOff) = values.indexOf(value)
-  val lengths = Offsets(1, 0, 0)
-  type Variable = DiscVar[T]
-  def variable(name: String, offsets: Offsets = Offsets(), owner: Var[Dom]) = DiscVar(name, owner, this, offsets.discOff)
-  def one = values.last
-  def zero = values.head
-  def const(value:T) = new Constant[DiscreteDom[T]](this,value)
-
-}
-
-class SeqDom[D <: Dom](val elementDom: D, val length: Int) extends Dom {
-
-  type Value = IndexedSeq[elementDom.Value]
-
-  def toValue(setting: Setting, offsets: Offsets = Offsets()) = {
-    val result = for (i <- 0 until length) yield elementDom.toValue(setting, offsets +(elementDom.lengths, i)
-    )
-    result
-  }
-  def copyValue(value: Value, setting: Setting, offsets: Offsets = Offsets()) = {
-    for (i <- 0 until length) {
-      elementDom.copyValue(value(i), setting, offsets +(elementDom.lengths, i))
-    }
-  }
-  val lengths = elementDom.lengths * length
-  type Variable = SeqVar[D]
-  def variable(name: String, offsets: Offsets = Offsets(), owner: Var[Dom]) = SeqVar(name, this, offsets, owner)
-  def one = for (i <- 0 until length) yield elementDom.one
-  def zero = for (i <- 0 until length) yield elementDom.zero
-
-}
-
-case class SeqVar[D <: Dom](name: String, domain: SeqDom[D], offsets: Offsets = Offsets(), owner: Var[Dom]) extends Var[SeqDom[D]] {
+case class SeqVar[D <: Dom](name: String, domain: SeqDom[D],
+                            offsets: Offsets = Offsets(),
+                            owner: Var[Dom]) extends Var[SeqDom[D]] with SeqTerm[D] {
 
 
   def atoms = elements.view.map(_.atoms).foldLeft(Atoms())(_ ++ _)
   val ranges   = Ranges(offsets, offsets +(domain.elementDom.lengths, domain.length))
   val elements = for (i <- 0 until domain.length) yield
     domain.elementDom.variable(s"$name($i)", offsets +(domain.elementDom.lengths, i), if (owner == null) this else owner)
-  def apply(index:Int) = elements(index)
 
 }
 
-case class Tuple2Var[D1 <: Dom, D2 <: Dom](name: String, domain: Tuple2Dom[D1, D2], offsets: Offsets, owner: Var[Dom]) extends Var[Tuple2Dom[D1, D2]] {
+trait SeqTerm[D<:Dom] extends Term[SeqDom[D]] {
+  def elements:IndexedSeq[domain.elementDom.TermType]
+  def apply(index: Int) = elements(index)
+
+}
+
+abstract class SeqTermImpl[D <: Dom, E <: Term[D]](val arguments: IndexedSeq[E]) extends Composed[SeqDom[D]] with SeqTerm[D] {
+  //todo: introduce variable element domains or require that all arguments have the same domain
+  val domain = new SeqDom(arguments.head.domain, arguments.length)
+  def composer() = new Evaluator {
+
+    def eval(inputs: Array[Setting], output: Setting) = {
+      for (i <- 0 until inputs.length) {
+        inputs(i).copyTo(output, domain.elementDom.lengths, i)
+      }
+    }
+  }
+  def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
+    def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]) = {
+      //each argument will get its error signal from a subsection of the outError
+      for (i <- 0 until argOutputs.length) {
+
+        gradient(i) += ???
+      }
+    }
+    def withRespectTo = wrt
+  }
+  //val elements = arguments
+}
+
+trait Tuple2Term[D1 <: Dom, D2 <: Dom] extends Term[Tuple2Dom[D1,D2]] {
+  def _1:domain.dom1.TermType
+  def _2:domain.dom2.TermType
+}
+
+case class Tuple2Var[D1 <: Dom, D2 <: Dom](name: String,
+                                           domain: Tuple2Dom[D1, D2],
+                                           offsets: Offsets,
+                                           owner: Var[Dom]) extends Var[Tuple2Dom[D1,D2]] with Tuple2Term[D1,D2] {
+
   val ranges = Ranges(offsets, offsets + domain.dom1.lengths + domain.dom2.lengths)
   val _1     = domain.dom1.variable(name + "._1", offsets, if (owner == null) this else owner)
   val _2     = domain.dom2.variable(name + "._2", offsets + domain.dom1.lengths, if (owner == null) this else owner)
   def atoms = _1.atoms ++ _2.atoms
-}
-
-class Tuple2Dom[D1 <: Dom, D2 <: Dom](val dom1: D1, val dom2: D2) extends Dom {
-  type Value = (dom1.Value, dom2.Value)
-  type Variable = Tuple2Var[D1, D2]
-  val lengths = dom1.lengths + dom2.lengths
-  def toValue(setting: Setting, offsets: Offsets = Offsets()) = {
-    val arg1 = dom1.toValue(setting, offsets)
-    val arg2 = dom2.toValue(setting, offsets + dom1.lengths)
-    (arg1, arg2)
-  }
-  def copyValue(value: Value, setting: Setting, offsets: Offsets = Offsets()): Unit = {
-    dom1.copyValue(value._1, setting)
-    dom2.copyValue(value._2, setting, dom1.lengths)
-  }
-  def variable(name: String, offsets: Offsets, owner: Var[Dom]) =
-    Tuple2Var(name, this, offsets, owner)
-  def one = (dom1.one, dom2.one)
-  def zero = (dom1.zero, dom2.zero)
 }
 
 
@@ -470,7 +389,7 @@ object TermImplicits {
   def vectors(dim: Int) = new VectorDom(dim)
   def discrete[T](args: T*) = new DiscreteDom[T](args.toIndexedSeq)
   def vector(values: Double*) = new DenseTensor1(values.toArray)
-  def seqs[D <: Dom](elements:D, length:Int) = new SeqDom(elements,length)
+  def seqs[D <: Dom](elements: D, length: Int) = new SeqDom(elements, length)
 
   def sigm[T <: DoubleTerm](term: T) = new Sigmoid(term)
 
@@ -480,8 +399,8 @@ object TermImplicits {
 
   implicit def doubleToConstant(d: Double): Constant[DoubleDom] = new Constant[DoubleDom](Dom.doubles, d)
   implicit def vectToConstant(d: FactorieVector): Constant[VectorDom] = new Constant[VectorDom](vectors(d.dim1), d)
-  implicit def discToConstant[T : DiscreteDom](value:T): Constant[DiscreteDom[T]] =
-    new Constant[DiscreteDom[T]](implicitly[DiscreteDom[T]],value)
+  implicit def discToConstant[T: DiscreteDom](value: T): Constant[DiscreteDom[T]] =
+    new Constant[DiscreteDom[T]](implicitly[DiscreteDom[T]], value)
 
 
   def argmax[D <: Dom](dom: D)(obj: dom.Variable => DoubleTerm): dom.Value = {

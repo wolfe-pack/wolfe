@@ -1,6 +1,7 @@
 package ml.wolfe.fg20
 
 import cc.factorie.la.DenseTensor1
+import ml.wolfe.term.Setting
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer

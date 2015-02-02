@@ -1,6 +1,7 @@
 package ml.wolfe.fg20
 
 import ml.wolfe.FactorieVector
+import ml.wolfe.term.Setting
 
 /**
  * A search space describes a set of possible values using a set of variables. Any setting to the search space's

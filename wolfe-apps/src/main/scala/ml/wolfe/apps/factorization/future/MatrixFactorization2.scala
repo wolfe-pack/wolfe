@@ -3,6 +3,7 @@ package ml.wolfe.apps.factorization.future
 import cc.factorie.la.DenseTensor1
 import cc.factorie.optimize.{AdaGrad, BatchTrainer}
 import ml.wolfe.fg20._
+import ml.wolfe.term.Setting
 import ml.wolfe.util.Math._
 
 import scala.util.Random

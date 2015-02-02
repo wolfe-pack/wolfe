@@ -3,6 +3,7 @@ package ml.wolfe.fg20
 import cc.factorie.optimize.{AdaGrad, BatchTrainer, LBFGS}
 import ml.wolfe._
 import ml.wolfe.FactorieVector
+import ml.wolfe.term.Setting
 
 
 /**

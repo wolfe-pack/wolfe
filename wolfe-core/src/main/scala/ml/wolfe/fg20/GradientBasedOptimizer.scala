@@ -5,6 +5,7 @@ import cc.factorie.model.{Weights, WeightsSet}
 import cc.factorie.optimize.{AdaGrad, Example, OnlineTrainer, Trainer}
 import cc.factorie.util.DoubleAccumulator
 import ml.wolfe._
+import ml.wolfe.term.Setting
 
 import scala.collection.mutable
 

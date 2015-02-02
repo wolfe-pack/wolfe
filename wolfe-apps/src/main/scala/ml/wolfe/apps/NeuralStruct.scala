@@ -1,6 +1,7 @@
 package ml.wolfe.apps
 
 import ml.wolfe.fg20._
+import ml.wolfe.term.Setting
 
 /**
  * @author Sebastian Riedel

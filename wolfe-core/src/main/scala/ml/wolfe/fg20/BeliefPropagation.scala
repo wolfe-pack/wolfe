@@ -2,6 +2,7 @@ package ml.wolfe.fg20
 
 import ml.wolfe.MoreArrayOps._
 import ml.wolfe._
+import ml.wolfe.term.Setting
 import scalaxy.loops._
 
 

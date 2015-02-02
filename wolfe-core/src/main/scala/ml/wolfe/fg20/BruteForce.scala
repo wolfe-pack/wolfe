@@ -2,6 +2,7 @@ package ml.wolfe.fg20
 
 import ml.wolfe.MoreArrayOps._
 import ml.wolfe.SparseVector
+import ml.wolfe.term.Setting
 
 trait FactorSettings extends FactorGraph {
 

@@ -1,6 +1,6 @@
 package ml.wolfe.term
 
-import ml.wolfe.fg20.Setting
+import ml.wolfe.term.Setting
 
 /**
  * @author riedel

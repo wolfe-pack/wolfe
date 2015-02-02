@@ -1,5 +1,7 @@
 package ml.wolfe.fg20
 
+import ml.wolfe.term.Setting
+
 /**
  * @author Sebastian Riedel
  */

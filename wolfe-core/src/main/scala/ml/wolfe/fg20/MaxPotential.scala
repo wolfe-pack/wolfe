@@ -1,5 +1,7 @@
 package ml.wolfe.fg20
 
+import ml.wolfe.term.Setting
+
 /**
  * A potential that returns the maximum of another potential.
  * @author Sebastian Riedel

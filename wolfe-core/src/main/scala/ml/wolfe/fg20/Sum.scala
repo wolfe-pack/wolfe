@@ -1,5 +1,7 @@
 package ml.wolfe.fg20
 
+import ml.wolfe.term.Setting
+
 /**
  * A sum of potential functions forms a potential as well.
  * @tparam P the type of argument potentials.

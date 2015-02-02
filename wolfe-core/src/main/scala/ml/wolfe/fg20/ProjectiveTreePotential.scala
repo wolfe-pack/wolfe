@@ -1,5 +1,7 @@
 package ml.wolfe.fg20
 
+import ml.wolfe.term.Setting
+
 /**
  * A potential that tests whether a set of edges (represented as assignment set of boolean variables)
  * is a projective dependency tree. To provide edge scores use incoming messages.

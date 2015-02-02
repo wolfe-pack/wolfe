@@ -4,6 +4,7 @@ import cc.factorie.la.{DenseTensor1, SparseTensor1}
 import cc.factorie.model.{WeightsMap, WeightsSet}
 import cc.factorie.optimize.{BatchTrainer, AdaGrad}
 import ml.wolfe.FactorieVector
+import ml.wolfe.term.Setting
 
 import scala.util.Random
 

@@ -167,7 +167,7 @@ class TermSpecs extends WolfeSpec {
       val sequences = seqs(labels, 2)
       def model(y: sequences.Variable) =
         I(y(0) === "V") * 2.0 +
-        I(y(1) === "V") * 1.0
+        I(y(1) === "N") * 1.0
       val result = max(sequences) {model}
       result() should be (3.0)
     }

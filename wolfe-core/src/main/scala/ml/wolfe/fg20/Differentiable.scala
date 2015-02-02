@@ -1,6 +1,7 @@
 package ml.wolfe.fg20
 
 import ml.wolfe._
+import ml.wolfe.term.Setting
 
 /**
  * Potentials which can be differentiated and which have a processor that

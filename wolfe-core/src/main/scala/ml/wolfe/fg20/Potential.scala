@@ -1,6 +1,7 @@
 package ml.wolfe.fg20
 
 import ml.wolfe._
+import ml.wolfe.term.Setting
 
 /**
  * A Potential is a function from settings of variables to real values. Many Machine Learning tasks can

@@ -2,6 +2,7 @@ package ml.wolfe.fg20
 
 import cc.factorie.la.{DenseTensor1, SingletonTensor1, SparseTensor1}
 import ml.wolfe.FactorieVector
+import ml.wolfe.term.Setting
 import ml.wolfe.util.Util.approxEqual
 
 

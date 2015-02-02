@@ -1,6 +1,6 @@
 package ml.wolfe.term
 
-import ml.wolfe.fg20.{Msgs, Setting}
+import ml.wolfe.fg20.Msgs
 
 /**
  * @author riedel
