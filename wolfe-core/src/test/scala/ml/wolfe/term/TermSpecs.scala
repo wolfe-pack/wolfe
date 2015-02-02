@@ -136,14 +136,13 @@ class TermSpecs extends WolfeSpec {
   "A term with discrete variables" should {
     "provide its argmax" in {
       val result = argmax(bools x bools) { x => I(x._1 && x._2)}
-      result should be(true, true)
+      result() should be(true, true)
     }
     "provide a partial argmax" in {
-      val x = bools.variable("x")
       val y = bools.variable("y")
-      val term = I(x === y)
-      term.argmax(x, true) should be(true)
-      term.argmax(x, false) should be(false)
+      val term = argmax(bools)(x => I(x === y))
+      term(true) should be(true)
+      term(false) should be(false)
     }
   }
 
@@ -155,7 +154,7 @@ class TermSpecs extends WolfeSpec {
       term(true) should be(1.0)
     }
 
-    "provide its sub-gradient" in {
+    "provide an element of its sub-gradient" in {
       val weights = vectors(2).variable("w")
       val term = max(bools) { label => I(label) * (weights dot vector(1, 2))}
       term.gradient(weights, vector(1, 1)) should equal(vector(1, 2))
@@ -165,13 +164,23 @@ class TermSpecs extends WolfeSpec {
     "maximize over a structured search space" in {
       implicit val labels = discrete("V", "N")
       val sequences = seqs(labels, 2)
-      def model(y: sequences.Variable) =
+      def model(y: sequences.TermType) =
         I(y(0) === "V") * 2.0 +
-        I(y(1) === "N") * 1.0
-      val result = max(sequences) {model}
-      result() should be (3.0)
+          I(y(1) === "N") * 1.0
+      val result = max(sequences) {
+        model
+      }
+      result() should be(3.0)
     }
 
+  }
+
+  "A sequence term" should {
+    "evaluate to a sequence" in {
+      implicit val dom = seqs(doubles, 3)
+      val x = doubles.variable("x")
+
+    }
   }
 
 }

@@ -7,8 +7,9 @@ import ml.wolfe.fg20.Msgs
 
 trait Dom {
   type Value
-  type TermType <: Term[Dom]
-  type Variable <: Var[Dom] with TermType
+  type This <: Dom
+  type TermType <: Term[This]
+  type Variable <: Var[This] with TermType
 
   def toValue(setting: Setting, offsets: Offsets = Offsets()): Value
   def copyValue(value: Value, setting: Setting, offsets: Offsets = Offsets())
@@ -26,6 +27,7 @@ trait Dom {
     result
   }
   def variable(name: String, offsets: Offsets = Offsets(), owner: Var[Dom] = null): Variable
+  def const(value:Value):TermType
 
   def lengths: Offsets
 
@@ -49,6 +51,7 @@ class VectorDom(val dim: Int) extends Dom {
   type Value = FactorieVector
   type Variable = VectorVar
   type TermType = VectorTerm
+  type This = VectorDom
 
   val lengths = Offsets(0, 0, 1)
 
@@ -59,11 +62,14 @@ class VectorDom(val dim: Int) extends Dom {
   def variable(name: String, offsets: Offsets, owner: Var[Dom]) = VectorVar(name, owner, this, offsets.vectOff)
   def one = new DenseTensor1(dim, 1.0)
   def zero = new DenseTensor1(dim, 0.0)
+
+  def const(value: Value) = new Constant[VectorDom](this,value)
 }
 
 class DoubleDom extends Dom {
   type Value = Double
   type TermType = DoubleTerm
+  type This = DoubleDom
   def toValue(setting: Setting, offsets: Offsets = Offsets()) =
     setting.cont(offsets.contOff)
   def copyValue(value: Value, setting: Setting, offsets: Offsets = Offsets()) =
@@ -73,10 +79,13 @@ class DoubleDom extends Dom {
   def variable(name: String, offsets: Offsets = Offsets(), owner: Var[Dom]) = DoubleVar(name, owner, this, offsets.contOff)
   def one = 1.0
   def zero = 0.0
+  def const(value: Value) = new Constant[DoubleDom](this,value)
+
 }
 
 class DiscreteDom[T](val values: IndexedSeq[T]) extends Dom {
   type Value = T
+  type This = DiscreteDom[T]
   type TermType = Term[DiscreteDom[T]]
   def toValue(setting: Setting, offsets: Offsets = Offsets()) =
     values(setting.disc(offsets.discOff))
@@ -95,9 +104,12 @@ class DiscreteDom[T](val values: IndexedSeq[T]) extends Dom {
 
 class SeqDom[D <: Dom](val elementDom: D, val length: Int) extends Dom {
 
+  self =>
+
   type Value = IndexedSeq[elementDom.Value]
   type TermType = SeqTerm[D]
   type Variable = SeqVar[D]
+  type This = SeqDom[D]
 
   def toValue(setting: Setting, offsets: Offsets = Offsets()) = {
     val result = for (i <- 0 until length) yield elementDom.toValue(setting, offsets +(elementDom.lengths, i)
@@ -114,12 +126,18 @@ class SeqDom[D <: Dom](val elementDom: D, val length: Int) extends Dom {
   def one = for (i <- 0 until length) yield elementDom.one
   def zero = for (i <- 0 until length) yield elementDom.zero
 
+  def const(value: Value) = new SeqTermImpl[D] {
+    val domain:self.type = self
+    val elements = for (i <- 0 until length) yield domain.elementDom.const(value(i))
+  }
 }
 
 class Tuple2Dom[D1 <: Dom, D2 <: Dom](val dom1: D1, val dom2: D2) extends Dom {
+  self =>
   type Value = (dom1.Value, dom2.Value)
   type Variable = Tuple2Var[D1, D2]
   type TermType = Tuple2Term[D1,D2]
+  type This = Tuple2Dom[D1,D2]
   val lengths = dom1.lengths + dom2.lengths
   def toValue(setting: Setting, offsets: Offsets = Offsets()) = {
     val arg1 = dom1.toValue(setting, offsets)
@@ -134,4 +152,10 @@ class Tuple2Dom[D1 <: Dom, D2 <: Dom](val dom1: D1, val dom2: D2) extends Dom {
     Tuple2Var(name, this, offsets, owner)
   def one = (dom1.one, dom2.one)
   def zero = (dom1.zero, dom2.zero)
+
+  def const(value: Value) = new Tuple2TermImpl[D1,D2] {
+    val _1 = domain.dom1.const(value._1)
+    val _2 = domain.dom2.const(value._2)
+    val domain:self.type = self
+  }
 }

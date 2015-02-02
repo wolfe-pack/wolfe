@@ -163,9 +163,9 @@ trait SeqTerm[D <: Dom] extends Term[SeqDom[D]] {
 
 }
 
-abstract class SeqTermImpl[D <: Dom, E <: Term[D]](val arguments: IndexedSeq[E]) extends Composed[SeqDom[D]] with SeqTerm[D] {
+abstract class SeqTermImpl[D <: Dom] extends Composed[SeqDom[D]] with SeqTerm[D] {
   //todo: introduce variable element domains or require that all arguments have the same domain
-  val domain = new SeqDom(arguments.head.domain, arguments.length)
+  def arguments = elements
 
   def composer() = new Evaluator {
 
@@ -194,6 +194,14 @@ abstract class SeqTermImpl[D <: Dom, E <: Term[D]](val arguments: IndexedSeq[E])
 trait Tuple2Term[D1 <: Dom, D2 <: Dom] extends Term[Tuple2Dom[D1, D2]] {
   def _1: domain.dom1.TermType
   def _2: domain.dom2.TermType
+}
+
+trait Tuple2TermImpl[D1 <:Dom, D2 <: Dom] extends Tuple2Term[D1,D2] with Composed[Tuple2Dom[D1,D2]] {
+  def arguments = IndexedSeq(_1,_2)
+
+  def composer() = ???
+
+  def differentiator(wrt: Seq[Var[Dom]]) = ???
 }
 
 case class Tuple2Var[D1 <: Dom, D2 <: Dom](name: String,

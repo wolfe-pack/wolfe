@@ -20,6 +20,16 @@ object TermImplicits {
 
   def seqs[D <: Dom](elements: D, length: Int) = new SeqDom(elements, length)
 
+  def seq[D <: Dom : SeqDom] = new AnyRef {
+    val dom = implicitly[SeqDom[D]]
+    def apply(elems:dom.elementDom.TermType*) = new SeqTermImpl[D] {
+
+      val domain:dom.type = dom
+
+      def elements = elems.toIndexedSeq
+    }
+  }
+
   def sigm[T <: DoubleTerm](term: T) = new Sigmoid(term)
 
   def log[T <: DoubleTerm](term: T) = new Log(term)
@@ -33,11 +43,16 @@ object TermImplicits {
   implicit def discToConstant[T: DiscreteDom](value: T): Constant[DiscreteDom[T]] =
     new Constant[DiscreteDom[T]](implicitly[DiscreteDom[T]], value)
 
+//  def argmax[D <: Dom](dom: D)(obj: dom.Variable => DoubleTerm): dom.Value = {
+//    val variable = dom.variable("_hidden")
+//    val term = obj(variable)
+//    term.argmax(variable).asInstanceOf[dom.Value]
+//  }
 
-  def argmax[D <: Dom](dom: D)(obj: dom.Variable => DoubleTerm): dom.Value = {
+  def argmax[D <: Dom](dom: D)(obj: dom.Variable => DoubleTerm):Argmax[dom.This] = {
     val variable = dom.variable("_hidden")
     val term = obj(variable)
-    term.argmax(variable).asInstanceOf[dom.Value]
+    new Argmax(term,variable)
   }
 
   def max[D <: Dom](dom: D)(obj: dom.Variable => DoubleTerm) = {
