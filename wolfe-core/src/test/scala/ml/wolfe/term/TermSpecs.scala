@@ -231,7 +231,7 @@ class TermSpecs extends WolfeSpec {
       val term = loss(IndexedSeq(false,false,true))(weights)
 
       term.gradient(weight, 1.0) should be (2.0)
-
+      term.gradient(weight, -1.0) should be (-1.0)
 
     }
   }
