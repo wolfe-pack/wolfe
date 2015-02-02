@@ -11,8 +11,6 @@ class OptimizeByLearningSpecs extends WolfeSpec {
   import OptimizedOperators._
   import Wolfe._
 
-  private val eps = 0.0001
-
   "An argmax operator" should {
     "return the argmax of the MAP log-likelihood (perceptron)" in {
       implicit val space = Range(0, 5)

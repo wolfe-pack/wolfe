@@ -1,8 +1,8 @@
 package ml.wolfe
 
 import ml.wolfe.fg20.{DiscDistribution, State}
+import org.scalactic.Equality
 import org.scalatest.{Matchers, WordSpec}
-import org.scalautils.Equality
 
 /**
  * Default Specs for Wolfe.

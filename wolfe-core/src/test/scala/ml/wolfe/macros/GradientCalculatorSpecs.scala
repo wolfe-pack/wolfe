@@ -9,8 +9,6 @@ import org.scalautils.{Tolerance, Equality}
  */
 class GradientCalculatorSpecs extends WolfeSpec {
 
-  private val eps = 0.0001
-
   "A gradient calculator" should {
     "return 0 gradient for a constant function" in {
       def f(w: Wolfe.Vector) = 5.0
