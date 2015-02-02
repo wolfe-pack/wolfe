@@ -201,7 +201,7 @@ class TermSpecs extends WolfeSpec {
   }
 
   "A structured loss" should {
-    "be parametrizable by a structured score" in {
+    "evaluate to its value" in {
       implicit val Scores = seqs(doubles, 3)
       implicit val Output = seqs(bools, 3)
 
@@ -214,6 +214,24 @@ class TermSpecs extends WolfeSpec {
       val term = loss(IndexedSeq(true,false,true))(IndexedSeq(1.0,1.0,-1.0))
 
       term() should be (2.0)
+    }
+
+    "calculate its gradient for tied weights" in {
+      implicit val Scores = seqs(doubles, 3)
+      implicit val Output = seqs(bools, 3)
+
+      def model(scores: Scores.Term)(y: Output.Term) =
+        sum(0 until y.length) { i => I(y(i)) * scores(i)}
+
+      def loss(gold:Output.Term)(scores:Scores.Term) =
+        max(Output) { model(scores)} - model(scores)(gold)
+
+      val weight = doubles.variable("w")
+      val weights = Scores(weight,weight,weight)
+      val term = loss(IndexedSeq(false,false,true))(weights)
+
+      term.gradient(weight, 1.0) should be (2.0)
+
 
     }
   }
