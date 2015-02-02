@@ -199,6 +199,8 @@ class DiscreteDom[T](val values: IndexedSeq[T]) extends Dom {
   def variable(name: String, offsets: Offsets = Offsets(), owner: Var[Dom]) = DiscVar(name, owner, this, offsets.discOff)
   def one = values.last
   def zero = values.head
+  def const(value:T) = new Constant[DiscreteDom[T]](this,value)
+
 }
 
 class SeqDom[D <: Dom](val elementDom: D, val length: Int) extends Dom {
@@ -230,6 +232,7 @@ case class SeqVar[D <: Dom](name: String, domain: SeqDom[D], offsets: Offsets = 
   val ranges   = Ranges(offsets, offsets +(domain.elementDom.lengths, domain.length))
   val elements = for (i <- 0 until domain.length) yield
     domain.elementDom.variable(s"$name($i)", offsets +(domain.elementDom.lengths, i), if (owner == null) this else owner)
+  def apply(index:Int) = elements(index)
 
 }
 
@@ -467,6 +470,7 @@ object TermImplicits {
   def vectors(dim: Int) = new VectorDom(dim)
   def discrete[T](args: T*) = new DiscreteDom[T](args.toIndexedSeq)
   def vector(values: Double*) = new DenseTensor1(values.toArray)
+  def seqs[D <: Dom](elements:D, length:Int) = new SeqDom(elements,length)
 
   def sigm[T <: DoubleTerm](term: T) = new Sigmoid(term)
 
@@ -476,6 +480,8 @@ object TermImplicits {
 
   implicit def doubleToConstant(d: Double): Constant[DoubleDom] = new Constant[DoubleDom](Dom.doubles, d)
   implicit def vectToConstant(d: FactorieVector): Constant[VectorDom] = new Constant[VectorDom](vectors(d.dim1), d)
+  implicit def discToConstant[T : DiscreteDom](value:T): Constant[DiscreteDom[T]] =
+    new Constant[DiscreteDom[T]](implicitly[DiscreteDom[T]],value)
 
 
   def argmax[D <: Dom](dom: D)(obj: dom.Variable => DoubleTerm): dom.Value = {
