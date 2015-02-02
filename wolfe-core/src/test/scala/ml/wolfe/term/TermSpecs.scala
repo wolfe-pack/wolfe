@@ -88,6 +88,13 @@ class TermSpecs extends WolfeSpec {
       term.gradient(y, 10.0, 5.0) should be(1.0)
       term.gradient(x, 10.0, 5.0) should be(2.0)
     }
+
+    "should be expressable through the sum operator" in {
+      val dom = seqs(bools,3)
+      def model(y:dom.TermType) = sum(0 until dom.length) { i => I(y(i)) }
+      val y = dom.variable("y")
+      model(y)(IndexedSeq(false,true,true)) should be (2.0)
+    }
   }
 
   "A product" should {
@@ -170,7 +177,6 @@ class TermSpecs extends WolfeSpec {
       val result = max(sequences) {model}
       result() should be(3.0)
     }
-
   }
 
   "A sequence term" should {

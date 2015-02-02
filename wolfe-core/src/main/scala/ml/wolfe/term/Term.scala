@@ -161,6 +161,9 @@ trait SeqTerm[D <: Dom] extends Term[SeqDom[D]] {
 
   def apply(index: Int) = elements(index)
 
+  def indices = elements.indices
+  def length = elements.length
+
 }
 
 abstract class SeqTermImpl[D <: Dom] extends Composed[SeqDom[D]] with SeqTerm[D] {

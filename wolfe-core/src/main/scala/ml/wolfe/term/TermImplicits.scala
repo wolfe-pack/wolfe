@@ -60,6 +60,8 @@ object TermImplicits {
     new Max(term, Seq(variable))
   }
 
+  def sum[T](dom:Seq[T])(arg:T => DoubleTerm) = new Sum(dom.toIndexedSeq.map(arg))
+
   implicit class RichDoubleTerm(term: DoubleTerm) {
     def +(that: DoubleTerm) = new Sum(IndexedSeq(term, that))
 
