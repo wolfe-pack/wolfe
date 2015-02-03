@@ -156,12 +156,12 @@ class TermSpecs extends WolfeSpec {
       val k = 2
       val m = 3
       val n = 3
-      val Embeddings = seqs(vectors(k), m) x seqs(vectors(k), n)
+      val Params = seqs(vectors(k), m) x seqs(vectors(k), n)
 
-      def cell(i: Int, j: Int, scale: Double)(e: Embeddings.Term) =
-        log(sigm((e._1(i) dot e._2(j)) * scale))
+      def cell(i: Int, j: Int, scale: Double)(e: Params.Term) =
+        log(sigm((e._1(i) dot e._2(j)) * scale)) + (e._1(i) dot e._2(j)) * 0.1
 
-      def loss(positive: Seq[(Int, Int)], negative: Seq[(Int, Int)])(e: Embeddings.Term) =
+      def loss(positive: Seq[(Int, Int)], negative: Seq[(Int, Int)])(e: Params.Term) =
         sum(positive) { case (i, j) => cell(i, j, 1.0)(e)} +
         sum(negative) { case (i, j) => cell(i, j, -1.0)(e)}
 

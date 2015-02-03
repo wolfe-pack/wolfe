@@ -47,14 +47,14 @@ trait Potential {
   def isLinear = false
   def statsForCurrentSetting(): FactorieVector = null
   def ad3Init():Unit = notSupported
-  @throws[CantProposeException]
+  //@throws[CantProposeException]
   def proposeSetting(edge:Edge):Unit = notSupported
   def toVerboseString(implicit fgPrinter: FGPrinter): String = getClass.getName
   def toHTMLString(implicit fgPrinter: FGPrinter): String = toVerboseString(fgPrinter)
   var factor:Factor = null //Automatically set by Factor
 }
 
-class CantProposeException extends Exception
+//class CantProposeException extends Exception
 
 trait DiscretePotential extends Potential {
   lazy val vars:Array[DiscreteVar[_]] = factor.edges.map(_.n.variable.asDiscrete)

@@ -16,6 +16,6 @@ final class ChoicePotential(x:Edge, xs:Seq[Edge], i:Edge) extends Potential {
   override def proposeSetting(edge: Edge): Unit = edge match {
     case `x` => xVar.setting = idxVar.setting
     case `i` => idxVar.setting = xVar.setting
-    case e if xs contains e => throw new CantProposeException
+    //case e if xs contains e => throw new CantProposeException
   }
 }

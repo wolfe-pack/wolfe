@@ -161,6 +161,14 @@ case class SeqVar[D <: Dom](name: String, domain: SeqDom[D],
   val elements = for (i <- 0 until domain.length) yield
     domain.elementDom.variable(s"$name($i)", offsets +(domain.elementDom.lengths, i), if (owner == null) this else owner)
 
+  /*
+  def apply(generator:Generator[Int]) = new StochasticElement(generator) {
+    val current = elements(generator.generate)
+
+  }
+  */
+
+
 }
 
 trait SeqTerm[D <: Dom] extends Term[SeqDom[D]] {
