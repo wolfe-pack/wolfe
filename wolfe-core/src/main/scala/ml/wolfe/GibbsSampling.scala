@@ -1,7 +1,7 @@
 package ml.wolfe
 
 import ml.wolfe.FactorGraph.Node
-import ml.wolfe.fg.{CantProposeException, ContinuousVar, DiscreteVar, Var}
+import ml.wolfe.fg.{ContinuousVar, DiscreteVar, Var}
 
 import scala.collection.mutable.ArrayBuffer
 import scala.math._

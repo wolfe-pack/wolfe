@@ -1,6 +1,6 @@
 package ml
 
-import cc.factorie.la.{SingletonTensor1, DenseTensor1, SparseTensor1, Tensor1}
+import cc.factorie.la._
 import cc.factorie.maths.ArrayOps
 // import scalaxy.streams.optimize
 
@@ -10,6 +10,7 @@ import cc.factorie.maths.ArrayOps
  */
 package object wolfe {
   type FactorieVector = Tensor1
+  type FactorieMatrix = Tensor2
   type SparseVector = SparseTensor1
   type DenseVector = DenseTensor1
   type SingletonVector = SingletonTensor1

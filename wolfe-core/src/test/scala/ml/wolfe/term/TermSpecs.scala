@@ -24,6 +24,22 @@ class TermSpecs extends WolfeSpec {
     }
   }
 
+  "A matrix variable term" should {
+    "evaluate to a matrix" in {
+      val X = matrices(2,3).variable("X")
+      val tensor2 = matrix(Seq(1,2,3), Seq(4,5,6))
+      val result = X(tensor2)
+      result should equal(tensor2)
+    }
+
+    "provide its constant gradient" in {
+      val X = matrices(2,3).variable("X")
+      val tensor2 = matrix(Seq(1,2,3), Seq(4,5,6))
+      val result = X.gradient(X, tensor2)
+      result.toArray should equal(new MatrixDom(2: Int, 3: Int).one.toArray)
+    }
+  }
+
   "A double variable term" should {
     "provide its argmax" in {
       val x = doubles.variable("x")
@@ -70,6 +86,21 @@ class TermSpecs extends WolfeSpec {
       val dot = x dot y
       dot.gradient(x, vector(2.0, 3.0), vector(1.0, 2.0)) should equal(vector(1.0, 2.0))
       dot.gradient(y, vector(2.0, 3.0), vector(1.0, 2.0)) should equal(vector(2.0, 3.0))
+    }
+  }
+
+  "A matrix-vector product term" should {
+    "evaluate to the value of a matrix-vector product" in {
+      val x = vectors(2).variable("x")
+      val A = matrices(3,2).variable("A")
+      val op = A * x
+      val tensor2 = matrix(Seq(1, 0), Seq(1, 1), Seq(2, 1))
+      val result = op(tensor2, vector(2, 4))
+      result should equal(vector(2.0, 6.0, 8.0))
+    }
+
+    "provide its gradient for different variables " ignore {
+      ???
     }
   }
 

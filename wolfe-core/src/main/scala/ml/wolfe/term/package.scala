@@ -10,6 +10,7 @@ package object term {
   type DomWithTerm[T] = Dom { type Term = T}
   type DoubleTerm = Term[DoubleDom]
   type VectorTerm = Term[VectorDom]
+  type MatrixTerm = Term[MatrixDom]
   type BoolDom = DiscreteDom[Boolean]
   type BoolTerm = Term[BoolDom]
   type DiscreteTerm[T] = Term[DiscreteDom[T]]

@@ -1,6 +1,6 @@
 package ml.wolfe.term
 
-import cc.factorie.la.DenseTensor1
+import cc.factorie.la.{SparseIndexedTensor2, DenseTensor2, DenseTensor1}
 import ml.wolfe._
 import ml.wolfe.fg20.Msgs
 
@@ -19,7 +19,7 @@ trait Dom {
     copyValue(value, result)
     result
   }
-  def createSetting(): Setting = new Setting(lengths.discOff, lengths.contOff, lengths.vectOff)
+  def createSetting(): Setting = new Setting(lengths.discOff, lengths.contOff, lengths.vectOff, lengths.matsOff)
   def createMsgs() = new Msgs(null, null, null)
   def createZeroSetting(): Setting = {
     val result = createSetting()
@@ -31,9 +31,9 @@ trait Dom {
 
   def lengths: Offsets
 
-  def isDiscrete = lengths.contOff == 0 && lengths.vectOff == 0
+  def isDiscrete = lengths.contOff == 0 && lengths.vectOff == 0 && lengths.matsOff == 0
   def isContinuous = lengths.discOff == 0
-  def isDouble = lengths.contOff == 1 && lengths.discOff == 0 && lengths.vectOff == 0
+  def isDouble = lengths.contOff == 1 && lengths.discOff == 0 && lengths.vectOff == 0 && lengths.matsOff == 0
 
 
   def one: Value
@@ -53,7 +53,7 @@ class VectorDom(val dim: Int) extends Dom {
   type Term = VectorTerm
   type This = VectorDom
 
-  val lengths = Offsets(0, 0, 1)
+  val lengths = Offsets(0, 0, 1, 0)
 
   def toValue(setting: Setting, offsets: Offsets) =
     setting.vect(offsets.vectOff)
@@ -65,6 +65,24 @@ class VectorDom(val dim: Int) extends Dom {
 
   def const(value: Value) = new Constant[VectorDom](this,value)
 }
+class MatrixDom(val dim1: Int, dim2: Int) extends Dom {
+  type Value = FactorieMatrix
+  type Variable = MatrixVar
+  type Term = MatrixTerm
+  type This = MatrixDom
+
+  val lengths = Offsets(0, 0, 0, 1)
+
+  def toValue(setting: Setting, offsets: Offsets) =
+    setting.mats(offsets.matsOff)
+  def copyValue(value: Value, setting: Setting, offsets: Offsets) =
+    setting.mats(offsets.matsOff) = value
+  def variable(name: String, offsets: Offsets, owner: Var[Dom]) = MatrixVar(name, owner, this, offsets.matsOff)
+  def one = new DenseTensor2(dim1, dim2, 1.0)
+  def zero = new DenseTensor2(dim1, dim2, 0.0)
+
+  def const(value: Value) = new Constant[MatrixDom](this,value)
+}
 
 class DoubleDom extends Dom {
   type Value = Double
@@ -74,7 +92,7 @@ class DoubleDom extends Dom {
     setting.cont(offsets.contOff)
   def copyValue(value: Value, setting: Setting, offsets: Offsets = Offsets()) =
     setting.cont(offsets.contOff) = value
-  val lengths = Offsets(0, 1, 0)
+  val lengths = Offsets(0, 1, 0, 0)
   type Variable = DoubleVar
   def variable(name: String, offsets: Offsets = Offsets(), owner: Var[Dom]) = DoubleVar(name, owner, this, offsets.contOff)
   def one = 1.0
@@ -91,7 +109,7 @@ class DiscreteDom[T](val values: IndexedSeq[T]) extends Dom {
     values(setting.disc(offsets.discOff))
   def copyValue(value: Value, setting: Setting, offsets: Offsets = Offsets()) =
     setting.disc(offsets.discOff) = values.indexOf(value)
-  val lengths = Offsets(1, 0, 0)
+  val lengths = Offsets(1, 0, 0, 0)
   type Variable = DiscVar[T]
   def variable(name: String, offsets: Offsets = Offsets(), owner: Var[Dom]) = DiscVar(name, owner, this, offsets.discOff)
   def one = values.last

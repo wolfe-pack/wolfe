@@ -1,7 +1,8 @@
 package ml.wolfe.term
 
 import cc.factorie.Factorie.DenseTensor1
-import ml.wolfe.FactorieVector
+import cc.factorie.la.DenseTensor2
+import ml.wolfe.{FactorieMatrix, FactorieVector}
 import scala.language.implicitConversions
 
 /**
@@ -14,9 +15,23 @@ object TermImplicits {
 
   def vectors(dim: Int) = new VectorDom(dim)
 
+  def matrices(dim1: Int, dim2: Int) = new MatrixDom(dim1: Int, dim2: Int)
+
   def discrete[T](args: T*) = new DiscreteDom[T](args.toIndexedSeq)
 
   def vector(values: Double*) = new DenseTensor1(values.toArray)
+
+  def matrix(values: Seq[Double]*) = {
+    val tmp = new DenseTensor2(values.length, values.head.length)
+
+    (0 until values.length).foreach(row => {
+      (0 until values(row).length).foreach(col => {
+        tmp(row, col) = values(row)(col)
+      })
+    })
+
+    tmp
+  }
 
   def seqs[D <: Dom](elements: D, length: Int) = new SeqDom(elements, length)
 
@@ -49,6 +64,8 @@ object TermImplicits {
   implicit def doubleToConstant(d: Double): Constant[DoubleDom] = new Constant[DoubleDom](Dom.doubles, d)
 
   implicit def vectToConstant(d: FactorieVector): Constant[VectorDom] = new Constant[VectorDom](vectors(d.dim1), d)
+
+  implicit def matToConstant(d: FactorieMatrix): Constant[MatrixDom] = new Constant[MatrixDom](matrices(d.dim1, d.dim2), d)
 
 //  implicit def discToConstant[T: DiscreteDom](value: T): Constant[DiscreteDom[T]] =
 //    new Constant[DiscreteDom[T]](implicitly[DiscreteDom[T]], value)
@@ -105,6 +122,11 @@ object TermImplicits {
 
   implicit class RichVectTerm(val vect: Term[VectorDom]) {
     def dot(that: Term[VectorDom]) = new DotProduct(vect, that)
+  }
+
+  implicit class RichMatrixTerm(val mat: Term[MatrixDom]) {
+    //def dot(that: Term[MatrixDom]) = new DotProduct(mat, that)
+    def *(that: Term[VectorDom]) = new MatrixVectorProduct(mat, that)
   }
 
 }

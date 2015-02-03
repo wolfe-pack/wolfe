@@ -104,31 +104,39 @@ trait Var[+D <: Dom] extends Term[D] {
 }
 
 sealed trait Atom
-case class Atoms(disc: Seq[DiscVar[Any]] = Nil, cont: Seq[DoubleVar] = Nil, vect: Seq[VectorVar] = Nil) {
-  def ++(that: Atoms) = copy(disc = disc ++ that.disc, cont = cont ++ that.cont, vect = vect ++ that.vect)
+case class Atoms(disc: Seq[DiscVar[Any]] = Nil, cont: Seq[DoubleVar] = Nil, vect: Seq[VectorVar] = Nil, mats: Seq[MatrixVar] = Nil) {
+  def ++(that: Atoms) = copy(disc = disc ++ that.disc, cont = cont ++ that.cont, vect = vect ++ that.vect, mats = mats ++ that.mats)
 
   def merge(that: Atoms) = copy(
     disc = (disc ++ that.disc).distinct,
     cont = (cont ++ that.cont).distinct,
-    vect = (vect ++ that.vect).distinct)
+    vect = (vect ++ that.vect).distinct,
+    mats = (mats ++ that.mats).distinct)
 
   def filterByOwner(predicate: Var[Dom] => Boolean) = copy(
     disc = disc.filter(v => predicate(v.owner)),
     cont = cont.filter(v => predicate(v.owner)),
-    vect = vect.filter(v => predicate(v.owner))
+    vect = vect.filter(v => predicate(v.owner)),
+    mats = mats.filter(v => predicate(v.owner))
   )
 
 }
 
 case class VectorVar(name: String, owner: Var[Dom], domain: VectorDom, offset: Int) extends Var[VectorDom] with Atom {
-  val ranges = Ranges(Offsets(0, 0, offset), Offsets(0, 0, offset + 1))
+  val ranges = Ranges(Offsets(0, 0, offset, 0), Offsets(0, 0, offset + 1, 0))
 
   def atoms = Atoms(vect = List(this))
 }
 
+case class MatrixVar(name: String, owner: Var[Dom], domain: MatrixDom, offset: Int) extends Var[MatrixDom] with Atom {
+  val ranges = Ranges(Offsets(0, 0, 0, offset), Offsets(0, 0, 0, offset + 1))
+
+  def atoms = Atoms(mats = List(this))
+}
+
 case class DoubleVar(name: String, owner: Var[Dom], domain: DoubleDom, offset: Int) extends Var[DoubleDom] with Atom {
   self =>
-  val ranges = Ranges(Offsets(0, offset, 0), Offsets(0, offset + 1, 0))
+  val ranges = Ranges(Offsets(0, offset, 0, 0), Offsets(0, offset + 1, 0, 0))
 
   def atoms = Atoms(cont = List(this))
 
@@ -142,7 +150,7 @@ case class DoubleVar(name: String, owner: Var[Dom], domain: DoubleDom, offset: I
 }
 
 case class DiscVar[T](name: String, owner: Var[Dom], domain: DiscreteDom[T], offset: Int) extends Var[DiscreteDom[T]] with Atom {
-  val ranges = Ranges(Offsets(offset, 0, 0), Offsets(offset + 1, 0, 0))
+  val ranges = Ranges(Offsets(offset, 0, 0, 0), Offsets(offset + 1, 0, 0, 0))
 
   def atoms = Atoms(disc = List(this.asInstanceOf[DiscVar[Any]]))
 
@@ -456,11 +464,9 @@ class DotProduct[T1 <: Term[VectorDom], T2 <: Term[VectorDom]](val arg1: T1, val
     }
   }
 
-
   def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
 
     def withRespectTo = wrt
-
 
     def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]): Unit = {
       val scale = outError.cont(0)
@@ -473,10 +479,39 @@ class DotProduct[T1 <: Term[VectorDom], T2 <: Term[VectorDom]](val arg1: T1, val
 
 }
 
+class MatrixVectorProduct[T1 <: Term[MatrixDom], T2 <: Term[VectorDom]](val arg1: T1, val arg2: T2) extends Composed[VectorDom] {
+
+  self =>
+
+  val arguments = IndexedSeq(arg1, arg2)
+
+  def composer() = new Evaluator {
+    def eval(inputs: Array[Setting], output: Setting) = {
+      output.vect(0) = inputs(0).mats(0) * inputs(1).vect(0)
+    }
+  }
+
+  def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
+
+    def withRespectTo = wrt
+
+    def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]): Unit = {
+      val scale = outError.vect(0)
+      gradient(0).mats(0) := 0.0
+      gradient(1).vect(0) := 0.0
+      gradient(0).mats(0) += argOutputs(1).vect(0) outer scale
+      gradient(1).vect(0) += argOutputs(0).mats(0) * scale
+    }
+  }
+
+  override val domain = new VectorDom(arg1.domain.dim1)
+}
+
 
 trait ComposedDoubleTerm extends DoubleTerm with Composed[DoubleDom] {
   val domain = Dom.doubles
 }
+
 
 trait UnaryTerm[T <: Term[Dom], D <: Dom] extends Composed[D] {
   def arg: T
@@ -548,13 +583,13 @@ object Playground {
   }
 }
 
-case class Offsets(discOff: Int = 0, contOff: Int = 0, vectOff: Int = 0) {
-  def +(disc: Int, cont: Int, vect: Int) = Offsets(discOff + disc, contOff + cont, vectOff + vect)
+case class Offsets(discOff: Int = 0, contOff: Int = 0, vectOff: Int = 0, matsOff: Int = 0) {
+  def +(disc: Int, cont: Int, vect: Int, mats: Int) = Offsets(discOff + disc, contOff + cont, vectOff + vect, matsOff + mats)
 
   def +(that: Offsets, scale: Int = 1) =
-    Offsets(discOff + scale * that.discOff, contOff + scale * that.contOff, vectOff + scale * that.vectOff)
+    Offsets(discOff + scale * that.discOff, contOff + scale * that.contOff, vectOff + scale * that.vectOff, matsOff + scale * that.matsOff)
 
-  def *(scale: Int) = Offsets(scale * discOff, scale * contOff, scale * vectOff)
+  def *(scale: Int) = Offsets(scale * discOff, scale * contOff, scale * vectOff, scale * matsOff)
 }
 
 case class Ranges(from: Offsets, to: Offsets) {
@@ -562,14 +597,20 @@ case class Ranges(from: Offsets, to: Offsets) {
     arraycopy(src.disc, from.discOff, tgt.disc, 0, to.discOff - from.discOff)
     arraycopy(src.cont, from.contOff, tgt.cont, 0, to.contOff - from.contOff)
     arraycopy(src.vect, from.vectOff, tgt.vect, 0, to.vectOff - from.vectOff)
+    arraycopy(src.mats, from.matsOff, tgt.mats, 0, to.matsOff - from.matsOff)
   }
 
   def addInto(src: Setting, tgt: Setting): Unit = {
     for (i <- 0 until numCont) {
       tgt.cont(from.contOff + i) += src.cont(i)
     }
+
     for (i <- 0 until numVect) {
       tgt.vect(from.vectOff + i) += src.vect(i)
+    }
+
+    for (i <- 0 until numMats) {
+      tgt.mats(from.matsOff + i) += src.mats(i)
     }
   }
 
@@ -578,6 +619,8 @@ case class Ranges(from: Offsets, to: Offsets) {
   def numCont = to.contOff - from.contOff
 
   def numVect = to.vectOff - from.vectOff
+
+  def numMats = to.matsOff - from.matsOff
 }
 
 class Iverson[T <: BoolTerm](val arg: T) extends UnaryTerm[T, DoubleDom] with ComposedDoubleTerm {
