@@ -19,7 +19,6 @@ trait Term[+D <: Dom] {
 
   def atoms: Atoms
 
-
   def argmaxer(wrt: Seq[Var[Dom]]): Argmaxer = {
     //todo: this could be type safe, for example by adding the argmax method to the RichDoubleTerm
     if (!domain.isDouble) sys.error("Argmax only supported for real valued terms")
@@ -62,6 +61,15 @@ trait Term[+D <: Dom] {
   }
 }
 
+trait TermProxy[D <: Dom] extends Term[D] {
+  def self: Term[D]
+  val domain = self.domain
+  def vars = self.vars
+  def evaluator() = self.evaluator()
+  def differentiator(wrt: Seq[Var[Dom]]) = self.differentiator(wrt)
+  def atoms = self.atoms
+}
+
 
 trait Var[+D <: Dom] extends Term[D] {
   self =>
@@ -96,7 +104,7 @@ trait Var[+D <: Dom] extends Term[D] {
   }
 }
 
-
+sealed trait Atom
 case class Atoms(disc: Seq[DiscVar[Any]] = Nil, cont: Seq[DoubleVar] = Nil, vect: Seq[VectorVar] = Nil) {
   def ++(that: Atoms) = copy(disc = disc ++ that.disc, cont = cont ++ that.cont, vect = vect ++ that.vect)
 
@@ -113,13 +121,13 @@ case class Atoms(disc: Seq[DiscVar[Any]] = Nil, cont: Seq[DoubleVar] = Nil, vect
 
 }
 
-case class VectorVar(name: String, owner: Var[Dom], domain: VectorDom, offset: Int) extends Var[VectorDom] {
+case class VectorVar(name: String, owner: Var[Dom], domain: VectorDom, offset: Int) extends Var[VectorDom] with Atom {
   val ranges = Ranges(Offsets(0, 0, offset), Offsets(0, 0, offset + 1))
 
   def atoms = Atoms(vect = List(this))
 }
 
-case class DoubleVar(name: String, owner: Var[Dom], domain: DoubleDom, offset: Int) extends Var[DoubleDom] {
+case class DoubleVar(name: String, owner: Var[Dom], domain: DoubleDom, offset: Int) extends Var[DoubleDom] with Atom {
   self =>
   val ranges = Ranges(Offsets(0, offset, 0), Offsets(0, offset + 1, 0))
 
@@ -134,7 +142,7 @@ case class DoubleVar(name: String, owner: Var[Dom], domain: DoubleDom, offset: I
   }
 }
 
-case class DiscVar[T](name: String, owner: Var[Dom], domain: DiscreteDom[T], offset: Int) extends Var[DiscreteDom[T]] {
+case class DiscVar[T](name: String, owner: Var[Dom], domain: DiscreteDom[T], offset: Int) extends Var[DiscreteDom[T]] with Atom {
   val ranges = Ranges(Offsets(offset, 0, 0), Offsets(offset + 1, 0, 0))
 
   def atoms = Atoms(disc = List(this.asInstanceOf[DiscVar[Any]]))
@@ -184,10 +192,10 @@ abstract class SeqTermImpl[D <: Dom] extends Composed[SeqDom[D]] with SeqTerm[D]
       for (i <- 0 until argOutputs.length) {
         val offsets = domain.elementDom.lengths * i
         for (j <- 0 until domain.elementDom.lengths.contOff) {
-          gradient(i).cont(j) += outError.cont(offsets.contOff + j)
+          gradient(i).cont(j) = outError.cont(offsets.contOff + j)
         }
         for (j <- 0 until domain.elementDom.lengths.vectOff) {
-          gradient(i).vect(j) += outError.vect(offsets.vectOff + j)
+          gradient(i).vect(j) := outError.vect(offsets.vectOff + j)
         }
       }
     }
@@ -216,7 +224,7 @@ case class Tuple2Var[D1 <: Dom, D2 <: Dom](name: String,
                                            offsets: Offsets,
                                            owner: Var[Dom]) extends Var[Tuple2Dom[D1, D2]] with Tuple2Term[D1, D2] {
 
-  val ranges                   = Ranges(offsets, offsets + domain.dom1.lengths + domain.dom2.lengths)
+  val ranges               = Ranges(offsets, offsets + domain.dom1.lengths + domain.dom2.lengths)
   val _1: domain.dom1.Term = domain.dom1.variable(name + "._1", offsets, if (owner == null) this else owner)
   val _2: domain.dom2.Term = domain.dom2.variable(name + "._2", offsets + domain.dom1.lengths, if (owner == null) this else owner)
 
@@ -228,9 +236,6 @@ trait Evaluator {
   def eval(inputs: Array[Setting], output: Setting)
 }
 
-trait Argmaxer {
-  def argmax(observed: Array[Setting], msgs: Array[Msgs], result: Array[Setting])
-}
 
 trait Differentiator {
   def term: Term[Dom]
@@ -245,11 +250,11 @@ trait Differentiator {
 
   def backProp(error: Setting, gradient: Array[Setting])
 
-  def addGradientAndValue(current: Array[Setting], outputError: Setting, gradient: Array[Setting], value: Setting): Unit = {
+  def addGradientAndValue(current: Array[Setting], outputError: Setting, gradientAccumulator: Array[Setting], value: Setting): Unit = {
     //call forward propagate on term with current assignment to free variables
     forwardProp(current)
     //then backward propagate
-    backProp(outputError, gradient)
+    backProp(outputError, gradientAccumulator)
     //also return the value
     value := activation
   }
@@ -326,7 +331,7 @@ trait Composed[D <: Dom] extends Term[D] {
 
     def eval(inputs: Array[Setting], output: Setting) = {
       for (i <- 0 until arguments.length) {
-        this2Arg(i).copyForward(inputs, argInputs(i))
+        full2Arg(i).copyForward(inputs, argInputs(i))
         argEvals(i).eval(argInputs(i), argOutputs(i))
       }
       comp.eval(argOutputs, output)
@@ -338,7 +343,7 @@ trait Composed[D <: Dom] extends Term[D] {
   trait Composer {
     val argOutputs = arguments.map(_.domain.createSetting()).toArray
     val argInputs  = arguments.map(_.vars.map(_.domain.createSetting()).toArray)
-    val this2Arg   = arguments.map(a => VariableMapping(vars, a.vars)).toArray
+    val full2Arg   = arguments.map(a => VariableMapping(vars, a.vars)).toArray
     val argEvals   = arguments.map(_.evaluator()).toArray
   }
 
@@ -362,7 +367,7 @@ trait Composed[D <: Dom] extends Term[D] {
     //updates the activation of this term and all sub terms
     def forwardProp(current: Array[Setting]) = {
       for (i <- 0 until arguments.length) {
-        this2Arg(i).copyForward(current, argInputs(i))
+        full2Arg(i).copyForward(current, argInputs(i))
         argDiffs(i).forwardProp(argInputs(i))
       }
       comp.eval(argActivations, activation)
@@ -373,9 +378,9 @@ trait Composed[D <: Dom] extends Term[D] {
       localBackProp(argActivations, error, argErrors)
       for (i <- 0 until arguments.size) {
         if (arguments(i).vars.exists(withRespectTo.contains)) {
-          this2Arg(i).copyForward(gradient, argGradients(i))
+          full2Arg(i).copyForward(gradient, argGradients(i))
           argDiffs(i).backProp(argErrors(i), argGradients(i))
-          this2Arg(i).copyBackward(gradient, argGradients(i))
+          full2Arg(i).copyBackward(gradient, argGradients(i))
         }
       }
     }
@@ -399,7 +404,7 @@ class Sigmoid[T <: Term[DoubleDom]](val arg: T) extends ComposedDoubleTerm {
     def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]) = {
       val sigm = sigmoid(argOutputs(0).cont(0))
       val result = (1.0 - sigm) * sigm * outError.cont(0)
-      gradient(0).cont(0) += result
+      gradient(0).cont(0) = result
     }
 
     def withRespectTo = wrt
@@ -415,7 +420,7 @@ class Log[T <: DoubleTerm](val arg: T) extends ComposedDoubleTerm {
 
   def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
     def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]) = {
-      gradient(0).cont(0) += outError.cont(0) * 1.0 / argOutputs(0).cont(0)
+      gradient(0).cont(0) = outError.cont(0) * 1.0 / argOutputs(0).cont(0)
     }
 
     def withRespectTo = wrt
@@ -442,6 +447,8 @@ class DotProduct[T1 <: Term[VectorDom], T2 <: Term[VectorDom]](val arg1: T1, val
 
     def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]): Unit = {
       val scale = outError.cont(0)
+      gradient(0).vect(0) := 0.0
+      gradient(1).vect(0) := 0.0
       gradient(0).vect(0) +=(argOutputs(1).vect(0), scale)
       gradient(1).vect(0) +=(argOutputs(0).vect(0), scale)
     }
@@ -472,7 +479,7 @@ class Sum(val arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm {
   def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
     def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]) = {
       for (i <- 0 until argOutputs.length)
-        gradient(i).cont(0) += outError.cont(0)
+        gradient(i).cont(0) = outError.cont(0)
     }
 
     def withRespectTo = wrt
@@ -491,12 +498,24 @@ class Product(val arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm 
   def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
     def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]) = {
       var total = outError.cont(0)
-      for (i <- 0 until argOutputs.length)
-        total *= argOutputs(i).cont(0)
-      for (i <- 0 until argOutputs.length)
-        gradient(i).cont(0) += total / argOutputs(i).cont(0)
+      var zeros = 0
+      var zeroIndex = -1
+      for (i <- 0 until argOutputs.length) {
+        //set to 0.0 by default
+        gradient(i) := 0.0
+        if (argOutputs(i).cont(0) == 0.0) {
+          zeros += 1
+          zeroIndex = i
+        } else
+          total *= argOutputs(i).cont(0)
+      }
+      if (zeros == 1) {
+        gradient(zeroIndex).cont(0) = total
+      } else if (zeros == 0) {
+        for (i <- 0 until argOutputs.length)
+          gradient(i).cont(0) = total / argOutputs(i).cont(0)
+      }
     }
-
     def withRespectTo = wrt
   }
 }

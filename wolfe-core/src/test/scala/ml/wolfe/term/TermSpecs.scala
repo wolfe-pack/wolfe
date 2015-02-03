@@ -236,4 +236,23 @@ class TermSpecs extends WolfeSpec {
     }
   }
 
+  "A quadratic objective" should {
+    "provide its gradient" in {
+      val x = doubles.variable("x")
+      val obj = (x * 4.0) - (x * x)
+      obj.gradient(x,0.0) should be (4.0)
+      obj.gradient(x,12.0) should be (-20.0)
+
+    }
+    "support custom argmaxing" in {
+      val x = doubles.variable("x")
+      def obj(x:doubles.Term) = x * 4.0 - x * x
+      val result = argmax(doubles) { x => obj(x).argmaxBy(Argmaxer.ascent(100,0.1))}
+      result() should be (2.0 +- eps)
+    }
+
+  }
+
+
+
 }

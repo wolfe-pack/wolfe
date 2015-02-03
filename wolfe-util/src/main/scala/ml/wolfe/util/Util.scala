@@ -110,7 +110,7 @@ class ProgressBar(goal: Int, reportInterval: Int = 1, outputStream: OutputStream
     startTime = System.currentTimeMillis()
   }
 
-  def apply(msg: String = "", lineBreak: Boolean = false) {
+  def apply(msg: =>String = "", lineBreak: Boolean = false) {
     if (completed == 0 && startTime == 0) start()
     if (completed % reportInterval == 0) {
       val percent = completed.toDouble / goal * 100
