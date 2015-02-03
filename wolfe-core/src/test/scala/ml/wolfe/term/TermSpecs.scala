@@ -89,12 +89,25 @@ class TermSpecs extends WolfeSpec {
       term.gradient(x, 10.0, 5.0) should be(2.0)
     }
 
+    "calculate sequential gradients" in {
+      val x = doubles.variable("x")
+      val y = doubles.variable("y")
+      val term = (x * 2.0 + y * 3.0).sequentialGradient()
+      val diff = term.differentiator(Seq(x))
+      diff.gradient(x, 1.0, 1.0) should be (2.0)
+      diff.gradient(x, 1.0, 1.0) should be (0.0)
+      diff.gradient(x, 1.0, 1.0) should be (2.0)
+
+    }
+
     "should be expressable through the sum operator" in {
       val dom = seqs(bools, 3)
       def model(y: dom.Term) = sum(0 until dom.length) { i => I(y(i))}
       val y = dom.variable("y")
       model(y)(IndexedSeq(false, true, true)) should be(2.0)
     }
+
+
   }
 
   "A product" should {

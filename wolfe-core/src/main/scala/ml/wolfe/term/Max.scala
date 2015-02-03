@@ -75,3 +75,4 @@ class Argmax[D <: Dom](val obj: DoubleTerm, val wrt:Var[D]) extends Term[D] {
 
   def differentiator(wrt: Seq[Var[Dom]]) = ???
 }
+

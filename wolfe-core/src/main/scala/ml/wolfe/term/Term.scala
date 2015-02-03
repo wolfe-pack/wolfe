@@ -3,7 +3,6 @@ package ml.wolfe.term
 import java.lang.System._
 
 import cc.factorie.la.DenseTensor1
-import ml.wolfe.FactorieVector
 import ml.wolfe.fg20._
 import ml.wolfe.util.Math._
 
@@ -236,7 +235,6 @@ trait Evaluator {
   def eval(inputs: Array[Setting], output: Setting)
 }
 
-
 trait Differentiator {
   def term: Term[Dom]
 
@@ -249,6 +247,17 @@ trait Differentiator {
   def forwardProp(current: Array[Setting])
 
   def backProp(error: Setting, gradient: Array[Setting])
+
+  def gradient(singleVar:Var[Dom],args:Any*):singleVar.domain.Value = {
+    val obj = term
+    val errorSetting = obj.domain.toSetting(term.domain.one.asInstanceOf[obj.domain.Value])
+    val argSettings = for ((a, v) <- args zip obj.vars) yield v.domain.toSetting(a.asInstanceOf[v.domain.Value])
+    val result = obj.vars.map(_.domain.createZeroSetting()).toArray
+    val output = obj.domain.createZeroSetting()
+    addGradientAndValue(argSettings.toArray, errorSetting, result, output)
+    val indexOfVar = obj.vars.indexOf(singleVar)
+    obj.vars(indexOfVar).domain.toValue(result(indexOfVar)).asInstanceOf[singleVar.domain.Value]
+  }
 
   def addGradientAndValue(current: Array[Setting], outputError: Setting, gradientAccumulator: Array[Setting], value: Setting): Unit = {
     //call forward propagate on term with current assignment to free variables
@@ -467,24 +476,7 @@ trait UnaryTerm[T <: Term[Dom], D <: Dom] extends Composed[D] {
   val arguments = IndexedSeq(arg)
 }
 
-class Sum(val arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm {
-  def composer() = new Evaluator {
-    def eval(inputs: Array[Setting], output: Setting) = {
-      output.cont(0) = 0.0
-      for (i <- 0 until inputs.length)
-        output.cont(0) += inputs(i).cont(0)
-    }
-  }
 
-  def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
-    def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]) = {
-      for (i <- 0 until argOutputs.length)
-        gradient(i).cont(0) = outError.cont(0)
-    }
-
-    def withRespectTo = wrt
-  }
-}
 
 class Product(val arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm {
   def composer() = new Evaluator {
@@ -525,7 +517,7 @@ object Playground {
 
   def vector(values: Seq[Double]) = new DenseTensor1(values.toArray)
 
-  import TermImplicits._
+  import ml.wolfe.term.TermImplicits._
 
   def main(args: Array[String]) {
 
