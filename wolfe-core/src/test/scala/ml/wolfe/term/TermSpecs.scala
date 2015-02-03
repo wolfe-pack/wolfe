@@ -94,9 +94,9 @@ class TermSpecs extends WolfeSpec {
       val y = doubles.variable("y")
       val term = (x * 2.0 + y * 3.0).sequentialGradient()
       val diff = term.differentiator(Seq(x))
-      diff.gradient(x, 1.0, 1.0) should be (2.0)
-      diff.gradient(x, 1.0, 1.0) should be (0.0)
-      diff.gradient(x, 1.0, 1.0) should be (2.0)
+      diff.gradient(x, 1.0, 1.0) should be(2.0)
+      diff.gradient(x, 1.0, 1.0) should be(0.0)
+      diff.gradient(x, 1.0, 1.0) should be(2.0)
 
     }
 
@@ -135,7 +135,7 @@ class TermSpecs extends WolfeSpec {
     }
   }
 
-  "Composing log, sigmoid and dot prodcuts" should {
+  "Composing log, sigmoid and dot products" should {
     "provide a logistic loss matrix factorization objective" in {
       val x = vectors(2).variable("x")
       val y = vectors(2).variable("y")
@@ -151,6 +151,22 @@ class TermSpecs extends WolfeSpec {
       val prob = sigmoid(8.0)
       result should equal(vector(2.0, 3.0) * (1.0 - prob))
     }
+
+    "provide a full matrix factorization objective" in {
+      val k = 2
+      val m = 3
+      val n = 3
+      val Embeddings = seqs(vectors(k), m) x seqs(vectors(k), n)
+
+      def cell(i: Int, j: Int, scale: Double)(e: Embeddings.Term) =
+        log(sigm((e._1(i) dot e._2(j)) * scale))
+
+      def loss(positive: Seq[(Int, Int)], negative: Seq[(Int, Int)])(e: Embeddings.Term) =
+        sum(positive) { case (i, j) => cell(i, j, 1.0)(e)} +
+        sum(negative) { case (i, j) => cell(i, j, -1.0)(e)}
+
+    }
+
   }
 
   "A term with discrete variables" should {
@@ -221,12 +237,12 @@ class TermSpecs extends WolfeSpec {
       def model(scores: Scores.Term)(y: Output.Term) =
         sum(0 until y.length) { i => I(y(i)) * scores(i)}
 
-      def loss(gold:Output.Term)(scores:Scores.Term) =
-        max(Output) { model(scores)} - model(scores)(gold)
+      def loss(gold: Output.Term)(scores: Scores.Term) =
+        max(Output) {model(scores)} - model(scores)(gold)
 
-      val term = loss(IndexedSeq(true,false,true))(IndexedSeq(1.0,1.0,-1.0))
+      val term = loss(IndexedSeq(true, false, true))(IndexedSeq(1.0, 1.0, -1.0))
 
-      term() should be (2.0)
+      term() should be(2.0)
     }
 
     "calculate its gradient for tied weights" in {
@@ -236,15 +252,15 @@ class TermSpecs extends WolfeSpec {
       def model(scores: Scores.Term)(y: Output.Term) =
         sum(0 until y.length) { i => I(y(i)) * scores(i)}
 
-      def loss(gold:Output.Term)(scores:Scores.Term) =
-        max(Output) { model(scores)} - model(scores)(gold)
+      def loss(gold: Output.Term)(scores: Scores.Term) =
+        max(Output) {model(scores)} - model(scores)(gold)
 
       val weight = doubles.variable("w")
-      val weights = Scores(weight,weight,weight)
-      val term = loss(IndexedSeq(false,false,true))(weights)
+      val weights = Scores(weight, weight, weight)
+      val term = loss(IndexedSeq(false, false, true))(weights)
 
-      term.gradient(weight, 1.0) should be (2.0)
-      term.gradient(weight, -1.0) should be (-1.0)
+      term.gradient(weight, 1.0) should be(2.0)
+      term.gradient(weight, -1.0) should be(-1.0)
 
     }
   }
@@ -253,19 +269,18 @@ class TermSpecs extends WolfeSpec {
     "provide its gradient" in {
       val x = doubles.variable("x")
       val obj = (x * 4.0) - (x * x)
-      obj.gradient(x,0.0) should be (4.0)
-      obj.gradient(x,12.0) should be (-20.0)
+      obj.gradient(x, 0.0) should be(4.0)
+      obj.gradient(x, 12.0) should be(-20.0)
 
     }
     "support custom argmaxing" in {
       val x = doubles.variable("x")
-      def obj(x:doubles.Term) = x * 4.0 - x * x
-      val result = argmax(doubles) { x => obj(x).argmaxBy(Argmaxer.ascent(100,0.1))}
-      result() should be (2.0 +- eps)
+      def obj(x: doubles.Term) = x * 4.0 - x * x
+      val result = argmax(doubles) { x => obj(x).argmaxBy(Argmaxer.ascent(100, 0.1))}
+      result() should be(2.0 +- eps)
     }
 
   }
-
 
 
 }
