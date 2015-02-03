@@ -313,5 +313,33 @@ class TermSpecs extends WolfeSpec {
 
   }
 
+  "A lazy sum" should {
+    "return a different value every time when evaluated" in {
+      val n = 3
+      val Y = seqs(doubles, n)
+      val y = Y.variable("y")
+      val term = sum(sequential(0 until n)) { i => y(i)}
+      for (_ <- 0 until 2; i <- 0 until n) term(IndexedSeq(1.0, 2.0, 3.0)) should be(i + 1.0)
+    }
+    "return a different gradient every time when evaluated" in {
+      val n = 3
+      val Y = seqs(doubles, n)
+      val y = Y.variable("y")
+      val term = sum(sequential(0 until n)) { i => y(i) * y(i)}
+      for (_ <- 0 until 2; i <- 0 until n) {
+        val gradient = term.gradient(y, IndexedSeq(0.0, 1.0, 2.0))
+        for (j <- 0 until n) gradient(j) should be(if (j == i) 2.0 * i else 0.0)
+      }
+    }
+
+  }
+
+  "A typed term" should {
+    "have a typed apply method" in {
+      val x = doubles.variable("x")
+      val term: Double => Double = (x * x) typed doubles
+      term(2.0) should be(4.0)
+    }
+  }
 
 }

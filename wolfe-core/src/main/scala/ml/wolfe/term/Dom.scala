@@ -27,7 +27,8 @@ trait Dom {
     result
   }
   def variable(name: String, offsets: Offsets = Offsets(), owner: Var[Dom] = null): Variable
-  def const(value:Value):Term
+  def dynamic(name: =>String, offsets: => Offsets = Offsets(), owner: Var[Dom] = null):Variable
+  def const(value: Value): Term
 
   def lengths: Offsets
 
@@ -59,11 +60,15 @@ class VectorDom(val dim: Int) extends Dom {
     setting.vect(offsets.vectOff)
   def copyValue(value: Value, setting: Setting, offsets: Offsets) =
     setting.vect(offsets.vectOff) = value
-  def variable(name: String, offsets: Offsets, owner: Var[Dom]) = VectorVar(name, owner, this, offsets.vectOff)
+  def variable(name: String, offsets: Offsets, owner: Var[Dom]) = StaticVectorVar(name, owner, this, offsets.vectOff)
+
+  def dynamic(name: =>String, offsets: => Offsets, owner: Var[Dom]) = new BaseVar[This](name, owner, this) with VectorVar {
+    def offset = offsets.vectOff
+  }
   def one = new DenseTensor1(dim, 1.0)
   def zero = new DenseTensor1(dim, 0.0)
 
-  def const(value: Value) = new Constant[VectorDom](this,value)
+  def const(value: Value) = new Constant[VectorDom](this, value)
 }
 class MatrixDom(val dim1: Int, dim2: Int) extends Dom {
   type Value = FactorieMatrix
@@ -78,6 +83,8 @@ class MatrixDom(val dim1: Int, dim2: Int) extends Dom {
   def copyValue(value: Value, setting: Setting, offsets: Offsets) =
     setting.mats(offsets.matsOff) = value
   def variable(name: String, offsets: Offsets, owner: Var[Dom]) = MatrixVar(name, owner, this, offsets.matsOff)
+
+  def dynamic(name: => String, offsets: => Offsets, owner: Var[Dom]) = ???
   def one = new DenseTensor2(dim1, dim2, 1.0)
   def zero = new DenseTensor2(dim1, dim2, 0.0)
 
@@ -94,10 +101,14 @@ class DoubleDom extends Dom {
     setting.cont(offsets.contOff) = value
   val lengths = Offsets(0, 1, 0, 0)
   type Variable = DoubleVar
-  def variable(name: String, offsets: Offsets = Offsets(), owner: Var[Dom]) = DoubleVar(name, owner, this, offsets.contOff)
+  def variable(name: String, offsets: Offsets = Offsets(), owner: Var[Dom]) = StaticDoubleVar(name, owner, this, offsets.contOff)
+
+  def dynamic(name: =>String, offsets: => Offsets, owner: Var[Dom]) = new BaseVar[This](name, owner, this) with DoubleVar {
+    def offset = offsets.contOff
+  }
   def one = 1.0
   def zero = 0.0
-  def const(value: Value) = new Constant[DoubleDom](this,value)
+  def const(value: Value) = new Constant[DoubleDom](this, value)
 
 }
 
@@ -111,13 +122,17 @@ class DiscreteDom[T](val values: IndexedSeq[T]) extends Dom {
     setting.disc(offsets.discOff) = values.indexOf(value)
   val lengths = Offsets(1, 0, 0, 0)
   type Variable = DiscVar[T]
-  def variable(name: String, offsets: Offsets = Offsets(), owner: Var[Dom]) = DiscVar(name, owner, this, offsets.discOff)
+  def variable(name: String, offsets: Offsets = Offsets(), owner: Var[Dom]) = StaticDiscVar(name, owner, this, offsets.discOff)
+
+  def dynamic(name: =>String, offsets: => Offsets, owner: Var[Dom]) = new BaseVar[This](name, owner, this) with DiscVar[T] {
+    def offset = offsets.discOff
+  }
+
   def one = values.last
   def zero = values.head
-  def const(value:T) = new Constant[DiscreteDom[T]](this,value)
+  def const(value: T) = new Constant[DiscreteDom[T]](this, value)
 
 }
-
 
 
 class SeqDom[D <: Dom](val elementDom: D, val length: Int) extends Dom {
@@ -130,8 +145,7 @@ class SeqDom[D <: Dom](val elementDom: D, val length: Int) extends Dom {
   type This = SeqDom[D]
 
   def toValue(setting: Setting, offsets: Offsets = Offsets()) = {
-    val result = for (i <- 0 until length) yield elementDom.toValue(setting, offsets +(elementDom.lengths, i)
-    )
+    val result = for (i <- 0 until length) yield elementDom.toValue(setting, offsets +(elementDom.lengths, i))
     result
   }
   def copyValue(value: Value, setting: Setting, offsets: Offsets = Offsets()) = {
@@ -140,18 +154,25 @@ class SeqDom[D <: Dom](val elementDom: D, val length: Int) extends Dom {
     }
   }
   val lengths = elementDom.lengths * length
-  def variable(name: String, offsets: Offsets = Offsets(), owner: Var[Dom]) = SeqVar(name, this, offsets, owner)
+  def variable(name: String, offsets: Offsets = Offsets(), owner: Var[Dom]) = StaticSeqVar(name, this, offsets, owner)
+
+  def dynamic(name: =>String, dynOffsets: => Offsets, owner: Var[Dom]) = new BaseVar[This](name, owner, this) with SeqVar[D] {
+    def offsets = dynOffsets
+    val elements = for (i <- 0 until domain.length) yield
+      domain.elementDom.dynamic(s"$name($i)", offsets +(domain.elementDom.lengths, i), if (owner == null) this else owner)
+  }
+
   def one = for (i <- 0 until length) yield elementDom.one
   def zero = for (i <- 0 until length) yield elementDom.zero
 
   def const(value: Value) = new SeqTermImpl[D] {
-    lazy val domain:self.type = self
-    lazy val elements = for (i <- 0 until self.length) yield domain.elementDom.const(value(i))
+    lazy val domain: self.type = self
+    lazy val elements          = for (i <- 0 until self.length) yield domain.elementDom.const(value(i))
   }
 
-  def apply(args:elementDom.Term*) = new SeqTermImpl[D] {
+  def apply(args: elementDom.Term*) = new SeqTermImpl[D] {
     def elements = args.toIndexedSeq
-    val domain:self.type = self
+    val domain: self.type = self
   }
 
 }
@@ -160,8 +181,8 @@ class Tuple2Dom[D1 <: Dom, D2 <: Dom](val dom1: D1, val dom2: D2) extends Dom {
   self =>
   type Value = (dom1.Value, dom2.Value)
   type Variable = Tuple2Var[D1, D2]
-  type Term = Tuple2Term[D1,D2]
-  type This = Tuple2Dom[D1,D2]
+  type Term = Tuple2Term[D1, D2]
+  type This = Tuple2Dom[D1, D2]
   val lengths = dom1.lengths + dom2.lengths
   def toValue(setting: Setting, offsets: Offsets = Offsets()) = {
     val arg1 = dom1.toValue(setting, offsets)
@@ -173,13 +194,19 @@ class Tuple2Dom[D1 <: Dom, D2 <: Dom](val dom1: D1, val dom2: D2) extends Dom {
     dom2.copyValue(value._2, setting, dom1.lengths)
   }
   def variable(name: String, offsets: Offsets, owner: Var[Dom]) =
-    Tuple2Var(name, this, offsets, owner)
+    StaticTuple2Var(name, this, offsets, owner)
+
+  def dynamic(name: =>String, dynOffsets: => Offsets, owner: Var[Dom]) = new BaseVar[This](name, owner, this) with Variable {
+    def offsets = dynOffsets
+    val _1: domain.dom1.Term = domain.dom1.dynamic(name + "._1", offsets, if (owner == null) this else owner)
+    val _2: domain.dom2.Term = domain.dom2.dynamic(name + "._2", offsets + domain.dom1.lengths, if (owner == null) this else owner)
+  }
   def one = (dom1.one, dom2.one)
   def zero = (dom1.zero, dom2.zero)
 
-  def const(value: Value) = new Tuple2TermImpl[D1,D2] {
-    val _1 = domain.dom1.const(value._1)
-    val _2 = domain.dom2.const(value._2)
-    val domain:self.type = self
+  def const(value: Value) = new Tuple2TermImpl[D1, D2] {
+    val domain: self.type = self
+    val _1                = domain.dom1.const(value._1)
+    val _2                = domain.dom2.const(value._2)
   }
 }
