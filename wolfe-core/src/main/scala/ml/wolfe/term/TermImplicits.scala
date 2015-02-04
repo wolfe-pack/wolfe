@@ -56,12 +56,31 @@ object TermImplicits {
       val domain = dom
     }
 
+  def sequential[T](seq:IndexedSeq[T]) = new Generator[T] {
+    private var _current = -1
+    def generateNext() = {
+      _current = (_current + 1) % seq.length
+    }
+    def current() = seq(_current)
+
+  }
+
+  def sum[T](gen: Generator[T])(arg:Generator[T] => DoubleTerm) = {
+    val term = arg(gen)
+    new DynamicTerm[DoubleDom,T] {
+      def self = term
+      def generator = gen
+    }
+  }
 
   //implicit def seqToConstant[T,D<:TypedDom[T]](seq:IndexedSeq[T])(implicit dom:SeqDom[D]):dom.TermType = dom.const(seq)
 
   //implicit def seqToSeqTerm[E <: Dom : SeqDom](elems:Seq[Term[E]]) = seq(implicitly[SeqDom[E]])(elems: _*)
 
   implicit def doubleToConstant(d: Double): Constant[DoubleDom] = new Constant[DoubleDom](Dom.doubles, d)
+
+  implicit def intToDoubleConstant(d: Int): Constant[DoubleDom] = new Constant[DoubleDom](Dom.doubles, d)
+
 
   implicit def vectToConstant(d: FactorieVector): Constant[VectorDom] = new Constant[VectorDom](vectors(d.dim1), d)
 
@@ -114,6 +133,10 @@ object TermImplicits {
 
   implicit class RichTerm[D <: Dom](val term: Term[D]) {
     def apply(args: Any*) = term.apply(args)
+    def typed[A <: Dom](dom:A):dom.Value => term.domain.Value = {
+      require(term.vars.size == 1 && term.vars.head.domain == dom)
+      (a:dom.Value) => term.apply(Seq(a):_*)
+    }
   }
 
   implicit class RichDom[D <: Dom](val dom: D) {

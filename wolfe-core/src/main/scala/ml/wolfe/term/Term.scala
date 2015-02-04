@@ -95,7 +95,6 @@ trait Var[+D <: Dom] extends Term[D] {
   }
 
   def evaluator() = new Evaluator {
-    val r = ranges
 
     def eval(inputs: Array[Setting], output: Setting) = {
       ranges.copy(inputs(0), output)
@@ -103,7 +102,9 @@ trait Var[+D <: Dom] extends Term[D] {
   }
 }
 
-sealed trait Atom
+sealed trait Atom {
+  def offset:Int
+}
 case class Atoms(disc: Seq[DiscVar[Any]] = Nil, cont: Seq[DoubleVar] = Nil, vect: Seq[VectorVar] = Nil, mats: Seq[MatrixVar] = Nil) {
   def ++(that: Atoms) = copy(disc = disc ++ that.disc, cont = cont ++ that.cont, vect = vect ++ that.vect, mats = mats ++ that.mats)
 
@@ -122,10 +123,18 @@ case class Atoms(disc: Seq[DiscVar[Any]] = Nil, cont: Seq[DoubleVar] = Nil, vect
 
 }
 
-case class VectorVar(name: String, owner: Var[Dom], domain: VectorDom, offset: Int) extends Var[VectorDom] with Atom {
-  val ranges = Ranges(Offsets(0, 0, offset, 0), Offsets(0, 0, offset + 1, 0))
+abstract class BaseVar[D <: Dom](dynName: =>String, val owner:Var[Dom], val domain:D) extends Var[D] {
+  def name = dynName
+}
 
+trait VectorVar extends Var[VectorDom] with Atom {
+  def ranges = Ranges(Offsets(0, 0, offset, 0), Offsets(0, 0, offset + 1, 0))
   def atoms = Atoms(vect = List(this))
+}
+
+case class StaticVectorVar(name: String, owner: Var[Dom], domain: VectorDom, offset: Int) extends VectorVar with Atom {
+  override val ranges = super.ranges
+
 }
 
 case class MatrixVar(name: String, owner: Var[Dom], domain: MatrixDom, offset: Int) extends Var[MatrixDom] with Atom {
@@ -134,11 +143,10 @@ case class MatrixVar(name: String, owner: Var[Dom], domain: MatrixDom, offset: I
   def atoms = Atoms(mats = List(this))
 }
 
-case class DoubleVar(name: String, owner: Var[Dom], domain: DoubleDom, offset: Int) extends Var[DoubleDom] with Atom {
-  self =>
-  val ranges = Ranges(Offsets(0, offset, 0, 0), Offsets(0, offset + 1, 0, 0))
 
-  def atoms = Atoms(cont = List(this))
+trait DoubleVar extends Var[DoubleDom] with Atom {
+  self =>
+  def ranges = Ranges(Offsets(0, offset, 0, 0), Offsets(0, offset + 1, 0, 0))
 
   override def argmaxer(wrt: Seq[Var[Dom]]) = new Argmaxer {
     val contained = wrt.contains(self)
@@ -147,25 +155,46 @@ case class DoubleVar(name: String, owner: Var[Dom], domain: DoubleDom, offset: I
       result(0).cont(0) = if (contained) Double.PositiveInfinity else observed(0).cont(0)
     }
   }
-}
-
-case class DiscVar[T](name: String, owner: Var[Dom], domain: DiscreteDom[T], offset: Int) extends Var[DiscreteDom[T]] with Atom {
-  val ranges = Ranges(Offsets(offset, 0, 0, 0), Offsets(offset + 1, 0, 0, 0))
-
-  def atoms = Atoms(disc = List(this.asInstanceOf[DiscVar[Any]]))
+  def atoms = Atoms(cont = List(this))
 
 
 }
 
+case class StaticDoubleVar(name: String, owner: Var[Dom], domain: DoubleDom, offset: Int) extends DoubleVar {
+  override val ranges = super.ranges
+}
 
-case class SeqVar[D <: Dom](name: String, domain: SeqDom[D],
-                            offsets: Offsets = Offsets(),
-                            owner: Var[Dom]) extends Var[SeqDom[D]] with SeqTerm[D] {
+  trait DiscVar[T] extends Var[DiscreteDom[T]] with Atom {
+    def ranges = Ranges(Offsets(offset, 0, 0,0), Offsets(offset + 1, 0, 0,0))
+    def atoms = Atoms(disc = List(this.asInstanceOf[DiscVar[Any]]))
 
+  }
 
+  case class StaticDiscVar[T](name: String, owner: Var[Dom], domain: DiscreteDom[T], offset: Int) extends DiscVar[T] {
+    override val ranges = super.ranges
+
+  }
+
+  trait Generator[+T] {
+    def generateNext()
+    def current():T
+  }
+
+trait SeqVar[D <: Dom] extends Var[SeqDom[D]] with SeqTerm[D] {
   def atoms = elements.view.map(_.atoms).foldLeft(Atoms())(_ ++ _)
+  def offsets: Offsets
+  def ranges = Ranges(offsets, offsets +(domain.elementDom.lengths, domain.length))
+  override def apply(gen:Generator[Int]):domain.elementDom.Variable = {
+    domain.elementDom.dynamic(s"$name(${gen.current()}})", offsets +(domain.elementDom.lengths, gen.current()), if (owner == null) this else owner)
+  }
+}
 
-  val ranges   = Ranges(offsets, offsets +(domain.elementDom.lengths, domain.length))
+case class StaticSeqVar[D <: Dom](name: String, domain: SeqDom[D],
+                                  offsets: Offsets = Offsets(),
+                                  owner: Var[Dom]) extends SeqVar[D] {
+
+
+  override val ranges = super.ranges
   val elements = for (i <- 0 until domain.length) yield
     domain.elementDom.variable(s"$name($i)", offsets +(domain.elementDom.lengths, i), if (owner == null) this else owner)
 
@@ -179,6 +208,7 @@ case class SeqVar[D <: Dom](name: String, domain: SeqDom[D],
 
 }
 
+
 trait SeqTerm[D <: Dom] extends Term[SeqDom[D]] {
   def elements: IndexedSeq[domain.elementDom.Term]
 
@@ -186,6 +216,8 @@ trait SeqTerm[D <: Dom] extends Term[SeqDom[D]] {
 
   def indices = elements.indices
   def length = elements.length
+
+  def apply(gen:Generator[Int]):domain.elementDom.Variable = ???
 
 }
 
@@ -234,16 +266,22 @@ trait Tuple2TermImpl[D1 <: Dom, D2 <: Dom] extends Tuple2Term[D1, D2] with Compo
   def differentiator(wrt: Seq[Var[Dom]]) = ???
 }
 
-case class Tuple2Var[D1 <: Dom, D2 <: Dom](name: String,
+trait Tuple2Var[D1 <: Dom, D2 <: Dom] extends Var[Tuple2Dom[D1, D2]] with Tuple2Term[D1, D2] {
+  def offsets: Offsets
+  def ranges = Ranges(offsets, offsets + domain.dom1.lengths + domain.dom2.lengths)
+  def atoms = _1.atoms ++ _2.atoms
+
+}
+
+case class StaticTuple2Var[D1 <: Dom, D2 <: Dom](name: String,
                                            domain: Tuple2Dom[D1, D2],
                                            offsets: Offsets,
-                                           owner: Var[Dom]) extends Var[Tuple2Dom[D1, D2]] with Tuple2Term[D1, D2] {
+                                           owner: Var[Dom]) extends Tuple2Var[D1, D2] {
 
-  val ranges               = Ranges(offsets, offsets + domain.dom1.lengths + domain.dom2.lengths)
+  override val ranges = super.ranges
   val _1: domain.dom1.Term = domain.dom1.variable(name + "._1", offsets, if (owner == null) this else owner)
   val _2: domain.dom2.Term = domain.dom2.variable(name + "._2", offsets + domain.dom1.lengths, if (owner == null) this else owner)
 
-  def atoms = _1.atoms ++ _2.atoms
 }
 
 
@@ -264,7 +302,7 @@ trait Differentiator {
 
   def backProp(error: Setting, gradient: Array[Setting])
 
-  def gradient(singleVar:Var[Dom],args:Any*):singleVar.domain.Value = {
+  def gradient(singleVar: Var[Dom], args: Any*): singleVar.domain.Value = {
     val obj = term
     val errorSetting = obj.domain.toSetting(term.domain.one.asInstanceOf[obj.domain.Value])
     val argSettings = for ((a, v) <- args zip obj.vars) yield v.domain.toSetting(a.asInstanceOf[v.domain.Value])
@@ -466,9 +504,11 @@ class DotProduct[T1 <: Term[VectorDom], T2 <: Term[VectorDom]](val arg1: T1, val
     }
   }
 
+
   def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
 
     def withRespectTo = wrt
+
 
     def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]): Unit = {
       val scale = outError.cont(0)
@@ -551,13 +591,11 @@ trait ComposedDoubleTerm extends DoubleTerm with Composed[DoubleDom] {
   val domain = Dom.doubles
 }
 
-
 trait UnaryTerm[T <: Term[Dom], D <: Dom] extends Composed[D] {
   def arg: T
 
   val arguments = IndexedSeq(arg)
 }
-
 
 
 class Product(val arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm {

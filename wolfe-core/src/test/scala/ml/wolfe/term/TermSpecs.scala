@@ -26,15 +26,15 @@ class TermSpecs extends WolfeSpec {
 
   "A matrix variable term" should {
     "evaluate to a matrix" in {
-      val X = matrices(2,3).variable("X")
-      val tensor2 = matrix(Seq(1,2,3), Seq(4,5,6))
+      val X = matrices(2, 3).variable("X")
+      val tensor2 = matrix(Seq(1, 2, 3), Seq(4, 5, 6))
       val result = X(tensor2)
       result should equal(tensor2)
     }
 
     "provide its constant gradient" in {
-      val X = matrices(2,3).variable("X")
-      val tensor2 = matrix(Seq(1,2,3), Seq(4,5,6))
+      val X = matrices(2, 3).variable("X")
+      val tensor2 = matrix(Seq(1, 2, 3), Seq(4, 5, 6))
       val result = X.gradient(X, tensor2)
       result.toArray should equal(new MatrixDom(2: Int, 3: Int).one.toArray)
     }
@@ -92,7 +92,7 @@ class TermSpecs extends WolfeSpec {
   "A matrix-vector product term" should {
     "evaluate to the value of a matrix-vector product" in {
       val x = vectors(2).variable("x")
-      val A = matrices(3,2).variable("A")
+      val A = matrices(3, 2).variable("A")
       val op = A * x
       val tensor2 = matrix(Seq(1, 0), Seq(1, 1), Seq(2, 1))
       val result = op(tensor2, vector(2, 4))
@@ -201,12 +201,20 @@ class TermSpecs extends WolfeSpec {
       val n = 3
       val Params = seqs(vectors(k), m) x seqs(vectors(k), n)
 
-      def cell(i: Int, j: Int, scale: Double)(e: Params.Term) =
-        log(sigm((e._1(i) dot e._2(j)) * scale)) + (e._1(i) dot e._2(j)) * 0.1
+
+      def cell(scale: Double)(a: VectorTerm, v: VectorTerm) =
+        log(sigm((a dot v) * scale)) + (a dot v) * 0.1
 
       def loss(positive: Seq[(Int, Int)], negative: Seq[(Int, Int)])(e: Params.Term) =
-        sum(positive) { case (i, j) => cell(i, j, 1.0)(e)} +
-        sum(negative) { case (i, j) => cell(i, j, -1.0)(e)}
+        sum(positive) { case (i, j) => cell(1.0)(e._1(i), e._2(j))} +
+        sum(negative) { case (i, j) => cell(-1.0)(e._1(i), e._2(j))}
+
+
+      def implicitFeedbackLoss(positive: Seq[(Int, Int)])(e: Params.Variable) =
+        sum(positive) { case (i, j) =>
+          cell(1.0)(e._1(i), e._2(j)) +
+          sum(sequential(0 until m)) { k => cell(-1.0)(e._1(i), e._2(k))}
+        }
 
     }
 
@@ -325,5 +333,33 @@ class TermSpecs extends WolfeSpec {
 
   }
 
+  "A lazy sum" should {
+    "return a different value every time when evaluated" in {
+      val n = 3
+      val Y = seqs(doubles, n)
+      val y = Y.variable("y")
+      val term = sum(sequential(0 until n)) { i => y(i)}
+      for (_ <- 0 until 2; i <- 0 until n) term(IndexedSeq(1.0, 2.0, 3.0)) should be(i + 1.0)
+    }
+    "return a different gradient every time when evaluated" in {
+      val n = 3
+      val Y = seqs(doubles, n)
+      val y = Y.variable("y")
+      val term = sum(sequential(0 until n)) { i => y(i) * y(i)}
+      for (_ <- 0 until 2; i <- 0 until n) {
+        val gradient = term.gradient(y, IndexedSeq(0.0, 1.0, 2.0))
+        for (j <- 0 until n) gradient(j) should be(if (j == i) 2.0 * i else 0.0)
+      }
+    }
+
+  }
+
+  "A typed term" should {
+    "have a typed apply method" in {
+      val x = doubles.variable("x")
+      val term: Double => Double = (x * x) typed doubles
+      term(2.0) should be(4.0)
+    }
+  }
 
 }
