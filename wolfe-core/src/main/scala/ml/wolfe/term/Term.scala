@@ -2,10 +2,10 @@ package ml.wolfe.term
 
 import java.lang.System._
 
-import cc.factorie.la.DenseTensor1
+import cc.factorie.la.{DenseTensor2, DenseTensor1}
+import ml.wolfe.FactorieMatrix
 import ml.wolfe.fg20._
 import ml.wolfe.util.Math._
-
 
 trait Term[+D <: Dom] {
   val domain: D
@@ -452,6 +452,8 @@ class Log[T <: DoubleTerm](val arg: T) extends ComposedDoubleTerm {
   }
 }
 
+
+
 class DotProduct[T1 <: Term[VectorDom], T2 <: Term[VectorDom]](val arg1: T1, val arg2: T2) extends ComposedDoubleTerm {
 
   self =>
@@ -479,11 +481,42 @@ class DotProduct[T1 <: Term[VectorDom], T2 <: Term[VectorDom]](val arg1: T1, val
 
 }
 
+class VectorScaling[T1 <: Term[VectorDom], T2 <: Term[DoubleDom]](val arg1: T1, arg2: T2) extends Composed[VectorDom] {
+  
+  self =>
+
+  val arguments = IndexedSeq(arg1, arg2)
+
+  override val domain: VectorDom = new VectorDom(arg1.domain.dim)
+
+  def composer() = new Evaluator {
+    def eval(inputs: Array[Setting], output: Setting) = {
+      output.vect(0) = inputs(0).vect(0) * inputs(1).cont(0)
+    }
+  }
+
+  def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
+
+    def withRespectTo = wrt
+
+    def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]): Unit = {
+      val error = outError.vect(0)
+      gradient(0).vect(0) := 0.0
+      gradient(0).vect(0) += error * argOutputs(1).cont(0)
+      gradient(1).cont(0) += argOutputs(0).vect(0) dot error
+    }
+  }
+
+}
+
+
 class MatrixVectorProduct[T1 <: Term[MatrixDom], T2 <: Term[VectorDom]](val arg1: T1, val arg2: T2) extends Composed[VectorDom] {
 
   self =>
 
   val arguments = IndexedSeq(arg1, arg2)
+
+  override val domain = new VectorDom(arg1.domain.dim1)
 
   def composer() = new Evaluator {
     def eval(inputs: Array[Setting], output: Setting) = {
@@ -496,15 +529,35 @@ class MatrixVectorProduct[T1 <: Term[MatrixDom], T2 <: Term[VectorDom]](val arg1
     def withRespectTo = wrt
 
     def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]): Unit = {
-      val scale = outError.vect(0)
+      val A = argOutputs(0).mats(0)
+      val x = argOutputs(1).vect(0)
+      val error = outError.vect(0)
+
+      require(A.dim2 == x.dim1, s"dimensions don't match: ${A.dim1}×${A.dim2} * ${x.dim1}")
+      require(A.dim1 == error.dim1, s"dimensions don't match: ${A.dim1}×${A.dim2} * ${x.dim1} => ${error.dim1}")
+
+      implicit class PimpedFactorieMatrix(self: FactorieMatrix) {
+        /**
+         * Returns the transpose of the matrix
+         */
+        def t: FactorieMatrix = {
+          new DenseTensor2(self) {
+            override protected def _initialArray: Array[Double] = self.asArray
+
+            override val dim1 = self.dim2
+            override val dim2 = self.dim1
+
+            override def apply(i: Int, j: Int): Double = self.apply(j, i)
+          }
+        }
+      }
+
       gradient(0).mats(0) := 0.0
       gradient(1).vect(0) := 0.0
-      gradient(0).mats(0) += argOutputs(1).vect(0) outer scale
-      gradient(1).vect(0) += argOutputs(0).mats(0) * scale
+      gradient(0).mats(0) += error outer x
+      gradient(1).vect(0) += A.t * error
     }
   }
-
-  override val domain = new VectorDom(arg1.domain.dim1)
 }
 
 
