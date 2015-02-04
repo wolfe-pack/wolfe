@@ -99,7 +99,7 @@ class TermSpecs extends WolfeSpec {
       result should equal(vector(2.0, 6.0, 8.0))
     }
 
-    "provide its gradient for different variables given an upstream error vector" ignore {
+    "provide its gradient for different variables given an upstream error vector" in {
       val AVar = matrices(3,2).variable("A")
       val xVar = vectors(2).variable("x")
       val term = AVar * xVar

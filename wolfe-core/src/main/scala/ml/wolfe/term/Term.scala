@@ -451,45 +451,62 @@ trait Composed[D <: Dom] extends Term[D] {
 
 }
 
-
-class Sigmoid[T <: Term[DoubleDom]](val arg: T) extends ComposedDoubleTerm {
+class DoubleFun[T <: Term[DoubleDom]](val arg: T, fun: Double => Double, deriv: Double => Double) extends ComposedDoubleTerm {
   self =>
 
   val arguments = IndexedSeq(arg)
 
   def composer() = new Evaluator {
     def eval(inputs: Array[Setting], output: Setting) = {
-      output.cont(0) = sigmoid(inputs(0).cont(0))
+      output.cont(0) = fun(inputs(0).cont(0))
     }
   }
 
   def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
     def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]) = {
-      val sigm = sigmoid(argOutputs(0).cont(0))
-      val result = (1.0 - sigm) * sigm * outError.cont(0)
-      gradient(0).cont(0) = result
+      gradient(0).cont(0) = deriv(argOutputs(0).cont(0)) * outError.cont(0)
     }
 
     def withRespectTo = wrt
   }
 }
 
-class Log[T <: DoubleTerm](val arg: T) extends ComposedDoubleTerm {
+class Sigmoid[T <: Term[DoubleDom]](override val arg: T) extends DoubleFun(arg, sigmoid, sigmoidDeriv)
+
+class Log[T <: DoubleTerm](override val arg: T) extends DoubleFun(arg, math.log, logDeriv)
+
+class Tanh[T <: DoubleTerm](override val arg: T) extends DoubleFun(arg, tanh, tanhDeriv)
+
+
+class VectorDoubleFun[T <: Term[VectorDom]](val arg: T, fun: Double => Double, deriv: Double => Double) extends Composed[VectorDom] {
+  self =>
+
   val arguments = IndexedSeq(arg)
 
+  override val domain: VectorDom = new VectorDom(arg.domain.dim)
+
   def composer() = new Evaluator {
-    def eval(inputs: Array[Setting], output: Setting) = output.cont(0) = math.log(inputs(0).cont(0))
+    def eval(inputs: Array[Setting], output: Setting) = {
+      output.vect(0) = new DenseTensor1(inputs(0).vect(0) map fun)
+    }
   }
 
   def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
     def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]) = {
-      gradient(0).cont(0) = outError.cont(0) * 1.0 / argOutputs(0).cont(0)
+      gradient(0).vect(0) =
+        new DenseTensor1(argOutputs(0).vect(0) map deriv) * outError.vect(0).asInstanceOf[DenseTensor1]
     }
 
     def withRespectTo = wrt
   }
+
 }
 
+class VectorSigmoid[T <: Term[VectorDom]](override val arg: T) 
+  extends VectorDoubleFun(arg, sigmoid, sigmoidDeriv)
+
+class VectorTanh[T <: Term[VectorDom]](override val arg: T)
+  extends VectorDoubleFun(arg, tanh, tanhDeriv)
 
 
 class DotProduct[T1 <: Term[VectorDom], T2 <: Term[VectorDom]](val arg1: T1, val arg2: T2) extends ComposedDoubleTerm {
@@ -546,7 +563,6 @@ class VectorScaling[T1 <: Term[VectorDom], T2 <: Term[DoubleDom]](val arg1: T1, 
       gradient(1).cont(0) += argOutputs(0).vect(0) dot error
     }
   }
-
 }
 
 

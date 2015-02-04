@@ -44,9 +44,15 @@ object TermImplicits {
 
   def sigm[T <: DoubleTerm](term: T) = new Sigmoid(term)
 
+  def tanh[T <: DoubleTerm](term: T) = new Tanh(term)
+
   def log[T <: DoubleTerm](term: T) = new Log(term)
 
   def I[T <: BoolTerm](term: T) = new Iverson(term)
+
+  def sigmVec[T <: VectorTerm](term: T) = new VectorSigmoid(term)
+
+  def tanhVec[T <: VectorTerm](term: T) = new VectorTanh(term)
 
   implicit def genericToConstant[T,D<:TypedDom[T]](t:T)(implicit dom:D):dom.Term = dom.const(t)
 

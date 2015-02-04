@@ -98,9 +98,11 @@ object Scratch extends App {
 
   val x = vectors(3).variable("x")
   val y = vectors(3).variable("y")
-  val z = vectors(2).variable("z")
+  val z = vectors(5).variable("z")
 
-  val A = matrices(2,3).variable("A")
+  val A = matrices(5,3).variable("A")
 
-  GradientChecking((((A * x) * a) dot z) * a, debug = true)()
+  val complexTerm = sigm(tanh(((sigmVec(A * x) * a) dot tanhVec(z)) * a))
+
+  GradientChecking(complexTerm, debug = true)()
 }
