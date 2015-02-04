@@ -2,7 +2,6 @@ package ml.wolfe.term
 
 import cc.factorie.la.{DenseTensor1, DenseTensor2}
 import ml.wolfe._
-import ml.wolfe.fg20.Msgs
 
 
 trait Dom {

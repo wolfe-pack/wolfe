@@ -25,8 +25,8 @@ class Tuple2Dom[D1 <: Dom, D2 <: Dom](val dom1: D1, val dom2: D2) extends Dom {
 
   def dynamic(name: => String, dynOffsets: => Offsets, owner: term.Var[Dom]): DomVar = new BaseVar(name, owner) with DomVar {
     def offsets = dynOffsets
-    val _1 = domain.dom1.dynamic(name + "._1", offsets, if (owner == null) this else owner)
-    val _2 = domain.dom2.dynamic(name + "._2", offsets + domain.dom1.lengths, if (owner == null) this else owner)
+    val _1v:domain.dom1.Var = domain.dom1.dynamic(name + "._1", offsets, if (owner == null) this else owner)
+    val _2v:domain.dom2.Var = domain.dom2.dynamic(name + "._2", offsets + domain.dom1.lengths, if (owner == null) this else owner)
   }
   def one = (dom1.one, dom2.one)
   def zero = (dom1.zero, dom2.zero)
@@ -49,13 +49,16 @@ class Tuple2Dom[D1 <: Dom, D2 <: Dom](val dom1: D1, val dom2: D2) extends Dom {
     def differentiator(wrt: Seq[term.Var[Dom]]) = ???
   }
 
-  trait DomVar extends super.DomVar {
+  trait DomVar extends super.DomVar with DomTerm {
     def offsets: Offsets
     def ranges = Ranges(offsets, offsets + domain.dom1.lengths + domain.dom2.lengths)
     def atoms = _1.atoms ++ _2.atoms
-    def _1: domain.dom1.Var
-    def _2: domain.dom2.Var
 
+    def _1v: domain.dom1.Var
+    def _2v: domain.dom2.Var
+
+    def _1 = _1v.asInstanceOf[domain.dom1.Term]
+    def _2 = _2v.asInstanceOf[domain.dom2.Term]
 
   }
 
@@ -63,9 +66,8 @@ class Tuple2Dom[D1 <: Dom, D2 <: Dom](val dom1: D1, val dom2: D2) extends Dom {
                              offsets: Offsets,
                              owner: term.Var[Dom]) extends DomVar {
     override val ranges = super.ranges
-    val _1 = domain.dom1.variable(name + "._1", offsets, if (owner == null) this else owner)
-    val _2 = domain.dom2.variable(name + "._2", offsets + domain.dom1.lengths, if (owner == null) this else owner)
-
+    val _1v = domain.dom1.variable(name + "._1", offsets, if (owner == null) this else owner)
+    val _2v = domain.dom2.variable(name + "._2", offsets + domain.dom1.lengths, if (owner == null) this else owner)
   }
 
 }

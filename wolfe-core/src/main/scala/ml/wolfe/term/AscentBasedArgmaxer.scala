@@ -1,6 +1,5 @@
 package ml.wolfe.term
 
-import ml.wolfe.fg20.Msgs
 import ml.wolfe.util.ProgressBar
 
 /**

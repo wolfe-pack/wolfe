@@ -87,6 +87,9 @@ class SeqDom[D <: Dom](val elementDom: D, val length: Int) extends Dom {
   }
 
   trait DomVar extends DomTerm with super.DomVar {
+    def elements: IndexedSeq[domain.elementDom.Var]
+    override def apply(index: Int):domain.elementDom.Var = elements(index)
+
     def atoms = elements.view.map(_.atoms).foldLeft(Atoms())(_ ++ _)
     def offsets: Offsets
     def ranges = Ranges(offsets, offsets +(domain.elementDom.lengths, domain.length))
