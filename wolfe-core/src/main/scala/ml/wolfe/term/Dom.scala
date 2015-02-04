@@ -9,7 +9,9 @@ trait Dom {
   type Value
   type This <: Dom
   type Term <: term.Term[This]
+//  type Variable <: Var[This] with Term
   type Variable <: Var[This] with Term
+
 
   def toValue(setting: Setting, offsets: Offsets = Offsets()): Value
   def copyValue(value: Value, setting: Setting, offsets: Offsets = Offsets())

@@ -184,7 +184,7 @@ trait SeqVar[D <: Dom] extends Var[SeqDom[D]] with SeqTerm[D] {
   def atoms = elements.view.map(_.atoms).foldLeft(Atoms())(_ ++ _)
   def offsets: Offsets
   def ranges = Ranges(offsets, offsets +(domain.elementDom.lengths, domain.length))
-  def apply(gen:Generator[Int]):domain.elementDom.Variable = {
+  override def apply(gen:Generator[Int]):domain.elementDom.Variable = {
     domain.elementDom.dynamic(s"$name(${gen.current()}})", offsets +(domain.elementDom.lengths, gen.current()), if (owner == null) this else owner)
   }
 }
@@ -216,6 +216,8 @@ trait SeqTerm[D <: Dom] extends Term[SeqDom[D]] {
 
   def indices = elements.indices
   def length = elements.length
+
+  def apply(gen:Generator[Int]):domain.elementDom.Variable = ???
 
 }
 
