@@ -12,9 +12,11 @@ trait Term[+D <: Dom] {
 
   def evaluator(): Evaluator
 
+  def atoms: Atoms
+
   def differentiator(wrt: Seq[Var[Dom]]): Differentiator
 
-  def atoms: Atoms
+  def maxMarginalizer(wrt:Seq[Var[Dom]],target:Seq[Var[Dom]]):MaxMarginalizer = ???
 
   def argmaxer(wrt: Seq[Var[Dom]]): Argmaxer = {
     //todo: this could be type safe, for example by adding the argmax method to the RichDoubleTerm
@@ -58,7 +60,7 @@ trait Term[+D <: Dom] {
   }
 }
 
-trait TermProxy[D <: Dom] extends Term[D] {
+trait ProxyTerm[D <: Dom] extends Term[D] {
   def self: Term[D]
   val domain = self.domain
   def vars = self.vars
@@ -137,6 +139,7 @@ trait Evaluator {
   def eval(inputs: Array[Setting], output: Setting)
 }
 
+
 trait Differentiator {
   def term: Term[Dom]
 
@@ -188,6 +191,15 @@ final class VariableMapping(val srcIndex: Array[Int], val tgtIndex: Array[Int]) 
 
   def copyBackward(src: Array[Setting], tgt: Array[Setting]) = {
     for (i <- 0 until srcIndex.length) src(srcIndex(i)) := tgt(tgtIndex(i))
+  }
+
+  def getTgtIndex(src:Int):Int = {
+    var i = 0
+    while (i < srcIndex.length) {
+      if (srcIndex(i) == src) return tgtIndex(i)
+      i += 1
+    }
+    -1
   }
 
 }

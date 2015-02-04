@@ -12,6 +12,8 @@ class SeqDom[D <: Dom](val elementDom: D, val length: Int) extends Dom {
   type Value = IndexedSeq[elementDom.Value]
   type Var = DomVar
   type Term = DomTerm
+  type Marginals = IndexedSeq[elementDom.Marginals]
+
   def toValue(setting: Setting, offsets: Offsets = Offsets()) = {
     val result = for (i <- 0 until length) yield elementDom.toValue(setting, offsets +(elementDom.lengths, i))
     result

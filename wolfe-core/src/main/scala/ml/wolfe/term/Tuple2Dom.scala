@@ -10,6 +10,8 @@ class Tuple2Dom[D1 <: Dom, D2 <: Dom](val dom1: D1, val dom2: D2) extends Dom {
   type Value = (dom1.Value, dom2.Value)
   type Var = DomVar
   type Term = DomTerm
+  type Marginals = (dom1.Marginals, dom2.Marginals)
+
   val lengths = dom1.lengths + dom2.lengths
   def toValue(setting: Setting, offsets: Offsets = Offsets()) = {
     val arg1 = dom1.toValue(setting, offsets)

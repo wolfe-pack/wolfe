@@ -1,5 +1,7 @@
 package ml.wolfe.term
 
+import java.util
+
 import ml.wolfe.{FactorieMatrix, FactorieVector}
 
 
@@ -34,11 +36,10 @@ class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMats: Int
     for (i <- 0 until mats.length) mats(i) += that.mats(i)
   }
 
-  //fixme: value isn't used!?
-  final def :=(value: Double): Unit = {
-    for (i <- 0 until cont.length) cont(i) = 0.0
-    for (i <- 0 until vect.length) if (vect(i) != null) vect(i) := 0.0
-    for (i <- 0 until mats.length) if (mats(i) != null) mats(i) := 0.0
+  final def :=(value: Double = 0.0): Unit = {
+    for (i <- 0 until cont.length) cont(i) = value
+    for (i <- 0 until vect.length) if (vect(i) != null) vect(i) := value
+    for (i <- 0 until mats.length) if (mats(i) != null) mats(i) := value
   }
 
   final def :=(that: Setting): Unit = {
@@ -93,19 +94,35 @@ object Setting {
 }
 
 
-class DiscMsg(dim:Int) {
+class DiscMsg(dim: Int) {
   var msg = Array.ofDim[Double](dim)
 }
 class ContMsg {
-  var mean:Double = 0.0
+  var mean: Double = 0.0
 }
 class VectMsg {
-  var mean:FactorieVector = null
+  var mean: FactorieVector = null
 }
 
-class Msgs(val disc:Array[DiscMsg],
-           val cont:Array[ContMsg],
-           val vect:Array[VectMsg])
+class MatsMsg {
+  var mean: FactorieMatrix = null
+}
+
+
+class Msgs(val disc: Array[DiscMsg],
+           val cont: Array[ContMsg],
+           val vect: Array[VectMsg],
+           val mats: Array[MatsMsg]) {
+
+  final def :=(value: Double): Unit = {
+    for (i <- 0 until disc.length) util.Arrays.fill(disc(i).msg, value)
+    for (i <- 0 until cont.length) cont(i).mean = value
+    for (i <- 0 until vect.length) if (vect(i) != null) vect(i).mean := value
+    for (i <- 0 until mats.length) if (mats(i) != null) mats(i).mean := value
+  }
+
+
+}
 
 
 

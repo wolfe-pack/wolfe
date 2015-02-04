@@ -9,13 +9,16 @@ trait Dom {
   dom =>
 
   type Value
+  type Var <: DomVar
+  type Term <: DomTerm
+  type Marginals
+
   trait DomTerm extends term.Term[dom.type] {
     val domain: dom.type = dom
   }
+
   trait DomVar extends term.Var[dom.type] with DomTerm
 
-  type Var <: DomVar
-  type Term <: DomTerm
 
   def toValue(setting: Setting, offsets: Offsets = Offsets()): Value
   def copyValue(value: Value, setting: Setting, offsets: Offsets = Offsets())
@@ -26,7 +29,7 @@ trait Dom {
     result
   }
   def createSetting(): Setting = new Setting(lengths.discOff, lengths.contOff, lengths.vectOff, lengths.matsOff)
-  def createMsgs() = new Msgs(null, null, null)
+  def createMsgs() = new Msgs(null, null, null, null)
   def createZeroSetting(): Setting = {
     val result = createSetting()
     copyValue(zero, result)
@@ -92,6 +95,7 @@ class VectorDom(val dim: Int) extends Dom {
   type Value = FactorieVector
   type Var = DomVar
   type Term = DomTerm
+  type Marginals = FactorieVector
 
   val lengths = Offsets(0, 0, 1, 0)
 
@@ -130,6 +134,7 @@ class MatrixDom(val dim1: Int, dim2: Int) extends Dom {
   type Value = FactorieMatrix
   type Var = DomVar
   type Term = DomTerm
+  type Marginals = FactorieMatrix
 
   val lengths = Offsets(0, 0, 0, 1)
 
@@ -158,6 +163,7 @@ class DoubleDom extends Dom {
 
   type Var = DomVar
   type Term = DomTerm
+  type Marginals = Double
 
   def toValue(setting: Setting, offsets: Offsets = Offsets()) =
     setting.cont(offsets.contOff)
@@ -201,6 +207,7 @@ class DiscreteDom[T](val values: IndexedSeq[T]) extends Dom {
   type Term = DomTerm
   type Value = T
   type Var = DomVar
+  type Marginals = IndexedSeq[Double]
   def toValue(setting: Setting, offsets: Offsets = Offsets()) =
     values(setting.disc(offsets.discOff))
   def copyValue(value: Value, setting: Setting, offsets: Offsets = Offsets()) =
@@ -226,7 +233,6 @@ class DiscreteDom[T](val values: IndexedSeq[T]) extends Dom {
     override val ranges = super.ranges
 
   }
-
 
 }
 

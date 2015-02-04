@@ -24,7 +24,7 @@ class Sum(val arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm {
     def withRespectTo = wrt
   }
 
-  def sequentialGradient() = new TermProxy[DoubleDom] {
+  def sequentialGradient() = new ProxyTerm[DoubleDom] {
     def self = sum
     override def differentiator(wrt: Seq[Var[Dom]]) = new StochasticDifferentiator {
       private var _index = 0
@@ -87,7 +87,7 @@ class Sum(val arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm {
 }
 
 
-trait DynamicTerm[D <: DoubleDom,T] extends TermProxy[D] {
+trait DynamicTerm[D <: DoubleDom,T] extends ProxyTerm[D] {
   def generator:Generator[T]
   override def evaluator() = new Evaluator {
     val eval = self.evaluator()
