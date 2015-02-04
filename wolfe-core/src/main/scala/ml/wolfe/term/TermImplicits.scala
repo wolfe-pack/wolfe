@@ -86,7 +86,6 @@ object TermImplicits {
 
   implicit def intToDoubleConstant(d: Int): Constant[DoubleDom] = Dom.doubles.const(d)
 
-
   implicit def vectToConstant(d: FactorieVector): Constant[VectorDom] = vectors(d.dim1).const(d)
 
   implicit def vectToConstantWithDom(d: FactorieVector)(implicit dom:VectorDom): dom.Term = dom.const(d)
@@ -116,10 +115,13 @@ object TermImplicits {
 
   def sum[T](dom:Seq[T])(arg:T => DoubleTerm) = new Sum(dom.toIndexedSeq.map(arg))
 
+  def sum(args: DoubleTerm*) = new Sum(args.toIndexedSeq)
+
   implicit class RichDoubleTerm(term: DoubleTerm) {
     def +(that: DoubleTerm) = new Sum(IndexedSeq(term, that))
     def -(that:DoubleTerm) = new Sum(IndexedSeq(term, that * (-1.0)))
     def *(that: DoubleTerm): Product = new Product(IndexedSeq(term, that))
+    def *(that: VectorTerm) = new VectorScaling(that, term)
     def argmaxBy(factory: ArgmaxerFactory) = new TermProxy[DoubleDom] {
       def self = term
       override def argmaxer(wrt: Seq[Var[Dom]]) = factory.argmaxer(term,wrt)
