@@ -62,8 +62,8 @@ object GradientChecking {
         cols.foreach(col => {
           //making small changes to the variable
           val (xPos, xNeg) = wiggle(value, epsilon, row, col)
-          val scorePos = term(vals.updated(ix, xPos): _*)
-          val scoreNeg = term(vals.updated(ix, xNeg): _*)
+          val scorePos = term.eval(vals.updated(ix, xPos): _*)
+          val scoreNeg = term.eval(vals.updated(ix, xNeg): _*)
 
           //numerically calculated gradient
           val dNum = (scorePos, scoreNeg) match {

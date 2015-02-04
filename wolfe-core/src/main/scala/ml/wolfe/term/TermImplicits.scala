@@ -54,7 +54,7 @@ object TermImplicits {
   def tanhVec[T <: VectorTerm](term: T) = new VectorTanh(term)
 
   implicit def genericToConstant[T,D<:TypedDom[T]](t:T)(implicit dom:D):dom.Term = dom.const(t)
-  implicit def genericToConstant[T,D<:TypedDom[T]](t:T)(implicit dom:D):dom.DomTerm = dom.const(t)
+//  implicit def genericToConstant[T,D<:TypedDom[T]](t:T)(implicit dom:D):dom.DomTerm = dom.const(t)
 
 //  implicit def seqOfTermsToSeqTerm[T <: Term[Dom], D <: DomWithTerm[T],S<:SeqDom[D]](seq:IndexedSeq[T])(implicit dom:S):dom.Term =
 //    new dom.SeqTermImpl {
@@ -68,7 +68,6 @@ object TermImplicits {
       _current = (_current + 1) % seq.length
     }
     def current() = seq(_current)
-
   }
 
   def sum[T](gen: Generator[T])(arg:Generator[T] => DoubleTerm) = {
