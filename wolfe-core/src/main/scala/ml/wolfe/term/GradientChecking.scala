@@ -58,8 +58,8 @@ object GradientChecking {
       }
 
       range.zipWithIndex.foreach(r => {
-        val (cols, row) = r
-        cols.foreach(col => {
+        val (rows, col) = r
+        rows.foreach(row => {
           //making small changes to the variable
           val (xPos, xNeg) = wiggle(value, epsilon, row, col)
           val scorePos = term.eval(vals.updated(ix, xPos): _*)

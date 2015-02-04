@@ -8,12 +8,14 @@ import ml.wolfe.util.ProgressBar
 class AscentBasedArgmaxer(val obj: DoubleTerm,
                           val wrt: Seq[Var[Dom]],
                           val iterations: Int,
-                          val learningRate: Double) extends Argmaxer {
+                          val learningRate: Double,
+                          val initParams: Array[Setting]) extends Argmaxer {
 
   val obsVars            = obj.vars.filterNot(wrt.contains)
   //get differentiator
   val diff               = obj.differentiator(wrt)
-  val initParams         = wrt.map(_.domain.createZeroSetting()).toArray
+
+  val initParameters = if (initParams.isEmpty) wrt.map(_.domain.createZeroSetting()).toArray else initParams
 
   val obs2full   = VariableMapping(obsVars, obj.vars)
   val param2full = VariableMapping(wrt, obj.vars)
@@ -33,7 +35,7 @@ class AscentBasedArgmaxer(val obj: DoubleTerm,
     //initialize with observation
     obs2full.copyForward(observed, result)
     //initialize parameters
-    param2full.copyForward(initParams, result)
+    param2full.copyForward(initParameters, result)
 
     //now optimize
     for (iteration <- 0 until iterations) {
