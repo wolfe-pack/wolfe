@@ -1,7 +1,5 @@
 package ml.wolfe.term
 
-import ml.wolfe.term.Setting
-
 /**
  * @author riedel
  */
