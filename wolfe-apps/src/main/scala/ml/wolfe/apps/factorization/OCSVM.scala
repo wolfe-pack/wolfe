@@ -185,7 +185,7 @@ case class XYNew(xs: Tensor2, y: FactorieVector, relation: Any, featureMask: Fac
 
 object OCSVM extends App {
   import OCSVMImplicits._
-  import ml.wolfe.apps.PimpMyFactorie._
+  import PimpMyFactorie._
 
   val confPath = args.lift(0).getOrElse("conf/mf-oc.conf")
   Conf.add(confPath)
@@ -653,7 +653,7 @@ object OCSVMGradientChecking extends App {
 
 object ElemMulTest extends App {
   import OCSVMImplicits._
-  import ml.wolfe.apps.PimpMyFactorie._
+  import PimpMyFactorie._
   
   val w = new DenseTensor1(Array(1.0, 2.0, 3.0, 4.0))
   val x = new SparseTensor1(w.dim1)

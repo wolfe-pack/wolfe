@@ -43,10 +43,17 @@ object TermImplicits {
 
   def sigm[T <: DoubleTerm](term: T) = new Sigmoid(term)
 
+  def tanh[T <: DoubleTerm](term: T) = new Tanh(term)
+
   def log[T <: DoubleTerm](term: T) = new Log(term)
 
   def I[T <: BoolTerm](term: T) = new Iverson(term)
 
+  def sigmVec[T <: VectorTerm](term: T) = new VectorSigmoid(term)
+
+  def tanhVec[T <: VectorTerm](term: T) = new VectorTanh(term)
+
+  implicit def genericToConstant[T,D<:TypedDom[T]](t:T)(implicit dom:D):dom.Term = dom.const(t)
   implicit def genericToConstant[T,D<:TypedDom[T]](t:T)(implicit dom:D):dom.DomTerm = dom.const(t)
 
 //  implicit def seqOfTermsToSeqTerm[T <: Term[Dom], D <: DomWithTerm[T],S<:SeqDom[D]](seq:IndexedSeq[T])(implicit dom:S):dom.Term =
@@ -145,6 +152,7 @@ object TermImplicits {
 
   implicit class RichVectTerm(val vect: Term[VectorDom]) {
     def dot(that: Term[VectorDom]) = new DotProduct(vect, that)
+    def *(that: Term[DoubleDom]) = new VectorScaling(vect, that)
   }
 
   implicit class RichMatrixTerm(val mat: Term[MatrixDom]) {

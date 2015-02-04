@@ -1,18 +1,12 @@
-package ml.wolfe.apps
+package ml.wolfe.util
 
 import cc.factorie.la._
-import scala.Array
-import cc.factorie.util.SparseDoubleSeq
+
 import scala.language.implicitConversions
 
 /**
  * @author rockt
  */
-class PimpMyFactorie {
-
-}
-
-
 object PimpMyFactorie {
   //FIXME: for some reason this methods is not applied implicitly
   implicit def applyElementwise(fun: Double => Double): (Tensor => Tensor) = {
@@ -42,15 +36,14 @@ object PimpMyFactorie {
      * Two tensors are equal if the have the same dimensions and values
      */
     def ===(obj: scala.Any): Boolean = (obj, self) match {
-      case (other: Tensor1, self: Tensor1) => {
+      case (other: Tensor1, self: Tensor1) =>
         if (other.dim1 != self.dim1) false
         else {
           for (i <- 0 until self.dim1)
             if (self(i) != other(i)) return false
           true
         }
-      }
-      case (other: Tensor2, self: Tensor2) => {
+      case (other: Tensor2, self: Tensor2) =>
         if (other.dim1 != self.dim1) false
         if (other.dim2 != self.dim2) false
         else {
@@ -61,8 +54,7 @@ object PimpMyFactorie {
             if (self(i,j) != other(i,j)) return false
           true
         }
-      }
-      case (other: Tensor3, self: Tensor3) => {
+      case (other: Tensor3, self: Tensor3) =>
         if (other.dim1 != self.dim1) false
         if (other.dim2 != self.dim2) false
         if (other.dim3 != self.dim3) false
@@ -75,7 +67,6 @@ object PimpMyFactorie {
             if (self(i,j,k) != other(i,j,k)) return false
           true
         }
-      }
       case _ => self.equals(obj)
     }
   }
@@ -101,8 +92,47 @@ object PimpMyFactorie {
         override val dim1 = self.dim2
         override val dim2 = self.dim1
         override def apply(i: Int, j: Int): Double = self.apply(j, i)
+        override def *(t: Tensor1): Tensor1 = {
+          assert(dim2 == t.dim1, "Dimensions don't match: " + dim2 + " " + t.dim1)
+          val newT = new DenseTensor1(dim1)
+          val newArray = newT.asArray
+          t match {
+            case t: DenseTensor =>
+              val tArr = t.asArray
+              var col = 0
+              while (col < tArr.length) {
+                val v = tArr(col)
+                var row = 0
+                while (row < dim1) {
+                  newArray(row) += (apply(row, col) * v)
+                  row += 1
+                }
+                col += 1
+              }
+            case t: SparseTensor =>
+              val tActiveDomainSize = t.activeDomainSize
+              val tIndices = t._indices
+              val tValues = t._valuesSeq
+              var ti = 0
+              while (ti < tActiveDomainSize) {
+                val col = tIndices(ti)
+                val v = tValues(ti)
+                var row = 0
+                while (row < dim1) {
+                  newArray(row) += (apply(row, col) * v)
+                  row += 1
+                }
+                ti += 1
+              }
+            case _ =>
+              throw new Error("tensor type neither dense nor sparse: " + t.getClass.getName)
+          }
+          newT
+        }
       }
     }
+
+
 
     //TODO: make this more efficient
     def multiply(other: Tensor2): Tensor2 = {
