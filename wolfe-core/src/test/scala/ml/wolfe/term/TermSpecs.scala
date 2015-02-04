@@ -330,7 +330,7 @@ class TermSpecs extends WolfeSpec {
     }
     "support custom argmaxing" in {
       val x = doubles.variable("x")
-      def obj(x: doubles.DomTerm) = x * 4.0 - x * x
+      def obj(x: doubles.Term) = x * 4.0 - x * x
       val result = argmax(doubles) { x => obj(x).argmaxBy(Argmaxer.ascent(100, 0.1))}
       result.eval() should be(2.0 +- eps)
     }

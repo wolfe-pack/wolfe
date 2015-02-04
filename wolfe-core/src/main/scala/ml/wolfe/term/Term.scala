@@ -476,20 +476,26 @@ class Product(val arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm 
 
 object Playground {
 
-  def vector(values: Seq[Double]) = new DenseTensor1(values.toArray)
 
   import ml.wolfe.term.TermImplicits._
 
   def main(args: Array[String]) {
 
-    val dom = doubles x seqs(doubles,2)
+    val V = vectors(2)
+    def f(v:VectorTerm) = v dot v
+    val k:VectorTerm = vector(1,2,3)
+    f(k)
 
-    val x = dom.variable("x")
-    val d:DoubleTerm = x._2(2)
 
-    implicit val vecs = vectors(2)
-    val y = vecs.variable("y")
-    val term = y dot vecs.Const(1.0,2.0)
+//
+//    val dom = doubles x seqs(doubles,2)
+//
+//    val x = dom.variable("x")
+//    val d:DoubleTerm = x._2(2)
+//
+//    implicit val vecs = vectors(2)
+//    val y = vecs.variable("y")
+//    val term = y dot vecs.Const(1.0,2.0)
 
     //    val X = new VectorDom(1)
     //    val XX = new Tuple2Dom(X, X)

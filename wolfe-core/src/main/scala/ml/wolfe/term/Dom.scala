@@ -110,7 +110,10 @@ class VectorDom(val dim: Int) extends Dom {
 
   def const(value: Value) = new Constant(value)
 
-  def Const(values:Double*) = const(new DenseVector(values.toArray))
+  def Const(values:Double*) = {
+    require(values.size == dim)
+    const(new DenseVector(values.toArray))
+  }
 
   trait DomVar extends Atom with DomTerm with super.DomVar {
     def ranges = Ranges(Offsets(0, 0, offset, 0), Offsets(0, 0, offset + 1, 0))
