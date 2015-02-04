@@ -122,7 +122,6 @@ object TermImplicits {
     def -(that:DoubleTerm) = new Sum(IndexedSeq(term, that * (-1.0)))
     def *(that: DoubleTerm): Product = new Product(IndexedSeq(term, that))
     def *(that: VectorTerm) = new VectorScaling(that, term)
-    def argmaxBy(factory: ArgmaxerFactory) = new TermProxy[DoubleDom] {
     def argmaxBy(factory: ArgmaxerFactory) = new ProxyTerm[DoubleDom] {
       def self = term
       override def argmaxer(wrt: Seq[Var[Dom]]) = factory.argmaxer(term,wrt)
