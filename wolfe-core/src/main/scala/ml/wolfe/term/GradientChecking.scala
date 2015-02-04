@@ -1,8 +1,7 @@
 package ml.wolfe.term
 
 import cc.factorie.la.{DenseTensor2, DenseTensor1}
-import ml.wolfe.FactorieVector
-import ml.wolfe.fg.FactorieTensor3.FactorieMatrix
+import ml.wolfe.{FactorieMatrix, FactorieVector}
 
 import scala.util.Random
 import org.scalautils.Tolerance._
@@ -42,7 +41,8 @@ object GradientChecking {
 
           val dNum = (scorePos, scoreNeg) match {
             case (p: Double, n: Double) => (p - n) / (2 * epsilon)
-            case (p: FactorieVector, n: FactorieVector) => ((p - n) / (2 * epsilon)).sum
+            case (p: FactorieVector, n: FactorieVector) => ((p - n) / (2 * epsilon)).oneNorm
+            case (p: FactorieMatrix, n: FactorieMatrix) => ((p - n) / (2 * epsilon)).oneNorm
             case _ => ???
           }
 
@@ -68,13 +68,8 @@ object GradientChecking {
 
             val dNum = (scorePos, scoreNeg) match {
               case (p: Double, n: Double) => (p - n) / (2 * epsilon)
-              case (p: FactorieVector, n: FactorieVector) =>
-                val tmp = (p - n) / (2 * epsilon)
-                term match {
-                  case v: VectorScaling[_,_] => tmp(i)
-                  case v: MatrixVectorProduct[_,_] => tmp.sum
-                  case _ => ???
-                }
+              case (p: FactorieVector, n: FactorieVector) => ((p - n) / (2 * epsilon)).oneNorm
+              case (p: FactorieMatrix, n: FactorieMatrix) => ((p - n) / (2 * epsilon)).oneNorm
               case _ => ???
             }
 
@@ -101,7 +96,8 @@ object GradientChecking {
 
             val dNum = (scorePos, scoreNeg) match {
               case (p: Double, n: Double) => (p - n) / (2 * epsilon)
-              case (p: FactorieVector, n: FactorieVector) => ((p - n) / (2 * epsilon)).sum
+              case (p: FactorieVector, n: FactorieVector) => ((p - n) / (2 * epsilon)).oneNorm
+              case (p: FactorieMatrix, n: FactorieMatrix) => ((p - n) / (2 * epsilon)).oneNorm
               case _ => ???
             }
 

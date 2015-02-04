@@ -514,6 +514,8 @@ class MatrixVectorProduct[T1 <: Term[MatrixDom], T2 <: Term[VectorDom]](val arg1
 
   self =>
 
+  import ml.wolfe.util.PimpMyFactorie._
+
   val arguments = IndexedSeq(arg1, arg2)
 
   override val domain = new VectorDom(arg1.domain.dim1)
@@ -533,24 +535,8 @@ class MatrixVectorProduct[T1 <: Term[MatrixDom], T2 <: Term[VectorDom]](val arg1
       val x = argOutputs(1).vect(0)
       val error = outError.vect(0)
 
-      require(A.dim2 == x.dim1, s"dimensions don't match: ${A.dim1}×${A.dim2} * ${x.dim1}")
-      require(A.dim1 == error.dim1, s"dimensions don't match: ${A.dim1}×${A.dim2} * ${x.dim1} => ${error.dim1}")
-
-      implicit class PimpedFactorieMatrix(self: FactorieMatrix) {
-        /**
-         * Returns the transpose of the matrix
-         */
-        def t: FactorieMatrix = {
-          new DenseTensor2(self) {
-            override protected def _initialArray: Array[Double] = self.asArray
-
-            override val dim1 = self.dim2
-            override val dim2 = self.dim1
-
-            override def apply(i: Int, j: Int): Double = self.apply(j, i)
-          }
-        }
-      }
+      require(A.dim2 == x.dim1, s"dimensions don't match: ${A.toDimensionsString} * ${x.dim1}")
+      require(A.dim1 == error.dim1, s"dimensions don't match: ${A.toDimensionsString} * ${x.dim1} => ${error.dim1}")
 
       gradient(0).mats(0) := 0.0
       gradient(1).vect(0) := 0.0
