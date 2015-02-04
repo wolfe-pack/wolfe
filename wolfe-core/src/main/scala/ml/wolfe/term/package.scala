@@ -6,6 +6,12 @@ import ml.wolfe.fg20.{Domain, IndexedSeqDomain, AtomicDomain}
  * @author riedel
  */
 package object term {
+  type DoubleVar = DoubleDom#DomVar
+  type VectorVar = VectorDom#DomVar
+  type MatrixVar = MatrixDom#DomVar
+  type DiscVar[T] = DiscreteDom[T]#DomVar
+  type Constant[D <: Dom] = D#Constant
+
   type TypedDom[T] = Dom { type Value = T}
   type DomWithTerm[T] = Dom { type Term = T}
   type DoubleTerm = Term[DoubleDom]

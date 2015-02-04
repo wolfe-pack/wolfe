@@ -33,11 +33,10 @@ object TermImplicits {
     tmp
   }
 
-  def seqs[D <: Dom](elements: D, length: Int) = new SeqDom(elements, length)
+  def seqs[D <: Dom](elements: D, length: Int):SeqDom[elements.type]  = new SeqDom[elements.type](elements, length)
 
-  def seq[E<:Dom](dom:SeqDom[E])(elems:dom.elementDom.Term*) = new SeqTermImpl[E] {
+  def seq[E<:Dom](dom:SeqDom[E])(elems:dom.elementDom.DomTerm*) = new dom.SeqDomTermImpl {
 
-      val domain:dom.type = dom
       def elements = elems.toIndexedSeq
 
   }
@@ -48,13 +47,13 @@ object TermImplicits {
 
   def I[T <: BoolTerm](term: T) = new Iverson(term)
 
-  implicit def genericToConstant[T,D<:TypedDom[T]](t:T)(implicit dom:D):dom.Term = dom.const(t)
+  implicit def genericToConstant[T,D<:TypedDom[T]](t:T)(implicit dom:D):dom.DomTerm = dom.const(t)
 
-  implicit def seqOfTermsToSeqTerm[T <: Term[Dom], D <: DomWithTerm[T],S<:SeqDom[D]](seq:IndexedSeq[T])(implicit dom:S):dom.Term =
-    new SeqTermImpl[D] {
-      val elements = seq
-      val domain = dom
-    }
+//  implicit def seqOfTermsToSeqTerm[T <: Term[Dom], D <: DomWithTerm[T],S<:SeqDom[D]](seq:IndexedSeq[T])(implicit dom:S):dom.Term =
+//    new dom.SeqTermImpl {
+//      val elements:IndexedSeq[T] = seq
+//      val domain:dom.type = dom
+//    }
 
   def sequential[T](seq:IndexedSeq[T]) = new Generator[T] {
     private var _current = -1
@@ -77,14 +76,16 @@ object TermImplicits {
 
   //implicit def seqToSeqTerm[E <: Dom : SeqDom](elems:Seq[Term[E]]) = seq(implicitly[SeqDom[E]])(elems: _*)
 
-  implicit def doubleToConstant(d: Double): Constant[DoubleDom] = new Constant[DoubleDom](Dom.doubles, d)
+  implicit def doubleToConstant(d: Double): Constant[DoubleDom] = Dom.doubles.const(d)
 
-  implicit def intToDoubleConstant(d: Int): Constant[DoubleDom] = new Constant[DoubleDom](Dom.doubles, d)
+  implicit def intToDoubleConstant(d: Int): Constant[DoubleDom] = Dom.doubles.const(d)
 
 
-  implicit def vectToConstant(d: FactorieVector): Constant[VectorDom] = new Constant[VectorDom](vectors(d.dim1), d)
+  implicit def vectToConstant(d: FactorieVector): Constant[VectorDom] = vectors(d.dim1).const(d)
 
-  implicit def matToConstant(d: FactorieMatrix): Constant[MatrixDom] = new Constant[MatrixDom](matrices(d.dim1, d.dim2), d)
+  implicit def vectToConstantWithDom(d: FactorieVector)(implicit dom:VectorDom): dom.Term = dom.const(d)
+
+  implicit def matToConstant(d: FactorieMatrix): Constant[MatrixDom] = matrices(d.dim1, d.dim2).const(d)
 
 //  implicit def discToConstant[T: DiscreteDom](value: T): Constant[DiscreteDom[T]] =
 //    new Constant[DiscreteDom[T]](implicitly[DiscreteDom[T]], value)
@@ -95,13 +96,13 @@ object TermImplicits {
 //    term.argmax(variable).asInstanceOf[dom.Value]
 //  }
 
-  def argmax[D <: Dom](dom: D)(obj: dom.Variable => DoubleTerm):Argmax[dom.This] = {
+  def argmax[D <: Dom](dom: D)(obj: dom.Var => DoubleTerm):Argmax[dom.type] = {
     val variable = dom.variable("_hidden")
     val term = obj(variable)
-    new Argmax(term,variable)
+    new Argmax[dom.type](term,variable)
   }
 
-  def max[D <: Dom](dom: D)(obj: dom.Variable => DoubleTerm) = {
+  def max[D <: Dom](dom: D)(obj: dom.Var => DoubleTerm) = {
     val variable = dom.variable("_hidden")
     val term = obj(variable)
     new Max(term, Seq(variable))
@@ -132,15 +133,14 @@ object TermImplicits {
   }
 
   implicit class RichTerm[D <: Dom](val term: Term[D]) {
-    def apply(args: Any*) = term.apply(args)
     def typed[A <: Dom](dom:A):dom.Value => term.domain.Value = {
       require(term.vars.size == 1 && term.vars.head.domain == dom)
-      (a:dom.Value) => term.apply(Seq(a):_*)
+      (a:dom.Value) => term.eval(Seq(a):_*)
     }
   }
 
   implicit class RichDom[D <: Dom](val dom: D) {
-    def x[D2 <: Dom](that: D2) = new Tuple2Dom[D, D2](dom, that)
+    def x[D2 <: Dom](that: D2):Tuple2Dom[dom.type, that.type] = new Tuple2Dom[dom.type, that.type](dom, that)
   }
 
   implicit class RichVectTerm(val vect: Term[VectorDom]) {

@@ -35,7 +35,7 @@ trait Term[+D <: Dom] {
     wrt.domain.toValue(result)
   }
 
-  def apply(args: Any*): domain.Value = {
+  def eval(args: Any*): domain.Value = {
     val ev = evaluator()
     val output = domain.createSetting()
     val argSettings = for ((a, v) <- args zip vars) yield v.domain.toSetting(a.asInstanceOf[v.domain.Value])
@@ -102,8 +102,8 @@ trait Var[+D <: Dom] extends Term[D] {
   }
 }
 
-sealed trait Atom {
-  def offset:Int
+trait Atom {
+  def offset: Int
 }
 case class Atoms(disc: Seq[DiscVar[Any]] = Nil, cont: Seq[DoubleVar] = Nil, vect: Seq[VectorVar] = Nil, mats: Seq[MatrixVar] = Nil) {
   def ++(that: Atoms) = copy(disc = disc ++ that.disc, cont = cont ++ that.cont, vect = vect ++ that.vect, mats = mats ++ that.mats)
@@ -123,165 +123,15 @@ case class Atoms(disc: Seq[DiscVar[Any]] = Nil, cont: Seq[DoubleVar] = Nil, vect
 
 }
 
-abstract class BaseVar[D <: Dom](dynName: =>String, val owner:Var[Dom], val domain:D) extends Var[D] {
+abstract class BaseVar[D <: Dom](dynName: => String, val owner: Var[Dom], val domain: D) extends Var[D] {
   def name = dynName
 }
 
-trait VectorVar extends Var[VectorDom] with Atom {
-  def ranges = Ranges(Offsets(0, 0, offset, 0), Offsets(0, 0, offset + 1, 0))
-  def atoms = Atoms(vect = List(this))
-}
-
-case class StaticVectorVar(name: String, owner: Var[Dom], domain: VectorDom, offset: Int) extends VectorVar with Atom {
-  override val ranges = super.ranges
-
-}
-
-case class MatrixVar(name: String, owner: Var[Dom], domain: MatrixDom, offset: Int) extends Var[MatrixDom] with Atom {
-  val ranges = Ranges(Offsets(0, 0, 0, offset), Offsets(0, 0, 0, offset + 1))
-
-  def atoms = Atoms(mats = List(this))
-}
 
 
-trait DoubleVar extends Var[DoubleDom] with Atom {
-  self =>
-  def ranges = Ranges(Offsets(0, offset, 0, 0), Offsets(0, offset + 1, 0, 0))
-
-  override def argmaxer(wrt: Seq[Var[Dom]]) = new Argmaxer {
-    val contained = wrt.contains(self)
-
-    def argmax(observed: Array[Setting], msgs: Array[Msgs], result: Array[Setting]) = {
-      result(0).cont(0) = if (contained) Double.PositiveInfinity else observed(0).cont(0)
-    }
-  }
-  def atoms = Atoms(cont = List(this))
-
-
-}
-
-case class StaticDoubleVar(name: String, owner: Var[Dom], domain: DoubleDom, offset: Int) extends DoubleVar {
-  override val ranges = super.ranges
-}
-
-  trait DiscVar[T] extends Var[DiscreteDom[T]] with Atom {
-    def ranges = Ranges(Offsets(offset, 0, 0,0), Offsets(offset + 1, 0, 0,0))
-    def atoms = Atoms(disc = List(this.asInstanceOf[DiscVar[Any]]))
-
-  }
-
-  case class StaticDiscVar[T](name: String, owner: Var[Dom], domain: DiscreteDom[T], offset: Int) extends DiscVar[T] {
-    override val ranges = super.ranges
-
-  }
-
-  trait Generator[+T] {
-    def generateNext()
-    def current():T
-  }
-
-trait SeqVar[D <: Dom] extends Var[SeqDom[D]] with SeqTerm[D] {
-  def atoms = elements.view.map(_.atoms).foldLeft(Atoms())(_ ++ _)
-  def offsets: Offsets
-  def ranges = Ranges(offsets, offsets +(domain.elementDom.lengths, domain.length))
-  override def apply(gen:Generator[Int]):domain.elementDom.Variable = {
-    domain.elementDom.dynamic(s"$name(${gen.current()}})", offsets +(domain.elementDom.lengths, gen.current()), if (owner == null) this else owner)
-  }
-}
-
-case class StaticSeqVar[D <: Dom](name: String, domain: SeqDom[D],
-                                  offsets: Offsets = Offsets(),
-                                  owner: Var[Dom]) extends SeqVar[D] {
-
-
-  override val ranges = super.ranges
-  val elements = for (i <- 0 until domain.length) yield
-    domain.elementDom.variable(s"$name($i)", offsets +(domain.elementDom.lengths, i), if (owner == null) this else owner)
-
-  /*
-  def apply(generator:Generator[Int]) = new StochasticElement(generator) {
-    val current = elements(generator.generate)
-
-  }
-  */
-
-
-}
-
-
-trait SeqTerm[D <: Dom] extends Term[SeqDom[D]] {
-  def elements: IndexedSeq[domain.elementDom.Term]
-
-  def apply(index: Int) = elements(index)
-
-  def indices = elements.indices
-  def length = elements.length
-
-  def apply(gen:Generator[Int]):domain.elementDom.Variable = ???
-
-}
-
-abstract class SeqTermImpl[D <: Dom] extends Composed[SeqDom[D]] with SeqTerm[D] {
-  def arguments = elements
-
-  def composer() = new Evaluator {
-
-    def eval(inputs: Array[Setting], output: Setting) = {
-      for (i <- 0 until inputs.length) {
-        inputs(i).copyTo(output, domain.elementDom.lengths, i)
-      }
-    }
-  }
-
-  def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
-    def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]) = {
-      //each argument will get its error signal from a subsection of the outError
-      for (i <- 0 until argOutputs.length) {
-        val offsets = domain.elementDom.lengths * i
-        for (j <- 0 until domain.elementDom.lengths.contOff) {
-          gradient(i).cont(j) = outError.cont(offsets.contOff + j)
-        }
-        for (j <- 0 until domain.elementDom.lengths.vectOff) {
-          gradient(i).vect(j) := outError.vect(offsets.vectOff + j)
-        }
-      }
-    }
-
-    def withRespectTo = wrt
-  }
-
-  //val elements = arguments
-}
-
-trait Tuple2Term[D1 <: Dom, D2 <: Dom] extends Term[Tuple2Dom[D1, D2]] {
-  def _1: domain.dom1.Term
-  def _2: domain.dom2.Term
-}
-
-trait Tuple2TermImpl[D1 <: Dom, D2 <: Dom] extends Tuple2Term[D1, D2] with Composed[Tuple2Dom[D1, D2]] {
-  def arguments = IndexedSeq(_1, _2)
-
-  def composer() = ???
-
-  def differentiator(wrt: Seq[Var[Dom]]) = ???
-}
-
-trait Tuple2Var[D1 <: Dom, D2 <: Dom] extends Var[Tuple2Dom[D1, D2]] with Tuple2Term[D1, D2] {
-  def offsets: Offsets
-  def ranges = Ranges(offsets, offsets + domain.dom1.lengths + domain.dom2.lengths)
-  def atoms = _1.atoms ++ _2.atoms
-
-}
-
-case class StaticTuple2Var[D1 <: Dom, D2 <: Dom](name: String,
-                                           domain: Tuple2Dom[D1, D2],
-                                           offsets: Offsets,
-                                           owner: Var[Dom]) extends Tuple2Var[D1, D2] {
-
-  override val ranges = super.ranges
-  val _1: domain.dom1.Term = domain.dom1.variable(name + "._1", offsets, if (owner == null) this else owner)
-  val _2: domain.dom2.Term = domain.dom2.variable(name + "._2", offsets + domain.dom1.lengths, if (owner == null) this else owner)
-
+trait Generator[+T] {
+  def generateNext()
+  def current(): T
 }
 
 
@@ -352,31 +202,6 @@ object VariableMapping {
   }
 }
 
-class Constant[D <: Dom](val domain: D, val value: D#Value) extends Term[D] {
-  self =>
-  val vars      = Seq.empty
-  val evaluator = new Evaluator {
-    val result = domain.toSetting(value.asInstanceOf[domain.Value])
-
-    def eval(inputs: Array[Setting], output: Setting) = {
-      output := result
-    }
-  }
-
-  def atoms = Atoms()
-
-  def differentiator(wrt: Seq[Var[Dom]]) = new Differentiator {
-    val result = domain.toSetting(value.asInstanceOf[domain.Value])
-
-    def forwardProp(current: Array[Setting]) = activation := result
-
-    def term = self
-
-    def withRespectTo = wrt
-
-    def backProp(error: Setting, gradient: Array[Setting]) = {}
-  }
-}
 
 
 trait Composed[D <: Dom] extends Term[D] {
@@ -602,8 +427,14 @@ object Playground {
 
   def main(args: Array[String]) {
 
-    val test = argmax(doubles) { x => x}
-    println(test)
+    val dom = doubles x seqs(doubles,2)
+
+    val x = dom.variable("x")
+    val d:DoubleTerm = x._2(2)
+
+    implicit val vecs = vectors(2)
+    val y = vecs.variable("y")
+    val term = y dot vecs.Const(1.0,2.0)
 
     //    val X = new VectorDom(1)
     //    val XX = new Tuple2Dom(X, X)
