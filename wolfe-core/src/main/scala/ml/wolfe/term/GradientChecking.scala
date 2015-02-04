@@ -25,20 +25,47 @@ object GradientChecking {
       tmp
   }
 
+  def wiggle[D](value: D, epsilon: Double, ix: Int*): (D, D) = (value match {
+    case x: Double => (x + epsilon, x - epsilon)
+    case x: FactorieVector =>
+      val xPos = x.copy
+      val xNeg = x.copy
+      xPos.update(ix(0), xPos(ix(0)) + epsilon)
+      xNeg.update(ix(0), xNeg(ix(0)) - epsilon)
+      (xPos, xNeg)
+    case x: FactorieMatrix =>
+      val xPos = x.copy
+      val xNeg = x.copy
+      xPos.update(ix(0), ix(1), xPos(ix(0), ix(1)) + epsilon)
+      xNeg.update(ix(0), ix(1), xNeg(ix(0), ix(1)) - epsilon)
+      (xPos, xNeg)
+  }).asInstanceOf[(D, D)]
+
   def apply[D <: Dom](term: Term[D], epsilon: Double = 0.00001, debug: Boolean = false)
                      (vals: Seq[Any] = term.vars.map(v => randomSetting(v)), error: term.domain.Value = term.domain.one) =
     term.vars.zipWithIndex.foreach(t => {
-      val (v, ix) = t
-      vals(ix) match {
-        case x: Double =>
-          val dAna = term.gradient(vals, error, Seq(v))(ix).asInstanceOf[Double]
+      val (variable, ix) = t
+      val value = vals(ix)
 
-          val xPos = x + epsilon
+      val gradient = term.gradient(vals, error, Seq(variable))(ix)
+
+      //how many values we have to test
+      val range = vals(ix) match {
+        case x: Double => Seq(0 to 0)
+        case x: FactorieVector => Seq(0 until x.dim1)
+        case x: FactorieMatrix => (0 until x.dim1).map(i => 0 until x.dim2)
+        case _ => ???
+      }
+
+      range.zipWithIndex.foreach(r => {
+        val (cols, row) = r
+        cols.foreach(col => {
+          //making small changes to the variable
+          val (xPos, xNeg) = wiggle(value, epsilon, row, col)
           val scorePos = term(vals.updated(ix, xPos): _*)
-
-          val xNeg = x - epsilon
           val scoreNeg = term(vals.updated(ix, xNeg): _*)
 
+          //numerically calculated gradient
           val dNum = (scorePos, scoreNeg) match {
             case (p: Double, n: Double) => (p - n) / (2 * epsilon)
             case (p: FactorieVector, n: FactorieVector) => ((p - n) / (2 * epsilon)).oneNorm
@@ -46,71 +73,22 @@ object GradientChecking {
             case _ => ???
           }
 
-          if (debug) {
-            val error = if (dAna === 0.0 +- epsilon && dNum === 0.0 +- epsilon) 1.0 else dNum / dAna
-            println("%-6s\tana: %12.8f\tnum: %12.8f\terr: %12.8f".format(v.name, dAna, dNum, error))
-          } else {
-            assert(dAna === dNum +- epsilon, s"Calculated gradient $dAna does not match numerical gradient $dNum for double variable ${v.name}!")
+          //analytically calculated gradient
+          val (dAna, variableName) = gradient match {
+            case x: Double => (x, variable.name)
+            case x: FactorieVector => (x(row), variable.name + row)
+            case x: FactorieMatrix => (x(row, col), variable.name + row + col)
+            case _ => ???
           }
 
-
-        case x: FactorieVector =>
-          val dAna = term.gradient(vals, error, Seq(v))(ix).asInstanceOf[FactorieVector]
-
-          (0 until x.dim1).foreach(i => {
-            val xPos = x.copy
-            xPos.update(i, xPos(i) + epsilon)
-            val scorePos = term(vals.updated(ix, xPos): _*)
-
-            val xNeg = x.copy
-            xNeg.update(i, xNeg(i) - epsilon)
-            val scoreNeg = term(vals.updated(ix, xNeg): _*)
-
-            val dNum = (scorePos, scoreNeg) match {
-              case (p: Double, n: Double) => (p - n) / (2 * epsilon)
-              case (p: FactorieVector, n: FactorieVector) => ((p - n) / (2 * epsilon)).oneNorm
-              case (p: FactorieMatrix, n: FactorieMatrix) => ((p - n) / (2 * epsilon)).oneNorm
-              case _ => ???
-            }
-
-            if (debug) {
-              val error = if (dAna(i) === 0.0 +- epsilon && dNum === 0.0 +- epsilon) 1.0 else dNum / dAna(i)
-              println("%s%-4d\tana: %12.8f\tnum: %12.8f\terr: %12.8f".format(v.name, i, dAna(i), dNum, error))
-            } else {
-              assert(dAna(i) === dNum +- epsilon, s"Calculated gradient ${dAna(i)} does not match numerical gradient $dNum for vector variable ${v.name} at index $i!")
-            }
-          })
-
-        case x: FactorieMatrix =>
-          val dAna = term.gradient(vals, error, Seq(v))(ix).asInstanceOf[FactorieMatrix]
-
-          (0 until x.dim1).foreach(row => (0 until x.dim2).foreach(col => {
-            val xPos = x.copy
-            xPos.update(row, col, xPos(row, col) + epsilon)
-            val scorePos = term(vals.updated(ix, xPos): _*)
-
-
-            val xNeg = x.copy
-            xNeg.update(row, col, xNeg(row, col) - epsilon)
-            val scoreNeg = term(vals.updated(ix, xNeg): _*)
-
-            val dNum = (scorePos, scoreNeg) match {
-              case (p: Double, n: Double) => (p - n) / (2 * epsilon)
-              case (p: FactorieVector, n: FactorieVector) => ((p - n) / (2 * epsilon)).oneNorm
-              case (p: FactorieMatrix, n: FactorieMatrix) => ((p - n) / (2 * epsilon)).oneNorm
-              case _ => ???
-            }
-
-            if (debug) {
-              val error = if (dAna(row, col) === 0.0 +- epsilon && dNum === 0.0 +- epsilon) 1.0 else dNum / dAna(row, col)
-              println("%s%d%-4d\tana: %12.8f\tnum: %12.8f\terr: %12.8f".format(v.name, row, col, dAna(row, col), dNum, error))
-            } else {
-              assert(dAna(row, col) === dNum +- epsilon, s"Calculated gradient ${dAna(row, col)} does not match numerical gradient $dNum for matrix variable ${v.name} at index ($row,$col)!")
-            }
-          }))
-      }
+          //comparing analytical with numerical gradient
+          if (debug) {
+            val ratio = if (dAna === 0.0 +- epsilon && dNum === 0.0 +- epsilon) 1.0 else dNum / dAna
+            println("%-6s\tana: %12.8f\tnum: %12.8f\tratio: %12.8f".format(variableName, dAna, dNum, ratio))
+          } else assert(dAna === dNum +- epsilon, s"Calculated gradient $dAna does not match numerical gradient $dNum for variable $variableName!")
+        })
+      })
     })
-
 }
 
 object Scratch extends App {
@@ -124,11 +102,5 @@ object Scratch extends App {
 
   val A = matrices(2,3).variable("A")
 
-  val mulTerm = a * a
-  val dotTerm = x dot y
-  val vecTerm = x * a
-  val matTerm = A * x
-  val complexTerm = (((A * x) * a) dot z) * a
-
-  GradientChecking(complexTerm, debug = true)()
+  GradientChecking((((A * x) * a) dot z) * a, debug = true)()
 }
