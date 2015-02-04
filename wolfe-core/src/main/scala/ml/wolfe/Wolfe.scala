@@ -49,18 +49,13 @@ WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
 WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
 WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW*/
 
-import ml.wolfe.FactorGraph.{Edge, Node}
-import ml.wolfe.fg.GaussianPotential
-import org.sameersingh.htmlgen.HTML
-
-import scala.language.implicitConversions
-import scala.util.Random
 import cc.factorie.model.WeightsSet
 import cc.factorie.optimize.Trainer
+
 import scala.annotation.StaticAnnotation
-import scala.collection.mutable.{ArrayBuffer, Buffer}
-import scala.collection.MapProxy
-import math._
+import scala.language.implicitConversions
+import scala.math._
+import scala.util.Random
 
 /**
  * @author Sebastian Riedel
@@ -71,8 +66,7 @@ object Wolfe extends SampleSpaceDefs
                      with Quantification
                      with DefaultValues
                      with ProblemBuilder
-                     with Utilities
-                     with Annotations {
+                     with Utilities {
 
   //core operators
   def notSupported = sys.error("This function is not supported")
@@ -127,19 +121,6 @@ object Wolfe extends SampleSpaceDefs
 
   def bernoulli(p: Double = 0.5)(coin: Boolean) = if (coin) log(p) else log1p(-p)
 
-  object logDist {
-
-    @Potential( (mean:Edge, dev:Edge, x: Edge) => new GaussianPotential(mean, dev)(x) )
-    def gaussian(mean: Double = 0.0, dev: Double = 1.0)(x: Double) = {
-      def sq(x: Double) = x * x
-      log(1.0 / (dev * sqrt(2.0 * Pi)) * exp(-sq(x - mean) / (2.0 * sq(dev))))
-    }
-
-    def sampleGaussian(mean: Double = 0.0, dev: Double = 1.0) = {
-      Random.nextGaussian() * dev + mean
-    }
-
-  }
 
 
   def I(b: Boolean) = if (b) 1.0 else 0.0
@@ -159,15 +140,6 @@ object Wolfe extends SampleSpaceDefs
     (example: T, weights: Vector) => weights dot featureGenerator(example).sum
   }
 
-  trait FactorGraphBuffer {
-    def set(fg: FactorGraph): Unit
-    def get(): FactorGraph
-  }
-  implicit val FactorGraphBuffer: FactorGraphBuffer = new FactorGraphBuffer {
-    var factorGraph: FactorGraph = null
-    def set(fg: FactorGraph) = factorGraph = fg
-    def get() = factorGraph
-  }
 
 }
 
@@ -429,15 +401,6 @@ trait DefaultValues {
   def default[T <: AnyRef]: T = null.asInstanceOf[T]
 }
 
-trait Annotations {
-  class OptimizeByLearning(trainer: WeightsSet => Trainer) extends StaticAnnotation
-  class OptimizeByInference(inference: FactorGraph => Unit) extends StaticAnnotation
-  class LogZByInference(inference: FactorGraph => Unit) extends StaticAnnotation
-  class Atomic extends StaticAnnotation
-  class Potential(construct: _ => ml.wolfe.fg.Potential) extends StaticAnnotation
-  class OutputFactorGraph(buffer: Wolfe.FactorGraphBuffer = Wolfe.FactorGraphBuffer) extends StaticAnnotation
-  class Stochastic extends StaticAnnotation
-}
 
 trait Utilities {
 

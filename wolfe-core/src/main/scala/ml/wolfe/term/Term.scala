@@ -2,9 +2,7 @@ package ml.wolfe.term
 
 import java.lang.System._
 
-import cc.factorie.la.{DenseTensor2, DenseTensor1}
-import ml.wolfe.FactorieMatrix
-import ml.wolfe.fg20._
+import cc.factorie.la.DenseTensor1
 import ml.wolfe.util.Math._
 
 trait Term[+D <: Dom] {
@@ -481,11 +479,13 @@ object Playground {
 
   def main(args: Array[String]) {
 
-    val V = vectors(2)
-    def f(v:VectorTerm) = v dot v
-    val k:VectorTerm = vector(1,2,3)
-    f(k)
+    val W = vectors(2) x vectors(2)
+    def loss(w:W.Term):DoubleTerm = 1.0
+    def loss2(w:W.dom1.Term):DoubleTerm = 1.0
 
+//    val result1 = argmax(W){ w => loss(w)}
+
+    val result = argmax(W){ w => loss2(w._1)}
 
 //
 //    val dom = doubles x seqs(doubles,2)

@@ -102,17 +102,6 @@ object BuildSettings {
    // "org.scala-lang" %% "scala-pickling" % "0.8.0"
   )
 
-  val neuralDependencies = libraryDependencies ++= Seq(
-    "org.scala-lang" % "scala-swing" % "2.11.0-M7"
-  )
-  
-  val appDependencies = libraryDependencies ++= Seq(
-    //"pl.project13.scala" %% "rainbow" % "0.2"
-    "net.sandrogrzicic" %% "scalabuff-compiler" % "1.3.8",
-    "net.sandrogrzicic" %% "scalabuff-runtime" % "1.3.8",
-    "com.google.protobuf" % "protobuf-java" % "2.3.0"
-  )
-
   val uiDependencies = libraryDependencies ++= Seq(
     "eu.henkelmann" % "actuarius_2.10.0" % "0.2.6"
   )
@@ -170,7 +159,7 @@ object Build extends Build {
     id = "wolfe",
     base = file("."),
     settings = Project.defaultSettings ++ publishSettings ++ generalSettings ++ releaseSettings
-  ) aggregate(core, nlp, examples, apps, ui, neural, util)
+  ) aggregate(core, nlp, examples, ui, util)
 
   lazy val core = Project(
     id = "wolfe-core",
@@ -186,12 +175,6 @@ object Build extends Build {
     settings = buildSettings ++ globalSettings ++ nlpDependencies
   ) dependsOn core % "test->test;compile->compile"
 
-  lazy val neural = Project(
-    id = "wolfe-neural",
-    base = file("wolfe-neural"),
-    settings = buildSettings ++ globalSettings ++ neuralDependencies
-  ) dependsOn core % "test->test;compile->compile"
-
   lazy val util = Project(
     id = "wolfe-util",
     base = file("wolfe-util"),
@@ -205,16 +188,6 @@ object Build extends Build {
     id = "wolfe-examples",
     base = file("wolfe-examples"),
     settings = buildSettings ++ globalSettings
-  ) dependsOn(
-  core % "test->test;compile->compile",
-  nlp % "test->test;compile->compile",
-  util % "test->test;compile->compile"
-  )
-
-  lazy val apps = Project(
-    id = "wolfe-apps",
-    base = file("wolfe-apps"),
-    settings = buildSettings ++ globalSettings ++ appDependencies
   ) dependsOn(
   core % "test->test;compile->compile",
   nlp % "test->test;compile->compile",

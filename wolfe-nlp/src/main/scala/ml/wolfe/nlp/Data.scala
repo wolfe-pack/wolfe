@@ -118,12 +118,23 @@ case class Document(source: String,
  */
 case class CorefAnnotation(mentions: Seq[CorefMention] = Seq.empty) {
 
+  def clusterOf(i: Int, j: Int): Option[Int] = {
+    mentions.find(m => m.start == i && m.end == j) match {
+      case Some(x) => Some(x.clusterID)
+      case _ => None
+    }
+  }
+
   def hasMention(s: Int, i: Int, j: Int): Boolean = {
     mentions.exists(m => m.sentence == s && m.start == i && m.end == j)
   }
 
   def mentionTokens(m: CorefMention, d: Document): IndexedSeq[Token] = {
     d.sentences(m.sentence).tokens.slice(m.start, m.end)
+  }
+
+  def shareCluster(i: Int, j: Int, k: Int, l: Int): Boolean = {
+    clusterOf(i, j) == clusterOf(k, l)
   }
 }
 

@@ -9,10 +9,8 @@ import ml.wolfe.Wolfe
  */
 object ExampleSlideshow extends MutableHTMLNotebook with App {
 
+  import ml.wolfe.Wolfe._
   import ml.wolfe.ui.RevealJS._
-  import Wolfe._
-  import ml.wolfe.macros.OptimizedOperators._
-  import ml.wolfe.D3Implicits._
 
 //  h1( "This is a Notebook")
 //
@@ -38,28 +36,28 @@ object ExampleSlideshow extends MutableHTMLNotebook with App {
 //
 //    """)
 
-  slides {
-    slide {
-      h1("This is a slide show")
-      md("Yoo!")
-    }
-    slide {
-      h2("This is a slide")
-      md("Whaaat?")
-      case class Sample(x: Boolean, y: Boolean)
-      @OutputFactorGraph
-      def model(s: Sample) = I(s.x == s.y) + I(s.x)
-      val result = argmax(all(Sample)) { model }
-
-      html(d3fg(FactorGraphBuffer.get()).source)
-    }
-    slide {
-      h2("This is another slide")
-      md("Okay!")
-    }
-
-
-  }
+//  slides {
+//    slide {
+//      h1("This is a slide show")
+//      md("Yoo!")
+//    }
+//    slide {
+//      h2("This is a slide")
+//      md("Whaaat?")
+//      case class Sample(x: Boolean, y: Boolean)
+//      @OutputFactorGraph
+//      def model(s: Sample) = I(s.x == s.y) + I(s.x)
+//      val result = argmax(all(Sample)) { model }
+//
+//      html(d3fg(FactorGraphBuffer.get()).source)
+//    }
+//    slide {
+//      h2("This is another slide")
+//      md("Okay!")
+//    }
+//
+//
+//  }
 
   saveTo(new File("/Users/sriedel/projects/wolfe/wolfe-ui/web/reveal.js-2.6.2/notebook.html"), new SimpleTemplate)
 

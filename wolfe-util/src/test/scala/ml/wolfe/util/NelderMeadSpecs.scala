@@ -91,7 +91,7 @@ class NelderMeadSpecs extends WordSpec with Matchers {
       // Set the starting point to 0
       val zeros: Map[String, Double] = Map("A" -> 0, "B" -> 0, "C" -> 0)
       myOptimizer.optimise(toyProblem, zeros)
-      println(f"Error is ${correctSolution - myOptimizer.bestScore}%g")
+//      println(f"Error is ${correctSolution - myOptimizer.bestScore}%g")
       myOptimizer.bestScore should be(correctSolution +- 1e-6)
 
     }

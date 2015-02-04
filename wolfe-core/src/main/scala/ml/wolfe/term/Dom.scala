@@ -1,8 +1,7 @@
 package ml.wolfe.term
 
-import cc.factorie.la.{SparseIndexedTensor2, DenseTensor2, DenseTensor1}
+import cc.factorie.la.{DenseTensor1, DenseTensor2}
 import ml.wolfe._
-import ml.wolfe.fg20.Msgs
 
 
 trait Dom {
@@ -110,7 +109,7 @@ class VectorDom(val dim: Int) extends Dom {
 
   def const(value: Value) = new Constant(value)
 
-  def Const(values:Double*) = {
+  def Const(values: Double*) = {
     require(values.size == dim)
     const(new DenseVector(values.toArray))
   }
@@ -165,7 +164,7 @@ class DoubleDom extends Dom {
   def copyValue(value: Value, setting: Setting, offsets: Offsets = Offsets()) =
     setting.cont(offsets.contOff) = value
   val lengths = Offsets(0, 1, 0, 0)
-  def variable(name: String, offsets: Offsets = Offsets(), owner: term.Var[Dom]):Var = StaticDoubleVar(name, owner, offsets.contOff)
+  def variable(name: String, offsets: Offsets = Offsets(), owner: term.Var[Dom]): Var = StaticDoubleVar(name, owner, offsets.contOff)
 
   def dynamic(name: => String, offsets: => Offsets, owner: term.Var[Dom]) = new BaseVar(name, owner) with DomVar {
     def offset = offsets.contOff
@@ -196,7 +195,6 @@ class DoubleDom extends Dom {
 }
 
 class DiscreteDom[T](val values: IndexedSeq[T]) extends Dom {
-
 
 
   dom =>
@@ -233,178 +231,6 @@ class DiscreteDom[T](val values: IndexedSeq[T]) extends Dom {
 }
 
 
-class SeqDom[D <: Dom](val elementDom: D, val length: Int) extends Dom {
-
-  dom =>
-
-  type Value = IndexedSeq[elementDom.Value]
-  type Var = DomVar
-  type Term = DomTerm
-  def toValue(setting: Setting, offsets: Offsets = Offsets()) = {
-    val result = for (i <- 0 until length) yield elementDom.toValue(setting, offsets +(elementDom.lengths, i))
-    result
-  }
-  def copyValue(value: Value, setting: Setting, offsets: Offsets = Offsets()) = {
-    for (i <- 0 until length) {
-      elementDom.copyValue(value(i), setting, offsets +(elementDom.lengths, i))
-    }
-  }
-  val lengths = elementDom.lengths * length
-  def variable(name: String, offsets: Offsets = Offsets(), owner: term.Var[Dom]) = StaticSeqVar(name, offsets, owner)
-
-  def dynamic(name: => String, dynOffsets: => Offsets, owner: term.Var[Dom]) = new BaseVar(name, owner) with DomVar {
-    def offsets = dynOffsets
-    val elements:IndexedSeq[domain.elementDom.Var] = for (i <- 0 until domain.length) yield
-      domain.elementDom.dynamic(s"$name($i)", offsets +(domain.elementDom.lengths, i), if (owner == null) this else owner)
-  }
-
-  def one = for (i <- 0 until length) yield elementDom.one
-  def zero = for (i <- 0 until length) yield elementDom.zero
-
-  def const(value: Value) = new SeqDomTermImpl {
-    lazy val elements = for (i <- 0 until dom.length) yield domain.elementDom.const(value(i))
-  }
-  
-  def Term(args: elementDom.Term*) = new SeqDomTermImpl {
-    def elements = args.toIndexedSeq
-  }
-  def Const(args: elementDom.Value*) = new SeqDomTermImpl {
-    def elements = args.map(a => elementDom.const(a)).toIndexedSeq
-  }
 
 
-  trait DomTerm extends super.DomTerm {
-    def elements: IndexedSeq[domain.elementDom.DomTerm]
 
-    def apply(index: Int) = elements(index)
-
-    def indices = elements.indices
-    def length = elements.length
-
-
-  }
-
-  abstract class SeqDomTermImpl extends Composed[dom.type] with DomTerm {
-    def arguments = elements
-
-    def composer() = new Evaluator {
-
-      def eval(inputs: Array[Setting], output: Setting) = {
-        for (i <- 0 until inputs.length) {
-          inputs(i).copyTo(output, domain.elementDom.lengths, i)
-        }
-      }
-    }
-
-    def differentiator(wrt: Seq[term.Var[Dom]]) = new ComposedDifferentiator {
-      def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]) = {
-        //each argument will get its error signal from a subsection of the outError
-        for (i <- 0 until argOutputs.length) {
-          val offsets = domain.elementDom.lengths * i
-          for (j <- 0 until domain.elementDom.lengths.contOff) {
-            gradient(i).cont(j) = outError.cont(offsets.contOff + j)
-          }
-          for (j <- 0 until domain.elementDom.lengths.vectOff) {
-            gradient(i).vect(j) := outError.vect(offsets.vectOff + j)
-          }
-        }
-      }
-
-      def withRespectTo = wrt
-    }
-  }
-
-  trait DomVar extends DomTerm with super.DomVar {
-    def atoms = elements.view.map(_.atoms).foldLeft(Atoms())(_ ++ _)
-    def offsets: Offsets
-    def ranges = Ranges(offsets, offsets +(domain.elementDom.lengths, domain.length))
-    def apply(gen: Generator[Int]): domain.elementDom.DomVar = {
-      domain.elementDom.dynamic(s"$name(${gen.current()}})", offsets +(domain.elementDom.lengths, gen.current()), if (owner == null) this else owner)
-    }
-  }
-
-  case class StaticSeqVar(name: String, offsets: Offsets = Offsets(),
-                          owner: term.Var[Dom]) extends DomVar {
-
-    override val ranges = super.ranges
-    val elements = for (i <- 0 until domain.length) yield
-      domain.elementDom.variable(s"$name($i)", offsets +(domain.elementDom.lengths, i), if (owner == null) this else owner)
-
-    /*
-    def apply(generator:Generator[Int]) = new StochasticElement(generator) {
-      val current = elements(generator.generate)
-
-    }
-    */
-
-
-  }
-
-  //val elements = arguments
-
-}
-
-class Tuple2Dom[D1 <: Dom, D2 <: Dom](val dom1: D1, val dom2: D2) extends Dom {
-  dom =>
-  type Value = (dom1.Value, dom2.Value)
-  type Var = DomVar
-  type Term = DomTerm
-  val lengths = dom1.lengths + dom2.lengths
-  def toValue(setting: Setting, offsets: Offsets = Offsets()) = {
-    val arg1 = dom1.toValue(setting, offsets)
-    val arg2 = dom2.toValue(setting, offsets + dom1.lengths)
-    (arg1, arg2)
-  }
-  def copyValue(value: Value, setting: Setting, offsets: Offsets = Offsets()): Unit = {
-    dom1.copyValue(value._1, setting)
-    dom2.copyValue(value._2, setting, dom1.lengths)
-  }
-  def variable(name: String, offsets: Offsets, owner: term.Var[Dom]): DomVar =
-    StaticTuple2Var(name, offsets, owner)
-
-  def dynamic(name: => String, dynOffsets: => Offsets, owner: term.Var[Dom]): DomVar = new BaseVar(name, owner) with DomVar {
-    def offsets = dynOffsets
-    val _1 = domain.dom1.dynamic(name + "._1", offsets, if (owner == null) this else owner)
-    val _2 = domain.dom2.dynamic(name + "._2", offsets + domain.dom1.lengths, if (owner == null) this else owner)
-  }
-  def one = (dom1.one, dom2.one)
-  def zero = (dom1.zero, dom2.zero)
-
-  def const(value: Value): DomTerm = new Tuple2DomTermImpl {
-    val _1 = domain.dom1.const(value._1)
-    val _2 = domain.dom2.const(value._2)
-  }
-
-  trait DomTerm extends super.DomTerm {
-    def _1: domain.dom1.Term
-    def _2: domain.dom2.Term
-  }
-
-  trait Tuple2DomTermImpl extends DomTerm with Composed[dom.type] {
-    def arguments = IndexedSeq(_1, _2)
-
-    def composer() = ???
-
-    def differentiator(wrt: Seq[term.Var[Dom]]) = ???
-  }
-
-  trait DomVar extends super.DomVar {
-    def offsets: Offsets
-    def ranges = Ranges(offsets, offsets + domain.dom1.lengths + domain.dom2.lengths)
-    def atoms = _1.atoms ++ _2.atoms
-    def _1: domain.dom1.Var
-    def _2: domain.dom2.Var
-
-
-  }
-
-  case class StaticTuple2Var(name: String,
-                             offsets: Offsets,
-                             owner: term.Var[Dom]) extends DomVar {
-    override val ranges = super.ranges
-    val _1 = domain.dom1.variable(name + "._1", offsets, if (owner == null) this else owner)
-    val _2 = domain.dom2.variable(name + "._2", offsets + domain.dom1.lengths, if (owner == null) this else owner)
-
-  }
-
-}

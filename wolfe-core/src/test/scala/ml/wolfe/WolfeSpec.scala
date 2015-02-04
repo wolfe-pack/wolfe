@@ -1,6 +1,5 @@
 package ml.wolfe
 
-import ml.wolfe.fg20.{DiscDistribution, State}
 import org.scalactic.Equality
 import org.scalatest.{Matchers, WordSpec}
 
@@ -32,18 +31,18 @@ trait WolfeSpec extends WordSpec with Matchers {
   }
 
 
-  implicit val stateEq = new Equality[State] {
-    def areEqual(a: State, b: Any) = b match {
-      case that: State => a.domain == that.domain && a.domain.forall(v => {
-        (a(v), that(v)) match {
-          case (DiscDistribution(_, m1), DiscDistribution(_, m2)) =>
-            m1.keys.forall(k1 => math.abs(m1(k1) - m2(k1)) < 0.0001)
-          case (x1, x2) => x1 == x2
-        }
-      })
-      case _ => false
-    }
-  }
+//  implicit val stateEq = new Equality[State] {
+//    def areEqual(a: State, b: Any) = b match {
+//      case that: State => a.domain == that.domain && a.domain.forall(v => {
+//        (a(v), that(v)) match {
+//          case (DiscDistribution(_, m1), DiscDistribution(_, m2)) =>
+//            m1.keys.forall(k1 => math.abs(m1(k1) - m2(k1)) < 0.0001)
+//          case (x1, x2) => x1 == x2
+//        }
+//      })
+//      case _ => false
+//    }
+//  }
 
 
 }
