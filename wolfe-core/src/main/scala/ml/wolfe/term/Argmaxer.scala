@@ -24,6 +24,14 @@ object Argmaxer {
       new AscentBasedArgmaxer(term, wrt, iterations, learningRate, initParams)
     }
   }
+
+  def adaGrad(iterations: Int, learningRate: Double = 0.1)(implicit initParams: Array[Setting] = Array()) = new ArgmaxerFactory {
+    def argmaxer(term: DoubleTerm, wrt: Seq[Var[Dom]]) = {
+      require(wrt.forall(_.domain.isContinuous), "adagrad based argmaxer needs continuous variables")
+      new AdaGradArgmaxer(term, wrt, iterations, learningRate, initParams)
+    }
+  }
+
 }
 
 trait MaxMarginalizer {

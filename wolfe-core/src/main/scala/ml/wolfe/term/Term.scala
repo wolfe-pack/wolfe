@@ -1,7 +1,6 @@
 package ml.wolfe.term
 
 import cc.factorie.la.DenseTensor1
-import ml.wolfe.FactorieVector
 import ml.wolfe.util.Math._
 
 trait Term[+D <: Dom] extends TermHelper[D] {
@@ -101,6 +100,8 @@ trait Var[+D <: Dom] extends Term[D] {
 
   def owner: Var[Dom]
 
+  def ownerOrSelf: Var[Dom] = if (owner == null) self else owner
+
   def vars = if (owner == null) Seq(this) else Seq(owner)
 
   def differentiator(wrt: Seq[Var[Dom]]) = new Differentiator {
@@ -142,6 +143,13 @@ case class Atoms(disc: Seq[DiscVar[Any]] = Nil, cont: Seq[DoubleVar] = Nil, vect
     cont = cont.filter(v => predicate(v.owner)),
     vect = vect.filter(v => predicate(v.owner)),
     mats = mats.filter(v => predicate(v.owner))
+  )
+
+  def distinct = copy(
+    disc = disc.distinct,
+    cont = cont.distinct,
+    vect = vect.distinct,
+    mats = mats.distinct
   )
 
 

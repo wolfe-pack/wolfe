@@ -334,7 +334,16 @@ class TermSpecs extends WolfeSpec {
       val result = argmax(doubles) { x => obj(x).argmaxBy(Argmaxer.ascent(100, 0.1))}
       result.eval() should be(2.0 +- eps)
     }
+  }
 
+  "Adagrad" should {
+    "optimize a quadratic objective" in {
+      val x = doubles.variable("x")
+      def obj(x: doubles.Term) = x * 4.0 - x * x
+      val result = argmax(doubles) { x => obj(x).argmaxBy(Argmaxer.adaGrad(100, 1))}
+      result.eval() should be(2.0 +- eps)
+
+    }
   }
 
   "A lazy sum" should {
