@@ -9,7 +9,7 @@ trait Dom {
   dom =>
 
   type Value
-  type Var <: DomVar
+  type Var <: DomVar with Term
   type Term <: DomTerm
   type Marginals
 
