@@ -56,6 +56,7 @@ trait TermHelper[+D <: Dom] {
     wrt.domain.toValue(result)
   }
 
+
   def eval(args: Any*): domain.Value = {
     val ev = evaluator()
     val output = domain.createSetting()
@@ -142,6 +143,7 @@ case class Atoms(disc: Seq[DiscVar[Any]] = Nil, cont: Seq[DoubleVar] = Nil, vect
     vect = vect.filter(v => predicate(v.owner)),
     mats = mats.filter(v => predicate(v.owner))
   )
+
 
 }
 
@@ -464,6 +466,8 @@ object Playground {
   import ml.wolfe.term.TermImplicits._
 
   def main(args: Array[String]) {
+
+
 
     val W = vectors(2) x vectors(2)
     def loss(w:W.Term):DoubleTerm = 1.0
