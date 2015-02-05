@@ -38,8 +38,6 @@ object ExhaustiveSearch {
     val length    = flattened.length
     def iterate(target: Array[Setting])(body: => Unit): Unit = {
       //flatten
-      val flattened = for (i <- 0 until atoms.length; j <- 0 until atoms(i).length) yield (atoms(i)(j), i)
-      val length = flattened.length
       var index = length - 1
 
       var atomVarIndex = flattened(index)
@@ -75,10 +73,9 @@ object ExhaustiveSearch {
           }
         }
       }
-
     }
-
   }
+
 }
 
 /**
