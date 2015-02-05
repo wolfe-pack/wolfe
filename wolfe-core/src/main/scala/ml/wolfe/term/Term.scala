@@ -5,7 +5,7 @@ import java.lang.System._
 import cc.factorie.la.DenseTensor1
 import ml.wolfe.util.Math._
 
-trait Term[+D <: Dom] {
+trait Term[+D <: Dom] extends TermHelper[D] {
   val domain: D
 
   def vars: Seq[Var[Dom]]
@@ -16,15 +16,37 @@ trait Term[+D <: Dom] {
 
   def differentiator(wrt: Seq[Var[Dom]]): Differentiator
 
-  def maxMarginalizer(wrt:Seq[Var[Dom]],target:Seq[Var[Dom]]):MaxMarginalizer = ???
+  def maxMarginalizer(wrt:Seq[Var[Dom]],target:Seq[Var[Dom]]):MaxMarginalizer = {
+    //todo: this could be type safe, for example by adding the argmax method to the RichDoubleTerm
+    if (!domain.isDouble) sys.error("Argmax only supported for real valued terms")
+    else if (wrt.forall(_.domain.isDiscrete))
+      new ExhaustiveSearchMaxMarginalizer(this.asInstanceOf[DoubleTerm], wrt,target) else ???
+  }
 
   def argmaxer(wrt: Seq[Var[Dom]]): Argmaxer = {
     //todo: this could be type safe, for example by adding the argmax method to the RichDoubleTerm
     if (!domain.isDouble) sys.error("Argmax only supported for real valued terms")
     else if (wrt.forall(_.domain.isDiscrete)) new ExhaustiveSearchArgmaxer(this.asInstanceOf[DoubleTerm], wrt) else ???
-
   }
 
+}
+
+/**
+ * Provides a range of convenience methods to access Term functionality in more type safe ways.
+ * @tparam D
+ */
+trait TermHelper[+D <: Dom] {
+  this: Term[D] =>
+
+  def maxMarginals[T <: Dom](target:Var[T],wrt:Var[T])(incoming:wrt.domain.Marginals)(args:Any*):target.domain.Marginals = {
+    val maxMarger = maxMarginalizer(Seq(wrt),Seq(target))
+    val observed = vars.filter(v => v != wrt && v != target)
+    val observedSettings = Dom.createSettings(observed,args)
+    val result = target.domain.createZeroMsgs()
+    val incomingMsgs = Array(wrt.domain.toMsgs(incoming))
+    maxMarger.maxMarginals(observedSettings,incomingMsgs,Array(result))
+    target.domain.toMarginals(result)
+  }
 
   def argmax[V <: Dom](wrt: Var[V], args: Any*): wrt.domain.Value = {
     val am = argmaxer(Seq(wrt))
@@ -58,6 +80,7 @@ trait Term[+D <: Dom] {
     diff.addGradientAndValue(argSettings.toArray, errorSetting, result, output)
     for ((s, v) <- result zip vars) yield v.domain.toValue(s)
   }
+
 }
 
 trait ProxyTerm[D <: Dom] extends Term[D] {

@@ -18,11 +18,30 @@ class SeqDom[D <: Dom](val elementDom: D, val length: Int) extends Dom {
     val result = for (i <- 0 until length) yield elementDom.toValue(setting, offsets +(elementDom.lengths, i))
     result
   }
+
+
+  def toMarginals(msg: Msgs, offsets: Offsets) = {
+    for (i <- 0 until length) yield elementDom.toMarginals(msg, offsets +(elementDom.lengths, i))
+  }
   def copyValue(value: Value, setting: Setting, offsets: Offsets = Offsets()) = {
     for (i <- 0 until length) {
       elementDom.copyValue(value(i), setting, offsets +(elementDom.lengths, i))
     }
   }
+
+
+  def copyMarginals(marginals: Marginals, msgs: Msgs, offsets: Offsets) = {
+    for (i <- 0 until length) {
+      elementDom.copyMarginals(marginals(i), msgs, offsets +(elementDom.lengths, i))
+    }
+  }
+
+  def fillZeroMsgs(target: Msgs, offsets: Offsets) = {
+    for (i <- 0 until length) {
+      elementDom.fillZeroMsgs(target, offsets +(elementDom.lengths, i))
+    }
+  }
+
   val lengths = elementDom.lengths * length
   def variable(name: String, offsets: Offsets = Offsets(), owner: term.Var[Dom]) = StaticSeqVar(name, offsets, owner)
 

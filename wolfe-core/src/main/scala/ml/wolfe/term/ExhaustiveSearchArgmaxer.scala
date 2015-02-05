@@ -76,19 +76,20 @@ object ExhaustiveSearch {
  * @author riedel
  */
 class ExhaustiveSearchMaxMarginalizer(val obj: DoubleTerm, val wrt: Seq[Var[Dom]], target: Seq[Var[Dom]]) extends MaxMarginalizer {
-  require(obj.domain.isDiscrete, "Cannot do exhaustive search over continuous domains")
+  require(wrt.forall(_.domain.isDiscrete), "Cannot do exhaustive search over continuous domains")
   val observedVars   = obj.vars.filterNot(v => wrt.contains(v) || target.contains(v))
   val settingsToVary = obj.vars.map(_.domain.createSetting()).toArray
   val obs2full       = VariableMapping(observedVars, obj.vars)
   val wrt2full       = VariableMapping(wrt, obj.vars)
   val tgt2full       = VariableMapping(target, obj.vars)
-  val discAtoms      = wrt.map(_.atoms.disc.toArray).toArray
+  val varyingVars    = (wrt ++ target).distinct
+  val discAtoms      = varyingVars.map(_.atoms.disc.toArray).toArray
   val evaluator      = obj.evaluator()
   val score          = obj.domain.createSetting()
 
 
   def maxMarginals(observed: Array[Setting], wrtMsgs: Array[Msgs], targetMsgs: Array[Msgs]) = {
-    for (i <- 0 until targetMsgs.length) targetMsgs(i) := -Double.NegativeInfinity
+    for (i <- 0 until targetMsgs.length) targetMsgs(i) := Double.NegativeInfinity
     obs2full.copyForward(observed, settingsToVary)
     ExhaustiveSearch.allSettings(discAtoms)(settingsToVary) {
       evaluator.eval(settingsToVary, score)
@@ -110,7 +111,7 @@ class ExhaustiveSearchMaxMarginalizer(val obj: DoubleTerm, val wrt: Seq[Var[Dom]
         for (i <- 0 until targetMsgs.length) {
           val currentSetting = settingsToVary(indexInFullSetting).disc(i)
           val tgt = targetMsgs(tgtIndex).disc(i)
-          tgt.msg(currentSetting) = math.max(tgt.msg(currentSetting),penalized)
+          tgt.msg(currentSetting) = math.max(tgt.msg(currentSetting), penalized)
           val currentMsg = tgt.msg(currentSetting)
         }
       }

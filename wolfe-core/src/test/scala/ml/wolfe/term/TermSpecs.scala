@@ -358,6 +358,16 @@ class TermSpecs extends WolfeSpec {
 
   }
 
+  "Exhaustive max-marginalizing" should {
+    "provide the exact max marginals" in {
+      val x = bools.variable("x")
+      val y = bools.variable("y")
+      val term = I(x === y)
+      val result = term.maxMarginals(x,y)(IndexedSeq(1.0,2.0))()
+      result should be (IndexedSeq(2.0,3.0))
+    }
+  }
+
   "A typed term" should {
     "have a typed apply method" in {
       val x = doubles.variable("x")

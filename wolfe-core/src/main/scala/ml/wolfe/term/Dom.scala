@@ -21,6 +21,8 @@ trait Dom {
 
 
   def toValue(setting: Setting, offsets: Offsets = Offsets()): Value
+  def toMarginals(msg: Msgs, offsets: Offsets = Offsets()): Marginals
+  def copyMarginals(marginals:Marginals, msgs:Msgs,offsets: Offsets = Offsets())
   def copyValue(value: Value, setting: Setting, offsets: Offsets = Offsets())
 
   def toSetting(value: Value): Setting = {
@@ -28,8 +30,21 @@ trait Dom {
     copyValue(value, result)
     result
   }
+
+  def toMsgs(marginals: Marginals): Msgs = {
+    val result = createMsgs()
+    copyMarginals(marginals, result)
+    result
+  }
+
   def createSetting(): Setting = new Setting(lengths.discOff, lengths.contOff, lengths.vectOff, lengths.matsOff)
-  def createMsgs() = new Msgs(null, null, null, null)
+  def createMsgs() = new Msgs(lengths.discOff, lengths.contOff, lengths.vectOff, lengths.matsOff)
+  def createZeroMsgs() = {
+    val result = createMsgs()
+    fillZeroMsgs(result)
+    result
+  }
+  def fillZeroMsgs(target:Msgs,offsets: Offsets = Offsets())
   def createZeroSetting(): Setting = {
     val result = createSetting()
     copyValue(zero, result)
@@ -86,6 +101,10 @@ trait Dom {
 object Dom {
   val doubles = new DoubleDom
   val bools   = TermImplicits.discrete(false, true)
+
+  def createSettings(vars:Seq[Var[Dom]],values:Seq[Any]):Array[Setting] = {
+    (for ((a, v) <- values zip vars) yield v.domain.toSetting(a.asInstanceOf[v.domain.Value])).toArray
+  }
 }
 
 class VectorDom(val dim: Int) extends Dom {
@@ -101,8 +120,23 @@ class VectorDom(val dim: Int) extends Dom {
 
   def toValue(setting: Setting, offsets: Offsets) =
     setting.vect(offsets.vectOff)
+
+
+  def toMarginals(msg: Msgs, offsets: Offsets) = {
+    msg.vect(offsets.vectOff).mean
+  }
+
+  def fillZeroMsgs(target: Msgs, offsets: Offsets) = {
+    target.vect(offsets.vectOff) = new VectMsg(one)
+  }
+
   def copyValue(value: Value, setting: Setting, offsets: Offsets) =
     setting.vect(offsets.vectOff) = value
+
+
+  def copyMarginals(marginals: Marginals, msgs: Msgs, offsets: Offsets) = {
+    msgs.vect(offsets.vectOff) = new VectMsg(marginals)
+  }
   def variable(name: String, offsets: Offsets, owner: term.Var[Dom]) = StaticVectorVar(name, owner, offsets.vectOff)
 
   def dynamic(name: => String, offsets: => Offsets, owner: term.Var[Dom]) = new BaseVar(name, owner) with DomVar {
@@ -140,8 +174,23 @@ class MatrixDom(val dim1: Int, dim2: Int) extends Dom {
 
   def toValue(setting: Setting, offsets: Offsets) =
     setting.mats(offsets.matsOff)
+
+  def toMarginals(msg: Msgs, offsets: Offsets) = {
+    msg.mats(offsets.matsOff).mean
+  }
+
   def copyValue(value: Value, setting: Setting, offsets: Offsets) =
     setting.mats(offsets.matsOff) = value
+
+
+  def copyMarginals(marginals: Marginals, msgs: Msgs, offsets: Offsets) = {
+    msgs.mats(offsets.matsOff) = new MatsMsg(marginals)
+  }
+
+  def fillZeroMsgs(target: Msgs, offsets: Offsets) = {
+    target.mats(offsets.matsOff) = new MatsMsg(zero)
+  }
+
   def variable(name: String, offsets: Offsets, owner: term.Var[Dom]): DomVar = DomVar(name, owner, offsets.matsOff)
 
   def dynamic(name: => String, offsets: => Offsets, owner: term.Var[Dom]) = ???
@@ -167,8 +216,24 @@ class DoubleDom extends Dom {
 
   def toValue(setting: Setting, offsets: Offsets = Offsets()) =
     setting.cont(offsets.contOff)
+
+
+  def toMarginals(msg: Msgs, offsets: Offsets) = {
+    msg.cont(offsets.contOff).mean
+  }
+
   def copyValue(value: Value, setting: Setting, offsets: Offsets = Offsets()) =
     setting.cont(offsets.contOff) = value
+
+
+  def copyMarginals(marginals: Marginals, msgs: Msgs, offsets: Offsets) = {
+    msgs.cont(offsets.contOff) = new ContMsg(marginals)
+  }
+
+  def fillZeroMsgs(target: Msgs, offsets: Offsets) = {
+    target.cont(offsets.contOff) = new ContMsg(0.0)
+  }
+
   val lengths = Offsets(0, 1, 0, 0)
   def variable(name: String, offsets: Offsets = Offsets(), owner: term.Var[Dom]): Var = StaticDoubleVar(name, owner, offsets.contOff)
 
@@ -210,8 +275,21 @@ class DiscreteDom[T](val values: IndexedSeq[T]) extends Dom {
   type Marginals = IndexedSeq[Double]
   def toValue(setting: Setting, offsets: Offsets = Offsets()) =
     values(setting.disc(offsets.discOff))
+
+  def toMarginals(msg: Msgs, offsets: Offsets) = {
+    msg.disc(offsets.discOff).msg
+  }
   def copyValue(value: Value, setting: Setting, offsets: Offsets = Offsets()) =
     setting.disc(offsets.discOff) = values.indexOf(value)
+
+
+  def copyMarginals(marginals: Marginals, msgs: Msgs, offsets: Offsets) = {
+    msgs.disc(offsets.discOff) = new DiscMsg(marginals.toArray)
+  }
+  def fillZeroMsgs(target: Msgs, offsets: Offsets) = {
+    target.disc(offsets.discOff) = new DiscMsg(values.length)
+  }
+
   val lengths = Offsets(1, 0, 0, 0)
   def variable(name: String, offsets: Offsets = Offsets(), owner: term.Var[Dom]) = StaticDiscVar(name, owner, offsets.discOff)
 

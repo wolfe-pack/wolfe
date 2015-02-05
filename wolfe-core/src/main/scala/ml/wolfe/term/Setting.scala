@@ -63,7 +63,14 @@ class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMats: Int
 
     true
   }
-
+  override def toString = {
+    s"""
+       |${disc.mkString(" ")}
+       |${cont.mkString(" ")}
+       |${vect.mkString(" ")}
+       |${mats.mkString(" ")}
+     """.stripMargin
+  }
 }
 
 object Setting {
@@ -94,25 +101,19 @@ object Setting {
 }
 
 
-class DiscMsg(dim: Int) {
-  var msg = Array.ofDim[Double](dim)
+class DiscMsg(var msg:Array[Double]) {
+  def this(size:Int) = this(Array.ofDim[Double](size))
 }
-class ContMsg {
-  var mean: Double = 0.0
-}
-class VectMsg {
-  var mean: FactorieVector = null
-}
-
-class MatsMsg {
-  var mean: FactorieMatrix = null
-}
+class ContMsg(var mean: Double = 0.0)
+class VectMsg(var mean: FactorieVector = null)
+class MatsMsg (var mean: FactorieMatrix = null)
 
 
-class Msgs(val disc: Array[DiscMsg],
-           val cont: Array[ContMsg],
-           val vect: Array[VectMsg],
-           val mats: Array[MatsMsg]) {
+class Msgs(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMats: Int = 0) {
+  final var disc = Array.ofDim[DiscMsg](numDisc)
+  final var cont = Array.ofDim[ContMsg](numCont)
+  final var vect = Array.ofDim[VectMsg](numVect)
+  final var mats = Array.ofDim[MatsMsg](numMats)
 
   final def :=(value: Double): Unit = {
     for (i <- 0 until disc.length) util.Arrays.fill(disc(i).msg, value)
