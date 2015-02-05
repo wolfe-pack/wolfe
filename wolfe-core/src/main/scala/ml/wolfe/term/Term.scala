@@ -1,6 +1,7 @@
 package ml.wolfe.term
 
 import cc.factorie.la.DenseTensor1
+import ml.wolfe.FactorieVector
 import ml.wolfe.util.Math._
 
 trait Term[+D <: Dom] extends TermHelper[D] {
@@ -260,7 +261,6 @@ class VectorSigmoid[T <: Term[VectorDom]](override val arg: T)
 class VectorTanh[T <: Term[VectorDom]](override val arg: T)
   extends VectorDoubleFun(arg, tanh, tanhDeriv)
 
-
 class DotProduct[T1 <: Term[VectorDom], T2 <: Term[VectorDom]](val arg1: T1, val arg2: T2) extends ComposedDoubleTerm {
 
   self =>
@@ -287,7 +287,34 @@ class DotProduct[T1 <: Term[VectorDom], T2 <: Term[VectorDom]](val arg1: T1, val
       gradient(1).vect(0) +=(argOutputs(0).vect(0), scale)
     }
   }
+}
 
+//rockt: this should be generalized to vectors and matrices
+class MatrixDotProduct[T1 <: Term[MatrixDom], T2 <: Term[MatrixDom]](val arg1: T1, val arg2: T2) extends ComposedDoubleTerm {
+  self =>
+
+  val arguments = IndexedSeq(arg1, arg2)
+
+  def composer() = new Evaluator {
+    def eval(inputs: Array[Setting], output: Setting) = {
+      output.cont(0) = inputs(0).mats(0) dot inputs(1).mats(0)
+    }
+  }
+
+
+  def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
+
+    def withRespectTo = wrt
+
+
+    def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]): Unit = {
+      val scale = outError.cont(0)
+      gradient(0).mats(0) := 0.0
+      gradient(1).mats(0) := 0.0
+      gradient(0).mats(0) +=(argOutputs(1).mats(0), scale)
+      gradient(1).mats(0) +=(argOutputs(0).mats(0), scale)
+    }
+  }
 }
 
 class VectorScaling[T1 <: Term[VectorDom], T2 <: Term[DoubleDom]](val arg1: T1, arg2: T2) extends Composed[VectorDom] {
@@ -317,6 +344,36 @@ class VectorScaling[T1 <: Term[VectorDom], T2 <: Term[DoubleDom]](val arg1: T1, 
   }
 }
 
+class VectorConcatenation[T1 <: Term[VectorDom], T2 <: Term[VectorDom]](val arg1: T1, val arg2: T2) extends Composed[VectorDom] {
+
+  self =>
+
+  val arguments = IndexedSeq(arg1, arg2)
+
+  override val domain: VectorDom = new VectorDom(arg1.domain.dim + arg2.domain.dim)
+
+  def composer() = new Evaluator {
+    def eval(inputs: Array[Setting], output: Setting) = {
+      //fixme: slow!
+      output.vect(0) = new DenseTensor1((inputs(0).vect(0).asSeq ++ inputs(1).vect(0).asSeq).toArray)
+    }
+  }
+
+
+  def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
+
+    def withRespectTo = wrt
+
+    def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]): Unit = {
+      val upstream = outError.vect(0)
+      gradient(0).vect(0) := 0.0
+      gradient(1).vect(0) := 0.0
+      gradient(0).vect(0) += new DenseTensor1(upstream.asArray.slice(0, argOutputs(0).vect(0).dim1))
+      gradient(1).vect(0) += new DenseTensor1(upstream.asArray.slice(argOutputs(0).vect(0).dim1, upstream.dim1))
+    }
+  }
+
+}
 
 class MatrixVectorProduct[T1 <: Term[MatrixDom], T2 <: Term[VectorDom]](val arg1: T1, val arg2: T2) extends Composed[VectorDom] {
 

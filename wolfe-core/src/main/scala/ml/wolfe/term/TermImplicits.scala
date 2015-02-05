@@ -158,11 +158,13 @@ object TermImplicits {
     //element-wise addition
     def +(that: Term[VectorDom]): VectorTerm = ???
     //element-wise multiplication
-    def **(that: Term[VectorDom]): VectorTerm = ???
+    def :*(that: Term[VectorDom]): VectorTerm = ???
+
+    def cons(that: Term[VectorDom]): VectorTerm = new VectorConcatenation(vect, that)
   }
 
   implicit class RichMatrixTerm(val mat: Term[MatrixDom]) {
-    //def dot(that: Term[MatrixDom]) = new DotProduct(mat, that)
+    def dot(that: Term[MatrixDom]) = new MatrixDotProduct(mat, that)
     def *(that: Term[VectorDom]) = new MatrixVectorProduct(mat, that)
   }
 

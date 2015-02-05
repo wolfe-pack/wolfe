@@ -20,8 +20,8 @@ object LSTM extends App {
     val f_t = sigmVec(W(4) * x_t + W(5) * h_t1)
     val o_t = sigmVec(W(6) * x_t + W(7) * h_t1)
 
-    val m_t = m_t1 ** f_t + i_t ** d_t
-    val h_t = m_t ** o_t
+    val m_t = m_t1 :* f_t + i_t :* d_t
+    val h_t = m_t :* o_t
 
     (m_t, h_t)
   }

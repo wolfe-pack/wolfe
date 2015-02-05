@@ -53,7 +53,7 @@ object GradientChecking {
       val range = vals(ix) match {
         case x: Double => Seq(0 to 0)
         case x: FactorieVector => Seq(0 until x.dim1)
-        case x: FactorieMatrix => (0 until x.dim1).map(i => 0 until x.dim2)
+        case x: FactorieMatrix => (0 until x.dim2).map(i => 0 until x.dim1)
         case _ => ???
       }
 
