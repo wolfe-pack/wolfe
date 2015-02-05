@@ -4,6 +4,8 @@ import cc.factorie.la.{DenseTensor1, DenseTensor2}
 import ml.wolfe._
 import ml.wolfe.term.ExhaustiveSearch.AllSettings
 
+import scala.collection.mutable.ArrayBuffer
+
 
 trait Dom {
 
@@ -102,8 +104,12 @@ trait Dom {
     val settingToVary = createSetting()
     val disc = tmp.atoms.disc.toArray
     val loop = new AllSettings(Array(disc))
-    //Iterator.continually()
-    ???
+    val result = new ArrayBuffer[Value]()
+    //todo: do a version that doesn't need to store the list in advance
+    loop.iterate(Array(settingToVary)) {
+      result += toValue(settingToVary)
+    }
+    result.iterator
   }
 
 

@@ -147,8 +147,9 @@ object TermImplicits {
     }
   }
 
-  implicit class RichDom[D <: Dom](val dom: D) {
+  implicit class RichDom[D <: Dom](val dom: D)  {
     def x[D2 <: Dom](that: D2):Tuple2Dom[dom.type, that.type] = new Tuple2Dom[dom.type, that.type](dom, that)
+//    def iterator = dom.iterator
   }
 
   implicit class RichVectTerm(val vect: Term[VectorDom]) {
