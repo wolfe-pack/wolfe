@@ -154,6 +154,11 @@ object TermImplicits {
   implicit class RichVectTerm(val vect: Term[VectorDom]) {
     def dot(that: Term[VectorDom]) = new DotProduct(vect, that)
     def *(that: Term[DoubleDom]) = new VectorScaling(vect, that)
+
+    //element-wise addition
+    def +(that: Term[VectorDom]): VectorTerm = ???
+    //element-wise multiplication
+    def **(that: Term[VectorDom]): VectorTerm = ???
   }
 
   implicit class RichMatrixTerm(val mat: Term[MatrixDom]) {
