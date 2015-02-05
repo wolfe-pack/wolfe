@@ -1,5 +1,6 @@
 package ml.wolfe.term
 
+import java.lang.System._
 import java.util
 
 import ml.wolfe.{FactorieMatrix, FactorieVector}
@@ -125,7 +126,73 @@ class Msgs(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMats: Int = 
 
 }
 
+final class VariableMapping(val srcIndex: Array[Int], val tgtIndex: Array[Int]) {
+  def copyForward(src: Array[Setting], tgt: Array[Setting]) = {
+    for (i <- 0 until srcIndex.length) tgt(tgtIndex(i)) := src(srcIndex(i))
+  }
 
+  def copyBackward(src: Array[Setting], tgt: Array[Setting]) = {
+    for (i <- 0 until srcIndex.length) src(srcIndex(i)) := tgt(tgtIndex(i))
+  }
+
+  def getTgtIndex(src:Int):Int = {
+    var i = 0
+    while (i < srcIndex.length) {
+      if (srcIndex(i) == src) return tgtIndex(i)
+      i += 1
+    }
+    -1
+  }
+
+}
+
+object VariableMapping {
+  def apply(src: Seq[Var[Dom]], tgt: Seq[Var[Dom]]) = {
+    val pairs = src.indices.view.map(i => i -> tgt.indexOf(src(i))).filter(_._2 != -1).toArray
+    val (srcIndex, tgtIndex) = (pairs.map(_._1), pairs.map(_._2))
+    new VariableMapping(srcIndex, tgtIndex)
+  }
+}
+
+case class Offsets(discOff: Int = 0, contOff: Int = 0, vectOff: Int = 0, matsOff: Int = 0) {
+  def +(disc: Int, cont: Int, vect: Int, mats: Int) = Offsets(discOff + disc, contOff + cont, vectOff + vect, matsOff + mats)
+
+  def +(that: Offsets, scale: Int = 1) =
+    Offsets(discOff + scale * that.discOff, contOff + scale * that.contOff, vectOff + scale * that.vectOff, matsOff + scale * that.matsOff)
+
+  def *(scale: Int) = Offsets(scale * discOff, scale * contOff, scale * vectOff, scale * matsOff)
+}
+
+case class Ranges(from: Offsets, to: Offsets) {
+  def copy(src: Setting, tgt: Setting): Unit = {
+    arraycopy(src.disc, from.discOff, tgt.disc, 0, to.discOff - from.discOff)
+    arraycopy(src.cont, from.contOff, tgt.cont, 0, to.contOff - from.contOff)
+    arraycopy(src.vect, from.vectOff, tgt.vect, 0, to.vectOff - from.vectOff)
+    arraycopy(src.mats, from.matsOff, tgt.mats, 0, to.matsOff - from.matsOff)
+  }
+
+  def addInto(src: Setting, tgt: Setting): Unit = {
+    for (i <- 0 until numCont) {
+      tgt.cont(from.contOff + i) += src.cont(i)
+    }
+
+    for (i <- 0 until numVect) {
+      tgt.vect(from.vectOff + i) += src.vect(i)
+    }
+
+    for (i <- 0 until numMats) {
+      tgt.mats(from.matsOff + i) += src.mats(i)
+    }
+  }
+
+  def numDisc = to.discOff - from.discOff
+
+  def numCont = to.contOff - from.contOff
+
+  def numVect = to.vectOff - from.vectOff
+
+  def numMats = to.matsOff - from.matsOff
+}
 
 
 
