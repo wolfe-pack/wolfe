@@ -33,7 +33,7 @@ object MatrixFactorization extends App {
   def cell(scale: Double)(a: VectorTerm, v: VectorTerm) =
     sum(log(sigm((a dot v) * scale)), rowReg * (a dot a), colReg * (v dot v))
 
-  def loss(positive: Seq[(Int, Int)], negative: Seq[(Int, Int)])(e: Params.Var) =
+  def loss(positive: Seq[(Int, Int)], negative: Seq[(Int, Int)])(e: Params.Term) =
     sum(positive) { case (i, j) => cell(1.0)(e._1(i), e._2(j))} + sum(negative) { case (i, j) => cell(-1.0)(e._1(i), e._2(j))}
 
   val random = new Random(1984l)
