@@ -70,6 +70,14 @@ object TermImplicits {
     def current() = seq(_current)
   }
 
+  def stochastic[T](sample: => T) = new Generator[T] {
+    private var _current: T = _
+
+    def generateNext() = _current = sample
+
+    def current() = _current
+  }
+
   def sum[T](gen: Generator[T])(arg:Generator[T] => DoubleTerm) = {
     val term = arg(gen)
     new DynamicTerm[DoubleDom,T] {
