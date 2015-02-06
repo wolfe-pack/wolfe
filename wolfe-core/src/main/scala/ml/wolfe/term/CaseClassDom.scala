@@ -38,8 +38,8 @@ object CaseClassDom {
         println(tpe)
         println(tpe.members.filter(_.isConstructor))
         println(argDoms)
-        val constructur = tpe.members.filter(_.isConstructor).head
-        val params = constructur.asMethod.paramLists.head
+        val constructor = tpe.members.filter(_.isConstructor).head
+        val params = constructor.asMethod.paramLists.head
 
         val domArgs = for ((param,argDom) <- params zip typedArgDoms) yield {
           val name = param.name.toTermName
@@ -76,13 +76,37 @@ object CaseClassDom {
         def argOffset(initOffset:Tree, index:Int) = offsetsSum(initOffset :: argLengths.take(index))
 
         val anonArgNames = params.indices.map(i => TermName(c.freshName("arg"+i))).toIndexedSeq
-        val argValues = for ((argDom,i) <- domNames.zipWithIndex) yield {
+
+        def offsetStatements(body:(TermName,TermName,Tree) => Tree) = for ((argDom,i) <- domNames.zipWithIndex) yield {
           val varName = anonArgNames(i)
           val offset = argOffset(q"offsets",i)
-          q"val $varName:dom.$argDom.Value = dom.$argDom.toValue(setting,$offset)"
+          body(varName,argDom,offset)
         }
 
+        val argValues = offsetStatements {
+          case (varName,argDom,offset) =>  q"val $varName:dom.$argDom.Value = dom.$argDom.toValue(setting,$offset)"
+        }
 
+        val marginalClassName = TypeName(tpe.typeSymbol.name.decodedName.toString + "Marginals")
+        val marginalArguments = for (d <- domNames) yield {
+          q"val $d:dom.$d.Marginals"
+        }
+        val marginalsCaseClass = q"""
+          case class $marginalClassName(..$marginalArguments)
+        """
+        val argMarginals = for ((argDom,i) <- domNames.zipWithIndex) yield {
+          val varName = anonArgNames(i)
+          val offset = argOffset(q"offsets",i)
+          q"val $varName:dom.$argDom.Marginals = dom.$argDom.toMarginals(msg,$offset)"
+        }
+
+        val copyMarginals = offsetStatements {
+          case (_,argDom,offset) =>  q"dom.$argDom.copyMarginals(marginals.$argDom,msgs,$offset)"
+        }
+
+        val copyValues = offsetStatements {
+          case (_,argDom,offset) =>  q"dom.$argDom.copyValue(value.$argDom,setting,$offset)"
+        }
 
         println(params.head.typeSignature)
 //        val cast = valueType.asInstanceOf[Ident]
@@ -95,9 +119,12 @@ object CaseClassDom {
           object $typeName extends ml.wolfe.term.ProductDom {
             dom =>
 
+            $marginalsCaseClass
+
             type Value = $valueType
             type Term = DomTerm
             type Var = DomVar
+            type Marginals = $marginalClassName
 
             ..$domArgs
 
@@ -107,9 +134,16 @@ object CaseClassDom {
               ..$argValues
               new Value(..$anonArgNames)
             }
-            def toMarginals(msg: Msgs, offsets: Offsets) = ???
-            def copyMarginals(marginals: Marginals, msgs: Msgs, offsets: Offsets) = ???
-            def copyValue(value: Value, setting: Setting, offsets: Offsets) = ???
+            def toMarginals(msg: Msgs, offsets: Offsets) = {
+              ..$argMarginals
+              new $marginalClassName(..$anonArgNames)
+            }
+            def copyMarginals(marginals: Marginals, msgs: Msgs, offsets: Offsets) = {
+              ..$copyMarginals
+            }
+            def copyValue(value: Value, setting: Setting, offsets: Offsets) = {
+              ..$copyValues
+            }
             def fillZeroMsgs(target: Msgs, offsets: Offsets) = ???
             def variable(name: String, offsets: Offsets, owner: term.Var[Dom]) = ???
             def dynamic(name: => String, offsets: => Offsets, owner: term.Var[Dom]) = ???
