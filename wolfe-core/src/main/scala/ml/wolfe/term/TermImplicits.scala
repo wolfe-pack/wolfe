@@ -78,8 +78,8 @@ object TermImplicits {
     def current() = _current
   }
 
-  def sum[T](gen: Generator[T])(arg:Generator[T] => DoubleTerm) = {
-    val term = arg(gen)
+  def sum[T](gen: Generator[T])(arg: (=>T) => DoubleTerm) = {
+    val term = arg(gen.current())
     new DynamicTerm[DoubleDom,T] {
       def self = term
       def generator = gen

@@ -351,14 +351,14 @@ class TermSpecs extends WolfeSpec {
       val n = 3
       val Y = seqs(doubles, n)
       val y = Y.variable("y")
-      val term = sum(sequential(0 until n)) { i => y(i)}
+      val term = sum(sequential(0 until n)) { i => y.dyn(i)}
       for (_ <- 0 until 2; i <- 0 until n) term.eval(IndexedSeq(1.0, 2.0, 3.0)) should be(i + 1.0)
     }
     "return a different gradient every time when evaluated" in {
       val n = 3
       val Y = seqs(doubles, n)
       val y = Y.variable("y")
-      val term = sum(sequential(0 until n)) { i => y(i) * y(i)}
+      val term = sum(sequential(0 until n)) { i => y.dyn(i) * y.dyn(i)}
       for (_ <- 0 until 2; i <- 0 until n) {
         val gradient = term.gradient(y, IndexedSeq(0.0, 1.0, 2.0))
         for (j <- 0 until n) gradient(j) should be(if (j == i) 2.0 * i else 0.0)
