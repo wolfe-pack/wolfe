@@ -12,7 +12,6 @@ object CaseClassDomScratch {
 
     @domain[Token](bools, bools, doubles) object Tokens
 
-
     val test = Tokens.const(Token(true,true,1.0))
     println(Tokens.one)
     println(Tokens.zero)

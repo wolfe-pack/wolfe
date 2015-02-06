@@ -78,8 +78,8 @@ object TermImplicits {
     def current() = _current
   }
 
-  def sum[T](gen: Generator[T])(arg:Generator[T] => DoubleTerm) = {
-    val term = arg(gen)
+  def sum[T](gen: Generator[T])(arg: (=>T) => DoubleTerm) = {
+    val term = arg(gen.current())
     new DynamicTerm[DoubleDom,T] {
       def self = term
       def generator = gen
@@ -114,6 +114,7 @@ object TermImplicits {
     val term = obj(variable)
     new Argmax[dom.type](term,variable)
   }
+
 
   def max[D <: Dom](dom: D)(obj: dom.Var => DoubleTerm) = {
     val variable = dom.variable("_hidden")
