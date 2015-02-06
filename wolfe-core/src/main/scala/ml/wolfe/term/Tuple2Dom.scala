@@ -90,3 +90,14 @@ class Tuple2Dom[D1 <: Dom, D2 <: Dom](val dom1: D1, val dom2: D2) extends Dom {
   }
 
 }
+
+trait ProductDom extends Dom {
+  dom =>
+
+  trait DomTermImpl extends super.DomTerm with Composed[dom.type] {
+    def composer() = ???
+
+    def differentiator(wrt: Seq[term.Var[Dom]]) = ???
+
+  }
+}
