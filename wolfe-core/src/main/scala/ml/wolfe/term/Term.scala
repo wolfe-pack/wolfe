@@ -513,15 +513,21 @@ object Playground {
 
   def main(args: Array[String]) {
 
+    class Gen[T](gen: =>T){
+      def eval = gen
+    }
 
+    def rand = math.random
 
-    val W = vectors(2) x vectors(2)
-    def loss(w:W.Term):DoubleTerm = 1.0
-    def loss2(w:W.dom1.Term):DoubleTerm = 1.0
+    val gen = new Gen(rand)
+
+    println(gen.eval)
+    println(gen.eval)
+
 
 //    val result1 = argmax(W){ w => loss(w)}
 
-    val result = argmax(W){ w => loss2(w._1)}
+//    val result = argmax(W){ w => loss2(w._1)}
 
 //
 //    val dom = doubles x seqs(doubles,2)

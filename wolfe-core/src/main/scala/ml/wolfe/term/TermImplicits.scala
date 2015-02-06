@@ -115,6 +115,7 @@ object TermImplicits {
     new Argmax[dom.type](term,variable)
   }
 
+
   def max[D <: Dom](dom: D)(obj: dom.Var => DoubleTerm) = {
     val variable = dom.variable("_hidden")
     val term = obj(variable)
