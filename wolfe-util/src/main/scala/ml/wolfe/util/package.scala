@@ -82,7 +82,8 @@ package object util {
 
     def createSymbolicLinkToLatest() =
       try {
-        Files.createLink(Paths.get(latest.getAbsolutePath), Paths.get(msDir.getAbsolutePath))
+        //Files.createLink(Paths.get(latest.getAbsolutePath), Paths.get(msDir.getAbsolutePath))
+        Files.createSymbolicLink(Paths.get(latest.getAbsolutePath), Paths.get(msDir.getAbsolutePath))
       } catch {
         case e: IOException => println("Can't create link")
       }
