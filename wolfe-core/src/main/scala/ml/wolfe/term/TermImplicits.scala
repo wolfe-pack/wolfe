@@ -53,7 +53,7 @@ object TermImplicits {
 
   def tanhVec[T <: VectorTerm](term: T) = new VectorTanh(term)
 
-  implicit def genericToConstant[T,D<:TypedDom[T]](t:T)(implicit dom:D):dom.Term = dom.const(t)
+//  implicit def genericToConstant[T,D<:TypedDom[T]](t:T)(implicit dom:D):dom.Term = dom.const(t)
 //  implicit def genericToConstant[T,D<:TypedDom[T]](t:T)(implicit dom:D):dom.DomTerm = dom.const(t)
 
 //  implicit def seqOfTermsToSeqTerm[T <: Term[Dom], D <: DomWithTerm[T],S<:SeqDom[D]](seq:IndexedSeq[T])(implicit dom:S):dom.Term =
@@ -100,8 +100,8 @@ object TermImplicits {
 
   implicit def matToConstant(d: FactorieMatrix): Constant[MatrixDom] = matrices(d.dim1, d.dim2).const(d)
 
-//  implicit def discToConstant[T: DiscreteDom](value: T): Constant[DiscreteDom[T]] =
-//    new Constant[DiscreteDom[T]](implicitly[DiscreteDom[T]], value)
+  implicit def discToConstant[T: DiscreteDom](value: T): Constant[DiscreteDom[T]] =
+    implicitly[DiscreteDom[T]].const(value)
 
 //  def argmax[D <: Dom](dom: D)(obj: dom.Variable => DoubleTerm): dom.Value = {
 //    val variable = dom.variable("_hidden")

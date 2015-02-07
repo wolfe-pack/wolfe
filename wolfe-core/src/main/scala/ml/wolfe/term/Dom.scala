@@ -22,7 +22,6 @@ trait Dom {
 
   trait DomVar extends term.Var[dom.type] with DomTerm
 
-
   def toValue(setting: Setting, offsets: Offsets = Offsets()): Value
   def toMarginals(msg: Msgs, offsets: Offsets = Offsets()): Marginals
   def copyMarginals(marginals:Marginals, msgs:Msgs,offsets: Offsets = Offsets())
@@ -63,7 +62,6 @@ trait Dom {
   def isContinuous = lengths.discOff == 0
   def isDouble = lengths.contOff == 1 && lengths.discOff == 0 && lengths.vectOff == 0 && lengths.matsOff == 0
 
-
   def one: Value
   def zero: Value
 
@@ -96,6 +94,12 @@ trait Dom {
 
       def backProp(error: Setting, gradient: Array[Setting]) = {}
     }
+  }
+
+  import scala.language.implicitConversions
+
+  object conversion {
+    implicit def toConst(value:dom.Value): dom.Term = const(value)
   }
 
   def iterator:Iterator[Value] = {

@@ -3,11 +3,12 @@ package ml.wolfe.util
 import com.typesafe.scalalogging._
 import com.typesafe.scalalogging.slf4j.LazyLogging
 
+import scala.reflect.macros.whitebox
+
 //.slf4j.Logging
 
 import scala.annotation.StaticAnnotation
 import scala.language.experimental.macros
-import scala.reflect.macros.Context
 
 /**
  * Logger wrapper class.
@@ -64,12 +65,12 @@ object LoggerUtil extends LazyLogging {
 }
 
 class LogCalls(preHook: String => Unit, postHook: String => Unit = _ => {}) extends StaticAnnotation {
-  def macroTransform(annottees: Any*) = macro LogCallsMacro.impl
+  def macroTransform(annottees: Any*):Any = macro LogCallsMacro.impl
 
 }
 
 object LogCallsMacro {
-  def impl(c: Context)(annottees: c.Expr[Any]*): c.Expr[Any] = {
+  def impl(c: whitebox.Context)(annottees: c.Expr[Any]*): c.Expr[Any] = {
     import c.universe._
     val inputs = annottees.map(_.tree).toList
     val withLogging = inputs match {
@@ -93,7 +94,7 @@ object LogCallsMacro {
         //todo: need inject type by force in such cases
 
         //fixme: check for return type
-        val tmp = newTermName(c.fresh("tmp"))
+        val tmp = TermName(c.freshName("tmp"))
         //defDef.tpe //return type of the def? might also be the structured type!?
         //alternative: check type of last expression
 
