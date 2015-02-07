@@ -35,7 +35,7 @@ object TermImplicits {
 
   def seqs[D <: Dom](elements: D, length: Int):SeqDom[elements.type]  = new SeqDom[elements.type](elements, length)
 
-  def seq[E<:Dom](dom:SeqDom[E])(elems:dom.elementDom.DomTerm*) = new dom.SeqDomTermImpl {
+  def seq[E<:Dom](dom:SeqDom[E])(elems:dom.elementDom.Term*) = new dom.SeqDomTermImpl {
 
       def elements = elems.toIndexedSeq
 

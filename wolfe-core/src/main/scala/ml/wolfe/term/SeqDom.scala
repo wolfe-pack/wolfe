@@ -43,12 +43,12 @@ class SeqDom[D <: Dom](val elementDom: D, val length: Int) extends Dom {
   }
 
   val lengths = elementDom.lengths * length
-  def variable(name: String, offsets: Offsets = Offsets(), owner: term.Var[Dom]) = StaticSeqVar(name, offsets, owner)
+  def variable(name: String, staticOffsets: Offsets = Offsets(), owner: term.Var[Dom]) = new BaseVar(name, owner) with DomVar {
+    val offsets = staticOffsets
+  }
 
   def dynamic(name: => String, dynOffsets: => Offsets, owner: term.Var[Dom]) = new BaseVar(name, owner) with DomVar {
     def offsets = dynOffsets
-    val elements:IndexedSeq[domain.elementDom.Var] = for (i <- 0 until domain.length) yield
-      domain.elementDom.dynamic(s"$name($i)", offsets +(domain.elementDom.lengths, i), if (owner == null) this else owner)
   }
 
   def one = for (i <- 0 until length) yield elementDom.one
@@ -67,19 +67,15 @@ class SeqDom[D <: Dom](val elementDom: D, val length: Int) extends Dom {
 
 
   trait DomTerm extends super.DomTerm {
-    def elements: IndexedSeq[domain.elementDom.DomTerm]
-
-    def apply(index: Int) = elements(index)
-
-    def indices = elements.indices
-    def length = elements.length
-
-
+    def apply(index: =>Int):elementDom.Term // = elements(index)
+    def indices = Range(0,dom.length)
+    def length = dom.length
   }
 
   abstract class SeqDomTermImpl extends Composed[dom.type] with DomTerm {
     def arguments = elements
-
+    def elements: IndexedSeq[domain.elementDom.Term]
+    def apply(index: => Int) = elements(index)
     def composer() = new Evaluator {
 
       def eval(inputs: Array[Setting], output: Setting) = {
@@ -108,33 +104,34 @@ class SeqDom[D <: Dom](val elementDom: D, val length: Int) extends Dom {
   }
 
   trait DomVar extends DomTerm with super.DomVar {
-    def elements: IndexedSeq[domain.elementDom.Var]
-    override def apply(index: Int):domain.elementDom.Var = elements(index)
-
+    def elements = indices.map(i => apply(i))
+    def apply(index: =>Int): domain.elementDom.Var = {
+      domain.elementDom.dynamic(s"$name($index})", offsets +(domain.elementDom.lengths, index), if (owner == null) this else owner)
+    }
     def atoms = elements.view.map(_.atoms).foldLeft(Atoms())(_ ++ _)
     def offsets: Offsets
     def ranges = Ranges(offsets, offsets +(domain.elementDom.lengths, domain.length))
-    def dyn(gen: =>Int): domain.elementDom.DomVar = {
-      domain.elementDom.dynamic(s"$name(${gen}})", offsets +(domain.elementDom.lengths, gen), if (owner == null) this else owner)
+    def static(gen: Int): domain.elementDom.DomVar = {
+      domain.elementDom.variable(s"$name($gen})", offsets +(domain.elementDom.lengths, gen), if (owner == null) this else owner)
     }
   }
 
-  case class StaticSeqVar(name: String, offsets: Offsets = Offsets(),
-                          owner: term.Var[Dom]) extends DomVar {
-
-    override val ranges = super.ranges
-    val elements = for (i <- 0 until domain.length) yield
-      domain.elementDom.variable(s"$name($i)", offsets +(domain.elementDom.lengths, i), if (owner == null) this else owner)
-
-    /*
-    def apply(generator:Generator[Int]) = new StochasticElement(generator) {
-      val current = elements(generator.generate)
-
-    }
-    */
-
-
-  }
+//  case class StaticSeqVar(name: String, offsets: Offsets = Offsets(),
+//                          owner: term.Var[Dom]) extends DomVar {
+//
+//    override val ranges = super.ranges
+//    val elements = for (i <- 0 until domain.length) yield
+//      domain.elementDom.variable(s"$name($i)", offsets +(domain.elementDom.lengths, i), if (owner == null) this else owner)
+//
+//    /*
+//    def apply(generator:Generator[Int]) = new StochasticElement(generator) {
+//      val current = elements(generator.generate)
+//
+//    }
+//    */
+//
+//
+//  }
 
   //val elements = arguments
 
