@@ -24,7 +24,7 @@ object CaseClassDom {
     annottees.map(_.tree).toList match {
       case (param: ModuleDef) :: Nil =>
         val typeName = param.name.toTermName
-        println(c.prefix)
+//        println(c.prefix)
         val (valueType,argDoms) = c.prefix.tree match {
           case q"new ${_}[$typ](...${args})" => (typ,args)
           case _ => null

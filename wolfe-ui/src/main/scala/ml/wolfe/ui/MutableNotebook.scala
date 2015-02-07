@@ -5,8 +5,6 @@ import java.io.{File, PrintStream}
 import eu.henkelmann.actuarius.ActuariusTransformer
 import org.sameersingh.htmlgen.HTML
 
-import scala.reflect.macros.Context
-
 /**
  * @author Sebastian Riedel
  */
@@ -164,120 +162,120 @@ trait CodeBlock {
   val result: Any
 }
 
-object Notebook {
-
-  import scala.language.experimental.macros
-
-  def lastNStatements(n:Int, level:Int = 1):String = macro lastNStatementsImpl
-
-  def parentMap[C<:Context](c:C)(tree:c.Tree):Map[c.Tree,c.Tree] = {
-    import c.universe._
-    val parents = tree.collect({
-      case parent =>
-        parent.children map (child => child -> parent)
-    }).flatMap(identity).toMap
-    parents
-  }
-
-  def lastNStatementsImpl(c:Context)(n:c.Expr[Int],level:c.Expr[Int]) = {
-    import c.universe._
-    //println(c.enclosingUnit.source.content.mkString(""))
-    def offset(tree:Tree) = tree match {
-      case v:ValDef => v.pos.point - 4
-      case _ => tree.pos.point
-    }
-    def visibleChildren(tree:Tree) = tree match {
-      case t:Template => t.children.drop(3)
-      case _ => tree.children
-    }
-    val exprRaw = c.macroApplication
-    val expr = c.enclosingUnit.body.find(exprRaw.pos.point == _.pos.point).get
-    val parents = parentMap[c.type](c)(c.enclosingUnit.body)
-    val constN = n.tree match {
-      case Literal(constant) => constant.value.asInstanceOf[Int]
-      case _ => c.abort(c.enclosingPosition,"N must be a literal integer")
-    }
-    val constLevel = level.tree match {
-      case Literal(const) => const.value.asInstanceOf[Int]
-      case _ => c.abort(c.enclosingPosition,"Level must be a literal integer")
-    }
-   def findAncestor(current:Tree, levelsLeft:Int): Tree = levelsLeft match {
-      case 0 => current
-      case _ => findAncestor(parents(current),levelsLeft - 1)
-    }
-    val ancestor = findAncestor(expr,constLevel)
-    val parent = parents(ancestor)
-    val children = visibleChildren(parent).toIndexedSeq
-    val index = children.indexOf(ancestor)
-    val beginIndex = math.max(0, index - (constN + 2))
-    val beginOffset = offset(children(beginIndex))
-    val endOffset = offset(ancestor)
-    val source = c.enclosingUnit.source.content.subSequence(beginOffset,endOffset).toString
-    val trimmed = source split "\n" map (_.trim) mkString "\n"
-    c.literal(trimmed)
-  }
-
-
-
-  def block(code: CodeBlock): String = macro blockImpl
-
-  def blockImpl(c: Context)(code: c.Expr[CodeBlock]) = {
-    import c.universe._
-    val blockSymbol = code.tree.symbol
-    val parents = c.enclosingUnit.body.collect({
-      case parent => parent.children map (child => child -> parent)
-    }).flatMap(identity).toMap
-    def next(tree: Tree, offset: Int = 1): Option[Tree] = parents.get(tree) match {
-      case Some(parent) =>
-        val children = parent.children.toIndexedSeq
-        val index = children.indexOf(tree)
-        children.lift(index + offset) match {
-          case Some(sibling) => Some(sibling)
-          case _ => None
-        }
-      case _ => None
-    }
-
-    val moduleDefs = c.enclosingUnit.body.collect({
-      case mdef: ModuleDef if mdef.symbol == blockSymbol => mdef
-    })
-    val sourceFile = c.enclosingUnit.source
-    def startOfLine(point: Int) = sourceFile.lineToOffset(sourceFile.offsetToLine(point))
-
-    //todo need to use original source file to recover the source code, as we otherwise drop comments, empty lines etc.
-    val source = moduleDefs match {
-      case blockDef :: Nil =>
-        val firstNonInit = blockDef.impl.body(1)
-        val last = blockDef.impl.body.last
-        val txt = sourceFile.content.subSequence(startOfLine(firstNonInit.pos.point), startOfLine(last.pos.point)).toString
-        val below = next(blockDef, +1).get
-
-        val lastLine = last match {
-          case ValDef(_, _, _, rhs) =>
-            //            val start = rhs.pos.point
-            //            val end = sourceFile.lineToOffset(sourceFile.offsetToLine(start) + 1)
-            //            sourceFile.content.subSequence(start - 7,end).toString
-            val result = last.pos.lineContent.replaceAll("val result = ", "")
-            //show(rhs)
-            result
-          case _ => c.abort(c.enclosingPosition, "Bad")
-        }
-        val lines = (txt.split("\n") :+ lastLine) map (_.trim) mkString "\n"
-
-        //
-        //        val beginningOfLine = sourceFile.lineToOffset(sourceFile.offsetToLine(below.pos.point))
-        //        val txt = sourceFile.content.subSequence(blockDef.pos.point,beginningOfLine).toString
-        //        show(txt)
-        //        val lines = for (line <- blockDef.impl.body.drop(1)) yield {
-        //          show(line)
-        //        }
-        //        lines mkString "\n"
-        lines
-      case _ => c.abort(c.enclosingPosition, "Can't find a definition of a CodeBlock object corresponding to " + code)
-    }
-
-    c.literal(source)
-  }
-
-
-}
+//object Notebook {
+//
+//  import scala.language.experimental.macros
+//
+//  def lastNStatements(n:Int, level:Int = 1):String = macro lastNStatementsImpl
+//
+//  def parentMap[C<:Context](c:C)(tree:c.Tree):Map[c.Tree,c.Tree] = {
+//    import c.universe._
+//    val parents = tree.collect({
+//      case parent =>
+//        parent.children map (child => child -> parent)
+//    }).flatMap(identity).toMap
+//    parents
+//  }
+//
+//  def lastNStatementsImpl(c:Context)(n:c.Expr[Int],level:c.Expr[Int]) = {
+//    import c.universe._
+//    //println(c.enclosingUnit.source.content.mkString(""))
+//    def offset(tree:Tree) = tree match {
+//      case v:ValDef => v.pos.point - 4
+//      case _ => tree.pos.point
+//    }
+//    def visibleChildren(tree:Tree) = tree match {
+//      case t:Template => t.children.drop(3)
+//      case _ => tree.children
+//    }
+//    val exprRaw = c.macroApplication
+//    val expr = c.enclosingUnit.body.find(exprRaw.pos.point == _.pos.point).get
+//    val parents = parentMap[c.type](c)(c.enclosingUnit.body)
+//    val constN = n.tree match {
+//      case Literal(constant) => constant.value.asInstanceOf[Int]
+//      case _ => c.abort(c.enclosingPosition,"N must be a literal integer")
+//    }
+//    val constLevel = level.tree match {
+//      case Literal(const) => const.value.asInstanceOf[Int]
+//      case _ => c.abort(c.enclosingPosition,"Level must be a literal integer")
+//    }
+//   def findAncestor(current:Tree, levelsLeft:Int): Tree = levelsLeft match {
+//      case 0 => current
+//      case _ => findAncestor(parents(current),levelsLeft - 1)
+//    }
+//    val ancestor = findAncestor(expr,constLevel)
+//    val parent = parents(ancestor)
+//    val children = visibleChildren(parent).toIndexedSeq
+//    val index = children.indexOf(ancestor)
+//    val beginIndex = math.max(0, index - (constN + 2))
+//    val beginOffset = offset(children(beginIndex))
+//    val endOffset = offset(ancestor)
+//    val source = c.enclosingUnit.source.content.subSequence(beginOffset,endOffset).toString
+//    val trimmed = source split "\n" map (_.trim) mkString "\n"
+//    c.literal(trimmed)
+//  }
+//
+//
+//
+//  def block(code: CodeBlock): String = macro blockImpl
+//
+//  def blockImpl(c: Context)(code: c.Expr[CodeBlock]) = {
+//    import c.universe._
+//    val blockSymbol = code.tree.symbol
+//    val parents = c.enclosingUnit.body.collect({
+//      case parent => parent.children map (child => child -> parent)
+//    }).flatMap(identity).toMap
+//    def next(tree: Tree, offset: Int = 1): Option[Tree] = parents.get(tree) match {
+//      case Some(parent) =>
+//        val children = parent.children.toIndexedSeq
+//        val index = children.indexOf(tree)
+//        children.lift(index + offset) match {
+//          case Some(sibling) => Some(sibling)
+//          case _ => None
+//        }
+//      case _ => None
+//    }
+//
+//    val moduleDefs = c.enclosingUnit.body.collect({
+//      case mdef: ModuleDef if mdef.symbol == blockSymbol => mdef
+//    })
+//    val sourceFile = c.enclosingUnit.source
+//    def startOfLine(point: Int) = sourceFile.lineToOffset(sourceFile.offsetToLine(point))
+//
+//    //todo need to use original source file to recover the source code, as we otherwise drop comments, empty lines etc.
+//    val source = moduleDefs match {
+//      case blockDef :: Nil =>
+//        val firstNonInit = blockDef.impl.body(1)
+//        val last = blockDef.impl.body.last
+//        val txt = sourceFile.content.subSequence(startOfLine(firstNonInit.pos.point), startOfLine(last.pos.point)).toString
+//        val below = next(blockDef, +1).get
+//
+//        val lastLine = last match {
+//          case ValDef(_, _, _, rhs) =>
+//            //            val start = rhs.pos.point
+//            //            val end = sourceFile.lineToOffset(sourceFile.offsetToLine(start) + 1)
+//            //            sourceFile.content.subSequence(start - 7,end).toString
+//            val result = last.pos.lineContent.replaceAll("val result = ", "")
+//            //show(rhs)
+//            result
+//          case _ => c.abort(c.enclosingPosition, "Bad")
+//        }
+//        val lines = (txt.split("\n") :+ lastLine) map (_.trim) mkString "\n"
+//
+//        //
+//        //        val beginningOfLine = sourceFile.lineToOffset(sourceFile.offsetToLine(below.pos.point))
+//        //        val txt = sourceFile.content.subSequence(blockDef.pos.point,beginningOfLine).toString
+//        //        show(txt)
+//        //        val lines = for (line <- blockDef.impl.body.drop(1)) yield {
+//        //          show(line)
+//        //        }
+//        //        lines mkString "\n"
+//        lines
+//      case _ => c.abort(c.enclosingPosition, "Can't find a definition of a CodeBlock object corresponding to " + code)
+//    }
+//
+//    c.literal(source)
+//  }
+//
+//
+//}

@@ -253,11 +253,12 @@ class TermSpecs extends WolfeSpec {
     }
 
     "maximize over a structured search space" in {
-      implicit val labels = discrete("V", "N")
+      val labels = discrete("V", "N")
       val sequences = seqs(labels, 2)
+
       def model(y: sequences.DomTerm) =
-        I(y(0) === "V") * 2.0 +
-        I(y(1) === "N") * 1.0
+        I(y(0) === labels.const("V")) * 2.0 +
+        I(y(1) === labels.const("N")) * 1.0
       val result = max(sequences) {model}
       result.eval() should be(3.0)
     }
