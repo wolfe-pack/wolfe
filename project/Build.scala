@@ -118,6 +118,7 @@ object BuildSettings {
 
   val generalSettings =
     Seq(
+      incOptions := incOptions.value.withNameHashing(false),
       initialCommands := """
         import ml.wolfe.Wolfe._
         import ml.wolfe.macros.OptimizedOperators._
