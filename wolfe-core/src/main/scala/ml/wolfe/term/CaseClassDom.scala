@@ -34,10 +34,10 @@ object CaseClassDom {
         }
         val tpe = c.typecheck(q"(7.asInstanceOf[$targetTrait])").tpe
         val typedArgDoms:List[Tree] = argDoms.head.map(a => c.typecheck(a))
-        println(typedArgDoms)
-        println(tpe)
-        println(tpe.members.filter(_.isConstructor))
-        println(argDoms)
+//        println(typedArgDoms)
+//        println(tpe)
+//        println(tpe.members.filter(_.isConstructor))
+//        println(argDoms)
         val constructor = tpe.members.filter(_.isConstructor).head
         val params = constructor.asMethod.paramLists.head
 
@@ -140,7 +140,7 @@ object CaseClassDom {
 
 
 
-        println(params.head.typeSignature)
+//        println(params.head.typeSignature)
 //        val cast = valueType.asInstanceOf[Ident]
 //        val typed = c.typecheck(valueType)
 //        println(valueType.tpe)
@@ -210,7 +210,7 @@ object CaseClassDom {
 
           }
         """
-        println(term)
+//        println(term)
         c.Expr[Any](term)
       case _ => c.abort(c.enclosingPosition,"Can't create domain")
     }
