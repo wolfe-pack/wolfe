@@ -342,7 +342,13 @@ class TermSpecs extends WolfeSpec {
       def obj(x: doubles.Term) = x * 4.0 - x * x
       val result = argmax(doubles) { x => obj(x).argmaxBy(Argmaxer.adaGrad(100, 1))}
       result.eval() should be(2.0 +- eps)
-
+    }
+    "optimize a multivariate quadratic objective" in {
+      val X = vectors(2)
+      val x = X.variable("x")
+      def obj(x: X.Term) = (x dot vector(4.0,4.0)) - (x dot x)
+      val result = argmax(X) { x => obj(x).argmaxBy(Argmaxer.adaGrad(100, 1))}
+      result.eval() should equal(vector(2.0,2.0))
     }
   }
 
