@@ -10,7 +10,8 @@ object CaseClassDomScratch {
 
   def main(args: Array[String]) {
 
-    @domain[Token](bools, bools, doubles) object Tokens
+    @domain[Token](bools, bools, doubles)
+    object Tokens
 
     val test = Tokens.const(Token(true,true,1.0))
     println(Tokens.one)

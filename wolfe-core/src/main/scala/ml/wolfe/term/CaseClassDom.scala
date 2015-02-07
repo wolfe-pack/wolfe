@@ -50,30 +50,39 @@ object CaseClassDom {
           val name = param.name.toTermName
           q"def $name:$argDom.Term"
         }
+        val varArgsDef = for ((param,argDom) <- params zip typedArgDoms) yield {
+          val name = param.name.toTermName
+          q"def $name:$argDom.Var"
+        }
         val constArgs = for ((param,argDom) <- params zip typedArgDoms) yield {
           val name = param.name.toTermName
           q"val $name:$argDom.Term = $argDom.const(__value.$name)"
-        }
-        val varArgs = for ((param,argDom) <- params zip typedArgDoms) yield {
-          val name = param.name.toTermName
-          q"""val $name:$argDom.Var = $argDom.variable("test")"""
         }
         val argNames = params.map(_.name.toTermName)
         val one = typedArgDoms.map(a => q"$a.one")
         val zero = typedArgDoms.map(a => q"$a.zero")
 
-        def offsetsSum(offsets:List[Tree]):Tree = offsets match {
+        def sum(offsets:List[Tree]):Tree = offsets match {
           case offset :: Nil => offset
           case head :: tail =>
-            val sum = offsetsSum(tail)
-            q"$head + $sum"
+            val s = sum(tail)
+            q"$head + $s"
           case _ => ???
         }
+
+        def concat(offsets:List[Tree]):Tree = offsets match {
+          case offset :: Nil => offset
+          case head :: tail =>
+            val s = concat(tail)
+            q"$head ++ $s"
+          case _ => ???
+        }
+
 
         val domNames = params.map(_.name.toTermName)
         val argLengths = domNames.map(a => q"dom.$a.lengths")
 
-        def argOffset(initOffset:Tree, index:Int) = offsetsSum(initOffset :: argLengths.take(index))
+        def argOffset(initOffset:Tree, index:Int) = sum(initOffset :: argLengths.take(index))
 
         val anonArgNames = params.indices.map(i => TermName(c.freshName("arg"+i))).toIndexedSeq
 
@@ -107,6 +116,29 @@ object CaseClassDom {
         val copyValues = offsetStatements {
           case (_,argDom,offset) =>  q"dom.$argDom.copyValue(value.$argDom,setting,$offset)"
         }
+
+        //dom1.fillZeroMsgs(target, offsets)
+        val fillZeroMsgs = offsetStatements {
+          case (_,argDom,offset) =>  q"dom.$argDom.fillZeroMsgs(target,$offset)"
+        }
+
+        val lengths = sum(domNames.map(n => q"dom.$n.lengths"))
+        val atoms = concat(domNames.map(n => q"domVar.$n.atoms"))
+
+
+        val staticVarArgs = offsetStatements {
+          case (_,argDom,offset) =>
+            q"""val $argDom = dom.$argDom.variable(name + "." + "name",$offset, if (owner == null) this else owner)"""
+        }
+
+        val dynVarArgs = offsetStatements {
+          case (_,argDom,offset) =>
+            q"""val $argDom = dom.$argDom.dynamic(name + "." + "name",$offset, if (owner == null) this else owner)"""
+        }
+
+
+
+
 
         println(params.head.typeSignature)
 //        val cast = valueType.asInstanceOf[Ident]
@@ -144,13 +176,22 @@ object CaseClassDom {
             def copyValue(value: Value, setting: Setting, offsets: Offsets) = {
               ..$copyValues
             }
-            def fillZeroMsgs(target: Msgs, offsets: Offsets) = ???
-            def variable(name: String, offsets: Offsets, owner: term.Var[Dom]) = ???
-            def dynamic(name: => String, offsets: => Offsets, owner: term.Var[Dom]) = ???
+            def fillZeroMsgs(target: Msgs, offsets: Offsets) = {
+              ..$fillZeroMsgs
+            }
+            def variable(name: String, statOffsets: Offsets, owner: term.Var[Dom]) = new BaseVar(name, owner) with DomVar {
+              val offsets = statOffsets
+              ..$staticVarArgs
+            }
+
+            def dynamic(name: => String, dynOffsets: => Offsets, owner: term.Var[Dom]) = new BaseVar(name, owner) with DomVar {
+              def offsets = dynOffsets
+              ..$dynVarArgs
+            }
             def const(__value: Value) = new DomTermImpl {
               ..$constArgs
             }
-            def lengths = ???
+            val lengths = $lengths
             def one = new $valueType(..$one)
             def zero = new $valueType(..$zero)
 
@@ -162,7 +203,11 @@ object CaseClassDom {
               ..$termArgs
             }
             trait DomVar extends super.DomVar with DomTerm {
-
+              domVar =>
+              ..$varArgsDef
+              def offsets: Offsets
+              def atoms = $atoms
+              def ranges = Ranges(offsets, offsets + dom.lengths)
             }
 
           }
