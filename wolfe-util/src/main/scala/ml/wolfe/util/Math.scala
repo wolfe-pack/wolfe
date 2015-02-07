@@ -1,5 +1,8 @@
 package ml.wolfe.util
 
+import cc.factorie.la.DenseTensor1
+import ml.wolfe._
+
 import scala.util.Random
 
 /**
