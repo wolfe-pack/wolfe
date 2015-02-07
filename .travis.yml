@@ -4,6 +4,8 @@ scala:
 jdk:
    - oraclejdk7
 
+sbt_args: -sbt-version 0.13.7
+
 #script: "sbt clean scoverage:test"
 script: "sbt test"
 
