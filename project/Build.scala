@@ -39,10 +39,12 @@ object BuildSettings {
   val buildName         = "wolfe"
   val buildOrganization = "ml.wolfe"
   val buildScalaVersion = "2.11.4"
+  val buildSbtVersion = "0.13.7"
 
   val buildSettings = Defaults.defaultSettings ++ Seq(
     organization := buildOrganization,
     scalaVersion := buildScalaVersion,
+    sbtVersion := buildSbtVersion,
     scalacOptions := Seq("-unchecked", "-deprecation", "-feature"),//, "-Ylog-classpath"), //, "-Yrangepos"?
     shellPrompt := ShellPrompt.buildShellPrompt,
     fork in run := true, //use a fresh JVM for sbt run

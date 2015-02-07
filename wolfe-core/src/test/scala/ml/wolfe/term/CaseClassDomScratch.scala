@@ -10,7 +10,6 @@ object CaseClassDomScratch {
   case class World(rain: Boolean, sprinkler: Boolean, probRain: Double)
   object World {
     def dom(rainDom:TypedDom[Boolean], sprinkler:TypedDom[Boolean], probRain:TypedDom[Double]): TypedDom[World] = ???
-
   }
 
   def main(args: Array[String]) {
