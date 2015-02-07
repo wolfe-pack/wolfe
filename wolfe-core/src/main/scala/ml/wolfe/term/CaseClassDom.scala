@@ -160,8 +160,6 @@ object CaseClassDom {
 
             ..$domArgs
 
-            import ml.wolfe.term
-
             def toValue(setting: Setting, offsets: Offsets) = {
               ..$argValues
               new Value(..$anonArgNames)
@@ -179,12 +177,12 @@ object CaseClassDom {
             def fillZeroMsgs(target: Msgs, offsets: Offsets) = {
               ..$fillZeroMsgs
             }
-            def variable(name: String, statOffsets: Offsets, owner: term.Var[Dom]) = new BaseVar(name, owner) with DomVar {
+            def variable(name: String, statOffsets: Offsets, owner: ml.wolfe.term.Var[Dom]) = new BaseVar(name, owner) with DomVar {
               val offsets = statOffsets
               ..$staticVarArgs
             }
 
-            def dynamic(name: => String, dynOffsets: => Offsets, owner: term.Var[Dom]) = new BaseVar(name, owner) with DomVar {
+            def dynamic(name: => String, dynOffsets: => Offsets, owner: ml.wolfe.term.Var[Dom]) = new BaseVar(name, owner) with DomVar {
               def offsets = dynOffsets
               ..$dynVarArgs
             }
