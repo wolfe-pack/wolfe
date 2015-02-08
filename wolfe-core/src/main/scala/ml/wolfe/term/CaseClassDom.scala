@@ -287,7 +287,7 @@ object CaseClassDom {
         val lengths = reduce(argLengths)
 
         //create a list of trees with a given argument name (_1) and offsets (_2)
-        def withOffsets(initOffsets: Tree)(body: (TermName, Tree) => Tree) = {
+        def withOffsets(initOffsets: Tree = q"_offsets")(body: (TermName, Tree) => Tree) = {
           for (argName <- argNames) yield {
             val offsets = argOffsets(initOffsets, argName)
             body(argName, offsets)
@@ -295,6 +295,7 @@ object CaseClassDom {
         }
 
         val toValueArgs = withOffsets(q"_offsets") { case (name, off) => q"val $name = $self.$name.toValue(_setting, $off)"}
+        val copyValueStatements = withOffsets() {case (name,off) => q"$self.$name.copyValue(_value.$name, _setting, $off)"}
 
         val newTerm = q"""
           $caseClassDef
@@ -311,6 +312,10 @@ object CaseClassDom {
             def toValue(_setting:Setting,_offsets:Offsets):Value = {
               ..$toValueArgs
               new $caseClassTypeName(..$argNames)
+            }
+
+            def copyValue(_value:Value,_setting:Setting,_offsets:Offsets) {
+              ..$copyValueStatements
             }
 
           }

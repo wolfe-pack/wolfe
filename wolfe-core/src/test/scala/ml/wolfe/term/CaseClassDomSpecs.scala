@@ -33,6 +33,15 @@ class CaseClassDomSpecs extends WolfeSpec {
       value should be (World(true,0.5))
     }
 
+    "generate a setting given a value" in {
+      val worlds = World.Dom(bools,doubles)
+      val setting = new Setting(numDisc = 1, numCont = 1)
+      worlds.copyValue(World(true,0.5),setting,Offsets())
+      setting.disc(0) should be (1)
+      setting.cont(0) should be (0.5)
+
+    }
+
 
 
   }
