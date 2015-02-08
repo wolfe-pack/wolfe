@@ -265,6 +265,7 @@ object CaseClassDom {
         val marginalArguments = for (d <- argNames) yield {
           q"val $d:$self.$d.Marginals"
         }
+
         val marginalsCaseClassDef = q"""
              case class Marginals(..$marginalArguments)
           """
@@ -300,6 +301,9 @@ object CaseClassDom {
         val copyValueStatements = withOffsets() {case (name,off) => q"$self.$name.copyValue(_value.$name, _setting, $off)"}
         val copyMarginalStatements = withOffsets() {case (name,off) => q"$self.$name.copyMarginals(_marginals.$name, _msgs, $off)"}
         val fillZeroMsgsStatements = withOffsets() {case (name,off) => q"$self.$name.fillZeroMsgs(_target, $off)"}
+        val ones = argNames.map(n => q"$n.one")
+        val zeros = argNames.map(n => q"$n.zero")
+
 
         val newTerm = q"""
           $caseClassDef
@@ -309,6 +313,9 @@ object CaseClassDom {
             type Value = $caseClassTypeName
 
             def lengths = $lengths
+
+            def one = new $caseClassTypeName(..$ones)
+            def zero = new $caseClassTypeName(..$zeros)
 
             $marginalsCaseClassDef
 
