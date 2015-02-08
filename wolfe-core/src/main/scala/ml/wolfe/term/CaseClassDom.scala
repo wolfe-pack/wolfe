@@ -298,6 +298,7 @@ object CaseClassDom {
         }
 
         val toValueArgs = withOffsets(q"_offsets") { case (name, off) => q"val $name = $self.$name.toValue(_setting, $off)"}
+        val toMarginalsArgs = withOffsets(q"_offsets") { case (name, off) => q"val $name = $self.$name.toMarginals(_msgs, $off)"}
         val copyValueStatements = withOffsets() {case (name,off) => q"$self.$name.copyValue(_value.$name, _setting, $off)"}
         val copyMarginalStatements = withOffsets() {case (name,off) => q"$self.$name.copyMarginals(_marginals.$name, _msgs, $off)"}
         val fillZeroMsgsStatements = withOffsets() {case (name,off) => q"$self.$name.fillZeroMsgs(_target, $off)"}
@@ -307,7 +308,7 @@ object CaseClassDom {
 
         val newTerm = q"""
           $caseClassDef
-          class $domClassName[..$argDomTypeParameters](..$domConstructorArgs) {
+          class $domClassName[..$argDomTypeParameters](..$domConstructorArgs)  {
             _dom =>
 
             type Value = $caseClassTypeName
@@ -322,6 +323,11 @@ object CaseClassDom {
             def toValue(_setting:Setting,_offsets:Offsets):Value = {
               ..$toValueArgs
               new $caseClassTypeName(..$argNames)
+            }
+
+            def toMarginals(_msgs:Msgs,_offsets:Offsets):Marginals = {
+              ..$toMarginalsArgs
+              new Marginals(..$argNames)
             }
 
             def copyValue(_value:Value,_setting:Setting,_offsets:Offsets) {
