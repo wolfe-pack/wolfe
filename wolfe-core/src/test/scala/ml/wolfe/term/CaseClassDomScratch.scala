@@ -7,15 +7,24 @@ object CaseClassDomScratch {
 
   import ml.wolfe.term.TermImplicits._
   import scala.language.implicitConversions
-  case class World(rain: Boolean, sprinkler: Boolean, probRain: Double)
-  object World {
-    def dom(rainDom:TypedDom[Boolean], sprinkler:TypedDom[Boolean], probRain:TypedDom[Double]): TypedDom[World] = ???
-  }
+
+
 
   def main(args: Array[String]) {
-    val world = World(true,true,1.0)
+    @domain2 case class World(rain: Boolean, sprinkler: Boolean, probRain: Double)
 
-    @domain[World](bools, bools, doubles) object worlds
+    val world = World(true,true,1.0)
+    val worlds = World.Dom(bools,bools,doubles)
+    val worlds2 = World.Dom // use implicits
+
+    println(worlds)
+    println(worlds.lengths)
+    //val m:worlds.Marginals = ???
+
+//    @domain[World](bools, bools, doubles) object worlds
+//
+//    println(worlds)
+//    println(_Blub.dom)
 //    val impWorlds = worlds
 //    implicit val strings = discrete("A","B")
 //

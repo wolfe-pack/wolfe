@@ -10,8 +10,8 @@ import scala.language.implicitConversions
  */
 object TermImplicits {
 
-  val doubles = Dom.doubles
-  val bools = Dom.bools
+  implicit val doubles = Dom.doubles
+  implicit val bools = Dom.bools
 
   def vectors(dim: Int) = new VectorDom(dim)
 
