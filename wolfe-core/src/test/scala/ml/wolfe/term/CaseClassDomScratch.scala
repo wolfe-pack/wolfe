@@ -11,14 +11,14 @@ object CaseClassDomScratch {
 
 
   def main(args: Array[String]) {
-    @domain2 case class World(rain: Boolean, sprinkler: Boolean, probRain: Double)
-
-    val world = World(true,true,1.0)
-    val worlds = World.Dom(bools,bools,doubles)
-    val worlds2 = World.Dom // use implicits
-
-    println(worlds)
-    println(worlds.lengths)
+//    @domain2 case class World(rain: Boolean, sprinkler: Boolean, probRain: Double)
+//
+//    val world = World(true,true,1.0)
+//    val worlds = World.Dom(bools,bools,doubles)
+//    val worlds2 = World.Dom // use implicits
+//
+//    println(worlds)
+//    println(worlds.lengths)
     //val m:worlds.Marginals = ???
 
 //    @domain[World](bools, bools, doubles) object worlds

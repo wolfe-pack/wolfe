@@ -11,7 +11,7 @@ class CaseClassDomSpecs extends WolfeSpec {
 
   "A case class domain macro" should {
 
-    @domain2 case class World(rain:Boolean,prob:Double)
+    @domain case class World(rain:Boolean,prob:Double)
 
     "generate domain arguments named like the case class arguments" in {
       val worlds = World.Dom(bools,doubles)

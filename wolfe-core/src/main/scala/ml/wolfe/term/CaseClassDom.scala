@@ -524,11 +524,11 @@ object CaseClassDom {
 
 }
 
-class domain[T](doms: term.Dom*) extends StaticAnnotation {
+class domain2[T](doms: term.Dom*) extends StaticAnnotation {
   def macroTransform(annottees: Any*): Any = macro CaseClassDom.impl
 }
 
-class domain2 extends StaticAnnotation {
+class domain extends StaticAnnotation {
   def macroTransform(annottees: Any*): Any = macro CaseClassDom.implOnClass
 }
 
