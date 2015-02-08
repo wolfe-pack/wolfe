@@ -251,20 +251,22 @@ object CaseClassDom {
           q"type $argDomTypeName <: ml.wolfe.term.TypedDom[$caseClassArgTypeName]"
         }
 
-        //List(val rains:TypedDom[Boolean],...)
-        val domConstructorArgs = for ((arg, typ) <- argNames zip caseClassArgTypeNames) yield q"val $arg:TypedDom[$typ]"
+        //List(val rains:Dom_rains,...)
+        val domConstructorArgs = for ((arg, typ) <- argNames zip argDomTypeNames) yield q"val $arg:$typ"
+
+        //List(rains.type,prob.type)
+        val argDomSingletonTypes = argNames.map(n => tq"$n.type")
 
         //for named self reference
-        val self = TermName(c.freshName("dom"))
-        val selfDef = q"val $self:$domClassName"
+        val self = q"_dom" //TermName(c.freshName("dom"))
+        val selfDef = q"val $self:$domClassName[..$argDomSingletonTypes]"
 
         //for Marginals class
-        val marginalClassName = TypeName(caseClassTermName.decodedName.toString + "Marginals")
         val marginalArguments = for (d <- argNames) yield {
           q"val $d:$self.$d.Marginals"
         }
         val marginalsCaseClassDef = q"""
-             case class $marginalClassName(..$marginalArguments)
+             case class Marginals(..$marginalArguments)
           """
 
         //lengths of argument domains
@@ -296,13 +298,14 @@ object CaseClassDom {
 
         val toValueArgs = withOffsets(q"_offsets") { case (name, off) => q"val $name = $self.$name.toValue(_setting, $off)"}
         val copyValueStatements = withOffsets() {case (name,off) => q"$self.$name.copyValue(_value.$name, _setting, $off)"}
+        val copyMarginalStatements = withOffsets() {case (name,off) => q"$self.$name.copyMarginals(_marginals.$name, _msgs, $off)"}
+        val fillZeroMsgsStatements = withOffsets() {case (name,off) => q"$self.$name.fillZeroMsgs(_target, $off)"}
 
         val newTerm = q"""
           $caseClassDef
-          class $domClassName(..$domConstructorArgs) {
-            $selfDef =>
+          class $domClassName[..$argDomTypeParameters](..$domConstructorArgs) {
+            _dom =>
 
-            type Marginals = $marginalClassName
             type Value = $caseClassTypeName
 
             def lengths = $lengths
@@ -318,9 +321,19 @@ object CaseClassDom {
               ..$copyValueStatements
             }
 
+            def copyMarginals(_marginals: Marginals, _msgs: Msgs, _offsets: Offsets) = {
+              ..$copyMarginalStatements
+            }
+
+
+            def fillZeroMsgs(_target: Msgs, _offsets: Offsets) = {
+              ..$fillZeroMsgsStatements
+            }
+
           }
           object $caseClassTermName {
-            def Dom(implicit ..$domConstructorArgs) = new $domClassName(..$argNames)
+            def Dom[..$argDomTypeParameters](implicit ..$domConstructorArgs) =
+              new $domClassName[..$argDomSingletonTypes](..$argNames)
           }
         """
         //def dom:$domClassName = new $domClassName

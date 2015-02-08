@@ -39,7 +39,25 @@ class CaseClassDomSpecs extends WolfeSpec {
       worlds.copyValue(World(true,0.5),setting,Offsets())
       setting.disc(0) should be (1)
       setting.cont(0) should be (0.5)
+    }
 
+    "fill up zero messages" in {
+      val worlds = World.Dom(bools,doubles)
+      val msgs = new Msgs(numDisc = 1, numCont = 1)
+      worlds.fillZeroMsgs(msgs,Offsets())
+      msgs.disc(0).msg(0) should be (0.0)
+      msgs.disc(0).msg(1) should be (0.0)
+      msgs.cont(0).mean should be (0.0)
+    }
+
+    "copy marginals into messages" in {
+      val worlds = World.Dom(bools,doubles)
+      val msgs = new Msgs(numDisc = 1, numCont = 1)
+      val marginals = worlds.Marginals(IndexedSeq(0.2,0.8),0.5)
+      worlds.copyMarginals(marginals,msgs,Offsets())
+      msgs.disc(0).msg(0) should be (0.2)
+      msgs.disc(0).msg(1) should be (0.8)
+      msgs.cont(0).mean should be (0.5)
     }
 
 
