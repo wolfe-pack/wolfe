@@ -9,6 +9,7 @@ class CaseClassDomSpecs extends WolfeSpec {
 
   import TermImplicits._
 
+
   "A case class domain macro" should {
 
     @domain case class World(rain: Boolean, prob: Double)
@@ -99,8 +100,16 @@ class CaseClassDomSpecs extends WolfeSpec {
       val x = params.variable("x")
       val term = x.weights(1)
       term.eval(Params(IndexedSeq(1.0,2.0))) should be (2.0)
-
     }
+
+    "work with classes defined elsewhere" in {
+      import ml.wolfe.FactorieVector
+      @domain case class Wrapped(vector:FactorieVector)
+      val X = Wrapped.Dom(vectors(2))
+      val x = X.variable("x")
+      x.eval(Wrapped(vector(1,2))).vector should equal (vector(1,2))
+    }
+
 
   }
 

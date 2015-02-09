@@ -33,7 +33,11 @@ object CaseClassDom {
 
         //List(val rains:...,val prob:...)
         val q"case class ${_}(..${caseClassArgs: List[ValDef]})" = caseClassDef
-        val typedCaseClassArgs = caseClassArgs.map(a => c.typecheck(a))
+        val caseClassArgTypeNames = caseClassArgs.map{case q"${_} val ${_}:$typ = ${_}" => typ}
+        //println(caseClassArgTypes)
+//        val typedCaseClassArgs = caseClassArgs.map(a => c.typecheck(a))
+//        val typedCaseClassArgs = caseClassArgs.map(a => q"{${c.typecheck(a)}}").map{case q"{$a}" => a}
+//        println(caseClassArgs.map(a => q"{c.typecheck(a)}"))
 
         //List(rains,prob)
         val caseClassArgNames = caseClassArgs.map(_.name)
@@ -41,8 +45,8 @@ object CaseClassDom {
         val argName2Index = argNames.zipWithIndex.toMap
 
         //List(Boolean,Double)
-        println(typedCaseClassArgs.map(a => a.symbol.info))
-        val caseClassArgTypeNames = typedCaseClassArgs.map(a => a.symbol.info)
+        println(caseClassArgTypeNames.map(a => a.symbol.info))
+        //val caseClassArgTypeNames = typedCaseClassArgs.map(a => a.symbol.info)
 
         //List(Dom_rains, Dom_prob)
         val arg2DomTypeName = argNames.map(n => n -> TypeName(c.freshName("Dom_") + n.toString)).toMap
@@ -213,10 +217,22 @@ object CaseClassDom {
     }
   }
 
-
 }
 
 class domain extends StaticAnnotation {
   def macroTransform(annottees: Any*): Any = macro CaseClassDom.implOnClass
 }
 
+class identity extends StaticAnnotation {
+  def macroTransform(annottees: Any*): Any = macro identityImpl.impl
+
+}
+
+object identityImpl {
+  def impl(c: whitebox.Context)(annottees: c.Expr[Any]*): c.Expr[Any] = {
+    import c.universe._
+    val result = annottees.map(_.tree).toList
+    c.Expr[Any](q"..$result")
+  }
+
+}
