@@ -91,6 +91,17 @@ class CaseClassDomSpecs extends WolfeSpec {
       x.eval(World(true,0.5)) should be (World(true,0.5))
       y.eval(World(true,0.5)) should be (true)
     }
+
+    "create nested domains" in {
+      import scala.language.existentials //todo: why is this necessary?
+      @domain case class Params(weights:IndexedSeq[Double])
+      val params = Params.Dom(seqs(doubles,2))
+      val x = params.variable("x")
+      val term = x.weights(1)
+      term.eval(Params(IndexedSeq(1.0,2.0))) should be (2.0)
+
+    }
+
   }
 
 }
