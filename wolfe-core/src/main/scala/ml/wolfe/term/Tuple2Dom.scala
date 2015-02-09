@@ -5,7 +5,7 @@ import ml.wolfe.term
 /**
  * @author riedel
  */
-class Tuple2Dom[D1 <: Dom, D2 <: Dom](val dom1: D1, val dom2: D2) extends Dom {
+class Tuple2Dom[D1 <: Dom, D2 <: Dom](val dom1: D1, val dom2: D2) extends ProductDom {
   dom =>
   type Value = (dom1.Value, dom2.Value)
   type Var = DomVar
@@ -60,12 +60,8 @@ class Tuple2Dom[D1 <: Dom, D2 <: Dom](val dom1: D1, val dom2: D2) extends Dom {
     def _2: domain.dom2.Term
   }
 
-  trait Tuple2DomTermImpl extends DomTerm with Composed[dom.type] {
+  trait Tuple2DomTermImpl extends DomTerm with super.DomTermImpl {
     def arguments = IndexedSeq(_1, _2)
-
-    def composer() = ???
-
-    def differentiator(wrt: Seq[term.Var[Dom]]) = ???
   }
 
   trait DomVar extends super.DomVar with DomTerm {
@@ -95,8 +91,19 @@ trait ProductDom extends Dom {
   dom =>
 
   trait DomTermImpl extends super.DomTerm with Composed[dom.type] {
-    def composer() = ???
+    def composer() = new Evaluator {
 
+      val lengths = arguments.map(_.domain.lengths).toArray
+
+      def eval(inputs: Array[Setting], output: Setting) = {
+        var off = Offsets()
+        for (i <- 0 until inputs.length) {
+          inputs(i).copyTo(output,off)
+          off = off + lengths(i)
+        }
+        //append inputs to output
+      }
+    }
     def differentiator(wrt: Seq[term.Var[Dom]]) = ???
 
   }
