@@ -70,6 +70,23 @@ object TermImplicits {
     def current() = seq(_current)
   }
 
+  def stochastic[T](seq:IndexedSeq[T]) = new Generator[T] {
+    import ml.wolfe.util.Math.random
+
+    private var _seq = random.shuffle(seq)
+    private var _current = -1
+
+    override def generateNext() = {
+      if (_current == _seq.size - 1) {
+        _seq = random.shuffle(seq)
+        _current = -1
+      }
+      _current = _current + 1
+    }
+
+    override def current(): T = _seq(_current)
+  }
+
   def stochastic[T](sample: => T) = new Generator[T] {
     private var _current: T = _
 

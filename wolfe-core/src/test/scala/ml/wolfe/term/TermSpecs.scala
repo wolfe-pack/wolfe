@@ -374,6 +374,20 @@ class TermSpecs extends WolfeSpec {
 
   }
 
+  "A stochastic sum" should {
+    "shuffles a list, traverses it and shuffles it again" in {
+      val n = 3
+      val epochs = 10
+      val Y = seqs(doubles, n)
+      val y = Y.variable("y")
+      val term = sum(stochastic(0 until n)) { i => y(i) }
+      val res = for (_ <- 0 until n * epochs) yield term.eval(IndexedSeq(1.0, 2.0, 3.0))
+      val lists = res.grouped(3).toList
+      lists.distinct.size > 1 should be(right = true)
+      lists.map(_.toSet).reduceLeft(_ intersect _) should be(Set(1.0, 2.0, 3.0))
+    }
+  }
+
   "Exhaustive max-marginalizing" should {
     "provide the exact max marginals" in {
       val x = bools.variable("x")
