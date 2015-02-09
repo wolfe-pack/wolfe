@@ -8,10 +8,12 @@ object CaseClassDomScratch {
   import ml.wolfe.term.TermImplicits._
   import scala.language.implicitConversions
 
-  case class World(rain: Boolean, prob: Double)
-
+  @domain case class Blah(value:Int)
+//  @domain case class World(rain: ml.wolfe.term.CaseClassDomScratch.Blah, prob: Double)
+//  @domain case class Test(value:ml.wolfe.term.Blah)
 
   def main(args: Array[String]) {
+//    @domain case class Universe(worlds:IndexedSeq[CaseClassDomScratch.Test])
     //@domain case class Universe(worlds:IndexedSeq[Double])
 
 //    @domain2 case class World(rain: Boolean, sprinkler: Boolean, probRain: Double)

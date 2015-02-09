@@ -290,10 +290,10 @@ class TermSpecs extends WolfeSpec {
       implicit val Scores = seqs(doubles, 3)
       implicit val Output = seqs(bools, 3)
 
-      def model(scores: Scores.DomTerm)(y: Output.DomTerm) =
+      def model(scores: Scores.Term)(y: Output.Term) =
         sum(0 until y.length) { i => I(y(i)) * scores(i)}
 
-      def loss(gold: Output.DomTerm)(scores: Scores.DomTerm) =
+      def loss(gold: Output.Term)(scores: Scores.Term) =
         max(Output) {model(scores)} - model(scores)(gold)
 
       val term = loss(Output.Const(true, false, true))(Scores.Const(1.0, 1.0, -1.0))
@@ -305,10 +305,10 @@ class TermSpecs extends WolfeSpec {
       implicit val Scores = seqs(doubles, 3)
       implicit val Output = seqs(bools, 3)
 
-      def model(scores: Scores.DomTerm)(y: Output.DomTerm) =
+      def model(scores: Scores.Term)(y: Output.Term) =
         sum(0 until y.length) { i => I(y(i)) * scores(i)}
 
-      def loss(gold: Output.DomTerm)(scores: Scores.DomTerm) =
+      def loss(gold: Output.Term)(scores: Scores.Term) =
         max(Output) {model(scores)} - model(scores)(gold)
 
       val weight = doubles.variable("w")
