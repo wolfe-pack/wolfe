@@ -1,7 +1,7 @@
 package ml.wolfe.term
 
 import cc.factorie.Factorie.DenseTensor1
-import cc.factorie.la.DenseTensor2
+import cc.factorie.la.{SingletonTensor1, DenseTensor2}
 import ml.wolfe.{FactorieMatrix, FactorieVector}
 import scala.language.implicitConversions
 
@@ -142,6 +142,9 @@ object TermImplicits {
   def sum[T](dom:Seq[T])(arg:T => DoubleTerm) = new Sum(dom.toIndexedSeq.map(arg))
 
   def sum(args: DoubleTerm*) = new Sum(args.toIndexedSeq)
+
+  def oneHot(index:Int,value:Double = 1.0)(implicit dom:VectorDom) =
+    dom.const(new SingletonTensor1(dom.dim,index,value))
 
   implicit class RichDoubleTerm(term: DoubleTerm) {
     def +(that: DoubleTerm) = new Sum(IndexedSeq(term, that))
