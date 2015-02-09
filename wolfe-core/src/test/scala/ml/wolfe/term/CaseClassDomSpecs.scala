@@ -93,7 +93,7 @@ class CaseClassDomSpecs extends WolfeSpec {
     }
 
     "create nested domains" in {
-      import scala.language.existentials //todo: why is this necessary?
+      import scala.language.existentials //todo: why is this necessary? General problem with sequence domains?
       @domain case class Params(weights:IndexedSeq[Double])
       val params = Params.Dom(seqs(doubles,2))
       val x = params.variable("x")
