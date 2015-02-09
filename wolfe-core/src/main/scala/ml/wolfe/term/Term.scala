@@ -161,6 +161,16 @@ trait Generator[+T] {
   def current(): T
 }
 
+trait Generator2[+T] {
+  def generateNext()
+  def value:Dynamic[T]
+}
+
+trait Dynamic[+T] {
+  def value():T
+}
+
+
 class PairGenerator[T1,T2](val self:Generator[(T1,T2)]) extends Generator[(T1,T2)] {
   val _1 = new Generator[T1] {
     def generateNext(): Unit = self.generateNext()

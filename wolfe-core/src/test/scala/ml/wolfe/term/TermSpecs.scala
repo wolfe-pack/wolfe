@@ -100,7 +100,7 @@ class TermSpecs extends WolfeSpec {
     }
 
     "provide its gradient for different variables given an upstream error vector" in {
-      val AVar = matrices(3,2).variable("A")
+      val AVar = matrices(3, 2).variable("A")
       val xVar = vectors(2).variable("x")
       val term = AVar * xVar
 
@@ -212,11 +212,11 @@ class TermSpecs extends WolfeSpec {
       }
 
 
-//      def implicitFeedbackLoss(positive: Seq[(Int, Int)])(e: Params.Variable) =
-//        sum(positive) { case (i, j) =>
-//          cell(1.0)(e._1(i), e._2(j)) +
-//          sum(sequential(0 until m)) { k => cell(-1.0)(e._1(i), e._2(k))}
-//        }
+      //      def implicitFeedbackLoss(positive: Seq[(Int, Int)])(e: Params.Variable) =
+      //        sum(positive) { case (i, j) =>
+      //          cell(1.0)(e._1(i), e._2(j)) +
+      //          sum(sequential(0 until m)) { k => cell(-1.0)(e._1(i), e._2(k))}
+      //        }
 
     }
 
@@ -347,9 +347,9 @@ class TermSpecs extends WolfeSpec {
     "optimize a multivariate quadratic objective" in {
       val X = vectors(2)
       val x = X.variable("x")
-      def obj(x: X.Term) = (x dot vector(4.0,4.0)) - (x dot x)
+      def obj(x: X.Term) = (x dot vector(4.0, 4.0)) - (x dot x)
       val result = argmax(X) { x => obj(x).argmaxBy(Argmaxer.adaGrad(100, 1))}
-      result.eval() should equal(vector(2.0,2.0))
+      result.eval() should equal(vector(2.0, 2.0))
     }
   }
 
@@ -380,7 +380,7 @@ class TermSpecs extends WolfeSpec {
       val epochs = 10
       val Y = seqs(doubles, n)
       val y = Y.variable("y")
-      val term = sum(stochastic(0 until n)) { i => y(i) }
+      val term = sum(stochastic(0 until n)) { i => y(i)}
       val res = for (_ <- 0 until n * epochs) yield term.eval(IndexedSeq(1.0, 2.0, 3.0))
       val lists = res.grouped(3).toList
       lists.distinct.size > 1 should be(right = true)
@@ -393,8 +393,8 @@ class TermSpecs extends WolfeSpec {
       val x = bools.variable("x")
       val y = bools.variable("y")
       val term = I(x === y)
-      val result = term.maxMarginals(x,y)(IndexedSeq(1.0,2.0))()
-      result should be (IndexedSeq(2.0,3.0))
+      val result = term.maxMarginals(x, y)(IndexedSeq(1.0, 2.0))()
+      result should be(IndexedSeq(2.0, 3.0))
     }
   }
 
@@ -403,6 +403,28 @@ class TermSpecs extends WolfeSpec {
       val x = doubles.variable("x")
       val term: Double => Double = (x * x) typed doubles
       term(2.0) should be(4.0)
+    }
+  }
+
+  "A dynamic value" should {
+    "match a pair pattern if it has pair values" in {
+      import scala.language.implicitConversions
+      implicit def toDynTuple2[T1, T2](t: Dynamic[(T1, T2)]): (Dynamic[T1], Dynamic[T2]) = {
+        val a1 = new Dynamic[T1] {
+          def value() = t.value()._1
+        }
+        val a2 = new Dynamic[T2] {
+          def value() = t.value()._2
+        }
+        (a1, a2)
+      }
+      object ~ {
+        def unapply[T1, T2](d: Dynamic[(T1, T2)]) = {
+          Some(toDynTuple2(d))
+        }
+      }
+      val term = sum(sequential(IndexedSeq(1 -> 2))) { pair => {pair._1; 1.0}}
+      val term2 = sum(sequential(IndexedSeq(1 -> 2))) { case ~(x, y) => x; y; 1.0}
     }
   }
 

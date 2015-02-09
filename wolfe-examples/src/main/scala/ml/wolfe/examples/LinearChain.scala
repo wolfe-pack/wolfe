@@ -1,7 +1,7 @@
 package ml.wolfe.examples
 
 import ml.wolfe.SimpleIndex
-import ml.wolfe.term.{TermImplicits, TypedDom}
+import ml.wolfe.term.{Argmaxer, TermImplicits, TypedDom}
 
 /**
  * @author riedel
@@ -12,26 +12,33 @@ object LinearChain {
 
     import TermImplicits._
 
-    type Input = TypedDom[IndexedSeq[String]]
+    val data = Seq((IndexedSeq("A"),IndexedSeq("NN")))
 
-    implicit val W = vectors(2)
-
-    val n = 4
-    val Labels = discrete("NN","VBD","IN")
-    val Y = seqs(Labels,n)
+    implicit val W = vectors(10)
+    implicit val Labels = discrete("NN","VBD","IN")
     val index = new SimpleIndex
 
-    def chain(w:W.Term)(x:IndexedSeq[String])(y:Y.Term) = {
-      sum(0 until n){ i => oneHot(index(x(i)->y(i))) dot w}
+    case class Instance(x:IndexedSeq[String]) {
+      val n = x.length
+      val Y = seqs(Labels,n)
+      def chain(w:W.Term)(y:Y.Term) = {
+        sum(0 until n){ i => oneHot(index(x(i)->y(i))) dot w}
+      }
+      def negLoss(yGold:IndexedSeq[String])(w:W.Term) = {
+        max(Y){chain(w)} - chain(w)(Y.const(yGold))
+      }
+      def predict(w:W.Term) = {
+        argmax(Y){chain(w)}
+      }
     }
 
-    def loss(x:IndexedSeq[String], yGold:IndexedSeq[String])(w:W.Term) = {
-      max(Y){chain(w)(x)} - chain(w)(x)(Y.const(yGold))
-    }
+    def loss(w:W.Term) = sum(data) { case (x, y) => Instance(x).negLoss(y)(w)}.argmaxBy(Argmaxer.ascent(10))
 
-    def predict(x:IndexedSeq[String])(w:W.Term) = {
-      argmax(Y){chain(w)(x)}
-    }
+    val w = argmax(W)(loss).eval()
+
+    println(w)
+
+
 
   }
 

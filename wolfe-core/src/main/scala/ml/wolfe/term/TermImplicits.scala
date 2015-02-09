@@ -62,7 +62,7 @@ object TermImplicits {
 //      val domain:dom.type = dom
 //    }
 
-  def sequential[T](seq:IndexedSeq[T]) = new Generator[T] {
+  def sequential2[T](seq:IndexedSeq[T]) = new Generator[T] {
     private var _current = -1
     def generateNext() = {
       _current = (_current + 1) % seq.length
@@ -70,7 +70,18 @@ object TermImplicits {
     def current() = seq(_current)
   }
 
-  def stochastic[T](seq:IndexedSeq[T]) = new Generator[T] {
+  def sequential[T](seq:IndexedSeq[T]) = new Generator2[T] {
+    private var _current = -1
+    def generateNext() = {
+      _current = (_current + 1) % seq.length
+    }
+    val value = new Dynamic[T] {
+      def value() = seq(_current)
+    }
+  }
+
+
+  def stochastic2[T](seq:IndexedSeq[T]) = new Generator[T] {
     import ml.wolfe.util.Math.random
 
     private var _seq = random.shuffle(seq)
@@ -87,6 +98,27 @@ object TermImplicits {
     override def current(): T = _seq(_current)
   }
 
+  def stochastic[T](seq:IndexedSeq[T]) = new Generator2[T] {
+    import ml.wolfe.util.Math.random
+
+    private var _seq = random.shuffle(seq)
+    private var _current = -1
+
+    def generateNext() = {
+      if (_current == _seq.size - 1) {
+        _seq = random.shuffle(seq)
+        _current = -1
+      }
+      _current = _current + 1
+    }
+
+
+    val value = new Dynamic[T] {
+      def value() = _seq(_current)
+    }
+  }
+
+
   def stochastic[T](sample: => T) = new Generator[T] {
     private var _current: T = _
 
@@ -95,8 +127,8 @@ object TermImplicits {
     def current() = _current
   }
 
-  def sum[T](gen: Generator[T])(arg: (=>T) => DoubleTerm) = {
-    val term = arg(gen.current())
+  def sum[T](gen: Generator2[T])(arg: Dynamic[T] => DoubleTerm) = {
+    val term = arg(gen.value)
     new DynamicTerm[DoubleDom,T] {
       def self = term
       def generator = gen

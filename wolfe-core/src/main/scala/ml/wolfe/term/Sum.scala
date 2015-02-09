@@ -88,7 +88,7 @@ class Sum(val arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm {
 
 
 trait DynamicTerm[D <: DoubleDom,T] extends ProxyTerm[D] {
-  def generator:Generator[T]
+  def generator:Generator2[T]
   override def evaluator() = new Evaluator {
     val eval = self.evaluator()
     def eval(inputs: Array[Setting], output: Setting) = {
