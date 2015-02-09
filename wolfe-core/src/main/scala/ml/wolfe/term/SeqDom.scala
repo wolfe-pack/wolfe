@@ -43,11 +43,11 @@ class SeqDom[D <: Dom](val elementDom: D, val length: Int) extends Dom {
   }
 
   val lengths = elementDom.lengths * length
-  def variable(name: String, staticOffsets: Offsets = Offsets(), owner: term.Var[Dom]) = new BaseVar(name, owner) with DomVar {
+  def variable(name: String, staticOffsets: Offsets = Offsets(), owner: term.Var[Dom]):Var = new BaseVar(name, owner) with DomVar {
     val offsets = staticOffsets
   }
 
-  def dynamic(name: => String, dynOffsets: => Offsets, owner: term.Var[Dom]) = new BaseVar(name, owner) with DomVar {
+  def dynamic(name: => String, dynOffsets: => Offsets, owner: term.Var[Dom]):Var = new BaseVar(name, owner) with DomVar {
     def offsets = dynOffsets
   }
 
@@ -111,7 +111,7 @@ class SeqDom[D <: Dom](val elementDom: D, val length: Int) extends Dom {
     def atoms = elements.view.map(_.atoms).foldLeft(Atoms())(_ ++ _)
     def offsets: Offsets
     def ranges = Ranges(offsets, offsets +(domain.elementDom.lengths, domain.length))
-    def static(gen: Int): domain.elementDom.DomVar = {
+    def static(gen: Int): domain.elementDom.Var = {
       domain.elementDom.variable(s"$name($gen})", offsets +(domain.elementDom.lengths, gen), if (owner == null) this else owner)
     }
   }

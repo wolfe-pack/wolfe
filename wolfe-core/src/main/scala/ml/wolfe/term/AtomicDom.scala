@@ -142,7 +142,7 @@ class DoubleDom extends AtomicDom {
   val lengths = Offsets(0, 1, 0, 0)
   def variable(name: String, offsets: Offsets = Offsets(), owner: term.Var[Dom]): Var = StaticDoubleVar(name, owner, offsets.contOff)
 
-  def dynamic(name: => String, offsets: => Offsets, owner: term.Var[Dom]) = new BaseVar(name, owner) with DomVar {
+  def dynamic(name: => String, offsets: => Offsets, owner: term.Var[Dom]):Var = new BaseVar(name, owner) with DomVar {
     def offset = offsets.contOff
   }
   def one = 1.0
