@@ -187,17 +187,8 @@ trait Dynamic[+T] {
   }
 
   def flatMap[A](f:T => Dynamic[A]) = new Dynamic[A] {
-    private var _initialized = false
-    private var _lastT:T = _
-    private var _currentA:Dynamic[A] = _
     def value() = {
-      val t = self.value()
-      if (!_initialized || t != _lastT) {
-        _lastT = t
-        _currentA = f(_lastT)
-        _initialized = true
-      }
-      _currentA.value()
+      f(self.value()).value()
     }
 
   }
