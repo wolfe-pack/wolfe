@@ -70,7 +70,7 @@ object TermImplicits {
     def current() = seq(_current)
   }
 
-  def sequential[T](seq:IndexedSeq[T]) = new Generator2[T] {
+  def sequential[T](seq:IndexedSeq[T]) = new DynamicGenerator[T] {
     private var _current = -1
     def generateNext() = {
       _current = (_current + 1) % seq.length
@@ -98,7 +98,7 @@ object TermImplicits {
     override def current(): T = _seq(_current)
   }
 
-  def stochastic[T](seq:IndexedSeq[T]) = new Generator2[T] {
+  def stochastic[T](seq:IndexedSeq[T]) = new DynamicGenerator[T] {
     import ml.wolfe.util.Math.random
 
     private var _seq = random.shuffle(seq)
@@ -119,19 +119,56 @@ object TermImplicits {
   }
 
 
-  def stochastic[T](sample: => T) = new Generator[T] {
+  def stochastic[T](sample: => T) = new DynamicGenerator[T] {
     private var _current: T = _
 
     def generateNext() = _current = sample
 
-    def current() = _current
+    override def value: Dynamic[T] = new Dynamic[T] {
+      override def value(): T = _current
+    }
   }
 
-  def sum[T](gen: Generator2[T])(arg: Dynamic[T] => DoubleTerm) = {
+  def sum[T](gen: DynamicGenerator[T])(arg: Dynamic[T] => DoubleTerm) = {
     val term = arg(gen.value)
     new DynamicTerm[DoubleDom,T] {
       def self = term
       def generator = gen
+    }
+  }
+
+  implicit def toDynTuple2[T1, T2](t: Dynamic[(T1, T2)]): (Dynamic[T1], Dynamic[T2]) = {
+    val a1 = new Dynamic[T1] {
+      def value() = t.value()._1
+    }
+    val a2 = new Dynamic[T2] {
+      def value() = t.value()._2
+    }
+    (a1, a2)
+  }
+
+  implicit def toDynTuple3[T1, T2, T3](t: Dynamic[(T1, T2, T3)]): (Dynamic[T1], Dynamic[T2], Dynamic[T3]) = {
+    val a1 = new Dynamic[T1] {
+      def value() = t.value()._1
+    }
+    val a2 = new Dynamic[T2] {
+      def value() = t.value()._2
+    }
+    val a3 = new Dynamic[T3] {
+      def value() = t.value()._3
+    }
+    (a1, a2, a3)
+  }
+
+  object ~ {
+    def unapply[T1, T2](d: Dynamic[(T1, T2)]) = {
+      Some(toDynTuple2(d))
+    }
+  }
+
+  object unapply3 {
+    def unapply[T1, T2, T3](d: Dynamic[(T1, T2, T3)]) = {
+      Some(toDynTuple3(d))
     }
   }
 

@@ -161,7 +161,7 @@ trait Generator[+T] {
   def current(): T
 }
 
-trait Generator2[+T] {
+trait DynamicGenerator[+T] {
   def generateNext()
   def value:Dynamic[T]
 }
@@ -171,48 +171,9 @@ trait Dynamic[+T] {
 }
 
 
-class PairGenerator[T1,T2](val self:Generator[(T1,T2)]) extends Generator[(T1,T2)] {
-  val _1 = new Generator[T1] {
-    def generateNext(): Unit = self.generateNext()
-    def current(): T1 = self.current()._1
-  }
-
-   val _2 = new Generator[T2] {
-    def generateNext(): Unit = self.generateNext()
-    def current(): T2 = self.current()._2
-  }
-
-  override def generateNext(): Unit = self.generateNext()
-
-  override def current(): (T1, T2) = self.current()
-}
-
-class TripletGenerator[T1,T2,T3](val self:Generator[(T1,T2,T3)]) extends Generator[(T1,T2,T3)] {
-  val _1 = new Generator[T1] {
-    def generateNext(): Unit = self.generateNext()
-    def current(): T1 = self.current()._1
-  }
-
-  val _2 = new Generator[T2] {
-    def generateNext(): Unit = self.generateNext()
-    def current(): T2 = self.current()._2
-  }
-
-  val _3 = new Generator[T3] {
-    def generateNext(): Unit = self.generateNext()
-    def current(): T3 = self.current()._3
-  }
-
-  override def generateNext(): Unit = self.generateNext()
-
-  override def current(): (T1, T2, T3) = self.current()
-}
-
 trait Evaluator {
   def eval(inputs: Array[Setting], output: Setting)
 }
-
-
 
 
 trait Differentiator {
