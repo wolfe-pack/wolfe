@@ -14,19 +14,34 @@ object SamplingBug extends App {
   val pairIx: Map[(Any,Any), Int] = Map((0, 0) -> 0, (0, 1) -> 1)
 
   def dynPairIx(e1: Dynamic[Any], e2: Dynamic[Any]) = new Dynamic[Int] {
-    override def value(): Int = pairIx(e1.value() -> e2.value())
+    def value(): Int = pairIx(e1.value() -> e2.value())
   }
 
   def stochasticPairIx(e1: Dynamic[Any], e2: Dynamic[Any]) = new Dynamic[Int] {
-    override def value(): Int = random.shuffle(pairIx.values).head
+    def value(): Int = random.shuffle(pairIx.values).head
+  }
+
+  def dynPairGenerator[T](e1: Dynamic[Any], e2: Dynamic[Any]) = new DynamicGenerator[Int] {
+    var _current = 0
+    def generateNext() = {
+      val v1 = e1.value()
+      val v2 = e2.value()
+      //do something stochastic in here
+      _current = pairIx(v1 -> v2)
+    }
+
+    val value = new Dynamic[Int] {
+      def value() = _current
+    }
   }
 
   def loss(data: IndexedSeq[(Int, Int, Int)])(t: theta.Var) =
-    sum(stochastic(data)) { case unapply3(s, i, j) =>
-      val r = t.rs(s.asInstanceOf[Dynamic[Int]])
+    stochasticTerm(stochastic(data)) { case unapply3(s, i, j) =>
+      val r = t.rs(s)
       val p = t.ps(dynPairIx(i, j))
       val pSampled = t.ps(stochasticPairIx(i, j))
-      (r dot p) + (r dot pSampled)
+      (r dot p) + stochasticTerm(dynPairGenerator(i,j)) {k => r dot t.ps(k)}
+//      (r dot p) + (r dot pSampled)
     }
 
   //parameter initialization

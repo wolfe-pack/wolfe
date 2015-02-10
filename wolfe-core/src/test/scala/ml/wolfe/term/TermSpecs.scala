@@ -364,14 +364,14 @@ class TermSpecs extends WolfeSpec {
       val n = 3
       val Y = seqs(doubles, n)
       val y = Y.variable("y")
-      val term = stochastic(sequential(0 until n)) { i => y(i)}
+      val term = stochasticTerm(sequential(0 until n)) { i => y(i)}
       for (_ <- 0 until 2; i <- 0 until n) term.eval(IndexedSeq(1.0, 2.0, 3.0)) should be(i + 1.0)
     }
     "return a different gradient every time when evaluated" in {
       val n = 3
       val Y = seqs(doubles, n)
       val y = Y.variable("y")
-      val term = stochastic(sequential(0 until n)) { i => y(i) * y(i)}
+      val term = stochasticTerm(sequential(0 until n)) { i => y(i) * y(i)}
       for (_ <- 0 until 2; i <- 0 until n) {
         val gradient = term.gradient(y, IndexedSeq(0.0, 1.0, 2.0))
         for (j <- 0 until n) gradient(j) should be(if (j == i) 2.0 * i else 0.0)
@@ -386,7 +386,7 @@ class TermSpecs extends WolfeSpec {
       val epochs = 10
       val Y = seqs(doubles, n)
       val y = Y.variable("y")
-      val term = stochastic(stochastic(0 until n)) { i => y(i)}
+      val term = stochasticTerm(stochastic(0 until n)) { i => y(i)}
       val res = for (_ <- 0 until n * epochs) yield term.eval(IndexedSeq(1.0, 2.0, 3.0))
       val lists = res.grouped(3).toList
       lists.distinct.size > 1 should be(right = true)
