@@ -35,6 +35,8 @@ object SamplingBug extends App {
     }
   }
 
+
+
   def loss(data: IndexedSeq[(Int, Int, Int)])(t: theta.Var) =
     stochasticTerm(stochastic(data)) { case unapply3(s, i, j) =>
       val r = t.rs(s)

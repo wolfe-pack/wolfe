@@ -167,7 +167,42 @@ trait DynamicGenerator[+T] {
 }
 
 trait Dynamic[+T] {
+
+  self =>
   def value():T
+
+  def map[A](f:T => A):Dynamic[A] = new Dynamic[A] {
+    private var _initialized = false
+    private var _lastT:T = _
+    private var _currentA:A = _
+    def value() = {
+      val t = self.value()
+      if (!_initialized || t != _lastT) {
+        _lastT = t
+        _currentA = f(_lastT)
+        _initialized = true
+      }
+      _currentA
+    }
+  }
+
+  def flatMap[A](f:T => Dynamic[A]) = new Dynamic[A] {
+    private var _initialized = false
+    private var _lastT:T = _
+    private var _currentA:Dynamic[A] = _
+    def value() = {
+      val t = self.value()
+      if (!_initialized || t != _lastT) {
+        _lastT = t
+        _currentA = f(_lastT)
+        _initialized = true
+      }
+      _currentA.value()
+    }
+
+  }
+
+  override def toString = s"Dynamic(${value()})"
 }
 
 

@@ -412,6 +412,37 @@ class TermSpecs extends WolfeSpec {
     }
   }
 
+  "A Dynamic object" should {
+    "be composable using map operations" in {
+      val gen = sequential(0 until 3)
+      val dyn = for (i <- gen.value) yield (i,i+1)
+      gen.generateNext()
+      dyn.value() should be (0->1)
+      gen.generateNext()
+      dyn.value() should be (1->2)
+    }
+    "be composable using flatmap and map operations" in {
+      val gen = sequential(0 until 3)
+      val dyn = for (i <- gen.value; j <- gen.value) yield i+j
+      gen.generateNext()
+      dyn.value() should be (0)
+      gen.generateNext()
+      dyn.value() should be (2)
+    }
+    "return a constant value if generateNext isn't called" in {
+      val gen = sequential(0 until 3)
+      val dyn = for (i <- gen.value) yield i + math.random
+      gen.generateNext()
+      val v1 = dyn.value()
+      val v2 = dyn.value()
+      gen.generateNext()
+      val v3 = dyn.value()
+      v1 should be (v2)
+      v1 should not be v3
+
+    }
+
+  }
 
 
 }
