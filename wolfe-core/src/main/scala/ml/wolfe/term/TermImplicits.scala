@@ -129,7 +129,7 @@ object TermImplicits {
     }
   }
 
-  def sum[T](gen: DynamicGenerator[T])(arg: Dynamic[T] => DoubleTerm) = {
+  def stochastic[T](gen: DynamicGenerator[T])(arg: Dynamic[T] => DoubleTerm) = {
     val term = arg(gen.value)
     new DynamicTerm[DoubleDom,T] {
       def self = term
