@@ -207,7 +207,7 @@ class TermSpecs extends WolfeSpec {
       def loss(positive: Seq[(Int, Int)], negative: Seq[(Int, Int)])(e: Params.Term) = {
 
         sum(positive) { case (i, j) => cell(1.0)(e._1(i), e._2(j))} +
-        sum(negative) { case (i, j) => cell(-1.0)(e._1(i), e._2(j))}
+          sum(negative) { case (i, j) => cell(-1.0)(e._1(i), e._2(j))}
 
       }
 
@@ -258,8 +258,10 @@ class TermSpecs extends WolfeSpec {
 
       def model(y: sequences.DomTerm) =
         I(y(0) === labels.const("V")) * 2.0 +
-        I(y(1) === labels.const("N")) * 1.0
-      val result = max(sequences) {model}
+          I(y(1) === labels.const("N")) * 1.0
+      val result = max(sequences) {
+        model
+      }
       result.eval() should be(3.0)
     }
 
@@ -294,7 +296,9 @@ class TermSpecs extends WolfeSpec {
         sum(0 until y.length) { i => I(y(i)) * scores(i)}
 
       def loss(gold: Output.Term)(scores: Scores.Term) =
-        max(Output) {model(scores)} - model(scores)(gold)
+        max(Output) {
+          model(scores)
+        } - model(scores)(gold)
 
       val term = loss(Output.Const(true, false, true))(Scores.Const(1.0, 1.0, -1.0))
 
@@ -309,7 +313,9 @@ class TermSpecs extends WolfeSpec {
         sum(0 until y.length) { i => I(y(i)) * scores(i)}
 
       def loss(gold: Output.Term)(scores: Scores.Term) =
-        max(Output) {model(scores)} - model(scores)(gold)
+        max(Output) {
+          model(scores)
+        } - model(scores)(gold)
 
       val weight = doubles.variable("w")
       val weights = Scores.Term(weight, weight, weight)
@@ -403,28 +409,6 @@ class TermSpecs extends WolfeSpec {
       val x = doubles.variable("x")
       val term: Double => Double = (x * x) typed doubles
       term(2.0) should be(4.0)
-    }
-  }
-
-  "A dynamic value" should {
-    "match a pair pattern if it has pair values" in {
-      import scala.language.implicitConversions
-      implicit def toDynTuple2[T1, T2](t: Dynamic[(T1, T2)]): (Dynamic[T1], Dynamic[T2]) = {
-        val a1 = new Dynamic[T1] {
-          def value() = t.value()._1
-        }
-        val a2 = new Dynamic[T2] {
-          def value() = t.value()._2
-        }
-        (a1, a2)
-      }
-      object ~ {
-        def unapply[T1, T2](d: Dynamic[(T1, T2)]) = {
-          Some(toDynTuple2(d))
-        }
-      }
-      val term = stochastic(sequential(IndexedSeq(1 -> 2))) { pair => {pair._1; 1.0}}
-      val term2 = stochastic(sequential(IndexedSeq(1 -> 2))) { case ~(x, y) => x; y; 1.0}
     }
   }
 
