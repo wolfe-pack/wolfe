@@ -18,7 +18,7 @@ package object term {
   type BoolDom = DiscreteDom[Boolean]
   type BoolTerm = Term[BoolDom]
   type DiscreteTerm[T] = Term[DiscreteDom[T]]
-  type IntTerm = DiscreteTerm[Int]
+//  type IntTerm = DiscreteTerm[Int]
   type DoubleSeqDom = SeqDom[DoubleDom]
 
 }
