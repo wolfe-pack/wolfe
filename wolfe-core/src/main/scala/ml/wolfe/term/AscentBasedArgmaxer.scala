@@ -27,7 +27,7 @@ class AscentBasedArgmaxer(val obj: DoubleTerm,
 
   def argmax(observed: Array[Setting], msgs: Array[Msgs], result: Array[Setting]) = {
 
-    val bar = new ProgressBar(iterations, 10)
+    val bar = new ProgressBar(iterations, 100)
     bar.start()
 
     //initialize learning rate (affects gradient by changing the final upstream error signal)
@@ -40,7 +40,7 @@ class AscentBasedArgmaxer(val obj: DoubleTerm,
     //now optimize
     for (iteration <- 0 until iterations) {
       diff.addGradientAndValue(result, scale, result, currentValue)
-      bar(s"Obj: ${currentValue.cont(0)}",true)
+      bar(s"Obj: ${currentValue.cont(0)}", lineBreak = true)
     }
 
   }

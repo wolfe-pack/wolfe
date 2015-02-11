@@ -77,7 +77,7 @@ object GradientChecking {
           val (dAna, variableName) = gradient match {
             case x: Double => (x, variable.name)
             case x: FactorieVector => (x(row), variable.name + row)
-            case x: FactorieMatrix => (x(row, col), variable.name + row + col)
+            case x: FactorieMatrix => (x(row, col), variable.name + row + "," + col)
             case _ => ???
           }
 

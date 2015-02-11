@@ -388,7 +388,7 @@ class TermSpecs extends WolfeSpec {
       val y = Y.variable("y")
       val term = stochasticTerm(stochastic(0 until n)) { i => y(i)}
       val res = for (_ <- 0 until n * epochs) yield term.eval(IndexedSeq(1.0, 2.0, 3.0))
-      val lists = res.grouped(3).toList
+      val lists = res.grouped(n).toList
       lists.distinct.size > 1 should be(right = true)
       lists.map(_.toSet).reduceLeft(_ intersect _) should be(Set(1.0, 2.0, 3.0))
     }
