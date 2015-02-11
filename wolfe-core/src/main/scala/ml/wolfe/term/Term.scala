@@ -162,8 +162,19 @@ trait Generator[+T] {
 }
 
 trait DynamicGenerator[+T] {
-  def generateNext()
+  type Listener = ()=>Unit
+  private var listeners:List[Listener] = Nil
+  def updateValue()
+  def generateNext(): Unit = {
+    updateValue()
+    println("Updating listeners: " + listeners)
+    for (l <- listeners) l()
+  }
   def value:Dynamic[T]
+  def addListener(listener: Listener): Unit = {
+    println("Adding listener " + listener)
+    listeners ::= listener
+  }
 }
 
 trait Dynamic[+T] {
@@ -171,24 +182,17 @@ trait Dynamic[+T] {
   self =>
   def value():T
 
-  def map[A](f:T => A):Dynamic[A] = new Dynamic[A] {
-    private var _initialized = false
-    private var _lastT:T = _
-    private var _currentA:A = _
-    def value() = {
-      val t = self.value()
-      if (!_initialized || t != _lastT) {
-        _lastT = t
-        _currentA = f(_lastT)
-        _initialized = true
-      }
-      _currentA
-    }
-  }
+  def generators:List[DynamicGenerator[_]]
 
-  def flatMap[A](f:T => Dynamic[A]) = new Dynamic[A] {
+  def map[A](f:T => A):Dynamic[A] = new Dynamic[A] {
+    def generators = self.generators
+    private var _currentA:A = _
+    generators.foreach(_.addListener {() =>
+      _currentA = f(self.value())
+    })
+
     def value() = {
-      f(self.value()).value()
+      _currentA
     }
 
   }

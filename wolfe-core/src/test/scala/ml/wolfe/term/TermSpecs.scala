@@ -421,14 +421,6 @@ class TermSpecs extends WolfeSpec {
       gen.generateNext()
       dyn.value() should be (1->2)
     }
-    "be composable using flatmap and map operations" in {
-      val gen = sequential(0 until 3)
-      val dyn = for (i <- gen.value; j <- gen.value) yield i+j
-      gen.generateNext()
-      dyn.value() should be (0)
-      gen.generateNext()
-      dyn.value() should be (2)
-    }
     "return a constant value if generateNext isn't called" in {
       val gen = sequential(0 until 3)
       val dyn = for (i <- gen.value) yield i + math.random

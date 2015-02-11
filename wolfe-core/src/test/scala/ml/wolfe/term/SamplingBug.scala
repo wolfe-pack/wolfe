@@ -15,27 +15,38 @@ object SamplingBug extends App {
 
   def dynPairIx(e1: Dynamic[Any], e2: Dynamic[Any]) = new Dynamic[Int] {
     def value(): Int = pairIx(e1.value() -> e2.value())
+
+    def generators = e1.generators ++ e2.generators
   }
 
   def stochasticPairIx(e1: Dynamic[Any], e2: Dynamic[Any]) = new Dynamic[Int] {
-    def value(): Int = random.shuffle(pairIx.values).head
+    var _current:Int = -1
+
+    def value(): Int = _current
+
+    def generators = e1.generators ++ e2.generators
+
+    generators.foreach(_.addListener{ () =>
+      _current = random.shuffle(pairIx.values).head
+    })
   }
 
   def dynPairGenerator[T](e1: Dynamic[Any], e2: Dynamic[Any]) = new DynamicGenerator[Int] {
+    gen =>
     var _current = 0
-    def generateNext() = {
+    def updateValue() = {
       val v1 = e1.value()
       val v2 = e2.value()
       //do something stochastic in here
       _current = pairIx(v1 -> v2)
     }
 
-    val value = new Dynamic[Int] {
+    val value:Dynamic[Int] = new Dynamic[Int] {
       def value() = _current
+
+      def generators = List(gen)
     }
   }
-
-
 
   def loss(data: IndexedSeq[(Int, Int, Int)])(t: theta.Var) =
     stochasticTerm(stochastic(data)) { case unapply3(s, i, j) =>

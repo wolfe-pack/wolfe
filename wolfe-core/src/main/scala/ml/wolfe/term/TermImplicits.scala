@@ -71,12 +71,15 @@ object TermImplicits {
   }
 
   def sequential[T](seq:IndexedSeq[T]) = new DynamicGenerator[T] {
+    gen =>
     private var _current = -1
-    def generateNext() = {
+    def updateValue() = {
       _current = (_current + 1) % seq.length
     }
-    val value = new Dynamic[T] {
+    val value:Dynamic[T] = new Dynamic[T] {
       def value() = seq(_current)
+
+      def generators = List(gen)
     }
   }
 
@@ -99,12 +102,13 @@ object TermImplicits {
   }
 
   def stochastic[T](seq:IndexedSeq[T]) = new DynamicGenerator[T] {
+    gen =>
     import ml.wolfe.util.Math.random
 
     private var _seq = random.shuffle(seq)
     private var _current = -1
 
-    def generateNext() = {
+    def updateValue() = {
       if (_current == _seq.size - 1) {
         _seq = random.shuffle(seq)
         _current = -1
@@ -113,19 +117,24 @@ object TermImplicits {
     }
 
 
-    val value = new Dynamic[T] {
+    val value:Dynamic[T] = new Dynamic[T] {
       def value() = _seq(_current)
+
+      def generators = List(gen)
     }
   }
 
 
   def stochastic[T](sample: => T) = new DynamicGenerator[T] {
+    gen =>
     private var _current: T = _
 
-    def generateNext() = _current = sample
+    def updateValue() = _current = sample
 
     override def value: Dynamic[T] = new Dynamic[T] {
       override def value(): T = _current
+
+      def generators = List(gen)
     }
   }
 
@@ -140,9 +149,11 @@ object TermImplicits {
   implicit def toDynTuple2[T1, T2](t: Dynamic[(T1, T2)]): (Dynamic[T1], Dynamic[T2]) = {
     val a1 = new Dynamic[T1] {
       def value() = t.value()._1
+      def generators = t.generators
     }
     val a2 = new Dynamic[T2] {
       def value() = t.value()._2
+      def generators = t.generators
     }
     (a1, a2)
   }
@@ -150,12 +161,15 @@ object TermImplicits {
   implicit def toDynTuple3[T1, T2, T3](t: Dynamic[(T1, T2, T3)]): (Dynamic[T1], Dynamic[T2], Dynamic[T3]) = {
     val a1 = new Dynamic[T1] {
       def value() = t.value()._1
+      def generators = t.generators
     }
     val a2 = new Dynamic[T2] {
       def value() = t.value()._2
+      def generators = t.generators
     }
     val a3 = new Dynamic[T3] {
       def value() = t.value()._3
+      def generators = t.generators
     }
     (a1, a2, a3)
   }
