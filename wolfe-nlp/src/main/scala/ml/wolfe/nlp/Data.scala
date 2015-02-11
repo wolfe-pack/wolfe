@@ -118,8 +118,8 @@ case class Document(source: String,
  */
 case class CorefAnnotation(mentions: Seq[CorefMention] = Seq.empty) {
 
-  def clusterOf(i: Int, j: Int): Option[Int] = {
-    mentions.find(m => m.start == i && m.end == j) match {
+  def clusterOf(s: Int, i: Int, j: Int): Option[Int] = {
+    mentions.find(m => m.sentence == s && m.start == i && m.end == j) match {
       case Some(x) => Some(x.clusterID)
       case _ => None
     }
@@ -133,8 +133,8 @@ case class CorefAnnotation(mentions: Seq[CorefMention] = Seq.empty) {
     d.sentences(m.sentence).tokens.slice(m.start, m.end)
   }
 
-  def shareCluster(i: Int, j: Int, k: Int, l: Int): Boolean = {
-    clusterOf(i, j) == clusterOf(k, l)
+  def shareCluster(s1: Int, i1: Int, j1: Int, s2: Int, i2: Int, j2: Int): Boolean = {
+    clusterOf(s1, i1, j1) == clusterOf(s2, i2, j2)
   }
 }
 
