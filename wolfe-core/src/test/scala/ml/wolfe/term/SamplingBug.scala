@@ -54,7 +54,7 @@ object SamplingBug extends App {
       val p = t.ps(dynPairIx(i, j))
       val pSampled = t.ps(stochasticPairIx(i, j))
       (r dot p) + stochasticTerm(dynPairGenerator(i,j)) {k => r dot t.ps(k)}
-//      (r dot p) + (r dot pSampled)
+      //      (r dot p) + (r dot pSampled)
     }
 
   //parameter initialization
@@ -74,4 +74,3 @@ object SamplingBug extends App {
 
   println(t)
 }
-

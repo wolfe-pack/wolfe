@@ -167,12 +167,12 @@ trait DynamicGenerator[+T] {
   def updateValue()
   def generateNext(): Unit = {
     updateValue()
-    println("Updating listeners: " + listeners)
+    //println("Updating listeners: " + listeners)
     for (l <- listeners) l()
   }
   def value:Dynamic[T]
   def addListener(listener: Listener): Unit = {
-    println("Adding listener " + listener)
+    //println("Adding listener " + listener)
     listeners ::= listener
   }
 }
