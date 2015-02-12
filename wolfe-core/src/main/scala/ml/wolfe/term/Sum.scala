@@ -66,7 +66,7 @@ class Sum(val arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm {
     //updates the activation of this term and all sub terms
     def forwardProp(current: Array[Setting]) = {
       currentIndex = selectIndex()
-      full2Arg(currentIndex).copyForward(current, argInputs(currentIndex))
+      full2Arg(currentIndex).copyForwardDeep(current, argInputs(currentIndex))
       argDiffs(currentIndex).forwardProp(argInputs(currentIndex))
       //take value of selected argument
       activation.cont(0) = argActivations(currentIndex).cont(0)
@@ -75,9 +75,9 @@ class Sum(val arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm {
     def backProp(error: Setting, gradient: Array[Setting]) = {
       localBackProp(argActivations, error, argErrors)
       if (arguments(currentIndex).vars.exists(withRespectTo.contains)) {
-        full2Arg(currentIndex).copyForward(gradient, argGradients(currentIndex))
+        full2Arg(currentIndex).copyForwardDeep(gradient, argGradients(currentIndex))
         argDiffs(currentIndex).backProp(argErrors(currentIndex), argGradients(currentIndex))
-        full2Arg(currentIndex).copyBackward(gradient, argGradients(currentIndex))
+        full2Arg(currentIndex).copyBackwardDeep(gradient, argGradients(currentIndex))
       }
       //choose next index
     }

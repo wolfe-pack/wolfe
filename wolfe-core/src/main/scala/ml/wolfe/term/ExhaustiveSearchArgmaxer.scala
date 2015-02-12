@@ -17,14 +17,14 @@ class ExhaustiveSearchArgmaxer(val obj: DoubleTerm, val wrt: Seq[Var[Dom]]) exte
   def argmax(observed: Array[Setting], msgs: Array[Msgs], result: Array[Setting]) = {
     //todo: take into account messages
     //copy observed into settingsToVary
-    obs2vars.copyForward(observed, settingsToVary)
+    obs2vars.copyForwardDeep(observed, settingsToVary)
     var max = Double.NegativeInfinity
     //get discrete atoms to vary
     allSettings.iterate(settingsToVary) {
       evaluator.eval(settingsToVary, score)
       if (score.cont(0) > max) {
         max = score.cont(0)
-        vars2result.copyForward(settingsToVary, result)
+        vars2result.copyForwardDeep(settingsToVary, result)
       }
     }
   }
@@ -97,7 +97,7 @@ class ExhaustiveSearchMaxMarginalizer(val obj: DoubleTerm, val wrt: Seq[Var[Dom]
 
   def maxMarginals(observed: Array[Setting], wrtMsgs: Array[Msgs], targetMsgs: Array[Msgs]) = {
     for (i <- 0 until targetMsgs.length) targetMsgs(i) := Double.NegativeInfinity
-    obs2full.copyForward(observed, settingsToVary)
+    obs2full.copyForwardDeep(observed, settingsToVary)
     allSettings.iterate(settingsToVary) {
       evaluator.eval(settingsToVary, score)
       var penalized = score.cont(0)

@@ -127,12 +127,18 @@ class Msgs(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMats: Int = 
 }
 
 final class VariableMapping(val srcIndex: Array[Int], val tgtIndex: Array[Int]) {
-  def copyForward(src: Array[Setting], tgt: Array[Setting]) = {
+  def copyForwardDeep(src: Array[Setting], tgt: Array[Setting]) = {
     for (i <- 0 until srcIndex.length) tgt(tgtIndex(i)) := src(srcIndex(i))
   }
+  def copyForwardShallow(src: Array[Setting], tgt: Array[Setting]) = {
+    for (i <- 0 until srcIndex.length) tgt(tgtIndex(i)) = src(srcIndex(i))
+  }
 
-  def copyBackward(src: Array[Setting], tgt: Array[Setting]) = {
+  def copyBackwardDeep(src: Array[Setting], tgt: Array[Setting]) = {
     for (i <- 0 until srcIndex.length) src(srcIndex(i)) := tgt(tgtIndex(i))
+  }
+  def copyBackwardShallow(src: Array[Setting], tgt: Array[Setting]) = {
+    for (i <- 0 until srcIndex.length) src(srcIndex(i)) = tgt(tgtIndex(i))
   }
 
   def getTgtIndex(src:Int):Int = {

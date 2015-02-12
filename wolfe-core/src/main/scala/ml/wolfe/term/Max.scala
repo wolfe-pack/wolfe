@@ -30,7 +30,7 @@ class Max(val obj: DoubleTerm, wrt: Seq[Var[Dom]]) extends DoubleTerm {
         //now get the gradient into fullGradient
         diff.addGradientAndValue(eval.fullSetting, error, fullGradient, value)
         //now filter full gradient to only contain the remaining free variables.
-        full2vars.copyForward(fullGradient,gradient)
+        full2vars.copyForwardDeep(fullGradient,gradient)
       }
     }
   }
@@ -47,8 +47,8 @@ class Max(val obj: DoubleTerm, wrt: Seq[Var[Dom]]) extends DoubleTerm {
       //get the argmax
       argmaxer.argmax(inputs, null, hiddenSetting)
       //copy into hiddenSetting into fullSetting
-      hidden2full.copyForward(hiddenSetting, fullSetting)
-      inputs2full.copyForward(inputs, fullSetting)
+      hidden2full.copyForwardDeep(hiddenSetting, fullSetting)
+      inputs2full.copyForwardDeep(inputs, fullSetting)
       //then evaluate score of argmax
       objEval.eval(fullSetting, output)
     }

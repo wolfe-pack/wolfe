@@ -18,7 +18,7 @@ trait Composed[D <: Dom] extends Term[D] {
 
     def eval(inputs: Array[Setting], output: Setting) = {
       for (i <- 0 until arguments.length) {
-        full2Arg(i).copyForward(inputs, argInputs(i))
+        full2Arg(i).copyForwardShallow(inputs, argInputs(i))
         argEvals(i).eval(argInputs(i), argOutputs(i))
       }
       comp.eval(argOutputs, output)
@@ -54,7 +54,7 @@ trait Composed[D <: Dom] extends Term[D] {
     //updates the activation of this term and all sub terms
     def forwardProp(current: Array[Setting]) = {
       for (i <- 0 until arguments.length) {
-        full2Arg(i).copyForward(current, argInputs(i))
+        full2Arg(i).copyForwardShallow(current, argInputs(i))
         argDiffs(i).forwardProp(argInputs(i))
       }
       comp.eval(argActivations, activation)
@@ -65,9 +65,9 @@ trait Composed[D <: Dom] extends Term[D] {
       localBackProp(argActivations, error, argErrors)
       for (i <- 0 until arguments.size) {
         if (arguments(i).vars.exists(withRespectTo.contains)) {
-          full2Arg(i).copyForward(gradient, argGradients(i))
+          full2Arg(i).copyForwardShallow(gradient, argGradients(i))
           argDiffs(i).backProp(argErrors(i), argGradients(i))
-          full2Arg(i).copyBackward(gradient, argGradients(i))
+          full2Arg(i).copyBackwardShallow(gradient, argGradients(i))
         }
       }
     }

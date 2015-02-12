@@ -33,9 +33,9 @@ class AscentBasedArgmaxer(val obj: DoubleTerm,
     //initialize learning rate (affects gradient by changing the final upstream error signal)
     scale.cont(0) = learningRate
     //initialize with observation
-    obs2full.copyForward(observed, result)
+    obs2full.copyForwardDeep(observed, result)
     //initialize parameters
-    param2full.copyForward(initParameters, result)
+    param2full.copyForwardDeep(initParameters, result)
 
     //now optimize
     for (iteration <- 0 until iterations) {
