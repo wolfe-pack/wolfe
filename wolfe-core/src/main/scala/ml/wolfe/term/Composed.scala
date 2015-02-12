@@ -30,6 +30,7 @@ trait Composed[D <: Dom] extends Term[D] {
   trait Composer {
     val argOutputs = arguments.map(_.domain.createSetting()).toArray
     val argInputs  = arguments.map(_.vars.map(_.domain.createSetting()).toArray)
+//    val argInputs  = arguments.map(a => Array.ofDim[Setting](a.vars.length)).toArray
     val full2Arg   = arguments.map(a => VariableMapping(vars, a.vars)).toArray
     val argEvals   = arguments.map(_.evaluator()).toArray
   }
@@ -38,7 +39,8 @@ trait Composed[D <: Dom] extends Term[D] {
 
     val term           = self
     val argErrors      = arguments.map(_.domain.createZeroSetting()).toArray
-    val argGradients   = arguments.map(_.vars.map(_.domain.createZeroSetting()).toArray).toArray
+//    val argGradients   = arguments.map(_.vars.map(_.domain.createSetting()).toArray).toArray
+    val argGradients   = arguments.map(a => Array.ofDim[Setting](a.vars.length)).toArray
     val argDiffs       = arguments.map(createDifferentiator).toArray
     val argActivations = argDiffs.map(_.activation)
     val comp           = composer()
