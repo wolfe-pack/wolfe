@@ -45,7 +45,7 @@ object CaseClassDom {
         val argName2Index = argNames.zipWithIndex.toMap
 
         //List(Boolean,Double)
-        println(caseClassArgTypeNames.map(a => a.symbol.info))
+//        println(caseClassArgTypeNames.map(a => a.symbol.info))
         //val caseClassArgTypeNames = typedCaseClassArgs.map(a => a.symbol.info)
 
         //List(Dom_rains, Dom_prob)

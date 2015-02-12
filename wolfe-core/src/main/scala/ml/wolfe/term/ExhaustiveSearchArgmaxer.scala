@@ -6,14 +6,15 @@ import ml.wolfe.term.ExhaustiveSearch.AllSettings
  * @author riedel
  */
 class ExhaustiveSearchArgmaxer(val obj: DoubleTerm, val wrt: Seq[Var[Dom]]) extends Argmaxer {
-  val observedVars   = obj.vars.filterNot(wrt.contains)
+  val observedVars = obj.vars.filterNot(wrt.contains)
   val settingsToVary = obj.vars.map(_.domain.createSetting()).toArray
-  val obs2vars       = VariableMapping(observedVars, obj.vars)
-  val vars2result    = VariableMapping(obj.vars, wrt)
-  val discAtoms      = wrt.map(_.atoms.disc.toArray).toArray
-  val allSettings = new AllSettings(discAtoms)
-  val evaluator      = obj.evaluator()
-  val score          = obj.domain.createSetting()
+  val obs2vars = VariableMapping(observedVars, obj.vars)
+  val vars2result = VariableMapping(obj.vars, wrt)
+  val newDiscAtoms = wrt.flatMap(_.atoms.disc).map(a => ExhaustiveSearch.IndexedAtom(a, obj.vars.indexOf(a.ownerOrSelf)))
+  val allSettings = new AllSettings(newDiscAtoms.toIndexedSeq)
+  val evaluator = obj.evaluator()
+  val score = obj.domain.createSetting()
+
   def argmax(observed: Array[Setting], msgs: Array[Msgs], result: Array[Setting]) = {
     //todo: take into account messages
     //copy observed into settingsToVary
@@ -33,21 +34,24 @@ class ExhaustiveSearchArgmaxer(val obj: DoubleTerm, val wrt: Seq[Var[Dom]]) exte
 
 object ExhaustiveSearch {
 
-  class AllSettings(atoms: Array[Array[DiscVar[Any]]]) {
-    val flattened = for (i <- 0 until atoms.length; j <- 0 until atoms(i).length) yield (atoms(i)(j), i)
-    val length    = flattened.length
+  case class IndexedAtom(atom: DiscVar[Any], variableIndex: Int)
+
+  class AllSettings(atoms: IndexedSeq[IndexedAtom]) {
+    //val flattened = for (i <- 0 until atoms.length; j <- 0 until atoms(i).length) yield (atoms(i)(j), i)
+    val length = atoms.length
+
     def iterate(target: Array[Setting])(body: => Unit): Unit = {
       //flatten
       var index = length - 1
 
-      var atomVarIndex = flattened(index)
-      var varIndex = atomVarIndex._2
-      var atom = atomVarIndex._1
+      var atomVarIndex = atoms(index)
+      var varIndex = atomVarIndex.variableIndex
+      var atom = atomVarIndex.atom
 
       def updateAtom(): Unit = {
-        atomVarIndex = flattened(index)
-        varIndex = atomVarIndex._2
-        atom = atomVarIndex._1
+        atomVarIndex = atoms(index)
+        varIndex = atomVarIndex.variableIndex
+        atom = atomVarIndex.atom
       }
       def currentTarget = target(varIndex).disc(atom.offset)
       def setTarget(value: Int) = target(varIndex).disc(atom.offset) = value
@@ -76,6 +80,55 @@ object ExhaustiveSearch {
     }
   }
 
+  class AllSettingsIterable[T](atoms: IndexedSeq[IndexedAtom], toVary: Array[Setting], fun: Array[Setting] => T) extends Iterable[T] {
+    //val flattened = for (i <- 0 until atoms.length; j <- 0 until atoms(i).length) yield (atoms(i)(j), i)
+    val length = atoms.length
+
+    def iterator = new Iterator[T] {
+      var index = length - 1
+      var atomVarIndex = atoms(index)
+      var varIndex = atomVarIndex.variableIndex
+      var atom = atomVarIndex.atom
+
+      def updateAtom(): Unit = {
+        atomVarIndex = atoms(index)
+        varIndex = atomVarIndex.variableIndex
+        atom = atomVarIndex.atom
+      }
+
+      def currentTarget = toVary(varIndex).disc(atom.offset)
+
+      def setTarget(value: Int) = toVary(varIndex).disc(atom.offset) = value
+
+      def incrementTarget() = toVary(varIndex).disc(atom.offset) += 1
+
+      def currentDim = atom.domain.values.length
+
+      def hasNext = index >= 0
+
+      def next() = {
+        val result = fun(toVary)
+        while (index >= 0 && (currentTarget == currentDim - 1)) {
+          setTarget(0)
+          index -= 1
+          if (index >= 0) updateAtom()
+        }
+        //increase setting by one if we haven't yet terminated
+        if (index >= 0) {
+          incrementTarget()
+          //depending on where we are in the array we bump up the settingId
+          if (index < length - 1) {
+            index = length - 1
+            updateAtom()
+          }
+        }
+        result
+      }
+    }
+
+  }
+
+
 }
 
 /**
@@ -83,16 +136,16 @@ object ExhaustiveSearch {
  */
 class ExhaustiveSearchMaxMarginalizer(val obj: DoubleTerm, val wrt: Seq[Var[Dom]], target: Seq[Var[Dom]]) extends MaxMarginalizer {
   require(wrt.forall(_.domain.isDiscrete), "Cannot do exhaustive search over continuous domains")
-  val observedVars   = obj.vars.filterNot(v => wrt.contains(v) || target.contains(v))
+  val observedVars = obj.vars.filterNot(v => wrt.contains(v) || target.contains(v))
   val settingsToVary = obj.vars.map(_.domain.createSetting()).toArray
-  val obs2full       = VariableMapping(observedVars, obj.vars)
-  val wrt2full       = VariableMapping(wrt, obj.vars)
-  val tgt2full       = VariableMapping(target, obj.vars)
-  val varyingVars    = (wrt ++ target).distinct
-  val discAtoms      = varyingVars.map(_.atoms.disc.toArray).toArray
-  val allSettings = new AllSettings(discAtoms)
-  val evaluator      = obj.evaluator()
-  val score          = obj.domain.createSetting()
+  val obs2full = VariableMapping(observedVars, obj.vars)
+  val wrt2full = VariableMapping(wrt, obj.vars)
+  val tgt2full = VariableMapping(target, obj.vars)
+  val varyingVars = (wrt ++ target).distinct
+  val newDiscAtoms = varyingVars.flatMap(_.atoms.disc).map(a => ExhaustiveSearch.IndexedAtom(a, obj.vars.indexOf(a.ownerOrSelf)))
+  val allSettings = new AllSettings(newDiscAtoms.toIndexedSeq)
+  val evaluator = obj.evaluator()
+  val score = obj.domain.createSetting()
 
 
   def maxMarginals(observed: Array[Setting], wrtMsgs: Array[Msgs], targetMsgs: Array[Msgs]) = {
