@@ -23,8 +23,6 @@ class AscentBasedArgmaxer(val obj: DoubleTerm,
   val scale        = new Setting(numCont = 1)
   val currentValue = new Setting(numCont = 1)
 
-
-
   def argmax(observed: Array[Setting], msgs: Array[Msgs], result: Array[Setting]) = {
 
     val bar = new ProgressBar(iterations, 100)

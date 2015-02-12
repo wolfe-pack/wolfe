@@ -101,6 +101,7 @@ trait DynamicTerm[D <: DoubleDom,T] extends ProxyTerm[D] {
     def forwardProp(current: Array[Setting]) = {
       generator.generateNext()
       diff.forwardProp(current)
+      activation := diff.activation
     }
     def term = diff.term
     def withRespectTo = diff.withRespectTo
