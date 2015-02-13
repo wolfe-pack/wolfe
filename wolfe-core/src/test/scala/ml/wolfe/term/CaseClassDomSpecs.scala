@@ -110,12 +110,11 @@ class CaseClassDomSpecs extends WolfeSpec {
       x.eval(Wrapped(vector(1,2))).vector should equal (vector(1,2))
     }
 
-    "return all case class values as iterable" ignore {
+    "return all case class values as iterable" in {
       @domain case class DiscWorld(rain:Boolean, sprinkler:Boolean)
       val worlds = DiscWorld.Dom(bools,bools)
-      val result = worlds.toIterable.toSeq
-      println(result.mkString("\n"))
-
+      val result = worlds.toSet
+      result should be (Set(DiscWorld(false,false),DiscWorld(false,true),DiscWorld(true,false),DiscWorld(true,true)))
     }
 
 

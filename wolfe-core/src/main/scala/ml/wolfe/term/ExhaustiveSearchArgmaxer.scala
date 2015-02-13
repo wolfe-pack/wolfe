@@ -80,12 +80,12 @@ object ExhaustiveSearch {
     }
   }
 
-  class AllSettingsIterable[T](atoms: IndexedSeq[IndexedAtom], toVary: Array[Setting], fun: Array[Setting] => T) extends Iterable[T] {
+  class AllSettingsIterable[T](val atoms: IndexedSeq[IndexedAtom], val toVary: Array[Setting], fun: Array[Setting] => T) extends Iterable[T] {
     //val flattened = for (i <- 0 until atoms.length; j <- 0 until atoms(i).length) yield (atoms(i)(j), i)
-    val length = atoms.length
+    val atomsLength = atoms.length
 
     def iterator = new Iterator[T] {
-      var index = length - 1
+      var index = atomsLength - 1
       var atomVarIndex = atoms(index)
       var varIndex = atomVarIndex.variableIndex
       var atom = atomVarIndex.atom
@@ -117,8 +117,8 @@ object ExhaustiveSearch {
         if (index >= 0) {
           incrementTarget()
           //depending on where we are in the array we bump up the settingId
-          if (index < length - 1) {
-            index = length - 1
+          if (index < atomsLength - 1) {
+            index = atomsLength - 1
             updateAtom()
           }
         }

@@ -33,6 +33,8 @@ object TermImplicits {
     tmp
   }
 
+  implicit def domToIterable(dom:Dom):Iterable[dom.Value] = dom.toIterable
+
   def seqs[D <: Dom](elements: D, length: Int):SeqDom[elements.type]  = new SeqDom[elements.type](elements, length)
 
   def seq[E<:Dom](dom:SeqDom[E])(elems:dom.elementDom.Term*) = new dom.SeqDomTermImpl {
