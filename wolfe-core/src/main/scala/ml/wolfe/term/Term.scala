@@ -3,22 +3,48 @@ package ml.wolfe.term
 import cc.factorie.la.DenseTensor1
 import ml.wolfe.util.Math._
 
+/**
+ * A term is an object that represents a computation of a value based on an assignment to free variables in the term.
+ * The term is typed, in the sense that it is guaranteed to produce values in a domain [[ml.wolfe.term.Dom]].
+ * The term's computation is defined through the term's evaluator object. Terms can also provide means to differentiate,
+ * optimize or marginalize the term with respect to some variables.
+ * @tparam D the type of domain this term produces values in.
+ */
 trait Term[+D <: Dom] extends TermHelper[D] {
+
+  /**
+   * The domain of the term. Evaluating the term will yield a value within this domain.
+   */
   val domain: D
 
+  /**
+   * The sequence of free variables in this term. Notice that the order of this sequence determines the order
+   * of arguments to be passed into the evaluation methods.
+   * @return the sequence of free variables in this term.
+   */
   def vars: Seq[Var[Dom]]
 
+  /**
+   * The evaluator calculates the value of the term given an assignment to free variables.
+   * @return the term's evaluator.
+   */
   def evaluator(): Evaluator
 
+  /**
+   * Variables may describe structured objects. Terms may only depend on parts of these structured objects. Atoms
+   * define a set of such parts.
+   * @return the atoms that this term depend on.
+   */
   def atoms: Atoms
 
   def differentiator(wrt: Seq[Var[Dom]]): Differentiator
 
-  def maxMarginalizer(wrt:Seq[Var[Dom]],target:Seq[Var[Dom]]):MaxMarginalizer = {
+  def maxMarginalizer(wrt: Seq[Var[Dom]], target: Seq[Var[Dom]]): MaxMarginalizer = {
     //todo: this could be type safe, for example by adding the argmax method to the RichDoubleTerm
     if (!domain.isDouble) sys.error("Argmax only supported for real valued terms")
     else if (wrt.forall(_.domain.isDiscrete))
-      new ExhaustiveSearchMaxMarginalizer(this.asInstanceOf[DoubleTerm], wrt,target) else ???
+      new ExhaustiveSearchMaxMarginalizer(this.asInstanceOf[DoubleTerm], wrt, target)
+    else ???
   }
 
   def argmaxer(wrt: Seq[Var[Dom]]): Argmaxer = {
@@ -36,13 +62,13 @@ trait Term[+D <: Dom] extends TermHelper[D] {
 trait TermHelper[+D <: Dom] {
   this: Term[D] =>
 
-  def maxMarginals[T <: Dom](target:Var[T],wrt:Var[T])(incoming:wrt.domain.Marginals)(args:Any*):target.domain.Marginals = {
-    val maxMarger = maxMarginalizer(Seq(wrt),Seq(target))
+  def maxMarginals[T <: Dom](target: Var[T], wrt: Var[T])(incoming: wrt.domain.Marginals)(args: Any*): target.domain.Marginals = {
+    val maxMarger = maxMarginalizer(Seq(wrt), Seq(target))
     val observed = vars.filter(v => v != wrt && v != target)
-    val observedSettings = Dom.createSettings(observed,args)
+    val observedSettings = Dom.createSettings(observed, args)
     val result = target.domain.createZeroMsgs()
     val incomingMsgs = Array(wrt.domain.toMsgs(incoming))
-    maxMarger.maxMarginals(observedSettings,incomingMsgs,Array(result))
+    maxMarger.maxMarginals(observedSettings, incomingMsgs, Array(result))
     target.domain.toMarginals(result)
   }
 
@@ -84,10 +110,15 @@ trait TermHelper[+D <: Dom] {
 
 trait ProxyTerm[D <: Dom] extends Term[D] {
   def self: Term[D]
+
   val domain = self.domain
+
   def vars = self.vars
+
   def evaluator() = self.evaluator()
+
   def differentiator(wrt: Seq[Var[Dom]]) = self.differentiator(wrt)
+
   def atoms = self.atoms
 }
 
@@ -129,6 +160,7 @@ trait Var[+D <: Dom] extends Term[D] {
 trait Atom {
   def offset: Int
 }
+
 case class Atoms(disc: Seq[DiscVar[Any]] = Nil, cont: Seq[DoubleVar] = Nil, vect: Seq[VectorVar] = Nil, mats: Seq[MatrixVar] = Nil) {
   def ++(that: Atoms) = copy(disc = disc ++ that.disc, cont = cont ++ that.cont, vect = vect ++ that.vect, mats = mats ++ that.mats)
 
@@ -158,19 +190,24 @@ case class Atoms(disc: Seq[DiscVar[Any]] = Nil, cont: Seq[DoubleVar] = Nil, vect
 
 trait Generator[+T] {
   def generateNext()
+
   def current(): T
 }
 
 trait DynamicGenerator[+T] {
-  type Listener = ()=>Unit
-  private var listeners:List[Listener] = Nil
+  type Listener = () => Unit
+  private var listeners: List[Listener] = Nil
+
   def updateValue()
+
   def generateNext(): Unit = {
     updateValue()
     //println("Updating listeners: " + listeners)
     for (l <- listeners) l()
   }
-  def value:Dynamic[T]
+
+  def value: Dynamic[T]
+
   def addListener(listener: Listener): Unit = {
     //println("Adding listener " + listener)
     listeners ::= listener
@@ -180,14 +217,15 @@ trait DynamicGenerator[+T] {
 trait Dynamic[+T] {
 
   self =>
-  def value():T
+  def value(): T
 
-  def generators:List[DynamicGenerator[_]]
+  def generators: List[DynamicGenerator[_]]
 
-  def map[A](f:T => A):Dynamic[A] = new Dynamic[A] {
+  def map[A](f: T => A): Dynamic[A] = new Dynamic[A] {
     def generators = self.generators
-    private var _currentA:A = _
-    generators.foreach(_.addListener {() =>
+
+    private var _currentA: A = _
+    generators.foreach(_.addListener { () =>
       _currentA = f(self.value())
     })
 
@@ -251,8 +289,6 @@ class EmptyDifferentiator(val term: Term[Dom], val withRespectTo: Seq[Var[Dom]])
 }
 
 
-
-
 class DoubleFun[T <: Term[DoubleDom]](val arg: T, fun: Double => Double, deriv: Double => Double) extends ComposedDoubleTerm {
   self =>
 
@@ -304,7 +340,7 @@ class VectorDoubleFun[T <: Term[VectorDom]](val arg: T, fun: Double => Double, d
 
 }
 
-class VectorSigmoid[T <: Term[VectorDom]](override val arg: T) 
+class VectorSigmoid[T <: Term[VectorDom]](override val arg: T)
   extends VectorDoubleFun(arg, sigmoid, sigmoidDeriv)
 
 class VectorTanh[T <: Term[VectorDom]](override val arg: T)
@@ -367,7 +403,7 @@ class MatrixDotProduct[T1 <: Term[MatrixDom], T2 <: Term[MatrixDom]](val arg1: T
 }
 
 class VectorScaling[T1 <: Term[VectorDom], T2 <: Term[DoubleDom]](val arg1: T1, arg2: T2) extends Composed[VectorDom] {
-  
+
   self =>
 
   val arguments = IndexedSeq(arg1, arg2)
@@ -502,6 +538,7 @@ class Product(val arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm 
           gradient(i).cont(0) = total / argOutputs(i).cont(0)
       }
     }
+
     def withRespectTo = wrt
   }
 }
@@ -514,7 +551,7 @@ object Playground {
 
   def main(args: Array[String]) {
 
-    class Gen[T](gen: =>T){
+    class Gen[T](gen: => T) {
       def eval = gen
     }
 
@@ -526,19 +563,19 @@ object Playground {
     println(gen.eval)
 
 
-//    val result1 = argmax(W){ w => loss(w)}
+    //    val result1 = argmax(W){ w => loss(w)}
 
-//    val result = argmax(W){ w => loss2(w._1)}
+    //    val result = argmax(W){ w => loss2(w._1)}
 
-//
-//    val dom = doubles x seqs(doubles,2)
-//
-//    val x = dom.variable("x")
-//    val d:DoubleTerm = x._2(2)
-//
-//    implicit val vecs = vectors(2)
-//    val y = vecs.variable("y")
-//    val term = y dot vecs.Const(1.0,2.0)
+    //
+    //    val dom = doubles x seqs(doubles,2)
+    //
+    //    val x = dom.variable("x")
+    //    val d:DoubleTerm = x._2(2)
+    //
+    //    implicit val vecs = vectors(2)
+    //    val y = vecs.variable("y")
+    //    val term = y dot vecs.Const(1.0,2.0)
 
     //    val X = new VectorDom(1)
     //    val XX = new Tuple2Dom(X, X)
