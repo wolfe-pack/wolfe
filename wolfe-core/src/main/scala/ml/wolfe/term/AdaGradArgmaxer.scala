@@ -29,9 +29,15 @@ class AdaGradArgmaxer(val obj: DoubleTerm,
 
   val var2Index = wrt.map(v => v -> obj.vars.indexOf(v)).toMap
 
-  def argmax(observed: Array[Setting], msgs: Array[Msgs], result: Array[Setting]) = {
+  val termsPerEpoch = obj match {
+    case t: DynamicTerm[_, _] => t.generator.termsPerEpoch
+    case _ => 1
+  }
+  val epochs = iterations / termsPerEpoch
+  var objAccumulator = 0.0
 
-    val bar = new ProgressBar(iterations, if (iterations < 100) 1 else iterations / 100)
+  def argmax(observed: Array[Setting], msgs: Array[Msgs], result: Array[Setting]) = {
+    val bar = new ProgressBar(epochs, if (epochs < 100) 1 else epochs / 100)
     bar.start()
 
     //initialize learning rate (affects gradient by changing the final upstream error signal)
@@ -59,7 +65,11 @@ class AdaGradArgmaxer(val obj: DoubleTerm,
       //now add gradient into result parameters, using momentum to determine learning rate.
       gradientStep(currentAtoms, gradient, momentum, result, learningRate, var2Index)
 
-      bar(s"Obj: ${currentValue.cont(0)}", true)
+      objAccumulator += currentValue.cont(0)
+      if ((iteration + 1) % termsPerEpoch == 0) {
+        bar(s"Obj: $objAccumulator", lineBreak = true)
+        objAccumulator = 0.0
+      }
     }
   }
 
