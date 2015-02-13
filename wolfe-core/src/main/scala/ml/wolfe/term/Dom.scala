@@ -7,6 +7,10 @@ import ml.wolfe.term.ExhaustiveSearch.{AllSettingsIterable, AllSettings}
 import scala.collection.mutable.ArrayBuffer
 
 
+/**
+ * A domain defines a set of possible values. Examples are the set of booleans, doubles, general discrete domains,
+ * but also "structured domains" such as the set of all sequences of booleans of length 5.
+ */
 trait Dom {
 
   dom =>

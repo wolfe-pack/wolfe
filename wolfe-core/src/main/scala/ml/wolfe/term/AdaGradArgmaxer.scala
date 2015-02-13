@@ -44,8 +44,10 @@ class AdaGradArgmaxer(val obj: DoubleTerm,
     //now optimize
     for (iteration <- 0 until iterations) {
       //reset all previous changes to the gradient
-      val prevAtoms = obj.atoms
-      setAtoms(prevAtoms, gradient, var2Index, 0.0)
+      if (iteration > 0) {
+        val prevAtoms = obj.atoms
+        setAtoms(prevAtoms, gradient, var2Index, 0.0)
+      }
 
       //add term gradient into result gradient
       diff.addGradientAndValue(result, scale, gradient, currentValue)
