@@ -112,6 +112,7 @@ object TermImplicits {
 
     def updateValue() = {
       if (_current == _seq.size - 1) {
+        //System.err.println(s"Shuffling ${_seq.length} data points.")
         _seq = random.shuffle(seq)
         _current = -1
       }

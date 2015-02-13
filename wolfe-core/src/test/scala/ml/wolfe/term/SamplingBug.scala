@@ -63,14 +63,14 @@ object SamplingBug extends App {
   init.head.vect.foreach(x => (0 until x.length).foreach(i => x.update(i, nextDouble)))
   init.head.mats.foreach(x => (0 until x.length).foreach(i => x.update(i, nextDouble)))
 
-
+  println(init.head.vect.head)
   val data: IndexedSeq[(Int, Int, Int)] = Array((0, 0, 0), (0, 0, 1))
 
   //loss definition
-  val argmaxTerm = argmax(theta) { x => loss(data)(x).argmaxBy(Argmaxer.ascent(data.size * 1000, 0.1)(init)) }
+  val argmaxTerm = argmax(theta) { x => loss(data)(x).argmaxBy(Argmaxer.adaGrad(data.size * 1000, 0.1)(init)) }
 
   //training
   val t = argmaxTerm.eval()
 
-  println(t)
+  println(t.rs.head)
 }
