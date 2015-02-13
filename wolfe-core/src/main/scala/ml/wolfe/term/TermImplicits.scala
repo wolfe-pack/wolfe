@@ -70,6 +70,7 @@ object TermImplicits {
       _current = (_current + 1) % seq.length
     }
     def current() = seq(_current)
+    def termsPerEpoch: Int = seq.length
   }
 
   def sequential[T](seq:IndexedSeq[T]) = new DynamicGenerator[T] {
@@ -101,6 +102,8 @@ object TermImplicits {
     }
 
     override def current(): T = _seq(_current)
+
+    override def termsPerEpoch: Int = seq.length
   }
 
   def stochastic[T](seq:IndexedSeq[T]) = new DynamicGenerator[T] {
@@ -125,6 +128,8 @@ object TermImplicits {
 
       def generators = List(gen)
     }
+
+    override def termsPerEpoch: Int = seq.length
   }
 
 

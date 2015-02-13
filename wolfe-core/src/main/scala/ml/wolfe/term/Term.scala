@@ -192,6 +192,8 @@ trait Generator[+T] {
   def generateNext()
 
   def current(): T
+
+  def termsPerEpoch: Int
 }
 
 trait DynamicGenerator[+T] {
@@ -212,6 +214,8 @@ trait DynamicGenerator[+T] {
     //println("Adding listener " + listener)
     listeners ::= listener
   }
+
+  def termsPerEpoch: Int = 1
 }
 
 trait Dynamic[+T] {
