@@ -1,8 +1,6 @@
 package ml.wolfe.util
 
-import cc.factorie.la.DenseTensor1
-import ml.wolfe._
-
+import cc.factorie.la.{Tensor1, DenseTensor1}
 import scala.util.Random
 
 /**
@@ -23,4 +21,9 @@ object Math {
   def tanh(theta: Double): Double = -1 + (2 / (1 + math.exp(-2 * theta)))
 
   def tanhDeriv(theta: Double): Double = 1 - math.pow(tanh(theta), 2.0)
+
+  def elementWise(vector: Tensor1, fun: Double => Double): Tensor1 = new DenseTensor1(vector map fun)
+
+  def vectTanh(vector: Tensor1): Tensor1 = elementWise(vector, tanh)
+  def vectSigm(vector: Tensor1): Tensor1 = elementWise(vector, sigmoid)
 }

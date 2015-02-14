@@ -488,7 +488,6 @@ class MatrixVectorProduct[T1 <: Term[MatrixDom], T2 <: Term[VectorDom]](val arg1
       val A = argOutputs(0).mats(0)
       val x = argOutputs(1).vect(0)
       val error = outError.vect(0)
-
       require(A.dim2 == x.dim1, s"dimensions don't match: ${A.toDimensionsString} * ${x.dim1}")
       require(A.dim1 == error.dim1, s"dimensions don't match: ${A.toDimensionsString} * ${x.dim1} => ${error.dim1}")
 
