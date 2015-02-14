@@ -88,19 +88,22 @@ class AdaGradArgmaxer(val obj: DoubleTerm,
   def addSquaredAtoms(atoms: Atoms, toAdd: Array[Setting], result: Array[Setting],
                       var2Index: Map[Var[Dom], Int] = this.var2Index): Unit = {
     for (a <- atoms.cont; i <- var2Index.get(a.ownerOrSelf)) {
-      val current = toAdd(i).cont(a.offset)
-      result(i).cont(a.offset) += current * current
+      val offset = a.offset
+      val current = toAdd(i).cont(offset)
+      result(i).cont(offset) += current * current
     }
     for (a <- atoms.vect; i <- var2Index.get(a.ownerOrSelf)) {
-      val current = toAdd(i).vect(a.offset)
-      val targetVector = result(i).vect(a.offset)
+      val offset = a.offset
+      val current = toAdd(i).vect(offset)
+      val targetVector = result(i).vect(offset)
       for (j <- current.activeDomain) {
         targetVector(j) += current(j) * current(j)
       }
     }
     for (a <- atoms.mats; i <- var2Index.get(a.ownerOrSelf)) {
-      val current = toAdd(i).mats(a.offset)
-      val targetMatrix = result(i).mats(a.offset)
+      val offset = a.offset
+      val current = toAdd(i).mats(offset)
+      val targetMatrix = result(i).mats(offset)
       //todo: probably slow
       for (i1 <- 0 until current.dim1; i2 <- 0 until current.dim2)
         targetMatrix(i1, i2) += current(i1, i2)
@@ -110,23 +113,26 @@ class AdaGradArgmaxer(val obj: DoubleTerm,
   def gradientStep(atoms: Atoms, gradient: Array[Setting], momentum: Array[Setting], result: Array[Setting],
                    lambda: Double, var2Index: Map[Var[Dom], Int] = this.var2Index): Unit = {
     for (a <- atoms.cont; i <- var2Index.get(a.ownerOrSelf)) {
-      val g = gradient(i).cont(a.offset)
-      val h = momentum(i).cont(a.offset)
-      result(i).cont(a.offset) += lambda / sqrt(h) * g
+      val offset = a.offset
+      val g = gradient(i).cont(offset)
+      val h = momentum(i).cont(offset)
+      result(i).cont(offset) += lambda / sqrt(h) * g
     }
     for (a <- atoms.vect; i <- var2Index.get(a.ownerOrSelf)) {
-      val g = gradient(i).vect(a.offset)
-      val h = momentum(i).vect(a.offset)
+      val offset = a.offset
+      val g = gradient(i).vect(offset)
+      val h = momentum(i).vect(offset)
       for (j <- g.activeDomain) {
-        result(i).vect(a.offset)(j) += lambda / sqrt(h(j)) * g(j)
+        result(i).vect(offset)(j) += lambda / sqrt(h(j)) * g(j)
       }
     }
     for (a <- atoms.mats; i <- var2Index.get(a.ownerOrSelf)) {
-      val g = gradient(i).mats(a.offset)
-      val h = momentum(i).mats(a.offset)
+      val offset = a.offset
+      val g = gradient(i).mats(offset)
+      val h = momentum(i).mats(offset)
       //todo: probably slow
       for (i1 <- 0 until g.dim1; i2 <- 0 until g.dim2)
-        result(i).mats(a.offset)(i1, i2) += lambda / sqrt(h(i1, i2)) * g(i1, i2)
+        result(i).mats(offset)(i1, i2) += lambda / sqrt(h(i1, i2)) * g(i1, i2)
     }
   }
 
