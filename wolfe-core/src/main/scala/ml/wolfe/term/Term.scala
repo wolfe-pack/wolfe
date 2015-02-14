@@ -188,59 +188,8 @@ case class Atoms(disc: Seq[DiscVar[Any]] = Nil, cont: Seq[DoubleVar] = Nil, vect
 }
 
 
-trait Generator[+T] {
-  def generateNext()
 
-  def current(): T
 
-  def termsPerEpoch: Int
-}
-
-trait DynamicGenerator[+T] {
-  type Listener = () => Unit
-  private var listeners: List[Listener] = Nil
-
-  def updateValue()
-
-  def generateNext(): Unit = {
-    updateValue()
-    //println("Updating listeners: " + listeners)
-    for (l <- listeners) l()
-  }
-
-  def value: Dynamic[T]
-
-  def addListener(listener: Listener): Unit = {
-    //println("Adding listener " + listener)
-    listeners ::= listener
-  }
-
-  def termsPerEpoch: Int = 1
-}
-
-trait Dynamic[+T] {
-
-  self =>
-  def value(): T
-
-  def generators: List[DynamicGenerator[_]]
-
-  def map[A](f: T => A): Dynamic[A] = new Dynamic[A] {
-    def generators = self.generators
-
-    private var _currentA: A = _
-    generators.foreach(_.addListener { () =>
-      _currentA = f(self.value())
-    })
-
-    def value() = {
-      _currentA
-    }
-
-  }
-
-  override def toString = s"Dynamic(${value()})"
-}
 
 
 trait Evaluator {

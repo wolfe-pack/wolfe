@@ -87,27 +87,4 @@ class Sum(val arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm {
 }
 
 
-trait DynamicTerm[D <: DoubleDom,T] extends ProxyTerm[D] {
-  def generator:DynamicGenerator[T]
-  override def evaluator() = new Evaluator {
-    val eval = self.evaluator()
-    def eval(inputs: Array[Setting], output: Setting) = {
-      generator.generateNext()
-      eval.eval(inputs, output)
-    }
-  }
-  override def differentiator(wrt: Seq[Var[Dom]]) = new Differentiator {
-    val diff = self.differentiator(wrt)
-    def forwardProp(current: Array[Setting]) = {
-      generator.generateNext()
-      diff.forwardProp(current)
-      activation := diff.activation
-    }
-    def term = diff.term
-    def withRespectTo = diff.withRespectTo
-    def backProp(error: Setting, gradient: Array[Setting]) = {
-      diff.backProp(error, gradient)
-    }
-  }
-}
 
