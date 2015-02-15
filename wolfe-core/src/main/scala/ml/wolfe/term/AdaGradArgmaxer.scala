@@ -51,7 +51,7 @@ class AdaGradArgmaxer(val obj: DoubleTerm,
     for (iteration <- 0 until iterations) {
       //reset all previous changes to the gradient
       if (iteration > 0) {
-        val prevAtoms = obj.atoms
+        val prevAtoms = Atoms.fromIterator(obj.atomsIterator)
         setAtoms(prevAtoms, gradient, var2Index, 0.0)
       }
 
@@ -59,7 +59,7 @@ class AdaGradArgmaxer(val obj: DoubleTerm,
       diff.addGradientAndValue(result, scale, gradient, currentValue)
 
       //now update the momentum, need to call atoms again because atoms may have changed if objective is dynamic
-      val currentAtoms = obj.atoms
+      val currentAtoms = Atoms.fromIterator(obj.atomsIterator)
       addSquaredAtoms(currentAtoms, gradient, momentum, var2Index)
 
       //now add gradient into result parameters, using momentum to determine learning rate.

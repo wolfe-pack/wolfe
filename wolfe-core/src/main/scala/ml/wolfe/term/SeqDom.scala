@@ -121,7 +121,9 @@ class SeqDom[D <: Dom](val elementDom: D, val length: Int) extends Dom {
     def apply(index: Dynamic[Int]): domain.elementDom.Var = {
       domain.elementDom.dynamic(s"$name($index})", offsets +(domain.elementDom.lengths, index.value()), if (owner == null) this else owner)
     }
-    def atoms = elements.view.map(_.atoms).foldLeft(Atoms())(_ ++ _)
+
+    def atomsIterator = elements.iterator.flatMap(_.atomsIterator)
+
     def offsets: Offsets
     def ranges = Ranges(offsets, offsets +(domain.elementDom.lengths, domain.length))
     def static(gen: Int): domain.elementDom.Var = {

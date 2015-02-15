@@ -3,6 +3,8 @@ package ml.wolfe.term
 import cc.factorie.la.DenseTensor1
 import ml.wolfe.util.Math._
 
+import scala.collection.mutable
+
 /**
  * A term is an object that represents a computation of a value based on an assignment to free variables in the term.
  * The term is typed, in the sense that it is guaranteed to produce values in a domain [[ml.wolfe.term.Dom]].
@@ -35,7 +37,9 @@ trait Term[+D <: Dom] extends TermHelper[D] {
    * define a set of such parts.
    * @return the atoms that this term depend on.
    */
-  def atoms: Atoms
+  def atoms: Atoms = Atoms.fromIterator(atomsIterator)
+
+  def atomsIterator: Iterator[Atom[Dom]]
 
   def differentiator(wrt: Seq[Var[Dom]]): Differentiator
 
@@ -119,7 +123,7 @@ trait ProxyTerm[D <: Dom] extends Term[D] {
 
   def differentiator(wrt: Seq[Var[Dom]]) = self.differentiator(wrt)
 
-  def atoms = self.atoms
+  def atomsIterator = self.atomsIterator
 }
 
 
@@ -157,8 +161,10 @@ trait Var[+D <: Dom] extends Term[D] {
   }
 }
 
-trait Atom {
+trait Atom[+D <: Dom] extends Var[D] {
   def offset: Int
+  def atomsIterator = Iterator(this)
+
 }
 
 case class Atoms(disc: Seq[DiscVar[Any]] = Nil, cont: Seq[DoubleVar] = Nil, vect: Seq[VectorVar] = Nil, mats: Seq[MatrixVar] = Nil) {
@@ -184,7 +190,23 @@ case class Atoms(disc: Seq[DiscVar[Any]] = Nil, cont: Seq[DoubleVar] = Nil, vect
     mats = mats.distinct
   )
 
+}
 
+object Atoms {
+  def fromIterator(iterator:Iterator[Atom[Dom]]) = {
+    val cont = new mutable.HashSet[DoubleVar]()
+    val vect = new mutable.HashSet[VectorVar]()
+    val disc = new mutable.HashSet[DiscVar[Any]]()
+    val mats = new mutable.HashSet[MatrixVar]()
+
+    for (a <- iterator) a match {
+      case c:DoubleVar => cont += c
+      case v:VectorVar => vect += v
+      case m:MatrixVar => mats += m
+      case d:DiscVar[_] => disc += d.asInstanceOf[DiscVar[Any]]
+    }
+    Atoms(disc.toSeq,cont.toSeq,vect.toSeq,mats.toSeq)
+  }
 }
 
 

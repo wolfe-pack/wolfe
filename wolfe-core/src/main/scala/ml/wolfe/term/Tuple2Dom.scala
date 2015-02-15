@@ -75,7 +75,8 @@ class Tuple2Dom[D1 <: Dom, D2 <: Dom](val dom1: D1, val dom2: D2) extends Produc
   trait DomVar extends super.DomVar with DomTerm {
     def offsets: Offsets
     def ranges = Ranges(offsets, offsets + domain.dom1.lengths + domain.dom2.lengths)
-    def atoms = _1.atoms ++ _2.atoms
+
+    def atomsIterator = _1.atomsIterator ++ _2.atomsIterator
 
     def var1: domain.dom1.Var
     def var2: domain.dom2.Var

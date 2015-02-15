@@ -7,7 +7,9 @@ class Max(val obj: DoubleTerm, wrt: Seq[Var[Dom]]) extends DoubleTerm {
   self =>
   val domain = Dom.doubles
   val vars   = obj.vars.filterNot(wrt.contains)
-  val atoms  = obj.atoms.filterByOwner(vars.contains)
+
+  def atomsIterator = obj.atomsIterator.filter(a => vars.contains(a.ownerOrSelf))
+
   def evaluator() = new MaxEvaluator()
 
   def differentiator(wrt: Seq[Var[Dom]]) = {
@@ -61,8 +63,7 @@ class Argmax[D <: Dom](val obj: DoubleTerm, val wrt:Var[D]) extends Term[D] {
 
   val vars = obj.vars.filter(_ != wrt)
 
-  def atoms = obj.atoms.filterByOwner(_ != wrt)
-
+  def atomsIterator = obj.atomsIterator.filter(_.ownerOrSelf != wrt)
 
   def evaluator() = new Evaluator {
     val maxer = obj.argmaxer(Seq(wrt))

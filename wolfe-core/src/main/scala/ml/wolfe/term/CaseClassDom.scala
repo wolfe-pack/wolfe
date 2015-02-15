@@ -114,7 +114,7 @@ object CaseClassDom {
         val termArgsDef = argNames.map(n => q"def $n:${arg2DomTypeName(n)}#Term")
         val varArgsDef = argNames.map(n => q"def $n:${arg2DomTypeName(n)}#Var")
 
-        val atoms = reduce(argNames.map(n => q"_domVar.$n.atoms"),{case (a1,a2) => q"$a1 ++ $a2"})
+        val atomsIterator = reduce(argNames.map(n => q"_domVar.$n.atomsIterator"),{case (a1,a2) => q"$a1 ++ $a2"})
 
         val staticVarArgs = withOffsets(q"_offsets") {
           case (name, off) =>
@@ -201,7 +201,7 @@ object CaseClassDom {
               _domVar =>
               ..$varArgsDef
               def offsets: Offsets
-              def atoms = $atoms
+              def atomsIterator = $atomsIterator
               def ranges = Ranges(offsets, offsets + $self.lengths)
             }
 

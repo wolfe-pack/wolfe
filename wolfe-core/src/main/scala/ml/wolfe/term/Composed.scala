@@ -29,7 +29,7 @@ trait Composed[D <: Dom] extends Term[D] {
     }
   }
 
-  def atoms = arguments.map(_.atoms).foldLeft(Atoms())(_ ++ _).distinct
+  def atomsIterator = arguments.iterator.flatMap(_.atomsIterator)
 
   trait Composer {
     val argOutputs = arguments.map(_.domain.createSetting()).toArray

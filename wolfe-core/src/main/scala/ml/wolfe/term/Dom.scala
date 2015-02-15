@@ -85,7 +85,7 @@ trait Dom {
       }
     }
 
-    def atoms = Atoms()
+    def atomsIterator = Iterator.empty
 
     def differentiator(wrt: Seq[term.Var[Dom]]) = new Differentiator {
       val result = domain.toSetting(value.asInstanceOf[domain.Value])

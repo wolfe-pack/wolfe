@@ -57,12 +57,11 @@ class VectorDom(val dim: Int) extends Dom {
     const(new DenseVector(values.toArray))
   }
 
-  trait DomVar extends Atom with DomTerm with super.DomVar {
+  trait DomVar extends Atom[dom.type] with DomTerm with super.DomVar {
     def ranges = Ranges(Offsets(0, 0, offset, 0), Offsets(0, 0, offset + 1, 0))
-    def atoms = Atoms(vect = List(this))
   }
 
-  case class StaticVectorVar(name: String, owner: term.Var[Dom], offset: Int) extends DomVar with Atom {
+  case class StaticVectorVar(name: String, owner: term.Var[Dom], offset: Int) extends DomVar with Atom[dom.type] {
     override val ranges = super.ranges
 
   }
@@ -104,9 +103,8 @@ class MatrixDom(val dim1: Int, dim2: Int) extends Dom {
 
   def const(value: Value) = new Constant(value)
 
-  case class DomVar(name: String, owner: term.Var[Dom], offset: Int) extends DomTerm with Atom with super.DomVar {
+  case class DomVar(name: String, owner: term.Var[Dom], offset: Int) extends DomTerm with Atom[dom.type] with super.DomVar {
     val ranges = Ranges(Offsets(0, 0, 0, offset), Offsets(0, 0, 0, offset + 1))
-    def atoms = Atoms(mats = List(this))
   }
 
 }
@@ -148,7 +146,7 @@ class DoubleDom extends AtomicDom {
   def one = 1.0
   def zero = 0.0
 
-  trait DomVar extends Atom with super.DomVar {
+  trait DomVar extends Atom[dom.type] with super.DomVar {
     self =>
     def ranges = Ranges(Offsets(0, offset, 0, 0), Offsets(0, offset + 1, 0, 0))
 
@@ -160,7 +158,6 @@ class DoubleDom extends AtomicDom {
         result(0).cont(0) = if (contained) Double.PositiveInfinity else observed(0).cont(0)
       }
     }
-    def atoms = Atoms(cont = List(this))
   }
 
   case class StaticDoubleVar(name: String, owner: term.Var[Dom], offset: Int) extends Var with DomTerm {
@@ -205,9 +202,8 @@ class DiscreteDom[T](val values: IndexedSeq[T]) extends Dom {
   def const(value: T) = new Constant(value)
 
 
-  trait DomVar extends Atom with super.DomVar {
+  trait DomVar extends Atom[dom.type] with super.DomVar {
     def ranges = Ranges(Offsets(offset, 0, 0, 0), Offsets(offset + 1, 0, 0, 0))
-    def atoms = Atoms(disc = List(this.asInstanceOf[DiscVar[Any]]))
   }
 
   case class StaticDiscVar(name: String, owner: term.Var[Dom], offset: Int) extends DomVar {
