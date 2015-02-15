@@ -277,7 +277,7 @@ class VectorDoubleFun[T <: Term[VectorDom]](val arg: T, fun: Double => Double, d
 
   val arguments = IndexedSeq(arg)
 
-  override val domain: VectorDom = new VectorDom(arg.domain.dim)
+  val domain: arg.domain.type = arg.domain
 
   def copy(args: IndexedSeq[ArgumentType]) = new VectorDoubleFun[T](args(0), fun, deriv)
 
