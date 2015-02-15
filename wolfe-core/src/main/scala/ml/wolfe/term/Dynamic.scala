@@ -37,6 +37,8 @@ trait Dynamic2[T] {
 
   def childCount = children.size
 
+  def size = 1
+
   private def detach(): Unit = {
     for (owner <- owners) {
       owner.children = owner.children.filterNot(_ == parent)
@@ -110,6 +112,8 @@ object Dynamic2 {
     }
 
     def value() = seq(_current)
+
+    override def size = seq.size
   }
 }
 

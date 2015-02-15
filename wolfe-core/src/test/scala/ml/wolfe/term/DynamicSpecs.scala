@@ -10,12 +10,11 @@ class DynamicSpecs extends WolfeSpec {
   "A dynamic object" should {
     "evaluate to different values after updates, and the same values without updates" in {
       val dyn = Dynamic2.sequential(0 until 5)
-      dyn.updateValue()
-      dyn.value() should be (0)
-      dyn.value() should be (0)
-      dyn.updateValue()
-      dyn.value() should be (1)
-      dyn.value() should be (1)
+      for (i <- 0 until 5){
+        dyn.updateValue()
+        dyn.value() should be (i)
+        dyn.value() should be (i)
+      }
     }
     "should be composable through the map operator" in {
       val dyn = Dynamic2.sequential(0 until 5)
