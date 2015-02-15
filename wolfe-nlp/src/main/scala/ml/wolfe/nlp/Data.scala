@@ -133,6 +133,10 @@ case class CorefAnnotation(mentions: Seq[CorefMention] = Seq.empty) {
     d.sentences(m.sentence).tokens.slice(m.start, m.end)
   }
 
+  def shareCluster(m1: CorefMention, m2: CorefMention): Boolean = {
+    shareCluster(m1.sentence, m1.start, m1.end, m2.sentence, m2.start, m2.end)
+  }
+
   def shareCluster(s1: Int, i1: Int, j1: Int, s2: Int, i2: Int, j2: Int): Boolean = {
     clusterOf(s1, i1, j1) == clusterOf(s2, i2, j2)
   }
