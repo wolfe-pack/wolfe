@@ -24,76 +24,120 @@ trait Dynamic[+T] {
     }
 
   }
+
   override def toString = s"Dynamic(${value()})"
 }
 
 trait Dynamic2[T] {
   parent =>
-  private var children:List[Dynamic2[_]] = Nil
+  protected var children: List[Dynamic2[_]] = Nil
+  protected var owners: List[Dynamic2[_]] = Nil
+
+  def ownerCount = owners.size
+
+  def childCount = children.size
+
+  private def detach(): Unit = {
+    for (owner <- owners) {
+      owner.children = owner.children.filterNot(_ == parent)
+    }
+    owners = Nil
+  }
+
+  private def attach(child: Dynamic2[_]): Unit = {
+    children ::= child
+    child.owners ::= parent
+  }
 
   protected def update()
+
   def updateValue(): Unit = {
     update()
-    children foreach (_.updateValue())
-  }
-  def value():T
-
-  def map[A](f:T => A) = new Dynamic2[A] {
-    parent.children ::= this
-
-    private var current:A =_
-    protected def update() = {
-      current = f(parent.value())
-    }
-
-    def value() = current
+    children.reverse foreach (_.updateValue())
   }
 
-  def flatMap[A](f:T=>Dynamic2[A]) = new Dynamic2[A] {
-    parent.children ::= this
+  def value(): T
 
-    private var current:Dynamic2[A] = _
+  def map[A](f: T => A) = new Dynamic2[A] {
+    parent.attach(this)
+
+    private var current: A = _
+    private var needsUpdate = true
 
     protected def update() = {
-      current = f(parent.value())
-      current.updateValue()
+      if (owners.nonEmpty) needsUpdate = true
     }
 
-    def value() = current.value()
+    def value() = {
+      if (needsUpdate) {
+        current = f(parent.value())
+        needsUpdate = false
+      }
+      current
+    }
+  }
+
+  def flatMap[A](f: T => Dynamic2[A]) = new Dynamic2[A] {
+    parent.attach(this)
+
+    private var current: Dynamic2[A] = _
+    private var needsUpdate = true
+
+    protected def update() = {
+      if (current != null) current.detach()
+      needsUpdate = true
+    }
+
+    def value() = {
+      if (needsUpdate) {
+        current = f(parent.value())
+        current.updateValue()
+        needsUpdate = false
+      }
+      current.value()
+    }
 
   }
 
 }
 
 object Dynamic2 {
-  def sequential[T](seq:IndexedSeq[T]):Dynamic2[T] = new Dynamic2[T] {
+  def sequential[T](seq: IndexedSeq[T]): Dynamic2[T] = new Dynamic2[T] {
     private var _current = -1
 
     protected def update() = {
       _current = (_current + 1) % seq.length
     }
+
     def value() = seq(_current)
   }
 }
 
-trait DynamicTerm[D <: DoubleDom,T] extends ProxyTerm[D] {
-  def generator:DynamicGenerator[T]
+trait DynamicTerm[D <: DoubleDom, T] extends ProxyTerm[D] {
+  def generator: DynamicGenerator[T]
+
   override def evaluator() = new Evaluator {
     val eval = self.evaluator()
+
     def eval(inputs: Array[Setting], output: Setting) = {
       generator.generateNext()
       eval.eval(inputs, output)
     }
   }
+
   override def differentiator(wrt: Seq[Var[Dom]]) = new Differentiator {
     val diff = self.differentiator(wrt)
+
     def forwardProp(current: Array[Setting]) = {
       generator.generateNext()
       diff.forwardProp(current)
       activation := diff.activation
     }
+
     def term = diff.term
+
     def withRespectTo = diff.withRespectTo
+
     def backProp(error: Setting, gradient: Array[Setting]) = {
       diff.backProp(error, gradient)
     }
