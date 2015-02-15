@@ -165,16 +165,17 @@ trait Var[+D <: Dom] extends Term[D] {
 
 trait Atom[+D <: Dom] extends Var[D] {
   def offset: Int
+
   def atomsIterator = Iterator(this)
 
   override def hashCode() = offset
 
   override def equals(obj: scala.Any) = obj match {
-    case a:Atom[_] =>
+    case a: Atom[_] =>
       a.domain == domain &&
-      a.ownerOrSelf == ownerOrSelf &&
-      a.offset == offset
-   }
+        (a.ownerOrSelf eq ownerOrSelf) &&
+        a.offset == offset
+  }
 }
 
 case class Atoms(disc: Seq[DiscVar[Any]] = Nil, cont: Seq[DoubleVar] = Nil, vect: Seq[VectorVar] = Nil, mats: Seq[MatrixVar] = Nil) {
@@ -203,19 +204,19 @@ case class Atoms(disc: Seq[DiscVar[Any]] = Nil, cont: Seq[DoubleVar] = Nil, vect
 }
 
 object Atoms {
-  def fromIterator(iterator:Iterator[Atom[Dom]]) = {
+  def fromIterator(iterator: Iterator[Atom[Dom]]) = {
     val cont = new mutable.HashSet[DoubleVar]()
     val vect = new mutable.HashSet[VectorVar]()
     val disc = new mutable.HashSet[DiscVar[Any]]()
     val mats = new mutable.HashSet[MatrixVar]()
 
     for (a <- iterator) a match {
-      case c:DoubleVar => cont += c
-      case v:VectorVar => vect += v
-      case m:MatrixVar => mats += m
-      case d:DiscVar[_] => disc += d.asInstanceOf[DiscVar[Any]]
+      case c: DoubleVar => cont += c
+      case v: VectorVar => vect += v
+      case m: MatrixVar => mats += m
+      case d: DiscVar[_] => disc += d.asInstanceOf[DiscVar[Any]]
     }
-    Atoms(disc.toSeq,cont.toSeq,vect.toSeq,mats.toSeq)
+    Atoms(disc.toSeq, cont.toSeq, vect.toSeq, mats.toSeq)
   }
 }
 
@@ -662,7 +663,9 @@ trait BinaryDiscreteOperator[D <: Dom, A <: Dom] extends Composed[D] {
     val domain: D = self.domain
 
     def arg1 = args(0)
+
     def arg2 = args(1)
+
     def op(a1: Int, a2: Int) = self.op(a1, a2)
   }
 }
