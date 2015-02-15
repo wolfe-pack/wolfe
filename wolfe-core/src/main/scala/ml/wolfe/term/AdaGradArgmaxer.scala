@@ -33,6 +33,7 @@ class AdaGradArgmaxer(val obj: DoubleTerm,
     case t: DynamicTerm[_, _] => t.generator.termsPerEpoch
     case _ => 1
   }
+
   val epochs = iterations / termsPerEpoch
   var objAccumulator = 0.0
 

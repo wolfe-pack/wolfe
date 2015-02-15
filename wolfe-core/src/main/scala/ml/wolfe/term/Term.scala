@@ -159,12 +159,22 @@ trait Var[+D <: Dom] extends Term[D] {
       ranges.copy(inputs(0), output)
     }
   }
+
+  override def toString = name
 }
 
 trait Atom[+D <: Dom] extends Var[D] {
   def offset: Int
   def atomsIterator = Iterator(this)
 
+  override def hashCode() = offset
+
+  override def equals(obj: scala.Any) = obj match {
+    case a:Atom[_] =>
+      a.domain == domain &&
+      a.ownerOrSelf == ownerOrSelf &&
+      a.offset == offset
+   }
 }
 
 case class Atoms(disc: Seq[DiscVar[Any]] = Nil, cont: Seq[DoubleVar] = Nil, vect: Seq[VectorVar] = Nil, mats: Seq[MatrixVar] = Nil) {

@@ -118,12 +118,16 @@ object CaseClassDom {
 
         val staticVarArgs = withOffsets(q"_offsets") {
           case (name, off) =>
-            q"""def $name = $self.$name.variable(name + "." + "name",$off, if (owner == null) this else owner)"""
+            val nameString = name.decodedName.toString
+            val nameConst = Constant(nameString)
+            q"""def $name = $self.$name.variable(name + "." + $nameConst,$off, if (owner == null) this else owner)"""
         }
 
         val dynVarArgs = withOffsets(q"_offsets") {
           case (name, off) =>
-            q"""def $name = $self.$name.dynamic(name + "." + "name",$off, if (owner == null) this else owner)"""
+            val nameString = name.decodedName.toString
+            val nameConst = Constant(nameString)
+            q"""def $name = $self.$name.dynamic(name + "." + $nameConst,$off, if (owner == null) this else owner)"""
         }
 
         val constArgs = withOffsets(q"_offsets") {
