@@ -188,10 +188,6 @@ case class Atoms(disc: Seq[DiscVar[Any]] = Nil, cont: Seq[DoubleVar] = Nil, vect
 }
 
 
-
-
-
-
 trait Evaluator {
   def eval(inputs: Array[Setting], output: Setting)
 }
@@ -245,7 +241,12 @@ class EmptyDifferentiator(val term: Term[Dom], val withRespectTo: Seq[Var[Dom]])
 class DoubleFun[T <: Term[DoubleDom]](val arg: T, fun: Double => Double, deriv: Double => Double) extends ComposedDoubleTerm {
   self =>
 
+  type ArgumentType = T
+
   val arguments = IndexedSeq(arg)
+
+
+  def copy(args: IndexedSeq[ArgumentType]) = new DoubleFun[T](args(0), fun, deriv)
 
   def composer() = new Evaluator {
     def eval(inputs: Array[Setting], output: Setting) = {
@@ -272,9 +273,13 @@ class Tanh[T <: DoubleTerm](override val arg: T) extends DoubleFun(arg, tanh, ta
 class VectorDoubleFun[T <: Term[VectorDom]](val arg: T, fun: Double => Double, deriv: Double => Double) extends Composed[VectorDom] {
   self =>
 
+  type ArgumentType = T
+
   val arguments = IndexedSeq(arg)
 
   override val domain: VectorDom = new VectorDom(arg.domain.dim)
+
+  def copy(args: IndexedSeq[ArgumentType]) = new VectorDoubleFun[T](args(0), fun, deriv)
 
   def composer() = new Evaluator {
     def eval(inputs: Array[Setting], output: Setting) = {
@@ -303,7 +308,12 @@ class DotProduct[T1 <: Term[VectorDom], T2 <: Term[VectorDom]](val arg1: T1, val
 
   self =>
 
+  type ArgumentType = Term[VectorDom]
+
   val arguments = IndexedSeq(arg1, arg2)
+
+
+  def copy(args: IndexedSeq[ArgumentType]) = new DotProduct(args(0), args(1))
 
   def composer() = new Evaluator {
     def eval(inputs: Array[Setting], output: Setting) = {
@@ -331,7 +341,13 @@ class DotProduct[T1 <: Term[VectorDom], T2 <: Term[VectorDom]](val arg1: T1, val
 class MatrixDotProduct[T1 <: Term[MatrixDom], T2 <: Term[MatrixDom]](val arg1: T1, val arg2: T2) extends ComposedDoubleTerm {
   self =>
 
+
+  type ArgumentType = Term[MatrixDom]
+
   val arguments = IndexedSeq(arg1, arg2)
+
+
+  def copy(args: IndexedSeq[ArgumentType]) = new MatrixDotProduct(args(0), args(1))
 
   def composer() = new Evaluator {
     def eval(inputs: Array[Setting], output: Setting) = {
@@ -355,11 +371,18 @@ class MatrixDotProduct[T1 <: Term[MatrixDom], T2 <: Term[MatrixDom]](val arg1: T
   }
 }
 
-class VectorScaling[T1 <: Term[VectorDom], T2 <: Term[DoubleDom]](val arg1: T1, arg2: T2) extends Composed[VectorDom] {
+class VectorScaling[T1 <: VectorTerm, T2 <: DoubleTerm](val arg1: T1, arg2: T2) extends Composed[VectorDom] {
 
   self =>
 
+
+  type ArgumentType = Term[Dom]
+
   val arguments = IndexedSeq(arg1, arg2)
+
+
+  def copy(args: IndexedSeq[ArgumentType]) =
+    new VectorScaling(args(0).asInstanceOf[VectorTerm], args(1).asInstanceOf[DoubleTerm])
 
   override val domain: VectorDom = new VectorDom(arg1.domain.dim)
 
@@ -386,7 +409,13 @@ class VectorConcatenation[T1 <: Term[VectorDom], T2 <: Term[VectorDom]](val arg1
 
   self =>
 
+
+  type ArgumentType = Term[VectorDom]
+
   val arguments = IndexedSeq(arg1, arg2)
+
+
+  def copy(args: IndexedSeq[ArgumentType]) = new VectorConcatenation(args(0), args(1))
 
   override val domain: VectorDom = new VectorDom(arg1.domain.dim + arg2.domain.dim)
 
@@ -413,15 +442,22 @@ class VectorConcatenation[T1 <: Term[VectorDom], T2 <: Term[VectorDom]](val arg1
 
 }
 
-class MatrixVectorProduct[T1 <: Term[MatrixDom], T2 <: Term[VectorDom]](val arg1: T1, val arg2: T2) extends Composed[VectorDom] {
+class MatrixVectorProduct[T1 <: MatrixTerm, T2 <: VectorTerm](val arg1: T1, val arg2: T2) extends Composed[VectorDom] {
 
   self =>
 
   import ml.wolfe.util.PimpMyFactorie._
 
+
+  type ArgumentType = Term[Dom]
+
   val arguments = IndexedSeq(arg1, arg2)
 
   override val domain = new VectorDom(arg1.domain.dim1)
+
+
+  def copy(args: IndexedSeq[ArgumentType]) =
+    new MatrixVectorProduct(args(0).asInstanceOf[MatrixTerm], args(1).asInstanceOf[VectorTerm])
 
   def composer() = new Evaluator {
     def eval(inputs: Array[Setting], output: Setting) = {
@@ -453,14 +489,20 @@ trait ComposedDoubleTerm extends DoubleTerm with Composed[DoubleDom] {
   val domain = Dom.doubles
 }
 
+
 trait UnaryTerm[T <: Term[Dom], D <: Dom] extends Composed[D] {
   def arg: T
+
+  type ArgumentType = T
 
   val arguments = IndexedSeq(arg)
 }
 
 
 class Product(val arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm {
+
+  type ArgumentType = DoubleTerm
+
   def composer() = new Evaluator {
     def eval(inputs: Array[Setting], output: Setting) = {
       output.cont(0) = 1.0
@@ -468,6 +510,9 @@ class Product(val arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm 
         output.cont(0) *= inputs(i).cont(0)
     }
   }
+
+
+  def copy(args: IndexedSeq[ArgumentType]) = new Product(args)
 
   def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
     def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]) = {
@@ -553,10 +598,16 @@ class Iverson[T <: BoolTerm](val arg: T) extends UnaryTerm[T, DoubleDom] with Co
     }
   }
 
+  def copy(args: IndexedSeq[ArgumentType]) = new Iverson(args(0))
+
   def differentiator(wrt: Seq[Var[Dom]]) = ???
 }
 
 trait BinaryDiscreteOperator[D <: Dom, A <: Dom] extends Composed[D] {
+
+  self =>
+
+  type ArgumentType = Term[A]
 
   def arg1: Term[A]
 
@@ -573,7 +624,17 @@ trait BinaryDiscreteOperator[D <: Dom, A <: Dom] extends Composed[D] {
   }
 
   def differentiator(wrt: Seq[Var[Dom]]) = ???
+
+  def copy(args: IndexedSeq[ArgumentType]) = new BinaryDiscreteOperator[D, A] {
+
+    val domain: D = self.domain
+
+    def arg1 = args(0)
+    def arg2 = args(1)
+    def op(a1: Int, a2: Int) = self.op(a1, a2)
+  }
 }
+
 
 class DiscreteEquals[T](var arg1: DiscreteTerm[T], var arg2: DiscreteTerm[T]) extends BinaryDiscreteOperator[BoolDom, DiscreteDom[T]] {
   val domain = Dom.bools

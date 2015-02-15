@@ -24,6 +24,13 @@ import ml.wolfe.Index
 //}
 
 class Indexed[T<:Term[Dom]](val value:T)(val index:Index) extends Composed[DiscreteDom[Int]] {
+
+
+  type ArgumentType = T
+
+
+  def copy(args: IndexedSeq[ArgumentType]) = new Indexed[T](args(0))(index)
+
   def arguments = ???
 
   def composer() = ???

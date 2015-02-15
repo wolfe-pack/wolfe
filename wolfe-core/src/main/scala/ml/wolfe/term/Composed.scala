@@ -7,11 +7,15 @@ trait Composed[D <: Dom] extends Term[D] {
 
   self =>
 
-  lazy val vars = arguments.flatMap(_.vars).toSeq.distinct
+  type ArgumentType <: Term[Dom]
 
-  def arguments: IndexedSeq[Term[Dom]]
+  def arguments: IndexedSeq[ArgumentType]
 
   def composer(): Evaluator
+
+  def copy(args:IndexedSeq[ArgumentType]):Term[Dom]
+
+  lazy val vars = arguments.flatMap(_.vars).toSeq.distinct
 
   def evaluator() = new Evaluator with Composer {
     val comp = composer()

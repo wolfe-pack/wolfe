@@ -56,13 +56,19 @@ class SeqDom[D <: Dom](val elementDom: D, val length: Int) extends Dom {
 
   def const(value: Value) = new SeqDomTermImpl {
     lazy val elements = for (i <- 0 until dom.length) yield domain.elementDom.const(value(i))
+
+    def copy(args: IndexedSeq[ArgumentType]) = Term(args:_*)
   }
 
-  def Term(args: elementDom.Term*) = new SeqDomTermImpl {
+  def Term(args: elementDom.Term*):Term = new SeqDomTermImpl {
     def elements = args.toIndexedSeq
+
+    def copy(args: IndexedSeq[ArgumentType]) = Term(args:_*)
   }
   def Const(args: elementDom.Value*) = new SeqDomTermImpl {
     def elements = args.map(a => elementDom.const(a)).toIndexedSeq
+
+    def copy(args: IndexedSeq[ArgumentType]) = Term(args:_*)
   }
 
 
@@ -73,9 +79,13 @@ class SeqDom[D <: Dom](val elementDom: D, val length: Int) extends Dom {
   }
 
   abstract class SeqDomTermImpl extends Composed[dom.type] with DomTerm {
+
+    type ArgumentType = domain.elementDom.Term
+
     def arguments = elements
     def elements: IndexedSeq[domain.elementDom.Term]
     def apply(index: => Int) = elements(index)
+
     def composer() = new Evaluator {
 
       def eval(inputs: Array[Setting], output: Setting) = {

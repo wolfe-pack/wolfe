@@ -7,6 +7,11 @@ class Sum(val arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm {
 
   sum =>
 
+  type ArgumentType = DoubleTerm
+
+
+  def copy(args: IndexedSeq[ArgumentType]) = new Sum(args)
+
   def composer() = new Evaluator {
     def eval(inputs: Array[Setting], output: Setting) = {
       output.cont(0) = 0.0

@@ -61,7 +61,15 @@ class Tuple2Dom[D1 <: Dom, D2 <: Dom](val dom1: D1, val dom2: D2) extends Produc
   }
 
   trait Tuple2DomTermImpl extends DomTerm with super.DomTermImpl {
+
+    type ArgumentType = term.Term[Dom]
+
     def arguments = IndexedSeq(_1, _2)
+
+    def copy(args: IndexedSeq[ArgumentType]) = new Tuple2DomTermImpl {
+      val _1 = args(0).asInstanceOf[dom1.Term]
+      val _2 = args(1).asInstanceOf[dom2.Term]
+    }
   }
 
   trait DomVar extends super.DomVar with DomTerm {
@@ -91,6 +99,7 @@ trait ProductDom extends Dom {
   dom =>
 
   trait DomTermImpl extends super.DomTerm with Composed[dom.type] {
+
     def composer() = new Evaluator {
 
       val lengths = arguments.map(_.domain.lengths).toArray

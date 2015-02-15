@@ -33,14 +33,14 @@ object TermImplicits {
     tmp
   }
 
-  implicit def domToIterable(dom:Dom):Iterable[dom.Value] = dom.toIterable
+  implicit def domToIterable(dom: Dom): Iterable[dom.Value] = dom.toIterable
 
-  def seqs[D <: Dom](elements: D, length: Int):SeqDom[elements.type]  = new SeqDom[elements.type](elements, length)
+  def seqs[D <: Dom](elements: D, length: Int): SeqDom[elements.type] = new SeqDom[elements.type](elements, length)
 
-  def seq[E<:Dom](dom:SeqDom[E])(elems:dom.elementDom.Term*) = new dom.SeqDomTermImpl {
+  def seq[E <: Dom](dom: SeqDom[E])(elems: dom.elementDom.Term*):dom.SeqDomTermImpl = new dom.SeqDomTermImpl {
+    def elements = elems.toIndexedSeq
 
-      def elements = elems.toIndexedSeq
-
+    def copy(args: IndexedSeq[ArgumentType]) = seq(dom)(args:_*)
   }
 
   def sigm[T <: DoubleTerm](term: T) = new Sigmoid(term)
@@ -55,31 +55,36 @@ object TermImplicits {
 
   def tanhVec[T <: VectorTerm](term: T) = new VectorTanh(term)
 
-//  implicit def genericToConstant[T,D<:TypedDom[T]](t:T)(implicit dom:D):dom.Term = dom.const(t)
-//  implicit def genericToConstant[T,D<:TypedDom[T]](t:T)(implicit dom:D):dom.DomTerm = dom.const(t)
+  //  implicit def genericToConstant[T,D<:TypedDom[T]](t:T)(implicit dom:D):dom.Term = dom.const(t)
+  //  implicit def genericToConstant[T,D<:TypedDom[T]](t:T)(implicit dom:D):dom.DomTerm = dom.const(t)
 
-//  implicit def seqOfTermsToSeqTerm[T <: Term[Dom], D <: DomWithTerm[T],S<:SeqDom[D]](seq:IndexedSeq[T])(implicit dom:S):dom.Term =
-//    new dom.SeqTermImpl {
-//      val elements:IndexedSeq[T] = seq
-//      val domain:dom.type = dom
-//    }
+  //  implicit def seqOfTermsToSeqTerm[T <: Term[Dom], D <: DomWithTerm[T],S<:SeqDom[D]](seq:IndexedSeq[T])(implicit dom:S):dom.Term =
+  //    new dom.SeqTermImpl {
+  //      val elements:IndexedSeq[T] = seq
+  //      val domain:dom.type = dom
+  //    }
 
-  def sequential2[T](seq:IndexedSeq[T]) = new Generator[T] {
+  def sequential2[T](seq: IndexedSeq[T]) = new Generator[T] {
     private var _current = -1
+
     def generateNext() = {
       _current = (_current + 1) % seq.length
     }
+
     def current() = seq(_current)
+
     def termsPerEpoch: Int = seq.length
   }
 
-  def sequential[T](seq:IndexedSeq[T]) = new DynamicGenerator[T] {
+  def sequential[T](seq: IndexedSeq[T]) = new DynamicGenerator[T] {
     gen =>
     private var _current = -1
+
     def updateValue() = {
       _current = (_current + 1) % seq.length
     }
-    val value:Dynamic[T] = new Dynamic[T] {
+
+    val value: Dynamic[T] = new Dynamic[T] {
       def value() = seq(_current)
 
       def generators = List(gen)
@@ -87,7 +92,8 @@ object TermImplicits {
   }
 
 
-  def stochastic2[T](seq:IndexedSeq[T]) = new Generator[T] {
+  def stochastic2[T](seq: IndexedSeq[T]) = new Generator[T] {
+
     import ml.wolfe.util.Math.random
 
     private var _seq = random.shuffle(seq)
@@ -106,8 +112,9 @@ object TermImplicits {
     override def termsPerEpoch: Int = seq.length
   }
 
-  def stochastic[T](seq:IndexedSeq[T]) = new DynamicGenerator[T] {
+  def stochastic[T](seq: IndexedSeq[T]) = new DynamicGenerator[T] {
     gen =>
+
     import ml.wolfe.util.Math.random
 
     private var _seq = random.shuffle(seq)
@@ -121,7 +128,7 @@ object TermImplicits {
       _current = _current + 1
     }
 
-    val value:Dynamic[T] = new Dynamic[T] {
+    val value: Dynamic[T] = new Dynamic[T] {
       def value() = _seq(_current)
 
       def generators = List(gen)
@@ -146,8 +153,9 @@ object TermImplicits {
 
   def stochasticTerm[T](gen: DynamicGenerator[T])(arg: Dynamic[T] => DoubleTerm) = {
     val term = arg(gen.value)
-    new DynamicTerm[DoubleDom,T] {
+    new DynamicTerm[DoubleDom, T] {
       def self = term
+
       def generator = gen
     }
   }
@@ -155,10 +163,12 @@ object TermImplicits {
   implicit def toDynTuple2[T1, T2](t: Dynamic[(T1, T2)]): (Dynamic[T1], Dynamic[T2]) = {
     val a1 = new Dynamic[T1] {
       def value() = t.value()._1
+
       def generators = t.generators
     }
     val a2 = new Dynamic[T2] {
       def value() = t.value()._2
+
       def generators = t.generators
     }
     (a1, a2)
@@ -167,14 +177,17 @@ object TermImplicits {
   implicit def toDynTuple3[T1, T2, T3](t: Dynamic[(T1, T2, T3)]): (Dynamic[T1], Dynamic[T2], Dynamic[T3]) = {
     val a1 = new Dynamic[T1] {
       def value() = t.value()._1
+
       def generators = t.generators
     }
     val a2 = new Dynamic[T2] {
       def value() = t.value()._2
+
       def generators = t.generators
     }
     val a3 = new Dynamic[T3] {
       def value() = t.value()._3
+
       def generators = t.generators
     }
     (a1, a2, a3)
@@ -202,23 +215,23 @@ object TermImplicits {
 
   implicit def vectToConstant(d: FactorieVector): Constant[VectorDom] = vectors(d.dim1).const(d)
 
-  implicit def vectToConstantWithDom(d: FactorieVector)(implicit dom:VectorDom): dom.Term = dom.const(d)
+  implicit def vectToConstantWithDom(d: FactorieVector)(implicit dom: VectorDom): dom.Term = dom.const(d)
 
   implicit def matToConstant(d: FactorieMatrix): Constant[MatrixDom] = matrices(d.dim1, d.dim2).const(d)
 
   implicit def discToConstant[T: DiscreteDom](value: T): Constant[DiscreteDom[T]] =
     implicitly[DiscreteDom[T]].const(value)
 
-//  def argmax[D <: Dom](dom: D)(obj: dom.Variable => DoubleTerm): dom.Value = {
-//    val variable = dom.variable("_hidden")
-//    val term = obj(variable)
-//    term.argmax(variable).asInstanceOf[dom.Value]
-//  }
+  //  def argmax[D <: Dom](dom: D)(obj: dom.Variable => DoubleTerm): dom.Value = {
+  //    val variable = dom.variable("_hidden")
+  //    val term = obj(variable)
+  //    term.argmax(variable).asInstanceOf[dom.Value]
+  //  }
 
-  def argmax[D <: Dom](dom: D)(obj: dom.Var => DoubleTerm):Argmax[dom.type] = {
+  def argmax[D <: Dom](dom: D)(obj: dom.Var => DoubleTerm): Argmax[dom.type] = {
     val variable = dom.variable("_hidden")
     val term = obj(variable)
-    new Argmax[dom.type](term,variable)
+    new Argmax[dom.type](term, variable)
   }
 
 
@@ -228,21 +241,26 @@ object TermImplicits {
     new Max(term, Seq(variable))
   }
 
-  def sum[T](dom:Seq[T])(arg:T => DoubleTerm) = new Sum(dom.toIndexedSeq.map(arg))
+  def sum[T](dom: Seq[T])(arg: T => DoubleTerm) = new Sum(dom.toIndexedSeq.map(arg))
 
   def sum(args: DoubleTerm*) = new Sum(args.toIndexedSeq)
 
-  def oneHot(index:Int,value:Double = 1.0)(implicit dom:VectorDom) =
-    dom.const(new SingletonTensor1(dom.dim,index,value))
+  def oneHot(index: Int, value: Double = 1.0)(implicit dom: VectorDom) =
+    dom.const(new SingletonTensor1(dom.dim, index, value))
 
   implicit class RichDoubleTerm(term: DoubleTerm) {
     def +(that: DoubleTerm) = new Sum(IndexedSeq(term, that))
-    def -(that:DoubleTerm) = new Sum(IndexedSeq(term, that * (-1.0)))
+
+    def -(that: DoubleTerm) = new Sum(IndexedSeq(term, that * (-1.0)))
+
     def *(that: DoubleTerm): Product = new Product(IndexedSeq(term, that))
+
     def *(that: VectorTerm) = new VectorScaling(that, term)
+
     def argmaxBy(factory: ArgmaxerFactory) = new ProxyTerm[DoubleDom] {
       def self = term
-      override def argmaxer(wrt: Seq[Var[Dom]]) = factory.argmaxer(term,wrt)
+
+      override def argmaxer(wrt: Seq[Var[Dom]]) = factory.argmaxer(term, wrt)
     }
   }
 
@@ -259,23 +277,26 @@ object TermImplicits {
   }
 
   implicit class RichTerm[D <: Dom](val term: Term[D]) {
-    def typed[A <: Dom](dom:A):dom.Value => term.domain.Value = {
+    def typed[A <: Dom](dom: A): dom.Value => term.domain.Value = {
       require(term.vars.size == 1 && term.vars.head.domain == dom)
-      (a:dom.Value) => term.eval(Seq(a):_*)
+      (a: dom.Value) => term.eval(Seq(a): _*)
     }
   }
 
-  implicit class RichDom[D <: Dom](val dom: D)  {
-    def x[D2 <: Dom](that: D2):Tuple2Dom[dom.type, that.type] = new Tuple2Dom[dom.type, that.type](dom, that)
-//    def iterator = dom.iterator
+  implicit class RichDom[D <: Dom](val dom: D) {
+    def x[D2 <: Dom](that: D2): Tuple2Dom[dom.type, that.type] = new Tuple2Dom[dom.type, that.type](dom, that)
+
+    //    def iterator = dom.iterator
   }
 
   implicit class RichVectTerm(val vect: Term[VectorDom]) {
     def dot(that: Term[VectorDom]) = new DotProduct(vect, that)
+
     def *(that: Term[DoubleDom]) = new VectorScaling(vect, that)
 
     //element-wise addition
     def +(that: Term[VectorDom]): VectorTerm = ???
+
     //element-wise multiplication
     def :*(that: Term[VectorDom]): VectorTerm = ???
 
@@ -284,6 +305,7 @@ object TermImplicits {
 
   implicit class RichMatrixTerm(val mat: Term[MatrixDom]) {
     def dot(that: Term[MatrixDom]) = new MatrixDotProduct(mat, that)
+
     def *(that: Term[VectorDom]) = new MatrixVectorProduct(mat, that)
   }
 
