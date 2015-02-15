@@ -107,7 +107,7 @@ class AdaGradArgmaxer(val obj: DoubleTerm,
       val targetMatrix = result(i).mats(offset)
       //todo: probably slow
       for (i1 <- 0 until current.dim1; i2 <- 0 until current.dim2)
-        targetMatrix(i1, i2) += current(i1, i2)
+        targetMatrix(i1, i2) += current(i1, i2) * current(i1, i2)
     }
   }
 

@@ -318,7 +318,6 @@ class VectorDoubleFun[T <: Term[VectorDom]](val arg: T, fun: Double => Double, d
   def composer() = new Evaluator {
     def eval(inputs: Array[Setting], output: Setting) = {
       output.vect(0) = new DenseTensor1(inputs(0).vect(0) map fun)
-      assert(!output.vect(0)(0).isNaN)
     }
   }
 
