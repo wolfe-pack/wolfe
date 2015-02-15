@@ -123,27 +123,13 @@ object CoNLLReader {
 class CoNLL2011Reader(filename: String, delim: String = "\t") extends Iterable[Document] {
 
   def iterator: Iterator[Document] = {
-    val files = new ChunkReader(filename).toArray.map(_.split("\n").filter(!_.startsWith("#")).mkString("\n")).groupBy { c =>
-      val l = c.split("\n")//.filter(!_.startsWith("#"))
-      if (l.isEmpty || l.size == 1) {
-        null
-      }
-      else {
-        val first = l.head
-        first.substring(0, first.indexOf(" "))
-      }
-    }
-    files.keys.filter(_ != null).map{f => mkCoNLL2011Document(files(f))}.iterator
+    new ChunkReader(filename, delim = "^#end\\ document.*").map(mkCoNLL2011Document(_)).iterator
   }
 
-  def mkCoNLL2011Document(chunks: Array[String]): Document = {
+  def mkCoNLL2011Document(chunk: String): Document = {
+    val chunks = chunk.split("\n\n")
     val sents = chunks.map { chunk =>
-      //      println(chunk + "\n")
-      val grid = chunk.split("\n").map(_.replaceAll(" +", "\t").split("\t"))
-      //      println(grid(0).mkString(", "))
-      //      println("lines = " + grid.size)
-      //      println("cols = " + grid(0).size)
-      //      println
+      val grid = chunk.split("\n").filter(!_.startsWith("#")).map(_.replaceAll(" +", "\t").split("\t"))
       val words = (0 until grid.size).map(grid(_)(3))
       val pos = (0 until grid.size).map(grid(_)(4))
       val lemma = (0 until grid.size).map(grid(_)(6))
@@ -172,11 +158,10 @@ class CoNLL2011Reader(filename: String, delim: String = "\t") extends Iterable[D
 
 
     val mentions = new ArrayBuffer[CorefMention]
-    var chunkFilename: Option[String] = None
+    val chunkFilename = chunk.split("\n").find(_.startsWith("#begin document")) //Option[String] = None
     val corefs = chunks.zipWithIndex.map { case(chunk, sidx) =>
-      val grid = chunk.split("\n").map(_.replaceAll(" +", "\t").split("\t"))
+      val grid = chunk.split("\n").filter(!_.startsWith("#")).map(_.replaceAll(" +", "\t").split("\t"))
       val slen = grid.size
-      chunkFilename = Some(grid(0)(0))
       val CSTART_PATTERN = """\(([0-9]+)""".r
       val CEND_PATTERN = """([0-9]+)\)""".r
       val buffer = new ArrayBuffer[(Int, Int)]
@@ -200,6 +185,38 @@ class CoNLL2011Reader(filename: String, delim: String = "\t") extends Iterable[D
 }
 
 
+object CoNLL2011Reader extends App {
+  for (doc <- new CoNLL2011Reader(args(0))) {
+    println(doc.filename.get)
+    println(doc.coref)
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+//      new ChunkReader(filename).toArray.map(_.split("\n").filter(!_.startsWith("#")).mkString("\n")).groupBy { c =>
+//      val l = c.split("\n")//.filter(!_.startsWith("#"))
+//      if (l.isEmpty || l.size == 1) {
+//        null
+//      }
+//      else {
+//        val first = l.head
+//        first.substring(0, first.indexOf(" "))
+//      }
+//    }
+//    files.keys.filter(_ != null).map{f => mkCoNLL2011Document(files(f))}.iterator
+//  }
+
+//  def mkCoNLL2011Document(chunks: Array[String]): Document = {
+
 /*      (5  59
       (8 44
        9 44)
@@ -219,17 +236,18 @@ class CoNLL2011Reader(filename: String, delim: String = "\t") extends Iterable[D
 //      }.toSeq
 
 
-class CoNLL2099Reader extends App {
-
-}
-
-object CoNLL2011Reader extends App {
-  for (t <- new CoNLL2011Reader(args(0))) {
-    println(t.sentences.size + "\t" + t.coref.mentions.map(_.clusterID).distinct.size)
+/*
     t.coref.mentions.zipWithIndex.foreach { case(c, cidx) =>
       val dist = t.coref.mentions.slice(0, cidx).reverse.find(_.clusterID == c.clusterID) match {
         case Some(m) => {
-/*
+          println
+          cidx - t.coref.mentions.indexOf(m)
+        }
+        case _ => 0
+      }
+      println("D: " + dist)
+    }
+
           println("Mention: " + c + "\n  -- links to --  \n" + m)
           println("REF: " + t.coref.mentionTokens(c, t).mkString(" "))
           println("ANT: " + t.coref.mentionTokens(m, t).mkString(" "))
@@ -239,17 +257,6 @@ object CoNLL2011Reader extends App {
 //          println("ANT Sentence: " + t.sentences(m.sentence).tokens.mkString(" "))
 //          println("Sentence size: " + t.sentences(c.sentence).size)
 //          println("Mentions in Sentence: " + t.coref.mentions.filter(_.sentence == c.sentence).mkString("\n"))
-          println
-          cidx - t.coref.mentions.indexOf(m)
-        }
-        case _ => 0
-      }
-      println("D: " + dist)
-    }
-  }
-}
-
-
 
 
 //      cells.zipWithIndex.filter(_._1(6) == "Y").map { case (l, i) => Predicate(i+1, tokens(i), l(13)) }
