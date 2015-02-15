@@ -77,6 +77,19 @@ object PimpMyFactorie {
     def *(tensor2: Tensor2): Tensor1 = tensor2.leftMultiply(self)
 
     def <>(tensor1: Tensor1): Tensor2 = self.outer(tensor1).asInstanceOf[Tensor2]
+
+    def mapValues(fun: Double => Double, receiver: Tensor1): Tensor1 = {
+      val tmp = if (receiver == null) new DenseTensor1(self.dim1) else receiver
+      require(tmp.dim1 == tmp.dim1)
+      self.foreachActiveElement((ix, v) => tmp.update(ix, fun(v)))
+      tmp
+    }
+
+    //element-wise multiplication. mutable!
+    def :*(other: Tensor1): Tensor1 = {
+      self.foreachActiveElement((ix, v) => self.update(ix, v * other(ix)))
+      self
+    }
   }
 
   /**
