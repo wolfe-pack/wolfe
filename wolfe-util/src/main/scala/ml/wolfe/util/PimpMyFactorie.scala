@@ -81,12 +81,14 @@ object PimpMyFactorie {
     def mapValues(fun: Double => Double, receiver: Tensor1): Tensor1 = {
       val tmp = if (receiver == null) new DenseTensor1(self.dim1) else receiver
       require(tmp.dim1 == tmp.dim1)
+      //fixme: slow!
       self.foreachActiveElement((ix, v) => tmp.update(ix, fun(v)))
       tmp
     }
 
     //element-wise multiplication. mutable!
     def :*(other: Tensor1): Tensor1 = {
+      //fixme: slow!
       self.foreachActiveElement((ix, v) => self.update(ix, v * other(ix)))
       self
     }
