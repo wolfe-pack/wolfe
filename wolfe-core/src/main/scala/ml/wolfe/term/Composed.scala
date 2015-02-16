@@ -3,17 +3,12 @@ package ml.wolfe.term
 /**
  * @author riedel
  */
-trait Composed[D <: Dom] extends Term[D] {
+trait Composed[D <: Dom] extends Term[D] with NAry {
 
   self =>
 
-  type ArgumentType <: Term[Dom]
-
-  def arguments: IndexedSeq[ArgumentType]
-
   def composer(): Evaluator
 
-  def copy(args:IndexedSeq[ArgumentType]):Term[Dom]
 
   lazy val vars = arguments.flatMap(_.vars).toSeq.distinct
 
@@ -78,5 +73,12 @@ trait Composed[D <: Dom] extends Term[D] {
       }
     }
   }
+
+}
+
+trait NAry {
+  type ArgumentType <: Term[Dom]
+  def arguments: IndexedSeq[ArgumentType]
+  def copy(args:IndexedSeq[ArgumentType]):Term[Dom]
 
 }
