@@ -160,6 +160,18 @@ object TermImplicits {
     }
   }
 
+
+  def stochasticTerm2[T](gen: Dynamic2[T])(arg: Dynamic2[T] => DoubleTerm) = {
+    val term = gen.value()
+    new DynamicTerm2[DoubleDom, T] {
+      override def generator: Dynamic2[T] = gen
+
+      override def self: Term[DoubleDom] = ???
+    }
+  }
+
+
+
   implicit def toDynTuple2[T1, T2](t: Dynamic[(T1, T2)]): (Dynamic[T1], Dynamic[T2]) = {
     val a1 = new Dynamic[T1] {
       def value() = t.value()._1
@@ -295,7 +307,7 @@ object TermImplicits {
     def *(that: Term[DoubleDom]) = new VectorScaling(vect, that)
 
     //element-wise addition
-    def +(that: Term[VectorDom]): VectorTerm = ???
+    def :+(that: Term[VectorDom]): VectorTerm = ???
 
     //element-wise multiplication
     def :*(that: Term[VectorDom]): VectorTerm = ???

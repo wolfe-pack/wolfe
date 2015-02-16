@@ -10,6 +10,7 @@ class AdaGradArgmaxer(val obj: DoubleTerm,
                       val wrt: Seq[Var[Dom]],
                       val iterations: Int,
                       val learningRate: Double,
+                      val delta: Double,
                       val initParams: Array[Setting]) extends Argmaxer {
 
   val obsVars = obj.vars.filterNot(wrt.contains)
@@ -117,14 +118,14 @@ class AdaGradArgmaxer(val obj: DoubleTerm,
       val offset = a.offset
       val g = gradient(i).cont(offset)
       val h = momentum(i).cont(offset)
-      result(i).cont(offset) += lambda / sqrt(h) * g
+      result(i).cont(offset) += lambda / (sqrt(h) + delta) * g
     }
     for (a <- atoms.vect; i <- var2Index.get(a.ownerOrSelf)) {
       val offset = a.offset
       val g = gradient(i).vect(offset)
       val h = momentum(i).vect(offset)
       for (j <- g.activeDomain) {
-        result(i).vect(offset)(j) += lambda / sqrt(h(j)) * g(j)
+        result(i).vect(offset)(j) += lambda / (sqrt(h(j)) + delta) * g(j)
       }
     }
     for (a <- atoms.mats; i <- var2Index.get(a.ownerOrSelf)) {
@@ -133,7 +134,7 @@ class AdaGradArgmaxer(val obj: DoubleTerm,
       val h = momentum(i).mats(offset)
       //todo: probably slow
       for (i1 <- 0 until g.dim1; i2 <- 0 until g.dim2)
-        result(i).mats(offset)(i1, i2) += lambda / sqrt(h(i1, i2)) * g(i1, i2)
+        result(i).mats(offset)(i1, i2) += lambda / (sqrt(h(i1, i2)) + delta) * g(i1, i2)
     }
   }
 
