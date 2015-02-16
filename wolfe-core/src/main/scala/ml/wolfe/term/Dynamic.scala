@@ -117,7 +117,10 @@ object Dynamic2 {
   }
 }
 
-trait DynamicTerm[D <: DoubleDom, T] extends ProxyTerm[D] {
+trait DynamicTerm[D <: DoubleDom, T] extends ProxyTerm[D] with NAry {
+
+  dyn =>
+
   def generator: DynamicGenerator[T]
 
   override def evaluator() = new Evaluator {
@@ -145,6 +148,15 @@ trait DynamicTerm[D <: DoubleDom, T] extends ProxyTerm[D] {
     def backProp(error: Setting, gradient: Array[Setting]) = {
       diff.backProp(error, gradient)
     }
+  }
+
+  type ArgumentType = Term[DoubleDom]
+
+  def arguments = IndexedSeq(self)
+
+  def copy(args: IndexedSeq[ArgumentType]) = new DynamicTerm[D,T] {
+    def generator = dyn.generator
+    def self = dyn.self
   }
 }
 

@@ -155,7 +155,7 @@ object CorefAnnotation {
  * @param end ending index (points to the first token AFTER the mention)
  * @param head head of the coreference mention
  */
-case class CorefMention(clusterID: Int, sentence: Int, start: Int, end: Int, head: Int = -1) {
+case class CorefMention(clusterID: Int, sentence: Int, start: Int, end: Int, head: Int = -1) extends Ordered[CorefMention] {
 
   override def toString = {
     "[COREF MENTION\n" +
@@ -164,6 +164,20 @@ case class CorefMention(clusterID: Int, sentence: Int, start: Int, end: Int, hea
       (if (head >= 0) "  HEAD: %d\n".format(head) else "") +
     "  SENTENCE: %d\n".format(sentence) +
     "  CLUSTER: %d]\n".format(clusterID)
+  }
+
+  override def compare(that: CorefMention): Int = {
+    if (this.sentence < that.sentence) return -1
+    else if (this.sentence > that.sentence) return 1
+    else {
+      if (this.start < that.start) return -1
+      else if (this.start > that.start) return 1
+      else {
+        if (this.end < that.end) return -1
+        else if (this.end > that.end) return 1
+        else return 0
+      }
+    }
   }
 }
 
