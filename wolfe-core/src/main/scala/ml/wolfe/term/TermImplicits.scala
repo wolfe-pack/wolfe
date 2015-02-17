@@ -37,10 +37,10 @@ object TermImplicits {
 
   def seqs[D <: Dom](elements: D, length: Int): SeqDom[elements.type] = new SeqDom[elements.type](elements, length)
 
-  def seq[E <: Dom](dom: SeqDom[E])(elems: dom.elementDom.Term*):dom.SeqDomTermImpl = new dom.SeqDomTermImpl {
+  def seq[E <: Dom](dom: SeqDom[E])(elems: dom.elementDom.Term*): dom.SeqDomTermImpl = new dom.SeqDomTermImpl {
     def elements = elems.toIndexedSeq
 
-    def copy(args: IndexedSeq[ArgumentType]) = seq(dom)(args:_*)
+    def copy(args: IndexedSeq[ArgumentType]) = seq(dom)(args: _*)
   }
 
   def sigm[T <: DoubleTerm](term: T) = new Sigmoid(term)
@@ -162,14 +162,12 @@ object TermImplicits {
 
 
   def stochasticTerm2[T](gen: Dynamic2[T])(arg: Dynamic2[T] => DoubleTerm) = {
-    val term = gen.value()
+    val term = arg(gen)
     new DynamicTerm2[DoubleDom, T] {
-      override def generator: Dynamic2[T] = gen
-
-      override def self: Term[DoubleDom] = ???
+      def generator: Dynamic2[T] = gen
+      def self: Term[DoubleDom] = term
     }
   }
-
 
 
   implicit def toDynTuple2[T1, T2](t: Dynamic[(T1, T2)]): (Dynamic[T1], Dynamic[T2]) = {

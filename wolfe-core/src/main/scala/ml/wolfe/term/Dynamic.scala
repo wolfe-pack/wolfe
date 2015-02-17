@@ -60,7 +60,7 @@ trait Dynamic2[T] {
 
   def value(): T
 
-  def map[A](f: T => A) = new Dynamic2[A] {
+  def map[A](f: T => A):Dynamic2[A] = new Dynamic2[A] {
     parent.attach(this)
 
     private var current: A = _
@@ -79,7 +79,7 @@ trait Dynamic2[T] {
     }
   }
 
-  def flatMap[A](f: T => Dynamic2[A]) = new Dynamic2[A] {
+  def flatMap[A](f: T => Dynamic2[A]):Dynamic2[A] = new Dynamic2[A] {
     parent.attach(this)
 
     private var current: Dynamic2[A] = _
@@ -115,6 +115,35 @@ object Dynamic2 {
 
     override def size = seq.size
   }
+
+  def stochastic[T](seq: IndexedSeq[T]): Dynamic2[T] = new Dynamic2[T] {
+    import ml.wolfe.util.Math.random
+    private var _seq = random.shuffle(seq)
+    private var _current = -1
+
+    protected def update() = {
+      if (_current == _seq.size - 1) {
+        _seq = random.shuffle(seq)
+        _current = -1
+      }
+      _current = _current + 1
+    }
+
+    def value() = seq(_current)
+
+    override def size = seq.size
+  }
+
+  object unapply3 {
+    def unapply[T1, T2, T3](d: Dynamic2[(T1, T2, T3)]) = {
+      val t1 = d.map(_._1)
+      val t2 = d.map(_._2)
+      val t3 = d.map(_._3)
+      Some((t1,t2,t3))
+    }
+  }
+
+
 }
 
 trait DynamicTerm[D <: DoubleDom, T] extends ProxyTerm[D] with NAry {
