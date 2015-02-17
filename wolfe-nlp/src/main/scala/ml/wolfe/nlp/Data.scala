@@ -161,6 +161,22 @@ object CorefAnnotation {
  */
 case class CorefMention(clusterID: Int, sentence: Int, start: Int, end: Int, head: Int = -1) extends Ordered[CorefMention] {
 
+  // symmetric nest
+  def areNested(that: CorefMention): Boolean = {
+    this.nests(that) || that.nests(this)
+  }
+
+  // asymmetric -- If m1 nests m2
+  def nests(that: CorefMention): Boolean = {
+    this.sentence == that.sentence && this.start <= that.start && this.end >= that.end && this != that
+  }
+
+  def crosses(that: CorefMention): Boolean = {
+    this.sentence == that.sentence &&
+      ((this.start < that.start && this.end > that.start && this.end < that.end) ||
+        (this.start > that.start && this.start < that.end && this.end > that.end))
+  }
+
   override def compare(that: CorefMention): Int = {
     if (this.sentence < that.sentence) return -1
     else if (this.sentence > that.sentence) return 1

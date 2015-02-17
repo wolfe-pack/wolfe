@@ -200,8 +200,8 @@ object CoNLL2011Reader extends App {
       numMentions += 1
     }
     for (m1 <- doc.coref.mentions; m2 <- doc.coref.mentions if m1 != m2) {
-      if (nests(m1, m2)) numNested += 1
-      if (crosses(m1, m2)) numCrossing += 1
+      if (m1.nests(m2)) numNested += 1
+      if (m1.crosses(m2)) numCrossing += 1
       if (doc.coref.shareCluster(m1, m2)) {
         corefDistances(doc.coref.distanceInMentions(m1, m2)) += 1
       }
@@ -229,21 +229,6 @@ object CoNLL2011Reader extends App {
   println("Number of crossing mentions = %d / %d".format(numCrossing, numMentions))
 
 
-  // symmetric nest
-  def areNested(m1: CorefMention, m2: CorefMention): Boolean = {
-    nests(m1, m2) || nests(m2, m1)
-  }
-
-  // asymmetric -- If m1 nests m2
-  def nests(m1: CorefMention, m2: CorefMention): Boolean = {
-      m1.sentence == m2.sentence && m1.start <= m2.start && m1.end >= m2.end && m1 != m2
-  }
-
-  def crosses(m1: CorefMention, m2: CorefMention): Boolean = {
-    m1.sentence == m2.sentence &&
-      ((m1.start < m2.start && m1.end > m2.start && m1.end < m2.end) ||
-      (m1.start > m2.start && m1.start < m2.end && m1.end > m2.end))
-  }
 }
 
 
