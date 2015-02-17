@@ -186,9 +186,63 @@ class CoNLL2011Reader(filename: String, delim: String = "\t") extends Iterable[D
 
 
 object CoNLL2011Reader extends App {
+  val mlens = new mutable.HashMap[Int, Int].withDefaultValue(0)
+  val dlens = new mutable.HashMap[Int, Int].withDefaultValue(0)
+  val slensByMentions = new mutable.HashMap[Int, Int].withDefaultValue(0)
+  val corefDistances = new mutable.HashMap[Int, Int].withDefaultValue(0)
+  var numMentions = 0
+  var numNested = 0
+  var numCrossing = 0
   for (doc <- new CoNLL2011Reader(args(0))) {
-    println(doc.filename.get)
-    println(doc.coref)
+    dlens(doc.sentences.size) += 1
+    for (m <- doc.coref.mentions) {
+      mlens(m.width) += 1
+      numMentions += 1
+    }
+    for (m1 <- doc.coref.mentions; m2 <- doc.coref.mentions if m1 != m2) {
+      if (nests(m1, m2)) numNested += 1
+      if (crosses(m1, m2)) numCrossing += 1
+      if (doc.coref.shareCluster(m1, m2)) {
+        corefDistances(doc.coref.distanceInMentions(m1, m2)) += 1
+      }
+    }
+    for (sidx <- 0 until doc.sentences.size) slensByMentions(doc.coref.mentions.count(_.sentence == sidx)) += 1
+  }
+
+  println("Document Lengths (# sentences):")
+  dlens.keys.toArray.sortBy(_ * 1.0).foreach(k => println(k + ":\t" + dlens(k)))
+  println("\n\n")
+
+  println("Mention Lengths:")
+  mlens.keys.toArray.sortBy(_ * 1.0).foreach(k => println(k + ":\t" + mlens(k)))
+  println("\n\n")
+
+  println("Mentions per Sentence:")
+  slensByMentions.keys.toArray.sortBy(_ * 1.0).foreach(k => println(k + ":\t" + slensByMentions(k)))
+  println("\n\n")
+
+  println("Distance of Coref Links (by # interceding mentions):")
+  corefDistances.keys.toArray.sortBy(_ * 1.0).foreach(k => println(k + ":\t" + corefDistances(k)))
+  println("\n\n")
+
+  println("Number of nested mentions = %d / %d".format(numNested, numMentions))
+  println("Number of crossing mentions = %d / %d".format(numCrossing, numMentions))
+
+
+  // symmetric nest
+  def areNested(m1: CorefMention, m2: CorefMention): Boolean = {
+    nests(m1, m2) || nests(m2, m1)
+  }
+
+  // asymmetric -- If m1 nests m2
+  def nests(m1: CorefMention, m2: CorefMention): Boolean = {
+      m1.sentence == m2.sentence && m1.start <= m2.start && m1.end >= m2.end && m1 != m2
+  }
+
+  def crosses(m1: CorefMention, m2: CorefMention): Boolean = {
+    m1.sentence == m2.sentence &&
+      ((m1.start < m2.start && m1.end > m2.start && m1.end < m2.end) ||
+      (m1.start > m2.start && m1.start < m2.end && m1.end > m2.end))
   }
 }
 

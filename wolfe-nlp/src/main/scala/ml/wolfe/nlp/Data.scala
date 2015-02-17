@@ -125,6 +125,10 @@ case class CorefAnnotation(mentions: Seq[CorefMention] = Seq.empty) {
     }
   }
 
+  def distanceInMentions(m1: CorefMention, m2: CorefMention): Int = {
+    mentions.count(m => m1 < m && m < m2)
+  }
+
   def hasMention(s: Int, i: Int, j: Int): Boolean = {
     mentions.exists(m => m.sentence == s && m.start == i && m.end == j)
   }
@@ -157,15 +161,6 @@ object CorefAnnotation {
  */
 case class CorefMention(clusterID: Int, sentence: Int, start: Int, end: Int, head: Int = -1) extends Ordered[CorefMention] {
 
-  override def toString = {
-    "[COREF MENTION\n" +
-    "  START: %d\n".format(start) +
-    "  END: %d\n".format(end) +
-      (if (head >= 0) "  HEAD: %d\n".format(head) else "") +
-    "  SENTENCE: %d\n".format(sentence) +
-    "  CLUSTER: %d]\n".format(clusterID)
-  }
-
   override def compare(that: CorefMention): Int = {
     if (this.sentence < that.sentence) return -1
     else if (this.sentence > that.sentence) return 1
@@ -179,6 +174,17 @@ case class CorefMention(clusterID: Int, sentence: Int, start: Int, end: Int, hea
       }
     }
   }
+
+  override def toString = {
+    "[COREF MENTION\n" +
+    "  START: %d\n".format(start) +
+    "  END: %d\n".format(end) +
+      (if (head >= 0) "  HEAD: %d\n".format(head) else "") +
+    "  SENTENCE: %d\n".format(sentence) +
+    "  CLUSTER: %d]\n".format(clusterID)
+  }
+
+  def width = end - start
 }
 
 /**
