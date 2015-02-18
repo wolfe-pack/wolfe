@@ -51,7 +51,7 @@ class VectorDom(val dim: Int) extends Dom {
   def zero = new DenseTensor1(dim, 0.0)
 
   def const(value: Value) = new Constant(value)
-  def dynConst(value:Dynamic2[Value]) = new DynamicConstant(value)
+  def dynConst(value:Dynamic[Value]) = new DynamicConstant(value)
 
   def Const(values: Double*) = {
     require(values.size == dim)

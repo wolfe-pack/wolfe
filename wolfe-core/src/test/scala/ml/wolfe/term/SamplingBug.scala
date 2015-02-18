@@ -13,13 +13,13 @@ object SamplingBug extends App {
 
   val pairIx: Map[(Any,Any), Int] = Map((0, 0) -> 0, (0, 1) -> 1)
 
-  def dynPairIx(e1: Dynamic[Any], e2: Dynamic[Any]) = new Dynamic[Int] {
+  def dynPairIx(e1: DynamicOld[Any], e2: DynamicOld[Any]) = new DynamicOld[Int] {
     def value(): Int = pairIx(e1.value() -> e2.value())
 
     def generators = e1.generators ++ e2.generators
   }
 
-  def stochasticPairIx(e1: Dynamic[Any], e2: Dynamic[Any]) = new Dynamic[Int] {
+  def stochasticPairIx(e1: DynamicOld[Any], e2: DynamicOld[Any]) = new DynamicOld[Int] {
     var _current:Int = -1
 
     def value(): Int = _current
@@ -31,7 +31,7 @@ object SamplingBug extends App {
     })
   }
 
-  def dynPairGenerator[T](e1: Dynamic[Any], e2: Dynamic[Any]) = new DynamicGenerator[Int] {
+  def dynPairGenerator[T](e1: DynamicOld[Any], e2: DynamicOld[Any]) = new DynamicGenerator[Int] {
     gen =>
     var _current = 0
     def updateValue() = {
@@ -41,7 +41,7 @@ object SamplingBug extends App {
       _current = pairIx(v1 -> v2)
     }
 
-    val value:Dynamic[Int] = new Dynamic[Int] {
+    val value:DynamicOld[Int] = new DynamicOld[Int] {
       def value() = _current
 
       def generators = List(gen)

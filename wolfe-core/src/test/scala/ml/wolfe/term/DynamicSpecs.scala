@@ -9,7 +9,7 @@ class DynamicSpecs extends WolfeSpec {
 
   "A dynamic object" should {
     "evaluate to different values after updates, and the same values without updates" in {
-      val dyn = Dynamic2.sequential(0 until 5)
+      val dyn = Dynamic.sequential(0 until 5)
       for (i <- 0 until 5){
         dyn.updateValue()
         dyn.value() should be (i)
@@ -17,7 +17,7 @@ class DynamicSpecs extends WolfeSpec {
       }
     }
     "should be composable through the map operator" in {
-      val dyn = Dynamic2.sequential(0 until 5)
+      val dyn = Dynamic.sequential(0 until 5)
       val composed = for (i <- dyn) yield i + 5
       for (i <- 0 until 5){
         dyn.updateValue()
@@ -28,7 +28,7 @@ class DynamicSpecs extends WolfeSpec {
     }
 
     "should be composable through the flatmap operator" in {
-      val dyn = Dynamic2.sequential(0 until 5)
+      val dyn = Dynamic.sequential(0 until 5)
       val composed = for (i <- dyn; j <- dyn) yield i + j
       for (i <- 0 until 5){
         dyn.updateValue()
@@ -39,8 +39,8 @@ class DynamicSpecs extends WolfeSpec {
     }
 
     "should be composable with other dynamic objects" in {
-      val dyn1 = Dynamic2.sequential(0 until 5)
-      val dyn2 = Dynamic2.sequential(0 until 5)
+      val dyn1 = Dynamic.sequential(0 until 5)
+      val dyn2 = Dynamic.sequential(0 until 5)
 
       val composed = for (i1 <- dyn1; i2 <- dyn2) yield i1 + i2
       for (i <- 0 until 5) {

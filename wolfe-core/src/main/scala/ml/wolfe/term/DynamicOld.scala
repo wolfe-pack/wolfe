@@ -4,14 +4,14 @@ package ml.wolfe.term
  * @author riedel
  */
 
-trait Dynamic[+T] {
+trait DynamicOld[+T] {
 
   self =>
   def value(): T
 
   def generators: List[DynamicGenerator[_]]
 
-  def map[A](f: T => A): Dynamic[A] = new Dynamic[A] {
+  def map[A](f: T => A): DynamicOld[A] = new DynamicOld[A] {
     def generators = self.generators
 
     private var _currentA: A = _
@@ -28,10 +28,10 @@ trait Dynamic[+T] {
   override def toString = s"Dynamic(${value()})"
 }
 
-trait Dynamic2[T] {
+trait Dynamic[T] {
   parent =>
-  protected var children: List[Dynamic2[_]] = Nil
-  protected var owners: List[Dynamic2[_]] = Nil
+  protected var children: List[Dynamic[_]] = Nil
+  protected var owners: List[Dynamic[_]] = Nil
 
   def ownerCount = owners.size
 
@@ -46,7 +46,7 @@ trait Dynamic2[T] {
     owners = Nil
   }
 
-  private def attach(child: Dynamic2[_]): Unit = {
+  private def attach(child: Dynamic[_]): Unit = {
     children ::= child
     child.owners ::= parent
   }
@@ -60,7 +60,7 @@ trait Dynamic2[T] {
 
   def value(): T
 
-  def map[A](f: T => A):Dynamic2[A] = new Dynamic2[A] {
+  def map[A](f: T => A):Dynamic[A] = new Dynamic[A] {
     parent.attach(this)
 
     private var current: A = _
@@ -79,10 +79,10 @@ trait Dynamic2[T] {
     }
   }
 
-  def flatMap[A](f: T => Dynamic2[A]):Dynamic2[A] = new Dynamic2[A] {
+  def flatMap[A](f: T => Dynamic[A]):Dynamic[A] = new Dynamic[A] {
     parent.attach(this)
 
-    private var current: Dynamic2[A] = _
+    private var current: Dynamic[A] = _
     private var needsUpdate = true
 
     protected def update() = {
@@ -103,8 +103,8 @@ trait Dynamic2[T] {
 
 }
 
-object Dynamic2 {
-  def sequential[T](seq: IndexedSeq[T]): Dynamic2[T] = new Dynamic2[T] {
+object Dynamic {
+  def sequential[T](seq: IndexedSeq[T]): Dynamic[T] = new Dynamic[T] {
     private var _current = -1
 
     protected def update() = {
@@ -116,7 +116,7 @@ object Dynamic2 {
     override def size = seq.size
   }
 
-  def stochastic[T](seq: IndexedSeq[T]): Dynamic2[T] = new Dynamic2[T] {
+  def shuffled[T](seq: IndexedSeq[T]): Dynamic[T] = new Dynamic[T] {
     import ml.wolfe.util.Math.random
     private var _seq = random.shuffle(seq)
     private var _current = -1
@@ -135,7 +135,7 @@ object Dynamic2 {
   }
 
   object unapply3 {
-    def unapply[T1, T2, T3](d: Dynamic2[(T1, T2, T3)]) = {
+    def unapply[T1, T2, T3](d: Dynamic[(T1, T2, T3)]) = {
       val t1 = d.map(_._1)
       val t2 = d.map(_._2)
       val t3 = d.map(_._3)
@@ -146,7 +146,7 @@ object Dynamic2 {
 
 }
 
-trait DynamicTerm[D <: DoubleDom, T] extends ProxyTerm[D] with NAry {
+trait DynamicTermOld[D <: DoubleDom, T] extends ProxyTerm[D] with NAry {
 
   dyn =>
 
@@ -183,14 +183,14 @@ trait DynamicTerm[D <: DoubleDom, T] extends ProxyTerm[D] with NAry {
 
   def arguments = IndexedSeq(self)
 
-  def copy(args: IndexedSeq[ArgumentType]) = new DynamicTerm[D,T] {
+  def copy(args: IndexedSeq[ArgumentType]) = new DynamicTermOld[D,T] {
     def generator = dyn.generator
     def self = dyn.self
   }
 }
 
-trait DynamicTerm2[D <: DoubleDom, T] extends ProxyTerm[D] {
-  def generator: Dynamic2[T]
+trait DynamicTerm[D <: DoubleDom, T] extends ProxyTerm[D] {
+  def generator: Dynamic[T]
 
   override def evaluator() = new Evaluator {
     val eval = self.evaluator()
@@ -234,7 +234,7 @@ trait DynamicGenerator[+T] {
     for (l <- listeners) l()
   }
 
-  def value: Dynamic[T]
+  def value: DynamicOld[T]
 
   def addListener(listener: Listener): Unit = {
     //println("Adding listener " + listener)

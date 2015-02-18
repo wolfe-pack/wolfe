@@ -399,8 +399,9 @@ class TermSpecs extends WolfeSpec {
       val Y = seqs(W, 2)
       val y = Y.variable("y")
       val values = IndexedSeq(vector(1),vector(2))
-      val term = stochasticTerm2(Dynamic2.sequential(0 until n)) {i =>
-        y(i) dot W.dynConst(for (iv <- i) yield values(iv))
+      def vectorAt(i:Dynamic[Int]) = W.dynConst(for (iv <- i) yield values(iv))
+      val term = stochastic(Dynamic.sequential(0 until n)) {i =>
+        y(i) dot vectorAt(i)
       }
       term.eval(values) should be (1.0)
       term.eval(values) should be (4.0)

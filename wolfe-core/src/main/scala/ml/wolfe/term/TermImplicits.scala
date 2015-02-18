@@ -84,7 +84,7 @@ object TermImplicits {
       _current = (_current + 1) % seq.length
     }
 
-    val value: Dynamic[T] = new Dynamic[T] {
+    val value: DynamicOld[T] = new DynamicOld[T] {
       def value() = seq(_current)
 
       def generators = List(gen)
@@ -128,7 +128,7 @@ object TermImplicits {
       _current = _current + 1
     }
 
-    val value: Dynamic[T] = new Dynamic[T] {
+    val value: DynamicOld[T] = new DynamicOld[T] {
       def value() = _seq(_current)
 
       def generators = List(gen)
@@ -144,16 +144,16 @@ object TermImplicits {
 
     def updateValue() = _current = sample
 
-    override def value: Dynamic[T] = new Dynamic[T] {
+    override def value: DynamicOld[T] = new DynamicOld[T] {
       override def value(): T = _current
 
       def generators = List(gen)
     }
   }
 
-  def stochasticTerm[T](gen: DynamicGenerator[T])(arg: Dynamic[T] => DoubleTerm) = {
+  def stochasticTerm[T](gen: DynamicGenerator[T])(arg: DynamicOld[T] => DoubleTerm) = {
     val term = arg(gen.value)
-    new DynamicTerm[DoubleDom, T] {
+    new DynamicTermOld[DoubleDom, T] {
       def self = term
 
       def generator = gen
@@ -161,22 +161,22 @@ object TermImplicits {
   }
 
 
-  def stochasticTerm2[T](gen: Dynamic2[T])(arg: Dynamic2[T] => DoubleTerm) = {
+  def stochastic[T](gen: Dynamic[T])(arg: Dynamic[T] => DoubleTerm) = {
     val term = arg(gen)
-    new DynamicTerm2[DoubleDom, T] {
-      def generator: Dynamic2[T] = gen
+    new DynamicTerm[DoubleDom, T] {
+      def generator: Dynamic[T] = gen
       def self: Term[DoubleDom] = term
     }
   }
 
 
-  implicit def toDynTuple2[T1, T2](t: Dynamic[(T1, T2)]): (Dynamic[T1], Dynamic[T2]) = {
-    val a1 = new Dynamic[T1] {
+  implicit def toDynTuple2[T1, T2](t: DynamicOld[(T1, T2)]): (DynamicOld[T1], DynamicOld[T2]) = {
+    val a1 = new DynamicOld[T1] {
       def value() = t.value()._1
 
       def generators = t.generators
     }
-    val a2 = new Dynamic[T2] {
+    val a2 = new DynamicOld[T2] {
       def value() = t.value()._2
 
       def generators = t.generators
@@ -184,18 +184,18 @@ object TermImplicits {
     (a1, a2)
   }
 
-  implicit def toDynTuple3[T1, T2, T3](t: Dynamic[(T1, T2, T3)]): (Dynamic[T1], Dynamic[T2], Dynamic[T3]) = {
-    val a1 = new Dynamic[T1] {
+  implicit def toDynTuple3[T1, T2, T3](t: DynamicOld[(T1, T2, T3)]): (DynamicOld[T1], DynamicOld[T2], DynamicOld[T3]) = {
+    val a1 = new DynamicOld[T1] {
       def value() = t.value()._1
 
       def generators = t.generators
     }
-    val a2 = new Dynamic[T2] {
+    val a2 = new DynamicOld[T2] {
       def value() = t.value()._2
 
       def generators = t.generators
     }
-    val a3 = new Dynamic[T3] {
+    val a3 = new DynamicOld[T3] {
       def value() = t.value()._3
 
       def generators = t.generators
@@ -204,13 +204,13 @@ object TermImplicits {
   }
 
   object ~ {
-    def unapply[T1, T2](d: Dynamic[(T1, T2)]) = {
+    def unapply[T1, T2](d: DynamicOld[(T1, T2)]) = {
       Some(toDynTuple2(d))
     }
   }
 
   object unapply3 {
-    def unapply[T1, T2, T3](d: Dynamic[(T1, T2, T3)]) = {
+    def unapply[T1, T2, T3](d: DynamicOld[(T1, T2, T3)]) = {
       Some(toDynTuple3(d))
     }
   }
@@ -226,11 +226,13 @@ object TermImplicits {
   implicit def vectToConstant(d: FactorieVector): Constant[VectorDom] = vectors(d.dim1).const(d)
 
   implicit def vectToConstantWithDom(d: FactorieVector)(implicit dom: VectorDom): dom.Term = dom.const(d)
+  implicit def dynVectToConstantWithDom(d: Dynamic[FactorieVector])(implicit dom: VectorDom): dom.Term = dom.dynConst(d)
 
   implicit def matToConstant(d: FactorieMatrix): Constant[MatrixDom] = matrices(d.dim1, d.dim2).const(d)
 
   implicit def discToConstant[T: DiscreteDom](value: T): Constant[DiscreteDom[T]] =
     implicitly[DiscreteDom[T]].const(value)
+
 
   //  def argmax[D <: Dom](dom: D)(obj: dom.Variable => DoubleTerm): dom.Value = {
   //    val variable = dom.variable("_hidden")

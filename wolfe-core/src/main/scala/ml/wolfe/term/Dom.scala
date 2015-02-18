@@ -100,7 +100,7 @@ trait Dom {
     }
   }
 
-  class DynamicConstant(val value: Dynamic2[Value]) extends DomTerm {
+  class DynamicConstant(val value: Dynamic[Value]) extends DomTerm {
     self =>
 
     val vars      = Seq.empty
