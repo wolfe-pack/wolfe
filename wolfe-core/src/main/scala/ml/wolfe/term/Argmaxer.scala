@@ -38,3 +38,4 @@ trait MaxMarginalizer {
   def maxMarginals(observed:Array[Setting], in:Array[Msgs], out:Array[Msgs])
 }
 
+

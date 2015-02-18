@@ -204,6 +204,8 @@ case class Atoms(disc: Seq[DiscVar[Any]] = Nil, cont: Seq[DoubleVar] = Nil, vect
 
 }
 
+case class AtomIndices(disc: Array[Int], cont: Array[Int], vect: Array[Int] , mats: Array[Int] )
+
 object Atoms {
   def fromIterator(iterator: Iterator[Atom[Dom]]) = {
     val cont = new mutable.HashSet[DoubleVar]()
@@ -222,9 +224,41 @@ object Atoms {
 }
 
 
+/**
+ * An evaluator calculates a setting based on a list of argument settings.
+ */
 trait Evaluator {
+
+  /**
+   * Compute a setting based on a list of input settings.
+   * @param inputs input settings.
+   * @param output output setting (will be updated).
+   */
   def eval(inputs: Array[Setting], output: Setting)
+
 }
+
+trait AtomicEvaluator {
+  def eval(atomSetting:Setting, output:Setting)
+}
+
+object AtomicEvaluator {
+  def apply(term:Term[Dom]) = {
+    val evaluator = term.evaluator()
+    val atoms = term.atoms
+    new AtomicEvaluator {
+      val inputs = term.vars.map(_.domain.createSetting()).toArray
+      def eval(atomSetting: Setting, output: Setting) = {
+        //for each atom find argument index and offset
+        //fill setting accordingly
+        //now evaluate
+        evaluator.eval(inputs,output)
+      }
+    }
+
+  }
+}
+
 
 
 trait Differentiator {

@@ -107,8 +107,7 @@ trait Dom {
     val evaluator = new Evaluator {
 
       def eval(inputs: Array[Setting], output: Setting) = {
-        val result = domain.toSetting(value.value())
-        output := result
+        domain.copyValue(value.value(),output)
       }
     }
 
@@ -117,8 +116,7 @@ trait Dom {
     def differentiator(wrt: Seq[term.Var[Dom]]) = new Differentiator {
 
       def forwardProp(current: Array[Setting]) = {
-        val result = domain.toSetting(value.value())
-        activation := result
+        domain.copyValue(value.value(),activation)
       }
 
       def term = self
