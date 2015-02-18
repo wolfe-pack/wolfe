@@ -100,6 +100,36 @@ trait Dom {
     }
   }
 
+  class DynamicConstant(val value: Dynamic2[Value]) extends DomTerm {
+    self =>
+
+    val vars      = Seq.empty
+    val evaluator = new Evaluator {
+
+      def eval(inputs: Array[Setting], output: Setting) = {
+        val result = domain.toSetting(value.value())
+        output := result
+      }
+    }
+
+    def atomsIterator = Iterator.empty
+
+    def differentiator(wrt: Seq[term.Var[Dom]]) = new Differentiator {
+
+      def forwardProp(current: Array[Setting]) = {
+        val result = domain.toSetting(value.value())
+        activation := result
+      }
+
+      def term = self
+
+      def withRespectTo = wrt
+
+      def backProp(error: Setting, gradient: Array[Setting]) = {}
+    }
+  }
+
+
   import scala.language.implicitConversions
 
   object conversion {

@@ -380,7 +380,7 @@ class TermSpecs extends WolfeSpec {
 
   }
 
-  "A stochastic sum" should {
+  "A stochastic term" should {
     "shuffles a list, traverses it and shuffles it again" in {
       val n = 3
       val epochs = 10
@@ -392,6 +392,20 @@ class TermSpecs extends WolfeSpec {
       lists.distinct.size > 1 should be(right = true)
       lists.map(_.toSet).reduceLeft(_ intersect _) should be(Set(1.0, 2.0, 3.0))
     }
+
+    "support dynamic sequence variables and constants" in {
+      val n = 2
+      val W = vectors(1)
+      val Y = seqs(W, 2)
+      val y = Y.variable("y")
+      val values = IndexedSeq(vector(1),vector(2))
+      val term = stochasticTerm2(Dynamic2.sequential(0 until n)) {i =>
+        y(i) dot W.dynConst(for (iv <- i) yield values(iv))
+      }
+      term.eval(values) should be (1.0)
+      term.eval(values) should be (4.0)
+    }
+
   }
 
   "Exhaustive max-marginalizing" should {
