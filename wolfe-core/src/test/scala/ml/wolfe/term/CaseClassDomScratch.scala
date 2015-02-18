@@ -8,13 +8,15 @@ object CaseClassDomScratch {
 
   import scala.language.implicitConversions
   import ml.wolfe.FactorieVector
+  import TermImplicits._
 
-  @domain case class Blah(value:Int)
-  @domain case class Wrapped(vector:FactorieVector)
+  @domain case class A(value:Int)
+  @domain case class B(a:A)
 
   def main(args: Array[String]) {
-    def test: Unit = {
-    }
+    val Bs = B.Dom(A.Dom(discrete(1,2)))
+    val test = Bs.const(B(A(2)))
+    println(test.eval())
   }
 
 

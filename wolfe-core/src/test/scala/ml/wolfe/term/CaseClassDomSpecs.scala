@@ -117,6 +117,12 @@ class CaseClassDomSpecs extends WolfeSpec {
       result should be (Set(DiscWorld(false,false),DiscWorld(false,true),DiscWorld(true,false),DiscWorld(true,true)))
     }
 
+    "Work with nested case classes" in {
+      @domain case class A(value:Int)
+      @domain case class B(a:A)
+      val bs = B.Dom(A.Dom(discrete(1,2)))
+      bs.toSet should be (Set(B(A(1)),B(A(2))))
+    }
 
   }
 
