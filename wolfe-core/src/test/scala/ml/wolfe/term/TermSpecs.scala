@@ -1,6 +1,6 @@
 package ml.wolfe.term
 
-import ml.wolfe.{FactorieVector, WolfeSpec}
+import ml.wolfe.WolfeSpec
 
 /**
  * @author riedel
@@ -364,14 +364,14 @@ class TermSpecs extends WolfeSpec {
       val n = 3
       val Y = seqs(doubles, n)
       val y = Y.variable("y")
-      val term = stochasticTerm(sequential(0 until n)) { i => y(i)}
+      val term = stochastic(Dynamic.sequential(0 until n)) { i => y(i)}
       for (_ <- 0 until 2; i <- 0 until n) term.eval(IndexedSeq(1.0, 2.0, 3.0)) should be(i + 1.0)
     }
     "return a different gradient every time when evaluated" in {
       val n = 3
       val Y = seqs(doubles, n)
       val y = Y.variable("y")
-      val term = stochasticTerm(sequential(0 until n)) { i => y(i) * y(i)}
+      val term = stochastic(Dynamic.sequential(0 until n)) { i => y(i) * y(i)}
       for (_ <- 0 until 2; i <- 0 until n) {
         val gradient = term.gradient(y, IndexedSeq(0.0, 1.0, 2.0))
         for (j <- 0 until n) gradient(j) should be(if (j == i) 2.0 * i else 0.0)
@@ -381,12 +381,12 @@ class TermSpecs extends WolfeSpec {
   }
 
   "A stochastic term" should {
-    "shuffles a list, traverses it and shuffles it again" in {
+    "shuffles a list, traverses it and shuffles it again" ignore {
       val n = 3
       val epochs = 10
       val Y = seqs(doubles, n)
       val y = Y.variable("y")
-      val term = stochasticTerm(stochastic(0 until n)) { i => y(i)}
+      val term = stochastic(Dynamic.shuffled(0 until n)) { i => y(i)}
       val res = for (_ <- 0 until n * epochs) yield term.eval(IndexedSeq(1.0, 2.0, 3.0))
       val lists = res.grouped(n).toList
       lists.distinct.size > 1 should be(right = true)
@@ -427,29 +427,6 @@ class TermSpecs extends WolfeSpec {
     }
   }
 
-  "A Dynamic object" should {
-    "be composable using map operations" in {
-      val gen = sequential(0 until 3)
-      val dyn = for (i <- gen.value) yield (i,i+1)
-      gen.generateNext()
-      dyn.value() should be (0->1)
-      gen.generateNext()
-      dyn.value() should be (1->2)
-    }
-    "return a constant value if generateNext isn't called" in {
-      val gen = sequential(0 until 3)
-      val dyn = for (i <- gen.value) yield i + math.random
-      gen.generateNext()
-      val v1 = dyn.value()
-      val v2 = dyn.value()
-      gen.generateNext()
-      val v3 = dyn.value()
-      v1 should be (v2)
-      v1 should not be v3
-
-    }
-
-  }
 
 
 }
