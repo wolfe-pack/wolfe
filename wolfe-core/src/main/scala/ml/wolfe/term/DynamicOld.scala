@@ -37,6 +37,8 @@ trait Dynamic[T] {
 
   def childCount = children.size
 
+  def descendentCount:Int = 1 + children.map(_.descendentCount).sum
+
   def size = 1
 
   private def detach(): Unit = {
@@ -208,6 +210,7 @@ trait DynamicTerm[D <: DoubleDom, T] extends ProxyTerm[D] {
     def forwardProp(current: Array[Setting]) = {
       //generator.generateNext()
       generator.updateValue()
+      //println(generator.descendentCount)
       diff.forwardProp(current)
       activation := diff.activation
     }
