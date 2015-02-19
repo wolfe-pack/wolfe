@@ -380,7 +380,6 @@ class DotProduct[T1 <: Term[VectorDom], T2 <: Term[VectorDom]](val arg1: T1, val
 
   val arguments = IndexedSeq(arg1, arg2)
 
-
   def copy(args: IndexedSeq[ArgumentType]) = new DotProduct(args(0), args(1))
 
   def composer() = new Evaluator {
@@ -389,7 +388,6 @@ class DotProduct[T1 <: Term[VectorDom], T2 <: Term[VectorDom]](val arg1: T1, val
     }
   }
 
-
   def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
 
     def withRespectTo = wrt
@@ -397,10 +395,8 @@ class DotProduct[T1 <: Term[VectorDom], T2 <: Term[VectorDom]](val arg1: T1, val
 
     def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]): Unit = {
       val scale = outError.cont(0)
-      gradient(0).vect(0) := 0.0
-      gradient(1).vect(0) := 0.0
-      gradient(0).vect(0) +=(argOutputs(1).vect(0), scale)
-      gradient(1).vect(0) +=(argOutputs(0).vect(0), scale)
+      gradient(0).setVect(0, argOutputs(1).vect(0), scale)
+      gradient(1).setVect(0, argOutputs(0).vect(0), scale)
     }
   }
 }

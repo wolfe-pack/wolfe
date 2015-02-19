@@ -64,22 +64,24 @@ class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMats: Int
 
   final def setVect(index: Int, value: FactorieVector): Unit = {
     if (vect(0) == null) {
-      vect(0) = value
+      vect(0) = value.copy
     } else {
       (vect(0), value) match {
         case (_: DenseTensor1, target: SparseTensor1) =>
-          vect(0) = target
+          vect(0) = target.copy
         case (_: SparseTensor1, target: DenseTensor1) =>
-          vect(0) = target
+          vect(0) = target.copy
         case (_,_) =>
-          vect(0) := 0.0
-          vect(0) += value
+          vect(0) := value
       }
     }
-
-
-
   }
+
+  final def setVect(index: Int, value: FactorieVector, scale:Double): Unit = {
+    setVect(index,value)
+    vect(0) *= scale
+  }
+
 
 
   def epsEquals(eps: Double, that: Setting): Boolean = {
