@@ -424,6 +424,7 @@ class SparseL2[T1 <: Term[VectorDom], T2 <: Term[VectorDom]](val arg: T1, val ma
 
   def composer() = new Evaluator {
     def eval(inputs: Array[Setting], output: Setting) = {
+      //todo: add mask!
       output.cont(0) = inputs(0).vect(0) dot inputs(0).vect(0)
     }
   }
@@ -445,12 +446,19 @@ class SparseL2[T1 <: Term[VectorDom], T2 <: Term[VectorDom]](val arg: T1, val ma
       if (mask != null) {
         val f = argOutputs(1).vect(0)
         import ml.wolfe.util.PimpMyFactorie._
-        gradient(0).vect(0) := 0.0
-        gradient(0).vect(0) += (f :* (w, scale * 2.0))
+        //need to multiply w with f
+        gradient(0).setVect(0,f)
+        gradient(0).vect(0) :* w
+        gradient(0).vect(0) *= 2.0
+//        gradient(0).vect(0) := 0.0
+//        gradient(0).vect(0) += (f :* (w, scale * 2.0))
       } else {
-        gradient(0).vect(0) := 0.0
-        gradient(0).vect(0) += (w * scale * 2.0)
+        gradient(0).setVect(0,w)
+        gradient(0).vect(0) *= scale * 2.0
+//        gradient(0).vect(0) := 0.0
+//        gradient(0).vect(0) += (w * scale * 2.0)
       }
+      //todo: calculate gradient for mask!
     }
   }
 }

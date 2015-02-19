@@ -3,7 +3,7 @@ package ml.wolfe.term
 import java.lang.System._
 import java.util
 
-import cc.factorie.la.{DenseTensor1, SparseTensor1}
+import cc.factorie.la.{SparseIndexedTensor1, DenseTensor1, SparseTensor1}
 import ml.wolfe.{FactorieMatrix, FactorieVector}
 
 
@@ -74,9 +74,9 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
         vect(index) = value.copy
       } else {
         (vect(index), value) match {
-          case (_: DenseTensor1, target: SparseTensor1) =>
+          case (_: DenseTensor1, target: SparseIndexedTensor1) =>
             vect(index) = target.copy
-          case (_: SparseTensor1, target: DenseTensor1) =>
+          case (_: SparseIndexedTensor1, target: DenseTensor1) =>
             vect(index) = target.copy
           case (_, _) =>
             vect(index) := value
@@ -97,10 +97,10 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
         vect(index) = value.copy
       } else {
         (vect(index), value) match {
-          case (current: SparseTensor1, arg: DenseTensor1) =>
+          case (current: SparseIndexedTensor1, arg: DenseTensor1) =>
             vect(index) = arg.copy
             vect(index) += current
-          case (current: DenseTensor1, arg: SparseTensor1) =>
+          case (current: DenseTensor1, arg: SparseIndexedTensor1) =>
             vect(index) = arg.copy
             vect(index) += current
           case (_, _) =>
