@@ -64,18 +64,6 @@ object TermImplicits {
   //      val domain:dom.type = dom
   //    }
 
-  def sequential2[T](seq: IndexedSeq[T]) = new Generator[T] {
-    private var _current = -1
-
-    def generateNext() = {
-      _current = (_current + 1) % seq.length
-    }
-
-    def current() = seq(_current)
-
-    def termsPerEpoch: Int = seq.length
-  }
-
 
   def stochastic[T](gen: Dynamic[T])(arg: Dynamic[T] => DoubleTerm) = {
     val term = arg(gen)

@@ -1,32 +1,5 @@
 package ml.wolfe.term
 
-/**
- * @author riedel
- */
-
-trait DynamicOld[+T] {
-
-  self =>
-  def value(): T
-
-  def generators: List[DynamicGenerator[_]]
-
-  def map[A](f: T => A): DynamicOld[A] = new DynamicOld[A] {
-    def generators = self.generators
-
-    private var _currentA: A = _
-    generators.foreach(_.addListener { () =>
-      _currentA = f(self.value())
-    })
-
-    def value() = {
-      _currentA
-    }
-
-  }
-
-  override def toString = s"Dynamic(${value()})"
-}
 
 trait Dynamic[T] {
   parent =>
@@ -161,48 +134,6 @@ object Dynamic {
 
 }
 
-trait DynamicTermOld[D <: DoubleDom, T] extends ProxyTerm[D] with NAry {
-
-  dyn =>
-
-  def generator: DynamicGenerator[T]
-
-  override def evaluator() = new Evaluator {
-    val eval = self.evaluator()
-
-    def eval(inputs: Array[Setting], output: Setting) = {
-      generator.generateNext()
-      eval.eval(inputs, output)
-    }
-  }
-
-  override def differentiator(wrt: Seq[Var[Dom]]) = new Differentiator {
-    val diff = self.differentiator(wrt)
-
-    def forwardProp(current: Array[Setting]) = {
-      generator.generateNext()
-      diff.forwardProp(current)
-      activation := diff.activation
-    }
-
-    def term = diff.term
-
-    def withRespectTo = diff.withRespectTo
-
-    def backProp(error: Setting, gradient: Array[Setting]) = {
-      diff.backProp(error, gradient)
-    }
-  }
-
-  type ArgumentType = Term[DoubleDom]
-
-  def arguments = IndexedSeq(self)
-
-  def copy(args: IndexedSeq[ArgumentType]) = new DynamicTermOld[D,T] {
-    def generator = dyn.generator
-    def self = dyn.self
-  }
-}
 
 trait DynamicTerm[D <: DoubleDom, T] extends ProxyTerm[D] {
   def generator: Dynamic[T]
@@ -239,32 +170,4 @@ trait DynamicTerm[D <: DoubleDom, T] extends ProxyTerm[D] {
   }
 }
 
-trait DynamicGenerator[+T] {
-  type Listener = () => Unit
-  private var listeners: List[Listener] = Nil
 
-  def updateValue()
-
-  def generateNext(): Unit = {
-    updateValue()
-    //println("Updating listeners: " + listeners)
-    for (l <- listeners) l()
-  }
-
-  def value: DynamicOld[T]
-
-  def addListener(listener: Listener): Unit = {
-    //println("Adding listener " + listener)
-    listeners ::= listener
-  }
-
-  def termsPerEpoch: Int = 1
-}
-
-trait Generator[+T] {
-  def generateNext()
-
-  def current(): T
-
-  def termsPerEpoch: Int
-}

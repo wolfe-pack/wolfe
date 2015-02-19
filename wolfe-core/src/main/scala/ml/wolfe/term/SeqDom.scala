@@ -118,9 +118,6 @@ class SeqDom[D <: Dom](val elementDom: D, val length: Int) extends Dom {
     def apply(index: =>Int): domain.elementDom.Var = {
       domain.elementDom.dynamic(s"$name($index})", offsets +(domain.elementDom.lengths, index), if (owner == null) this else owner)
     }
-    def apply(index: DynamicOld[Int]): domain.elementDom.Var = {
-      domain.elementDom.dynamic(s"$name($index})", offsets +(domain.elementDom.lengths, index.value()), if (owner == null) this else owner)
-    }
     def apply(index: Dynamic[Int]): domain.elementDom.Var = {
       domain.elementDom.dynamic(s"$name(${index.value()})", offsets +(domain.elementDom.lengths, index.value()), if (owner == null) this else owner)
     }
