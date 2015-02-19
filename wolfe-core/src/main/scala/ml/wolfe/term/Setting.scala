@@ -13,38 +13,44 @@ import ml.wolfe.{FactorieMatrix, FactorieVector}
  * @param numCont number of continuous assignments.
  * @param numVect number of vector assignments.
  */
-class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMats: Int = 0) {
-  final var disc = Array.ofDim[Int](numDisc)
-  final var cont = Array.ofDim[Double](numCont)
-  final var vect = Array.ofDim[FactorieVector](numVect)
-  final var mats = Array.ofDim[FactorieMatrix](numMats)
+final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMats: Int = 0) {
+  var disc = Array.ofDim[Int](numDisc)
+  var cont = Array.ofDim[Double](numCont)
+  var vect = Array.ofDim[FactorieVector](numVect)
+  var mats = Array.ofDim[FactorieMatrix](numMats)
 
-  final def copyTo(target: Setting, targetOffsets: Offsets, length: Int = 1): Unit = {
+  private var adaptiveVectors = false
+
+  def setAdaptiveVectors(adaptive: Boolean): Unit = {
+    adaptiveVectors = adaptive
+  }
+
+  def copyTo(target: Setting, targetOffsets: Offsets, length: Int = 1): Unit = {
     if (disc.length > 0) System.arraycopy(disc, 0, target.disc, targetOffsets.discOff * length, disc.length)
     if (cont.length > 0) System.arraycopy(cont, 0, target.cont, targetOffsets.contOff * length, cont.length)
     if (vect.length > 0) System.arraycopy(vect, 0, target.vect, targetOffsets.vectOff * length, vect.length)
     if (mats.length > 0) System.arraycopy(mats, 0, target.mats, targetOffsets.matsOff * length, mats.length)
   }
 
-  final def *=(scale: Double): Unit = {
+  def *=(scale: Double): Unit = {
     for (i <- 0 until cont.length) cont(i) *= scale
     for (i <- 0 until vect.length) vect(i) *= scale
     for (i <- 0 until mats.length) mats(i) *= scale
   }
 
-  final def +=(that: Setting): Unit = {
+  def +=(that: Setting): Unit = {
     for (i <- 0 until cont.length) cont(i) += that.cont(i)
     for (i <- 0 until vect.length) vect(i) += that.vect(i)
     for (i <- 0 until mats.length) mats(i) += that.mats(i)
   }
 
-  final def :=(value: Double = 0.0): Unit = {
+  def :=(value: Double = 0.0): Unit = {
     for (i <- 0 until cont.length) cont(i) = value
     for (i <- 0 until vect.length) if (vect(i) != null) vect(i) := value
     for (i <- 0 until mats.length) if (mats(i) != null) mats(i) := value
   }
 
-  final def :=(that: Setting): Unit = {
+  def :=(that: Setting): Unit = {
     for (i <- 0 until disc.length) disc(i) = that.disc(i)
     for (i <- 0 until cont.length) cont(i) = that.cont(i)
     for (i <- 0 until vect.length) vect(i) = that.vect(i)
@@ -54,7 +60,7 @@ class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMats: Int
   def ensureSparsity(): Unit = {
     for (i <- 0 until vect.length) {
       vect(i) match {
-        case d:DenseTensor1 =>
+        case d: DenseTensor1 =>
           vect(i) = new SparseTensor1(d.dim1)
         case _ =>
       }
@@ -62,42 +68,49 @@ class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMats: Int
 
   }
 
-  final def setVect(index: Int, value: FactorieVector): Unit = {
-    if (vect(index) == null) {
-      vect(index) = value.copy
-    } else {
-      (vect(index), value) match {
-        case (_: DenseTensor1, target: SparseTensor1) =>
-          vect(index) = target.copy
-        case (_: SparseTensor1, target: DenseTensor1) =>
-          vect(index) = target.copy
-        case (_,_) =>
-          vect(index) := value
+  def setVect(index: Int, value: FactorieVector): Unit = {
+    if (adaptiveVectors) {
+      if (vect(index) == null) {
+        vect(index) = value.copy
+      } else {
+        (vect(index), value) match {
+          case (_: DenseTensor1, target: SparseTensor1) =>
+            vect(index) = target.copy
+          case (_: SparseTensor1, target: DenseTensor1) =>
+            vect(index) = target.copy
+          case (_, _) =>
+            vect(index) := value
+        }
       }
-    }
+    } else
+      vect(index) := value
   }
 
-  final def addVect(index: Int, value: FactorieVector): Unit = {
-    if (vect(index) == null) {
-      vect(index) = value.copy
-    } else {
-      (vect(index), value) match {
-        case (current:SparseTensor1,arg:DenseTensor1) =>
-          vect(index) = arg.copy
-          vect(index) += current
-        case (_,_) =>
-          vect(index) += value
-      }
-    }
-  }
-
-
-
-  final def setVect(index: Int, value: FactorieVector, scale:Double): Unit = {
-    setVect(index,value)
+  def setVect(index: Int, value: FactorieVector, scale: Double): Unit = {
+    setVect(index, value)
     vect(0) *= scale
   }
 
+  def addVect(index: Int, value: FactorieVector): Unit = {
+    if (adaptiveVectors) {
+      if (vect(index) == null) {
+        vect(index) = value.copy
+      } else {
+        (vect(index), value) match {
+          case (current: SparseTensor1, arg: DenseTensor1) =>
+            vect(index) = arg.copy
+            vect(index) += current
+          case (current: DenseTensor1, arg: SparseTensor1) =>
+            vect(index) = arg.copy
+            vect(index) += current
+          case (_, _) =>
+            vect(index) += value
+        }
+      }
+    } else {
+      vect(index) += value
+    }
+  }
 
 
   def epsEquals(eps: Double, that: Setting): Boolean = {
