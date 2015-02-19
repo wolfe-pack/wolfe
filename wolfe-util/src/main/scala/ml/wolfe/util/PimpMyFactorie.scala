@@ -98,7 +98,15 @@ object PimpMyFactorie {
     //element-wise multiplication. mutable!
     def :*(other: Tensor1, scale: Double = 1.0): Tensor1 = {
       //fixme: slow!
-      self.foreachActiveElement((ix, v) => self.update(ix, v * other(ix) * scale))
+      self match {
+        case s:SparseIndexedTensor1 =>
+          s._makeReadable()
+          for (i <- 0 until s._unsafeActiveDomainSize) {
+            s._values(i) *= other(i) * scale
+          }
+        case _ =>
+          self.foreachActiveElement((ix, v) => self.update(ix, v * other(ix) * scale))
+      }
       self
     }
   }
