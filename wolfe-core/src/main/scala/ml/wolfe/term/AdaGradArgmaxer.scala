@@ -12,18 +12,18 @@ class AdaGradArgmaxer(val obj: DoubleTerm,
                       val learningRate: Double,
                       val delta: Double,
                       val initParams: Array[Setting],
-                      val adaptiveVectors:Boolean = true) extends Argmaxer {
+                      val adaptiveVectors: Boolean = true) extends Argmaxer {
 
   val obsVars = obj.vars.filterNot(wrt.contains)
   //get differentiator
-  val diff    = obj.differentiator(wrt)
+  val diff = obj.differentiator(wrt)
 
   val initParameters = if (initParams.isEmpty) wrt.map(_.domain.createZeroSetting()).toArray else initParams
 
-  val obs2full   = VariableMapping(obsVars, obj.vars)
+  val obs2full = VariableMapping(obsVars, obj.vars)
   val param2full = VariableMapping(wrt, obj.vars)
 
-  val scale        = new Setting(numCont = 1)
+  val scale = new Setting(numCont = 1)
   val currentValue = new Setting(numCont = 1)
 
   val gradient = wrt.map(_.domain.createZeroSetting()).toArray
@@ -32,7 +32,7 @@ class AdaGradArgmaxer(val obj: DoubleTerm,
   val var2Index = wrt.map(v => v -> obj.vars.indexOf(v)).toMap
 
   val termsPerEpoch = obj match {
-    case t: DynamicTerm[_,_] => t.generator.size
+    case t: DynamicTerm[_, _] => t.generator.size
     case _ => 1
   }
 
@@ -83,7 +83,11 @@ class AdaGradArgmaxer(val obj: DoubleTerm,
       result(i).cont(a.offset) = value
     }
     for (a <- lastAtoms.vect; i <- var2Index.get(a.ownerOrSelf)) {
-      result(i).vect(a.offset) := value
+      if (value == 0.0)
+//        result(i).vect(a.offset) := value
+        result(i).vect(a.offset).zero()
+      else
+        result(i).vect(a.offset) := value
     }
     for (a <- lastAtoms.mats; i <- var2Index.get(a.ownerOrSelf)) {
       result(i).mats(a.offset) := value

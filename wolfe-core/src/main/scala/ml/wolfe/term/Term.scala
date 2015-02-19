@@ -425,7 +425,16 @@ class SparseL2[T1 <: Term[VectorDom], T2 <: Term[VectorDom]](val arg: T1, val ma
   def composer() = new Evaluator {
     def eval(inputs: Array[Setting], output: Setting) = {
       //todo: add mask!
-      output.cont(0) = inputs(0).vect(0) dot inputs(0).vect(0)
+      val w = inputs(0).vect(0)
+      val f = inputs(1).vect(0)
+      if (f != null) {
+        output.cont(0) = 0.0
+        f.foreachActiveElement { case (i, v) =>
+          output.cont(0) += w(i) * w(i) * v
+        }
+      } else {
+        output.cont(0) = w dot w
+      }
     }
   }
 
