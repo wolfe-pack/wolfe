@@ -428,6 +428,8 @@ class SparseL2[T1 <: Term[VectorDom], T2 <: Term[VectorDom]](val arg: T1, val ma
 
     def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]): Unit = {
       val scale = outError.cont(0)
+      gradient(0).setVect(0, argOutputs(1).vect(0), scale)
+      gradient(1).setVect(0, argOutputs(0).vect(0), scale)
 
       val w = argOutputs(0).vect(0)
 

@@ -11,7 +11,8 @@ class AdaGradArgmaxer(val obj: DoubleTerm,
                       val iterations: Int,
                       val learningRate: Double,
                       val delta: Double,
-                      val initParams: Array[Setting]) extends Argmaxer {
+                      val initParams: Array[Setting],
+                      val adaptiveVectors:Boolean = true) extends Argmaxer {
 
   val obsVars = obj.vars.filterNot(wrt.contains)
   //get differentiator
@@ -37,6 +38,8 @@ class AdaGradArgmaxer(val obj: DoubleTerm,
 
   val epochs = iterations / termsPerEpoch
   var objAccumulator = 0.0
+
+  if (adaptiveVectors) gradient.foreach(_.setAdaptiveVectors(true))
 
   def argmax(observed: Array[Setting], msgs: Array[Msgs], result: Array[Setting]) = {
     val bar = new ProgressBar(epochs, if (epochs < 100) 1 else epochs / 100)
