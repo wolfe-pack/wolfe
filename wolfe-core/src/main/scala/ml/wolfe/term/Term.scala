@@ -1,6 +1,6 @@
 package ml.wolfe.term
 
-import cc.factorie.la.DenseTensor1
+import cc.factorie.la.{SparseBinaryTensor1, SparseIndexedTensor1, DenseTensor1}
 import ml.wolfe.util.Math._
 
 import scala.collection.mutable
@@ -380,7 +380,6 @@ class DotProduct[T1 <: Term[VectorDom], T2 <: Term[VectorDom]](val arg1: T1, val
 
   val arguments = IndexedSeq(arg1, arg2)
 
-
   def copy(args: IndexedSeq[ArgumentType]) = new DotProduct(args(0), args(1))
 
   def composer() = new Evaluator {
@@ -389,18 +388,58 @@ class DotProduct[T1 <: Term[VectorDom], T2 <: Term[VectorDom]](val arg1: T1, val
     }
   }
 
+  def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
+
+    def withRespectTo = wrt
+
+    def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]): Unit = {
+      val scale = outError.cont(0)
+        if (arg1.vars.size > 0) {
+          gradient(0).vect(0) := 0.0
+          gradient(0).vect(0) +=(argOutputs(1).vect(0), scale)
+        }
+        if (arg2.vars.size > 0) {
+          gradient(1).vect(0) := 0.0
+          gradient(1).vect(0) +=(argOutputs(0).vect(0), scale)
+        }
+    }
+  }
+}
+
+class SparseL2[T1 <: Term[VectorDom], T2 <: Term[VectorDom]](val arg: T1, val mask: T2 = null) extends ComposedDoubleTerm {
+
+  self =>
+
+  type ArgumentType = Term[VectorDom]
+
+  val arguments = if (mask == null) IndexedSeq(arg) else IndexedSeq(arg, mask)
+
+  def copy(args: IndexedSeq[ArgumentType]) = new DotProduct(args(0), args(1))
+
+  def composer() = new Evaluator {
+    def eval(inputs: Array[Setting], output: Setting) = {
+      output.cont(0) = inputs(0).vect(0) dot inputs(0).vect(0)
+    }
+  }
 
   def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
 
     def withRespectTo = wrt
 
-
     def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]): Unit = {
       val scale = outError.cont(0)
-      gradient(0).vect(0) := 0.0
-      gradient(1).vect(0) := 0.0
-      gradient(0).vect(0) +=(argOutputs(1).vect(0), scale)
-      gradient(1).vect(0) +=(argOutputs(0).vect(0), scale)
+
+      val w = argOutputs(0).vect(0)
+
+      if (mask != null) {
+        val f = argOutputs(1).vect(0)
+        import ml.wolfe.util.PimpMyFactorie._
+        gradient(0).vect(0) := 0.0
+        gradient(0).vect(0) += (f :* (w, scale * 2.0))
+      } else {
+        gradient(0).vect(0) := 0.0
+        gradient(0).vect(0) += (w * scale * 2.0)
+      }
     }
   }
 }

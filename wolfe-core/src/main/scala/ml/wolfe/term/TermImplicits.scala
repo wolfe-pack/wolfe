@@ -172,6 +172,8 @@ object TermImplicits {
     def :*(that: Term[VectorDom]): VectorTerm = ???
 
     def cons(that: Term[VectorDom]): VectorTerm = new VectorConcatenation(vect, that)
+
+    def l2(mask: Term[VectorDom] = null): DoubleTerm = new SparseL2(vect, mask)
   }
 
   implicit class RichMatrixTerm(val mat: Term[MatrixDom]) {
