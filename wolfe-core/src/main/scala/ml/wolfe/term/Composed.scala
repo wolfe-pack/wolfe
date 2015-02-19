@@ -9,7 +9,6 @@ trait Composed[D <: Dom] extends Term[D] with NAry {
 
   def composer(): Evaluator
 
-
   lazy val vars = arguments.flatMap(_.vars).toSeq.distinct
 
   def evaluator() = new Evaluator with Composer {

@@ -3,6 +3,7 @@ package ml.wolfe.term
 import java.lang.System._
 import java.util
 
+import cc.factorie.la.{DenseTensor1, SparseTensor1}
 import ml.wolfe.{FactorieMatrix, FactorieVector}
 
 
@@ -50,6 +51,36 @@ class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMats: Int
     for (i <- 0 until mats.length) mats(i) = that.mats(i)
   }
 
+  def ensureSparsity(): Unit = {
+    for (i <- 0 until vect.length) {
+      vect(i) match {
+        case d:DenseTensor1 =>
+          vect(i) = new SparseTensor1(d.dim1)
+        case _ =>
+      }
+    }
+
+  }
+
+  final def setVect(index: Int, value: FactorieVector): Unit = {
+    if (vect(0) == null) {
+      vect(0) = value
+    } else {
+      (vect(0), value) match {
+        case (_: DenseTensor1, target: SparseTensor1) =>
+          vect(0) = target
+        case (_: SparseTensor1, target: DenseTensor1) =>
+          vect(0) = target
+        case (_,_) =>
+          vect(0) := 0.0
+          vect(0) += value
+      }
+    }
+
+
+
+  }
+
 
   def epsEquals(eps: Double, that: Setting): Boolean = {
     if (disc.length != that.disc.length) return false
@@ -64,12 +95,13 @@ class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMats: Int
 
     true
   }
+
   override def toString = {
     s"""
        |${disc.mkString(" ")}
-       |${cont.mkString(" ")}
-       |${vect.mkString(" ")}
-       |${mats.mkString(" ")}
+        |${cont.mkString(" ")}
+        |${vect.mkString(" ")}
+        |${mats.mkString(" ")}
      """.stripMargin
   }
 }
@@ -102,12 +134,15 @@ object Setting {
 }
 
 
-class DiscMsg(var msg:Array[Double]) {
-  def this(size:Int) = this(Array.ofDim[Double](size))
+class DiscMsg(var msg: Array[Double]) {
+  def this(size: Int) = this(Array.ofDim[Double](size))
 }
+
 class ContMsg(var mean: Double = 0.0)
+
 class VectMsg(var mean: FactorieVector = null)
-class MatsMsg (var mean: FactorieMatrix = null)
+
+class MatsMsg(var mean: FactorieMatrix = null)
 
 
 class Msgs(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMats: Int = 0) {
@@ -130,6 +165,7 @@ final class VariableMapping(val srcIndex: Array[Int], val tgtIndex: Array[Int]) 
   def copyForwardDeep(src: Array[Setting], tgt: Array[Setting]) = {
     for (i <- 0 until srcIndex.length) tgt(tgtIndex(i)) := src(srcIndex(i))
   }
+
   def copyForwardShallow(src: Array[Setting], tgt: Array[Setting]) = {
     for (i <- 0 until srcIndex.length) tgt(tgtIndex(i)) = src(srcIndex(i))
   }
@@ -137,11 +173,12 @@ final class VariableMapping(val srcIndex: Array[Int], val tgtIndex: Array[Int]) 
   def copyBackwardDeep(src: Array[Setting], tgt: Array[Setting]) = {
     for (i <- 0 until srcIndex.length) src(srcIndex(i)) := tgt(tgtIndex(i))
   }
+
   def copyBackwardShallow(src: Array[Setting], tgt: Array[Setting]) = {
     for (i <- 0 until srcIndex.length) src(srcIndex(i)) = tgt(tgtIndex(i))
   }
 
-  def getTgtIndex(src:Int):Int = {
+  def getTgtIndex(src: Int): Int = {
     var i = 0
     while (i < srcIndex.length) {
       if (srcIndex(i) == src) return tgtIndex(i)
