@@ -39,9 +39,16 @@ trait Dynamic[T] {
 
   def descendentCount:Int = 1 + children.map(_.descendentCount).sum
 
+  def printTree(indent:Int = 0):Unit = {
+    for (_ <- 0 until indent) print(" ")
+    try { print(value()) } catch { case _:Exception => println("Exception")}
+    println(owners.map(_.value()).mkString(" (",",",")"))
+    for (c <- children) c.printTree(indent + 2)
+  }
+
   def size = 1
 
-  private def detach(): Unit = {
+  protected def detach(): Unit = {
     for (owner <- owners) {
       owner.children = owner.children.filterNot(_ == parent)
     }
@@ -90,6 +97,12 @@ trait Dynamic[T] {
     protected def update() = {
       if (current != null) current.detach()
       needsUpdate = true
+    }
+
+
+    override protected def detach() = {
+      super.detach()
+      if (current != null) current.detach()
     }
 
     def value() = {
@@ -210,7 +223,8 @@ trait DynamicTerm[D <: DoubleDom, T] extends ProxyTerm[D] {
     def forwardProp(current: Array[Setting]) = {
       //generator.generateNext()
       generator.updateValue()
-      //println(generator.descendentCount)
+//      generator.printTree()
+//      println(generator.descendentCount)
       diff.forwardProp(current)
       activation := diff.activation
     }
