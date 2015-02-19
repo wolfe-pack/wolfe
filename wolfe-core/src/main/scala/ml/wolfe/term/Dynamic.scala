@@ -125,7 +125,7 @@ object Dynamic {
     override def size = seq.size
   }
 
-  object unapply3 {
+  object Tuple3 {
     def unapply[T1, T2, T3](d: Dynamic[(T1, T2, T3)]) = {
       val t1 = d.map(_._1)
       val t2 = d.map(_._2)
