@@ -43,6 +43,8 @@ trait Composed[D <: Dom] extends Term[D] with NAry {
     val argActivations = argDiffs.map(_.activation)
     val comp           = composer()
 
+    argErrors.foreach(_.setAdaptiveVectors(true))
+
     def createDifferentiator(term: Term[Dom]) =
       if (term.vars.exists(withRespectTo.contains)) term.differentiator(withRespectTo)
       else
