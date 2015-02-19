@@ -77,16 +77,19 @@ class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMats: Int
     }
   }
 
-//  final def addVect(index: Int, value: FactorieVector): Unit = {
-//    if (vect(0) == null) {
-//      vect(0) = value.copy
-//    } else {
-//      (vect(0), value) match {
-//        case (_,_) =>
-//          vect(0) := value
-//      }
-//    }
-//  }
+  final def addVect(index: Int, value: FactorieVector): Unit = {
+    if (vect(index) == null) {
+      vect(index) = value.copy
+    } else {
+      (vect(index), value) match {
+        case (current:SparseTensor1,arg:DenseTensor1) =>
+          vect(index) = arg.copy
+          vect(index) += current
+        case (_,_) =>
+          vect(index) += value
+      }
+    }
+  }
 
 
 
@@ -235,7 +238,7 @@ case class Ranges(from: Offsets, to: Offsets) {
     }
 
     for (i <- 0 until numVect) {
-      tgt.vect(from.vectOff + i) += src.vect(i)
+      tgt.addVect(from.vectOff + i, src.vect(i))
     }
 
     for (i <- 0 until numMats) {
