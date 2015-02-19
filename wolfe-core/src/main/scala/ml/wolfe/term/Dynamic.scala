@@ -92,6 +92,9 @@ trait Dynamic[T] {
 }
 
 object Dynamic {
+
+  def singleton[T](value:T) = sequential(IndexedSeq(value))
+
   def sequential[T](seq: IndexedSeq[T]): Dynamic[T] = new Dynamic[T] {
     private var _current = -1
 
