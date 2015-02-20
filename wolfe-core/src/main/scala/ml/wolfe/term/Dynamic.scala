@@ -125,6 +125,22 @@ object Dynamic {
     override def size = seq.size
   }
 
+  def mutable[T] = new MutableDynamic[T]
+
+  class MutableDynamic[T] extends Dynamic[T]  {
+    private var _current:T = _
+
+    def :=(value:T) {
+      _current = value
+    }
+
+    protected def update() = {}
+
+    def value() = _current
+  }
+
+
+
   object Tuple3 {
     def unapply[T1, T2, T3](d: Dynamic[(T1, T2, T3)]) = {
       val t1 = d.map(_._1)
