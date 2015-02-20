@@ -69,6 +69,7 @@ object TermImplicits {
     val term = arg(gen)
     new DynamicTerm[DoubleDom, T] {
       def generator: Dynamic[T] = gen
+
       def self: Term[DoubleDom] = term
     }
   }
@@ -85,6 +86,7 @@ object TermImplicits {
   implicit def vectToConstant(d: FactorieVector): Constant[VectorDom] = vectors(d.dim1).const(d)
 
   implicit def vectToConstantWithDom(d: FactorieVector)(implicit dom: VectorDom): dom.Term = dom.const(d)
+
   implicit def dynVectToConstantWithDom(d: Dynamic[FactorieVector])(implicit dom: VectorDom): dom.Term = dom.dynConst(d)
 
   implicit def matToConstant(d: FactorieMatrix): Constant[MatrixDom] = matrices(d.dim1, d.dim2).const(d)
@@ -153,6 +155,29 @@ object TermImplicits {
       (a: dom.Value) => term.eval(Seq(a): _*)
     }
   }
+
+  implicit class RichMonadTerm[A <: Term[Dom]](val termToBeMapped: A) {
+    def map[B: TypedDom](fun: termToBeMapped.domain.Value => B) = {
+      val targetDom = implicitly[TypedDom[B]]
+      new TermMap[A, targetDom.type] {
+        val term: termToBeMapped.type = termToBeMapped
+        val domain: targetDom.type = targetDom
+
+        def f(arg: term.domain.Value) = fun(arg)
+      }
+    }
+
+    def flatMap[B: TypedDom](fun: termToBeMapped.domain.Value => Term[TypedDom[B]]) = {
+      val targetDom = implicitly[TypedDom[B]]
+      new TermFlatMap[A, TypedDom[B]] {
+        val term: termToBeMapped.type = termToBeMapped
+        val domain: TypedDom[B] = targetDom
+
+        def f(arg: term.domain.Value): Term[TypedDom[B]] = fun(arg)
+      }
+    }
+  }
+
 
   implicit class RichDom[D <: Dom](val dom: D) {
     def x[D2 <: Dom](that: D2): Tuple2Dom[dom.type, that.type] = new Tuple2Dom[dom.type, that.type](dom, that)
