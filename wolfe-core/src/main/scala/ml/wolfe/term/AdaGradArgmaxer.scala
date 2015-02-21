@@ -12,7 +12,7 @@ class AdaGradArgmaxer(val obj: DoubleTerm,
                       val learningRate: Double,
                       val delta: Double,
                       val initParams: Array[Setting],
-                      val epochHook: IndexedSeq[Any] => Unit = null,
+                      val epochHook: (IndexedSeq[Any],Int) => String = null,
                       val adaptiveVectors: Boolean = true) extends Argmaxer {
 
   val obsVars = obj.vars.filterNot(wrt.contains)
@@ -73,12 +73,14 @@ class AdaGradArgmaxer(val obj: DoubleTerm,
 
       objAccumulator += currentValue.cont(0)
       if ((iteration + 1) % termsPerEpoch == 0) {
-        bar(s"Obj: $objAccumulator", lineBreak = true)
-        objAccumulator = 0.0
         if (epochHook != null) {
           val parameters = for ((v,s) <- wrt zip result) yield v.domain.toValue(s)
-          epochHook(parameters.toIndexedSeq)
+          val text = epochHook(parameters.toIndexedSeq,iteration)
+          bar(s"Obj: $objAccumulator $text", lineBreak = true)
+        } else {
+          bar(s"Obj: $objAccumulator", lineBreak = true)
         }
+        objAccumulator = 0.0
       }
 
     }
