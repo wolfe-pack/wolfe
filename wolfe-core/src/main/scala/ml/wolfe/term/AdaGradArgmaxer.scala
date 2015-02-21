@@ -75,7 +75,7 @@ class AdaGradArgmaxer(val obj: DoubleTerm,
       if ((iteration + 1) % termsPerEpoch == 0) {
         if (epochHook != null) {
           val parameters = for ((v,s) <- wrt zip result) yield v.domain.toValue(s)
-          val text = epochHook(parameters.toIndexedSeq,iteration)
+          val text = epochHook(parameters.toIndexedSeq,(iteration + 1) % termsPerEpoch)
           bar(s"Obj: $objAccumulator $text", lineBreak = true)
         } else {
           bar(s"Obj: $objAccumulator", lineBreak = true)
