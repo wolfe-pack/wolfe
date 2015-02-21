@@ -102,7 +102,8 @@ object PimpMyFactorie {
         case s:SparseIndexedTensor1 =>
           s._makeReadable()
           for (i <- 0 until s._unsafeActiveDomainSize) {
-            s._values(i) *= other(i) * scale
+            val index = s._indices(i)
+            s._values(i) *= other(index) * scale
           }
         case _ =>
           self.foreachActiveElement((ix, v) => self.update(ix, v * other(ix) * scale))

@@ -140,7 +140,10 @@ class AdaGradArgmaxer(val obj: DoubleTerm,
       val g = gradient(i).vect(offset)
       val h = momentum(i).vect(offset)
       for (j <- g.activeDomain) {
+        val oldValue = result(i).vect(offset)(j)
         result(i).vect(offset)(j) += lambda / (sqrt(h(j)) + delta) * g(j)
+        val newValue = result(i).vect(offset)(j)
+        val deltaValue = math.abs(oldValue) - math.abs(newValue)
       }
     }
     for (a <- atoms.mats; i <- var2Index.get(a.ownerOrSelf)) {
