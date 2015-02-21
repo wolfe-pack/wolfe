@@ -1,6 +1,7 @@
 package ml.wolfe.term
 
 import scala.reflect.macros.blackbox
+import scala.language.experimental.macros
 
 /**
  * @author riedel
