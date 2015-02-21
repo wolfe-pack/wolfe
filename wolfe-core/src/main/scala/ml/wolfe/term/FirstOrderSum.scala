@@ -38,10 +38,9 @@ class FirstOrderSum[D <: Dom, Body <: DoubleTerm](val variable:Var[D], body:Body
   def differentiator(wrt: Seq[Var[Dom]]) = new SumProcessor with Differentiator{
     val eval = evaluator()
 
-    private var _current:Array[Setting] = _
     def forwardProp(current: Array[Setting]) = {
       eval.eval(current,activation)
-      _current = current
+      this2body.copyForwardShallow(current,bodyInputs)
     }
 
     def term = sum
@@ -53,7 +52,7 @@ class FirstOrderSum[D <: Dom, Body <: DoubleTerm](val variable:Var[D], body:Body
     def backProp(error: Setting, gradient: Array[Setting]) = {
       this2body.copyForwardShallow(gradient,bodyGradient)
       iterator.iterate(bodyInputs) {
-        bodyDiff.addGradientAndValue(_current,error,bodyGradient,bodyOutput)
+        bodyDiff.addGradientAndValue(bodyInputs,error,bodyGradient,bodyOutput)
       }
       this2body.copyBackwardShallow(gradient,bodyGradient)
     }

@@ -22,8 +22,9 @@ class FirstOrderSumSpecs extends WolfeSpec {
       val n = 4
       val X = seqs(doubles,n)
       val x = X.Var
-      val t = sum(dom(0 until n)) {i => x(i) * x(i)}
-      //println(t.gradient(x,(0 until n).map(_.toDouble)))
+      val t = sum(dom(0 until n)) {i => x(i) * x(i) }
+      val args = (0 until n).map(_.toDouble)
+      t.gradient(x,args) should be (for (i <- 0 until n) yield 2.0 * i)
     }
 
   }

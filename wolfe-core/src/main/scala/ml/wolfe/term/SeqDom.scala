@@ -23,6 +23,7 @@ class SeqDom[D <: Dom](val elementDom: D, val length: Int) extends Dom {
   def toMarginals(msg: Msgs, offsets: Offsets) = {
     for (i <- 0 until length) yield elementDom.toMarginals(msg, offsets +(elementDom.lengths, i))
   }
+
   def copyValue(value: Value, setting: Setting, offsets: Offsets = Offsets()) = {
     for (i <- 0 until length) {
       elementDom.copyValue(value(i), setting, offsets +(elementDom.lengths, i))
@@ -43,41 +44,48 @@ class SeqDom[D <: Dom](val elementDom: D, val length: Int) extends Dom {
   }
 
   val lengths = elementDom.lengths * length
-  def variable(name: String, staticOffsets: Offsets = Offsets(), owner: term.Var[Dom]):Var = new BaseVar(name, owner) with DomVar {
+
+  def variable(name: String, staticOffsets: Offsets = Offsets(), owner: term.Var[Dom]): Var = new BaseVar(name, owner) with DomVar {
     val offsets = staticOffsets
   }
 
-  def dynamic(name: => String, dynOffsets: => Offsets, owner: term.Var[Dom]):Var = new BaseVar(name, owner) with DomVar {
+  def dynamic(name: => String, dynOffsets: => Offsets, owner: term.Var[Dom]): Var = new BaseVar(name, owner) with DomVar {
     def offsets = dynOffsets
   }
 
   def one = for (i <- 0 until length) yield elementDom.one
+
   def zero = for (i <- 0 until length) yield elementDom.zero
 
   def const(value: Value) = new SeqDomTermImpl {
     lazy val elements = for (i <- 0 until dom.length) yield domain.elementDom.const(value(i))
 
-    def copy(args: IndexedSeq[ArgumentType]) = Term(args:_*)
+    def copy(args: IndexedSeq[ArgumentType]) = Term(args: _*)
   }
 
-  def Term(args: elementDom.Term*):Term = new SeqDomTermImpl {
+  def Term(args: elementDom.Term*): Term = new SeqDomTermImpl {
     def elements = args.toIndexedSeq
 
-    def copy(args: IndexedSeq[ArgumentType]) = Term(args:_*)
+    def copy(args: IndexedSeq[ArgumentType]) = Term(args: _*)
   }
+
   def Const(args: elementDom.Value*) = new SeqDomTermImpl {
     def elements = args.map(a => elementDom.const(a)).toIndexedSeq
 
-    def copy(args: IndexedSeq[ArgumentType]) = Term(args:_*)
+    def copy(args: IndexedSeq[ArgumentType]) = Term(args: _*)
   }
 
 
   trait DomTerm extends super.DomTerm {
-    def apply(index: =>Int):elementDom.Term // = elements(index)
-    def indices = Range(0,dom.length)
+    def apply(index: => Int): elementDom.Term
+
+    // = elements(index)
+    def indices = Range(0, dom.length)
+
     def length = dom.length
-    def apply(index:term.Term[TypedDom[Int]]) =
-      new SeqApply[D,Term,term.Term[TypedDom[Int]]](this,index)
+
+    def apply(index: term.Term[TypedDom[Int]]) =
+      new SeqApply[D, Term, term.Term[TypedDom[Int]]](this, index)
 
   }
 
@@ -86,7 +94,9 @@ class SeqDom[D <: Dom](val elementDom: D, val length: Int) extends Dom {
     type ArgumentType = domain.elementDom.Term
 
     def arguments = elements
+
     def elements: IndexedSeq[domain.elementDom.Term]
+
     def apply(index: => Int) = elements(index)
 
     def composer() = new Evaluator {
@@ -118,9 +128,11 @@ class SeqDom[D <: Dom](val elementDom: D, val length: Int) extends Dom {
 
   trait DomVar extends DomTerm with super.DomVar {
     def elements = indices.map(i => apply(i))
-    def apply(index: =>Int): domain.elementDom.Var = {
+
+    def apply(index: => Int): domain.elementDom.Var = {
       domain.elementDom.dynamic(s"$name($index})", offsets +(domain.elementDom.lengths, index), if (owner == null) this else owner)
     }
+
     def apply(index: Dynamic[Int]): domain.elementDom.Var = {
       domain.elementDom.dynamic(s"$name(${index.value()})", offsets +(domain.elementDom.lengths, index.value()), if (owner == null) this else owner)
     }
@@ -129,7 +141,9 @@ class SeqDom[D <: Dom](val elementDom: D, val length: Int) extends Dom {
     def atomsIterator = elements.iterator.flatMap(_.atomsIterator)
 
     def offsets: Offsets
+
     def ranges = Ranges(offsets, offsets +(domain.elementDom.lengths, domain.length))
+
     def static(gen: Int): domain.elementDom.Var = {
       domain.elementDom.variable(s"$name($gen})", offsets +(domain.elementDom.lengths, gen), if (owner == null) this else owner)
     }
@@ -138,13 +152,13 @@ class SeqDom[D <: Dom](val elementDom: D, val length: Int) extends Dom {
 
 }
 
-class SeqApply[E <: Dom, S <: Term[SeqDom[E]], I <: Term[TypedDom[Int]]](val seq:S, index:I) extends Composed[E] {
+class SeqApply[E <: Dom, S <: Term[SeqDom[E]], I <: Term[TypedDom[Int]]](val seq: S, index: I) extends Composed[E] {
   self =>
   val domain = seq.domain.elementDom
 
   type ArgumentType = Term[Dom]
 
-  def arguments = IndexedSeq(seq,index)
+  def arguments = IndexedSeq(seq, index)
 
 
   def copy(args: IndexedSeq[ArgumentType]) = ???
@@ -152,17 +166,19 @@ class SeqApply[E <: Dom, S <: Term[SeqDom[E]], I <: Term[TypedDom[Int]]](val seq
   def composer() = new Evaluator {
     def eval(inputs: Array[Setting], output: Setting) = {
       val index = inputs(1).disc(0)
-      inputs(0).copyTo(output,domain.lengths,index,Offsets(),0,domain.lengths)
+      inputs(0).copyTo(output, domain.lengths, index, Offsets(), 0, domain.lengths)
     }
   }
 
   def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
-    require(index.vars.forall(v => !wrt.contains(v)),"Can't differentiate index term in sequence apply")
+    require(index.vars.forall(v => !wrt.contains(v)), "Can't differentiate index term in sequence apply")
+
     def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]) = {
       val index = argOutputs(1).disc(0)
-      val ranges = Ranges(domain.lengths * index, domain.lengths * (index + 1) )
+      gradient(0) := 0.0
       //update gradient at offset corresponding to index
-      ranges.addInto(outError,gradient(1))
+      outError.copyTo(gradient(0), Offsets(), 0, domain.lengths, index, domain.lengths)
+      //ranges.addInto(outError,gradient(0))
     }
 
     def withRespectTo = wrt
