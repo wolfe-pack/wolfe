@@ -110,6 +110,8 @@ trait TermHelper[+D <: Dom] {
     for ((s, v) <- result zip vars) yield v.domain.toValue(s)
   }
 
+  def createVariableSettings() = vars.map(_.domain.createSetting()).toArray
+
 }
 
 trait ProxyTerm[D <: Dom] extends Term[D] {
@@ -733,6 +735,22 @@ class Iverson[T <: BoolTerm](val arg: T) extends UnaryTerm[T, DoubleDom] with Co
   }
 
   def copy(args: IndexedSeq[ArgumentType]) = new Iverson(args(0))
+
+  def differentiator(wrt: Seq[Var[Dom]]) = ???
+}
+
+class IntToDouble[T<:DiscreteTerm[Int]](val int:T) extends ComposedDoubleTerm {
+  type ArgumentType = T
+
+  def arguments = IndexedSeq(int)
+
+  def copy(args: IndexedSeq[ArgumentType]) = new IntToDouble(args(0))
+
+  def composer() = new Evaluator {
+    def eval(inputs: Array[Setting], output: Setting) = {
+      output.cont(0) = inputs(0).disc(0)
+    }
+  }
 
   def differentiator(wrt: Seq[Var[Dom]]) = ???
 }

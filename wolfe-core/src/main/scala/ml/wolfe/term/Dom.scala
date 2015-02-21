@@ -15,9 +15,24 @@ trait Dom {
 
   dom =>
 
+  /**
+   * The type of value this domain contains.
+   */
   type Value
+
+  /**
+   * The type of variables of this domain.
+   */
   type Var <: DomVar with Term
+
+  /**
+   * The type of terms this domain provides.
+   */
   type Term <: DomTerm
+
+  /**
+   * How marginals are represented for values of this domain.
+   */
   type Marginals
 
   trait DomTerm extends term.Term[dom.type] {
@@ -57,6 +72,9 @@ trait Dom {
     result
   }
   def variable(name: String, offsets: Offsets = Offsets(), owner: term.Var[Dom] = null): Var
+
+  def vari(implicit nameProvider: NameProvider):Var = variable(nameProvider.newName())
+
   def dynamic(name: => String, offsets: => Offsets = Offsets(), owner: term.Var[Dom] = null): Var
   def const(value: Value): Term
 

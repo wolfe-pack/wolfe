@@ -25,12 +25,24 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
     adaptiveVectors = adaptive
   }
 
-  def copyTo(target: Setting, targetOffsets: Offsets, length: Int = 1): Unit = {
-    if (disc.length > 0) System.arraycopy(disc, 0, target.disc, targetOffsets.discOff * length, disc.length)
-    if (cont.length > 0) System.arraycopy(cont, 0, target.cont, targetOffsets.contOff * length, cont.length)
-    if (vect.length > 0) System.arraycopy(vect, 0, target.vect, targetOffsets.vectOff * length, vect.length)
-    if (mats.length > 0) System.arraycopy(mats, 0, target.mats, targetOffsets.matsOff * length, mats.length)
+  def copyTo(target: Setting, targetOffsets: Offsets, targetMultiplier: Int = 1): Unit = {
+    if (disc.length > 0) System.arraycopy(disc, 0, target.disc, targetOffsets.discOff * targetMultiplier, disc.length)
+    if (cont.length > 0) System.arraycopy(cont, 0, target.cont, targetOffsets.contOff * targetMultiplier, cont.length)
+    if (vect.length > 0) System.arraycopy(vect, 0, target.vect, targetOffsets.vectOff * targetMultiplier, vect.length)
+    if (mats.length > 0) System.arraycopy(mats, 0, target.mats, targetOffsets.matsOff * targetMultiplier, mats.length)
   }
+
+  def copyTo(target: Setting, sourceOffsets:Offsets, srcMultiplier:Int, targetOffsets: Offsets, tgtMultiplier: Int, length:Offsets): Unit = {
+    if (disc.length > 0) System.arraycopy(disc, sourceOffsets.discOff * srcMultiplier,
+      target.disc, targetOffsets.discOff * tgtMultiplier, length.discOff)
+    if (cont.length > 0) System.arraycopy(cont, sourceOffsets.contOff * srcMultiplier,
+      target.cont, targetOffsets.contOff * tgtMultiplier, length.contOff)
+    if (vect.length > 0) System.arraycopy(vect, sourceOffsets.vectOff * srcMultiplier,
+      target.vect, targetOffsets.vectOff * tgtMultiplier, length.vectOff)
+    if (mats.length > 0) System.arraycopy(mats, sourceOffsets.matsOff * srcMultiplier,
+      target.mats, targetOffsets.matsOff * tgtMultiplier, length.matsOff)
+  }
+
 
   def *=(scale: Double): Unit = {
     for (i <- 0 until cont.length) cont(i) *= scale

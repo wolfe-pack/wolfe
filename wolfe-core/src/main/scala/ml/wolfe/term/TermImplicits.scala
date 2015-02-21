@@ -8,7 +8,7 @@ import scala.language.implicitConversions
 /**
  * @author riedel
  */
-object TermImplicits {
+object TermImplicits extends NameProviderImplicits {
 
   implicit val doubles = Dom.doubles
   implicit val bools = Dom.bools
@@ -18,6 +18,8 @@ object TermImplicits {
   def matrices(dim1: Int, dim2: Int) = new MatrixDom(dim1: Int, dim2: Int)
 
   def discrete[T](args: T*) = new DiscreteDom[T](args.toIndexedSeq)
+
+  def dom[T](args: Seq[T]) = new DiscreteDom[T](args.toIndexedSeq)
 
   def vector(values: Double*) = new DenseTensor1(values.toArray)
 
@@ -91,6 +93,8 @@ object TermImplicits {
 
   implicit def matToConstant(d: FactorieMatrix): Constant[MatrixDom] = matrices(d.dim1, d.dim2).const(d)
 
+  implicit def intToDouble(int:DiscreteTerm[Int]):IntToDouble[int.type] = new IntToDouble[int.type](int)
+
   implicit def discToConstant[T: DiscreteDom](value: T): Constant[DiscreteDom[T]] =
     implicitly[DiscreteDom[T]].const(value)
 
@@ -117,6 +121,12 @@ object TermImplicits {
   def sum[T](dom: Seq[T])(arg: T => DoubleTerm) = new Sum(dom.toIndexedSeq.map(arg))
 
   def sum(args: DoubleTerm*) = new Sum(args.toIndexedSeq)
+
+  def sum[T <: DoubleTerm, D <: Dom](d:D)(body:d.Var => T) = {
+    val variable = d.variable("_i")
+    val bodyTerm = body(variable)
+    new FirstOrderSum[d.type,T](variable,bodyTerm)
+  }
 
   def oneHot(index: Int, value: Double = 1.0)(implicit dom: VectorDom) =
     dom.const(new SingletonTensor1(dom.dim, index, value))
@@ -155,6 +165,11 @@ object TermImplicits {
       (a: dom.Value) => term.eval(Seq(a): _*)
     }
   }
+
+//  implicit class RichSeqTerm[E <: Dom, S <: Term[SeqDom[E]]](val term:S) {
+//    def apply[I <: Term[TypedDom[Int]]](index:I) =
+//      new SeqApply[E,S,I](term,index)
+//  }
 
   implicit class RichMonadTerm[A <: Term[Dom]](val termToBeMapped: A) {
     def map[B: TypedDom](fun: termToBeMapped.domain.Value => B) = {
@@ -205,6 +220,10 @@ object TermImplicits {
     def dot(that: Term[MatrixDom]) = new MatrixDotProduct(mat, that)
 
     def *(that: Term[VectorDom]) = new MatrixVectorProduct(mat, that)
+  }
+
+  implicit class VarCreator(val d:Dom) {
+    def Var(implicit provider:NameProvider) = d.variable(provider.newName())
   }
 
 }

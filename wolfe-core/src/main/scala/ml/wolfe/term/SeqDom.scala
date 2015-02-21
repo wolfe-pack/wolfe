@@ -76,6 +76,9 @@ class SeqDom[D <: Dom](val elementDom: D, val length: Int) extends Dom {
     def apply(index: =>Int):elementDom.Term // = elements(index)
     def indices = Range(0,dom.length)
     def length = dom.length
+    def apply(index:term.Term[TypedDom[Int]]) =
+      new SeqApply[D,Term,term.Term[TypedDom[Int]]](this,index)
+
   }
 
   abstract class SeqDomTermImpl extends Composed[dom.type] with DomTerm {
@@ -132,23 +135,37 @@ class SeqDom[D <: Dom](val elementDom: D, val length: Int) extends Dom {
     }
   }
 
-//  case class StaticSeqVar(name: String, offsets: Offsets = Offsets(),
-//                          owner: term.Var[Dom]) extends DomVar {
-//
-//    override val ranges = super.ranges
-//    val elements = for (i <- 0 until domain.length) yield
-//      domain.elementDom.variable(s"$name($i)", offsets +(domain.elementDom.lengths, i), if (owner == null) this else owner)
-//
-//    /*
-//    def apply(generator:Generator[Int]) = new StochasticElement(generator) {
-//      val current = elements(generator.generate)
-//
-//    }
-//    */
-//
-//
-//  }
 
-  //val elements = arguments
+}
+
+class SeqApply[E <: Dom, S <: Term[SeqDom[E]], I <: Term[TypedDom[Int]]](val seq:S, index:I) extends Composed[E] {
+  self =>
+  val domain = seq.domain.elementDom
+
+  type ArgumentType = Term[Dom]
+
+  def arguments = IndexedSeq(seq,index)
+
+
+  def copy(args: IndexedSeq[ArgumentType]) = ???
+
+  def composer() = new Evaluator {
+    def eval(inputs: Array[Setting], output: Setting) = {
+      val index = inputs(1).disc(0)
+      inputs(0).copyTo(output,domain.lengths,index,Offsets(),0,domain.lengths)
+    }
+  }
+
+  def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
+    require(index.vars.forall(v => !wrt.contains(v)),"Can't differentiate index term in sequence apply")
+    def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]) = {
+      val index = argOutputs(1).disc(0)
+      val ranges = Ranges(domain.lengths * index, domain.lengths * (index + 1) )
+      //update gradient at offset corresponding to index
+      ranges.addInto(outError,gradient(1))
+    }
+
+    def withRespectTo = wrt
+  }
 
 }
