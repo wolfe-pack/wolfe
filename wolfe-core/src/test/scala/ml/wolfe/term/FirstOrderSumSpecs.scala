@@ -19,10 +19,11 @@ class FirstOrderSumSpecs extends WolfeSpec {
     }
 
     "calculate its gradient" in {
-      val n = 2
+      val n = 4
       val X = seqs(doubles,n)
-      val x = X.variable("x")
-      val t = sum(dom(0 until n)) {i => x(i) * i}
+      val x = X.Var
+      val t = sum(dom(0 until n)) {i => x(i) * x(i)}
+      //println(t.gradient(x,(0 until n).map(_.toDouble)))
     }
 
   }

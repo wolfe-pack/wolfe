@@ -222,8 +222,8 @@ object TermImplicits extends NameProviderImplicits {
     def *(that: Term[VectorDom]) = new MatrixVectorProduct(mat, that)
   }
 
-  implicit class VarCreator(val d:Dom) {
-    def Var(implicit provider:NameProvider) = d.variable(provider.newName())
+  implicit class VarCreator[D<:Dom](val d:D) {
+    def Var(implicit provider:NameProvider):d.Var = d.variable(provider.newName())
   }
 
 }
