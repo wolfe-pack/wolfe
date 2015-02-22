@@ -51,6 +51,8 @@ object TermImplicits extends NameProviderImplicits {
 
   def sqrt[T <: DoubleTerm](term: T) = new Sqrt(term)
 
+  def clip[T <: DoubleTerm](term: T) = new Clip(term)
+
   def tanh[T <: DoubleTerm](term: T) = new Tanh(term)
 
   def log[T <: DoubleTerm](term: T) = new Log(term)
@@ -143,6 +145,8 @@ object TermImplicits extends NameProviderImplicits {
     def *(that: DoubleTerm): Product = new Product(IndexedSeq(term, that))
 
     def *(that: VectorTerm) = new VectorScaling(that, term)
+
+    def unary_- = term * (-1.0)
 
     def argmaxBy(factory: ArgmaxerFactory) = new ProxyTerm[DoubleDom] {
       def self = term
