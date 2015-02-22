@@ -1,5 +1,7 @@
 package ml.wolfe.term
 
+import cc.factorie.la.DenseTensor1
+
 /**
  * @author riedel
  */
@@ -93,7 +95,7 @@ class Sum(val arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm {
 /**
  * @author riedel
  */
-class VectorSum(val arguments: IndexedSeq[VectorTerm]) extends Composed[VectorDom] {
+class VectorSum(val arguments: IndexedSeq[VectorTerm]) extends Composed[GenericVectorDom] {
 
   sum =>
 
@@ -105,7 +107,8 @@ class VectorSum(val arguments: IndexedSeq[VectorTerm]) extends Composed[VectorDo
 
   def composer() = new Evaluator {
     def eval(inputs: Array[Setting], output: Setting) = {
-      output := 0.0
+      if (output.vect(0) == null) output.vect(0) = new DenseTensor1(domain.dim)
+      else output := 0.0
       for (i <- 0 until inputs.length)
         output.vect(0) += inputs(i).vect(0)
     }
