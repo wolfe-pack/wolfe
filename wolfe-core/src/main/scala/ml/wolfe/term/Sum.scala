@@ -90,5 +90,38 @@ class Sum(val arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm {
 
 }
 
+/**
+ * @author riedel
+ */
+class VectorSum(val arguments: IndexedSeq[VectorTerm]) extends Composed[VectorDom] {
+
+  sum =>
+
+  type ArgumentType = VectorTerm
+
+  def copy(args: IndexedSeq[ArgumentType]) = new VectorSum(args)
+
+  val domain = arguments.head.domain
+
+  def composer() = new Evaluator {
+    def eval(inputs: Array[Setting], output: Setting) = {
+      output := 0.0
+      for (i <- 0 until inputs.length)
+        output.vect(0) += inputs(i).vect(0)
+    }
+  }
+
+  def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
+    def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]) = {
+      for (i <- 0 until argOutputs.length)
+        gradient(i).setVect(0,outError.vect(0))
+    }
+
+    def withRespectTo = wrt
+  }
+
+
+}
+
 
 

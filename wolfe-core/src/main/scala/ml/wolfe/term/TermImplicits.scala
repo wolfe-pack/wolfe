@@ -15,6 +15,8 @@ object TermImplicits extends NameProviderImplicits {
 
   def vectors(dim: Int) = new VectorDom(dim)
 
+  def unitVectors(dim: Int) = new UnitVectorDom(dim)
+
   def matrices(dim1: Int, dim2: Int) = new MatrixDom(dim1: Int, dim2: Int)
 
   def discrete[T](args: T*) = new DiscreteDom[T](args.toIndexedSeq)
@@ -46,6 +48,8 @@ object TermImplicits extends NameProviderImplicits {
   }
 
   def sigm[T <: DoubleTerm](term: T) = new Sigmoid(term)
+
+  def sqrt[T <: DoubleTerm](term: T) = new Sqrt(term)
 
   def tanh[T <: DoubleTerm](term: T) = new Tanh(term)
 
@@ -200,26 +204,31 @@ object TermImplicits extends NameProviderImplicits {
     //    def iterator = dom.iterator
   }
 
-  implicit class RichVectTerm(val vect: Term[VectorDom]) {
-    def dot(that: Term[VectorDom]) = new DotProduct(vect, that)
+  implicit class RichVectTerm(val vect: VectorTerm) {
+    def dot(that: VectorTerm) = new DotProduct(vect, that)
 
     def *(that: Term[DoubleDom]) = new VectorScaling(vect, that)
 
+    def +(that: VectorTerm) = new VectorSum(IndexedSeq(vect, that))
+
+    def -(that: VectorTerm) = new VectorSum(IndexedSeq(vect, that * (-1.0)))
+
+
     //element-wise addition
-    def :+(that: Term[VectorDom]): VectorTerm = ???
+    def :+(that: VectorTerm): VectorTerm = ???
 
     //element-wise multiplication
-    def :*(that: Term[VectorDom]): VectorTerm = ???
+    def :*(that: VectorTerm): VectorTerm = ???
 
-    def cons(that: Term[VectorDom]): VectorTerm = new VectorConcatenation(vect, that)
+    def cons(that: VectorTerm): VectorTerm = new VectorConcatenation(vect, that)
 
-    def l2(mask: Term[VectorDom] = null): DoubleTerm = new SparseL2(vect, mask)
+    def l2(mask: VectorTerm = null): DoubleTerm = new SparseL2(vect, mask)
   }
 
   implicit class RichMatrixTerm(val mat: Term[MatrixDom]) {
     def dot(that: Term[MatrixDom]) = new MatrixDotProduct(mat, that)
 
-    def *(that: Term[VectorDom]) = new MatrixVectorProduct(mat, that)
+    def *(that: VectorTerm) = new MatrixVectorProduct(mat, that)
   }
 
   implicit class VarCreator[D<:Dom](val d:D) {

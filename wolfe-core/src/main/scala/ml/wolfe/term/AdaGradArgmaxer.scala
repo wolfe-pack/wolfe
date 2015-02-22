@@ -134,6 +134,8 @@ class AdaGradArgmaxer(val obj: DoubleTerm,
       val g = gradient(i).cont(offset)
       val h = momentum(i).cont(offset)
       result(i).cont(offset) += lambda / (sqrt(h) + delta) * g
+      a.projectValue(result(i))
+
     }
     for (a <- atoms.vect; i <- var2Index.get(a.ownerOrSelf)) {
       val offset = a.offset
@@ -145,6 +147,7 @@ class AdaGradArgmaxer(val obj: DoubleTerm,
         val newValue = result(i).vect(offset)(j)
         val deltaValue = math.abs(oldValue) - math.abs(newValue)
       }
+      a.projectValue(result(i))
     }
     for (a <- atoms.mats; i <- var2Index.get(a.ownerOrSelf)) {
       val offset = a.offset
@@ -153,6 +156,7 @@ class AdaGradArgmaxer(val obj: DoubleTerm,
       //todo: probably slow
       for (i1 <- 0 until g.dim1; i2 <- 0 until g.dim2)
         result(i).mats(offset)(i1, i2) += lambda / (sqrt(h(i1, i2)) + delta) * g(i1, i2)
+      a.projectValue(result(i))
     }
   }
 

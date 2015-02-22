@@ -12,9 +12,10 @@ trait AtomicDom extends Dom {
 
 }
 
-class VectorDom(val dim: Int) extends Dom {
-
+trait GenericVectorDom extends Dom {
   dom =>
+
+  def dim:Int
 
   type Value = FactorieVector
   type Var = DomVar
@@ -42,11 +43,7 @@ class VectorDom(val dim: Int) extends Dom {
   def copyMarginals(marginals: Marginals, msgs: Msgs, offsets: Offsets) = {
     msgs.vect(offsets.vectOff) = new VectMsg(marginals)
   }
-  def variable(name: String, offsets: Offsets, owner: term.Var[Dom]) = StaticVectorVar(name, owner, offsets.vectOff)
 
-  def dynamic(name: => String, offsets: => Offsets, owner: term.Var[Dom]) = new BaseVar(name, owner) with DomVar {
-    def offset = offsets.vectOff
-  }
   def one = new DenseTensor1(dim, 1.0)
   def zero = new DenseTensor1(dim, 0.0)
 
@@ -62,12 +59,43 @@ class VectorDom(val dim: Int) extends Dom {
     def ranges = Ranges(Offsets(0, 0, offset, 0), Offsets(0, 0, offset + 1, 0))
   }
 
-  case class StaticVectorVar(name: String, owner: term.Var[Dom], offset: Int) extends DomVar with Atom[dom.type] {
+  case class StaticVectorVar(name: String, owner: term.Var[Dom], offset: Int) extends DomVar {
     override val ranges = super.ranges
+  }
 
+
+}
+class VectorDom(val dim: Int) extends GenericVectorDom {
+
+  def variable(name: String, offsets: Offsets, owner: term.Var[Dom]) = StaticVectorVar(name, owner, offsets.vectOff)
+
+  def dynamic(name: => String, offsets: => Offsets, owner: term.Var[Dom]) = new BaseVar(name, owner) with DomVar {
+    def offset = offsets.vectOff
   }
 
 }
+
+class UnitVectorDom(val dim: Int) extends GenericVectorDom {
+  dom =>
+
+  trait UnitVectorVar extends Atom[dom.type] {
+    override def projectValue(setting: Setting) = {
+      setting.vect(offset).normalize()
+    }
+  }
+
+  def variable(name: String, offsets: Offsets, owner: term.Var[Dom]) =
+    new StaticVectorVar(name, owner, offsets.vectOff) with UnitVectorVar
+
+  def dynamic(name: => String, offsets: => Offsets, owner: term.Var[Dom]) = new BaseVar(name, owner) with DomVar with UnitVectorVar {
+    def offset = offsets.vectOff
+  }
+
+}
+
+
+
+
 class MatrixDom(val dim1: Int, dim2: Int) extends Dom {
   dom =>
   type Value = FactorieMatrix

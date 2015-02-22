@@ -179,6 +179,9 @@ trait Atom[+D <: Dom] extends Var[D] {
         a.offset == offset
     case _ => false
   }
+
+  def projectValue(setting:Setting) {}
+
 }
 
 case class Atoms(disc: Seq[DiscVar[Any]] = Nil, cont: Seq[DoubleVar] = Nil, vect: Seq[VectorVar] = Nil, mats: Seq[MatrixVar] = Nil) {
@@ -335,12 +338,14 @@ class DoubleFun[T <: Term[DoubleDom]](val arg: T, fun: Double => Double, deriv: 
 
 class Sigmoid[T <: Term[DoubleDom]](override val arg: T) extends DoubleFun(arg, sigmoid, sigmoidDeriv)
 
+class Sqrt[T <: Term[DoubleDom]](override val arg: T) extends DoubleFun(arg, math.sqrt, x => 0.5 / math.sqrt(x))
+
 class Log[T <: DoubleTerm](override val arg: T) extends DoubleFun(arg, math.log, logDeriv)
 
 class Tanh[T <: DoubleTerm](override val arg: T) extends DoubleFun(arg, tanh, tanhDeriv)
 
 
-class VectorDoubleFun[T <: Term[VectorDom]](val arg: T, fun: Double => Double, deriv: Double => Double) extends Composed[VectorDom] {
+class VectorDoubleFun[T <: VectorTerm](val arg: T, fun: Double => Double, deriv: Double => Double) extends Composed[GenericVectorDom] {
   self =>
 
   type ArgumentType = T
@@ -368,17 +373,17 @@ class VectorDoubleFun[T <: Term[VectorDom]](val arg: T, fun: Double => Double, d
   }
 }
 
-class VectorSigmoid[T <: Term[VectorDom]](override val arg: T)
+class VectorSigmoid[T <: VectorTerm](override val arg: T)
   extends VectorDoubleFun(arg, sigmoid, sigmoidDeriv)
 
-class VectorTanh[T <: Term[VectorDom]](override val arg: T)
+class VectorTanh[T <: VectorTerm](override val arg: T)
   extends VectorDoubleFun(arg, tanh, tanhDeriv)
 
-class DotProduct[T1 <: Term[VectorDom], T2 <: Term[VectorDom]](val arg1: T1, val arg2: T2) extends ComposedDoubleTerm {
+class DotProduct[T1 <: VectorTerm, T2 <: VectorTerm](val arg1: T1, val arg2: T2) extends ComposedDoubleTerm {
 
   self =>
 
-  type ArgumentType = Term[VectorDom]
+  type ArgumentType = VectorTerm
 
   val arguments = IndexedSeq(arg1, arg2)
 
@@ -414,11 +419,11 @@ class DotProduct[T1 <: Term[VectorDom], T2 <: Term[VectorDom]](val arg1: T1, val
   }
 }
 
-class SparseL2[T1 <: Term[VectorDom], T2 <: Term[VectorDom]](val arg: T1, val mask: T2 = null) extends ComposedDoubleTerm {
+class SparseL2[T1 <: VectorTerm, T2 <: VectorTerm](val arg: T1, val mask: T2 = null) extends ComposedDoubleTerm {
 
   self =>
 
-  type ArgumentType = Term[VectorDom]
+  type ArgumentType = VectorTerm
 
   val arguments = if (mask == null) IndexedSeq(arg) else IndexedSeq(arg, mask)
 
@@ -541,12 +546,12 @@ class VectorScaling[T1 <: VectorTerm, T2 <: DoubleTerm](val arg1: T1, arg2: T2) 
   }
 }
 
-class VectorConcatenation[T1 <: Term[VectorDom], T2 <: Term[VectorDom]](val arg1: T1, val arg2: T2) extends Composed[VectorDom] {
+class VectorConcatenation[T1 <: VectorTerm, T2 <: VectorTerm](val arg1: T1, val arg2: T2) extends Composed[GenericVectorDom] {
 
   self =>
 
 
-  type ArgumentType = Term[VectorDom]
+  type ArgumentType = VectorTerm
 
   val arguments = IndexedSeq(arg1, arg2)
 
