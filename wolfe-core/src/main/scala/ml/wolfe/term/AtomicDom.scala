@@ -205,11 +205,16 @@ class DiscreteDom[T](val values: IndexedSeq[T]) extends Dom {
   def toValue(setting: Setting, offsets: Offsets = Offsets()) =
     values(setting.disc(offsets.discOff))
 
+  def indexOf(value:Value):Int = values match {
+    case _: Range => value.asInstanceOf[Int] //todo: Range domains should be separate, this will break
+    case _ => values.indexOf(value)
+  }
+
   def toMarginals(msg: Msgs, offsets: Offsets) = {
     msg.disc(offsets.discOff).msg
   }
   def copyValue(value: Value, setting: Setting, offsets: Offsets = Offsets()) =
-    setting.disc(offsets.discOff) = values.indexOf(value)
+    setting.disc(offsets.discOff) = indexOf(value)
 
 
   def copyMarginals(marginals: Marginals, msgs: Msgs, offsets: Offsets) = {

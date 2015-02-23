@@ -25,22 +25,27 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
     adaptiveVectors = adaptive
   }
 
-  def copyTo(target: Setting, targetOffsets: Offsets, targetMultiplier: Int = 1): Unit = {
+  def copyTo(target: Setting, targetOffsets: Offsets, targetMultiplier: Int): Unit = {
     if (disc.length > 0) System.arraycopy(disc, 0, target.disc, targetOffsets.discOff * targetMultiplier, disc.length)
     if (cont.length > 0) System.arraycopy(cont, 0, target.cont, targetOffsets.contOff * targetMultiplier, cont.length)
     if (vect.length > 0) System.arraycopy(vect, 0, target.vect, targetOffsets.vectOff * targetMultiplier, vect.length)
     if (mats.length > 0) System.arraycopy(mats, 0, target.mats, targetOffsets.matsOff * targetMultiplier, mats.length)
   }
 
-  def copyTo(target: Setting, sourceOffsets:Offsets, srcMultiplier:Int, targetOffsets: Offsets, tgtMultiplier: Int, length:Offsets): Unit = {
-    if (disc.length > 0) System.arraycopy(disc, sourceOffsets.discOff * srcMultiplier,
-      target.disc, targetOffsets.discOff * tgtMultiplier, length.discOff)
-    if (cont.length > 0) System.arraycopy(cont, sourceOffsets.contOff * srcMultiplier,
-      target.cont, targetOffsets.contOff * tgtMultiplier, length.contOff)
-    if (vect.length > 0) System.arraycopy(vect, sourceOffsets.vectOff * srcMultiplier,
-      target.vect, targetOffsets.vectOff * tgtMultiplier, length.vectOff)
-    if (mats.length > 0) System.arraycopy(mats, sourceOffsets.matsOff * srcMultiplier,
-      target.mats, targetOffsets.matsOff * tgtMultiplier, length.matsOff)
+  def copyTo(target: Setting, srcElementLength:Offsets, srcMultiplier:Int, tgtElementLength: Offsets, tgtMultiplier: Int,
+             length:Offsets, srcOffsets:Offsets = Offsets(), tgtOffsets:Offsets = Offsets()): Unit = {
+    if (disc.length > 0) System.arraycopy(
+      disc,srcOffsets.discOff + length.discOff * srcMultiplier,
+      target.disc, tgtOffsets.discOff + tgtElementLength.discOff * tgtMultiplier, length.discOff)
+    if (cont.length > 0) System.arraycopy(
+      cont, srcOffsets.contOff +srcElementLength.contOff * srcMultiplier,
+      target.cont, tgtOffsets.contOff + tgtElementLength.contOff * tgtMultiplier, length.contOff)
+    if (vect.length > 0) System.arraycopy(
+      vect, srcOffsets.vectOff + srcElementLength.vectOff * srcMultiplier,
+      target.vect, tgtOffsets.vectOff + tgtElementLength.vectOff * tgtMultiplier, length.vectOff)
+    if (mats.length > 0) System.arraycopy(
+      mats, srcOffsets.matsOff + srcElementLength.matsOff * srcMultiplier,
+      target.mats, tgtOffsets.matsOff + tgtElementLength.matsOff * tgtMultiplier, length.matsOff)
   }
 
 
@@ -179,6 +184,9 @@ object Setting {
 
 class DiscMsg(var msg: Array[Double]) {
   def this(size: Int) = this(Array.ofDim[Double](size))
+  def argmax() = Range(0,msg.length).maxBy(msg)
+  def isDiracAt(index:Int) =
+    Range(0,msg.length).filterNot(_ == index).forall(msg(_) == Double.NegativeInfinity)
 }
 
 class ContMsg(var mean: Double = 0.0)
@@ -258,6 +266,9 @@ case class Ranges(from: Offsets, to: Offsets) {
   }
 
   def addInto(src: Setting, tgt: Setting): Unit = {
+    for (i <- 0 until numDisc) {
+      tgt.disc(from.contOff + i) = src.disc(i)
+    }
     for (i <- 0 until numCont) {
       tgt.cont(from.contOff + i) += src.cont(i)
     }

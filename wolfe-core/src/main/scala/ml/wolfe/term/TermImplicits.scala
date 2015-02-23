@@ -41,6 +41,10 @@ object TermImplicits extends NameProviderImplicits {
 
   def seqs[D <: Dom](elements: D, length: Int): SeqDom[elements.type] = new SeqDom[elements.type](elements, length)
 
+  def seqs[D <: Dom](elements: D, minLength: Int, maxLength:Int): VarSeqDom[elements.type] =
+    new VarSeqDom[elements.type](elements, maxLength, minLength)
+
+
   def seq[E <: Dom](dom: SeqDom[E])(elems: dom.elementDom.Term*): dom.SeqDomTermImpl = new dom.SeqDomTermImpl {
     def elements = elems.toIndexedSeq
 
@@ -238,8 +242,8 @@ object TermImplicits extends NameProviderImplicits {
     def *(that: VectorTerm) = new MatrixVectorProduct(mat, that)
   }
 
-  implicit class VarCreator[D<:Dom](val d:D) {
-    def Var(implicit provider:NameProvider):d.Var = d.variable(provider.newName())
-  }
+//  implicit class VarCreator[D<:Dom](val d:D) {
+//    def Var(implicit provider:NameProvider):d.Var = d.variable(provider.newName())
+//  }
 
 }

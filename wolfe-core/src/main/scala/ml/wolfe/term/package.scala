@@ -11,6 +11,7 @@ package object term {
   type Constant[D <: Dom] = D#Constant
 
   type TypedDom[T] = Dom { type Value = T}
+  type TypedTerm[T] = Term[TypedDom[T]]
   type DomWithTerm[T] = Dom { type Term = T}
   type DoubleTerm = Term[DoubleDom]
   type VectorTerm = Term[GenericVectorDom]

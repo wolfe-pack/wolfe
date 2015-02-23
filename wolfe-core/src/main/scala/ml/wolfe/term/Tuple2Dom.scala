@@ -108,7 +108,7 @@ trait ProductDom extends Dom {
       def eval(inputs: Array[Setting], output: Setting) = {
         var off = Offsets()
         for (i <- 0 until inputs.length) {
-          inputs(i).copyTo(output,off)
+          inputs(i).copyTo(output,off,1)
           off = off + lengths(i)
         }
         //append inputs to output

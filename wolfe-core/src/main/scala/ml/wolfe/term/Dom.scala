@@ -73,6 +73,8 @@ trait Dom {
   }
   def variable(name: String, offsets: Offsets = Offsets(), owner: term.Var[Dom] = null): Var
 
+  def Var(implicit provider:NameProvider):Var = variable(provider.newName())
+
   def vari(implicit nameProvider: NameProvider):Var = variable(nameProvider.newName())
 
   def dynamic(name: => String, offsets: => Offsets = Offsets(), owner: term.Var[Dom] = null): Var
@@ -87,7 +89,7 @@ trait Dom {
   def one: Value
   def zero: Value
 
-  abstract class BaseVar(dynName: => String, val owner: term.Var[Dom]) extends DomVar {
+  abstract class BaseVar(dynName: => String, val owner: term.Var[Dom] = null) extends DomVar {
     def name = dynName
   }
 
