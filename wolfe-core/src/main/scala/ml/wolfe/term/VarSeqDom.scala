@@ -5,7 +5,7 @@ import ml.wolfe.term
 /**
  * @author riedel
  */
-class VarSeqDom[E <: Dom](val elementDom: E, val maxLength: Int, val minLength: Int = 0) extends Dom {
+class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength: Int = 0) extends Dom {
 
   dom =>
 
@@ -14,6 +14,7 @@ class VarSeqDom[E <: Dom](val elementDom: E, val maxLength: Int, val minLength: 
   type Value = IndexedSeq[elementDom.Value]
   type Var = DomVar
   type Term = DomTerm
+//  type ElemDom = E
 
   case class Marginals(length: lengthDom.Marginals, elements: IndexedSeq[elementDom.Marginals])
 
@@ -71,7 +72,7 @@ class VarSeqDom[E <: Dom](val elementDom: E, val maxLength: Int, val minLength: 
 
   def zero = for (i <- 0 until minLength) yield elementDom.zero
 
-  def const(value: Value) = Constructor(lengthDom.const(value.length),value.map(elementDom.const))
+  def const(value: Value) = new Constructor(lengthDom.const(value.length),value.map(elementDom.const))
 
   trait DomTerm extends super.DomTerm {
     def apply(index:Int):term.Term[E]
@@ -88,18 +89,18 @@ class VarSeqDom[E <: Dom](val elementDom: E, val maxLength: Int, val minLength: 
     def atomsIterator = ???
   }
 
-  case class Constructor(length:TypedTerm[Int],elements:IndexedSeq[term.Term[E]]) extends DomTerm with Composed[dom.type] {
+  def Term(length:TypedTerm[Int],elements:IndexedSeq[elementDom.Term]):Term = new Constructor(length,elements)
+
+  class Constructor(val length:TypedTerm[Int],val elements:IndexedSeq[term.Term[E]]) extends DomTerm with Composed[dom.type] {
     def apply(index:Int) = elements(index)
 
     type ArgumentType = term.Term[Dom]
 
-
     def arguments = length +: elements
 
-    def copy(args: IndexedSeq[ArgumentType]) = Constructor(
+    def copy(args: IndexedSeq[ArgumentType]) = new Constructor(
       args(0).asInstanceOf[lengthDom.Term],
       args.drop(1).asInstanceOf[IndexedSeq[elementDom.Term]])
-
 
     def composer() = new Evaluator {
 
@@ -155,7 +156,7 @@ class VarSeqLength[S <: Term[VarSeqDom[_]]](val seq: S) extends Composed[TypedDo
   def differentiator(wrt: Seq[Var[Dom]]) = ???
 }
 
-class VarSeqApply[E <: Dom, S <: Term[VarSeqDom[E]], I <: Term[TypedDom[Int]]](val seq: S, index: I) extends Composed[E] {
+class VarSeqApply[+E <: Dom, S <: Term[VarSeqDom[E]], I <: Term[TypedDom[Int]]](val seq: S, index: I) extends Composed[E] {
   self =>
   val domain = seq.domain.elementDom
 
@@ -192,3 +193,50 @@ class VarSeqApply[E <: Dom, S <: Term[VarSeqDom[E]], I <: Term[TypedDom[Int]]](v
 
 }
 
+class VarSeqConstructor[E<:Dom](val length:TypedTerm[Int],val elements:IndexedSeq[term.Term[E]]) extends Composed[VarSeqDom[E]] {
+  def apply(index:Int) = elements(index)
+
+  type ArgumentType = term.Term[Dom]
+
+  def arguments = length +: elements
+
+  val domain = new VarSeqDom[E](elements.head.domain,elements.size,0)
+
+  def copy(args: IndexedSeq[ArgumentType]) = new VarSeqConstructor(
+    args(0).asInstanceOf[TypedTerm[Int]],
+    args.drop(1).asInstanceOf[IndexedSeq[Term[E]]])
+
+  def composer() = new Evaluator {
+
+    def eval(inputs: Array[Setting], output: Setting) = {
+      //todo: adapt
+      //todo: evaluate length first, and then only update the relevant elements
+      val length = inputs(0).disc(0)
+      for (i <- 0 until length) {
+        inputs(i+1).copyTo(output, Offsets(), 0, domain.elementDom.lengths, i,domain.elementDom.lengths, tgtOffsets = Offsets(discOff = 1))
+      }
+      output.disc(0) = length
+    }
+  }
+
+  def differentiator(wrt: Seq[term.Var[Dom]]) = new ComposedDifferentiator {
+    //todo: adapt
+    require(length.vars.forall(v => !wrt.contains(v)), "Can't differentiate length term in sequence constructor")
+
+    def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]) = {
+      //each argument will get its error signal from a subsection of the outError
+      val length = argOutputs(0).disc(0)
+      for (i <- 1 until length) {
+        val offsets = (domain.elementDom.lengths * i) + Offsets(discOff = 1)
+        for (j <- 0 until domain.elementDom.lengths.contOff) {
+          gradient(i).cont(j) = outError.cont(offsets.contOff + j)
+        }
+        for (j <- 0 until domain.elementDom.lengths.vectOff) {
+          gradient(i).vect(j) := outError.vect(offsets.vectOff + j)
+        }
+      }
+    }
+
+    def withRespectTo = wrt
+  }
+}

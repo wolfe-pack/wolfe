@@ -30,8 +30,8 @@ class VarSeqDomSpecs extends WolfeSpec {
       val xs = seqs(bools,0,n)
       val i = dom(0 until n).Var
       val b = bools.Var
-      val term = xs.Constructor(i,IndexedSeq(b,b,b))
-      term.eval(2,false) should be (IndexedSeq(false,false))
+      val term = VarSeq(i,IndexedSeq(b,!b,b))
+      term.eval(2,false) should be (IndexedSeq(false,true))
     }
 
     "supports gradients for sequence arguments" in {

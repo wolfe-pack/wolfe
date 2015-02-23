@@ -23,12 +23,12 @@ trait Dom {
   /**
    * The type of variables of this domain.
    */
-  type Var <: DomVar with Term
+  type Var <: term.Var[dom.type] with Term
 
   /**
    * The type of terms this domain provides.
    */
-  type Term <: DomTerm
+  type Term <: term.Term[dom.type]
 
   /**
    * How marginals are represented for values of this domain.

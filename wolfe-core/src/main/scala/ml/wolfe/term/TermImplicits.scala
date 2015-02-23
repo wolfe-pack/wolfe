@@ -10,7 +10,7 @@ import scala.language.implicitConversions
  */
 object TermImplicits extends NameProviderImplicits {
 
-  implicit val doubles = Dom.doubles
+  implicit val doubles:DoubleDom = Dom.doubles
   implicit val bools = Dom.bools
 
   def vectors(dim: Int) = new VectorDom(dim)
@@ -79,6 +79,9 @@ object TermImplicits extends NameProviderImplicits {
   //      val domain:dom.type = dom
   //    }
 
+  def VarSeq[D<:Dom](length:TypedTerm[Int],args:IndexedSeq[Term[D]]) = {
+    new VarSeqConstructor[D](length,args)
+  }
 
   def stochastic[T](gen: Dynamic[T])(arg: Dynamic[T] => DoubleTerm) = {
     val term = arg(gen)
@@ -135,6 +138,8 @@ object TermImplicits extends NameProviderImplicits {
 
   def sum(args: DoubleTerm*) = new Sum(args.toIndexedSeq)
 
+  def sum[T <: Term[VarSeqDom[DoubleDom]]](args: T) = new VarSeqSum[DoubleDom,T](args)
+
   def sum[T <: DoubleTerm, D <: Dom](d:D)(body:d.Var => T) = {
     val variable = d.variable("_i")
     val bodyTerm = body(variable)
@@ -168,6 +173,9 @@ object TermImplicits extends NameProviderImplicits {
     def ||(that: BoolTerm) = new Or(term, that)
 
     def -->(that: BoolTerm) = new Implies(term, that)
+
+    def unary_! = for (b <- term ) yield !b
+
   }
 
   implicit class RichDiscreteTerm[T](term: DiscreteTerm[T]) {
@@ -211,9 +219,26 @@ object TermImplicits extends NameProviderImplicits {
 
   implicit class RichDom[D <: Dom](val dom: D) {
     def x[D2 <: Dom](that: D2): Tuple2Dom[dom.type, that.type] = new Tuple2Dom[dom.type, that.type](dom, that)
-
     //    def iterator = dom.iterator
   }
+
+
+  class RichVarSeqTerm[E <: Dom, T <: Term[VarSeqDom[E]]](val term:T) {
+    def apply(index:Int) =
+      new VarSeqApply[E,T,term.domain.lengthDom.Term](term,term.domain.lengthDom.const(index))
+    def length = new VarSeqLength[T](term)
+    //def apply(index:Int) = term.elements(index)
+
+  }
+
+  implicit class RichVarSeqDom[E <: Dom](val dom:VarSeqDom[E]) {
+//    def Term2(length:TypedTerm[Int],elements:IndexedSeq[Term[E]]):dom.Term = new dom.Constructor(length,elements)
+
+  }
+
+//  implicit def toRichVarSeqTerm[S <:Term[VarSeqDom[_]]](seq:S):RichVarSeqTerm[seq.domain.ElemDom,seq.type] = {
+//    ???
+//  }
 
   implicit class RichVectTerm(val vect: VectorTerm) {
     def dot(that: VectorTerm) = new DotProduct(vect, that)

@@ -3,7 +3,7 @@ package ml.wolfe.term
 /**
  * @author riedel
  */
-trait Composed[D <: Dom] extends Term[D] with NAry {
+trait Composed[+D <: Dom] extends Term[D] with NAry {
 
   self =>
 

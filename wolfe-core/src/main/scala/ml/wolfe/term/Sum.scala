@@ -32,8 +32,10 @@ class Sum(val arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm {
 
   def sequentialGradient() = new ProxyTerm[DoubleDom] {
     def self = sum
+
     override def differentiator(wrt: Seq[Var[Dom]]) = new StochasticDifferentiator {
       private var _index = 0
+
       def selectIndex() = {
         if (_index == arguments.length) {
           _index = 0
@@ -42,18 +44,19 @@ class Sum(val arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm {
         _index += 1
         tmp
       }
+
       def withRespectTo = wrt
     }
   }
 
   trait StochasticDifferentiator extends Differentiator with Composer {
 
-    val term           = sum
-    val argErrors      = arguments.map(_.domain.createZeroSetting()).toArray
-    val argGradients   = arguments.map(_.vars.map(_.domain.createZeroSetting()).toArray).toArray
-    val argDiffs       = arguments.map(createDifferentiator).toArray
+    val term = sum
+    val argErrors = arguments.map(_.domain.createZeroSetting()).toArray
+    val argGradients = arguments.map(_.vars.map(_.domain.createZeroSetting()).toArray).toArray
+    val argDiffs = arguments.map(createDifferentiator).toArray
     val argActivations = argDiffs.map(_.activation)
-    val comp           = composer()
+    val comp = composer()
 
     def selectIndex(): Int
 
@@ -92,6 +95,113 @@ class Sum(val arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm {
 
 }
 
+class VarSeqSum[D <: DoubleDom, T <: Term[VarSeqDom[D]]](val seq: T) extends DoubleTerm with NAry {
+
+  self =>
+
+  type ArgumentType = Term[Dom]
+
+  val (length, elements) = seq match {
+    case s: seq.domain.Constructor =>
+      s.length -> s.elements
+    case s: VarSeqConstructor[_] =>
+      s.length -> s.elements
+    case _ =>
+      val l = new VarSeqLength[T](seq)
+      val e = for (i <- 0 until seq.domain.maxLength) yield
+        new VarSeqApply[D, T, TypedTerm[Int]](seq, seq.domain.lengthDom.const(i))
+      l -> e
+  }
+
+  val arguments = length +: elements
+
+  val domain = Dom.doubles
+
+  val vars = arguments.flatMap(_.vars).distinct
+
+  def atomsIterator = ???
+
+  def copy(args: IndexedSeq[ArgumentType]) = ???
+
+  trait Composer {
+    val argOutputs = arguments.map(_.domain.createSetting()).toArray
+    val argInputs  = arguments.map(_.vars.map(_.domain.createSetting()).toArray)
+    //    val argInputs  = arguments.map(a => Array.ofDim[Setting](a.vars.length)).toArray
+    val full2Arg   = arguments.map(a => VariableMapping(vars, a.vars)).toArray
+    val argEvals   = arguments.map(_.evaluator()).toArray
+  }
+
+
+  def evaluator() = new Evaluator with Composer {
+
+    def eval(inputs: Array[Setting], output: Setting) = {
+      full2Arg(0).copyForwardShallow(inputs, argInputs(0))
+      argEvals(0).eval(argInputs(0), argOutputs(0))
+      val length = argOutputs(0).disc(0)
+      var result = 0.0
+      for (i <- 1 until length + 1) {
+        full2Arg(i).copyForwardShallow(inputs, argInputs(i))
+        argEvals(i).eval(argInputs(i), argOutputs(i))
+        result += argOutputs(i).cont(0)
+      }
+      output.cont(0) = result
+    }
+  }
+
+
+  def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
+    def withRespectTo = wrt
+  }
+
+  //todo: avoid code duplication here
+  trait ComposedDifferentiator extends Differentiator with Composer {
+
+    val term           = self
+    val argErrors      = arguments.map(_.domain.createZeroSetting()).toArray
+    //    val argGradients   = arguments.map(_.vars.map(_.domain.createSetting()).toArray).toArray
+    val argGradients   = arguments.map(a => Array.ofDim[Setting](a.vars.length)).toArray
+    val argDiffs       = arguments.map(createDifferentiator).toArray
+    val argActivations = argDiffs.map(_.activation)
+
+    argErrors.foreach(_.setAdaptiveVectors(true))
+
+    def createDifferentiator(term: Term[Dom]) =
+      if (term.vars.exists(withRespectTo.contains)) term.differentiator(withRespectTo)
+      else
+        new EmptyDifferentiator(term, withRespectTo)
+
+
+    //updates the activation of this term and all sub terms
+    def forwardProp(current: Array[Setting]) = {
+      full2Arg(0).copyForwardShallow(current, argInputs(0))
+      argDiffs(0).forwardProp(argInputs(0))
+      val length = argActivations(0).disc(0)
+      var result = 0.0
+
+      for (i <- 1 until length + 1) {
+        full2Arg(i).copyForwardShallow(current, argInputs(i))
+        argDiffs(i).forwardProp(argInputs(i))
+        result += argActivations(i).cont(0)
+      }
+      activation.cont(0) = result
+    }
+
+    def backProp(error: Setting, gradient: Array[Setting]) = {
+
+      val length = argActivations(0).disc(0)
+      for (i <- 1 until length + 1) {
+        if (arguments(i).vars.exists(withRespectTo.contains)) {
+          argErrors(i).cont(0) = error.cont(0)
+          full2Arg(i).copyForwardShallow(gradient, argGradients(i))
+          argDiffs(i).backProp(argErrors(i), argGradients(i))
+          full2Arg(i).copyBackwardShallow(gradient, argGradients(i))
+        }
+      }
+    }
+  }
+
+}
+
 /**
  * @author riedel
  */
@@ -117,12 +227,11 @@ class VectorSum(val arguments: IndexedSeq[VectorTerm]) extends Composed[GenericV
   def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
     def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]) = {
       for (i <- 0 until argOutputs.length)
-        gradient(i).setVect(0,outError.vect(0))
+        gradient(i).setVect(0, outError.vect(0))
     }
 
     def withRespectTo = wrt
   }
-
 
 }
 
