@@ -35,7 +35,6 @@ class VarSeqSumSpecs extends WolfeSpec {
       t.gradient(d,2,3.0) should be (7.0)
     }
 
-
   }
 
 }
