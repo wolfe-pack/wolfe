@@ -41,3 +41,29 @@ class VectorSigmoid[T <: VectorTerm](override val arg: T)
 class VectorTanh[T <: VectorTerm](override val arg: T)
   extends VectorDoubleFun(arg, tanh, tanhDeriv)
 
+class L1Norm[T <: VectorTerm](val arg:T) extends ComposedDoubleTerm {
+  type ArgumentType = VectorTerm
+
+  def copy(args: IndexedSeq[ArgumentType]) = new L1Norm(args(0))
+
+  def composer() = new Evaluator {
+
+    def eval(inputs: Array[Setting], output: Setting) = {
+      output.cont(0) = inputs(0).vect(0).oneNorm
+    }
+  }
+
+  val arguments = IndexedSeq(arg)
+
+  def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
+    def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]) = {
+      val scale = outError.cont(0)
+      for (i <- 0 until argOutputs(0).vect(0).dim1) {
+        val current = argOutputs(0).vect(0)(i)
+        gradient(0).vect(0)(i) = if (current > 0.0) scale else if (current < 0) -scale else 0.0
+      }
+    }
+
+    def withRespectTo = wrt
+  }
+}

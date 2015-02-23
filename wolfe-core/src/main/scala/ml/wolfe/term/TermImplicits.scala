@@ -63,6 +63,9 @@ object TermImplicits extends NameProviderImplicits {
 
   def tanhVec[T <: VectorTerm](term: T) = new VectorTanh(term)
 
+  def l1[T <: VectorTerm](term: T) = new L1Norm[term.type](term)
+  def l2[T <: VectorTerm](term: T) = sqrt(term dot term)
+
   //  implicit def genericToConstant[T,D<:TypedDom[T]](t:T)(implicit dom:D):dom.Term = dom.const(t)
   //  implicit def genericToConstant[T,D<:TypedDom[T]](t:T)(implicit dom:D):dom.DomTerm = dom.const(t)
 
