@@ -67,6 +67,9 @@ object TermImplicits extends NameProviderImplicits {
 
   def tanhVec[T <: VectorTerm](term: T) = new VectorTanh(term)
 
+  def min(arg1:DoubleTerm,arg2:DoubleTerm) = new Min2[DoubleTerm](arg1,arg2)
+  def max(arg1:DoubleTerm,arg2:DoubleTerm) = new Max2[DoubleTerm](arg1,arg2)
+
   def l1[T <: VectorTerm](term: T) = new L1Norm[term.type](term)
   def l2[T <: VectorTerm](term: T) = sqrt(term dot term)
 
@@ -98,6 +101,9 @@ object TermImplicits extends NameProviderImplicits {
   //implicit def seqToSeqTerm[E <: Dom : SeqDom](elems:Seq[Term[E]]) = seq(implicitly[SeqDom[E]])(elems: _*)
 
   implicit def doubleToConstant(d: Double): Constant[DoubleDom] = Dom.doubles.const(d)
+
+  implicit def doubleToRichConstant(d: Double): RichDoubleTerm = new RichDoubleTerm(doubleToConstant(d))
+
 
   implicit def intToDoubleConstant(d: Int): Constant[DoubleDom] = Dom.doubles.const(d)
 
