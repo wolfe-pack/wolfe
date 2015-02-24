@@ -169,6 +169,22 @@ class TermSpecs extends WolfeSpec {
     }
   }
 
+  "A div" should {
+    "evaluate to the division of its arguments" in {
+      val x = doubles.variable("x")
+      val y = doubles.variable("y")
+      val term = (x / y) * 2.0
+      term.eval(2.0, 0.5) should be(8.0)
+    }
+    "calculate its gradient" in {
+      val x = doubles.variable("x")
+      val y = doubles.variable("y")
+      val term = (x / y) * 2.0
+      term.gradient(x, 2.0, 0.5) should be(4.0)
+      term.gradient(y, 2.0, 0.5) should be(-16.0)
+    }
+  }
+
   "An iverson bracket" should {
     "evaluate to 0 if a predicate is false, and 1 otherwise" in {
       val x = bools.variable("x")

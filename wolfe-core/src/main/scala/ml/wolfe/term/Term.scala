@@ -560,6 +560,38 @@ class MatrixVectorProduct[T1 <: MatrixTerm, T2 <: VectorTerm](val arg1: T1, val 
   }
 }
 
+class Div[T1 <: DoubleTerm, T2 <: DoubleTerm](val arg1: T1, val arg2: T2) extends ComposedDoubleTerm {
+
+  self =>
+
+  type ArgumentType = DoubleTerm
+
+  val arguments = IndexedSeq(arg1, arg2)
+
+  def copy(args: IndexedSeq[ArgumentType]) = new Div(args(0), args(1))
+
+  def composer() = new Evaluator {
+    def eval(inputs: Array[Setting], output: Setting) = {
+      output.cont(0) = inputs(0).cont(0) / inputs(1).cont(0)
+    }
+  }
+
+  def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
+
+    def withRespectTo = wrt
+
+    def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]): Unit = {
+      val scale = outError.cont(0)
+
+      val x = argOutputs(0).cont(0)
+      val y = argOutputs(1).cont(0)
+
+      gradient(0).cont(0) = scale / y
+      gradient(1).cont(0) = -(scale * x) / (y * y)
+    }
+  }
+}
+
 
 trait ComposedDoubleTerm extends DoubleTerm with Composed[DoubleDom] {
   val domain = Dom.doubles

@@ -158,6 +158,8 @@ object TermImplicits extends NameProviderImplicits {
 
     def *(that: VectorTerm) = new VectorScaling(that, term)
 
+    def /(that: DoubleTerm) = new Div(term, that)
+
     def unary_- = term * (-1.0)
 
     def argmaxBy(factory: ArgmaxerFactory) = new ProxyTerm[DoubleDom] {
