@@ -124,16 +124,23 @@ class MatrixDom(val dim1: Int, dim2: Int) extends Dom {
     target.mats(offsets.matsOff) = new MatsMsg(zero)
   }
 
-  def variable(name: String, offsets: Offsets, owner: term.Var[Dom]): DomVar = DomVar(name, owner, offsets.matsOff)
+  def variable(name: String, offsets: Offsets, owner: term.Var[Dom]): DomVar = new StaticMatrixVar(name, owner, offsets.matsOff)
 
-  def dynamic(name: => String, offsets: => Offsets, owner: term.Var[Dom]) = ???
+  def dynamic(name: => String, offsets: => Offsets, owner: term.Var[Dom]) = new BaseVar(name, owner) with DomVar {
+    def offset = offsets.matsOff
+  }
+
   def one = new DenseTensor2(dim1, dim2, 1.0)
   def zero = new DenseTensor2(dim1, dim2, 0.0)
 
   def const(value: Value) = new Constant(value)
 
-  case class DomVar(name: String, owner: term.Var[Dom], offset: Int) extends DomTerm with Atom[dom.type] with super.DomVar {
-    val ranges = Ranges(Offsets(0, 0, 0, offset), Offsets(0, 0, 0, offset + 1))
+  case class StaticMatrixVar(name: String, owner: term.Var[Dom], offset: Int) extends DomVar {
+    override val ranges = super.ranges
+  }
+
+  trait DomVar extends DomTerm with Atom[dom.type] with super.DomVar {
+    def ranges = Ranges(Offsets(0, 0, 0, offset), Offsets(0, 0, 0, offset + 1))
   }
 
 }
