@@ -19,7 +19,7 @@ object Argmaxer {
     }
   }
   def ascent(iterations: Int, learningRate: Double = 0.1, delta: Double = 0.0,
-             hook:(IndexedSeq[Any],Int) => String = null)(implicit initParams: Array[Setting] = Array()) = new ArgmaxerFactory {
+             hook:(IndexedSeq[Any],Int) => String = null, delays:Map[Atom[Dom],Int] = Map.empty)(implicit initParams: Array[Setting] = Array()) = new ArgmaxerFactory {
     def argmaxer(term: DoubleTerm, wrt: Seq[Var[Dom]]) = {
       require(wrt.forall(_.domain.isContinuous), "ascent based argmaxer needs continuous variables")
       new AscentBasedArgmaxer(term, wrt, iterations, learningRate, initParams)
@@ -27,10 +27,11 @@ object Argmaxer {
   }
 
   def adaGrad(iterations: Int, learningRate: Double = 0.1, delta: Double = 0.0,
-              hook:(IndexedSeq[Any],Int) => String = null)(implicit initParams: Array[Setting] = Array()) = new ArgmaxerFactory {
+              hook:(IndexedSeq[Any],Int) => String = null,
+              delays:Map[Atom[Dom],Int] = Map.empty )(implicit initParams: Array[Setting] = Array()) = new ArgmaxerFactory {
     def argmaxer(term: DoubleTerm, wrt: Seq[Var[Dom]]) = {
       require(wrt.forall(_.domain.isContinuous), "adagrad based argmaxer needs continuous variables")
-      new AdaGradArgmaxer(term, wrt, iterations, learningRate, delta, initParams,hook)
+      new AdaGradArgmaxer(term, wrt, iterations, learningRate, delta, initParams,hook,delays = delays)
     }
   }
 

@@ -13,7 +13,8 @@ class AdaGradArgmaxer(val obj: DoubleTerm,
                       val delta: Double,
                       val initParams: Array[Setting],
                       val epochHook: (IndexedSeq[Any],Int) => String = null,
-                      val adaptiveVectors: Boolean = true) extends Argmaxer {
+                      val adaptiveVectors: Boolean = true,
+                      val delays:Map[Atom[Dom],Int] = Map.empty) extends Argmaxer {
 
   val obsVars = obj.vars.filterNot(wrt.contains)
   //get differentiator
@@ -55,6 +56,7 @@ class AdaGradArgmaxer(val obj: DoubleTerm,
 
     //now optimize
     for (iteration <- 0 until iterations) {
+      val epoch = iteration / termsPerEpoch
       //reset all previous changes to the gradient
       if (iteration > 0) {
         val prevAtoms = Atoms.fromIterator(obj.atomsIterator)
@@ -69,7 +71,7 @@ class AdaGradArgmaxer(val obj: DoubleTerm,
       addSquaredAtoms(currentAtoms, gradient, momentum, var2Index)
 
       //now add gradient into result parameters, using momentum to determine learning rate.
-      gradientStep(currentAtoms, gradient, momentum, result, learningRate, var2Index)
+      gradientStep(epoch, currentAtoms, gradient, momentum, result, learningRate, var2Index)
 
       objAccumulator += currentValue.cont(0)
       if ((iteration + 1) % termsPerEpoch == 0) {
@@ -127,9 +129,9 @@ class AdaGradArgmaxer(val obj: DoubleTerm,
     }
   }
 
-  def gradientStep(atoms: Atoms, gradient: Array[Setting], momentum: Array[Setting], result: Array[Setting],
+  def gradientStep(epoch:Int, atoms: Atoms, gradient: Array[Setting], momentum: Array[Setting], result: Array[Setting],
                    lambda: Double, var2Index: Map[Var[Dom], Int] = this.var2Index): Unit = {
-    for (a <- atoms.cont; i <- var2Index.get(a.ownerOrSelf)) {
+    for (a <- atoms.cont; i <- var2Index.get(a.ownerOrSelf) if epoch >= delays.getOrElse(a,0)) {
       val offset = a.offset
       val g = gradient(i).cont(offset)
       val h = momentum(i).cont(offset)
@@ -137,7 +139,7 @@ class AdaGradArgmaxer(val obj: DoubleTerm,
       a.projectValue(result(i))
 
     }
-    for (a <- atoms.vect; i <- var2Index.get(a.ownerOrSelf)) {
+    for (a <- atoms.vect; i <- var2Index.get(a.ownerOrSelf) if epoch >= delays.getOrElse(a,0) ) {
       val offset = a.offset
       val g = gradient(i).vect(offset)
       val h = momentum(i).vect(offset)
@@ -149,7 +151,7 @@ class AdaGradArgmaxer(val obj: DoubleTerm,
       }
       a.projectValue(result(i))
     }
-    for (a <- atoms.mats; i <- var2Index.get(a.ownerOrSelf)) {
+    for (a <- atoms.mats; i <- var2Index.get(a.ownerOrSelf) if epoch >= delays.getOrElse(a,0)) {
       val offset = a.offset
       val g = gradient(i).mats(offset)
       val h = momentum(i).mats(offset)
