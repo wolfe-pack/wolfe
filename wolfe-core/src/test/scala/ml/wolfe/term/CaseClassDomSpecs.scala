@@ -85,6 +85,12 @@ class CaseClassDomSpecs extends WolfeSpec {
       const.eval() should be (World(true,0.5))
     }
 
+    "create a constant using toTerm" in {
+      implicit val worlds = World.Dom(bools, doubles)
+      val const = World(true,0.5).toTerm
+      const.rain.eval() should be (true)
+    }
+
     "create a static variable" in {
       val worlds = World.Dom(bools, doubles)
       val x = worlds.variable("x")

@@ -8,42 +8,27 @@ import scala.language.implicitConversions
 /**
  * @author riedel
  */
-object TermImplicits extends NameProviderImplicits {
+object TermImplicits extends NameProviderImplicits with MathImplicits {
 
-  implicit val doubles:DoubleDom = Dom.doubles
+  implicit val doubles: DoubleDom = Dom.doubles
   implicit val bools = Dom.bools
 
-  def vectors(dim: Int) = new VectorDom(dim)
-
-  def unitVectors(dim: Int) = new UnitVectorDom(dim)
-
-  def matrices(dim1: Int, dim2: Int) = new MatrixDom(dim1: Int, dim2: Int)
 
   def discrete[T](args: T*) = new DiscreteDom[T](args.toIndexedSeq)
 
   def dom[T](args: Seq[T]) = new DiscreteDom[T](args.toIndexedSeq)
 
-  def vector(values: Double*) = new DenseTensor1(values.toArray)
-
-  def matrix(values: Seq[Double]*) = {
-    val tmp = new DenseTensor2(values.length, values.head.length)
-
-    (0 until values.length).foreach(row => {
-      (0 until values(row).length).foreach(col => {
-        tmp(row, col) = values(row)(col)
-      })
-    })
-
-    tmp
-  }
 
   implicit def domToIterable(dom: Dom): Iterable[dom.Value] = dom.toIterable
 
   def seqs[D <: Dom](elements: D, length: Int): SeqDom[elements.type] = new SeqDom[elements.type](elements, length)
 
-  def seqs[D <: Dom](elements: D, minLength: Int, maxLength:Int): VarSeqDom[elements.type] =
+  def seqs[D <: Dom](elements: D, minLength: Int, maxLength: Int): VarSeqDom[elements.type] =
     new VarSeqDom[elements.type](elements, maxLength, minLength)
 
+  implicit class ConvertableToTerm[T,D<:TypedDom[T]](value:T)(implicit val domain:D) {
+    def toTerm:domain.Term = domain.const(value)
+  }
 
   def seq[E <: Dom](dom: SeqDom[E])(elems: dom.elementDom.Term*): dom.SeqDomTermImpl = new dom.SeqDomTermImpl {
     def elements = elems.toIndexedSeq
@@ -51,27 +36,6 @@ object TermImplicits extends NameProviderImplicits {
     def copy(args: IndexedSeq[ArgumentType]) = seq(dom)(args: _*)
   }
 
-  def sigm[T <: DoubleTerm](term: T) = new Sigmoid(term)
-
-  def sqrt[T <: DoubleTerm](term: T) = new Sqrt(term)
-
-  def clip[T <: DoubleTerm](term: T) = new Clip(term)
-
-  def tanh[T <: DoubleTerm](term: T) = new Tanh(term)
-
-  def log[T <: DoubleTerm](term: T) = new Log(term)
-
-  def I[T <: BoolTerm](term: T) = new Iverson(term)
-
-  def sigmVec[T <: VectorTerm](term: T) = new VectorSigmoid(term)
-
-  def tanhVec[T <: VectorTerm](term: T) = new VectorTanh(term)
-
-  def min(arg1:DoubleTerm,arg2:DoubleTerm) = new Min2[DoubleTerm](arg1,arg2)
-  def max(arg1:DoubleTerm,arg2:DoubleTerm) = new Max2[DoubleTerm](arg1,arg2)
-
-  def l1[T <: VectorTerm](term: T) = new L1Norm[term.type](term)
-  def l2[T <: VectorTerm](term: T) = sqrt(term dot term)
 
   //  implicit def genericToConstant[T,D<:TypedDom[T]](t:T)(implicit dom:D):dom.Term = dom.const(t)
   //  implicit def genericToConstant[T,D<:TypedDom[T]](t:T)(implicit dom:D):dom.DomTerm = dom.const(t)
@@ -82,8 +46,8 @@ object TermImplicits extends NameProviderImplicits {
   //      val domain:dom.type = dom
   //    }
 
-  def VarSeq[D<:Dom](length:TypedTerm[Int],args:IndexedSeq[Term[D]]) = {
-    new VarSeqConstructor[D](length,args)
+  def VarSeq[D <: Dom](length: TypedTerm[Int], args: IndexedSeq[Term[D]]) = {
+    new VarSeqConstructor[D](length, args)
   }
 
   def stochastic[T](gen: Dynamic[T])(arg: Dynamic[T] => DoubleTerm) = {
@@ -100,22 +64,6 @@ object TermImplicits extends NameProviderImplicits {
 
   //implicit def seqToSeqTerm[E <: Dom : SeqDom](elems:Seq[Term[E]]) = seq(implicitly[SeqDom[E]])(elems: _*)
 
-  implicit def doubleToConstant(d: Double): Constant[DoubleDom] = Dom.doubles.const(d)
-
-  implicit def doubleToRichConstant(d: Double): RichDoubleTerm = new RichDoubleTerm(doubleToConstant(d))
-
-
-  implicit def intToDoubleConstant(d: Int): Constant[DoubleDom] = Dom.doubles.const(d)
-
-  implicit def vectToConstant(d: FactorieVector): Constant[VectorDom] = vectors(d.dim1).const(d)
-
-  implicit def vectToConstantWithDom(d: FactorieVector)(implicit dom: VectorDom): dom.Term = dom.const(d)
-
-  implicit def dynVectToConstantWithDom(d: Dynamic[FactorieVector])(implicit dom: VectorDom): dom.Term = dom.dynConst(d)
-
-  implicit def matToConstant(d: FactorieMatrix): Constant[MatrixDom] = matrices(d.dim1, d.dim2).const(d)
-
-  implicit def intToDouble(int:DiscreteTerm[Int]):IntToDouble[int.type] = new IntToDouble[int.type](int)
 
   implicit def discToConstant[T: DiscreteDom](value: T): Constant[DiscreteDom[T]] =
     implicitly[DiscreteDom[T]].const(value)
@@ -127,53 +75,6 @@ object TermImplicits extends NameProviderImplicits {
   //    term.argmax(variable).asInstanceOf[dom.Value]
   //  }
 
-  def argmax[D <: Dom](dom: D)(obj: dom.Var => DoubleTerm): Argmax[dom.type] = {
-    val variable = dom.variable("_hidden")
-    val term = obj(variable)
-    new Argmax[dom.type](term, variable)
-  }
-
-
-  def max[D <: Dom](dom: D)(obj: dom.Var => DoubleTerm) = {
-    val variable = dom.variable("_hidden")
-    val term = obj(variable)
-    new Max(term, Seq(variable))
-  }
-
-  def sum[T](dom: Seq[T])(arg: T => DoubleTerm) = new Sum(dom.toIndexedSeq.map(arg))
-
-  def sum(args: DoubleTerm*) = new Sum(args.toIndexedSeq)
-
-  def sum[T <: Term[VarSeqDom[DoubleDom]]](args: T) = new VarSeqSum[DoubleDom,T](args)
-
-  def sum[T <: DoubleTerm, D <: Dom](d:D)(body:d.Var => T) = {
-    val variable = d.variable("_i")
-    val bodyTerm = body(variable)
-    new FirstOrderSum[d.type,T](variable,bodyTerm)
-  }
-
-  def oneHot(index: Int, value: Double = 1.0)(implicit dom: VectorDom) =
-    dom.const(new SingletonTensor1(dom.dim, index, value))
-
-  implicit class RichDoubleTerm(term: DoubleTerm) {
-    def +(that: DoubleTerm) = new Sum(IndexedSeq(term, that))
-
-    def -(that: DoubleTerm) = new Sum(IndexedSeq(term, that * (-1.0)))
-
-    def *(that: DoubleTerm): Product = new Product(IndexedSeq(term, that))
-
-    def *(that: VectorTerm) = new VectorScaling(that, term)
-
-    def /(that: DoubleTerm) = new Div(term, that)
-
-    def unary_- = term * (-1.0)
-
-    def argmaxBy(factory: ArgmaxerFactory) = new ProxyTerm[DoubleDom] {
-      def self = term
-
-      override def argmaxer(wrt: Seq[Var[Dom]]) = factory.argmaxer(term, wrt)
-    }
-  }
 
   implicit class RichBoolTerm(term: BoolTerm) {
     def &&(that: BoolTerm) = new And(term, that)
@@ -182,7 +83,7 @@ object TermImplicits extends NameProviderImplicits {
 
     def -->(that: BoolTerm) = new Implies(term, that)
 
-    def unary_! = for (b <- term ) yield !b
+    def unary_! = for (b <- term) yield !b
 
   }
 
@@ -197,10 +98,10 @@ object TermImplicits extends NameProviderImplicits {
     }
   }
 
-//  implicit class RichSeqTerm[E <: Dom, S <: Term[SeqDom[E]]](val term:S) {
-//    def apply[I <: Term[TypedDom[Int]]](index:I) =
-//      new SeqApply[E,S,I](term,index)
-//  }
+  //  implicit class RichSeqTerm[E <: Dom, S <: Term[SeqDom[E]]](val term:S) {
+  //    def apply[I <: Term[TypedDom[Int]]](index:I) =
+  //      new SeqApply[E,S,I](term,index)
+  //  }
 
   implicit class RichMonadTerm[A <: Term[Dom]](val termToBeMapped: A) {
     def map[B: TypedDom](fun: termToBeMapped.domain.Value => B) = {
@@ -227,26 +128,76 @@ object TermImplicits extends NameProviderImplicits {
 
   implicit class RichDom[D <: Dom](val dom: D) {
     def x[D2 <: Dom](that: D2): Tuple2Dom[dom.type, that.type] = new Tuple2Dom[dom.type, that.type](dom, that)
+
     //    def iterator = dom.iterator
   }
 
 
-  class RichVarSeqTerm[E <: Dom, T <: Term[VarSeqDom[E]]](val term:T) {
-    def apply(index:Int) =
-      new VarSeqApply[E,T,term.domain.lengthDom.Term](term,term.domain.lengthDom.const(index))
+  class RichVarSeqTerm[E <: Dom, T <: Term[VarSeqDom[E]]](val term: T) {
+    def apply(index: Int) =
+      new VarSeqApply[E, T, term.domain.lengthDom.Term](term, term.domain.lengthDom.const(index))
+
     def length = new VarSeqLength[T](term)
+
     //def apply(index:Int) = term.elements(index)
 
   }
 
-  implicit class RichVarSeqDom[E <: Dom](val dom:VarSeqDom[E]) {
-//    def Term2(length:TypedTerm[Int],elements:IndexedSeq[Term[E]]):dom.Term = new dom.Constructor(length,elements)
+  implicit class RichVarSeqDom[E <: Dom](val dom: VarSeqDom[E]) {
+
 
   }
 
-//  implicit def toRichVarSeqTerm[S <:Term[VarSeqDom[_]]](seq:S):RichVarSeqTerm[seq.domain.ElemDom,seq.type] = {
-//    ???
-//  }
+}
+
+trait MathImplicits {
+
+  def vectors(dim: Int) = new VectorDom(dim)
+
+  def unitVectors(dim: Int) = new UnitVectorDom(dim)
+
+  def matrices(dim1: Int, dim2: Int) = new MatrixDom(dim1: Int, dim2: Int)
+
+  def vector(values: Double*) = new DenseTensor1(values.toArray)
+
+  def matrix(values: Seq[Double]*) = {
+    val tmp = new DenseTensor2(values.length, values.head.length)
+
+    (0 until values.length).foreach(row => {
+      (0 until values(row).length).foreach(col => {
+        tmp(row, col) = values(row)(col)
+      })
+    })
+
+    tmp
+  }
+
+
+  def sigm[T <: DoubleTerm](term: T) = new Sigmoid(term)
+
+  def sqrt[T <: DoubleTerm](term: T) = new Sqrt(term)
+
+  def clip[T <: DoubleTerm](term: T) = new Clip(term)
+
+  def tanh[T <: DoubleTerm](term: T) = new Tanh(term)
+
+  def log[T <: DoubleTerm](term: T) = new Log(term)
+
+  def I[T <: BoolTerm](term: T) = new Iverson(term)
+
+  def sigmVec[T <: VectorTerm](term: T) = new VectorSigmoid(term)
+
+  def tanhVec[T <: VectorTerm](term: T) = new VectorTanh(term)
+
+  def min(arg1: DoubleTerm, arg2: DoubleTerm) = new Min2[DoubleTerm](arg1, arg2)
+
+  def max(arg1: DoubleTerm, arg2: DoubleTerm) = new Max2[DoubleTerm](arg1, arg2)
+
+  def l1[T <: VectorTerm](term: T) = new L1Norm[term.type](term)
+
+  def l2[T <: VectorTerm](term: T) = sqrt(term dot term)
+
+  def l2Squared[T <: VectorTerm](term: T) = term dot term
 
   implicit class RichVectTerm(val vect: VectorTerm) {
     def dot(that: VectorTerm) = new DotProduct(vect, that)
@@ -275,8 +226,72 @@ object TermImplicits extends NameProviderImplicits {
     def *(that: VectorTerm) = new MatrixVectorProduct(mat, that)
   }
 
-//  implicit class VarCreator[D<:Dom](val d:D) {
-//    def Var(implicit provider:NameProvider):d.Var = d.variable(provider.newName())
-//  }
+  implicit class RichDoubleTerm(term: DoubleTerm) {
+    def +(that: DoubleTerm) = new Sum(IndexedSeq(term, that))
+
+    def -(that: DoubleTerm) = new Sum(IndexedSeq(term, that * (-1.0)))
+
+    def *(that: DoubleTerm): Product = new Product(IndexedSeq(term, that))
+
+    def *(that: VectorTerm) = new VectorScaling(that, term)
+
+    def /(that: DoubleTerm) = new Div(term, that)
+
+    def unary_- = term * (-1.0)
+
+    def argmaxBy(factory: ArgmaxerFactory) = new ProxyTerm[DoubleDom] {
+      def self = term
+
+      override def argmaxer(wrt: Seq[Var[Dom]]) = factory.argmaxer(term, wrt)
+    }
+  }
+
+
+  def argmax[D <: Dom](dom: D)(obj: dom.Var => DoubleTerm): Argmax[dom.type] = {
+    val variable = dom.variable("_hidden")
+    val term = obj(variable)
+    new Argmax[dom.type](term, variable)
+  }
+
+
+  def max[D <: Dom](dom: D)(obj: dom.Var => DoubleTerm) = {
+    val variable = dom.variable("_hidden")
+    val term = obj(variable)
+    new Max(term, Seq(variable))
+  }
+
+  def sum[T](dom: Seq[T])(arg: T => DoubleTerm) = new Sum(dom.toIndexedSeq.map(arg))
+
+  def sum(args: DoubleTerm*) = new Sum(args.toIndexedSeq)
+
+  def sum[T <: Term[VarSeqDom[DoubleDom]]](args: T) = new VarSeqSum[DoubleDom, T](args)
+
+  def sum[T <: DoubleTerm, D <: Dom](d: D)(body: d.Var => T) = {
+    val variable = d.variable("_i")
+    val bodyTerm = body(variable)
+    new FirstOrderSum[d.type, T](variable, bodyTerm)
+  }
+
+  def oneHot(index: Int, value: Double = 1.0)(implicit dom: VectorDom) =
+    dom.const(new SingletonTensor1(dom.dim, index, value))
+
+
+  implicit def doubleToConstant(d: Double): Constant[DoubleDom] = Dom.doubles.const(d)
+
+  implicit def doubleToRichConstant(d: Double): RichDoubleTerm = new RichDoubleTerm(doubleToConstant(d))
+
+
+  implicit def intToDoubleConstant(d: Int): Constant[DoubleDom] = Dom.doubles.const(d)
+
+  implicit def vectToConstant(d: FactorieVector): Constant[VectorDom] = vectors(d.dim1).const(d)
+
+  implicit def vectToConstantWithDom(d: FactorieVector)(implicit dom: VectorDom): dom.Term = dom.const(d)
+
+  implicit def dynVectToConstantWithDom(d: Dynamic[FactorieVector])(implicit dom: VectorDom): dom.Term = dom.dynConst(d)
+
+  implicit def matToConstant(d: FactorieMatrix): Constant[MatrixDom] = matrices(d.dim1, d.dim2).const(d)
+
+  implicit def intToDouble(int: DiscreteTerm[Int]): IntToDouble[int.type] = new IntToDouble[int.type](int)
+
 
 }
