@@ -21,7 +21,7 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
   setting =>
 
   val disc = new DiscBuffer(numDisc)
-  val cont = Array.ofDim[Double](numCont)
+  val cont = new ContBuffer(numCont)
   val vect = Array.ofDim[FactorieVector](numVect)
   val mats = Array.ofDim[FactorieMatrix](numMats)
 
@@ -29,6 +29,7 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
   final class DiscBuffer(val length:Int) extends Buffer[Int](setting) {
 
   }
+  
   final class ContBuffer(val length:Int) extends Buffer[Double](setting) {
     def *=(scale: Double): Unit = {
       for (i <- 0 until length) array(i) *= scale
@@ -36,6 +37,10 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
     }
     def :=(scale: Double): Unit = {
       for (i <- 0 until length) array(i) = scale
+      flagAllChanged()
+    }
+    def +=(that:Buffer[Double]): Unit = {
+      for (i <- 0 until length) array(i) += that(i)
       flagAllChanged()
     }
   }
@@ -96,15 +101,13 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
 
   def copyTo(target: Setting, targetOffsets: Offsets, targetMultiplier: Int): Unit = {
     disc.copyTo(target.disc,0,targetOffsets.discOff * targetMultiplier,disc.length)
-//    if (disc.length > 0) System.arraycopy(disc, 0, target.disc, targetOffsets.discOff * targetMultiplier, disc.length)
-    if (cont.length > 0) System.arraycopy(cont, 0, target.cont, targetOffsets.contOff * targetMultiplier, cont.length)
+    cont.copyTo(target.cont,0,targetOffsets.contOff * targetMultiplier,cont.length)
     if (vect.length > 0) System.arraycopy(vect, 0, target.vect, targetOffsets.vectOff * targetMultiplier, vect.length)
     if (mats.length > 0) System.arraycopy(mats, 0, target.mats, targetOffsets.matsOff * targetMultiplier, mats.length)
   }
   def copyTo(target: Setting, srcOffsets:Offsets, targetOffsets: Offsets, length:Offsets): Unit = {
     disc.copyTo(target.disc,srcOffsets.discOff,targetOffsets.discOff,length.discOff)
-    //if (disc.length > 0) System.arraycopy(disc, srcOffsets.discOff, target.disc, targetOffsets.discOff, length.discOff)
-    if (cont.length > 0) System.arraycopy(cont, srcOffsets.contOff, target.cont, targetOffsets.contOff, length.contOff)
+    cont.copyTo(target.cont,srcOffsets.contOff,targetOffsets.contOff,length.contOff)
     if (vect.length > 0) System.arraycopy(vect, srcOffsets.vectOff, target.vect, targetOffsets.vectOff, length.vectOff)
     if (mats.length > 0) System.arraycopy(mats, srcOffsets.matsOff, target.mats, targetOffsets.matsOff, length.matsOff)
   }
@@ -113,9 +116,8 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
              length:Offsets, srcOffsets:Offsets = Offsets(), tgtOffsets:Offsets = Offsets()): Unit = {
     disc.copyTo(target.disc,srcOffsets.discOff + length.discOff * srcMultiplier,
       tgtOffsets.discOff + tgtElementLength.discOff * tgtMultiplier,length.discOff)
-    if (cont.length > 0) System.arraycopy(
-      cont, srcOffsets.contOff +srcElementLength.contOff * srcMultiplier,
-      target.cont, tgtOffsets.contOff + tgtElementLength.contOff * tgtMultiplier, length.contOff)
+    cont.copyTo(target.cont,srcOffsets.contOff + length.contOff * srcMultiplier,
+      tgtOffsets.contOff + tgtElementLength.contOff * tgtMultiplier,length.contOff)
     if (vect.length > 0) System.arraycopy(
       vect, srcOffsets.vectOff + srcElementLength.vectOff * srcMultiplier,
       target.vect, tgtOffsets.vectOff + tgtElementLength.vectOff * tgtMultiplier, length.vectOff)
@@ -126,26 +128,26 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
 
 
   def *=(scale: Double): Unit = {
-    for (i <- 0 until cont.length) cont(i) *= scale
+    cont *= scale
     for (i <- 0 until vect.length) vect(i) *= scale
     for (i <- 0 until mats.length) mats(i) *= scale
   }
 
   def +=(that: Setting): Unit = {
-    for (i <- 0 until cont.length) cont(i) += that.cont(i)
+    cont += that.cont
     for (i <- 0 until vect.length) vect(i) += that.vect(i)
     for (i <- 0 until mats.length) mats(i) += that.mats(i)
   }
 
   def :=(value: Double = 0.0): Unit = {
-    for (i <- 0 until cont.length) cont(i) = value
+    cont := value
     for (i <- 0 until vect.length) if (vect(i) != null) vect(i) := value
     for (i <- 0 until mats.length) if (mats(i) != null) mats(i) := value
   }
 
   def :=(that: Setting): Unit = {
-    for (i <- 0 until disc.length) disc(i) = that.disc(i)
-    for (i <- 0 until cont.length) cont(i) = that.cont(i)
+    disc := that.disc
+    cont := that.cont
     for (i <- 0 until vect.length) vect(i) = that.vect(i)
     for (i <- 0 until mats.length) mats(i) = that.mats(i)
   }
@@ -361,8 +363,7 @@ case class Offsets(discOff: Int = 0, contOff: Int = 0, vectOff: Int = 0, matsOff
 case class Ranges(from: Offsets, to: Offsets) {
   def copy(src: Setting, tgt: Setting): Unit = {
     src.disc.copyTo(tgt.disc,from.discOff,0,to.discOff - from.discOff)
-//    arraycopy(src.disc, from.discOff, tgt.disc, 0, to.discOff - from.discOff)
-    arraycopy(src.cont, from.contOff, tgt.cont, 0, to.contOff - from.contOff)
+    src.cont.copyTo(tgt.cont,from.contOff,0,to.contOff - from.contOff)
     arraycopy(src.vect, from.vectOff, tgt.vect, 0, to.vectOff - from.vectOff)
     arraycopy(src.mats, from.matsOff, tgt.mats, 0, to.matsOff - from.matsOff)
   }
