@@ -27,7 +27,6 @@ class VarSeqDomSpecs extends WolfeSpec {
 
     "support constructing sequence terms" in {
       val n = 3
-      val xs = seqs(bools,0,n)
       val i = dom(0 until n).Var
       val b = bools.Var
       val term = VarSeq(i,IndexedSeq(b,!b,b))

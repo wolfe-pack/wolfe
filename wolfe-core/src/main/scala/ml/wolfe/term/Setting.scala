@@ -31,6 +31,12 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
     if (vect.length > 0) System.arraycopy(vect, 0, target.vect, targetOffsets.vectOff * targetMultiplier, vect.length)
     if (mats.length > 0) System.arraycopy(mats, 0, target.mats, targetOffsets.matsOff * targetMultiplier, mats.length)
   }
+  def copyTo(target: Setting, srcOffsets:Offsets, targetOffsets: Offsets, length:Offsets): Unit = {
+    if (disc.length > 0) System.arraycopy(disc, srcOffsets.discOff, target.disc, targetOffsets.discOff, length.discOff)
+    if (cont.length > 0) System.arraycopy(cont, srcOffsets.contOff, target.cont, targetOffsets.contOff, length.contOff)
+    if (vect.length > 0) System.arraycopy(vect, srcOffsets.vectOff, target.vect, targetOffsets.vectOff, length.vectOff)
+    if (mats.length > 0) System.arraycopy(mats, srcOffsets.matsOff, target.mats, targetOffsets.matsOff, length.matsOff)
+  }
 
   def copyTo(target: Setting, srcElementLength:Offsets, srcMultiplier:Int, tgtElementLength: Offsets, tgtMultiplier: Int,
              length:Offsets, srcOffsets:Offsets = Offsets(), tgtOffsets:Offsets = Offsets()): Unit = {

@@ -133,13 +133,17 @@ object TermImplicits extends NameProviderImplicits with MathImplicits {
   }
 
 
-  class RichVarSeqTerm[E <: Dom, T <: Term[VarSeqDom[E]]](val term: T) {
+  implicit class RichVarSeqTerm[E <: Dom, T <: Term[VarSeqDom[E]]](val term: T) {
     def apply(index: Int) =
       new VarSeqApply[E, T, term.domain.lengthDom.Term](term, term.domain.lengthDom.const(index))
 
     def length = new VarSeqLength[T](term)
 
     //def apply(index:Int) = term.elements(index)
+
+    def sum(body: term.domain.elementDom.Var => DoubleTerm) = {
+      new FirstOrderSum[E,DoubleTerm,T](term,???,???)
+    }
 
   }
 
@@ -266,13 +270,18 @@ trait MathImplicits {
 
   def sum[T <: Term[VarSeqDom[DoubleDom]]](args: T) = new VarSeqSum[DoubleDom, T](args)
 
-  def sum[T <: DoubleTerm, D <: Dom](d: D)(body: d.Var => T) = {
-    val variable = d.variable("_i")
-    val bodyTerm = body(variable)
-    new FirstOrderSum[d.type, T](variable, bodyTerm)
+  def sum2[E <: Dom, T <: Term[VarSeqDom[E]], Body <: DoubleTerm](indices:T)(body:indices.domain.elementDom.Var => Body) = {
+    val variable = indices.domain.elementDom.variable("_i")
+    val instantiatedBody = body(variable)
+    new FirstOrderSum[E,Body,T](indices,variable,instantiatedBody)
   }
 
-  def oneHot(index: Int, value: Double = 1.0)(implicit dom: VectorDom) =
+  def sum[T <: Term[VarSeqDom[Dom]],Body <: DoubleTerm](indices:T)(body:indices.domain.elementDom.Var => Body) =
+    sum2[Dom,Term[VarSeqDom[Dom]],Body](indices)(body)
+
+
+
+    def oneHot(index: Int, value: Double = 1.0)(implicit dom: VectorDom) =
     dom.const(new SingletonTensor1(dom.dim, index, value))
 
 
