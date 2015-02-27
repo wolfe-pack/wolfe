@@ -8,6 +8,7 @@ import ml.wolfe._
  */
 trait AtomicDom extends Dom {
   type Term = DomTerm
+
   def const(value: Value) = new Constant(value)
 
 }
@@ -15,7 +16,7 @@ trait AtomicDom extends Dom {
 trait GenericVectorDom extends Dom {
   dom =>
 
-  def dim:Int
+  def dim: Int
 
   type Value = FactorieVector
   type Var = DomVar
@@ -45,10 +46,12 @@ trait GenericVectorDom extends Dom {
   }
 
   def one = new DenseTensor1(dim, 1.0)
+
   def zero = new DenseTensor1(dim, 0.0)
 
   def const(value: Value) = new Constant(value)
-  def dynConst(value:Dynamic[Value]) = new DynamicConstant(value)
+
+  def dynConst(value: Dynamic[Value]) = new DynamicConstant(value)
 
   def Const(values: Double*) = {
     require(values.size == dim)
@@ -65,6 +68,7 @@ trait GenericVectorDom extends Dom {
 
 
 }
+
 class VectorDom(val dim: Int) extends GenericVectorDom {
 
   def variable(name: String, offsets: Offsets, owner: term.Var[Dom]) = StaticVectorVar(name, owner, offsets.vectOff)
@@ -92,8 +96,6 @@ class UnitVectorDom(val dim: Int) extends GenericVectorDom {
   }
 
 }
-
-
 
 
 class MatrixDom(val dim1: Int, dim2: Int) extends Dom {
@@ -131,6 +133,7 @@ class MatrixDom(val dim1: Int, dim2: Int) extends Dom {
   }
 
   def one = new DenseTensor2(dim1, dim2, 1.0)
+
   def zero = new DenseTensor2(dim1, dim2, 0.0)
 
   def const(value: Value) = new Constant(value)
@@ -144,7 +147,6 @@ class MatrixDom(val dim1: Int, dim2: Int) extends Dom {
   }
 
 }
-
 
 
 class DoubleDom extends AtomicDom {
@@ -174,12 +176,15 @@ class DoubleDom extends AtomicDom {
   }
 
   val lengths = Offsets(0, 1, 0, 0)
+
   def variable(name: String, offsets: Offsets = Offsets(), owner: term.Var[Dom]): Var = StaticDoubleVar(name, owner, offsets.contOff)
 
-  def dynamic(name: => String, offsets: => Offsets, owner: term.Var[Dom]):Var = new BaseVar(name, owner) with DomVar {
+  def dynamic(name: => String, offsets: => Offsets, owner: term.Var[Dom]): Var = new BaseVar(name, owner) with DomVar {
     def offset = offsets.contOff
   }
+
   def one = 1.0
+
   def zero = 0.0
 
   trait DomVar extends Atom[dom.type] with super.DomVar {
@@ -199,47 +204,50 @@ class DoubleDom extends AtomicDom {
   case class StaticDoubleVar(name: String, owner: term.Var[Dom], offset: Int) extends Var with DomTerm {
     override val ranges = super.ranges
   }
+
 }
 
-class DiscreteDom[T](val values: IndexedSeq[T]) extends Dom {
-
+trait GenericDiscreteDom[T] extends Dom {
 
   dom =>
   type Term = DomTerm
   type Value = T
   type Var = DomVar
   type Marginals = IndexedSeq[Double]
-  def toValue(setting: Setting, offsets: Offsets = Offsets()) =
-    values(setting.disc(offsets.discOff))
 
-  def indexOf(value:Value):Int = values match {
-    case _: Range => value.asInstanceOf[Int] //todo: Range domains should be separate, this will break
-    case _ => values.indexOf(value)
-  }
+  def intToValue(int:Int):Value
+  def valueToInt(value:Value):Int
+  def domainSize:Int
+
+  def toValue(setting: Setting, offsets: Offsets = Offsets()) =
+    intToValue(setting.disc(offsets.discOff))
+
+
 
   def toMarginals(msg: Msgs, offsets: Offsets) = {
     msg.disc(offsets.discOff).msg
   }
+
   def copyValue(value: Value, setting: Setting, offsets: Offsets = Offsets()) =
-    setting.disc(offsets.discOff) = indexOf(value)
+    setting.disc(offsets.discOff) = valueToInt(value)
 
 
   def copyMarginals(marginals: Marginals, msgs: Msgs, offsets: Offsets) = {
     msgs.disc(offsets.discOff) = new DiscMsg(marginals.toArray)
   }
+
   def fillZeroMsgs(target: Msgs, offsets: Offsets) = {
-    target.disc(offsets.discOff) = new DiscMsg(values.length)
+    target.disc(offsets.discOff) = new DiscMsg(domainSize)
   }
 
   val lengths = Offsets(1, 0, 0, 0)
+
   def variable(name: String, offsets: Offsets = Offsets(), owner: term.Var[Dom]) = StaticDiscVar(name, owner, offsets.discOff)
 
   def dynamic(name: => String, offsets: => Offsets, owner: term.Var[Dom]) = new BaseVar(name, owner) with DomVar {
     def offset = offsets.discOff
   }
 
-  def one = values.last
-  def zero = values.head
   def const(value: T) = new Constant(value)
 
 
@@ -252,5 +260,24 @@ class DiscreteDom[T](val values: IndexedSeq[T]) extends Dom {
 
   }
 
+
 }
+
+class DiscreteDom[T](val values: IndexedSeq[T]) extends GenericDiscreteDom[T] {
+  def intToValue(int: Int) = values(int)
+  def valueToInt(value: Value) = values.indexOf(value)
+  def domainSize = values.size
+  def one = values.last
+  def zero = values.head
+}
+
+class RangeDom(val values: Range) extends GenericDiscreteDom[Int] {
+  def intToValue(int: Int) = int
+  def valueToInt(value: Value) = value
+  def domainSize = values.size
+  def one = values.last
+  def zero = values.head
+
+}
+
 

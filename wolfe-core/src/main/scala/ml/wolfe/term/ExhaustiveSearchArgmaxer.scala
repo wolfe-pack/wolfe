@@ -56,7 +56,7 @@ object ExhaustiveSearch {
       def currentTarget = target(varIndex).disc(atom.offset)
       def setTarget(value: Int) = target(varIndex).disc(atom.offset) = value
       def incrementTarget() = target(varIndex).disc(atom.offset) += 1
-      def currentDim = atom.domain.values.length
+      def currentDim = atom.domain.domainSize
 
       while (index >= 0) {
         //call body on current setting
@@ -102,7 +102,7 @@ object ExhaustiveSearch {
 
       def incrementTarget() = toVary(varIndex).disc(atom.offset) += 1
 
-      def currentDim = atom.domain.values.length
+      def currentDim = atom.domain.domainSize
 
       def hasNext = index >= 0
 

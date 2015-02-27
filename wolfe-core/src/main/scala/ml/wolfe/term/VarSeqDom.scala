@@ -9,7 +9,7 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
 
   dom =>
 
-  val lengthDom = new DiscreteDom[Int](Range(minLength, maxLength))
+  val lengthDom = new RangeDom(Range(minLength, maxLength))
 
   type Value = IndexedSeq[elementDom.Value]
   type Var = DomVar

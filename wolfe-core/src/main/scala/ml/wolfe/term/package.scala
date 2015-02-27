@@ -7,7 +7,7 @@ package object term {
   type DoubleVar = DoubleDom#DomVar
   type VectorVar = VectorDom#DomVar
   type MatrixVar = MatrixDom#DomVar
-  type DiscVar[T] = DiscreteDom[T]#DomVar
+  type DiscVar[T] = GenericDiscreteDom[T]#DomVar
   type Constant[D <: Dom] = D#Constant
 
   type TypedDom[T] = Dom { type Value = T}

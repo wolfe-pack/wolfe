@@ -13,11 +13,11 @@ object TermImplicits extends NameProviderImplicits with MathImplicits {
   implicit val doubles: DoubleDom = Dom.doubles
   implicit val bools = Dom.bools
 
-
   def discrete[T](args: T*) = new DiscreteDom[T](args.toIndexedSeq)
 
   def dom[T](args: Seq[T]) = new DiscreteDom[T](args.toIndexedSeq)
 
+  implicit def rangeToDom(range:Range):RangeDom = new RangeDom(range)
 
   implicit def domToIterable(dom: Dom): Iterable[dom.Value] = dom.toIterable
 
@@ -29,6 +29,16 @@ object TermImplicits extends NameProviderImplicits with MathImplicits {
   implicit class ConvertableToTerm[T,D<:TypedDom[T]](value:T)(implicit val domain:D) {
     def toTerm:domain.Term = domain.const(value)
   }
+
+  implicit class RichRange(values:Range) {
+    def toDom = new RangeDom(values)
+  }
+
+  implicit class RichIndexedSeq[T](values:IndexedSeq[T]) {
+    def toDom = new DiscreteDom[T](values)
+  }
+
+
 
   def seq[E <: Dom](dom: SeqDom[E])(elems: dom.elementDom.Term*): dom.SeqDomTermImpl = new dom.SeqDomTermImpl {
     def elements = elems.toIndexedSeq
