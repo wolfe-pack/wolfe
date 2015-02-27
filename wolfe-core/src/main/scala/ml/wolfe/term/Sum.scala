@@ -227,7 +227,7 @@ class VectorSum(val arguments: IndexedSeq[VectorTerm]) extends Composed[GenericV
   def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
     def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]) = {
       for (i <- 0 until argOutputs.length)
-        gradient(i).setVect(0, outError.vect(0))
+        gradient(i).vect.update(0, outError.vect(0))
     }
 
     def withRespectTo = wrt

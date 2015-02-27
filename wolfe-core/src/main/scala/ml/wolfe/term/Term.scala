@@ -339,8 +339,8 @@ class DotProduct[T1 <: VectorTerm, T2 <: VectorTerm](val arg1: T1, val arg2: T2)
     def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]): Unit = {
       val scale = outError.cont(0)
 
-      if (arg1.vars.nonEmpty) gradient(0).setVect(0, argOutputs(1).vect(0), scale)
-      if (arg2.vars.nonEmpty) gradient(1).setVect(0, argOutputs(0).vect(0), scale)
+      if (arg1.vars.nonEmpty) gradient(0).vect.set(0, argOutputs(1).vect(0), scale)
+      if (arg2.vars.nonEmpty) gradient(1).vect.set(0, argOutputs(0).vect(0), scale)
 
       /*
         if (arg1.vars.size > 0) {
@@ -403,11 +403,11 @@ class SparseL2[T1 <: VectorTerm, T2 <: VectorTerm](val arg: T1, val mask: T2 = n
         val f = argOutputs(1).vect(0)
         import ml.wolfe.util.PimpMyFactorie._
         //need to multiply w with f
-        gradient(0).setVect(0,f)
+        gradient(0).vect.update(0,f)
         gradient(0).vect(0) :* w
         gradient(0).vect(0) *= 2.0 * scale
       } else {
-        gradient(0).setVect(0,w)
+        gradient(0).vect.update(0,w)
         gradient(0).vect(0) *= scale * 2.0
       }
       //todo: calculate gradient for mask!

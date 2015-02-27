@@ -22,69 +22,101 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
 
   val disc = new DiscBuffer(numDisc)
   val cont = new ContBuffer(numCont)
-  val vect = Array.ofDim[FactorieVector](numVect)
+  val vect = new VectBuffer(numVect)
   val mats = Array.ofDim[FactorieMatrix](numMats)
 
 
-  final class DiscBuffer(val length:Int) extends Buffer[Int](setting) {
+  final class DiscBuffer(val length: Int) extends Buffer[Int](setting) {
 
   }
-  
-  final class ContBuffer(val length:Int) extends Buffer[Double](setting) {
+
+  final class ContBuffer(val length: Int) extends Buffer[Double](setting) {
     def *=(scale: Double): Unit = {
       for (i <- 0 until length) array(i) *= scale
       flagAllChanged()
     }
+
     def :=(scale: Double): Unit = {
       for (i <- 0 until length) array(i) = scale
       flagAllChanged()
     }
-    def +=(that:Buffer[Double]): Unit = {
+
+    def +=(that: Buffer[Double]): Unit = {
       for (i <- 0 until length) array(i) += that(i)
       flagAllChanged()
     }
   }
 
-  final class VectBuffer(val length:Int) extends Buffer[FactorieVector](setting) {
+  final class VectBuffer(val length: Int) extends Buffer[FactorieVector](setting) {
     def *=(scale: Double): Unit = {
       for (i <- 0 until length) array(i) *= scale
       flagAllChanged()
     }
+
     def :=(scale: Double): Unit = {
       for (i <- 0 until length) array(i) := scale
+      flagAllChanged()
+    }
+
+    def +=(that: Buffer[FactorieVector]): Unit = {
+      for (i <- 0 until length) array(i) += that(i)
       flagAllChanged()
     }
 
     override def update(index: Int, value: FactorieVector): Unit = {
       if (adaptiveVectors) {
         if (this(index) == null) {
-          super.update(index,value.copy)
+          super.update(index, value.copy)
         } else {
           (this(index), value) match {
             case (_: DenseTensor1, target: SparseIndexedTensor1) =>
-              super.update(index,target.copy)
+              super.update(index, target.copy)
             case (_: SparseIndexedTensor1, target: DenseTensor1) =>
-              super.update(index,target.copy)
+              super.update(index, target.copy)
             case (_, _) =>
-              super.update(index,value)
+              this(index) := value
           }
         }
       } else
-        super.update(index,value)
+        super.update(index, value)
     }
 
     def set(index: Int, value: FactorieVector, scale: Double): Unit = {
       update(index, value)
-      vect(0) *= scale
+      this(index) *= scale
     }
+
+
+    def add(index: Int, value: FactorieVector): Unit = {
+      if (adaptiveVectors) {
+        if (this(index) == null) {
+          this(index) = value.copy
+        } else {
+          (this(index), value) match {
+            case (current: SparseIndexedTensor1, arg: DenseTensor1) =>
+              this(index) = arg.copy
+              this(index) += current
+            case (current: DenseTensor1, arg: SparseIndexedTensor1) =>
+              this(index) = arg.copy
+              this(index) += current
+            case (_, _) =>
+              this(index) += value
+          }
+        }
+      } else {
+        this(index) += value
+      }
+    }
+
 
   }
 
-  final class MatrixBuffer(val length:Int) extends Buffer[FactorieMatrix](setting) {
+  final class MatrixBuffer(val length: Int) extends Buffer[FactorieMatrix](setting) {
     def *=(scale: Double): Unit = {
       for (i <- 0 until length) array(i) *= scale
       flagAllChanged()
     }
+
     def :=(scale: Double): Unit = {
       for (i <- 0 until length) array(i) := scale
       flagAllChanged()
@@ -100,27 +132,27 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
   }
 
   def copyTo(target: Setting, targetOffsets: Offsets, targetMultiplier: Int): Unit = {
-    disc.copyTo(target.disc,0,targetOffsets.discOff * targetMultiplier,disc.length)
-    cont.copyTo(target.cont,0,targetOffsets.contOff * targetMultiplier,cont.length)
-    if (vect.length > 0) System.arraycopy(vect, 0, target.vect, targetOffsets.vectOff * targetMultiplier, vect.length)
+    disc.copyTo(target.disc, 0, targetOffsets.discOff * targetMultiplier, disc.length)
+    cont.copyTo(target.cont, 0, targetOffsets.contOff * targetMultiplier, cont.length)
+    vect.copyTo(target.vect, 0, targetOffsets.vectOff * targetMultiplier, vect.length)
     if (mats.length > 0) System.arraycopy(mats, 0, target.mats, targetOffsets.matsOff * targetMultiplier, mats.length)
   }
-  def copyTo(target: Setting, srcOffsets:Offsets, targetOffsets: Offsets, length:Offsets): Unit = {
-    disc.copyTo(target.disc,srcOffsets.discOff,targetOffsets.discOff,length.discOff)
-    cont.copyTo(target.cont,srcOffsets.contOff,targetOffsets.contOff,length.contOff)
-    if (vect.length > 0) System.arraycopy(vect, srcOffsets.vectOff, target.vect, targetOffsets.vectOff, length.vectOff)
+
+  def copyTo(target: Setting, srcOffsets: Offsets, targetOffsets: Offsets, length: Offsets): Unit = {
+    disc.copyTo(target.disc, srcOffsets.discOff, targetOffsets.discOff, length.discOff)
+    cont.copyTo(target.cont, srcOffsets.contOff, targetOffsets.contOff, length.contOff)
+    vect.copyTo(target.vect, srcOffsets.vectOff, targetOffsets.vectOff, length.vectOff)
     if (mats.length > 0) System.arraycopy(mats, srcOffsets.matsOff, target.mats, targetOffsets.matsOff, length.matsOff)
   }
 
-  def copyTo(target: Setting, srcElementLength:Offsets, srcMultiplier:Int, tgtElementLength: Offsets, tgtMultiplier: Int,
-             length:Offsets, srcOffsets:Offsets = Offsets(), tgtOffsets:Offsets = Offsets()): Unit = {
-    disc.copyTo(target.disc,srcOffsets.discOff + length.discOff * srcMultiplier,
-      tgtOffsets.discOff + tgtElementLength.discOff * tgtMultiplier,length.discOff)
-    cont.copyTo(target.cont,srcOffsets.contOff + length.contOff * srcMultiplier,
-      tgtOffsets.contOff + tgtElementLength.contOff * tgtMultiplier,length.contOff)
-    if (vect.length > 0) System.arraycopy(
-      vect, srcOffsets.vectOff + srcElementLength.vectOff * srcMultiplier,
-      target.vect, tgtOffsets.vectOff + tgtElementLength.vectOff * tgtMultiplier, length.vectOff)
+  def copyTo(target: Setting, srcElementLength: Offsets, srcMultiplier: Int, tgtElementLength: Offsets, tgtMultiplier: Int,
+             length: Offsets, srcOffsets: Offsets = Offsets(), tgtOffsets: Offsets = Offsets()): Unit = {
+    disc.copyTo(target.disc, srcOffsets.discOff + length.discOff * srcMultiplier,
+      tgtOffsets.discOff + tgtElementLength.discOff * tgtMultiplier, length.discOff)
+    cont.copyTo(target.cont, srcOffsets.contOff + length.contOff * srcMultiplier,
+      tgtOffsets.contOff + tgtElementLength.contOff * tgtMultiplier, length.contOff)
+    vect.copyTo(target.vect, srcOffsets.vectOff + length.vectOff * srcMultiplier,
+      tgtOffsets.vectOff + tgtElementLength.vectOff * tgtMultiplier, length.vectOff)
     if (mats.length > 0) System.arraycopy(
       mats, srcOffsets.matsOff + srcElementLength.matsOff * srcMultiplier,
       target.mats, tgtOffsets.matsOff + tgtElementLength.matsOff * tgtMultiplier, length.matsOff)
@@ -129,26 +161,26 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
 
   def *=(scale: Double): Unit = {
     cont *= scale
-    for (i <- 0 until vect.length) vect(i) *= scale
+    vect *= scale
     for (i <- 0 until mats.length) mats(i) *= scale
   }
 
   def +=(that: Setting): Unit = {
     cont += that.cont
-    for (i <- 0 until vect.length) vect(i) += that.vect(i)
+    vect += that.vect
     for (i <- 0 until mats.length) mats(i) += that.mats(i)
   }
 
   def :=(value: Double = 0.0): Unit = {
     cont := value
-    for (i <- 0 until vect.length) if (vect(i) != null) vect(i) := value
+    vect := value
     for (i <- 0 until mats.length) if (mats(i) != null) mats(i) := value
   }
 
   def :=(that: Setting): Unit = {
     disc := that.disc
     cont := that.cont
-    for (i <- 0 until vect.length) vect(i) = that.vect(i)
+    vect := that.vect
     for (i <- 0 until mats.length) mats(i) = that.mats(i)
   }
 
@@ -161,50 +193,6 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
       }
     }
 
-  }
-
-  def setVect(index: Int, value: FactorieVector): Unit = {
-    if (adaptiveVectors) {
-      if (vect(index) == null) {
-        vect(index) = value.copy
-      } else {
-        (vect(index), value) match {
-          case (_: DenseTensor1, target: SparseIndexedTensor1) =>
-            vect(index) = target.copy
-          case (_: SparseIndexedTensor1, target: DenseTensor1) =>
-            vect(index) = target.copy
-          case (_, _) =>
-            vect(index) := value
-        }
-      }
-    } else
-      vect(index) := value
-  }
-
-  def setVect(index: Int, value: FactorieVector, scale: Double): Unit = {
-    setVect(index, value)
-    vect(0) *= scale
-  }
-
-  def addVect(index: Int, value: FactorieVector): Unit = {
-    if (adaptiveVectors) {
-      if (vect(index) == null) {
-        vect(index) = value.copy
-      } else {
-        (vect(index), value) match {
-          case (current: SparseIndexedTensor1, arg: DenseTensor1) =>
-            vect(index) = arg.copy
-            vect(index) += current
-          case (current: DenseTensor1, arg: SparseIndexedTensor1) =>
-            vect(index) = arg.copy
-            vect(index) += current
-          case (_, _) =>
-            vect(index) += value
-        }
-      }
-    } else {
-      vect(index) += value
-    }
   }
 
 
@@ -262,9 +250,11 @@ object Setting {
 
 class DiscMsg(var msg: Array[Double]) {
   def this(size: Int) = this(Array.ofDim[Double](size))
-  def argmax() = Range(0,msg.length).maxBy(msg)
-  def isDiracAt(index:Int) =
-    Range(0,msg.length).filterNot(_ == index).forall(msg(_) == Double.NegativeInfinity)
+
+  def argmax() = Range(0, msg.length).maxBy(msg)
+
+  def isDiracAt(index: Int) =
+    Range(0, msg.length).filterNot(_ == index).forall(msg(_) == Double.NegativeInfinity)
 }
 
 class ContMsg(var mean: Double = 0.0)
@@ -318,28 +308,40 @@ final class VariableMapping(val srcIndex: Array[Int], val tgtIndex: Array[Int]) 
 
 }
 
-abstract class Buffer[T:ClassTag](val setting:Setting) {
-  def length:Int
+abstract class Buffer[T: ClassTag](val setting: Setting) {
+  def length: Int
+
   lazy val changes = new mutable.HashSet[Int]
   protected var allChanged = false
+
   def resetChanges() = changes.clear()
-  protected def flagAllChanged() { allChanged = true}
+
+  protected def flagAllChanged() {
+    allChanged = true
+  }
+
   def shouldRecord = setting.recordChanges && !allChanged
+
   val array = Array.ofDim[T](length)
-  def update(index:Int,value:T) = {
+
+  def update(index: Int, value: T) = {
     array(index) = value
     if (shouldRecord) changes += index
   }
-  def apply(index:Int) = array(index)
-  def copyTo(tgt:Buffer[T],srcPos:Int,tgtPos:Int,length:Int) = {
+
+  def apply(index: Int) = array(index)
+
+  def copyTo(tgt: Buffer[T], srcPos: Int, tgtPos: Int, length: Int) = {
     if (length > 0) System.arraycopy(array, srcPos, tgt.array, tgtPos, length)
-    if (shouldRecord) changes ++= Range(srcPos,srcPos + length)
+    if (shouldRecord) changes ++= Range(srcPos, srcPos + length)
   }
-  def :=(value:Buffer[T]): Unit = {
+
+  def :=(value: Buffer[T]): Unit = {
     System.arraycopy(value.array, 0, array, 0, length)
     flagAllChanged()
   }
-  def mkString(sep:String) = array.mkString(sep)
+
+  def mkString(sep: String) = array.mkString(sep)
 }
 
 
@@ -362,9 +364,9 @@ case class Offsets(discOff: Int = 0, contOff: Int = 0, vectOff: Int = 0, matsOff
 
 case class Ranges(from: Offsets, to: Offsets) {
   def copy(src: Setting, tgt: Setting): Unit = {
-    src.disc.copyTo(tgt.disc,from.discOff,0,to.discOff - from.discOff)
-    src.cont.copyTo(tgt.cont,from.contOff,0,to.contOff - from.contOff)
-    arraycopy(src.vect, from.vectOff, tgt.vect, 0, to.vectOff - from.vectOff)
+    src.disc.copyTo(tgt.disc, from.discOff, 0, to.discOff - from.discOff)
+    src.cont.copyTo(tgt.cont, from.contOff, 0, to.contOff - from.contOff)
+    src.vect.copyTo(tgt.vect, from.vectOff, 0, to.vectOff - from.vectOff)
     arraycopy(src.mats, from.matsOff, tgt.mats, 0, to.matsOff - from.matsOff)
   }
 
@@ -377,7 +379,7 @@ case class Ranges(from: Offsets, to: Offsets) {
     }
 
     for (i <- 0 until numVect) {
-      tgt.addVect(from.vectOff + i, src.vect(i))
+      tgt.vect.add(from.vectOff + i, src.vect(i))
     }
 
     for (i <- 0 until numMats) {
