@@ -20,38 +20,16 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
 
   setting =>
 
-  var disc = Array.ofDim[Int](numDisc)
-  var cont = Array.ofDim[Double](numCont)
-  var vect = Array.ofDim[FactorieVector](numVect)
-  var mats = Array.ofDim[FactorieMatrix](numMats)
+  val disc = new DiscBuffer(numDisc)
+  val cont = Array.ofDim[Double](numCont)
+  val vect = Array.ofDim[FactorieVector](numVect)
+  val mats = Array.ofDim[FactorieMatrix](numMats)
 
-  abstract class Buffer[T:ClassTag] {
-    def length:Int
-    lazy val changes = new mutable.HashSet[Int]
-    protected var allChanged = false
-    def resetChanges() = changes.clear()
-    protected def flagAllChanged() { allChanged = true}
-    def recordChanges = setting.recordChanges && !allChanged
-    val array = Array.ofDim[T](length)
-    def update(index:Int,value:T) = {
-      array(index) = value
-      if (recordChanges) changes += index
-    }
-    def apply(index:Int) = array(index)
-    def copyTo(tgt:Buffer[T],srcPos:Int,tgtPos:Int,length:Int) = {
-      if (length > 0) System.arraycopy(array, srcPos, tgt.array, tgtPos, length)
-      if (recordChanges) changes ++= Range(srcPos,srcPos + length)
-    }
-    def :=(value:Buffer[T]): Unit = {
-      System.arraycopy(value.array, 0, array, 0, length)
-      flagAllChanged()
-    }
-  }
 
-  final class DiscBuffer(val length:Int) extends Buffer[Int] {
+  final class DiscBuffer(val length:Int) extends Buffer[Int](setting) {
 
   }
-  final class ContBuffer(val length:Int) extends Buffer[Double] {
+  final class ContBuffer(val length:Int) extends Buffer[Double](setting) {
     def *=(scale: Double): Unit = {
       for (i <- 0 until length) array(i) *= scale
       flagAllChanged()
@@ -62,7 +40,7 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
     }
   }
 
-  final class VectBuffer(val length:Int) extends Buffer[FactorieVector] {
+  final class VectBuffer(val length:Int) extends Buffer[FactorieVector](setting) {
     def *=(scale: Double): Unit = {
       for (i <- 0 until length) array(i) *= scale
       flagAllChanged()
@@ -97,7 +75,7 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
 
   }
 
-  final class MatrixBuffer(val length:Int) extends Buffer[FactorieMatrix] {
+  final class MatrixBuffer(val length:Int) extends Buffer[FactorieMatrix](setting) {
     def *=(scale: Double): Unit = {
       for (i <- 0 until length) array(i) *= scale
       flagAllChanged()
@@ -117,13 +95,15 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
   }
 
   def copyTo(target: Setting, targetOffsets: Offsets, targetMultiplier: Int): Unit = {
-    if (disc.length > 0) System.arraycopy(disc, 0, target.disc, targetOffsets.discOff * targetMultiplier, disc.length)
+    disc.copyTo(target.disc,0,targetOffsets.discOff * targetMultiplier,disc.length)
+//    if (disc.length > 0) System.arraycopy(disc, 0, target.disc, targetOffsets.discOff * targetMultiplier, disc.length)
     if (cont.length > 0) System.arraycopy(cont, 0, target.cont, targetOffsets.contOff * targetMultiplier, cont.length)
     if (vect.length > 0) System.arraycopy(vect, 0, target.vect, targetOffsets.vectOff * targetMultiplier, vect.length)
     if (mats.length > 0) System.arraycopy(mats, 0, target.mats, targetOffsets.matsOff * targetMultiplier, mats.length)
   }
   def copyTo(target: Setting, srcOffsets:Offsets, targetOffsets: Offsets, length:Offsets): Unit = {
-    if (disc.length > 0) System.arraycopy(disc, srcOffsets.discOff, target.disc, targetOffsets.discOff, length.discOff)
+    disc.copyTo(target.disc,srcOffsets.discOff,targetOffsets.discOff,length.discOff)
+    //if (disc.length > 0) System.arraycopy(disc, srcOffsets.discOff, target.disc, targetOffsets.discOff, length.discOff)
     if (cont.length > 0) System.arraycopy(cont, srcOffsets.contOff, target.cont, targetOffsets.contOff, length.contOff)
     if (vect.length > 0) System.arraycopy(vect, srcOffsets.vectOff, target.vect, targetOffsets.vectOff, length.vectOff)
     if (mats.length > 0) System.arraycopy(mats, srcOffsets.matsOff, target.mats, targetOffsets.matsOff, length.matsOff)
@@ -131,9 +111,8 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
 
   def copyTo(target: Setting, srcElementLength:Offsets, srcMultiplier:Int, tgtElementLength: Offsets, tgtMultiplier: Int,
              length:Offsets, srcOffsets:Offsets = Offsets(), tgtOffsets:Offsets = Offsets()): Unit = {
-    if (disc.length > 0) System.arraycopy(
-      disc,srcOffsets.discOff + length.discOff * srcMultiplier,
-      target.disc, tgtOffsets.discOff + tgtElementLength.discOff * tgtMultiplier, length.discOff)
+    disc.copyTo(target.disc,srcOffsets.discOff + length.discOff * srcMultiplier,
+      tgtOffsets.discOff + tgtElementLength.discOff * tgtMultiplier,length.discOff)
     if (cont.length > 0) System.arraycopy(
       cont, srcOffsets.contOff +srcElementLength.contOff * srcMultiplier,
       target.cont, tgtOffsets.contOff + tgtElementLength.contOff * tgtMultiplier, length.contOff)
@@ -337,6 +316,31 @@ final class VariableMapping(val srcIndex: Array[Int], val tgtIndex: Array[Int]) 
 
 }
 
+abstract class Buffer[T:ClassTag](val setting:Setting) {
+  def length:Int
+  lazy val changes = new mutable.HashSet[Int]
+  protected var allChanged = false
+  def resetChanges() = changes.clear()
+  protected def flagAllChanged() { allChanged = true}
+  def shouldRecord = setting.recordChanges && !allChanged
+  val array = Array.ofDim[T](length)
+  def update(index:Int,value:T) = {
+    array(index) = value
+    if (shouldRecord) changes += index
+  }
+  def apply(index:Int) = array(index)
+  def copyTo(tgt:Buffer[T],srcPos:Int,tgtPos:Int,length:Int) = {
+    if (length > 0) System.arraycopy(array, srcPos, tgt.array, tgtPos, length)
+    if (shouldRecord) changes ++= Range(srcPos,srcPos + length)
+  }
+  def :=(value:Buffer[T]): Unit = {
+    System.arraycopy(value.array, 0, array, 0, length)
+    flagAllChanged()
+  }
+  def mkString(sep:String) = array.mkString(sep)
+}
+
+
 object VariableMapping {
   def apply(src: Seq[Var[Dom]], tgt: Seq[Var[Dom]]) = {
     val pairs = src.indices.view.map(i => i -> tgt.indexOf(src(i))).filter(_._2 != -1).toArray
@@ -356,7 +360,8 @@ case class Offsets(discOff: Int = 0, contOff: Int = 0, vectOff: Int = 0, matsOff
 
 case class Ranges(from: Offsets, to: Offsets) {
   def copy(src: Setting, tgt: Setting): Unit = {
-    arraycopy(src.disc, from.discOff, tgt.disc, 0, to.discOff - from.discOff)
+    src.disc.copyTo(tgt.disc,from.discOff,0,to.discOff - from.discOff)
+//    arraycopy(src.disc, from.discOff, tgt.disc, 0, to.discOff - from.discOff)
     arraycopy(src.cont, from.contOff, tgt.cont, 0, to.contOff - from.contOff)
     arraycopy(src.vect, from.vectOff, tgt.vect, 0, to.vectOff - from.vectOff)
     arraycopy(src.mats, from.matsOff, tgt.mats, 0, to.matsOff - from.matsOff)
