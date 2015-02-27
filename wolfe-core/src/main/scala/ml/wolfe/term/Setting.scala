@@ -23,7 +23,7 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
   val disc = new DiscBuffer(numDisc)
   val cont = new ContBuffer(numCont)
   val vect = new VectBuffer(numVect)
-  val mats = Array.ofDim[FactorieMatrix](numMats)
+  val mats = new MatrixBuffer(numMats)
 
 
   final class DiscBuffer(val length: Int) extends Buffer[Int](setting) {
@@ -122,6 +122,12 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
       flagAllChanged()
     }
 
+    def +=(that: Buffer[FactorieMatrix]): Unit = {
+      for (i <- 0 until length) array(i) += that(i)
+      flagAllChanged()
+    }
+
+
   }
 
   private var adaptiveVectors = false
@@ -135,14 +141,14 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
     disc.copyTo(target.disc, 0, targetOffsets.discOff * targetMultiplier, disc.length)
     cont.copyTo(target.cont, 0, targetOffsets.contOff * targetMultiplier, cont.length)
     vect.copyTo(target.vect, 0, targetOffsets.vectOff * targetMultiplier, vect.length)
-    if (mats.length > 0) System.arraycopy(mats, 0, target.mats, targetOffsets.matsOff * targetMultiplier, mats.length)
+    mats.copyTo(target.mats, 0, targetOffsets.matsOff * targetMultiplier, mats.length)
   }
 
   def copyTo(target: Setting, srcOffsets: Offsets, targetOffsets: Offsets, length: Offsets): Unit = {
     disc.copyTo(target.disc, srcOffsets.discOff, targetOffsets.discOff, length.discOff)
     cont.copyTo(target.cont, srcOffsets.contOff, targetOffsets.contOff, length.contOff)
     vect.copyTo(target.vect, srcOffsets.vectOff, targetOffsets.vectOff, length.vectOff)
-    if (mats.length > 0) System.arraycopy(mats, srcOffsets.matsOff, target.mats, targetOffsets.matsOff, length.matsOff)
+    mats.copyTo(target.mats, srcOffsets.matsOff, targetOffsets.matsOff, length.matsOff)
   }
 
   def copyTo(target: Setting, srcElementLength: Offsets, srcMultiplier: Int, tgtElementLength: Offsets, tgtMultiplier: Int,
@@ -153,22 +159,21 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
       tgtOffsets.contOff + tgtElementLength.contOff * tgtMultiplier, length.contOff)
     vect.copyTo(target.vect, srcOffsets.vectOff + length.vectOff * srcMultiplier,
       tgtOffsets.vectOff + tgtElementLength.vectOff * tgtMultiplier, length.vectOff)
-    if (mats.length > 0) System.arraycopy(
-      mats, srcOffsets.matsOff + srcElementLength.matsOff * srcMultiplier,
-      target.mats, tgtOffsets.matsOff + tgtElementLength.matsOff * tgtMultiplier, length.matsOff)
+    mats.copyTo(target.mats, srcOffsets.matsOff + length.matsOff * srcMultiplier,
+      tgtOffsets.matsOff + tgtElementLength.matsOff * tgtMultiplier, length.matsOff)
   }
 
 
   def *=(scale: Double): Unit = {
     cont *= scale
     vect *= scale
-    for (i <- 0 until mats.length) mats(i) *= scale
+    mats *= scale
   }
 
   def +=(that: Setting): Unit = {
     cont += that.cont
     vect += that.vect
-    for (i <- 0 until mats.length) mats(i) += that.mats(i)
+    mats += that.mats
   }
 
   def :=(value: Double = 0.0): Unit = {
@@ -181,7 +186,7 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
     disc := that.disc
     cont := that.cont
     vect := that.vect
-    for (i <- 0 until mats.length) mats(i) = that.mats(i)
+    mats := that.mats
   }
 
   def ensureSparsity(): Unit = {
@@ -367,7 +372,7 @@ case class Ranges(from: Offsets, to: Offsets) {
     src.disc.copyTo(tgt.disc, from.discOff, 0, to.discOff - from.discOff)
     src.cont.copyTo(tgt.cont, from.contOff, 0, to.contOff - from.contOff)
     src.vect.copyTo(tgt.vect, from.vectOff, 0, to.vectOff - from.vectOff)
-    arraycopy(src.mats, from.matsOff, tgt.mats, 0, to.matsOff - from.matsOff)
+    src.mats.copyTo(tgt.mats, from.matsOff, 0, to.matsOff - from.matsOff)
   }
 
   def addInto(src: Setting, tgt: Setting): Unit = {
