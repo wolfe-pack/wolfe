@@ -6,6 +6,9 @@ import java.util
 import cc.factorie.la.{SparseIndexedTensor1, DenseTensor1, SparseTensor1}
 import ml.wolfe.{FactorieMatrix, FactorieVector}
 
+import scala.collection.mutable
+import scala.reflect.ClassTag
+
 
 /**
  * A setting of a clique of discrete, continuous and vector variables.
@@ -14,12 +17,100 @@ import ml.wolfe.{FactorieMatrix, FactorieVector}
  * @param numVect number of vector assignments.
  */
 final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMats: Int = 0) {
+
+  setting =>
+
   var disc = Array.ofDim[Int](numDisc)
   var cont = Array.ofDim[Double](numCont)
   var vect = Array.ofDim[FactorieVector](numVect)
   var mats = Array.ofDim[FactorieMatrix](numMats)
 
+  abstract class Buffer[T:ClassTag] {
+    def length:Int
+    lazy val changes = new mutable.HashSet[Int]
+    protected var allChanged = false
+    def resetChanges() = changes.clear()
+    protected def flagAllChanged() { allChanged = true}
+    def recordChanges = setting.recordChanges && !allChanged
+    val array = Array.ofDim[T](length)
+    def update(index:Int,value:T) = {
+      array(index) = value
+      if (recordChanges) changes += index
+    }
+    def apply(index:Int) = array(index)
+    def copyTo(tgt:Buffer[T],srcPos:Int,tgtPos:Int,length:Int) = {
+      if (length > 0) System.arraycopy(array, srcPos, tgt.array, tgtPos, length)
+      if (recordChanges) changes ++= Range(srcPos,srcPos + length)
+    }
+    def :=(value:Buffer[T]): Unit = {
+      System.arraycopy(value.array, 0, array, 0, length)
+      flagAllChanged()
+    }
+  }
+
+  final class DiscBuffer(val length:Int) extends Buffer[Int] {
+
+  }
+  final class ContBuffer(val length:Int) extends Buffer[Double] {
+    def *=(scale: Double): Unit = {
+      for (i <- 0 until length) array(i) *= scale
+      flagAllChanged()
+    }
+    def :=(scale: Double): Unit = {
+      for (i <- 0 until length) array(i) = scale
+      flagAllChanged()
+    }
+  }
+
+  final class VectBuffer(val length:Int) extends Buffer[FactorieVector] {
+    def *=(scale: Double): Unit = {
+      for (i <- 0 until length) array(i) *= scale
+      flagAllChanged()
+    }
+    def :=(scale: Double): Unit = {
+      for (i <- 0 until length) array(i) := scale
+      flagAllChanged()
+    }
+
+    override def update(index: Int, value: FactorieVector): Unit = {
+      if (adaptiveVectors) {
+        if (this(index) == null) {
+          super.update(index,value.copy)
+        } else {
+          (this(index), value) match {
+            case (_: DenseTensor1, target: SparseIndexedTensor1) =>
+              super.update(index,target.copy)
+            case (_: SparseIndexedTensor1, target: DenseTensor1) =>
+              super.update(index,target.copy)
+            case (_, _) =>
+              super.update(index,value)
+          }
+        }
+      } else
+        super.update(index,value)
+    }
+
+    def set(index: Int, value: FactorieVector, scale: Double): Unit = {
+      update(index, value)
+      vect(0) *= scale
+    }
+
+  }
+
+  final class MatrixBuffer(val length:Int) extends Buffer[FactorieMatrix] {
+    def *=(scale: Double): Unit = {
+      for (i <- 0 until length) array(i) *= scale
+      flagAllChanged()
+    }
+    def :=(scale: Double): Unit = {
+      for (i <- 0 until length) array(i) := scale
+      flagAllChanged()
+    }
+
+  }
+
   private var adaptiveVectors = false
+  var recordChanges = false
 
   def setAdaptiveVectors(adaptive: Boolean): Unit = {
     adaptiveVectors = adaptive
