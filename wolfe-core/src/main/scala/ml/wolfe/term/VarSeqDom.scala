@@ -206,10 +206,9 @@ class VarSeqApply[+E <: Dom, S <: Term[VarSeqDom[E]], I <: Term[TypedDom[Int]]](
     //todo: should also check for length variable of sequence? no that should be done in seqApply
 
     def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]) = {
-      gradient(0).clearChangeRecord()
+      gradient(0).resetToZero()
       val index = argOutputs(1).disc(0)
       val length = argOutputs(0).disc(0)
-      gradient(0) := 0.0
       gradient(0).disc(0) = length
       //update gradient at offset corresponding to index
       outError.copyTo(gradient(0), Offsets(), 0, domain.lengths, index, domain.lengths, tgtOffsets = Offsets(discOff = 1))

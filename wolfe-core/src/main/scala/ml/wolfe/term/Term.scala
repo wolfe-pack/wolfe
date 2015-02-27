@@ -153,7 +153,7 @@ trait Var[+D <: Dom] extends Term[D] {
     }
 
     def backProp(error: Setting, gradient: Array[Setting]) = {
-      ranges.addInto(error, gradient(0))
+      ranges.addIntoIfChanged(error, gradient(0))
     }
   }
 

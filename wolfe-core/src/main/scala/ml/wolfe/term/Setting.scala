@@ -32,9 +32,17 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
     mats.resetChanges()
   }
 
+  def resetToZero(): Unit = {
+    disc.resetToZero()
+    cont.resetToZero()
+    vect.resetToZero()
+    mats.resetToZero()
+  }
+
+
 
   final class DiscBuffer(val length: Int) extends Buffer[Int](setting) {
-
+    def resetToZero(offset: Int) = array(offset) = 0
   }
 
   final class ContBuffer(val length: Int) extends Buffer[Double](setting) {
@@ -52,6 +60,8 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
       for (i <- 0 until length) array(i) += that(i)
       flagAllChanged()
     }
+    def resetToZero(offset: Int) = array(offset) = 0.0
+
   }
 
   final class VectBuffer(val length: Int) extends Buffer[FactorieVector](setting) {
@@ -69,6 +79,8 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
       for (i <- 0 until length) array(i) += that(i)
       flagAllChanged()
     }
+
+    def resetToZero(offset: Int) = array(offset) := 0
 
     override def update(index: Int, value: FactorieVector): Unit = {
       if (adaptiveVectors) {
@@ -134,6 +146,8 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
       flagAllChanged()
     }
 
+    def resetToZero(offset: Int) = array(offset) := 0
+
 
   }
 
@@ -186,7 +200,7 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
   def :=(value: Double = 0.0): Unit = {
     cont := value
     vect := value
-    for (i <- 0 until mats.length) if (mats(i) != null) mats(i) := value
+    mats := value
   }
 
   def :=(that: Setting): Unit = {
@@ -233,6 +247,13 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
 }
 
 object Setting {
+
+  def cont(value:Double) = {
+    val result = new Setting(numCont = 1)
+    result.cont(0) = value
+    result
+  }
+
   def merge(settings: Array[Setting], result: Setting) = {
     var cont = 0
     var disc = 0
@@ -326,7 +347,19 @@ abstract class Buffer[T: ClassTag](val setting: Setting) {
   lazy val changedIndices = new mutable.HashSet[Int]
   protected var allChanged = false
 
-  def resetChanges() = changedIndices.clear()
+  def resetChanges() = {
+    changedIndices.clear()
+    allChanged = false
+  }
+
+  def resetToZero():Unit = {
+    for (i <- changed()) resetToZero(i)
+    changedIndices.clear()
+    allChanged = false
+  }
+
+  def resetToZero(offset:Int):Unit
+
 
   protected def flagAllChanged() {
     allChanged = true
@@ -348,8 +381,11 @@ abstract class Buffer[T: ClassTag](val setting: Setting) {
   def apply(index: Int) = array(index)
 
   def copyTo(tgt: Buffer[T], srcPos: Int, tgtPos: Int, length: Int) = {
-    if (length > 0) System.arraycopy(array, srcPos, tgt.array, tgtPos, length)
-    if (shouldRecord) changedIndices ++= Range(srcPos, srcPos + length)
+    if (length > 0) {
+      System.arraycopy(array, srcPos, tgt.array, tgtPos, length)
+      if (tgt.shouldRecord)
+        tgt.changedIndices ++= Range(tgtPos, tgtPos + length)
+    }
   }
 
   def :=(value: Buffer[T]): Unit = {
@@ -402,6 +438,25 @@ case class Ranges(from: Offsets, to: Offsets) {
       tgt.mats(from.matsOff + i) += src.mats(i)
     }
   }
+
+  def addIntoIfChanged(src: Setting, tgt: Setting): Unit = {
+    for (i <- src.disc.changed()) {
+      tgt.disc(from.contOff + i) = src.disc(i)
+    }
+    for (i <- src.cont.changed()) {
+      tgt.cont(from.contOff + i) += src.cont(i)
+    }
+
+    for (i <- src.vect.changed()) {
+      tgt.vect.add(from.vectOff + i, src.vect(i))
+    }
+
+    for (i <- src.mats.changed()) {
+      tgt.mats(from.matsOff + i) += src.mats(i)
+    }
+  }
+
+
 
   def numDisc = to.discOff - from.discOff
 
