@@ -111,6 +111,7 @@ class TermSpecs extends WolfeSpec {
       val dA = term.gradient(Seq(A, x), e, Seq(AVar))(0)
       val dx = term.gradient(Seq(A, x), e, Seq(xVar))(1)
 
+      //todo: test the gradient
       println(dx)
       println(dA)
     }

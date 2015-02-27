@@ -25,6 +25,13 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
   val vect = new VectBuffer(numVect)
   val mats = new MatrixBuffer(numMats)
 
+  def clearChangeRecord(): Unit = {
+    disc.resetChanges()
+    cont.resetChanges()
+    vect.resetChanges()
+    mats.resetChanges()
+  }
+
 
   final class DiscBuffer(val length: Int) extends Buffer[Int](setting) {
 
@@ -131,7 +138,7 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
   }
 
   private var adaptiveVectors = false
-  var recordChanges = false
+  var recordChangedOffsets = false
 
   def setAdaptiveVectors(adaptive: Boolean): Unit = {
     adaptiveVectors = adaptive
@@ -316,29 +323,33 @@ final class VariableMapping(val srcIndex: Array[Int], val tgtIndex: Array[Int]) 
 abstract class Buffer[T: ClassTag](val setting: Setting) {
   def length: Int
 
-  lazy val changes = new mutable.HashSet[Int]
+  lazy val changedIndices = new mutable.HashSet[Int]
   protected var allChanged = false
 
-  def resetChanges() = changes.clear()
+  def resetChanges() = changedIndices.clear()
 
   protected def flagAllChanged() {
     allChanged = true
   }
 
-  def shouldRecord = setting.recordChanges && !allChanged
+  def shouldRecord = setting.recordChangedOffsets && !allChanged
 
   val array = Array.ofDim[T](length)
 
+  def changed() = {
+    if (!setting.recordChangedOffsets || allChanged) Range(0,length) else changedIndices
+  }
+
   def update(index: Int, value: T) = {
     array(index) = value
-    if (shouldRecord) changes += index
+    if (shouldRecord) changedIndices += index
   }
 
   def apply(index: Int) = array(index)
 
   def copyTo(tgt: Buffer[T], srcPos: Int, tgtPos: Int, length: Int) = {
     if (length > 0) System.arraycopy(array, srcPos, tgt.array, tgtPos, length)
-    if (shouldRecord) changes ++= Range(srcPos, srcPos + length)
+    if (shouldRecord) changedIndices ++= Range(srcPos, srcPos + length)
   }
 
   def :=(value: Buffer[T]): Unit = {

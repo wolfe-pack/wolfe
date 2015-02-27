@@ -200,9 +200,13 @@ class VarSeqApply[+E <: Dom, S <: Term[VarSeqDom[E]], I <: Term[TypedDom[Int]]](
   def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
     require(index.vars.forall(v => !wrt.contains(v)), "Can't differentiate index term in sequence apply")
 
+    //the indices of errors we pass to the sequence argument should be recorded such that the argument can focus on what was changed
+    argErrors(0).recordChangedOffsets = true
+
     //todo: should also check for length variable of sequence? no that should be done in seqApply
 
     def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]) = {
+      gradient(0).clearChangeRecord()
       val index = argOutputs(1).disc(0)
       val length = argOutputs(0).disc(0)
       gradient(0) := 0.0
