@@ -20,7 +20,7 @@ class FirstOrderSumSpecs extends WolfeSpec {
     }
     "calculate its gradient" in {
       val n = 3
-      val indices = seqs((0 until n).toDom,0,n).Var
+      val indices = seqs(dom(0 until n),0,n).Var
       val x = seqs(doubles,n,n).Var
       val term = sum(indices) { i => x(i) * x(i) }
       term.gradient(x,IndexedSeq(1),IndexedSeq(1.0,2.0,3.0)) should be (IndexedSeq(0.0,4.0,0.0))

@@ -16,6 +16,7 @@ object TermImplicits extends NameProviderImplicits with MathImplicits {
   def discrete[T](args: T*) = new DiscreteDom[T](args.toIndexedSeq)
 
   def dom[T](args: Seq[T]) = new DiscreteDom[T](args.toIndexedSeq)
+  def dom[T](args: Range) = new RangeDom(args)
 
   implicit def rangeToDom(range:Range):RangeDom = new RangeDom(range)
 
