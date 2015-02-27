@@ -7,20 +7,26 @@ import ml.wolfe._
  * @author riedel
  */
 trait AtomicDom extends Dom {
+
+  dom =>
   type Term = DomTerm
 
   def const(value: Value) = new Constant(value)
 
+  def own(term: TypedTerm[Value]) = new ProxyTerm[TypedDom[Value]] with Term {
+    def self = term
+
+    override val domain:dom.type = dom
+  }
 }
 
-trait GenericVectorDom extends Dom {
+trait GenericVectorDom extends AtomicDom {
   dom =>
 
   def dim: Int
 
   type Value = FactorieVector
   type Var = DomVar
-  type Term = DomTerm
   type Marginals = FactorieVector
 
   val lengths = Offsets(0, 0, 1, 0)
@@ -48,8 +54,6 @@ trait GenericVectorDom extends Dom {
   def one = new DenseTensor1(dim, 1.0)
 
   def zero = new DenseTensor1(dim, 0.0)
-
-  def const(value: Value) = new Constant(value)
 
   def dynConst(value: Dynamic[Value]) = new DynamicConstant(value)
 
@@ -98,11 +102,10 @@ class UnitVectorDom(val dim: Int) extends GenericVectorDom {
 }
 
 
-class MatrixDom(val dim1: Int, dim2: Int) extends Dom {
+class MatrixDom(val dim1: Int, dim2: Int) extends AtomicDom {
   dom =>
   type Value = FactorieMatrix
   type Var = DomVar
-  type Term = DomTerm
   type Marginals = FactorieMatrix
 
   val lengths = Offsets(0, 0, 0, 1)
@@ -135,8 +138,6 @@ class MatrixDom(val dim1: Int, dim2: Int) extends Dom {
   def one = new DenseTensor2(dim1, dim2, 1.0)
 
   def zero = new DenseTensor2(dim1, dim2, 0.0)
-
-  def const(value: Value) = new Constant(value)
 
   case class StaticMatrixVar(name: String, owner: term.Var[Dom], offset: Int) extends DomVar {
     override val ranges = super.ranges
@@ -207,10 +208,9 @@ class DoubleDom extends AtomicDom {
 
 }
 
-trait GenericDiscreteDom[T] extends Dom {
+trait GenericDiscreteDom[T] extends AtomicDom {
 
   dom =>
-  type Term = DomTerm
   type Value = T
   type Var = DomVar
   type Marginals = IndexedSeq[Double]
@@ -247,9 +247,6 @@ trait GenericDiscreteDom[T] extends Dom {
   def dynamic(name: => String, offsets: => Offsets, owner: term.Var[Dom]) = new BaseVar(name, owner) with DomVar {
     def offset = offsets.discOff
   }
-
-  def const(value: T) = new Constant(value)
-
 
   trait DomVar extends Atom[dom.type] with super.DomVar {
     def ranges = Ranges(Offsets(offset, 0, 0, 0), Offsets(offset + 1, 0, 0, 0))

@@ -19,6 +19,10 @@ class Tuple2Dom[D1 <: Dom, D2 <: Dom](val dom1: D1, val dom2: D2) extends Produc
     (arg1, arg2)
   }
 
+
+  //trait Test extends Term
+  def own(term: TypedTerm[Value]) = ???
+
   def toMarginals(msg: Msgs, offsets: Offsets) = {
     val arg1 = dom1.toMarginals(msg, offsets)
     val arg2 = dom2.toMarginals(msg, offsets + dom1.lengths)

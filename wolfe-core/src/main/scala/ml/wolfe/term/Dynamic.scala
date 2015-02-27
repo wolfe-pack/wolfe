@@ -154,7 +154,7 @@ object Dynamic {
 }
 
 
-trait DynamicTerm[D <: DoubleDom, T] extends ProxyTerm[D] {
+trait DynamicTerm[T] extends ProxyTerm[TypedDom[Double]] {
   def generator: Dynamic[T]
 
   override def evaluator() = new Evaluator {

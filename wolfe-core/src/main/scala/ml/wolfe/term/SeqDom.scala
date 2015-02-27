@@ -20,6 +20,15 @@ class SeqDom[D <: Dom](val elementDom: D, val length: Int) extends Dom {
   }
 
 
+  //trait Test extends Term
+  def own(term: TypedTerm[Value]) = new ProxyTerm[TypedDom[Value]] with Term {
+    def self = term
+
+    def apply(index: => Int) = ???
+
+    override val domain:dom.type = dom
+  }
+
   def toMarginals(msg: Msgs, offsets: Offsets) = {
     for (i <- 0 until length) yield elementDom.toMarginals(msg, offsets +(elementDom.lengths, i))
   }

@@ -43,6 +43,20 @@ class VarSeqDomSpecs extends WolfeSpec {
       term.gradient(x,value,1) should be (IndexedSeq(0.0,4.0,0.0))
     }
 
+    "evaluate nested sequences" in {
+      val n = 3
+      val xs = seqs(seqs(doubles,0,n),0,n)
+      val i = dom(0 until n).Var
+      val x = xs.Var
+      val t = x(i)
+      val args = IndexedSeq(IndexedSeq(1.0,2.0),IndexedSeq(3.0,4.0))
+      t.eval(args,0) should be (IndexedSeq(1.0,2.0))
+      t.eval(args,1) should be (IndexedSeq(3.0,4.0))
+
+      t(i).eval(args,0) should be (1.0)
+      t(i).eval(args,1) should be (4.0)
+    }
+
   }
 
 }

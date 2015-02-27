@@ -14,7 +14,20 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
   type Value = IndexedSeq[elementDom.Value]
   type Var = DomVar
   type Term = DomTerm
-//  type ElemDom = E
+  //  type ElemDom = E
+
+
+  //trait Test extends Term
+  def own(term: TypedTerm[Value]) = new ProxyTerm[TypedDom[Value]] with Term {
+    def self = term
+
+    def apply(index: Int) = ???
+
+    def length = new VarSeqLength[Term](this)
+
+    override val domain: dom.type = dom
+
+  }
 
   case class Marginals(length: lengthDom.Marginals, elements: IndexedSeq[elementDom.Marginals])
 
@@ -54,7 +67,7 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
   }
 
   def fillZeroMsgs(target: Msgs, offsets: Offsets) = {
-    lengthDom.fillZeroMsgs(target,offsets)
+    lengthDom.fillZeroMsgs(target, offsets)
     val start = startOfElements(offsets)
     for (i <- 0 until maxLength) {
       elementDom.fillZeroMsgs(target, start +(elementDom.lengths, i))
@@ -64,7 +77,7 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
   val lengths = (elementDom.lengths * maxLength) + Offsets(discOff = 1)
 
   def variable(name: String, staticOffsets: Offsets = Offsets(), owner: term.Var[Dom]): Var =
-    new DomVar(name, staticOffsets,owner)
+    new DomVar(name, staticOffsets, owner)
 
   def dynamic(name: => String, dynOffsets: => Offsets, owner: term.Var[Dom]): Var = ???
 
@@ -72,27 +85,37 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
 
   def zero = for (i <- 0 until minLength) yield elementDom.zero
 
-  def const(value: Value) = new Constructor(lengthDom.const(value.length),value.map(elementDom.const))
+  def const(value: Value) = new Constructor(lengthDom.const(value.length), value.map(elementDom.const))
 
   trait DomTerm extends super.DomTerm {
-    def apply(index:Int):term.Term[E]
-    def length:TypedTerm[Int]
-    def apply(index: term.Term[TypedDom[Int]]) =
-      new VarSeqApply[E, Term, term.Term[TypedDom[Int]]](this, index)
+    def apply(index: Int): term.Term[E]
+
+    def length: TypedTerm[Int]
+
+    def apply(index: term.Term[TypedDom[Int]]): elementDom.Term = {
+      type Index = TypedTerm[Int]
+      type ElemDom = TypedDom[elementDom.Value]
+      type SeqTerm = term.Term[VarSeqDom[TypedDom[elementDom.Value]]]
+      elementDom.own(new VarSeqApply[
+        ElemDom, SeqTerm, Index](this.asInstanceOf[SeqTerm], index))
+    }
 
   }
 
-  class DomVar(name: =>String, val offsets:Offsets,owner:term.Var[Dom]) extends BaseVar(name,owner) with super.DomVar with DomTerm{
-    def apply(index: Int) = new VarSeqApply[E,Term,lengthDom.Term](this,lengthDom.const(index))
+  class DomVar(name: => String, val offsets: Offsets, owner: term.Var[Dom]) extends BaseVar(name, owner) with super.DomVar with DomTerm {
+    def apply(index: Int) = new VarSeqApply[E, Term, lengthDom.Term](this, lengthDom.const(index))
+
     def length = new VarSeqLength[Term](this)
+
     def ranges = Ranges(offsets, startOfElements(offsets) +(domain.elementDom.lengths, domain.maxLength))
+
     def atomsIterator = ???
   }
 
-  def Term(length:TypedTerm[Int],elements:IndexedSeq[elementDom.Term]):Term = new Constructor(length,elements)
+  def Term(length: TypedTerm[Int], elements: IndexedSeq[elementDom.Term]): Term = new Constructor(length, elements)
 
-  class Constructor(val length:TypedTerm[Int],val elements:IndexedSeq[term.Term[E]]) extends DomTerm with Composed[dom.type] {
-    def apply(index:Int) = elements(index)
+  class Constructor(val length: TypedTerm[Int], val elements: IndexedSeq[term.Term[E]]) extends DomTerm with Composed[dom.type] {
+    def apply(index: Int) = elements(index)
 
     type ArgumentType = term.Term[Dom]
 
@@ -162,7 +185,7 @@ class VarSeqApply[+E <: Dom, S <: Term[VarSeqDom[E]], I <: Term[TypedDom[Int]]](
 
   type ArgumentType = Term[Dom]
 
-  def arguments = IndexedSeq(seq, index)
+  val arguments = IndexedSeq(seq, index)
 
 
   def copy(args: IndexedSeq[ArgumentType]) = ???
@@ -176,6 +199,7 @@ class VarSeqApply[+E <: Dom, S <: Term[VarSeqDom[E]], I <: Term[TypedDom[Int]]](
 
   def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
     require(index.vars.forall(v => !wrt.contains(v)), "Can't differentiate index term in sequence apply")
+
     //todo: should also check for length variable of sequence? no that should be done in seqApply
 
     def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]) = {
@@ -193,14 +217,14 @@ class VarSeqApply[+E <: Dom, S <: Term[VarSeqDom[E]], I <: Term[TypedDom[Int]]](
 
 }
 
-class VarSeqConstructor[E<:Dom](val length:TypedTerm[Int],val elements:IndexedSeq[term.Term[E]]) extends Composed[VarSeqDom[E]] {
-  def apply(index:Int) = elements(index)
+class VarSeqConstructor[E <: Dom](val length: TypedTerm[Int], val elements: IndexedSeq[term.Term[E]]) extends Composed[VarSeqDom[E]] {
+  def apply(index: Int) = elements(index)
 
   type ArgumentType = term.Term[Dom]
 
   def arguments = length +: elements
 
-  val domain = new VarSeqDom[E](elements.head.domain,elements.size,0)
+  val domain = new VarSeqDom[E](elements.head.domain, elements.size, 0)
 
   def copy(args: IndexedSeq[ArgumentType]) = new VarSeqConstructor(
     args(0).asInstanceOf[TypedTerm[Int]],
@@ -213,7 +237,7 @@ class VarSeqConstructor[E<:Dom](val length:TypedTerm[Int],val elements:IndexedSe
       //todo: evaluate length first, and then only update the relevant elements
       val length = inputs(0).disc(0)
       for (i <- 0 until length) {
-        inputs(i+1).copyTo(output, Offsets(), 0, domain.elementDom.lengths, i,domain.elementDom.lengths, tgtOffsets = Offsets(discOff = 1))
+        inputs(i + 1).copyTo(output, Offsets(), 0, domain.elementDom.lengths, i, domain.elementDom.lengths, tgtOffsets = Offsets(discOff = 1))
       }
       output.disc(0) = length
     }

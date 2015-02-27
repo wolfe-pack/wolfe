@@ -63,10 +63,10 @@ object TermImplicits extends NameProviderImplicits with MathImplicits {
 
   def stochastic[T](gen: Dynamic[T])(arg: Dynamic[T] => DoubleTerm) = {
     val term = arg(gen)
-    new DynamicTerm[DoubleDom, T] {
+    new DynamicTerm[T] {
       def generator: Dynamic[T] = gen
 
-      def self: Term[DoubleDom] = term
+      def self: DoubleTerm = term
     }
   }
 
@@ -144,24 +144,29 @@ object TermImplicits extends NameProviderImplicits with MathImplicits {
   }
 
 
-  implicit class RichVarSeqTerm[E <: Dom, T <: Term[VarSeqDom[E]]](val term: T) {
-    def apply(index: Int) =
-      new VarSeqApply[E, T, term.domain.lengthDom.Term](term, term.domain.lengthDom.const(index))
+////  implicit class RichVarSeqTerm[E <: Dom, T <: Term[VarSeqDom[E]]](val term: T) {
+////    def apply(index: Int) =
+////      new VarSeqApply[E, T, term.domain.lengthDom.Term](term, term.domain.lengthDom.const(index))
+////
+////    def length = new VarSeqLength[T](term)
+////
+////    //def apply(index:Int) = term.elements(index)
+////
+////    def sum(body: term.domain.elementDom.Var => DoubleTerm) = {
+////      new FirstOrderSum[E,DoubleTerm,T](term,???,???)
+////    }
+////
+////  }
+//  implicit class RichVarSeqTerm[T <: Term[VarSeqDom[Dom]]](val term:T) {
+//    type NewE = term.domain.elementDom.type
+//    type NewT = Term[VarSeqDom[term.domain.elementDom.type]]
+//    type ResultType = Term[term.domain.elementDom.type]
+//    type ResultTypeOld = VarSeqApply[NewE,NewT,TypedTerm[Int]]
+//
+//  def apply(index:TypedTerm[Int]):ResultType =
+//      new VarSeqApply[Dom,Term[VarSeqDom[Dom]],TypedTerm[Int]](term,index).asInstanceOf[ResultType]
+//  }
 
-    def length = new VarSeqLength[T](term)
-
-    //def apply(index:Int) = term.elements(index)
-
-    def sum(body: term.domain.elementDom.Var => DoubleTerm) = {
-      new FirstOrderSum[E,DoubleTerm,T](term,???,???)
-    }
-
-  }
-
-  implicit class RichVarSeqDom[E <: Dom](val dom: VarSeqDom[E]) {
-
-
-  }
 
 }
 
@@ -254,7 +259,7 @@ trait MathImplicits {
 
     def unary_- = term * (-1.0)
 
-    def argmaxBy(factory: ArgmaxerFactory) = new ProxyTerm[DoubleDom] {
+    def argmaxBy(factory: ArgmaxerFactory) = new ProxyTerm[TypedDom[Double]] {
       def self = term
 
       override def argmaxer(wrt: Seq[Var[Dom]]) = factory.argmaxer(term, wrt)

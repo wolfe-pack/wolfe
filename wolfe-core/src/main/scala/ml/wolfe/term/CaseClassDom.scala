@@ -147,6 +147,8 @@ object CaseClassDom {
             type Var = DomVar
             type Term = DomTerm
 
+            def own(term: TypedTerm[Value]) = ???
+
             def lengths = $lengths
 
             def one = new $caseClassTypeName(..$ones)

@@ -35,6 +35,9 @@ trait Dom {
    */
   type Marginals
 
+  //trait Test extends Term
+  def own(term:TypedTerm[Value]):Term
+
   trait DomTerm extends term.Term[dom.type] {
     val domain: dom.type = dom
   }

@@ -34,7 +34,7 @@ class AdaGradArgmaxer(val obj: DoubleTerm,
   val var2Index = wrt.map(v => v -> obj.vars.indexOf(v)).toMap
 
   val termsPerEpoch = obj match {
-    case t: DynamicTerm[_, _] => t.generator.size
+    case t: DynamicTerm[_] => t.generator.size
     case _ => 1
   }
 

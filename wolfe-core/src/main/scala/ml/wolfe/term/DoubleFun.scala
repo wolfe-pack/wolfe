@@ -5,7 +5,7 @@ import ml.wolfe.util.Math._
 /**
  * @author riedel
  */
-class DoubleFun[T <: Term[DoubleDom]](val arg: T, fun: Double => Double, deriv: Double => Double) extends ComposedDoubleTerm {
+class DoubleFun[T <: DoubleTerm](val arg: T, fun: Double => Double, deriv: Double => Double) extends ComposedDoubleTerm {
   self =>
 
   type ArgumentType = T
@@ -33,7 +33,7 @@ class DoubleFun[T <: Term[DoubleDom]](val arg: T, fun: Double => Double, deriv: 
 /**
  * @author riedel
  */
-class DoubleBinaryFun[T <: Term[DoubleDom]](val arg1: T, arg2:T, fun: (Double,Double) => Double,
+class DoubleBinaryFun[T <: DoubleTerm](val arg1: T, arg2:T, fun: (Double,Double) => Double,
                                             deriv: (Double,Double) => (Double,Double)) extends ComposedDoubleTerm {
   self =>
 
@@ -61,9 +61,9 @@ class DoubleBinaryFun[T <: Term[DoubleDom]](val arg1: T, arg2:T, fun: (Double,Do
 }
 
 
-class Sigmoid[T <: Term[DoubleDom]](override val arg: T) extends DoubleFun(arg, sigmoid, sigmoidDeriv)
+class Sigmoid[T <: DoubleTerm](override val arg: T) extends DoubleFun(arg, sigmoid, sigmoidDeriv)
 
-class Sqrt[T <: Term[DoubleDom]](override val arg: T) extends DoubleFun(arg, math.sqrt, x => 0.5 / math.sqrt(x))
+class Sqrt[T <: DoubleTerm](override val arg: T) extends DoubleFun(arg, math.sqrt, x => 0.5 / math.sqrt(x))
 
 class Clip[T <:DoubleTerm](arg:T) extends DoubleFun(arg,x => if (x > 0.0) x else 0.0, x => if (x > 0.0) 1.0 else 0.0)
 

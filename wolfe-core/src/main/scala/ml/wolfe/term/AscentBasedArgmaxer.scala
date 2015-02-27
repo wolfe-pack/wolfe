@@ -24,7 +24,7 @@ class AscentBasedArgmaxer(val obj: DoubleTerm,
   val currentValue = new Setting(numCont = 1)
 
   val termsPerEpoch = obj match {
-    case t: DynamicTerm[_,_] => t.generator.size
+    case t: DynamicTerm[_] => t.generator.size
     case _ => 1
   }
 
