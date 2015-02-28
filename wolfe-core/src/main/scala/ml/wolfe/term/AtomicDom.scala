@@ -149,6 +149,17 @@ class MatrixDom(val dim1: Int, dim2: Int) extends AtomicDom {
 
 }
 
+class BooleanDom extends GenericDiscreteDom[Boolean] {
+
+  def domainSize = 2
+
+  def intToValue(int: Int) = if (int == 0) false else true
+
+  def valueToInt(value: Value) = if (value) 1 else 0
+
+  def one = true
+  def zero = false
+}
 
 class DoubleDom extends AtomicDom {
   dom =>
@@ -254,8 +265,9 @@ trait GenericDiscreteDom[T] extends AtomicDom {
 
   case class StaticDiscVar(name: String, owner: term.Var[Dom], offset: Int) extends DomVar {
     override val ranges = super.ranges
-
   }
+
+
 
 
 }

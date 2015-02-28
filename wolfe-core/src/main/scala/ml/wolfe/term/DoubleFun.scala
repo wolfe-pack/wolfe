@@ -28,6 +28,20 @@ class DoubleFun[T <: DoubleTerm](val arg: T, fun: Double => Double, deriv: Doubl
 
     def withRespectTo = wrt
   }
+
+  override def composer2(args: Settings) = new Composer2 {
+    def eval() = {
+      output.cont(0) = fun(input(0).cont(0))
+    }
+    val input = args
+  }
+
+  override def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
+    new ComposedDifferentiator2(wrt,in,err,gradientAcc) {
+      def localPropagate() = {
+        argErrors(0).cont(0) = deriv(argOutputs(0).cont(0)) * error.cont(0)
+      }
+    }
 }
 
 /**
@@ -58,6 +72,22 @@ class DoubleBinaryFun[T <: DoubleTerm](val arg1: T, arg2:T, fun: (Double,Double)
 
     def withRespectTo = wrt
   }
+
+  override def composer2(args: Settings) = new Composer2 {
+    def eval() = {
+      output.cont(0) = fun(input(0).cont(0), input(1).cont(0))
+    }
+    val input = args
+  }
+
+  override def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
+    new ComposedDifferentiator2(wrt,in,err,gradientAcc) {
+      def localPropagate() = {
+        val (d1,d2) = deriv(argOutputs(0).cont(0),argOutputs(1).cont(0))
+        argErrors(0).cont(0) = d1 * error.cont(0)
+        argErrors(1).cont(0) = d2 * error.cont(0)
+      }
+    }
 }
 
 
@@ -78,3 +108,4 @@ class Min2[T<:DoubleTerm](arg1:T,arg2:T) extends DoubleBinaryFun(arg1,arg2,
 class Max2[T<:DoubleTerm](arg1:T,arg2:T) extends DoubleBinaryFun(arg1,arg2,
   (x1:Double,x2:Double) => math.max(x1,x2),
   (x1:Double,x2:Double) => if (x1 > x2) (1.0,0.0) else (0.0,1.0))
+

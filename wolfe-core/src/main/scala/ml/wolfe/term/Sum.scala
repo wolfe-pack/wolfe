@@ -92,7 +92,37 @@ class Sum(val arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm {
     }
   }
 
+  override def composer2(args: Settings) = new Composer2 {
+    def eval(): Unit = {
+      output.cont(0) = 0.0
+      for (i <- 0 until size) output.cont(0) += input(i).cont(0)
+    }
 
+    val input = args
+  }
+
+  override def differentiator2(wrt:Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) = new Differentiator2 {
+
+
+    val input = in
+    val error = err
+    val gradientAccumulator = gradientAcc
+
+    val argDiffs = for (a <- arguments) yield
+      a.differentiator2(wrt)(input.linkedSettings(vars, a.vars), err, gradientAccumulator.linkedSettings(vars, a.vars))
+    val argOutputs = Settings.fromSeq(argDiffs.map(_.output))
+    val comp = composer2(argOutputs)
+    val output = comp.output
+
+    def forward() = {
+      argDiffs foreach (_.forward())
+      comp.eval()
+    }
+
+    def backward() = {
+      argDiffs foreach (_.backward())
+    }
+  }
 }
 
 class VarSeqSum[D <: DoubleDom, T <: Term[VarSeqDom[D]]](val seq: T) extends DoubleTerm with NAry {
@@ -125,10 +155,10 @@ class VarSeqSum[D <: DoubleDom, T <: Term[VarSeqDom[D]]](val seq: T) extends Dou
 
   trait Composer {
     val argOutputs = arguments.map(_.domain.createSetting()).toArray
-    val argInputs  = arguments.map(_.vars.map(_.domain.createSetting()).toArray)
+    val argInputs = arguments.map(_.vars.map(_.domain.createSetting()).toArray)
     //    val argInputs  = arguments.map(a => Array.ofDim[Setting](a.vars.length)).toArray
-    val full2Arg   = arguments.map(a => VariableMapping(vars, a.vars)).toArray
-    val argEvals   = arguments.map(_.evaluator()).toArray
+    val full2Arg = arguments.map(a => VariableMapping(vars, a.vars)).toArray
+    val argEvals = arguments.map(_.evaluator()).toArray
   }
 
 
@@ -156,11 +186,11 @@ class VarSeqSum[D <: DoubleDom, T <: Term[VarSeqDom[D]]](val seq: T) extends Dou
   //todo: avoid code duplication here
   trait ComposedDifferentiator extends Differentiator with Composer {
 
-    val term           = self
-    val argErrors      = arguments.map(_.domain.createZeroSetting()).toArray
+    val term = self
+    val argErrors = arguments.map(_.domain.createZeroSetting()).toArray
     //    val argGradients   = arguments.map(_.vars.map(_.domain.createSetting()).toArray).toArray
-    val argGradients   = arguments.map(a => Array.ofDim[Setting](a.vars.length)).toArray
-    val argDiffs       = arguments.map(createDifferentiator).toArray
+    val argGradients = arguments.map(a => Array.ofDim[Setting](a.vars.length)).toArray
+    val argDiffs = arguments.map(createDifferentiator).toArray
     val argActivations = argDiffs.map(_.activation)
 
     argErrors.foreach(_.setAdaptiveVectors(true))

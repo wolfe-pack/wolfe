@@ -15,16 +15,16 @@ class FirstOrderSumSpecs extends WolfeSpec {
       val n = 3
       val indices = seqs(bools,0,n).Var
       val term = sum(indices) { v => I(v)}
-      term.eval(IndexedSeq(false,true)) should be (1.0)
-      term.eval(IndexedSeq(false,true,true)) should be (2.0)
+      term.eval2(IndexedSeq(false,true)) should be (1.0)
+      term.eval2(IndexedSeq(false,true,true)) should be (2.0)
     }
 
     "evaluate nested sums" in {
       val n = 3
       val indices = seqs(seqs(bools,0,n),0,n).Var
-      val i = dom(0 until n).Var
-      //val t = I(indices(i)(i))
-      //val term = sum(indices) {i => sum(i) { v => v; 0.0.toTerm }}
+      val term = sum(indices) {i => sum(i) {j => I(j)}}
+      val args = IndexedSeq(IndexedSeq(true,true),IndexedSeq(false,true))
+      term.eval2(args) should be (3.0)
     }
 
     "calculate its gradient" in {

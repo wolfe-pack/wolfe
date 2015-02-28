@@ -16,9 +16,9 @@ package object term {
   type DoubleTerm = TypedTerm[Double]
   type VectorTerm = Term[GenericVectorDom]
   type MatrixTerm = Term[MatrixDom]
-  type BoolDom = DiscreteDom[Boolean]
-  type BoolTerm = Term[BoolDom]
-  type DiscreteTerm[T] = Term[DiscreteDom[T]]
+  type BoolDom = TypedDom[Boolean]
+  type BoolTerm = TypedTerm[Boolean]
+  type DiscreteTerm[T] = Term[GenericDiscreteDom[T]]
 //  type IntTerm = DiscreteTerm[Int]
   type DoubleSeqDom = SeqDom[DoubleDom]
 

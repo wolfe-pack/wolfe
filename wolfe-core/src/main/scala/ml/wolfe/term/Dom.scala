@@ -170,7 +170,7 @@ trait Dom {
 
 object Dom {
   val doubles = new DoubleDom
-  val bools   = TermImplicits.discrete(false, true)
+  val bools   = new BooleanDom
 
   def createSettings(vars:Seq[Var[Dom]],values:Seq[Any]):Array[Setting] = {
     (for ((a, v) <- values zip vars) yield v.domain.toSetting(a.asInstanceOf[v.domain.Value])).toArray

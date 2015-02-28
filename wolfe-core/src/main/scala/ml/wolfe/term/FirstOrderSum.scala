@@ -81,5 +81,45 @@ class FirstOrderSum[D <: Dom, Body <: DoubleTerm, R <: Term[VarSeqDom[D]]](val r
       this2body.copyBackwardShallow(gradient,bodyGradient)
     }
   }
+
+  val this2body = VariableMapping(vars,body.vars)
+  val this2range = VariableMapping(vars,range.vars)
+
+  override def evaluator2(in: Settings) = new Evaluator2 {
+    val input = in
+    val output = domain.createSetting()
+
+    val indexOfVar = body.vars.indexOf(variable)
+    val varInput = variable.domain.createSetting()
+    val bodyInput = body.createSettings()
+    val rangeInput = range.createSettings()
+
+    this2range.linkTargetsToSource(in,rangeInput)
+    this2body.linkTargetsToSource(in,bodyInput)
+    bodyInput(indexOfVar) = varInput
+
+    val bodyEval = body.evaluator2(bodyInput)
+    val rangeEval = range.evaluator2(rangeInput)
+
+    def eval() = {
+      rangeEval.eval()
+      var result = 0.0
+      val length = rangeEval.output.disc(0)
+      val elemLength = range.domain.elementDom.lengths
+      var offset = Offsets(discOff = 1)
+      for (i <- 0 until length) {
+        //copy element into body input at variable index
+        varInput := (rangeEval.output,offset,elemLength)
+        //evaluate body
+        bodyEval.eval()
+        //add to result
+        result += bodyEval.output.cont(0)
+        //move to next slot in range
+        offset += elemLength
+      }
+      output.cont(0) = result
+
+    }
+  }
 }
 

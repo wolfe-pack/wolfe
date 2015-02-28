@@ -11,7 +11,7 @@ import scala.language.implicitConversions
 object TermImplicits extends NameProviderImplicits with MathImplicits {
 
   implicit val doubles: DoubleDom = Dom.doubles
-  implicit val bools = Dom.bools
+  implicit val bools: BooleanDom = Dom.bools
 
   def discrete[T](args: T*) = new DiscreteDom[T](args.toIndexedSeq)
 
@@ -203,7 +203,8 @@ trait MathImplicits {
 
   def log[T <: DoubleTerm](term: T) = new Log(term)
 
-  def I[T <: BoolTerm](term: T) = new Iverson(term)
+//  def I[T <: BoolTerm](term: T) = new Iverson(term)
+  def I(term: BoolTerm) = new Iverson(term)
 
   def sigmVec[T <: VectorTerm](term: T) = new VectorSigmoid(term)
 
@@ -284,7 +285,7 @@ trait MathImplicits {
 
   def sum(args: DoubleTerm*) = new Sum(args.toIndexedSeq)
 
-  def sum[T <: Term[VarSeqDom[DoubleDom]]](args: T) = new VarSeqSum[DoubleDom, T](args)
+  def varSeqSum[T <: Term[VarSeqDom[DoubleDom]]](args: T) = new VarSeqSum[DoubleDom, T](args)
 
   def sum2[E <: Dom, T <: Term[VarSeqDom[E]], Body <: DoubleTerm](indices:T)(body:indices.domain.elementDom.Var => Body) = {
     val variable = indices.domain.elementDom.variable("_i")

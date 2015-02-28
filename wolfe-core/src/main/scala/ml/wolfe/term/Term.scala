@@ -32,6 +32,10 @@ trait Term[+D <: Dom] extends TermHelper[D] {
    */
   def evaluator(): Evaluator
 
+  def evaluator2(in: Settings): Evaluator2 = ???
+
+  def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc:Settings): Differentiator2 = ???
+
   /**
    * Variables may describe structured objects. Terms may only depend on parts of these structured objects. Atoms
    * define a set of such parts.
@@ -58,7 +62,6 @@ trait Term[+D <: Dom] extends TermHelper[D] {
   }
 
 }
-
 
 
 /**
@@ -96,11 +99,29 @@ trait TermHelper[+D <: Dom] {
     domain.toValue(output)
   }
 
+  def eval2(args: Any*): domain.Value = {
+    val argSettings = createSettings(args)
+    val ev = evaluator2(argSettings)
+    ev.eval()
+    domain.toValue(ev.output)
+  }
+
+
   def gradient[V <: Dom](wrt: Var[V], args: Any*): wrt.domain.Value = {
     require(args.length == vars.length, s"You need as many arguments as there are free variables (${vars.length})")
     val indexOfWrt = vars.indexOf(wrt)
     gradient(args, wrt = Seq(wrt))(indexOfWrt).asInstanceOf[wrt.domain.Value]
   }
+
+  def gradient2[V <: Dom](wrt: Var[V], args: Any*): wrt.domain.Value = {
+    require(args.length == vars.length, s"You need as many arguments as there are free variables (${vars.length})")
+    val gradient = createSettings()
+    val diff = differentiator2(Seq(wrt))(createSettings(args),domain.toSetting(domain.one),gradient)
+    diff.differentiate()
+    val indexOfWrt = vars.indexOf(wrt)
+    wrt.domain.toValue(gradient(indexOfWrt))
+  }
+
 
   def gradient(args: Seq[Any], error: domain.Value = domain.one, wrt: Seq[Var[Dom]] = vars): Seq[Any] = {
     val diff = differentiator(wrt)
@@ -113,6 +134,13 @@ trait TermHelper[+D <: Dom] {
   }
 
   def createVariableSettings() = vars.map(_.domain.createSetting()).toArray
+
+  def createSettings(args:Seq[Any]) = {
+    Settings.fromSeq((args zip vars) map {case (a,v) => v.domain.toSetting(a.asInstanceOf[v.domain.Value])})
+  }
+  def createSettings() = {
+    Settings.fromSeq(vars.map(_.domain.createSetting()))
+  }
 
 }
 
@@ -164,6 +192,27 @@ trait Var[+D <: Dom] extends Term[D] {
     }
   }
 
+
+  override def evaluator2(in: Settings) = new Evaluator2 {
+    def eval() = {}
+
+    val input = in
+    val output = in(0)
+  }
+
+
+  override def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc:Settings) = new Differentiator2 {
+    val gradientAccumulator = gradientAcc
+    val input = in
+    val error = err
+    val output = in(0)
+    val isWrt = wrt.contains(self)
+    def forward() {}
+    def backward(): Unit = {
+      if (isWrt) gradientAccumulator(0) += error
+    }
+  }
+
   override def toString = name
 }
 
@@ -182,7 +231,7 @@ trait Atom[+D <: Dom] extends Var[D] {
     case _ => false
   }
 
-  def projectValue(setting:Setting) {}
+  def projectValue(setting: Setting) {}
 
 }
 
@@ -211,7 +260,7 @@ case class Atoms(disc: Seq[DiscVar[Any]] = Nil, cont: Seq[DoubleVar] = Nil, vect
 
 }
 
-case class AtomIndices(disc: Array[Int], cont: Array[Int], vect: Array[Int] , mats: Array[Int] )
+case class AtomIndices(disc: Array[Int], cont: Array[Int], vect: Array[Int], mats: Array[Int])
 
 object Atoms {
   def fromIterator(iterator: Iterator[Atom[Dom]]) = {
@@ -246,26 +295,26 @@ trait Evaluator {
 }
 
 trait AtomicEvaluator {
-  def eval(atomSetting:Setting, output:Setting)
+  def eval(atomSetting: Setting, output: Setting)
 }
 
 object AtomicEvaluator {
-  def apply(term:Term[Dom]) = {
+  def apply(term: Term[Dom]) = {
     val evaluator = term.evaluator()
     val atoms = term.atoms
     new AtomicEvaluator {
       val inputs = term.vars.map(_.domain.createSetting()).toArray
+
       def eval(atomSetting: Setting, output: Setting) = {
         //for each atom find argument index and offset
         //fill setting accordingly
         //now evaluate
-        evaluator.eval(inputs,output)
+        evaluator.eval(inputs, output)
       }
     }
 
   }
 }
-
 
 
 trait Differentiator {
@@ -311,9 +360,6 @@ class EmptyDifferentiator(val term: Term[Dom], val withRespectTo: Seq[Var[Dom]])
 
   def backProp(error: Setting, gradient: Array[Setting]) = {}
 }
-
-
-
 
 
 class DotProduct[T1 <: VectorTerm, T2 <: VectorTerm](val arg1: T1, val arg2: T2) extends ComposedDoubleTerm {
@@ -378,10 +424,10 @@ class SparseL2[T1 <: VectorTerm, T2 <: VectorTerm](val arg: T1, val mask: T2 = n
       } else {
         output.cont(0) = w dot w
       }
-//      if (output.cont(0) != 0.0) {
-//        println("Huh?")
-//      }
-//      println("Eval: " + output.cont(0))
+      //      if (output.cont(0) != 0.0) {
+      //        println("Huh?")
+      //      }
+      //      println("Eval: " + output.cont(0))
     }
   }
 
@@ -403,11 +449,11 @@ class SparseL2[T1 <: VectorTerm, T2 <: VectorTerm](val arg: T1, val mask: T2 = n
         val f = argOutputs(1).vect(0)
         import ml.wolfe.util.PimpMyFactorie._
         //need to multiply w with f
-        gradient(0).vect.update(0,f)
+        gradient(0).vect.update(0, f)
         gradient(0).vect(0) :* w
         gradient(0).vect(0) *= 2.0 * scale
       } else {
-        gradient(0).vect.update(0,w)
+        gradient(0).vect.update(0, w)
         gradient(0).vect(0) *= scale * 2.0
       }
       //todo: calculate gradient for mask!
@@ -622,6 +668,40 @@ class Product(val arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm 
   }
 
 
+  override def composer2(args: Settings) = new Composer2 {
+    def eval() = {
+      output.cont(0) = 1.0
+      for (i <- 0 until input.length)
+        output.cont(0) *= input(i).cont(0)
+    }
+    val input = args
+  }
+
+
+  override def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
+    new ComposedDifferentiator2(wrt,in,err,gradientAcc) {
+      def localPropagate() = {
+        var total = error.cont(0)
+        var zeros = 0
+        var zeroIndex = -1
+        for (i <- 0 until argOutputs.length) {
+          //set to 0.0 by default
+          argErrors(i) := 0.0
+          if (argOutputs(i).cont(0) == 0.0) {
+            zeros += 1
+            zeroIndex = i
+          } else
+            total *= argOutputs(i).cont(0)
+        }
+        if (zeros == 1) {
+          argErrors(zeroIndex).cont(0) = total
+        } else if (zeros == 0) {
+          for (i <- 0 until argOutputs.length)
+            argErrors(i).cont(0) = total / argOutputs(i).cont(0)
+        }
+      }
+    }
+
   def copy(args: IndexedSeq[ArgumentType]) = new Product(args)
 
   def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
@@ -708,12 +788,20 @@ class Iverson[T <: BoolTerm](val arg: T) extends UnaryTerm[T, DoubleDom] with Co
     }
   }
 
+
+  override def composer2(args: Settings) = new Composer2 {
+    def eval() = {
+      output.cont(0) =  if (input(0).disc(0) == 0) 0.0 else 1.0
+    }
+    val input: Settings = args
+  }
+
   def copy(args: IndexedSeq[ArgumentType]) = new Iverson(args(0))
 
   def differentiator(wrt: Seq[Var[Dom]]) = ???
 }
 
-class IntToDouble[T<:DiscreteTerm[Int]](val int:T) extends ComposedDoubleTerm {
+class IntToDouble[T <: DiscreteTerm[Int]](val int: T) extends ComposedDoubleTerm {
   type ArgumentType = T
 
   def arguments = IndexedSeq(int)
@@ -725,6 +813,14 @@ class IntToDouble[T<:DiscreteTerm[Int]](val int:T) extends ComposedDoubleTerm {
       output.cont(0) = inputs(0).disc(0)
     }
   }
+
+  override def composer2(args: Settings) = new Composer2 {
+    def eval() = {
+      output.cont(0) = input(0).disc(0)
+    }
+    val input: Settings = args
+  }
+
 
   def differentiator(wrt: Seq[Var[Dom]]) = ???
 }

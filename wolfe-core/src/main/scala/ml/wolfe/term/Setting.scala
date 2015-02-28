@@ -40,7 +40,6 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
   }
 
 
-
   final class DiscBuffer(val length: Int) extends Buffer[Int](setting) {
     def resetToZero(offset: Int) = array(offset) = 0
   }
@@ -60,6 +59,7 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
       for (i <- 0 until length) array(i) += that(i)
       flagAllChanged()
     }
+
     def resetToZero(offset: Int) = array(offset) = 0.0
 
   }
@@ -210,6 +210,13 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
     mats := that.mats
   }
 
+  def :=(that: Setting, offsets: Offsets, lengths: Offsets): Unit = {
+    disc := (that.disc, offsets.discOff, lengths.discOff)
+    cont := (that.cont, offsets.contOff, lengths.contOff)
+    vect := (that.vect, offsets.vectOff, lengths.vectOff)
+    mats := (that.mats, offsets.matsOff, lengths.matsOff)
+  }
+
   def ensureSparsity(): Unit = {
     for (i <- 0 until vect.length) {
       vect(i) match {
@@ -248,7 +255,7 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
 
 object Setting {
 
-  def cont(value:Double) = {
+  def cont(value: Double) = {
     val result = new Setting(numCont = 1)
     result.cont(0) = value
     result
@@ -280,6 +287,34 @@ object Setting {
   }
 }
 
+final class Settings(val length: Int) extends IndexedSeq[Setting] {
+  val array = Array.ofDim[Setting](length)
+
+  def apply(index: Int) = array(index)
+
+  def update(index: Int, value: Setting): Unit = {
+    array(index) = value
+  }
+
+  def linkedSettings(from: Seq[Var[Dom]], to: Seq[Var[Dom]]): Settings = {
+    val mapping = VariableMapping(from, to)
+    val result = new Settings(to.length)
+    mapping.linkTargetsToSource(this, result)
+    result
+  }
+
+}
+
+object Settings {
+  def fromSeq(seq: Seq[Setting]): Settings = {
+    val indexed = seq.toIndexedSeq
+    val result = new Settings(seq.length)
+    for (i <- 0 until result.length) result(i) = indexed(i)
+    result
+  }
+
+  def apply(settings: Setting*) = fromSeq(settings.toIndexedSeq)
+}
 
 class DiscMsg(var msg: Array[Double]) {
   def this(size: Int) = this(Array.ofDim[Double](size))
@@ -322,6 +357,11 @@ final class VariableMapping(val srcIndex: Array[Int], val tgtIndex: Array[Int]) 
     for (i <- 0 until srcIndex.length) tgt(tgtIndex(i)) = src(srcIndex(i))
   }
 
+  def linkTargetsToSource(src: Settings, tgt: Settings) = {
+    for (i <- 0 until srcIndex.length) tgt(tgtIndex(i)) = src(srcIndex(i))
+  }
+
+
   def copyBackwardDeep(src: Array[Setting], tgt: Array[Setting]) = {
     for (i <- 0 until srcIndex.length) src(srcIndex(i)) := tgt(tgtIndex(i))
   }
@@ -352,13 +392,13 @@ abstract class Buffer[T: ClassTag](val setting: Setting) {
     allChanged = false
   }
 
-  def resetToZero():Unit = {
+  def resetToZero(): Unit = {
     for (i <- changed()) resetToZero(i)
     changedIndices.clear()
     allChanged = false
   }
 
-  def resetToZero(offset:Int):Unit
+  def resetToZero(offset: Int): Unit
 
 
   protected def flagAllChanged() {
@@ -370,7 +410,7 @@ abstract class Buffer[T: ClassTag](val setting: Setting) {
   val array = Array.ofDim[T](length)
 
   def changed() = {
-    if (!setting.recordChangedOffsets || allChanged) Range(0,length) else changedIndices
+    if (!setting.recordChangedOffsets || allChanged) Range(0, length) else changedIndices
   }
 
   def update(index: Int, value: T) = {
@@ -392,6 +432,12 @@ abstract class Buffer[T: ClassTag](val setting: Setting) {
     System.arraycopy(value.array, 0, array, 0, length)
     flagAllChanged()
   }
+
+  def :=(src: Buffer[T], srcOffset: Int, srcLength: Int): Unit = {
+    System.arraycopy(src.array, srcOffset, array, 0, srcLength)
+    flagAllChanged()
+  }
+
 
   def mkString(sep: String) = array.mkString(sep)
 }
@@ -455,7 +501,6 @@ case class Ranges(from: Offsets, to: Offsets) {
       tgt.mats(from.matsOff + i) += src.mats(i)
     }
   }
-
 
 
   def numDisc = to.discOff - from.discOff

@@ -197,6 +197,17 @@ class VarSeqApply[+E <: Dom, S <: Term[VarSeqDom[E]], I <: Term[TypedDom[Int]]](
     }
   }
 
+
+  override def composer2(args: Settings) = new Composer2 {
+    def eval() = {
+      val index = input(1).disc(0)
+      val offset = (seq.domain.elementDom.lengths * index) + Offsets(discOff = 1)
+      output := (input(0),offset,seq.domain.elementDom.lengths)
+    }
+
+    val input = args
+  }
+
   def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
     require(index.vars.forall(v => !wrt.contains(v)), "Can't differentiate index term in sequence apply")
 

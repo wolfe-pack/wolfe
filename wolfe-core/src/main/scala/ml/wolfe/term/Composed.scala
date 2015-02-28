@@ -1,5 +1,7 @@
 package ml.wolfe.term
 
+import cc.factorie.la.SmartGradientAccumulator
+
 /**
  * @author riedel
  */
@@ -8,6 +10,8 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
   self =>
 
   def composer(): Evaluator
+
+  def size = arguments.length
 
   lazy val vars = arguments.flatMap(_.vars).toSeq.distinct
 
@@ -23,25 +27,78 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
     }
   }
 
+  trait Composer2 extends Evaluator2 {
+    val output = self.domain.createSetting()
+  }
+
+  def composer2(args: Settings): Composer2 = ???
+
+  override def evaluator2(in: Settings) = new Evaluator2 {
+
+    val argEvals = arguments.map(a => a.evaluator2(in.linkedSettings(vars, a.vars)))
+    val argOutputs = Settings.fromSeq(argEvals.map(_.output))
+    val comp = composer2(argOutputs)
+    val input = in
+    val output = comp.output
+
+    def eval() = {
+      argEvals foreach (_.eval())
+      comp.eval()
+    }
+  }
+
+
+
+  abstract class ComposedDifferentiator2(val wrt:Seq[Var[Dom]],
+                                         val input: Settings,
+                                         val error: Setting,
+                                         val gradientAccumulator: Settings) extends Differentiator2 {
+
+
+    val argDiffs = arguments.map(a => a.differentiator2(wrt)(
+      input.linkedSettings(vars,a.vars),a.domain.createSetting(),gradientAccumulator.linkedSettings(vars,a.vars)))
+    val argOutputs = Settings.fromSeq(argDiffs.map(_.output))
+    val argErrors = Settings.fromSeq(argDiffs.map(_.error))
+    val comp = composer2(argOutputs)
+    val output = comp.output
+    val mappings = arguments.map(a => VariableMapping(a.vars,vars))
+
+    /**
+     * update argErrors based on incoming error and current argOutputs (activations)
+     */
+    def localPropagate()
+
+    def forward() = {
+      argDiffs foreach (_.forward())
+      comp.eval()
+    }
+
+    def backward() = {
+      localPropagate()
+      argDiffs foreach (_.backward())
+    }
+
+  }
+
   def atomsIterator = arguments.iterator.flatMap(_.atomsIterator)
 
   trait Composer {
     val argOutputs = arguments.map(_.domain.createSetting()).toArray
-    val argInputs  = arguments.map(_.vars.map(_.domain.createSetting()).toArray)
-//    val argInputs  = arguments.map(a => Array.ofDim[Setting](a.vars.length)).toArray
-    val full2Arg   = arguments.map(a => VariableMapping(vars, a.vars)).toArray
-    val argEvals   = arguments.map(_.evaluator()).toArray
+    val argInputs = arguments.map(_.vars.map(_.domain.createSetting()).toArray)
+    //    val argInputs  = arguments.map(a => Array.ofDim[Setting](a.vars.length)).toArray
+    val full2Arg = arguments.map(a => VariableMapping(vars, a.vars)).toArray
+    val argEvals = arguments.map(_.evaluator()).toArray
   }
 
   trait ComposedDifferentiator extends Differentiator with Composer {
 
-    val term           = self
-    val argErrors      = arguments.map(_.domain.createZeroSetting()).toArray
-//    val argGradients   = arguments.map(_.vars.map(_.domain.createSetting()).toArray).toArray
-    val argGradients   = arguments.map(a => Array.ofDim[Setting](a.vars.length)).toArray
-    val argDiffs       = arguments.map(createDifferentiator).toArray
+    val term = self
+    val argErrors = arguments.map(_.domain.createZeroSetting()).toArray
+    //    val argGradients   = arguments.map(_.vars.map(_.domain.createSetting()).toArray).toArray
+    val argGradients = arguments.map(a => Array.ofDim[Setting](a.vars.length)).toArray
+    val argDiffs = arguments.map(createDifferentiator).toArray
     val argActivations = argDiffs.map(_.activation)
-    val comp           = composer()
+    val comp = composer()
 
     argErrors.foreach(_.setAdaptiveVectors(true))
 
@@ -79,7 +136,9 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
 
 trait NAry {
   type ArgumentType <: Term[Dom]
+
   def arguments: IndexedSeq[ArgumentType]
-  def copy(args:IndexedSeq[ArgumentType]):Term[Dom]
+
+  def copy(args: IndexedSeq[ArgumentType]): Term[Dom]
 
 }
