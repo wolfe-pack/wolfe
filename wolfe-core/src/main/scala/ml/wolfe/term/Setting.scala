@@ -192,6 +192,7 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
   }
 
   def +=(that: Setting): Unit = {
+    disc := that.disc //todo: this is odd but required to pass on discrete values in gradients
     cont += that.cont
     vect += that.vect
     mats += that.mats
@@ -210,11 +211,11 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
     mats := that.mats
   }
 
-  def :=(that: Setting, offsets: Offsets, lengths: Offsets): Unit = {
-    disc := (that.disc, offsets.discOff, lengths.discOff)
-    cont := (that.cont, offsets.contOff, lengths.contOff)
-    vect := (that.vect, offsets.vectOff, lengths.vectOff)
-    mats := (that.mats, offsets.matsOff, lengths.matsOff)
+  def :=(src: Setting, srcOffsets: Offsets, lengths: Offsets): Unit = {
+    disc := (src.disc, srcOffsets.discOff, lengths.discOff)
+    cont := (src.cont, srcOffsets.contOff, lengths.contOff)
+    vect := (src.vect, srcOffsets.vectOff, lengths.vectOff)
+    mats := (src.mats, srcOffsets.matsOff, lengths.matsOff)
   }
 
   def ensureSparsity(): Unit = {
@@ -459,6 +460,11 @@ case class Offsets(discOff: Int = 0, contOff: Int = 0, vectOff: Int = 0, matsOff
 
   def *(scale: Int) = Offsets(scale * discOff, scale * contOff, scale * vectOff, scale * matsOff)
 }
+
+object Offsets {
+  val zero = new Offsets()
+}
+
 
 case class Ranges(from: Offsets, to: Offsets) {
   def copy(src: Setting, tgt: Setting): Unit = {

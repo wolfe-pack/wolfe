@@ -32,7 +32,13 @@ trait Term[+D <: Dom] extends TermHelper[D] {
    */
   def evaluator(): Evaluator
 
+  abstract class AbstractEvaluator2(val input: Settings) extends ml.wolfe.term.Evaluator2
+
   def evaluator2(in: Settings): Evaluator2 = ???
+
+  abstract class AbstractDifferentiator2(val input: Settings,
+                                         val error: Setting,
+                                         val gradientAccumulator: Settings) extends ml.wolfe.term.Differentiator2
 
   def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc:Settings): Differentiator2 = ???
 
@@ -152,6 +158,13 @@ trait ProxyTerm[D <: Dom] extends Term[D] {
   def vars = self.vars
 
   def evaluator() = self.evaluator()
+
+
+  override def evaluator2(in: Settings) = self.evaluator2(in)
+
+
+  override def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
+    self.differentiator2(wrt)(in,err,gradientAcc)
 
   def differentiator(wrt: Seq[Var[Dom]]) = self.differentiator(wrt)
 

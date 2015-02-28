@@ -208,6 +208,20 @@ class VarSeqApply[+E <: Dom, S <: Term[VarSeqDom[E]], I <: Term[TypedDom[Int]]](
     val input = args
   }
 
+
+  override def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
+    new ComposedDifferentiator2(wrt,in,err,gradientAcc) {
+      argErrors(0).recordChangedOffsets = true
+      def localPropagate() = {
+        val length = argOutputs(0).disc(0)
+        val index = argOutputs(1).disc(0)
+        val offset = seq.domain.elementDom.lengths * index + Offsets(discOff = 1)
+        argErrors(0).resetToZero()
+        argErrors(0).disc(0) = length
+        error.copyTo(argErrors(0),Offsets.zero,offset,seq.domain.elementDom.lengths)
+      }
+    }
+
   def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
     require(index.vars.forall(v => !wrt.contains(v)), "Can't differentiate index term in sequence apply")
 

@@ -32,9 +32,10 @@ class FirstOrderSumSpecs extends WolfeSpec {
       val indices = seqs(dom(0 until n),0,n).Var
       val x = seqs(doubles,n,n).Var
       val term = sum(indices) { i => x(i) * x(i) }
-      term.gradient(x,IndexedSeq(1),IndexedSeq(1.0,2.0,3.0)) should be (IndexedSeq(0.0,4.0,0.0))
-      term.gradient(x,IndexedSeq(1,2),IndexedSeq(1.0,2.0,3.0)) should be (IndexedSeq(0.0,4.0,6.0))
-      term.gradient(x,IndexedSeq(1,1),IndexedSeq(1.0,2.0,3.0)) should be (IndexedSeq(0.0,8.0,0.0))
+      val seq = IndexedSeq(1.0, 2.0, 3.0)
+      term.gradient2(x,IndexedSeq(1),seq) should be (IndexedSeq(0.0,4.0,0.0))
+      term.gradient2(x,IndexedSeq(1,2),seq) should be (IndexedSeq(0.0,4.0,6.0))
+      term.gradient2(x,IndexedSeq(1,1),seq) should be (IndexedSeq(0.0,8.0,0.0))
     }
 
   }
