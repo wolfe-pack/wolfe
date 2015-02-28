@@ -860,7 +860,7 @@ trait BinaryDiscreteOperator[D <: Dom, A <: Dom] extends Composed[D] {
 }
 
 
-class DiscreteEquals[T](var arg1: DiscreteTerm[T], var arg2: DiscreteTerm[T]) extends BinaryDiscreteOperator[BoolDom, DiscreteDom[T]] {
+class DiscreteEquals[T](var arg1: DiscreteTerm[T], var arg2: DiscreteTerm[T]) extends BinaryDiscreteOperator[BoolDom, GenericDiscreteDom[T]] {
   val domain = Dom.bools
 
   def op(a1: Int, a2: Int) = if (a1 == a2) 1 else 0
