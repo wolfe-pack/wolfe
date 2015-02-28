@@ -60,6 +60,13 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
       flagAllChanged()
     }
 
+    def addIfChanged(that: Buffer[Double]): Unit = {
+      for (i <- that.changed()) {
+        array(i) += that(i)
+      }
+      addChanges(that.changed())
+    }
+
     def resetToZero(offset: Int) = array(offset) = 0.0
 
   }
@@ -76,8 +83,15 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
     }
 
     def +=(that: Buffer[FactorieVector]): Unit = {
-      for (i <- 0 until length) array(i) += that(i)
+      for (i <- 0 until length) add(i,that(i))
       flagAllChanged()
+    }
+
+    def addIfChanged(that: Buffer[FactorieVector]): Unit = {
+      for (i <- that.changed()) {
+        add(i,that(i))
+      }
+      addChanges(that.changed())
     }
 
     def resetToZero(offset: Int) = array(offset) := 0
@@ -146,6 +160,14 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
       flagAllChanged()
     }
 
+    def addIfChanged(that: Buffer[FactorieMatrix]): Unit = {
+      for (i <- that.changed()) {
+        array(i) += that(i)
+      }
+      addChanges(that.changed())
+    }
+
+
     def resetToZero(offset: Int) = array(offset) := 0
 
 
@@ -197,6 +219,14 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
     vect += that.vect
     mats += that.mats
   }
+
+  def addIfChanged(that: Setting): Unit = {
+    disc := that.disc //todo: this is odd but required to pass on discrete values in gradients
+    cont.addIfChanged(that.cont)
+    vect.addIfChanged(that.vect)
+    mats.addIfChanged(that.mats)
+  }
+
 
   def :=(value: Double = 0.0): Unit = {
     cont := value
@@ -391,6 +421,10 @@ abstract class Buffer[T: ClassTag](val setting: Setting) {
   def resetChanges() = {
     changedIndices.clear()
     allChanged = false
+  }
+
+  def addChanges(indices:Iterable[Int]): Unit = {
+    if (shouldRecord) changedIndices ++= indices
   }
 
   def resetToZero(): Unit = {

@@ -171,6 +171,7 @@ trait Dom {
 object Dom {
   val doubles = new DoubleDom
   val bools   = new BooleanDom
+  val ints   = new RangeDom(Int.MinValue until Int.MaxValue)
 
   def createSettings(vars:Seq[Var[Dom]],values:Seq[Any]):Array[Setting] = {
     (for ((a, v) <- values zip vars) yield v.domain.toSetting(a.asInstanceOf[v.domain.Value])).toArray

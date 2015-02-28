@@ -147,6 +147,10 @@ trait TermHelper[+D <: Dom] {
   def createSettings() = {
     Settings.fromSeq(vars.map(_.domain.createSetting()))
   }
+  def createZeroSettings() = {
+    Settings.fromSeq(vars.map(_.domain.createZeroSetting()))
+  }
+
 
 }
 
@@ -214,15 +218,13 @@ trait Var[+D <: Dom] extends Term[D] {
   }
 
 
-  override def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc:Settings) = new Differentiator2 {
-    val gradientAccumulator = gradientAcc
-    val input = in
-    val error = err
+  override def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc:Settings) =
+    new AbstractDifferentiator2(in,err,gradientAcc)  {
     val output = in(0)
     val isWrt = wrt.contains(self)
     def forward() {}
     def backward(): Unit = {
-      if (isWrt) gradientAccumulator(0) += error
+      if (isWrt) gradientAccumulator(0).addIfChanged(error)
     }
   }
 

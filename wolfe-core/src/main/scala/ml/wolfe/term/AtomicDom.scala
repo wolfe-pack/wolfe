@@ -286,7 +286,6 @@ class RangeDom(val values: Range) extends GenericDiscreteDom[Int] {
   def domainSize = values.size
   def one = values.last
   def zero = values.head
-
 }
 
 
