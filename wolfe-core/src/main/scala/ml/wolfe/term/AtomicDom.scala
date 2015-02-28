@@ -2,6 +2,9 @@ package ml.wolfe.term
 
 import cc.factorie.la.{DenseTensor1, DenseTensor2}
 import ml.wolfe._
+import ml.wolfe.util.Math._
+
+import scala.util.Random
 
 /**
  * @author riedel
@@ -273,8 +276,9 @@ trait GenericDiscreteDom[T] extends AtomicDom {
 }
 
 class DiscreteDom[T](val values: IndexedSeq[T]) extends GenericDiscreteDom[T] {
+  val index = values.zipWithIndex.toMap
   def intToValue(int: Int) = values(int)
-  def valueToInt(value: Value) = values.indexOf(value)
+  def valueToInt(value: Value) = index(value)
   def domainSize = values.size
   def one = values.last
   def zero = values.head
@@ -286,6 +290,61 @@ class RangeDom(val values: Range) extends GenericDiscreteDom[Int] {
   def domainSize = values.size
   def one = values.last
   def zero = values.head
+
+  trait SampleTerm extends Term {
+
+    abstract class Evaluator(in:Settings) extends AbstractEvaluator2(in) {
+      val output = createSetting()
+
+    }
+
+    def vars = Seq.empty
+    def atomsIterator = ???
+    def evaluator() = ???
+    def differentiator(wrt: Seq[term.Var[Dom]]) = ???
+  }
+
+  def uniform(implicit random:Random) = new SampleUniform()
+  def shuffled(implicit random:Random) = new SampleShuffled()
+  def sequential = new SampleSequential
+
+  class SampleUniform(implicit random:Random) extends SampleTerm {
+    override def evaluator2(in: Settings) = new Evaluator(in) {
+      def eval() = {
+        val i = random.nextInt(domainSize) + values.start
+        output.disc(0) = i
+      }
+    }
+  }
+
+  class SampleShuffled(implicit random:Random) extends SampleTerm {
+    val indexed = values.toIndexedSeq
+    override def evaluator2(in: Settings) = new Evaluator(in) {
+      private var shuffled = random.shuffle(indexed).toIterator
+      def eval() = {
+        if (!shuffled.hasNext) {
+          shuffled = random.shuffle(indexed).toIterator
+        }
+        output.disc(0) = shuffled.next()
+      }
+    }
+  }
+
+  class SampleSequential extends SampleTerm {
+    override def evaluator2(in: Settings) = new Evaluator(in) {
+      var iterator = values.iterator
+      def eval() = {
+        if (!iterator.hasNext) {
+          iterator = values.iterator
+        }
+        output.disc(0) = iterator.next()
+      }
+    }
+  }
+
+
 }
+
+
 
 

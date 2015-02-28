@@ -11,7 +11,7 @@ class VarSeqDomSpecs extends WolfeSpec {
 
   "A variable length sequence domain" should {
     "create variables" in {
-      val xs = seqs(bools, 0, 5)
+      val xs = varSeqs(bools, 0, 5)
       val x = xs.Var
       val value = IndexedSeq(true, false, true)
       x.eval2(value) should be(value)
@@ -19,7 +19,7 @@ class VarSeqDomSpecs extends WolfeSpec {
 
     "support element access through integer terms" in {
       val n = 3
-      val x = seqs(bools, 0, n).Var
+      val x = varSeqs(bools, 0, n).Var
       val i = dom(0 until n).Var
       val value = IndexedSeq(true, false, true)
       x(i).eval(value, 1) should be(false)
@@ -35,7 +35,7 @@ class VarSeqDomSpecs extends WolfeSpec {
 
     "supports gradients for sequence arguments" in {
       val n = 3
-      val xs = seqs(doubles, 0, n)
+      val xs = varSeqs(doubles, 0, n)
       val x = xs.Var
       val i = xs.lengthDom.Var
       val value = IndexedSeq(1.0, 2.0, 3.0)
@@ -45,7 +45,7 @@ class VarSeqDomSpecs extends WolfeSpec {
 
     "should make sparse updates when calculating the gradient" in {
       val n = 3
-      val xs = seqs(doubles, 0, n)
+      val xs = varSeqs(doubles, 0, n)
       val x = xs.Var
       val i = xs.lengthDom.Var
       val value = IndexedSeq(1.0, 2.0, 3.0)
@@ -61,7 +61,7 @@ class VarSeqDomSpecs extends WolfeSpec {
 
     "evaluate nested sequences" in {
       val n = 3
-      val xs = seqs(seqs(doubles, 0, n), 0, n)
+      val xs = varSeqs(varSeqs(doubles, 0, n), 0, n)
       val i = dom(0 until n).Var
       val x = xs.Var
       val t = x(i)

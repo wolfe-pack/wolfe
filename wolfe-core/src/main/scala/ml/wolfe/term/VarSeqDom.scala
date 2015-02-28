@@ -2,6 +2,8 @@ package ml.wolfe.term
 
 import ml.wolfe.term
 
+import scala.util.Random
+
 /**
  * @author riedel
  */
@@ -16,6 +18,7 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
   type Term = DomTerm
   //  type ElemDom = E
 
+  val indexDom = new RangeDom(0 until maxLength)
 
   //trait Test extends Term
   def own(term: TypedTerm[Value]) = new ProxyTerm[TypedDom[Value]] with Term {
@@ -100,6 +103,10 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
         ElemDom, SeqTerm, Index](this.asInstanceOf[SeqTerm], index))
     }
 
+    def sampleShuffled(implicit random:Random) = apply(indexDom.shuffled)
+    def sampleSequential = apply(indexDom.sequential)
+    def sampleUniform(implicit random:Random) = apply(indexDom.uniform)
+
   }
 
   class DomVar(name: => String, val offsets: Offsets, owner: term.Var[Dom]) extends BaseVar(name, owner) with super.DomVar with DomTerm {
@@ -132,6 +139,15 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
         //todo: evaluate length first, and then only update the relevant elements
         for (i <- 0 until inputs.length) {
           inputs(i).copyTo(output, domain.elementDom.lengths, i)
+        }
+      }
+    }
+
+
+    override def composer2(args: Settings) = new Composer2(args) {
+      def eval() = {
+        for (i <- 0 until input.length) {
+          input(i).copyTo(output, domain.elementDom.lengths, i)
         }
       }
     }

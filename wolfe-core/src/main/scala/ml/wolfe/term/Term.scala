@@ -34,13 +34,14 @@ trait Term[+D <: Dom] extends TermHelper[D] {
 
   abstract class AbstractEvaluator2(val input: Settings) extends ml.wolfe.term.Evaluator2
 
+
   def evaluator2(in: Settings): Evaluator2 = ???
 
   abstract class AbstractDifferentiator2(val input: Settings,
                                          val error: Setting,
                                          val gradientAccumulator: Settings) extends ml.wolfe.term.Differentiator2
 
-  class EmptyDifferentiator2(in:Settings,err:Setting,gradientAcc:Settings) extends AbstractDifferentiator2(in,err,gradientAcc) {
+  class EmptyDifferentiator2(in: Settings, err: Setting, gradientAcc: Settings) extends AbstractDifferentiator2(in, err, gradientAcc) {
     val eval = evaluator2(in)
     val output = eval.output
 
@@ -51,8 +52,8 @@ trait Term[+D <: Dom] extends TermHelper[D] {
     def backward() {}
   }
 
-  def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc:Settings): Differentiator2 =
-    new EmptyDifferentiator2(in,err,gradientAcc)
+  def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings): Differentiator2 =
+    new EmptyDifferentiator2(in, err, gradientAcc)
 
   /**
    * Variables may describe structured objects. Terms may only depend on parts of these structured objects. Atoms
@@ -88,6 +89,36 @@ trait Term[+D <: Dom] extends TermHelper[D] {
  */
 trait TermHelper[+D <: Dom] {
   this: Term[D] =>
+
+  def clientEvaluator() = new ClientEvaluator
+  def clientDifferentiator[T <: Dom](wrt:Var[T]) = new ClientDifferentiator[T](wrt)
+
+  class ClientEvaluator() {
+    val input = createSettings()
+    val eval = evaluator2(input)
+
+    def eval(args: Any*): domain.Value = {
+      for ((v,i) <- vars.zipWithIndex) v.domain.copyValue(args(i).asInstanceOf[v.domain.Value],input(i))
+      eval.eval()
+      domain.toValue(eval.output)
+    }
+  }
+
+  class ClientDifferentiator[T <: Dom](val wrt:Var[T]) {
+    val input = createSettings()
+    val error = domain.toSetting(domain.one)
+    val gradient = createSettings()
+    val diff = differentiator2(Seq(wrt))(input,error,gradient)
+    val indexOfWrt = vars.indexOf(wrt)
+
+    def differentiate(args:Any*):wrt.domain.Value = {
+      for ((v,i) <- vars.zipWithIndex) v.domain.copyValue(args(i).asInstanceOf[v.domain.Value],input(i))
+      gradient.foreach(_.resetToZero())
+      diff.differentiate()
+      wrt.domain.toValue(gradient(indexOfWrt))
+    }
+
+  }
 
   def maxMarginals[T <: Dom](target: Var[T], wrt: Var[T])(incoming: wrt.domain.Marginals)(args: Any*): target.domain.Marginals = {
     val maxMarger = maxMarginalizer(Seq(wrt), Seq(target))
@@ -134,7 +165,7 @@ trait TermHelper[+D <: Dom] {
   def gradient2[V <: Dom](wrt: Var[V], args: Any*): wrt.domain.Value = {
     require(args.length == vars.length, s"You need as many arguments as there are free variables (${vars.length})")
     val gradient = createSettings()
-    val diff = differentiator2(Seq(wrt))(createSettings(args),domain.toSetting(domain.one),gradient)
+    val diff = differentiator2(Seq(wrt))(createSettings(args), domain.toSetting(domain.one), gradient)
     diff.differentiate()
     val indexOfWrt = vars.indexOf(wrt)
     wrt.domain.toValue(gradient(indexOfWrt))
@@ -153,12 +184,14 @@ trait TermHelper[+D <: Dom] {
 
   def createVariableSettings() = vars.map(_.domain.createSetting()).toArray
 
-  def createSettings(args:Seq[Any]) = {
-    Settings.fromSeq((args zip vars) map {case (a,v) => v.domain.toSetting(a.asInstanceOf[v.domain.Value])})
+  def createSettings(args: Seq[Any]) = {
+    Settings.fromSeq((args zip vars) map { case (a, v) => v.domain.toSetting(a.asInstanceOf[v.domain.Value])})
   }
+
   def createSettings() = {
     Settings.fromSeq(vars.map(_.domain.createSetting()))
   }
+
   def createZeroSettings() = {
     Settings.fromSeq(vars.map(_.domain.createZeroSetting()))
   }
@@ -180,7 +213,7 @@ trait ProxyTerm[D <: Dom] extends Term[D] {
 
 
   override def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
-    self.differentiator2(wrt)(in,err,gradientAcc)
+    self.differentiator2(wrt)(in, err, gradientAcc)
 
   def differentiator(wrt: Seq[Var[Dom]]) = self.differentiator(wrt)
 
@@ -230,15 +263,17 @@ trait Var[+D <: Dom] extends Term[D] {
   }
 
 
-  override def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc:Settings) =
-    new AbstractDifferentiator2(in,err,gradientAcc)  {
-    val output = in(0)
-    val isWrt = wrt.contains(self)
-    def forward() {}
-    def backward(): Unit = {
-      if (isWrt) gradientAccumulator(0).addIfChanged(error)
+  override def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
+    new AbstractDifferentiator2(in, err, gradientAcc) {
+      val output = in(0)
+      val isWrt = wrt.contains(self)
+
+      def forward() {}
+
+      def backward(): Unit = {
+        if (isWrt) gradientAccumulator(0).addIfChanged(error)
+      }
     }
-  }
 
   override def toString = name
 }
@@ -705,7 +740,7 @@ class Product(val arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm 
 
 
   override def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
-    new ComposedDifferentiator2(wrt,in,err,gradientAcc) {
+    new ComposedDifferentiator2(wrt, in, err, gradientAcc) {
       def localPropagate() = {
         var total = error.cont(0)
         var zeros = 0
@@ -817,7 +852,7 @@ class Iverson[T <: BoolTerm](val arg: T) extends UnaryTerm[T, DoubleDom] with Co
 
   override def composer2(args: Settings) = new Composer2(args) {
     def eval() = {
-      output.cont(0) =  if (input(0).disc(0) == 0) 0.0 else 1.0
+      output.cont(0) = if (input(0).disc(0) == 0) 0.0 else 1.0
     }
   }
 
@@ -826,7 +861,7 @@ class Iverson[T <: BoolTerm](val arg: T) extends UnaryTerm[T, DoubleDom] with Co
   def differentiator(wrt: Seq[Var[Dom]]) = ???
 }
 
-class IntToDouble[T <: DiscreteTerm[Int]](val int: T) extends ComposedDoubleTerm {
+class IntToDouble[T <: IntTerm](val int: T) extends ComposedDoubleTerm {
   type ArgumentType = T
 
   def arguments = IndexedSeq(int)

@@ -8,7 +8,7 @@ import scala.language.implicitConversions
 /**
  * @author riedel
  */
-object TermImplicits extends NameProviderImplicits with MathImplicits {
+object TermImplicits extends NameProviderImplicits with MathImplicits with Stochastic {
 
   implicit val doubles: DoubleDom = Dom.doubles
   implicit val bools: BooleanDom = Dom.bools
@@ -25,8 +25,15 @@ object TermImplicits extends NameProviderImplicits with MathImplicits {
 
   def seqs[D <: Dom](elements: D, length: Int): SeqDom[elements.type] = new SeqDom[elements.type](elements, length)
 
-  def seqs[D <: Dom](elements: D, minLength: Int, maxLength: Int): VarSeqDom[elements.type] =
+  def varSeqs[D <: Dom](elements: D, minLength: Int, maxLength: Int): VarSeqDom[elements.type] =
     new VarSeqDom[elements.type](elements, maxLength, minLength)
+
+  def fixedSeqs[D <: Dom](elements: D, length: Int): VarSeqDom[elements.type] = varSeqs(elements,length,length)
+
+  def fixedSeq[T : TypedDom](elements:Seq[T]) = {
+    val dom = implicitly[TypedDom[T]]
+    fixedSeqs(dom, elements.length).const(elements.toIndexedSeq)
+  }
 
   implicit class ConvertableToTerm[T,D<:TypedDom[T]](value:T)(implicit val domain:D) {
     def toTerm:domain.Term = domain.const(value)
@@ -255,6 +262,8 @@ trait MathImplicits {
 
     def *(that: DoubleTerm): Product = new Product(IndexedSeq(term, that))
 
+//    def *(that: IntTerm): Product = new Product(IndexedSeq(term, new IntToDouble(that)))
+
     def *(that: VectorTerm) = new VectorScaling(that, term)
 
     def /(that: DoubleTerm) = new Div(term, that)
@@ -328,7 +337,12 @@ trait MathImplicits {
 
   implicit def matToConstant(d: FactorieMatrix): Constant[MatrixDom] = matrices(d.dim1, d.dim2).const(d)
 
-  implicit def intToDouble(int: DiscreteTerm[Int]): IntToDouble[int.type] = new IntToDouble[int.type](int)
+  implicit def intToDouble(int: IntTerm): IntToDouble[int.type] = new IntToDouble[int.type](int)
 
 
+}
+
+trait Stochastic {
+  import TermImplicits._
+  def sampleSequential(range:Range) = dom(range).sequential
 }

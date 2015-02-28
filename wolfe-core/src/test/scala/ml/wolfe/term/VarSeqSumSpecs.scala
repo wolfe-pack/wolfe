@@ -12,7 +12,7 @@ class VarSeqSumSpecs extends WolfeSpec {
   "A sum over variable length sequences" should {
     "evaluate to the sum of all its arguments when the sequence is constructed" in {
       val n = 3
-      val xs = seqs(doubles,0,n)
+      val xs = varSeqs(doubles,0,n)
       val length = xs.lengthDom.Var
       val d = doubles.Var
       val t = varSeqSum(VarSeq(length, IndexedSeq(d, d * 2.0, d)))
@@ -20,7 +20,7 @@ class VarSeqSumSpecs extends WolfeSpec {
     }
     "evaluate to the sum of all its arguments when the sequence is a variable" in {
       val n = 3
-      val xs = seqs(doubles,0,n)
+      val xs = varSeqs(doubles,0,n)
       val length = xs.lengthDom.Var
       val d = doubles.Var
       val x = xs.Var
