@@ -12,6 +12,7 @@ object TermImplicits extends NameProviderImplicits with MathImplicits {
 
   implicit val doubles: DoubleDom = Dom.doubles
   implicit val bools: BooleanDom = Dom.bools
+  implicit val ints:IntDom = Dom.ints
 
   def discrete[T](args: T*) = new DiscreteDom[T](args.toIndexedSeq)
 
@@ -267,6 +268,14 @@ trait MathImplicits {
     }
   }
 
+  implicit class RichIntTerm(term:IntTerm) {
+    def +(that:IntTerm) = new BinaryIntFun(term,that,_ + _)
+    def -(that:IntTerm) = new BinaryIntFun(term,that,_ - _)
+    def *(that:IntTerm) = new BinaryIntFun(term,that,_ * _)
+
+  }
+
+
 
   def argmax[D <: Dom](dom: D)(obj: dom.Var => DoubleTerm): Argmax[dom.type] = {
     val variable = dom.variable("_hidden")
@@ -303,6 +312,8 @@ trait MathImplicits {
 
 
   implicit def doubleToConstant(d: Double): Constant[DoubleDom] = Dom.doubles.const(d)
+
+  implicit def intToConstant(i: Int): Constant[IntDom] = Dom.ints.const(i)
 
   implicit def doubleToRichConstant(d: Double): RichDoubleTerm = new RichDoubleTerm(doubleToConstant(d))
 

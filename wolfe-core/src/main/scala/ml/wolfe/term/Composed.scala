@@ -27,7 +27,7 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
     }
   }
 
-  trait Composer2 extends Evaluator2 {
+  abstract class Composer2(in:Settings) extends AbstractEvaluator2(in) {
     val output = self.domain.createSetting()
   }
 

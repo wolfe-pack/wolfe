@@ -29,11 +29,10 @@ class DoubleFun[T <: DoubleTerm](val arg: T, fun: Double => Double, deriv: Doubl
     def withRespectTo = wrt
   }
 
-  override def composer2(args: Settings) = new Composer2 {
+  override def composer2(args: Settings) = new Composer2(args) {
     def eval() = {
       output.cont(0) = fun(input(0).cont(0))
     }
-    val input = args
   }
 
   override def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
@@ -73,11 +72,10 @@ class DoubleBinaryFun[T <: DoubleTerm](val arg1: T, arg2:T, fun: (Double,Double)
     def withRespectTo = wrt
   }
 
-  override def composer2(args: Settings) = new Composer2 {
+  override def composer2(args: Settings) = new Composer2(args) {
     def eval() = {
       output.cont(0) = fun(input(0).cont(0), input(1).cont(0))
     }
-    val input = args
   }
 
   override def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =

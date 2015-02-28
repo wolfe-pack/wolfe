@@ -92,13 +92,11 @@ class Sum(val arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm {
     }
   }
 
-  override def composer2(args: Settings) = new Composer2 {
+  override def composer2(args: Settings) = new Composer2(args) {
     def eval(): Unit = {
       output.cont(0) = 0.0
       for (i <- 0 until size) output.cont(0) += input(i).cont(0)
     }
-
-    val input = args
   }
 
   override def differentiator2(wrt:Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) = new Differentiator2 {

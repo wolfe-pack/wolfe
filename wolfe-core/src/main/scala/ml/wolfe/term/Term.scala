@@ -40,7 +40,19 @@ trait Term[+D <: Dom] extends TermHelper[D] {
                                          val error: Setting,
                                          val gradientAccumulator: Settings) extends ml.wolfe.term.Differentiator2
 
-  def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc:Settings): Differentiator2 = ???
+  class EmptyDifferentiator2(in:Settings,err:Setting,gradientAcc:Settings) extends AbstractDifferentiator2(in,err,gradientAcc) {
+    val eval = evaluator2(in)
+    val output = eval.output
+
+    def forward(): Unit = {
+      eval.eval()
+    }
+
+    def backward() {}
+  }
+
+  def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc:Settings): Differentiator2 =
+    new EmptyDifferentiator2(in,err,gradientAcc)
 
   /**
    * Variables may describe structured objects. Terms may only depend on parts of these structured objects. Atoms
@@ -683,13 +695,12 @@ class Product(val arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm 
   }
 
 
-  override def composer2(args: Settings) = new Composer2 {
+  override def composer2(args: Settings) = new Composer2(args) {
     def eval() = {
       output.cont(0) = 1.0
       for (i <- 0 until input.length)
         output.cont(0) *= input(i).cont(0)
     }
-    val input = args
   }
 
 
@@ -804,11 +815,10 @@ class Iverson[T <: BoolTerm](val arg: T) extends UnaryTerm[T, DoubleDom] with Co
   }
 
 
-  override def composer2(args: Settings) = new Composer2 {
+  override def composer2(args: Settings) = new Composer2(args) {
     def eval() = {
       output.cont(0) =  if (input(0).disc(0) == 0) 0.0 else 1.0
     }
-    val input: Settings = args
   }
 
   def copy(args: IndexedSeq[ArgumentType]) = new Iverson(args(0))
@@ -829,11 +839,10 @@ class IntToDouble[T <: DiscreteTerm[Int]](val int: T) extends ComposedDoubleTerm
     }
   }
 
-  override def composer2(args: Settings) = new Composer2 {
+  override def composer2(args: Settings) = new Composer2(args) {
     def eval() = {
       output.cont(0) = input(0).disc(0)
     }
-    val input: Settings = args
   }
 
 

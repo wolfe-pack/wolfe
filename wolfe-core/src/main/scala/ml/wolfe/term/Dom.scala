@@ -108,6 +108,12 @@ trait Dom {
       }
     }
 
+
+    override def evaluator2(in: Settings) = new AbstractEvaluator2(in) {
+      def eval() {}
+      val output = domain.toSetting(value.asInstanceOf[domain.Value])
+    }
+
     def atomsIterator = Iterator.empty
 
     def differentiator(wrt: Seq[term.Var[Dom]]) = new Differentiator {

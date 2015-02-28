@@ -14,7 +14,7 @@ class VarSeqDomSpecs extends WolfeSpec {
       val xs = seqs(bools, 0, 5)
       val x = xs.Var
       val value = IndexedSeq(true, false, true)
-      x.eval(value) should be(value)
+      x.eval2(value) should be(value)
     }
 
     "support element access through integer terms" in {
@@ -39,8 +39,8 @@ class VarSeqDomSpecs extends WolfeSpec {
       val x = xs.Var
       val i = xs.lengthDom.Var
       val value = IndexedSeq(1.0, 2.0, 3.0)
-      val term = x(i) * x(i)
-      term.gradient(x, value, 1) should be(IndexedSeq(0.0, 4.0, 0.0))
+      val term = x(i) * x(i + 1)
+      term.gradient2(x, value, 1) should be(IndexedSeq(0.0, 3.0, 2.0))
     }
 
     "should make sparse updates when calculating the gradient" in {
