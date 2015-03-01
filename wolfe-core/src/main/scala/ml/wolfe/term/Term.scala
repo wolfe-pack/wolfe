@@ -457,7 +457,7 @@ class DotProduct[T1 <: VectorTerm, T2 <: VectorTerm](val arg1: T1, val arg2: T2)
   override def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
     new ComposedDifferentiator2(wrt,in,err,gradientAcc) {
 
-      def localPropagate() = {
+      def localBackProp() = {
         val scale = error.cont(0)
 
         if (arg1.vars.nonEmpty) argErrors(0).vect.set(0, argOutputs(1).vect(0), scale)
@@ -677,6 +677,32 @@ class MatrixVectorProduct[T1 <: MatrixTerm, T2 <: VectorTerm](val arg1: T1, val 
     }
   }
 
+
+  override def composer2(args: Settings) = new Composer2(args) {
+    def eval() = {
+      output.vect(0) = input(0).mats(0) * input(1).vect(0)
+    }
+  }
+
+
+  override def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
+    new ComposedDifferentiator2(wrt,in,err,gradientAcc) {
+
+      def localBackProp() = {
+        val A = argOutputs(0).mats(0)
+        val x = argOutputs(1).vect(0)
+        val errorVec = error.vect(0)
+        require(A.dim2 == x.dim1, s"dimensions don't match: ${A.toDimensionsString} * ${x.dim1}")
+        require(A.dim1 == errorVec.dim1, s"dimensions don't match: ${A.toDimensionsString} * ${x.dim1} => ${errorVec.dim1}")
+
+        argErrors(0).mats(0) := 0.0
+        argErrors(1).vect(0) := 0.0
+        argErrors(0).mats(0) += errorVec outer x
+        argErrors(1).vect(0) += A.t * errorVec
+
+      }
+    }
+
   def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
 
     def withRespectTo = wrt
@@ -712,6 +738,13 @@ class Div[T1 <: DoubleTerm, T2 <: DoubleTerm](val arg1: T1, val arg2: T2) extend
     }
   }
 
+
+  override def composer2(args: Settings) = new Composer2(args) {
+    def eval() = {
+      output.cont(0) = input(0).cont(0) / input(1).cont(0)
+    }
+  }
+
   def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
 
     def withRespectTo = wrt
@@ -726,6 +759,19 @@ class Div[T1 <: DoubleTerm, T2 <: DoubleTerm](val arg1: T1, val arg2: T2) extend
       gradient(1).cont(0) = -(scale * x) / (y * y)
     }
   }
+
+  override def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
+    new ComposedDifferentiator2(wrt,in,err,gradientAcc) {
+      def localBackProp() = {
+        val scale = error.cont(0)
+
+        val x = argOutputs(0).cont(0)
+        val y = argOutputs(1).cont(0)
+
+        argErrors(0).cont(0) = scale / y
+        argErrors(1).cont(0) = -(scale * x) / (y * y)
+      }
+    }
 }
 
 
@@ -767,7 +813,7 @@ class Product(val arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm 
 
   override def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
     new ComposedDifferentiator2(wrt, in, err, gradientAcc) {
-      def localPropagate() = {
+      def localBackProp() = {
         var total = error.cont(0)
         var zeros = 0
         var zeroIndex = -1

@@ -19,7 +19,7 @@ object RunExperimentSeries {
     val confSeq: Confs = series.map { case (key, value) =>
       (value zip (Stream continually Seq(key)).flatten).map(_.swap)
     }.foldLeft(Seq[Any](Nil)) { case (seqs, seq) => (seqs flatCross seq).toSeq }
-                         .map { case seq: Seq[(String, Any)] => seq.toMap }
+                         .map { case seq: Seq[_] => seq.asInstanceOf[Seq[(String, Any)]].toMap }
 
     val confSeqWithCollectFields = if (Conf.hasPath("logFile")) {
       val fields = confSeq.head.keys.toList
@@ -52,7 +52,7 @@ object RunExperimentSeries {
     }
 
     val configsFut: Traversable[Future[Any]] = confs.map {
-      c => future {
+      c => Future {
         blocking {
           val newConfPath = File.createTempFile(System.nanoTime().toString, null).getAbsolutePath
           OverrideConfig(c, newConfPath, confPath)

@@ -66,7 +66,7 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
     /**
      * update argErrors based on incoming error and current argOutputs (activations)
      */
-    def localPropagate()
+    def localBackProp()
 
     def forward() = {
       argDiffs foreach (_.forward())
@@ -74,7 +74,7 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
     }
 
     def backward() = {
-      localPropagate()
+      localBackProp()
       argDiffs foreach (_.backward())
     }
 

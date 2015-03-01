@@ -37,7 +37,7 @@ class DoubleFun[T <: DoubleTerm](val arg: T, fun: Double => Double, deriv: Doubl
 
   override def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
     new ComposedDifferentiator2(wrt,in,err,gradientAcc) {
-      def localPropagate() = {
+      def localBackProp() = {
         argErrors(0).cont(0) = deriv(argOutputs(0).cont(0)) * error.cont(0)
       }
     }
@@ -80,7 +80,7 @@ class DoubleBinaryFun[T <: DoubleTerm](val arg1: T, arg2:T, fun: (Double,Double)
 
   override def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
     new ComposedDifferentiator2(wrt,in,err,gradientAcc) {
-      def localPropagate() = {
+      def localBackProp() = {
         val (d1,d2) = deriv(argOutputs(0).cont(0),argOutputs(1).cont(0))
         argErrors(0).cont(0) = d1 * error.cont(0)
         argErrors(1).cont(0) = d2 * error.cont(0)

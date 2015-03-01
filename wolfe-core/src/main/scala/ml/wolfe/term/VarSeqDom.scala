@@ -103,9 +103,11 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
         ElemDom, SeqTerm, Index](this.asInstanceOf[SeqTerm], index))
     }
 
-    def sampleShuffled(implicit random:Random) = apply(indexDom.shuffled)
+    def sampleShuffled(implicit random: Random) = apply(indexDom.shuffled)
+
     def sampleSequential = apply(indexDom.sequential)
-    def sampleUniform(implicit random:Random) = apply(indexDom.uniform)
+
+    def sampleUniform(implicit random: Random) = apply(indexDom.uniform)
 
   }
 
@@ -121,12 +123,14 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
 
   def Term(length: TypedTerm[Int], elements: IndexedSeq[elementDom.Term]): Term = new Constructor(length, elements)
 
+  def Term(elements: elementDom.Term*): Term = Term(indexDom.const(elements.size), elements.toIndexedSeq)
+
   class Constructor(val length: TypedTerm[Int], val elements: IndexedSeq[term.Term[E]]) extends DomTerm with Composed[dom.type] {
     def apply(index: Int) = elements(index)
 
     type ArgumentType = term.Term[Dom]
 
-    def arguments = length +: elements
+    val arguments = length +: elements
 
     def copy(args: IndexedSeq[ArgumentType]) = new Constructor(
       args(0).asInstanceOf[lengthDom.Term],
@@ -146,8 +150,35 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
 
     override def composer2(args: Settings) = new Composer2(args) {
       def eval() = {
-        for (i <- 0 until input.length) {
-          input(i).copyTo(output, domain.elementDom.lengths, i)
+        output.disc(0) = input(0).disc(0)
+        var offset = Offsets(discOff = 1)
+        for (i <- 1 until input.length) {
+          input(i).copyTo(output, Offsets.zero, offset, domain.elementDom.lengths)
+          offset += domain.elementDom.lengths
+        }
+      }
+    }
+
+
+    override def differentiator2(wrt: Seq[term.Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) = {
+      require(length.vars.forall(v => !wrt.contains(v)), "Can't differentiate length term in sequence constructor")
+      new ComposedDifferentiator2(wrt, in, err, gradientAcc) {
+
+        def localBackProp() = {
+          //each argument will get its error signal from a subsection of the outError
+          val length = argOutputs(0).disc(0)
+          var offsets = Offsets(discOff = 1)
+          for (i <- 0 until length) {
+            for (j <- 0 until domain.elementDom.lengths.contOff) {
+              argErrors(i+1).cont(j) = error.cont(offsets.contOff + j)
+            }
+            for (j <- 0 until domain.elementDom.lengths.vectOff) {
+              argErrors(i+1).vect(j) := error.vect(offsets.vectOff + j)
+            }
+            offsets += domain.elementDom.lengths
+            //todo: matrices!
+          }
+
         }
       }
     }
@@ -218,22 +249,23 @@ class VarSeqApply[+E <: Dom, S <: Term[VarSeqDom[E]], I <: Term[TypedDom[Int]]](
     def eval() = {
       val index = input(1).disc(0)
       val offset = (seq.domain.elementDom.lengths * index) + Offsets(discOff = 1)
-      output := (input(0),offset,seq.domain.elementDom.lengths)
+      output :=(input(0), offset, seq.domain.elementDom.lengths)
     }
 
   }
 
 
   override def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
-    new ComposedDifferentiator2(wrt,in,err,gradientAcc) {
+    new ComposedDifferentiator2(wrt, in, err, gradientAcc) {
       argErrors(0).recordChangedOffsets = true
-      def localPropagate() = {
+
+      def localBackProp() = {
         val length = argOutputs(0).disc(0)
         val index = argOutputs(1).disc(0)
         val offset = seq.domain.elementDom.lengths * index + Offsets(discOff = 1)
         argErrors(0).resetToZero()
         argErrors(0).disc(0) = length
-        error.copyTo(argErrors(0),Offsets.zero,offset,seq.domain.elementDom.lengths)
+        error.copyTo(argErrors(0), Offsets.zero, offset, seq.domain.elementDom.lengths)
       }
     }
 

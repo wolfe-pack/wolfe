@@ -2,14 +2,11 @@ package ml.wolfe.ui
 
 import java.io.File
 
-import ml.wolfe.Wolfe
-
 /**
  * @author Sebastian Riedel
  */
 object ExampleSlideshow extends MutableHTMLNotebook with App {
 
-  import ml.wolfe.Wolfe._
   import ml.wolfe.ui.RevealJS._
 
 //  h1( "This is a Notebook")

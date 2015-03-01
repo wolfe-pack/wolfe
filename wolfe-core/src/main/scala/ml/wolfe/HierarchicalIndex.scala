@@ -80,4 +80,4 @@ class HierarchicalIndex extends Index {
   }
 }
 
-class HierarchicalIndexAndBuilder extends HierarchicalIndex with FactorieVectorBuilder
+class HierarchicalIndexAndBuilder extends HierarchicalIndex

@@ -28,11 +28,11 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
   def varSeqs[D <: Dom](elements: D, minLength: Int, maxLength: Int): VarSeqDom[elements.type] =
     new VarSeqDom[elements.type](elements, maxLength, minLength)
 
-  def fixedSeqs[D <: Dom](elements: D, length: Int): VarSeqDom[elements.type] = varSeqs(elements,length,length)
+  def fixedLengthSeqs[D <: Dom](elements: D, length: Int): VarSeqDom[elements.type] = varSeqs(elements,length,length)
 
   def fixedSeq[T : TypedDom](elements:Seq[T]) = {
     val dom = implicitly[TypedDom[T]]
-    fixedSeqs(dom, elements.length).const(elements.toIndexedSeq)
+    fixedLengthSeqs(dom, elements.length).const(elements.toIndexedSeq)
   }
 
   implicit class ConvertableToTerm[T,D<:TypedDom[T]](value:T)(implicit val domain:D) {
