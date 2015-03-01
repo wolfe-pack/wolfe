@@ -358,6 +358,12 @@ final class Settings(val length: Int) extends IndexedSeq[Setting] {
     result
   }
 
+  def :=(that:Settings): Unit = {
+    for (i <- 0 until length) {
+      this(i) := that(i)
+    }
+  }
+
 }
 
 object Settings {

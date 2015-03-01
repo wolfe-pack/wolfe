@@ -23,6 +23,21 @@ class SampleSpecs extends WolfeSpec {
       e.eval() should be (0)
     }
 
+    "generate different values in different positions" in {
+      val r = sampleUniform(0 until 100000)
+      val t = r === r
+      val e = t.clientEvaluator()
+      e.eval() should be (false)
+    }
+
+    "support memoization" in {
+      val r = mem(sampleUniform(0 until 100000))
+      val t = r === r
+      val e = t.clientEvaluator()
+      e.eval() should be (true)
+    }
+
+
     "sample from a sequence" in {
       val seq = fixedLengthSeq(Seq(false,true)).sampleSequential
       val e = seq.clientEvaluator()

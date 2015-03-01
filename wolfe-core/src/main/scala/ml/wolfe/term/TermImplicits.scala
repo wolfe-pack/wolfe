@@ -4,6 +4,7 @@ import cc.factorie.Factorie.DenseTensor1
 import cc.factorie.la.{SingletonTensor1, DenseTensor2}
 import ml.wolfe.{FactorieMatrix, FactorieVector}
 import scala.language.implicitConversions
+import scala.util.Random
 
 /**
  * @author riedel
@@ -34,6 +35,8 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
   def fixedLengthSeq[T](elements: Seq[T])(implicit dom: TypedDom[T]) = {
     fixedLengthSeqs(dom, elements.length).Const(elements.toIndexedSeq)
   }
+
+  def mem[T <: Term[Dom]](term:T) = term.domain.own(new Memoized[Dom,T](term).asInstanceOf[TypedTerm[term.domain.Value]])
 
   implicit class ConvertableToTerm[T, D <: TypedDom[T]](value: T)(implicit val domain: D) {
     def toTerm: domain.Term = domain.Const(value)
@@ -367,4 +370,6 @@ trait Stochastic {
   import TermImplicits._
 
   def sampleSequential(range: Range) = dom(range).sequential
+  def sampleUniform(range: Range)(implicit random:Random) = dom(range).uniform
+
 }

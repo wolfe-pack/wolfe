@@ -301,6 +301,16 @@ class RangeDom(val values: Range) extends GenericDiscreteDom[Int] {
 
     abstract class Evaluator(in:Settings) extends AbstractEvaluator2(in) {
       val output = createSetting()
+      private var currentExecution:Execution = null
+      private var currentValue:Int = -1
+      def nextValue():Int
+      def eval()(implicit execution: Execution) = {
+        if (execution != currentExecution) {
+          currentValue = nextValue()
+          currentExecution = execution
+        }
+        output.disc(0) = currentValue
+      }
 
     }
 
@@ -316,10 +326,9 @@ class RangeDom(val values: Range) extends GenericDiscreteDom[Int] {
 
   class SampleUniform(implicit random:Random) extends SampleTerm {
     override def evaluatorImpl(in: Settings) = new Evaluator(in) {
-      def eval()(implicit execution: Execution) = {
-        val i = random.nextInt(domainSize) + values.start
-        output.disc(0) = i
-      }
+
+      def nextValue() = random.nextInt(domainSize) + values.start
+
     }
   }
 
@@ -327,11 +336,12 @@ class RangeDom(val values: Range) extends GenericDiscreteDom[Int] {
     val indexed = values.toIndexedSeq
     override def evaluatorImpl(in: Settings) = new Evaluator(in) {
       private var shuffled = random.shuffle(indexed).toIterator
-      def eval()(implicit execution: Execution) = {
+
+      def nextValue() = {
         if (!shuffled.hasNext) {
           shuffled = random.shuffle(indexed).toIterator
         }
-        output.disc(0) = shuffled.next()
+        shuffled.next()
       }
     }
   }
@@ -339,11 +349,11 @@ class RangeDom(val values: Range) extends GenericDiscreteDom[Int] {
   class SampleSequential extends SampleTerm {
     override def evaluatorImpl(in: Settings) = new Evaluator(in) {
       var iterator = values.iterator
-      def eval()(implicit execution: Execution) = {
+      def nextValue() = {
         if (!iterator.hasNext) {
           iterator = values.iterator
         }
-        output.disc(0) = iterator.next()
+        iterator.next()
       }
     }
   }

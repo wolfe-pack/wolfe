@@ -980,6 +980,13 @@ trait BinaryDiscreteOperator[D <: Dom, A <: Dom] extends Composed[D] {
     }
   }
 
+
+  override def composer2(args: Settings) = new Composer2(args) {
+    def eval()(implicit execution: Execution) = {
+      output.disc(0) = op(input(0).disc(0), input(1).disc(0))
+    }
+  }
+
   def differentiator(wrt: Seq[Var[Dom]]) = ???
 
   def copy(args: IndexedSeq[ArgumentType]) = new BinaryDiscreteOperator[D, A] {
