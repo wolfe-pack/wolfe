@@ -30,8 +30,18 @@ trait WolfeSpec extends WordSpec with Matchers {
     }
   }
 
+  implicit val factorieMatrixEq = new Equality[FactorieMatrix] {
+    def areEqual(a: FactorieMatrix, b: Any) = b match {
+      case v: FactorieMatrix =>
+        a.activeDomain.forall(i => math.abs(a(i) - v(i)) < eps) &&
+          v.activeDomain.forall(i => math.abs(a(i) - v(i)) < eps)
+      case _ => false
+    }
+  }
 
-//  implicit val stateEq = new Equality[State] {
+
+
+  //  implicit val stateEq = new Equality[State] {
 //    def areEqual(a: State, b: Any) = b match {
 //      case that: State => a.domain == that.domain && a.domain.forall(v => {
 //        (a(v), that(v)) match {

@@ -146,7 +146,6 @@ trait TermHelper[+D <: Dom] {
     wrt.domain.toValue(result)
   }
 
-
   def eval(args: Any*): domain.Value = {
     val ev = evaluator()
     val output = domain.createSetting()
@@ -171,7 +170,7 @@ trait TermHelper[+D <: Dom] {
 
   def gradient2[V <: Dom](wrt: Var[V], args: Any*): wrt.domain.Value = {
     require(args.length == vars.length, s"You need as many arguments as there are free variables (${vars.length})")
-    val gradient = createSettings()
+    val gradient = createZeroSettings()
     val diff = differentiator2(Seq(wrt))(createSettings(args), domain.toSetting(domain.one), gradient)
     diff.differentiate()
     val indexOfWrt = vars.indexOf(wrt)

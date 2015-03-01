@@ -12,38 +12,38 @@ class TermSpecs extends WolfeSpec {
 
   "An vector variable term" should {
     "evaluate to a vector" in {
-      val x = vectors(2).variable("x")
-      val result = x.eval(vector(1.0, 2.0))
+      val x = vectors(2).Var
+      val result = x.eval2(vector(1.0, 2.0))
       result should equal(vector(1.0, 2.0))
     }
 
     "provide its constant gradient" in {
-      val x = vectors(2).variable("x")
-      val result = x.gradient(x, vector(2.0, 1.0))
+      val x = vectors(2).Var
+      val result = x.gradient2(x, vector(2.0, 1.0))
       result should equal(vector(1.0, 1.0))
     }
   }
 
   "A matrix variable term" should {
     "evaluate to a matrix" in {
-      val X = matrices(2, 3).variable("X")
+      val X = matrices(2, 3).Var
       val tensor2 = matrix(Seq(1, 2, 3), Seq(4, 5, 6))
-      val result = X.eval(tensor2)
+      val result = X.eval2(tensor2)
       result should equal(tensor2)
     }
 
     "provide its constant gradient" in {
-      val X = matrices(2, 3).variable("X")
+      val X = matrices(2, 3).Var
       val tensor2 = matrix(Seq(1, 2, 3), Seq(4, 5, 6))
-      val result = X.gradient(X, tensor2)
+      val result = X.gradient2(X, tensor2)
       result.toArray should equal(new MatrixDom(2: Int, 3: Int).one.toArray)
     }
   }
 
   "A double variable term" should {
     "provide its argmax" in {
-      val x = doubles.variable("x")
-      val y = doubles.variable("y")
+      val x = doubles.Var
+      val y = doubles.Var
       x.argmax(x) should be(Double.PositiveInfinity)
       x.argmax(y, 2.0) should be(2.0)
     }
