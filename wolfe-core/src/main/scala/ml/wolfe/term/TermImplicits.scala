@@ -123,14 +123,14 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
   //  }
 
   implicit class RichMonadTerm[A <: Term[Dom]](val termToBeMapped: A) {
-    def map[B: TypedDom](fun: termToBeMapped.domain.Value => B) = {
-      val targetDom = implicitly[TypedDom[B]]
-      new TermMap[A, targetDom.type] {
+    def map[B: TypedDom](fun: termToBeMapped.domain.Value => B)(implicit targetDom:TypedDom[B]):targetDom.Term= {
+      val result = new TermMap[A, targetDom.type] {
         val term: termToBeMapped.type = termToBeMapped
         val domain: targetDom.type = targetDom
 
         def f(arg: term.domain.Value) = fun(arg)
       }
+      targetDom.own(result)
     }
 
     def flatMap[B: TypedDom](fun: termToBeMapped.domain.Value => Term[TypedDom[B]]) = {

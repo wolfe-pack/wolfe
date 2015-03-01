@@ -52,6 +52,21 @@ class SampleSpecs extends WolfeSpec {
       d.differentiate(2.0) should be (0.0)
     }
 
+    "combine with first order sums" in {
+      val n = 4
+      implicit val I = varSeqs(ints,0,n)
+      def indices(iTerm:IntTerm):I.Term = iTerm map (i => IndexedSeq() ++ (0 until i))
+      val t = sum(indices(sampleSequential(1 until n))) { i => i:DoubleTerm}
+      val e = t.clientEvaluator()
+      e.eval() should be (0.0)
+      e.eval() should be (1.0)
+      e.eval() should be (3.0)
+      e.eval() should be (0.0)
+
+
+
+    }
+
   }
 
 }
