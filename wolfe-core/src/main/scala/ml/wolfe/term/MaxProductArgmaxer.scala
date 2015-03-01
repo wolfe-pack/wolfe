@@ -7,7 +7,7 @@ class MaxProductArgmaxer(obj:Sum,val wrt:Seq[Var[Dom]]) extends Argmaxer {
 
   
 
-  def argmax(observed: Array[Setting], msgs: Array[Msgs], result: Array[Setting]) = {
+  def argmax(observed: Array[Setting], msgs: Array[Msg], result: Array[Setting]) = {
 
   }
 }

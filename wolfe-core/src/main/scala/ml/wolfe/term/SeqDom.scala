@@ -29,7 +29,7 @@ class SeqDom[D <: Dom](val elementDom: D, val length: Int) extends Dom {
     override val domain:dom.type = dom
   }
 
-  def toMarginals(msg: Msgs, offsets: Offsets) = {
+  def toMarginals(msg: Msg, offsets: Offsets) = {
     for (i <- 0 until length) yield elementDom.toMarginals(msg, offsets +(elementDom.lengths, i))
   }
 
@@ -40,15 +40,15 @@ class SeqDom[D <: Dom](val elementDom: D, val length: Int) extends Dom {
   }
 
 
-  def copyMarginals(marginals: Marginals, msgs: Msgs, offsets: Offsets) = {
+  def copyMarginals(marginals: Marginals, msgs: Msg, offsets: Offsets) = {
     for (i <- 0 until length) {
       elementDom.copyMarginals(marginals(i), msgs, offsets +(elementDom.lengths, i))
     }
   }
 
-  def fillZeroMsgs(target: Msgs, offsets: Offsets) = {
+  def fillZeroMsg(target: Msg, offsets: Offsets) = {
     for (i <- 0 until length) {
-      elementDom.fillZeroMsgs(target, offsets +(elementDom.lengths, i))
+      elementDom.fillZeroMsg(target, offsets +(elementDom.lengths, i))
     }
   }
 

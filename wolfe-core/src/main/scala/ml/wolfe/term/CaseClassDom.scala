@@ -104,10 +104,10 @@ object CaseClassDom {
         }
 
         val toValueArgs = withOffsets(q"_offsets") { case (name, off) => q"val $name = $self.$name.toValue(_setting, $off)"}
-        val toMarginalsArgs = withOffsets(q"_offsets") { case (name, off) => q"val $name = $self.$name.toMarginals(_msgs, $off)"}
+        val toMarginalsArgs = withOffsets(q"_offsets") { case (name, off) => q"val $name = $self.$name.toMarginals(_Msg, $off)"}
         val copyValueStatements = withOffsets() {case (name,off) => q"$self.$name.copyValue(_value.$name, _setting, $off)"}
-        val copyMarginalStatements = withOffsets() {case (name,off) => q"$self.$name.copyMarginals(_marginals.$name, _msgs, $off)"}
-        val fillZeroMsgsStatements = withOffsets() {case (name,off) => q"$self.$name.fillZeroMsgs(_target, $off)"}
+        val copyMarginalStatements = withOffsets() {case (name,off) => q"$self.$name.copyMarginals(_marginals.$name, _Msg, $off)"}
+        val fillZeroMsgStatements = withOffsets() {case (name,off) => q"$self.$name.fillZeroMsg(_target, $off)"}
         val ones = argNames.map(n => q"$n.one")
         val zeros = argNames.map(n => q"$n.zero")
 
@@ -161,7 +161,7 @@ object CaseClassDom {
               new $caseClassTypeName(..$argNames)
             }
 
-            def toMarginals(_msgs:Msgs,_offsets:Offsets):Marginals = {
+            def toMarginals(_Msg:Msg,_offsets:Offsets):Marginals = {
               ..$toMarginalsArgs
               new Marginals(..$argNames)
             }
@@ -170,13 +170,13 @@ object CaseClassDom {
               ..$copyValueStatements
             }
 
-            def copyMarginals(_marginals: Marginals, _msgs: Msgs, _offsets: Offsets) = {
+            def copyMarginals(_marginals: Marginals, _Msg: Msg, _offsets: Offsets) = {
               ..$copyMarginalStatements
             }
 
 
-            def fillZeroMsgs(_target: Msgs, _offsets: Offsets) = {
-              ..$fillZeroMsgsStatements
+            def fillZeroMsg(_target: Msg, _offsets: Offsets) = {
+              ..$fillZeroMsgStatements
             }
 
             def variable(name: String, _offsets: Offsets, owner: ml.wolfe.term.Var[Dom]) = new BaseVar(name, owner) with DomVar {

@@ -35,14 +35,14 @@ trait Term[+D <: Dom] extends TermHelper[D] {
   abstract class AbstractEvaluator2(val input: Settings) extends ml.wolfe.term.Evaluator2
 
 
-  def evaluator2(in: Settings): Evaluator2 = ???
+  def evaluatorImpl(in: Settings): Evaluator2 = ???
 
   abstract class AbstractDifferentiator2(val input: Settings,
                                          val error: Setting,
                                          val gradientAccumulator: Settings) extends ml.wolfe.term.Differentiator2
 
   class EmptyDifferentiator2(in: Settings, err: Setting, gradientAcc: Settings) extends AbstractDifferentiator2(in, err, gradientAcc) {
-    val eval = evaluator2(in)
+    val eval = evaluatorImpl(in)
     val output = eval.output
 
     def forward(): Unit = {
@@ -80,6 +80,13 @@ trait Term[+D <: Dom] extends TermHelper[D] {
     else if (wrt.forall(_.domain.isDiscrete)) new ExhaustiveSearchArgmaxer(this.asInstanceOf[DoubleTerm], wrt) else ???
   }
 
+  def argmaxerImpl(wrt: Seq[Var[Dom]])(observed:Settings, msgs:Msgs): Argmaxer2 = {
+    //todo: this could be type safe, for example by adding the argmax method to the RichDoubleTerm
+    if (!domain.isDouble) sys.error("Argmax only supported for real valued terms")
+    else if (wrt.forall(_.domain.isDiscrete)) ??? else ???
+  }
+
+
 }
 
 
@@ -95,7 +102,7 @@ trait TermHelper[+D <: Dom] {
 
   class ClientEvaluator() {
     val input = createSettings()
-    val eval = evaluator2(input)
+    val eval = evaluatorImpl(input)
 
     def eval(args: Any*): domain.Value = {
       for ((v,i) <- vars.zipWithIndex) v.domain.copyValue(args(i).asInstanceOf[v.domain.Value],input(i))
@@ -124,7 +131,7 @@ trait TermHelper[+D <: Dom] {
     val maxMarger = maxMarginalizer(Seq(wrt), Seq(target))
     val observed = vars.filter(v => v != wrt && v != target)
     val observedSettings = Dom.createSettings(observed, args)
-    val result = target.domain.createZeroMsgs()
+    val result = target.domain.createZeroMsg()
     val incomingMsgs = Array(wrt.domain.toMsgs(incoming))
     maxMarger.maxMarginals(observedSettings, incomingMsgs, Array(result))
     target.domain.toMarginals(result)
@@ -135,7 +142,7 @@ trait TermHelper[+D <: Dom] {
     val observed = vars.filter(_ != wrt)
     val observedSettings = for ((a, v) <- args zip observed) yield v.domain.toSetting(a.asInstanceOf[v.domain.Value])
     val result = wrt.domain.createSetting()
-    am.argmax(observedSettings.toArray, observed.map(_.domain.createMsgs()).toArray, Array(result))
+    am.argmax(observedSettings.toArray, observed.map(_.domain.createMsg()).toArray, Array(result))
     wrt.domain.toValue(result)
   }
 
@@ -150,7 +157,7 @@ trait TermHelper[+D <: Dom] {
 
   def eval2(args: Any*): domain.Value = {
     val argSettings = createSettings(args)
-    val ev = evaluator2(argSettings)
+    val ev = evaluatorImpl(argSettings)
     ev.eval()
     domain.toValue(ev.output)
   }
@@ -209,7 +216,7 @@ trait ProxyTerm[D <: Dom] extends Term[D] {
   def evaluator() = self.evaluator()
 
 
-  override def evaluator2(in: Settings) = self.evaluator2(in)
+  override def evaluatorImpl(in: Settings) = self.evaluatorImpl(in)
 
 
   override def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
@@ -255,7 +262,7 @@ trait Var[+D <: Dom] extends Term[D] {
   }
 
 
-  override def evaluator2(in: Settings) = new Evaluator2 {
+  override def evaluatorImpl(in: Settings) = new Evaluator2 {
     def eval() = {}
 
     val input = in
@@ -439,6 +446,26 @@ class DotProduct[T1 <: VectorTerm, T2 <: VectorTerm](val arg1: T1, val arg2: T2)
       output.cont(0) = inputs(0).vect(0) dot inputs(1).vect(0)
     }
   }
+
+
+  override def composer2(args: Settings) = new Composer2(args) {
+    def eval() = {
+      output.cont(0) = input(0).vect(0) dot input(1).vect(0)
+    }
+  }
+
+
+  override def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
+    new ComposedDifferentiator2(wrt,in,err,gradientAcc) {
+
+      def localPropagate() = {
+        val scale = error.cont(0)
+
+        if (arg1.vars.nonEmpty) argErrors(0).vect.set(0, argOutputs(1).vect(0), scale)
+        if (arg2.vars.nonEmpty) argErrors(1).vect.set(0, argOutputs(0).vect(0), scale)
+
+      }
+    }
 
   def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
 

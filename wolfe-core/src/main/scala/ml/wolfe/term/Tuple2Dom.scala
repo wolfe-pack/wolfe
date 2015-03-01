@@ -23,7 +23,7 @@ class Tuple2Dom[D1 <: Dom, D2 <: Dom](val dom1: D1, val dom2: D2) extends Produc
   //trait Test extends Term
   def own(term: TypedTerm[Value]) = ???
 
-  def toMarginals(msg: Msgs, offsets: Offsets) = {
+  def toMarginals(msg: Msg, offsets: Offsets) = {
     val arg1 = dom1.toMarginals(msg, offsets)
     val arg2 = dom2.toMarginals(msg, offsets + dom1.lengths)
     (arg1, arg2)
@@ -33,14 +33,14 @@ class Tuple2Dom[D1 <: Dom, D2 <: Dom](val dom1: D1, val dom2: D2) extends Produc
     dom2.copyValue(value._2, setting, offsets + dom1.lengths)
   }
 
-  def copyMarginals(marginals: Marginals, msgs:Msgs, offsets: Offsets = Offsets()): Unit = {
+  def copyMarginals(marginals: Marginals, msgs:Msg, offsets: Offsets = Offsets()): Unit = {
     dom1.copyMarginals(marginals._1, msgs, offsets)
     dom2.copyMarginals(marginals._2, msgs, offsets + dom1.lengths)
   }
 
-  def fillZeroMsgs(target: Msgs, offsets: Offsets) = {
-    dom1.fillZeroMsgs(target, offsets)
-    dom2.fillZeroMsgs(target, offsets + dom1.lengths)
+  def fillZeroMsg(target: Msg, offsets: Offsets) = {
+    dom1.fillZeroMsg(target, offsets)
+    dom2.fillZeroMsg(target, offsets + dom1.lengths)
   }
 
   def variable(name: String, offsets: Offsets, owner: term.Var[Dom]): DomVar =

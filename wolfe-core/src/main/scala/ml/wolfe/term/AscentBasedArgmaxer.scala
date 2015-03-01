@@ -31,7 +31,7 @@ class AscentBasedArgmaxer(val obj: DoubleTerm,
   val epochs = iterations / termsPerEpoch
   var objAccumulator = 0.0
 
-  def argmax(observed: Array[Setting], msgs: Array[Msgs], result: Array[Setting]) = {
+  def argmax(observed: Array[Setting], msgs: Array[Msg], result: Array[Setting]) = {
     val bar = new ProgressBar(epochs, if (epochs < 100) 1 else epochs / 100)
     bar.start()
 

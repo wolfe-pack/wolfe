@@ -45,8 +45,8 @@ trait Dom {
   trait DomVar extends term.Var[dom.type] with DomTerm
 
   def toValue(setting: Setting, offsets: Offsets = Offsets()): Value
-  def toMarginals(msg: Msgs, offsets: Offsets = Offsets()): Marginals
-  def copyMarginals(marginals:Marginals, msgs:Msgs,offsets: Offsets = Offsets())
+  def toMarginals(msg: Msg, offsets: Offsets = Offsets()): Marginals
+  def copyMarginals(marginals:Marginals, msgs:Msg,offsets: Offsets = Offsets())
   def copyValue(value: Value, setting: Setting, offsets: Offsets = Offsets())
 
   def toSetting(value: Value): Setting = {
@@ -55,20 +55,20 @@ trait Dom {
     result
   }
 
-  def toMsgs(marginals: Marginals): Msgs = {
-    val result = createMsgs()
+  def toMsgs(marginals: Marginals): Msg = {
+    val result = createMsg()
     copyMarginals(marginals, result)
     result
   }
 
   def createSetting(): Setting = new Setting(lengths.discOff, lengths.contOff, lengths.vectOff, lengths.matsOff)
-  def createMsgs() = new Msgs(lengths.discOff, lengths.contOff, lengths.vectOff, lengths.matsOff)
-  def createZeroMsgs() = {
-    val result = createMsgs()
-    fillZeroMsgs(result)
+  def createMsg() = new Msg(lengths.discOff, lengths.contOff, lengths.vectOff, lengths.matsOff)
+  def createZeroMsg() = {
+    val result = createMsg()
+    fillZeroMsg(result)
     result
   }
-  def fillZeroMsgs(target:Msgs,offsets: Offsets = Offsets())
+  def fillZeroMsg(target:Msg,offsets: Offsets = Offsets())
   def createZeroSetting(): Setting = {
     val result = createSetting()
     copyValue(zero, result)
@@ -77,8 +77,6 @@ trait Dom {
   def variable(name: String, offsets: Offsets = Offsets(), owner: term.Var[Dom] = null): Var
 
   def Var(implicit provider:NameProvider):Var = variable(provider.newName())
-
-  def vari(implicit nameProvider: NameProvider):Var = variable(nameProvider.newName())
 
   def dynamic(name: => String, offsets: => Offsets = Offsets(), owner: term.Var[Dom] = null): Var
   def const(value: Value): Term
@@ -109,7 +107,7 @@ trait Dom {
     }
 
 
-    override def evaluator2(in: Settings) = new AbstractEvaluator2(in) {
+    override def evaluatorImpl(in: Settings) = new AbstractEvaluator2(in) {
       def eval() {}
       val output = domain.toSetting(value.asInstanceOf[domain.Value])
     }

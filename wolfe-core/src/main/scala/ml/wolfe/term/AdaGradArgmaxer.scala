@@ -43,7 +43,7 @@ class AdaGradArgmaxer(val obj: DoubleTerm,
 
   if (adaptiveVectors) gradient.foreach(_.setAdaptiveVectors(true))
 
-  def argmax(observed: Array[Setting], msgs: Array[Msgs], result: Array[Setting]) = {
+  def argmax(observed: Array[Setting], msgs: Array[Msg], result: Array[Setting]) = {
     val bar = new ProgressBar(epochs, if (epochs < 100) 1 else epochs / 100)
     bar.start()
 

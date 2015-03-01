@@ -75,3 +75,31 @@ class Argmax[D <: Dom](val obj: DoubleTerm, val wrt:Var[D]) extends Term[D] {
   def differentiator(wrt: Seq[Var[Dom]]) = ???
 }
 
+class Argmax2[D <: Dom](val obj: DoubleTerm, val wrt:Var[D]) extends Term[D] {
+  val domain = wrt.domain
+
+  val vars = obj.vars.filter(_ != wrt)
+
+  def atomsIterator = obj.atomsIterator.filter(_.ownerOrSelf != wrt)
+
+  def evaluator() = new Evaluator {
+    val maxer = obj.argmaxer(Seq(wrt))
+    def eval(inputs: Array[Setting], output: Setting) = {
+      maxer.argmax(inputs,null,Array(output))
+    }
+  }
+
+
+  override def evaluatorImpl(in: Settings) = new AbstractEvaluator2(in) {
+    val maxer = obj.argmaxerImpl(Seq(wrt))(in,null)
+    def eval() = {
+      maxer.argmax()
+    }
+
+    val output = maxer.result(0)
+  }
+
+  def differentiator(wrt: Seq[Var[Dom]]) = ???
+}
+
+

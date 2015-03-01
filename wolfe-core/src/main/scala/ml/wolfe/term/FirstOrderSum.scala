@@ -96,8 +96,8 @@ class FirstOrderSum[D <: Dom, Body <: DoubleTerm, R <: Term[VarSeqDom[D]]](val r
     this2body.linkTargetsToSource(termInputs, bodyInput)
     bodyInput(indexOfVar) = varInput
 
-    val bodyEval = body.evaluator2(bodyInput)
-    val rangeEval = range.evaluator2(rangeInput)
+    val bodyEval = body.evaluatorImpl(bodyInput)
+    val rangeEval = range.evaluatorImpl(rangeInput)
 
     val output = bodyEval.output
 
@@ -121,7 +121,7 @@ class FirstOrderSum[D <: Dom, Body <: DoubleTerm, R <: Term[VarSeqDom[D]]](val r
 
   }
 
-  override def evaluator2(in: Settings) = new AbstractEvaluator2(in)  {
+  override def evaluatorImpl(in: Settings) = new AbstractEvaluator2(in)  {
     val output = domain.createSetting()
     val loop = new Loop(in)
 
@@ -139,7 +139,7 @@ class FirstOrderSum[D <: Dom, Body <: DoubleTerm, R <: Term[VarSeqDom[D]]](val r
     new AbstractDifferentiator2(in,err,gradientAcc) {
 
       val loop = new Loop(in)
-      val eval = evaluator2(in)
+      val eval = evaluatorImpl(in)
       val output = eval.output
       val bodyDiff = body.differentiator2(wrt)(loop.bodyInput, err, gradientAccumulator.linkedSettings(vars,body.vars))
 

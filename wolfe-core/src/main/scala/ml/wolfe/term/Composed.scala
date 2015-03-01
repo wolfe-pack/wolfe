@@ -33,9 +33,9 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
 
   def composer2(args: Settings): Composer2 = ???
 
-  override def evaluator2(in: Settings) = new Evaluator2 {
+  override def evaluatorImpl(in: Settings) = new Evaluator2 {
 
-    val argEvals = arguments.map(a => a.evaluator2(in.linkedSettings(vars, a.vars)))
+    val argEvals = arguments.map(a => a.evaluatorImpl(in.linkedSettings(vars, a.vars)))
     val argOutputs = Settings.fromSeq(argEvals.map(_.output))
     val comp = composer2(argOutputs)
     val input = in

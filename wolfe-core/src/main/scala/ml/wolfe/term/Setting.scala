@@ -78,18 +78,23 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
     }
 
     def :=(scale: Double): Unit = {
-      for (i <- 0 until length) array(i) := scale
       flagAllChanged()
+      for (i <- 0 until length) array(i) := scale
+    }
+
+    override def :=(that: Buffer[FactorieVector]): Unit = {
+      flagAllChanged()
+      for (i <- 0 until length) this(i) = that(i)
     }
 
     def +=(that: Buffer[FactorieVector]): Unit = {
-      for (i <- 0 until length) add(i,that(i))
       flagAllChanged()
+      for (i <- 0 until length) add(i, that(i))
     }
 
     def addIfChanged(that: Buffer[FactorieVector]): Unit = {
       for (i <- that.changed()) {
-        add(i,that(i))
+        add(i, that(i))
       }
       addChanges(that.changed())
     }
@@ -97,10 +102,10 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
     def resetToZero(offset: Int) = array(offset) := 0
 
     override def update(index: Int, value: FactorieVector): Unit = {
-      if (adaptiveVectors) {
-        if (this(index) == null) {
-          super.update(index, value.copy)
-        } else {
+      if (this(index) == null) {
+        super.update(index, value.copy)
+      } else {
+        if (adaptiveVectors) {
           (this(index), value) match {
             case (_: DenseTensor1, target: SparseIndexedTensor1) =>
               super.update(index, target.copy)
@@ -109,10 +114,13 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
             case (_, _) =>
               this(index) := value
           }
+        } else {
+          this(index) := value
+          recordChange(index)
         }
-      } else
-        super.update(index, value)
+      }
     }
+
 
     def set(index: Int, value: FactorieVector, scale: Double): Unit = {
       update(index, value)
@@ -165,6 +173,22 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
         array(i) += that(i)
       }
       addChanges(that.changed())
+    }
+
+    override def :=(that: Buffer[FactorieMatrix]): Unit = {
+      flagAllChanged()
+      for (i <- 0 until length) this(i) = that(i)
+    }
+
+
+    override def update(index: Int, value: FactorieMatrix): Unit = {
+      if (this(index) == null) {
+        super.update(index, value.copy)
+      } else {
+        this(index) := value
+        recordChange(index)
+      }
+
     }
 
 
@@ -242,10 +266,10 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
   }
 
   def :=(src: Setting, srcOffsets: Offsets, lengths: Offsets): Unit = {
-    disc := (src.disc, srcOffsets.discOff, lengths.discOff)
-    cont := (src.cont, srcOffsets.contOff, lengths.contOff)
-    vect := (src.vect, srcOffsets.vectOff, lengths.vectOff)
-    mats := (src.mats, srcOffsets.matsOff, lengths.matsOff)
+    disc :=(src.disc, srcOffsets.discOff, lengths.discOff)
+    cont :=(src.cont, srcOffsets.contOff, lengths.contOff)
+    vect :=(src.vect, srcOffsets.vectOff, lengths.vectOff)
+    mats :=(src.mats, srcOffsets.matsOff, lengths.matsOff)
   }
 
   def ensureSparsity(): Unit = {
@@ -363,7 +387,7 @@ class VectMsg(var mean: FactorieVector = null)
 class MatsMsg(var mean: FactorieMatrix = null)
 
 
-class Msgs(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMats: Int = 0) {
+class Msg(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMats: Int = 0) {
   final var disc = Array.ofDim[DiscMsg](numDisc)
   final var cont = Array.ofDim[ContMsg](numCont)
   final var vect = Array.ofDim[VectMsg](numVect)
@@ -375,14 +399,29 @@ class Msgs(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMats: Int = 
     for (i <- 0 until vect.length) if (vect(i) != null) vect(i).mean := value
     for (i <- 0 until mats.length) if (mats(i) != null) mats(i).mean := value
   }
-
-
 }
+
+final class Msgs(val length: Int) extends IndexedSeq[Msg] {
+  val array = Array.ofDim[Msg](length)
+
+  def apply(idx: Int) = array(idx)
+
+  def update(idx: Int, msg: Msg): Unit = {
+    array(idx) = msg
+  }
+}
+
 
 final class VariableMapping(val srcIndex: Array[Int], val tgtIndex: Array[Int]) {
   def copyForwardDeep(src: Array[Setting], tgt: Array[Setting]) = {
     for (i <- 0 until srcIndex.length) tgt(tgtIndex(i)) := src(srcIndex(i))
   }
+
+  def copyForwardDeep(src: Settings, tgt: Settings) = {
+    for (i <- 0 until srcIndex.length)
+      tgt(tgtIndex(i)) := src(srcIndex(i))
+  }
+
 
   def copyForwardShallow(src: Array[Setting], tgt: Array[Setting]) = {
     for (i <- 0 until srcIndex.length) tgt(tgtIndex(i)) = src(srcIndex(i))
@@ -423,7 +462,7 @@ abstract class Buffer[T: ClassTag](val setting: Setting) {
     allChanged = false
   }
 
-  def addChanges(indices:Iterable[Int]): Unit = {
+  def addChanges(indices: Iterable[Int]): Unit = {
     if (shouldRecord) changedIndices ++= indices
   }
 
@@ -441,6 +480,10 @@ abstract class Buffer[T: ClassTag](val setting: Setting) {
   }
 
   def shouldRecord = setting.recordChangedOffsets && !allChanged
+
+  def recordChange(offset: Int): Unit = {
+    if (shouldRecord) changedIndices += offset
+  }
 
   val array = Array.ofDim[T](length)
 

@@ -43,7 +43,7 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
     result
   }
 
-  def toMarginals(msg: Msgs, offsets: Offsets) = {
+  def toMarginals(msg: Msg, offsets: Offsets) = {
     val start = startOfElements(offsets)
     val length = lengthDom.toMarginals(msg, offsets)
     //todo: if length is deterministic, only collect marginals until actual length
@@ -61,7 +61,7 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
   }
 
 
-  def copyMarginals(marginals: Marginals, msgs: Msgs, offsets: Offsets) = {
+  def copyMarginals(marginals: Marginals, msgs: Msg, offsets: Offsets) = {
     lengthDom.copyMarginals(marginals.length, msgs, offsets)
     val start = startOfElements(offsets)
     for (i <- 0 until maxLength) {
@@ -69,11 +69,11 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
     }
   }
 
-  def fillZeroMsgs(target: Msgs, offsets: Offsets) = {
-    lengthDom.fillZeroMsgs(target, offsets)
+  def fillZeroMsg(target: Msg, offsets: Offsets) = {
+    lengthDom.fillZeroMsg(target, offsets)
     val start = startOfElements(offsets)
     for (i <- 0 until maxLength) {
-      elementDom.fillZeroMsgs(target, start +(elementDom.lengths, i))
+      elementDom.fillZeroMsg(target, start +(elementDom.lengths, i))
     }
   }
 

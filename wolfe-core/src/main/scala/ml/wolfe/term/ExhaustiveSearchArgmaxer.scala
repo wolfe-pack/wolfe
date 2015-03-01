@@ -15,7 +15,7 @@ class ExhaustiveSearchArgmaxer(val obj: DoubleTerm, val wrt: Seq[Var[Dom]]) exte
   val evaluator = obj.evaluator()
   val score = obj.domain.createSetting()
 
-  def argmax(observed: Array[Setting], msgs: Array[Msgs], result: Array[Setting]) = {
+  def argmax(observed: Array[Setting], msgs: Array[Msg], result: Array[Setting]) = {
     //todo: take into account messages
     //copy observed into settingsToVary
     obs2vars.copyForwardDeep(observed, settingsToVary)
@@ -148,7 +148,7 @@ class ExhaustiveSearchMaxMarginalizer(val obj: DoubleTerm, val wrt: Seq[Var[Dom]
   val score = obj.domain.createSetting()
 
 
-  def maxMarginals(observed: Array[Setting], wrtMsgs: Array[Msgs], targetMsgs: Array[Msgs]) = {
+  def maxMarginals(observed: Array[Setting], wrtMsgs: Array[Msg], targetMsgs: Array[Msg]) = {
     for (i <- 0 until targetMsgs.length) targetMsgs(i) := Double.NegativeInfinity
     obs2full.copyForwardDeep(observed, settingsToVary)
     allSettings.iterate(settingsToVary) {

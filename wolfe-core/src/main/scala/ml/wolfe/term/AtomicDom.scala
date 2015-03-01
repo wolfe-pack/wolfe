@@ -38,11 +38,11 @@ trait GenericVectorDom extends AtomicDom {
     setting.vect(offsets.vectOff)
 
 
-  def toMarginals(msg: Msgs, offsets: Offsets) = {
+  def toMarginals(msg: Msg, offsets: Offsets) = {
     msg.vect(offsets.vectOff).mean
   }
 
-  def fillZeroMsgs(target: Msgs, offsets: Offsets) = {
+  def fillZeroMsg(target: Msg, offsets: Offsets) = {
     target.vect(offsets.vectOff) = new VectMsg(one)
   }
 
@@ -50,7 +50,7 @@ trait GenericVectorDom extends AtomicDom {
     setting.vect(offsets.vectOff) = value
 
 
-  def copyMarginals(marginals: Marginals, msgs: Msgs, offsets: Offsets) = {
+  def copyMarginals(marginals: Marginals, msgs: Msg, offsets: Offsets) = {
     msgs.vect(offsets.vectOff) = new VectMsg(marginals)
   }
 
@@ -116,7 +116,7 @@ class MatrixDom(val dim1: Int, dim2: Int) extends AtomicDom {
   def toValue(setting: Setting, offsets: Offsets) =
     setting.mats(offsets.matsOff)
 
-  def toMarginals(msg: Msgs, offsets: Offsets) = {
+  def toMarginals(msg: Msg, offsets: Offsets) = {
     msg.mats(offsets.matsOff).mean
   }
 
@@ -124,11 +124,11 @@ class MatrixDom(val dim1: Int, dim2: Int) extends AtomicDom {
     setting.mats(offsets.matsOff) = value
 
 
-  def copyMarginals(marginals: Marginals, msgs: Msgs, offsets: Offsets) = {
+  def copyMarginals(marginals: Marginals, msgs: Msg, offsets: Offsets) = {
     msgs.mats(offsets.matsOff) = new MatsMsg(marginals)
   }
 
-  def fillZeroMsgs(target: Msgs, offsets: Offsets) = {
+  def fillZeroMsg(target: Msg, offsets: Offsets) = {
     target.mats(offsets.matsOff) = new MatsMsg(zero)
   }
 
@@ -174,7 +174,7 @@ class DoubleDom extends AtomicDom {
     setting.cont(offsets.contOff)
 
 
-  def toMarginals(msg: Msgs, offsets: Offsets) = {
+  def toMarginals(msg: Msg, offsets: Offsets) = {
     msg.cont(offsets.contOff).mean
   }
 
@@ -182,11 +182,11 @@ class DoubleDom extends AtomicDom {
     setting.cont(offsets.contOff) = value
 
 
-  def copyMarginals(marginals: Marginals, msgs: Msgs, offsets: Offsets) = {
+  def copyMarginals(marginals: Marginals, msgs: Msg, offsets: Offsets) = {
     msgs.cont(offsets.contOff) = new ContMsg(marginals)
   }
 
-  def fillZeroMsgs(target: Msgs, offsets: Offsets) = {
+  def fillZeroMsg(target: Msg, offsets: Offsets) = {
     target.cont(offsets.contOff) = new ContMsg(0.0)
   }
 
@@ -210,7 +210,7 @@ class DoubleDom extends AtomicDom {
     override def argmaxer(wrt: Seq[term.Var[Dom]]) = new Argmaxer {
       val contained = wrt.contains(self)
 
-      def argmax(observed: Array[Setting], msgs: Array[Msgs], result: Array[Setting]) = {
+      def argmax(observed: Array[Setting], msgs: Array[Msg], result: Array[Setting]) = {
         result(0).cont(0) = if (contained) Double.PositiveInfinity else observed(0).cont(0)
       }
     }
@@ -238,7 +238,7 @@ trait GenericDiscreteDom[T] extends AtomicDom {
 
 
 
-  def toMarginals(msg: Msgs, offsets: Offsets) = {
+  def toMarginals(msg: Msg, offsets: Offsets) = {
     msg.disc(offsets.discOff).msg
   }
 
@@ -246,11 +246,11 @@ trait GenericDiscreteDom[T] extends AtomicDom {
     setting.disc(offsets.discOff) = valueToInt(value)
 
 
-  def copyMarginals(marginals: Marginals, msgs: Msgs, offsets: Offsets) = {
+  def copyMarginals(marginals: Marginals, msgs: Msg, offsets: Offsets) = {
     msgs.disc(offsets.discOff) = new DiscMsg(marginals.toArray)
   }
 
-  def fillZeroMsgs(target: Msgs, offsets: Offsets) = {
+  def fillZeroMsg(target: Msg, offsets: Offsets) = {
     target.disc(offsets.discOff) = new DiscMsg(domainSize)
   }
 
@@ -309,7 +309,7 @@ class RangeDom(val values: Range) extends GenericDiscreteDom[Int] {
   def sequential = new SampleSequential
 
   class SampleUniform(implicit random:Random) extends SampleTerm {
-    override def evaluator2(in: Settings) = new Evaluator(in) {
+    override def evaluatorImpl(in: Settings) = new Evaluator(in) {
       def eval() = {
         val i = random.nextInt(domainSize) + values.start
         output.disc(0) = i
@@ -319,7 +319,7 @@ class RangeDom(val values: Range) extends GenericDiscreteDom[Int] {
 
   class SampleShuffled(implicit random:Random) extends SampleTerm {
     val indexed = values.toIndexedSeq
-    override def evaluator2(in: Settings) = new Evaluator(in) {
+    override def evaluatorImpl(in: Settings) = new Evaluator(in) {
       private var shuffled = random.shuffle(indexed).toIterator
       def eval() = {
         if (!shuffled.hasNext) {
@@ -331,7 +331,7 @@ class RangeDom(val values: Range) extends GenericDiscreteDom[Int] {
   }
 
   class SampleSequential extends SampleTerm {
-    override def evaluator2(in: Settings) = new Evaluator(in) {
+    override def evaluatorImpl(in: Settings) = new Evaluator(in) {
       var iterator = values.iterator
       def eval() = {
         if (!iterator.hasNext) {

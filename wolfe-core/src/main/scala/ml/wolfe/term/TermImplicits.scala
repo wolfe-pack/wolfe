@@ -275,6 +275,17 @@ trait MathImplicits {
 
       override def argmaxer(wrt: Seq[Var[Dom]]) = factory.argmaxer(term, wrt)
     }
+
+    def argmaxBy(factory: ArgmaxerFactory2) = new ProxyTerm[TypedDom[Double]] {
+      def self = term
+
+      override def argmaxerImpl(wrt: Seq[Var[Dom]])(observed: Settings, msgs: Msgs) = {
+        factory.argmaxer(term,wrt)(observed,msgs)
+      }
+
+    }
+
+
   }
 
   implicit class RichIntTerm(term:IntTerm) {
@@ -291,6 +302,13 @@ trait MathImplicits {
     val term = obj(variable)
     new Argmax[dom.type](term, variable)
   }
+
+  def argmax2[D <: Dom](dom: D)(obj: dom.Var => DoubleTerm): Argmax2[dom.type] = {
+    val variable = dom.variable("_hidden")
+    val term = obj(variable)
+    new Argmax2[dom.type](term, variable)
+  }
+
 
 
   def max[D <: Dom](dom: D)(obj: dom.Var => DoubleTerm) = {

@@ -4,12 +4,24 @@ package ml.wolfe.term
  * @author riedel
  */
 trait Argmaxer {
-  def argmax(observed: Array[Setting], msgs: Array[Msgs], result: Array[Setting])
+  def argmax(observed: Array[Setting], msgs: Array[Msg], result: Array[Setting])
+}
+
+trait Argmaxer2 {
+  val observed:Settings
+  val msgs:Msgs
+  val result:Settings
+  def argmax()
 }
 
 trait ArgmaxerFactory {
   def argmaxer(term: DoubleTerm, wrt: Seq[Var[Dom]]): Argmaxer
 }
+
+trait ArgmaxerFactory2 {
+  def argmaxer(term: DoubleTerm, wrt: Seq[Var[Dom]])(obs:Settings,msgs:Msgs): Argmaxer2
+}
+
 
 object Argmaxer {
   val exhaustive = new ArgmaxerFactory {
@@ -35,10 +47,15 @@ object Argmaxer {
     }
   }
 
+  def adaGrad2(implicit params:AdaGradParameters) = new ArgmaxerFactory2 {
+    def argmaxer(term: DoubleTerm, wrt: Seq[Var[Dom]])(obs: Settings, msgs: Msgs) =
+      new AdaGradArgmaxer2(term,wrt,obs,msgs)
+  }
+
 }
 
 trait MaxMarginalizer {
-  def maxMarginals(observed:Array[Setting], in:Array[Msgs], out:Array[Msgs])
+  def maxMarginals(observed:Array[Setting], in:Array[Msg], out:Array[Msg])
 }
 
 
