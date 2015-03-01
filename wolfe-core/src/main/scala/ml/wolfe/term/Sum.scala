@@ -93,7 +93,7 @@ class Sum(val arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm {
   }
 
   override def composer2(args: Settings) = new Composer2(args) {
-    def eval(): Unit = {
+    def eval()(implicit execution: Execution): Unit = {
       output.cont(0) = 0.0
       for (i <- 0 until size) output.cont(0) += input(i).cont(0)
     }
@@ -112,18 +112,18 @@ class Sum(val arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm {
     val comp = composer2(argOutputs)
     val output = comp.output
 
-    def forward() = {
+    def forward()(implicit execution: Execution) = {
       argDiffs foreach (_.forward())
       comp.eval()
     }
 
-    def backward() = {
+    def backward()(implicit execution: Execution) = {
       argDiffs foreach (_.backward())
     }
   }
 }
 
-class VarSeqSum[D <: DoubleDom, T <: Term[VarSeqDom[D]]](val seq: T) extends DoubleTerm with NAry {
+class VarSeqSum[D <: TypedDom[Double], T <: Term[VarSeqDom[D]]](val seq: T) extends DoubleTerm with NAry {
 
   self =>
 

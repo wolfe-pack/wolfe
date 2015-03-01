@@ -26,7 +26,7 @@ trait TermMap[A <: Term[Dom], D <: Dom] extends Term[D] {
 
   override def evaluatorImpl(in: Settings) = new AbstractEvaluator2(in) {
     val termEval = term.evaluatorImpl(in)
-    def eval(): Unit = {
+    def eval()(implicit execution: Execution): Unit = {
       termEval.eval()
       val value = term.domain.toValue(termEval.output)
       val mapped = f(value)

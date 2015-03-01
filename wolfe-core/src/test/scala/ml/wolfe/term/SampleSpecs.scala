@@ -24,7 +24,7 @@ class SampleSpecs extends WolfeSpec {
     }
 
     "sample from a sequence" in {
-      val seq = fixedSeq(Seq(false,true)).sampleSequential
+      val seq = fixedLengthSeq(Seq(false,true)).sampleSequential
       val e = seq.clientEvaluator()
       e.eval() should be (false)
       e.eval() should be (true)
@@ -43,7 +43,7 @@ class SampleSpecs extends WolfeSpec {
     "allow calculating stochastic gradients" in {
       val n = 2
       val x = doubles.Var
-      val w = fixedSeq(0 until n)
+      val w = fixedLengthSeq(0 until n)
       val i = sampleSequential(0 until n)
       val t = x * x * w(i)
       val d = t.clientDifferentiator(x)

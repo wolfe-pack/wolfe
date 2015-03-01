@@ -45,11 +45,11 @@ trait Term[+D <: Dom] extends TermHelper[D] {
     val eval = evaluatorImpl(in)
     val output = eval.output
 
-    def forward(): Unit = {
+    def forward()(implicit execution: Execution): Unit = {
       eval.eval()
     }
 
-    def backward() {}
+    def backward()(implicit execution: Execution) {}
   }
 
   def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings): Differentiator2 =
@@ -103,10 +103,12 @@ trait TermHelper[+D <: Dom] {
   class ClientEvaluator() {
     val input = createSettings()
     val eval = evaluatorImpl(input)
+    var count = 0
 
     def eval(args: Any*): domain.Value = {
       for ((v,i) <- vars.zipWithIndex) v.domain.copyValue(args(i).asInstanceOf[v.domain.Value],input(i))
-      eval.eval()
+      eval.eval()(Execution(count))
+      count += 1
       domain.toValue(eval.output)
     }
   }
@@ -117,11 +119,13 @@ trait TermHelper[+D <: Dom] {
     val gradient = createSettings()
     val diff = differentiator2(Seq(wrt))(input,error,gradient)
     val indexOfWrt = vars.indexOf(wrt)
+    var count = 0
 
     def differentiate(args:Any*):wrt.domain.Value = {
       for ((v,i) <- vars.zipWithIndex) v.domain.copyValue(args(i).asInstanceOf[v.domain.Value],input(i))
       gradient.foreach(_.resetToZero())
-      diff.differentiate()
+      diff.differentiate()(Execution(count))
+      count += 1
       wrt.domain.toValue(gradient(indexOfWrt))
     }
 
@@ -157,7 +161,7 @@ trait TermHelper[+D <: Dom] {
   def eval2(args: Any*): domain.Value = {
     val argSettings = createSettings(args)
     val ev = evaluatorImpl(argSettings)
-    ev.eval()
+    ev.eval()(Execution(0))
     domain.toValue(ev.output)
   }
 
@@ -172,7 +176,7 @@ trait TermHelper[+D <: Dom] {
     require(args.length == vars.length, s"You need as many arguments as there are free variables (${vars.length})")
     val gradient = createZeroSettings()
     val diff = differentiator2(Seq(wrt))(createSettings(args), domain.toSetting(domain.one), gradient)
-    diff.differentiate()
+    diff.differentiate()(Execution(0))
     val indexOfWrt = vars.indexOf(wrt)
     wrt.domain.toValue(gradient(indexOfWrt))
   }
@@ -262,7 +266,7 @@ trait Var[+D <: Dom] extends Term[D] {
 
 
   override def evaluatorImpl(in: Settings) = new Evaluator2 {
-    def eval() = {}
+    def eval()(implicit execution: Execution) = {}
 
     val input = in
     val output = in(0)
@@ -274,9 +278,9 @@ trait Var[+D <: Dom] extends Term[D] {
       val output = in(0)
       val isWrt = wrt.contains(self)
 
-      def forward() {}
+      def forward()(implicit execution: Execution) {}
 
-      def backward(): Unit = {
+      def backward()(implicit execution: Execution): Unit = {
         if (isWrt) gradientAccumulator(0).addIfChanged(error)
       }
     }
@@ -448,7 +452,7 @@ class DotProduct[T1 <: VectorTerm, T2 <: VectorTerm](val arg1: T1, val arg2: T2)
 
 
   override def composer2(args: Settings) = new Composer2(args) {
-    def eval() = {
+    def eval()(implicit execution: Execution) = {
       output.cont(0) = input(0).vect(0) dot input(1).vect(0)
     }
   }
@@ -457,7 +461,7 @@ class DotProduct[T1 <: VectorTerm, T2 <: VectorTerm](val arg1: T1, val arg2: T2)
   override def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
     new ComposedDifferentiator2(wrt,in,err,gradientAcc) {
 
-      def localBackProp() = {
+      def localBackProp()(implicit execution: Execution) = {
         val scale = error.cont(0)
 
         if (arg1.vars.nonEmpty) argErrors(0).vect.set(0, argOutputs(1).vect(0), scale)
@@ -679,7 +683,7 @@ class MatrixVectorProduct[T1 <: MatrixTerm, T2 <: VectorTerm](val arg1: T1, val 
 
 
   override def composer2(args: Settings) = new Composer2(args) {
-    def eval() = {
+    def eval()(implicit execution: Execution) = {
       output.vect(0) = input(0).mats(0) * input(1).vect(0)
     }
   }
@@ -688,7 +692,7 @@ class MatrixVectorProduct[T1 <: MatrixTerm, T2 <: VectorTerm](val arg1: T1, val 
   override def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
     new ComposedDifferentiator2(wrt,in,err,gradientAcc) {
 
-      def localBackProp() = {
+      def localBackProp()(implicit execution: Execution) = {
         val A = argOutputs(0).mats(0)
         val x = argOutputs(1).vect(0)
         val errorVec = error.vect(0)
@@ -740,7 +744,7 @@ class Div[T1 <: DoubleTerm, T2 <: DoubleTerm](val arg1: T1, val arg2: T2) extend
 
 
   override def composer2(args: Settings) = new Composer2(args) {
-    def eval() = {
+    def eval()(implicit execution: Execution) = {
       output.cont(0) = input(0).cont(0) / input(1).cont(0)
     }
   }
@@ -762,7 +766,7 @@ class Div[T1 <: DoubleTerm, T2 <: DoubleTerm](val arg1: T1, val arg2: T2) extend
 
   override def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
     new ComposedDifferentiator2(wrt,in,err,gradientAcc) {
-      def localBackProp() = {
+      def localBackProp()(implicit execution: Execution) = {
         val scale = error.cont(0)
 
         val x = argOutputs(0).cont(0)
@@ -803,7 +807,7 @@ class Product(val arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm 
 
 
   override def composer2(args: Settings) = new Composer2(args) {
-    def eval() = {
+    def eval()(implicit execution: Execution) = {
       output.cont(0) = 1.0
       for (i <- 0 until input.length)
         output.cont(0) *= input(i).cont(0)
@@ -813,7 +817,7 @@ class Product(val arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm 
 
   override def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
     new ComposedDifferentiator2(wrt, in, err, gradientAcc) {
-      def localBackProp() = {
+      def localBackProp()(implicit execution: Execution) = {
         var total = error.cont(0)
         var zeros = 0
         var zeroIndex = -1
@@ -923,7 +927,7 @@ class Iverson[T <: BoolTerm](val arg: T) extends UnaryTerm[T, DoubleDom] with Co
 
 
   override def composer2(args: Settings) = new Composer2(args) {
-    def eval() = {
+    def eval()(implicit execution: Execution) = {
       output.cont(0) = if (input(0).disc(0) == 0) 0.0 else 1.0
     }
   }
@@ -947,7 +951,7 @@ class IntToDouble[T <: IntTerm](val int: T) extends ComposedDoubleTerm {
   }
 
   override def composer2(args: Settings) = new Composer2(args) {
-    def eval() = {
+    def eval()(implicit execution: Execution) = {
       output.cont(0) = input(0).disc(0)
     }
   }

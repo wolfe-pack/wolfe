@@ -41,7 +41,7 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
     val input = in
     val output = comp.output
 
-    def eval() = {
+    def eval()(implicit execution:Execution) = {
       argEvals foreach (_.eval())
       comp.eval()
     }
@@ -66,14 +66,14 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
     /**
      * update argErrors based on incoming error and current argOutputs (activations)
      */
-    def localBackProp()
+    def localBackProp()(implicit execution:Execution)
 
-    def forward() = {
+    def forward()(implicit execution:Execution) = {
       argDiffs foreach (_.forward())
       comp.eval()
     }
 
-    def backward() = {
+    def backward()(implicit execution:Execution) = {
       localBackProp()
       argDiffs foreach (_.backward())
     }

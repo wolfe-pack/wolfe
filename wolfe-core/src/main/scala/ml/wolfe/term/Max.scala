@@ -92,7 +92,7 @@ class Argmax2[D <: Dom](val obj: DoubleTerm, val wrt:Var[D]) extends Term[D] {
 
   override def evaluatorImpl(in: Settings) = new AbstractEvaluator2(in) {
     val maxer = obj.argmaxerImpl(Seq(wrt))(in,null)
-    def eval() = {
+    def eval()(implicit execution: Execution) = {
       maxer.argmax()
     }
 

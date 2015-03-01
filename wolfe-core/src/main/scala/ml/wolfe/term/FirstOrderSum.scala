@@ -101,8 +101,8 @@ class FirstOrderSum[D <: Dom, Body <: DoubleTerm, R <: Term[VarSeqDom[D]]](val r
 
     val output = bodyEval.output
 
-    def apply(procedure: => Unit): Unit = {
-      rangeEval.eval()
+    def apply(execution:Execution)(procedure: => Unit): Unit = {
+      rangeEval.eval()(execution)
       var result = 0.0
       val length = rangeEval.output.disc(0)
       val elemLength = range.domain.elementDom.lengths
@@ -111,7 +111,7 @@ class FirstOrderSum[D <: Dom, Body <: DoubleTerm, R <: Term[VarSeqDom[D]]](val r
         //copy element into body input at variable index
         varInput :=(rangeEval.output, offset, elemLength)
         //evaluate body
-        bodyEval.eval()
+        bodyEval.eval()(execution)
         //add to result
         procedure
         //move to next slot in range
@@ -125,9 +125,9 @@ class FirstOrderSum[D <: Dom, Body <: DoubleTerm, R <: Term[VarSeqDom[D]]](val r
     val output = domain.createSetting()
     val loop = new Loop(in)
 
-    def eval() = {
+    def eval()(implicit execution:Execution) = {
       var result = 0.0
-      loop {
+      loop(execution) {
         result += loop.output.cont(0)
       }
       output.cont(0) = result
@@ -143,12 +143,12 @@ class FirstOrderSum[D <: Dom, Body <: DoubleTerm, R <: Term[VarSeqDom[D]]](val r
       val output = eval.output
       val bodyDiff = body.differentiator2(wrt)(loop.bodyInput, err, gradientAccumulator.linkedSettings(vars,body.vars))
 
-      def forward() = {
+      def forward()(implicit execution:Execution) = {
         eval.eval()
       }
 
-      def backward() = {
-        loop {
+      def backward()(implicit execution:Execution) = {
+        loop(execution) {
           bodyDiff.differentiate()
         }
       }

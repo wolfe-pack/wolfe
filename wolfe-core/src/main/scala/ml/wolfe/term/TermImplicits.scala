@@ -10,16 +10,17 @@ import scala.language.implicitConversions
  */
 object TermImplicits extends NameProviderImplicits with MathImplicits with Stochastic {
 
-  implicit val doubles: DoubleDom = Dom.doubles
-  implicit val bools: BooleanDom = Dom.bools
-  implicit val ints:IntDom = Dom.ints
+  implicit val doubles: Dom.doubles.type = Dom.doubles
+  implicit val bools: Dom.bools.type = Dom.bools
+  implicit val ints: Dom.ints.type = Dom.ints
 
   def discrete[T](args: T*) = new DiscreteDom[T](args.toIndexedSeq)
 
   def dom[T](args: Seq[T]) = new DiscreteDom[T](args.toIndexedSeq)
+
   def dom[T](args: Range) = new RangeDom(args)
 
-  implicit def rangeToDom(range:Range):RangeDom = new RangeDom(range)
+  implicit def rangeToDom(range: Range): RangeDom = new RangeDom(range)
 
   implicit def domToIterable(dom: Dom): Iterable[dom.Value] = dom.toIterable
 
@@ -28,25 +29,23 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
   def varSeqs[D <: Dom](elements: D, minLength: Int, maxLength: Int): VarSeqDom[elements.type] =
     new VarSeqDom[elements.type](elements, maxLength, minLength)
 
-  def fixedLengthSeqs[D <: Dom](elements: D, length: Int): VarSeqDom[elements.type] = varSeqs(elements,length,length)
+  def fixedLengthSeqs[D <: Dom](elements: D, length: Int): VarSeqDom[elements.type] = varSeqs(elements, length, length)
 
-  def fixedSeq[T : TypedDom](elements:Seq[T]) = {
-    val dom = implicitly[TypedDom[T]]
+  def fixedLengthSeq[T](elements: Seq[T])(implicit dom: TypedDom[T]) = {
     fixedLengthSeqs(dom, elements.length).Const(elements.toIndexedSeq)
   }
 
-  implicit class ConvertableToTerm[T,D<:TypedDom[T]](value:T)(implicit val domain:D) {
-    def toTerm:domain.Term = domain.Const(value)
+  implicit class ConvertableToTerm[T, D <: TypedDom[T]](value: T)(implicit val domain: D) {
+    def toTerm: domain.Term = domain.Const(value)
   }
 
-  implicit class RichRange(values:Range) {
+  implicit class RichRange(values: Range) {
     def toDom = new RangeDom(values)
   }
 
-  implicit class RichIndexedSeq[T](values:IndexedSeq[T]) {
+  implicit class RichIndexedSeq[T](values: IndexedSeq[T]) {
     def toDom = new DiscreteDom[T](values)
   }
-
 
 
   def seq[E <: Dom](dom: SeqDom[E])(elems: dom.elementDom.Term*): dom.SeqDomTermImpl = new dom.SeqDomTermImpl {
@@ -65,10 +64,10 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
   //      val domain:dom.type = dom
   //    }
 
-  def VarSeq[D <: Dom](length: TypedTerm[Int], args: IndexedSeq[Term[D]]):Term[VarSeqDom[D]] = {
-    val dom = fixedLengthSeqs[D](args.head.domain,args.length)
-    dom.Term(length,args.asInstanceOf[IndexedSeq[dom.elementDom.Term]])
-//    new VarSeqConstructor[D](length, args)
+  def VarSeq[D <: Dom](length: TypedTerm[Int], args: IndexedSeq[Term[D]]): Term[VarSeqDom[D]] = {
+    val dom = fixedLengthSeqs[D](args.head.domain, args.length)
+    dom.Term(length, args.asInstanceOf[IndexedSeq[dom.elementDom.Term]])
+    //    new VarSeqConstructor[D](length, args)
   }
 
   def stochastic[T](gen: Dynamic[T])(arg: Dynamic[T] => DoubleTerm) = {
@@ -125,7 +124,7 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
   //  }
 
   implicit class RichMonadTerm[A <: Term[Dom]](val termToBeMapped: A) {
-    def map[B: TypedDom](fun: termToBeMapped.domain.Value => B)(implicit targetDom:TypedDom[B]):targetDom.Term= {
+    def map[B: TypedDom](fun: termToBeMapped.domain.Value => B)(implicit targetDom: TypedDom[B]): targetDom.Term = {
       val result = new TermMap[A, targetDom.type] {
         val term: termToBeMapped.type = termToBeMapped
         val domain: targetDom.type = targetDom
@@ -154,28 +153,28 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
   }
 
 
-////  implicit class RichVarSeqTerm[E <: Dom, T <: Term[VarSeqDom[E]]](val term: T) {
-////    def apply(index: Int) =
-////      new VarSeqApply[E, T, term.domain.lengthDom.Term](term, term.domain.lengthDom.const(index))
-////
-////    def length = new VarSeqLength[T](term)
-////
-////    //def apply(index:Int) = term.elements(index)
-////
-////    def sum(body: term.domain.elementDom.Var => DoubleTerm) = {
-////      new FirstOrderSum[E,DoubleTerm,T](term,???,???)
-////    }
-////
-////  }
-//  implicit class RichVarSeqTerm[T <: Term[VarSeqDom[Dom]]](val term:T) {
-//    type NewE = term.domain.elementDom.type
-//    type NewT = Term[VarSeqDom[term.domain.elementDom.type]]
-//    type ResultType = Term[term.domain.elementDom.type]
-//    type ResultTypeOld = VarSeqApply[NewE,NewT,TypedTerm[Int]]
-//
-//  def apply(index:TypedTerm[Int]):ResultType =
-//      new VarSeqApply[Dom,Term[VarSeqDom[Dom]],TypedTerm[Int]](term,index).asInstanceOf[ResultType]
-//  }
+  ////  implicit class RichVarSeqTerm[E <: Dom, T <: Term[VarSeqDom[E]]](val term: T) {
+  ////    def apply(index: Int) =
+  ////      new VarSeqApply[E, T, term.domain.lengthDom.Term](term, term.domain.lengthDom.const(index))
+  ////
+  ////    def length = new VarSeqLength[T](term)
+  ////
+  ////    //def apply(index:Int) = term.elements(index)
+  ////
+  ////    def sum(body: term.domain.elementDom.Var => DoubleTerm) = {
+  ////      new FirstOrderSum[E,DoubleTerm,T](term,???,???)
+  ////    }
+  ////
+  ////  }
+  //  implicit class RichVarSeqTerm[T <: Term[VarSeqDom[Dom]]](val term:T) {
+  //    type NewE = term.domain.elementDom.type
+  //    type NewT = Term[VarSeqDom[term.domain.elementDom.type]]
+  //    type ResultType = Term[term.domain.elementDom.type]
+  //    type ResultTypeOld = VarSeqApply[NewE,NewT,TypedTerm[Int]]
+  //
+  //  def apply(index:TypedTerm[Int]):ResultType =
+  //      new VarSeqApply[Dom,Term[VarSeqDom[Dom]],TypedTerm[Int]](term,index).asInstanceOf[ResultType]
+  //  }
 
 
 }
@@ -213,7 +212,7 @@ trait MathImplicits {
 
   def log[T <: DoubleTerm](term: T) = new Log(term)
 
-//  def I[T <: BoolTerm](term: T) = new Iverson(term)
+  //  def I[T <: BoolTerm](term: T) = new Iverson(term)
   def I(term: BoolTerm) = new Iverson(term)
 
   def sigmVec[T <: VectorTerm](term: T) = new VectorSigmoid(term)
@@ -258,17 +257,19 @@ trait MathImplicits {
   }
 
   implicit class RichDoubleTerm(term: DoubleTerm) {
-    def +(that: DoubleTerm) = new Sum(IndexedSeq(term, that))
+    def +(that: DoubleTerm) = Dom.doubles.own(new Sum(IndexedSeq(term, that)))
 
-    def -(that: DoubleTerm) = new Sum(IndexedSeq(term, that * (-1.0)))
+    def -(that: DoubleTerm) = Dom.doubles.own(new Sum(IndexedSeq(term, that * (-1.0))))
 
-    def *(that: DoubleTerm): Product = new Product(IndexedSeq(term, that))
+    //def *(that: DoubleTerm): Product = new Product(IndexedSeq(term, that))
 
-//    def *(that: IntTerm): Product = new Product(IndexedSeq(term, new IntToDouble(that)))
+    def *(that: DoubleTerm) = Dom.doubles.own(new Product(IndexedSeq(term, that)))
+
+    //    def *(that: IntTerm): Product = new Product(IndexedSeq(term, new IntToDouble(that)))
 
     def *(that: VectorTerm) = new VectorScaling(that, term)
 
-    def /(that: DoubleTerm) = new Div(term, that)
+    def /(that: DoubleTerm) = Dom.doubles.own(new Div(term, that))
 
     def unary_- = term * (-1.0)
 
@@ -282,7 +283,7 @@ trait MathImplicits {
       def self = term
 
       override def argmaxerImpl(wrt: Seq[Var[Dom]])(observed: Settings, msgs: Msgs) = {
-        factory.argmaxer(term,wrt)(observed,msgs)
+        factory.argmaxer(term, wrt)(observed, msgs)
       }
 
     }
@@ -290,13 +291,14 @@ trait MathImplicits {
 
   }
 
-  implicit class RichIntTerm(term:IntTerm) {
-    def +(that:IntTerm) = new BinaryIntFun(term,that,_ + _)
-    def -(that:IntTerm) = new BinaryIntFun(term,that,_ - _)
-    def *(that:IntTerm) = new BinaryIntFun(term,that,_ * _)
+  implicit class RichIntTerm(term: IntTerm) {
+    def +(that: IntTerm) = new BinaryIntFun(term, that, _ + _)
+
+    def -(that: IntTerm) = new BinaryIntFun(term, that, _ - _)
+
+    def *(that: IntTerm) = new BinaryIntFun(term, that, _ * _)
 
   }
-
 
 
   def argmax[D <: Dom](dom: D)(obj: dom.Var => DoubleTerm): Argmax[dom.type] = {
@@ -312,7 +314,6 @@ trait MathImplicits {
   }
 
 
-
   def max[D <: Dom](dom: D)(obj: dom.Var => DoubleTerm) = {
     val variable = dom.variable("_hidden")
     val term = obj(variable)
@@ -323,20 +324,19 @@ trait MathImplicits {
 
   def sum(args: DoubleTerm*) = new Sum(args.toIndexedSeq)
 
-  def varSeqSum[T <: Term[VarSeqDom[DoubleDom]]](args: T) = new VarSeqSum[DoubleDom, T](args)
+  def varSeqSum[T <: Term[VarSeqDom[TypedDom[Double]]]](args: T) = new VarSeqSum[TypedDom[Double], T](args)
 
-  def sum2[E <: Dom, T <: Term[VarSeqDom[E]], Body <: DoubleTerm](indices:T)(body:indices.domain.elementDom.Var => Body) = {
+  def sum2[E <: Dom, T <: Term[VarSeqDom[E]], Body <: DoubleTerm](indices: T)(body: indices.domain.elementDom.Var => Body) = {
     val variable = indices.domain.elementDom.variable("_i")
     val instantiatedBody = body(variable)
-    new FirstOrderSum[E,Body,T](indices,variable,instantiatedBody)
+    new FirstOrderSum[E, Body, T](indices, variable, instantiatedBody)
   }
 
-  def sum[T <: Term[VarSeqDom[Dom]],Body <: DoubleTerm](indices:T)(body:indices.domain.elementDom.Var => Body) =
-    sum2[Dom,Term[VarSeqDom[Dom]],Body](indices)(body)
+  def sum[T <: Term[VarSeqDom[Dom]], Body <: DoubleTerm](indices: T)(body: indices.domain.elementDom.Var => Body) =
+    sum2[Dom, Term[VarSeqDom[Dom]], Body](indices)(body)
 
 
-
-    def oneHot(index: Int, value: Double = 1.0)(implicit dom: VectorDom) =
+  def oneHot(index: Int, value: Double = 1.0)(implicit dom: VectorDom) =
     dom.Const(new SingletonTensor1(dom.dim, index, value))
 
 
@@ -363,6 +363,8 @@ trait MathImplicits {
 }
 
 trait Stochastic {
+
   import TermImplicits._
-  def sampleSequential(range:Range) = dom(range).sequential
+
+  def sampleSequential(range: Range) = dom(range).sequential
 }

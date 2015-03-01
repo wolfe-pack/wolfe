@@ -157,6 +157,10 @@ object Build extends Build {
   lazy val jamr = ProjectRef(uri("git://github.com/jflanigan/jamr.git"), "jamr")
   lazy val berkNER = ProjectRef(uri("git://github.com/gregdurrett/berkeley-entity.git"), "berkeley-entity")
 
+  lazy val macroSettings = Seq(
+    addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0-M1" cross CrossVersion.full)
+  )
+
   lazy val root = Project(
     id = "wolfe",
     base = file("."),
@@ -166,10 +170,7 @@ object Build extends Build {
   lazy val core = Project(
     id = "wolfe-core",
     base = file("wolfe-core"),
-    settings = buildSettings ++ globalSettings ++ coreDependencies ++ Seq(
-      addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0-M1" cross CrossVersion.full)
-    )
-  ) dependsOn util % "test->test;compile->compile"
+    settings = buildSettings ++ globalSettings ++ coreDependencies ++ macroSettings) dependsOn util % "test->test;compile->compile"
 
   lazy val nlp = Project(
     id = "wolfe-nlp",
@@ -180,16 +181,14 @@ object Build extends Build {
   lazy val util = Project(
     id = "wolfe-util",
     base = file("wolfe-util"),
-    settings = buildSettings ++ globalSettings ++ utilDependencies ++ Seq(
-      addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0-M1" cross CrossVersion.full)
-    )
+    settings = buildSettings ++ globalSettings ++ utilDependencies ++ macroSettings
   )
 
 
   lazy val examples = Project(
     id = "wolfe-examples",
     base = file("wolfe-examples"),
-    settings = buildSettings ++ globalSettings
+    settings = buildSettings ++ globalSettings ++ macroSettings
   ) dependsOn(
   core % "test->test;compile->compile",
   nlp % "test->test;compile->compile",

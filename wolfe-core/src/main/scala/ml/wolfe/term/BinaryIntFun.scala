@@ -11,7 +11,7 @@ class BinaryIntFun[T1 <: IntTerm, T2 <:IntTerm](val a1:T1, val a2:T2, fun:(Int,I
 
 
   override def composer2(args: Settings) = new Composer2(args) {
-    def eval() = {
+    def eval()(implicit execution: Execution) = {
       output.disc(0) = fun(input(0).disc(0),input(1).disc(0))
     }
   }

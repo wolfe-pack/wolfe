@@ -146,6 +146,9 @@ object CaseClassDom {
           class $domClassName[..$argDomTypeParameters](..$domConstructorArgs) extends ml.wolfe.term.ProductDom {
             _dom =>
 
+            import ml.wolfe.term._
+
+
             type Value = $caseClassTypeName
             type Var = DomVar
             type Term = DomTerm

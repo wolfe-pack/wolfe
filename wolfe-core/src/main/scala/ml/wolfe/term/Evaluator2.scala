@@ -6,8 +6,10 @@ package ml.wolfe.term
 trait Evaluator2 {
   val input:Settings
   val output:Setting
-  def eval()
+  def eval()(implicit execution:Execution)
 }
+
+case class Execution(num:Int)
 
 trait Differentiator2 {
   val input:Settings
@@ -15,10 +17,10 @@ trait Differentiator2 {
   val gradientAccumulator:Settings
   val error:Setting
 
-  def forward()
-  def backward()
+  def forward()(implicit execution:Execution)
+  def backward()(implicit execution:Execution)
 
-  def differentiate(): Unit = {
+  def differentiate()(implicit execution:Execution = Execution(0)): Unit = {
     forward()
     backward()
   }

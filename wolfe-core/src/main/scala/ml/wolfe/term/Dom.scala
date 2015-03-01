@@ -105,7 +105,7 @@ trait Dom {
 
 
     override def evaluatorImpl(in: Settings) = new AbstractEvaluator2(in) {
-      def eval() {}
+      def eval()(implicit execution: Execution) {}
       val output = domain.toSetting(value.asInstanceOf[domain.Value])
     }
 

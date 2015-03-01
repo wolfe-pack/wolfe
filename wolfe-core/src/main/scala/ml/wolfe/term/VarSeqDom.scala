@@ -106,7 +106,7 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
 
     def sampleShuffled(implicit random: Random) = apply(indexDom.shuffled)
 
-    def sampleSequential = apply(indexDom.sequential)
+    def sampleSequential:elementDom.Term = apply(indexDom.sequential)
 
     def sampleUniform(implicit random: Random) = apply(indexDom.uniform)
 
@@ -150,7 +150,7 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
 
 
     override def composer2(args: Settings) = new Composer2(args) {
-      def eval() = {
+      def eval()(implicit execution: Execution) = {
         output.disc(0) = input(0).disc(0)
         var offset = Offsets(discOff = 1)
         for (i <- 1 until input.length) {
@@ -165,7 +165,7 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
       require(length.vars.forall(v => !wrt.contains(v)), "Can't differentiate length term in sequence constructor")
       new ComposedDifferentiator2(wrt, in, err, gradientAcc) {
 
-        def localBackProp() = {
+        def localBackProp()(implicit execution: Execution) = {
           //each argument will get its error signal from a subsection of the outError
           val length = argOutputs(0).disc(0)
           var offsets = Offsets(discOff = 1)
@@ -226,7 +226,7 @@ class VarSeqLength[S <: Term[VarSeqDom[_]]](val seq: S) extends Composed[TypedDo
 
 
   override def composer2(args: Settings) = new Composer2(args) {
-    def eval() = {
+    def eval()(implicit execution: Execution) = {
       output.disc(0) = input(0).disc(0)
 
     }
@@ -255,7 +255,7 @@ class VarSeqApply[+E <: Dom, S <: Term[VarSeqDom[E]], I <: Term[TypedDom[Int]]](
 
 
   override def composer2(args: Settings) = new Composer2(args) {
-    def eval() = {
+    def eval()(implicit execution: Execution) = {
       val index = input(1).disc(0)
       val offset = (seq.domain.elementDom.lengths * index) + Offsets(discOff = 1)
       output :=(input(0), offset, seq.domain.elementDom.lengths)
@@ -268,7 +268,7 @@ class VarSeqApply[+E <: Dom, S <: Term[VarSeqDom[E]], I <: Term[TypedDom[Int]]](
     new ComposedDifferentiator2(wrt, in, err, gradientAcc) {
       argErrors(0).recordChangedOffsets = true
 
-      def localBackProp() = {
+      def localBackProp()(implicit execution: Execution) = {
         val length = argOutputs(0).disc(0)
         val index = argOutputs(1).disc(0)
         val offset = seq.domain.elementDom.lengths * index + Offsets(discOff = 1)

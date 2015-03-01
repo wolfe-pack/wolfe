@@ -316,7 +316,7 @@ class RangeDom(val values: Range) extends GenericDiscreteDom[Int] {
 
   class SampleUniform(implicit random:Random) extends SampleTerm {
     override def evaluatorImpl(in: Settings) = new Evaluator(in) {
-      def eval() = {
+      def eval()(implicit execution: Execution) = {
         val i = random.nextInt(domainSize) + values.start
         output.disc(0) = i
       }
@@ -327,7 +327,7 @@ class RangeDom(val values: Range) extends GenericDiscreteDom[Int] {
     val indexed = values.toIndexedSeq
     override def evaluatorImpl(in: Settings) = new Evaluator(in) {
       private var shuffled = random.shuffle(indexed).toIterator
-      def eval() = {
+      def eval()(implicit execution: Execution) = {
         if (!shuffled.hasNext) {
           shuffled = random.shuffle(indexed).toIterator
         }
@@ -339,7 +339,7 @@ class RangeDom(val values: Range) extends GenericDiscreteDom[Int] {
   class SampleSequential extends SampleTerm {
     override def evaluatorImpl(in: Settings) = new Evaluator(in) {
       var iterator = values.iterator
-      def eval() = {
+      def eval()(implicit execution: Execution) = {
         if (!iterator.hasNext) {
           iterator = values.iterator
         }

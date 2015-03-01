@@ -126,7 +126,7 @@ trait ProductDom extends Dom {
     override def composer2(args: Settings) = new Composer2(args) {
       val lengths = arguments.map(_.domain.lengths).toArray
 
-      def eval() = {
+      def eval()(implicit execution: Execution) = {
         var off = Offsets()
         for (i <- 0 until input.length) {
           input(i).copyTo(output,off,1)

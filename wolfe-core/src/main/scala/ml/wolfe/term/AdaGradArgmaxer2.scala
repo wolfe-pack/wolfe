@@ -67,7 +67,7 @@ class AdaGradArgmaxer2(val obj: DoubleTerm,
       gradient foreach (_.resetToZero())
 
       //add term gradient into result gradient
-      diff.differentiate()
+      diff.differentiate()(Execution(iteration))
 
       //now update the momentum, need to call atoms again because atoms may have changed if objective is dynamic
       addSquared(gradient, momentum)
