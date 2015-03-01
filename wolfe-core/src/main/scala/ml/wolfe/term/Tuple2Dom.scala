@@ -13,6 +13,9 @@ class Tuple2Dom[D1 <: Dom, D2 <: Dom](val dom1: D1, val dom2: D2) extends Produc
   type Marginals = (dom1.Marginals, dom2.Marginals)
 
   val lengths = dom1.lengths + dom2.lengths
+
+  override val dimensions = dom1.dimensions + dom2.dimensions
+
   def toValue(setting: Setting, offsets: Offsets = Offsets()) = {
     val arg1 = dom1.toValue(setting, offsets)
     val arg2 = dom2.toValue(setting, offsets + dom1.lengths)

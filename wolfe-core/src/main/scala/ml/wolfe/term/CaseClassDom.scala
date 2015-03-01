@@ -78,6 +78,7 @@ object CaseClassDom {
 
         //lengths of argument domains
         val argLengths = argNames.map(a => q"$self.$a.lengths")
+        val argDimensions = argNames.map(a => q"$self.$a.dimensions")
 
         //provides the offsets for each argument
         def argOffsets(initOffset: Tree, argName: TermName) = reduce(initOffset :: argLengths.take(argName2Index(argName)))
@@ -94,6 +95,8 @@ object CaseClassDom {
 
         //the length of this domain
         val lengths = reduce(argLengths)
+        val dimensions = reduce(argDimensions)
+
 
         //create a list of trees with a given argument name (_1) and offsets (_2)
         def withOffsets(initOffsets: Tree = q"_offsets")(body: (TermName, Tree) => Tree) = {
@@ -150,6 +153,7 @@ object CaseClassDom {
             def own(term: TypedTerm[Value]) = ???
 
             def lengths = $lengths
+            override val dimensions = $dimensions
 
             def one = new $caseClassTypeName(..$ones)
             def zero = new $caseClassTypeName(..$zeros)

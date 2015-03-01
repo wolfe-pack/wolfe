@@ -529,6 +529,16 @@ object VariableMapping {
   }
 }
 
+case class Dimensions(discDims:Array[Range] = Array.empty) {
+  def +(that:Dimensions) = copy(discDims ++ that.discDims)
+  def *(times:Int) = {
+    val result = Array.ofDim[Range](discDims.length * times)
+    for (i <- 0 until times)
+      System.arraycopy(discDims,0,result,i * discDims.length,discDims.length)
+    Dimensions(result)
+  }
+}
+
 case class Offsets(discOff: Int = 0, contOff: Int = 0, vectOff: Int = 0, matsOff: Int = 0) {
   def +(disc: Int, cont: Int, vect: Int, mats: Int) = Offsets(discOff + disc, contOff + cont, vectOff + vect, matsOff + mats)
 

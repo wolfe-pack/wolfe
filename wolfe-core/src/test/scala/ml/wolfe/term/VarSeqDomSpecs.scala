@@ -22,7 +22,7 @@ class VarSeqDomSpecs extends WolfeSpec {
       val x = varSeqs(bools, 0, n).Var
       val i = dom(0 until n).Var
       val value = IndexedSeq(true, false, true)
-      x(i).eval(value, 1) should be(false)
+      x(i).eval2(value, 1) should be(false)
     }
 
     "support constructing sequence terms" in {
@@ -30,7 +30,7 @@ class VarSeqDomSpecs extends WolfeSpec {
       val i = dom(0 until n).Var
       val b = bools.Var
       val term = VarSeq(i, IndexedSeq(b, !b, b))
-      term.eval(2, false) should be(IndexedSeq(false, true))
+      term.eval2(2, false) should be(IndexedSeq(false, true))
     }
 
     "supports gradients for sequence arguments" in {
@@ -66,11 +66,11 @@ class VarSeqDomSpecs extends WolfeSpec {
       val x = xs.Var
       val t = x(i)
       val args = IndexedSeq(IndexedSeq(1.0, 2.0), IndexedSeq(3.0, 4.0))
-      t.eval(args, 0) should be(IndexedSeq(1.0, 2.0))
-      t.eval(args, 1) should be(IndexedSeq(3.0, 4.0))
+      t.eval2(args, 0) should be(IndexedSeq(1.0, 2.0))
+      t.eval2(args, 1) should be(IndexedSeq(3.0, 4.0))
 
-      t(i).eval(args, 0) should be(1.0)
-      t(i).eval(args, 1) should be(4.0)
+      t(i).eval2(args, 0) should be(1.0)
+      t(i).eval2(args, 1) should be(4.0)
     }
 
   }

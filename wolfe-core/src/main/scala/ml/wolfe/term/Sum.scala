@@ -132,8 +132,6 @@ class VarSeqSum[D <: DoubleDom, T <: Term[VarSeqDom[D]]](val seq: T) extends Dou
   val (length, elements) = seq match {
     case s: seq.domain.Constructor =>
       s.length -> s.elements
-    case s: VarSeqConstructor[_] =>
-      s.length -> s.elements
     case _ =>
       val l = new VarSeqLength[T](seq)
       val e = for (i <- 0 until seq.domain.maxLength) yield

@@ -11,7 +11,7 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
 
   dom =>
 
-  val lengthDom = new RangeDom(Range(minLength, maxLength))
+  val lengthDom = new RangeDom(Range(minLength, maxLength + 1))
 
   type Value = IndexedSeq[elementDom.Value]
   type Var = DomVar
@@ -78,6 +78,7 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
   }
 
   val lengths = (elementDom.lengths * maxLength) + Offsets(discOff = 1)
+  override val dimensions = Dimensions(Array(minLength until maxLength + 1)) + elementDom.dimensions * maxLength
 
   def variable(name: String, staticOffsets: Offsets = Offsets(), owner: term.Var[Dom]): Var =
     new DomVar(name, staticOffsets, owner)
@@ -223,6 +224,14 @@ class VarSeqLength[S <: Term[VarSeqDom[_]]](val seq: S) extends Composed[TypedDo
     }
   }
 
+
+  override def composer2(args: Settings) = new Composer2(args) {
+    def eval() = {
+      output.disc(0) = input(0).disc(0)
+
+    }
+  }
+
   def differentiator(wrt: Seq[Var[Dom]]) = ???
 }
 
@@ -292,50 +301,3 @@ class VarSeqApply[+E <: Dom, S <: Term[VarSeqDom[E]], I <: Term[TypedDom[Int]]](
 
 }
 
-class VarSeqConstructor[E <: Dom](val length: TypedTerm[Int], val elements: IndexedSeq[term.Term[E]]) extends Composed[VarSeqDom[E]] {
-  def apply(index: Int) = elements(index)
-
-  type ArgumentType = term.Term[Dom]
-
-  def arguments = length +: elements
-
-  val domain = new VarSeqDom[E](elements.head.domain, elements.size, 0)
-
-  def copy(args: IndexedSeq[ArgumentType]) = new VarSeqConstructor(
-    args(0).asInstanceOf[TypedTerm[Int]],
-    args.drop(1).asInstanceOf[IndexedSeq[Term[E]]])
-
-  def composer() = new Evaluator {
-
-    def eval(inputs: Array[Setting], output: Setting) = {
-      //todo: adapt
-      //todo: evaluate length first, and then only update the relevant elements
-      val length = inputs(0).disc(0)
-      for (i <- 0 until length) {
-        inputs(i + 1).copyTo(output, Offsets(), 0, domain.elementDom.lengths, i, domain.elementDom.lengths, tgtOffsets = Offsets(discOff = 1))
-      }
-      output.disc(0) = length
-    }
-  }
-
-  def differentiator(wrt: Seq[term.Var[Dom]]) = new ComposedDifferentiator {
-    //todo: adapt
-    require(length.vars.forall(v => !wrt.contains(v)), "Can't differentiate length term in sequence constructor")
-
-    def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]) = {
-      //each argument will get its error signal from a subsection of the outError
-      val length = argOutputs(0).disc(0)
-      for (i <- 1 until length) {
-        val offsets = (domain.elementDom.lengths * i) + Offsets(discOff = 1)
-        for (j <- 0 until domain.elementDom.lengths.contOff) {
-          gradient(i).cont(j) = outError.cont(offsets.contOff + j)
-        }
-        for (j <- 0 until domain.elementDom.lengths.vectOff) {
-          gradient(i).vect(j) := outError.vect(offsets.vectOff + j)
-        }
-      }
-    }
-
-    def withRespectTo = wrt
-  }
-}

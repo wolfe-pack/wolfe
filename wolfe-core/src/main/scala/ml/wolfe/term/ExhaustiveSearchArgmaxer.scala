@@ -1,11 +1,12 @@
 package ml.wolfe.term
 
-import ml.wolfe.term.ExhaustiveSearch.AllSettings
 
 /**
  * @author riedel
  */
 class ExhaustiveSearchArgmaxer(val obj: DoubleTerm, val wrt: Seq[Var[Dom]]) extends Argmaxer {
+  import ml.wolfe.term.ExhaustiveSearch.AllSettings
+
   val observedVars = obj.vars.filterNot(wrt.contains)
   val settingsToVary = obj.vars.map(_.domain.createSetting()).toArray
   val obs2vars = VariableMapping(observedVars, obj.vars)
@@ -31,6 +32,10 @@ class ExhaustiveSearchArgmaxer(val obj: DoubleTerm, val wrt: Seq[Var[Dom]]) exte
   }
 
 }
+
+
+
+
 
 object ExhaustiveSearch {
 
@@ -135,6 +140,8 @@ object ExhaustiveSearch {
  * @author riedel
  */
 class ExhaustiveSearchMaxMarginalizer(val obj: DoubleTerm, val wrt: Seq[Var[Dom]], target: Seq[Var[Dom]]) extends MaxMarginalizer {
+  import ml.wolfe.term.ExhaustiveSearch.AllSettings
+
   require(wrt.forall(_.domain.isDiscrete), "Cannot do exhaustive search over continuous domains")
   val observedVars = obj.vars.filterNot(v => wrt.contains(v) || target.contains(v))
   val settingsToVary = obj.vars.map(_.domain.createSetting()).toArray

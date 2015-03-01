@@ -162,6 +162,8 @@ class BooleanDom extends GenericDiscreteDom[Boolean] {
 
   def one = true
   def zero = false
+
+  override val dimensions = Dimensions(Array(0 until 2))
 }
 
 class DoubleDom extends AtomicDom {
@@ -282,6 +284,8 @@ class DiscreteDom[T](val values: IndexedSeq[T]) extends GenericDiscreteDom[T] {
   def domainSize = values.size
   def one = values.last
   def zero = values.head
+
+  override val dimensions = Dimensions(Array(values.indices))
 }
 
 class RangeDom(val values: Range) extends GenericDiscreteDom[Int] {
@@ -290,6 +294,8 @@ class RangeDom(val values: Range) extends GenericDiscreteDom[Int] {
   def domainSize = values.size
   def one = values.last
   def zero = values.head
+
+  override val dimensions = Dimensions(Array(values))
 
   trait SampleTerm extends Term {
 

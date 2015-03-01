@@ -82,6 +82,7 @@ trait Dom {
   def const(value: Value): Term
 
   def lengths: Offsets
+  def dimensions: Dimensions = Dimensions()
 
   def isDiscrete = lengths.contOff == 0 && lengths.vectOff == 0 && lengths.matsOff == 0
   def isContinuous = lengths.discOff == 0

@@ -65,8 +65,10 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
   //      val domain:dom.type = dom
   //    }
 
-  def VarSeq[D <: Dom](length: TypedTerm[Int], args: IndexedSeq[Term[D]]) = {
-    new VarSeqConstructor[D](length, args)
+  def VarSeq[D <: Dom](length: TypedTerm[Int], args: IndexedSeq[Term[D]]):Term[VarSeqDom[D]] = {
+    val dom = fixedLengthSeqs[D](args.head.domain,args.length)
+    dom.Term(length,args.asInstanceOf[IndexedSeq[dom.elementDom.Term]])
+//    new VarSeqConstructor[D](length, args)
   }
 
   def stochastic[T](gen: Dynamic[T])(arg: Dynamic[T] => DoubleTerm) = {
