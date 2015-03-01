@@ -2,7 +2,7 @@ package ml.wolfe.examples
 
 import ml.wolfe._
 import ml.wolfe.term.TermImplicits._
-import ml.wolfe.term.{Term, VarSeqDom, TypedTerm, domain}
+import ml.wolfe.term._
 
 /**
  * @author riedel
@@ -29,7 +29,7 @@ object MatrixFactorization extends App {
   implicit val cells = Cell.Dom(dom(0 until k),dom(0 until k))
 
   // positive training data, as a term
-  val trainingData = fixedLengthSeq(IndexedSeq(Cell(0,0),Cell(1,0)))
+  val trainingData = IndexedSeqConst(Cell(0,0),Cell(1,0))
 
   //call some user code to return a negative cell
   def sampleNegCell(posTerm:cells.Term) = for (pos <- posTerm) yield pos //do something to sample a different cell
@@ -39,10 +39,19 @@ object MatrixFactorization extends App {
 
   //training loss, stochastic term based on sampling a positive cell, and then a negative based on it.
   def loss(t:thetas.Term) = {
-    val pos = trainingData.sampleSequential
+    //we sample a positive cell, and memoize the result
+    val pos = mem(trainingData.sampleSequential)
+    //based on the memoized positive cell, we sample a negative cell
     val neg = sampleNegCell(pos)
+    //the loss based on positve and negative cell
     log(sigm(score(t)(pos))) - log(sigm(-score(t)(neg)))
   }
+
+  //learning parameters
+  val adaParams = AdaGradParameters(100, 1)
+
+  //do the training (argmax is a term, so it needs to be evaluated to do the optimization)
+  val thetaStar = argmax2(thetas)(t => loss(t).argmaxBy(Argmaxer.adaGrad2(adaParams))).eval2()
 
 
 }

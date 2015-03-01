@@ -36,6 +36,11 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
     fixedLengthSeqs(dom, elements.length).Const(elements.toIndexedSeq)
   }
 
+  def IndexedSeqConst[T](elements: T*)(implicit dom: TypedDom[T]) = {
+    fixedLengthSeq[T](elements)
+  }
+
+
   def mem[T <: Term[Dom]](term:T) = term.domain.own(new Memoized[Dom,T](term).asInstanceOf[TypedTerm[term.domain.Value]])
 
   implicit class ConvertableToTerm[T, D <: TypedDom[T]](value: T)(implicit val domain: D) {
