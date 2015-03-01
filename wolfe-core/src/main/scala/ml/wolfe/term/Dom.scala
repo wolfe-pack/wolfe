@@ -1,10 +1,6 @@
 package ml.wolfe.term
 
-import cc.factorie.la.{DenseTensor1, DenseTensor2}
 import ml.wolfe._
-import ml.wolfe.term.ExhaustiveSearch.{AllSettingsIterable, AllSettings}
-
-import scala.collection.mutable.ArrayBuffer
 
 
 /**
@@ -164,11 +160,8 @@ trait Dom {
 
   def toIterable:Iterable[Value] = {
     require(isDiscrete, "domain must be discrete to iterate over all states")
-    val settingToVary = createSetting()
-    val tmp = variable("tmp")
-    val atoms = tmp.atoms.disc.map(a => ExhaustiveSearch.IndexedAtom(a,0)).toIndexedSeq
-    val iterable = new AllSettingsIterable[Value](atoms,Array(settingToVary),a => toValue(a(0)))
-    iterable
+    def settingToVary = Settings(createSetting())
+    new AllSettings[Value](IndexedSeq(this),settingToVary)(s => toValue(s(0)))
   }
 
 }
