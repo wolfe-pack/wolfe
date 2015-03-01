@@ -89,7 +89,7 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
 
   def zero = for (i <- 0 until minLength) yield elementDom.zero
 
-  def const(value: Value) = new Constructor(lengthDom.const(value.length), value.map(elementDom.const))
+  def Const(value: Value) = new Constructor(lengthDom.Const(value.length), value.map(elementDom.Const))
 
   trait DomTerm extends super.DomTerm {
     def apply(index: Int): term.Term[E]
@@ -113,7 +113,7 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
   }
 
   class DomVar(name: => String, val offsets: Offsets, owner: term.Var[Dom]) extends BaseVar(name, owner) with super.DomVar with DomTerm {
-    def apply(index: Int) = new VarSeqApply[E, Term, lengthDom.Term](this, lengthDom.const(index))
+    def apply(index: Int) = new VarSeqApply[E, Term, lengthDom.Term](this, lengthDom.Const(index))
 
     def length = new VarSeqLength[Term](this)
 
@@ -124,7 +124,7 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
 
   def Term(length: TypedTerm[Int], elements: IndexedSeq[elementDom.Term]): Term = new Constructor(length, elements)
 
-  def Term(elements: elementDom.Term*): Term = Term(indexDom.const(elements.size), elements.toIndexedSeq)
+  def Term(elements: elementDom.Term*): Term = Term(indexDom.Const(elements.size), elements.toIndexedSeq)
 
   class Constructor(val length: TypedTerm[Int], val elements: IndexedSeq[term.Term[E]]) extends DomTerm with Composed[dom.type] {
     def apply(index: Int) = elements(index)

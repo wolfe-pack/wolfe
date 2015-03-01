@@ -135,7 +135,7 @@ class VarSeqSum[D <: DoubleDom, T <: Term[VarSeqDom[D]]](val seq: T) extends Dou
     case _ =>
       val l = new VarSeqLength[T](seq)
       val e = for (i <- 0 until seq.domain.maxLength) yield
-        new VarSeqApply[D, T, TypedTerm[Int]](seq, seq.domain.lengthDom.const(i))
+        new VarSeqApply[D, T, TypedTerm[Int]](seq, seq.domain.lengthDom.Const(i))
       l -> e
   }
 

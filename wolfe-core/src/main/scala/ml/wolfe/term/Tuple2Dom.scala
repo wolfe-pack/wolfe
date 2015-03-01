@@ -57,9 +57,9 @@ class Tuple2Dom[D1 <: Dom, D2 <: Dom](val dom1: D1, val dom2: D2) extends Produc
   def one = (dom1.one, dom2.one)
   def zero = (dom1.zero, dom2.zero)
 
-  def const(value: Value): DomTerm = new Tuple2DomTermImpl {
-    val _1 = domain.dom1.const(value._1)
-    val _2 = domain.dom2.const(value._2)
+  def Const(value: Value): DomTerm = new Tuple2DomTermImpl {
+    val _1 = domain.dom1.Const(value._1)
+    val _2 = domain.dom2.Const(value._2)
   }
 
   trait DomTerm extends super.DomTerm {
@@ -121,6 +121,22 @@ trait ProductDom extends Dom {
         //append inputs to output
       }
     }
+
+
+    override def composer2(args: Settings) = new Composer2(args) {
+      val lengths = arguments.map(_.domain.lengths).toArray
+
+      def eval() = {
+        var off = Offsets()
+        for (i <- 0 until input.length) {
+          input(i).copyTo(output,off,1)
+          off += lengths(i)
+        }
+        //append inputs to output
+
+      }
+    }
+
     def differentiator(wrt: Seq[term.Var[Dom]]) = ???
 
   }

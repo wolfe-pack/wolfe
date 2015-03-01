@@ -32,11 +32,11 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
 
   def fixedSeq[T : TypedDom](elements:Seq[T]) = {
     val dom = implicitly[TypedDom[T]]
-    fixedLengthSeqs(dom, elements.length).const(elements.toIndexedSeq)
+    fixedLengthSeqs(dom, elements.length).Const(elements.toIndexedSeq)
   }
 
   implicit class ConvertableToTerm[T,D<:TypedDom[T]](value:T)(implicit val domain:D) {
-    def toTerm:domain.Term = domain.const(value)
+    def toTerm:domain.Term = domain.Const(value)
   }
 
   implicit class RichRange(values:Range) {
@@ -87,7 +87,7 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
 
 
   implicit def discToConstant[T: DiscreteDom](value: T): Constant[DiscreteDom[T]] =
-    implicitly[DiscreteDom[T]].const(value)
+    implicitly[DiscreteDom[T]].Const(value)
 
 
   //  def argmax[D <: Dom](dom: D)(obj: dom.Variable => DoubleTerm): dom.Value = {
@@ -337,25 +337,25 @@ trait MathImplicits {
 
 
     def oneHot(index: Int, value: Double = 1.0)(implicit dom: VectorDom) =
-    dom.const(new SingletonTensor1(dom.dim, index, value))
+    dom.Const(new SingletonTensor1(dom.dim, index, value))
 
 
-  implicit def doubleToConstant(d: Double): Constant[DoubleDom] = Dom.doubles.const(d)
+  implicit def doubleToConstant(d: Double): Constant[DoubleDom] = Dom.doubles.Const(d)
 
-  implicit def intToConstant(i: Int): Constant[IntDom] = Dom.ints.const(i)
+  implicit def intToConstant(i: Int): Constant[IntDom] = Dom.ints.Const(i)
 
   implicit def doubleToRichConstant(d: Double): RichDoubleTerm = new RichDoubleTerm(doubleToConstant(d))
 
 
-  implicit def intToDoubleConstant(d: Int): Constant[DoubleDom] = Dom.doubles.const(d)
+  implicit def intToDoubleConstant(d: Int): Constant[DoubleDom] = Dom.doubles.Const(d)
 
-  implicit def vectToConstant(d: FactorieVector): Constant[VectorDom] = vectors(d.dim1).const(d)
+  implicit def vectToConstant(d: FactorieVector): Constant[VectorDom] = vectors(d.dim1).Const(d)
 
-  implicit def vectToConstantWithDom(d: FactorieVector)(implicit dom: VectorDom): dom.Term = dom.const(d)
+  implicit def vectToConstantWithDom(d: FactorieVector)(implicit dom: VectorDom): dom.Term = dom.Const(d)
 
   implicit def dynVectToConstantWithDom(d: Dynamic[FactorieVector])(implicit dom: VectorDom): dom.Term = dom.dynConst(d)
 
-  implicit def matToConstant(d: FactorieMatrix): Constant[MatrixDom] = matrices(d.dim1, d.dim2).const(d)
+  implicit def matToConstant(d: FactorieMatrix): Constant[MatrixDom] = matrices(d.dim1, d.dim2).Const(d)
 
   implicit def intToDouble(int: IntTerm): IntToDouble[int.type] = new IntToDouble[int.type](int)
 

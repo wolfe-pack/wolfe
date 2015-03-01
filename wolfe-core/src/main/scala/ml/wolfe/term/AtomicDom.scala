@@ -14,7 +14,7 @@ trait AtomicDom extends Dom {
   dom =>
   type Term = DomTerm
 
-  def const(value: Value) = new Constant(value)
+  def Const(value: Value) = new Constant(value)
 
   def own(term: TypedTerm[Value]) = new ProxyTerm[TypedDom[Value]] with Term {
     def self = term
@@ -60,9 +60,9 @@ trait GenericVectorDom extends AtomicDom {
 
   def dynConst(value: Dynamic[Value]) = new DynamicConstant(value)
 
-  def Const(values: Double*) = {
+  def Term(values: Double*) = {
     require(values.size == dim)
-    const(new DenseVector(values.toArray))
+    Const(new DenseVector(values.toArray))
   }
 
   trait DomVar extends Atom[dom.type] with DomTerm with super.DomVar {

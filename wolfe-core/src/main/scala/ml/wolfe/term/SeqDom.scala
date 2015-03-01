@@ -66,8 +66,8 @@ class SeqDom[D <: Dom](val elementDom: D, val length: Int) extends Dom {
 
   def zero = for (i <- 0 until length) yield elementDom.zero
 
-  def const(value: Value) = new SeqDomTermImpl {
-    lazy val elements = for (i <- 0 until dom.length) yield domain.elementDom.const(value(i))
+  def Const(value: Value) = new SeqDomTermImpl {
+    lazy val elements = for (i <- 0 until dom.length) yield domain.elementDom.Const(value(i))
 
     def copy(args: IndexedSeq[ArgumentType]) = Term(args: _*)
   }
@@ -79,7 +79,7 @@ class SeqDom[D <: Dom](val elementDom: D, val length: Int) extends Dom {
   }
 
   def Const(args: elementDom.Value*) = new SeqDomTermImpl {
-    def elements = args.map(a => elementDom.const(a)).toIndexedSeq
+    def elements = args.map(a => elementDom.Const(a)).toIndexedSeq
 
     def copy(args: IndexedSeq[ArgumentType]) = Term(args: _*)
   }

@@ -75,7 +75,7 @@ trait Dom {
   def Var(implicit provider:NameProvider):Var = variable(provider.newName())
 
   def dynamic(name: => String, offsets: => Offsets = Offsets(), owner: term.Var[Dom] = null): Var
-  def const(value: Value): Term
+  def Const(value: Value): Term
 
   def lengths: Offsets
   def dimensions: Dimensions = Dimensions()
@@ -155,7 +155,7 @@ trait Dom {
   import scala.language.implicitConversions
 
   object conversion {
-    implicit def toConst(value:dom.Value): dom.Term = const(value)
+    implicit def toConst(value:dom.Value): dom.Term = Const(value)
   }
 
   def toIterable:Iterable[Value] = {

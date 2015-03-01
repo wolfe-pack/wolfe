@@ -135,7 +135,7 @@ object CaseClassDom {
 
         val constArgs = withOffsets(q"_offsets") {
           case (name, off) =>
-          q"val $name:$self.$name.Term = $self.$name.const(_value.$name)"
+          q"val $name:$self.$name.Term = $self.$name.Const(_value.$name)"
         }
 
         val composedArgs = argNames.map(n => q"_term.$n.asInstanceOf[ml.wolfe.term.Term[ml.wolfe.term.Dom]]")
@@ -193,7 +193,7 @@ object CaseClassDom {
               ..$dynVarArgs
             }
 
-            def const(_value: Value) = new DomTermImpl {
+            def Const(_value: Value) = new DomTermImpl {
               ..$constArgs
             }
 

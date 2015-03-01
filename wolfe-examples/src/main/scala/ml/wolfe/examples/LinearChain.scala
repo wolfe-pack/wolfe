@@ -25,7 +25,7 @@ object LinearChain {
         sum(0 until n){ i => oneHot(index(x(i)->y(i))) dot w}
       }
       def negLoss(yGold:IndexedSeq[String])(w:W.Term) = {
-        max(Y){chain(w)} - chain(w)(Y.const(yGold))
+        max(Y){chain(w)} - chain(w)(Y.Const(yGold))
       }
       def predict(w:W.Term) = {
         argmax(Y){chain(w)}
