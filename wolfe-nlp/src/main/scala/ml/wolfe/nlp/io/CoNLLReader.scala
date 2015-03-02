@@ -190,14 +190,20 @@ object CoNLL2011Reader extends App {
   val dlens = new mutable.HashMap[Int, Int].withDefaultValue(0)
   val slensByMentions = new mutable.HashMap[Int, Int].withDefaultValue(0)
   val corefDistances = new mutable.HashMap[Int, Int].withDefaultValue(0)
+  val mentionConsts = new mutable.HashMap[String, Int].withDefaultValue(0)
   var numMentions = 0
   var numNested = 0
   var numCrossing = 0
+  var numASpans = 0
+  var numNSpans = 0
   for (doc <- new CoNLL2011Reader(args(0))) {
     dlens(doc.sentences.size) += 1
     for (m <- doc.coref.mentions) {
       mlens(m.width) += 1
       numMentions += 1
+      if (doc.sentences(m.sentence).syntax.tree.containsSpan(m.start, m.end)) numASpans += 1
+      if (doc.sentences(m.sentence).syntax.tree.spansAt(m.start, m.end).count(_.label.startsWith("N")) > 0) numNSpans += 1
+      doc.sentences(m.sentence).syntax.tree.spansAt(m.start, m.end).foreach { sp => mentionConsts(sp.label) += 1}
     }
     for (m1 <- doc.coref.mentions; m2 <- doc.coref.mentions if m1 != m2) {
       if (m1.nests(m2)) numNested += 1
@@ -225,9 +231,15 @@ object CoNLL2011Reader extends App {
   corefDistances.keys.toArray.sortBy(_ * 1.0).foreach(k => println(k + ":\t" + corefDistances(k)))
   println("\n\n")
 
-  println("Number of nested mentions = %d / %d".format(numNested, numMentions))
-  println("Number of crossing mentions = %d / %d".format(numCrossing, numMentions))
+  println("Constituents which appear as mentions:")
+  mentionConsts.keys.toArray.sortBy(mentionConsts(_)).foreach(k => println(k + ":\t" + mentionConsts(k)))
+  println
 
+  println("Number of nested mentions = %d / %d = %.1f%%".format(numNested, numMentions, numNested * 100.0 / numMentions))
+  println("Number of crossing mentions = %d / %d = %.1f%%".format(numCrossing, numMentions, numCrossing * 100.0 / numMentions))
+  println("Number of mentions corresponding to constituent spans = %d / %d = %.1f%%".format(numASpans, numMentions, numASpans * 100.0 / numMentions))
+  println("Number of mentions corresponding to NP spans = %d / %d = %.1f%%".format(numNSpans, numMentions, numNSpans * 100.0 / numMentions))
+  println("Done.")
 
 }
 

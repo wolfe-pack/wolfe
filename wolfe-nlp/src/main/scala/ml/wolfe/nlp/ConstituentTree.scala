@@ -2,8 +2,7 @@ package ml.wolfe.nlp
 
 import ml.wolfe.nlp.io.{TreebankReaderOptions, ConstituentTreeFactory}
 
-import scala.collection.mutable.ArrayBuffer
-import scala.util.matching.Regex
+import scala.collection.mutable.{ArrayBuffer, HashMap, Map}
 
 /**
  * Created by narad on 12/5/14.
@@ -21,7 +20,8 @@ case class ConstituentTree(node: ConstituentNode, children : List[ConstituentTre
   def isNonterminal = node.isNonterminal
 
   def labelsOfSpan(i: Int, j: Int): Iterator[String] = {
-    index(i)(j).map(_.label).iterator
+ //   index(i)(j).map(_.label).iterator
+    spans((i,j)).view.map(_.label).iterator
   }
 
   def coarsenLabels: ConstituentTree = {
@@ -82,7 +82,24 @@ case class ConstituentTree(node: ConstituentNode, children : List[ConstituentTre
     }
   }
 
-  def index: Array[Array[ArrayBuffer[Span]]] = {
+  def indexViaHash: Map[(Int,Int), List[Span]] = {
+    val index = new HashMap[(Int,Int), List[Span]].withDefaultValue(List())
+    var numLeaves = 0
+    for (t <- leafFirstSearch) {
+      if (t.isLeaf) {
+        index((numLeaves, numLeaves+1)) = index((numLeaves, numLeaves+1)) :+ new Span(numLeaves, numLeaves+1, t.label, 0)
+        numLeaves += 1
+      }
+      else {
+        val len = t.length
+        val height = index(numLeaves-len, numLeaves).size
+        index((numLeaves-len, numLeaves)) = index((numLeaves-len, numLeaves)) :+ new Span(numLeaves-len, numLeaves, t.label, height)
+      }
+    }
+    index
+  }
+
+  def indexViaArray: Array[Array[ArrayBuffer[Span]]] = {
     val ispans = Array.fill(length+1,length+1)(new ArrayBuffer[Span])
     var numLeaves = 0
     for (t <- leafFirstSearch) {
@@ -212,7 +229,7 @@ case class ConstituentTree(node: ConstituentNode, children : List[ConstituentTre
   }
 
   def leafFirstSearch: Iterator[ConstituentTree] = {
-    children.flatMap(_.leafFirstSearch).iterator ++ Iterator.single(this)
+    children.view.flatMap(_.leafFirstSearch).iterator ++ Iterator.single(this)
   }
 
   def height: Int = {
@@ -239,59 +256,67 @@ case class ConstituentTree(node: ConstituentNode, children : List[ConstituentTre
   }
 
   // Indexing Methods
-  lazy private val spans = index
+  lazy private val spans = indexViaHash
 
   def containsSpan(i: Int, j: Int): Boolean = {
     if (i < 0 || j < 0) return false
     if (i > length || j > length) return false
-    !spans(i)(j).isEmpty
+    spans((i,j)).nonEmpty
+//    !spans(i)(j).isEmpty
   }
 
   def containsSpan(i: Int, j: Int, l: String): Boolean = {
     if (!containsSpan(i, j)) return false
-    return spans(i)(j).exists(_.label == l)
+    spans((i,j)).exists(_.label == l)
+//    return spans(i)(j).exists(_.label == l)
   }
 
   def containsUnarySpan(i: Int, j: Int): Boolean = {
     if (i < 0 || j < 0) return false
     if (i > length || j > length) return false
-    spans(i)(j).exists(_.isUnary)
+    spans((i,j)).exists(_.isUnary)
+//    spans(i)(j).exists(_.isUnary)
   }
 
   def containsUnarySpan(i: Int, j: Int, l: String): Boolean = {
     if (i < 0 || j < 0) return false
     if (i > length || j > length) return false
-    spans(i)(j).exists(s => s.isUnary && s.label == l)
+    spans((i,j)).exists(s => s.isUnary && s.label == l)
+//    spans(i)(j).exists(s => s.isUnary && s.label == l)
   }
 
   def containsUnarySpan(i: Int, j: Int, l: String, h: Int): Boolean = {
     if (i < 0 || j < 0) return false
     if (i > length || j > length) return false
-    spans(i)(j).exists(s => s.isUnary && s.label == l && s.height == h)
+    spans((i,j)).exists(s => s.isUnary && s.label == l && s.height == h)
+//    spans(i)(j).exists(s => s.isUnary && s.label == l && s.height == h)
   }
 
   def containsLabel(i: Int, j: Int, l: String): Boolean = {
     if (i < 0 || j < 0) return false
     if (i > length || j > length) return false
-    spans(i)(j).exists(s => s.label == l)
+//    spans(i)(j).exists(s => s.label == l)
+    spans((i,j)).exists(s => s.label == l)
   }
 
-  def highestUnarySpan(i: Int, j: Int): String = {
-    if (i < 0 || j < 0) return "none"
-    if (i > length || j > length) return "none"
-    if (spans(i)(j).filter(_.isUnary).size > 0) {
-      spans(i)(j).filter(_.isUnary).sortBy(_.height * -1).head.label
-    }
-    else {
-      "none"
-    }
-  }
+//  def highestUnarySpan(i: Int, j: Int): String = {
+//    if (i < 0 || j < 0) return "none"
+//    if (i > length || j > length) return "none"
+//    spans((i,j)).filter()
+//    if (spans(i)(j).filter(_.isUnary).size > 0) {
+//      spans(i)(j).filter(_.isUnary).sortBy(_.height * -1).head.label
+//    }
+//    else {
+//      "none"
+//    }
+//  }
 
   def toSpans: Iterable[Span] = {
-    for (i <- 0 until length; j <- 1 to length; k <- 0 until spans(i)(j).size) yield spans(i)(j)(k)
+//    for (i <- 0 until length; j <- 1 to length; k <- 0 until spans(i)(j).size) yield spans(i)(j)(k)
+    (for (i <- 0 until length; j <- 1 to length if spans.contains((i,j))) yield spans((i,j))).flatten  //spans(i)(j)(k)
   }
 
-  def spansAt(i: Int, j: Int): Iterable[Span] = spans(i)(j).toIterable
+  def spansAt(i: Int, j: Int): Iterable[Span] = spans((i,j)) //spans(i)(j).toIterable
 }
 
 trait ConstituentNode {
@@ -330,20 +355,16 @@ case class Span(left: Int, right: Int, label: String, var height: Int=0) {
   def width: Int = right - left
 
   def covers(other: Span): Boolean = {
-    return left <= other.left &&
-    right >= other.right &&
-    !equals(other)
+    left <= other.left && right >= other.right && !equals(other)
   }
 
   def crosses(other: Span): Boolean = {
-    return (start < other.start && end > other.start   && end < other.end) ||
+    (start < other.start && end > other.start   && end < other.end) ||
     (start > other.start && start < other.end && end > other.end)
   }
 
   override def equals(that: Any): Boolean = that match {
-    case other: Span => {
-      left == other.left && right == other.right && other.label == label
-    }
+    case other: Span => left == other.left && right == other.right && other.label == label
     case _=> false
   }
 
@@ -373,22 +394,22 @@ object ConstituentTree {
     str match {
       case DOUBLE_PAREN_PATTERN() => {
         val children = subexpressions(str).map(stringToTree(_, options))
-        return ConstituentTreeFactory.buildTree(label=options.DEFAULT_LABEL, children=children)
+        ConstituentTreeFactory.buildTree(label=options.DEFAULT_LABEL, children=children)
       }
       case TOKEN_PATTERN(tag, word) => {
         ConstituentTreeFactory.buildTree(label=tag, word=word)
       }
       case CONSTITUENT_PATTERN(label) => {
         val children = subexpressions(str).map(stringToTree(_, options))
-        return ConstituentTreeFactory.buildTree(label=label, children=children)
+        ConstituentTreeFactory.buildTree(label=label, children=children)
       }
       case EMPTY_PATTERN() => {
         val children = subexpressions(str).map(stringToTree(_, options))
-        return ConstituentTreeFactory.buildTree(label=options.DEFAULT_LABEL, children=children)
+        ConstituentTreeFactory.buildTree(label=options.DEFAULT_LABEL, children=children)
       }
       case _ => {
         if (str != null) System.err.println("Not recognized: %s".format(str))
-        return null.asInstanceOf[ConstituentTree]
+        null.asInstanceOf[ConstituentTree]
       }
     }
   }

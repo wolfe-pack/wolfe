@@ -112,6 +112,7 @@ case class Document(source: String,
 
 }
 
+import scala.collection.mutable.HashMap
 /**
  * Class to represent coreference annotation
  * @param mentions sequence of CorefMention elements
@@ -142,8 +143,15 @@ case class CorefAnnotation(mentions: Seq[CorefMention] = Seq.empty) {
   }
 
   def shareCluster(s1: Int, i1: Int, j1: Int, s2: Int, i2: Int, j2: Int): Boolean = {
-    clusterOf(s1, i1, j1) == clusterOf(s2, i2, j2)
+    if (askedBefore(s1, i1, j1, s2, i2, j2)) return cachedAnswer((s1, i1, j1, s2, i2, j2))
+    val answer = clusterOf(s1, i1, j1) == clusterOf(s2, i2, j2)
+    cachedAnswer((s1, i1, j1, s2, i2, j2)) = answer
+    answer
   }
+
+  val cachedAnswer = new HashMap[(Int,Int,Int,Int,Int,Int), Boolean]
+
+  def askedBefore(s1: Int, i1: Int, j1: Int, s2: Int, i2: Int, j2: Int) = cachedAnswer.contains((s1, i1, j1, s2, i2, j2))
 }
 
 object CorefAnnotation {
@@ -191,6 +199,9 @@ case class CorefMention(clusterID: Int, sentence: Int, start: Int, end: Int, hea
     }
   }
 
+  override def toString = "[Coref Mention: Sent: %d, Start: %d, End: %d, Cluster: %d]".format(sentence, start, end, clusterID)
+
+/*
   override def toString = {
     "[COREF MENTION\n" +
     "  START: %d\n".format(start) +
@@ -199,6 +210,7 @@ case class CorefMention(clusterID: Int, sentence: Int, start: Int, end: Int, hea
     "  SENTENCE: %d\n".format(sentence) +
     "  CLUSTER: %d]\n".format(clusterID)
   }
+*/
 
   def width = end - start
 }

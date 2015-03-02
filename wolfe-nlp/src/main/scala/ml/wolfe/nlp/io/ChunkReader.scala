@@ -42,6 +42,10 @@ class ChunkReader(filename: String, delim: String="^[ \t]*$", iencoding: String=
 
 object ChunkReader {
 
+  def main(args: Array[String]) {
+    read(args(0))
+  }
+
   def read(filename: String): Iterator[String] = {
     val reader = new ChunkReader(filename)
     reader.iterator
