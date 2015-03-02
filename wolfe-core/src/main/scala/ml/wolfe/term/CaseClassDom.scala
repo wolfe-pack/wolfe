@@ -140,6 +140,22 @@ object CaseClassDom {
 
         val composedArgs = argNames.map(n => q"_term.$n.asInstanceOf[ml.wolfe.term.Term[ml.wolfe.term.Dom]]")
 
+        val ownArgs = withOffsets(q"Offsets.zero") {
+          case (name, off) =>
+            val nameString = name.decodedName.toString
+            val nameConst = Constant(nameString)
+            q"""val $name = $self.$name.own(new Field(_term,$self.$name,$off))"""
+//            q"""val $name:$self.$name.Term = ???"""
+
+        }
+
+        val own = q"""
+          new ProxyTerm[TypedDom[Value]] with Term {
+              def self = _term
+              override val domain:_dom.type = _dom
+              ..$ownArgs
+            }
+          """
 
         val newTerm = q"""
           $caseClassDef
@@ -153,8 +169,7 @@ object CaseClassDom {
             type Var = DomVar
             type Term = DomTerm
 
-            def own(term: TypedTerm[Value]) = ???
-
+            def own(_term: TypedTerm[Value]):Term = $own
             def lengths = $lengths
             override val dimensions = $dimensions
 

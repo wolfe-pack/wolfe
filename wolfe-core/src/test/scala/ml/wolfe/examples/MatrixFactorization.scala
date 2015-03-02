@@ -17,28 +17,28 @@ object MatrixFactorization extends App {
   val n = 3
 
   // the class of parameters
-  @domain case class Theta(v:IndexedSeq[FactorieVector],a:IndexedSeq[FactorieVector])
+  @domain case class Theta(v: IndexedSeq[FactorieVector], a: IndexedSeq[FactorieVector])
 
   // the class of cells
-  @domain case class Cell(i:Int, j:Int)
+  @domain case class Cell(i: Int, j: Int)
 
   // the set of possible parameters
-  implicit val thetas = Theta.Dom(fixedLengthSeqs(vectors(k),m),fixedLengthSeqs(vectors(k),n))
+  implicit val thetas = Theta.Dom(fixedLengthSeqs(vectors(k), m), fixedLengthSeqs(vectors(k), n))
 
   // the set of possible cells
-  implicit val cells = Cell.Dom(dom(0 until k),dom(0 until k))
+  implicit val cells = Cell.Dom(dom(0 until k), dom(0 until k))
 
   // positive training data, as a term
-  val trainingData = IndexedSeqConst(Cell(0,0),Cell(1,0))
+  val trainingData = IndexedSeqConst(Cell(0, 0), Cell(1, 0))
 
   //call some user code to return a negative cell
-  def sampleNegCell(posTerm:cells.Term) = for (pos <- posTerm) yield pos //do something to sample a different cell
+  def sampleNegCell(posTerm: cells.Term) = for (pos <- posTerm) yield pos //do something to sample a different cell
 
   //the per cell loss
-  def score(theta:thetas.Term)(cell:cells.Term) = theta.v(cell.i) dot theta.a(cell.j)
+  def score(theta: thetas.Term)(cell: cells.Term) = theta.v(cell.i) dot theta.a(cell.j)
 
   //training loss, stochastic term based on sampling a positive cell, and then a negative based on it.
-  def loss(t:thetas.Term) = {
+  def loss(t: thetas.Term) = {
     //we sample a positive cell, and memoize the result
     val pos = mem(trainingData.sampleSequential)
     //based on the memoized positive cell, we sample a negative cell
