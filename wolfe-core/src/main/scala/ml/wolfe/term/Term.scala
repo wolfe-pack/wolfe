@@ -46,7 +46,7 @@ trait Term[+D <: Dom] extends TermHelper[D] {
     val output = eval.output
 
     def forward()(implicit execution: Execution): Unit = {
-      eval.eval()
+      eval.eval()(execution.copy(typ = Execution.EmptyDiff)) //ensures that log terms still render
     }
 
     def backward()(implicit execution: Execution) {}
@@ -124,7 +124,7 @@ trait TermHelper[+D <: Dom] {
     def differentiate(args:Any*):wrt.domain.Value = {
       for ((v,i) <- vars.zipWithIndex) v.domain.copyValue(args(i).asInstanceOf[v.domain.Value],input(i))
       gradient.foreach(_.resetToZero())
-      diff.differentiate()(Execution(count))
+      diff.differentiate()(Execution(count,Execution.Diff))
       count += 1
       wrt.domain.toValue(gradient(indexOfWrt))
     }
@@ -176,7 +176,7 @@ trait TermHelper[+D <: Dom] {
     require(args.length == vars.length, s"You need as many arguments as there are free variables (${vars.length})")
     val gradient = createZeroSettings()
     val diff = differentiator2(Seq(wrt))(createSettings(args), domain.toSetting(domain.one), gradient)
-    diff.differentiate()(Execution(0))
+    diff.differentiate()(Execution(0,Execution.Diff))
     val indexOfWrt = vars.indexOf(wrt)
     wrt.domain.toValue(gradient(indexOfWrt))
   }

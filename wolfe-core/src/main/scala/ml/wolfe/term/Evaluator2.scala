@@ -9,7 +9,16 @@ trait Evaluator2 {
   def eval()(implicit execution:Execution)
 }
 
-case class Execution(num:Int)
+case class Execution(num:Int, typ:Execution.ExeType = Execution.Eval)
+
+object Execution extends Enumeration {
+  type ExeType = Value
+  val Eval, Diff, EmptyDiff = Value
+
+
+
+}
+
 
 trait Differentiator2 {
   val input:Settings
@@ -20,7 +29,7 @@ trait Differentiator2 {
   def forward()(implicit execution:Execution)
   def backward()(implicit execution:Execution)
 
-  def differentiate()(implicit execution:Execution = Execution(0)): Unit = {
+  def differentiate()(implicit execution:Execution = Execution(0,Execution.Diff)): Unit = {
     forward()
     backward()
   }

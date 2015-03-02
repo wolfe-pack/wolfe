@@ -119,11 +119,20 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
     def ===(that: DiscreteTerm[T]) = new DiscreteEquals(term, that)
   }
 
-  implicit class RichTerm[D <: Dom](val term: Term[D]) {
+  implicit class RichTermToType[D <: Dom](val term: Term[D]) {
     def typed[A <: Dom](dom: A): dom.Value => term.domain.Value = {
       require(term.vars.size == 1 && term.vars.head.domain == dom)
       (a: dom.Value) => term.eval(Seq(a): _*)
     }
+  }
+
+  implicit class RichToLog[T <: Term[Dom]](val term:T) {
+    def logMe(name:String) =
+      term.domain.own(new LogTerm[Dom,Term[Dom]](term,name).asInstanceOf[TypedTerm[term.domain.Value]])
+
+    def logged(implicit name:NameProvider) =
+      term.domain.own(new LogTerm[Dom,Term[Dom]](term,name.newName()).asInstanceOf[TypedTerm[term.domain.Value]])
+
   }
 
   //  implicit class RichSeqTerm[E <: Dom, S <: Term[SeqDom[E]]](val term:S) {

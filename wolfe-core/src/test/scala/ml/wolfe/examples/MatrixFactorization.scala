@@ -3,7 +3,7 @@ package ml.wolfe.examples
 import ml.wolfe._
 import ml.wolfe.term.TermImplicits._
 import ml.wolfe.term._
-
+import util.Math._
 /**
  * @author riedel
  */
@@ -13,42 +13,42 @@ object MatrixFactorization extends App {
   val k = 3
 
   //matrix size
-  val m = 3
-  val n = 3
+  val rows = 10
+  val cols = 10
 
   // the class of parameters
   @domain case class Theta(v: IndexedSeq[FactorieVector], a: IndexedSeq[FactorieVector])
 
   // the class of cells
-  @domain case class Cell(i: Int, j: Int)
+  @domain case class Cell(row: Int, col: Int)
 
   // the set of possible parameters
-  implicit val thetas = Theta.Dom(fixedLengthSeqs(vectors(k), m), fixedLengthSeqs(vectors(k), n))
+  implicit val thetas = Theta.Dom(fixedLengthSeqs(vectors(k), rows), fixedLengthSeqs(vectors(k), cols))
 
   // the set of possible cells
-  implicit val cells = Cell.Dom(dom(0 until k), dom(0 until k))
+  implicit val cells = Cell.Dom(dom(0 until rows), dom(0 until cols))
 
   // positive training data, as a term
-  val trainingData = IndexedSeqConst(Cell(0, 0), Cell(1, 0))
+  val trainingData = IndexedSeqConst(Cell(0, 0), Cell(1, 1))
 
-  //call some user code to return a negative cell
-  def sampleNegCell(posTerm: cells.Term) = for (pos <- posTerm) yield pos //do something to sample a different cell
+  //call some user code to return a negative cell, uses term monad (so pos is an actual Cell, not a term)
+  def sampleNegCell(posTerm: cells.Term) = for (pos <- posTerm) yield pos.copy(row = random.nextInt(rows))
 
   //the per cell loss
-  def score(theta: thetas.Term)(cell: cells.Term) = theta.v(cell.i) dot theta.a(cell.j)
+  def score(theta: thetas.Term)(cell: cells.Term) = theta.v(cell.row) dot theta.a(cell.col)
 
   //training loss, stochastic term based on sampling a positive cell, and then a negative based on it.
   def loss(t: thetas.Term) = {
     //we sample a positive cell, and memoize the result
-    val pos = mem(trainingData.sampleSequential)
+    val pos = mem(trainingData.sampleSequential).logged
     //based on the memoized positive cell, we sample a negative cell
-    val neg = sampleNegCell(pos)
+    val neg = mem(sampleNegCell(pos)).logged
     //the loss based on positve and negative cell
     log(sigm(score(t)(pos))) - log(sigm(-score(t)(neg)))
   }
 
   //learning parameters
-  val init = Settings(thetas.createRandomSetting(util.Math.random.nextGaussian() * 0.01))
+  val init = Settings(thetas.createRandomSetting(random.nextGaussian() * 0.1))
   val adaParams = AdaGradParameters(iterations = 100, learningRate = 1, initParams = init)
 
   //do the training (argmax is a term, so it needs to be evaluated to do the optimization)
