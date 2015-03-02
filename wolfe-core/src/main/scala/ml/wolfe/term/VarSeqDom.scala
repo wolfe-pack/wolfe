@@ -21,7 +21,7 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
   val indexDom = new RangeDom(0 until maxLength)
 
   //trait Test extends Term
-  def own(term: TypedTerm[Value]) = new ProxyTerm[TypedDom[Value]] with Term {
+  def own(term: TypedTerm[Value]) = new OwnedTerm[Value] with Term {
     def self = term
 
     def apply(index: Int) = ???

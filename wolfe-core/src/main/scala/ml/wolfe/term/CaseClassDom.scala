@@ -156,7 +156,7 @@ object CaseClassDom {
         }
 
         val own = q"""
-          new ProxyTerm[TypedDom[Value]] with Term {
+          new OwnedTerm[Value] with Term {
               def self = _term
               override val domain:_dom.type = _dom
               ..$ownArgs
