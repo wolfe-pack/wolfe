@@ -5,6 +5,8 @@ package ml.wolfe.term
  */
 object Transformer {
 
+  import TermImplicits._
+
   def depthFirst(term:Term[Dom])(partialFunction: PartialFunction[Term[Dom],Term[Dom]]): Term[Dom] = {
     val result = term match {
       case n:NAry =>
@@ -29,6 +31,26 @@ object Transformer {
       case a =>
         IndexedSeq(a)
     })
+  }
+
+  def groundSums(term:Term[Dom]) = depthFirst(removeOwned(term)) {
+    case FirstOrderSum(indices,variable,body) =>
+      val length = indices match {
+        case i:VarSeqDom[_]#Term => i.length
+        case i => VarSeqLength(indices)
+      }
+      val doubleTerms = for (i <- 0 until indices.domain.maxLength) yield {
+        val element = indices match {
+          case v:VarSeqDom[_]#Term => v(i)
+          case v => new VarSeqApply[Dom,Term[VarSeqDom[Dom]],IntTerm](v,i.toTerm)
+        }
+        val doubleTerm = depthFirst(body) {
+          case t if t == variable => element
+        }
+        doubleTerm.asInstanceOf[DoubleTerm]
+      }
+      val sumArgs = VarSeq(length,doubleTerms)
+      varSeqSum[Term[VarSeqDom[TypedDom[Double]]]](sumArgs)
   }
 
 }

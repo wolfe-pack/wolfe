@@ -125,7 +125,7 @@ case class Sum(arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm {
   }
 }
 
-class VarSeqSum[D <: TypedDom[Double], T <: Term[VarSeqDom[D]]](val seq: T) extends DoubleTerm with NAry {
+case class VarSeqSum[D <: TypedDom[Double], T <: Term[VarSeqDom[D]]](seq: T) extends DoubleTerm with NAry {
 
   self =>
 

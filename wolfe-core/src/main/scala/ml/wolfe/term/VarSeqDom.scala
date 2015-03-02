@@ -209,12 +209,12 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
       def withRespectTo = wrt
     }
 
-    override def toString = s"""IndexedSeqTerm($length)(${elements.mkString(",")})"""
+    override def toString = s"""ISeq($length)(${elements.mkString(",")})"""
   }
 
 }
 
-class VarSeqLength[S <: Term[VarSeqDom[_]]](val seq: S) extends Composed[TypedDom[Int]] {
+case class VarSeqLength[S <: Term[VarSeqDom[_]]](seq: S) extends Composed[TypedDom[Int]] {
   type ArgumentType = S
 
   def copy(args: IndexedSeq[ArgumentType]) = new VarSeqLength[S](args(0))
@@ -241,7 +241,7 @@ class VarSeqLength[S <: Term[VarSeqDom[_]]](val seq: S) extends Composed[TypedDo
   def differentiator(wrt: Seq[Var[Dom]]) = ???
 }
 
-case class VarSeqApply[+E <: Dom, S <: Term[VarSeqDom[E]], I <: Term[TypedDom[Int]]](seq: S, index: I) extends Composed[E] {
+case class VarSeqApply[+E <: Dom, S <: Term[VarSeqDom[E]], I <: IntTerm](seq: S, index: I) extends Composed[E] {
   self =>
   val domain = seq.domain.elementDom
 
@@ -250,7 +250,7 @@ case class VarSeqApply[+E <: Dom, S <: Term[VarSeqDom[E]], I <: Term[TypedDom[In
   val arguments = IndexedSeq(seq, index)
 
 
-  def copy(args: IndexedSeq[ArgumentType]) = ???
+  def copy(args: IndexedSeq[ArgumentType]) = VarSeqApply[E,S,I](args(0).asInstanceOf[S],args(1).asInstanceOf[I])
 
   def composer() = new Evaluator {
     def eval(inputs: Array[Setting], output: Setting) = {
