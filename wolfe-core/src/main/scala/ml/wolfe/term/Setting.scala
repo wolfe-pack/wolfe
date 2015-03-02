@@ -502,6 +502,8 @@ abstract class Buffer[T: ClassTag](val setting: Setting) {
     if (shouldRecord) changedIndices += index
   }
 
+  def foreach(f: T => Unit) = (0 until length).foreach(x => f(apply(x)))
+
   def apply(index: Int) = array(index)
 
   def copyTo(tgt: Buffer[T], srcPos: Int, tgtPos: Int, length: Int) = {
