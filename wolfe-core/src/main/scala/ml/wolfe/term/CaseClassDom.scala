@@ -42,6 +42,8 @@ object CaseClassDom {
         //List(rains,prob)
         val caseClassArgNames = caseClassArgs.map(_.name)
         def argNames = caseClassArgNames
+        def prefixName(prefix:String, name:TermName) = TermName(prefix + name.decodedName.toString)
+
         val argName2Index = argNames.zipWithIndex.toMap
 
         //List(Boolean,Double)
@@ -116,6 +118,10 @@ object CaseClassDom {
 
         val termArgsDef = argNames.map(n => q"def $n:${arg2DomTypeName(n)}#Term")
         val varArgsDef = argNames.map(n => q"def $n:${arg2DomTypeName(n)}#Var")
+
+        val termConstructorArgs = argNames.map(n => q"val ${prefixName("_",n)}:$self.$n.Term")
+        val termConstructorDefs = argNames.map(n => q"val $n:$self.$n.Term = ${prefixName("_",n)}")
+
 
         val atomsIterator = reduce(argNames.map(n => q"_domVar.$n.atomsIterator"),{case (a1,a2) => q"$a1 ++ $a2"})
 
@@ -213,6 +219,10 @@ object CaseClassDom {
 
             def Const(_value: Value) = new DomTermImpl {
               ..$constArgs
+            }
+
+            def Term(..$termConstructorArgs):Term = new DomTermImpl {
+              ..$termConstructorDefs
             }
 
             trait DomTermImpl extends DomTerm with super.DomTermImpl { _term =>

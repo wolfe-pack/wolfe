@@ -129,6 +129,16 @@ class CaseClassDomSpecs extends WolfeSpec {
       bs.toSet should be (Set(B(A(1)),B(A(2))))
     }
 
+    "Create terms using a term constructor" in {
+      val worlds = World.Dom(bools, doubles)
+      val b = bools.Var
+      val d = doubles.Var
+      val term = worlds.Term(b,d)
+      term.eval2(true,0.5) should be (World(true,0.5))
+
+    }
+
+
   }
 
 }
