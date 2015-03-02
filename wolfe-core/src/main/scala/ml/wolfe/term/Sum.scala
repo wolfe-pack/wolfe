@@ -5,7 +5,7 @@ import cc.factorie.la.DenseTensor1
 /**
  * @author riedel
  */
-class Sum(val arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm {
+case class Sum(arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm {
 
   sum =>
 
@@ -32,6 +32,8 @@ class Sum(val arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm {
 
   def sequentialGradient() = new ProxyTerm[DoubleDom] {
     def self = sum
+
+    def copy(args: IndexedSeq[ArgumentType]) = ???
 
     override def differentiator(wrt: Seq[Var[Dom]]) = new StochasticDifferentiator {
       private var _index = 0

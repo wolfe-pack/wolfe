@@ -95,7 +95,7 @@ trait Dom {
     def name = dynName
   }
 
-  class Constant(val value: Value) extends DomTerm {
+  case class Constant(value: Value) extends DomTerm {
     self =>
 
     val vars      = Seq.empty

@@ -27,6 +27,8 @@ class SeqDom[D <: Dom](val elementDom: D, val length: Int) extends Dom {
     def apply(index: => Int) = ???
 
     override val domain:dom.type = dom
+
+    def copy(args: IndexedSeq[ArgumentType]) = own(args(0))
   }
 
   def toMarginals(msg: Msg, offsets: Offsets) = {

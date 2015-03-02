@@ -20,6 +20,8 @@ trait AtomicDom extends Dom {
     def self = term
 
     override val domain:dom.type = dom
+
+    def copy(args: IndexedSeq[ArgumentType]) = own(args(0))
   }
 }
 

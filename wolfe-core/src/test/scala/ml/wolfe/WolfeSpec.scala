@@ -12,6 +12,8 @@ trait WolfeSpec extends WordSpec with Matchers {
 
   val eps = 0.0001
 
+  def beStringEqual(that:Any) = be(that.toString) compose( (f:Any) => f.toString)
+
   implicit val factorieVectorEq = new Equality[FactorieVector] {
     def areEqual(a: FactorieVector, b: Any) = b match {
       case v: FactorieVector =>

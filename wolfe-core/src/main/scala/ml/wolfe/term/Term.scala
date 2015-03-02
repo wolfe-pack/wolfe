@@ -86,7 +86,6 @@ trait Term[+D <: Dom] extends TermHelper[D] {
     else if (wrt.forall(_.domain.isDiscrete)) ??? else ???
   }
 
-
 }
 
 
@@ -209,12 +208,17 @@ trait TermHelper[+D <: Dom] {
 
 }
 
-trait ProxyTerm[D <: Dom] extends Term[D] {
+trait ProxyTerm[D <: Dom] extends Term[D] with NAry {
   def self: Term[D]
 
   val domain = self.domain
 
   def vars = self.vars
+
+
+  type ArgumentType = Term[D]
+
+  def arguments = IndexedSeq(self)
 
   def evaluator() = self.evaluator()
 
@@ -228,6 +232,14 @@ trait ProxyTerm[D <: Dom] extends Term[D] {
   def differentiator(wrt: Seq[Var[Dom]]) = self.differentiator(wrt)
 
   def atomsIterator = self.atomsIterator
+
+  override def toString = self.toString
+
+  override def equals(obj: scala.Any) = obj match {
+    case t:ProxyTerm[_] =>
+      t.self == self && t.getClass == getClass
+    case _ => false
+  }
 }
 
 
@@ -793,7 +805,7 @@ trait UnaryTerm[T <: Term[Dom], D <: Dom] extends Composed[D] {
 }
 
 
-class Product(val arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm {
+case class Product(arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm {
 
   type ArgumentType = DoubleTerm
 

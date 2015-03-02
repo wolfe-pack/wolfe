@@ -160,7 +160,8 @@ object CaseClassDom {
               def self = _term
               override val domain:_dom.type = _dom
               ..$ownArgs
-            }
+              def copy(args: IndexedSeq[ArgumentType]) = own(args(0))
+          }
           """
 
         val newTerm = q"""

@@ -30,6 +30,9 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
 
     override val domain: dom.type = dom
 
+    def copy(args: IndexedSeq[ArgumentType]) = own(args(0))
+
+
   }
 
   case class Marginals(length: lengthDom.Marginals, elements: IndexedSeq[elementDom.Marginals])

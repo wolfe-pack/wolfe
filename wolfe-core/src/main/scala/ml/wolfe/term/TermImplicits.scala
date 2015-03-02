@@ -87,6 +87,8 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
       def generator: Dynamic[T] = gen
 
       def self: DoubleTerm = term
+      def copy(args: IndexedSeq[ArgumentType]) = ???
+
     }
   }
 
@@ -297,6 +299,9 @@ trait MathImplicits {
       def self = term
 
       override def argmaxer(wrt: Seq[Var[Dom]]) = factory.argmaxer(term, wrt)
+
+      def copy(args: IndexedSeq[ArgumentType]) = ???
+
     }
 
     def argmaxBy(factory: ArgmaxerFactory2) = new ProxyTerm[TypedDom[Double]] {
@@ -306,9 +311,15 @@ trait MathImplicits {
         factory.argmaxer(term, wrt)(observed, msgs)
       }
 
+      def copy(args: IndexedSeq[ArgumentType]) = ???
+
     }
 
 
+  }
+
+  implicit class StringEquals(val t:Any) {
+    def stringEquals(that:Any) = t.toString == that.toString
   }
 
   implicit class RichIntTerm(term: IntTerm) {
