@@ -126,6 +126,8 @@ trait Dom {
 
       def backProp(error: Setting, gradient: Array[Setting]) = {}
     }
+
+    override def toString = value.toString
   }
 
   class DynamicConstant(val value: Dynamic[Value]) extends DomTerm {

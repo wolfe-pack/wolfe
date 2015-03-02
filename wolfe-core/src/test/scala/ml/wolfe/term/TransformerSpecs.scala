@@ -32,4 +32,13 @@ class TransformerSpecs extends WolfeSpec {
     }
   }
 
+  "A first order sum grounder" should {
+    "replace a first order sum with a propositional sum" in {
+      val x = fixedLengthSeqs(doubles,5).Var
+      val indices = IndexedSeqConst(0,1,2)
+      val term = sum(indices) {i => x(i)}
+      println(term)
+    }
+  }
+
 }

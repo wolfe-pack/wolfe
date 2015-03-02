@@ -164,6 +164,7 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
     }
 
 
+
     override def differentiator2(wrt: Seq[term.Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) = {
       require(length.vars.forall(v => !wrt.contains(v)), "Can't differentiate length term in sequence constructor")
       new ComposedDifferentiator2(wrt, in, err, gradientAcc) {
@@ -207,6 +208,8 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
 
       def withRespectTo = wrt
     }
+
+    override def toString = s"""IndexedSeqTerm($length)(${elements.mkString(",")})"""
   }
 
 }
@@ -238,7 +241,7 @@ class VarSeqLength[S <: Term[VarSeqDom[_]]](val seq: S) extends Composed[TypedDo
   def differentiator(wrt: Seq[Var[Dom]]) = ???
 }
 
-class VarSeqApply[+E <: Dom, S <: Term[VarSeqDom[E]], I <: Term[TypedDom[Int]]](val seq: S, index: I) extends Composed[E] {
+case class VarSeqApply[+E <: Dom, S <: Term[VarSeqDom[E]], I <: Term[TypedDom[Int]]](seq: S, index: I) extends Composed[E] {
   self =>
   val domain = seq.domain.elementDom
 
@@ -302,5 +305,6 @@ class VarSeqApply[+E <: Dom, S <: Term[VarSeqDom[E]], I <: Term[TypedDom[Int]]](
     def withRespectTo = wrt
   }
 
+  override def toString = s"$seq($index)"
 }
 
