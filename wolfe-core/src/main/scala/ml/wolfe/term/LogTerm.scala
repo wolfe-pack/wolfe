@@ -13,12 +13,12 @@ class LogTerm[D <: Dom, T <: Term[D]](val toLog: T, val name:String = null) exte
     def eval()(implicit execution: Execution) = {
       evalToLog.eval()
       if (execution.typ != Execution.Diff) {
-        val inputValues = for ((v, s) <- vars zip input) yield v.domain.toValue(s)
-        val inputString = if (inputValues.isEmpty) "[None]" else inputValues.mkString("\n -", "\n -", "")
+//        val inputValues = for ((v, s) <- vars zip input) yield v.domain.toValue(s)
+//        val inputString = if (inputValues.isEmpty) "[None]" else inputValues.mkString("\n -", "\n -", "")
         println("-----------------------------------")
         println(s"Execution:  $execution")
         println(s"Term:       $nameToShow")
-        println(s"Inputs:     $inputString")
+//        println(s"Inputs:     $inputString")
         val outputValue = domain.toValue(output)
         println(s"Output:     $outputValue")
         toLog match {
@@ -26,7 +26,7 @@ class LogTerm[D <: Dom, T <: Term[D]](val toLog: T, val name:String = null) exte
             val composer = evalToLog.asInstanceOf[Composed[Dom]#ComposedEvaluator]
             val argValues = for ((a, s) <- composed.arguments zip composer.argOutputs) yield a.domain.toValue(s)
             val argString = argValues.mkString("\n -", "\n -", "")
-            println(s"Arguments: $inputString")
+            println(s"Arguments: $argString")
           case _ =>
         }
       }
@@ -41,12 +41,12 @@ class LogTerm[D <: Dom, T <: Term[D]](val toLog: T, val name:String = null) exte
       val diffToLog = toLog.differentiator2(wrt)(in,err,gradientAcc)
       def forward()(implicit execution: Execution) = {
         diffToLog.forward()
-        val inputValues = for ((v, s) <- vars zip input) yield v.domain.toValue(s)
-        val inputString = if (inputValues.isEmpty) "[None]" else inputValues.mkString("\n -", "\n -", "")
+//        val inputValues = for ((v, s) <- vars zip input) yield v.domain.toValue(s)
+//        val inputString = if (inputValues.isEmpty) "[None]" else inputValues.mkString("\n -", "\n -", "")
         println("-----------------------------------")
         println(s"Execution:  $execution")
         println(s"Term:       $nameToShow")
-        println(s"Inputs:     $inputString")
+//        println(s"Inputs:     $inputString")
         val outputValue = domain.toValue(output)
         println(s"Output:     $outputValue" )
 
