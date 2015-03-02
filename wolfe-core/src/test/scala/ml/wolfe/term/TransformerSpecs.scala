@@ -15,9 +15,19 @@ class TransformerSpecs extends WolfeSpec {
       val y = doubles.Var
       val term = x * 2.0 + x
       val expected = y * 2.0 + y
-      val transformed = Transfomer.depthFirst(term) {
+      val transformed = Transformer.depthFirst(term) {
         case t if t == x => y
       }
+      transformed should beStringEqual (expected)
+    }
+  }
+
+  "A sum flattener" should {
+    "replace nested sums with one flat sum" in {
+      val x = doubles.Var
+      val term = x + x + x + x
+      val expected = sum(x,x,x,x)
+      val transformed = Transformer.flattenSums(term)
       transformed should beStringEqual (expected)
     }
   }

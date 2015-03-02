@@ -16,7 +16,7 @@ trait AtomicDom extends Dom {
 
   def Const(value: Value) = new Constant(value)
 
-  def own(term: TypedTerm[Value]) = new ProxyTerm[TypedDom[Value]] with Term {
+  def own(term: TypedTerm[Value]) = new OwnedTerm[Value] with Term {
     def self = term
 
     override val domain:dom.type = dom

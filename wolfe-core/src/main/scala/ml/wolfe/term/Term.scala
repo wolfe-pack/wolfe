@@ -80,7 +80,7 @@ trait Term[+D <: Dom] extends TermHelper[D] {
     else if (wrt.forall(_.domain.isDiscrete)) new ExhaustiveSearchArgmaxer(this.asInstanceOf[DoubleTerm], wrt) else ???
   }
 
-  def argmaxerImpl(wrt: Seq[Var[Dom]])(observed:Settings, msgs:Msgs): Argmaxer2 = {
+  def argmaxerImpl(wrt: Seq[Var[Dom]])(observed: Settings, msgs: Msgs): Argmaxer2 = {
     //todo: this could be type safe, for example by adding the argmax method to the RichDoubleTerm
     if (!domain.isDouble) sys.error("Argmax only supported for real valued terms")
     else if (wrt.forall(_.domain.isDiscrete)) ??? else ???
@@ -97,7 +97,8 @@ trait TermHelper[+D <: Dom] {
   this: Term[D] =>
 
   def clientEvaluator() = new ClientEvaluator
-  def clientDifferentiator[T <: Dom](wrt:Var[T]) = new ClientDifferentiator[T](wrt)
+
+  def clientDifferentiator[T <: Dom](wrt: Var[T]) = new ClientDifferentiator[T](wrt)
 
   class ClientEvaluator() {
     val input = createSettings()
@@ -105,25 +106,25 @@ trait TermHelper[+D <: Dom] {
     var count = 0
 
     def eval(args: Any*): domain.Value = {
-      for ((v,i) <- vars.zipWithIndex) v.domain.copyValue(args(i).asInstanceOf[v.domain.Value],input(i))
+      for ((v, i) <- vars.zipWithIndex) v.domain.copyValue(args(i).asInstanceOf[v.domain.Value], input(i))
       eval.eval()(Execution(count))
       count += 1
       domain.toValue(eval.output)
     }
   }
 
-  class ClientDifferentiator[T <: Dom](val wrt:Var[T]) {
+  class ClientDifferentiator[T <: Dom](val wrt: Var[T]) {
     val input = createSettings()
     val error = domain.toSetting(domain.one)
     val gradient = createSettings()
-    val diff = differentiator2(Seq(wrt))(input,error,gradient)
+    val diff = differentiator2(Seq(wrt))(input, error, gradient)
     val indexOfWrt = vars.indexOf(wrt)
     var count = 0
 
-    def differentiate(args:Any*):wrt.domain.Value = {
-      for ((v,i) <- vars.zipWithIndex) v.domain.copyValue(args(i).asInstanceOf[v.domain.Value],input(i))
+    def differentiate(args: Any*): wrt.domain.Value = {
+      for ((v, i) <- vars.zipWithIndex) v.domain.copyValue(args(i).asInstanceOf[v.domain.Value], input(i))
       gradient.foreach(_.resetToZero())
-      diff.differentiate()(Execution(count,Execution.Diff))
+      diff.differentiate()(Execution(count, Execution.Diff))
       count += 1
       wrt.domain.toValue(gradient(indexOfWrt))
     }
@@ -175,7 +176,7 @@ trait TermHelper[+D <: Dom] {
     require(args.length == vars.length, s"You need as many arguments as there are free variables (${vars.length})")
     val gradient = createZeroSettings()
     val diff = differentiator2(Seq(wrt))(createSettings(args), domain.toSetting(domain.one), gradient)
-    diff.differentiate()(Execution(0,Execution.Diff))
+    diff.differentiate()(Execution(0, Execution.Diff))
     val indexOfWrt = vars.indexOf(wrt)
     wrt.domain.toValue(gradient(indexOfWrt))
   }
@@ -236,10 +237,14 @@ trait ProxyTerm[D <: Dom] extends Term[D] with NAry {
   override def toString = self.toString
 
   override def equals(obj: scala.Any) = obj match {
-    case t:ProxyTerm[_] =>
+    case t: ProxyTerm[_] =>
       t.self == self && t.getClass == getClass
     case _ => false
   }
+}
+
+trait OwnedTerm[T] extends ProxyTerm[TypedDom[T]] {
+
 }
 
 
@@ -471,7 +476,7 @@ class DotProduct[T1 <: VectorTerm, T2 <: VectorTerm](val arg1: T1, val arg2: T2)
 
 
   override def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
-    new ComposedDifferentiator2(wrt,in,err,gradientAcc) {
+    new ComposedDifferentiator2(wrt, in, err, gradientAcc) {
 
       def localBackProp()(implicit execution: Execution) = {
         val scale = error.cont(0)
@@ -702,7 +707,7 @@ class MatrixVectorProduct[T1 <: MatrixTerm, T2 <: VectorTerm](val arg1: T1, val 
 
 
   override def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
-    new ComposedDifferentiator2(wrt,in,err,gradientAcc) {
+    new ComposedDifferentiator2(wrt, in, err, gradientAcc) {
 
       def localBackProp()(implicit execution: Execution) = {
         val A = argOutputs(0).mats(0)
@@ -777,7 +782,7 @@ class Div[T1 <: DoubleTerm, T2 <: DoubleTerm](val arg1: T1, val arg2: T2) extend
   }
 
   override def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
-    new ComposedDifferentiator2(wrt,in,err,gradientAcc) {
+    new ComposedDifferentiator2(wrt, in, err, gradientAcc) {
       def localBackProp()(implicit execution: Execution) = {
         val scale = error.cont(0)
 
