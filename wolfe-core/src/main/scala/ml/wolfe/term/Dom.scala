@@ -51,6 +51,10 @@ trait Dom {
     result
   }
 
+  def createRandomSetting(eps: => Double) = {
+    toSetting(zero).randomize(eps)
+  }
+
   def toMsgs(marginals: Marginals): Msg = {
     val result = createMsg()
     copyMarginals(marginals, result)

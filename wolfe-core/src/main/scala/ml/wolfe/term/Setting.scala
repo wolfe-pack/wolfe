@@ -39,9 +39,17 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
     mats.resetToZero()
   }
 
+  def randomize(eps: => Double):setting.type = {
+    cont.randomize(eps)
+    vect.randomize(eps)
+    mats.randomize(eps)
+    setting
+  }
 
   final class DiscBuffer(val length: Int) extends Buffer[Int](setting) {
     def resetToZero(offset: Int) = array(offset) = 0
+
+    def randomize(eps: => Double) = {}
   }
 
   final class ContBuffer(val length: Int) extends Buffer[Double](setting) {
@@ -69,6 +77,10 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
 
     def resetToZero(offset: Int) = array(offset) = 0.0
 
+    def randomize(eps: => Double) = {
+      for (i <- 0 until length) array(i) = array(i) + eps
+      flagAllChanged()
+    }
   }
 
   final class VectBuffer(val length: Int) extends Buffer[FactorieVector](setting) {
@@ -97,6 +109,12 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
         add(i, that(i))
       }
       addChanges(that.changed())
+    }
+
+    def randomize(eps: => Double) = {
+      for (i <- 0 until length)
+        array(i) += eps
+      flagAllChanged()
     }
 
     def resetToZero(offset: Int) = array(offset) := 0
@@ -194,6 +212,11 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
 
     def resetToZero(offset: Int) = array(offset) := 0
 
+    def randomize(eps: => Double) = {
+      for (i <- 0 until length)
+        array(i) += eps
+      flagAllChanged()
+    }
 
   }
 
@@ -524,6 +547,7 @@ abstract class Buffer[T: ClassTag](val setting: Setting) {
     flagAllChanged()
   }
 
+  def randomize(eps: =>Double)
 
   def mkString(sep: String) = array.mkString(sep)
 }
