@@ -18,7 +18,6 @@ object NamedValue extends NamedValueImplicits {
     val result = q"""
       new ml.wolfe.term.NamedValue($name,${value.tree})
     """
-    println(result)
     c.Expr[NamedValue[T]](result)
   }
   //  def logMacro[T <: Term[Dom] : c.WeakTypeTag](c:blackbox.Context)(term: c.Expr[T]):c.Expr[]
