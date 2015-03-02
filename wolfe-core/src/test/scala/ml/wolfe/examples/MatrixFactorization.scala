@@ -32,6 +32,7 @@ object MatrixFactorization extends App {
   val trainingData = IndexedSeqConst(Cell(0, 0), Cell(1, 1))
 
   //call some user code to return a negative cell, uses term monad (so pos is an actual Cell, not a term)
+  //note that this requires "cells" to be implicit, as it creates a new cells.Term
   def sampleNegCell(posTerm: cells.Term) = for (pos <- posTerm) yield pos.copy(row = random.nextInt(rows))
 
   //the per cell loss
@@ -40,8 +41,8 @@ object MatrixFactorization extends App {
   //training loss, stochastic term based on sampling a positive cell, and then a negative based on it.
   def loss(t: thetas.Term) = {
     //we sample a positive cell, and memoize the result
-    val pos = mem(trainingData.sampleSequential).logged
-    //based on the memoized positive cell, we sample a negative cell
+    val pos = logged(mem(trainingData.sampleSequential))
+    //based on the memoized positive cell, we sample a negative cell which needs to memoized because it will reappear several times
     val neg = mem(sampleNegCell(pos)).logged
     //the loss based on positve and negative cell
     log(sigm(score(t)(pos))) - log(sigm(-score(t)(neg)))

@@ -2,14 +2,17 @@ package ml.wolfe.term
 
 import cc.factorie.Factorie.DenseTensor1
 import cc.factorie.la.{SingletonTensor1, DenseTensor2}
+import ml.wolfe.term.TermImplicits.RichToLog
 import ml.wolfe.{FactorieMatrix, FactorieVector}
 import scala.language.implicitConversions
+import scala.reflect.ClassTag
+import scala.reflect.macros.blackbox
 import scala.util.Random
 
 /**
  * @author riedel
  */
-object TermImplicits extends NameProviderImplicits with MathImplicits with Stochastic {
+object TermImplicits extends NameProviderImplicits with MathImplicits with Stochastic with LoggedTerms {
 
   implicit val doubles: Dom.doubles.type = Dom.doubles
   implicit val bools: Dom.bools.type = Dom.bools
@@ -127,7 +130,7 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
   }
 
   implicit class RichToLog[T <: Term[Dom]](val term:T) {
-    def logMe(name:String) =
+    def logged(name:String) =
       term.domain.own(new LogTerm[Dom,Term[Dom]](term,name).asInstanceOf[TypedTerm[term.domain.Value]])
 
     def logged(implicit name:NameProvider) =
@@ -387,3 +390,15 @@ trait Stochastic {
   def sampleUniform(range: Range)(implicit random:Random) = dom(range).uniform
 
 }
+
+trait LoggedTerms extends NamedValueImplicits {
+
+  def logged[T <: Term[Dom]](term:NamedValue[T]):term.value.domain.Term = {
+    val clean = term.name.replace("ml.wolfe.term.TermImplicits.","")
+    term.value.domain.own(new LogTerm[Dom, Term[Dom]](term.value, clean).asInstanceOf[TypedTerm[term.value.domain.Value]])
+  }
+
+}
+
+
+
