@@ -977,6 +977,11 @@ class IntToDouble[T <: IntTerm](val int: T) extends ComposedDoubleTerm {
   def differentiator(wrt: Seq[Var[Dom]]) = ???
 }
 
+case class Identity[D<:Dom, T <: Term[D]](self: T) extends ProxyTerm[D] {
+  def copy(args: IndexedSeq[ArgumentType]) = new Identity[D,T](args(0).asInstanceOf[T])
+}
+
+
 trait BinaryDiscreteOperator[D <: Dom, A <: Dom] extends Composed[D] {
 
   self =>

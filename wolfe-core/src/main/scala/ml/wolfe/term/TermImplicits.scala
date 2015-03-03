@@ -47,7 +47,8 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
   def choice[T <: Term[Dom]](index:IntTerm)(choice1:T, choices:T*):choice1.domain.Term =
     choice1.domain.own(SeqTerm(choice1 +:choices:_*)(index).asInstanceOf[TypedTerm[choice1.domain.Value]])
 
-  def ifThenElse[T <: Term[Dom]](cond:BoolTerm)(ifTrue:T)(ifFalse:T) = choice(boolToInt(cond))(ifTrue,ifFalse)
+  def ifThenElse[T <: Term[Dom]](cond:BoolTerm)(ifTrue:T)(ifFalse:T) =
+    choice(boolToInt(cond))(ifFalse,ifTrue)
 
   implicit class ConvertableToTerm[T, D <: TypedDom[T]](value: T)(implicit val domain: D) {
     def toConst: domain.Term = domain.Const(value)
@@ -397,8 +398,7 @@ trait MathImplicits {
   implicit def intToDouble(int: IntTerm): IntToDouble[int.type] = new IntToDouble[int.type](int)
 
   def boolToInt(bool: BoolTerm):Dom.ints.Term = {
-    import TermImplicits._
-    bool.map(b => if (b) 1 else 0)(Dom.ints)
+    Dom.ints.own(bool.asInstanceOf[IntTerm])
   }
 
 }
