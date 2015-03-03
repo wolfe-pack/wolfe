@@ -114,6 +114,8 @@ class Tuple2Dom[D1 <: Dom, D2 <: Dom](val dom1: D1, val dom2: D2) extends Produc
 trait ProductDom extends Dom {
   dom =>
 
+  def productName = dom.getClass.getSimpleName
+
   class Field[D <: Dom](val product: TypedTerm[Value], val domain: D, val start: Offsets) extends Composed[D] {
 
     type ArgumentType = TypedTerm[Value]
@@ -156,6 +158,8 @@ trait ProductDom extends Dom {
       }
     }
 
+
+    override def toString = s"""$productName(${arguments.mkString(",")})"""
 
     override def composer2(args: Settings) = new Composer2(args) {
       val lengths = arguments.map(_.domain.lengths).toArray

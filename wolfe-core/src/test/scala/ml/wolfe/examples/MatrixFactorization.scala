@@ -11,6 +11,7 @@ import util.Math._
  */
 object MatrixFactorization extends App {
 
+
   //number of latent dimensions
   val k = 3
 

@@ -290,7 +290,7 @@ class DiscreteDom[T](val values: IndexedSeq[T]) extends GenericDiscreteDom[T] {
   override val dimensions = Dimensions(Array(values.indices))
 }
 
-class RangeDom(val values: Range) extends GenericDiscreteDom[Int] {
+case class RangeDom(values: Range) extends GenericDiscreteDom[Int] {
   def intToValue(int: Int) = int
   def valueToInt(value: Value) = value
   def domainSize = values.size

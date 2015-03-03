@@ -59,4 +59,6 @@ class Memoized[D <: Dom, T <: Term[D]](val term:T) extends Term[D] {
   def atomsIterator = ???
 
   def differentiator(wrt: Seq[Var[Dom]]) = ???
+
+  override def toString = s"mem($term)"
 }

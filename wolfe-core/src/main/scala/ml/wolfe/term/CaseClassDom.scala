@@ -164,6 +164,8 @@ object CaseClassDom {
           }
           """
 
+        val classNameString = Constant(caseClassTypeName.toString)
+
         val newTerm = q"""
           $caseClassDef
           class $domClassName[..$argDomTypeParameters](..$domConstructorArgs) extends ml.wolfe.term.ProductDom {
@@ -171,6 +173,7 @@ object CaseClassDom {
 
             import ml.wolfe.term._
 
+            override def productName = $classNameString
 
             type Value = $caseClassTypeName
             type Var = DomVar
