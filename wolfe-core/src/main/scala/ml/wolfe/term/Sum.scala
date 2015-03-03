@@ -150,7 +150,7 @@ case class VarSeqSum[D <: TypedDom[Double], T <: Term[VarSeqDom[D]]](seq: T) ext
     def eval()(implicit execution: Execution) = {
       val length = input(0).disc(0)
       output.cont(0) = 0.0
-      for (i <- 0 until length) output.cont(0) += input(i).cont(0)
+      for (i <- 0 until length) output.cont(0) += input(i+1).cont(0)
     }
 
     override def abort(index: Int) = {
@@ -165,13 +165,15 @@ case class VarSeqSum[D <: TypedDom[Double], T <: Term[VarSeqDom[D]]](seq: T) ext
       def localBackProp()(implicit execution: Execution) = {
         val length = argOutputs(0).disc(0)
         for (i <- 0 until length) {
-          argErrors(i) := error
+          argErrors(i+1) := error
         }
       }
 
-      override def abortForward(index: Int) = super.abortForward(index)
+      override def abortForward(index: Int) = {
+        index > 0 && index > argOutputs(0).disc(0)
+      }
 
-      override def abortBackward(index: Int) = super.abortBackward(index)
+      override def abortBackward(index: Int) = abortForward(index)
     }
 
   trait Composer {
