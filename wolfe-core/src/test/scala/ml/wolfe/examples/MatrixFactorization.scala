@@ -86,13 +86,13 @@ object BagOfWordsMatrixFactorization extends App {
   implicit val Cols = Col.Values(Seqs(Words, 0, maxWordsPerCol))
   implicit val Cells = Cell.Values(Ints(0 until numRows), Ints(0 until numCols))
 
-  val observedCols = SeqConst(Col(IndexedSeq(0, 1)), Col(IndexedSeq(1, 2)))
+  val cols = SeqConst(Col(IndexedSeq(0, 1)), Col(IndexedSeq(1, 2)))
   val trainingData = SeqConst(Cell(0, 0), Cell(1, 1))
 
   def sampleNegCell(posTerm: Cells.Term) = for (pos <- posTerm) yield pos.copy(row = random.nextInt(numRows))
 
   def score(t: Thetas.Term)(cell: Cells.Term) = {
-    sum(observedCols(cell.col).words) { w => t.words(w) dot t.rows(cell.row)}
+    sum(cols(cell.col).words) { w => t.words(w) dot t.rows(cell.row)}
   }
 
   def loss(t: Thetas.Term) = {

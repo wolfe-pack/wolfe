@@ -8,6 +8,7 @@ import ml.wolfe.WolfeSpec
 class TransformerSpecs extends WolfeSpec {
 
   import TermImplicits._
+  import Transformer._
 
   "A depth first transformer" should {
     "transform a term tree in a depth first fashion" in {
@@ -15,7 +16,7 @@ class TransformerSpecs extends WolfeSpec {
       val y = Doubles.Var
       val term = x * 2.0 + x
       val expected = y * 2.0 + y
-      val transformed = Transformer.depthFirst(term) {
+      val transformed = depthFirst(term) {
         case t if t == x => y
       }
       transformed should beStringEqual (expected)
@@ -27,7 +28,7 @@ class TransformerSpecs extends WolfeSpec {
       val x = Doubles.Var
       val term = x + x + x + x
       val expected = sum(x,x,x,x)
-      val transformed = Transformer.flattenSums(term)
+      val transformed = flattenSums(clean(term))
       transformed should beStringEqual (expected)
     }
   }
@@ -37,7 +38,7 @@ class TransformerSpecs extends WolfeSpec {
       val x = Seqs(Doubles,3).Var
       val indices = SeqConst(0,1,2)
       val term = sum(indices) {i => x(i)}
-      val transformed = Transformer.groundSums(term)
+      val transformed = groundSums(term)
       val expected = varSeqSum(VarSeq(indices.length,IndexedSeq(x(indices(0)),x(indices(1)),x(indices(2)))))
       transformed should beStringEqual (expected)
       transformed.eval2(IndexedSeq(1.0,2.0,3.0)) should be (expected.eval2(IndexedSeq(1.0,2.0,3.0)))

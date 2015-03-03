@@ -10,17 +10,24 @@ case class AdaGradParameters(iterations: Int,
                              initParams: Settings = new Settings(0),
                              epochHook: (IndexedSeq[Any], Int) => String = null,
                              adaptiveVectors: Boolean = true,
-                             delays: Map[Atom[Dom], Int] = Map.empty)
+                             delays: Map[Atom[Dom], Int] = Map.empty,
+                             optimizeTerm: Boolean = false)
 
 /**
  * @author riedel
  */
-class AdaGradArgmaxer2(val obj: DoubleTerm,
+class AdaGradArgmaxer2(val objRaw: DoubleTerm,
                        val wrt: Seq[Var[Dom]],
                        val observed: Settings,
                        val msgs: Msgs)(implicit params: AdaGradParameters) extends Argmaxer2 {
 
   import params._
+
+  val preprocess = optimizeTerm match {
+    case true => Transformer.clean _ andThen Transformer.groundSums andThen Transformer.flattenSums
+    case false => identity[DoubleTerm] _
+  }
+  val obj = preprocess(objRaw)
 
   val obsVars = obj.vars.filterNot(wrt.contains)
   //get differentiator
@@ -67,7 +74,7 @@ class AdaGradArgmaxer2(val obj: DoubleTerm,
       gradient foreach (_.resetToZero())
 
       //add term gradient into result gradient
-      diff.differentiate()(Execution(iteration,Execution.Diff))
+      diff.differentiate()(Execution(iteration, Execution.Diff))
 
       //now update the momentum, need to call atoms again because atoms may have changed if objective is dynamic
       addSquared(gradient, momentum)

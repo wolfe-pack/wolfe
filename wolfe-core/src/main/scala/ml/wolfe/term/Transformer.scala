@@ -24,7 +24,7 @@ object Transformer {
       o.self
   }
 
-  def flattenSums(term:Term[Dom]) = depthFirst(clean(term)) {
+  def flattenSums(term:Term[Dom]) = depthFirst(term) {
     case Sum(args) => Sum(args flatMap {
       case Sum(inner) =>
         inner
@@ -33,7 +33,7 @@ object Transformer {
     })
   }
 
-  def groundSums(term:Term[Dom]) = depthFirst(clean(term)) {
+  def groundSums(term:Term[Dom]) = depthFirst(term) {
     case FirstOrderSum(indices,variable,body) =>
       val length = indices match {
         case i:VarSeqDom[_]#Term => i.length
