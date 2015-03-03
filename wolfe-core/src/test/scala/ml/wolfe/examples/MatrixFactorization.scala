@@ -48,7 +48,7 @@ object MatrixFactorization extends App {
     //based on the memoized positive cell, we sample a negative cell which needs to memoized because it will reappear several times
     val neg = mem(sampleNegCell(pos)).logged
     //the loss based on positve and negative cell
-    log(sigm(score(t)(pos))) - log(sigm(-score(t)(neg)))
+    log(sigm(score(t)(pos))) + log(sigm(-score(t)(neg)))
   }
 
   //learning parameters
@@ -98,7 +98,7 @@ object BagOfWordsMatrixFactorization extends App {
   def loss(t: Thetas.Term) = {
     val pos = mem(trainingData.sampleSequential)
     val neg = mem(sampleNegCell(pos))
-    log(sigm(score(t)(pos))) - log(sigm(-score(t)(neg)))
+    log(sigm(score(t)(pos))) + log(sigm(-score(t)(neg)))
   }
 
   val init = Settings(Thetas.createRandomSetting(random.nextGaussian() * 0.1))
