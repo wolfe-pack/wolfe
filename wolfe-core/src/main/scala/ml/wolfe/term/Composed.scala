@@ -157,3 +157,12 @@ trait NAry {
   def copy(args: IndexedSeq[ArgumentType]): Term[Dom]
 
 }
+
+trait Unary extends NAry {
+  def argument:ArgumentType
+  def copy(arg:ArgumentType):Term[Dom]
+
+  def arguments = IndexedSeq(argument)
+
+  def copy(args: IndexedSeq[ArgumentType]) = copy(args(0))
+}

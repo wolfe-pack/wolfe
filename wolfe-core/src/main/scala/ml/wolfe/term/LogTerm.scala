@@ -3,9 +3,20 @@ package ml.wolfe.term
 /**
  * @author riedel
  */
-class LogTerm[D <: Dom, T <: Term[D]](val toLog: T, val name:String = null) extends Term[D] {
+class LogTerm[D <: Dom, T <: Term[D]](val toLog: T, val name:String = null) extends Term[D] with Unary {
 
   def nameToShow = if (name == null) toLog.toString else name
+
+
+  type ArgumentType = T
+
+
+  def argument = toLog
+
+
+  override def toString = s"logged($toLog)"
+
+  def copy(arg: ArgumentType) = new LogTerm[Dom,Term[Dom]](arg,name)
 
   override def evaluatorImpl(in: Settings) = new AbstractEvaluator2(in) {
     val evalToLog = toLog.evaluatorImpl(in)

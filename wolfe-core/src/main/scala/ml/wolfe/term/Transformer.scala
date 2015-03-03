@@ -19,12 +19,12 @@ object Transformer {
     transformed
   }
 
-  def removeOwned(term:Term[Dom]) = depthFirst(term) {
+  def clean(term:Term[Dom]) = depthFirst(term) {
     case o:OwnedTerm[_] =>
       o.self
   }
 
-  def flattenSums(term:Term[Dom]) = depthFirst(removeOwned(term)) {
+  def flattenSums(term:Term[Dom]) = depthFirst(clean(term)) {
     case Sum(args) => Sum(args flatMap {
       case Sum(inner) =>
         inner
@@ -33,7 +33,7 @@ object Transformer {
     })
   }
 
-  def groundSums(term:Term[Dom]) = depthFirst(removeOwned(term)) {
+  def groundSums(term:Term[Dom]) = depthFirst(clean(term)) {
     case FirstOrderSum(indices,variable,body) =>
       val length = indices match {
         case i:VarSeqDom[_]#Term => i.length
