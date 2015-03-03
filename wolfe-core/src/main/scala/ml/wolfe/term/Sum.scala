@@ -101,7 +101,7 @@ case class Sum(arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm {
     }
   }
 
-  override def differentiator2(wrt:Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) = new Differentiator2 {
+  override def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) = new Differentiator2 {
 
 
     val input = in
@@ -125,7 +125,7 @@ case class Sum(arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm {
   }
 }
 
-case class VarSeqSum[D <: TypedDom[Double], T <: Term[VarSeqDom[D]]](seq: T) extends DoubleTerm with NAry {
+case class VarSeqSum[D <: TypedDom[Double], T <: Term[VarSeqDom[D]]](seq: T) extends ComposedDoubleTerm {
 
   self =>
 
@@ -143,13 +143,36 @@ case class VarSeqSum[D <: TypedDom[Double], T <: Term[VarSeqDom[D]]](seq: T) ext
 
   val arguments = length +: elements
 
-  val domain = Dom.doubles
-
-  val vars = arguments.flatMap(_.vars).distinct
-
-  def atomsIterator = ???
-
   def copy(args: IndexedSeq[ArgumentType]) = ???
+
+
+  override def composer2(args: Settings) = new Composer2(args) {
+    def eval()(implicit execution: Execution) = {
+      val length = input(0).disc(0)
+      output.cont(0) = 0.0
+      for (i <- 0 until length) output.cont(0) += input(i).cont(0)
+    }
+
+    override def abort(index: Int) = {
+      index > 0 && index > input(0).disc(0)
+    }
+  }
+
+
+  override def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
+    new ComposedDifferentiator2(wrt,in,err,gradientAcc) {
+
+      def localBackProp()(implicit execution: Execution) = {
+        val length = argOutputs(0).disc(0)
+        for (i <- 0 until length) {
+          argErrors(i) := error
+        }
+      }
+
+      override def abortForward(index: Int) = super.abortForward(index)
+
+      override def abortBackward(index: Int) = super.abortBackward(index)
+    }
 
   trait Composer {
     val argOutputs = arguments.map(_.domain.createSetting()).toArray
@@ -160,22 +183,7 @@ case class VarSeqSum[D <: TypedDom[Double], T <: Term[VarSeqDom[D]]](seq: T) ext
   }
 
 
-  def evaluator() = new Evaluator with Composer {
-
-    def eval(inputs: Array[Setting], output: Setting) = {
-      full2Arg(0).copyForwardShallow(inputs, argInputs(0))
-      argEvals(0).eval(argInputs(0), argOutputs(0))
-      val length = argOutputs(0).disc(0)
-      var result = 0.0
-      for (i <- 1 until length + 1) {
-        full2Arg(i).copyForwardShallow(inputs, argInputs(i))
-        argEvals(i).eval(argInputs(i), argOutputs(i))
-        result += argOutputs(i).cont(0)
-      }
-      output.cont(0) = result
-    }
-  }
-
+  def composer() = ???
 
   def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
     def withRespectTo = wrt

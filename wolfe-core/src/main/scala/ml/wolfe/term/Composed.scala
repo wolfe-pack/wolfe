@@ -29,19 +29,24 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
 
   abstract class Composer2(in:Settings) extends AbstractEvaluator2(in) {
     val output = self.domain.createSetting()
+    def abort(index:Int) = false
   }
 
   def composer2(args: Settings): Composer2 = ???
 
   class ComposedEvaluator(in:Settings) extends Evaluator2 {
-    val argEvals = arguments.map(a => a.evaluatorImpl(in.linkedSettings(vars, a.vars)))
+    val argEvals = arguments.map(a => a.evaluatorImpl(in.linkedSettings(vars, a.vars))).toArray
     val argOutputs = Settings.fromSeq(argEvals.map(_.output))
     val comp = composer2(argOutputs)
     val input = in
     val output = comp.output
 
     def eval()(implicit execution:Execution) = {
-      argEvals foreach (_.eval())
+      var i = 0
+      while (i < size && !comp.abort(i)) {
+        argEvals(i).eval()
+        i += 1
+      }
       comp.eval()
     }
   }
@@ -55,7 +60,7 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
 
 
     val argDiffs = arguments.map(a => a.differentiator2(wrt)(
-      input.linkedSettings(vars,a.vars),a.domain.createSetting(),gradientAccumulator.linkedSettings(vars,a.vars)))
+      input.linkedSettings(vars,a.vars),a.domain.createSetting(),gradientAccumulator.linkedSettings(vars,a.vars))).toArray
     val argOutputs = Settings.fromSeq(argDiffs.map(_.output))
     val argErrors = Settings.fromSeq(argDiffs.map(_.error))
     val comp = composer2(argOutputs)
@@ -67,14 +72,25 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
      */
     def localBackProp()(implicit execution:Execution)
 
+    def abortForward(index:Int) = false
+    def abortBackward(index:Int) = false
+
     def forward()(implicit execution:Execution) = {
-      argDiffs foreach (_.forward())
+      var i = 0
+      while (i < size && !abortForward(i)) {
+        argDiffs(i).forward()
+        i += 1
+      }
       comp.eval()
     }
 
     def backward()(implicit execution:Execution) = {
       localBackProp()
-      argDiffs foreach (_.backward())
+      var i = 0
+      while (i < size && !abortBackward(i)) {
+        argDiffs(i).backward()
+        i += 1
+      }
     }
 
   }
