@@ -200,11 +200,11 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
 
 trait MathImplicits {
 
-  def vectors(dim: Int) = new VectorDom(dim)
+  def Vectors(dim: Int) = new VectorDom(dim)
 
-  def unitVectors(dim: Int) = new UnitVectorDom(dim)
+  def UnitVectors(dim: Int) = new UnitVectorDom(dim)
 
-  def matrices(dim1: Int, dim2: Int) = new MatrixDom(dim1: Int, dim2: Int)
+  def Matrices(dim1: Int, dim2: Int) = new MatrixDom(dim1: Int, dim2: Int)
 
   def vector(values: Double*) = new DenseTensor1(values.toArray)
 
@@ -377,13 +377,13 @@ trait MathImplicits {
 
   implicit def intToDoubleConstant(d: Int): Constant[DoubleDom] = Dom.doubles.Const(d)
 
-  implicit def vectToConstant(d: FactorieVector): Constant[VectorDom] = vectors(d.dim1).Const(d)
+  implicit def vectToConstant(d: FactorieVector): Constant[VectorDom] = Vectors(d.dim1).Const(d)
 
   implicit def vectToConstantWithDom(d: FactorieVector)(implicit dom: VectorDom): dom.Term = dom.Const(d)
 
   implicit def dynVectToConstantWithDom(d: Dynamic[FactorieVector])(implicit dom: VectorDom): dom.Term = dom.dynConst(d)
 
-  implicit def matToConstant(d: FactorieMatrix): Constant[MatrixDom] = matrices(d.dim1, d.dim2).Const(d)
+  implicit def matToConstant(d: FactorieMatrix): Constant[MatrixDom] = Matrices(d.dim1, d.dim2).Const(d)
 
   implicit def intToDouble(int: IntTerm): IntToDouble[int.type] = new IntToDouble[int.type](int)
 

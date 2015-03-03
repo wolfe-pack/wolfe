@@ -17,7 +17,7 @@ class AdagradSpecs extends WolfeSpec {
       result.eval2() should be(2.0 +- eps)
     }
     "optimize a multivariate quadratic objective" in {
-      val X = vectors(2)
+      val X = Vectors(2)
       val x = X.variable("x")
       def obj(x: X.Term) = (x dot vector(4.0, 4.0)) - (x dot x)
       val result = argmax2(X) { x => obj(x).argmaxBy(Argmaxer.adaGrad2(AdaGradParameters(100, 1)))}

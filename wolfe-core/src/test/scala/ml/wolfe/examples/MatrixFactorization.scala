@@ -26,7 +26,7 @@ object MatrixFactorization extends App {
   @domain case class Cell(row: Int, col: Int)
 
   // the set of possible parameters
-  implicit val Thetas = Theta.Dom(Seqs(vectors(k), rows), Seqs(vectors(k), cols))
+  implicit val Thetas = Theta.Dom(Seqs(Vectors(k), rows), Seqs(Vectors(k), cols))
 
   // the set of possible cells
   implicit val Cells = Cell.Dom(Ints(0 until rows), Ints(0 until cols))
@@ -79,8 +79,8 @@ object BagOfWordsMatrixFactorization extends App {
   @domain case class Cell(row: Int, col: Int)
 
   implicit val Thetas = Theta.Dom(
-    Seqs(vectors(k), numRows),
-    Seqs(vectors(k), numWords))
+    Seqs(Vectors(k), numRows),
+    Seqs(Vectors(k), numWords))
 
   implicit val Words = Ints(0 until numWords)
   implicit val Cols = Col.Dom(Seqs(Words, 0, maxWordsPerCol))

@@ -96,11 +96,11 @@ object Scratch extends App {
 
   val a = Doubles.variable("a")
 
-  val x = vectors(3).variable("x")
-  val y = vectors(3).variable("y")
-  val z = vectors(5).variable("z")
+  val x = Vectors(3).variable("x")
+  val y = Vectors(3).variable("y")
+  val z = Vectors(5).variable("z")
 
-  val A = matrices(5,3).variable("A")
+  val A = Matrices(5,3).variable("A")
 
   val complexTerm = sigm(tanh(((sigmVec(A * x) * a) dot tanhVec(z)) * a))
 
