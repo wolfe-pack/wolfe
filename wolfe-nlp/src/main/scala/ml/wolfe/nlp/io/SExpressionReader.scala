@@ -6,28 +6,41 @@ import scala.collection.mutable.ArrayBuffer
  * Created by narad on 8/1/14.
  */
 
-abstract class ProtoNode
+abstract class ProtoNode {
+  def search: Seq[ProtoNode]
+}
 
-case class ProtoValueNode(field: String, value: String) extends ProtoNode
+case class ProtoValueNode(field: String, value: String) extends ProtoNode {
 
-case class ProtoParentNode(field: String, value: Seq[ProtoNode]) extends ProtoNode
+  def search: Seq[ProtoNode] = Seq(this)
+}
+
+case class ProtoParentNode(field: String, value: Seq[ProtoNode]) extends ProtoNode {
+  def search: Seq[ProtoNode] = Seq(this) ++ value.map(_.search).flatten
+}
 
 
 class ProtoReader(ldelim: String = "(", rdelim: String = ")") {
+  val VALUE_PATTERN = """ *([^:]+): (.*)""".r
+  val PARENT_PATTERN = """ *([^ ]+) \{""".r
 
   def parse(text: String): Seq[ProtoNode] = {
     var lines = text.split("\n")
     val nodes = new ArrayBuffer[ProtoNode]
-    while (lines.nonEmpty && !lines.head.contains("{")) {
-      if (lines.head.contains(":")) {
-        val cols = lines.head.split(":")
-        nodes += ProtoValueNode(cols(0).trim, cols(1).trim)
+    while (lines.nonEmpty) {
+      lines.head match {
+        case VALUE_PATTERN(field, value) => {
+          nodes += ProtoValueNode(field, value)
+          lines = lines.tail
+        }
+        case PARENT_PATTERN(field) => {
+          val name = lines.head.split("\\{").head.trim
+          val inner = lookAhead(lines)
+          nodes += ProtoParentNode(name, parse(inner.mkString("\n")))
+          lines = lines.slice(inner.size+1, lines.size)
+        }
+        case _ => lines = lines.tail
       }
-      lines = lines.tail
-    }
-    if (lines.nonEmpty && lines.head.contains("{")) {
-      val name = lines.head.split("\\{").head.trim
-      nodes += ProtoParentNode(name, parse(lookAhead(lines).mkString("\n")))
     }
     nodes.toSeq
   }
@@ -64,6 +77,8 @@ object ProtoReader {
     sreader.parse(str).foreach { n =>
       println(n)
     }
+    println("\nNodes:")
+    println(sreader.parse(str).head.search.mkString("\n"))
   }
 }
 
