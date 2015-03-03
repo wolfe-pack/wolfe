@@ -44,7 +44,8 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
 
   def mem[T <: Term[Dom]](term:T) = term.domain.own(new Memoized[Dom,T](term).asInstanceOf[TypedTerm[term.domain.Value]])
 
-  def choice[T <: Term[Dom]](index:IntTerm)(choices:T*):T = SeqTerm(choices:_*)(index).asInstanceOf[T]
+  def choice[T <: Term[Dom]](index:IntTerm)(choice1:T, choices:T*):choice1.domain.Term =
+    choice1.domain.own(SeqTerm(choice1 +:choices:_*)(index).asInstanceOf[TypedTerm[choice1.domain.Value]])
 
   def ifThenElse[T <: Term[Dom]](cond:BoolTerm)(ifTrue:T)(ifFalse:T) = choice(boolToInt(cond))(ifTrue,ifFalse)
 
