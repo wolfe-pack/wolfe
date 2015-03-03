@@ -57,7 +57,7 @@ class SampleSpecs extends WolfeSpec {
 
     "allow calculating stochastic gradients" in {
       val n = 2
-      val x = doubles.Var
+      val x = Doubles.Var
       val w = fixedLengthSeq(0 until n)
       val i = sampleSequential(0 until n)
       val t = x * x * w(i)
@@ -69,7 +69,7 @@ class SampleSpecs extends WolfeSpec {
 
     "combine with first order sums" in {
       val n = 4
-      implicit val I = varSeqs(ints,0,n)
+      implicit val I = Seqs(Ints,0,n)
       def indices(iTerm:IntTerm):I.Term = iTerm map (i => IndexedSeq() ++ (0 until i))
       val t = sum(indices(sampleSequential(1 until n))) { i => i:DoubleTerm}
       val e = t.clientEvaluator()

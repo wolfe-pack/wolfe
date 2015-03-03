@@ -94,7 +94,7 @@ object GradientChecking {
 object Scratch extends App {
   import ml.wolfe.term.TermImplicits._
 
-  val a = doubles.variable("a")
+  val a = Doubles.variable("a")
 
   val x = vectors(3).variable("x")
   val y = vectors(3).variable("y")

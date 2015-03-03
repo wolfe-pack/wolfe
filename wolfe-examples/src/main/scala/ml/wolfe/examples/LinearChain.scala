@@ -15,7 +15,7 @@ object LinearChain {
     val data = Seq((IndexedSeq("A"),IndexedSeq("NN")))
 
     implicit val W = vectors(10)
-    implicit val Labels = discrete("NN","VBD","IN")
+    implicit val Labels = Discretes("NN","VBD","IN")
     val index = new SimpleIndex
 
     case class Instance(x:IndexedSeq[String]) {

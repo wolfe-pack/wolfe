@@ -11,8 +11,8 @@ class TransformerSpecs extends WolfeSpec {
 
   "A depth first transformer" should {
     "transform a term tree in a depth first fashion" in {
-      val x = doubles.Var
-      val y = doubles.Var
+      val x = Doubles.Var
+      val y = Doubles.Var
       val term = x * 2.0 + x
       val expected = y * 2.0 + y
       val transformed = Transformer.depthFirst(term) {
@@ -24,7 +24,7 @@ class TransformerSpecs extends WolfeSpec {
 
   "A sum flattener" should {
     "replace nested sums with one flat sum" in {
-      val x = doubles.Var
+      val x = Doubles.Var
       val term = x + x + x + x
       val expected = sum(x,x,x,x)
       val transformed = Transformer.flattenSums(term)
@@ -34,8 +34,8 @@ class TransformerSpecs extends WolfeSpec {
 
   "A first order sum grounder" should {
     "replace a first order sum with a propositional sum" in {
-      val x = fixedLengthSeqs(doubles,3).Var
-      val indices = IndexedSeqConst(0,1,2)
+      val x = Seqs(Doubles,3).Var
+      val indices = SeqConst(0,1,2)
       val term = sum(indices) {i => x(i)}
       val transformed = Transformer.groundSums(term)
       val expected = varSeqSum(VarSeq(indices.length,IndexedSeq(x(indices(0)),x(indices(1)),x(indices(2)))))

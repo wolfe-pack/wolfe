@@ -15,9 +15,9 @@ class AllSettingsIterableSpecs extends WolfeSpec {
 
   "An all settings iterable" should {
     "should iterate over all settings" in {
-      val d1 = bools
-      val d2 = fixedLengthSeqs(discrete("Yo"), 2)
-      val d3 = dom(1 until 3)
+      val d1 = Bools
+      val d2 = Seqs(Discretes("Yo"), 2)
+      val d3 = Ints(1 until 3)
       val iterable = AllSettings(IndexedSeq(d1, d2, d3)) {
         s => (d1.toValue(s(0)), d2.toValue(s(1)), d3.toValue(s(2)))
       }

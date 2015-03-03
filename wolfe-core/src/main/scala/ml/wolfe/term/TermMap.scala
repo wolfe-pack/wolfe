@@ -81,8 +81,8 @@ object TermMonadTest {
 
   def main(args: Array[String]) {
     import TermImplicits._
-    val x = bools.variable("x")
-    val z = bools.variable("z")
+    val x = Bools.variable("x")
+    val z = Bools.variable("z")
     val y = for (i <- x) yield !i
     val t = for (i <- x; j <- z) yield !i || j
     println(y.eval(true))

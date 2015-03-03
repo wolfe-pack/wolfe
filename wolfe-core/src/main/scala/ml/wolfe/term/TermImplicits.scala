@@ -14,15 +14,13 @@ import scala.util.Random
  */
 object TermImplicits extends NameProviderImplicits with MathImplicits with Stochastic with LoggedTerms {
 
-  implicit val doubles: Dom.doubles.type = Dom.doubles
-  implicit val bools: Dom.bools.type = Dom.bools
-  implicit val ints: Dom.ints.type = Dom.ints
+  implicit val Doubles: Dom.doubles.type = Dom.doubles
+  implicit val Bools: Dom.bools.type = Dom.bools
+  implicit val Ints: Dom.ints.type = Dom.ints
 
-  def discrete[T](args: T*) = new DiscreteDom[T](args.toIndexedSeq)
-
-  def dom[T](args: Seq[T]) = new DiscreteDom[T](args.toIndexedSeq)
-
-  def dom[T](args: Range) = new RangeDom(args)
+  def Discretes[T](args: T*) = new DiscreteDom[T](args.toIndexedSeq)
+  
+  def Ints[T](args: Range) = new RangeDom(args)
 
   implicit def rangeToDom(range: Range): RangeDom = new RangeDom(range)
 
@@ -30,16 +28,16 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
 
   def seqs[D <: Dom](elements: D, length: Int): SeqDom[elements.type] = new SeqDom[elements.type](elements, length)
 
-  def varSeqs[D <: Dom](elements: D, minLength: Int, maxLength: Int): VarSeqDom[elements.type] =
+  def Seqs[D <: Dom](elements: D, minLength: Int, maxLength: Int): VarSeqDom[elements.type] =
     new VarSeqDom[elements.type](elements, maxLength, minLength)
 
-  def fixedLengthSeqs[D <: Dom](elements: D, length: Int): VarSeqDom[elements.type] = varSeqs(elements, length, length)
+  def Seqs[D <: Dom](elements: D, length: Int): VarSeqDom[elements.type] = Seqs(elements, length, length)
 
   def fixedLengthSeq[T](elements: Seq[T])(implicit dom: TypedDom[T]) = {
-    fixedLengthSeqs(dom, elements.length).Const(elements.toIndexedSeq)
+    Seqs(dom, elements.length).Const(elements.toIndexedSeq)
   }
 
-  def IndexedSeqConst[T](elements: T*)(implicit dom: TypedDom[T]) = {
+  def SeqConst[T](elements: T*)(implicit dom: TypedDom[T]) = {
     fixedLengthSeq[T](elements)
   }
 
@@ -54,10 +52,9 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
     def toDom = new RangeDom(values)
   }
 
-  implicit class RichIndexedSeq[T](values: IndexedSeq[T]) {
-    def toDom = new DiscreteDom[T](values)
+  implicit class RichSeq[T](values: Seq[T]) {
+    def toDom = new DiscreteDom[T](values.toIndexedSeq)
   }
-
 
   def seq[E <: Dom](dom: SeqDom[E])(elems: dom.elementDom.Term*): dom.SeqDomTermImpl = new dom.SeqDomTermImpl {
     def elements = elems.toIndexedSeq
@@ -76,7 +73,7 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
   //    }
 
   def VarSeq[D <: Dom](length: TypedTerm[Int], args: IndexedSeq[Term[D]]): Term[VarSeqDom[D]] = {
-    val dom = fixedLengthSeqs[D](args.head.domain, args.length)
+    val dom = Seqs[D](args.head.domain, args.length)
     dom.Term(length, args.asInstanceOf[IndexedSeq[dom.elementDom.Term]])
     //    new VarSeqConstructor[D](length, args)
   }
@@ -397,8 +394,8 @@ trait Stochastic {
 
   import TermImplicits._
 
-  def sampleSequential(range: Range) = dom(range).sequential
-  def sampleUniform(range: Range)(implicit random:Random) = dom(range).uniform
+  def sampleSequential(range: Range) = Ints(range).sequential
+  def sampleUniform(range: Range)(implicit random:Random) = Ints(range).uniform
 
 }
 

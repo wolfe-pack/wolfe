@@ -26,23 +26,23 @@ object MatrixFactorization extends App {
   @domain case class Cell(row: Int, col: Int)
 
   // the set of possible parameters
-  implicit val thetas = Theta.Dom(fixedLengthSeqs(vectors(k), rows), fixedLengthSeqs(vectors(k), cols))
+  implicit val Thetas = Theta.Dom(Seqs(vectors(k), rows), Seqs(vectors(k), cols))
 
   // the set of possible cells
-  implicit val cells = Cell.Dom(dom(0 until rows), dom(0 until cols))
+  implicit val Cells = Cell.Dom(Ints(0 until rows), Ints(0 until cols))
 
   // positive training data, as a term
-  val trainingData = IndexedSeqConst(Cell(0, 0), Cell(1, 1))
+  val trainingData = SeqConst(Cell(0, 0), Cell(1, 1))
 
   //call some user code to return a negative cell, uses term monad (so pos is an actual Cell, not a term)
   //note that this requires "cells" to be implicit, as it creates a new cells.Term
-  def sampleNegCell(posTerm: cells.Term) = for (pos <- posTerm) yield pos.copy(row = random.nextInt(rows))
+  def sampleNegCell(posTerm: Cells.Term) = for (pos <- posTerm) yield pos.copy(row = random.nextInt(rows))
 
   //the per cell loss
-  def score(theta: thetas.Term)(cell: cells.Term) = theta.v(cell.row) dot theta.a(cell.col)
+  def score(theta: Thetas.Term)(cell: Cells.Term) = theta.v(cell.row) dot theta.a(cell.col)
 
   //training loss, stochastic term based on sampling a positive cell, and then a negative based on it.
-  def loss(t: thetas.Term) = {
+  def loss(t: Thetas.Term) = {
     //we sample a positive cell, and memoize the result
     val pos = logged(mem(trainingData.sampleSequential))
     //based on the memoized positive cell, we sample a negative cell which needs to memoized because it will reappear several times
@@ -52,11 +52,11 @@ object MatrixFactorization extends App {
   }
 
   //learning parameters
-  val init = Settings(thetas.createRandomSetting(random.nextGaussian() * 0.1))
+  val init = Settings(Thetas.createRandomSetting(random.nextGaussian() * 0.1))
   val adaParams = AdaGradParameters(iterations = 100, learningRate = 1, initParams = init)
 
   //do the training (argmax is a term, so it needs to be evaluated to do the optimization)
-  val thetaStar = argmax2(thetas)(t => loss(t).argmaxBy(Argmaxer.adaGrad2(adaParams))).eval2()
+  val thetaStar = argmax2(Thetas)(t => loss(t).argmaxBy(Argmaxer.adaGrad2(adaParams))).eval2()
 
 
 }
@@ -78,34 +78,34 @@ object BagOfWordsMatrixFactorization extends App {
   @domain case class Theta(rows: IndexedSeq[FactorieVector], words: IndexedSeq[FactorieVector])
   @domain case class Cell(row: Int, col: Int)
 
-  implicit val thetas = Theta.Dom(
-    fixedLengthSeqs(vectors(k), numRows),
-    fixedLengthSeqs(vectors(k), numWords))
+  implicit val Thetas = Theta.Dom(
+    Seqs(vectors(k), numRows),
+    Seqs(vectors(k), numWords))
 
-  implicit val words = dom(0 until numWords)
-  implicit val cols = Col.Dom(varSeqs(words, 0, maxWordsPerCol))
-  implicit val cells = Cell.Dom(dom(0 until numRows), dom(0 until numCols))
+  implicit val Words = Ints(0 until numWords)
+  implicit val Cols = Col.Dom(Seqs(Words, 0, maxWordsPerCol))
+  implicit val Cells = Cell.Dom(Ints(0 until numRows), Ints(0 until numCols))
 
-  val observedCols = IndexedSeqConst(Col(IndexedSeq(0, 1)), Col(IndexedSeq(1, 2)))
-  val trainingData = IndexedSeqConst(Cell(0, 0), Cell(1, 1))
+  val observedCols = SeqConst(Col(IndexedSeq(0, 1)), Col(IndexedSeq(1, 2)))
+  val trainingData = SeqConst(Cell(0, 0), Cell(1, 1))
 
-  def sampleNegCell(posTerm: cells.Term) = for (pos <- posTerm) yield pos.copy(row = random.nextInt(numRows))
+  def sampleNegCell(posTerm: Cells.Term) = for (pos <- posTerm) yield pos.copy(row = random.nextInt(numRows))
 
-  def score(t: thetas.Term)(cell: cells.Term) = {
+  def score(t: Thetas.Term)(cell: Cells.Term) = {
     sum(observedCols(cell.col).words) { w => t.words(w) dot t.rows(cell.row)}
   }
 
-  def loss(t: thetas.Term) = {
+  def loss(t: Thetas.Term) = {
     val pos = logged(mem(trainingData.sampleSequential))
     val neg = mem(sampleNegCell(pos)).logged
     log(sigm(score(t)(pos))) - log(sigm(-score(t)(neg)))
   }
 
-  val init = Settings(thetas.createRandomSetting(random.nextGaussian() * 0.1))
+  val init = Settings(Thetas.createRandomSetting(random.nextGaussian() * 0.1))
   val adaParams = AdaGradParameters(iterations = 100, learningRate = 1, initParams = init)
 
   //do the training (argmax is a term, so it needs to be evaluated to do the optimization)
-  val thetaStar = argmax2(thetas)(t => loss(t).argmaxBy(Argmaxer.adaGrad2(adaParams))).eval2()
+  val thetaStar = argmax2(Thetas)(t => loss(t).argmaxBy(Argmaxer.adaGrad2(adaParams))).eval2()
 
 
 

@@ -26,7 +26,7 @@ class NameProviderSpecs extends WolfeSpec {
   "A domain" should {
     "use the implicit name provider for create variable names" in {
       import TermImplicits._
-      val x = bools.Var
+      val x = Bools.Var
       x.name should be ("x")
     }
   }

@@ -11,9 +11,9 @@ class AdagradSpecs extends WolfeSpec {
 
   "Adagrad" should {
     "optimize a quadratic objective" in {
-      val x = doubles.variable("x")
-      def obj(x: doubles.Term) = x * 4.0 - x * x
-      val result = argmax2(doubles) { x => obj(x).argmaxBy(Argmaxer.adaGrad2(AdaGradParameters(100, 1)))}
+      val x = Doubles.variable("x")
+      def obj(x: Doubles.Term) = x * 4.0 - x * x
+      val result = argmax2(Doubles) { x => obj(x).argmaxBy(Argmaxer.adaGrad2(AdaGradParameters(100, 1)))}
       result.eval2() should be(2.0 +- eps)
     }
     "optimize a multivariate quadratic objective" in {
