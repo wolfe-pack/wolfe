@@ -32,7 +32,7 @@ object MatrixFactorization extends App {
   implicit val Cells = Cell.Values(Ints(0 until rows), Ints(0 until cols))
 
   // positive training data, as a term
-  val trainingData = SeqConst(Cell(0, 0), Cell(1, 1))
+  val trainingData = Seq(Cell(0, 0), Cell(1, 1)).toConst
 
   //call some user code to return a negative cell, uses term monad (so pos is an actual Cell, not a term)
   //note that this requires "cells" to be implicit, as it creates a new cells.Term
@@ -86,8 +86,8 @@ object BagOfWordsMatrixFactorization extends App {
   implicit val Cols = Col.Values(Seqs(Words, 0, maxWordsPerCol))
   implicit val Cells = Cell.Values(Ints(0 until numRows), Ints(0 until numCols))
 
-  val cols = SeqConst(Col(IndexedSeq(0, 1)), Col(IndexedSeq(1, 2)))
-  val trainingData = SeqConst(Cell(0, 0), Cell(1, 1))
+  val cols = Seq(Col(IndexedSeq(0, 1)), Col(IndexedSeq(1, 2))).toConst
+  val trainingData = Seq(Cell(0, 0), Cell(1, 1)).toConst
 
   def sampleNegCell(posTerm: Cells.Term) = for (pos <- posTerm) yield pos.copy(row = random.nextInt(numRows))
 
