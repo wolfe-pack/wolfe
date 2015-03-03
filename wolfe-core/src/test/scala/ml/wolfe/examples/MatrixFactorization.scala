@@ -96,8 +96,8 @@ object BagOfWordsMatrixFactorization extends App {
   }
 
   def loss(t: Thetas.Term) = {
-    val pos = logged(mem(trainingData.sampleSequential))
-    val neg = mem(sampleNegCell(pos)).logged
+    val pos = mem(trainingData.sampleSequential)
+    val neg = mem(sampleNegCell(pos))
     log(sigm(score(t)(pos))) - log(sigm(-score(t)(neg)))
   }
 
