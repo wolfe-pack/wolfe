@@ -267,16 +267,3 @@ class domain extends StaticAnnotation {
   def macroTransform(annottees: Any*): Any = macro CaseClassDom.implOnClass
 }
 
-class identity extends StaticAnnotation {
-  def macroTransform(annottees: Any*): Any = macro identityImpl.impl
-
-}
-
-object identityImpl {
-  def impl(c: whitebox.Context)(annottees: c.Expr[Any]*): c.Expr[Any] = {
-    import c.universe._
-    val result = annottees.map(_.tree).toList
-    c.Expr[Any](q"..$result")
-  }
-
-}

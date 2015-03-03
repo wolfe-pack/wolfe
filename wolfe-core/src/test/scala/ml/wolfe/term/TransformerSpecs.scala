@@ -45,4 +45,15 @@ class TransformerSpecs extends WolfeSpec {
     }
   }
 
+  "A sample counter" should {
+    "estimate the number of distinct samples a stochastic term can generate" in {
+      val s1 = sampleSequential(0 until 4)
+      val s2 = sampleSequential(0 until 2)
+      val m1 = mem(s1)
+      val m2 = mem(m1 + m1 + s2)
+      val t = m2 + m2
+      Traversal.guessSampleCount(t) should be (8)
+    }
+  }
+
 }
