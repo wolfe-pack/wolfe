@@ -249,7 +249,7 @@ object CaseClassDom {
 
           }
           object $caseClassTermName {
-            def Dom[..$argDomTypeParameters](implicit ..$domConstructorArgs) =
+            def Values[..$argDomTypeParameters](implicit ..$domConstructorArgs) =
               new $domClassName[..$argDomSingletonTypes](..$argNames)
           }
         """
