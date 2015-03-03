@@ -86,7 +86,7 @@ class CaseClassDomSpecs extends WolfeSpec {
 
     "create a constant using toTerm" in {
       implicit val worlds = World.Values(Bools, Doubles)
-      val const = World(true,0.5).toTerm
+      val const = World(true,0.5).toConst
       const.rain.eval() should be (true)
     }
 

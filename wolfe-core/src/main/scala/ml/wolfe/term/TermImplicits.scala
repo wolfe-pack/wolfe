@@ -44,8 +44,12 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
 
   def mem[T <: Term[Dom]](term:T) = term.domain.own(new Memoized[Dom,T](term).asInstanceOf[TypedTerm[term.domain.Value]])
 
+  def choice[T <: Term[Dom]](index:IntTerm)(choices:T*):T = SeqTerm(choices:_*)(index).asInstanceOf[T]
+
+  def ifThenElse[T <: Term[Dom]](cond:BoolTerm)(ifTrue:T)(ifFalse:T) = choice(boolToInt(cond))(ifTrue,ifFalse)
+
   implicit class ConvertableToTerm[T, D <: TypedDom[T]](value: T)(implicit val domain: D) {
-    def toTerm: domain.Term = domain.Const(value)
+    def toConst: domain.Term = domain.Const(value)
   }
 
   implicit class RichRange(values: Range) {
@@ -73,7 +77,10 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
   //      val domain:dom.type = dom
   //    }
 
-  def VarSeq[D <: Dom](length: TypedTerm[Int], args: IndexedSeq[Term[D]]): Term[VarSeqDom[D]] = {
+  def SeqTerm[D <: Dom](args:Term[D]*):VarSeqDom[D]#Term  = VarSeq[D](Ints.Const(args.length),args.toIndexedSeq)
+  def SeqTerm[D <: Dom](length:IntTerm)(args:Term[D]*):VarSeqDom[D]#Term  = VarSeq[D](length,args.toIndexedSeq)
+
+  def VarSeq[D <: Dom](length: TypedTerm[Int], args: IndexedSeq[Term[D]]): VarSeqDom[D]#Term = {
     val dom = Seqs[D](args.head.domain, args.length)
     dom.Term(length, args.asInstanceOf[IndexedSeq[dom.elementDom.Term]])
     //    new VarSeqConstructor[D](length, args)
@@ -144,7 +151,7 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
   //  }
 
   implicit class RichMonadTerm[A <: Term[Dom]](val termToBeMapped: A) {
-    def map[B: TypedDom](fun: termToBeMapped.domain.Value => B)(implicit targetDom: TypedDom[B]): targetDom.Term = {
+    def map[B](fun: termToBeMapped.domain.Value => B)(implicit targetDom: TypedDom[B]): targetDom.Term = {
       val result = new TermMap[A, targetDom.type] {
         val term: termToBeMapped.type = termToBeMapped
         val domain: targetDom.type = targetDom
@@ -388,6 +395,10 @@ trait MathImplicits {
 
   implicit def intToDouble(int: IntTerm): IntToDouble[int.type] = new IntToDouble[int.type](int)
 
+  def boolToInt(bool: BoolTerm):Dom.ints.Term = {
+    import TermImplicits._
+    bool.map(b => if (b) 1 else 0)(Dom.ints)
+  }
 
 }
 

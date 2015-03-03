@@ -42,7 +42,7 @@ object Transformer {
       val doubleTerms = for (i <- 0 until indices.domain.maxLength) yield {
         val element = indices match {
           case v:VarSeqDom[_]#Term => v(i)
-          case v => new VarSeqApply[Dom,Term[VarSeqDom[Dom]],IntTerm](v,i.toTerm)
+          case v => new VarSeqApply[Dom,Term[VarSeqDom[Dom]],IntTerm](v,i.toConst)
         }
         val doubleTerm = depthFirst(body) {
           case t if t == variable => element

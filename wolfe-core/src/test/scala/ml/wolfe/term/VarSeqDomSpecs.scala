@@ -29,7 +29,7 @@ class VarSeqDomSpecs extends WolfeSpec {
       val n = 3
       val i = Ints(0 until n).Var
       val b = Bools.Var
-      val term = VarSeq(i, IndexedSeq(b, !b, b))
+      val term = SeqTerm(i)(b, !b, b)
       term.eval2(2, false) should be(IndexedSeq(false, true))
     }
 
