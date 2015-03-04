@@ -14,11 +14,11 @@ class FoldLeftSpecs extends WolfeSpec {
   implicit val random = new Random(0)
 
   "A fold left term" should {
-    "do a fold left" in {
-      @domain case class Result(value:Int)
+    "do a fold left" ignore {
+      @domain case class Result(value: Int)
       implicit val Results = Result.Values(Ints)
-      val s = Seq(1,2,3).toConst
-      val f = s.foldLeft(Result(0).toConst) {(r,i) => Results.Term(i + 1)}
+      val s = Seq(1, 2, 3).toConst
+      val f = s.foldLeft(Result(0).toConst) { (r, i) => Results.Term(r.value + i )}
       //todo: + i, but this doesn't compile because we require argument to Term be of type Results.value.Term
 
     }
