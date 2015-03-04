@@ -113,6 +113,10 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
 
     def sampleUniform(implicit random: Random) = apply(indexDom.uniform)
 
+//    def foldLeft[D : d.Term](d:Dom)(init:D#Term)(op:(elementDom.Term,D#Term) => D#Term) = ???
+//    def foldLeft[D <: Dom](init:D#Term)(op:(elementDom.Term,D#Term) => D#Term) = ???
+    def foldLeft(init:term.Term[Dom])(op:(init.domain.Term, elementDom.Term) => init.domain.Term) = ???
+
   }
 
   class DomVar(name: => String, val offsets: Offsets, owner: term.Var[Dom]) extends BaseVar(name, owner) with super.DomVar with DomTerm {

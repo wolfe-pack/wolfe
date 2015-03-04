@@ -101,7 +101,7 @@ trait TermHelper[+D <: Dom] {
   def clientDifferentiator[T <: Dom](wrt: Var[T]) = new ClientDifferentiator[T](wrt)
 
   class ClientEvaluator() {
-    val input = createSettings()
+    val input = createInputSettings()
     val eval = evaluatorImpl(input)
     var count = 0
 
@@ -114,9 +114,9 @@ trait TermHelper[+D <: Dom] {
   }
 
   class ClientDifferentiator[T <: Dom](val wrt: Var[T]) {
-    val input = createSettings()
+    val input = createInputSettings()
     val error = domain.toSetting(domain.one)
-    val gradient = createSettings()
+    val gradient = createInputSettings()
     val diff = differentiator2(Seq(wrt))(input, error, gradient)
     val indexOfWrt = vars.indexOf(wrt)
     var count = 0
@@ -198,7 +198,7 @@ trait TermHelper[+D <: Dom] {
     Settings.fromSeq((args zip vars) map { case (a, v) => v.domain.toSetting(a.asInstanceOf[v.domain.Value])})
   }
 
-  def createSettings() = {
+  def createInputSettings() = {
     Settings.fromSeq(vars.map(_.domain.createSetting()))
   }
 

@@ -19,7 +19,7 @@ class TransformerSpecs extends WolfeSpec {
       val transformed = depthFirst(term) {
         case t if t == x => y
       }
-      transformed should beStringEqual (expected)
+      transformed should beStringEqual(expected)
     }
   }
 
@@ -27,21 +27,22 @@ class TransformerSpecs extends WolfeSpec {
     "replace nested sums with one flat sum" in {
       val x = Doubles.Var
       val term = x + x + x + x
-      val expected = sum(x,x,x,x)
+      val expected = sum(x, x, x, x)
       val transformed = flattenSums(clean(term))
-      transformed should beStringEqual (expected)
+      transformed should beStringEqual(expected)
     }
   }
 
   "A first order sum grounder" should {
     "replace a first order sum with a propositional sum" in {
-      val x = Seqs(Doubles,3).Var
-      val indices = SeqConst(0,1,2)
-      val term = sum(indices) {i => x(i)}
+      val x = Seqs(Doubles, 3).Var
+      val indices = SeqConst(0, 1, 2)
+      val term = sum(indices) { i => x(i)}
       val transformed = groundSums(term)
-      val expected = varSeqSum(VarSeq(indices.length,IndexedSeq(x(indices(0)),x(indices(1)),x(indices(2)))))
-      transformed should beStringEqual (expected)
-      transformed.eval2(IndexedSeq(1.0,2.0,3.0)) should be (expected.eval2(IndexedSeq(1.0,2.0,3.0)))
+      val i = Ints.variable("_i")
+      val expected = sum(indices.length)(x(i) | i << 0, x(i) | i << 1, x(i) | i << 2)
+      transformed should beStringEqual(expected)
+      transformed.eval2(IndexedSeq(1.0, 2.0, 3.0)) should be(expected.eval2(IndexedSeq(1.0, 2.0, 3.0)))
     }
   }
 
@@ -52,7 +53,7 @@ class TransformerSpecs extends WolfeSpec {
       val m1 = mem(s1)
       val m2 = mem(m1 + m1 + s2)
       val t = m2 + m2
-      Traversal.distinctSampleCount(t) should be (8)
+      Traversal.distinctSampleCount(t) should be(8)
     }
   }
 

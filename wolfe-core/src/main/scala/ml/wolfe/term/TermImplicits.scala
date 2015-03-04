@@ -41,7 +41,6 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
     fixedLengthSeq[T](elements)
   }
 
-
   def mem[T <: Term[Dom]](term:T) = term.domain.own(new Memoized[Dom,T](term).asInstanceOf[TypedTerm[term.domain.Value]])
 
   def choice[T <: Term[Dom]](index:IntTerm)(choice1:T, choices:T*):choice1.domain.Term =
@@ -50,9 +49,19 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
   def ifThenElse[T <: Term[Dom]](cond:BoolTerm)(ifTrue:T)(ifFalse:T) =
     choice(boolToInt(cond))(ifFalse,ifTrue)
 
-  implicit class ConvertableToTerm[T, D <: TypedDom[T]](value: T)(implicit val domain: D) {
+//  implicit class ConvertableToTerm[T, D <: TypedDom[T]](value: T)(implicit val domain: D) {
+//    def toConst: domain.Term = domain.Const(value)
+//  }
+//  implicit class ConvertableToTerm2[T](value: T)(implicit val domain: TypedDom[T]) {
+//    def toConst2: domain.Term = domain.Const(value)
+//  }
+
+  class ConvertableToTerm3[T, D <: TypedDom[T]](value: T)(implicit val domain: D) {
     def toConst: domain.Term = domain.Const(value)
   }
+
+
+  implicit def toConvertable[T](value:T)(implicit domain: TypedDom[T]) = new ConvertableToTerm3[T,domain.type](value)(domain)
 
   implicit class RichRange(values: Range) {
     def toDom = new RangeDom(values)
@@ -152,10 +161,23 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
   //      new SeqApply[E,S,I](term,index)
   //  }
 
-  implicit class RichMonadTerm[A <: Term[Dom]](val termToBeMapped: A) {
-    def map[B](fun: termToBeMapped.domain.Value => B)(implicit targetDom: TypedDom[B]): targetDom.Term = {
+  case class Assignment[D <: Dom](variable:Var[D],value:Term[D])
+
+  implicit class RichVar[D <: Dom](val innerVar:Var[D]) {
+    def <<(that:Term[D]) = Assignment(innerVar, that)
+    def <<(that:innerVar.domain.Value) = Assignment(innerVar, innerVar.domain.Const(that))
+
+  }
+
+  implicit class RichTerm[A <: Term[Dom]](val innerTerm: A) {
+
+    def |[D<:Dom](assignment:Assignment[D]) = {
+      innerTerm.domain.own(Conditioned[Dom,Dom](innerTerm, assignment.variable, assignment.value).asInstanceOf[TypedTerm[innerTerm.domain.Value]])
+    }
+
+    def map[B](fun: innerTerm.domain.Value => B)(implicit targetDom: TypedDom[B]): targetDom.Term = {
       val result = new TermMap[A, targetDom.type] {
-        val term: termToBeMapped.type = termToBeMapped
+        val term: innerTerm.type = innerTerm
         val domain: targetDom.type = targetDom
 
         def f(arg: term.domain.Value) = fun(arg)
@@ -163,10 +185,10 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
       targetDom.own(result)
     }
 
-    def flatMap[B: TypedDom](fun: termToBeMapped.domain.Value => Term[TypedDom[B]]) = {
+    def flatMap[B: TypedDom](fun: innerTerm.domain.Value => Term[TypedDom[B]]) = {
       val targetDom = implicitly[TypedDom[B]]
       new TermFlatMap[A, TypedDom[B]] {
-        val term: termToBeMapped.type = termToBeMapped
+        val term: innerTerm.type = innerTerm
         val domain: TypedDom[B] = targetDom
 
         def f(arg: term.domain.Value): Term[TypedDom[B]] = fun(arg)
@@ -330,7 +352,7 @@ trait MathImplicits {
   }
 
   implicit class RichIntTerm(val term: IntTerm) {
-    def +(that: IntTerm) = new BinaryIntFun(term, that, _ + _)
+    def +(that: IntTerm) = Dom.ints.own(new BinaryIntFun(term, that, _ + _))
 
     def -(that: IntTerm) = new BinaryIntFun(term, that, _ - _)
 
@@ -365,6 +387,12 @@ trait MathImplicits {
   def sum(args: DoubleTerm*) = new Sum(args.toIndexedSeq)
 
   def varSeqSum[T <: Term[VarSeqDom[TypedDom[Double]]]](args: T) = new VarSeqSum[TypedDom[Double], T](args)
+
+  import TermImplicits._
+
+  def sum(length:IntTerm)(args: DoubleTerm*) =
+    varSeqSum[Term[VarSeqDom[TypedDom[Double]]]](VarSeq[TypedDom[Double]](length,args.toIndexedSeq.asInstanceOf[IndexedSeq[TypedTerm[Double]]]))
+
 
   def sum2[E <: Dom, T <: Term[VarSeqDom[E]], Body <: DoubleTerm](indices: T)(body: indices.domain.elementDom.Var => Body) = {
     val variable = indices.domain.elementDom.variable("_i")

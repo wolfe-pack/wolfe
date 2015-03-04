@@ -89,8 +89,8 @@ case class FirstOrderSum[D <: Dom, Body <: DoubleTerm, R <: Term[VarSeqDom[D]]](
   class Loop(termInputs: Settings) {
     val indexOfVar = body.vars.indexOf(variable)
     val varInput = variable.domain.createSetting()
-    val bodyInput = body.createSettings()
-    val rangeInput = range.createSettings()
+    val bodyInput = body.createInputSettings()
+    val rangeInput = range.createInputSettings()
 
     this2range.linkTargetsToSource(termInputs, rangeInput)
     this2body.linkTargetsToSource(termInputs, bodyInput)
