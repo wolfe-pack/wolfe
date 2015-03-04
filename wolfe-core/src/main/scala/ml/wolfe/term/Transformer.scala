@@ -76,6 +76,7 @@ object Traversal {
         }
       case s: SampleTerm => Alone(s) :: Nil
       case n:NAry => n.arguments.toList.flatMap(a => uniqueSampleTerms(a)).distinct
+      case _ => Nil
     }
   }
 
