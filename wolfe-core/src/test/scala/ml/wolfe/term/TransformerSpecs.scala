@@ -52,7 +52,7 @@ class TransformerSpecs extends WolfeSpec {
       val m1 = mem(s1)
       val m2 = mem(m1 + m1 + s2)
       val t = m2 + m2
-      Traversal.guessSampleCount(t) should be (8)
+      Traversal.distinctSampleCount(t) should be (8)
     }
   }
 

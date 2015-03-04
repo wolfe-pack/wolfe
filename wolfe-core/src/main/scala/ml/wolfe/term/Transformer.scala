@@ -79,7 +79,7 @@ object Traversal {
     }
   }
 
-  def guessSampleCount(term:Term[Dom]) = uniqueSampleTerms(term).map(_.term.domain.domainSize).product
+  def distinctSampleCount(term:Term[Dom]) = uniqueSampleTerms(term).map(_.term.domain.domainSize).product
 
 
 
