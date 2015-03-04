@@ -329,12 +329,14 @@ trait MathImplicits {
     def stringEquals(that:Any) = t.toString == that.toString
   }
 
-  implicit class RichIntTerm(term: IntTerm) {
+  implicit class RichIntTerm(val term: IntTerm) {
     def +(that: IntTerm) = new BinaryIntFun(term, that, _ + _)
 
     def -(that: IntTerm) = new BinaryIntFun(term, that, _ - _)
 
     def *(that: IntTerm) = new BinaryIntFun(term, that, _ * _)
+
+    def toDouble = intToDouble(term)
 
   }
 

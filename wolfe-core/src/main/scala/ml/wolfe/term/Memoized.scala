@@ -15,18 +15,27 @@ class Memoized[D <: Dom, T <: Term[D]](val term:T) extends Term[D] {
   private val uniqueEval = term.evaluatorImpl(inputToUniqueEval)
   private val uniqueDiffs = new mutable.HashMap[Seq[Var[Dom]],Differentiator2]()
   private var currentExecution: Execution = null
+  private val inputs2ValueInCurrentExecution = new mutable.HashMap[Any,Setting]
 
   override def evaluatorImpl(in: Settings) = new AbstractEvaluator2(in) {
 
     def eval()(implicit execution:Execution) = {
+      val inputValue = (input zip vars) map {case(i,v) => v.domain.toValue(i)}
       if (execution != currentExecution) {
-        inputToUniqueEval := input
+        inputs2ValueInCurrentExecution.clear()
         currentExecution = execution
-        uniqueEval.eval()
       }
+      val outputSetting = inputs2ValueInCurrentExecution.getOrElseUpdate(inputValue, {
+        inputToUniqueEval := input
+        uniqueEval.eval()
+        val setting = domain.createSetting()
+        setting := uniqueEval.output
+        setting
+      })
+      cachedOut := outputSetting
     }
 
-    val output: Setting = uniqueEval.output
+    val output: Setting = cachedOut
   }
 
   //todo: this should be memoized too (what does this mean?)
@@ -38,20 +47,29 @@ class Memoized[D <: Dom, T <: Term[D]](val term:T) extends Term[D] {
         val uniqueGradient = createSettings()
         term.differentiator2(wrt)(uniqueInputs,uniqueErr,uniqueGradient)
       })
+      val cachedOut = domain.createSetting()
 
       def forward()(implicit execution: Execution) = {
+        val inputValue = (input zip vars) map {case(i,v) => v.domain.toValue(i)}
         if (execution != currentExecution) {
-          diff.input := input
-          diff.forward()
+          inputs2ValueInCurrentExecution.clear()
           currentExecution = execution
         }
+        val outputSetting = inputs2ValueInCurrentExecution.getOrElseUpdate(inputValue, {
+          diff.input := input
+          diff.forward()
+          val setting = domain.createSetting()
+          setting := diff.output
+          setting
+        })
+        cachedOut := outputSetting
       }
 
       def backward()(implicit execution: Execution) = {
         diff.backward()
       }
 
-      val output: Setting = diff.output
+      val output: Setting = cachedOut
     }
 
   def evaluator() = ???

@@ -37,7 +37,6 @@ class SampleSpecs extends WolfeSpec {
       e.eval() should be (true)
     }
 
-
     "sample from a sequence" in {
       val seq = fixedLengthSeq(Seq(false,true)).sampleSequential
       val e = seq.clientEvaluator()
