@@ -341,7 +341,7 @@ class TermSpecs extends WolfeSpec {
   "A choice term" should {
     "evaluate to the right branch depending on the condition" in {
       val x = Ints.Var
-      val t = choice(x)(1.0.toConst, Doubles.Const(2.0)) //todo: make toConst work here?
+      val t = choice(x)(1.0.toConst, 2.0.toConst)
       t.eval2(0) should be(1.0)
       t.eval2(1) should be(2.0)
     }
@@ -350,7 +350,7 @@ class TermSpecs extends WolfeSpec {
   "An ifthenelse term" should {
     "evaluate to the right branch depending on the condition" in {
       val x = Bools.Var
-      val t = ifThenElse(x)(Doubles.Const(1.0))(Doubles.Const(2.0)) //todo: make toConst work here?
+      val t = ifThenElse(x)(1.0.toConst)(2.0.toConst)
       t.eval2(true) should be(1.0)
       t.eval2(false) should be(2.0)
     }
