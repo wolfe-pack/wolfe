@@ -93,7 +93,7 @@ class Sigmoid[T <: DoubleTerm](override val arg: T) extends DoubleFun(arg, sigmo
 
 class Sqrt[T <: DoubleTerm](override val arg: T) extends DoubleFun(arg, math.sqrt, x => 0.5 / math.sqrt(x))
 
-class Clip[T <:DoubleTerm](arg:T) extends DoubleFun(arg,x => if (x > 0.0) x else 0.0, x => if (x > 0.0) 1.0 else 0.0)
+class Rectifier[T <:DoubleTerm](arg:T) extends DoubleFun(arg,x => if (x > 0.0) x else 0.0, x => if (x > 0.0) 1.0 else 0.0)
 
 class Log[T <: DoubleTerm](override val arg: T) extends DoubleFun(arg, math.log, logDeriv)
 

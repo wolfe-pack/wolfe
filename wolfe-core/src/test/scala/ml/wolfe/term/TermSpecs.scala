@@ -225,7 +225,7 @@ class TermSpecs extends WolfeSpec {
       val dom = Seqs(Doubles, 3)
       val x = Doubles.Var
       val y = Doubles.Var
-      val term = dom.Term(x,y,x)
+      val term = dom.Term(x, y, x)
       term.eval2(1.0, 2.0) should be(Seq(1.0, 2.0, 1.0))
     }
 
@@ -323,12 +323,27 @@ class TermSpecs extends WolfeSpec {
     }
   }
 
+  "A binding" should {
+    "bind variables to the value of a different term" in {
+      val x = Doubles.Var
+      val t = (x + 1.0)| x << 2.0
+      t.eval2() should be(3.0)
+    }
+    "bind variables to the value of a different term in a nested way" in {
+      val x = Doubles.Var
+      val y = Doubles.Var
+      val t = x | x << (y + 1.0) | y << 2.0
+      t.eval2() should be(3.0)
+    }
+
+  }
+
   "A choice term" should {
     "evaluate to the right branch depending on the condition" in {
       val x = Ints.Var
-      val t = choice(x)(Doubles.Const(1.0),Doubles.Const(2.0)) //todo: make toConst work here?
-      t.eval2(0) should be (1.0)
-      t.eval2(1) should be (2.0)
+      val t = choice(x)(1.0.toConst, Doubles.Const(2.0)) //todo: make toConst work here?
+      t.eval2(0) should be(1.0)
+      t.eval2(1) should be(2.0)
     }
   }
 
@@ -336,8 +351,8 @@ class TermSpecs extends WolfeSpec {
     "evaluate to the right branch depending on the condition" in {
       val x = Bools.Var
       val t = ifThenElse(x)(Doubles.Const(1.0))(Doubles.Const(2.0)) //todo: make toConst work here?
-      t.eval2(true) should be (1.0)
-      t.eval2(false) should be (2.0)
+      t.eval2(true) should be(1.0)
+      t.eval2(false) should be(2.0)
     }
   }
 
