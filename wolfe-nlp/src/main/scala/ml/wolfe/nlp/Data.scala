@@ -135,7 +135,13 @@ case class CorefAnnotation(mentions: Seq[CorefMention] = Seq.empty) {
   }
 
   def mentionTokens(m: CorefMention, d: Document): IndexedSeq[Token] = {
+    assert(m.sentence < d.sentences.size, "Document does not have a sentence at idx = %d.".format(m.sentence))
+    assert(d.sentences(m.sentence).size >= m.end, "Sentence at idx = %d is of len %d (queried mention ends at %d).".format(m.sentence, m.end))
     d.sentences(m.sentence).tokens.slice(m.start, m.end)
+  }
+
+  def mentionTokens(m: (Int,Int,Int), d: Document): IndexedSeq[Token] = {
+    mentionTokens(CorefMention(sentence = m._1, start = m._2, end = m._3, clusterID = -1), d)
   }
 
   def shareCluster(m1: CorefMention, m2: CorefMention): Boolean = {

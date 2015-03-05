@@ -154,8 +154,9 @@ object Build extends Build {
 
   import BuildSettings._
 
-  lazy val jamr = ProjectRef(uri("git://github.com/jflanigan/jamr.git"), "jamr")
   lazy val berkNER = ProjectRef(uri("git://github.com/gregdurrett/berkeley-entity.git"), "berkeley-entity")
+  lazy val jamr = ProjectRef(uri("git://github.com/jflanigan/jamr.git"), "jamr")
+//  lazy val word2vec = ProjectRef(uri("git://github.com/trananh/word2vec-scala.git"), "word2vec-scala")
 
   lazy val macroSettings = Seq(
     addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0-M1" cross CrossVersion.full)
@@ -176,7 +177,10 @@ object Build extends Build {
     id = "wolfe-nlp",
     base = file("wolfe-nlp"),
     settings = buildSettings ++ globalSettings ++ nlpDependencies
-  ) dependsOn core % "test->test;compile->compile"
+  ) dependsOn (
+  core % "test->test;compile->compile"
+//  word2vec % "test->test;compile->compile"
+  )
 
   lazy val util = Project(
     id = "wolfe-util",
