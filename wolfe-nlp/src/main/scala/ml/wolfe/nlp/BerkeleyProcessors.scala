@@ -3,6 +3,8 @@ package ml.wolfe.nlp
 import edu.berkeley.nlp.PCFGLA.CoarseToFineMaxRuleParser
 import edu.berkeley.nlp.entity._
 import edu.berkeley.nlp.entity.coref._
+import edu.berkeley.nlp.entity.joint.JointPredictor
+import edu.berkeley.nlp.entity.lang.Language
 import edu.berkeley.nlp.entity.ner.NerSystemLabeled
 import edu.berkeley.nlp.entity.preprocess.{SentenceSplitter => BerkeleySentenceSplitter, PreprocessingDriver}
 import edu.berkeley.nlp.entity.preprocess.PreprocessingDriver.loadParser
@@ -29,7 +31,6 @@ object BerkeleyProcessors {
   // path to Bergsma Lin data
   val numberGenderDataPath: String = "wolfe-nlp/data/gender.data"
 
-  val doConllPostprocessing: Boolean = false
 
   lazy val splitter: BerkeleySentenceSplitter = {
     Logger.logss("Loading sentence splitter")
@@ -110,23 +111,25 @@ object BerkeleyProcessors {
       mkParsedDocument(text)
     } else {
       val result = SISTAProcessors.mkDocument(text)
-      val tokenizedSentences = result.sentences.map{sentence =>
-        sentence.tokens.map(token => token.word).toArray
-      }.toArray
-      val conll = PreprocessingDriver.renderDocConllLines("00", tokenizedSentences, parser, backoffParser, nerSystem)
-      val reader = new ConllDocReader(edu.berkeley.nlp.entity.lang.Language.ENGLISH, "")
-      val fcn = (docID: String, docPartNo: Int, docBySentencesByLines: ArrayBuffer[ArrayBuffer[String]]) => reader.assembleConllDoc(docBySentencesByLines, docID, docPartNo);
-      val doc = fcn("00", 0, ArrayBuffer(conll.map{x => ArrayBuffer(x :_*)} :_*))
+      val tokenizedSentences = result.sentences.map(_.tokens.map(_.word).toArray).toArray
+      val conll = PreprocessingDriver.renderDocConllLines("**", tokenizedSentences, parser, backoffParser, nerSystem)
+      val reader = new ConllDocReader(Language.ENGLISH, "")
+      val doc = reader.assembleConllDoc(ArrayBuffer(conll.map{x => ArrayBuffer(x :_*)} :_*), "**", 0);
+
       val assembler = CorefDocAssembler(Driver.lang, Driver.useGoldMentions)
       val mentionPropertyComputer = new MentionPropertyComputer(Some(numberGenderComputer))
-      val corefDoc = if (Driver.useCoordination) {
+
+      val corefDoc = if (Driver.useCoordination)
         assembler.createCorefDocWithCoordination(doc, mentionPropertyComputer)
-      } else {
+      else
         assembler.createCorefDoc(doc, mentionPropertyComputer)
-      }
+
       val docGraph = new DocumentGraph(corefDoc, false)
-      val allPredBackptrsAndPredClusterings = CorefSystem.runPredict(Seq(docGraph),GUtil.load(modelPath).asInstanceOf[PairwiseScorer],false)
-      val clustering = allPredBackptrsAndPredClusterings(0)._2.bind(docGraph.getMentions(), doConllPostprocessing)
+      val pairwiseScorer = GUtil.load(modelPath).asInstanceOf[PairwiseScorer]
+      val allPredBackptrsAndPredClusterings = CorefSystem.runPredict(Seq(docGraph), pairwiseScorer, false)
+
+      val clustering = allPredBackptrsAndPredClusterings(0)._2.bind(docGraph.getMentions, false)
+
       val ret = for ((mention, clusterID) <- clustering.ments.zipWithIndex) yield {
         CorefMention(clustering.clustering.getClusterIdx(clusterID), mention.sentIdx, mention.startIdx, mention.endIdx, mention.headIdx)
       }
@@ -140,4 +143,6 @@ object BerkeleyProcessors {
 object BerkeleyProcessorTest extends App {
   val doc = BerkeleyProcessors.annotate("Jim said he is going to the store. He lied. He will end up in hell for lying. Why Jim, why did you lie?", true)
   println(doc)
+  val doc2 = BerkeleyProcessors.test("Jim said he is going to the store. He lied. He will end up in hell for lying. Why Jim, why did you lie?", true)
+  println(doc2)
 }
