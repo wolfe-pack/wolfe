@@ -6,11 +6,9 @@ import edu.berkeley.nlp.entity.coref._
 import edu.berkeley.nlp.entity.ner.NerSystemLabeled
 import edu.berkeley.nlp.entity.preprocess.{SentenceSplitter => BerkeleySentenceSplitter, PreprocessingDriver}
 import edu.berkeley.nlp.entity.preprocess.PreprocessingDriver.loadParser
-import edu.berkeley.nlp.futile.fig.basic.IOUtils
 import edu.berkeley.nlp.syntax.Tree
-import edu.berkeley.nlp.util.{Logger}
+import edu.berkeley.nlp.util.Logger
 import scala.collection.JavaConversions._
-import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 /**
@@ -18,6 +16,8 @@ import scala.collection.mutable.ArrayBuffer
  * @author narad
  */
 object BerkeleyProcessors {
+  // Path to read/write the model
+  val modelPath: String = "wolfe-nlp/models/coref-onto.ser.gz"
   // Path to read the sentence splitter model from
   val sentenceSplitterModelPath: String = "wolfe-nlp/models/sentsplit.txt.gz"
   // Path to read the Berkeley Parser grammar from
@@ -26,17 +26,30 @@ object BerkeleyProcessors {
   val backoffGrammarPath: String = "wolfe-nlp/models/eng_sm1.gr"
   // Path to read the NER model from
   val nerModelPath: String = ""
+  // path to Bergsma Lin data
+  val numberGenderDataPath: String = "wolfe-nlp/data/gender.data"
 
-  Logger.logss("Loading sentence splitter")
-  val splitter: BerkeleySentenceSplitter = BerkeleySentenceSplitter.loadSentenceSplitter(sentenceSplitterModelPath)
-  Logger.logss("Loading parser")
-  val parser: CoarseToFineMaxRuleParser = loadParser(grammarPath)
-  Logger.logss("Loading backoff parser")
-  val backoffParser: CoarseToFineMaxRuleParser = loadParser(backoffGrammarPath)
-  //Logger.logss("Loading NER system")
-  val nerSystem: NerSystemLabeled = if (nerModelPath.isEmpty()) null else NerSystemLabeled.loadNerSystem(nerModelPath)
+  val doConllPostprocessing: Boolean = false
 
-
+  lazy val splitter: BerkeleySentenceSplitter = {
+    Logger.logss("Loading sentence splitter")
+    BerkeleySentenceSplitter.loadSentenceSplitter(sentenceSplitterModelPath)
+  }
+  lazy val parser: CoarseToFineMaxRuleParser = {
+    Logger.logss("Loading parser")
+    loadParser(grammarPath)
+  }
+  lazy val backoffParser: CoarseToFineMaxRuleParser = {
+    Logger.logss("Loading backoff parser")
+    loadParser(backoffGrammarPath)
+  }
+  lazy val nerSystem: NerSystemLabeled = {
+    Logger.logss("Loading NER system")
+    if (nerModelPath.isEmpty()) null else NerSystemLabeled.loadNerSystem(nerModelPath)
+  }
+  lazy val numberGenderComputer = {
+    NumberGenderComputer.readBergsmaLinData(numberGenderDataPath)
+  }
 
 //  // Skip sentence splitting entirely.
 //  val skipSentenceSplitting: Boolean = false
@@ -46,12 +59,6 @@ object BerkeleyProcessors {
 //  val respectInputTwoLineBreaks: Boolean = true
 //  // Use an alternate tokenizer that may respect the original input a little bit more.
 //  val useAlternateTokenizer: Boolean = false
-
-
-
-
-  // Path to read/write the model
-  val modelPath: String = "wolfe-nlp/models/coref-onto.ser.gz"
 
   def toWolfeConstituentTree(tree: Tree[String]): ConstituentTree = {
     if (!tree.isEmpty)
@@ -66,8 +73,6 @@ object BerkeleyProcessors {
     else
       new ConstituentTree(new NonterminalNode(label = tree.getLabel, head = -1), tree.getChildren.map(treeToTree(_)).toList)
   }
-
-
 
 ////  what it looks like when berkeley parser parses...without memorizing offsets :S
 //  def BerkeleyPreprocessing(text: String) = {
@@ -89,9 +94,7 @@ object BerkeleyProcessors {
 //    tokenizedSentences
 //  }
 
-
-
-  def mkParsedDocument(text: String, coref: Boolean = true) = {
+  def mkParsedDocument(text: String) = {
     val result = SISTAProcessors.mkDocument(text)
     val updatedSentences = result.sentences.map{sentence =>
       val tokenizedSentenceArray = sentence.tokens.map(token => token.word)
@@ -102,14 +105,39 @@ object BerkeleyProcessors {
   }
 
 
-  def annotate(text: String): Document = {
-    mkParsedDocument(text)
+  def annotate(text: String, coref: Boolean = true): Document = {
+    if (!coref) {
+      mkParsedDocument(text)
+    } else {
+      val result = SISTAProcessors.mkDocument(text)
+      val tokenizedSentences = result.sentences.map{sentence =>
+        sentence.tokens.map(token => token.word).toArray
+      }.toArray
+      val conll = PreprocessingDriver.renderDocConllLines("00", tokenizedSentences, parser, backoffParser, nerSystem)
+      val reader = new ConllDocReader(edu.berkeley.nlp.entity.lang.Language.ENGLISH, "")
+      val fcn = (docID: String, docPartNo: Int, docBySentencesByLines: ArrayBuffer[ArrayBuffer[String]]) => reader.assembleConllDoc(docBySentencesByLines, docID, docPartNo);
+      val doc = fcn("00", 0, ArrayBuffer(conll.map{x => ArrayBuffer(x :_*)} :_*))
+      val assembler = CorefDocAssembler(Driver.lang, Driver.useGoldMentions)
+      val mentionPropertyComputer = new MentionPropertyComputer(Some(numberGenderComputer))
+      val corefDoc = if (Driver.useCoordination) {
+        assembler.createCorefDocWithCoordination(doc, mentionPropertyComputer)
+      } else {
+        assembler.createCorefDoc(doc, mentionPropertyComputer)
+      }
+      val docGraph = new DocumentGraph(corefDoc, false)
+      val allPredBackptrsAndPredClusterings = CorefSystem.runPredict(Seq(docGraph),GUtil.load(modelPath).asInstanceOf[PairwiseScorer],false)
+      val clustering = allPredBackptrsAndPredClusterings(0)._2.bind(docGraph.getMentions(), doConllPostprocessing)
+      val ret = for ((mention, clusterID) <- clustering.ments.zipWithIndex) yield {
+        CorefMention(clustering.clustering.getClusterIdx(clusterID), mention.sentIdx, mention.startIdx, mention.endIdx, mention.headIdx)
+      }
+      Document(text, result.sentences, coref = CorefAnnotation(ret))
+    }
   }
 
 }
 
 
 object BerkeleyProcessorTest extends App {
-  val doc = BerkeleyProcessors.annotate("Jim said he is going to the store. He lied. He will end up in hell for lying.")
+  val doc = BerkeleyProcessors.annotate("Jim said he is going to the store. He lied. He will end up in hell for lying. Why Jim, why did you lie?", true)
   println(doc)
 }
