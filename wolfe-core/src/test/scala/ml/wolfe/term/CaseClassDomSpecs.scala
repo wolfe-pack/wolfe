@@ -41,7 +41,7 @@ class CaseClassDomSpecs extends WolfeSpec {
       msgs.disc(0).msg(1) = 0.2
       msgs.cont(0).mean = 0.5
       val marginals = worlds.toMarginals(msgs,Offsets())
-      marginals should be (worlds.Marginals(IndexedSeq(0.8,0.2),0.5))
+      marginals should be (worlds.Marginals(Map(false -> 0.8, true -> 0.2),0.5))
     }
 
     "generate a setting given a value" in {
@@ -65,7 +65,7 @@ class CaseClassDomSpecs extends WolfeSpec {
     "copy marginals into messages" in {
       val worlds = World.Values(Bools, Doubles)
       val msgs = new Msg(numDisc = 1, numCont = 1)
-      val marginals = worlds.Marginals(IndexedSeq(0.2, 0.8), 0.5)
+      val marginals = worlds.Marginals(Map(false -> 0.2, true -> 0.8), 0.5)
       worlds.copyMarginals(marginals, msgs, Offsets())
       msgs.disc(0).msg(0) should be(0.2)
       msgs.disc(0).msg(1) should be(0.8)

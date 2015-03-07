@@ -76,14 +76,6 @@ trait Term[+D <: Dom] extends TermHelper[D] {
 
   def differentiator(wrt: Seq[Var[Dom]]): Differentiator
 
-  def maxMarginalizer(wrt: Seq[Var[Dom]], target: Seq[Var[Dom]]): MaxMarginalizer = {
-    //todo: this could be type safe, for example by adding the argmax method to the RichDoubleTerm
-    if (!domain.isDouble) sys.error("Argmax only supported for real valued terms")
-    else if (wrt.forall(_.domain.isDiscrete))
-      new ExhaustiveSearchMaxMarginalizer(this.asInstanceOf[DoubleTerm], wrt, target)
-    else ???
-  }
-
   def argmaxer(wrt: Seq[Var[Dom]]): Argmaxer = {
     //todo: this could be type safe, for example by adding the argmax method to the RichDoubleTerm
     if (!domain.isDouble) sys.error("Argmax only supported for real valued terms")
@@ -149,19 +141,6 @@ trait TermHelper[+D <: Dom] {
     maxMarger.maxMarginals()(Execution(0))
     target.domain.toMarginals(maxMarger.outputMsgs(0))
   }
-
-
-  def maxMarginalsOld[T <: Dom](target: Var[T], wrt: Var[T])(incoming: wrt.domain.Marginals)(args: Any*): target.domain.Marginals = {
-    val maxMarger = maxMarginalizer(Seq(wrt), Seq(target))
-    val observed = vars.filter(v => v != wrt && v != target)
-    val observedSettings = Dom.createSettingsArray(observed, args)
-    val result = target.domain.createZeroMsg()
-    val incomingMsgs = Array(wrt.domain.toMsgs(incoming))
-    maxMarger.maxMarginals(observedSettings, incomingMsgs, Array(result))
-    target.domain.toMarginals(result)
-  }
-
-
 
   def argmax[V <: Dom](wrt: Var[V], args: Any*): wrt.domain.Value = {
     val am = argmaxer(Seq(wrt))

@@ -54,10 +54,6 @@ object Argmaxer {
 
 }
 
-trait MaxMarginalizer {
-  def maxMarginals(observed:Array[Setting], in:Array[Msg], out:Array[Msg])
-}
-
 
 trait MaxMarginalizer2 {
 
