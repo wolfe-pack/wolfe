@@ -257,7 +257,7 @@ trait MathImplicits {
 
   def sqrt[T <: DoubleTerm](term: T) = new Sqrt(term)
 
-  def clip[T <: DoubleTerm](term: T) = new Clip(term)
+  def rect[T <: DoubleTerm](term: T) = new Rectifier(term)
 
   def tanh[T <: DoubleTerm](term: T) = new Tanh(term)
 
