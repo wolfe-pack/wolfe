@@ -59,3 +59,13 @@ trait MaxMarginalizer {
 }
 
 
+trait MaxMarginalizer2 {
+
+  val input:Settings
+  val inputMsgs:Msgs
+  val outputMsgs:Msgs
+
+  def maxMarginals()(implicit execution: Execution)
+}
+
+

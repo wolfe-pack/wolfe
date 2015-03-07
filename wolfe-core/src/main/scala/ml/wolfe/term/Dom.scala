@@ -177,9 +177,13 @@ object Dom {
   val bools   = new BooleanDom
   val ints   = new RangeDom(Int.MinValue until Int.MaxValue)
 
-  def createSettings(vars:Seq[Var[Dom]],values:Seq[Any]):Array[Setting] = {
+  def createSettingsArray(vars:Seq[Var[Dom]],values:Seq[Any]):Array[Setting] = {
     (for ((a, v) <- values zip vars) yield v.domain.toSetting(a.asInstanceOf[v.domain.Value])).toArray
   }
+  def createSettings(vars:Seq[Var[Dom]],values:Seq[Any]):Settings = {
+    Settings.fromSeq(for ((a, v) <- values zip vars) yield v.domain.toSetting(a.asInstanceOf[v.domain.Value]))
+  }
+
 }
 
 

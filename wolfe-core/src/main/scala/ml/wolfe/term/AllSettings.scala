@@ -20,8 +20,19 @@ class AllSettings[T](domains: IndexedSeq[Dom], toVaryCreator: => Settings)(fun: 
 
   override val size = (dims map (_.size)).product
 
+  def loopSettings(proc:Settings => Unit): Unit = {
+    val it = iterator
+    while (it.hasNext) {
+      proc(it.toVary)
+      it.next()
+    }
+  }
 
-  def iterator = new Iterator[T] {
+  trait IteratorOverSettings[T] extends Iterator[T] {
+    def toVary:Settings
+  }
+
+  def iterator = new IteratorOverSettings[T] {
 
     val toVary = toVaryCreator
 
@@ -45,6 +56,7 @@ class AllSettings[T](domains: IndexedSeq[Dom], toVaryCreator: => Settings)(fun: 
     def currentEnd = dims(index).end
 
     def hasNext = index >= 0
+
 
     def next() = {
       val result = fun(toVary)

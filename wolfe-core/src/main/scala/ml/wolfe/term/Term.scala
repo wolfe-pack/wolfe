@@ -55,6 +55,16 @@ trait Term[+D <: Dom] extends TermHelper[D] {
   def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings): Differentiator2 =
     new EmptyDifferentiator2(in, err, gradientAcc)
 
+  def maxMarginalizerImpl(wrt: Seq[Var[Dom]], observed: Seq[Var[Dom]])(input:Settings,inputMsgs:Msgs): MaxMarginalizer2 = {
+    //todo: this could be type safe, for example by adding the argmax method to the RichDoubleTerm
+    val varying = vars filterNot observed.contains
+    if (!domain.isDouble) sys.error("Argmax only supported for real valued terms")
+    else if (varying.forall(_.domain.isDiscrete))
+      new ExhaustiveSearchMaxMarginalizer2(this.asInstanceOf[DoubleTerm], wrt, observed,input,inputMsgs)
+    else ???
+  }
+
+
   /**
    * Variables may describe structured objects. Terms may only depend on parts of these structured objects. Atoms
    * define a set of such parts.
@@ -132,14 +142,26 @@ trait TermHelper[+D <: Dom] {
   }
 
   def maxMarginals[T <: Dom](target: Var[T], wrt: Var[T])(incoming: wrt.domain.Marginals)(args: Any*): target.domain.Marginals = {
-    val maxMarger = maxMarginalizer(Seq(wrt), Seq(target))
     val observed = vars.filter(v => v != wrt && v != target)
     val observedSettings = Dom.createSettings(observed, args)
+    val incomingMsgs = Msgs(Seq(wrt.domain.toMsgs(incoming)))
+    val maxMarger = maxMarginalizerImpl(Seq(wrt),observed)(observedSettings,incomingMsgs)
+    maxMarger.maxMarginals()(Execution(0))
+    target.domain.toMarginals(maxMarger.outputMsgs(0))
+  }
+
+
+  def maxMarginalsOld[T <: Dom](target: Var[T], wrt: Var[T])(incoming: wrt.domain.Marginals)(args: Any*): target.domain.Marginals = {
+    val maxMarger = maxMarginalizer(Seq(wrt), Seq(target))
+    val observed = vars.filter(v => v != wrt && v != target)
+    val observedSettings = Dom.createSettingsArray(observed, args)
     val result = target.domain.createZeroMsg()
     val incomingMsgs = Array(wrt.domain.toMsgs(incoming))
     maxMarger.maxMarginals(observedSettings, incomingMsgs, Array(result))
     target.domain.toMarginals(result)
   }
+
+
 
   def argmax[V <: Dom](wrt: Var[V], args: Any*): wrt.domain.Value = {
     val am = argmaxer(Seq(wrt))

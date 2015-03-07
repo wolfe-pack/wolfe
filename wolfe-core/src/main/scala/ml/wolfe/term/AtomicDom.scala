@@ -232,7 +232,11 @@ trait GenericDiscreteDom[T] extends AtomicDom {
   dom =>
   type Value = T
   type Var = DomVar
-  type Marginals = IndexedSeq[Double]
+  type Marginals = Map[T,Double]
+
+
+  def start = valueToInt(zero)
+  def end = start + domainSize
 
   def intToValue(int: Int): Value
 
@@ -244,8 +248,11 @@ trait GenericDiscreteDom[T] extends AtomicDom {
     intToValue(setting.disc(offsets.discOff))
 
 
+  def domainValues = for (i <- start until end) yield intToValue(i)
+
   def toMarginals(msg: Msg, offsets: Offsets) = {
-    msg.disc(offsets.discOff).msg
+    val pairs = for (i <- start until end) yield intToValue(i) -> msg.disc(offsets.discOff).msg(i - start)
+    pairs.toMap
   }
 
   def copyValue(value: Value, setting: Setting, offsets: Offsets = Offsets()) =
@@ -253,7 +260,10 @@ trait GenericDiscreteDom[T] extends AtomicDom {
 
 
   def copyMarginals(marginals: Marginals, msgs: Msg, offsets: Offsets) = {
-    msgs.disc(offsets.discOff) = new DiscMsg(marginals.toArray)
+    val start = valueToInt(zero)
+    val end = start + domainSize
+    val margs = domainValues map (v => marginals(v))
+    msgs.disc(offsets.discOff) = new DiscMsg(margs.toArray)
   }
 
   def fillZeroMsg(target: Msg, offsets: Offsets) = {

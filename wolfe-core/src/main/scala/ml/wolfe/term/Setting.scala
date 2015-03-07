@@ -440,8 +440,21 @@ final class Msgs(val length: Int) extends IndexedSeq[Msg] {
   }
 }
 
+object Msgs {
+  def apply(msgs:Seq[Msg]) = {
+    val result =new Msgs(msgs.length)
+    for ((msg,i) <- msgs.zipWithIndex) result(i) = msg
+    result
+  }
+}
+
 
 final class VariableMapping(val srcIndex: Array[Int], val tgtIndex: Array[Int]) {
+
+  def length = srcIndex.length
+
+  lazy val pairs = srcIndex zip tgtIndex
+
   def copyForwardDeep(src: Array[Setting], tgt: Array[Setting]) = {
     for (i <- 0 until srcIndex.length) tgt(tgtIndex(i)) := src(srcIndex(i))
   }

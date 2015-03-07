@@ -310,8 +310,8 @@ class TermSpecs extends WolfeSpec {
       val x = Bools.variable("x")
       val y = Bools.variable("y")
       val term = I(x === y)
-      val result = term.maxMarginals(x, y)(IndexedSeq(1.0, 2.0))()
-      result should be(IndexedSeq(2.0, 3.0))
+      val result = term.maxMarginals(x, y)(Map(false -> 1.0,  true -> 2.0))()
+      result should be(Map(false -> 2.0, true -> 3.0))
     }
   }
 
