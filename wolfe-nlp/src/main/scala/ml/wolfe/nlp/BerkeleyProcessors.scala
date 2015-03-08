@@ -143,6 +143,6 @@ object BerkeleyProcessors {
 object BerkeleyProcessorTest extends App {
   val doc = BerkeleyProcessors.annotate("Jim said he is going to the store. He lied. He will end up in hell for lying. Why Jim, why did you lie?", true)
   println(doc)
-  val doc2 = BerkeleyProcessors.test("Jim said he is going to the store. He lied. He will end up in hell for lying. Why Jim, why did you lie?", true)
-  println(doc2)
+//  val doc2 = BerkeleyProcessors.test("Jim said he is going to the store. He lied. He will end up in hell for lying. Why Jim, why did you lie?", true)
+//  println(doc2)
 }
