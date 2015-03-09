@@ -87,13 +87,13 @@ case class ConstituentTree(node: ConstituentNode, children : List[ConstituentTre
     var numLeaves = 0
     for (t <- leafFirstSearch) {
       if (t.isLeaf) {
-        index((numLeaves, numLeaves+1)) = index((numLeaves, numLeaves+1)) :+ new Span(numLeaves, numLeaves+1, t.label, 0)
+        index((numLeaves, numLeaves+1)) = index((numLeaves, numLeaves+1)) ++ List(new Span(numLeaves, numLeaves+1, t.label, 0))
         numLeaves += 1
       }
       else {
         val len = t.length
         val height = index(numLeaves-len, numLeaves).size
-        index((numLeaves-len, numLeaves)) = index((numLeaves-len, numLeaves)) :+ new Span(numLeaves-len, numLeaves, t.label, height)
+        index((numLeaves-len, numLeaves)) = index((numLeaves-len, numLeaves)) ++ List(new Span(numLeaves-len, numLeaves, t.label, height))
       }
     }
     index
@@ -311,9 +311,14 @@ case class ConstituentTree(node: ConstituentNode, children : List[ConstituentTre
 //    }
 //  }
 
+
   def toSpans: Iterable[Span] = {
 //    for (i <- 0 until length; j <- 1 to length; k <- 0 until spans(i)(j).size) yield spans(i)(j)(k)
     (for (i <- 0 until length; j <- 1 to length if spans.contains((i,j))) yield spans((i,j))).flatten  //spans(i)(j)(k)
+  }
+
+  def toNonterminalSpans: Iterable[Span] = {
+    toSpans.filter(s => s.width > 1 || s.height > 0)
   }
 
   def spansAt(i: Int, j: Int): Iterable[Span] = spans((i,j)) //spans(i)(j).toIterable
