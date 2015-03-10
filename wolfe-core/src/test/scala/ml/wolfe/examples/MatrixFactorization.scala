@@ -39,14 +39,15 @@ object MatrixFactorization extends App {
   def sampleNegCell(posTerm: Cells.Term) = for (pos <- posTerm) yield pos.copy(row = random.nextInt(rows))
 
   //the per cell loss
-  def score(theta: Thetas.Term)(cell: Cells.Term) = theta.v(cell.row) dot theta.a(cell.col)
+  def score(theta: Thetas.Term)(cell: Cells.Term) =
+    theta.v(cell.row) dot theta.a(cell.col)
 
   //training loss, stochastic term based on sampling a positive cell, and then a negative based on it.
   def loss(t: Thetas.Term) = {
     //we sample a positive cell, and memoize the result
-    val pos = logged(mem(trainingData.sampleSequential))
+    val pos = mem(trainingData.sampleSequential)
     //based on the memoized positive cell, we sample a negative cell which needs to memoized because it will reappear several times
-    val neg = mem(sampleNegCell(pos)).logged
+    val neg = mem(sampleNegCell(pos))
     //the loss based on positve and negative cell
     log(sigm(score(t)(pos))) + log(sigm(-score(t)(neg)))
   }
@@ -75,7 +76,9 @@ object BagOfWordsMatrixFactorization extends App {
   val maxWordsPerCol = 5
 
   @domain case class Col(words: IndexedSeq[Int])
+
   @domain case class Theta(rows: IndexedSeq[FactorieVector], words: IndexedSeq[FactorieVector])
+
   @domain case class Cell(row: Int, col: Int)
 
   implicit val Thetas = Theta.Values(
@@ -106,8 +109,6 @@ object BagOfWordsMatrixFactorization extends App {
 
   //do the training (argmax is a term, so it needs to be evaluated to do the optimization)
   val thetaStar = argmax2(Thetas)(t => loss(t).argmaxBy(Argmaxer.adaGrad2(adaParams))).eval2()
-
-
 
 
 }

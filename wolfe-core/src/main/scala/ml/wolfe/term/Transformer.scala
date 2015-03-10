@@ -47,7 +47,8 @@ object Transformer {
         val doubleTerm = depthFirst(body) {
           case t if t == variable => element
         }
-        doubleTerm.asInstanceOf[DoubleTerm]
+        (body | variable << element).asInstanceOf[DoubleTerm]
+        //doubleTerm.asInstanceOf[DoubleTerm]
       }
       val sumArgs = VarSeq(length, doubleTerms)
       varSeqSum[Term[VarSeqDom[TypedDom[Double]]]](sumArgs)

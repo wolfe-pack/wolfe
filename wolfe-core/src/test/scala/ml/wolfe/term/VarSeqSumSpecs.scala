@@ -33,7 +33,7 @@ class VarSeqSumSpecs extends WolfeSpec {
       val n = 3
       val length = Ints(0 until n).Var
       val d = Doubles.Var
-      val t = varSeqSum(VarSeq(length, IndexedSeq(d, d * d, d * d * d)))
+      val t = sum(length)(d, d * d, d * d * d)
       t.gradient2(d,2,3.0) should be (7.0)
     }
 

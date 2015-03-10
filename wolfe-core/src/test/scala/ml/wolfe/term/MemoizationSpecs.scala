@@ -15,11 +15,12 @@ class MemoizationSpecs extends WolfeSpec {
 
   "A memoization term" should {
     "return different value if input is different" in {
-      def obj(i: IntTerm) = {
-        mem(i)
-      }
-      val t = sum(Seq(1,2,1).toConst) { i => obj(i).toDouble}
-      t.eval2() should be (4)
+      val x = Ints.Var
+      val s = mem(sampleUniform(0 until 10000) + x)
+      val t1 = (s | x << 1) === (s | x << 1)
+      val t2 = (s | x << 1) === (s | x << 2)
+      t1.eval2() should be (true)
+      t2.eval2() should be (false)
     }
 
   }

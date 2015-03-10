@@ -19,7 +19,7 @@ trait AtomicDom extends Dom {
   def own(term: TypedTerm[Value]) = new OwnedTerm[Value] with Term {
     def self = term
 
-    override val domain:dom.type = dom
+    override val domain: dom.type = dom
 
     def copy(args: IndexedSeq[ArgumentType]) = own(args(0))
   }
@@ -163,6 +163,7 @@ class BooleanDom extends GenericDiscreteDom[Boolean] {
   def valueToInt(value: Value) = if (value) 1 else 0
 
   def one = true
+
   def zero = false
 
   override val dimensions = Dimensions(Array(0 until 2))
@@ -233,13 +234,14 @@ trait GenericDiscreteDom[T] extends AtomicDom {
   type Var = DomVar
   type Marginals = IndexedSeq[Double]
 
-  def intToValue(int:Int):Value
-  def valueToInt(value:Value):Int
-  def domainSize:Int
+  def intToValue(int: Int): Value
+
+  def valueToInt(value: Value): Int
+
+  def domainSize: Int
 
   def toValue(setting: Setting, offsets: Offsets = Offsets()) =
     intToValue(setting.disc(offsets.discOff))
-
 
 
   def toMarginals(msg: Msg, offsets: Offsets) = {
@@ -275,16 +277,19 @@ trait GenericDiscreteDom[T] extends AtomicDom {
   }
 
 
-
-
 }
 
 class DiscreteDom[T](val values: IndexedSeq[T]) extends GenericDiscreteDom[T] {
   val index = values.zipWithIndex.toMap
+
   def intToValue(int: Int) = values(int)
+
   def valueToInt(value: Value) = index(value)
+
   def domainSize = values.size
+
   def one = values.last
+
   def zero = values.head
 
   override val dimensions = Dimensions(Array(values.indices))
@@ -292,41 +297,49 @@ class DiscreteDom[T](val values: IndexedSeq[T]) extends GenericDiscreteDom[T] {
 
 case class RangeDom(values: Range) extends GenericDiscreteDom[Int] {
   def intToValue(int: Int) = int
+
   def valueToInt(value: Value) = value
+
   def domainSize = values.size
+
   def one = values.last
+
   def zero = values.head
 
   override val dimensions = Dimensions(Array(values))
 
   trait SampleTerm extends Term {
 
-    abstract class Evaluator(in:Settings) extends AbstractEvaluator2(in) {
+    abstract class Evaluator(in: Settings) extends AbstractEvaluator2(in) {
       val output = createSetting()
-      private var currentExecution:Execution = null
-      private var currentValue:Int = -1
-      def nextValue():Int
+      private var currentExecution: Execution = null
+      private var currentValue: Int = -1
+
+      def nextValue(): Int
+
       def eval()(implicit execution: Execution) = {
-        if (execution != currentExecution) {
-          currentValue = nextValue()
-          currentExecution = execution
-        }
+        currentValue = nextValue()
         output.disc(0) = currentValue
       }
 
     }
 
     def vars = Seq.empty
+
     def atomsIterator = ???
+
     def evaluator() = ???
+
     def differentiator(wrt: Seq[term.Var[Dom]]) = ???
   }
 
-  def uniform(implicit random:Random) = new SampleUniform()
-  def shuffled(implicit random:Random) = new SampleShuffled()
+  def uniform(implicit random: Random) = new SampleUniform()
+
+  def shuffled(implicit random: Random) = new SampleShuffled()
+
   def sequential = SampleSequential
 
-  case class SampleUniform(implicit random:Random) extends SampleTerm {
+  case class SampleUniform(implicit random: Random) extends SampleTerm {
     override def evaluatorImpl(in: Settings) = new Evaluator(in) {
 
       def nextValue() = random.nextInt(domainSize) + values.start
@@ -334,8 +347,9 @@ case class RangeDom(values: Range) extends GenericDiscreteDom[Int] {
     }
   }
 
-  case class SampleShuffled(implicit random:Random) extends SampleTerm {
+  case class SampleShuffled(implicit random: Random) extends SampleTerm {
     val indexed = values.toIndexedSeq
+
     override def evaluatorImpl(in: Settings) = new Evaluator(in) {
       private var shuffled = random.shuffle(indexed).toIterator
 
@@ -351,6 +365,7 @@ case class RangeDom(values: Range) extends GenericDiscreteDom[Int] {
   case object SampleSequential extends SampleTerm {
     override def evaluatorImpl(in: Settings) = new Evaluator(in) {
       var iterator = values.iterator
+
       def nextValue() = {
         if (!iterator.hasNext) {
           iterator = values.iterator
