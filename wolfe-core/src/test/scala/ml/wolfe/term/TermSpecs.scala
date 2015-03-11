@@ -1,12 +1,11 @@
 package ml.wolfe.term
 
-import ml.wolfe.WolfeSpec
+import ml.wolfe.{FactorieVector, WolfeSpec}
 
 /**
  * @author riedel
  */
 class TermSpecs extends WolfeSpec {
-
   import ml.wolfe.term.TermImplicits._
   import ml.wolfe.util.Math._
 
@@ -302,6 +301,23 @@ class TermSpecs extends WolfeSpec {
       def obj(x: X.Term) = (x dot vector(4.0, 4.0)) - (x dot x)
       val result = argmax(X) { x => obj(x).argmaxBy(Argmaxer.adaGrad(100, 1))}
       result.eval() should equal(vector(2.0, 2.0))
+    }
+    "optimize a quadratic objective over case class domains with nested sequences of vectors" in {
+      val numXs = 2
+      val numYs = 3
+      val k = 2
+      @domain case class Theta(xs: IndexedSeq[FactorieVector], ys: IndexedSeq[FactorieVector])
+      val Thetas = Theta.Values(Seqs(Vectors(k), numXs), Seqs(Vectors(k), numYs))
+
+      def obj(t: Thetas.Term) = sum(0 until numXs) { i => 1.0 - (t.xs(i) dot t.xs(i)) } +
+        sum(0 until numYs) { i => 1.0 - (t.ys(i) dot t.ys(i)) }
+
+      def nextRandom = random.nextGaussian() * 0.1
+      val init = Settings(Thetas.createRandomSetting(nextRandom))
+
+      val thetaStar = argmax2(Thetas)(t => obj(t).argmaxBy(Argmaxer.adaGrad2(AdaGradParameters(100, 0.1, initParams = init)))).eval2()
+      thetaStar.xs.foreach(x => x.foreach(_ should be(0.0 +- eps)))
+      thetaStar.ys.foreach(y => y.foreach(_ should be(0.0 +- eps)))
     }
   }
 

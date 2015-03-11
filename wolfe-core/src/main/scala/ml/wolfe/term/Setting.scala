@@ -113,7 +113,8 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
 
     def randomize(eps: => Double) = {
       for (i <- 0 until length)
-        array(i) += eps
+        for (j <- 0 until array(i).length)
+          array(i)(j) += eps
       flagAllChanged()
     }
 
@@ -214,7 +215,8 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
 
     def randomize(eps: => Double) = {
       for (i <- 0 until length)
-        array(i) += eps
+        for (j <- 0 until array(i).length)
+          array(i)(j) += eps
       flagAllChanged()
     }
 
