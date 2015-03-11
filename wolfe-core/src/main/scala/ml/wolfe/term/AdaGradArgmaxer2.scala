@@ -19,7 +19,7 @@ case class AdaGradParameters(iterations: Int,
 class AdaGradArgmaxer2(val objRaw: DoubleTerm,
                        val wrt: Seq[Var[Dom]],
                        val observed: Settings,
-                       val msgs: Msgs)(implicit params: AdaGradParameters) extends Argmaxer2 {
+                       val msgs: Msgs)(implicit params: AdaGradParameters) extends Argmaxer {
 
   import params._
 

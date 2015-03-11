@@ -324,7 +324,7 @@ trait MathImplicits {
 
     def unary_- = term * (-1.0)
 
-    def argmaxBy(factory: ArgmaxerFactory) = new ProxyTerm[TypedDom[Double]] {
+    def argmaxBy(factory: ArgmaxerFactoryOld) = new ProxyTerm[TypedDom[Double]] {
       def self = term
 
       override def argmaxer(wrt: Seq[Var[Dom]]) = factory.argmaxer(term, wrt)
@@ -333,7 +333,7 @@ trait MathImplicits {
 
     }
 
-    def argmaxBy(factory: ArgmaxerFactory2) = new ProxyTerm[TypedDom[Double]] {
+    def argmaxBy(factory: ArgmaxerFactory) = new ProxyTerm[TypedDom[Double]] {
       def self = term
 
       override def argmaxerImpl(wrt: Seq[Var[Dom]])(observed: Settings, msgs: Msgs) = {

@@ -1,7 +1,7 @@
 package ml.wolfe.examples
 
 import ml.wolfe.SimpleIndex
-import ml.wolfe.term.{Argmaxer, TermImplicits, TypedDom}
+import ml.wolfe.term._
 
 /**
  * @author riedel

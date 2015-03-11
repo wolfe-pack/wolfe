@@ -5,13 +5,17 @@ import scala.collection.mutable.ArrayBuffer
 import Traversal._
 import Transformer._
 
+case class MaxProductParameters(iterations:Int)
+
 /**
  * @author riedel
  */
 class MaxProductBP(val objRaw: DoubleTerm,
                    val wrt: Seq[Var[Dom]],
                    val observed: Settings,
-                   val msgs: Msgs) extends Argmaxer2 {
+                   val msgs: Msgs)(implicit params:MaxProductParameters) extends Argmaxer {
+
+  import params._
 
   val observedVars = objRaw.vars.filterNot(wrt.contains)
   val result: Settings = Settings.fromSeq(wrt.map(_.domain.createSetting()))
@@ -22,42 +26,62 @@ class MaxProductBP(val objRaw: DoubleTerm,
   //factor graph
   val fg = new FG[NodeContent, EdgeContent, FactorContent]
 
-  //evaluators for lengths of variable length sums
-  val lengthEvals = new ArrayBuffer[Evaluator2]()
+  addNodes(wrt)
+  val factors = addTerm(obj)
 
-  addNodes(obj.vars)
-  addTerm(obj)
+  sealed trait FactorGroup {
+    def activate()(implicit execution: Execution)
+  }
+  case class SingleFactor(factor:fg.Factor) extends FactorGroup {
+    def activate()(implicit execution: Execution) = {
+      fg.activate(factor)
+    }
+  }
 
-  class NodeContent()
+  case class FixedLengthFactors(groups:Seq[FactorGroup]) extends FactorGroup {
+    def activate()(implicit execution: Execution) = {
+      groups foreach (_.activate())
+    }
 
-  class EdgeContent(val maxMarginalizer: MaxMarginalizer2, val f2n: Msg, n2f: Msg)
+  }
+
+  case class VariableLengthFactors(groups:Seq[FactorGroup], lengthEval:Evaluator2) extends FactorGroup {
+    def activate()(implicit execution: Execution) = {
+      lengthEval.eval()
+      val length = lengthEval.output.disc(0)
+      groups.take(length) foreach (_.activate())
+    }
+  }
+
+  class NodeContent(val belief:Msg)
+
+  class EdgeContent(val maxMarginalizer: MaxMarginalizer2, val f2n: Msg, val n2f: Msg)
 
   class FactorContent()
 
   def addNodes(vars: Seq[Variable]): Unit = {
-    for (v <- vars)
-      fg.addNode(v, new NodeContent())
+    for (v <- vars) {
+      fg.addNode(v, new NodeContent(v.domain.createMsg()))
+    }
   }
 
-  def addTerm(term: Term[Dom]): Unit = {
+  def addTerm(term: Term[Dom]): FactorGroup = {
     term match {
       case s@VarSeqSum(_) =>
-        val factors = s.elements map addPotential
+        val factors = s.elements map addTerm
         val obsVarInLength = s.length.vars.filter(observedVars.contains)
         val obsInLength = observed.linkedSettings(observedVars,obsVarInLength)
         val lengthEval = s.length.evaluatorImpl(obsInLength)
-        lengthEvals += lengthEval
-        fg.declareDynamic(lengthEval.output.disc(0),factors)
-        //todo: this needs to work for nested var seq sums
+        VariableLengthFactors(factors,lengthEval)
       case Sum(args) =>
-        for (a <- args) addTerm(a)
+        FixedLengthFactors(args.map(addTerm))
       case pot =>
-        addPotential(pot.asInstanceOf[DoubleTerm])
+        SingleFactor(addPotential(pot.asInstanceOf[DoubleTerm]))
     }
   }
 
   def addPotential(pot: DoubleTerm): fg.Factor = {
-    val vars = pot.vars
+    val vars = pot.vars.filter(wrt.contains)
     val n2fs = vars.map(v => v -> v.domain.createZeroMsg()).toMap
     val obsVarsInPot = vars.filter(observedVars.contains)
     val obsInPot = observed.linkedSettings(observedVars,obsVarsInPot)
@@ -70,93 +94,44 @@ class MaxProductBP(val objRaw: DoubleTerm,
     }
   }
 
+  def updateN2Fs(edge:fg.Edge): Unit = {
+    for (e <- edge.factor.activeEdges; if e != edge) {
+      e.content.n2f := Double.NegativeInfinity
+      for (o <- e.node.activeEdges; if o != e) {
+        e.content.n2f += o.content.f2n
+      }
+    }
+  }
+
+  def updateF2N(edge:fg.Edge)(implicit execution: Execution): Unit = {
+    edge.content.maxMarginalizer.maxMarginals()
+  }
+
+  def updateNodeBelief(node:fg.Node): Unit = {
+    node.content.belief := Double.NegativeInfinity
+    for (e <- node.activeEdges) {
+      node.content.belief += e.content.f2n
+    }
+  }
+
   def argmax()(implicit execution: Execution) = {
+    fg.deactivate()
+    factors.activate()
+
+    for (i <- 0 until iterations) {
+      for (e <- fg.activeEdges) {
+        updateN2Fs(e)
+        updateF2N(e)
+      }
+    }
+
+    for (n <- fg.activeNodes) {
+      updateNodeBelief(n)
+      n.content.belief.argmax(result(wrt.indexOf(n.variable)))
+    }
 
   }
 
 
 }
 
-class FG[NodeContent, EdgeContent, FactorContent] {
-
-  class Node(val variable: Variable, val content: NodeContent) {
-    val edges = new ArrayBuffer[Edge]
-    val activeEdges = new ArrayBuffer[Edge]
-  }
-
-  class Edge(val node: Node, val factor: Factor, val content: EdgeContent)
-
-  class Factor(val potential: DoubleTerm, val content: FactorContent) {
-    val edges = new ArrayBuffer[Edge]
-  }
-
-  abstract class DynamicFactors(val factors: IndexedSeq[Factor]) {
-    def currentLength: Int
-
-    def currentActive = factors.take(currentLength)
-  }
-
-  val nodes = new mutable.LinkedHashMap[Variable, Node]
-  val factors = new mutable.LinkedHashMap[DoubleTerm, Factor]
-  val edges = new ArrayBuffer[Edge]()
-  val dynamic = new ArrayBuffer[DynamicFactors]()
-  val static = new mutable.HashSet[Factor]
-  val activeDynamicFactors = new ArrayBuffer[Factor]
-
-  def addNode(variable: Variable, content: NodeContent): Node = {
-    val node = new Node(variable, content)
-    nodes(variable) = node
-    node
-  }
-
-  def addFactor(potential: DoubleTerm, content: FactorContent)(edgeContent: Node => EdgeContent): Factor = {
-    val factor = new Factor(potential, content)
-    for (v <- potential.vars; n <- nodes.get(v)) {
-      val edge = new Edge(n, factor, edgeContent(n))
-      edges += edge
-      factor.edges += edge
-      n.edges += edge
-      n.activeEdges += edge
-    }
-    static += factor
-    factors(potential) = factor
-    factor
-  }
-
-  def declareDynamic(dynamicLength: => Int, factors: Seq[Factor]): Unit = {
-    dynamic += new DynamicFactors(factors.toIndexedSeq) {
-      def currentLength = dynamicLength
-    }
-    for (f <- factors) {
-      static.remove(f)
-      for (e <- f.edges) {
-        e.node.activeEdges -= e
-      }
-    }
-  }
-
-  def updateActiveFactors(): Unit = {
-    //remove current active factors {
-    for (f <- activeDynamicFactors) {
-      deactiveFactor(f)
-    }
-    activeDynamicFactors.clear()
-    for (d <- dynamic) {
-      for (f <- d.currentActive) {
-        activeDynamicFactors += f
-      }
-    }
-  }
-
-  private def deactiveFactor(f: Factor): Unit = {
-    for (e <- f.edges) {
-      e.node.activeEdges -= e
-    }
-  }
-
-  private def activeFactor(f: Factor): Unit = {
-    for (e <- f.edges) {
-      e.node.activeEdges += e
-    }
-  }
-}

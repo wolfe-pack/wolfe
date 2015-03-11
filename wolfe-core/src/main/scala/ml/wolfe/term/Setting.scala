@@ -4,7 +4,7 @@ import java.lang.System._
 import java.util
 
 import cc.factorie.la.{SparseIndexedTensor1, DenseTensor1, SparseTensor1}
-import ml.wolfe.{FactorieMatrix, FactorieVector}
+import ml.wolfe.{MoreArrayOps, FactorieMatrix, FactorieVector}
 
 import scala.collection.mutable
 import scala.reflect.ClassTag
@@ -419,6 +419,7 @@ class MatsMsg(var mean: FactorieMatrix = null)
 
 
 class Msg(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMats: Int = 0) {
+  import MoreArrayOps._
   final var disc = Array.ofDim[DiscMsg](numDisc)
   final var cont = Array.ofDim[ContMsg](numCont)
   final var vect = Array.ofDim[VectMsg](numVect)
@@ -430,6 +431,28 @@ class Msg(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMats: Int = 0
     for (i <- 0 until vect.length) if (vect(i) != null) vect(i).mean := value
     for (i <- 0 until mats.length) if (mats(i) != null) mats(i).mean := value
   }
+
+  final def +=(value: Msg): Unit = {
+    for (i <- 0 until disc.length) {
+      incr(value.disc(i).msg,disc(i).msg)
+    }
+    for (i <- 0 until cont.length) {
+      cont(i).mean += value.cont(i).mean
+    }
+  }
+
+  def argmax(target:Setting): Unit = {
+    target.disc.resetToZero()
+    for (i <- 0 until disc.length) {
+      val argmaxIndex = maxIndex(disc(i).msg)
+      target.disc(i) = argmaxIndex
+    }
+    for (i <- 0 until cont.length) {
+      target.cont(i) = cont(i).mean
+    }
+
+  }
+
 }
 
 final class Msgs(val length: Int) extends IndexedSeq[Msg] {

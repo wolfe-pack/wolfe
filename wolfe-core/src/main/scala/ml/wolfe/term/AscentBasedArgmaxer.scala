@@ -9,7 +9,7 @@ class AscentBasedArgmaxer(val obj: DoubleTerm,
                           val wrt: Seq[Var[Dom]],
                           val iterations: Int,
                           val learningRate: Double,
-                          val initParams: Array[Setting]) extends Argmaxer {
+                          val initParams: Array[Setting]) extends ArgmaxerOld {
 
   val obsVars            = obj.vars.filterNot(wrt.contains)
   //get differentiator

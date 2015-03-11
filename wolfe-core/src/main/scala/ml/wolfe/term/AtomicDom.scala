@@ -212,7 +212,7 @@ class DoubleDom extends AtomicDom {
     def ranges = Ranges(Offsets(0, offset, 0, 0), Offsets(0, offset + 1, 0, 0))
 
     //val domain:self.type = self
-    override def argmaxer(wrt: Seq[term.Var[Dom]]) = new Argmaxer {
+    override def argmaxer(wrt: Seq[term.Var[Dom]]) = new ArgmaxerOld {
       val contained = wrt.contains(self)
 
       def argmax(observed: Array[Setting], msgs: Array[Msg], result: Array[Setting]) = {

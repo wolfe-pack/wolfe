@@ -3,7 +3,7 @@ package ml.wolfe.term
 /**
  * @author riedel
  */
-class MaxProductArgmaxer(obj:Sum,val wrt:Seq[Var[Dom]]) extends Argmaxer {
+class MaxProductArgmaxer(obj:Sum,val wrt:Seq[Var[Dom]]) extends ArgmaxerOld {
 
   
 

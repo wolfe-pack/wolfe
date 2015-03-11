@@ -14,7 +14,7 @@ class AdaGradArgmaxer(val obj: DoubleTerm,
                       val initParams: Array[Setting],
                       val epochHook: (IndexedSeq[Any],Int) => String = null,
                       val adaptiveVectors: Boolean = true,
-                      val delays:Map[Atom[Dom],Int] = Map.empty) extends Argmaxer {
+                      val delays:Map[Atom[Dom],Int] = Map.empty) extends ArgmaxerOld {
 
   val obsVars = obj.vars.filterNot(wrt.contains)
   //get differentiator

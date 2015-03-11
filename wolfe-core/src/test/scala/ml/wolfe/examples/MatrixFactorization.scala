@@ -11,6 +11,8 @@ import util.Math._
  */
 object MatrixFactorization extends App {
 
+  implicit val rand =  ml.wolfe.util.Math.random
+
   //number of latent dimensions
   val k = 5
 
@@ -44,9 +46,9 @@ object MatrixFactorization extends App {
   //training loss, stochastic term based on sampling a positive cell, and then a negative based on it.
   def loss(t: Thetas.Term) = {
     //we sample a positive cell, and memoize the result
-    val pos = mem(trainingData.sampleSequential)
+    val pos = mem(trainingData.sampleShuffled).logged
     //based on the memoized positive cell, we sample a negative cell which needs to memoized because it will reappear several times
-    val neg = mem(sampleNegCell(pos))
+    val neg = mem(sampleNegCell(pos)).logged
     //the loss based on positve and negative cell
     log(sigm(score(t)(pos))) + log(sigm(-score(t)(neg)))
   }

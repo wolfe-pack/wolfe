@@ -6,7 +6,7 @@ import ml.wolfe.term
 /**
  * @author riedel
  */
-class ExhaustiveSearchArgmaxer(val obj: DoubleTerm, val wrt: Seq[Var[Dom]]) extends Argmaxer {
+class ExhaustiveSearchArgmaxer(val obj: DoubleTerm, val wrt: Seq[Var[Dom]]) extends ArgmaxerOld {
 
   import ml.wolfe.term.ExhaustiveSearch.AllSettings
 
