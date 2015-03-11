@@ -21,7 +21,7 @@ class Memoized[D <: Dom, T <: Term[D]](val term:T) extends Term[D] {
 
     def eval()(implicit execution:Execution) = {
       val inputValue = (input zip vars) map {case(i,v) => v.domain.toValue(i)}
-      if (execution != currentExecution) {
+      if (currentExecution == null || execution.num != currentExecution.num) {
         inputs2ValueInCurrentExecution.clear()
         currentExecution = execution
       }
@@ -51,7 +51,7 @@ class Memoized[D <: Dom, T <: Term[D]](val term:T) extends Term[D] {
 
       def forward()(implicit execution: Execution) = {
         val inputValue = (input zip vars) map {case(i,v) => v.domain.toValue(i)}
-        if (execution != currentExecution) {
+        if (currentExecution == null || execution.num != currentExecution.num) {
           inputs2ValueInCurrentExecution.clear()
           currentExecution = execution
         }
