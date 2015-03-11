@@ -542,6 +542,22 @@ class SparseL2[T1 <: VectorTerm, T2 <: VectorTerm](val arg: T1, val mask: T2 = n
     }
   }
 
+
+  override def composer2(args: Settings) = new Composer2(args) {
+    def eval()(implicit execution: Execution) = {
+      val w = input(0).vect(0)
+      if (mask != null) {
+        val f = input(1).vect(0)
+        output.cont(0) = 0.0
+        f.foreachActiveElement { case (i, v) =>
+          output.cont(0) += w(i) * w(i) * v
+        }
+      } else {
+        output.cont(0) = w dot w
+      }
+    }
+  }
+
   def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
 
     def withRespectTo = wrt
@@ -570,6 +586,32 @@ class SparseL2[T1 <: VectorTerm, T2 <: VectorTerm](val arg: T1, val mask: T2 = n
       //todo: calculate gradient for mask!
     }
   }
+
+
+
+  override def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
+    new ComposedDifferentiator2(wrt, in, err, gradientAcc) {
+
+      def localBackProp()(implicit execution: Execution) = {
+
+        val scale = error.cont(0)
+
+        val w = argOutputs(0).vect(0)
+
+        if (mask != null) {
+          val f = argOutputs(1).vect(0)
+          import ml.wolfe.util.PimpMyFactorie._
+          //need to multiply w with f
+          argErrors(0).vect.update(0, f)
+          argErrors(0).vect(0) :* w
+          argErrors(0).vect(0) *= 2.0 * scale
+        } else {
+          argErrors(0).vect.update(0, w)
+          argErrors(0).vect(0) *= scale * 2.0
+        }
+        //todo: calculate gradient for mask!
+      }
+    }
 }
 
 //rockt: this should be generalized to vectors and matrices
