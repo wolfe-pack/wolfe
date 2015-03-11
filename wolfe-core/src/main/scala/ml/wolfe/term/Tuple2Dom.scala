@@ -132,6 +132,7 @@ trait ProductDom extends Dom {
     override def differentiator2(wrt: Seq[term.Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
       new ComposedDifferentiator2(wrt,in,err,gradientAcc) {
         def localBackProp()(implicit execution: Execution) = {
+
           error.copyTo(argErrors(0),Offsets.zero,start,domain.lengths)
         }
       }

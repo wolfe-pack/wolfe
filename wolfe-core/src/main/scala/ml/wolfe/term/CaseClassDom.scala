@@ -117,7 +117,7 @@ object CaseClassDom {
         val zeros = argNames.map(n => q"$n.zero")
 
         val termArgsDef = argNames.map(n => q"def $n:${arg2DomTypeName(n)}#Term")
-        val varArgsDef = argNames.map(n => q"def $n:${arg2DomTypeName(n)}#Var")
+        val varArgsDef = argNames.map(n => q"def $n:${arg2DomTypeName(n)}#Term")
 
         val termConstructorArgs = argNames.map(n => q"val ${prefixName("_",n)}:$self.$n.Term")
         val termConstructorDefs = argNames.map(n => q"val $n:$self.$n.Term = ${prefixName("_",n)}")
@@ -129,7 +129,9 @@ object CaseClassDom {
           case (name, off) =>
             val nameString = name.decodedName.toString
             val nameConst = Constant(nameString)
-            q"""def $name = $self.$name.variable(name + "." + $nameConst,$off, if (owner == null) this else owner)"""
+            q"""val $name:$self.$name.Term = $self.$name.own(new Field(this,$self.$name,$off))"""
+//
+//            q"""def $name = $self.$name.variable(name + "." + $nameConst,$off, if (owner == null) this else owner)"""
         }
 
         val dynVarArgs = withOffsets(q"_offsets") {

@@ -59,8 +59,15 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
                                          val gradientAccumulator: Settings) extends Differentiator2 {
 
 
+    def createArgError(a:ArgumentType) = {
+      val result = a.domain.createSetting()
+      result.setAdaptiveVectors(true)
+      result.recordChangedOffsets = true
+      result
+    }
+
     val argDiffs = arguments.map(a => a.differentiator2(wrt)(
-      input.linkedSettings(vars,a.vars),a.domain.createSetting(),gradientAccumulator.linkedSettings(vars,a.vars))).toArray
+      input.linkedSettings(vars,a.vars),createArgError(a),gradientAccumulator.linkedSettings(vars,a.vars))).toArray
     val argOutputs = Settings.fromSeq(argDiffs.map(_.output))
     val argErrors = Settings.fromSeq(argDiffs.map(_.error))
     val comp = composer2(argOutputs)

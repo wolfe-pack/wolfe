@@ -58,7 +58,7 @@ class AdaGradArgmaxer2(val objRaw: DoubleTerm,
 
   val diff = obj.differentiator2(wrt)(result, scale, gradient)
 
-  def argmax() = {
+  def argmax()(implicit execution: Execution) = {
     val bar = new ProgressBar(epochs, if (epochs < 100) 1 else epochs / 100)
     bar.start()
 

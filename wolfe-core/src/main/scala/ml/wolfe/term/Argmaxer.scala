@@ -11,7 +11,7 @@ trait Argmaxer2 {
   val observed:Settings
   val msgs:Msgs
   val result:Settings
-  def argmax()
+  def argmax()(implicit execution: Execution)
 }
 
 trait ArgmaxerFactory {

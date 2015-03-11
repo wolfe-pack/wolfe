@@ -24,7 +24,7 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
   def own(term: TypedTerm[Value]) = new OwnedTerm[Value] with Term {
     def self = term
 
-    def apply(index: Int) = ???
+    def apply(index: Int) =  new VarSeqApply[E, Term, lengthDom.Term](this, lengthDom.Const(index))
 
     def length = new VarSeqLength[Term](this)
 

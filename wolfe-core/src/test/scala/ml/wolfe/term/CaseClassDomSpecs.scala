@@ -40,8 +40,8 @@ class CaseClassDomSpecs extends WolfeSpec {
       msgs.disc(0).msg(0) = 0.8
       msgs.disc(0).msg(1) = 0.2
       msgs.cont(0).mean = 0.5
-      val marginals = worlds.toMarginals(msgs,Offsets())
-      marginals should be (worlds.Marginals(Map(false -> 0.8, true -> 0.2),0.5))
+      val marginals = worlds.toMarginals(msgs, Offsets())
+      marginals should be(worlds.Marginals(Map(false -> 0.8, true -> 0.2), 0.5))
     }
 
     "generate a setting given a value" in {
@@ -80,61 +80,69 @@ class CaseClassDomSpecs extends WolfeSpec {
 
     "create a constant" in {
       val worlds = World.Values(Bools, Doubles)
-      val const = worlds.Const(World(true,0.5))
-      const.eval2() should be (World(true,0.5))
+      val const = worlds.Const(World(true, 0.5))
+      const.eval2() should be(World(true, 0.5))
     }
 
     "create a constant using toTerm" in {
       implicit val worlds = World.Values(Bools, Doubles)
-      val const = World(true,0.5).toConst
-      const.rain.eval() should be (true)
+      val const = World(true, 0.5).toConst
+      const.rain.eval() should be(true)
     }
 
     "create a static variable" in {
       val worlds = World.Values(Bools, Doubles)
       val x = worlds.Var
       val y = x.rain
-      x.eval(World(true,0.5)) should be (World(true,0.5))
-      y.eval(World(true,0.5)) should be (true)
+      x.eval2(World(true, 0.5)) should be(World(true, 0.5))
+      y.eval2(World(true, 0.5)) should be(true)
     }
 
     "create nested domains" in {
-      import scala.language.existentials //todo: why is this necessary? General problem with sequence domains?
-      @domain case class Params(weights:IndexedSeq[Double])
-      val params = Params.Values(seqs(Doubles,2))
-      val x = params.variable("x")
+      import scala.language.existentials
+      //todo: why is this necessary? General problem with sequence domains?
+      @domain case class Params(weights: IndexedSeq[Double])
+      val params = Params.Values(Seqs(Doubles, 2))
+      val x = params.Var
       val term = x.weights(1)
-      term.eval(Params(IndexedSeq(1.0,2.0))) should be (2.0)
+      term.eval2(Params(IndexedSeq(1.0, 2.0))) should be(2.0)
     }
 
     "work with classes defined elsewhere" in {
       import ml.wolfe.FactorieVector
-      @domain case class Wrapped(vector:FactorieVector)
+      @domain case class Wrapped(vector: FactorieVector)
       val X = Wrapped.Values(Vectors(2))
-      val x = X.variable("x")
-      x.eval(Wrapped(vector(1,2))).vector should equal (vector(1,2))
+      val x = X.Var
+      x.eval(Wrapped(vector(1, 2))).vector should equal(vector(1, 2))
     }
 
     "return all case class values as iterable" in {
-      @domain case class DiscWorld(rain:Boolean, sprinkler:Boolean)
-      val worlds = DiscWorld.Values(Bools,Bools)
+      @domain case class DiscWorld(rain: Boolean, sprinkler: Boolean)
+      val worlds = DiscWorld.Values(Bools, Bools)
       val result = worlds.toSet
-      result should be (Set(DiscWorld(false,false),DiscWorld(false,true),DiscWorld(true,false),DiscWorld(true,true)))
+      result should be(Set(DiscWorld(false, false), DiscWorld(false, true), DiscWorld(true, false), DiscWorld(true, true)))
     }
 
     "Work with nested case classes" in {
-      @domain case class A(value:Int)
-      @domain case class B(a:A)
-      val bs = B.Values(A.Values(Discretes(1,2)))
-      bs.toSet should be (Set(B(A(1)),B(A(2))))
+      @domain case class A(value: Int)
+      @domain case class B(a: A)
+      val bs = B.Values(A.Values(Discretes(1, 2)))
+      bs.toSet should be(Set(B(A(1)), B(A(2))))
     }
 
     "Create terms using a term constructor" in {
-      val worlds = World.Values(Bools, Doubles)
+      val Worlds = World.Values(Bools, Doubles)
       val b = Bools.Var
       val d = Doubles.Var
-      val term = worlds.Term(b,d)
-      term.eval2(true,0.5) should be (World(true,0.5))
+      val term = Worlds.Term(b, d)
+      term.eval2(true, 0.5) should be(World(true, 0.5))
+
+    }
+
+    "Create a variable that has accessor terms" in {
+      val Worlds = World.Values(Bools, Doubles)
+      val x = Worlds.Var
+      (x.prob | x << World(true, 0.3)).eval2() should be (0.3)
 
     }
 

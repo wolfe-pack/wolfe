@@ -544,9 +544,16 @@ abstract class Buffer[T: ClassTag](val setting: Setting) {
 
   def copyTo(tgt: Buffer[T], srcPos: Int, tgtPos: Int, length: Int) = {
     if (length > 0) {
-      System.arraycopy(array, srcPos, tgt.array, tgtPos, length)
-      if (tgt.shouldRecord)
-        tgt.changedIndices ++= Range(tgtPos, tgtPos + length)
+      if (!shouldRecord) {
+        System.arraycopy(array, srcPos, tgt.array, tgtPos, length)
+        if (tgt.shouldRecord)
+          tgt.changedIndices ++= Range(tgtPos, tgtPos + length)
+      } else {
+        for (i <- changed()) {
+          tgt(tgtPos + i) = this(srcPos + i)
+          if (tgt.shouldRecord) tgt.changedIndices += tgtPos + i
+        }
+      }
     }
   }
 
