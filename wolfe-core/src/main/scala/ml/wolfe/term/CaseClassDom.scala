@@ -129,7 +129,7 @@ object CaseClassDom {
           case (name, off) =>
             val nameString = name.decodedName.toString
             val nameConst = Constant(nameString)
-            q"""val $name:$self.$name.Term = $self.$name.own(new Field(this,$self.$name,$off))"""
+            q"""val $name:$self.$name.Term = $self.$name.own(new Field(this,$self.$name,$off)($nameConst))"""
 //
 //            q"""def $name = $self.$name.variable(name + "." + $nameConst,$off, if (owner == null) this else owner)"""
         }
@@ -152,7 +152,7 @@ object CaseClassDom {
           case (name, off) =>
             val nameString = name.decodedName.toString
             val nameConst = Constant(nameString)
-            q"""val $name = $self.$name.own(new Field(_term,$self.$name,$off))"""
+            q"""val $name = $self.$name.own(new Field(_term,$self.$name,$off)($nameConst))"""
 //            q"""val $name:$self.$name.Term = ???"""
 
         }

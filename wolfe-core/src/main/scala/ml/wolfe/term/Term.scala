@@ -480,6 +480,7 @@ class DotProduct[T1 <: VectorTerm, T2 <: VectorTerm](val arg1: T1, val arg2: T2)
     new ComposedDifferentiator2(wrt, in, err, gradientAcc) {
 
       def localBackProp()(implicit execution: Execution) = {
+
         val scale = error.cont(0)
 
         if (arg1.vars.nonEmpty) argErrors(0).vect.set(0, argOutputs(1).vect(0), scale)

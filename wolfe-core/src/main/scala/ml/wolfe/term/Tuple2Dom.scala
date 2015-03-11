@@ -116,12 +116,12 @@ trait ProductDom extends Dom {
 
   def productName = dom.getClass.getSimpleName
 
-  class Field[D <: Dom](val product: TypedTerm[Value], val domain: D, val start: Offsets) extends Composed[D] {
+  class Field[D <: Dom](val product: TypedTerm[Value], val domain: D, val start: Offsets)(fieldName:String = start.toString) extends Composed[D] {
 
     type ArgumentType = TypedTerm[Value]
     val arguments = IndexedSeq(product)
 
-    def copy(args: IndexedSeq[ArgumentType]) = new Field(args(0),domain,start)
+    def copy(args: IndexedSeq[ArgumentType]) = new Field(args(0),domain,start)(fieldName)
 
     override def composer2(args: Settings) = new Composer2(args) {
       def eval()(implicit execution: Execution) = {
@@ -132,7 +132,8 @@ trait ProductDom extends Dom {
     override def differentiator2(wrt: Seq[term.Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
       new ComposedDifferentiator2(wrt,in,err,gradientAcc) {
         def localBackProp()(implicit execution: Execution) = {
-
+          //todo: SR: why can't argErrors be reset to zero in the ComposedDiff code?
+          argErrors(0).resetToZero()
           error.copyTo(argErrors(0),Offsets.zero,start,domain.lengths)
         }
       }
@@ -141,6 +142,8 @@ trait ProductDom extends Dom {
 
 
     def differentiator(wrt: Seq[term.Var[Dom]]) = ???
+
+    override def toString = s"$product.$fieldName"
   }
 
   trait DomTermImpl extends super.DomTerm with Composed[dom.type] {
