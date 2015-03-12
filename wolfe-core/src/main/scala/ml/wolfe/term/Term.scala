@@ -89,7 +89,7 @@ trait Term[+D <: Dom] extends TermHelper[D] {
     else if (wrt.forall(_.domain.isDiscrete)) new ExhaustiveSearchArgmaxer(this.asInstanceOf[DoubleTerm], wrt) else ???
   }
 
-  def argmaxerImpl(wrt: Seq[Var[Dom]])(observed: Settings, msgs: Msgs): ArgmaxerImpl = {
+  def argmaxerImpl(wrt: Seq[Var[Dom]])(observed: Settings, msgs: Msgs): Argmaxer = {
     //todo: this could be type safe, for example by adding the argmax method to the RichDoubleTerm
     if (!domain.isDouble) sys.error("Argmax only supported for real valued terms")
     else if (wrt.forall(_.domain.isDiscrete)) ??? else ???

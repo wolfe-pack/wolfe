@@ -7,7 +7,7 @@ trait ArgmaxerOld {
   def argmax(observed: Array[Setting], msgs: Array[Msg], result: Array[Setting])
 }
 
-trait ArgmaxerImpl {
+trait Argmaxer {
   val observed: Settings
   val msgs: Msgs
   val result: Settings
@@ -20,11 +20,11 @@ trait ArgmaxerFactoryOld {
 }
 
 trait ArgmaxerFactory {
-  def argmaxer(term: DoubleTerm, wrt: Seq[Var[Dom]])(obs: Settings, msgs: Msgs): ArgmaxerImpl
+  def argmaxer(term: DoubleTerm, wrt: Seq[Var[Dom]])(obs: Settings, msgs: Msgs): Argmaxer
 }
 
 
-object ArgmaxerImpl {
+object Argmaxer {
   val exhaustive = new ArgmaxerFactoryOld {
     def argmaxer(term: DoubleTerm, wrt: Seq[Var[Dom]]) = {
       require(wrt.forall(_.domain.isDiscrete), "exhaustive argmaxer needs discrete variables")

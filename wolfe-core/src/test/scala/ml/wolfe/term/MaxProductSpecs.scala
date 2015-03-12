@@ -9,6 +9,8 @@ class MaxProductSpecs extends WolfeSpec {
 
   import ml.wolfe.term.TermImplicits._
 
+  import Argmaxer._
+
   "A MaxProduct algorithm" should {
     "optimize a linear chain objective" ignore {
       val n = 5
@@ -22,13 +24,26 @@ class MaxProductSpecs extends WolfeSpec {
 
       val obj = sum(vars.map(local), length) + sum(pairs.map(pair), length - 1)
 
-      println((obj | length << 5).eval2(true,true,false,true,true))
+      println((obj | length << 5).eval2(true, true, false, true, true))
       val mpParams = MaxProductParameters(10)
 
       val observation = Settings.fromSeq(Seq(Setting.disc(5)))
-      val argmaxer = obj.argmaxBy(ArgmaxerImpl.maxProduct(mpParams)).argmaxerImpl(vars)(observation,null)
+      val argmaxer = obj.argmaxBy(Argmaxer.maxProduct(mpParams)).argmaxerImpl(vars)(observation, null)
 
       argmaxer.argmax()(Execution(0))
+    }
+
+    "optimize a linear chain objective in high level code" ignore {
+      val n = 5
+      val Ys = Seqs(Bools, 0, n)
+      def model(length: IntTerm)(y: Ys.Term) = {
+        sum(0 until length) { i => I(y(i))} +
+          sum(0 until length - 1) { i => I(y(i) <-> y(i + 1))}
+      }
+      val mpParams = MaxProductParameters(10)
+      val yStar = argmax2(Ys)(y => model(4)(y) argmaxBy maxProduct(mpParams))
+
+
 
     }
   }

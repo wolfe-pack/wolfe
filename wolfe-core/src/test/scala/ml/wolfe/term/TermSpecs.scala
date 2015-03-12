@@ -292,14 +292,14 @@ class TermSpecs extends WolfeSpec {
     "optimize a quadratic objective" in {
       val x = Doubles.variable("x")
       def obj(x: Doubles.Term) = x * 4.0 - x * x
-      val result = argmax(Doubles) { x => obj(x).argmaxBy(ArgmaxerImpl.adaGrad(100, 1))}
+      val result = argmax(Doubles) { x => obj(x).argmaxBy(Argmaxer.adaGrad(100, 1))}
       result.eval() should be(2.0 +- eps)
     }
     "optimize a multivariate quadratic objective" in {
       val X = Vectors(2)
       val x = X.variable("x")
       def obj(x: X.Term) = (x dot vector(4.0, 4.0)) - (x dot x)
-      val result = argmax(X) { x => obj(x).argmaxBy(ArgmaxerImpl.adaGrad(100, 1))}
+      val result = argmax(X) { x => obj(x).argmaxBy(Argmaxer.adaGrad(100, 1))}
       result.eval() should equal(vector(2.0, 2.0))
     }
     "optimize a quadratic objective over case class domains with nested sequences of vectors" in {
@@ -315,7 +315,7 @@ class TermSpecs extends WolfeSpec {
       def nextRandom = random.nextGaussian() * 0.1
       val init = Settings(Thetas.createRandomSetting(nextRandom))
 
-      val thetaStar = argmax2(Thetas)(t => obj(t).argmaxBy(ArgmaxerImpl.adaGrad2(AdaGradParameters(100, 0.1, initParams = init)))).eval2()
+      val thetaStar = argmax2(Thetas)(t => obj(t).argmaxBy(Argmaxer.adaGrad2(AdaGradParameters(100, 0.1, initParams = init)))).eval2()
       thetaStar.xs.foreach(x => x.foreach(_ should be(0.0 +- eps)))
       thetaStar.ys.foreach(y => y.foreach(_ should be(0.0 +- eps)))
     }
