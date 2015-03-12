@@ -420,6 +420,8 @@ trait MathImplicits {
   def oneHot(index: Int, value: Double = 1.0)(implicit dom: VectorDom) =
     dom.Const(new SingletonTensor1(dom.dim, index, value))
 
+  def oneHot(index: IntTerm, value: DoubleTerm):VectorTerm = ???
+
 
   implicit def doubleToConstant(d: Double): Constant[DoubleDom] = Dom.doubles.Const(d)
 
