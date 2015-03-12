@@ -134,7 +134,7 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
 
     def unary_! = for (b <- term) yield !b
 
-    def <->(that:BoolTerm) = new DiscreteEquals[Boolean](term, that)
+    def <->(that:BoolTerm) = new DiscreteEquals[Boolean](term.asInstanceOf[DiscreteTerm[Boolean]], that.asInstanceOf[DiscreteTerm[Boolean]])
 
   }
 
@@ -333,7 +333,7 @@ trait MathImplicits {
     def argmaxBy(factory: ArgmaxerFactoryOld) = new ProxyTerm[TypedDom[Double]] {
       def self = term
 
-      override def argmaxer(wrt: Seq[Var[Dom]]) = factory.argmaxer(term, wrt)
+      override def argmaxerOld(wrt: Seq[Var[Dom]]) = factory.argmaxer(term, wrt)
 
       def copy(args: IndexedSeq[ArgumentType]) = ???
 

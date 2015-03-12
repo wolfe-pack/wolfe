@@ -141,7 +141,7 @@ trait ProductDom extends Dom {
     def composer() = ???
 
 
-    def differentiator(wrt: Seq[term.Var[Dom]]) = ???
+    def differentiatorOld(wrt: Seq[term.Var[Dom]]) = ???
 
     override def toString = s"$product.$fieldName"
   }
@@ -179,7 +179,7 @@ trait ProductDom extends Dom {
       }
     }
 
-    def differentiator(wrt: Seq[term.Var[Dom]]) = ???
+    def differentiatorOld(wrt: Seq[term.Var[Dom]]) = ???
 
   }
 

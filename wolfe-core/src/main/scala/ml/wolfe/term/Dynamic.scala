@@ -157,8 +157,8 @@ object Dynamic {
 trait DynamicTerm[T] extends ProxyTerm[TypedDom[Double]] {
   def generator: Dynamic[T]
 
-  override def evaluator() = new Evaluator {
-    val eval = self.evaluator()
+  override def evaluatorOld() = new Evaluator {
+    val eval = self.evaluatorOld()
 
     def eval(inputs: Array[Setting], output: Setting) = {
       //generator.generateNext()
@@ -167,8 +167,8 @@ trait DynamicTerm[T] extends ProxyTerm[TypedDom[Double]] {
     }
   }
 
-  override def differentiator(wrt: Seq[Var[Dom]]) = new Differentiator {
-    val diff = self.differentiator(wrt)
+  override def differentiatorOld(wrt: Seq[Var[Dom]]) = new Differentiator {
+    val diff = self.differentiatorOld(wrt)
 
     def forwardProp(current: Array[Setting]) = {
       //generator.generateNext()

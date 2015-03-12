@@ -16,7 +16,7 @@ class ExhaustiveSearchArgmaxer(val obj: DoubleTerm, val wrt: Seq[Var[Dom]]) exte
   val vars2result = VariableMapping(obj.vars, wrt)
   val newDiscAtoms = wrt.flatMap(_.atoms.disc).map(a => ExhaustiveSearch.IndexedAtom(a, obj.vars.indexOf(a.ownerOrSelf)))
   val allSettings = new AllSettings(newDiscAtoms.toIndexedSeq)
-  val evaluator = obj.evaluator()
+  val evaluator = obj.evaluatorOld()
   val score = obj.domain.createSetting()
 
   def argmax(observed: Array[Setting], msgs: Array[Msg], result: Array[Setting]) = {

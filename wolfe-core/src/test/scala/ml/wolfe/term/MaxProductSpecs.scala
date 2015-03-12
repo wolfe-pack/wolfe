@@ -25,7 +25,7 @@ class MaxProductSpecs extends WolfeSpec {
       println((obj | length << 5).eval2(true,true,false,true,true))
       val mpParams = MaxProductParameters(10)
 
-      val argmaxer = obj.argmaxBy(Argmaxer.maxProduct(mpParams)).argmaxerImpl(vars)(???,???)
+      val argmaxer = obj.argmaxBy(ArgmaxerImpl.maxProduct(mpParams)).argmaxerImpl(vars)(???,???)
 
       argmaxer.argmax()(Execution(0))
 

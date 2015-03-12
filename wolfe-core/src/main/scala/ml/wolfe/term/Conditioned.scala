@@ -40,8 +40,8 @@ case class Conditioned[D <: Dom, V <: Dom](term:Term[D],variable:Var[V],value:Te
 
   def copy(args: IndexedSeq[ArgumentType]) = Conditioned[D,V](args(0).asInstanceOf[Term[D]],variable,value.asInstanceOf[Term[V]])
 
-  def evaluator() = ???
-  def differentiator(wrt: Seq[Var[Dom]]) = ???
+  def evaluatorOld() = ???
+  def differentiatorOld(wrt: Seq[Var[Dom]]) = ???
   def atomsIterator = ???
 
 }

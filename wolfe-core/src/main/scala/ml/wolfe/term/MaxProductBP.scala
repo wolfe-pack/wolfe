@@ -13,7 +13,7 @@ case class MaxProductParameters(iterations:Int)
 class MaxProductBP(val objRaw: DoubleTerm,
                    val wrt: Seq[Var[Dom]],
                    val observed: Settings,
-                   val msgs: Msgs)(implicit params:MaxProductParameters) extends Argmaxer {
+                   val msgs: Msgs)(implicit params:MaxProductParameters) extends ArgmaxerImpl {
 
   import params._
 

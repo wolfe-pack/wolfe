@@ -37,7 +37,7 @@ trait Term[+D <: Dom] extends TermHelper[D] {
    * The evaluator calculates the value of the term given an assignment to free variables.
    * @return the term's evaluator.
    */
-  def evaluator(): Evaluator
+  def evaluatorOld(): Evaluator
 
   abstract class AbstractEvaluator2(val input: Settings) extends ml.wolfe.term.Evaluator2
 
@@ -81,15 +81,15 @@ trait Term[+D <: Dom] extends TermHelper[D] {
 
   def atomsIterator: Iterator[Atom[Dom]]
 
-  def differentiator(wrt: Seq[Var[Dom]]): Differentiator
+  def differentiatorOld(wrt: Seq[Var[Dom]]): Differentiator
 
-  def argmaxer(wrt: Seq[Var[Dom]]): ArgmaxerOld = {
+  def argmaxerOld(wrt: Seq[Var[Dom]]): ArgmaxerOld = {
     //todo: this could be type safe, for example by adding the argmax method to the RichDoubleTerm
     if (!domain.isDouble) sys.error("Argmax only supported for real valued terms")
     else if (wrt.forall(_.domain.isDiscrete)) new ExhaustiveSearchArgmaxer(this.asInstanceOf[DoubleTerm], wrt) else ???
   }
 
-  def argmaxerImpl(wrt: Seq[Var[Dom]])(observed: Settings, msgs: Msgs): Argmaxer = {
+  def argmaxerImpl(wrt: Seq[Var[Dom]])(observed: Settings, msgs: Msgs): ArgmaxerImpl = {
     //todo: this could be type safe, for example by adding the argmax method to the RichDoubleTerm
     if (!domain.isDouble) sys.error("Argmax only supported for real valued terms")
     else if (wrt.forall(_.domain.isDiscrete)) ??? else ???
@@ -97,6 +97,9 @@ trait Term[+D <: Dom] extends TermHelper[D] {
 
 }
 
+trait LegacyTerm {
+
+}
 
 /**
  * Provides a range of convenience methods to access Term functionality in more type safe ways.
@@ -105,9 +108,9 @@ trait Term[+D <: Dom] extends TermHelper[D] {
 trait TermHelper[+D <: Dom] {
   this: Term[D] =>
 
-  def clientEvaluator() = new ClientEvaluator
+  def evaluator() = new ClientEvaluator
 
-  def clientDifferentiator[T <: Dom](wrt: Var[T]) = new ClientDifferentiator[T](wrt)
+  def differentiator[T <: Dom](wrt: Var[T]) = new ClientDifferentiator[T](wrt)
 
   class ClientEvaluator() {
     val input = createInputSettings()
@@ -121,6 +124,7 @@ trait TermHelper[+D <: Dom] {
       domain.toValue(eval.output)
     }
   }
+
 
   class ClientDifferentiator[T <: Dom](val wrt: Var[T]) {
     val input = createInputSettings()
@@ -150,7 +154,7 @@ trait TermHelper[+D <: Dom] {
   }
 
   def argmax[V <: Dom](wrt: Var[V], args: Any*): wrt.domain.Value = {
-    val am = argmaxer(Seq(wrt))
+    val am = argmaxerOld(Seq(wrt))
     val observed = vars.filter(_ != wrt)
     val observedSettings = for ((a, v) <- args zip observed) yield v.domain.toSetting(a.asInstanceOf[v.domain.Value])
     val result = wrt.domain.createSetting()
@@ -159,7 +163,7 @@ trait TermHelper[+D <: Dom] {
   }
 
   def eval(args: Any*): domain.Value = {
-    val ev = evaluator()
+    val ev = evaluatorOld()
     val output = domain.createSetting()
     val argSettings = for ((a, v) <- args zip vars) yield v.domain.toSetting(a.asInstanceOf[v.domain.Value])
     ev.eval(argSettings.toArray, output)
@@ -191,7 +195,7 @@ trait TermHelper[+D <: Dom] {
 
 
   def gradient(args: Seq[Any], error: domain.Value = domain.one, wrt: Seq[Var[Dom]] = vars): Seq[Any] = {
-    val diff = differentiator(wrt)
+    val diff = differentiatorOld(wrt)
     val errorSetting = domain.toSetting(error)
     val argSettings = for ((a, v) <- args zip vars) yield v.domain.toSetting(a.asInstanceOf[v.domain.Value])
     val result = vars.map(_.domain.createZeroSetting()).toArray
@@ -235,7 +239,7 @@ trait ProxyTerm[D <: Dom] extends Term[D] with NAry {
 
   def arguments = IndexedSeq(self)
 
-  def evaluator() = self.evaluator()
+  def evaluatorOld() = self.evaluatorOld()
 
 
   override def evaluatorImpl(in: Settings) = self.evaluatorImpl(in)
@@ -244,7 +248,7 @@ trait ProxyTerm[D <: Dom] extends Term[D] with NAry {
   override def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
     self.differentiator2(wrt)(in, err, gradientAcc)
 
-  def differentiator(wrt: Seq[Var[Dom]]) = self.differentiator(wrt)
+  def differentiatorOld(wrt: Seq[Var[Dom]]) = self.differentiatorOld(wrt)
 
   def atomsIterator = self.atomsIterator
 
@@ -276,7 +280,7 @@ trait Var[+D <: Dom] extends Term[D] {
 
   def isStatic = false
 
-  def differentiator(wrt: Seq[Var[Dom]]) = new Differentiator {
+  def differentiatorOld(wrt: Seq[Var[Dom]]) = new Differentiator {
     def term = self
 
     def withRespectTo = wrt
@@ -290,7 +294,7 @@ trait Var[+D <: Dom] extends Term[D] {
     }
   }
 
-  def evaluator() = new Evaluator {
+  def evaluatorOld() = new Evaluator {
 
     def eval(inputs: Array[Setting], output: Setting) = {
       ranges.copy(inputs(0), output)
@@ -405,7 +409,7 @@ trait AtomicEvaluator {
 
 object AtomicEvaluator {
   def apply(term: Term[Dom]) = {
-    val evaluator = term.evaluator()
+    val evaluator = term.evaluatorOld()
     val atoms = term.atoms
     new AtomicEvaluator {
       val inputs = term.vars.map(_.domain.createSetting()).toArray
@@ -457,7 +461,7 @@ trait Differentiator {
 }
 
 class EmptyDifferentiator(val term: Term[Dom], val withRespectTo: Seq[Var[Dom]]) extends Differentiator {
-  val eval = term.evaluator()
+  val eval = term.evaluatorOld()
 
   def forwardProp(current: Array[Setting]) = {
     eval.eval(current, activation)
@@ -504,7 +508,7 @@ class DotProduct[T1 <: VectorTerm, T2 <: VectorTerm](val arg1: T1, val arg2: T2)
       }
     }
 
-  def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
+  def differentiatorOld(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
 
     def withRespectTo = wrt
 
@@ -573,7 +577,7 @@ class SparseL2[T1 <: VectorTerm, T2 <: VectorTerm](val arg: T1, val mask: T2 = n
     }
   }
 
-  def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
+  def differentiatorOld(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
 
     def withRespectTo = wrt
 
@@ -648,7 +652,7 @@ class MatrixDotProduct[T1 <: Term[MatrixDom], T2 <: Term[MatrixDom]](val arg1: T
   }
 
 
-  def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
+  def differentiatorOld(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
 
     def withRespectTo = wrt
 
@@ -684,7 +688,7 @@ class VectorScaling[T1 <: VectorTerm, T2 <: DoubleTerm](val arg1: T1, arg2: T2) 
     }
   }
 
-  def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
+  def differentiatorOld(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
 
     def withRespectTo = wrt
 
@@ -719,7 +723,7 @@ class VectorConcatenation[T1 <: VectorTerm, T2 <: VectorTerm](val arg1: T1, val 
   }
 
 
-  def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
+  def differentiatorOld(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
 
     def withRespectTo = wrt
 
@@ -783,7 +787,7 @@ class MatrixVectorProduct[T1 <: MatrixTerm, T2 <: VectorTerm](val arg1: T1, val 
       }
     }
 
-  def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
+  def differentiatorOld(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
 
     def withRespectTo = wrt
 
@@ -825,7 +829,7 @@ class Div[T1 <: DoubleTerm, T2 <: DoubleTerm](val arg1: T1, val arg2: T2) extend
     }
   }
 
-  def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
+  def differentiatorOld(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
 
     def withRespectTo = wrt
 
@@ -917,7 +921,7 @@ case class Product(arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm
 
   def copy(args: IndexedSeq[ArgumentType]) = new Product(args)
 
-  def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
+  def differentiatorOld(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
     def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]) = {
       var total = outError.cont(0)
       var zeros = 0
@@ -1010,7 +1014,7 @@ class Iverson[T <: BoolTerm](val arg: T) extends UnaryTerm[T, DoubleDom] with Co
 
   def copy(args: IndexedSeq[ArgumentType]) = new Iverson(args(0))
 
-  def differentiator(wrt: Seq[Var[Dom]]) = ???
+  def differentiatorOld(wrt: Seq[Var[Dom]]) = ???
 }
 
 class IntToDouble[T <: IntTerm](val int: T) extends ComposedDoubleTerm {
@@ -1033,7 +1037,7 @@ class IntToDouble[T <: IntTerm](val int: T) extends ComposedDoubleTerm {
   }
 
 
-  def differentiator(wrt: Seq[Var[Dom]]) = ???
+  def differentiatorOld(wrt: Seq[Var[Dom]]) = ???
 }
 
 case class Identity[D<:Dom, T <: Term[D]](self: T) extends ProxyTerm[D] {
@@ -1069,7 +1073,7 @@ trait BinaryDiscreteOperator[D <: Dom, A <: Dom] extends Composed[D] {
     }
   }
 
-  def differentiator(wrt: Seq[Var[Dom]]) = ???
+  def differentiatorOld(wrt: Seq[Var[Dom]]) = ???
 
   def copy(args: IndexedSeq[ArgumentType]) = new BinaryDiscreteOperator[D, A] {
 

@@ -42,7 +42,7 @@ class VectorDoubleFun[T <: VectorTerm](val arg: T, fun: Double => Double, deriv:
       }
     }
 
-  def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
+  def differentiatorOld(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
     def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]) = {
       gradient(0).vect(0) = argOutputs(0).vect(0).mapValues(deriv, gradient(0).vect(0)) :* outError.vect(0).asInstanceOf[DenseTensor1]
     }
@@ -92,7 +92,7 @@ class L1Norm[T <: VectorTerm](val arg:T) extends ComposedDoubleTerm {
       }
     }
 
-  def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
+  def differentiatorOld(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
     def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]) = {
       val scale = outError.cont(0)
       for (i <- 0 until argOutputs(0).vect(0).dim1) {

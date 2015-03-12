@@ -78,9 +78,9 @@ class LogTerm[D <: Dom, T <: Term[D]](val toLog: T, val name:String = null) exte
 
   def vars = toLog.vars
 
-  def evaluator() = ???
+  def evaluatorOld() = ???
 
   def atomsIterator = ???
 
-  def differentiator(wrt: Seq[Var[Dom]]) = ???
+  def differentiatorOld(wrt: Seq[Var[Dom]]) = ???
 }

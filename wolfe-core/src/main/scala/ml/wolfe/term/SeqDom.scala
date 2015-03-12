@@ -119,7 +119,7 @@ class SeqDom[D <: Dom](val elementDom: D, val length: Int) extends Dom {
       }
     }
 
-    def differentiator(wrt: Seq[term.Var[Dom]]) = new ComposedDifferentiator {
+    def differentiatorOld(wrt: Seq[term.Var[Dom]]) = new ComposedDifferentiator {
       def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]) = {
         //each argument will get its error signal from a subsection of the outError
         for (i <- 0 until argOutputs.length) {
@@ -181,7 +181,7 @@ class SeqApply[E <: Dom, S <: Term[SeqDom[E]], I <: Term[TypedDom[Int]]](val seq
     }
   }
 
-  def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
+  def differentiatorOld(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
     require(index.vars.forall(v => !wrt.contains(v)), "Can't differentiate index term in sequence apply")
 
     def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]) = {

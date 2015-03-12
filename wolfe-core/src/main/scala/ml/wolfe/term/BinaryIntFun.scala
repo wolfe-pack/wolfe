@@ -17,5 +17,5 @@ class BinaryIntFun[T1 <: IntTerm, T2 <:IntTerm](val a1:T1, val a2:T2, fun:(Int,I
   }
 
   def composer() = ???
-  def differentiator(wrt: Seq[Var[Dom]]) = ???
+  def differentiatorOld(wrt: Seq[Var[Dom]]) = ???
 }

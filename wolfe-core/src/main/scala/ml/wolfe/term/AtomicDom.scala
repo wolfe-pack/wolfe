@@ -212,7 +212,7 @@ class DoubleDom extends AtomicDom {
     def ranges = Ranges(Offsets(0, offset, 0, 0), Offsets(0, offset + 1, 0, 0))
 
     //val domain:self.type = self
-    override def argmaxer(wrt: Seq[term.Var[Dom]]) = new ArgmaxerOld {
+    override def argmaxerOld(wrt: Seq[term.Var[Dom]]) = new ArgmaxerOld {
       val contained = wrt.contains(self)
 
       def argmax(observed: Array[Setting], msgs: Array[Msg], result: Array[Setting]) = {
@@ -340,9 +340,9 @@ case class RangeDom(values: Range) extends GenericDiscreteDom[Int] {
 
     def atomsIterator = ???
 
-    def evaluator() = ???
+    def evaluatorOld() = ???
 
-    def differentiator(wrt: Seq[term.Var[Dom]]) = ???
+    def differentiatorOld(wrt: Seq[term.Var[Dom]]) = ???
   }
 
   def uniform(implicit random: Random) = new SampleUniform()

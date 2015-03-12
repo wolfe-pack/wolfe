@@ -74,11 +74,11 @@ class Memoized[D <: Dom, T <: Term[D]](val term:T) extends Term[D] {
       val output: Setting = cachedOut
     }
 
-  def evaluator() = ???
+  def evaluatorOld() = ???
 
   def atomsIterator = ???
 
-  def differentiator(wrt: Seq[Var[Dom]]) = ???
+  def differentiatorOld(wrt: Seq[Var[Dom]]) = ???
 
   override def toString = s"mem($term)"
 }

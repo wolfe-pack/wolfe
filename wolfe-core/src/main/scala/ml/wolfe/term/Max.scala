@@ -12,13 +12,13 @@ class Max(val obj: DoubleTerm, wrt: Seq[Var[Dom]]) extends DoubleTerm {
 
   def isStatic = false
 
-  def evaluator() = new MaxEvaluator()
+  def evaluatorOld() = new MaxEvaluator()
 
-  def differentiator(wrt: Seq[Var[Dom]]) = {
+  def differentiatorOld(wrt: Seq[Var[Dom]]) = {
     new Differentiator {
 
-      val eval         = evaluator()
-      val diff         = obj.differentiator(vars)
+      val eval         = evaluatorOld()
+      val diff         = obj.differentiatorOld(vars)
       val value        = domain.createSetting()
       val fullGradient = obj.vars.map(_.domain.createZeroSetting()).toArray
       val full2vars = VariableMapping(obj.vars,vars)
@@ -40,8 +40,8 @@ class Max(val obj: DoubleTerm, wrt: Seq[Var[Dom]]) extends DoubleTerm {
   }
 
   class MaxEvaluator extends Evaluator {
-    val argmaxer      = obj.argmaxer(wrt)
-    val objEval       = obj.evaluator()
+    val argmaxer      = obj.argmaxerOld(wrt)
+    val objEval       = obj.evaluatorOld()
     //val vars2obs = VariableMapping(vars,)
     val hiddenSetting = wrt.map(_.domain.createSetting()).toArray
     val fullSetting   = obj.vars.map(_.domain.createSetting()).toArray
@@ -67,14 +67,14 @@ class Argmax[D <: Dom](val obj: DoubleTerm, val wrt:Var[D]) extends Term[D] {
 
   def atomsIterator = obj.atomsIterator.filter(_.ownerOrSelf != wrt)
 
-  def evaluator() = new Evaluator {
-    val maxer = obj.argmaxer(Seq(wrt))
+  def evaluatorOld() = new Evaluator {
+    val maxer = obj.argmaxerOld(Seq(wrt))
     def eval(inputs: Array[Setting], output: Setting) = {
       maxer.argmax(inputs,null,Array(output))
     }
   }
 
-  def differentiator(wrt: Seq[Var[Dom]]) = ???
+  def differentiatorOld(wrt: Seq[Var[Dom]]) = ???
 
   /**
    * Is this term guaranteed to evaluate to the same value each it is called
@@ -90,8 +90,8 @@ class Argmax2[D <: Dom](val obj: DoubleTerm, val wrt:Var[D]) extends Term[D] {
 
   def atomsIterator = obj.atomsIterator.filter(_.ownerOrSelf != wrt)
 
-  def evaluator() = new Evaluator {
-    val maxer = obj.argmaxer(Seq(wrt))
+  def evaluatorOld() = new Evaluator {
+    val maxer = obj.argmaxerOld(Seq(wrt))
     def eval(inputs: Array[Setting], output: Setting) = {
       maxer.argmax(inputs,null,Array(output))
     }
@@ -108,7 +108,7 @@ class Argmax2[D <: Dom](val obj: DoubleTerm, val wrt:Var[D]) extends Term[D] {
     val output = maxer.result(0)
   }
 
-  def differentiator(wrt: Seq[Var[Dom]]) = ???
+  def differentiatorOld(wrt: Seq[Var[Dom]]) = ???
 }
 
 

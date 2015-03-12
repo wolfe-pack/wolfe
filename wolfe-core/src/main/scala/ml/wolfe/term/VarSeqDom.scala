@@ -192,7 +192,7 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
       }
     }
 
-    def differentiator(wrt: Seq[term.Var[Dom]]) = new ComposedDifferentiator {
+    def differentiatorOld(wrt: Seq[term.Var[Dom]]) = new ComposedDifferentiator {
       //todo: adapt
       require(length.vars.forall(v => !wrt.contains(v)), "Can't differentiate length term in sequence constructor")
 
@@ -242,7 +242,7 @@ case class VarSeqLength[S <: Term[VarSeqDom[_]]](seq: S) extends Composed[TypedD
     }
   }
 
-  def differentiator(wrt: Seq[Var[Dom]]) = ???
+  def differentiatorOld(wrt: Seq[Var[Dom]]) = ???
 }
 
 case class VarSeqApply[+E <: Dom, S <: Term[VarSeqDom[E]], I <: IntTerm](seq: S, index: I) extends Composed[E] {
@@ -288,7 +288,7 @@ case class VarSeqApply[+E <: Dom, S <: Term[VarSeqDom[E]], I <: IntTerm](seq: S,
       }
     }
 
-  def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
+  def differentiatorOld(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
     require(index.vars.forall(v => !wrt.contains(v)), "Can't differentiate index term in sequence apply")
 
     //the indices of errors we pass to the sequence argument should be recorded such that the argument can focus on what was changed
@@ -352,6 +352,6 @@ class RangeTerm(start:IntTerm,end:IntTerm) extends Composed[VarSeqDom[TypedDom[I
   }
 
   def composer() = ???
-  def differentiator(wrt: Seq[Var[Dom]]) = ???
+  def differentiatorOld(wrt: Seq[Var[Dom]]) = ???
 
 }

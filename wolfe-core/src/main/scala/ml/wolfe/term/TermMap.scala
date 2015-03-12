@@ -12,8 +12,8 @@ trait TermMap[A <: Term[Dom], D <: Dom] extends Term[D] {
 
   def atomsIterator = term.atomsIterator
 
-  def evaluator() = new Evaluator {
-    val termEval = term.evaluator()
+  def evaluatorOld() = new Evaluator {
+    val termEval = term.evaluatorOld()
     val termOutput = term.domain.createSetting()
     def eval(inputs: Array[Setting], output: Setting) = {
       termEval.eval(inputs,termOutput)
@@ -39,7 +39,7 @@ trait TermMap[A <: Term[Dom], D <: Dom] extends Term[D] {
     val output = domain.createSetting()
   }
 
-  def differentiator(wrt: Seq[Var[Dom]]) = ???
+  def differentiatorOld(wrt: Seq[Var[Dom]]) = ???
 }
 
 trait TermFlatMap[A <: Term[Dom], D <: Dom] extends Term[D] {
@@ -52,13 +52,13 @@ trait TermFlatMap[A <: Term[Dom], D <: Dom] extends Term[D] {
   def vars = (term.vars ++ prototype.vars).distinct
   def atomsIterator = term.atomsIterator ++ prototype.atomsIterator
 
-  def evaluator() = new Evaluator {
+  def evaluatorOld() = new Evaluator {
     //need to map
     val this2term = VariableMapping(vars,term.vars)
     val this2proto = VariableMapping(vars,prototype.vars)
     val termInputs = term.vars.map(_.domain.createSetting()).toArray
     val protoInputs = prototype.vars.map(_.domain.createSetting()).toArray
-    val termEval = term.evaluator()
+    val termEval = term.evaluatorOld()
     val termOutput = term.domain.createSetting()
     def eval(inputs: Array[Setting], output: Setting) = {
       this2term.copyForwardShallow(inputs,termInputs)
@@ -66,11 +66,11 @@ trait TermFlatMap[A <: Term[Dom], D <: Dom] extends Term[D] {
       termEval.eval(termInputs,termOutput)
       val value = term.domain.toValue(termOutput)
       val mapped = f(value)
-      mapped.evaluator().eval(protoInputs,output)
+      mapped.evaluatorOld().eval(protoInputs,output)
     }
   }
 
-  def differentiator(wrt: Seq[Var[Dom]]) = ???
+  def differentiatorOld(wrt: Seq[Var[Dom]]) = ???
 
 
 }

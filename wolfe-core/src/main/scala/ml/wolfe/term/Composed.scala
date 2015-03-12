@@ -15,7 +15,7 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
 
   lazy val isStatic = arguments forall (_.isStatic)
 
-  def evaluator() = new Evaluator with Composer {
+  def evaluatorOld() = new Evaluator with Composer {
     val comp = composer()
 
     def eval(inputs: Array[Setting], output: Setting) = {
@@ -123,7 +123,7 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
     val argInputs = arguments.map(_.vars.map(_.domain.createSetting()).toArray)
     //    val argInputs  = arguments.map(a => Array.ofDim[Setting](a.vars.length)).toArray
     val full2Arg = arguments.map(a => VariableMapping(vars, a.vars)).toArray
-    val argEvals = arguments.map(_.evaluator()).toArray
+    val argEvals = arguments.map(_.evaluatorOld()).toArray
   }
 
   trait ComposedDifferentiator extends Differentiator with Composer {
@@ -139,7 +139,7 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
     argErrors.foreach(_.setAdaptiveVectors(true))
 
     def createDifferentiator(term: Term[Dom]) =
-      if (term.vars.exists(withRespectTo.contains)) term.differentiator(withRespectTo)
+      if (term.vars.exists(withRespectTo.contains)) term.differentiatorOld(withRespectTo)
       else
         new EmptyDifferentiator(term, withRespectTo)
 

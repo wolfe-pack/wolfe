@@ -13,7 +13,7 @@ class AscentBasedArgmaxer(val obj: DoubleTerm,
 
   val obsVars            = obj.vars.filterNot(wrt.contains)
   //get differentiator
-  val diff               = obj.differentiator(wrt)
+  val diff               = obj.differentiatorOld(wrt)
 
   val initParameters = if (initParams.isEmpty) wrt.map(_.domain.createZeroSetting()).toArray else initParams
 

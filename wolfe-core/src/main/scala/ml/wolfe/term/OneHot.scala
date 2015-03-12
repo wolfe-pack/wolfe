@@ -35,7 +35,7 @@ class Indexed[T<:Term[Dom]](val value:T)(val index:Index) extends Composed[Discr
 
   def composer() = ???
 
-  def differentiator(wrt: Seq[Var[Dom]]) = ???
+  def differentiatorOld(wrt: Seq[Var[Dom]]) = ???
 
   val domain: DiscreteDom[Int] = ???
 }

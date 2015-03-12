@@ -21,11 +21,11 @@ case class FirstOrderSum[D <: Dom, Body <: DoubleTerm, R <: Term[VarSeqDom[D]]](
 
     val bodyInputs = body.createVariableSettings()
     val bodyOutput = body.domain.createSetting()
-    val bodyEval = body.evaluator()
+    val bodyEval = body.evaluatorOld()
 
     val rangeInputs = range.createVariableSettings()
     val rangeOutput = range.domain.createSetting()
-    val rangeEval = range.evaluator()
+    val rangeEval = range.evaluatorOld()
 
     def loop(inputs: Array[Setting], bodyInputs: Array[Setting] = bodyInputs)(procedure: => Unit): Unit = {
       this2body.copyForwardShallow(inputs, bodyInputs)
@@ -44,7 +44,7 @@ case class FirstOrderSum[D <: Dom, Body <: DoubleTerm, R <: Term[VarSeqDom[D]]](
 
   }
 
-  def evaluator() = new SumProcessor with Evaluator {
+  def evaluatorOld() = new SumProcessor with Evaluator {
 
 
     def eval(inputs: Array[Setting], output: Setting) = {
@@ -57,7 +57,7 @@ case class FirstOrderSum[D <: Dom, Body <: DoubleTerm, R <: Term[VarSeqDom[D]]](
     }
   }
 
-  def differentiator(wrt: Seq[Var[Dom]]) = new SumProcessor with Differentiator {
+  def differentiatorOld(wrt: Seq[Var[Dom]]) = new SumProcessor with Differentiator {
 
     require(wrt.forall(!range.vars.contains(_)), "Cannot differentiate range/indices of sum")
 
@@ -73,7 +73,7 @@ case class FirstOrderSum[D <: Dom, Body <: DoubleTerm, R <: Term[VarSeqDom[D]]](
 
     def withRespectTo = wrt
 
-    val bodyDiff = body.differentiator(wrt)
+    val bodyDiff = body.differentiatorOld(wrt)
     val bodyGradient = body.createVariableSettings()
 
     def backProp(error: Setting, gradient: Array[Setting]) = {
