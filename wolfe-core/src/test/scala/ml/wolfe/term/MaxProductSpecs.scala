@@ -10,7 +10,7 @@ class MaxProductSpecs extends WolfeSpec {
   import ml.wolfe.term.TermImplicits._
 
   "A MaxProduct algorithm" should {
-    "optimize a linear chain objective" in {
+    "optimize a linear chain objective" ignore {
       val n = 5
       val vars = Range(0, n) map (i => Bools.variable("y" + i))
       val length = Ints(0 until n).Var
