@@ -175,12 +175,15 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
       innerTerm.domain.own(Conditioned[Dom,Dom](innerTerm, assignment.variable, assignment.value).asInstanceOf[TypedTerm[innerTerm.domain.Value]])
     }
 
+
     def map[B](fun: innerTerm.domain.Value => B)(implicit targetDom: TypedDom[B]): targetDom.Term = {
       val result = new TermMap[A, targetDom.type] {
         val term: innerTerm.type = innerTerm
         val domain: targetDom.type = targetDom
 
         def f(arg: term.domain.Value) = fun(arg)
+        def isStatic = false
+
       }
       targetDom.own(result)
     }
@@ -190,6 +193,7 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
       new TermFlatMap[A, TypedDom[B]] {
         val term: innerTerm.type = innerTerm
         val domain: TypedDom[B] = targetDom
+        def isStatic = false
 
         def f(arg: term.domain.Value): Term[TypedDom[B]] = fun(arg)
       }

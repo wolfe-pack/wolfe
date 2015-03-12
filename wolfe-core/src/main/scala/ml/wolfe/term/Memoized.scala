@@ -16,6 +16,8 @@ class Memoized[D <: Dom, T <: Term[D]](val term:T) extends Term[D] {
   private var currentExecution: Execution = null
   private val inputs2ValueInCurrentExecution = new mutable.HashMap[Any,Setting]
 
+  def isStatic = term.isStatic
+
   override def evaluatorImpl(in: Settings) = new AbstractEvaluator2(in) {
     private val cachedOut = domain.createSetting()
 

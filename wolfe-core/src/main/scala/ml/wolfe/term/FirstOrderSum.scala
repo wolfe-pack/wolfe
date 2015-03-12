@@ -12,6 +12,8 @@ case class FirstOrderSum[D <: Dom, Body <: DoubleTerm, R <: Term[VarSeqDom[D]]](
 
   val domain = body.domain
 
+  def isStatic = false //todo
+
   trait SumProcessor {
     val indexOfVar = body.vars.indexOf(variable)
     val this2body = VariableMapping(vars, body.vars)

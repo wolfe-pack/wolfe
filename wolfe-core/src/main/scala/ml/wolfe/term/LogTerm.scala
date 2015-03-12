@@ -13,6 +13,7 @@ class LogTerm[D <: Dom, T <: Term[D]](val toLog: T, val name:String = null) exte
 
   def argument = toLog
 
+  def isStatic = toLog.isStatic
 
   override def toString = s"logged($toLog)"
 

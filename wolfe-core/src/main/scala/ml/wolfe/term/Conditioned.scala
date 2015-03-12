@@ -8,6 +8,11 @@ case class Conditioned[D <: Dom, V <: Dom](term:Term[D],variable:Var[V],value:Te
   val vars = (term.vars.filterNot(_ == variable) ++ value.vars).distinct
   val domain = term.domain
 
+  lazy val substituted = Transformer.depthFirst(term) {
+    case v:Var[_] if v == variable => value
+  }
+
+  lazy val isStatic = substituted.isStatic
 
   type ArgumentType = Term[Dom]
   val arguments = IndexedSeq(term,value)

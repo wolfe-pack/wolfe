@@ -98,6 +98,8 @@ trait Dom {
   case class Constant(value: Value) extends DomTerm {
     self =>
 
+    def isStatic = true
+
     val vars      = Seq.empty
     val evaluator = new Evaluator {
       val result = domain.toSetting(value.asInstanceOf[domain.Value])
@@ -132,6 +134,8 @@ trait Dom {
 
   class DynamicConstant(val value: Dynamic[Value]) extends DomTerm {
     self =>
+
+    def isStatic = false
 
     val vars      = Seq.empty
     val evaluator = new Evaluator {

@@ -15,7 +15,6 @@ object CaseClassDom {
 
   //http://imranrashid.com/posts/scala-reflection/
 
-
   def implOnClass(c: whitebox.Context)(annottees: c.Expr[Any]*): c.Expr[Any] = {
     import c.universe._
 
@@ -233,7 +232,7 @@ object CaseClassDom {
 
             trait DomTermImpl extends DomTerm with super.DomTermImpl { _term =>
               type ArgumentType = ml.wolfe.term.Term[Dom]
-              def arguments:IndexedSeq[ml.wolfe.term.Term[Dom]] = IndexedSeq(..$composedArgs)
+              lazy val arguments:IndexedSeq[ml.wolfe.term.Term[Dom]] = IndexedSeq(..$composedArgs)
               def copy(args:IndexedSeq[ArgumentType]) = ???
             }
 

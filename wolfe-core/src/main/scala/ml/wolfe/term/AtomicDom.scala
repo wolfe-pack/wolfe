@@ -320,6 +320,8 @@ case class RangeDom(values: Range) extends GenericDiscreteDom[Int] {
 
   trait SampleTerm extends Term {
 
+    def isStatic = false
+
     abstract class Evaluator(in: Settings) extends AbstractEvaluator2(in) {
       val output = createSetting()
       private var currentExecution: Execution = null

@@ -26,6 +26,13 @@ trait Term[+D <: Dom] extends TermHelper[D] {
    */
   def vars: Seq[Var[Dom]]
 
+
+  /**
+   * Is this term guaranteed to evaluate to the same value each it is called
+   * @return true iff the evaluator always evaluates to the same value (over all executions)
+   */
+  def isStatic:Boolean
+
   /**
    * The evaluator calculates the value of the term given an assignment to free variables.
    * @return the term's evaluator.
@@ -218,6 +225,12 @@ trait ProxyTerm[D <: Dom] extends Term[D] with NAry {
   def vars = self.vars
 
 
+  /**
+   * Is this term guaranteed to evaluate to the same value each it is called
+   * @return true iff the evaluator always evaluates to the same value (over all executions)
+   */
+  def isStatic = self.isStatic
+
   type ArgumentType = Term[D]
 
   def arguments = IndexedSeq(self)
@@ -260,6 +273,8 @@ trait Var[+D <: Dom] extends Term[D] {
   def ownerOrSelf: Var[Dom] = if (owner == null) self else owner
 
   def vars = if (owner == null) Seq(this) else Seq(owner)
+
+  def isStatic = false
 
   def differentiator(wrt: Seq[Var[Dom]]) = new Differentiator {
     def term = self
@@ -1023,6 +1038,7 @@ class IntToDouble[T <: IntTerm](val int: T) extends ComposedDoubleTerm {
 
 case class Identity[D<:Dom, T <: Term[D]](self: T) extends ProxyTerm[D] {
   def copy(args: IndexedSeq[ArgumentType]) = new Identity[D,T](args(0).asInstanceOf[T])
+
 }
 
 

@@ -10,6 +10,8 @@ class Max(val obj: DoubleTerm, wrt: Seq[Var[Dom]]) extends DoubleTerm {
 
   def atomsIterator = obj.atomsIterator.filter(a => vars.contains(a.ownerOrSelf))
 
+  def isStatic = false
+
   def evaluator() = new MaxEvaluator()
 
   def differentiator(wrt: Seq[Var[Dom]]) = {
@@ -73,6 +75,12 @@ class Argmax[D <: Dom](val obj: DoubleTerm, val wrt:Var[D]) extends Term[D] {
   }
 
   def differentiator(wrt: Seq[Var[Dom]]) = ???
+
+  /**
+   * Is this term guaranteed to evaluate to the same value each it is called
+   * @return true iff the evaluator always evaluates to the same value (over all executions)
+   */
+  def isStatic = false
 }
 
 class Argmax2[D <: Dom](val obj: DoubleTerm, val wrt:Var[D]) extends Term[D] {
@@ -89,6 +97,7 @@ class Argmax2[D <: Dom](val obj: DoubleTerm, val wrt:Var[D]) extends Term[D] {
     }
   }
 
+  def isStatic = false
 
   override def evaluatorImpl(in: Settings) = new AbstractEvaluator2(in) {
     val maxer = obj.argmaxerImpl(Seq(wrt))(in,null)
