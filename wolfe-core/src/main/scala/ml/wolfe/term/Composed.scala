@@ -1,7 +1,5 @@
 package ml.wolfe.term
 
-import cc.factorie.la.SmartGradientAccumulator
-
 /**
  * @author riedel
  */
@@ -36,7 +34,19 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
 
   def composer2(args: Settings): Composer2 = ???
 
-  class ComposedEvaluator(in:Settings) extends Evaluator2 {
+  trait Cached {
+    private var calls = 0
+    def useCached = isStatic && calls > 0
+
+    def cache[T](body: =>Unit): Unit = {
+      if (!useCached) {
+        body
+      }
+      calls += 1
+    }
+  }
+
+  class ComposedEvaluator(in:Settings) extends Evaluator2 with Cached {
     val argEvals = arguments.map(a => a.evaluatorImpl(in.linkedSettings(vars, a.vars))).toArray
     val argOutputs = Settings.fromSeq(argEvals.map(_.output))
     val comp = composer2(argOutputs)
@@ -44,12 +54,14 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
     val output = comp.output
 
     def eval()(implicit execution:Execution) = {
-      var i = 0
-      while (i < size && !comp.abort(i)) {
-        argEvals(i).eval()
-        i += 1
+      cache {
+        var i = 0
+        while (i < size && !comp.abort(i)) {
+          argEvals(i).eval()
+          i += 1
+        }
+        comp.eval()
       }
-      comp.eval()
     }
   }
 

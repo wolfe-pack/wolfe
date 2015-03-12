@@ -134,6 +134,8 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
 
     def unary_! = for (b <- term) yield !b
 
+    def <->(that:BoolTerm) = new DiscreteEquals[Boolean](term, that)
+
   }
 
   implicit class RichDiscreteTerm[T](term: DiscreteTerm[T]) {
@@ -355,12 +357,16 @@ trait MathImplicits {
     def stringEquals(that:Any) = t.toString == that.toString
   }
 
+  implicit def intToRichIntTerm(int:Int):RichIntTerm = new RichIntTerm(Dom.ints.Const(int))
+
   implicit class RichIntTerm(val term: IntTerm) {
     def +(that: IntTerm) = Dom.ints.own(new BinaryIntFun(term, that, _ + _))
 
     def -(that: IntTerm) = new BinaryIntFun(term, that, _ - _)
 
     def *(that: IntTerm) = new BinaryIntFun(term, that, _ * _)
+
+    def until(end:IntTerm) = new RangeTerm(term,end)
 
     def toDouble = intToDouble(term)
 
@@ -395,6 +401,9 @@ trait MathImplicits {
   import TermImplicits._
 
   def sum(length:IntTerm)(args: DoubleTerm*) =
+    varSeqSum[Term[VarSeqDom[TypedDom[Double]]]](VarSeq[TypedDom[Double]](length,args.toIndexedSeq.asInstanceOf[IndexedSeq[TypedTerm[Double]]]))
+
+  def sum(args: Seq[DoubleTerm],length:IntTerm) =
     varSeqSum[Term[VarSeqDom[TypedDom[Double]]]](VarSeq[TypedDom[Double]](length,args.toIndexedSeq.asInstanceOf[IndexedSeq[TypedTerm[Double]]]))
 
 

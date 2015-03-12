@@ -312,3 +312,46 @@ case class VarSeqApply[+E <: Dom, S <: Term[VarSeqDom[E]], I <: IntTerm](seq: S,
   override def toString = s"$seq($index)"
 }
 
+class RangeTerm(start:IntTerm,end:IntTerm) extends Composed[VarSeqDom[TypedDom[Int]]] {
+
+
+  type ArgumentType = IntTerm
+
+  def arguments = IndexedSeq(start,end)
+
+  def copy(args: IndexedSeq[ArgumentType]) = new RangeTerm(args(0),args(1))
+
+  val min = start match {
+    case c:Constant[_] => c.value.asInstanceOf[Int]
+    case e => e.domain match {
+      case d:RangeDom => d.start
+      case _ => sys.error("Can't bound range length")
+    }
+  }
+
+  val max = end match {
+    case c:Constant[_] => c.value.asInstanceOf[Int]
+    case e => e.domain match {
+      case d:RangeDom => d.end
+      case _ => sys.error("Can't bound range length")
+    }
+  }
+  val range = min until max
+
+
+  val domain: VarSeqDom[TypedDom[Int]] = new VarSeqDom(RangeDom(range),max - min,0)
+
+  override def composer2(args: Settings) = new Composer2(args) {
+    def eval()(implicit execution: Execution) = {
+      val from = input(0).disc(0)
+      val to = input(1).disc(0)
+      val length = to - from
+      output.disc(0) = length
+      for (i <- 0 until length) output.disc(1 + i) = from + i
+    }
+  }
+
+  def composer() = ???
+  def differentiator(wrt: Seq[Var[Dom]]) = ???
+
+}
