@@ -125,7 +125,6 @@ trait TermHelper[+D <: Dom] {
     }
   }
 
-
   class ClientDifferentiator[T <: Dom](val wrt: Var[T]) {
     val input = createInputSettings()
     val error = domain.toSetting(domain.one)

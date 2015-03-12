@@ -341,6 +341,13 @@ object Setting {
     result
   }
 
+  def disc(value: Int) = {
+    val result = new Setting(numDisc = 1)
+    result.disc(0) = value
+    result
+  }
+
+
   def merge(settings: Array[Setting], result: Setting) = {
     var cont = 0
     var disc = 0
