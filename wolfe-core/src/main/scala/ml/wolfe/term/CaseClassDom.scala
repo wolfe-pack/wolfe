@@ -181,7 +181,7 @@ object CaseClassDom {
             type Term = DomTerm
 
             def own(_term: TypedTerm[Value]):Term = $own
-            def lengths = $lengths
+            val lengths = $lengths
             override val dimensions = $dimensions
 
             def one = new $caseClassTypeName(..$ones)
