@@ -37,13 +37,13 @@ class MaxProductSpecs extends WolfeSpec {
 
     "optimize a linear chain objective in high level code" ignore {
       val n = 5
-      val Ys = Seqs(Bools, 0, n)
-      def model(length: IntTerm)(y: Ys.Term) = {
+      val Y = Seqs(Bools, 0, n)
+      def model(length: IntTerm)(y: Y.Term) = {
         sum(0 until length) { i => I(y(i))} +
           sum(0 until length - 1) { i => I(y(i) <-> y(i + 1))}
       }
       val mpParams = MaxProductParameters(10)
-      val yStar = argmax2(Ys)(y => model(4)(y) argmaxBy maxProduct(mpParams))
+      val yStar = argmax2(Y)(y => model(4)(y) argmaxBy maxProduct(mpParams))
     }
 
     "optimize a linear chain in a perceptron loss" ignore {
@@ -54,22 +54,22 @@ class MaxProductSpecs extends WolfeSpec {
       val adaParams = AdaGradParameters(100, 0.1)
 
       val n = 5
-      val Xs = Seqs(Ints(0 until 3), 0, n)
-      val Ys = Seqs(Bools, 0, n)
+      val X = Seqs(Ints(0 until 3), 0, n)
+      val Y = Seqs(Bools, 0, n)
       val Weights = Vectors(1000)
 
-      @domain case class Instance(x: Xs.Value, y: Ys.Value)
+      @domain case class Instance(x: X.Value, y: Y.Value)
 
-      implicit val Instances = Instance.Values(Xs, Ys)
+      implicit val Instances = Instance.Values(X, Y)
 
       val train = Seq(Instance(IndexedSeq(0, 1, 2), IndexedSeq(true, false, true))).toConst
 
-      def model(x: Xs.Term, w: Weights.Term)(y: Ys.Term) = {
+      def model(x: X.Term, w: Weights.Term)(y: Y.Term) = {
         sum(0 until x.length) { i => w dot oneHot(x(i), I(y(i)))} argmaxBy maxProduct(mpParams)
       }
 
-      def instanceLL(x: Xs.Term, yGold: Ys.Term)(w: Weights.Term) = {
-        max(Ys)(y => model(x, w)(y)) - model(x, w)(yGold)
+      def instanceLL(x: X.Term, yGold: Y.Term)(w: Weights.Term) = {
+        max(Y)(y => model(x, w)(y)) - model(x, w)(yGold)
       }
 
       def ll(w: Weights.Term) = sum(train) { i => instanceLL(i.x, i.y)(w)} argmaxBy adaGrad2(adaParams)
