@@ -138,7 +138,7 @@ case class FirstOrderSum[D <: Dom, Body <: DoubleTerm, R <: Term[VarSeqDom[D]]](
   }
 
   override def differentiatorImpl(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
-    new AbstractDifferentiator(in,err,gradientAcc) {
+    new AbstractDifferentiator(in,err,gradientAcc,wrt) {
 
       val loop = new Loop(in)
       val eval = evaluatorImpl(in)

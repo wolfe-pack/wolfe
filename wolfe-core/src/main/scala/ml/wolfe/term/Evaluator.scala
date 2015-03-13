@@ -34,5 +34,8 @@ trait Differentiator {
     backward()
   }
 
+  def withRespectTo:Seq[Variable]
+
+
 }
 

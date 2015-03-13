@@ -51,7 +51,7 @@ class LogTerm[D <: Dom, T <: Term[D]](val toLog: T, val name:String = null) exte
 
 
   override def differentiatorImpl(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
-    new AbstractDifferentiator(in, err, gradientAcc) {
+    new AbstractDifferentiator(in, err, gradientAcc,wrt) {
       val diffToLog = toLog.differentiatorImpl(wrt)(in,err,gradientAcc)
       def forward()(implicit execution: Execution) = {
         diffToLog.forward()

@@ -156,7 +156,7 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
     }
 
 
-    override def composer2(args: Settings) = new Composer(args) {
+    override def composer(args: Settings) = new Composer(args) {
       def eval()(implicit execution: Execution) = {
         output.disc(0) = input(0).disc(0)
         var offset = Offsets(discOff = 1)
@@ -235,7 +235,7 @@ case class VarSeqLength[S <: Term[VarSeqDom[_]]](seq: S) extends Composed[TypedD
   }
 
 
-  override def composer2(args: Settings) = new Composer(args) {
+  override def composer(args: Settings) = new Composer(args) {
     def eval()(implicit execution: Execution) = {
       output.disc(0) = input(0).disc(0)
 
@@ -264,7 +264,7 @@ case class VarSeqApply[+E <: Dom, S <: Term[VarSeqDom[E]], I <: IntTerm](seq: S,
   }
 
 
-  override def composer2(args: Settings) = new Composer(args) {
+  override def composer(args: Settings) = new Composer(args) {
     def eval()(implicit execution: Execution) = {
       val index = input(1).disc(0)
       val offset = (seq.domain.elementDom.lengths * index) + Offsets(discOff = 1)
@@ -341,7 +341,7 @@ class RangeTerm(start:IntTerm,end:IntTerm) extends Composed[VarSeqDom[TypedDom[I
 
   val domain: VarSeqDom[TypedDom[Int]] = new VarSeqDom(RangeDom(range),max - min,0)
 
-  override def composer2(args: Settings) = new Composer(args) {
+  override def composer(args: Settings) = new Composer(args) {
     def eval()(implicit execution: Execution) = {
       val from = input(0).disc(0)
       val to = input(1).disc(0)

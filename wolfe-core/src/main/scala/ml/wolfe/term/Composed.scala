@@ -33,20 +33,20 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
     def abort(index: Int) = false
   }
 
-  def composer2(args: Settings): Composer = ???
+  def composer(args: Settings): Composer = ???
 
 
   class ComposedEvaluator(in: Settings) extends Evaluator {
     val argEvals = arguments.map(a => a.evaluatorImpl(in.linkedSettings(vars, a.vars))).toArray
     val argOutputs = Settings.fromSeq(argEvals.map(_.output))
-    val comp = composer2(argOutputs)
+    val comp = composer(argOutputs)
     val input = in
     val output = comp.output
 
     def eval()(implicit execution: Execution) = {
       var i = 0
       while (i < size && !comp.abort(i)) {
-        argEvals(i).cachedEval()
+        argEvals(i).optimizedEval()
         i += 1
       }
       comp.eval()
@@ -55,7 +55,7 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
 
   override def evaluatorImpl(in: Settings) = new ComposedEvaluator(in)
 
-  abstract class ComposedDifferentiator(val wrt: Seq[Var[Dom]],
+  abstract class ComposedDifferentiator(val withRespectTo: Seq[Var[Dom]],
                                         val input: Settings,
                                         val error: Setting,
                                         val gradientAccumulator: Settings) extends Differentiator {
@@ -68,11 +68,11 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
       result
     }
 
-    val argDiffs = arguments.map(a => a.differentiatorImpl(wrt)(
+    val argDiffs = arguments.map(a => a.differentiatorImpl(withRespectTo)(
       input.linkedSettings(vars, a.vars), createArgError(a), gradientAccumulator.linkedSettings(vars, a.vars))).toArray
     val argOutputs = Settings.fromSeq(argDiffs.map(_.output))
     val argErrors = Settings.fromSeq(argDiffs.map(_.error))
-    val comp = composer2(argOutputs)
+    val comp = composer(argOutputs)
     val output = comp.output
     val mappings = arguments.map(a => VariableMapping(a.vars, vars))
 
@@ -88,7 +88,7 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
     def forward()(implicit execution: Execution) = {
       var i = 0
       while (i < size && !abortForward(i)) {
-        argDiffs(i).cachedForward()
+        argDiffs(i).optimizedForward()
         i += 1
       }
       comp.eval()
@@ -98,7 +98,7 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
       localBackProp()
       var i = 0
       while (i < size && !abortBackward(i)) {
-        argDiffs(i).backward()
+        argDiffs(i).optimizedBackward()
         i += 1
       }
     }

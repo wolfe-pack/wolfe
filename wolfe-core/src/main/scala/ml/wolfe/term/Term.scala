@@ -36,7 +36,7 @@ trait Term[+D <: Dom] extends TermHelper[D] with LegacyTerm[D] {
   def evaluatorImpl(in: Settings): Evaluator = ???
 
   def differentiatorImpl(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings): Differentiator =
-    new EmptyDifferentiator(in, err, gradientAcc)
+    new EmptyDifferentiator(in, err, gradientAcc, wrt)
 
   def maxMarginalizerImpl(wrt: Seq[Var[Dom]], observed: Seq[Var[Dom]])(input: Settings, inputMsgs: Msgs): MaxMarginalizer = {
     //todo: this could be type safe, for example by adding the argmax method to the RichDoubleTerm
@@ -62,8 +62,6 @@ trait Term[+D <: Dom] extends TermHelper[D] with LegacyTerm[D] {
     def cache[T](body: => Unit): Unit = {
       if (!useCached) {
         body
-      } else {
-        print("")
       }
       calls += 1
     }
@@ -71,22 +69,21 @@ trait Term[+D <: Dom] extends TermHelper[D] with LegacyTerm[D] {
 
   trait Evaluator extends ml.wolfe.term.Evaluator with Cached {
 
-    def cachedEval()(implicit execution: Execution): Unit = {
+    def optimizedEval()(implicit execution: Execution): Unit = {
       cache(eval())
     }
 
   }
 
-  trait Differentiator extends ml.wolfe.term.Differentiator {
-    val forwardCache = new Cached {}
-    val backwardCache = new Cached {}
+  trait Differentiator extends ml.wolfe.term.Differentiator with Cached {
+    val needBackward = withRespectTo.exists(vars.contains)
 
-    def cachedForward()(implicit execution: Execution): Unit = {
-      forwardCache.cache(forward())
+    def optimizedForward()(implicit execution: Execution): Unit = {
+      cache(forward())
     }
 
-    def cachedBackward()(implicit execution: Execution): Unit = {
-      backwardCache.cache(backward())
+    def optimizedBackward()(implicit execution: Execution): Unit = {
+      if (needBackward) backward()
     }
 
 
@@ -108,6 +105,8 @@ trait Term[+D <: Dom] extends TermHelper[D] with LegacyTerm[D] {
     def forward()(implicit execution: Execution) = self.forward()
 
     def backward()(implicit execution: Execution) = self.backward()
+
+    def withRespectTo = self.withRespectTo
   }
 
 
@@ -115,9 +114,10 @@ trait Term[+D <: Dom] extends TermHelper[D] with LegacyTerm[D] {
 
   abstract class AbstractDifferentiator(val input: Settings,
                                         val error: Setting,
-                                        val gradientAccumulator: Settings) extends Differentiator
+                                        val gradientAccumulator: Settings,
+                                        val withRespectTo: Seq[Variable]) extends Differentiator
 
-  class EmptyDifferentiator(in: Settings, err: Setting, gradientAcc: Settings) extends AbstractDifferentiator(in, err, gradientAcc) {
+  class EmptyDifferentiator(in: Settings, err: Setting, gradientAcc: Settings, withRespectTo: Seq[Variable]) extends AbstractDifferentiator(in, err, gradientAcc,withRespectTo) {
     val eval = evaluatorImpl(in)
     val output = eval.output
 
@@ -315,7 +315,7 @@ trait Var[+D <: Dom] extends Term[D] {
 
 
   override def differentiatorImpl(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
-    new AbstractDifferentiator(in, err, gradientAcc) {
+    new AbstractDifferentiator(in, err, gradientAcc, wrt) {
       val output = in(0)
       val isWrt = wrt.contains(self)
 
@@ -492,7 +492,7 @@ class DotProduct[T1 <: VectorTerm, T2 <: VectorTerm](val arg1: T1, val arg2: T2)
   }
 
 
-  override def composer2(args: Settings) = new Composer(args) {
+  override def composer(args: Settings) = new Composer(args) {
     def eval()(implicit execution: Execution) = {
       output.cont(0) = input(0).vect(0) dot input(1).vect(0)
     }
@@ -566,7 +566,7 @@ class SparseL2[T1 <: VectorTerm, T2 <: VectorTerm](val arg: T1, val mask: T2 = n
   }
 
 
-  override def composer2(args: Settings) = new Composer(args) {
+  override def composer(args: Settings) = new Composer(args) {
     def eval()(implicit execution: Execution) = {
       val w = input(0).vect(0)
       if (mask != null) {
@@ -765,7 +765,7 @@ class MatrixVectorProduct[T1 <: MatrixTerm, T2 <: VectorTerm](val arg1: T1, val 
   }
 
 
-  override def composer2(args: Settings) = new Composer(args) {
+  override def composer(args: Settings) = new Composer(args) {
     def eval()(implicit execution: Execution) = {
       output.vect(0) = input(0).mats(0) * input(1).vect(0)
     }
@@ -826,7 +826,7 @@ class Div[T1 <: DoubleTerm, T2 <: DoubleTerm](val arg1: T1, val arg2: T2) extend
   }
 
 
-  override def composer2(args: Settings) = new Composer(args) {
+  override def composer(args: Settings) = new Composer(args) {
     def eval()(implicit execution: Execution) = {
       output.cont(0) = input(0).cont(0) / input(1).cont(0)
     }
@@ -889,7 +889,7 @@ case class Product(arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm
   }
 
 
-  override def composer2(args: Settings) = new Composer(args) {
+  override def composer(args: Settings) = new Composer(args) {
     def eval()(implicit execution: Execution) = {
       output.cont(0) = 1.0
       for (i <- 0 until input.length)
@@ -1009,7 +1009,7 @@ class Iverson[T <: BoolTerm](val arg: T) extends UnaryTerm[T, DoubleDom] with Co
   }
 
 
-  override def composer2(args: Settings) = new Composer(args) {
+  override def composer(args: Settings) = new Composer(args) {
     def eval()(implicit execution: Execution) = {
       output.cont(0) = if (input(0).disc(0) == 0) 0.0 else 1.0
     }
@@ -1033,7 +1033,7 @@ class IntToDouble[T <: IntTerm](val int: T) extends ComposedDoubleTerm {
     }
   }
 
-  override def composer2(args: Settings) = new Composer(args) {
+  override def composer(args: Settings) = new Composer(args) {
     def eval()(implicit execution: Execution) = {
       output.cont(0) = input(0).disc(0)
     }
@@ -1070,7 +1070,7 @@ trait BinaryDiscreteOperator[D <: Dom, A <: Dom] extends Composed[D] {
   }
 
 
-  override def composer2(args: Settings) = new Composer(args) {
+  override def composer(args: Settings) = new Composer(args) {
     def eval()(implicit execution: Execution) = {
       output.disc(0) = op(input(0).disc(0), input(1).disc(0))
     }

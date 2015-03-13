@@ -123,7 +123,7 @@ trait ProductDom extends Dom {
 
     def copy(args: IndexedSeq[ArgumentType]) = new Field(args(0),domain,start)(fieldName)
 
-    override def composer2(args: Settings) = new Composer(args) {
+    override def composer(args: Settings) = new Composer(args) {
       def eval()(implicit execution: Execution) = {
         input(0).copyTo(output,start,Offsets.zero,domain.lengths)
       }
@@ -165,7 +165,7 @@ trait ProductDom extends Dom {
 
     override def toString = s"""$productName(${arguments.mkString(",")})"""
 
-    override def composer2(args: Settings) = new Composer(args) {
+    override def composer(args: Settings) = new Composer(args) {
       val lengths = arguments.map(_.domain.lengths).toArray
 
       def eval()(implicit execution: Execution) = {

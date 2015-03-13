@@ -94,7 +94,7 @@ case class Sum(arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm {
     }
   }
 
-  override def composer2(args: Settings) = new Composer(args) {
+  override def composer(args: Settings) = new Composer(args) {
     def eval()(implicit execution: Execution): Unit = {
       output.cont(0) = 0.0
       for (i <- 0 until size) output.cont(0) += input(i).cont(0)
@@ -111,7 +111,7 @@ case class Sum(arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm {
     val argDiffs = for (a <- arguments) yield
       a.differentiatorImpl(wrt)(input.linkedSettings(vars, a.vars), err, gradientAccumulator.linkedSettings(vars, a.vars))
     val argOutputs = Settings.fromSeq(argDiffs.map(_.output))
-    val comp = composer2(argOutputs)
+    val comp = composer(argOutputs)
     val output = comp.output
 
     def forward()(implicit execution: Execution) = {
@@ -122,6 +122,8 @@ case class Sum(arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm {
     def backward()(implicit execution: Execution) = {
       argDiffs foreach (_.backward())
     }
+
+    def withRespectTo = wrt
   }
 }
 
@@ -146,7 +148,7 @@ case class VarSeqSum[D <: TypedDom[Double], T <: Term[VarSeqDom[D]]](seq: T) ext
   def copy(args: IndexedSeq[ArgumentType]) = ???
 
 
-  override def composer2(args: Settings) = new Composer(args) {
+  override def composer(args: Settings) = new Composer(args) {
     def eval()(implicit execution: Execution) = {
       val length = input(0).disc(0)
       output.cont(0) = 0.0
