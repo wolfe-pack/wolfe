@@ -18,7 +18,7 @@ class Memoized[D <: Dom, T <: Term[D]](val term:T) extends Term[D] {
 
   def isStatic = term.isStatic
 
-  override def evaluatorImpl(in: Settings) = new AbstractEvaluator2(in) {
+  override def evaluatorImpl(in: Settings) = new AbstractEvaluator(in) {
     private val cachedOut = domain.createSetting()
 
     def eval()(implicit execution:Execution) = {

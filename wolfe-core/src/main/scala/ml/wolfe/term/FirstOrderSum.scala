@@ -123,7 +123,7 @@ case class FirstOrderSum[D <: Dom, Body <: DoubleTerm, R <: Term[VarSeqDom[D]]](
 
   }
 
-  override def evaluatorImpl(in: Settings) = new AbstractEvaluator2(in)  {
+  override def evaluatorImpl(in: Settings) = new AbstractEvaluator(in)  {
     val output = domain.createSetting()
     val loop = new Loop(in)
 

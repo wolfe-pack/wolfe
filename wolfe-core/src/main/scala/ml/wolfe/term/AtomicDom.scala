@@ -322,7 +322,7 @@ case class RangeDom(values: Range) extends GenericDiscreteDom[Int] {
 
     def isStatic = false
 
-    abstract class Evaluator(in: Settings) extends AbstractEvaluator2(in) {
+    abstract class Evaluator(in: Settings) extends AbstractEvaluator(in) {
       val output = createSetting()
       private var currentExecution: Execution = null
       private var currentValue: Int = -1

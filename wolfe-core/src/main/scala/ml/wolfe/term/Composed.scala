@@ -27,12 +27,12 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
     }
   }
 
-  abstract class Composer2(in:Settings) extends AbstractEvaluator2(in) {
+  abstract class Composer(in:Settings) extends AbstractEvaluator(in) {
     val output = self.domain.createSetting()
     def abort(index:Int) = false
   }
 
-  def composer2(args: Settings): Composer2 = ???
+  def composer2(args: Settings): Composer = ???
 
   trait Cached {
     private var calls = 0
@@ -46,7 +46,7 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
     }
   }
 
-  class ComposedEvaluator(in:Settings) extends Evaluator2 with Cached {
+  class ComposedEvaluator(in:Settings) extends Evaluator with Cached {
     val argEvals = arguments.map(a => a.evaluatorImpl(in.linkedSettings(vars, a.vars))).toArray
     val argOutputs = Settings.fromSeq(argEvals.map(_.output))
     val comp = composer2(argOutputs)

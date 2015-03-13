@@ -3,7 +3,7 @@ package ml.wolfe.term
 /**
  * @author riedel
  */
-trait Evaluator2 {
+trait Evaluator {
   val input:Settings
   val output:Setting
   def eval()(implicit execution:Execution)

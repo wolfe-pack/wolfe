@@ -29,7 +29,7 @@ class DoubleFun[T <: DoubleTerm](val arg: T, fun: Double => Double, deriv: Doubl
     def withRespectTo = wrt
   }
 
-  override def composer2(args: Settings) = new Composer2(args) {
+  override def composer2(args: Settings) = new Composer(args) {
     def eval()(implicit execution: Execution) = {
       output.cont(0) = fun(input(0).cont(0))
     }
@@ -72,7 +72,7 @@ class DoubleBinaryFun[T <: DoubleTerm](val arg1: T, arg2:T, fun: (Double,Double)
     def withRespectTo = wrt
   }
 
-  override def composer2(args: Settings) = new Composer2(args) {
+  override def composer2(args: Settings) = new Composer(args) {
     def eval()(implicit execution: Execution) = {
       output.cont(0) = fun(input(0).cont(0), input(1).cont(0))
     }

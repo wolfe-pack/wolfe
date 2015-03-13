@@ -20,7 +20,7 @@ class VectorDoubleFun[T <: VectorTerm](val arg: T, fun: Double => Double, deriv:
   def copy(args: IndexedSeq[ArgumentType]) = new VectorDoubleFun[T](args(0), fun, deriv)
 
 
-  override def composer2(args: Settings) = new Composer2(args) {
+  override def composer2(args: Settings) = new Composer(args) {
     def eval()(implicit execution: Execution) = {
       output.vect(0) = input(0).vect(0).mapValues(fun, output.vect(0))
     }
@@ -71,7 +71,7 @@ class L1Norm[T <: VectorTerm](val arg:T) extends ComposedDoubleTerm {
   }
 
 
-  override def composer2(in: Settings) = new Composer2(in) {
+  override def composer2(in: Settings) = new Composer(in) {
     def eval()(implicit execution: Execution) = {
       output.cont(0) = input(0).vect(0).oneNorm
     }

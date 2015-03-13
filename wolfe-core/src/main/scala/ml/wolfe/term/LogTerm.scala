@@ -19,7 +19,7 @@ class LogTerm[D <: Dom, T <: Term[D]](val toLog: T, val name:String = null) exte
 
   def copy(arg: ArgumentType) = new LogTerm[Dom,Term[Dom]](arg,name)
 
-  override def evaluatorImpl(in: Settings) = new AbstractEvaluator2(in) {
+  override def evaluatorImpl(in: Settings) = new AbstractEvaluator(in) {
     val evalToLog = toLog.evaluatorImpl(in)
 
     def eval()(implicit execution: Execution) = {

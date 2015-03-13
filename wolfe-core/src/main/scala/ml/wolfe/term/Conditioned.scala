@@ -19,7 +19,7 @@ case class Conditioned[D <: Dom, V <: Dom](term:Term[D],variable:Var[V],value:Te
 
   val indexOfVar = term.vars.indexOf(variable)
 
-  override def evaluatorImpl(in: Settings) = new AbstractEvaluator2(in) {
+  override def evaluatorImpl(in: Settings) = new AbstractEvaluator(in) {
     val innerInput = in.linkedSettings(vars,term.vars)
     innerInput(indexOfVar) = variable.domain.createSetting()
     val valueInput = in.linkedSettings(vars,value.vars)

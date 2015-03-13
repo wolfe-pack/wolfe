@@ -45,7 +45,7 @@ class MaxProductBP(val objRaw: DoubleTerm,
 
   }
 
-  case class VariableLengthFactors(groups:Seq[FactorGroup], lengthEval:Evaluator2) extends FactorGroup {
+  case class VariableLengthFactors(groups:Seq[FactorGroup], lengthEval:Evaluator) extends FactorGroup {
     def activate()(implicit execution: Execution) = {
       lengthEval.eval()
       val length = lengthEval.output.disc(0)

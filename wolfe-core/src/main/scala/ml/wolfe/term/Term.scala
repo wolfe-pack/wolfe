@@ -33,7 +33,7 @@ trait Term[+D <: Dom] extends TermHelper[D] with LegacyTerm[D] {
    */
   def isStatic:Boolean
 
-  def evaluatorImpl(in: Settings): Evaluator2 = ???
+  def evaluatorImpl(in: Settings): Evaluator = ???
 
   def differentiatorImpl(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings): Differentiator =
     new EmptyDifferentiator(in, err, gradientAcc)
@@ -54,7 +54,7 @@ trait Term[+D <: Dom] extends TermHelper[D] with LegacyTerm[D] {
     else if (wrt.forall(_.domain.isDiscrete)) ??? else ???
   }
 
-  abstract class AbstractEvaluator2(val input: Settings) extends ml.wolfe.term.Evaluator2
+  abstract class AbstractEvaluator(val input: Settings) extends ml.wolfe.term.Evaluator
 
   abstract class AbstractDifferentiator(val input: Settings,
                                          val error: Setting,
@@ -255,7 +255,7 @@ trait Var[+D <: Dom] extends Term[D] {
   }
 
 
-  override def evaluatorImpl(in: Settings) = new Evaluator2 {
+  override def evaluatorImpl(in: Settings) = new Evaluator {
     def eval()(implicit execution: Execution) = {}
 
     val input = in
@@ -441,7 +441,7 @@ class DotProduct[T1 <: VectorTerm, T2 <: VectorTerm](val arg1: T1, val arg2: T2)
   }
 
 
-  override def composer2(args: Settings) = new Composer2(args) {
+  override def composer2(args: Settings) = new Composer(args) {
     def eval()(implicit execution: Execution) = {
       output.cont(0) = input(0).vect(0) dot input(1).vect(0)
     }
@@ -515,7 +515,7 @@ class SparseL2[T1 <: VectorTerm, T2 <: VectorTerm](val arg: T1, val mask: T2 = n
   }
 
 
-  override def composer2(args: Settings) = new Composer2(args) {
+  override def composer2(args: Settings) = new Composer(args) {
     def eval()(implicit execution: Execution) = {
       val w = input(0).vect(0)
       if (mask != null) {
@@ -715,7 +715,7 @@ class MatrixVectorProduct[T1 <: MatrixTerm, T2 <: VectorTerm](val arg1: T1, val 
   }
 
 
-  override def composer2(args: Settings) = new Composer2(args) {
+  override def composer2(args: Settings) = new Composer(args) {
     def eval()(implicit execution: Execution) = {
       output.vect(0) = input(0).mats(0) * input(1).vect(0)
     }
@@ -776,7 +776,7 @@ class Div[T1 <: DoubleTerm, T2 <: DoubleTerm](val arg1: T1, val arg2: T2) extend
   }
 
 
-  override def composer2(args: Settings) = new Composer2(args) {
+  override def composer2(args: Settings) = new Composer(args) {
     def eval()(implicit execution: Execution) = {
       output.cont(0) = input(0).cont(0) / input(1).cont(0)
     }
@@ -839,7 +839,7 @@ case class Product(arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm
   }
 
 
-  override def composer2(args: Settings) = new Composer2(args) {
+  override def composer2(args: Settings) = new Composer(args) {
     def eval()(implicit execution: Execution) = {
       output.cont(0) = 1.0
       for (i <- 0 until input.length)
@@ -959,7 +959,7 @@ class Iverson[T <: BoolTerm](val arg: T) extends UnaryTerm[T, DoubleDom] with Co
   }
 
 
-  override def composer2(args: Settings) = new Composer2(args) {
+  override def composer2(args: Settings) = new Composer(args) {
     def eval()(implicit execution: Execution) = {
       output.cont(0) = if (input(0).disc(0) == 0) 0.0 else 1.0
     }
@@ -983,7 +983,7 @@ class IntToDouble[T <: IntTerm](val int: T) extends ComposedDoubleTerm {
     }
   }
 
-  override def composer2(args: Settings) = new Composer2(args) {
+  override def composer2(args: Settings) = new Composer(args) {
     def eval()(implicit execution: Execution) = {
       output.cont(0) = input(0).disc(0)
     }
@@ -1020,7 +1020,7 @@ trait BinaryDiscreteOperator[D <: Dom, A <: Dom] extends Composed[D] {
   }
 
 
-  override def composer2(args: Settings) = new Composer2(args) {
+  override def composer2(args: Settings) = new Composer(args) {
     def eval()(implicit execution: Execution) = {
       output.disc(0) = op(input(0).disc(0), input(1).disc(0))
     }
