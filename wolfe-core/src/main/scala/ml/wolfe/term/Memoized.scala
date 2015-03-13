@@ -40,7 +40,7 @@ class Memoized[D <: Dom, T <: Term[D]](val term:T) extends Term[D] {
     private val cachedOut = domain.createSetting()
 
     def eval()(implicit execution:Execution) = {
-      val inputValue = (input zip vars) map {case(i,v) => v.domain.toValue(i)}
+      val inputValue = if (input.length == 0) Nil else (input zip vars) map {case(i,v) => v.domain.toValue(i)}
       if (currentExecution == null || execution.num != currentExecution.num) {
         inputs2ValueInCurrentExecution.values foreach (_.clear())
         currentExecution = execution
@@ -68,7 +68,7 @@ class Memoized[D <: Dom, T <: Term[D]](val term:T) extends Term[D] {
       val cachedOut = domain.createSetting()
 
       def forward()(implicit execution: Execution) = {
-        val inputValue = (input zip vars) map {case(i,v) => v.domain.toValue(i)}
+        val inputValue = if (input.length == 0) Nil else (input zip vars) map {case(i,v) => v.domain.toValue(i)}
         if (currentExecution == null || execution.num != currentExecution.num) {
           inputs2ValueInCurrentExecution.values foreach (_.clear())
           currentExecution = execution
