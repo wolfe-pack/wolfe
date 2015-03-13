@@ -81,21 +81,21 @@ class CaseClassDomSpecs extends WolfeSpec {
     "create a constant" in {
       val worlds = World.Values(Bools, Doubles)
       val const = worlds.Const(World(true, 0.5))
-      const.eval2() should be(World(true, 0.5))
+      const.eval() should be(World(true, 0.5))
     }
 
     "create a constant using toTerm" in {
       implicit val worlds = World.Values(Bools, Doubles)
       val const = World(true, 0.5).toConst
-      const.rain.eval() should be(true)
+      const.rain.evalOld() should be(true)
     }
 
     "create a static variable" in {
       val worlds = World.Values(Bools, Doubles)
       val x = worlds.Var
       val y = x.rain
-      x.eval2(World(true, 0.5)) should be(World(true, 0.5))
-      y.eval2(World(true, 0.5)) should be(true)
+      x.eval(World(true, 0.5)) should be(World(true, 0.5))
+      y.eval(World(true, 0.5)) should be(true)
     }
 
     "create nested domains" in {
@@ -105,7 +105,7 @@ class CaseClassDomSpecs extends WolfeSpec {
       val params = Params.Values(Seqs(Doubles, 2))
       val x = params.Var
       val term = x.weights(1)
-      term.eval2(Params(IndexedSeq(1.0, 2.0))) should be(2.0)
+      term.eval(Params(IndexedSeq(1.0, 2.0))) should be(2.0)
     }
 
     "work with classes defined elsewhere" in {
@@ -113,7 +113,7 @@ class CaseClassDomSpecs extends WolfeSpec {
       @domain case class Wrapped(vector: FactorieVector)
       val X = Wrapped.Values(Vectors(2))
       val x = X.Var
-      x.eval(Wrapped(vector(1, 2))).vector should equal(vector(1, 2))
+      x.evalOld(Wrapped(vector(1, 2))).vector should equal(vector(1, 2))
     }
 
     "return all case class values as iterable" in {
@@ -135,14 +135,14 @@ class CaseClassDomSpecs extends WolfeSpec {
       val b = Bools.Var
       val d = Doubles.Var
       val term = Worlds.Term(b, d)
-      term.eval2(true, 0.5) should be(World(true, 0.5))
+      term.eval(true, 0.5) should be(World(true, 0.5))
 
     }
 
     "Create a variable that has accessor terms" in {
       val Worlds = World.Values(Bools, Doubles)
       val x = Worlds.Var
-      (x.prob | x << World(true, 0.3)).eval2() should be (0.3)
+      (x.prob | x << World(true, 0.3)).eval() should be (0.3)
 
     }
 

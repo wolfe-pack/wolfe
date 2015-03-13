@@ -110,7 +110,7 @@ class SeqDom[D <: Dom](val elementDom: D, val length: Int) extends Dom {
 
     def apply(index: => Int) = elements(index)
 
-    def composer() = new Evaluator {
+    def composer() = new EvaluatorOld {
 
       def eval(inputs: Array[Setting], output: Setting) = {
         for (i <- 0 until inputs.length) {
@@ -119,7 +119,7 @@ class SeqDom[D <: Dom](val elementDom: D, val length: Int) extends Dom {
       }
     }
 
-    def differentiatorOld(wrt: Seq[term.Var[Dom]]) = new ComposedDifferentiator {
+    def differentiatorOld(wrt: Seq[term.Var[Dom]]) = new ComposedDifferentiatorOld {
       def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]) = {
         //each argument will get its error signal from a subsection of the outError
         for (i <- 0 until argOutputs.length) {
@@ -174,14 +174,14 @@ class SeqApply[E <: Dom, S <: Term[SeqDom[E]], I <: Term[TypedDom[Int]]](val seq
 
   def copy(args: IndexedSeq[ArgumentType]) = ???
 
-  def composer() = new Evaluator {
+  def composer() = new EvaluatorOld {
     def eval(inputs: Array[Setting], output: Setting) = {
       val index = inputs(1).disc(0)
       inputs(0).copyTo(output, domain.lengths, index, Offsets(), 0, domain.lengths)
     }
   }
 
-  def differentiatorOld(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
+  def differentiatorOld(wrt: Seq[Var[Dom]]) = new ComposedDifferentiatorOld {
     require(index.vars.forall(v => !wrt.contains(v)), "Can't differentiate index term in sequence apply")
 
     def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]) = {

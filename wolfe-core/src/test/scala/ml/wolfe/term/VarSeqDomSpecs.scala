@@ -14,7 +14,7 @@ class VarSeqDomSpecs extends WolfeSpec {
       val xs = Seqs(Bools, 0, 5)
       val x = xs.Var
       val value = IndexedSeq(true, false, true)
-      x.eval2(value) should be(value)
+      x.eval(value) should be(value)
     }
 
     "support element access through integer terms" in {
@@ -22,7 +22,7 @@ class VarSeqDomSpecs extends WolfeSpec {
       val x = Seqs(Bools, 0, n).Var
       val i = Ints(0 until n).Var
       val value = IndexedSeq(true, false, true)
-      x(i).eval2(value, 1) should be(false)
+      x(i).eval(value, 1) should be(false)
     }
 
     "support constructing sequence terms" in {
@@ -30,7 +30,7 @@ class VarSeqDomSpecs extends WolfeSpec {
       val i = Ints(0 until n).Var
       val b = Bools.Var
       val term = SeqTerm(i)(b, !b, b)
-      term.eval2(2, false) should be(IndexedSeq(false, true))
+      term.eval(2, false) should be(IndexedSeq(false, true))
     }
 
     "supports gradients for sequence arguments" in {
@@ -40,7 +40,7 @@ class VarSeqDomSpecs extends WolfeSpec {
       val i = xs.lengthDom.Var
       val value = IndexedSeq(1.0, 2.0, 3.0)
       val term = x(i) * x(i + 1)
-      term.gradient2(x, value, 1) should be(IndexedSeq(0.0, 3.0, 2.0))
+      term.gradient(x, value, 1) should be(IndexedSeq(0.0, 3.0, 2.0))
     }
 
     "should make sparse updates when calculating the gradient" in {
@@ -52,7 +52,7 @@ class VarSeqDomSpecs extends WolfeSpec {
       val term = x(i) * x(i)
       val parameter = Settings(xs.toSetting(value),xs.lengthDom.toSetting(2))
       val gradient = term.createZeroSettings()
-      val diff = term.differentiator2(Seq(x))(parameter,Setting.cont(1.0),gradient)
+      val diff = term.differentiatorImpl(Seq(x))(parameter,Setting.cont(1.0),gradient)
       gradient(0).recordChangedOffsets = true
       diff.differentiate()
       gradient(0).cont.changed() should be (Set(2))
@@ -66,11 +66,11 @@ class VarSeqDomSpecs extends WolfeSpec {
       val x = xs.Var
       val t = x(i)
       val args = IndexedSeq(IndexedSeq(1.0, 2.0), IndexedSeq(3.0, 4.0))
-      t.eval2(args, 0) should be(IndexedSeq(1.0, 2.0))
-      t.eval2(args, 1) should be(IndexedSeq(3.0, 4.0))
+      t.eval(args, 0) should be(IndexedSeq(1.0, 2.0))
+      t.eval(args, 1) should be(IndexedSeq(3.0, 4.0))
 
-      t(i).eval2(args, 0) should be(1.0)
-      t(i).eval2(args, 1) should be(4.0)
+      t(i).eval(args, 0) should be(1.0)
+      t(i).eval(args, 1) should be(4.0)
     }
 
   }

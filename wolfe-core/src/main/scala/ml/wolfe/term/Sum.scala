@@ -13,7 +13,7 @@ case class Sum(arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm {
 
   def copy(args: IndexedSeq[ArgumentType]) = new Sum(args)
 
-  def composer() = new Evaluator {
+  def composer() = new EvaluatorOld {
     def eval(inputs: Array[Setting], output: Setting) = {
       output.cont(0) = 0.0
       for (i <- 0 until inputs.length)
@@ -21,7 +21,7 @@ case class Sum(arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm {
     }
   }
 
-  def differentiatorOld(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
+  def differentiatorOld(wrt: Seq[Var[Dom]]) = new ComposedDifferentiatorOld {
     def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]) = {
       for (i <- 0 until argOutputs.length)
         gradient(i).cont(0) = outError.cont(0)
@@ -35,7 +35,7 @@ case class Sum(arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm {
 
     def copy(args: IndexedSeq[ArgumentType]) = ???
 
-    override def differentiatorOld(wrt: Seq[Var[Dom]]) = new StochasticDifferentiator {
+    override def differentiatorOld(wrt: Seq[Var[Dom]]) = new StochasticDifferentiatorOld {
       private var _index = 0
 
       def selectIndex() = {
@@ -51,7 +51,7 @@ case class Sum(arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm {
     }
   }
 
-  trait StochasticDifferentiator extends Differentiator with Composer {
+  trait StochasticDifferentiatorOld extends DifferentiatorOld with Composer {
 
     val term = sum
     val argErrors = arguments.map(_.domain.createZeroSetting()).toArray
@@ -67,7 +67,7 @@ case class Sum(arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm {
     def createDifferentiator(term: Term[Dom]) =
       if (term.vars.exists(withRespectTo.contains)) term.differentiatorOld(withRespectTo)
       else
-        new EmptyDifferentiator(term, withRespectTo)
+        new EmptyDifferentiatorOld(term, withRespectTo)
 
 
     def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]) = {
@@ -101,7 +101,7 @@ case class Sum(arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm {
     }
   }
 
-  override def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) = new Differentiator2 {
+  override def differentiatorImpl(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) = new Differentiator {
 
 
     val input = in
@@ -109,7 +109,7 @@ case class Sum(arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm {
     val gradientAccumulator = gradientAcc
 
     val argDiffs = for (a <- arguments) yield
-      a.differentiator2(wrt)(input.linkedSettings(vars, a.vars), err, gradientAccumulator.linkedSettings(vars, a.vars))
+      a.differentiatorImpl(wrt)(input.linkedSettings(vars, a.vars), err, gradientAccumulator.linkedSettings(vars, a.vars))
     val argOutputs = Settings.fromSeq(argDiffs.map(_.output))
     val comp = composer2(argOutputs)
     val output = comp.output
@@ -159,8 +159,8 @@ case class VarSeqSum[D <: TypedDom[Double], T <: Term[VarSeqDom[D]]](seq: T) ext
   }
 
 
-  override def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
-    new ComposedDifferentiator2(wrt,in,err,gradientAcc) {
+  override def differentiatorImpl(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
+    new ComposedDifferentiator(wrt,in,err,gradientAcc) {
 
       def localBackProp()(implicit execution: Execution) = {
         val length = argOutputs(0).disc(0)
@@ -187,12 +187,12 @@ case class VarSeqSum[D <: TypedDom[Double], T <: Term[VarSeqDom[D]]](seq: T) ext
 
   def composer() = ???
 
-  def differentiatorOld(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
+  def differentiatorOld(wrt: Seq[Var[Dom]]) = new ComposedDifferentiatorOld {
     def withRespectTo = wrt
   }
 
   //todo: avoid code duplication here
-  trait ComposedDifferentiator extends Differentiator with Composer {
+  trait ComposedDifferentiatorOld extends DifferentiatorOld with Composer {
 
     val term = self
     val argErrors = arguments.map(_.domain.createZeroSetting()).toArray
@@ -206,7 +206,7 @@ case class VarSeqSum[D <: TypedDom[Double], T <: Term[VarSeqDom[D]]](seq: T) ext
     def createDifferentiator(term: Term[Dom]) =
       if (term.vars.exists(withRespectTo.contains)) term.differentiatorOld(withRespectTo)
       else
-        new EmptyDifferentiator(term, withRespectTo)
+        new EmptyDifferentiatorOld(term, withRespectTo)
 
 
     //updates the activation of this term and all sub terms
@@ -253,7 +253,7 @@ class VectorSum(val arguments: IndexedSeq[VectorTerm]) extends Composed[GenericV
 
   val domain = arguments.head.domain
 
-  def composer() = new Evaluator {
+  def composer() = new EvaluatorOld {
     def eval(inputs: Array[Setting], output: Setting) = {
       if (output.vect(0) == null) output.vect(0) = new DenseTensor1(domain.dim)
       else output := 0.0
@@ -262,7 +262,7 @@ class VectorSum(val arguments: IndexedSeq[VectorTerm]) extends Composed[GenericV
     }
   }
 
-  def differentiatorOld(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
+  def differentiatorOld(wrt: Seq[Var[Dom]]) = new ComposedDifferentiatorOld {
     def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]) = {
       for (i <- 0 until argOutputs.length)
         gradient(i).vect.update(0, outError.vect(0))

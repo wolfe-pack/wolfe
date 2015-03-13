@@ -139,8 +139,8 @@ object ExhaustiveSearch {
 /**
  * @author riedel
  */
-class ExhaustiveSearchMaxMarginalizer2(val obj: DoubleTerm, val wrt: Seq[Var[Dom]],val observed: Seq[Var[Dom]],
-                                       val input: Settings, val inputMsgs: Msgs) extends MaxMarginalizer2 {
+class ExhaustiveSearchMaxMarginalizer(val obj: DoubleTerm, val wrt: Seq[Var[Dom]],val observed: Seq[Var[Dom]],
+                                       val input: Settings, val inputMsgs: Msgs) extends MaxMarginalizer {
 
   require(wrt.forall(_.domain.isDiscrete), "Cannot do exhaustive search over continuous domains")
   val target = obj.vars.filterNot(v => wrt.contains(v) || observed.contains(v))

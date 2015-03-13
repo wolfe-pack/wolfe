@@ -18,7 +18,7 @@ class ConditionedSpecs extends WolfeSpec {
       val x = Doubles.Var
       val t = x + x
       val c = t | x << 1.0
-      c.eval2() should be (2.0)
+      c.eval() should be (2.0)
     }
 
   }

@@ -12,7 +12,7 @@ trait TermMap[A <: Term[Dom], D <: Dom] extends Term[D] {
 
   def atomsIterator = term.atomsIterator
 
-  def evaluatorOld() = new Evaluator {
+  def evaluatorOld() = new EvaluatorOld {
     val termEval = term.evaluatorOld()
     val termOutput = term.domain.createSetting()
     def eval(inputs: Array[Setting], output: Setting) = {
@@ -52,7 +52,7 @@ trait TermFlatMap[A <: Term[Dom], D <: Dom] extends Term[D] {
   def vars = (term.vars ++ prototype.vars).distinct
   def atomsIterator = term.atomsIterator ++ prototype.atomsIterator
 
-  def evaluatorOld() = new Evaluator {
+  def evaluatorOld() = new EvaluatorOld {
     //need to map
     val this2term = VariableMapping(vars,term.vars)
     val this2proto = VariableMapping(vars,prototype.vars)
@@ -85,8 +85,8 @@ object TermMonadTest {
     val z = Bools.variable("z")
     val y = for (i <- x) yield !i
     val t = for (i <- x; j <- z) yield !i || j
-    println(y.eval(true))
-    println(y.eval(true,false))
+    println(y.evalOld(true))
+    println(y.evalOld(true,false))
 
   }
 }

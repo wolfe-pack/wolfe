@@ -7,7 +7,7 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
 
   self =>
 
-  def composer(): Evaluator
+  def composer(): EvaluatorOld
 
   def size = arguments.length
 
@@ -15,7 +15,7 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
 
   lazy val isStatic = arguments forall (_.isStatic)
 
-  def evaluatorOld() = new Evaluator with Composer {
+  def evaluatorOld() = new EvaluatorOld with Composer {
     val comp = composer()
 
     def eval(inputs: Array[Setting], output: Setting) = {
@@ -67,10 +67,10 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
 
   override def evaluatorImpl(in: Settings) = new ComposedEvaluator(in)
 
-  abstract class ComposedDifferentiator2(val wrt:Seq[Var[Dom]],
+  abstract class ComposedDifferentiator(val wrt:Seq[Var[Dom]],
                                          val input: Settings,
                                          val error: Setting,
-                                         val gradientAccumulator: Settings) extends Differentiator2 {
+                                         val gradientAccumulator: Settings) extends Differentiator {
 
 
     def createArgError(a:ArgumentType) = {
@@ -80,7 +80,7 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
       result
     }
 
-    val argDiffs = arguments.map(a => a.differentiator2(wrt)(
+    val argDiffs = arguments.map(a => a.differentiatorImpl(wrt)(
       input.linkedSettings(vars,a.vars),createArgError(a),gradientAccumulator.linkedSettings(vars,a.vars))).toArray
     val argOutputs = Settings.fromSeq(argDiffs.map(_.output))
     val argErrors = Settings.fromSeq(argDiffs.map(_.error))
@@ -126,7 +126,7 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
     val argEvals = arguments.map(_.evaluatorOld()).toArray
   }
 
-  trait ComposedDifferentiator extends Differentiator with Composer {
+  trait ComposedDifferentiatorOld extends DifferentiatorOld with Composer {
 
     val term = self
     val argErrors = arguments.map(_.domain.createZeroSetting()).toArray
@@ -141,7 +141,7 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
     def createDifferentiator(term: Term[Dom]) =
       if (term.vars.exists(withRespectTo.contains)) term.differentiatorOld(withRespectTo)
       else
-        new EmptyDifferentiator(term, withRespectTo)
+        new EmptyDifferentiatorOld(term, withRespectTo)
 
 
     def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]): Unit

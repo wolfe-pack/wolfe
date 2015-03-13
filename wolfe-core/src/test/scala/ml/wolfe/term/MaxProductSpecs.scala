@@ -26,7 +26,7 @@ class MaxProductSpecs extends WolfeSpec {
 
       val obj = sum(vars.map(local), length) + sum(pairs.map(pair), length - 1)
 
-      println((obj | length << 5).eval2(true, true, false, true, true))
+      println((obj | length << 5).eval(true, true, false, true, true))
       val mpParams = MaxProductParameters(10)
 
       val observation = Settings.fromSeq(Seq(Setting.disc(5)))

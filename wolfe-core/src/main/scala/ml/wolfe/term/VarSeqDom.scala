@@ -144,7 +144,7 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
       args(0).asInstanceOf[lengthDom.Term],
       args.drop(1).asInstanceOf[IndexedSeq[elementDom.Term]])
 
-    def composer() = new Evaluator {
+    def composer() = new EvaluatorOld {
 
       def eval(inputs: Array[Setting], output: Setting) = {
         //todo: adapt
@@ -169,9 +169,9 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
 
 
 
-    override def differentiator2(wrt: Seq[term.Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) = {
+    override def differentiatorImpl(wrt: Seq[term.Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) = {
       require(length.vars.forall(v => !wrt.contains(v)), "Can't differentiate length term in sequence constructor")
-      new ComposedDifferentiator2(wrt, in, err, gradientAcc) {
+      new ComposedDifferentiator(wrt, in, err, gradientAcc) {
 
         def localBackProp()(implicit execution: Execution) = {
           //each argument will get its error signal from a subsection of the outError
@@ -192,7 +192,7 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
       }
     }
 
-    def differentiatorOld(wrt: Seq[term.Var[Dom]]) = new ComposedDifferentiator {
+    def differentiatorOld(wrt: Seq[term.Var[Dom]]) = new ComposedDifferentiatorOld {
       //todo: adapt
       require(length.vars.forall(v => !wrt.contains(v)), "Can't differentiate length term in sequence constructor")
 
@@ -228,7 +228,7 @@ case class VarSeqLength[S <: Term[VarSeqDom[_]]](seq: S) extends Composed[TypedD
   val domain: TypedDom[Int] = seq.domain.lengthDom
 
 
-  def composer() = new Evaluator {
+  def composer() = new EvaluatorOld {
     def eval(inputs: Array[Setting], output: Setting) = {
       output.disc(0) = inputs(0).disc(0)
     }
@@ -256,7 +256,7 @@ case class VarSeqApply[+E <: Dom, S <: Term[VarSeqDom[E]], I <: IntTerm](seq: S,
 
   def copy(args: IndexedSeq[ArgumentType]) = VarSeqApply[E,S,I](args(0).asInstanceOf[S],args(1).asInstanceOf[I])
 
-  def composer() = new Evaluator {
+  def composer() = new EvaluatorOld {
     def eval(inputs: Array[Setting], output: Setting) = {
       val index = inputs(1).disc(0)
       inputs(0).copyTo(output, domain.lengths, index, Offsets(), 0, domain.lengths, srcOffsets = Offsets(discOff = 1))
@@ -274,8 +274,8 @@ case class VarSeqApply[+E <: Dom, S <: Term[VarSeqDom[E]], I <: IntTerm](seq: S,
   }
 
 
-  override def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
-    new ComposedDifferentiator2(wrt, in, err, gradientAcc) {
+  override def differentiatorImpl(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
+    new ComposedDifferentiator(wrt, in, err, gradientAcc) {
       argErrors(0).recordChangedOffsets = true
 
       def localBackProp()(implicit execution: Execution) = {
@@ -288,7 +288,7 @@ case class VarSeqApply[+E <: Dom, S <: Term[VarSeqDom[E]], I <: IntTerm](seq: S,
       }
     }
 
-  def differentiatorOld(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
+  def differentiatorOld(wrt: Seq[Var[Dom]]) = new ComposedDifferentiatorOld {
     require(index.vars.forall(v => !wrt.contains(v)), "Can't differentiate index term in sequence apply")
 
     //the indices of errors we pass to the sequence argument should be recorded such that the argument can focus on what was changed

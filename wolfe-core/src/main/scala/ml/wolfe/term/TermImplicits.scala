@@ -145,7 +145,7 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
   implicit class RichTermToType[D <: Dom](val term: Term[D]) {
     def typed[A <: Dom](dom: A): dom.Value => term.domain.Value = {
       require(term.vars.size == 1 && term.vars.head.domain == dom)
-      (a: dom.Value) => term.eval(Seq(a): _*)
+      (a: dom.Value) => term.evalOld(Seq(a): _*)
     }
   }
 

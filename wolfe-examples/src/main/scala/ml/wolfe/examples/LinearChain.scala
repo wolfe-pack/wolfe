@@ -34,7 +34,7 @@ object LinearChain {
 
     def loss(w:W.Term) = sum(data) { case (x, y) => Instance(x).negLoss(y)(w)}.argmaxBy(Argmaxer.ascent(10))
 
-    val w = argmax(W)(loss).eval()
+    val w = argmax(W)(loss).evalOld()
 
     println(w)
 

@@ -56,7 +56,7 @@ class AdaGradArgmaxer2(val objRaw: DoubleTerm,
   if (adaptiveVectors) gradient.foreach(_.setAdaptiveVectors(true))
   gradient foreach (_.recordChangedOffsets = true)
 
-  val diff = obj.differentiator2(wrt)(result, scale, gradient)
+  val diff = obj.differentiatorImpl(wrt)(result, scale, gradient)
 
   def argmax()(implicit execution: Execution) = {
     val bar = new ProgressBar(epochs, if (epochs < 100) 1 else epochs / 100)

@@ -101,7 +101,7 @@ trait Dom {
     def isStatic = true
 
     val vars      = Seq.empty
-    val evaluatorOld = new Evaluator {
+    val evaluatorOld = new EvaluatorOld {
       val result = domain.toSetting(value.asInstanceOf[domain.Value])
 
       def eval(inputs: Array[Setting], output: Setting) = {
@@ -117,7 +117,7 @@ trait Dom {
 
     def atomsIterator = Iterator.empty
 
-    def differentiatorOld(wrt: Seq[term.Var[Dom]]) = new Differentiator {
+    def differentiatorOld(wrt: Seq[term.Var[Dom]]) = new DifferentiatorOld {
       val result = domain.toSetting(value.asInstanceOf[domain.Value])
 
       def forwardProp(current: Array[Setting]) = activation := result
@@ -138,7 +138,7 @@ trait Dom {
     def isStatic = false
 
     val vars      = Seq.empty
-    val evaluatorOld = new Evaluator {
+    val evaluatorOld = new EvaluatorOld {
 
       def eval(inputs: Array[Setting], output: Setting) = {
         domain.copyValue(value.value(),output)
@@ -147,7 +147,7 @@ trait Dom {
 
     def atomsIterator = Iterator.empty
 
-    def differentiatorOld(wrt: Seq[term.Var[Dom]]) = new Differentiator {
+    def differentiatorOld(wrt: Seq[term.Var[Dom]]) = new DifferentiatorOld {
 
       def forwardProp(current: Array[Setting]) = {
         domain.copyValue(value.value(),activation)

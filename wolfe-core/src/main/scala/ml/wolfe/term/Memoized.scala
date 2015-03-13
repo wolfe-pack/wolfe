@@ -12,7 +12,7 @@ class Memoized[D <: Dom, T <: Term[D]](val term:T) extends Term[D] {
 
   private val inputToUniqueEval = createInputSettings()
   private val uniqueEval = term.evaluatorImpl(inputToUniqueEval)
-  private val uniqueDiffs = new mutable.HashMap[Seq[Var[Dom]],Differentiator2]()
+  private val uniqueDiffs = new mutable.HashMap[Seq[Var[Dom]],Differentiator]()
   private var currentExecution: Execution = null
   private val inputs2ValueInCurrentExecution = new mutable.HashMap[Any,Setting]
 
@@ -41,13 +41,13 @@ class Memoized[D <: Dom, T <: Term[D]](val term:T) extends Term[D] {
   }
 
   //todo: this should be memoized too (what does this mean?)
-  override def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
-    new AbstractDifferentiator2(in,err,gradientAcc) {
+  override def differentiatorImpl(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
+    new AbstractDifferentiator(in,err,gradientAcc) {
       val diff = uniqueDiffs.getOrElseUpdate(wrt, {
         val uniqueInputs = createInputSettings()
         val uniqueErr = domain.createSetting()
         val uniqueGradient = createInputSettings()
-        term.differentiator2(wrt)(uniqueInputs,uniqueErr,uniqueGradient)
+        term.differentiatorImpl(wrt)(uniqueInputs,uniqueErr,uniqueGradient)
       })
       val cachedOut = domain.createSetting()
 

@@ -26,15 +26,15 @@ class VectorDoubleFun[T <: VectorTerm](val arg: T, fun: Double => Double, deriv:
     }
   }
 
-  def composer() = new Evaluator {
+  def composer() = new EvaluatorOld {
     def eval(inputs: Array[Setting], output: Setting) = {
       output.vect(0) = inputs(0).vect(0).mapValues(fun, output.vect(0))
     }
   }
 
 
-  override def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
-    new ComposedDifferentiator2(wrt,in,err,gradientAcc) {
+  override def differentiatorImpl(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
+    new ComposedDifferentiator(wrt,in,err,gradientAcc) {
 
       def localBackProp()(implicit execution: Execution) = {
         argErrors(0).vect(0) = argOutputs(0).vect(0).mapValues(deriv, argErrors(0).vect(0)) :* error.vect(0).asInstanceOf[DenseTensor1]
@@ -42,7 +42,7 @@ class VectorDoubleFun[T <: VectorTerm](val arg: T, fun: Double => Double, deriv:
       }
     }
 
-  def differentiatorOld(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
+  def differentiatorOld(wrt: Seq[Var[Dom]]) = new ComposedDifferentiatorOld {
     def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]) = {
       gradient(0).vect(0) = argOutputs(0).vect(0).mapValues(deriv, gradient(0).vect(0)) :* outError.vect(0).asInstanceOf[DenseTensor1]
     }
@@ -63,7 +63,7 @@ class L1Norm[T <: VectorTerm](val arg:T) extends ComposedDoubleTerm {
 
   def copy(args: IndexedSeq[ArgumentType]) = new L1Norm(args(0))
 
-  def composer() = new Evaluator {
+  def composer() = new EvaluatorOld {
 
     def eval(inputs: Array[Setting], output: Setting) = {
       output.cont(0) = inputs(0).vect(0).oneNorm
@@ -80,8 +80,8 @@ class L1Norm[T <: VectorTerm](val arg:T) extends ComposedDoubleTerm {
   val arguments = IndexedSeq(arg)
 
 
-  override def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
-    new ComposedDifferentiator2(wrt,in,err,gradientAcc) {
+  override def differentiatorImpl(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
+    new ComposedDifferentiator(wrt,in,err,gradientAcc) {
 
       def localBackProp()(implicit execution: Execution) = {
         val scale = error.cont(0)
@@ -92,7 +92,7 @@ class L1Norm[T <: VectorTerm](val arg:T) extends ComposedDoubleTerm {
       }
     }
 
-  def differentiatorOld(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
+  def differentiatorOld(wrt: Seq[Var[Dom]]) = new ComposedDifferentiatorOld {
     def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]) = {
       val scale = outError.cont(0)
       for (i <- 0 until argOutputs(0).vect(0).dim1) {

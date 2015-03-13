@@ -55,7 +55,7 @@ class MaxProductBP(val objRaw: DoubleTerm,
 
   class NodeContent(val belief:Msg)
 
-  class EdgeContent(val maxMarginalizer: MaxMarginalizer2, val f2n: Msg, val n2f: Msg)
+  class EdgeContent(val maxMarginalizer: MaxMarginalizer, val f2n: Msg, val n2f: Msg)
 
   class FactorContent()
 

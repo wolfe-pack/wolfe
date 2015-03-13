@@ -20,7 +20,7 @@ object Execution extends Enumeration {
 }
 
 
-trait Differentiator2 {
+trait Differentiator {
   val input:Settings
   val output:Setting
   val gradientAccumulator:Settings

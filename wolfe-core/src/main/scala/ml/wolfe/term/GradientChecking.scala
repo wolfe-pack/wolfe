@@ -47,7 +47,7 @@ object GradientChecking {
       val (variable, ix) = t
       val value = vals(ix)
 
-      val gradient = term.gradient(vals, error, Seq(variable))(ix)
+      val gradient = term.gradientOld(vals, error, Seq(variable))(ix)
 
       //how many values we have to test
       val range = vals(ix) match {
@@ -62,8 +62,8 @@ object GradientChecking {
         rows.foreach(row => {
           //making small changes to the variable
           val (xPos, xNeg) = wiggle(value, epsilon, row, col)
-          val scorePos = term.eval(vals.updated(ix, xPos): _*)
-          val scoreNeg = term.eval(vals.updated(ix, xNeg): _*)
+          val scorePos = term.evalOld(vals.updated(ix, xPos): _*)
+          val scoreNeg = term.evalOld(vals.updated(ix, xNeg): _*)
 
           //numerically calculated gradient
           val dNum = (scorePos, scoreNeg) match {

@@ -63,7 +63,7 @@ object Argmaxer {
 }
 
 
-trait MaxMarginalizer2 {
+trait MaxMarginalizer {
 
   val input: Settings
   val inputMsgs: Msgs

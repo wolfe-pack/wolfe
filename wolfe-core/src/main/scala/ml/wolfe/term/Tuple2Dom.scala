@@ -129,8 +129,8 @@ trait ProductDom extends Dom {
       }
     }
 
-    override def differentiator2(wrt: Seq[term.Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
-      new ComposedDifferentiator2(wrt,in,err,gradientAcc) {
+    override def differentiatorImpl(wrt: Seq[term.Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
+      new ComposedDifferentiator(wrt,in,err,gradientAcc) {
         def localBackProp()(implicit execution: Execution) = {
           //todo: SR: why can't argErrors be reset to zero in the ComposedDiff code?
           argErrors(0).resetToZero()
@@ -148,7 +148,7 @@ trait ProductDom extends Dom {
 
   trait DomTermImpl extends super.DomTerm with Composed[dom.type] {
 
-    def composer() = new Evaluator {
+    def composer() = new EvaluatorOld {
 
       val lengths = arguments.map(_.domain.lengths).toArray
 

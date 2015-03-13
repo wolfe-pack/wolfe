@@ -44,7 +44,7 @@ case class FirstOrderSum[D <: Dom, Body <: DoubleTerm, R <: Term[VarSeqDom[D]]](
 
   }
 
-  def evaluatorOld() = new SumProcessor with Evaluator {
+  def evaluatorOld() = new SumProcessor with EvaluatorOld {
 
 
     def eval(inputs: Array[Setting], output: Setting) = {
@@ -57,7 +57,7 @@ case class FirstOrderSum[D <: Dom, Body <: DoubleTerm, R <: Term[VarSeqDom[D]]](
     }
   }
 
-  def differentiatorOld(wrt: Seq[Var[Dom]]) = new SumProcessor with Differentiator {
+  def differentiatorOld(wrt: Seq[Var[Dom]]) = new SumProcessor with DifferentiatorOld {
 
     require(wrt.forall(!range.vars.contains(_)), "Cannot differentiate range/indices of sum")
 
@@ -137,13 +137,13 @@ case class FirstOrderSum[D <: Dom, Body <: DoubleTerm, R <: Term[VarSeqDom[D]]](
     }
   }
 
-  override def differentiator2(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
-    new AbstractDifferentiator2(in,err,gradientAcc) {
+  override def differentiatorImpl(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
+    new AbstractDifferentiator(in,err,gradientAcc) {
 
       val loop = new Loop(in)
       val eval = evaluatorImpl(in)
       val output = eval.output
-      val bodyDiff = body.differentiator2(wrt)(loop.bodyInput, err, gradientAccumulator.linkedSettings(vars,body.vars))
+      val bodyDiff = body.differentiatorImpl(wrt)(loop.bodyInput, err, gradientAccumulator.linkedSettings(vars,body.vars))
 
       def forward()(implicit execution:Execution) = {
         eval.eval()

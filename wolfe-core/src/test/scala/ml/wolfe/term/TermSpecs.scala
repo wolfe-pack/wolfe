@@ -12,13 +12,13 @@ class TermSpecs extends WolfeSpec {
   "An vector variable term" should {
     "evaluate to a vector" in {
       val x = Vectors(2).Var
-      val result = x.eval2(vector(1.0, 2.0))
+      val result = x.eval(vector(1.0, 2.0))
       result should equal(vector(1.0, 2.0))
     }
 
     "provide its constant gradient" in {
       val x = Vectors(2).Var
-      val result = x.gradient2(x, vector(2.0, 1.0))
+      val result = x.gradient(x, vector(2.0, 1.0))
       result should equal(vector(1.0, 1.0))
     }
   }
@@ -27,14 +27,14 @@ class TermSpecs extends WolfeSpec {
     "evaluate to a matrix" in {
       val X = Matrices(2, 3).Var
       val tensor2 = matrix(Seq(1, 2, 3), Seq(4, 5, 6))
-      val result = X.eval2(tensor2)
+      val result = X.eval(tensor2)
       result should equal(tensor2)
     }
 
     "provide its constant gradient" in {
       val X = Matrices(2, 3).Var
       val tensor2 = matrix(Seq(1, 2, 3), Seq(4, 5, 6))
-      val result = X.gradient2(X, tensor2)
+      val result = X.gradient(X, tensor2)
       result.toArray should equal(new MatrixDom(2: Int, 3: Int).one.toArray)
     }
   }
@@ -52,7 +52,7 @@ class TermSpecs extends WolfeSpec {
     "evaluate to a tuple2" in {
       val dom = Doubles x Doubles
       val x = dom.Var
-      val result = x.eval2((1.0, 2.0))
+      val result = x.eval((1.0, 2.0))
       result should be(1.0, 2.0)
     }
 
@@ -60,7 +60,7 @@ class TermSpecs extends WolfeSpec {
       val dom = Doubles x Doubles
       val x = dom.variable("x")
       val arg1 = x._1
-      arg1.eval2((2.0, 1.0)) should be(2.0)
+      arg1.eval((2.0, 1.0)) should be(2.0)
     }
   }
 
@@ -68,14 +68,14 @@ class TermSpecs extends WolfeSpec {
     "evaluate to the value of a dot product" in {
       val x = Vectors(2).Var
       val dot = x dot x
-      val result = dot.eval2(vector(2.0, 3.0))
+      val result = dot.eval(vector(2.0, 3.0))
       result should be(13.0)
     }
 
     "provide its gradient for identical variables" in {
       val x = Vectors(2).Var
       val dot = x dot x
-      val result = dot.gradient2(x, vector(2.0, 3.0))
+      val result = dot.gradient(x, vector(2.0, 3.0))
       result should equal(vector(4.0, 6.0))
     }
 
@@ -83,8 +83,8 @@ class TermSpecs extends WolfeSpec {
       val x = Vectors(2).Var
       val y = Vectors(2).Var
       val dot = x dot y
-      dot.gradient2(x, vector(2.0, 3.0), vector(1.0, 2.0)) should equal(vector(1.0, 2.0))
-      dot.gradient2(y, vector(2.0, 3.0), vector(1.0, 2.0)) should equal(vector(2.0, 3.0))
+      dot.gradient(x, vector(2.0, 3.0), vector(1.0, 2.0)) should equal(vector(1.0, 2.0))
+      dot.gradient(y, vector(2.0, 3.0), vector(1.0, 2.0)) should equal(vector(2.0, 3.0))
     }
   }
 
@@ -94,7 +94,7 @@ class TermSpecs extends WolfeSpec {
       val A = Matrices(3, 2).Var
       val op = A * x
       val tensor2 = matrix(Seq(1, 0), Seq(1, 1), Seq(2, 1))
-      val result = op.eval2(tensor2, vector(2, 4))
+      val result = op.eval(tensor2, vector(2, 4))
       result should equal(vector(2.0, 6.0, 8.0))
     }
 
@@ -107,8 +107,8 @@ class TermSpecs extends WolfeSpec {
       val x = vector(2, 4)
       val e = vector(1.0, 0.5, 1.5)
 
-      val dA = term.gradient(Seq(A, x), e, Seq(AVar))(0)
-      val dx = term.gradient(Seq(A, x), e, Seq(xVar))(1)
+      val dA = term.gradientOld(Seq(A, x), e, Seq(AVar))(0)
+      val dx = term.gradientOld(Seq(A, x), e, Seq(xVar))(1)
 
       //todo: test the gradient
       println(dx)
@@ -121,14 +121,14 @@ class TermSpecs extends WolfeSpec {
       val x = Doubles.Var
       val y = Doubles.Var
       val term = x * y * x * 0.5
-      term.eval2(2.0, 3.0) should be(6.0)
+      term.eval(2.0, 3.0) should be(6.0)
     }
     "calculate its gradient" in {
       val x = Doubles.Var
       val y = Doubles.Var
       val term = x * y * x * 0.5
-      term.gradient2(x, 2.0, 3.0) should be(6.0)
-      term.gradient2(y, 2.0, 3.0) should be(2.0)
+      term.gradient(x, 2.0, 3.0) should be(6.0)
+      term.gradient(y, 2.0, 3.0) should be(2.0)
     }
   }
 
@@ -137,14 +137,14 @@ class TermSpecs extends WolfeSpec {
       val x = Doubles.Var
       val y = Doubles.Var
       val term = (x / y) * 2.0
-      term.eval2(2.0, 0.5) should be(8.0)
+      term.eval(2.0, 0.5) should be(8.0)
     }
     "calculate its gradient" in {
       val x = Doubles.Var
       val y = Doubles.Var
       val term = (x / y) * 2.0
-      term.gradient2(x, 2.0, 0.5) should be(4.0)
-      term.gradient2(y, 2.0, 0.5) should be(-16.0)
+      term.gradient(x, 2.0, 0.5) should be(4.0)
+      term.gradient(y, 2.0, 0.5) should be(-16.0)
     }
   }
 
@@ -152,8 +152,8 @@ class TermSpecs extends WolfeSpec {
     "evaluate to 0 if a predicate is false, and 1 otherwise" in {
       val x = Bools.Var
       val term = I(x)
-      term.eval(false) should be(0.0)
-      term.eval(true) should be(1.0)
+      term.evalOld(false) should be(0.0)
+      term.evalOld(true) should be(1.0)
     }
   }
 
@@ -162,14 +162,14 @@ class TermSpecs extends WolfeSpec {
       val x = Vectors(2).Var
       val y = Vectors(2).Var
       val term = log(sigm(x dot y))
-      term.eval2(vector(1.0, 2.0), vector(2.0, 3.0)) should equal(math.log(sigmoid(8.0)))
+      term.eval(vector(1.0, 2.0), vector(2.0, 3.0)) should equal(math.log(sigmoid(8.0)))
     }
 
     "provide the gradient of a logistic loss matrix factorization objective" in {
       val x = Vectors(2).Var
       val y = Vectors(2).Var
       val term = log(sigm(x dot y))
-      val result = term.gradient2(x, vector(1.0, 2.0), vector(2.0, 3.0))
+      val result = term.gradient(x, vector(1.0, 2.0), vector(2.0, 3.0))
       val prob = sigmoid(8.0)
       result should equal(vector(2.0, 3.0) * (1.0 - prob))
     }
@@ -181,13 +181,13 @@ class TermSpecs extends WolfeSpec {
       val dom = Bools x Bools
       val x = dom.Var
       val result = argmax(dom) { x => I(x._1 && x._2)}
-      result.eval() should be(true, true)
+      result.evalOld() should be(true, true)
     }
     "provide a partial argmax" in {
       val y = Bools.Var
       val term = argmax(Bools)(x => I(x === y))
-      term.eval(true) should be(true)
-      term.eval(false) should be(false)
+      term.evalOld(true) should be(true)
+      term.evalOld(false) should be(false)
     }
   }
 
@@ -195,15 +195,15 @@ class TermSpecs extends WolfeSpec {
     "evaluate to the maximum over its domain" in {
       val x = Bools.Var
       val term = max(Bools) { y => I(y && x)}
-      term.eval(false) should be(0.0)
-      term.eval(true) should be(1.0)
+      term.evalOld(false) should be(0.0)
+      term.evalOld(true) should be(1.0)
     }
 
     "provide an element of its sub-gradient" in {
       val weights = Vectors(2).Var
       val term = max(Bools) { label => I(label) * (weights dot vector(1, 2))}
-      term.gradient(weights, vector(1, 1)) should equal(vector(1, 2))
-      term.gradient(weights, vector(1, -1)) should equal(vector(0, 0))
+      term.gradientOld(weights, vector(1, 1)) should equal(vector(1, 2))
+      term.gradientOld(weights, vector(1, -1)) should equal(vector(0, 0))
     }
 
     "maximize over a structured search space" in {
@@ -214,7 +214,7 @@ class TermSpecs extends WolfeSpec {
         I(y(0) === labels.Const("V")) * 2.0 +
           I(y(1) === labels.Const("N")) * 1.0
       val result = max(sequences)(model)
-      result.eval() should be(3.0)
+      result.evalOld() should be(3.0)
     }
 
   }
@@ -225,7 +225,7 @@ class TermSpecs extends WolfeSpec {
       val x = Doubles.Var
       val y = Doubles.Var
       val term = dom.Term(x, y, x)
-      term.eval2(1.0, 2.0) should be(Seq(1.0, 2.0, 1.0))
+      term.eval(1.0, 2.0) should be(Seq(1.0, 2.0, 1.0))
     }
 
     "provide its gradient" in {
@@ -233,8 +233,8 @@ class TermSpecs extends WolfeSpec {
       val x = Doubles.Var
       val y = Doubles.Var
       val term = dom.Term(x, y, x)
-      term.gradient2(x, 10.0, 3.0) should be(2.0)
-      term.gradient2(y, 10.0, 3.0) should be(1.0)
+      term.gradient(x, 10.0, 3.0) should be(2.0)
+      term.gradient(y, 10.0, 3.0) should be(1.0)
     }
 
   }
@@ -254,7 +254,7 @@ class TermSpecs extends WolfeSpec {
 
       val term = loss(Output.Const(true, false, true))(Scores.Const(1.0, 1.0, -1.0))
 
-      term.eval() should be(2.0)
+      term.evalOld() should be(2.0)
     }
 
     "calculate its gradient for tied weights" in {
@@ -273,8 +273,8 @@ class TermSpecs extends WolfeSpec {
       val weights = Scores.Term(weight, weight, weight)
       val term = loss(Output.Const(false, false, true))(weights)
 
-      term.gradient(weight, 1.0) should be(2.0)
-      term.gradient(weight, -1.0) should be(-1.0)
+      term.gradientOld(weight, 1.0) should be(2.0)
+      term.gradientOld(weight, -1.0) should be(-1.0)
 
     }
   }
@@ -283,8 +283,8 @@ class TermSpecs extends WolfeSpec {
     "provide its gradient" in {
       val x = Doubles.Var
       val obj = (x * 4.0) - (x * x)
-      obj.gradient2(x, 0.0) should be(4.0)
-      obj.gradient2(x, 12.0) should be(-20.0)
+      obj.gradient(x, 0.0) should be(4.0)
+      obj.gradient(x, 12.0) should be(-20.0)
     }
   }
 
@@ -293,14 +293,14 @@ class TermSpecs extends WolfeSpec {
       val x = Doubles.variable("x")
       def obj(x: Doubles.Term) = x * 4.0 - x * x
       val result = argmax(Doubles) { x => obj(x).argmaxBy(Argmaxer.adaGrad(100, 1))}
-      result.eval() should be(2.0 +- eps)
+      result.evalOld() should be(2.0 +- eps)
     }
     "optimize a multivariate quadratic objective" in {
       val X = Vectors(2)
       val x = X.variable("x")
       def obj(x: X.Term) = (x dot vector(4.0, 4.0)) - (x dot x)
       val result = argmax(X) { x => obj(x).argmaxBy(Argmaxer.adaGrad(100, 1))}
-      result.eval() should equal(vector(2.0, 2.0))
+      result.evalOld() should equal(vector(2.0, 2.0))
     }
     "optimize a quadratic objective over case class domains with nested sequences of vectors" in {
       val numXs = 2
@@ -315,7 +315,7 @@ class TermSpecs extends WolfeSpec {
       def nextRandom = random.nextGaussian() * 0.1
       val init = Settings(Thetas.createRandomSetting(nextRandom))
 
-      val thetaStar = argmax2(Thetas)(t => obj(t).argmaxBy(Argmaxer.adaGrad2(AdaGradParameters(100, 0.1, initParams = init)))).eval2()
+      val thetaStar = argmax2(Thetas)(t => obj(t).argmaxBy(Argmaxer.adaGrad2(AdaGradParameters(100, 0.1, initParams = init)))).eval()
       thetaStar.xs.foreach(x => x.foreach(_ should be(0.0 +- eps)))
       thetaStar.ys.foreach(y => y.foreach(_ should be(0.0 +- eps)))
     }
@@ -343,13 +343,13 @@ class TermSpecs extends WolfeSpec {
     "bind variables to the value of a different term" in {
       val x = Doubles.Var
       val t = (x + 1.0)| x << 2.0
-      t.eval2() should be(3.0)
+      t.eval() should be(3.0)
     }
     "bind variables to the value of a different term in a nested way" in {
       val x = Doubles.Var
       val y = Doubles.Var
       val t = x | x << (y + 1.0) | y << 2.0
-      t.eval2() should be(3.0)
+      t.eval() should be(3.0)
     }
 
   }
@@ -358,8 +358,8 @@ class TermSpecs extends WolfeSpec {
     "evaluate to the right branch depending on the condition" in {
       val x = Ints.Var
       val t = choice(x)(1.0.toConst, 2.0.toConst)
-      t.eval2(0) should be(1.0)
-      t.eval2(1) should be(2.0)
+      t.eval(0) should be(1.0)
+      t.eval(1) should be(2.0)
     }
   }
 
@@ -367,8 +367,8 @@ class TermSpecs extends WolfeSpec {
     "evaluate to the right branch depending on the condition" in {
       val x = Bools.Var
       val t = ifThenElse(x)(1.0.toConst)(2.0.toConst)
-      t.eval2(true) should be(1.0)
-      t.eval2(false) should be(2.0)
+      t.eval(true) should be(1.0)
+      t.eval(false) should be(2.0)
     }
   }
 

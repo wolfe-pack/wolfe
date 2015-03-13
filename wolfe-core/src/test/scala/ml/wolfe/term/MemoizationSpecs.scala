@@ -19,8 +19,8 @@ class MemoizationSpecs extends WolfeSpec {
       val s = mem(sampleUniform(0 until 10000) + x)
       val t1 = (s | x << 1) === (s | x << 1)
       val t2 = (s | x << 1) === (s | x << 2)
-      t1.eval2() should be (true)
-      t2.eval2() should be (false)
+      t1.eval() should be (true)
+      t2.eval() should be (false)
     }
 
   }
