@@ -416,6 +416,12 @@ trait MathImplicits {
   def sum[T <: Term[VarSeqDom[Dom]], Body <: DoubleTerm](indices: T)(body: indices.domain.elementDom.Var => Body) =
     sum2[Dom, Term[VarSeqDom[Dom]], Body](indices)(body)
 
+  def stochastic(indices:VarSeqDom[Dom]#Term)(body: indices.domain.elementDom.Term => DoubleTerm)(implicit random:Random) = {
+    import TermImplicits._
+    val i = mem(indices.sampleShuffled)
+    val term = body(i.asInstanceOf[indices.domain.elementDom.Term])
+    term
+  }
 
   def oneHot(index: Int, value: Double = 1.0)(implicit dom: VectorDom) =
     dom.Const(new SingletonTensor1(dom.dim, index, value))

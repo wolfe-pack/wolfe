@@ -2,6 +2,8 @@ package ml.wolfe.term
 
 import ml.wolfe.WolfeSpec
 
+import scala.util.Random
+
 /**
  * @author riedel
  */
@@ -45,6 +47,9 @@ class MaxProductSpecs extends WolfeSpec {
     }
 
     "optimize a linear chain in a perceptron loss" ignore {
+
+      implicit val random = new Random(0)
+
       val mpParams = MaxProductParameters(10)
       val adaParams = AdaGradParameters(100, 0.1)
 
@@ -68,6 +73,8 @@ class MaxProductSpecs extends WolfeSpec {
       }
 
       def ll(w: Weights.Term) = sum(train) { i => instanceLL(i.x, i.y)(w)} argmaxBy adaGrad2(adaParams)
+
+      def llStochastic(w: Weights.Term) = stochastic(train) { i => instanceLL(i.x, i.y)(w)} argmaxBy adaGrad2(adaParams)
 
       val wStar = argmax2(Weights)(ll)
 
