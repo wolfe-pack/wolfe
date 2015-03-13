@@ -15,7 +15,7 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
 
   lazy val isStatic = arguments forall (_.isStatic)
 
-  def evaluatorOld() = new EvaluatorOld with Composer {
+  def evaluatorOld() = new EvaluatorOld with ComposerOld {
     val comp = composer()
 
     def eval(inputs: Array[Setting], output: Setting) = {
@@ -41,6 +41,8 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
     def cache[T](body: =>Unit): Unit = {
       if (!useCached) {
         body
+      } else {
+        println("Using cached value...")
       }
       calls += 1
     }
@@ -118,7 +120,7 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
 
   def atomsIterator = arguments.iterator.flatMap(_.atomsIterator)
 
-  trait Composer {
+  trait ComposerOld {
     val argOutputs = arguments.map(_.domain.createSetting()).toArray
     val argInputs = arguments.map(_.vars.map(_.domain.createSetting()).toArray)
     //    val argInputs  = arguments.map(a => Array.ofDim[Setting](a.vars.length)).toArray
@@ -126,7 +128,7 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
     val argEvals = arguments.map(_.evaluatorOld()).toArray
   }
 
-  trait ComposedDifferentiatorOld extends DifferentiatorOld with Composer {
+  trait ComposedDifferentiatorOld extends DifferentiatorOld with ComposerOld {
 
     val term = self
     val argErrors = arguments.map(_.domain.createZeroSetting()).toArray

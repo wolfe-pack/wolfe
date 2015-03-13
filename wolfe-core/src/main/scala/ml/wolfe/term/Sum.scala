@@ -51,7 +51,7 @@ case class Sum(arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm {
     }
   }
 
-  trait StochasticDifferentiatorOld extends DifferentiatorOld with Composer {
+  trait StochasticDifferentiatorOld extends DifferentiatorOld with ComposerOld {
 
     val term = sum
     val argErrors = arguments.map(_.domain.createZeroSetting()).toArray
@@ -176,7 +176,7 @@ case class VarSeqSum[D <: TypedDom[Double], T <: Term[VarSeqDom[D]]](seq: T) ext
       override def abortBackward(index: Int) = abortForward(index)
     }
 
-  trait Composer {
+  trait ComposerOld {
     val argOutputs = arguments.map(_.domain.createSetting()).toArray
     val argInputs = arguments.map(_.vars.map(_.domain.createSetting()).toArray)
     //    val argInputs  = arguments.map(a => Array.ofDim[Setting](a.vars.length)).toArray
@@ -192,7 +192,7 @@ case class VarSeqSum[D <: TypedDom[Double], T <: Term[VarSeqDom[D]]](seq: T) ext
   }
 
   //todo: avoid code duplication here
-  trait ComposedDifferentiatorOld extends DifferentiatorOld with Composer {
+  trait ComposedDifferentiatorOld extends DifferentiatorOld with ComposerOld {
 
     val term = self
     val argErrors = arguments.map(_.domain.createZeroSetting()).toArray
