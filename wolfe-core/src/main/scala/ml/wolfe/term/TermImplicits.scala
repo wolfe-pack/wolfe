@@ -396,15 +396,17 @@ trait MathImplicits {
 
   def sum(args: DoubleTerm*) = new Sum(args.toIndexedSeq)
 
-  def varSeqSum[T <: Term[VarSeqDom[TypedDom[Double]]]](args: T) = new VarSeqSum[TypedDom[Double], T](args)
+  //def varSeqSum[T <: Term[VarSeqDom[TypedDom[Double]]]](args: T) = new VarSeqSum[TypedDom[Double], T](args)
 
   import TermImplicits._
 
-  def sum(length:IntTerm)(args: DoubleTerm*) =
-    varSeqSum[Term[VarSeqDom[TypedDom[Double]]]](VarSeq[TypedDom[Double]](length,args.toIndexedSeq.asInstanceOf[IndexedSeq[TypedTerm[Double]]]))
+  def sum(length:IntTerm)(args: DoubleTerm*):DoubleTerm =
+    sum(args.toSeq,length)
+    //varSeqSum[Term[VarSeqDom[TypedDom[Double]]]](VarSeq[TypedDom[Double]](length,args.toIndexedSeq.asInstanceOf[IndexedSeq[TypedTerm[Double]]]))
 
-  def sum(args: Seq[DoubleTerm],length:IntTerm) =
-    varSeqSum[Term[VarSeqDom[TypedDom[Double]]]](VarSeq[TypedDom[Double]](length,args.toIndexedSeq.asInstanceOf[IndexedSeq[TypedTerm[Double]]]))
+  def sum(args: Seq[DoubleTerm],length:IntTerm):DoubleTerm =
+    new VarSeqSum(length,args)
+    //varSeqSum[Term[VarSeqDom[TypedDom[Double]]]](VarSeq[TypedDom[Double]](length,args.toIndexedSeq.asInstanceOf[IndexedSeq[TypedTerm[Double]]]))
 
 
   def sum2[E <: Dom, T <: Term[VarSeqDom[E]], Body <: DoubleTerm](indices: T)(body: indices.domain.elementDom.Var => Body) = {
@@ -416,7 +418,7 @@ trait MathImplicits {
   def sum[T <: Term[VarSeqDom[Dom]], Body <: DoubleTerm](indices: T)(body: indices.domain.elementDom.Var => Body) =
     sum2[Dom, Term[VarSeqDom[Dom]], Body](indices)(body)
 
-  def stochastic(indices:VarSeqDom[Dom]#Term)(body: indices.domain.elementDom.Term => DoubleTerm)(implicit random:Random) = {
+  def shuffled(indices:VarSeqDom[Dom]#Term)(body: indices.domain.elementDom.Term => DoubleTerm)(implicit random:Random) = {
     import TermImplicits._
     val i = mem(indices.sampleShuffled)
     val term = body(i.asInstanceOf[indices.domain.elementDom.Term])

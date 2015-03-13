@@ -383,6 +383,12 @@ final class Settings(val length: Int) extends IndexedSeq[Setting] {
     array(index) = value
   }
 
+  def toValues(doms:Seq[Dom]):Seq[Any] = for ((d,s) <- doms zip this) yield d.toValue(s)
+
+  //def toValues(vars:Seq[Variable]):Seq[Any] = toValues(vars map (_.domain))
+
+
+
   def linkedSettings(from: Seq[Var[Dom]], to: Seq[Var[Dom]]): Settings = {
     val mapping = VariableMapping(from, to)
     val result = new Settings(to.length)

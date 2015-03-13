@@ -32,7 +32,7 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
 
     def copy(args: IndexedSeq[ArgumentType]) = own(args(0))
 
-
+    def elements = for (i <- 0 until maxLength) yield apply(i)
   }
 
   case class Marginals(length: lengthDom.Marginals, elements: IndexedSeq[elementDom.Marginals])
@@ -99,6 +99,8 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
 
     def length: TypedTerm[Int]
 
+    def elements:IndexedSeq[term.Term[E]] // = for (i <- 0 until maxLength) yield apply(i)
+
     def apply(index: term.Term[TypedDom[Int]]): elementDom.Term = {
       type Index = TypedTerm[Int]
       type ElemDom = TypedDom[elementDom.Value]
@@ -127,6 +129,9 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
     def ranges = Ranges(offsets, startOfElements(offsets) +(domain.elementDom.lengths, domain.maxLength))
 
     def atomsIterator = ???
+
+    def elements = for (i <- 0 until maxLength) yield apply(i)
+
   }
 
   def Term(length: TypedTerm[Int], elements: IndexedSeq[elementDom.Term]): Term = new Constructor(length, elements)

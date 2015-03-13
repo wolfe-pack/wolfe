@@ -51,7 +51,8 @@ object Transformer {
         //doubleTerm.asInstanceOf[DoubleTerm]
       }
       val sumArgs = VarSeq(length, doubleTerms)
-      varSeqSum[Term[VarSeqDom[TypedDom[Double]]]](sumArgs)
+      sum(doubleTerms,length)
+      //varSeqSum[Term[VarSeqDom[TypedDom[Double]]]](sumArgs)
   }
 
 }

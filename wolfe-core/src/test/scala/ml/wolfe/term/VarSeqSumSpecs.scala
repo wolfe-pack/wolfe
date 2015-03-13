@@ -16,8 +16,7 @@ class VarSeqSumSpecs extends WolfeSpec {
       val xs = Seqs(Doubles,0,n)
       val length = xs.lengthDom.Var
       val d = Doubles.Var
-      val seq = VarSeq(length, IndexedSeq(d + 1.0, d * 2.0, d))
-      val t = varSeqSum(seq)
+      val t = sum(length)(d + 1.0, d * 2.0, d)
       t.eval(2,1.0) should be (4.0)
     }
     "evaluate to the sum of all its arguments when the sequence is a variable" in {
@@ -26,7 +25,7 @@ class VarSeqSumSpecs extends WolfeSpec {
       val length = xs.lengthDom.Var
       val d = Doubles.Var
       val x = xs.Var
-      val t = varSeqSum(x)
+      val t = sum(x.elements,x.length)
       t.eval(IndexedSeq(1.0,2.0)) should be (3.0)
     }
     "calculate the gradient for constructed sequences" in {

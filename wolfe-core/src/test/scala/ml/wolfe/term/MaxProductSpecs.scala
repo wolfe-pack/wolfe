@@ -33,6 +33,8 @@ class MaxProductSpecs extends WolfeSpec {
       val argmaxer = obj.argmaxBy(Argmaxer.maxProduct(mpParams)).argmaxerImpl(vars)(observation, null)
 
       argmaxer.argmax()(Execution(0))
+
+      println(argmaxer.result.toValues(vars map (_.domain)))
     }
 
     "optimize a linear chain objective in high level code" ignore {
@@ -74,7 +76,7 @@ class MaxProductSpecs extends WolfeSpec {
 
       def ll(w: Weights.Term) = sum(train) { i => instanceLL(i.x, i.y)(w)} argmaxBy adaGrad2(adaParams)
 
-      def llStochastic(w: Weights.Term) = stochastic(train) { i => instanceLL(i.x, i.y)(w)} argmaxBy adaGrad2(adaParams)
+      def llStochastic(w: Weights.Term) = shuffled(train) { i => instanceLL(i.x, i.y)(w)} argmaxBy adaGrad2(adaParams)
 
       val wStar = argmax2(Weights)(ll)
 

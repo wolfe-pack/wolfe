@@ -67,7 +67,7 @@ class MaxProductBP(val objRaw: DoubleTerm,
 
   def addTerm(term: Term[Dom]): FactorGroup = {
     term match {
-      case s@VarSeqSum(_) =>
+      case s@VarSeqSum(_,_) =>
         val factors = s.elements map addTerm
         val obsVarInLength = s.length.vars.filter(observedVars.contains)
         val obsInLength = observed.linkedSettings(observedVars,obsVarInLength)

@@ -127,25 +127,28 @@ case class Sum(arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm {
   }
 }
 
-case class VarSeqSum[D <: TypedDom[Double], T <: Term[VarSeqDom[D]]](seq: T) extends ComposedDoubleTerm {
+case class VarSeqSum[D <: TypedDom[Double], T <: Term[VarSeqDom[D]]](length: IntTerm,elements:Seq[DoubleTerm]) extends ComposedDoubleTerm {
 
   self =>
 
   type ArgumentType = Term[Dom]
 
-  val (length, elements) = seq match {
-    case s: seq.domain.Constructor =>
-      s.length -> s.elements
-    case _ =>
-      val l = new VarSeqLength[T](seq)
-      val e = for (i <- 0 until seq.domain.maxLength) yield
-        new VarSeqApply[D, T, TypedTerm[Int]](seq, seq.domain.lengthDom.Const(i))
-      l -> e
-  }
+//  val (length, elements) = seq match {
+//    case s: seq.domain.Constructor =>
+//      s.length -> s.elements
+//    case _ =>
+//      val l = new VarSeqLength[T](seq)
+//      val e = for (i <- 0 until seq.domain.maxLength) yield
+//        new VarSeqApply[D, T, TypedTerm[Int]](seq, seq.domain.lengthDom.Const(i))
+//      l -> e
+//  }
 
-  val arguments = length +: elements
+  val arguments = length +: elements.toIndexedSeq
 
-  def copy(args: IndexedSeq[ArgumentType]) = ???
+
+  override def toString = s"""sum($length)(${elements.mkString(", ")}})"""
+
+  def copy(args: IndexedSeq[ArgumentType]) = VarSeqSum(args(0).asInstanceOf[IntTerm],args.drop(1).asInstanceOf[Seq[DoubleTerm]])
 
 
   override def composer(args: Settings) = new Composer(args) {
