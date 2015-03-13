@@ -47,7 +47,7 @@ class Memoized[D <: Dom, T <: Term[D]](val term:T) extends Term[D] {
         val uniqueInputs = createInputSettings()
         val uniqueErr = domain.createSetting()
         val uniqueGradient = createInputSettings()
-        term.differentiatorImpl(wrt)(uniqueInputs,uniqueErr,uniqueGradient)
+        new ProxyDifferentiator(term.differentiatorImpl(wrt)(uniqueInputs,uniqueErr,uniqueGradient))
       })
       val cachedOut = domain.createSetting()
 

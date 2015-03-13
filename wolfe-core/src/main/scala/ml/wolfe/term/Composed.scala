@@ -27,55 +27,41 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
     }
   }
 
-  abstract class Composer(in:Settings) extends AbstractEvaluator(in) {
+  abstract class Composer(in: Settings) extends AbstractEvaluator(in) {
     val output = self.domain.createSetting()
-    def abort(index:Int) = false
+
+    def abort(index: Int) = false
   }
 
   def composer2(args: Settings): Composer = ???
 
-  trait Cached {
-    private var calls = 0
-    def useCached = isStatic && calls > 0
 
-    def cache[T](body: =>Unit): Unit = {
-      if (!useCached) {
-        body
-      } else {
-        println("Using cached value...")
-      }
-      calls += 1
-    }
-  }
-
-  class ComposedEvaluator(in:Settings) extends Evaluator with Cached {
+  class ComposedEvaluator(in: Settings) extends Evaluator {
     val argEvals = arguments.map(a => a.evaluatorImpl(in.linkedSettings(vars, a.vars))).toArray
     val argOutputs = Settings.fromSeq(argEvals.map(_.output))
     val comp = composer2(argOutputs)
     val input = in
     val output = comp.output
 
-    def eval()(implicit execution:Execution) = {
-      cache {
-        var i = 0
-        while (i < size && !comp.abort(i)) {
-          argEvals(i).eval()
-          i += 1
-        }
-        comp.eval()
+    def eval()(implicit execution: Execution) = {
+      var i = 0
+      while (i < size && !comp.abort(i)) {
+        argEvals(i).cachedEval()
+        i += 1
       }
+      comp.eval()
     }
   }
 
   override def evaluatorImpl(in: Settings) = new ComposedEvaluator(in)
 
-  abstract class ComposedDifferentiator(val wrt:Seq[Var[Dom]],
-                                         val input: Settings,
-                                         val error: Setting,
-                                         val gradientAccumulator: Settings) extends Differentiator {
+  abstract class ComposedDifferentiator(val wrt: Seq[Var[Dom]],
+                                        val input: Settings,
+                                        val error: Setting,
+                                        val gradientAccumulator: Settings) extends Differentiator {
 
 
-    def createArgError(a:ArgumentType) = {
+    def createArgError(a: ArgumentType) = {
       val result = a.domain.createSetting()
       result.setAdaptiveVectors(true)
       result.recordChangedOffsets = true
@@ -83,31 +69,32 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
     }
 
     val argDiffs = arguments.map(a => a.differentiatorImpl(wrt)(
-      input.linkedSettings(vars,a.vars),createArgError(a),gradientAccumulator.linkedSettings(vars,a.vars))).toArray
+      input.linkedSettings(vars, a.vars), createArgError(a), gradientAccumulator.linkedSettings(vars, a.vars))).toArray
     val argOutputs = Settings.fromSeq(argDiffs.map(_.output))
     val argErrors = Settings.fromSeq(argDiffs.map(_.error))
     val comp = composer2(argOutputs)
     val output = comp.output
-    val mappings = arguments.map(a => VariableMapping(a.vars,vars))
+    val mappings = arguments.map(a => VariableMapping(a.vars, vars))
 
     /**
      * update argErrors based on incoming error and current argOutputs (activations)
      */
-    def localBackProp()(implicit execution:Execution)
+    def localBackProp()(implicit execution: Execution)
 
-    def abortForward(index:Int) = false
-    def abortBackward(index:Int) = false
+    def abortForward(index: Int) = false
 
-    def forward()(implicit execution:Execution) = {
+    def abortBackward(index: Int) = false
+
+    def forward()(implicit execution: Execution) = {
       var i = 0
       while (i < size && !abortForward(i)) {
-        argDiffs(i).forward()
+        argDiffs(i).cachedForward()
         i += 1
       }
       comp.eval()
     }
 
-    def backward()(implicit execution:Execution) = {
+    def backward()(implicit execution: Execution) = {
       localBackProp()
       var i = 0
       while (i < size && !abortBackward(i)) {
@@ -182,8 +169,9 @@ trait NAry {
 }
 
 trait Unary extends NAry {
-  def argument:ArgumentType
-  def copy(arg:ArgumentType):Term[Dom]
+  def argument: ArgumentType
+
+  def copy(arg: ArgumentType): Term[Dom]
 
   def arguments = IndexedSeq(argument)
 

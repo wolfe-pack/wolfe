@@ -31,19 +31,19 @@ trait Term[+D <: Dom] extends TermHelper[D] with LegacyTerm[D] {
    * Is this term guaranteed to evaluate to the same value each it is called
    * @return true iff the evaluator always evaluates to the same value (over all executions)
    */
-  def isStatic:Boolean
+  def isStatic: Boolean
 
   def evaluatorImpl(in: Settings): Evaluator = ???
 
   def differentiatorImpl(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings): Differentiator =
     new EmptyDifferentiator(in, err, gradientAcc)
 
-  def maxMarginalizerImpl(wrt: Seq[Var[Dom]], observed: Seq[Var[Dom]])(input:Settings,inputMsgs:Msgs): MaxMarginalizer = {
+  def maxMarginalizerImpl(wrt: Seq[Var[Dom]], observed: Seq[Var[Dom]])(input: Settings, inputMsgs: Msgs): MaxMarginalizer = {
     //todo: this could be type safe, for example by adding the argmax method to the RichDoubleTerm
     val varying = vars filterNot observed.contains
     if (!domain.isDouble) sys.error("Argmax only supported for real valued terms")
     else if (varying.forall(_.domain.isDiscrete))
-      new ExhaustiveSearchMaxMarginalizer(this.asInstanceOf[DoubleTerm], wrt, observed,input,inputMsgs)
+      new ExhaustiveSearchMaxMarginalizer(this.asInstanceOf[DoubleTerm], wrt, observed, input, inputMsgs)
     else ???
   }
 
@@ -54,11 +54,68 @@ trait Term[+D <: Dom] extends TermHelper[D] with LegacyTerm[D] {
     else if (wrt.forall(_.domain.isDiscrete)) ??? else ???
   }
 
-  abstract class AbstractEvaluator(val input: Settings) extends ml.wolfe.term.Evaluator
+  trait Cached {
+    private var calls = 0
+
+    def useCached = isStatic && calls > 0
+
+    def cache[T](body: => Unit): Unit = {
+      if (!useCached) {
+        body
+      } else {
+        print("")
+      }
+      calls += 1
+    }
+  }
+
+  trait Evaluator extends ml.wolfe.term.Evaluator with Cached {
+
+    def cachedEval()(implicit execution: Execution): Unit = {
+      cache(eval())
+    }
+
+  }
+
+  trait Differentiator extends ml.wolfe.term.Differentiator {
+    val forwardCache = new Cached {}
+    val backwardCache = new Cached {}
+
+    def cachedForward()(implicit execution: Execution): Unit = {
+      forwardCache.cache(forward())
+    }
+
+    def cachedBackward()(implicit execution: Execution): Unit = {
+      backwardCache.cache(backward())
+    }
+
+
+  }
+
+  class ProxyEvaluator(val self: ml.wolfe.term.Evaluator) extends Evaluator {
+    val input = self.input
+    val output = self.output
+
+    def eval()(implicit execution: Execution) = self.eval()
+  }
+
+  class ProxyDifferentiator(val self: ml.wolfe.term.Differentiator) extends Differentiator {
+    val gradientAccumulator = self.gradientAccumulator
+    val error = self.error
+    val input = self.input
+    val output = self.output
+
+    def forward()(implicit execution: Execution) = self.forward()
+
+    def backward()(implicit execution: Execution) = self.backward()
+  }
+
+
+  abstract class AbstractEvaluator(val input: Settings) extends Evaluator
 
   abstract class AbstractDifferentiator(val input: Settings,
-                                         val error: Setting,
-                                         val gradientAccumulator: Settings) extends ml.wolfe.term.Differentiator
+                                        val error: Setting,
+                                        val gradientAccumulator: Settings) extends Differentiator
 
   class EmptyDifferentiator(in: Settings, err: Setting, gradientAcc: Settings) extends AbstractDifferentiator(in, err, gradientAcc) {
     val eval = evaluatorImpl(in)
@@ -70,8 +127,6 @@ trait Term[+D <: Dom] extends TermHelper[D] with LegacyTerm[D] {
 
     def backward()(implicit execution: Execution) {}
   }
-
-
 
 
 }
@@ -123,7 +178,7 @@ trait TermHelper[+D <: Dom] {
     val observed = vars.filter(v => v != wrt && v != target)
     val observedSettings = Dom.createSettings(observed, args)
     val incomingMsgs = Msgs(Seq(wrt.domain.toMsgs(incoming)))
-    val maxMarger = maxMarginalizerImpl(Seq(wrt),observed)(observedSettings,incomingMsgs)
+    val maxMarger = maxMarginalizerImpl(Seq(wrt), observed)(observedSettings, incomingMsgs)
     maxMarger.maxMarginals()(Execution(0))
     target.domain.toMarginals(maxMarger.outputMsgs(0))
   }
@@ -146,7 +201,6 @@ trait TermHelper[+D <: Dom] {
   }
 
 
-
   def gradient[V <: Dom](wrt: Var[V], args: Any*): wrt.domain.Value = {
     require(args.length == vars.length, s"You need as many arguments as there are free variables (${vars.length})")
     val gradient = createZeroSettings()
@@ -155,7 +209,6 @@ trait TermHelper[+D <: Dom] {
     val indexOfWrt = vars.indexOf(wrt)
     wrt.domain.toValue(gradient(indexOfWrt))
   }
-
 
 
   def createVariableSettings() = vars.map(_.domain.createSetting()).toArray
@@ -194,12 +247,10 @@ trait ProxyTerm[D <: Dom] extends Term[D] with NAry {
 
   def evaluatorOld() = self.evaluatorOld()
 
-
-  override def evaluatorImpl(in: Settings) = self.evaluatorImpl(in)
-
+  override def evaluatorImpl(in: Settings) = new ProxyEvaluator(self.evaluatorImpl(in))
 
   override def differentiatorImpl(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
-    self.differentiatorImpl(wrt)(in, err, gradientAcc)
+    new ProxyDifferentiator(self.differentiatorImpl(wrt)(in, err, gradientAcc))
 
   def differentiatorOld(wrt: Seq[Var[Dom]]) = self.differentiatorOld(wrt)
 
@@ -558,7 +609,6 @@ class SparseL2[T1 <: VectorTerm, T2 <: VectorTerm](val arg: T1, val mask: T2 = n
       //todo: calculate gradient for mask!
     }
   }
-
 
 
   override def differentiatorImpl(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
@@ -993,8 +1043,8 @@ class IntToDouble[T <: IntTerm](val int: T) extends ComposedDoubleTerm {
   def differentiatorOld(wrt: Seq[Var[Dom]]) = ???
 }
 
-case class Identity[D<:Dom, T <: Term[D]](self: T) extends ProxyTerm[D] {
-  def copy(args: IndexedSeq[ArgumentType]) = new Identity[D,T](args(0).asInstanceOf[T])
+case class Identity[D <: Dom, T <: Term[D]](self: T) extends ProxyTerm[D] {
+  def copy(args: IndexedSeq[ArgumentType]) = new Identity[D, T](args(0).asInstanceOf[T])
 
 }
 
@@ -1066,7 +1116,7 @@ class Implies(val arg1: BoolTerm, val arg2: BoolTerm) extends BinaryDiscreteOper
 }
 
 trait LegacyTerm[+D <: Dom] {
-  this:Term[D] =>
+  this: Term[D] =>
 
   /**
    * Variables may describe structured objects. Terms may only depend on parts of these structured objects. Atoms
@@ -1114,7 +1164,6 @@ trait LegacyTerm[+D <: Dom] {
     val indexOfWrt = vars.indexOf(wrt)
     gradientOld(args, wrt = Seq(wrt))(indexOfWrt).asInstanceOf[wrt.domain.Value]
   }
-
 
 
 }
