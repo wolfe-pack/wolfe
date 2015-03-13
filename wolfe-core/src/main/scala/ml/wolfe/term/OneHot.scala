@@ -33,7 +33,7 @@ class Indexed[T<:Term[Dom]](val value:T)(val index:Index) extends Composed[Discr
 
   def arguments = ???
 
-  def composer() = ???
+  def composerOld() = ???
 
   def differentiatorOld(wrt: Seq[Var[Dom]]) = ???
 

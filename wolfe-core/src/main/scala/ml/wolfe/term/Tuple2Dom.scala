@@ -124,6 +124,9 @@ trait ProductDom extends Dom {
     def copy(args: IndexedSeq[ArgumentType]) = new Field(args(0),domain,start)(fieldName)
 
     override def composer(args: Settings) = new Composer(args) {
+
+      //input(0).recordChangedOffsets = true
+
       def eval()(implicit execution: Execution) = {
         input(0).copyTo(output,start,Offsets.zero,domain.lengths)
       }
@@ -138,8 +141,7 @@ trait ProductDom extends Dom {
         }
       }
 
-    def composer() = ???
-
+    def composerOld() = ???
 
     def differentiatorOld(wrt: Seq[term.Var[Dom]]) = ???
 
@@ -148,7 +150,7 @@ trait ProductDom extends Dom {
 
   trait DomTermImpl extends super.DomTerm with Composed[dom.type] {
 
-    def composer() = new EvaluatorOld {
+    def composerOld() = new EvaluatorOld {
 
       val lengths = arguments.map(_.domain.lengths).toArray
 

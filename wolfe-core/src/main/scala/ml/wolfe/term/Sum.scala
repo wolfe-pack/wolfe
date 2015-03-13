@@ -13,7 +13,7 @@ case class Sum(arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm {
 
   def copy(args: IndexedSeq[ArgumentType]) = new Sum(args)
 
-  def composer() = new EvaluatorOld {
+  def composerOld() = new EvaluatorOld {
     def eval(inputs: Array[Setting], output: Setting) = {
       output.cont(0) = 0.0
       for (i <- 0 until inputs.length)
@@ -58,7 +58,7 @@ case class Sum(arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm {
     val argGradients = arguments.map(_.vars.map(_.domain.createZeroSetting()).toArray).toArray
     val argDiffs = arguments.map(createDifferentiator).toArray
     val argActivations = argDiffs.map(_.activation)
-    val comp = composer()
+    val comp = composerOld()
 
     def selectIndex(): Int
 
@@ -187,7 +187,7 @@ case class VarSeqSum[D <: TypedDom[Double], T <: Term[VarSeqDom[D]]](seq: T) ext
   }
 
 
-  def composer() = ???
+  def composerOld() = ???
 
   def differentiatorOld(wrt: Seq[Var[Dom]]) = new ComposedDifferentiatorOld {
     def withRespectTo = wrt
@@ -255,7 +255,7 @@ class VectorSum(val arguments: IndexedSeq[VectorTerm]) extends Composed[GenericV
 
   val domain = arguments.head.domain
 
-  def composer() = new EvaluatorOld {
+  def composerOld() = new EvaluatorOld {
     def eval(inputs: Array[Setting], output: Setting) = {
       if (output.vect(0) == null) output.vect(0) = new DenseTensor1(domain.dim)
       else output := 0.0

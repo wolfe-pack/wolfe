@@ -14,6 +14,8 @@ import scala.collection.mutable
  */
 trait Term[+D <: Dom] extends TermHelper[D] with LegacyTerm[D] {
 
+  term =>
+
   /**
    * The domain of the term. Evaluating the term will yield a value within this domain.
    */
@@ -25,7 +27,6 @@ trait Term[+D <: Dom] extends TermHelper[D] with LegacyTerm[D] {
    * @return the sequence of free variables in this term.
    */
   def vars: Seq[Var[Dom]]
-
 
   /**
    * Is this term guaranteed to evaluate to the same value each it is called
@@ -73,6 +74,7 @@ trait Term[+D <: Dom] extends TermHelper[D] with LegacyTerm[D] {
       cache(eval())
     }
 
+    override def toString = term.toString + ".evaluator"
   }
 
   trait Differentiator extends ml.wolfe.term.Differentiator with Cached {
@@ -85,6 +87,8 @@ trait Term[+D <: Dom] extends TermHelper[D] with LegacyTerm[D] {
     def optimizedBackward()(implicit execution: Execution): Unit = {
       if (needBackward) backward()
     }
+
+    override def toString = term.toString + ".differentiator"
 
 
   }
@@ -485,7 +489,7 @@ class DotProduct[T1 <: VectorTerm, T2 <: VectorTerm](val arg1: T1, val arg2: T2)
 
   def copy(args: IndexedSeq[ArgumentType]) = new DotProduct(args(0), args(1))
 
-  def composer() = new EvaluatorOld {
+  def composerOld() = new EvaluatorOld {
     def eval(inputs: Array[Setting], output: Setting) = {
       output.cont(0) = inputs(0).vect(0) dot inputs(1).vect(0)
     }
@@ -546,7 +550,7 @@ class SparseL2[T1 <: VectorTerm, T2 <: VectorTerm](val arg: T1, val mask: T2 = n
 
   def copy(args: IndexedSeq[ArgumentType]) = new DotProduct(args(0), args(1))
 
-  def composer() = new EvaluatorOld {
+  def composerOld() = new EvaluatorOld {
     def eval(inputs: Array[Setting], output: Setting) = {
       val w = inputs(0).vect(0)
       if (mask != null) {
@@ -648,7 +652,7 @@ class MatrixDotProduct[T1 <: Term[MatrixDom], T2 <: Term[MatrixDom]](val arg1: T
 
   def copy(args: IndexedSeq[ArgumentType]) = new MatrixDotProduct(args(0), args(1))
 
-  def composer() = new EvaluatorOld {
+  def composerOld() = new EvaluatorOld {
     def eval(inputs: Array[Setting], output: Setting) = {
       output.cont(0) = inputs(0).mats(0) dot inputs(1).mats(0)
     }
@@ -685,7 +689,7 @@ class VectorScaling[T1 <: VectorTerm, T2 <: DoubleTerm](val arg1: T1, arg2: T2) 
 
   override val domain: VectorDom = new VectorDom(arg1.domain.dim)
 
-  def composer() = new EvaluatorOld {
+  def composerOld() = new EvaluatorOld {
     def eval(inputs: Array[Setting], output: Setting) = {
       output.vect(0) = inputs(0).vect(0) * inputs(1).cont(0)
     }
@@ -718,7 +722,7 @@ class VectorConcatenation[T1 <: VectorTerm, T2 <: VectorTerm](val arg1: T1, val 
 
   override val domain: VectorDom = new VectorDom(arg1.domain.dim + arg2.domain.dim)
 
-  def composer() = new EvaluatorOld {
+  def composerOld() = new EvaluatorOld {
     def eval(inputs: Array[Setting], output: Setting) = {
       //fixme: slow!
       output.vect(0) = new DenseTensor1((inputs(0).vect(0).asSeq ++ inputs(1).vect(0).asSeq).toArray)
@@ -758,7 +762,7 @@ class MatrixVectorProduct[T1 <: MatrixTerm, T2 <: VectorTerm](val arg1: T1, val 
   def copy(args: IndexedSeq[ArgumentType]) =
     new MatrixVectorProduct(args(0).asInstanceOf[MatrixTerm], args(1).asInstanceOf[VectorTerm])
 
-  def composer() = new EvaluatorOld {
+  def composerOld() = new EvaluatorOld {
     def eval(inputs: Array[Setting], output: Setting) = {
       output.vect(0) = inputs(0).mats(0) * inputs(1).vect(0)
     }
@@ -819,7 +823,7 @@ class Div[T1 <: DoubleTerm, T2 <: DoubleTerm](val arg1: T1, val arg2: T2) extend
 
   def copy(args: IndexedSeq[ArgumentType]) = new Div(args(0), args(1))
 
-  def composer() = new EvaluatorOld {
+  def composerOld() = new EvaluatorOld {
     def eval(inputs: Array[Setting], output: Setting) = {
       output.cont(0) = inputs(0).cont(0) / inputs(1).cont(0)
     }
@@ -880,7 +884,7 @@ case class Product(arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm
 
   type ArgumentType = DoubleTerm
 
-  def composer() = new EvaluatorOld {
+  def composerOld() = new EvaluatorOld {
     def eval(inputs: Array[Setting], output: Setting) = {
       output.cont(0) = 1.0
       for (i <- 0 until inputs.length)
@@ -1002,7 +1006,7 @@ object Playground {
 
 
 class Iverson[T <: BoolTerm](val arg: T) extends UnaryTerm[T, DoubleDom] with ComposedDoubleTerm {
-  def composer() = new EvaluatorOld {
+  def composerOld() = new EvaluatorOld {
     def eval(inputs: Array[Setting], output: Setting) = {
       output.cont(0) = if (inputs(0).disc(0) == 0) 0.0 else 1.0
     }
@@ -1027,7 +1031,7 @@ class IntToDouble[T <: IntTerm](val int: T) extends ComposedDoubleTerm {
 
   def copy(args: IndexedSeq[ArgumentType]) = new IntToDouble(args(0))
 
-  def composer() = new EvaluatorOld {
+  def composerOld() = new EvaluatorOld {
     def eval(inputs: Array[Setting], output: Setting) = {
       output.cont(0) = inputs(0).disc(0)
     }
@@ -1063,7 +1067,7 @@ trait BinaryDiscreteOperator[D <: Dom, A <: Dom] extends Composed[D] {
 
   val arguments = IndexedSeq(arg1, arg2)
 
-  def composer() = new EvaluatorOld {
+  def composerOld() = new EvaluatorOld {
     def eval(inputs: Array[Setting], output: Setting) = {
       output.disc(0) = op(inputs(0).disc(0), inputs(1).disc(0))
     }

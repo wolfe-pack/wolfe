@@ -26,7 +26,7 @@ class VectorDoubleFun[T <: VectorTerm](val arg: T, fun: Double => Double, deriv:
     }
   }
 
-  def composer() = new EvaluatorOld {
+  def composerOld() = new EvaluatorOld {
     def eval(inputs: Array[Setting], output: Setting) = {
       output.vect(0) = inputs(0).vect(0).mapValues(fun, output.vect(0))
     }
@@ -63,7 +63,7 @@ class L1Norm[T <: VectorTerm](val arg:T) extends ComposedDoubleTerm {
 
   def copy(args: IndexedSeq[ArgumentType]) = new L1Norm(args(0))
 
-  def composer() = new EvaluatorOld {
+  def composerOld() = new EvaluatorOld {
 
     def eval(inputs: Array[Setting], output: Setting) = {
       output.cont(0) = inputs(0).vect(0).oneNorm

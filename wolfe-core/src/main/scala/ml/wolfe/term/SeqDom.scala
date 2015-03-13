@@ -110,7 +110,7 @@ class SeqDom[D <: Dom](val elementDom: D, val length: Int) extends Dom {
 
     def apply(index: => Int) = elements(index)
 
-    def composer() = new EvaluatorOld {
+    def composerOld() = new EvaluatorOld {
 
       def eval(inputs: Array[Setting], output: Setting) = {
         for (i <- 0 until inputs.length) {
@@ -174,7 +174,7 @@ class SeqApply[E <: Dom, S <: Term[SeqDom[E]], I <: Term[TypedDom[Int]]](val seq
 
   def copy(args: IndexedSeq[ArgumentType]) = ???
 
-  def composer() = new EvaluatorOld {
+  def composerOld() = new EvaluatorOld {
     def eval(inputs: Array[Setting], output: Setting) = {
       val index = inputs(1).disc(0)
       inputs(0).copyTo(output, domain.lengths, index, Offsets(), 0, domain.lengths)

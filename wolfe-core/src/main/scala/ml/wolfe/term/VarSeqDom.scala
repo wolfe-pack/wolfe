@@ -144,7 +144,7 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
       args(0).asInstanceOf[lengthDom.Term],
       args.drop(1).asInstanceOf[IndexedSeq[elementDom.Term]])
 
-    def composer() = new EvaluatorOld {
+    def composerOld() = new EvaluatorOld {
 
       def eval(inputs: Array[Setting], output: Setting) = {
         //todo: adapt
@@ -228,7 +228,7 @@ case class VarSeqLength[S <: Term[VarSeqDom[_]]](seq: S) extends Composed[TypedD
   val domain: TypedDom[Int] = seq.domain.lengthDom
 
 
-  def composer() = new EvaluatorOld {
+  def composerOld() = new EvaluatorOld {
     def eval(inputs: Array[Setting], output: Setting) = {
       output.disc(0) = inputs(0).disc(0)
     }
@@ -256,7 +256,7 @@ case class VarSeqApply[+E <: Dom, S <: Term[VarSeqDom[E]], I <: IntTerm](seq: S,
 
   def copy(args: IndexedSeq[ArgumentType]) = VarSeqApply[E,S,I](args(0).asInstanceOf[S],args(1).asInstanceOf[I])
 
-  def composer() = new EvaluatorOld {
+  def composerOld() = new EvaluatorOld {
     def eval(inputs: Array[Setting], output: Setting) = {
       val index = inputs(1).disc(0)
       inputs(0).copyTo(output, domain.lengths, index, Offsets(), 0, domain.lengths, srcOffsets = Offsets(discOff = 1))
@@ -351,7 +351,7 @@ class RangeTerm(start:IntTerm,end:IntTerm) extends Composed[VarSeqDom[TypedDom[I
     }
   }
 
-  def composer() = ???
+  def composerOld() = ???
   def differentiatorOld(wrt: Seq[Var[Dom]]) = ???
 
 }

@@ -15,7 +15,7 @@ class DoubleFun[T <: DoubleTerm](val arg: T, fun: Double => Double, deriv: Doubl
 
   def copy(args: IndexedSeq[ArgumentType]) = new DoubleFun[T](args(0), fun, deriv)
 
-  def composer() = new EvaluatorOld {
+  def composerOld() = new EvaluatorOld {
     def eval(inputs: Array[Setting], output: Setting) = {
       output.cont(0) = fun(inputs(0).cont(0))
     }
@@ -56,7 +56,7 @@ class DoubleBinaryFun[T <: DoubleTerm](val arg1: T, arg2:T, fun: (Double,Double)
   
   def copy(args: IndexedSeq[ArgumentType]) = new DoubleBinaryFun[T](args(0),args(1),fun, deriv)
 
-  def composer() = new EvaluatorOld {
+  def composerOld() = new EvaluatorOld {
     def eval(inputs: Array[Setting], output: Setting) = {
       output.cont(0) = fun(inputs(0).cont(0),inputs(1).cont(0))
     }

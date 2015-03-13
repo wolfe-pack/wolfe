@@ -7,7 +7,7 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
 
   self =>
 
-  def composer(): EvaluatorOld
+  def composerOld(): EvaluatorOld
 
   def size = arguments.length
 
@@ -16,7 +16,7 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
   lazy val isStatic = arguments forall (_.isStatic)
 
   def evaluatorOld() = new EvaluatorOld with ComposerOld {
-    val comp = composer()
+    val comp = composerOld()
 
     def eval(inputs: Array[Setting], output: Setting) = {
       for (i <- 0 until arguments.length) {
@@ -123,7 +123,7 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
     val argGradients = arguments.map(a => Array.ofDim[Setting](a.vars.length)).toArray
     val argDiffs = arguments.map(createDifferentiator).toArray
     val argActivations = argDiffs.map(_.activation)
-    val comp = composer()
+    val comp = composerOld()
 
     argErrors.foreach(_.setAdaptiveVectors(true))
 

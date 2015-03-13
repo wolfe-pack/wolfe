@@ -581,9 +581,9 @@ abstract class Buffer[T: ClassTag](val setting: Setting) {
         if (tgt.shouldRecord)
           tgt.changedIndices ++= Range(tgtPos, tgtPos + length)
       } else {
-        for (i <- changed()) {
-          tgt(tgtPos + i) = this(srcPos + i)
-          if (tgt.shouldRecord) tgt.changedIndices += tgtPos + i
+        for (i <- changed() if i >= srcPos && i < srcPos + length) {
+          tgt(tgtPos + i - srcPos) = this(i)
+          if (tgt.shouldRecord) tgt.changedIndices += tgtPos + i - srcPos
         }
       }
     }

@@ -45,13 +45,13 @@ object Argmaxer {
               delays: Map[Atom[Dom], Int] = Map.empty)(implicit initParams: Array[Setting] = Array()) = new ArgmaxerFactoryOld {
     def argmaxer(term: DoubleTerm, wrt: Seq[Var[Dom]]) = {
       require(wrt.forall(_.domain.isContinuous), "adagrad based argmaxer needs continuous variables")
-      new AdaGradArgmaxer(term, wrt, iterations, learningRate, delta, initParams, hook, delays = delays)
+      new AdaGradArgmaxerOld(term, wrt, iterations, learningRate, delta, initParams, hook, delays = delays)
     }
   }
 
   def adaGrad2(implicit params: AdaGradParameters) = new ArgmaxerFactory {
     def argmaxer(term: DoubleTerm, wrt: Seq[Var[Dom]])(obs: Settings, msgs: Msgs) =
-      new AdaGradArgmaxer2(term, wrt, obs, msgs)
+      new AdaGradArgmaxer(term, wrt, obs, msgs)
   }
 
   def maxProduct(implicit params: MaxProductParameters) = new ArgmaxerFactory {

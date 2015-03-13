@@ -40,7 +40,6 @@ class Memoized[D <: Dom, T <: Term[D]](val term:T) extends Term[D] {
     val output: Setting = cachedOut
   }
 
-  //todo: this should be memoized too (what does this mean?)
   override def differentiatorImpl(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
     new AbstractDifferentiator(in,err,gradientAcc,wrt) {
       val diff = uniqueDiffs.getOrElseUpdate(wrt, {
