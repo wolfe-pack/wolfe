@@ -14,7 +14,25 @@ class Memoized[D <: Dom, T <: Term[D]](val term:T) extends Term[D] {
   private val uniqueEval = term.evaluatorImpl(inputToUniqueEval)
   private val uniqueDiffs = new mutable.HashMap[Seq[Var[Dom]],Differentiator]()
   private var currentExecution: Execution = null
-  private val inputs2ValueInCurrentExecution = new mutable.HashMap[Any,Setting]
+  private val inputs2ValueInCurrentExecution = new mutable.HashMap[Any,CurrentSettingForInput]
+
+  class CurrentSettingForInput(val inputValue:Any) {
+
+    val output = domain.createSetting()
+    var needsUpdate = true
+
+    def updateIfNeeded(body: => Setting): Unit = {
+      if (needsUpdate) {
+        output := body
+        needsUpdate = false
+      }
+    }
+
+    def clear(): Unit = {
+      needsUpdate = true
+    }
+
+  }
 
   def isStatic = term.isStatic
 
@@ -24,17 +42,16 @@ class Memoized[D <: Dom, T <: Term[D]](val term:T) extends Term[D] {
     def eval()(implicit execution:Execution) = {
       val inputValue = (input zip vars) map {case(i,v) => v.domain.toValue(i)}
       if (currentExecution == null || execution.num != currentExecution.num) {
-        inputs2ValueInCurrentExecution.clear()
+        inputs2ValueInCurrentExecution.values foreach (_.clear())
         currentExecution = execution
       }
-      val outputSetting = inputs2ValueInCurrentExecution.getOrElseUpdate(inputValue, {
+      val outputSetting = inputs2ValueInCurrentExecution.getOrElseUpdate(inputValue, new CurrentSettingForInput(inputValue))
+      outputSetting.updateIfNeeded {
         inputToUniqueEval := input
         uniqueEval.eval()
-        val setting = domain.createSetting()
-        setting := uniqueEval.output
-        setting
-      })
-      cachedOut := outputSetting
+        uniqueEval.output
+      }
+      cachedOut := outputSetting.output
     }
 
     val output: Setting = cachedOut
@@ -53,17 +70,16 @@ class Memoized[D <: Dom, T <: Term[D]](val term:T) extends Term[D] {
       def forward()(implicit execution: Execution) = {
         val inputValue = (input zip vars) map {case(i,v) => v.domain.toValue(i)}
         if (currentExecution == null || execution.num != currentExecution.num) {
-          inputs2ValueInCurrentExecution.clear()
+          inputs2ValueInCurrentExecution.values foreach (_.clear())
           currentExecution = execution
         }
-        val outputSetting = inputs2ValueInCurrentExecution.getOrElseUpdate(inputValue, {
+        val outputSetting = inputs2ValueInCurrentExecution.getOrElseUpdate(inputValue, new CurrentSettingForInput(inputValue))
+        outputSetting.updateIfNeeded {
           diff.input := input
           diff.forward()
-          val setting = domain.createSetting()
-          setting := diff.output
-          setting
-        })
-        cachedOut := outputSetting
+          diff.output
+        }
+        cachedOut := outputSetting.output
       }
 
       def backward()(implicit execution: Execution) = {

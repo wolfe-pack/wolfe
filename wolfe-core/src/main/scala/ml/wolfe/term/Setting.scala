@@ -118,7 +118,7 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
       flagAllChanged()
     }
 
-    def resetToZero(offset: Int) = array(offset) := 0
+    def resetToZero(offset: Int) = array(offset).zero() // := 0
 
     override def update(index: Int, value: FactorieVector): Unit = {
       if (this(index) == null) {
