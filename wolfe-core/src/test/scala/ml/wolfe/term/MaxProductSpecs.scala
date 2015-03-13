@@ -14,7 +14,7 @@ class MaxProductSpecs extends WolfeSpec {
   import Argmaxer._
 
   "A MaxProduct algorithm" should {
-    "optimize a linear chain objective" ignore {
+    "optimize a linear chain objective" in {
       val n = 5
       val vars = Range(0, n) map (i => Bools.variable("y" + i))
       val length = Ints(0 until n).Var
@@ -34,7 +34,10 @@ class MaxProductSpecs extends WolfeSpec {
 
       argmaxer.argmax()(Execution(0))
 
-      println(argmaxer.result.toValues(vars map (_.domain)))
+      val result = argmaxer.result.toValues(vars map (_.domain))
+
+      println(result)
+      result should be (vars map (_ => true))
     }
 
     "optimize a linear chain objective in high level code" ignore {

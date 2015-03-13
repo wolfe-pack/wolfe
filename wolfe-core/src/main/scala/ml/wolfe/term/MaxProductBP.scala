@@ -61,7 +61,7 @@ class MaxProductBP(val objRaw: DoubleTerm,
 
   def addNodes(vars: Seq[Variable]): Unit = {
     for (v <- vars) {
-      fg.addNode(v, new NodeContent(v.domain.createMsg()))
+      fg.addNode(v, new NodeContent(v.domain.createZeroMsg()))
     }
   }
 
@@ -96,7 +96,7 @@ class MaxProductBP(val objRaw: DoubleTerm,
 
   def updateN2Fs(edge:fg.Edge): Unit = {
     for (e <- edge.factor.activeEdges; if e != edge) {
-      e.content.n2f := Double.NegativeInfinity
+      e.content.n2f := 0.0
       for (o <- e.node.activeEdges; if o != e) {
         e.content.n2f += o.content.f2n
       }
@@ -108,7 +108,7 @@ class MaxProductBP(val objRaw: DoubleTerm,
   }
 
   def updateNodeBelief(node:fg.Node): Unit = {
-    node.content.belief := Double.NegativeInfinity
+    node.content.belief := 0.0
     for (e <- node.activeEdges) {
       node.content.belief += e.content.f2n
     }
@@ -122,6 +122,7 @@ class MaxProductBP(val objRaw: DoubleTerm,
       for (e <- fg.activeEdges) {
         updateN2Fs(e)
         updateF2N(e)
+//        println(e.content.f2n)
       }
     }
 

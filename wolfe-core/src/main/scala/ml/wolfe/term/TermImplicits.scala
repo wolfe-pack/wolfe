@@ -360,11 +360,11 @@ trait MathImplicits {
   implicit def intToRichIntTerm(int:Int):RichIntTerm = new RichIntTerm(Dom.ints.Const(int))
 
   implicit class RichIntTerm(val term: IntTerm) {
-    def +(that: IntTerm) = Dom.ints.own(new BinaryIntFun(term, that, _ + _))
+    def +(that: IntTerm) = Dom.ints.own(new BinaryIntFun(term, that, _ + _, "+"))
 
-    def -(that: IntTerm) = new BinaryIntFun(term, that, _ - _)
+    def -(that: IntTerm) = new BinaryIntFun(term, that, _ - _, "-")
 
-    def *(that: IntTerm) = new BinaryIntFun(term, that, _ * _)
+    def *(that: IntTerm) = new BinaryIntFun(term, that, _ * _, "*")
 
     def until(end:IntTerm) = new RangeTerm(term,end)
 

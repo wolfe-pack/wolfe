@@ -1005,7 +1005,7 @@ object Playground {
 }
 
 
-class Iverson[T <: BoolTerm](val arg: T) extends UnaryTerm[T, DoubleDom] with ComposedDoubleTerm {
+case class Iverson[T <: BoolTerm](val arg: T) extends UnaryTerm[T, DoubleDom] with ComposedDoubleTerm {
   def composerOld() = new EvaluatorOld {
     def eval(inputs: Array[Setting], output: Setting) = {
       output.cont(0) = if (inputs(0).disc(0) == 0) 0.0 else 1.0
@@ -1022,6 +1022,8 @@ class Iverson[T <: BoolTerm](val arg: T) extends UnaryTerm[T, DoubleDom] with Co
   def copy(args: IndexedSeq[ArgumentType]) = new Iverson(args(0))
 
   def differentiatorOld(wrt: Seq[Var[Dom]]) = ???
+
+  override def toString = s"I($arg)"
 }
 
 class IntToDouble[T <: IntTerm](val int: T) extends ComposedDoubleTerm {
@@ -1065,6 +1067,10 @@ trait BinaryDiscreteOperator[D <: Dom, A <: Dom] extends Composed[D] {
 
   def op(a1: Int, a2: Int): Int
 
+  def name:String
+
+  override def toString = s"$arg1 $name $arg2"
+
   val arguments = IndexedSeq(arg1, arg2)
 
   def composerOld() = new EvaluatorOld {
@@ -1091,6 +1097,8 @@ trait BinaryDiscreteOperator[D <: Dom, A <: Dom] extends Composed[D] {
     def arg2 = args(1)
 
     def op(a1: Int, a2: Int) = self.op(a1, a2)
+
+    def name = self.name
   }
 }
 
@@ -1099,24 +1107,35 @@ class DiscreteEquals[T](var arg1: DiscreteTerm[T], var arg2: DiscreteTerm[T]) ex
   val domain = Dom.bools
 
   def op(a1: Int, a2: Int) = if (a1 == a2) 1 else 0
+
+  def name = "==="
 }
 
 class And(val arg1: BoolTerm, val arg2: BoolTerm) extends BinaryDiscreteOperator[BoolDom, BoolDom] {
   def op(a1: Int, a2: Int) = if (a1 != 0 && a2 != 0) 1 else 0
 
   val domain = Dom.bools
+
+  def name = "&&"
+
 }
 
 class Or(val arg1: BoolTerm, val arg2: BoolTerm) extends BinaryDiscreteOperator[BoolDom, BoolDom] {
   def op(a1: Int, a2: Int) = if (a1 != 0 || a2 != 0) 1 else 0
 
   val domain = Dom.bools
+
+  def name = "||"
+
 }
 
 class Implies(val arg1: BoolTerm, val arg2: BoolTerm) extends BinaryDiscreteOperator[BoolDom, BoolDom] {
   def op(a1: Int, a2: Int) = if (a1 == 0 || a2 != 0) 1 else 0
 
   val domain = Dom.bools
+
+  def name = "-->"
+
 }
 
 trait LegacyTerm[+D <: Dom] {

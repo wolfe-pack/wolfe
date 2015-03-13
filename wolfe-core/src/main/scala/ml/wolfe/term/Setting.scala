@@ -447,7 +447,7 @@ class Msg(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMats: Int = 0
 
   final def +=(value: Msg): Unit = {
     for (i <- 0 until disc.length) {
-      incr(value.disc(i).msg,disc(i).msg)
+      incr(disc(i).msg,value.disc(i).msg)
     }
     for (i <- 0 until cont.length) {
       cont(i).mean += value.cont(i).mean
