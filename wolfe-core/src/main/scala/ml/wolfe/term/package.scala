@@ -11,6 +11,8 @@ package object term {
   type Constant[D <: Dom] = D#Constant
   type AnyVar = Var[Dom]
   type AnyTerm = Term[Dom]
+  type AnyAtom = Atom[Dom]
+  type AnyGroundAtom = GroundAtom[Dom]
   type AnySeqDom = VarSeqDom[Dom]
   type Mem = Memoized[Dom, AnyTerm]
   type SampleTerm = RangeDom#SampleTerm

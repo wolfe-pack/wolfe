@@ -20,8 +20,7 @@ object Transformer {
   }
 
   def clean(term: AnyTerm) = depthFirst(term) {
-    case o: OwnedTerm[_] =>
-      o.self
+    case o: OwnedTerm[_] => o.self
   }
 
   def flattenSums(term: AnyTerm) = depthFirst(term) {
@@ -33,9 +32,9 @@ object Transformer {
     })
   }
 
-  def groundVariables(toGround:Seq[AnyVar])(term:AnyTerm) = depthFirst(term) {
-    case v:Var[_] if toGround.contains(v) => VarAtom(v)
-    case VarSeqApply(a:Atom[_],i) => SeqAtom[Dom,VarSeqDom[Dom]](a.asInstanceOf[Atom[VarSeqDom[Dom]]],i)
+  def groundVariables(toGround: Seq[AnyVar])(term: AnyTerm) = depthFirst(term) {
+    case v: Var[_] if toGround.contains(v) => VarAtom(v)
+    case VarSeqApply(a: Atom[_], i) => SeqAtom[Dom, VarSeqDom[Dom]](a.asInstanceOf[Atom[VarSeqDom[Dom]]], i)
   }
 
   def groundSums(term: AnyTerm) = depthFirst(term) {
@@ -56,8 +55,8 @@ object Transformer {
         //doubleTerm.asInstanceOf[DoubleTerm]
       }
       val sumArgs = VarSeq(length, doubleTerms)
-      sum(doubleTerms,length)
-      //varSeqSum[Term[VarSeqDom[TypedDom[Double]]]](sumArgs)
+      sum(doubleTerms, length)
+    //varSeqSum[Term[VarSeqDom[TypedDom[Double]]]](sumArgs)
   }
 
 }
@@ -66,28 +65,28 @@ object Traversal {
 
 
   trait UniqueSampleTerm {
-    def term:SampleTerm
+    def term: SampleTerm
   }
-  case class Alone(term:SampleTerm, id:String = java.util.UUID.randomUUID.toString) extends UniqueSampleTerm
-  case class InMem(term:SampleTerm, mem:Mem) extends UniqueSampleTerm
+
+  case class Alone(term: SampleTerm, id: String = java.util.UUID.randomUUID.toString) extends UniqueSampleTerm
+
+  case class InMem(term: SampleTerm, mem: Mem) extends UniqueSampleTerm
 
   def uniqueSampleTerms(term: AnyTerm): List[UniqueSampleTerm] = {
     term match {
       case m: Memoized[_, _] =>
         val children = uniqueSampleTerms(m.term)
         for (c <- children) yield c match {
-          case Alone(t,_) => InMem(t,m.asInstanceOf[Mem])
+          case Alone(t, _) => InMem(t, m.asInstanceOf[Mem])
           case t => t
         }
       case s: SampleTerm => Alone(s) :: Nil
-      case n:NAry => n.arguments.toList.flatMap(a => uniqueSampleTerms(a)).distinct
+      case n: NAry => n.arguments.toList.flatMap(a => uniqueSampleTerms(a)).distinct
       case _ => Nil
     }
   }
 
-  def distinctSampleCount(term:AnyTerm) = uniqueSampleTerms(term).map(_.term.domain.domainSize).product
-
-  
+  def distinctSampleCount(term: AnyTerm) = uniqueSampleTerms(term).map(_.term.domain.domainSize).product
 
 
 }

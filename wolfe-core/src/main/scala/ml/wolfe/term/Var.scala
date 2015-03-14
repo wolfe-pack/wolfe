@@ -1,7 +1,5 @@
 package ml.wolfe.term
 
-import scala.collection.mutable
-
 /**
  * @author riedel
  */
@@ -38,35 +36,82 @@ trait Var[+D <: Dom] extends Term[D] {
 
 trait Atom[+D <: Dom] extends Var[D] {
 
-  val name = toString
+  self =>
 
-  def id()(implicit execution: Execution):Any
+  trait Grounder {
+    def ground()(implicit execution: Execution): GroundAtom[D]
+  }
+
+  def varsToGround: Seq[AnyVar]
+
+  def grounder(settings: Settings): Grounder
+
+  def owner: AnyVar
 
 }
 
-case class VarAtom[D<:Dom](variable:Var[D]) extends Atom[D] {
+trait GroundAtom[+D <: Dom] extends Atom[D] {
+  self =>
+  def offsets: Offsets
+
+  def varsToGround = Nil
+
+  def grounder(settings: Settings) = new Grounder {
+    def ground()(implicit execution: Execution) = self
+  }
+}
+
+case class VarAtom[D <: Dom](variable: Var[D]) extends GroundAtom[D] {
+
+  def offsets = Offsets.zero
+
   val domain = variable.domain
 
-  def id()(implicit execution: Execution) = variable
+  def owner = variable
+
+  def name = variable.name
 }
 
-case class _1Atom[D <: Dom](parent:Atom[Tuple2Dom[D,_]]) extends Atom[D] {
-  val domain = parent.domain.dom1
-  def id()(implicit execution: Execution) = (parent.id(),1)
+//case class _1Atom[D <: Dom](parent:Atom[Tuple2Dom[D,_]]) extends Atom[D] {
+//  val domain = parent.domain.dom1
+//
+//}
+//case class _2Atom[D <: Dom](parent:Atom[Tuple2Dom[_,D]]) extends Atom[D] {
+//  val domain = parent.domain.dom2
+//
+//}
 
+case class SeqGroundAtom[E <: Dom, S <: VarSeqDom[E]](seq: GroundAtom[S], index: Int) extends GroundAtom[E] {
+  val domain = seq.domain.elementDom
+
+  val offsets = seq.offsets + domain.lengths * index
+
+  def owner = seq.owner
+
+  def name = toString
 }
-case class _2Atom[D <: Dom](parent:Atom[Tuple2Dom[_,D]]) extends Atom[D] {
-  val domain = parent.domain.dom2
-  def id()(implicit execution: Execution) = (parent.id(),2)
 
-}
-
-case class SeqAtom[E <: Dom, S <: VarSeqDom[E]](seq:Atom[S],index:IntTerm) extends Atom[E] {
+case class SeqAtom[E <: Dom, S <: VarSeqDom[E]](seq: Atom[S], index: IntTerm) extends Atom[E] {
 
   val domain = seq.domain.elementDom
-  def id()(implicit execution: Execution) = (seq.id(),2)
+  val varsToGround = (seq.varsToGround ++ index.vars).distinct
 
+  def grounder(settings: Settings) = {
+    new Grounder {
+      val seqGrounder = seq.grounder(settings.linkedSettings(varsToGround, seq.varsToGround))
+      val indexEval = index.evaluatorImpl(settings.linkedSettings(varsToGround, index.vars))
 
+      def ground()(implicit execution: Execution) = {
+        val parent = seqGrounder.ground()
+        indexEval.eval()
+        val groundIndex = indexEval.output.disc(0)
+        SeqGroundAtom[E,S](parent,groundIndex)
+      }
+    }
+  }
+  def name = toString
+
+  def owner = seq.owner
 }
 
 

@@ -26,7 +26,7 @@ trait Term[+D <: Dom] extends TermHelper[D]  {
    * of arguments to be passed into the evaluation methods.
    * @return the sequence of free variables in this term.
    */
-  def vars: Seq[Var[Dom]]
+  def vars: Seq[AnyVar]
 
   /**
    * Is this term guaranteed to evaluate to the same value each it is called

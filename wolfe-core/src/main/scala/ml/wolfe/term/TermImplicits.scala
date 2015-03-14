@@ -338,14 +338,7 @@ trait MathImplicits {
 
   }
 
-
-  def argmax[D <: Dom](dom: D)(obj: dom.Var => DoubleTerm): Argmax[dom.type] = {
-    val variable = dom.variable("_hidden")
-    val term = obj(variable)
-    new Argmax[dom.type](term, variable)
-  }
-
-  def argmax2[D <: Dom](dom: D)(obj: dom.Var => DoubleTerm): Argmax2[dom.type] = {
+  def argmax[D <: Dom](dom: D)(obj: dom.Var => DoubleTerm): Argmax2[dom.type] = {
     val variable = dom.variable("_hidden")
     val term = obj(variable)
     new Argmax2[dom.type](term, variable)

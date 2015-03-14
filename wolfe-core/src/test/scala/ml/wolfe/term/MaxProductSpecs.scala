@@ -48,7 +48,8 @@ class MaxProductSpecs extends WolfeSpec {
           sum(0 until length - 1) { i => I(y(i) <-> y(i + 1))}
       }
       val mpParams = MaxProductParameters(10)
-      val yStar = argmax2(Y)(y => model(4)(y) argmaxBy maxProduct(mpParams))
+      val yStar = argmax(Y)(y => model(5)(y) argmaxBy maxProduct(mpParams)).eval()
+      println(yStar)
     }
 
     "optimize a linear chain in a perceptron loss" ignore {
@@ -81,7 +82,7 @@ class MaxProductSpecs extends WolfeSpec {
 
       def llStochastic(w: Weights.Term) = shuffled(train) { i => instanceLL(i.x, i.y)(w)} argmaxBy adaGrad2(adaParams)
 
-      val wStar = argmax2(Weights)(ll)
+      val wStar = argmax(Weights)(ll)
 
 
     }
