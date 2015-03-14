@@ -28,6 +28,5 @@ package object term {
   type BoolTerm = TypedTerm[Boolean]
   type DiscreteTerm[T] = Term[GenericDiscreteDom[T]]
 //  type IntTerm = DiscreteTerm[Int]
-  type DoubleSeqDom = SeqDom[DoubleDom]
 
 }
