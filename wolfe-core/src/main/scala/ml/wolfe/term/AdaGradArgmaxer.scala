@@ -10,7 +10,6 @@ case class AdaGradParameters(iterations: Int,
                              initParams: Settings = new Settings(0),
                              epochHook: (IndexedSeq[Any], Int) => String = null,
                              adaptiveVectors: Boolean = true,
-                             delays: Map[AtomOld[Dom], Int] = Map.empty,
                              optimizeTerm: Boolean = false)
 
 /**

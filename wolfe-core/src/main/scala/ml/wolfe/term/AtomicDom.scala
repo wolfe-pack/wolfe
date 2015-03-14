@@ -60,19 +60,15 @@ trait GenericVectorDom extends AtomicDom {
 
   def zero = new DenseTensor1(dim, 0.0)
 
-  def dynConst(value: Dynamic[Value]) = new DynamicConstant(value)
-
   def Term(values: Double*) = {
     require(values.size == dim)
     Const(new DenseVector(values.toArray))
   }
 
-  trait DomVar extends AtomOld[dom.type] with DomTerm with super.DomVar {
-    def ranges = Ranges(Offsets(0, 0, offset, 0), Offsets(0, 0, offset + 1, 0))
+  trait DomVar extends DomTerm with super.DomVar {
   }
 
   case class StaticVectorVar(name: String, owner: term.Var[Dom], offset: Int) extends DomVar {
-    override val ranges = super.ranges
   }
 
 
@@ -91,9 +87,9 @@ class VectorDom(val dim: Int) extends GenericVectorDom {
 class UnitVectorDom(val dim: Int) extends GenericVectorDom {
   dom =>
 
-  trait UnitVectorVar extends AtomOld[dom.type] {
-    override def projectValue(setting: Setting) = {
-      setting.vect(offset).normalize()
+  trait UnitVectorVar {
+    def projectValue(setting: Setting) = {
+//      setting.vect(offset).normalize()
     }
   }
 
@@ -145,11 +141,9 @@ class MatrixDom(val dim1: Int, dim2: Int) extends AtomicDom {
   def zero = new DenseTensor2(dim1, dim2, 0.0)
 
   case class StaticMatrixVar(name: String, owner: term.Var[Dom], offset: Int) extends DomVar {
-    override val ranges = super.ranges
   }
 
-  trait DomVar extends DomTerm with AtomOld[dom.type] with super.DomVar {
-    def ranges = Ranges(Offsets(0, 0, 0, offset), Offsets(0, 0, 0, offset + 1))
+  trait DomVar extends DomTerm with super.DomVar {
   }
 
 }
@@ -207,22 +201,12 @@ class DoubleDom extends AtomicDom {
 
   def zero = 0.0
 
-  trait DomVar extends AtomOld[dom.type] with super.DomVar {
+  trait DomVar extends super.DomVar {
     self =>
-    def ranges = Ranges(Offsets(0, offset, 0, 0), Offsets(0, offset + 1, 0, 0))
 
-    //val domain:self.type = self
-    override def argmaxerOld(wrt: Seq[term.Var[Dom]]) = new ArgmaxerOld {
-      val contained = wrt.contains(self)
-
-      def argmax(observed: Array[Setting], msgs: Array[Msg], result: Array[Setting]) = {
-        result(0).cont(0) = if (contained) Double.PositiveInfinity else observed(0).cont(0)
-      }
-    }
   }
 
   case class StaticDoubleVar(name: String, owner: term.Var[Dom], offset: Int) extends Var with DomTerm {
-    override val ranges = super.ranges
   }
 
 }
@@ -278,12 +262,10 @@ trait GenericDiscreteDom[T] extends AtomicDom {
     def offset = offsets.discOff
   }
 
-  trait DomVar extends AtomOld[dom.type] with super.DomVar {
-    def ranges = Ranges(Offsets(offset, 0, 0, 0), Offsets(offset + 1, 0, 0, 0))
+  trait DomVar extends super.DomVar {
   }
 
   case class StaticDiscVar(name: String, owner: term.Var[Dom], offset: Int) extends DomVar {
-    override val ranges = super.ranges
   }
 
 
@@ -338,11 +320,6 @@ case class RangeDom(values: Range) extends GenericDiscreteDom[Int] {
 
     def vars = Seq.empty
 
-    def atomsIterator = ???
-
-    def evaluatorOld() = ???
-
-    def differentiatorOld(wrt: Seq[term.Var[Dom]]) = ???
   }
 
   def uniform(implicit random: Random) = new SampleUniform()

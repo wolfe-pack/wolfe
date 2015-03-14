@@ -16,7 +16,7 @@ object CaseClassDomScratch {
   def main(args: Array[String]) {
     val Bs = B.Values(A.Values(Discretes(1,2)))
     val test = Bs.Const(B(A(2)))
-    println(test.evalOld())
+    println(test.eval())
   }
 
 

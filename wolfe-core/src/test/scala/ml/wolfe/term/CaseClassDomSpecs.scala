@@ -87,7 +87,7 @@ class CaseClassDomSpecs extends WolfeSpec {
     "create a constant using toTerm" in {
       implicit val worlds = World.Values(Bools, Doubles)
       val const = World(true, 0.5).toConst
-      const.rain.evalOld() should be(true)
+      const.rain.eval() should be(true)
     }
 
     "create a static variable" in {
@@ -113,7 +113,7 @@ class CaseClassDomSpecs extends WolfeSpec {
       @domain case class Wrapped(vector: FactorieVector)
       val X = Wrapped.Values(Vectors(2))
       val x = X.Var
-      x.evalOld(Wrapped(vector(1, 2))).vector should equal(vector(1, 2))
+      x.eval(Wrapped(vector(1, 2))).vector should equal(vector(1, 2))
     }
 
     "return all case class values as iterable" in {

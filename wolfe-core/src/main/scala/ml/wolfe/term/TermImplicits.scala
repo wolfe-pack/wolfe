@@ -26,8 +26,6 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
 
   implicit def domToIterable(dom: Dom): Iterable[dom.Value] = dom.toIterable
 
-  def seqs[D <: Dom](elements: D, length: Int): SeqDom[elements.type] = new SeqDom[elements.type](elements, length)
-
   def Seqs[D <: Dom](elements: D, minLength: Int, maxLength: Int): VarSeqDom[elements.type] =
     new VarSeqDom[elements.type](elements, maxLength, minLength)
 
@@ -61,7 +59,7 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
   }
 
 
-  implicit def toConvertable[T](value:T)(implicit domain: TypedDom[T]) = new ConvertableToTerm3[T,domain.type](value)(domain)
+  implicit def toConvertable[T](value:T)(implicit domain: TypedDom[T]): ConvertableToTerm3[T, domain.type] = new ConvertableToTerm3[T,domain.type](value)(domain)
 
   implicit class RichRange(values: Range) {
     def toDom = new RangeDom(values)
@@ -70,12 +68,6 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
   implicit class RichSeq[T](values: Seq[T]) {
     def toDom = new DiscreteDom[T](values.toIndexedSeq)
     def toConst(implicit dom:TypedDom[T]) = fixedLengthSeq[T](values)
-  }
-
-  def seq[E <: Dom](dom: SeqDom[E])(elems: dom.elementDom.Term*): dom.SeqDomTermImpl = new dom.SeqDomTermImpl {
-    def elements = elems.toIndexedSeq
-
-    def copy(args: IndexedSeq[ArgumentType]) = seq(dom)(args: _*)
   }
 
 
@@ -97,16 +89,6 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
     //    new VarSeqConstructor[D](length, args)
   }
 
-  def stochastic[T](gen: Dynamic[T])(arg: Dynamic[T] => DoubleTerm) = {
-    val term = arg(gen)
-    new DynamicTerm[T] {
-      def generator: Dynamic[T] = gen
-
-      def self: DoubleTerm = term
-      def copy(args: IndexedSeq[ArgumentType]) = ???
-
-    }
-  }
 
 
   //implicit def seqToConstant[T,D<:TypedDom[T]](seq:IndexedSeq[T])(implicit dom:SeqDom[D]):dom.TermType = dom.const(seq)
@@ -140,13 +122,6 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
 
   implicit class RichDiscreteTerm[T](term: DiscreteTerm[T]) {
     def ===(that: DiscreteTerm[T]) = new DiscreteEquals(term, that)
-  }
-
-  implicit class RichTermToType[D <: Dom](val term: Term[D]) {
-    def typed[A <: Dom](dom: A): dom.Value => term.domain.Value = {
-      require(term.vars.size == 1 && term.vars.head.domain == dom)
-      (a: dom.Value) => term.evalOld(Seq(a): _*)
-    }
   }
 
   implicit class RichToLog[T <: Term[Dom]](val term:T) {
@@ -330,15 +305,6 @@ trait MathImplicits {
 
     def unary_- = term * (-1.0)
 
-    def argmaxBy(factory: ArgmaxerFactoryOld) = new ProxyTerm[TypedDom[Double]] {
-      def self = term
-
-      override def argmaxerOld(wrt: Seq[Var[Dom]]) = factory.argmaxer(term, wrt)
-
-      def copy(args: IndexedSeq[ArgumentType]) = ???
-
-    }
-
     def argmaxBy(factory: ArgmaxerFactory) = new ProxyTerm[TypedDom[Double]] {
       def self = term
 
@@ -443,8 +409,6 @@ trait MathImplicits {
   implicit def vectToConstant(d: FactorieVector): Constant[VectorDom] = Vectors(d.dim1).Const(d)
 
   implicit def vectToConstantWithDom(d: FactorieVector)(implicit dom: VectorDom): dom.Term = dom.Const(d)
-
-  implicit def dynVectToConstantWithDom(d: Dynamic[FactorieVector])(implicit dom: VectorDom): dom.Term = dom.dynConst(d)
 
   implicit def matToConstant(d: FactorieMatrix): Constant[MatrixDom] = Matrices(d.dim1, d.dim2).Const(d)
 

@@ -101,65 +101,15 @@ trait Dom {
     def isStatic = true
 
     val vars      = Seq.empty
-    val evaluatorOld = new EvaluatorOld {
-      val result = domain.toSetting(value.asInstanceOf[domain.Value])
-
-      def eval(inputs: Array[Setting], output: Setting) = {
-        output := result
-      }
-    }
-
 
     override def evaluatorImpl(in: Settings) = new AbstractEvaluator(in) {
       def eval()(implicit execution: Execution) {}
       val output = domain.toSetting(value.asInstanceOf[domain.Value])
     }
 
-    def atomsIterator = Iterator.empty
-
-    def differentiatorOld(wrt: Seq[term.Var[Dom]]) = new DifferentiatorOld {
-      val result = domain.toSetting(value.asInstanceOf[domain.Value])
-
-      def forwardProp(current: Array[Setting]) = activation := result
-
-      def term = self
-
-      def withRespectTo = wrt
-
-      def backProp(error: Setting, gradient: Array[Setting]) = {}
-    }
-
     override def toString = value.toString
   }
 
-  class DynamicConstant(val value: Dynamic[Value]) extends DomTerm {
-    self =>
-
-    def isStatic = false
-
-    val vars      = Seq.empty
-    val evaluatorOld = new EvaluatorOld {
-
-      def eval(inputs: Array[Setting], output: Setting) = {
-        domain.copyValue(value.value(),output)
-      }
-    }
-
-    def atomsIterator = Iterator.empty
-
-    def differentiatorOld(wrt: Seq[term.Var[Dom]]) = new DifferentiatorOld {
-
-      def forwardProp(current: Array[Setting]) = {
-        domain.copyValue(value.value(),activation)
-      }
-
-      def term = self
-
-      def withRespectTo = wrt
-
-      def backProp(error: Setting, gradient: Array[Setting]) = {}
-    }
-  }
 
 
   import scala.language.implicitConversions

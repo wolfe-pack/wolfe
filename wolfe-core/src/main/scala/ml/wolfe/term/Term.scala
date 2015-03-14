@@ -12,7 +12,7 @@ import scala.collection.mutable
  * optimize or marginalize the term with respect to some variables.
  * @tparam D the type of domain this term produces values in.
  */
-trait Term[+D <: Dom] extends TermHelper[D] with LegacyTerm[D] {
+trait Term[+D <: Dom] extends TermHelper[D]  {
 
   term =>
 
@@ -96,7 +96,6 @@ trait Term[+D <: Dom] extends TermHelper[D] with LegacyTerm[D] {
   class ProxyEvaluator(val self: ml.wolfe.term.Evaluator) extends Evaluator {
     val input = self.input
     val output = self.output
-
     def eval()(implicit execution: Execution) = self.eval()
   }
 
@@ -107,9 +106,7 @@ trait Term[+D <: Dom] extends TermHelper[D] with LegacyTerm[D] {
     val output = self.output
 
     def forward()(implicit execution: Execution) = self.forward()
-
     def backward()(implicit execution: Execution) = self.backward()
-
     def withRespectTo = self.withRespectTo
   }
 
@@ -188,12 +185,12 @@ trait TermHelper[+D <: Dom] {
   }
 
   def argmax[V <: Dom](wrt: Var[V], args: Any*): wrt.domain.Value = {
-    val am = argmaxerOld(Seq(wrt))
     val observed = vars.filter(_ != wrt)
     val observedSettings = for ((a, v) <- args zip observed) yield v.domain.toSetting(a.asInstanceOf[v.domain.Value])
+    val am = argmaxerImpl(Seq(wrt))(Settings.fromSeq(observedSettings),null)
     val result = wrt.domain.createSetting()
-    am.argmax(observedSettings.toArray, observed.map(_.domain.createMsg()).toArray, Array(result))
-    wrt.domain.toValue(result)
+    am.argmax()(Execution(0))
+    wrt.domain.toValue(am.result(0))
   }
 
 
@@ -249,16 +246,10 @@ trait ProxyTerm[D <: Dom] extends Term[D] with NAry {
 
   def arguments = IndexedSeq(self)
 
-  def evaluatorOld() = self.evaluatorOld()
-
   override def evaluatorImpl(in: Settings) = new ProxyEvaluator(self.evaluatorImpl(in))
 
   override def differentiatorImpl(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
     new ProxyDifferentiator(self.differentiatorImpl(wrt)(in, err, gradientAcc))
-
-  def differentiatorOld(wrt: Seq[Var[Dom]]) = self.differentiatorOld(wrt)
-
-  def atomsIterator = self.atomsIterator
 
   override def toString = self.toString
 
@@ -276,91 +267,6 @@ trait OwnedTerm[T] extends ProxyTerm[TypedDom[T]] {
 
 
 
-
-
-
-/**
- * An evaluator calculates a setting based on a list of argument settings.
- */
-trait EvaluatorOld {
-
-  /**
-   * Compute a setting based on a list of input settings.
-   * @param inputs input settings.
-   * @param output output setting (will be updated).
-   */
-  def eval(inputs: Array[Setting], output: Setting)
-
-}
-
-trait AtomicEvaluator {
-  def eval(atomSetting: Setting, output: Setting)
-}
-
-object AtomicEvaluator {
-  def apply(term: Term[Dom]) = {
-    val evaluator = term.evaluatorOld()
-    val atoms = term.atoms
-    new AtomicEvaluator {
-      val inputs = term.vars.map(_.domain.createSetting()).toArray
-
-      def eval(atomSetting: Setting, output: Setting) = {
-        //for each atom find argument index and offset
-        //fill setting accordingly
-        //now evaluate
-        evaluator.eval(inputs, output)
-      }
-    }
-
-  }
-}
-
-
-trait DifferentiatorOld {
-  def term: Term[Dom]
-
-  def withRespectTo: Seq[Var[Dom]]
-
-  lazy val conditionedOn = term.vars.filterNot(withRespectTo.contains)
-
-  lazy val activation = term.domain.createSetting()
-
-  def forwardProp(current: Array[Setting])
-
-  def backProp(error: Setting, gradient: Array[Setting])
-
-  def gradient(singleVar: Var[Dom], args: Any*): singleVar.domain.Value = {
-    val obj = term
-    val errorSetting = obj.domain.toSetting(term.domain.one.asInstanceOf[obj.domain.Value])
-    val argSettings = for ((a, v) <- args zip obj.vars) yield v.domain.toSetting(a.asInstanceOf[v.domain.Value])
-    val result = obj.vars.map(_.domain.createZeroSetting()).toArray
-    val output = obj.domain.createZeroSetting()
-    addGradientAndValue(argSettings.toArray, errorSetting, result, output)
-    val indexOfVar = obj.vars.indexOf(singleVar)
-    obj.vars(indexOfVar).domain.toValue(result(indexOfVar)).asInstanceOf[singleVar.domain.Value]
-  }
-
-  def addGradientAndValue(current: Array[Setting], outputError: Setting, gradientAccumulator: Array[Setting], value: Setting): Unit = {
-    //call forward propagate on term with current assignment to free variables
-    forwardProp(current)
-    //then backward propagate
-    backProp(outputError, gradientAccumulator)
-    //also return the value
-    value := activation
-  }
-}
-
-class EmptyDifferentiatorOld(val term: Term[Dom], val withRespectTo: Seq[Var[Dom]]) extends DifferentiatorOld {
-  val eval = term.evaluatorOld()
-
-  def forwardProp(current: Array[Setting]) = {
-    eval.eval(current, activation)
-  }
-
-  def backProp(error: Setting, gradient: Array[Setting]) = {}
-}
-
-
 class DotProduct[T1 <: VectorTerm, T2 <: VectorTerm](val arg1: T1, val arg2: T2) extends ComposedDoubleTerm {
 
   self =>
@@ -371,11 +277,6 @@ class DotProduct[T1 <: VectorTerm, T2 <: VectorTerm](val arg1: T1, val arg2: T2)
 
   def copy(args: IndexedSeq[ArgumentType]) = new DotProduct(args(0), args(1))
 
-  def composerOld() = new EvaluatorOld {
-    def eval(inputs: Array[Setting], output: Setting) = {
-      output.cont(0) = inputs(0).vect(0) dot inputs(1).vect(0)
-    }
-  }
 
 
   override def composer(args: Settings) = new Composer(args) {
@@ -398,28 +299,6 @@ class DotProduct[T1 <: VectorTerm, T2 <: VectorTerm](val arg1: T1, val arg2: T2)
       }
     }
 
-  def differentiatorOld(wrt: Seq[Var[Dom]]) = new ComposedDifferentiatorOld {
-
-    def withRespectTo = wrt
-
-    def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]): Unit = {
-      val scale = outError.cont(0)
-
-      if (arg1.vars.nonEmpty) gradient(0).vect.set(0, argOutputs(1).vect(0), scale)
-      if (arg2.vars.nonEmpty) gradient(1).vect.set(0, argOutputs(0).vect(0), scale)
-
-      /*
-        if (arg1.vars.size > 0) {
-          gradient(0).vect(0) := 0.0
-          gradient(0).vect(0) +=(argOutputs(1).vect(0), scale)
-        }
-        if (arg2.vars.size > 0) {
-          gradient(1).vect(0) := 0.0
-          gradient(1).vect(0) +=(argOutputs(0).vect(0), scale)
-        }
-      */
-    }
-  }
 }
 
 class SparseL2[T1 <: VectorTerm, T2 <: VectorTerm](val arg: T1, val mask: T2 = null) extends ComposedDoubleTerm {
@@ -432,24 +311,6 @@ class SparseL2[T1 <: VectorTerm, T2 <: VectorTerm](val arg: T1, val mask: T2 = n
 
   def copy(args: IndexedSeq[ArgumentType]) = new DotProduct(args(0), args(1))
 
-  def composerOld() = new EvaluatorOld {
-    def eval(inputs: Array[Setting], output: Setting) = {
-      val w = inputs(0).vect(0)
-      if (mask != null) {
-        val f = inputs(1).vect(0)
-        output.cont(0) = 0.0
-        f.foreachActiveElement { case (i, v) =>
-          output.cont(0) += w(i) * w(i) * v
-        }
-      } else {
-        output.cont(0) = w dot w
-      }
-      //      if (output.cont(0) != 0.0) {
-      //        println("Huh?")
-      //      }
-      //      println("Eval: " + output.cont(0))
-    }
-  }
 
 
   override def composer(args: Settings) = new Composer(args) {
@@ -464,35 +325,6 @@ class SparseL2[T1 <: VectorTerm, T2 <: VectorTerm](val arg: T1, val mask: T2 = n
       } else {
         output.cont(0) = w dot w
       }
-    }
-  }
-
-  def differentiatorOld(wrt: Seq[Var[Dom]]) = new ComposedDifferentiatorOld {
-
-    def withRespectTo = wrt
-
-    def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]): Unit = {
-      val scale = outError.cont(0)
-
-      /*
-      gradient(0).setVect(0, argOutputs(1).vect(0), scale)
-      gradient(1).setVect(0, argOutputs(0).vect(0), scale)
-      */
-
-      val w = argOutputs(0).vect(0)
-
-      if (mask != null) {
-        val f = argOutputs(1).vect(0)
-        import ml.wolfe.util.PimpMyFactorie._
-        //need to multiply w with f
-        gradient(0).vect.update(0, f)
-        gradient(0).vect(0) :* w
-        gradient(0).vect(0) *= 2.0 * scale
-      } else {
-        gradient(0).vect.update(0, w)
-        gradient(0).vect(0) *= scale * 2.0
-      }
-      //todo: calculate gradient for mask!
     }
   }
 
@@ -534,26 +366,6 @@ class MatrixDotProduct[T1 <: Term[MatrixDom], T2 <: Term[MatrixDom]](val arg1: T
 
   def copy(args: IndexedSeq[ArgumentType]) = new MatrixDotProduct(args(0), args(1))
 
-  def composerOld() = new EvaluatorOld {
-    def eval(inputs: Array[Setting], output: Setting) = {
-      output.cont(0) = inputs(0).mats(0) dot inputs(1).mats(0)
-    }
-  }
-
-
-  def differentiatorOld(wrt: Seq[Var[Dom]]) = new ComposedDifferentiatorOld {
-
-    def withRespectTo = wrt
-
-
-    def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]): Unit = {
-      val scale = outError.cont(0)
-      gradient(0).mats(0) := 0.0
-      gradient(1).mats(0) := 0.0
-      gradient(0).mats(0) +=(argOutputs(1).mats(0), scale)
-      gradient(1).mats(0) +=(argOutputs(0).mats(0), scale)
-    }
-  }
 }
 
 class VectorScaling[T1 <: VectorTerm, T2 <: DoubleTerm](val arg1: T1, arg2: T2) extends Composed[VectorDom] {
@@ -570,24 +382,6 @@ class VectorScaling[T1 <: VectorTerm, T2 <: DoubleTerm](val arg1: T1, arg2: T2) 
     new VectorScaling(args(0).asInstanceOf[VectorTerm], args(1).asInstanceOf[DoubleTerm])
 
   override val domain: VectorDom = new VectorDom(arg1.domain.dim)
-
-  def composerOld() = new EvaluatorOld {
-    def eval(inputs: Array[Setting], output: Setting) = {
-      output.vect(0) = inputs(0).vect(0) * inputs(1).cont(0)
-    }
-  }
-
-  def differentiatorOld(wrt: Seq[Var[Dom]]) = new ComposedDifferentiatorOld {
-
-    def withRespectTo = wrt
-
-    def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]): Unit = {
-      val error = outError.vect(0)
-      gradient(0).vect(0) := 0.0
-      gradient(0).vect(0) += error * argOutputs(1).cont(0)
-      gradient(1).cont(0) += argOutputs(0).vect(0) dot error
-    }
-  }
 }
 
 class VectorConcatenation[T1 <: VectorTerm, T2 <: VectorTerm](val arg1: T1, val arg2: T2) extends Composed[GenericVectorDom] {
@@ -603,27 +397,6 @@ class VectorConcatenation[T1 <: VectorTerm, T2 <: VectorTerm](val arg1: T1, val 
   def copy(args: IndexedSeq[ArgumentType]) = new VectorConcatenation(args(0), args(1))
 
   override val domain: VectorDom = new VectorDom(arg1.domain.dim + arg2.domain.dim)
-
-  def composerOld() = new EvaluatorOld {
-    def eval(inputs: Array[Setting], output: Setting) = {
-      //fixme: slow!
-      output.vect(0) = new DenseTensor1((inputs(0).vect(0).asSeq ++ inputs(1).vect(0).asSeq).toArray)
-    }
-  }
-
-
-  def differentiatorOld(wrt: Seq[Var[Dom]]) = new ComposedDifferentiatorOld {
-
-    def withRespectTo = wrt
-
-    def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]): Unit = {
-      val upstream = outError.vect(0)
-      gradient(0).vect(0) := 0.0
-      gradient(1).vect(0) := 0.0
-      gradient(0).vect(0) += new DenseTensor1(upstream.asArray.slice(0, argOutputs(0).vect(0).dim1))
-      gradient(1).vect(0) += new DenseTensor1(upstream.asArray.slice(argOutputs(0).vect(0).dim1, upstream.dim1))
-    }
-  }
 
 }
 
@@ -643,12 +416,6 @@ class MatrixVectorProduct[T1 <: MatrixTerm, T2 <: VectorTerm](val arg1: T1, val 
 
   def copy(args: IndexedSeq[ArgumentType]) =
     new MatrixVectorProduct(args(0).asInstanceOf[MatrixTerm], args(1).asInstanceOf[VectorTerm])
-
-  def composerOld() = new EvaluatorOld {
-    def eval(inputs: Array[Setting], output: Setting) = {
-      output.vect(0) = inputs(0).mats(0) * inputs(1).vect(0)
-    }
-  }
 
 
   override def composer(args: Settings) = new Composer(args) {
@@ -676,23 +443,6 @@ class MatrixVectorProduct[T1 <: MatrixTerm, T2 <: VectorTerm](val arg1: T1, val 
       }
     }
 
-  def differentiatorOld(wrt: Seq[Var[Dom]]) = new ComposedDifferentiatorOld {
-
-    def withRespectTo = wrt
-
-    def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]): Unit = {
-      val A = argOutputs(0).mats(0)
-      val x = argOutputs(1).vect(0)
-      val error = outError.vect(0)
-      require(A.dim2 == x.dim1, s"dimensions don't match: ${A.toDimensionsString} * ${x.dim1}")
-      require(A.dim1 == error.dim1, s"dimensions don't match: ${A.toDimensionsString} * ${x.dim1} => ${error.dim1}")
-
-      gradient(0).mats(0) := 0.0
-      gradient(1).vect(0) := 0.0
-      gradient(0).mats(0) += error outer x
-      gradient(1).vect(0) += A.t * error
-    }
-  }
 }
 
 class Div[T1 <: DoubleTerm, T2 <: DoubleTerm](val arg1: T1, val arg2: T2) extends ComposedDoubleTerm {
@@ -705,31 +455,10 @@ class Div[T1 <: DoubleTerm, T2 <: DoubleTerm](val arg1: T1, val arg2: T2) extend
 
   def copy(args: IndexedSeq[ArgumentType]) = new Div(args(0), args(1))
 
-  def composerOld() = new EvaluatorOld {
-    def eval(inputs: Array[Setting], output: Setting) = {
-      output.cont(0) = inputs(0).cont(0) / inputs(1).cont(0)
-    }
-  }
-
 
   override def composer(args: Settings) = new Composer(args) {
     def eval()(implicit execution: Execution) = {
       output.cont(0) = input(0).cont(0) / input(1).cont(0)
-    }
-  }
-
-  def differentiatorOld(wrt: Seq[Var[Dom]]) = new ComposedDifferentiatorOld {
-
-    def withRespectTo = wrt
-
-    def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]): Unit = {
-      val scale = outError.cont(0)
-
-      val x = argOutputs(0).cont(0)
-      val y = argOutputs(1).cont(0)
-
-      gradient(0).cont(0) = scale / y
-      gradient(1).cont(0) = -(scale * x) / (y * y)
     }
   }
 
@@ -765,14 +494,6 @@ trait UnaryTerm[T <: Term[Dom], D <: Dom] extends Composed[D] {
 case class Product(arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm {
 
   type ArgumentType = DoubleTerm
-
-  def composerOld() = new EvaluatorOld {
-    def eval(inputs: Array[Setting], output: Setting) = {
-      output.cont(0) = 1.0
-      for (i <- 0 until inputs.length)
-        output.cont(0) *= inputs(i).cont(0)
-    }
-  }
 
 
   override def composer(args: Settings) = new Composer(args) {
@@ -810,89 +531,12 @@ case class Product(arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm
 
   def copy(args: IndexedSeq[ArgumentType]) = new Product(args)
 
-  def differentiatorOld(wrt: Seq[Var[Dom]]) = new ComposedDifferentiatorOld {
-    def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]) = {
-      var total = outError.cont(0)
-      var zeros = 0
-      var zeroIndex = -1
-      for (i <- 0 until argOutputs.length) {
-        //set to 0.0 by default
-        gradient(i) := 0.0
-        if (argOutputs(i).cont(0) == 0.0) {
-          zeros += 1
-          zeroIndex = i
-        } else
-          total *= argOutputs(i).cont(0)
-      }
-      if (zeros == 1) {
-        gradient(zeroIndex).cont(0) = total
-      } else if (zeros == 0) {
-        for (i <- 0 until argOutputs.length)
-          gradient(i).cont(0) = total / argOutputs(i).cont(0)
-      }
-    }
-
-    def withRespectTo = wrt
-  }
 }
 
 
-object Playground {
-
-
-  import ml.wolfe.term.TermImplicits._
-
-  def main(args: Array[String]) {
-
-    class Gen[T](gen: => T) {
-      def eval = gen
-    }
-
-    def rand = math.random
-
-    val gen = new Gen(rand)
-
-    println(gen.eval)
-    println(gen.eval)
-
-
-    //    val result1 = argmax(W){ w => loss(w)}
-
-    //    val result = argmax(W){ w => loss2(w._1)}
-
-    //
-    //    val dom = doubles x seqs(doubles,2)
-    //
-    //    val x = dom.variable("x")
-    //    val d:DoubleTerm = x._2(2)
-    //
-    //    implicit val vecs = vectors(2)
-    //    val y = vecs.variable("y")
-    //    val term = y dot vecs.Const(1.0,2.0)
-
-    //    val X = new VectorDom(1)
-    //    val XX = new Tuple2Dom(X, X)
-    //    val pair = XX.variable("pair")
-    //    val x = X.variable("x")
-    //    val dot = new DotProduct(x, pair._1)
-    //    val diff = dot.differentiator(Seq(x))
-    //
-    //    println(dot.vars)
-    //    println(dot(Seq(vector(Seq(2.0)), (vector(Seq(10.0)), vector(Seq(2.0))))))
-
-
-    //val result = dot(Seq())
-
-  }
-}
 
 
 case class Iverson[T <: BoolTerm](val arg: T) extends UnaryTerm[T, DoubleDom] with ComposedDoubleTerm {
-  def composerOld() = new EvaluatorOld {
-    def eval(inputs: Array[Setting], output: Setting) = {
-      output.cont(0) = if (inputs(0).disc(0) == 0) 0.0 else 1.0
-    }
-  }
 
 
   override def composer(args: Settings) = new Composer(args) {
@@ -915,11 +559,6 @@ class IntToDouble[T <: IntTerm](val int: T) extends ComposedDoubleTerm {
 
   def copy(args: IndexedSeq[ArgumentType]) = new IntToDouble(args(0))
 
-  def composerOld() = new EvaluatorOld {
-    def eval(inputs: Array[Setting], output: Setting) = {
-      output.cont(0) = inputs(0).disc(0)
-    }
-  }
 
   override def composer(args: Settings) = new Composer(args) {
     def eval()(implicit execution: Execution) = {
@@ -955,12 +594,6 @@ trait BinaryDiscreteOperator[D <: Dom, A <: Dom] extends Composed[D] {
 
   val arguments = IndexedSeq(arg1, arg2)
 
-  def composerOld() = new EvaluatorOld {
-    def eval(inputs: Array[Setting], output: Setting) = {
-      output.disc(0) = op(inputs(0).disc(0), inputs(1).disc(0))
-    }
-  }
-
 
   override def composer(args: Settings) = new Composer(args) {
     def eval()(implicit execution: Execution) = {
@@ -968,7 +601,6 @@ trait BinaryDiscreteOperator[D <: Dom, A <: Dom] extends Composed[D] {
     }
   }
 
-  def differentiatorOld(wrt: Seq[Var[Dom]]) = ???
 
   def copy(args: IndexedSeq[ArgumentType]) = new BinaryDiscreteOperator[D, A] {
 
@@ -1020,57 +652,5 @@ class Implies(val arg1: BoolTerm, val arg2: BoolTerm) extends BinaryDiscreteOper
 
 }
 
-trait LegacyTerm[+D <: Dom] {
-  this: Term[D] =>
-
-  /**
-   * Variables may describe structured objects. Terms may only depend on parts of these structured objects. Atoms
-   * define a set of such parts.
-   * @return the atoms that this term depend on.
-   */
-  def atoms: AtomsOld = AtomsOld.fromIterator(atomsIterator)
-
-  def atomsIterator: Iterator[AtomOld[Dom]]
-
-  def differentiatorOld(wrt: Seq[Var[Dom]]): DifferentiatorOld
-
-  def argmaxerOld(wrt: Seq[Var[Dom]]): ArgmaxerOld = {
-    //todo: this could be type safe, for example by adding the argmax method to the RichDoubleTerm
-    if (!domain.isDouble) sys.error("Argmax only supported for real valued terms")
-    else if (wrt.forall(_.domain.isDiscrete)) new ExhaustiveSearchArgmaxer(this.asInstanceOf[DoubleTerm], wrt) else ???
-  }
-
-  /**
-   * The evaluator calculates the value of the term given an assignment to free variables.
-   * @return the term's evaluator.
-   */
-  def evaluatorOld(): EvaluatorOld
-
-  def evalOld(args: Any*): domain.Value = {
-    val ev = evaluatorOld()
-    val output = domain.createSetting()
-    val argSettings = for ((a, v) <- args zip vars) yield v.domain.toSetting(a.asInstanceOf[v.domain.Value])
-    ev.eval(argSettings.toArray, output)
-    domain.toValue(output)
-  }
-
-  def gradientOld(args: Seq[Any], error: domain.Value = domain.one, wrt: Seq[Var[Dom]] = vars): Seq[Any] = {
-    val diff = differentiatorOld(wrt)
-    val errorSetting = domain.toSetting(error)
-    val argSettings = for ((a, v) <- args zip vars) yield v.domain.toSetting(a.asInstanceOf[v.domain.Value])
-    val result = vars.map(_.domain.createZeroSetting()).toArray
-    val output = domain.createZeroSetting()
-    diff.addGradientAndValue(argSettings.toArray, errorSetting, result, output)
-    for ((s, v) <- result zip vars) yield v.domain.toValue(s)
-  }
-
-  def gradientOld[V <: Dom](wrt: Var[V], args: Any*): wrt.domain.Value = {
-    require(args.length == vars.length, s"You need as many arguments as there are free variables (${vars.length})")
-    val indexOfWrt = vars.indexOf(wrt)
-    gradientOld(args, wrt = Seq(wrt))(indexOfWrt).asInstanceOf[wrt.domain.Value]
-  }
-
-
-}
 
 

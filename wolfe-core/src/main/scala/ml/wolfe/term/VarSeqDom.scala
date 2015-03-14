@@ -128,8 +128,6 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
 
     def ranges = Ranges(offsets, startOfElements(offsets) +(domain.elementDom.lengths, domain.maxLength))
 
-    def atomsIterator = ???
-
     def elements = for (i <- 0 until maxLength) yield apply(i)
 
 
@@ -150,16 +148,6 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
       args(0).asInstanceOf[lengthDom.Term],
       args.drop(1).asInstanceOf[IndexedSeq[elementDom.Term]])
 
-    def composerOld() = new EvaluatorOld {
-
-      def eval(inputs: Array[Setting], output: Setting) = {
-        //todo: adapt
-        //todo: evaluate length first, and then only update the relevant elements
-        for (i <- 0 until inputs.length) {
-          inputs(i).copyTo(output, domain.elementDom.lengths, i)
-        }
-      }
-    }
 
 
     override def composer(args: Settings) = new Composer(args) {
@@ -198,26 +186,6 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
       }
     }
 
-    def differentiatorOld(wrt: Seq[term.Var[Dom]]) = new ComposedDifferentiatorOld {
-      //todo: adapt
-      require(length.vars.forall(v => !wrt.contains(v)), "Can't differentiate length term in sequence constructor")
-
-      def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]) = {
-        //each argument will get its error signal from a subsection of the outError
-        val length = argOutputs(0).disc(0)
-        for (i <- 1 until length) {
-          val offsets = (domain.elementDom.lengths * i) + Offsets(discOff = 1)
-          for (j <- 0 until domain.elementDom.lengths.contOff) {
-            gradient(i).cont(j) = outError.cont(offsets.contOff + j)
-          }
-          for (j <- 0 until domain.elementDom.lengths.vectOff) {
-            gradient(i).vect(j) := outError.vect(offsets.vectOff + j)
-          }
-        }
-      }
-
-      def withRespectTo = wrt
-    }
 
     override def toString = s"""ISeq($length)(${elements.mkString(",")})"""
   }
@@ -234,11 +202,6 @@ case class VarSeqLength[S <: Term[VarSeqDom[_]]](seq: S) extends Composed[TypedD
   val domain: TypedDom[Int] = seq.domain.lengthDom
 
 
-  def composerOld() = new EvaluatorOld {
-    def eval(inputs: Array[Setting], output: Setting) = {
-      output.disc(0) = inputs(0).disc(0)
-    }
-  }
 
 
   override def composer(args: Settings) = new Composer(args) {
@@ -262,12 +225,6 @@ case class VarSeqApply[+E <: Dom, S <: Term[VarSeqDom[E]], I <: IntTerm](seq: S,
 
   def copy(args: IndexedSeq[ArgumentType]) = VarSeqApply[E,S,I](args(0).asInstanceOf[S],args(1).asInstanceOf[I])
 
-  def composerOld() = new EvaluatorOld {
-    def eval(inputs: Array[Setting], output: Setting) = {
-      val index = inputs(1).disc(0)
-      inputs(0).copyTo(output, domain.lengths, index, Offsets(), 0, domain.lengths, srcOffsets = Offsets(discOff = 1))
-    }
-  }
 
 
   override def composer(args: Settings) = new Composer(args) {
@@ -294,26 +251,6 @@ case class VarSeqApply[+E <: Dom, S <: Term[VarSeqDom[E]], I <: IntTerm](seq: S,
       }
     }
 
-  def differentiatorOld(wrt: Seq[Var[Dom]]) = new ComposedDifferentiatorOld {
-    require(index.vars.forall(v => !wrt.contains(v)), "Can't differentiate index term in sequence apply")
-
-    //the indices of errors we pass to the sequence argument should be recorded such that the argument can focus on what was changed
-    argErrors(0).recordChangedOffsets = true
-
-    //todo: should also check for length variable of sequence? no that should be done in seqApply
-
-    def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]) = {
-      gradient(0).resetToZero()
-      val index = argOutputs(1).disc(0)
-      val length = argOutputs(0).disc(0)
-      gradient(0).disc(0) = length
-      //update gradient at offset corresponding to index
-      outError.copyTo(gradient(0), Offsets(), 0, domain.lengths, index, domain.lengths, tgtOffsets = Offsets(discOff = 1))
-      //ranges.addInto(outError,gradient(0))
-    }
-
-    def withRespectTo = wrt
-  }
 
   override def toString = s"$seq($index)"
 }

@@ -89,8 +89,6 @@ class Tuple2Dom[D1 <: Dom, D2 <: Dom](val dom1: D1, val dom2: D2) extends Produc
 
     def ranges = Ranges(offsets, offsets + domain.dom1.lengths + domain.dom2.lengths)
 
-    def atomsIterator = _1.atomsIterator ++ _2.atomsIterator
-
     def var1: domain.dom1.Var
 
     def var2: domain.dom2.Var
@@ -149,20 +147,6 @@ trait ProductDom extends Dom {
   }
 
   trait DomTermImpl extends super.DomTerm with Composed[dom.type] {
-
-    def composerOld() = new EvaluatorOld {
-
-      val lengths = arguments.map(_.domain.lengths).toArray
-
-      def eval(inputs: Array[Setting], output: Setting) = {
-        var off = Offsets()
-        for (i <- 0 until inputs.length) {
-          inputs(i).copyTo(output, off, 1)
-          off = off + lengths(i)
-        }
-        //append inputs to output
-      }
-    }
 
 
     override def toString = s"""$productName(${arguments.mkString(",")})"""
