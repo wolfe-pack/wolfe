@@ -132,6 +132,7 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
 
     def elements = for (i <- 0 until maxLength) yield apply(i)
 
+
   }
 
   def Term(length: TypedTerm[Int], elements: IndexedSeq[elementDom.Term]): Term = new Constructor(length, elements)

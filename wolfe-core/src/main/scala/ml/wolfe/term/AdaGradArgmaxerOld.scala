@@ -14,7 +14,7 @@ class AdaGradArgmaxerOld(val obj: DoubleTerm,
                       val initParams: Array[Setting],
                       val epochHook: (IndexedSeq[Any],Int) => String = null,
                       val adaptiveVectors: Boolean = true,
-                      val delays:Map[Atom[Dom],Int] = Map.empty) extends ArgmaxerOld {
+                      val delays:Map[AtomOld[Dom],Int] = Map.empty) extends ArgmaxerOld {
 
   val obsVars = obj.vars.filterNot(wrt.contains)
   //get differentiator
@@ -59,7 +59,7 @@ class AdaGradArgmaxerOld(val obj: DoubleTerm,
       val epoch = iteration / termsPerEpoch
       //reset all previous changes to the gradient
       if (iteration > 0) {
-        val prevAtoms = Atoms.fromIterator(obj.atomsIterator)
+        val prevAtoms = AtomsOld.fromIterator(obj.atomsIterator)
         setAtoms(prevAtoms, gradient, var2Index, 0.0)
       }
 
@@ -67,7 +67,7 @@ class AdaGradArgmaxerOld(val obj: DoubleTerm,
       diff.addGradientAndValue(result, scale, gradient, currentValue)
 
       //now update the momentum, need to call atoms again because atoms may have changed if objective is dynamic
-      val currentAtoms = Atoms.fromIterator(obj.atomsIterator)
+      val currentAtoms = AtomsOld.fromIterator(obj.atomsIterator)
       addSquaredAtoms(currentAtoms, gradient, momentum, var2Index)
 
       //now add gradient into result parameters, using momentum to determine learning rate.
@@ -88,7 +88,7 @@ class AdaGradArgmaxerOld(val obj: DoubleTerm,
     }
   }
 
-  def setAtoms(lastAtoms: Atoms, result: Array[Setting], var2Index: Map[Var[Dom], Int] = this.var2Index, value: Double = 0.0): Unit = {
+  def setAtoms(lastAtoms: AtomsOld, result: Array[Setting], var2Index: Map[Var[Dom], Int] = this.var2Index, value: Double = 0.0): Unit = {
     for (a <- lastAtoms.cont; i <- var2Index.get(a.ownerOrSelf)) {
       result(i).cont(a.offset) = value
     }
@@ -104,7 +104,7 @@ class AdaGradArgmaxerOld(val obj: DoubleTerm,
     }
   }
 
-  def addSquaredAtoms(atoms: Atoms, toAdd: Array[Setting], result: Array[Setting],
+  def addSquaredAtoms(atoms: AtomsOld, toAdd: Array[Setting], result: Array[Setting],
                       var2Index: Map[Var[Dom], Int] = this.var2Index): Unit = {
     for (a <- atoms.cont; i <- var2Index.get(a.ownerOrSelf)) {
       val offset = a.offset
@@ -129,7 +129,7 @@ class AdaGradArgmaxerOld(val obj: DoubleTerm,
     }
   }
 
-  def gradientStep(epoch:Int, atoms: Atoms, gradient: Array[Setting], momentum: Array[Setting], result: Array[Setting],
+  def gradientStep(epoch:Int, atoms: AtomsOld, gradient: Array[Setting], momentum: Array[Setting], result: Array[Setting],
                    lambda: Double, var2Index: Map[Var[Dom], Int] = this.var2Index): Unit = {
     for (a <- atoms.cont; i <- var2Index.get(a.ownerOrSelf) if epoch >= delays.getOrElse(a,0)) {
       val offset = a.offset

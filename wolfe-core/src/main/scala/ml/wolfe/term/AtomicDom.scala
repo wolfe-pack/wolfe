@@ -67,7 +67,7 @@ trait GenericVectorDom extends AtomicDom {
     Const(new DenseVector(values.toArray))
   }
 
-  trait DomVar extends Atom[dom.type] with DomTerm with super.DomVar {
+  trait DomVar extends AtomOld[dom.type] with DomTerm with super.DomVar {
     def ranges = Ranges(Offsets(0, 0, offset, 0), Offsets(0, 0, offset + 1, 0))
   }
 
@@ -91,7 +91,7 @@ class VectorDom(val dim: Int) extends GenericVectorDom {
 class UnitVectorDom(val dim: Int) extends GenericVectorDom {
   dom =>
 
-  trait UnitVectorVar extends Atom[dom.type] {
+  trait UnitVectorVar extends AtomOld[dom.type] {
     override def projectValue(setting: Setting) = {
       setting.vect(offset).normalize()
     }
@@ -148,7 +148,7 @@ class MatrixDom(val dim1: Int, dim2: Int) extends AtomicDom {
     override val ranges = super.ranges
   }
 
-  trait DomVar extends DomTerm with Atom[dom.type] with super.DomVar {
+  trait DomVar extends DomTerm with AtomOld[dom.type] with super.DomVar {
     def ranges = Ranges(Offsets(0, 0, 0, offset), Offsets(0, 0, 0, offset + 1))
   }
 
@@ -207,7 +207,7 @@ class DoubleDom extends AtomicDom {
 
   def zero = 0.0
 
-  trait DomVar extends Atom[dom.type] with super.DomVar {
+  trait DomVar extends AtomOld[dom.type] with super.DomVar {
     self =>
     def ranges = Ranges(Offsets(0, offset, 0, 0), Offsets(0, offset + 1, 0, 0))
 
@@ -278,7 +278,7 @@ trait GenericDiscreteDom[T] extends AtomicDom {
     def offset = offsets.discOff
   }
 
-  trait DomVar extends Atom[dom.type] with super.DomVar {
+  trait DomVar extends AtomOld[dom.type] with super.DomVar {
     def ranges = Ranges(Offsets(offset, 0, 0, 0), Offsets(offset + 1, 0, 0, 0))
   }
 

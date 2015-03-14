@@ -7,10 +7,10 @@ object Transformer {
 
   import TermImplicits._
 
-  def depthFirst(term: Term[Dom])(partialFunction: PartialFunction[Term[Dom], Term[Dom]]): Term[Dom] = {
+  def depthFirst(term: AnyTerm)(partialFunction: PartialFunction[AnyTerm, AnyTerm]): AnyTerm = {
     val result = term match {
       case n: NAry =>
-        val transformed = n.arguments map ((t: Term[Dom]) => depthFirst(t)(partialFunction).asInstanceOf[n.ArgumentType])
+        val transformed = n.arguments map ((t: AnyTerm) => depthFirst(t)(partialFunction).asInstanceOf[n.ArgumentType])
         val copied = n.copy(transformed)
         copied
       case t => t
@@ -19,12 +19,12 @@ object Transformer {
     transformed
   }
 
-  def clean(term: Term[Dom]) = depthFirst(term) {
+  def clean(term: AnyTerm) = depthFirst(term) {
     case o: OwnedTerm[_] =>
       o.self
   }
 
-  def flattenSums(term: Term[Dom]) = depthFirst(term) {
+  def flattenSums(term: AnyTerm) = depthFirst(term) {
     case Sum(args) => Sum(args flatMap {
       case Sum(inner) =>
         inner
@@ -33,7 +33,12 @@ object Transformer {
     })
   }
 
-  def groundSums(term: Term[Dom]) = depthFirst(term) {
+  def groundVariables(toGround:Seq[Variable])(term:AnyTerm) = depthFirst(term) {
+    case v:Var[_] if toGround.contains(v) => VarAtom(v)
+    case VarSeqApply(a:Atom[_],i) => SeqAtom[Dom,VarSeqDom[Dom]](a.asInstanceOf[Atom[VarSeqDom[Dom]]],i)
+  }
+
+  def groundSums(term: AnyTerm) = depthFirst(term) {
     case FirstOrderSum(indices, variable, body) =>
       val length = indices match {
         case i: VarSeqDom[_]#Term => i.length
