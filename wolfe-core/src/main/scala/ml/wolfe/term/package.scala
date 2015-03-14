@@ -9,9 +9,12 @@ package object term {
   type MatrixVar = MatrixDom#DomVar
   type DiscVar[T] = GenericDiscreteDom[T]#DomVar
   type Constant[D <: Dom] = D#Constant
-  type Variable = Var[Dom]
+  type AnyVar = Var[Dom]
   type AnyTerm = Term[Dom]
   type AnySeqDom = VarSeqDom[Dom]
+  type Mem = Memoized[Dom, AnyTerm]
+  type SampleTerm = RangeDom#SampleTerm
+  type VarSeqTerm = VarSeqDom[Dom]#Term
 
   type TypedDom[T] = Dom { type Value = T}
   type TypedTerm[T] = Term[TypedDom[T]]

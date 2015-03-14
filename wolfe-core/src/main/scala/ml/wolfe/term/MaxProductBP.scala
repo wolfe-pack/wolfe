@@ -11,7 +11,7 @@ case class MaxProductParameters(iterations:Int)
  * @author riedel
  */
 class MaxProductBP(val objRaw: DoubleTerm,
-                   val wrt: Seq[Var[Dom]],
+                   val wrt: Seq[AnyVar],
                    val observed: Settings,
                    val msgs: Msgs)(implicit params:MaxProductParameters) extends Argmaxer {
 
@@ -59,7 +59,7 @@ class MaxProductBP(val objRaw: DoubleTerm,
 
   class FactorContent()
 
-  def addNodes(vars: Seq[Variable]): Unit = {
+  def addNodes(vars: Seq[AnyVar]): Unit = {
     for (v <- vars) {
       fg.addNode(v, new NodeContent(v.domain.createZeroMsg()))
     }
@@ -133,6 +133,22 @@ class MaxProductBP(val objRaw: DoubleTerm,
 
   }
 
+}
 
+object MaxProductBP {
+
+  import TermImplicits._
+
+  //todo: make this tail-recursive
+  def allAtoms(parent:Atom[Dom]):List[Atom[Dom]] = {
+    parent.domain match {
+      case s:AnySeqDom =>
+        Range(s.minLength,s.maxLength).toList flatMap (i =>
+          allAtoms(SeqAtom[Dom,AnySeqDom](parent.asInstanceOf[Atom[AnySeqDom]],i.toConst)))
+      case d:ProductDom =>
+        Nil
+      case _ => parent :: Nil
+    }
+  }
 }
 

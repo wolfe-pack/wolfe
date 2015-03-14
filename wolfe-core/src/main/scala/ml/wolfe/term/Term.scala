@@ -119,9 +119,9 @@ trait Term[+D <: Dom] extends TermHelper[D] with LegacyTerm[D] {
   abstract class AbstractDifferentiator(val input: Settings,
                                         val error: Setting,
                                         val gradientAccumulator: Settings,
-                                        val withRespectTo: Seq[Variable]) extends Differentiator
+                                        val withRespectTo: Seq[AnyVar]) extends Differentiator
 
-  class EmptyDifferentiator(in: Settings, err: Setting, gradientAcc: Settings, withRespectTo: Seq[Variable]) extends AbstractDifferentiator(in, err, gradientAcc,withRespectTo) {
+  class EmptyDifferentiator(in: Settings, err: Setting, gradientAcc: Settings, withRespectTo: Seq[AnyVar]) extends AbstractDifferentiator(in, err, gradientAcc,withRespectTo) {
     val eval = evaluatorImpl(in)
     val output = eval.output
 

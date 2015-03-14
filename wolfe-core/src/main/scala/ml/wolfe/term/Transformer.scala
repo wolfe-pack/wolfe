@@ -33,7 +33,7 @@ object Transformer {
     })
   }
 
-  def groundVariables(toGround:Seq[Variable])(term:AnyTerm) = depthFirst(term) {
+  def groundVariables(toGround:Seq[AnyVar])(term:AnyTerm) = depthFirst(term) {
     case v:Var[_] if toGround.contains(v) => VarAtom(v)
     case VarSeqApply(a:Atom[_],i) => SeqAtom[Dom,VarSeqDom[Dom]](a.asInstanceOf[Atom[VarSeqDom[Dom]]],i)
   }
@@ -64,8 +64,6 @@ object Transformer {
 
 object Traversal {
 
-  type Mem = Memoized[Dom, Term[Dom]]
-  type SampleTerm = RangeDom#SampleTerm
 
   trait UniqueSampleTerm {
     def term:SampleTerm
@@ -73,7 +71,7 @@ object Traversal {
   case class Alone(term:SampleTerm, id:String = java.util.UUID.randomUUID.toString) extends UniqueSampleTerm
   case class InMem(term:SampleTerm, mem:Mem) extends UniqueSampleTerm
 
-  def uniqueSampleTerms(term: Term[Dom]): List[UniqueSampleTerm] = {
+  def uniqueSampleTerms(term: AnyTerm): List[UniqueSampleTerm] = {
     term match {
       case m: Memoized[_, _] =>
         val children = uniqueSampleTerms(m.term)
@@ -87,8 +85,9 @@ object Traversal {
     }
   }
 
-  def distinctSampleCount(term:Term[Dom]) = uniqueSampleTerms(term).map(_.term.domain.domainSize).product
+  def distinctSampleCount(term:AnyTerm) = uniqueSampleTerms(term).map(_.term.domain.domainSize).product
 
+  
 
 
 }

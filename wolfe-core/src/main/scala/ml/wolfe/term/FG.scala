@@ -8,7 +8,7 @@ import scala.collection.mutable
  */
 class FG[NodeContent, EdgeContent, FactorContent] {
 
-  class Node(val variable: Variable, val content: NodeContent) {
+  class Node(val variable: AnyVar, val content: NodeContent) {
     val edges = new ArrayBuffer[Edge]
     val activeEdges = new ArrayBuffer[Edge]
   }
@@ -21,7 +21,7 @@ class FG[NodeContent, EdgeContent, FactorContent] {
   }
 
 
-  val nodes = new mutable.LinkedHashMap[Variable, Node]
+  val nodes = new mutable.LinkedHashMap[AnyVar, Node]
   val factors = new mutable.LinkedHashMap[DoubleTerm, Factor]
   val edges = new ArrayBuffer[Edge]()
 
@@ -30,7 +30,7 @@ class FG[NodeContent, EdgeContent, FactorContent] {
   val activeNodes = new mutable.LinkedHashSet[Node]
 
 
-  def addNode(variable: Variable, content: NodeContent): Node = {
+  def addNode(variable: AnyVar, content: NodeContent): Node = {
     val node = new Node(variable, content)
     nodes(variable) = node
     node
