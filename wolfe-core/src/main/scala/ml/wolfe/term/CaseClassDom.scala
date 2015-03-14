@@ -121,20 +121,13 @@ object CaseClassDom {
         val termConstructorArgs = argNames.map(n => q"val ${prefixName("_",n)}:$self.$n.Term")
         val termConstructorDefs = argNames.map(n => q"val $n:$self.$n.Term = ${prefixName("_",n)}")
 
-        val staticVarArgs = withOffsets(q"_offsets") {
+        val staticVarArgs = withOffsets(q"ml.wolfe.term.Offsets.zero") {
           case (name, off) =>
             val nameString = name.decodedName.toString
             val nameConst = Constant(nameString)
             q"""val $name:$self.$name.Term = $self.$name.own(new Field(this,$self.$name,$off)($nameConst))"""
 //
 //            q"""def $name = $self.$name.variable(name + "." + $nameConst,$off, if (owner == null) this else owner)"""
-        }
-
-        val dynVarArgs = withOffsets(q"_offsets") {
-          case (name, off) =>
-            val nameString = name.decodedName.toString
-            val nameConst = Constant(nameString)
-            q"""def $name = $self.$name.dynamic(name + "." + $nameConst,$off, if (owner == null) this else owner)"""
         }
 
         val constArgs = withOffsets(q"_offsets") {
@@ -209,14 +202,8 @@ object CaseClassDom {
               ..$fillZeroMsgStatements
             }
 
-            def variable(name: String, _offsets: Offsets, owner: ml.wolfe.term.Var[Dom]) = new BaseVar(name, owner) with DomVar {
-              val offsets = _offsets
+            def variable(name: String) = new BaseVar(name) with DomVar {
               ..$staticVarArgs
-            }
-
-            def dynamic(name: => String, _offsets: => Offsets, owner: ml.wolfe.term.Var[Dom]) = new BaseVar(name, owner) with DomVar {
-              def offsets = _offsets
-              ..$dynVarArgs
             }
 
             def Const(_value: Value) = new DomTermImpl {
@@ -240,8 +227,6 @@ object CaseClassDom {
             trait DomVar extends super.DomVar with DomTerm {
               _domVar =>
               ..$varArgsDef
-              def offsets: Offsets
-              def ranges = Ranges(offsets, offsets + $self.lengths)
             }
 
           }

@@ -24,7 +24,7 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
   def own(term: TypedTerm[Value]) = new OwnedTerm[Value] with Term {
     def self = term
 
-    def apply(index: Int) =  new VarSeqApply[E, Term, lengthDom.Term](this, lengthDom.Const(index))
+    def apply(index: Int) = new VarSeqApply[E, Term, lengthDom.Term](this, lengthDom.Const(index))
 
     def length = new VarSeqLength[Term](this)
 
@@ -83,10 +83,8 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
   val lengths = (elementDom.lengths * maxLength) + Offsets(discOff = 1)
   override val dimensions = Dimensions(Array(minLength until maxLength + 1)) + elementDom.dimensions * maxLength
 
-  def variable(name: String, staticOffsets: Offsets = Offsets(), owner: term.Var[Dom]): Var =
-    new DomVar(name, staticOffsets, owner)
+  def variable(name: String): Var = new DomVar(name)
 
-  def dynamic(name: => String, dynOffsets: => Offsets, owner: term.Var[Dom]): Var = ???
 
   def one = for (i <- 0 until minLength) yield elementDom.one
 
@@ -99,7 +97,7 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
 
     def length: TypedTerm[Int]
 
-    def elements:IndexedSeq[term.Term[E]] // = for (i <- 0 until maxLength) yield apply(i)
+    def elements: IndexedSeq[term.Term[E]] // = for (i <- 0 until maxLength) yield apply(i)
 
     def apply(index: term.Term[TypedDom[Int]]): elementDom.Term = {
       type Index = TypedTerm[Int]
@@ -111,23 +109,21 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
 
     def sampleShuffled(implicit random: Random) = apply(indexDom.shuffled)
 
-    def sampleSequential:elementDom.Term = apply(indexDom.sequential)
+    def sampleSequential: elementDom.Term = apply(indexDom.sequential)
 
     def sampleUniform(implicit random: Random) = apply(indexDom.uniform)
 
-//    def foldLeft[D : d.Term](d:Dom)(init:D#Term)(op:(elementDom.Term,D#Term) => D#Term) = ???
-//    def foldLeft[D <: Dom](init:D#Term)(op:(elementDom.Term,D#Term) => D#Term) = ???
-    def foldLeft(init:term.Term[Dom])(op:(init.domain.Term, elementDom.Term) => init.domain.Term) = ???
+    //    def foldLeft[D : d.Term](d:Dom)(init:D#Term)(op:(elementDom.Term,D#Term) => D#Term) = ???
+    //    def foldLeft[D <: Dom](init:D#Term)(op:(elementDom.Term,D#Term) => D#Term) = ???
+    def foldLeft(init: term.Term[Dom])(op: (init.domain.Term, elementDom.Term) => init.domain.Term) = ???
 
   }
 
-  class DomVar(name: => String, val offsets: Offsets, owner: term.Var[Dom]) extends BaseVar(name, owner) with super.DomVar with DomTerm {
+  class DomVar(name: String) extends BaseVar(name) with super.DomVar with DomTerm {
     def apply(index: Int) = new VarSeqApply[E, Term, lengthDom.Term](this, lengthDom.Const(index))
 
     def length = new VarSeqLength[Term](this)
-
-    def ranges = Ranges(offsets, startOfElements(offsets) +(domain.elementDom.lengths, domain.maxLength))
-
+    
     def elements = for (i <- 0 until maxLength) yield apply(i)
 
 
@@ -149,7 +145,6 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
       args.drop(1).asInstanceOf[IndexedSeq[elementDom.Term]])
 
 
-
     override def composer(args: Settings) = new Composer(args) {
       def eval()(implicit execution: Execution) = {
         output.disc(0) = input(0).disc(0)
@@ -162,7 +157,6 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
     }
 
 
-
     override def differentiatorImpl(wrt: Seq[term.Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) = {
       require(length.vars.forall(v => !wrt.contains(v)), "Can't differentiate length term in sequence constructor")
       new ComposedDifferentiator(wrt, in, err, gradientAcc) {
@@ -173,10 +167,10 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
           var offsets = Offsets(discOff = 1)
           for (i <- 0 until length) {
             for (j <- 0 until domain.elementDom.lengths.contOff) {
-              argErrors(i+1).cont(j) = error.cont(offsets.contOff + j)
+              argErrors(i + 1).cont(j) = error.cont(offsets.contOff + j)
             }
             for (j <- 0 until domain.elementDom.lengths.vectOff) {
-              argErrors(i+1).vect(j) := error.vect(offsets.vectOff + j)
+              argErrors(i + 1).vect(j) := error.vect(offsets.vectOff + j)
             }
             offsets += domain.elementDom.lengths
             //todo: matrices!
@@ -202,8 +196,6 @@ case class VarSeqLength[S <: Term[VarSeqDom[_]]](seq: S) extends Composed[TypedD
   val domain: TypedDom[Int] = seq.domain.lengthDom
 
 
-
-
   override def composer(args: Settings) = new Composer(args) {
     def eval()(implicit execution: Execution) = {
       output.disc(0) = input(0).disc(0)
@@ -223,8 +215,7 @@ case class VarSeqApply[+E <: Dom, S <: Term[VarSeqDom[E]], I <: IntTerm](seq: S,
   val arguments = IndexedSeq(seq, index)
 
 
-  def copy(args: IndexedSeq[ArgumentType]) = VarSeqApply[E,S,I](args(0).asInstanceOf[S],args(1).asInstanceOf[I])
-
+  def copy(args: IndexedSeq[ArgumentType]) = VarSeqApply[E, S, I](args(0).asInstanceOf[S], args(1).asInstanceOf[I])
 
 
   override def composer(args: Settings) = new Composer(args) {
@@ -255,34 +246,34 @@ case class VarSeqApply[+E <: Dom, S <: Term[VarSeqDom[E]], I <: IntTerm](seq: S,
   override def toString = s"$seq($index)"
 }
 
-class RangeTerm(start:IntTerm,end:IntTerm) extends Composed[VarSeqDom[TypedDom[Int]]] {
+class RangeTerm(start: IntTerm, end: IntTerm) extends Composed[VarSeqDom[TypedDom[Int]]] {
 
 
   type ArgumentType = IntTerm
 
-  def arguments = IndexedSeq(start,end)
+  def arguments = IndexedSeq(start, end)
 
-  def copy(args: IndexedSeq[ArgumentType]) = new RangeTerm(args(0),args(1))
+  def copy(args: IndexedSeq[ArgumentType]) = new RangeTerm(args(0), args(1))
 
   val min = start match {
-    case c:Constant[_] => c.value.asInstanceOf[Int]
+    case c: Constant[_] => c.value.asInstanceOf[Int]
     case e => e.domain match {
-      case d:RangeDom => d.start
+      case d: RangeDom => d.start
       case _ => sys.error("Can't bound range length")
     }
   }
 
   val max = end match {
-    case c:Constant[_] => c.value.asInstanceOf[Int]
+    case c: Constant[_] => c.value.asInstanceOf[Int]
     case e => e.domain match {
-      case d:RangeDom => d.end
+      case d: RangeDom => d.end
       case _ => sys.error("Can't bound range length")
     }
   }
   val range = min until max
 
 
-  val domain: VarSeqDom[TypedDom[Int]] = new VarSeqDom(RangeDom(range),max - min,0)
+  val domain: VarSeqDom[TypedDom[Int]] = new VarSeqDom(RangeDom(range), max - min, 0)
 
   override def composer(args: Settings) = new Composer(args) {
     def eval()(implicit execution: Execution) = {
@@ -295,6 +286,7 @@ class RangeTerm(start:IntTerm,end:IntTerm) extends Composed[VarSeqDom[TypedDom[I
   }
 
   def composerOld() = ???
+
   def differentiatorOld(wrt: Seq[Var[Dom]]) = ???
 
 }

@@ -74,11 +74,10 @@ trait Dom {
     copyValue(zero, result)
     result
   }
-  def variable(name: String, offsets: Offsets = Offsets(), owner: term.Var[Dom] = null): Var
+  def variable(name: String): Var
 
   def Var(implicit provider:NameProvider):Var = variable(provider.newName())
 
-  def dynamic(name: => String, offsets: => Offsets = Offsets(), owner: term.Var[Dom] = null): Var
   def Const(value: Value): Term
 
   def lengths: Offsets
@@ -91,8 +90,7 @@ trait Dom {
   def one: Value
   def zero: Value
 
-  abstract class BaseVar(dynName: => String, val owner: term.Var[Dom] = null) extends DomVar {
-    def name = dynName
+  abstract class BaseVar(val name: String) extends DomVar {
   }
 
   case class Constant(value: Value) extends DomTerm {

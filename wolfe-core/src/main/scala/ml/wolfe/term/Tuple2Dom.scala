@@ -47,15 +47,8 @@ class Tuple2Dom[D1 <: Dom, D2 <: Dom](val dom1: D1, val dom2: D2) extends Produc
     dom2.fillZeroMsg(target, offsets + dom1.lengths)
   }
 
-  def variable(name: String, offsets: Offsets, owner: term.Var[Dom]): DomVar =
-    StaticTuple2Var(name, offsets, owner)
-
-  def dynamic(name: => String, dynOffsets: => Offsets, owner: term.Var[Dom]): DomVar = new BaseVar(name, owner) with DomVar {
-    def offsets = dynOffsets
-
-    val var1: domain.dom1.Var = domain.dom1.dynamic(name + "._1", offsets, if (owner == null) this else owner)
-    val var2: domain.dom2.Var = domain.dom2.dynamic(name + "._2", offsets + domain.dom1.lengths, if (owner == null) this else owner)
-  }
+  def variable(name: String): DomVar =
+    StaticTuple2Var(name)
 
   def one = (dom1.one, dom2.one)
 
@@ -85,9 +78,6 @@ class Tuple2Dom[D1 <: Dom, D2 <: Dom](val dom1: D1, val dom2: D2) extends Produc
   }
 
   trait DomVar extends super.DomVar with DomTerm {
-    def offsets: Offsets
-
-    def ranges = Ranges(offsets, offsets + domain.dom1.lengths + domain.dom2.lengths)
 
     def var1: domain.dom1.Var
 
@@ -99,12 +89,9 @@ class Tuple2Dom[D1 <: Dom, D2 <: Dom](val dom1: D1, val dom2: D2) extends Produc
 
   }
 
-  case class StaticTuple2Var(name: String,
-                             offsets: Offsets,
-                             owner: term.Var[Dom]) extends DomVar {
-    override val ranges = super.ranges
-    val var1 = domain.dom1.variable(name + "._1", offsets, if (owner == null) this else owner)
-    val var2 = domain.dom2.variable(name + "._2", offsets + domain.dom1.lengths, if (owner == null) this else owner)
+  case class StaticTuple2Var(name: String) extends DomVar {
+    val var1 = domain.dom1.variable(name + "._1")
+    val var2 = domain.dom2.variable(name + "._2")
   }
 
 }

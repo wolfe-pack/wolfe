@@ -68,7 +68,7 @@ trait GenericVectorDom extends AtomicDom {
   trait DomVar extends DomTerm with super.DomVar {
   }
 
-  case class StaticVectorVar(name: String, owner: term.Var[Dom], offset: Int) extends DomVar {
+  case class StaticVectorVar(name: String) extends DomVar {
   }
 
 
@@ -76,11 +76,7 @@ trait GenericVectorDom extends AtomicDom {
 
 class VectorDom(val dim: Int) extends GenericVectorDom {
 
-  def variable(name: String, offsets: Offsets, owner: term.Var[Dom]) = StaticVectorVar(name, owner, offsets.vectOff)
-
-  def dynamic(name: => String, offsets: => Offsets, owner: term.Var[Dom]) = new BaseVar(name, owner) with DomVar {
-    def offset = offsets.vectOff
-  }
+  def variable(name: String) = StaticVectorVar(name)
 
 }
 
@@ -93,12 +89,8 @@ class UnitVectorDom(val dim: Int) extends GenericVectorDom {
     }
   }
 
-  def variable(name: String, offsets: Offsets, owner: term.Var[Dom]) =
-    new StaticVectorVar(name, owner, offsets.vectOff) with UnitVectorVar
-
-  def dynamic(name: => String, offsets: => Offsets, owner: term.Var[Dom]) = new BaseVar(name, owner) with DomVar with UnitVectorVar {
-    def offset = offsets.vectOff
-  }
+  def variable(name: String) =
+    new StaticVectorVar(name) with UnitVectorVar
 
 }
 
@@ -130,17 +122,13 @@ class MatrixDom(val dim1: Int, dim2: Int) extends AtomicDom {
     target.mats(offsets.matsOff) = new MatsMsg(zero)
   }
 
-  def variable(name: String, offsets: Offsets, owner: term.Var[Dom]): DomVar = new StaticMatrixVar(name, owner, offsets.matsOff)
-
-  def dynamic(name: => String, offsets: => Offsets, owner: term.Var[Dom]) = new BaseVar(name, owner) with DomVar {
-    def offset = offsets.matsOff
-  }
+  def variable(name: String): DomVar = new StaticMatrixVar(name)
 
   def one = new DenseTensor2(dim1, dim2, 1.0)
 
   def zero = new DenseTensor2(dim1, dim2, 0.0)
 
-  case class StaticMatrixVar(name: String, owner: term.Var[Dom], offset: Int) extends DomVar {
+  case class StaticMatrixVar(name: String) extends DomVar {
   }
 
   trait DomVar extends DomTerm with super.DomVar {
@@ -191,24 +179,13 @@ class DoubleDom extends AtomicDom {
 
   val lengths = Offsets(0, 1, 0, 0)
 
-  def variable(name: String, offsets: Offsets = Offsets(), owner: term.Var[Dom]): Var = StaticDoubleVar(name, owner, offsets.contOff)
-
-  def dynamic(name: => String, offsets: => Offsets, owner: term.Var[Dom]): Var = new BaseVar(name, owner) with DomVar {
-    def offset = offsets.contOff
-  }
+  def variable(name: String): Var = StaticDoubleVar(name)
 
   def one = 1.0
 
   def zero = 0.0
 
-  trait DomVar extends super.DomVar {
-    self =>
-
-  }
-
-  case class StaticDoubleVar(name: String, owner: term.Var[Dom], offset: Int) extends Var with DomTerm {
-  }
-
+  case class StaticDoubleVar(name: String) extends Var with DomTerm
 }
 
 trait GenericDiscreteDom[T] extends AtomicDom {
@@ -256,16 +233,13 @@ trait GenericDiscreteDom[T] extends AtomicDom {
 
   val lengths = Offsets(1, 0, 0, 0)
 
-  def variable(name: String, offsets: Offsets = Offsets(), owner: term.Var[Dom]) = StaticDiscVar(name, owner, offsets.discOff)
+  def variable(name: String) = StaticDiscVar(name)
 
-  def dynamic(name: => String, offsets: => Offsets, owner: term.Var[Dom]) = new BaseVar(name, owner) with DomVar {
-    def offset = offsets.discOff
-  }
 
   trait DomVar extends super.DomVar {
   }
 
-  case class StaticDiscVar(name: String, owner: term.Var[Dom], offset: Int) extends DomVar {
+  case class StaticDiscVar(name: String) extends DomVar {
   }
 
 
