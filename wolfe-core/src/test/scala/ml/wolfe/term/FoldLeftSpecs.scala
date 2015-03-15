@@ -18,8 +18,8 @@ class FoldLeftSpecs extends WolfeSpec {
       @domain case class Result(value: Int)
       implicit val Results = Result.Values(Ints)
       val s = Seq(1, 2, 3).toConst
-      val f = s.foldLeft(Result(0).toConst) { (r, i) => Results.Term(r.value + i )}
-      //todo: + i, but this doesn't compile because we require argument to Term be of type Results.value.Term
+      //val f = s.foldLeft(Result(0).toConst) { (r, i) => Results.Term(r.value + i )}
+      //todo: + i doesn't compile because we require argument to Term be of type Results.value.Term
 
     }
 

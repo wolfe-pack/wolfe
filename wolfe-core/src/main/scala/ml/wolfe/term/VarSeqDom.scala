@@ -255,25 +255,11 @@ class RangeTerm(start: IntTerm, end: IntTerm) extends Composed[VarSeqDom[IntDom]
 
   def copy(args: IndexedSeq[ArgumentType]) = new RangeTerm(args(0), args(1))
 
-  val min = start match {
-    case c: Constant[_] => c.value.asInstanceOf[Int]
-    case e => e.domain match {
-      case d: RangeDom => d.start
-      case _ => sys.error("Can't bound range length")
-    }
-  }
-
-  val max = end match {
-    case c: Constant[_] => c.value.asInstanceOf[Int]
-    case e => e.domain match {
-      case d: RangeDom => d.end
-      case _ => sys.error("Can't bound range length")
-    }
-  }
+  val min = start.domain.start
+  val max = end.domain.end
   val range = min until max
 
-
-  val domain: VarSeqDom[IntDom] = new VarSeqDom(RangeDom(range), max - min, 0)
+  val domain: VarSeqDom[IntDom] = new VarSeqDom(RangeDom(range), max - min, end.domain.start - start.domain.end)
 
   override def composer(args: Settings) = new Composer(args) {
     def eval()(implicit execution: Execution) = {

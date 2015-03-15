@@ -138,7 +138,7 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
   //      new SeqApply[E,S,I](term,index)
   //  }
 
-  case class Assignment[D <: Dom](variable:Var[D],value:Term[D])
+  case class Assignment[+D <: Dom](variable:Var[D],value:Term[D])
 
   implicit class RichVar[D <: Dom](val innerVar:Var[D]) {
     def <<(that:Term[D]) = Assignment(innerVar, that)
@@ -151,6 +151,10 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
     def |[D<:Dom](assignment:Assignment[D]) = {
       innerTerm.domain.own(Conditioned[Dom,Dom](innerTerm, assignment.variable, assignment.value).asInstanceOf[TypedTerm[innerTerm.domain.Value]])
     }
+
+    def apply(assignments:Assignment[Dom]*) = assignments.foldLeft[AnyTerm](innerTerm){
+      case (result,assignment) => Conditioned[Dom,Dom](result, assignment.variable, assignment.value)
+    }.eval()
 
 
     def map[B](fun: innerTerm.domain.Value => B)(implicit targetDom: TypedDom[B]): targetDom.Term = {
@@ -326,11 +330,11 @@ trait MathImplicits {
   implicit def intToRichIntTerm(int:Int):RichIntTerm = new RichIntTerm(Dom.ints.Const(int))
 
   implicit class RichIntTerm(val term: IntTerm) {
-    def +(that: IntTerm) = Dom.ints.own(new BinaryIntFun(term, that, _ + _, "+"))
+    def +(that: IntTerm) = new BinaryIntFun(term, that, "+", _ + _, _ + _)
 
-    def -(that: IntTerm) = new BinaryIntFun(term, that, _ - _, "-")
+    def -(that: IntTerm) = new BinaryIntFun(term, that, "-", _ - _, _ - _)
 
-    def *(that: IntTerm) = new BinaryIntFun(term, that, _ * _, "*")
+    def *(that: IntTerm) = new BinaryIntFun(term, that, "*", _ * _,(d1,d2) => Dom.ints)
 
     def until(end:IntTerm) = new RangeTerm(term,end)
 
@@ -392,7 +396,7 @@ trait MathImplicits {
 
   implicit def doubleToConstant(d: Double): Constant[DoubleDom] = Dom.doubles.Const(d)
 
-  implicit def intToConstant(i: Int): Constant[IntDom] = Dom.ints.Const(i)
+  implicit def intToConstant(i: Int): Constant[IntDom] = new RangeDom(i until i+1).Const(i)
 
   implicit def doubleToRichConstant(d: Double): RichDoubleTerm = new RichDoubleTerm(doubleToConstant(d))
 
