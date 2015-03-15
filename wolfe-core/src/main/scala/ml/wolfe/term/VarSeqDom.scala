@@ -95,12 +95,12 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
   trait DomTerm extends super.DomTerm {
     def apply(index: Int): term.Term[E]
 
-    def length: TypedTerm[Int]
+    def length: IntTerm
 
     def elements: IndexedSeq[term.Term[E]] // = for (i <- 0 until maxLength) yield apply(i)
 
-    def apply(index: term.Term[TypedDom[Int]]): elementDom.Term = {
-      type Index = TypedTerm[Int]
+    def apply(index: IntTerm): elementDom.Term = {
+      type Index = IntTerm
       type ElemDom = TypedDom[elementDom.Value]
       type SeqTerm = term.Term[VarSeqDom[TypedDom[elementDom.Value]]]
       elementDom.own(new VarSeqApply[
@@ -123,17 +123,17 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
     def apply(index: Int) = new VarSeqApply[E, Term, lengthDom.Term](this, lengthDom.Const(index))
 
     def length = new VarSeqLength[Term](this)
-    
+
     def elements = for (i <- 0 until maxLength) yield apply(i)
 
 
   }
 
-  def Term(length: TypedTerm[Int], elements: IndexedSeq[elementDom.Term]): Term = new Constructor(length, elements)
+  def Term(length: IntTerm, elements: IndexedSeq[elementDom.Term]): Term = new Constructor(length, elements)
 
   def Term(elements: elementDom.Term*): Term = Term(indexDom.Const(elements.size), elements.toIndexedSeq)
 
-  class Constructor(val length: TypedTerm[Int], val elements: IndexedSeq[term.Term[E]]) extends DomTerm with Composed[dom.type] {
+  class Constructor(val length: IntTerm, val elements: IndexedSeq[term.Term[E]]) extends DomTerm with Composed[dom.type] {
     def apply(index: Int) = elements(index)
 
     type ArgumentType = term.Term[Dom]
@@ -186,14 +186,14 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
 
 }
 
-case class VarSeqLength[S <: Term[VarSeqDom[_]]](seq: S) extends Composed[TypedDom[Int]] {
+case class VarSeqLength[S <: Term[VarSeqDom[_]]](seq: S) extends Composed[IntDom] {
   type ArgumentType = S
 
   def copy(args: IndexedSeq[ArgumentType]) = new VarSeqLength[S](args(0))
 
   val arguments = IndexedSeq(seq)
 
-  val domain: TypedDom[Int] = seq.domain.lengthDom
+  val domain: IntDom = seq.domain.lengthDom
 
 
   override def composer(args: Settings) = new Composer(args) {
@@ -246,7 +246,7 @@ case class VarSeqApply[+E <: Dom, S <: Term[VarSeqDom[E]], I <: IntTerm](seq: S,
   override def toString = s"$seq($index)"
 }
 
-class RangeTerm(start: IntTerm, end: IntTerm) extends Composed[VarSeqDom[TypedDom[Int]]] {
+class RangeTerm(start: IntTerm, end: IntTerm) extends Composed[VarSeqDom[IntDom]] {
 
 
   type ArgumentType = IntTerm
@@ -273,7 +273,7 @@ class RangeTerm(start: IntTerm, end: IntTerm) extends Composed[VarSeqDom[TypedDo
   val range = min until max
 
 
-  val domain: VarSeqDom[TypedDom[Int]] = new VarSeqDom(RangeDom(range), max - min, 0)
+  val domain: VarSeqDom[IntDom] = new VarSeqDom(RangeDom(range), max - min, 0)
 
   override def composer(args: Settings) = new Composer(args) {
     def eval()(implicit execution: Execution) = {

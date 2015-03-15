@@ -83,7 +83,7 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
   def SeqTerm[D <: Dom](args:Term[D]*):VarSeqDom[D]#Term  = VarSeq[D](Ints.Const(args.length),args.toIndexedSeq)
   def SeqTerm[D <: Dom](length:IntTerm)(args:Term[D]*):VarSeqDom[D]#Term  = VarSeq[D](length,args.toIndexedSeq)
 
-  def VarSeq[D <: Dom](length: TypedTerm[Int], args: IndexedSeq[Term[D]]): VarSeqDom[D]#Term = {
+  def VarSeq[D <: Dom](length: IntTerm, args: IndexedSeq[Term[D]]): VarSeqDom[D]#Term = {
     val dom = Seqs[D](args.head.domain, args.length)
     dom.Term(length, args.asInstanceOf[IndexedSeq[dom.elementDom.Term]])
     //    new VarSeqConstructor[D](length, args)
