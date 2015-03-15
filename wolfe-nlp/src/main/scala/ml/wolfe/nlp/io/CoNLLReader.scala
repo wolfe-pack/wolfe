@@ -130,6 +130,7 @@ class CoNLL2011Reader(filename: String, delim: String = "\t") extends Iterable[D
     val chunks = chunk.split("\n\n")
     val sents = chunks.map { chunk =>
       val grid = chunk.split("\n").filter(!_.startsWith("#")).map(_.replaceAll(" +", "\t").split("\t"))
+      val numCols = grid(0).size
       val words = (0 until grid.size).map(grid(_)(3))
       val pos = (0 until grid.size).map(grid(_)(4))
       val lemma = (0 until grid.size).map(grid(_)(6))
@@ -151,10 +152,16 @@ class CoNLL2011Reader(filename: String, delim: String = "\t") extends Iterable[D
       assert(nertree != null, "Null NER tree")
       val mentions = nertree.toSpans.view.filter(_.label != "XX").map(s => EntityMention(s.label, s.start, s.end))
 
+      val predicates = (0 until words.size).map(i => Predicate(i, tokens(i), grid(i)(6) + "." + grid(i)(7)))
+//      val frames = (11 until numCols-1).map {i =>
+//        readStackFormatSRL((0 until words.size).map(j => grid(i)(j)).toList)
+//      }
+      // 6,7,8 predicate info
+      //11 - len-2 is arguments
+
       val sense = (0 until grid.size).map(grid(_)(7))
       Sentence(tokens, syntax = SyntaxAnnotation(tree = ctree, dependencies = null))
     }.toIndexedSeq
-
 
 
     val mentions = new ArrayBuffer[CorefMention]
@@ -178,6 +185,9 @@ class CoNLL2011Reader(filename: String, delim: String = "\t") extends Iterable[D
     }.toIndexedSeq
     Document(source = chunks.mkString("\n"), filename = chunkFilename, sentences = sents, coref = CorefAnnotation(mentions = mentions.toSeq))
   }
+
+//  def readStackFormatSRL(l: List[String]): Seq[SemanticFrame] = {
+//  }
 
   def stackReader(l: List[String]): List[(Int, Int, String)] = {
     ???

@@ -140,12 +140,22 @@ class Word2Vec {
       vocab.put(word, vector.map(_ / normFactor) )
 
       // Eat up the next delimiter character
-      reader.read()
+      try {
+        reader.read()
+      }
+      catch {
+        case e: Throwable => System.err.println("Error reading Word2Vec: " + e.getStackTrace.mkString("\n"))
+      }
     }
+    println(vocab.size)
     println("Loaded " + math.min(numWords, limit) + " words.\n")
 
     // Finally, close the reader
     reader.close()
+  }
+
+  def put(str: String, vec: Array[Float]) = {
+    vocab.put(str, vec)
   }
 
   /** Return the number of words in the vocab.
@@ -388,7 +398,7 @@ object RunWord2Vec {
   def main(args: Array[String]) {
     // Load word2vec model from binary file.
     val model = new Word2Vec()
-    model.load("../word2vec-scala/vectors.bin")
+    model.load(args(0)) //"../word2vec-scala/vectors.bin")
 
     // distance: Find N closest words
     model.pprint(model.distance(List("france"), N = 10))
@@ -403,3 +413,11 @@ object RunWord2Vec {
   }
 
 }
+
+
+
+
+
+
+
+
