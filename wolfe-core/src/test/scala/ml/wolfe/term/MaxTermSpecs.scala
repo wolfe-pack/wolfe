@@ -23,7 +23,7 @@ class MaxTermSpecs extends WolfeSpec {
       term.gradient(weights, vector(1, -1)) should equal(vector(0, 0))
     }
 
-    "maximize over a structured search space" ignore {
+    "maximize over a structured search space" in {
       val labels = Discretes("V", "N")
       val sequences = Seqs(labels, 2)
 
