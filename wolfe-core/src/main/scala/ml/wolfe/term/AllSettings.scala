@@ -10,7 +10,7 @@ object AllSettings {
   }
 }
 
-class AllSettings[T](domains: IndexedSeq[Dom], toVaryCreator: => Settings)(fun: Settings => T) extends Iterable[T] {
+class AllSettings[T](val domains: IndexedSeq[Dom], toVaryCreator: => Settings)(fun: Settings => T) extends Iterable[T] {
   //val flattened = for (i <- 0 until atoms.length; j <- 0 until atoms(i).length) yield (atoms(i)(j), i)
   val atomToVar = (for ((d, i) <- domains.zipWithIndex) yield Array.fill[Int](d.lengths.discOff)(i)).flatten.toArray
   val offsets = domains.flatMap(d => Range(0, d.lengths.discOff)).toArray

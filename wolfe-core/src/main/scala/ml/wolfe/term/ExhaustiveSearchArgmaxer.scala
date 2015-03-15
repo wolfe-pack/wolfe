@@ -60,4 +60,39 @@ class ExhaustiveSearchMaxMarginalizer(val obj: DoubleTerm, val wrt: Seq[Var[Dom]
 
 }
 
+class ExhaustiveSearchArgmaxer(val obj:DoubleTerm, val wrt:Seq[AnyVar])(val observed:Settings, val msgs: Msgs) extends Argmaxer {
+
+  val obsVars = obj.vars.filterNot(wrt.contains)
+
+  val wrt2obj = VariableMapping(wrt,obj.vars)
+  val obs2obj = VariableMapping(obsVars,obj.vars)
+
+  val result = Settings.fromSeq(wrt map (_.domain.createSetting()))
+  val toVary = Settings.fromSeq(wrt map (_.domain.createSetting()))
+
+  val objInput = obj.createInputSettings()
+
+  wrt2obj.linkTargetsToSource(toVary,objInput)
+  obs2obj.linkTargetsToSource(observed,objInput)
+
+  val objEval = obj.evaluatorImpl(objInput)
+
+  val allSettings = new term.AllSettings(wrt.map(_.domain).toIndexedSeq, toVary)(_ => {})
+
+
+  def argmax()(implicit execution: Execution) = {
+    var max = Double.NegativeInfinity
+    allSettings.loopSettings { settings =>
+
+      objEval.eval()
+      val value = objEval.output.cont(0)
+
+      if (value > max) {
+        max = value
+        wrt2obj.copyBackwardDeep(result,settings)
+      }
+    }
+  }
+}
+
 

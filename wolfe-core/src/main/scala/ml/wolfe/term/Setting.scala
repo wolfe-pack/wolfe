@@ -516,6 +516,10 @@ final class VariableMapping(val srcIndex: Array[Int], val tgtIndex: Array[Int]) 
     for (i <- 0 until srcIndex.length) src(srcIndex(i)) := tgt(tgtIndex(i))
   }
 
+  def copyBackwardDeep(src: Settings, tgt: Settings) = {
+    for (i <- 0 until srcIndex.length) src(srcIndex(i)) := tgt(tgtIndex(i))
+  }
+
   def copyBackwardShallow(src: Array[Setting], tgt: Array[Setting]) = {
     for (i <- 0 until srcIndex.length) src(srcIndex(i)) = tgt(tgtIndex(i))
   }

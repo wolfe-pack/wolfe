@@ -51,7 +51,7 @@ class VarSeqDomSpecs extends WolfeSpec {
       val value = IndexedSeq(1.0, 2.0, 3.0)
       val term = x(i) * x(i)
       val parameter = Settings(xs.toSetting(value),xs.lengthDom.toSetting(2))
-      val gradient = term.createZeroSettings()
+      val gradient = term.createZeroInputSettings()
       val diff = term.differentiatorImpl(Seq(x))(parameter,Setting.cont(1.0),gradient)
       gradient(0).recordChangedOffsets = true
       diff.differentiate()
