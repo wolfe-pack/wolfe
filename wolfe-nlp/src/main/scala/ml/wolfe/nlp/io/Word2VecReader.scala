@@ -20,10 +20,10 @@ object Word2VecReader {
     load(args(0))
   }
 
-  def load(filename: String, filter: (String => Boolean) = _ => true): Word2Vec = {
+  def load(filename: String, filter: (String => Boolean) = _ => true, normalize: Boolean = true): Word2Vec = {
     val w2v = new Word2Vec
     try {
-      w2v.load(filename, filter)
+      w2v.load(filename, filter, normalize)
     }
     catch {
       case e: Exception => {
@@ -112,6 +112,7 @@ class Word2Vec {
             put(word, vector.toArray)
           }
         }
+        println(vocab.size)
       }
 
       // dis.readChar()
