@@ -20,10 +20,10 @@ object Word2VecReader {
     load(args(0))
   }
 
-  def load(filename: String): Word2Vec = {
+  def load(filename: String, filter: (String => Boolean) = _ => true): Word2Vec = {
     val w2v = new Word2Vec
     try {
-      w2v.load(filename)
+      w2v.load(filename, filter)
     }
     catch {
       case e: Exception => {
@@ -67,7 +67,7 @@ class Word2Vec {
    * @throws IOException
    */
   @throws(classOf[IOException])
-  def load(path: String, normalize: Boolean = true): Word2Vec = {
+  def load(path: String, filter: (String => Boolean) = _ => true, normalize: Boolean = true) = { //Word2Vec = {
     var dis: DataInputStream = null
     var bis: BufferedInputStream = null
     var gis: GZIPInputStream = null
@@ -75,7 +75,7 @@ class Word2Vec {
     var vector: Float = 0
     var words: Int = 0
     var size: Int = 0
-    val w2v: Word2Vec = new Word2Vec
+//    val w2v: Word2Vec = new Word2Vec
 
     try {
       if (path.endsWith(".gz")) {
@@ -91,17 +91,26 @@ class Word2Vec {
       size = readString(dis).toInt
       println("Words = " + words + "; size = " + size)
       var word: String = null
-      val vector = new ArrayBuffer[Float]
-
-      for (i <- 0 until words) {
-        word = readString(dis)
-        for (j <- 0 until size) {
-          vector += readFloat(dis)
+      if (filter(word)) {
+        val vector = new ArrayBuffer[Float]
+        for (i <- 0 until words) {
+          word = readString(dis)
+          for (j <- 0 until size) {
+            vector += readFloat(dis)
+          }
+//          println(word) // + ": " + vector)
         }
-        println(word) // + ": " + vector)
+        if (normalize) {
+          val sum = vector.sum
+          //w2v.
+            put(word, vector.toArray.map(_ / sum))
+        }
+        else {
+          //w2v.
+            put(word, vector.toArray)
+        }
       }
-      val sum = vector.sum
-      w2v.put(word, vector.toArray.map(_ / sum))
+
      // dis.readChar()
 
     }
@@ -111,8 +120,10 @@ class Word2Vec {
       bis.close
       dis.close
     }
-    w2v
+//    w2v
   }
+
+  def size = vocab.size
 
   /**
    * Read a string from a data input stream
@@ -474,8 +485,7 @@ object RunWord2Vec {
   /** Demo. */
   def main(args: Array[String]) {
     // Load word2vec model from binary file.
-    val model = new Word2Vec()
-    Word2VecReader.load(args(0)) //model.load(args(0)) //"../word2vec-scala/vectors.bin")
+    val model = Word2VecReader.load(args(0)) //model.load(args(0)) //"../word2vec-scala/vectors.bin")
 
     // distance: Find N closest words
     model.pprint(model.distance(List("france"), N = 10))
