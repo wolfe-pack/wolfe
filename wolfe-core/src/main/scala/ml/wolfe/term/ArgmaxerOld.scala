@@ -1,11 +1,5 @@
 package ml.wolfe.term
 
-/**
- * @author riedel
- */
-trait ArgmaxerOld {
-  def argmax(observed: Array[Setting], msgs: Array[Msg], result: Array[Setting])
-}
 
 trait Argmaxer {
   val observed: Settings
@@ -15,10 +9,6 @@ trait Argmaxer {
   def argmax()(implicit execution: Execution)
 }
 
-trait ArgmaxerFactoryOld {
-  def argmaxer(term: DoubleTerm, wrt: Seq[Var[Dom]]): ArgmaxerOld
-}
-
 trait ArgmaxerFactory {
   def argmaxer(term: DoubleTerm, wrt: Seq[Var[Dom]])(obs: Settings, msgs: Msgs): Argmaxer
 }
@@ -26,7 +16,7 @@ trait ArgmaxerFactory {
 
 object Argmaxer {
 
-  def adaGrad2(implicit params: AdaGradParameters) = new ArgmaxerFactory {
+  def adaGrad(implicit params: AdaGradParameters) = new ArgmaxerFactory {
     def argmaxer(term: DoubleTerm, wrt: Seq[Var[Dom]])(obs: Settings, msgs: Msgs) =
       new AdaGradArgmaxer(term, wrt, obs, msgs)
   }

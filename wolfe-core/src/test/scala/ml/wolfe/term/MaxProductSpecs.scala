@@ -78,9 +78,9 @@ class MaxProductSpecs extends WolfeSpec {
         max(Y)(y => model(x, w)(y)) - model(x, w)(yGold)
       }
 
-      def ll(w: Weights.Term) = sum(train) { i => instanceLL(i.x, i.y)(w)} argmaxBy adaGrad2(adaParams)
+      def ll(w: Weights.Term) = sum(train) { i => instanceLL(i.x, i.y)(w)} argmaxBy adaGrad(adaParams)
 
-      def llStochastic(w: Weights.Term) = shuffled(train) { i => instanceLL(i.x, i.y)(w)} argmaxBy adaGrad2(adaParams)
+      def llStochastic(w: Weights.Term) = shuffled(train) { i => instanceLL(i.x, i.y)(w)} argmaxBy adaGrad(adaParams)
 
       val wStar = argmax(Weights)(ll)
 

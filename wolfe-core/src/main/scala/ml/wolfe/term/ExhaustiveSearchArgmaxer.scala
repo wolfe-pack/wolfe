@@ -58,5 +58,6 @@ class ExhaustiveSearchMaxMarginalizer(val obj: DoubleTerm, val wrt: Seq[Var[Dom]
     }
   }
 
-
 }
+
+

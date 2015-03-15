@@ -34,6 +34,11 @@ trait Var[+D <: Dom] extends Term[D] {
   override def toString = name
 }
 
+/**
+ * An atom is a variable that can be used to represent a part of another, possibly structured, owner variable.
+ * For example, we can use an atom x(i) to represent the i-ths element of a sequence variable x.
+ * @tparam D the domain of the variable.
+ */
 trait Atom[+D <: Dom] extends Var[D] {
 
   self =>
@@ -50,6 +55,11 @@ trait Atom[+D <: Dom] extends Var[D] {
 
 }
 
+/**
+ * A ground atom is an atom that has no free variables in its definition. For example, x(i) is a non-ground atom
+ * as the index i to the sequence variable x is a free variable. The atom x(4) on the other hand is grounded.
+ * @tparam D the domain of the variable.
+ */
 trait GroundAtom[+D <: Dom] extends Atom[D] {
   self =>
   def offsets: Offsets
