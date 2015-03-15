@@ -6,6 +6,7 @@ import ml.wolfe.WolfeSpec
  * @author rockt
  */
 class MaxTermSpecs extends WolfeSpec {
+
   import ml.wolfe.term.TermImplicits._
 
   "A max term" should {
@@ -24,13 +25,12 @@ class MaxTermSpecs extends WolfeSpec {
     }
 
     "maximize over a structured search space" in {
-      val labels = Discretes("V", "N")
-      val sequences = Seqs(labels, 2)
+      implicit val Labels = Discretes("V", "N")
+      val Sequences = Seqs(Labels, 2)
 
-      def model(y: sequences.DomTerm) =
-        I(y(0) === labels.Const("V")) * 2.0 +
-          I(y(1) === labels.Const("N")) * 1.0
-      val result = max(sequences)(model)
+      def model(y: Sequences.Term) =
+        I(y(0) === "V") * 2.0 + I(y(1) === "N") * 1.0
+      val result = max(Sequences)(model)
       result.eval() should be(3.0)
     }
 
