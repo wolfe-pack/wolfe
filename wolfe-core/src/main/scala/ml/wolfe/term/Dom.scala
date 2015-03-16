@@ -31,6 +31,11 @@ trait Dom {
    */
   type Marginals
 
+  /**
+   * A type to define terms of sequences of elements of this domain.
+   */
+  type Seqs = VarSeqDom[dom.type]#Term
+
   //trait Test extends Term
   def own(term: TypedTerm[Value]): Term
 
