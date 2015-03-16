@@ -3,7 +3,7 @@ package ml.wolfe.term
 import java.lang.System._
 import java.util
 
-import cc.factorie.la.{SparseIndexedTensor1, DenseTensor1, SparseTensor1}
+import cc.factorie.la._
 import ml.wolfe.{MoreArrayOps, FactorieMatrix, FactorieVector}
 
 import scala.collection.mutable
@@ -120,16 +120,21 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
 
     def resetToZero(offset: Int) = array(offset).zero() // := 0
 
+    def copyVector(v:FactorieVector) = v match {
+      case s:SingletonTensor1 => new SingletonTensor1(s.dim1,s.singleIndex,s.singleValue)
+      case _ => v.copy
+    }
+
     override def update(index: Int, value: FactorieVector): Unit = {
       if (this(index) == null) {
-        super.update(index, value.copy)
+        super.update(index, copyVector(value))
       } else {
         if (adaptiveVectors) {
           (this(index), value) match {
             case (_: DenseTensor1, target: SparseIndexedTensor1) =>
-              super.update(index, target.copy)
+              super.update(index, copyVector(target))
             case (_: SparseIndexedTensor1, target: DenseTensor1) =>
-              super.update(index, target.copy)
+              super.update(index, copyVector(target))
             case (_, _) =>
               this(index) := value
           }

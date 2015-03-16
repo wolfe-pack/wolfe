@@ -28,8 +28,7 @@ class MaxTermSpecs extends WolfeSpec {
       implicit val Labels = Discretes("V", "N")
       val Sequences = Seqs(Labels, 2)
 
-      def model(y: Sequences.Term) =
-        I(y(0) === "V") * 2.0 + I(y(1) === "N") * 1.0
+      def model(y: Sequences.Term) = I(y(0) === "V") * 2.0 + I(y(1) === "N") * 1.0
       val result = max(Sequences)(model)
       result.eval() should be(3.0)
     }

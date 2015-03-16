@@ -62,7 +62,7 @@ class MaxProductSpecs extends WolfeSpec {
       val n = 5
       val X = Seqs(Ints(0 until 3), 0, n)
       val Y = Seqs(Bools, 0, n)
-      val Weights = Vectors(1000)
+      implicit val Weights = Vectors(1000)
 
       @domain case class Instance(x: X.Value, y: Y.Value)
 

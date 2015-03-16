@@ -14,6 +14,8 @@ class HierarchicalIndex extends Index {
   def size = _size
 
 
+  def key(index: Int) = ???
+
   def hasKey(key: Any) = ???
   final class NodeIndex(val key: Any) {
     val children = new THashMap[Any, NodeIndex]()

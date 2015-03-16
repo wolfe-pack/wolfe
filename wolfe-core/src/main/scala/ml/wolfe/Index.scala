@@ -2,6 +2,7 @@ package ml.wolfe
 
 import gnu.trove.strategy.HashingStrategy
 import gnu.trove.map.custom_hash.TObjectIntCustomHashMap
+import scala.collection.mutable.ArrayBuffer
 import scala.collection.{GenMap, mutable}
 import gnu.trove.procedure.TObjectIntProcedure
 import java.io.{ObjectInputStream, ObjectOutputStream}
@@ -16,18 +17,25 @@ trait Index {
   def index(key: Any): Int
   def hasKey(key:Any) : Boolean
   def inverse(): GenMap[Int, Any]
+  def key(index:Int):Any
+
 }
 
 @SerialVersionUID(100L)
 class SimpleIndex extends Serializable with Index {
 
   private val map = new TObjectIntHashMap[Any]
+  private val inversed = new ArrayBuffer[Any]
 
   def size = map.size()
   def index(args: Any): Int = {
-    map.adjustOrPutValue(args, 0, map.size)
+    val oldSize = map.size()
+    val current = map.adjustOrPutValue(args, 0, map.size)
+    if (map.size > oldSize) inversed += args
+    current
   }
 
+  def key(index:Int) = inversed(index)
 
   def hasKey(key: Any) = map.containsKey(key)
   def inverse() = {

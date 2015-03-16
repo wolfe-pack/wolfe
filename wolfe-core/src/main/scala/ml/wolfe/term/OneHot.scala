@@ -1,41 +1,76 @@
 package ml.wolfe.term
 
-import cc.factorie.la.SingletonTensor1
+import cc.factorie.la.{GrowableSparseTensor1, GrowableDenseTensor1, SingletonTensor1}
 import ml.wolfe.Index
 
-///**
-// * @author riedel
-// */
-//class OneHot(val index:IntTerm,val value:DoubleTerm)(val domain:VectorDom) extends Composed[VectorDom] {
-//  val arguments = IndexedSeq(index,value)
-//  def composer() = new Evaluator {
-//    def eval(inputs: Array[Setting], output: Setting) = {
-//      val index = inputs(0).disc(0)
-//      val value = inputs(1).cont(0)
-//      output.vect(0) = new SingletonTensor1(domain.dim,index,value)
-//    }
-//  }
-//  def differentiator(wrt: Seq[Var[Dom]]) = new ComposedDifferentiator {
-//    def localBackProp(argOutputs: Array[Setting], outError: Setting, gradient: Array[Setting]) = {
-//      ???
-//    }
-//    def withRespectTo = wrt
-//  }
-//}
+/**
+ * @author riedel
+ */
+case class OneHot(index: IntTerm, value: DoubleTerm)(implicit val domain: VectorDom) extends Composed[VectorDom] {
 
-class Indexed[T<:Term[Dom]](val value:T)(val index:Index) extends Composed[DiscreteDom[Int]] {
+  type ArgumentType = AnyTerm
+  val arguments = IndexedSeq(index, value)
 
+
+  override def composer(args: Settings) = new Composer(args) {
+    def eval()(implicit execution: Execution) = {
+      val index = input(0).disc(0)
+      val value = input(1).cont(0)
+      output.vect(0) = new SingletonTensor1(domain.dim, index, value)
+    }
+  }
+
+
+  override def differentiatorImpl(wrt: Seq[AnyVar])(in: Settings, err: Setting, gradientAcc: Settings) =
+    new ComposedDifferentiator(wrt,in,err,gradientAcc) {
+      def localBackProp()(implicit execution: Execution) = {
+        val index = argOutputs(0).disc(0)
+        argErrors(0).disc(0) = index //todo: this is nasty, needs to be fixed
+        argErrors(1).cont(0) = error.vect(0)(index)
+      }
+    }
+
+  def copy(args: IndexedSeq[ArgumentType]) =
+    OneHot(args(0).asInstanceOf[IntTerm], args(1).asInstanceOf[DoubleTerm])(domain)
+}
+
+case class Indexed[T <: Term[Dom]](value: T)(implicit val index: Index) extends Composed[IntDom] {
+
+  require(value.domain.isDiscrete, "can only index discrete terms")
 
   type ArgumentType = T
 
-
   def copy(args: IndexedSeq[ArgumentType]) = new Indexed[T](args(0))(index)
 
-  def arguments = ???
+  val arguments = IndexedSeq(value)
+  val domain = Dom.ints
 
-  def composerOld() = ???
+  override def composer(args: Settings) = new Composer(args) {
+    def eval()(implicit execution: Execution) = {
+      val value = input(0).disc.array.toSeq
+      val indexOfValue = index(value)
+      output.disc(0) = indexOfValue
+    }
+  }
+}
 
-  def differentiatorOld(wrt: Seq[Var[Dom]]) = ???
+case class Conjoined(arg1:VectorTerm,arg2:VectorTerm)(implicit val index:Index,val dom:VectorDom) extends Composed[VectorDom] {
+  type ArgumentType = VectorTerm
+  val domain = dom
+  val arguments = IndexedSeq(arg1,arg2)
 
-  val domain: DiscreteDom[Int] = ???
+  def copy(args: IndexedSeq[ArgumentType]) = Conjoined(args(0),args(1))(index,dom)
+
+  override def composer(args: Settings) = new Composer(args) {
+    output.vect(0) = new GrowableSparseTensor1(0 until 100)
+    def eval()(implicit execution: Execution) = {
+      val a1 = input(0).vect(0)
+      val a2 = input(1).vect(0)
+      output.vect(0).zero()
+      for ((i1,v1) <- a1.activeElements; (i2,v2) <- a2.activeElements) {
+        val i = index(i1 -> i2)
+        output.vect(0)(i) = v1 * v2
+      }
+    }
+  }
 }

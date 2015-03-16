@@ -1,9 +1,9 @@
 package ml.wolfe.term
 
 import cc.factorie.Factorie.DenseTensor1
-import cc.factorie.la.{SingletonTensor1, DenseTensor2}
+import cc.factorie.la.{GrowableSparseTensor1, GrowableDenseTensor1, SingletonTensor1, DenseTensor2}
 import ml.wolfe.term.TermImplicits.RichToLog
-import ml.wolfe.{FactorieMatrix, FactorieVector}
+import ml.wolfe.{Index, FactorieMatrix, FactorieVector}
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.reflect.macros.blackbox
@@ -12,7 +12,7 @@ import scala.util.Random
 /**
  * @author riedel
  */
-object TermImplicits extends NameProviderImplicits with MathImplicits with Stochastic with LoggedTerms {
+object TermImplicits extends NameProviderImplicits with MathImplicits with Stochastic with LoggedTerms with FVectors {
 
   implicit val Doubles: Dom.doubles.type = Dom.doubles
   implicit val Bools: Dom.bools.type = Dom.bools
@@ -46,6 +46,8 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
 
   def ifThenElse[T <: Term[Dom]](cond:BoolTerm)(ifTrue:T)(ifFalse:T) =
     choice(boolToInt(cond))(ifFalse,ifTrue)
+
+  def indexed(value:AnyTerm)(implicit index:Index) = Indexed(value)
 
 //  implicit class ConvertableToTerm[T, D <: TypedDom[T]](value: T)(implicit val domain: D) {
 //    def toConst: domain.Term = domain.Const(value)
@@ -152,9 +154,9 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
       innerTerm.domain.own(Conditioned[Dom,Dom](innerTerm, assignment.variable, assignment.value).asInstanceOf[TypedTerm[innerTerm.domain.Value]])
     }
 
-    def apply(assignments:Assignment[Dom]*) = assignments.foldLeft[AnyTerm](innerTerm){
+    def apply(assignments:Assignment[Dom]*):innerTerm.domain.Value = assignments.foldLeft[AnyTerm](innerTerm){
       case (result,assignment) => Conditioned[Dom,Dom](result, assignment.variable, assignment.value)
-    }.eval()
+    }.eval().asInstanceOf[innerTerm.domain.Value]
 
 
     def map[B](fun: innerTerm.domain.Value => B)(implicit targetDom: TypedDom[B]): targetDom.Term = {
@@ -274,6 +276,7 @@ trait MathImplicits {
 
     def -(that: VectorTerm) = new VectorSum(IndexedSeq(vect, that * (-1.0)))
 
+    def conjoin(that:VectorTerm)(implicit index:Index,dom:VectorDom) = new Conjoined(vect,that)
 
     //element-wise addition
     def :+(that: VectorTerm): VectorTerm = ???
@@ -388,11 +391,13 @@ trait MathImplicits {
     term
   }
 
-  def oneHot(index: Int, value: Double = 1.0)(implicit dom: VectorDom) =
-    dom.Const(new SingletonTensor1(dom.dim, index, value))
+//  def oneHot(index: Int, value: Double = 1.0)(implicit dom: VectorDom) =
+//    dom.Const(new SingletonTensor1(dom.dim, index, value))
 
-  def oneHot(index: IntTerm, value: DoubleTerm):VectorTerm = ???
+  def oneHot(index: IntTerm, value: DoubleTerm = Dom.doubles.Const(1.0))(implicit dom:VectorDom):VectorTerm = OneHot(index,value)
 
+  def feature(feat: AnyTerm, value: DoubleTerm = Dom.doubles.Const(1.0))(implicit dom:VectorDom, index:Index) =
+    oneHot(indexed(feat),value)
 
   implicit def doubleToConstant(d: Double): Constant[DoubleDom] = Dom.doubles.Const(d)
 
@@ -435,5 +440,15 @@ trait LoggedTerms extends NamedValueImplicits {
 
 }
 
+trait FVectors {
+  def feats(prefix:Symbol,elements:Seq[Any],value:Double = 1.0)(implicit index:Index) = {
+    val result = new GrowableSparseTensor1(elements)
+    for (e <- elements) {
+      result(index(prefix -> e)) = value
+    }
+    result
+  }
+
+}
 
 
