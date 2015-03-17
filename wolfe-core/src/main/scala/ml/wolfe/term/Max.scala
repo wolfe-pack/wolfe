@@ -84,6 +84,20 @@ class Argmax[D <: Dom](val obj: DoubleTerm, val wrt: Var[D]) extends Term[D] {
     val output = maxer.result(0)
   }
 
+  def by(factory: ArgmaxerFactory) = {
+    val newObj = new ProxyTerm[TypedDom[Double]] {
+      def self = obj
+
+      override def argmaxerImpl(wrt: Seq[Var[Dom]])(observed: Settings, msgs: Msgs) = {
+        factory.argmaxer(obj, wrt)(observed, msgs)
+      }
+
+      def copy(args: IndexedSeq[ArgumentType]) = ???
+    }
+    new Argmax(newObj,wrt)
+  }
+
+
 
 }
 
