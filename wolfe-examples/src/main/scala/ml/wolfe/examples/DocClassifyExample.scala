@@ -35,8 +35,8 @@ object DocClassifyExample extends App {
     w dot (x.feats conjoin feature(y))
   }
 
-  val train = trainDocs.map(toInstance).toConst
-  val test = testDocs.map(toInstance).toConst
+  val train = trainDocs.take(10).map(toInstance).toConst
+  val test = testDocs.take(10).map(toInstance).toConst
 
   println(index.size)
 
@@ -45,6 +45,8 @@ object DocClassifyExample extends App {
   }
 
   val wStar = argmax(Weights)(learnObj(train)).eval()
+
+  println(wStar)
 
   //def conjoin
 

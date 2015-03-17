@@ -1,6 +1,7 @@
 package ml.wolfe.term
 
-import cc.factorie.la.{GrowableSparseTensor1, GrowableDenseTensor1, SingletonTensor1}
+import cc.factorie.la._
+import cc.factorie.util.SingletonIntSeq
 import ml.wolfe.Index
 
 /**
@@ -13,10 +14,15 @@ case class OneHot(index: IntTerm, value: DoubleTerm)(implicit val domain: Vector
 
 
   override def composer(args: Settings) = new Composer(args) {
+    output.vect(0) = new MutableSingletonTensor1(domain.dim, -1, 1.0)
+
+    val result:MutableSingletonTensor1 = output.vect(0).asInstanceOf[MutableSingletonTensor1]
+
     def eval()(implicit execution: Execution) = {
       val index = input(0).disc(0)
       val value = input(1).cont(0)
-      output.vect(0) = new SingletonTensor1(domain.dim, index, value)
+      result.move(index,value)
+      output.vect.recordChange(0)
     }
   }
 
@@ -34,6 +40,18 @@ case class OneHot(index: IntTerm, value: DoubleTerm)(implicit val domain: Vector
     OneHot(args(0).asInstanceOf[IntTerm], args(1).asInstanceOf[DoubleTerm])(domain)
 }
 
+/** A one-dimensional one-hot Tensor. */
+class MutableSingletonTensor1(val dim1:Int, var singleIndex:Int, var singleValue:Double) extends SingletonIndexedTensor with Tensor1 {
+  def activeDomain = new SingletonIntSeq(singleIndex)
+
+  def move(i:Int, v:Double): Unit = {
+    singleIndex = i
+    singleValue = v
+  }
+
+}
+
+
 case class Indexed[T <: Term[Dom]](value: T)(implicit val index: Index) extends Composed[IntDom] {
 
   require(value.domain.isDiscrete, "can only index discrete terms")
@@ -47,7 +65,7 @@ case class Indexed[T <: Term[Dom]](value: T)(implicit val index: Index) extends 
 
   override def composer(args: Settings) = new Composer(args) {
     def eval()(implicit execution: Execution) = {
-      val value = input(0).disc.array.toSeq
+      val value = Seq() ++ input(0).disc.array
       val indexOfValue = index(value)
       output.disc(0) = indexOfValue
     }
@@ -63,6 +81,8 @@ case class Conjoined(arg1:VectorTerm,arg2:VectorTerm)(implicit val index:Index,v
 
   override def composer(args: Settings) = new Composer(args) {
     output.vect(0) = new GrowableSparseTensor1(0 until 100)
+//    output.vect(0) = new SparseIndexedTensor1(1000)
+
     def eval()(implicit execution: Execution) = {
       val a1 = input(0).vect(0)
       val a2 = input(1).vect(0)

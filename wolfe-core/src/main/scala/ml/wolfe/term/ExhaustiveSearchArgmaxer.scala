@@ -90,7 +90,6 @@ class ExhaustiveSearchArgmaxer(val obj:DoubleTerm, val wrt:Seq[AnyVar])(val obse
       if (value > max) {
         max = value
         result := settings
-        //wrt2obj.copyBackwardDeep(result,settings)
       }
     }
   }

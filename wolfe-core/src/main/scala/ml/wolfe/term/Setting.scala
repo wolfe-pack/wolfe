@@ -122,6 +122,7 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
 
     def copyVector(v:FactorieVector) = v match {
       case s:SingletonTensor1 => new SingletonTensor1(s.dim1,s.singleIndex,s.singleValue)
+      case s:MutableSingletonTensor1 => new MutableSingletonTensor1(s.dim1,s.singleIndex,s.singleValue)
       case _ => v.copy
     }
 
@@ -131,9 +132,9 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
       } else {
         if (adaptiveVectors) {
           (this(index), value) match {
-            case (_: DenseTensor1, target: SparseIndexedTensor1) =>
+            case (_: DenseTensor1, target: SparseIndexedTensor) =>
               super.update(index, copyVector(target))
-            case (_: SparseIndexedTensor1, target: DenseTensor1) =>
+            case (_: SparseIndexedTensor, target: DenseTensor1) =>
               super.update(index, copyVector(target))
             case (_, _) =>
               this(index) := value
@@ -158,10 +159,10 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
           this(index) = value.copy
         } else {
           (this(index), value) match {
-            case (current: SparseIndexedTensor1, arg: DenseTensor1) =>
+            case (current: SparseIndexedTensor, arg: DenseTensor1) =>
               this(index) = arg.copy
               this(index) += current
-            case (current: DenseTensor1, arg: SparseIndexedTensor1) =>
+            case (current: DenseTensor1, arg: SparseIndexedTensor) =>
               this(index) = arg.copy
               this(index) += current
             case (_, _) =>

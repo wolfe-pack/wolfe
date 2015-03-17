@@ -54,6 +54,7 @@ class AdaGradArgmaxer(val objRaw: DoubleTerm,
 
   gradient foreach (_.recordChangedOffsets = true)
   result foreach (_.recordChangedOffsets = true)
+  gradient foreach (_.setAdaptiveVectors(true))
 
   param2full.copyForwardDeep(initParameters, result)
 
