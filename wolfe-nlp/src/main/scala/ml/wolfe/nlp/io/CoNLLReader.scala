@@ -3,6 +3,7 @@ package ml.wolfe.nlp.io
 import ml.wolfe.nlp._
 import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
+import scala.util.matching.Regex
 
 /**
  * Created by narad on 8/12/14.
@@ -50,7 +51,7 @@ class CoNLLReader(filename: String, delim: String = "\t") extends Iterable[Sente
     val argsets = (14 to 13 + preds.size).map { i =>
       cells.zipWithIndex.flatMap { case (row, ri) => row(i) match {
         case "_" => None
-        case x => Some(SemanticRole(ri+1, x))
+        case x => Some(SemanticRole(start = ri+1, role = x))
       }
       }
     }
@@ -136,7 +137,7 @@ class CoNLL2011Reader(filename: String, delim: String = "\t") extends Iterable[D
       val lemma = (0 until grid.size).map(grid(_)(6))
       val tokens = words.zip(pos).zipWithIndex.map { case (p, i) => Token(p._1, CharOffsets(i, i + 1), p._2, lemma = lemma(i))}
       val csyntax = (0 until grid.size).map(grid(_)(5))
-      val ner = ((0 until grid.size).map(grid(_)(10))).map(s => if (!s.contains("*")) s.replaceFirst("\\)", "*)") else s)
+      val ner = (0 until grid.size).map(i => fixNestedField(grid(i)(10)))
 
       val csyntaxCleaned = csyntax.mkString(" ").replaceAll("\\*", " * ").replaceAll("\\(", " ( ").replaceAll("\\)", " ) ").replaceAll(" +", " ")
       var tc = -1
@@ -144,52 +145,90 @@ class CoNLL2011Reader(filename: String, delim: String = "\t") extends Iterable[D
       val ctree = ConstituentTree.stringToTree(csyntaxStr)
       assert(ctree != null, "Null constituent tree")
 
-      val nerCleaned = ner.mkString(" ").replaceAll("\\*", " * ").replaceAll("\\(", " ( ").replaceAll("\\)", " ) ").replaceAll(" +", " ")
+      val entities = readStackFormatEntities(ner.toList)
 
-      var nc = -1
-      val nerStr = "(XX " + nerCleaned.map(c => if (c == '*') {nc += 1; "(XX " + words(nc) + ")"} else c.toString).mkString("") + ")"
-      val nertree = ConstituentTree.stringToTree(nerStr)
-      assert(nertree != null, "Null NER tree")
-      val mentions = nertree.toSpans.view.filter(_.label != "XX").map(s => EntityMention(s.label, s.start, s.end))
 
-      val predicates = (0 until words.size).map(i => Predicate(i, tokens(i), grid(i)(6) + "." + grid(i)(7)))
-//      val frames = (11 until numCols-1).map {i =>
-//        readStackFormatSRL((0 until words.size).map(j => grid(i)(j)).toList)
-//      }
       // 6,7,8 predicate info
       //11 - len-2 is arguments
+      val predicates = (0 until words.size).collect {
+        case i if grid(i)(6) != "-" => Predicate(i, tokens(i), grid(i)(6) + "." + grid(i)(7))
+      }
+      val args = (11 until numCols-1).map {i =>
+        readStackFormatSRL((0 until words.size).map(j => fixNestedField(grid(j)(i))).toList)
+      }
+      val frames = predicates.zip(args).map { case(p,r) => SemanticFrame(predicate = p, roles = r)}
+
 
       val sense = (0 until grid.size).map(grid(_)(7))
-      Sentence(tokens, syntax = SyntaxAnnotation(tree = ctree, dependencies = null))
+      Sentence(tokens, syntax = SyntaxAnnotation(tree = ctree, dependencies = null), ie = IEAnnotation(entityMentions = entities, semanticFrames = frames))
     }.toIndexedSeq
 
 
-    val mentions = new ArrayBuffer[CorefMention]
-    val chunkFilename = chunk.split("\n").find(_.startsWith("#begin document")) //Option[String] = None
-    val corefs = chunks.zipWithIndex.map { case(chunk, sidx) =>
+    val mentions = chunks.zipWithIndex.map { case(chunk, cidx) =>
       val grid = chunk.split("\n").filter(!_.startsWith("#")).map(_.replaceAll(" +", "\t").split("\t"))
-      val slen = grid.size
-      val CSTART_PATTERN = """\(([0-9]+)""".r
-      val CEND_PATTERN = """([0-9]+)\)""".r
-      val buffer = new ArrayBuffer[(Int, Int)]
-      (0 until slen).foreach { i =>
-        val ccell = grid(i).last
-        buffer ++= (CSTART_PATTERN findAllIn ccell).matchData.toArray.map(m => (i, m.group(1).toInt))
-        val imentions = (CEND_PATTERN findAllIn ccell).matchData.toArray.map(m => (i, m.group(1).toInt)).foreach { e =>
-          val stidx = buffer.indexWhere(_._2 == e._2)
-          val s = buffer(stidx)
-          buffer.remove(stidx)
-          mentions += CorefMention(s._2, sidx, s._1, e._1+1)
-        }
-      }
-    }.toIndexedSeq
+      readStackFormatCoref(grid.map(_.last).toList, sidx = cidx)
+    }.flatten
+
+    val chunkFilename = chunk.split("\n").find(_.startsWith("#begin document")) //Option[String] = None
     Document(source = chunks.mkString("\n"), filename = chunkFilename, sentences = sents, coref = CorefAnnotation(mentions = mentions.toSeq))
   }
 
-//  def readStackFormatSRL(l: List[String]): Seq[SemanticFrame] = {
-//  }
+  //.map(s => if (!s.contains("*")) s.replaceFirst("\\)", "*)") else s)
+  def fixNestedField(str: String): String = {
+    if (!str.contains("*")) str.replaceFirst("\\)", "*)")
+    else if (str.startsWith("(")) str.replaceAll("\\(", "*(").substring(1)
+    else str // str.replaceAll("\\(", " ( ").replaceAll("\\)", " ) ").replaceAll(" +", " ")
+  }
 
-  def stackReader(l: List[String]): List[(Int, Int, String)] = {
+
+  def readStackFormatEntities(l: List[String]): Array[EntityMention] = {
+    stackReader(l.toArray, startPattern="""\(([^\*]+)\*""".r, endPattern = """(\*)\)""".r, matchString = false).map{
+      case(start, end, label) => EntityMention(start = start, end = end+1, label = label)
+    }
+  }
+
+  def readStackFormatSRL(l: List[String]): Array[SemanticRole] = {
+//    println(l.mkString(", "))
+    stackReader(l.toArray, startPattern="""\(([^\*]+)\*""".r, endPattern = """(\*)\)""".r, matchString = false).map{
+      case(pidx, aidx, role) => SemanticRole(start = pidx, end = aidx+1, role = role)
+    }
+  }
+
+  def readStackFormatCoref(l: List[String], sidx: Int): Array[CorefMention] = {
+//    println(l.mkString(", "))
+    stackReader(l.toArray, startPattern="""\(([0-9]+)""".r, endPattern = """([0-9]+)\)""".r, matchString = true).map{
+      case(start, end, cluster) => CorefMention(cluster.toInt, sentence = sidx, start = start, end = end+1, head = -1)
+    }
+  }
+
+  def stackReader(seq: Array[String], startPattern: Regex, endPattern: Regex, matchString: Boolean): Array[(Int, Int, String)] = {
+    var starts = (0 until seq.size).map(i => (startPattern findAllIn seq(i)).matchData.toArray.map(m => (i, m.group(1)))).flatten.toArray
+    var ends = (0 until seq.size).map(i => (endPattern findAllIn seq(i)).matchData.toArray.map(m => (i, m.group(1)))).flatten.toArray
+    val founds = new ArrayBuffer[(Int, Int, String)]
+    founds ++= findMatches(starts, ends, matchString = matchString)
+    founds.toArray
+  }
+
+  def findMatches(starts: Array[(Int, String)], ends: Array[(Int, String)], matchString: Boolean): Array[(Int, Int, String)] = {
+//    println("starts: " + starts.mkString(", "))
+//    println("ends: " + ends.mkString(" "))
+//    println
+    val found = new ArrayBuffer[(Int, Int, String)]
+    val buffer = new ArrayBuffer[(Int, String)]
+    buffer ++= starts.reverse
+    ends.foreach { e =>
+      val endIdx = if (matchString) buffer.indexWhere(s => s._2 == e._2 && s._1 <= e._1) else buffer.indexWhere(s => s._1 <= e._1)
+      val s = buffer(endIdx)
+      buffer.remove(endIdx)
+      found += ((s._1, e._1, s._2))
+    }
+    found.toArray
+  }
+
+  def recursiveStackReader(list: List[String], startPattern: Regex, endPattern: Regex): List[(Int, Int, String)] = {
+    if (list.head.matches(" ")) {
+
+    }
     ???
   }
 }
@@ -254,6 +293,48 @@ object CoNLL2011Reader extends App {
 }
 
 
+object CoNLL2011Test extends App {
+
+  val sample = """wb/eng/00/eng_0010   4    0         But     CC                   (TOP(S*        -    -   -    _jules_  *         *         *             *             *             *     -
+                 |wb/eng/00/eng_0010   4    1           I    PRP                      (NP*)       -    -   -    _jules_  *    (ARG0*)        *             *             *             *     -
+                 |wb/eng/00/eng_0010   4    2         bet    VBP                      (VP*       bet  01   2    _jules_  *       (V*)        *             *             *             *     -
+                 |wb/eng/00/eng_0010   4    3        such     JJ               (SBAR(S(NP*        -    -   -    _jules_  *    (ARG2*     (ARG1(R-ARG2*)             *             *             *     (4|(5
+                 |wb/eng/00/eng_0010   4    4    concerns    NNS                         *)       -    -   1    _jules_  *         *         *)            *             *             *     -
+                 |wb/eng/00/eng_0010   4    5         are    VBP                      (VP*        be  01   1    _jules_  *         *       (V*)            *             *             *     -
+                 |wb/eng/00/eng_0010   4    6         far     JJ                    (ADJP*        -    -   -    _jules_  *         *    (ARG2*)            *             *             *     5)
+                 |wb/eng/00/eng_0010   4    7        from     IN                      (PP*        -    -   -    _jules_  *         *         *             *             *             *     -
+                 |wb/eng/00/eng_0010   4    8         the     DT                   (NP(NP*        -    -   -    _jules_  *         *         *             *             *             *     -
+                 |wb/eng/00/eng_0010   4    9       minds    NNS                         *)       -    -   3    _jules_  *         *         *             *             *             *     -
+                 |wb/eng/00/eng_0010   4   10          of     IN                      (PP*        -    -   -    _jules_  *         *         *             *             *             *     -
+                 |wb/eng/00/eng_0010   4   11    military     JJ                   (NP(NP*        -    -   -    _jules_  *         *         *        (ARG1*        (ARG0*        (ARG0*    (3
+                 |wb/eng/00/eng_0010   4   12     leaders    NNS                         *)       -    -   1    _jules_  *         *         *             *)            *)            *)    -
+                 |wb/eng/00/eng_0010   4   13         who     WP               (SBAR(WHNP*)       -    -   -    _jules_  *         *         *      (R-ARG1*)     (R-ARG0*)     (R-ARG0*)    4)
+                 |wb/eng/00/eng_0010   4   14         can     MD                    (S(VP*        -    -   -    _jules_  *         *         *    (ARGM-MOD*)            *             *     -
+                 |wb/eng/00/eng_0010   4   15         not     RB                         *        -    -   -    _jules_  *         *         *    (ARGM-NEG*)            *             *     -
+                 |wb/eng/00/eng_0010   4   16          be     VB                      (VP*        be  01   1    _jules_  *         *         *           (V*)            *             *     -
+                 |wb/eng/00/eng_0010   4   17    bothered     JJ                    (ADJP*        -    -   -    _jules_  *         *         *        (ARG2*             *             *     -
+                 |wb/eng/00/eng_0010   4   18          to     TO                    (S(VP*        -    -   -    _jules_  *         *         *             *             *             *     -
+                 |wb/eng/00/eng_0010   4   19       equip     VB                      (VP*     equip  01   1    _jules_  *         *         *             *           (V*)            *     -
+                 |wb/eng/00/eng_0010   4   20          or     CC                         *        -    -   -    _jules_  *         *         *             *             *             *     -
+                 |wb/eng/00/eng_0010   4   21      supply     VB                         *    supply  01   -    _jules_  *         *         *             *             *           (V*)    -
+                 |wb/eng/00/eng_0010   4   22       their   PRP$                      (NP*        -    -   -    _jules_  (THING*         *         *             *        (ARG1*        (ARG1*    (3)
+                 |wb/eng/00/eng_0010   4   23         own     JJ                         *        -    -   -    _jules_  *         *         *             *             *             *     -
+                 |wb/eng/00/eng_0010   4   24      troops    NNS                         *)       -    -   -    _jules_  *)         *         *             *             *)            *)    -
+                 |wb/eng/00/eng_0010   4   25    properly     RB   (ADVP*))))))))))))))))))       -    -   -    _jules_  *         *)        *             *)   (ARGM-MNR*)   (ARGM-MNR*)    3)
+                 |wb/eng/00/eng_0010   4   26           .      .                        *))       -    -   -    _jules_  *         *         *             *             *             *     -
+                 |""".stripMargin
+  val reader = new CoNLL2011Reader(filename = null)
+  val doc = reader.mkCoNLL2011Document(sample)
+  println(doc)
+  println("Coref:")
+  println(doc.coref.mentions.mkString("\n"))
+  println("SRL:")
+  doc.sentences.foreach(s => s.ie.semanticFrames.foreach(f => println(f)))
+  println("NER:")
+  doc.sentences.foreach(s => s.ie.entityMentions.foreach(e => println(e)))
+
+
+}
 
 
 
@@ -261,6 +342,57 @@ object CoNLL2011Reader extends App {
 
 
 
+
+
+
+
+/*
+      val nerCleaned = ner.mkString(" ").replaceAll("\\*", " * ").replaceAll("\\(", " ( ").replaceAll("\\)", " ) ").replaceAll(" +", " ")
+
+      var nc = -1
+      val nerStr = "(XX " + nerCleaned.map(c => if (c == '*') {nc += 1; "(XX " + words(nc) + ")"} else c.toString).mkString("") + ")"
+      val nertree = ConstituentTree.stringToTree(nerStr)
+      assert(nertree != null, "Null NER tree")
+      val mentions = nertree.toSpans.view.filter(_.label != "XX").map(s => EntityMention(s.label, s.start, s.end))
+
+ */
+
+
+//    val mentions = new ArrayBuffer[CorefMention]
+//    val corefs = chunks.zipWithIndex.map { case(chunk, sidx) =>
+//      val grid = chunk.split("\n").filter(!_.startsWith("#")).map(_.replaceAll(" +", "\t").split("\t"))
+//      val slen = grid.size
+//      val CSTART_PATTERN = """\(([0-9]+)""".r
+//      val CEND_PATTERN = """([0-9]+)\)""".r
+//      val buffer = new ArrayBuffer[(Int, Int)]
+//      (0 until slen).foreach { i =>
+//        val ccell = grid(i).last
+//        buffer ++= (CSTART_PATTERN findAllIn ccell).matchData.toArray.map(m => (i, m.group(1).toInt))
+//        (CEND_PATTERN findAllIn ccell).matchData.toArray.map(m => (i, m.group(1).toInt)).foreach { e =>
+//          val stidx = buffer.indexWhere(_._2 == e._2)
+//          val s = buffer(stidx)
+//          buffer.remove(stidx)
+//          mentions += CorefMention(s._2, sidx, s._1, e._1+1)
+//        }
+//      }
+//    }.toIndexedSeq
+
+
+//  def stackReader(list: List[String], startPattern: Regex, endPattern: Regex): List[(Int, Int, String)] = {
+//    val found = new ArrayBuffer[(Int, Int, String)]
+//    val buffer = new ArrayBuffer[(Int, String)]
+//    (0 until list.size).foreach { i =>
+//      buffer ++= (startPattern findAllIn list(i)).matchData.toArray.map(m => (i, m.group(1)))
+//      val ends = (endPattern findAllIn list(i)).matchData.toArray.map(m => (i, m.group(1)))
+//      ends.foreach { e =>
+//        val endIdx = buffer.indexWhere(_._2 == e._2)
+//        val s = buffer(endIdx)
+//        buffer.remove(endIdx)
+//        found += ((s._1, e._1, s._2))
+//      }
+//    }
+//    found.toList
+//  }
 
 
 //      new ChunkReader(filename).toArray.map(_.split("\n").filter(!_.startsWith("#")).mkString("\n")).groupBy { c =>

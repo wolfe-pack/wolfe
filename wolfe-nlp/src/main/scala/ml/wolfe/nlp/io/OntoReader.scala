@@ -60,7 +60,7 @@ class OntoReader(dir: String, pattern: String = ".*") extends Iterable[Document]
       val pred = Predicate(tid, Token("TMP", CharOffsets(-1,-1)), sense)
       val roles = (7 until cols.size).map { cidx =>
         val F_PATTERN(s,e,r) = cols(cidx)
-        SemanticRole(s.toInt, r)
+        SemanticRole(start = s.toInt, role = r)
       }
       (sid, SemanticFrame(pred, roles))
     }
