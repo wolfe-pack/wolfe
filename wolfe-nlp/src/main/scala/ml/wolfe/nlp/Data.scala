@@ -126,7 +126,7 @@ case class DiscourseRelation(arg1: DiscourseArgument,
                              connective: DiscourseArgument,
                              entityID: String,
                              sense: List[String],
-                             typ: List[String])
+                             typ: String)
 
 case class DiscourseArgument(text: String = "",
                              charOffsets: List[CharOffsets] = List.empty,
@@ -136,11 +136,9 @@ object DiscourseArgument {
   val empty = DiscourseArgument()
 }
 
-
 object DiscourseAnnotation {
   val empty = DiscourseAnnotation()
 }
-
 
 
 
