@@ -5,12 +5,37 @@ import ml.wolfe.term
 /**
  * @author riedel
  */
-class Tuple2Dom[D1 <: Dom, D2 <: Dom](val dom1: D1, val dom2: D2) extends ProductDom {
+class Tuple2Dom[D1 <: Dom, D2 <: Dom](val dom1: D1, val dom2: D2) extends TupleDom {
   dom =>
   type Value = (dom1.Value, dom2.Value)
-  type Var = DomVar
-  type Term = DomTerm
+  type Var = Tuple2Var
+  type Term = Tuple2Term
   type Marginals = (dom1.Marginals, dom2.Marginals)
+
+  def productArity = 2
+
+  def fieldName(index: Int) = "_" + index
+
+  val domains = IndexedSeq(dom1,dom2)
+  val offsets = IndexedSeq(Offsets.zero, dom1.lengths)
+
+  def fieldDomain(index: Int) = domains(index)
+  def fieldOffset(index: Int) = offsets(index)
+
+  trait Tuple2Term extends TupleTerm {
+    def _1:dom1.Term = productElement(0).asInstanceOf[dom1.Term]
+    def _2:dom2.Term = productElement(1).asInstanceOf[dom2.Term]
+  }
+
+  class Tuple2Var(val name:String) extends DomVar with TupleView with Tuple2Term {
+    def product = this
+  }
+
+  class Tuple2Constructor(a1:dom1.Term,a2:dom2.Term) extends Tuple2Term with TupleConstructor {
+    def productElements = IndexedSeq(a1,a2)
+    def copy(args: IndexedSeq[ArgumentType]) =
+      new Tuple2Constructor(args(0).asInstanceOf[dom1.Term],args(1).asInstanceOf[dom2.Term])
+  }
 
   val lengths = dom1.lengths + dom2.lengths
 
@@ -24,7 +49,13 @@ class Tuple2Dom[D1 <: Dom, D2 <: Dom](val dom1: D1, val dom2: D2) extends Produc
 
 
   //trait Test extends Term
-  def own(term: TypedTerm[Value]) = ???
+  def own(term: TypedTerm[Value]) = new OwnedTerm[Value] with TupleView with Tuple2Term {
+    def product = term
+    def self = term
+    def copy(args: IndexedSeq[ArgumentType]) = own(args(0))
+    override val domain: dom.type = dom
+
+  }
 
   def toMarginals(msg: Msg, offsets: Offsets) = {
     val arg1 = dom1.toMarginals(msg, offsets)
@@ -47,51 +78,50 @@ class Tuple2Dom[D1 <: Dom, D2 <: Dom](val dom1: D1, val dom2: D2) extends Produc
     dom2.fillZeroMsg(target, offsets + dom1.lengths)
   }
 
-  def variable(name: String): DomVar =
-    StaticTuple2Var(name)
 
   def one = (dom1.one, dom2.one)
 
   def zero = (dom1.zero, dom2.zero)
 
-  def Const(value: Value): DomTerm = new Tuple2DomTermImpl {
-    val _1 = domain.dom1.Const(value._1)
-    val _2 = domain.dom2.Const(value._2)
+  def Const(value: Value) = new Tuple2Constructor(dom1.Const(value._1),dom2.Const(value._2))
+  def variable(name: String) = new Tuple2Var(name)
+
+
+}
+
+trait TupleDom extends Dom {
+  dom =>
+  type Value <: scala.Product
+
+  def productName = dom.getClass.getSimpleName
+  def productArity:Int
+  def fieldName(index:Int):String
+  def fieldOffset(index:Int):Offsets
+  def fieldDomain(index:Int):Dom
+
+  trait TupleTerm extends DomTerm {
+    def productElement(index:Int):AnyTerm
   }
 
-  trait DomTerm extends super.DomTerm {
-    def _1: domain.dom1.Term
+  trait TupleView extends TupleTerm {
+    def product:TypedTerm[Value]
+    def productElement(index: Int) = new Field[Dom,Value](product,fieldDomain(index),fieldOffset(index))(fieldName(index))
 
-    def _2: domain.dom2.Term
   }
 
-  trait Tuple2DomTermImpl extends DomTerm with super.DomTermImpl {
+  trait TupleConstructor extends TupleTerm with Composed[Dom] {
+    def productElements:IndexedSeq[AnyTerm]
+    def productElement(index: Int) = productElements(index)
+    type ArgumentType = AnyTerm
+    val arguments = productElements
 
-    type ArgumentType = term.Term[Dom]
-
-    def arguments = IndexedSeq(_1, _2)
-
-    def copy(args: IndexedSeq[ArgumentType]) = new Tuple2DomTermImpl {
-      val _1 = args(0).asInstanceOf[dom1.Term]
-      val _2 = args(1).asInstanceOf[dom2.Term]
+    override def composer(args: Settings) = new Composer(args) {
+      def eval()(implicit execution: Execution) = {
+        for (i <- 0 until productArity) {
+          input(i).copyTo(output, fieldOffset(i), 1)
+        }
+      }
     }
-  }
-
-  trait DomVar extends super.DomVar with DomTerm {
-
-    def var1: domain.dom1.Var
-
-    def var2: domain.dom2.Var
-
-    def _1 = var1
-
-    def _2 = var2
-
-  }
-
-  case class StaticTuple2Var(name: String) extends DomVar {
-    val var1 = domain.dom1.variable(name + "._1")
-    val var2 = domain.dom2.variable(name + "._2")
   }
 
 }
@@ -99,39 +129,11 @@ class Tuple2Dom[D1 <: Dom, D2 <: Dom](val dom1: D1, val dom2: D2) extends Produc
 trait ProductDom extends Dom {
   dom =>
 
+  type Value <: scala.Product
+
   def productName = dom.getClass.getSimpleName
 
-  class Field[D <: Dom](val product: TypedTerm[Value], val domain: D, val start: Offsets)(fieldName:String = start.toString) extends Composed[D] {
 
-    type ArgumentType = TypedTerm[Value]
-    val arguments = IndexedSeq(product)
-
-    def copy(args: IndexedSeq[ArgumentType]) = new Field(args(0),domain,start)(fieldName)
-
-    override def composer(args: Settings) = new Composer(args) {
-
-      //input(0).recordChangedOffsets = true
-
-      def eval()(implicit execution: Execution) = {
-        input(0).copyTo(output,start,Offsets.zero,domain.lengths)
-      }
-    }
-
-    override def differentiatorImpl(wrt: Seq[term.Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
-      new ComposedDifferentiator(wrt,in,err,gradientAcc) {
-        def localBackProp()(implicit execution: Execution) = {
-          //todo: SR: why can't argErrors be reset to zero in the ComposedDiff code?
-          argErrors(0).resetToZero()
-          error.copyTo(argErrors(0),Offsets.zero,start,domain.lengths)
-        }
-      }
-
-    def composerOld() = ???
-
-    def differentiatorOld(wrt: Seq[term.Var[Dom]]) = ???
-
-    override def toString = s"$product.$fieldName"
-  }
 
   trait DomTermImpl extends super.DomTerm with Composed[dom.type] {
 
@@ -152,8 +154,38 @@ trait ProductDom extends Dom {
       }
     }
 
-    def differentiatorOld(wrt: Seq[term.Var[Dom]]) = ???
-
   }
 
+}
+
+class Field[D <: Dom, Value](val product: TypedTerm[Value], val domain: D, val start: Offsets)(fieldName:String = start.toString) extends Composed[D] {
+
+  type ArgumentType = TypedTerm[Value]
+  val arguments = IndexedSeq(product)
+
+  def copy(args: IndexedSeq[ArgumentType]) = new Field(args(0),domain,start)(fieldName)
+
+  override def composer(args: Settings) = new Composer(args) {
+
+    //input(0).recordChangedOffsets = true
+
+    def eval()(implicit execution: Execution) = {
+      input(0).copyTo(output,start,Offsets.zero,domain.lengths)
+    }
+  }
+
+  override def differentiatorImpl(wrt: Seq[term.Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
+    new ComposedDifferentiator(wrt,in,err,gradientAcc) {
+      def localBackProp()(implicit execution: Execution) = {
+        //todo: SR: why can't argErrors be reset to zero in the ComposedDiff code?
+        argErrors(0).resetToZero()
+        error.copyTo(argErrors(0),Offsets.zero,start,domain.lengths)
+      }
+    }
+
+  def composerOld() = ???
+
+  def differentiatorOld(wrt: Seq[term.Var[Dom]]) = ???
+
+  override def toString = s"$product.$fieldName"
 }
