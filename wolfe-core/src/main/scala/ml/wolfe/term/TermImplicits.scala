@@ -405,6 +405,7 @@ trait MathImplicits {
 
   implicit def doubleToRichConstant(d: Double): RichDoubleTerm = new RichDoubleTerm(doubleToConstant(d))
 
+  implicit def anyToConst[T](any:T)(implicit dom:TypedDom[T]):dom.Term = dom.Const(any)
 
   implicit def intToDoubleConstant(d: Int): Constant[DoubleDom] = Dom.doubles.Const(d)
 

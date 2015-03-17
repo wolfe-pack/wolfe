@@ -39,16 +39,20 @@ object DocClassifyExample extends App {
     shuffled(data) { i => max(Labels) {l => model(w,i.doc)(l)} - model(w,i.doc)(i.label)} argmaxBy adaGrad
   }
 
-  val train = trainDocs.take(10).map(toInstance).toConst
-  val test = testDocs.take(10).map(toInstance).toConst
+  val trainInstances = trainDocs.take(10).map(toInstance)
+  val testInstances = testDocs.take(10).map(toInstance)
+  val train = trainInstances.toConst
+  val test = testInstances.toConst
 
   println(index.size)
 
-
-
   val wStar = argmax(Weights)(learnObj(train)).eval()
 
-  println(wStar)
+  val predict = argmax(Labels)(model(wStar.toConst,Docs.Var))
+
+  println(predict.eval(trainInstances(0).doc))
+
+  //println(wStar)
 
   //def conjoin
 
