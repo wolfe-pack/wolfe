@@ -23,8 +23,8 @@ class Tuple2Dom[D1 <: Dom, D2 <: Dom](val dom1: D1, val dom2: D2) extends TupleD
   def fieldOffset(index: Int) = offsets(index)
 
   trait Tuple2Term extends TupleTerm {
-    def _1:dom1.Term = productElement(0).asInstanceOf[dom1.Term]
-    def _2:dom2.Term = productElement(1).asInstanceOf[dom2.Term]
+    def _1:dom1.Term = dom1.own(productElement(0).asInstanceOf[TypedTerm[dom1.Value]])
+    def _2:dom2.Term = dom2.own(productElement(1).asInstanceOf[TypedTerm[dom2.Value]])
   }
 
   class Tuple2Var(val name:String) extends DomVar with TupleView with Tuple2Term {
@@ -86,6 +86,12 @@ class Tuple2Dom[D1 <: Dom, D2 <: Dom](val dom1: D1, val dom2: D2) extends TupleD
   def Const(value: Value) = new Tuple2Constructor(dom1.Const(value._1),dom2.Const(value._2))
   def variable(name: String) = new Tuple2Var(name)
 
+  object Term {
+    def unapply(term:AnyTerm) = term match {
+      case t:Tuple2Term => Some(t._1,t._2)
+      case _ => None
+    }
+  }
 
 }
 
@@ -105,7 +111,8 @@ trait TupleDom extends Dom {
 
   trait TupleView extends TupleTerm {
     def product:TypedTerm[Value]
-    def productElement(index: Int) = new Field[Dom,Value](product,fieldDomain(index),fieldOffset(index))(fieldName(index))
+    def productElement(index: Int) =
+      new Field[Dom,Value](product,fieldDomain(index),fieldOffset(index))(fieldName(index))
 
   }
 
