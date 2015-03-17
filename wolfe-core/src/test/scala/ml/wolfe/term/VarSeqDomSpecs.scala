@@ -50,20 +50,20 @@ class VarSeqDomSpecs extends WolfeSpec {
       val i = xs.lengthDom.Var
       val value = IndexedSeq(1.0, 2.0, 3.0)
       val term = x(i) * x(i)
-      val parameter = Settings(xs.toSetting(value),xs.lengthDom.toSetting(2))
+      val parameter = Settings(xs.toSetting(value), xs.lengthDom.toSetting(2))
       val gradient = term.createZeroInputSettings()
-      val diff = term.differentiatorImpl(Seq(x))(parameter,Setting.cont(1.0),gradient)
+      val diff = term.differentiatorImpl(Seq(x))(parameter, Setting.cont(1.0), gradient)
       gradient(0).recordChangedOffsets = true
       diff.differentiate()
-      gradient(0).cont.changed() should be (Set(2))
+      gradient(0).cont.changed() should be(Set(2))
     }
 
 
     "evaluate nested sequences" in {
       val n = 3
-      val xs = Seqs(Seqs(Doubles, 0, n), 0, n)
+      val X = Seqs(Seqs(Doubles, 0, n), 0, n)
       val i = Ints(0 until n).Var
-      val x = xs.Var
+      val x = X.Var
       val t = x(i)
       val args = IndexedSeq(IndexedSeq(1.0, 2.0), IndexedSeq(3.0, 4.0))
       t.eval(args, 0) should be(IndexedSeq(1.0, 2.0))
@@ -71,6 +71,13 @@ class VarSeqDomSpecs extends WolfeSpec {
 
       t(i).eval(args, 0) should be(1.0)
       t(i).eval(args, 1) should be(4.0)
+    }
+
+    "support argmax with length constraints" in {
+      val X = Seqs(Bools, 0, 5)
+      val t = argmax(X) { x => sum(x) { i => I(i)} subjectTo (x.length === 3)}
+      val result = t.eval()
+      result should be(IndexedSeq(true, true, true))
     }
 
   }
