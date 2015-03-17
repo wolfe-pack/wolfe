@@ -36,13 +36,13 @@ class TupleDomSpecs extends WolfeSpec {
     }
 
     "support pattern matching" in {
-      val Pairs = Doubles x Doubles
-      val x = Pairs.Var
-      def obj(pair: Pairs.Term) = pair match {
-        case Pairs.Term(a1, a2) => a1 + a2
+      val Tuples = (Doubles x Bools) x Doubles
+      val x = Tuples.Var
+      def obj(pair: Tuples.Term) = pair match {
+        case Tuples.Term(Tuples.dom1.Term(a1, _), a2) => a1 + a2
       }
       val term = obj(x)
-      term(x << 1.0 -> 2.0) should be (3.0)
+      term(x <<((1.0, false), 2.0)) should be(3.0)
     }
 
 
