@@ -478,8 +478,8 @@ class Div[T1 <: DoubleTerm, T2 <: DoubleTerm](val arg1: T1, val arg2: T2) extend
 }
 
 
-trait ComposedDoubleTerm extends DoubleTerm with Composed[DoubleDom] {
-  val domain = Dom.doubles
+trait ComposedDoubleTerm extends DoubleTerm with Composed[Dom.doubles.type] {
+  val domain:Dom.doubles.type = Dom.doubles
 }
 
 
@@ -552,6 +552,7 @@ case class Iverson[T <: BoolTerm](val arg: T) extends UnaryTerm[T, DoubleDom] wi
 
   override def toString = s"I($arg)"
 }
+
 
 class IntToDouble[T <: IntTerm](val int: T) extends ComposedDoubleTerm {
   type ArgumentType = T

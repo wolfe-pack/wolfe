@@ -32,4 +32,6 @@ package object term {
   type DiscreteTerm[T] = Term[GenericDiscreteDom[T]]
 //  type IntTerm = DiscreteTerm[Int]
 
+  type x[D1 <: Dom, D2 <:Dom] = Tuple2Dom[D1,D2]
+
 }

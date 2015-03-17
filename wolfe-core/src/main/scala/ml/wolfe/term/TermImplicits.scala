@@ -253,6 +253,8 @@ trait MathImplicits {
   //  def I[T <: BoolTerm](term: T) = new Iverson(term)
   def I(term: BoolTerm) = new Iverson(term)
 
+  def constraint(term:BoolTerm) = log(I(term))
+
   def sigmVec[T <: VectorTerm](term: T) = new VectorSigmoid(term)
 
   def tanhVec[T <: VectorTerm](term: T) = new VectorTanh(term)
@@ -296,21 +298,23 @@ trait MathImplicits {
   }
 
   implicit class RichDoubleTerm(term: DoubleTerm) {
-    def +(that: DoubleTerm) = Dom.doubles.own(new Sum(IndexedSeq(term, that)))
+    def +(that: DoubleTerm) = new Sum(IndexedSeq(term, that))
 
-    def -(that: DoubleTerm) = Dom.doubles.own(new Sum(IndexedSeq(term, that * (-1.0))))
+    def -(that: DoubleTerm) = new Sum(IndexedSeq(term, that * (-1.0)))
 
     //def *(that: DoubleTerm): Product = new Product(IndexedSeq(term, that))
 
-    def *(that: DoubleTerm) = Dom.doubles.own(new Product(IndexedSeq(term, that)))
+    def *(that: DoubleTerm) = new Product(IndexedSeq(term, that))
 
     //    def *(that: IntTerm): Product = new Product(IndexedSeq(term, new IntToDouble(that)))
 
     def *(that: VectorTerm) = new VectorScaling(that, term)
 
-    def /(that: DoubleTerm) = Dom.doubles.own(new Div(term, that))
+    def /(that: DoubleTerm) = new Div(term, that)
 
     def unary_- = term * (-1.0)
+
+    def subjectTo(predicate:BoolTerm) = term + constraint(predicate)
 
     def argmaxBy(factory: ArgmaxerFactory) = new ProxyTerm[TypedDom[Double]] {
       def self = term
