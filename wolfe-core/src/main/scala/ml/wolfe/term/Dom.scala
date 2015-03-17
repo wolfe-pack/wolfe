@@ -34,7 +34,7 @@ trait Dom {
   /**
    * A type to define terms of sequences of elements of this domain.
    */
-  type Seqs = VarSeqDom[dom.type]#Term
+  type SeqTerm = VarSeqDom[dom.type]#Term
 
   //trait Test extends Term
   def own(term: TypedTerm[Value]): Term

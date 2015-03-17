@@ -35,14 +35,16 @@ object DocClassifyExample extends App {
     w dot (x.feats conjoin feature(y))
   }
 
+  def learnObj(data: Instances.SeqTerm)(w: Weights.Term) = {
+    shuffled(data) { i => max(Labels) {l => model(w,i.doc)(l)} - model(w,i.doc)(i.label)} argmaxBy adaGrad
+  }
+
   val train = trainDocs.take(10).map(toInstance).toConst
   val test = testDocs.take(10).map(toInstance).toConst
 
   println(index.size)
 
-  def learnObj(data: Instances.Seqs)(w: Weights.Term) = {
-    shuffled(data) { i => max(Labels) {l => model(w,i.doc)(l)} - model(w,i.doc)(i.label)} argmaxBy adaGrad
-  }
+
 
   val wStar = argmax(Weights)(learnObj(train)).eval()
 
