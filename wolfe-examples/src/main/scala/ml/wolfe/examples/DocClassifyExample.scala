@@ -14,6 +14,7 @@ import scala.util.Random
 object DocClassifyExample extends App {
 
   import ml.wolfe.term.TermImplicits._
+  import LearningObjective._
 
   val (trainDocs, testDocs) = TwentyNewsGroupReader.loadFromTarGz()
 
@@ -29,12 +30,12 @@ object DocClassifyExample extends App {
   implicit val Instances = Docs x Labels
   implicit val adaParam = AdaGradParameters(10, 0.1)
 
-  def model(w: Weights.Term, x: Docs.Term)(y: Labels.Term) = {
+  def model(w: Weights.Term)(x: Docs.Term)(y: Labels.Term) = {
     w dot (x.feats conjoin feature(y))
   }
 
   def learnObj(data: Instances.SeqTerm)(w: Weights.Term) = {
-    shuffled(data) { i => max(Labels) { l => model(w, i._1)(l)} - model(w, i._1)(i._2)} argmaxBy adaGrad
+    perceptron(data)(Labels)(model(w))
   }
 
   val trainInstances = random.shuffle(trainDocs).take(10).map(toInstance)
@@ -46,9 +47,9 @@ object DocClassifyExample extends App {
   println(Labels.mkString("\n"))
   println(trainInstances.take(10).map(_._2).mkString("\n"))
 
-  val wStar = argmax(Weights)(learnObj(train)).eval()
+  val wStar = (argmax(Weights)(learnObj(train)) by adaGrad).eval()
 
-  val predict = lambda(Docs) { d => argmax(Labels)(model(wStar.toConst, d))}
+  val predict = lambda(Docs) { d => argmax(Labels)(model(wStar.toConst)(d))}
 
   println(predict(trainInstances(0)._1))
 
