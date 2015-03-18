@@ -2,7 +2,7 @@ package ml.wolfe.examples
 
 import ml.wolfe.nlp.Document
 import ml.wolfe.nlp.io.TwentyNewsGroupReader
-import ml.wolfe.term.{AdaGradParameters, SeqTerm, VarSeqTerm, domain}
+import ml.wolfe.term._
 import ml.wolfe.{FactorieVector, SimpleIndex}
 import ml.wolfe.term.Argmaxer._
 
@@ -14,46 +14,41 @@ import scala.util.Random
 object DocClassifyExample extends App {
 
   import ml.wolfe.term.TermImplicits._
+  import LearningObjective._
+
+  implicit val random = new Random(0)
+  implicit val index = new SimpleIndex
 
   val (trainDocs, testDocs) = TwentyNewsGroupReader.loadFromTarGz()
 
   @domain case class Doc(feats: FactorieVector)
 
-  @domain case class Instance(doc: Doc, label: String)
+  def toInstance(doc: Document) = (Doc(feats('words, doc.tokens.take(10).map(_.word))), doc.ir.docLabel.get)
 
-  def toInstance(doc: Document) = Instance(Doc(feats('words, doc.tokens.take(10).map(_.word))), doc.ir.docLabel.get)
-
-  implicit val random = new Random(0)
-  implicit val index = new SimpleIndex
   implicit val Labels = trainDocs.flatMap(_.ir.docLabel).distinct.toDom
   implicit val Docs = Doc.Values(Vectors(100000))
   implicit val Weights = Vectors(100000)
-  implicit val Instances = Instance.Values(Docs, Labels)
-  implicit val adaParam = AdaGradParameters(10,0.1)
+  implicit val Instances = Docs x Labels
 
-  def model(w: Weights.Term, x: Docs.Term)(y: Labels.Term) = {
-    w dot (x.feats conjoin feature(y))
-  }
+  implicit val adaParam = AdaGradParameters(10, 0.1)
 
-  def learnObj(data: Instances.SeqTerm)(w: Weights.Term) = {
-    shuffled(data) { i => max(Labels) {l => model(w,i.doc)(l)} - model(w,i.doc)(i.label)} argmaxBy adaGrad
-  }
-
-  val trainInstances = trainDocs.take(10).map(toInstance)
+  val trainInstances = random.shuffle(trainDocs).take(10).map(toInstance)
   val testInstances = testDocs.take(10).map(toInstance)
   val train = trainInstances.toConst
   val test = testInstances.toConst
 
   println(index.size)
+  println(Labels.mkString("\n"))
+  println(trainInstances.take(10).map(_._2).mkString("\n"))
 
-  val wStar = argmax(Weights)(learnObj(train)).eval()
+  def model(w: Weights.Term)(x: Docs.Term)(y: Labels.Term) = {
+    w dot (x.feats conjoin feature(y))
+  }
 
-  val predict = argmax(Labels)(model(wStar.toConst,Docs.Var))
+  val wStar = learn(Weights)(w => perceptron(train)(Labels)(model(w))) using adaGrad
+  val predict = fun(Docs) { d => argmax(Labels)(model(wStar.toConst)(d))}
 
-  println(predict.eval(trainInstances(0).doc))
+  println(predict(trainInstances(0)._1))
 
-  //println(wStar)
-
-  //def conjoin
 
 }

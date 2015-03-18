@@ -53,6 +53,8 @@ trait Dom {
 
   def copyValue(value: Value, setting: Setting, offsets: Offsets = Offsets())
 
+  def x(that:Dom) = new Tuple2Dom[dom.type,that.type](dom,that)
+
   def toSetting(value: Value): Setting = {
     val result = createSetting()
     copyValue(value, result)
