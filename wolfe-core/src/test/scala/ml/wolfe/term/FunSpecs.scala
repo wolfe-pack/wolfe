@@ -18,8 +18,6 @@ class FunSpecs extends WolfeSpec {
       val f = fun(Bools,Bools){(x,y) => I(x && y)}
       f(true,true) should be (1.0)
     }
-
-
   }
 
 

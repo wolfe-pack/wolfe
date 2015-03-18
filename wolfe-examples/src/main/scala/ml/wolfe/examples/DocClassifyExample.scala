@@ -16,18 +16,20 @@ object DocClassifyExample extends App {
   import ml.wolfe.term.TermImplicits._
   import LearningObjective._
 
+  implicit val random = new Random(0)
+  implicit val index = new SimpleIndex
+
   val (trainDocs, testDocs) = TwentyNewsGroupReader.loadFromTarGz()
 
   @domain case class Doc(feats: FactorieVector)
 
   def toInstance(doc: Document) = (Doc(feats('words, doc.tokens.take(10).map(_.word))), doc.ir.docLabel.get)
 
-  implicit val random = new Random(0)
-  implicit val index = new SimpleIndex
   implicit val Labels = trainDocs.flatMap(_.ir.docLabel).distinct.toDom
   implicit val Docs = Doc.Values(Vectors(100000))
   implicit val Weights = Vectors(100000)
   implicit val Instances = Docs x Labels
+
   implicit val adaParam = AdaGradParameters(10, 0.1)
 
   val trainInstances = random.shuffle(trainDocs).take(10).map(toInstance)
@@ -44,7 +46,6 @@ object DocClassifyExample extends App {
   }
 
   val wStar = learn(Weights)(w => perceptron(train)(Labels)(model(w))) using adaGrad
-
   val predict = fun(Docs) { d => argmax(Labels)(model(wStar.toConst)(d))}
 
   println(predict(trainInstances(0)._1))

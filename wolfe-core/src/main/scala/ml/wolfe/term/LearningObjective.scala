@@ -18,7 +18,8 @@ object LearningObjective {
                                               (model: X#Term => Y#Term => DoubleTerm):DoubleTerm = {
 
     shuffled(data) { i => max(space) {model(i._1)} - model(i._1)(i._2)}
-
   }
+
+
 
 }
