@@ -17,8 +17,7 @@ object LearningObjective {
                                               (space: Y)
                                               (model: X#Term => Y#Term => DoubleTerm):DoubleTerm = {
 
-    //how can search space be made dependent on x?
-    shuffled(data) { i => max(space) {l => model(i._1)(l)} - model(i._1)(i._2)}
+    shuffled(data) { i => max(space) {model(i._1)} - model(i._1)(i._2)}
 
   }
 
