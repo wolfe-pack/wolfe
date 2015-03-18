@@ -34,10 +34,6 @@ object DocClassifyExample extends App {
     w dot (x.feats conjoin feature(y))
   }
 
-  def learnObj(data: Instances.SeqTerm)(w: Weights.Term) = {
-    perceptron(data)(Labels)(model(w))
-  }
-
   val trainInstances = random.shuffle(trainDocs).take(10).map(toInstance)
   val testInstances = testDocs.take(10).map(toInstance)
   val train = trainInstances.toConst
@@ -47,7 +43,7 @@ object DocClassifyExample extends App {
   println(Labels.mkString("\n"))
   println(trainInstances.take(10).map(_._2).mkString("\n"))
 
-  val wStar = (argmax(Weights)(learnObj(train)) by adaGrad).eval()
+  val wStar = (argmax(Weights) { w => perceptron(train)(Labels)(model(w))} by adaGrad).eval()
 
   val predict = lambda(Docs) { d => argmax(Labels)(model(wStar.toConst)(d))}
 
