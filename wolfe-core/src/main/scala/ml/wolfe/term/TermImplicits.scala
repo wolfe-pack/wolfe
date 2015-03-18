@@ -28,6 +28,8 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
 
   implicit def domToIterable(dom: Dom): Iterable[dom.Value] = dom.toIterable
 
+  //def >[T](term:TypedTerm[T]):T = term.eval()
+
   def Seqs[D <: Dom](elements: D, minLength: Int, maxLength: Int): VarSeqDom[elements.type] =
     new VarSeqDom[elements.type](elements, maxLength, minLength)
 
@@ -188,6 +190,7 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
         def f(arg: term.domain.Value): Term[TypedDom[B]] = fun(arg)
       }
     }
+
   }
 
 
@@ -362,6 +365,11 @@ trait MathImplicits {
     new Argmax[dom.type](term, variable)
   }
 
+  def learn[D <: Dom](dom: D)(obj: dom.Var => DoubleTerm, argmaxerFactory: ArgmaxerFactory): dom.Value = {
+    (argmax(dom)(obj) by argmaxerFactory).eval()
+  }
+
+  def eval(term:AnyTerm):term.domain.Value = term.eval()
 
   def max[D <: Dom](dom: D)(obj: dom.Var => DoubleTerm) = {
     val variable = dom.variable("_hidden")
