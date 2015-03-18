@@ -64,7 +64,7 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
     def toConst: domain.Term = domain.Const(value)
   }
 
-  def lambda[D <: Dom](d: Dom)(f: d.Term => Term[D]): d.Value => D#Value = {
+  def fun[D <: Dom](d: Dom)(f: d.Term => Term[D]): d.Value => D#Value = {
     val v = d.variable("v")
     val t = f(v)
     val e = t.evaluator()

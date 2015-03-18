@@ -45,7 +45,7 @@ object DocClassifyExample extends App {
 
   val wStar = learn(Weights)(w => perceptron(train)(Labels)(model(w))) using adaGrad
 
-  val predict = lambda(Docs) { d => argmax(Labels)(model(wStar.toConst)(d))}
+  val predict = fun(Docs) { d => argmax(Labels)(model(wStar.toConst)(d))}
 
   println(predict(trainInstances(0)._1))
 

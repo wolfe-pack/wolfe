@@ -5,13 +5,13 @@ import ml.wolfe.WolfeSpec
 /**
  * @author riedel
  */
-class LambdaSpecs extends WolfeSpec {
+class FunSpecs extends WolfeSpec {
 
   import ml.wolfe.term.TermImplicits._
 
-  "A lambda function" should {
+  "A function creator" should {
     "create a typed scala function using a term" in {
-      val f = lambda(Bools){x => I(x)}
+      val f = fun(Bools){x => I(x)}
       f(true) should be (1.0)
     }
 
