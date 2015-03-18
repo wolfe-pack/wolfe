@@ -169,13 +169,13 @@ class TermSpecs extends WolfeSpec {
   }
 
   "A term with discrete variables" should {
-    "provide its argmax" ignore {
+    "provide its argmax" in {
       val dom = Bools x Bools
       val x = dom.Var
       val result = argmax(dom) { x => I(x._1 && x._2)}
       result.eval() should be(true, true)
     }
-    "provide a partial argmax" ignore {
+    "provide a partial argmax" in {
       val y = Bools.Var
       val term = argmax(Bools)(x => I(x === y))
       term.eval(true) should be(true)
