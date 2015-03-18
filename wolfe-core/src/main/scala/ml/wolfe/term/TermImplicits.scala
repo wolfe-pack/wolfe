@@ -70,6 +70,14 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
     val e = t.evaluator()
     (x: d.Value) => e.eval(x)
   }
+  def fun[D <: Dom](d1: Dom,d2:Dom)(f: (d1.Term,d2.Term) => Term[D]): (d1.Value,d2.Value) => D#Value = {
+    val v1 = d1.variable("v1")
+    val v2 = d2.variable("v2")
+    val t = f(v1,v2)
+    val e = t.evaluator()
+    (a1:d1.Value,a2:d2.Value) => e.eval(a1,a2)
+  }
+
 
   implicit def toConvertable[T](value: T)(implicit domain: TypedDom[T]): ConvertableToTerm3[T, domain.type] = new ConvertableToTerm3[T, domain.type](value)(domain)
 
