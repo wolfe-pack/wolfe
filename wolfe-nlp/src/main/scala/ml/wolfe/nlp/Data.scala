@@ -100,8 +100,10 @@ case class Sentence(tokens: IndexedSeq[Token], syntax: SyntaxAnnotation = Syntax
 case class Document(source: String,
                     sentences: IndexedSeq[Sentence],
                     filename: Option[String] = None,
+                    id: Option[String] = None,
                     ir: IRAnnotation = IRAnnotation.empty,
-                    coref: CorefAnnotation = CorefAnnotation.empty) {
+                    coref: CorefAnnotation = CorefAnnotation.empty,
+                    discourse: DiscourseAnnotation = DiscourseAnnotation.empty) {
 
   def toText = sentences map (_.toText) mkString "\n"
   def toTaggedText = sentences map (_.toTaggedText) mkString "\n"
@@ -146,6 +148,34 @@ object Document {
   }
 
 }
+
+/**
+ * Class to represent discourse annotation
+ * @param relations sequence of DiscourseRelation elements
+ */
+
+case class DiscourseAnnotation(relations: Seq[DiscourseRelation] = Seq.empty)
+
+case class DiscourseRelation(arg1: DiscourseArgument,
+                             arg2: DiscourseArgument,
+                             connective: DiscourseArgument,
+                             entityID: String,
+                             sense: List[String],
+                             typ: String)
+
+case class DiscourseArgument(text: String = "",
+                             charOffsets: List[CharOffsets] = List.empty,
+                             tokens: Seq[(Int, Int)] = Seq.empty)
+
+object DiscourseArgument {
+  val empty = DiscourseArgument()
+}
+
+object DiscourseAnnotation {
+  val empty = DiscourseAnnotation()
+}
+
+
 
 import scala.collection.mutable.HashMap
 /**

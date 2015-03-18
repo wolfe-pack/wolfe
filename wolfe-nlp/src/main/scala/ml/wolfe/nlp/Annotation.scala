@@ -80,10 +80,19 @@ case class SemanticFrame(predicate: Predicate, roles: Seq[SemanticRole]) {
 
   override def toString = {
     "Predicate %d (%s):\n%s".format(predicate.idx, predicate.token.word,
-      roles.map(r => "  %s --> %d".format(r.role, r.idx)).mkString("\n"))
+      roles.map{ r =>
+        if (r.end == -1) "  %s --> %d".format(r.role, r.idx)
+        else "  %s --> (%d,%d)".format(r.role, r.start, r.end)
+      }.mkString("\n"))
   }
 }
 
 case class Predicate(idx: Int, token: Token, sense: String)
 
-case class SemanticRole(idx: Int, role: String)
+case class SemanticRole(start: Int, end: Int = -1, role: String) {
+
+  def idx: Int = {
+    assert(end == -1, "SemanticRole is a span-based instance, and therefore indices should be referenced using start/end fields.")
+    start
+  }
+}
