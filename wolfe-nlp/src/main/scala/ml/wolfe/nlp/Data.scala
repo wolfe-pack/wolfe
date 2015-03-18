@@ -159,7 +159,7 @@ case class DiscourseAnnotation(relations: Seq[DiscourseRelation] = Seq.empty)
 case class DiscourseRelation(arg1: DiscourseArgument,
                              arg2: DiscourseArgument,
                              connective: DiscourseArgument,
-                             entityID: String,
+                             id: String,
                              sense: List[String],
                              typ: String)
 
