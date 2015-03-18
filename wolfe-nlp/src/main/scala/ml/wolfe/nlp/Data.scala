@@ -3,6 +3,7 @@ package ml.wolfe.nlp
 import breeze.linalg.SparseVector
 import edu.berkeley.nlp.entity.ConllDocReader
 
+import scala.language.implicitConversions
 import scala.collection.mutable
 
 
@@ -13,6 +14,8 @@ import scala.collection.mutable
  */
 case class CharOffsets(start: Int, end: Int)
 
+case class ParentChildRelation() extends ObjectGraphRelation
+
 /**
  * A natural language token.
  * @param word word at token.
@@ -22,12 +25,12 @@ case class CharOffsets(start: Int, end: Int)
  */
 case class Token(word: String, offsets: CharOffsets, posTag: String = null, lemma: String = null) {
   def toTaggedText = word + "/" + posTag
-  def sentence(implicit graph: ObjectGraph) =
-    graph.receiveOrdered[Token, Sentence, Sentence]('tokens, this)((_, s) => s)
-  def next(implicit graph: ObjectGraph) =
-    graph.receiveOrdered[Token, Sentence, Option[Token]]('tokens, this)((i, s) => s.tokens.lift(i + 1))
-  def prev(implicit graph: ObjectGraph) =
-    graph.receiveOrdered[Token, Sentence, Option[Token]]('tokens, this)((i, s) => s.tokens.lift(i - 1))
+  def sentence(implicit graph: ObjectGraph[Sentence,Token]) =
+    graph.receive(ParentChildRelation(), this)
+  def next(implicit graph: ObjectGraph[Sentence,Token]) =
+    graph.receive(ParentChildRelation(), this).tokens.lift(idx + 1)
+  def prev(implicit graph: ObjectGraph[Sentence,Token]) =
+    graph.receive(ParentChildRelation(), this).tokens.lift(idx - 1)
   def toPrettyString = if (posTag != null) word + "/" + posTag else word
   def idx = offsets.start // Should replace with index lookup in ObjectGraph
 
@@ -42,10 +45,10 @@ case class Token(word: String, offsets: CharOffsets, posTag: String = null, lemm
 case class Sentence(tokens: IndexedSeq[Token], syntax: SyntaxAnnotation = SyntaxAnnotation.empty, ie: IEAnnotation = IEAnnotation.empty) {
   def toText = tokens map (_.word) mkString " "
   def toTaggedText = tokens map (_.toTaggedText) mkString " "
-  def document(implicit g:ObjectGraph) =
-    g.receiveOrdered[Sentence,Document,Document]('sentences,this)((_,d) => d)
-  def linkTokens(implicit graph: ObjectGraph) =
-    graph.link1toNOrdered[Sentence, Token, IndexedSeq[Token]]('tokens, this, tokens)
+  def document(implicit graph: ObjectGraph[Document, Sentence]) =
+    graph.receive(ParentChildRelation(), this)
+  def linkTokens(implicit graph: ObjectGraph[Sentence, Token]) =
+    graph.link1toN(ParentChildRelation(), this, tokens)
   def size = tokens.size
   def offsets = CharOffsets(tokens.head.offsets.start,tokens.last.offsets.end)
   def toPrettyString = tokens.map(_.toPrettyString).mkString(" ")
@@ -103,12 +106,44 @@ case class Document(source: String,
   def toText = sentences map (_.toText) mkString "\n"
   def toTaggedText = sentences map (_.toTaggedText) mkString "\n"
   def tokens = sentences flatMap (_.tokens)
-  def $sentences(implicit g:ObjectGraph) =
-    g.link1toNOrdered[Document,Sentence,Seq[Sentence]]('sentences, this, sentences)
+  def linkSentences(implicit graph: ObjectGraph[Document,Sentence]) =
+    graph.link1toN(ParentChildRelation(), this, sentences)
   def toPrettyString = sentences.map(_.toPrettyString).mkString("\n")
 
   def entityMentionsAsBIOSeq = sentences flatMap (_.entityMentionsAsBIOSeq)
   def tokenWords = sentences flatMap (s => s.tokens.map(_.word))
+
+}
+
+object Document {
+
+  def apply(sentences:Seq[IndexedSeq[String]]) : Document = {
+    val source = sentences.map(_.mkString(" ")).mkString(" ")
+    var start = 0
+    val resultSentences = for (s <- sentences) yield {
+      val tokens = for (t <- s) yield {
+        val tmp = Token(t, CharOffsets(start, start + t.length))
+        start += t.size + 1
+        tmp
+
+      }
+      Sentence(tokens)
+    }
+    Document(source, resultSentences.toIndexedSeq)
+  }
+
+  def apply(source: String) : Document = Document(source, IndexedSeq(Sentence(IndexedSeq(Token(source,CharOffsets(0,source.length))))))
+
+  implicit def toDoc(source:String): Document = Document(source)
+
+  /**
+   * Creates a new Document based on the old document, where every token is surrounded by white spaces.
+   * @param doc old Document
+   * @return A normalised copy of the old Document
+   */
+  def normalizeDoc(doc:Document) = {
+    Document(doc.sentences.map(_.tokens.map(_.word)))
+  }
 
 }
 

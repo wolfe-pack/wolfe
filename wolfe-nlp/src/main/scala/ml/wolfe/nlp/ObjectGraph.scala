@@ -3,36 +3,57 @@ package ml.wolfe.nlp
 import scala.collection.mutable
 
 /**
+ * An object graph keeps track of all the relation
  * @author Sebastian Riedel
+ *         Ingolf Becker
+ *
  */
-trait ObjectGraph {
-  def link1toN[Parent, Child, I <: Iterable[Child]](rel: Any, parent: Parent, children: I): I
-  def link1toNOrdered[Parent, Child, I <: Seq[Child]](rel: Any, parent: Parent, children: I): I
-  def receive[Child, Parent](rel: Any, child: Child): Parent
-  def receiveOrdered[Child, Parent, T](rel: Any, child: Child)(f: (Int, Parent) => T): T
+
+abstract class ObjectGraphRelation
+
+
+
+trait ObjectGraph[Parent, Child] {
+  /**
+   * Links one child to one parent with the specified relation.
+   * @param relation The relation between child and parent
+   * @param parent The parent object
+   * @param child The Iterable of child object
+   * @return The Child
+   */
+  def link1to1[Rel <: ObjectGraphRelation](relation: Rel, parent: Parent, child: Child): Child
+  /**
+   * Links all children to the parent with the specified relation.
+   * @param relation The relation between child and parents
+   * @param parent The parent object
+   * @param children The Iterable of child objects
+   * @return The children
+   */
+  def link1toN[I <: Iterable[Child], Rel <: ObjectGraphRelation](relation: Rel, parent: Parent, children: I): I
+  /**
+   * Gets the parent of this child under this relation
+   * @param relation The relation between child and parents
+   * @param child The child to find the parent of
+   * @return The parent
+   */
+  def receive[ Rel <: ObjectGraphRelation](relation: Rel, child: Child): Parent
 }
 
-class SimpleObjectGraph extends ObjectGraph {
+class SimpleObjectGraph[Parent, Child] extends ObjectGraph[Parent, Child]  {
 
-  //todo: hashmaps should use case class object identity, not default equality, for hashing and comparing.
-  private val map           = new mutable.HashMap[(Any, Any), Any]()
-  private val mapForOrdered = new mutable.HashMap[(Any, Any), (Int, Any)]()
+  private val map = new mutable.HashMap[(Child, ObjectGraphRelation), Parent]()
 
-
-  def link1toNOrdered[Parent, Child, I <: Seq[Child]](rel: Any, parent: Parent, children: I) = {
-    for ((c, i) <- children.zipWithIndex) mapForOrdered(c -> rel) = i -> parent
-    children
-
+  def link1to1[Rel <: ObjectGraphRelation](relation: Rel, parent: Parent, child: Child): Child = {
+    map(child -> relation) = parent
+    child
   }
-  def link1toN[Parent, Child, I <: Iterable[Child]](rel: Any, parent: Parent, children: I) = {
-    for (c <- children) map(c -> rel) = parent
+
+  def link1toN[I <: Iterable[Child], Rel <: ObjectGraphRelation](relation: Rel, parent: Parent, children: I): I = {
+    for (c <- children) map(c -> relation) = parent
     children
   }
-  def receive[Child, Parent](rel: Any, child: Child) =
-    map(child -> rel).asInstanceOf[Parent]
+  def receive[ Rel <: ObjectGraphRelation](relation: Rel, child: Child): Parent =
+    map(child -> relation)
 
-  def receiveOrdered[Child, Parent, T](rel: Any, child: Child)(f: (Int, Parent) => T) = {
-    val p = mapForOrdered(child -> rel).asInstanceOf[(Int, Parent)]
-    f(p._1, p._2)
-  }
 }
+
