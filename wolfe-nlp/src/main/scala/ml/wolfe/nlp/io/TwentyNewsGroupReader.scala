@@ -16,6 +16,9 @@ import ml.wolfe.nlp._
  */
 object TwentyNewsGroupReader {
 
+  def toDoc(source:String): Document = Document(source, IndexedSeq(Sentence(IndexedSeq(Token(source,CharOffsets(0,source.length))))))
+
+
   def loadFromTarGz(path: String = "ml/wolfe/datasets/20news/20news-bydate.tar.gz") = {
     //http://java-tweets.blogspot.co.uk/2012/07/untar-targz-file-with-apache-commons.html
     LoggerUtil.info("Loading 20 newsgroups ...")

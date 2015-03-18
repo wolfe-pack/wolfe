@@ -18,6 +18,7 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
   type Term = DomTerm
   //  type ElemDom = E
 
+
   val indexDom = new RangeDom(0 until maxLength)
 
   //trait Test extends Term
@@ -237,7 +238,7 @@ case class VarSeqApply[+E <: Dom, S <: Term[VarSeqDom[E]], I <: IntTerm](seq: S,
         val index = argOutputs(1).disc(0)
         val offset = seq.domain.elementDom.lengths * index + Offsets(discOff = 1)
         argErrors(0).resetToZero()
-        argErrors(0).disc(0) = length
+        argErrors(0).disc := argOutputs(0).disc
         error.copyTo(argErrors(0), Offsets.zero, offset, seq.domain.elementDom.lengths)
       }
     }
@@ -271,8 +272,5 @@ class RangeTerm(start: IntTerm, end: IntTerm) extends Composed[VarSeqDom[IntDom]
     }
   }
 
-  def composerOld() = ???
-
-  def differentiatorOld(wrt: Seq[Var[Dom]]) = ???
 
 }

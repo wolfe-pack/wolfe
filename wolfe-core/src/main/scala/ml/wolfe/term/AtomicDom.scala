@@ -138,8 +138,6 @@ class MatrixDom(val dim1: Int, dim2: Int) extends AtomicDom {
 
 class BooleanDom extends GenericDiscreteDom[Boolean] {
 
-  def domainSize = 2
-
   def intToValue(int: Int) = if (int == 0) false else true
 
   def valueToInt(value: Value) = if (value) 1 else 0
@@ -252,8 +250,6 @@ class DiscreteDom[T](val values: IndexedSeq[T]) extends GenericDiscreteDom[T] {
 
   def valueToInt(value: Value) = index(value)
 
-  def domainSize = values.size
-
   def one = values.last
 
   def zero = values.head
@@ -271,8 +267,6 @@ case class RangeDom(values: Range) extends GenericDiscreteDom[Int] {
   def intToValue(int: Int) = int
 
   def valueToInt(value: Value) = value
-
-  def domainSize = values.size
 
   def one = values.last
 
