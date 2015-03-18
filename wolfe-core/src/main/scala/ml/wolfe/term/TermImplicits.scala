@@ -22,6 +22,8 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
   
   def Ints[T](args: Range) = new RangeDom(args)
 
+  def Pairs(d1:Dom,d2:Dom) = new Tuple2Dom[d1.type,d2.type](d1,d2)
+
   implicit def rangeToDom(range: Range): RangeDom = new RangeDom(range)
 
   implicit def domToIterable(dom: Dom): Iterable[dom.Value] = dom.toIterable
@@ -60,6 +62,11 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
     def toConst: domain.Term = domain.Const(value)
   }
 
+  def lambda[D<:Dom](d:Dom)(f:d.Term => Term[D]):d.Value => D#Value = {
+    val v = d.variable("v")
+    val t = f(v)
+    (x:d.Value) => t.eval(x)
+  }
 
   implicit def toConvertable[T](value:T)(implicit domain: TypedDom[T]): ConvertableToTerm3[T, domain.type] = new ConvertableToTerm3[T,domain.type](value)(domain)
 
@@ -185,7 +192,7 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
 
 
   implicit class RichDom[D <: Dom](val dom: D) {
-    def x[D2 <: Dom](that: D2): Tuple2Dom[dom.type, that.type] = new Tuple2Dom[dom.type, that.type](dom, that)
+    //def x[D2 <: Dom](that: D2): Tuple2Dom[D, D2] = new Tuple2Dom[D, D2](dom, that)
 
     //    def iterator = dom.iterator
   }

@@ -65,6 +65,20 @@ class Max(val obj: DoubleTerm, val wrt: Seq[Var[Dom]]) extends DoubleTerm {
 
   override def evaluatorImpl(in: Settings) = new MaxEvaluator(in)
 
+  def by(factory: ArgmaxerFactory) = {
+    val newObj = new ProxyTerm[TypedDom[Double]] {
+      def self = obj
+
+      override def argmaxerImpl(wrt: Seq[Var[Dom]])(observed: Settings, msgs: Msgs) = {
+        factory.argmaxer(obj, wrt)(observed, msgs)
+      }
+
+      def copy(args: IndexedSeq[ArgumentType]) = ???
+    }
+    new Max(newObj,wrt)
+  }
+
+
 }
 
 class Argmax[D <: Dom](val obj: DoubleTerm, val wrt: Var[D]) extends Term[D] {
