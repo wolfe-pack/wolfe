@@ -365,8 +365,13 @@ trait MathImplicits {
     new Argmax[dom.type](term, variable)
   }
 
-  def learn[D <: Dom](dom: D)(obj: dom.Var => DoubleTerm, argmaxerFactory: ArgmaxerFactory): dom.Value = {
-    (argmax(dom)(obj) by argmaxerFactory).eval()
+  abstract class LearnBuilder[D <: Dom](val dom: D) {
+    def obj: dom.Var => DoubleTerm
+    def using(argmaxerFactory: ArgmaxerFactory):dom.Value = (argmax(dom)(obj) by argmaxerFactory).eval()
+  }
+
+  def learn(dom: Dom)(objective: dom.Var => DoubleTerm) = new LearnBuilder[dom.type](dom) {
+    def obj = objective
   }
 
   def eval(term:AnyTerm):term.domain.Value = term.eval()

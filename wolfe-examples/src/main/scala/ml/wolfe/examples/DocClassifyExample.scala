@@ -43,8 +43,7 @@ object DocClassifyExample extends App {
     w dot (x.feats conjoin feature(y))
   }
 
-
-  val wStar = learn(Weights)(w => perceptron(train)(Labels)(model(w)), adaGrad)
+  val wStar = learn(Weights)(w => perceptron(train)(Labels)(model(w))) using adaGrad
 
   val predict = lambda(Docs) { d => argmax(Labels)(model(wStar.toConst)(d))}
 
