@@ -1,9 +1,12 @@
 package ml.wolfe.nlp.io
 
+import java.nio.file.{Paths, Files}
+
 import ml.wolfe.nlp._
 import org.json4s.JsonAST.{JInt, JObject, JString}
 import org.json4s._
 import org.json4s.native.JsonMethods._
+import java.nio.charset.StandardCharsets
 
 import scala.io.Source
 
@@ -74,7 +77,7 @@ object CoNLL2015DiscourseReader {
       }
 
       val filename = dataDirectory + "raw/" + docID
-      val text = Source.fromFile(filename).getLines().mkString("\n")
+      val text = Source.fromFile(filename, "ISO-8859-1").getLines().mkString("\n")
 
       val discourse = doc_relations.get(docID) match {
         case Some(relations) =>
@@ -92,7 +95,7 @@ object CoNLL2015DiscourseReader {
           DiscourseAnnotation(rels)
         case None => DiscourseAnnotation.empty
       }
-      Document(text, sentences.toIndexedSeq, filename = Some(filename), discourse = discourse)
+      Document(text, sentences.toIndexedSeq, filename = Some(filename), id = Some(docID), discourse = discourse)
     }
     documents
   }
@@ -100,9 +103,65 @@ object CoNLL2015DiscourseReader {
 
 }
 
+object CoNLL2015DiscourseWriter {
 
-object CoNLL2015Test extends App {
-  println("here")
-  CoNLL2015DiscourseReader.loadData("data/conll15st-train-dev/conll15st_data/conll15-st-03-04-15-train/")
-  println("done")
+  case class JSONDiscourseRelation(Arg1: JSONDiscourseArgument, Arg2: JSONDiscourseArgument, Connective: JSONDiscourseArgument, DocID: String, ID: Int, Sense: List[String], Type: String)
+  case class JSONDiscourseArgument(CharacterSpanList: List[List[Int]] , RawText: String, TokenList: List[List[Int]])
+
+  def writeDocumentsToJSON(documents: Iterable[Document], filename: String) = {
+    val sb = new StringBuilder
+    documents.toIterator.foreach{ document =>
+      val jSONDiscourseRelations = documentToJSONDiscourseRelations(document)
+      import org.json4s.native.Serialization.write
+      implicit val formats = org.json4s.native.Serialization.formats(NoTypeHints)
+      jSONDiscourseRelations.foreach(relation => sb.append(write(relation) + "\n"))
+    }
+    scala.tools.nsc.io.File(filename).writeAll(sb.toString)
+  }
+
+  def documentToJSONDiscourseRelations(document: Document): Seq[JSONDiscourseRelation] = {
+    // pre-calculate document sentence lengths, needed for token offsets
+    var counter = 0
+    val sentence_lengths = document.sentences.map{ sentence =>
+      counter += sentence.size
+      counter
+    }
+    val ret = document.discourse.relations.map { relation =>
+
+      def charOffsetsToSpanList(x: List[CharOffsets]) = x.map{ offset => List(offset.start, offset.end)}
+      def rewriteTokens(sentenceTokenPairs: Seq[(Int, Int)]) = {
+        sentenceTokenPairs.map { pair =>
+          val sentenceID = pair._1
+          val tokenID = pair._2
+          val offsets = document.sentences(sentenceID).tokens(tokenID).offsets
+          val tokenOffset = sentence_lengths(if (sentenceID - 1 >= 0) sentenceID - 1 else 0) + tokenID
+          List(offsets.start, offsets.end, tokenOffset, sentenceID, tokenID)
+        }.toList
+      }
+
+      val arg1_characterspanlist = charOffsetsToSpanList(relation.arg1.charOffsets)
+      val arg2_characterspanlist = charOffsetsToSpanList(relation.arg2.charOffsets)
+      val connective_characterspanlist = charOffsetsToSpanList(relation.connective.charOffsets)
+
+      val arg1_tokens = rewriteTokens(relation.arg1.tokens)
+      val arg2_tokens = rewriteTokens(relation.arg2.tokens)
+      val connective_tokens = rewriteTokens(relation.connective.tokens)
+
+      val arg1 = JSONDiscourseArgument(arg1_characterspanlist, relation.arg1.text, arg1_tokens)
+      val arg2 = JSONDiscourseArgument(arg2_characterspanlist, relation.arg2.text, arg2_tokens)
+      val connective = JSONDiscourseArgument(connective_characterspanlist, relation.connective.text, connective_tokens)
+
+      JSONDiscourseRelation(arg1, arg2, connective, document.id.get, relation.id.toInt, relation.sense, relation.typ)
+    }
+    ret
+
+  }
+}
+
+object CoNLL2015TestReadWrite extends App {
+  println("Initiating reader.")
+  val output = CoNLL2015DiscourseReader.loadData("/Users/matko/workspace/conll2015/data/conll15st-train-dev/conll15st_data/conll15-st-03-04-15-train/")
+  println("Reading DONE. Initiating writing.")
+  CoNLL2015DiscourseWriter.writeDocumentsToJSON(output, "output.json")
+  println("Writing DONE.")
 }
