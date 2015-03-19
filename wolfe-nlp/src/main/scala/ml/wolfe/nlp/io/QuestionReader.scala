@@ -1,7 +1,5 @@
 package ml.wolfe.nlp.io
 
-import ml.wolfe.nlp.{SISTAProcessors, SISTAConverter}
-
 /**
  * @author narad
  * @author mbosnjak
@@ -95,6 +93,8 @@ case class AnswerChoice(label: String, text: String, isCorrect: Boolean)
 
 
 // Temp location for some helper IO
+
+import ml.wolfe.nlp.converters.SISTAProcessors
 
 import scala.collection.mutable.ArrayBuffer
 

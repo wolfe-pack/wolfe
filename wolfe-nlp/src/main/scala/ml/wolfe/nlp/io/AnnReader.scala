@@ -1,5 +1,6 @@
 package ml.wolfe.nlp.io
 import ml.wolfe.nlp._
+import ml.wolfe.nlp.converters.SISTAProcessors
 
 import scala.util.matching.Regex
 

@@ -2,6 +2,7 @@ package ml.wolfe.nlp
 
 import breeze.linalg.SparseVector
 import edu.berkeley.nlp.entity.ConllDocReader
+import ml.wolfe.nlp.converters.SISTAProcessors
 
 import scala.language.implicitConversions
 import scala.collection.mutable

@@ -1,16 +1,17 @@
-package ml.wolfe.nlp
+package ml.wolfe.nlp.converters
 
 import edu.berkeley.nlp.PCFGLA.CoarseToFineMaxRuleParser
 import edu.berkeley.nlp.entity._
 import edu.berkeley.nlp.entity.coref._
-import edu.berkeley.nlp.entity.joint.JointPredictor
 import edu.berkeley.nlp.entity.lang.Language
 import edu.berkeley.nlp.entity.ner.NerSystemLabeled
-import edu.berkeley.nlp.entity.preprocess.{SentenceSplitter => BerkeleySentenceSplitter, PreprocessingDriver}
 import edu.berkeley.nlp.entity.preprocess.PreprocessingDriver.loadParser
+import edu.berkeley.nlp.entity.preprocess.{PreprocessingDriver, SentenceSplitter => BerkeleySentenceSplitter}
 import edu.berkeley.nlp.syntax.Tree
 import edu.berkeley.nlp.util.Logger
-import ml.wolfe.nlp.syntax.{PreterminalNode, NonterminalNode, ConstituentTree}
+import ml.wolfe.nlp._
+import ml.wolfe.nlp.syntax.{ConstituentTree, NonterminalNode, PreterminalNode}
+
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ArrayBuffer
 

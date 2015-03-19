@@ -1,6 +1,7 @@
-package ml.wolfe.nlp
+package ml.wolfe.nlp.converters
 
-import edu.arizona.sista.processors.corenlp.{CoreNLPDocument, CoreNLPProcessor}
+import edu.arizona.sista.processors.corenlp.CoreNLPProcessor
+import ml.wolfe.nlp.{CorefAnnotation, Document}
 
 /**
  * Convenience methods for processing NLP documents.

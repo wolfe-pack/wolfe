@@ -1,10 +1,10 @@
-package ml.wolfe.nlp
+package ml.wolfe.nlp.converters
 
-import edu.arizona.sista.processors.{Sentence => SISTASent}
-import edu.arizona.sista.processors.{CorefChains => SISTACorefChains}
-import edu.arizona.sista.processors.{CorefMention => SISTACorefMention}
+import edu.arizona.sista.processors.{CorefChains => SISTACorefChains, CorefMention, CorefMention => SISTACorefMention, Sentence, Sentence => SISTASent}
 import edu.arizona.sista.struct.Tree
-import ml.wolfe.nlp.syntax.{DependencyTree, PreterminalNode, NonterminalNode, ConstituentTree}
+import ml.wolfe.nlp._
+import ml.wolfe.nlp.syntax.{ConstituentTree, DependencyTree, NonterminalNode, PreterminalNode}
+
 import scala.collection.mutable.ArrayBuffer
 
 /**
