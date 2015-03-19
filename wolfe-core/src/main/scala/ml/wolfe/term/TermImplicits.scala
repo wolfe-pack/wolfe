@@ -197,6 +197,8 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
       innerTerm.domain.own(Conditioned[Dom, Dom](innerTerm, assignment.variable, assignment.value).asInstanceOf[TypedTerm[innerTerm.domain.Value]])
     }
 
+    def idx = new IndexOf[innerTerm.domain.type](innerTerm.asInstanceOf[innerTerm.domain.Term])
+
     def apply(assignments: Assignment[Dom]*): innerTerm.domain.Value = assignments.foldLeft[AnyTerm](innerTerm) {
       case (result, assignment) => Conditioned[Dom, Dom](result, assignment.variable, assignment.value)
     }.eval().asInstanceOf[innerTerm.domain.Value]

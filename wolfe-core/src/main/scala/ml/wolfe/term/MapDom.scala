@@ -111,21 +111,21 @@ class MapDom1[K <: Dom, V <: Dom](keyDom: K, valueDom: V) extends MapDom[K,V](ke
 class MapDom2[K1 <: Dom, K2 <: Dom, V <:Dom](val keyDom1:K1, val keyDom2:K2, override val valueDom:V)
   extends MapDom[K1 x K2,V](new Tuple2Dom[K1,K2](keyDom1,keyDom2),valueDom) {
 
-  type Term = DomTerm
-
-  class Var(name:String) extends DomVar(name) {
+  trait Term extends DomTerm {
     def apply(key1: keyDom1.Term,key2:keyDom2.Term):valueDom.Term = {
       val key = keyDom.Term(key1.asInstanceOf[keyDom.dom1.Term],key2.asInstanceOf[keyDom.dom2.Term])
       apply(key)
     }
   }
 
+  class Var(name:String) extends DomVar(name) with Term
+
   def variable(varName: String) = new Var(varName)
 
-  def Const(value: Value) = new SeqWrapper(seqDom.Const(map2seq(value)))
+  def Const(value: Value) = new SeqWrapper(seqDom.Const(map2seq(value))) with Term
 
   //trait Test extends Term
-  def own(term: TypedTerm[Value]) = new SeqWrapper(seqDom.own(term.asInstanceOf[TypedTerm[seqDom.Value]]))
+  def own(term: TypedTerm[Value]) = new SeqWrapper(seqDom.own(term.asInstanceOf[TypedTerm[seqDom.Value]])) with Term
 
 }
 
