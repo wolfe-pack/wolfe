@@ -242,6 +242,8 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
 
 trait MathImplicits {
 
+  import TermImplicits._
+
   def Vectors(dim: Int) = new VectorDom(dim)
 
   def UnitVectors(dim: Int) = new UnitVectorDom(dim)
@@ -293,6 +295,7 @@ trait MathImplicits {
   def l2Squared[T <: VectorTerm](term: T) = term dot term
 
   implicit class RichVectTerm(val vect: VectorTerm) {
+
     def dot(that: VectorTerm) = new DotProduct(vect, that)
 
     def *(that: Term[DoubleDom]) = new VectorScaling(vect, that)
@@ -439,15 +442,15 @@ trait MathImplicits {
   def feature(feat: AnyTerm, value: DoubleTerm = Dom.doubles.Const(1.0))(implicit dom: VectorDom, index: Index) =
     oneHot(indexed(feat), value)
 
-  implicit def doubleToConstant(d: Double): Constant[DoubleDom] = Dom.doubles.Const(d)
+  implicit def doubleToConstant(d: Double): Dom.doubles.Term = Dom.doubles.Const(d)
 
   implicit def intToConstant(i: Int): Constant[IntDom] = new RangeDom(i until i + 1).Const(i)
 
   implicit def doubleToRichConstant(d: Double): RichDoubleTerm = new RichDoubleTerm(doubleToConstant(d))
 
-  implicit def anyToConst[T](any: T)(implicit dom: TypedDom[T]): dom.Term = dom.Const(any)
+  //implicit def anyToConst[T](any: T)(implicit dom: TypedDom[T]): dom.Term = dom.Const(any)
 
-  implicit def intToDoubleConstant(d: Int): Constant[DoubleDom] = Dom.doubles.Const(d)
+  implicit def intToDoubleConstant(d: Int): Dom.doubles.Term = Dom.doubles.Const(d)
 
   implicit def vectToConstant(d: FactorieVector): Constant[VectorDom] = Vectors(d.dim1).Const(d)
 
@@ -456,6 +459,9 @@ trait MathImplicits {
   implicit def matToConstant(d: FactorieMatrix): Constant[MatrixDom] = Matrices(d.dim1, d.dim2).Const(d)
 
   implicit def intToDouble(int: IntTerm): IntToDouble[int.type] = new IntToDouble[int.type](int)
+
+  implicit def valueToConst[T <: AnyRef](value:T)(implicit dom:TypedDom[T]):dom.Term = dom.Const(value)
+
 
   def boolToInt(bool: BoolTerm): Dom.ints.Term = {
     Dom.ints.own(bool.asInstanceOf[IntTerm])

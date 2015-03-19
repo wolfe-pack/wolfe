@@ -291,7 +291,7 @@ class TermSpecs extends WolfeSpec {
   "An ifthenelse term" should {
     "evaluate to the right branch depending on the condition" in {
       val x = Bools.Var
-      val t = ifThenElse(x)(1.0.toConst)(2.0.toConst)
+      val t = ifThenElse(x)(1.0.toConst)(2.0)
       t.eval(true) should be(1.0)
       t.eval(false) should be(2.0)
     }

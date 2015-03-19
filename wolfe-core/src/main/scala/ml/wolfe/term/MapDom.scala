@@ -2,6 +2,8 @@ package ml.wolfe.term
 
 import ml.wolfe.term
 
+import scala.collection.convert.Wrappers.SeqWrapper
+
 /**
  * @author riedel
  */
@@ -62,7 +64,7 @@ class MapDom[K <: Dom, V <: Dom](val keyDom: K, val valueDom: V) extends Dom {
   def Const(value: Value) = new SeqWrapper(seqDom.Const(map2seq(value)))
 
   //trait Test extends Term
-  def own(term: TypedTerm[Value]) = ???
+  def own(term: TypedTerm[Value]) = new SeqWrapper(seqDom.own(term.asInstanceOf[TypedTerm[seqDom.Value]]))
 
 
   def fillZeroMsg(target: Msg, offsets: Offsets) = seqDom.fillZeroMsg(target, offsets)
