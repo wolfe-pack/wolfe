@@ -14,7 +14,17 @@ import scala.collection.mutable
  */
 case class CharOffsets(start: Int, end: Int)
 
-case class ParentChildRelation() extends ObjectGraphRelation
+case class SentenceTokenRelation() extends ObjectGraphRelation {
+  type Parent = Sentence
+  type Child = Token
+  case class FatherSonRelation() extends RelationType
+}
+
+case class DocumentSentenceRelation() extends ObjectGraphRelation {
+  type Parent = Document
+  type Child = Sentence
+  case class FatherSonRelation() extends RelationType
+}
 
 /**
  * A natural language token.
@@ -25,12 +35,12 @@ case class ParentChildRelation() extends ObjectGraphRelation
  */
 case class Token(word: String, offsets: CharOffsets, posTag: String = null, lemma: String = null) {
   def toTaggedText = word + "/" + posTag
-  def sentence(implicit graph: ObjectGraph[Sentence,Token]) =
-    graph.receive(ParentChildRelation(), this)
-  def next(implicit graph: ObjectGraph[Sentence,Token]) =
-    graph.receive(ParentChildRelation(), this).tokens.lift(idx + 1)
-  def prev(implicit graph: ObjectGraph[Sentence,Token]) =
-    graph.receive(ParentChildRelation(), this).tokens.lift(idx - 1)
+  def sentence(implicit graph: ObjectGraph[SentenceTokenRelation]) =
+    graph.receive(this)
+  def next(implicit graph: ObjectGraph[SentenceTokenRelation]) =
+    graph.receive(this).tokens.lift(idx + 1)
+  def prev(implicit graph: ObjectGraph[SentenceTokenRelation]) =
+    graph.receive(this).tokens.lift(idx - 1)
   def toPrettyString = if (posTag != null) word + "/" + posTag else word
   def idx = offsets.start // Should replace with index lookup in ObjectGraph
 
@@ -45,10 +55,10 @@ case class Token(word: String, offsets: CharOffsets, posTag: String = null, lemm
 case class Sentence(tokens: IndexedSeq[Token], syntax: SyntaxAnnotation = SyntaxAnnotation.empty, ie: IEAnnotation = IEAnnotation.empty) {
   def toText = tokens map (_.word) mkString " "
   def toTaggedText = tokens map (_.toTaggedText) mkString " "
-  def document(implicit graph: ObjectGraph[Document, Sentence]) =
-    graph.receive(ParentChildRelation(), this)
-  def linkTokens(implicit graph: ObjectGraph[Sentence, Token]) =
-    graph.link1toN(ParentChildRelation(), this, tokens)
+  def document(implicit graph: ObjectGraph[DocumentSentenceRelation]) =
+    graph.receive(this)
+  def linkTokens(implicit graph: ObjectGraph[SentenceTokenRelation]) =
+    graph.link1toN(this, tokens)
   def size = tokens.size
   def offsets = CharOffsets(tokens.head.offsets.start,tokens.last.offsets.end)
   def toPrettyString = tokens.map(_.toPrettyString).mkString(" ")
@@ -108,8 +118,8 @@ case class Document(source: String,
   def toText = sentences map (_.toText) mkString "\n"
   def toTaggedText = sentences map (_.toTaggedText) mkString "\n"
   def tokens = sentences flatMap (_.tokens)
-  def linkSentences(implicit graph: ObjectGraph[Document,Sentence]) =
-    graph.link1toN(ParentChildRelation(), this, sentences)
+  def linkSentences(implicit graph: ObjectGraph[DocumentSentenceRelation]) =
+    graph.link1toN(this, sentences)
   def toPrettyString = sentences.map(_.toPrettyString).mkString("\n")
 
   def entityMentionsAsBIOSeq = sentences flatMap (_.entityMentionsAsBIOSeq)

@@ -8,52 +8,49 @@ import scala.collection.mutable
  *         Ingolf Becker
  *
  */
+trait ObjectGraphRelation {
+  type Parent
+  type Child
+  abstract class RelationType
+}
 
-abstract class ObjectGraphRelation
 
-
-
-trait ObjectGraph[Parent, Child] {
+trait ObjectGraph[types <: ObjectGraphRelation] {
   /**
    * Links one child to one parent with the specified relation.
-   * @param relation The relation between child and parent
    * @param parent The parent object
    * @param child The Iterable of child object
    * @return The Child
    */
-  def link1to1[Rel <: ObjectGraphRelation](relation: Rel, parent: Parent, child: Child): Child
+  def link1to1(parent: types#Parent, child: types#Child): types#Child
   /**
    * Links all children to the parent with the specified relation.
-   * @param relation The relation between child and parents
    * @param parent The parent object
    * @param children The Iterable of child objects
    * @return The children
    */
-  def link1toN[I <: Iterable[Child], Rel <: ObjectGraphRelation](relation: Rel, parent: Parent, children: I): I
+  def link1toN[I <: Iterable[types#Child]](parent: types#Parent, children: I): I
   /**
    * Gets the parent of this child under this relation
-   * @param relation The relation between child and parents
    * @param child The child to find the parent of
    * @return The parent
    */
-  def receive[ Rel <: ObjectGraphRelation](relation: Rel, child: Child): Parent
+  def receive(child: types#Child): types#Parent
 }
 
-class SimpleObjectGraph[Parent, Child] extends ObjectGraph[Parent, Child]  {
+class SimpleObjectGraph[types <: ObjectGraphRelation] extends ObjectGraph[types] {
+  private val map = new mutable.HashMap[types#Child, types#Parent]()
 
-  private val map = new mutable.HashMap[(Child, ObjectGraphRelation), Parent]()
-
-  def link1to1[Rel <: ObjectGraphRelation](relation: Rel, parent: Parent, child: Child): Child = {
-    map(child -> relation) = parent
+  def link1to1(parent: types#Parent, child: types#Child): types#Child = {
+    map(child) = parent
     child
   }
 
-  def link1toN[I <: Iterable[Child], Rel <: ObjectGraphRelation](relation: Rel, parent: Parent, children: I): I = {
-    for (c <- children) map(c -> relation) = parent
+  def link1toN[I <: Iterable[types#Child]](parent: types#Parent, children: I): I = {
+    for (c <- children) map(c) = parent
     children
   }
-  def receive[ Rel <: ObjectGraphRelation](relation: Rel, child: Child): Parent =
-    map(child -> relation)
 
+  def receive(child: types#Child): types#Parent = map(child)
 }
 

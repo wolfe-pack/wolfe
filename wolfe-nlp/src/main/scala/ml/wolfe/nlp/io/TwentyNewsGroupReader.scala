@@ -34,7 +34,7 @@ object TwentyNewsGroupReader {
         val content = new Array[Byte](entry.getSize.toInt)
         tarIn.read(content, 0, entry.getSize.toInt)
         val text = new String(content)
-        val raw = toDoc(text)
+        val raw = Document.toDoc(text)
         val doc = TokenSplitter(raw).copy(ir = IRAnnotation(docLabel = Some(label)))
         if (root.endsWith("train")) trainDocs += doc else testDocs += doc
         //
