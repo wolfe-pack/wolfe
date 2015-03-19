@@ -201,6 +201,8 @@ trait TermHelper[+D <: Dom] {
     domain.toValue(ev.output)
   }
 
+  def !! = eval()
+
 
   def gradient[V <: Dom](wrt: Var[V], args: Any*): wrt.domain.Value = {
     require(args.length == vars.length, s"You need as many arguments as there are free variables (${vars.length})")

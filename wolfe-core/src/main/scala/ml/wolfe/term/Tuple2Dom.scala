@@ -37,6 +37,8 @@ class Tuple2Dom[D1 <: Dom, D2 <: Dom](val dom1: D1, val dom2: D2) extends TupleD
       new Tuple2Constructor(args(0).asInstanceOf[dom1.Term],args(1).asInstanceOf[dom2.Term])
   }
 
+  def Term(a1:dom1.Term,a2:dom2.Term):Term = new Tuple2Constructor(a1,a2)
+
   val lengths = dom1.lengths + dom2.lengths
 
   override val dimensions = dom1.dimensions + dom2.dimensions

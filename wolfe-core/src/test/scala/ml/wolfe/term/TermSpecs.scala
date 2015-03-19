@@ -169,13 +169,13 @@ class TermSpecs extends WolfeSpec {
   }
 
   "A term with discrete variables" should {
-    "provide its argmax" ignore {
+    "provide its argmax" in {
       val dom = Bools x Bools
       val x = dom.Var
       val result = argmax(dom) { x => I(x._1 && x._2)}
       result.eval() should be(true, true)
     }
-    "provide a partial argmax" ignore {
+    "provide a partial argmax" in {
       val y = Bools.Var
       val term = argmax(Bools)(x => I(x === y))
       term.eval(true) should be(true)
@@ -291,7 +291,7 @@ class TermSpecs extends WolfeSpec {
   "An ifthenelse term" should {
     "evaluate to the right branch depending on the condition" in {
       val x = Bools.Var
-      val t = ifThenElse(x)(1.0.toConst)(2.0.toConst)
+      val t = ifThenElse(x)(1.0.toConst)(2.0)
       t.eval(true) should be(1.0)
       t.eval(false) should be(2.0)
     }

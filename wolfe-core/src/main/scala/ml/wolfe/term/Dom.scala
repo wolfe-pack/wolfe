@@ -53,6 +53,10 @@ trait Dom {
 
   def copyValue(value: Value, setting: Setting, offsets: Offsets = Offsets())
 
+  def x(that: Dom) = new Tuple2Dom[dom.type, that.type](dom, that)
+
+  def ==>(that:Dom) = new MapDom1[dom.type,that.type](dom,that)
+
   def toSetting(value: Value): Setting = {
     val result = createSetting()
     copyValue(value, result)
@@ -96,6 +100,52 @@ trait Dom {
   def lengths: Offsets
 
   def dimensions: Dimensions = Dimensions()
+
+  lazy val domainSize = {
+    require(isDiscrete,"domain size is only defined for discrete domains")
+    dimensions.discDims.map(_.size).product
+  }
+
+  def indexOfSetting(setting: Setting): Int = {
+    require(isDiscrete, "only discrete domains have indices")
+    var result = 0
+    for (i <- 0 until setting.disc.length) {
+      val index = setting.disc(i) - dimensions.discDims(i).start
+      result = index + result * dimensions.discDims(i).size
+    }
+    result
+  }
+
+  def indexToValue(index:Int) = {
+    val setting = createSetting()
+    settingOfIndex(index,setting)
+    toValue(setting)
+  }
+
+  def settingOfIndex(index: Int, tgt: Setting): Unit = {
+    val result = tgt.disc
+    var current = index
+    def dim(i: Int) = dimensions.discDims(i).size
+    def length = dimensions.discDims.length
+    for (i <- 0 until length) {
+      // .optimized) {
+      val value = current % dim(length - i - 1)
+      result(length - i - 1) = value
+      current = current / dim(length - i - 1)
+    }
+    /*
+    val result = Array.ofDim[Int](dims.length)
+    var current = entry
+    for (i <- (0 until dims.length)) { // .optimized) {
+      val value = current % dims(dims.length - i - 1)
+      result(dims.length - i - 1) = value
+      current = current / dims(dims.length - i - 1)
+    }
+    result
+
+       */
+  }
+
 
   def isDiscrete = lengths.contOff == 0 && lengths.vectOff == 0 && lengths.matsOff == 0
 
