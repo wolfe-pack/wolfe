@@ -1,5 +1,6 @@
 package ml.wolfe.nlp.io
 import ml.wolfe.nlp._
+import ml.wolfe.nlp.syntax.{ConstituentSpan, PreterminalNode, NonterminalNode, ConstituentTree}
 import scala.collection.mutable.ArrayBuffer
 
 /**
@@ -74,7 +75,7 @@ class TreeTransformer(options: TreebankReaderOptions) {
     if (options.BINARIZE)
       t = t.binarize(options.BINARIZE_MODE)
     if (options.REMOVE_TOP) {
-      if (t.children.size == 1) t = t.removeTop
+      if (t.children.size == 1) t = t.removeTopNode
     }
     if (options.FIX_ROOT) {
       t = new ConstituentTree(NonterminalNode("TOP"), t.children)
@@ -152,11 +153,11 @@ object ConstituentTreeFactory {
     }
   }
 
-  def constructFromSpans(spans: Array[Span], slen: Int, words: Array[String] = Array(), tags: Array[String] = Array()): ConstituentTree = {
+  def constructFromSpans(spans: Array[ConstituentSpan], slen: Int, words: Array[String] = Array(), tags: Array[String] = Array()): ConstituentTree = {
     return ConstituentTreeFactory.buildTree(label="TOP", children=findChildren(spans.sortBy(sp => (sp.width * 1000) + sp.height).reverse, 0, slen, words, tags))
   }
 
-  def findChildren(spans: Array[Span], start: Int, end: Int, words: Array[String] = Array(), tags: Array[String] = Array()): List[ConstituentTree] = {
+  def findChildren(spans: Array[ConstituentSpan], start: Int, end: Int, words: Array[String] = Array(), tags: Array[String] = Array()): List[ConstituentTree] = {
     val children = new ArrayBuffer[ConstituentTree]
     val max = findMaxSpan(spans, start, end)
     max match {
@@ -184,7 +185,7 @@ object ConstituentTreeFactory {
     }
   }
 
-  def findMaxSpan(spans: Array[Span], start: Int, end: Int): Option[Span] = {
+  def findMaxSpan(spans: Array[ConstituentSpan], start: Int, end: Int): Option[ConstituentSpan] = {
     for (span <- spans) {
       if (span.start >= start && span.end <= end) return Some(span)
     }

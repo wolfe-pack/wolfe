@@ -1,5 +1,7 @@
 package ml.wolfe.nlp
 
+import ml.wolfe.nlp.syntax.{DependencyTree, ConstituentTree}
+
 import scala.collection.mutable.ArrayBuffer
 import ml.wolfe.nlp.io._
 

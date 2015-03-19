@@ -3,6 +3,7 @@ package ml.wolfe.nlp.io
 import java.nio.file.{Paths, Files}
 
 import ml.wolfe.nlp._
+import ml.wolfe.nlp.syntax.{DependencyTree, ConstituentTree}
 import org.json4s.JsonAST.{JInt, JObject, JString}
 import org.json4s._
 import org.json4s.native.JsonMethods._

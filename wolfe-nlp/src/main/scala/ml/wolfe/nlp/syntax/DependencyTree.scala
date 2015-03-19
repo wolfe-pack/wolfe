@@ -1,4 +1,6 @@
-package ml.wolfe.nlp
+package ml.wolfe.nlp.syntax
+
+import ml.wolfe.nlp.{CharOffsets, Token}
 
 /**
  * Created by narad on 12/5/14.

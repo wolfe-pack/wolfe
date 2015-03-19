@@ -10,6 +10,7 @@ import edu.berkeley.nlp.entity.preprocess.{SentenceSplitter => BerkeleySentenceS
 import edu.berkeley.nlp.entity.preprocess.PreprocessingDriver.loadParser
 import edu.berkeley.nlp.syntax.Tree
 import edu.berkeley.nlp.util.Logger
+import ml.wolfe.nlp.syntax.{PreterminalNode, NonterminalNode, ConstituentTree}
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ArrayBuffer
 

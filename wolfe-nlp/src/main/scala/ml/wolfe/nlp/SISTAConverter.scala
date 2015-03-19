@@ -4,6 +4,7 @@ import edu.arizona.sista.processors.{Sentence => SISTASent}
 import edu.arizona.sista.processors.{CorefChains => SISTACorefChains}
 import edu.arizona.sista.processors.{CorefMention => SISTACorefMention}
 import edu.arizona.sista.struct.Tree
+import ml.wolfe.nlp.syntax.{DependencyTree, PreterminalNode, NonterminalNode, ConstituentTree}
 import scala.collection.mutable.ArrayBuffer
 
 /**

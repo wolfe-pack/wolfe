@@ -1,6 +1,7 @@
 package ml.wolfe.nlp.io
 
 import ml.wolfe.nlp._
+import ml.wolfe.nlp.syntax.{ModifiedCollinsHeadFinder, DependencyTree, ConstituentTree}
 import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import scala.util.matching.Regex
@@ -142,7 +143,7 @@ class CoNLL2011Reader(filename: String, delim: String = "\t") extends Iterable[D
       val csyntaxCleaned = csyntax.mkString(" ").replaceAll("\\*", " * ").replaceAll("\\(", " ( ").replaceAll("\\)", " ) ").replaceAll(" +", " ")
       var tc = -1
       val csyntaxStr = csyntaxCleaned.map(c => if (c == '*') {tc += 1; "(" + pos(tc) + " " + words(tc) + ")"} else c.toString).mkString("")
-      val ctree = ConstituentTree.stringToTree(csyntaxStr)
+      val ctree = ModifiedCollinsHeadFinder.annotate(ConstituentTree.stringToTree(csyntaxStr))
       assert(ctree != null, "Null constituent tree")
 
       val entities = readStackFormatEntities(ner.toList)
@@ -210,9 +211,6 @@ class CoNLL2011Reader(filename: String, delim: String = "\t") extends Iterable[D
   }
 
   def findMatches(starts: Array[(Int, String)], ends: Array[(Int, String)], matchString: Boolean): Array[(Int, Int, String)] = {
-//    println("starts: " + starts.mkString(", "))
-//    println("ends: " + ends.mkString(" "))
-//    println
     val found = new ArrayBuffer[(Int, Int, String)]
     val buffer = new ArrayBuffer[(Int, String)]
     buffer ++= starts.reverse

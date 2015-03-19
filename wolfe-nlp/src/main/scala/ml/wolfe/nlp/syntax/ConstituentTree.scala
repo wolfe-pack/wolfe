@@ -1,6 +1,7 @@
-package ml.wolfe.nlp
+package ml.wolfe.nlp.syntax
 
-import ml.wolfe.nlp.io.{TreebankReaderOptions, ConstituentTreeFactory}
+import ml.wolfe.nlp.Token
+import ml.wolfe.nlp.io.{ConstituentTreeFactory, TreebankReaderOptions}
 
 import scala.collection.mutable.{ArrayBuffer, HashMap, Map}
 
@@ -20,7 +21,6 @@ case class ConstituentTree(node: ConstituentNode, children : List[ConstituentTre
   def isNonterminal = node.isNonterminal
 
   def labelsOfSpan(i: Int, j: Int): Iterator[String] = {
- //   index(i)(j).map(_.label).iterator
     spans((i,j)).view.map(_.label).iterator
   }
 
@@ -82,39 +82,43 @@ case class ConstituentTree(node: ConstituentNode, children : List[ConstituentTre
     }
   }
 
-  def indexViaHash: Map[(Int,Int), List[Span]] = {
-    val index = new HashMap[(Int,Int), List[Span]].withDefaultValue(List())
+  def indexViaHash: Map[(Int,Int), List[ConstituentSpan]] = {
+    val index = new HashMap[(Int,Int), List[ConstituentSpan]].withDefaultValue(List())
     var numLeaves = 0
     for (t <- leafFirstSearch) {
       if (t.isLeaf) {
-        index((numLeaves, numLeaves+1)) = index((numLeaves, numLeaves+1)) ++ List(new Span(numLeaves, numLeaves+1, t.label, 0))
+        index((numLeaves, numLeaves+1)) = index((numLeaves, numLeaves+1)) ++ List(new ConstituentSpan(numLeaves, numLeaves+1, t.label, 0))
         numLeaves += 1
       }
       else {
         val len = t.length
         val height = index(numLeaves-len, numLeaves).size
-        index((numLeaves-len, numLeaves)) = index((numLeaves-len, numLeaves)) ++ List(new Span(numLeaves-len, numLeaves, t.label, height))
+        index((numLeaves-len, numLeaves)) = index((numLeaves-len, numLeaves)) ++ List(new ConstituentSpan(numLeaves-len, numLeaves, t.label, height))
       }
     }
     index
   }
 
-  def indexViaArray: Array[Array[ArrayBuffer[Span]]] = {
-    val ispans = Array.fill(length+1,length+1)(new ArrayBuffer[Span])
+  def indexViaArray: Array[Array[ArrayBuffer[ConstituentSpan]]] = {
+    val ispans = Array.fill(length+1,length+1)(new ArrayBuffer[ConstituentSpan])
     var numLeaves = 0
     for (t <- leafFirstSearch) {
       if (t.isLeaf) {
-        ispans(numLeaves)(numLeaves+1) += new Span(numLeaves, numLeaves+1, t.label, 0)
+        ispans(numLeaves)(numLeaves+1) += new ConstituentSpan(numLeaves, numLeaves+1, t.label, 0)
         numLeaves += 1
       }
       else {
         val len = t.length
         val height = ispans(numLeaves-len)(numLeaves).size
-        ispans(numLeaves-len)(numLeaves) += new Span(numLeaves-len, numLeaves, t.label, height)
+        ispans(numLeaves-len)(numLeaves) += new ConstituentSpan(numLeaves-len, numLeaves, t.label, height)
       }
     }
     ispans
   }
+
+//  def headOf(i: Int, j: Int): Option[String] = {
+//    spans((i,j)).collectFirst{ case i if i}
+//  }
 
   override def toString: String = {
     node match {
@@ -127,7 +131,7 @@ case class ConstituentTree(node: ConstituentNode, children : List[ConstituentTre
   def slice(i: Int, j: Int): ConstituentTree = {
     val ospans = toSpans.toArray
     val fspans = ospans.filter{ s => s.start >= i && s.end <= j && s.width > 1} // && (span.end-span.start > 1 || span.isUnary)}
-    val ss2 = fspans.map{span => Span(span.start-i, span.end-i, span.label, span.height)}
+    val ss2 = fspans.map{span => ConstituentSpan(span.start-i, span.end-i, span.label, span.height)}
     val t = ConstituentTreeFactory.constructFromSpans(ss2, j-i, words.slice(i, j).toArray, tags.slice(i, j).toArray)
     t
   }
@@ -205,7 +209,7 @@ case class ConstituentTree(node: ConstituentNode, children : List[ConstituentTre
     }
   }
 
-  def removeTop: ConstituentTree = {
+  def removeTopNode: ConstituentTree = {
     assert(children.size == 1, "Attempted to remove top node on a tree that would become multi-rooted.\n" + toString)
     children(0)
   }
@@ -299,90 +303,18 @@ case class ConstituentTree(node: ConstituentNode, children : List[ConstituentTre
     spans((i,j)).exists(s => s.label == l)
   }
 
-//  def highestUnarySpan(i: Int, j: Int): String = {
-//    if (i < 0 || j < 0) return "none"
-//    if (i > length || j > length) return "none"
-//    spans((i,j)).filter()
-//    if (spans(i)(j).filter(_.isUnary).size > 0) {
-//      spans(i)(j).filter(_.isUnary).sortBy(_.height * -1).head.label
-//    }
-//    else {
-//      "none"
-//    }
-//  }
-
-
-  def toSpans: Iterable[Span] = {
+  def toSpans: Iterable[ConstituentSpan] = {
 //    for (i <- 0 until length; j <- 1 to length; k <- 0 until spans(i)(j).size) yield spans(i)(j)(k)
     (for (i <- 0 until length; j <- 1 to length if spans.contains((i,j))) yield spans((i,j))).flatten  //spans(i)(j)(k)
   }
 
-  def toNonterminalSpans: Iterable[Span] = {
+  def toNonterminalSpans: Iterable[ConstituentSpan] = {
     toSpans.filter(s => s.width > 1 || s.height > 0)
   }
 
-  def spansAt(i: Int, j: Int): Iterable[Span] = spans((i,j)) //spans(i)(j).toIterable
+  def spansAt(i: Int, j: Int): Iterable[ConstituentSpan] = spans((i,j)) //spans(i)(j).toIterable
 }
 
-trait ConstituentNode {
-
-  def label:String
-
-  def isNonterminal: Boolean = this match {
-    case x: NonterminalNode => true
-    case _ => false
-  }
-
-  def isPreterminal: Boolean = this match {
-    case x: PreterminalNode => true
-    case _ => false
-  }
-}
-
-case class NonterminalNode(label: String, head: Int = -1) extends ConstituentNode {
-
-  override def isNonterminal = true
-
-  override def isPreterminal = false
-}
-
-case class PreterminalNode(label: String, word: String) extends ConstituentNode {
-
-  override def isNonterminal = false
-
-  override def isPreterminal = true
-}
-
-
-
-case class Span(left: Int, right: Int, label: String, var height: Int=0) {
-
-  def width: Int = right - left
-
-  def covers(other: Span): Boolean = {
-    left <= other.left && right >= other.right && !equals(other)
-  }
-
-  def crosses(other: Span): Boolean = {
-    (start < other.start && end > other.start   && end < other.end) ||
-    (start > other.start && start < other.end && end > other.end)
-  }
-
-  override def equals(that: Any): Boolean = that match {
-    case other: Span => left == other.left && right == other.right && other.label == label
-    case _=> false
-  }
-
-  def isUnary = height > 0
-
-  def start = left
-
-  def end = right
-
-  def isTerminal = !isUnary && width == 1
-
-  override def toString(): String = "%s(%s,%s,%d)".format(label, left, right, height)
-}
 
 /**
  * Companion object for the ConstituentTree class.
@@ -437,3 +369,31 @@ object ConstituentTree {
     subs.toList
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+//  def highestUnarySpan(i: Int, j: Int): String = {
+//    if (i < 0 || j < 0) return "none"
+//    if (i > length || j > length) return "none"
+//    spans((i,j)).filter()
+//    if (spans(i)(j).filter(_.isUnary).size > 0) {
+//      spans(i)(j).filter(_.isUnary).sortBy(_.height * -1).head.label
+//    }
+//    else {
+//      "none"
+//    }
+//  }
+//
+//  def toDependencyTree: DependencyTree = {
+//
+//  }
