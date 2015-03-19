@@ -11,14 +11,14 @@ class MapDomSpecs extends WolfeSpec {
 
   "A map domain" should {
     "create variables" in {
-      val M = Bools -> Ints
+      val M = Maps(Bools, Ints)
       val m = M.Var
       m(m << Map(false -> 1, true -> 2)) should be(Map(false -> 1, true -> 2))
       m(m << Map(false -> 1)) should be(Map(false -> 1))
     }
 
     "access map elements of a variable" in {
-      val M = Bools -> Ints
+      val M = Maps(Bools, Ints)
       val m = M.Var
       val k = Bools.Var
       val t = m(k)
@@ -26,19 +26,29 @@ class MapDomSpecs extends WolfeSpec {
     }
 
     "access map elements of a constant" in {
-      implicit val M = Bools -> Ints
+      implicit val M = Maps(Bools, Ints)
       val m = Map(false -> 1, true -> 2).toConst
       val k = Bools.Var
       m(k)(k << true) should be(2)
     }
 
     "supports gradients for map values" in {
-      val M = Bools -> Doubles
+      val M = Maps(Bools, Doubles)
       val m = M.Var
       val k = Bools.Var
       val term = m(k) * m(k) * 2.0 + m(!k) * m(!k) * 3.0
       term.gradient(m, Map(true -> 1.0, false -> 2.0), true) should be(Map(true -> 4.0, false -> 12.0))
     }
+
+//    "support binary arguments" in {
+//      val M = Maps(Bools x Bools, Doubles)
+//      val m = M.Var
+//      val k = Bools.Var
+//      val t = toRichMapTerm2(m)(k,k)
+//
+//
+//    }
+
     //
     //    "should make sparse updates when calculating the gradient" in {
     //      val n = 3

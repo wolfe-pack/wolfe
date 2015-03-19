@@ -70,7 +70,7 @@ object DocClassifyExampleNew extends App {
 
   implicit val Feats = Vectors(10000)
   implicit val Labels = trainDocs.flatMap(_.ir.docLabel).distinct.toDom
-  implicit val Thetas = Theta.Values(Labels -> Feats)
+  implicit val Thetas = Theta.Values(Maps(Labels, Feats))
   implicit val Docs = Doc.Values(Feats)
   implicit val Instances = Docs x Labels
 

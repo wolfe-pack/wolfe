@@ -35,6 +35,8 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
 
   def Seqs[D <: Dom](elements: D, length: Int): VarSeqDom[elements.type] = Seqs(elements, length, length)
 
+  def Maps(keyDom:Dom,valueDom:Dom):MapDom[keyDom.type,valueDom.type] = new MapDom[keyDom.type,valueDom.type](keyDom,valueDom)
+
   def fixedLengthSeq[T](elements: Seq[T])(implicit dom: TypedDom[T]) = {
     Seqs(dom, elements.length).Const(elements.toIndexedSeq)
   }
@@ -127,6 +129,14 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
   //    term.argmax(variable).asInstanceOf[dom.Value]
   //  }
 
+  class RichMapTerm2[M <: MapTerm[Tuple2Dom[_ <: Dom,_ <: Dom],_ <: Dom]](val term:M) {
+    def apply(k1:term.domain.keyDom.dom1.Term,k2:term.domain.keyDom.dom2.Term):term.domain.valueDom.Term = {
+      term.asInstanceOf[term.domain.Term](term.domain.keyDom.Term(k1,k2))
+    }
+  }
+
+  implicit def toRichMapTerm2(m:MapTerm[Tuple2Dom[_ <: Dom,_ <: Dom],_ <: Dom]):RichMapTerm2[m.type] =
+    new RichMapTerm2[m.type](m)
 
   implicit class RichBoolTerm(term: BoolTerm) {
     def &&(that: BoolTerm) = new And(term, that)

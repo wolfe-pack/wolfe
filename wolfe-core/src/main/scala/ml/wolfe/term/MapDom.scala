@@ -7,7 +7,7 @@ import scala.collection.convert.Wrappers.SeqWrapper
 /**
  * @author riedel
  */
-class MapDom[K <: Dom, V <: Dom](val keyDom: K, val valueDom: V) extends Dom {
+class MapDom[+K <: Dom, +V <: Dom](val keyDom: K, val valueDom: V) extends Dom {
 
   dom =>
 
