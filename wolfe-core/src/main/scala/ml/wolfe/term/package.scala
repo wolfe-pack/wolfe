@@ -18,7 +18,7 @@ package object term {
   type SampleTerm = RangeDom#SampleTerm
   type VarSeqTerm = VarSeqDom[Dom]#Term
   type SeqTerm[D <: Dom] = VarSeqDom[D]#Term
-  type MapTerm[K<:Dom,V<:Dom] = MapDom[K,V]#Term
+  type MapTerm[+K<:Dom,+V<:Dom] = MapDom[K,V]#Term
 
   type TypedDom[T] = Dom { type Value = T}
   type TypedTerm[T] = Term[TypedDom[T]]

@@ -40,14 +40,13 @@ class MapDomSpecs extends WolfeSpec {
       term.gradient(m, Map(true -> 1.0, false -> 2.0), true) should be(Map(true -> 4.0, false -> 12.0))
     }
 
-//    "support binary arguments" in {
-//      val M = Maps(Bools x Bools, Doubles)
-//      val m = M.Var
-//      val k = Bools.Var
-//      val t = toRichMapTerm2(m)(k,k)
-//
-//
-//    }
+    "support binary arguments" in {
+      val k = Bools.Var
+      val M = Maps(Bools, Bools, Doubles)
+      val m = M.Var
+      val t = m(k,k)
+      t(m << Map((true,true)->2.0), k << true) should be (2.0)
+    }
 
     //
     //    "should make sparse updates when calculating the gradient" in {

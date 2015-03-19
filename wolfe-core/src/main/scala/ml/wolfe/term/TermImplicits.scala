@@ -35,7 +35,10 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
 
   def Seqs[D <: Dom](elements: D, length: Int): VarSeqDom[elements.type] = Seqs(elements, length, length)
 
-  def Maps(keyDom:Dom,valueDom:Dom):MapDom[keyDom.type,valueDom.type] = new MapDom[keyDom.type,valueDom.type](keyDom,valueDom)
+  def Maps(keyDom:Dom,valueDom:Dom):MapDom1[keyDom.type,valueDom.type] = new MapDom1[keyDom.type,valueDom.type](keyDom,valueDom)
+
+  def Maps(keyDom1:Dom,keyDom2:Dom,valueDom:Dom):MapDom2[keyDom1.type,keyDom2.type,valueDom.type] =
+    new MapDom2[keyDom1.type,keyDom2.type,valueDom.type](keyDom1,keyDom2,valueDom)
 
   def fixedLengthSeq[T](elements: Seq[T])(implicit dom: TypedDom[T]) = {
     Seqs(dom, elements.length).Const(elements.toIndexedSeq)
@@ -129,7 +132,13 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
   //    term.argmax(variable).asInstanceOf[dom.Value]
   //  }
 
-  class RichMapTerm2[M <: MapTerm[Tuple2Dom[_ <: Dom,_ <: Dom],_ <: Dom]](val term:M) {
+  class RichMapTerm2[+M <: MapTerm[Tuple2Dom[_ <: Dom,_ <: Dom],_ <: Dom]](val term:M) {
+    def apply(k1:term.domain.keyDom.dom1.Term,k2:term.domain.keyDom.dom2.Term):term.domain.valueDom.Term = {
+      term.asInstanceOf[term.domain.Term](term.domain.keyDom.Term(k1,k2))
+    }
+
+  }
+  class RichMapTerm2New[T1 <:Dom, T2<:Dom, V <: Dom, M <: MapTerm[Tuple2Dom[T1,T2],V]](val term:M) {
     def apply(k1:term.domain.keyDom.dom1.Term,k2:term.domain.keyDom.dom2.Term):term.domain.valueDom.Term = {
       term.asInstanceOf[term.domain.Term](term.domain.keyDom.Term(k1,k2))
     }
@@ -137,6 +146,10 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
 
   implicit def toRichMapTerm2(m:MapTerm[Tuple2Dom[_ <: Dom,_ <: Dom],_ <: Dom]):RichMapTerm2[m.type] =
     new RichMapTerm2[m.type](m)
+
+//  implicit def toRichMapTerm2New[T1 <:Dom, T2<:Dom, V <: Dom, M <: MapTerm[Tuple2Dom[T1,T2],V]](m:M):RichMapTerm2New[T1,T2,V,M] =
+//    new RichMapTerm2New[T1,T2,V,M](m)
+
 
   implicit class RichBoolTerm(term: BoolTerm) {
     def &&(that: BoolTerm) = new And(term, that)

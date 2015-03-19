@@ -1,17 +1,13 @@
 package ml.wolfe.term
 
-import ml.wolfe.term
-
-import scala.collection.convert.Wrappers.SeqWrapper
-
 /**
  * @author riedel
  */
-class MapDom[+K <: Dom, +V <: Dom](val keyDom: K, val valueDom: V) extends Dom {
+abstract class MapDom[K <: Dom, V <: Dom](val keyDom: K, val valueDom: V) extends Dom {
 
   dom =>
 
-  import TermImplicits._
+  import ml.wolfe.term.TermImplicits._
 
   require(keyDom.isDiscrete, "keys of map need to be discrete")
 
@@ -20,6 +16,8 @@ class MapDom[+K <: Dom, +V <: Dom](val keyDom: K, val valueDom: V) extends Dom {
 
   type Value = Map[keyDom.Value, valueDom.Value]
   type Marginals = Map[keyDom.Value, (Bools.Marginals,valueDom.Marginals)]
+  type Term <: DomTerm
+  type Var <: Term with DomVar
 
   def seq2map(seq: seqDom.Value) = {
     val map = for (((exists, value), index) <- seq zipWithIndex; if exists) yield keyDom.indexToValue(index) -> value
@@ -33,12 +31,12 @@ class MapDom[+K <: Dom, +V <: Dom](val keyDom: K, val valueDom: V) extends Dom {
     }
   }
 
-  trait Term extends super.DomTerm {
+  trait DomTerm extends super.DomTerm {
 
     def apply(key: keyDom.Term): valueDom.Term
   }
 
-  class SeqWrapper(val seqTerm: seqDom.Term) extends Term with ProxyTerm[Dom] {
+  class SeqWrapper(val seqTerm: seqDom.Term) extends DomTerm with ProxyTerm[Dom] {
     def self = seqTerm
 
     override val domain: dom.type = dom
@@ -55,16 +53,10 @@ class MapDom[+K <: Dom, +V <: Dom](val keyDom: K, val valueDom: V) extends Dom {
     seq2map(seq)
   }
 
-  class Var(val name: String) extends Term with DomVar {
+  class DomVar(val name: String) extends DomTerm with super.DomVar {
     def apply(key: keyDom.Term) = seqDom.own(this.asInstanceOf[TypedTerm[seqDom.Value]])(IndexOf(key))._2
   }
 
-  def variable(varName: String) = new Var(varName)
-
-  def Const(value: Value) = new SeqWrapper(seqDom.Const(map2seq(value)))
-
-  //trait Test extends Term
-  def own(term: TypedTerm[Value]) = new SeqWrapper(seqDom.own(term.asInstanceOf[TypedTerm[seqDom.Value]]))
 
 
   def fillZeroMsg(target: Msg, offsets: Offsets) = seqDom.fillZeroMsg(target, offsets)
@@ -99,6 +91,41 @@ class MapDom[+K <: Dom, +V <: Dom](val keyDom: K, val valueDom: V) extends Dom {
   def zero = Map.empty
 
   def one = keyDom.toIterable.map(k => k -> valueDom.one).toMap
+
+}
+
+class MapDom1[K <: Dom, V <: Dom](keyDom: K, valueDom: V) extends MapDom[K,V](keyDom,valueDom) {
+
+  type Term = DomTerm
+  type Var = DomVar
+
+  def variable(varName: String) = new Var(varName)
+
+  def Const(value: Value) = new SeqWrapper(seqDom.Const(map2seq(value)))
+
+  //trait Test extends Term
+  def own(term: TypedTerm[Value]) = new SeqWrapper(seqDom.own(term.asInstanceOf[TypedTerm[seqDom.Value]]))
+
+}
+
+class MapDom2[K1 <: Dom, K2 <: Dom, V <:Dom](val keyDom1:K1, val keyDom2:K2, override val valueDom:V)
+  extends MapDom[K1 x K2,V](new Tuple2Dom[K1,K2](keyDom1,keyDom2),valueDom) {
+
+  type Term = DomTerm
+
+  class Var(name:String) extends DomVar(name) {
+    def apply(key1: keyDom1.Term,key2:keyDom2.Term):valueDom.Term = {
+      val key = keyDom.Term(key1.asInstanceOf[keyDom.dom1.Term],key2.asInstanceOf[keyDom.dom2.Term])
+      apply(key)
+    }
+  }
+
+  def variable(varName: String) = new Var(varName)
+
+  def Const(value: Value) = new SeqWrapper(seqDom.Const(map2seq(value)))
+
+  //trait Test extends Term
+  def own(term: TypedTerm[Value]) = new SeqWrapper(seqDom.own(term.asInstanceOf[TypedTerm[seqDom.Value]]))
 
 }
 

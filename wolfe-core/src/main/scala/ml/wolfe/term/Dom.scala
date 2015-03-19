@@ -55,7 +55,7 @@ trait Dom {
 
   def x(that: Dom) = new Tuple2Dom[dom.type, that.type](dom, that)
 
-  def ==>(that:Dom) = new MapDom[dom.type,that.type](dom,that)
+  def ==>(that:Dom) = new MapDom1[dom.type,that.type](dom,that)
 
   def toSetting(value: Value): Setting = {
     val result = createSetting()
