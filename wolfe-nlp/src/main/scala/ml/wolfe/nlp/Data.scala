@@ -77,14 +77,24 @@ object Data {
       def toPrettyString = word
     }
 
+    case class FanciestToken(word: String)  extends DataStructure with DataIterator {
+      def toPrettyString = word + "No!"
+    }
+
     implicit val graph = new SimpleObjectGraph[DataIterator#ForwardIteratorRelation]
 
 
     val tokens = for (i <- 1 to 10) yield new FancierToken(i.toString)
+    val tokens2 = for (i <- 1 to 10) yield new FanciestToken(i.toString)
     graph.link1to1(tokens(1),tokens(0))
     println(tokens(0).hasNext)
     println(tokens(0).next)
     println(tokens(0).next.getClass)
+    graph.link1to1(tokens2(0),tokens(2))
+    println(tokens(2).hasNext)
+    println(tokens(2).next)
+    println(tokens(2).next.getClass)
+
   }
 }
 
