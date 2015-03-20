@@ -2,19 +2,23 @@ package ml.wolfe.nlp
 
 import scala.collection.mutable
 
+
+
+/**
+ * Trait describing the types in the relationship
+ * @author Ingolf Becker
+ */
+trait ObjectGraphRelation {
+  type Parent
+  type Child
+}
+
 /**
  * An object graph keeps track of all the relation
  * @author Sebastian Riedel
  *         Ingolf Becker
  *
  */
-trait ObjectGraphRelation {
-  type Parent
-  type Child
-  abstract class RelationType
-}
-
-
 trait ObjectGraph[types <: ObjectGraphRelation] {
   /**
    * Links one child to one parent with the specified relation.
@@ -38,6 +42,10 @@ trait ObjectGraph[types <: ObjectGraphRelation] {
   def receive(child: types#Child): types#Parent
 }
 
+/**
+ * A simple implementation of an ObjectGraph based on a mutable HashMap.
+ * @tparam types The instance of ObjectGraphRelation describing the types of this ObjectGraph.
+ */
 class SimpleObjectGraph[types <: ObjectGraphRelation] extends ObjectGraph[types] {
   private val map = new mutable.HashMap[types#Child, types#Parent]()
 
@@ -47,7 +55,7 @@ class SimpleObjectGraph[types <: ObjectGraphRelation] extends ObjectGraph[types]
   }
 
   def link1toN[I <: Iterable[types#Child]](parent: types#Parent, children: I): I = {
-    for (c <- children) map(c) = parent
+    children.map(map(_) = parent)
     children
   }
 

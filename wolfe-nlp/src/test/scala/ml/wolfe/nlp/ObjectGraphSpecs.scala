@@ -1,5 +1,5 @@
 package ml.wolfe.nlp
-import ml.wolfe.{nlp, WolfeSpec}
+import ml.wolfe.WolfeSpec
 
 
 import scala.language.implicitConversions
@@ -14,19 +14,17 @@ class ObjectGraphSpecs extends WolfeSpec {
   case class ParentChildRelation() extends ObjectGraphRelation {
     type Parent = testParent
     type Child = testChild
-    case class FatherSonRelation() extends RelationType
   }
-  case class FicitonalRelation() extends ObjectGraphRelation {
+  case class FictionalRelation() extends ObjectGraphRelation {
     type Parent = testParent
     type Child = testChild
-    case class DifferentRelation() extends RelationType
   }
   case class testParent(name: String)
   case class testChild(name: String) {
 
     def getParent(implicit graph: ObjectGraph[ParentChildRelation]): testParent = graph.receive(this)
 
-    def getFictionalParent(implicit graph: ObjectGraph[FicitonalRelation]): testParent = graph.receive(this)
+    def getFictionalParent(implicit graph: ObjectGraph[FictionalRelation]): testParent = graph.receive(this)
   }
 
   "A simple object graph" should {
@@ -44,13 +42,12 @@ class ObjectGraphSpecs extends WolfeSpec {
       val child = testChild("Test Child")
       val parent = testParent("Father")
       graph.link1to1(parent, child)
-      println(graph)
       child.getParent should be (parent)
     }
 
     "should choose the correct implicits" in {
       implicit val graph3 = new SimpleObjectGraph[ParentChildRelation]
-      implicit val graph = new SimpleObjectGraph[FicitonalRelation]
+      implicit val graph = new SimpleObjectGraph[FictionalRelation]
       implicit val graph2 = new SimpleObjectGraph[ParentChildRelation]
       val child = testChild("Test Child")
       val parent = testParent("Father")
@@ -66,21 +63,16 @@ class ObjectGraphSpecs extends WolfeSpec {
       children.forall(graph.receive(_) == parent) should be (true)
     }
 
-
-
     "distinguish different types of links" in {
       implicit val graph = new SimpleObjectGraph[ParentChildRelation]
-      implicit val graph2 = new SimpleObjectGraph[FicitonalRelation]
+      implicit val graph2 = new SimpleObjectGraph[FictionalRelation]
       val child = testChild("Test Child")
       val parent = testParent("Father")
       val parent2 = testParent("GodFather")
       graph.link1to1(parent, child)
       graph2.link1to1(parent2, child)
-      println(child.getParent)
-      println(child.getFictionalParent)
       child.getParent should not be child.getFictionalParent
     }
 
   }
-
 }

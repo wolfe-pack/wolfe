@@ -18,13 +18,11 @@ case class CharOffsets(start: Int, end: Int)
 case class SentenceTokenRelation() extends ObjectGraphRelation {
   type Parent = Sentence
   type Child = Token
-  case class FatherSonRelation() extends RelationType
 }
 
 case class DocumentSentenceRelation() extends ObjectGraphRelation {
   type Parent = Document
   type Child = Sentence
-  case class FatherSonRelation() extends RelationType
 }
 
 /**
