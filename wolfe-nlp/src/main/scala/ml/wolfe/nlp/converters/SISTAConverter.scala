@@ -3,6 +3,7 @@ package ml.wolfe.nlp.converters
 import edu.arizona.sista.processors.{CorefChains => SISTACorefChains, Sentence => SISTASent}
 import edu.arizona.sista.struct.Tree
 import ml.wolfe.nlp._
+import ml.wolfe.nlp.ie.{EntityMention, CorefMention}
 import ml.wolfe.nlp.syntax.{ConstituentTree, DependencyTree, NonterminalNode, PreterminalNode}
 
 import scala.collection.mutable.ArrayBuffer

@@ -1,5 +1,7 @@
 package ml.wolfe.nlp.io
 import ml.wolfe.nlp._
+import ml.wolfe.nlp.semantics.{Predicate, SemanticRole, SemanticFrame}
+import ml.wolfe.nlp.ie.{EntityMention}
 import scala.collection.mutable.ArrayBuffer
 import scala.util.matching.Regex
 import java.io.File

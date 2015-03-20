@@ -1,7 +1,8 @@
 package ml.wolfe.nlp.io
 
 import ml.wolfe.nlp.converters.SISTAProcessors
-import ml.wolfe.nlp.{Document, EntityMention, RelationMention, Sentence}
+import ml.wolfe.nlp.{Document, Sentence}
+import ml.wolfe.nlp.ie.{EntityMention, EventMention, RelationMention}
 import java.io.{File, FileWriter}
 
 /**

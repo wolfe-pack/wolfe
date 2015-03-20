@@ -1,7 +1,9 @@
 package ml.wolfe.nlp.io
 
 import ml.wolfe.nlp._
+import ml.wolfe.nlp.semantics.{Predicate, SemanticFrame, SemanticRole}
 import ml.wolfe.nlp.syntax.{ModifiedCollinsHeadFinder, DependencyTree, ConstituentTree}
+import ml.wolfe.nlp.ie.{CorefMention, CorefAnnotation, EntityMention}
 import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import scala.util.matching.Regex
