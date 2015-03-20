@@ -40,6 +40,8 @@ trait ObjectGraph[types <: ObjectGraphRelation] {
    * @return The parent
    */
   def receive(child: types#Child): types#Parent
+
+  def hasKey(child: types#Child): Boolean
 }
 
 /**
@@ -60,5 +62,7 @@ class SimpleObjectGraph[types <: ObjectGraphRelation] extends ObjectGraph[types]
   }
 
   def receive(child: types#Child): types#Parent = map(child)
+
+  def hasKey(child: types#Child): Boolean = map.contains(child)
 }
 

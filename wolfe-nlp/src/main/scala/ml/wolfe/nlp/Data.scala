@@ -45,6 +45,49 @@ case class Token(word: String, offsets: CharOffsets, posTag: String = null, lemm
 
 }
 
+abstract class DataStructure {
+  def toPrettyString : String
+}
+
+case class BasicToken(word: String) extends DataStructure {
+  def toPrettyString = word
+}
+
+trait DataIterator {
+  this: DataStructure =>
+  protected type X = this.type
+  case class ForwardIteratorRelation() extends ObjectGraphRelation {
+    type Parent = X
+    type Child = X
+  }
+  def hasNext(implicit graph: ObjectGraph[DataIterator#ForwardIteratorRelation]): Boolean = {
+    graph.hasKey(this)
+
+  }
+  def next(implicit graph: ObjectGraph[DataIterator#ForwardIteratorRelation]): DataIterator#ForwardIteratorRelation#Parent = graph.receive(this)
+}
+
+
+
+
+object Data {
+  def main(args: Array[String]): Unit = {
+
+    case class FancierToken(word: String) extends DataStructure with DataIterator {
+      def toPrettyString = word
+    }
+
+    implicit val graph = new SimpleObjectGraph[DataIterator#ForwardIteratorRelation]
+
+
+    val tokens = for (i <- 1 to 10) yield new FancierToken(i.toString)
+    graph.link1to1(tokens(1),tokens(0))
+    println(tokens(0).hasNext)
+    println(tokens(0).next)
+    println(tokens(0).next.getClass)
+  }
+}
+
 /**
  * A sentence consisting of tokens.
  * @param tokens the tokens of the sentence.
@@ -309,19 +352,19 @@ object IRAnnotation {
 
 
 
-object Data {
-  def main(args: Array[String]) {
-    val source = "Sally met Harry. She was a girl. He was not."
-
-    val result = SISTAProcessors.annotate(source, true, true, true, true, true, true)
-
-    println("coreference result: " + result.coref)
-
-    implicit val graph = new SimpleObjectGraph
-
-    val s = result.sentences.head
-
-    val cr = new ConllDocReader(null)
+//object Data {
+//  def main(args: Array[String]) {
+//    val source = "Sally met Harry. She was a girl. He was not."
+//
+//    val result = SISTAProcessors.annotate(source, true, true, true, true, true, true)
+//
+//    println("coreference result: " + result.coref)
+//
+//    implicit val graph = new SimpleObjectGraph
+//
+//    val s = result.sentences.head
+//
+//    val cr = new ConllDocReader(null)
     //s.linkTokens(graph) //build graph
 
     //println(s.tokens.head.sentence == s)
@@ -332,6 +375,6 @@ object Data {
     //    println(result2.toTaggedText)
     //    println(result2)
 
-
-  }
-}
+//
+//  }
+//}
