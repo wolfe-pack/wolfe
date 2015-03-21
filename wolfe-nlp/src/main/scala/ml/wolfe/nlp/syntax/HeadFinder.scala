@@ -89,7 +89,13 @@ object ModifiedCollinsHeadFinder {
         if (guess > -1) return guess
       }
     }
-    -2
+    // Best guess at a default
+    if (rules.contains(tree.label)) {
+      if (rules(tree.label).head.head.startsWith("l")) 0 else tree.children.size-1
+    }
+    else {
+      tree.children.size-1
+    }
   }
 
   def searchLeft(tree: ConstituentTree, search: Array[String]): Int = {
