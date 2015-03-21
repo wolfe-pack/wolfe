@@ -1,6 +1,6 @@
 package ml.wolfe.term
 
-import ml.wolfe.{FactorieVector, WolfeSpec}
+import ml.wolfe.{Vect, WolfeSpec}
 
 /**
  * @author riedel

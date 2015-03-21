@@ -4,7 +4,7 @@ import java.lang.System._
 import java.util
 
 import cc.factorie.la._
-import ml.wolfe.{MoreArrayOps, FactorieMatrix, FactorieVector}
+import ml.wolfe.{MoreArrayOps, Mat, Vect}
 
 import scala.collection.mutable
 import scala.reflect.ClassTag
@@ -127,7 +127,7 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
     }
   }
 
-  final class VectBuffer(val length: Int) extends Buffer[FactorieVector](setting) {
+  final class VectBuffer(val length: Int) extends Buffer[Vect](setting) {
     def *=(scale: Double): Unit = {
       for (i <- 0 until length) array(i) *= scale
       flagAllChanged()
@@ -138,17 +138,17 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
       for (i <- 0 until length) array(i) := scale
     }
 
-    override def :=(that: Buffer[FactorieVector]): Unit = {
+    override def :=(that: Buffer[Vect]): Unit = {
       flagAllChanged()
       for (i <- 0 until length) this(i) = that(i)
     }
 
-    def +=(that: Buffer[FactorieVector]): Unit = {
+    def +=(that: Buffer[Vect]): Unit = {
       flagAllChanged()
       for (i <- 0 until length) add(i, that(i))
     }
 
-    def addIfChanged(that: Buffer[FactorieVector]): Unit = {
+    def addIfChanged(that: Buffer[Vect]): Unit = {
       for (i <- that.changed()) {
         add(i, that(i))
       }
@@ -164,13 +164,13 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
 
     def resetToZero(offset: Int) = array(offset).zero() // := 0
 
-    def copyVector(v:FactorieVector) = v match {
+    def copyVector(v:Vect) = v match {
       case s:SingletonTensor1 => new SingletonTensor1(s.dim1,s.singleIndex,s.singleValue)
       case s:MutableSingletonTensor1 => new MutableSingletonTensor1(s.dim1,s.singleIndex,s.singleValue)
       case _ => v.copy
     }
 
-    override def update(index: Int, value: FactorieVector): Unit = {
+    override def update(index: Int, value: Vect): Unit = {
       if (this(index) == null) {
         super.update(index, copyVector(value))
       } else {
@@ -191,13 +191,13 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
     }
 
 
-    def set(index: Int, value: FactorieVector, scale: Double): Unit = {
+    def set(index: Int, value: Vect, scale: Double): Unit = {
       update(index, value)
       this(index) *= scale
     }
 
 
-    def add(index: Int, value: FactorieVector): Unit = {
+    def add(index: Int, value: Vect): Unit = {
       if (adaptiveVectors) {
         if (this(index) == null) {
           this(index) = value.copy
@@ -221,7 +221,7 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
 
   }
 
-  final class MatrixBuffer(val length: Int) extends Buffer[FactorieMatrix](setting) {
+  final class MatrixBuffer(val length: Int) extends Buffer[Mat](setting) {
     def *=(scale: Double): Unit = {
       for (i <- 0 until length) array(i) *= scale
       flagAllChanged()
@@ -232,25 +232,25 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
       flagAllChanged()
     }
 
-    def +=(that: Buffer[FactorieMatrix]): Unit = {
+    def +=(that: Buffer[Mat]): Unit = {
       for (i <- 0 until length) array(i) += that(i)
       flagAllChanged()
     }
 
-    def addIfChanged(that: Buffer[FactorieMatrix]): Unit = {
+    def addIfChanged(that: Buffer[Mat]): Unit = {
       for (i <- that.changed()) {
         array(i) += that(i)
       }
       addChanges(that.changed())
     }
 
-    override def :=(that: Buffer[FactorieMatrix]): Unit = {
+    override def :=(that: Buffer[Mat]): Unit = {
       flagAllChanged()
       for (i <- 0 until length) this(i) = that(i)
     }
 
 
-    override def update(index: Int, value: FactorieMatrix): Unit = {
+    override def update(index: Int, value: Mat): Unit = {
       if (this(index) == null) {
         super.update(index, value.copy)
       } else {
@@ -496,9 +496,9 @@ class DiscMsg(var msg: Array[Double]) {
 
 class ContMsg(var mean: Double = 0.0)
 
-class VectMsg(var mean: FactorieVector = null)
+class VectMsg(var mean: Vect = null)
 
-class MatsMsg(var mean: FactorieMatrix = null)
+class MatsMsg(var mean: Mat = null)
 
 
 class Msg(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMats: Int = 0) {
@@ -589,6 +589,11 @@ final class VariableMapping(val srcIndex: Array[Int], val tgtIndex: Array[Int]) 
   def copyBackwardDeep(src: Settings, tgt: Settings) = {
     for (i <- 0 until srcIndex.length) src(srcIndex(i)) := tgt(tgtIndex(i))
   }
+
+  def addBackward(src: Settings, tgt: Settings) = {
+    for (i <- 0 until srcIndex.length) src(srcIndex(i)) += tgt(tgtIndex(i))
+  }
+
 
   def copyBackwardShallow(src: Array[Setting], tgt: Array[Setting]) = {
     for (i <- 0 until srcIndex.length) src(srcIndex(i)) = tgt(tgtIndex(i))

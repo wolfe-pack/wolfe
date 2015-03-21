@@ -4,7 +4,7 @@ import ml.wolfe.util.ProgressBar
 
 import scala.math._
 
-case class AdaGradParameters(iterations: Int,
+case class AdaGradParameters(epochs: Int,
                              learningRate: Double,
                              delta: Double = 0.0,
                              initParams: Settings = new Settings(0),
@@ -43,7 +43,7 @@ class AdaGradArgmaxer(val objRaw: DoubleTerm,
 
   val termsPerEpoch = Traversal.distinctSampleCount(obj)
 
-  val epochs = iterations / termsPerEpoch
+  val iterations = epochs * termsPerEpoch
   var objAccumulator = 0.0
 
   val result = Settings.fromSeq(wrt.map(_.domain.createSetting()))

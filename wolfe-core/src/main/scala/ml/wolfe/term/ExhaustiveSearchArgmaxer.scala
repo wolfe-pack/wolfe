@@ -92,6 +92,8 @@ class ExhaustiveSearchArgmaxer(val obj:DoubleTerm, val wrt:Seq[AnyVar])(val obse
         result := settings
       }
     }
+    //println("Argmax: " + result(0).disc.mkString(" "))
+
   }
 }
 

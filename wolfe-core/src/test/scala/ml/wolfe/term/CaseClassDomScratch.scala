@@ -7,7 +7,7 @@ package ml.wolfe.term
 object CaseClassDomScratch {
 
   import scala.language.implicitConversions
-  import ml.wolfe.FactorieVector
+  import ml.wolfe.Vect
   import TermImplicits._
 
   @domain case class A(value:Int)

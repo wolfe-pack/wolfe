@@ -37,7 +37,7 @@ class Max(val obj: DoubleTerm, val wrt: Seq[Var[Dom]]) extends DoubleTerm {
         //we use this assignment as observation to the differentiator
         diff.differentiate()
         //now the objective gradient holds a gradient for all objective vars, map this back to the max term vars
-        this2obj.copyBackwardDeep(gradientAcc, diff.gradientAccumulator)
+        this2obj.addBackward(gradientAcc, diff.gradientAccumulator)
       }
 
       val output = eval.output

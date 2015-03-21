@@ -30,9 +30,9 @@ trait GenericVectorDom extends AtomicDom {
 
   def dim: Int
 
-  type Value = FactorieVector
+  type Value = Vect
   type Var = DomVar
-  type Marginals = FactorieVector
+  type Marginals = Vect
 
   val lengths = Offsets(0, 0, 1, 0)
 
@@ -97,9 +97,9 @@ class UnitVectorDom(val dim: Int) extends GenericVectorDom {
 
 class MatrixDom(val dim1: Int, dim2: Int) extends AtomicDom {
   dom =>
-  type Value = FactorieMatrix
+  type Value = Mat
   type Var = DomVar
-  type Marginals = FactorieMatrix
+  type Marginals = Mat
 
   val lengths = Offsets(0, 0, 0, 1)
 

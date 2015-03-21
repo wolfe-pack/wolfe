@@ -20,7 +20,7 @@ abstract class MapDom[K <: Dom, V <: Dom](val keyDom: K, val valueDom: V) extend
   type Var <: Term with DomVar
 
   def seq2map(seq: seqDom.Value) = {
-    val map = for (((exists, value), index) <- seq zipWithIndex; if exists) yield keyDom.indexToValue(index) -> value
+    val map = for (((exists, value), index) <- seq.zipWithIndex; if exists) yield keyDom.indexToValue(index) -> value
     map.toMap
   }
 

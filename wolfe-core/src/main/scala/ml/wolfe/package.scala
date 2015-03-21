@@ -9,8 +9,8 @@ import cc.factorie.maths.ArrayOps
  * @author Sebastian Riedel
  */
 package object wolfe {
-  type FactorieVector = Tensor1
-  type FactorieMatrix = Tensor2
+  type Vect = Tensor1
+  type Mat = Tensor2
   type SparseVector = SparseTensor1
   type DenseVector = DenseTensor1
   type SingletonVector = SingletonTensor1
