@@ -3,7 +3,7 @@ package ml.wolfe.term
 import cc.factorie.Factorie.DenseTensor1
 import cc.factorie.la.{GrowableSparseTensor1, GrowableDenseTensor1, SingletonTensor1, DenseTensor2}
 import ml.wolfe.term.TermImplicits.RichToLog
-import ml.wolfe.{Index, FactorieMatrix, FactorieVector}
+import ml.wolfe.{Index, Mat, Vect}
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.reflect.macros.blackbox
@@ -90,10 +90,10 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
     def toDom = new RangeDom(values)
   }
 
-  implicit class RichSeq[T](values: Seq[T]) {
+  implicit class RichSeq[T](values: Iterable[T]) {
     def toDom = new DiscreteDom[T](values.toIndexedSeq)
 
-    def toConst(implicit dom: TypedDom[T]) = fixedLengthSeq[T](values)
+    def toConst(implicit dom: TypedDom[T]) = fixedLengthSeq[T](values.toSeq)
   }
 
 
@@ -238,6 +238,13 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
     //    def iterator = dom.iterator
   }
 
+  implicit class RichVect(val vect:Vect) {
+    def toIndexedString(implicit index:Index) = {
+      val mapped = vect.activeElements.filter(_._2 != 0.0).map(pair => index.key(pair._1) -> pair._2).toSeq
+      val sorted = mapped.sortBy(-_._2)
+      sorted.map(pair => s"${pair._2}\t${pair._1}").mkString("\n")
+    }
+  }
 
   ////  implicit class RichVarSeqTerm[E <: Dom, T <: Term[VarSeqDom[E]]](val term: T) {
   ////    def apply(index: Int) =
@@ -477,11 +484,11 @@ trait MathImplicits {
 
   implicit def intToDoubleConstant(d: Int): Dom.doubles.Term = Dom.doubles.Const(d)
 
-  implicit def vectToConstant(d: FactorieVector): Constant[VectorDom] = Vectors(d.dim1).Const(d)
+  implicit def vectToConstant(d: Vect): Constant[VectorDom] = Vectors(d.dim1).Const(d)
 
-  implicit def vectToConstantWithDom(d: FactorieVector)(implicit dom: VectorDom): dom.Term = dom.Const(d)
+  implicit def vectToConstantWithDom(d: Vect)(implicit dom: VectorDom): dom.Term = dom.Const(d)
 
-  implicit def matToConstant(d: FactorieMatrix): Constant[MatrixDom] = Matrices(d.dim1, d.dim2).Const(d)
+  implicit def matToConstant(d: Mat): Constant[MatrixDom] = Matrices(d.dim1, d.dim2).Const(d)
 
   implicit def intToDouble(int: IntTerm): IntToDouble[int.type] = new IntToDouble[int.type](int)
 

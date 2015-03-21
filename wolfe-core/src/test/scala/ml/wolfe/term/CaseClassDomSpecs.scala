@@ -109,8 +109,8 @@ class CaseClassDomSpecs extends WolfeSpec {
     }
 
     "work with classes defined elsewhere" in {
-      import ml.wolfe.FactorieVector
-      @domain case class Wrapped(vector: FactorieVector)
+      import ml.wolfe.Vect
+      @domain case class Wrapped(vector: Vect)
       val X = Wrapped.Values(Vectors(2))
       val x = X.Var
       x.eval(Wrapped(vector(1, 2))).vector should equal(vector(1, 2))

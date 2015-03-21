@@ -1,6 +1,6 @@
 package ml.wolfe.term
 
-import ml.wolfe.{FactorieVector, WolfeSpec}
+import ml.wolfe.{Vect, WolfeSpec}
 
 /**
  * @author riedel
@@ -256,8 +256,8 @@ class TermSpecs extends WolfeSpec {
 
   "Exhaustive max-marginalizing" should {
     "provide the exact max marginals" in {
-      val x = Bools.variable("x")
-      val y = Bools.variable("y")
+      val x = Bools.Var
+      val y = Bools.Var
       val term = I(x === y)
       val result = term.maxMarginals(x, y)(Map(false -> 1.0,  true -> 2.0))()
       result should be(Map(false -> 2.0, true -> 3.0))

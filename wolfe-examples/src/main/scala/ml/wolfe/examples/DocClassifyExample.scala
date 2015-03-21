@@ -3,7 +3,7 @@ package ml.wolfe.examples
 import ml.wolfe.nlp.Document
 import ml.wolfe.nlp.io.TwentyNewsGroupReader
 import ml.wolfe.term._
-import ml.wolfe.{FactorieVector, SimpleIndex}
+import ml.wolfe.{Vect, SimpleIndex}
 import ml.wolfe.term.Argmaxer._
 
 import scala.util.Random
@@ -21,7 +21,7 @@ object DocClassifyExample extends App {
 
   val (trainDocs, testDocs) = TwentyNewsGroupReader.loadFromTarGz()
 
-  @domain case class Doc(feats: FactorieVector)
+  @domain case class Doc(feats: Vect)
 
   def toInstance(doc: Document) = (Doc(feats('words, doc.tokens.take(10).map(_.word))), doc.ir.docLabel.get)
 
@@ -63,8 +63,8 @@ object DocClassifyExampleNew extends App {
 
   val (trainDocs, testDocs) = TwentyNewsGroupReader.loadFromTarGz()
 
-  @domain case class Doc(feats: FactorieVector)
-  @domain case class Theta(weights:Map[String,FactorieVector])
+  @domain case class Doc(feats: Vect)
+  @domain case class Theta(weights:Map[String,Vect])
 
   def toInstance(doc: Document) = (Doc(feats('words, doc.tokens.take(10).map(_.word))), doc.ir.docLabel.get)
 

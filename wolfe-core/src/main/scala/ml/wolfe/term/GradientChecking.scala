@@ -1,7 +1,7 @@
 package ml.wolfe.term
 
 import cc.factorie.la.{DenseTensor2, DenseTensor1}
-import ml.wolfe.{FactorieMatrix, FactorieVector}
+import ml.wolfe.{Mat, Vect}
 
 import scala.util.Random
 import org.scalautils.Tolerance._
@@ -27,13 +27,13 @@ object GradientChecking {
 
   def wiggle[D](value: D, epsilon: Double, ix: Int*): (D, D) = (value match {
     case x: Double => (x + epsilon, x - epsilon)
-    case x: FactorieVector =>
+    case x: Vect =>
       val xPos = x.copy
       val xNeg = x.copy
       xPos.update(ix(0), xPos(ix(0)) + epsilon)
       xNeg.update(ix(0), xNeg(ix(0)) - epsilon)
       (xPos, xNeg)
-    case x: FactorieMatrix =>
+    case x: Mat =>
       val xPos = x.copy
       val xNeg = x.copy
       xPos.update(ix(0), ix(1), xPos(ix(0), ix(1)) + epsilon)

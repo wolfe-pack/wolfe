@@ -62,7 +62,13 @@ object ModifiedCollinsHeadFinder {
   def annotate(tree: ConstituentTree): ConstituentTree = {
     tree.node match {
       case nonterminal: NonterminalNode => {
-        tree.copy(node = nonterminal.copy(head = findHead(tree)), children = tree.children.map(annotate(_)))
+        val hidx = findHead(tree)
+        val headedChildren = tree.children.map(annotate(_))
+        val headWord = headedChildren(hidx).node match {
+          case nt: NonterminalNode => nt.headWord
+          case pt: PreterminalNode => pt.word
+        }
+        tree.copy(node = nonterminal.copy(head = hidx, headWord = headWord), children = headedChildren)
       }
       case leaf: PreterminalNode => tree
     }
@@ -83,7 +89,13 @@ object ModifiedCollinsHeadFinder {
         if (guess > -1) return guess
       }
     }
-    -2
+    // Best guess at a default
+    if (rules.contains(tree.label)) {
+      if (rules(tree.label).head.head.startsWith("l")) 0 else tree.children.size-1
+    }
+    else {
+      tree.children.size-1
+    }
   }
 
   def searchLeft(tree: ConstituentTree, search: Array[String]): Int = {
@@ -124,11 +136,8 @@ object ModifiedCollinsHeadFinder {
     val reader = new TreebankReader(filename = null)
     val tree = reader.stringToTree(str, new DefaultTreebankReaderOptions)
     val atree = annotate(tree)
-    println(atree)
-    atree.breadthFirstSearch.foreach { _.node match {
-        case t: NonterminalNode => println(t.label + "\t" + t.head)
-        case l: PreterminalNode => println(l)
-      }
+    for (i <- 0 until atree.length; j <- 1 to atree.length) {
+      if (atree.containsSpan(i,j)) println("(%d,%d,%s) = %s".format(i, j, atree.labelsOfSpan(i, j).take(1), atree.headOf(i, j)))
     }
   }
 

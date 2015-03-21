@@ -1,9 +1,10 @@
 package ml.wolfe.nlp
 
+import breeze.linalg.SparseVector
+import ml.wolfe.nlp.discourse.DiscourseRelation
+import ml.wolfe.nlp.semantics.{SemanticFrame}
+import ml.wolfe.nlp.ie.{EventMention, RelationMention, EntityMention}
 import ml.wolfe.nlp.syntax.{DependencyTree, ConstituentTree}
-
-import scala.collection.mutable.ArrayBuffer
-import ml.wolfe.nlp.io._
 
 /**
  * A mention of a named entity.
@@ -25,39 +26,34 @@ object IEAnnotation {
   val empty = IEAnnotation(IndexedSeq.empty, IndexedSeq.empty, IndexedSeq.empty, IndexedSeq.empty)
 }
 
+
+
 /**
- * A mention of a named entity.
- * @param label label of the entity.
- * @param start index to the token that begins the entity span.
- * @param end index to the token that ends the entity span.
- * @param id mention-specific identifier of the entity span.
+ * Class to represent discourse annotation
+ * @param relations sequence of DiscourseRelation elements
  */
-case class EntityMention(label: String, start: Int, end: Int, id: String = null) {
-  def expandRight(howMuch:Int = 1) = copy(end = end + howMuch)
+
+case class DiscourseAnnotation(relations: Seq[DiscourseRelation] = Seq.empty)
+
+
+object DiscourseAnnotation {
+  val empty = DiscourseAnnotation()
 }
 
-/**
- * A directed relation mention.
- * @param label label of the relation.
- * @param arg1 index into sentence.entities() for the first argument (parent of the relation)
- * @param arg2 index into sentence.entities() for the second argument (child of the relation)
- */
-case class RelationMention(label: String, arg1: Int, arg2: Int, id: String = null) {}
+
+
 
 /**
- * An event mention.
- * @param label label of the event.
- * @param trigger trigger word for the event.
- * @param arguments a sequence of argument roles.
+ * Class to represent IR information for a document
+ * @param docLabel an optional document label.
+ * @param bowVector a vectorized bag of word representation, for example using tf-idf counts.
  */
-case class EventMention(label: String, trigger: EntityMention, arguments: IndexedSeq[RoleMention], id: String = null) {}
+case class IRAnnotation(docLabel:Option[String] = None,
+                        bowVector:Option[SparseVector[Double]] = None)
 
-/**
- * A role mention.
- * @param label label of the role.
- * @param arg the target of the role.
- */
-case class RoleMention(label: String, arg: EntityMention) {}
+object IRAnnotation {
+  val empty = IRAnnotation()
+}
 
 
 
@@ -77,24 +73,3 @@ object SyntaxAnnotation {
 
 
 case class SRLAnnotation(frames: Seq[SemanticFrame]) {}
-
-case class SemanticFrame(predicate: Predicate, roles: Seq[SemanticRole]) {
-
-  override def toString = {
-    "Predicate %d (%s):\n%s".format(predicate.idx, predicate.token.word,
-      roles.map{ r =>
-        if (r.end == -1) "  %s --> %d".format(r.role, r.idx)
-        else "  %s --> (%d,%d)".format(r.role, r.start, r.end)
-      }.mkString("\n"))
-  }
-}
-
-case class Predicate(idx: Int, token: Token, sense: String)
-
-case class SemanticRole(start: Int, end: Int = -1, role: String) {
-
-  def idx: Int = {
-    assert(end == -1, "SemanticRole is a span-based instance, and therefore indices should be referenced using start/end fields.")
-    start
-  }
-}

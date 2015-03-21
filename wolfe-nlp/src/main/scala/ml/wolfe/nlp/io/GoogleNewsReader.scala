@@ -2,6 +2,7 @@ package ml.wolfe.nlp.io
 
 import ml.wolfe.nlp._
 import scala.collection.mutable.ArrayBuffer
+import ml.wolfe.nlp.ie.EntityMention
 
 /**
  * Created by narad on 2/27/15.

@@ -14,18 +14,18 @@ trait WolfeSpec extends WordSpec with Matchers {
 
   def beStringEqual(that:Any) = be(that.toString) compose( (f:Any) => f.toString)
 
-  implicit val factorieVectorEq = new Equality[FactorieVector] {
-    def areEqual(a: FactorieVector, b: Any) = b match {
-      case v: FactorieVector =>
+  implicit val factorieVectorEq = new Equality[Vect] {
+    def areEqual(a: Vect, b: Any) = b match {
+      case v: Vect =>
         a.activeDomain.forall(i => math.abs(a(i) - v(i)) < eps) &&
         v.activeDomain.forall(i => math.abs(a(i) - v(i)) < eps)
       case _ => false
     }
   }
 
-  implicit val factorieMatrixEq = new Equality[FactorieMatrix] {
-    def areEqual(a: FactorieMatrix, b: Any) = b match {
-      case v: FactorieMatrix =>
+  implicit val factorieMatrixEq = new Equality[Mat] {
+    def areEqual(a: Mat, b: Any) = b match {
+      case v: Mat =>
         a.activeDomain.forall(i => math.abs(a(i) - v(i)) < eps) &&
           v.activeDomain.forall(i => math.abs(a(i) - v(i)) < eps)
       case _ => false

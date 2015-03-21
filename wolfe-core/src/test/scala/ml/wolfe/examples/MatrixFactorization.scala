@@ -21,7 +21,7 @@ object MatrixFactorization extends App {
   val cols = 10
 
   // the class of parameters
-  @domain case class Theta(v: IndexedSeq[FactorieVector], a: IndexedSeq[FactorieVector])
+  @domain case class Theta(v: IndexedSeq[Vect], a: IndexedSeq[Vect])
 
   // the class of cells
   @domain case class Cell(row: Int, col: Int)
@@ -78,7 +78,7 @@ object BagOfWordsMatrixFactorization extends App {
 
   @domain case class Col(words: IndexedSeq[Int])
 
-  @domain case class Theta(rows: IndexedSeq[FactorieVector], words: IndexedSeq[FactorieVector])
+  @domain case class Theta(rows: IndexedSeq[Vect], words: IndexedSeq[Vect])
 
   @domain case class Cell(row: Int, col: Int)
 

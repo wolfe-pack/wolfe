@@ -25,6 +25,7 @@ class Max(val obj: DoubleTerm, val wrt: Seq[Var[Dom]]) extends DoubleTerm {
       wrt2obj.linkTargetsToSource(eval.argmaxer.result, objInput)
 
       val objGradient = obj.createZeroInputSettings()
+      this2obj.pairs foreach { case (src, tgt) => objGradient(tgt).setAdaptiveVectors(gradientAcc(src).adaptiveVectors) }
 
       val diff = obj.differentiatorImpl(diffWrt)(objInput, err, objGradient)
 
@@ -35,9 +36,10 @@ class Max(val obj: DoubleTerm, val wrt: Seq[Var[Dom]]) extends DoubleTerm {
       def backward()(implicit execution: Execution) = {
         //eval was executed, and argmaxer.result is the maximizing assignment
         //we use this assignment as observation to the differentiator
+        diff.gradientAccumulator foreach (_.resetToZero())
         diff.differentiate()
         //now the objective gradient holds a gradient for all objective vars, map this back to the max term vars
-        this2obj.copyBackwardDeep(gradientAcc, diff.gradientAccumulator)
+        this2obj.addBackward(gradientAcc, diff.gradientAccumulator)
       }
 
       val output = eval.output
@@ -75,7 +77,7 @@ class Max(val obj: DoubleTerm, val wrt: Seq[Var[Dom]]) extends DoubleTerm {
 
       def copy(args: IndexedSeq[ArgumentType]) = ???
     }
-    new Max(newObj,wrt)
+    new Max(newObj, wrt)
   }
 
 
@@ -108,9 +110,8 @@ class Argmax[D <: Dom](val obj: DoubleTerm, val wrt: Var[D]) extends Term[D] {
 
       def copy(args: IndexedSeq[ArgumentType]) = ???
     }
-    new Argmax(newObj,wrt)
+    new Argmax(newObj, wrt)
   }
-
 
 
 }

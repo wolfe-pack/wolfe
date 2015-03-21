@@ -86,39 +86,28 @@ case class ConstituentTree(node: ConstituentNode, children : List[ConstituentTre
     val index = new HashMap[(Int,Int), List[ConstituentSpan]].withDefaultValue(List())
     var numLeaves = 0
     for (t <- leafFirstSearch) {
-      if (t.isLeaf) {
-        index((numLeaves, numLeaves+1)) = index((numLeaves, numLeaves+1)) ++ List(new ConstituentSpan(numLeaves, numLeaves+1, t.label, 0))
-        numLeaves += 1
-      }
-      else {
-        val len = t.length
-        val height = index(numLeaves-len, numLeaves).size
-        index((numLeaves-len, numLeaves)) = index((numLeaves-len, numLeaves)) ++ List(new ConstituentSpan(numLeaves-len, numLeaves, t.label, height))
+      t.node match {
+        case nt: NonterminalNode => {
+          val len = t.length
+          val height = index(numLeaves-len, numLeaves).size
+          index((numLeaves-len, numLeaves)) = index((numLeaves-len, numLeaves)) ++ List(new ConstituentSpan(numLeaves-len, numLeaves, t.label, height, head = nt.headWord))
+        }
+        case leaf: PreterminalNode => {
+          index((numLeaves, numLeaves + 1)) = index((numLeaves, numLeaves + 1)) ++ List(new ConstituentSpan(numLeaves, numLeaves + 1, t.label, 0, head = leaf.word))
+          numLeaves += 1
+        }
       }
     }
     index
   }
 
-  def indexViaArray: Array[Array[ArrayBuffer[ConstituentSpan]]] = {
-    val ispans = Array.fill(length+1,length+1)(new ArrayBuffer[ConstituentSpan])
-    var numLeaves = 0
-    for (t <- leafFirstSearch) {
-      if (t.isLeaf) {
-        ispans(numLeaves)(numLeaves+1) += new ConstituentSpan(numLeaves, numLeaves+1, t.label, 0)
-        numLeaves += 1
-      }
-      else {
-        val len = t.length
-        val height = ispans(numLeaves-len)(numLeaves).size
-        ispans(numLeaves-len)(numLeaves) += new ConstituentSpan(numLeaves-len, numLeaves, t.label, height)
-      }
-    }
-    ispans
+  def headOf(i: Int, j: Int): Option[String] = {
+    if (i < 0 || j < 0) return None
+    if (i > length || j > length) return None
+    spans((i,j)).collectFirst{ case x => x.head }
   }
 
-//  def headOf(i: Int, j: Int): Option[String] = {
-//    spans((i,j)).collectFirst{ case i if i}
-//  }
+
 
   override def toString: String = {
     node match {
@@ -378,6 +367,59 @@ object ConstituentTree {
 
 
 
+
+
+
+
+
+
+
+//  def headword: String = {
+//    node match {
+//      case nt: NonterminalNode => children(nt.head).headword
+//      case pt: PreterminalNode => pt.word
+//    }
+//  }
+
+//  def headOf(i: Int, j: Int): Option[String] = {
+//    spans((i,j)).collectFirst{ case i if i}
+//  }
+
+/*
+
+  def indexViaArray: Array[Array[ArrayBuffer[ConstituentSpan]]] = {
+    val ispans = Array.fill(length+1,length+1)(new ArrayBuffer[ConstituentSpan])
+    var numLeaves = 0
+    for (t <- leafFirstSearch) {
+      t.node match {
+        case nt: NonterminalNode => {
+          val len = t.length
+          val height = ispans(numLeaves-len)(numLeaves).size
+          val head = nt.head
+          ispans(numLeaves-len)(numLeaves) += new ConstituentSpan(numLeaves-len, numLeaves, t.label, height, head = nt.head + numLeaves-len)
+        }
+        case leaf: PreterminalNode => {
+         ispans(numLeaves)(numLeaves+1) += new ConstituentSpan(numLeaves, numLeaves+1, t.label, 0, head = numLeaves)
+         numLeaves += 1
+        }
+      }
+    }
+    ispans
+  }
+
+ */
+
+
+
+//      if (t.isLeaf) {
+//        index((numLeaves, numLeaves+1)) = index((numLeaves, numLeaves+1)) ++ List(new ConstituentSpan(numLeaves, numLeaves+1, t.label, 0))
+//        numLeaves += 1
+//      }
+//      else {
+//        val len = t.length
+//        val height = index(numLeaves-len, numLeaves).size
+//        index((numLeaves-len, numLeaves)) = index((numLeaves-len, numLeaves)) ++ List(new ConstituentSpan(numLeaves-len, numLeaves, t.label, height, head = head))
+//      }
 
 
 

@@ -10,6 +10,7 @@ import edu.berkeley.nlp.entity.preprocess.{PreprocessingDriver, SentenceSplitter
 import edu.berkeley.nlp.syntax.Tree
 import edu.berkeley.nlp.util.Logger
 import ml.wolfe.nlp._
+import ml.wolfe.nlp.ie.{CorefAnnotation, CorefMention}
 import ml.wolfe.nlp.syntax.{ConstituentTree, NonterminalNode, PreterminalNode}
 
 import scala.collection.JavaConversions._

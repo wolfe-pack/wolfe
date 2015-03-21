@@ -25,6 +25,8 @@ class Tuple2Dom[D1 <: Dom, D2 <: Dom](val dom1: D1, val dom2: D2) extends TupleD
   trait Tuple2Term extends TupleTerm {
     def _1:dom1.Term = dom1.own(productElement(0).asInstanceOf[TypedTerm[dom1.Value]])
     def _2:dom2.Term = dom2.own(productElement(1).asInstanceOf[TypedTerm[dom2.Value]])
+
+    override def toString = s"(${_1},${_2})"
   }
 
   class Tuple2Var(val name:String) extends DomVar with TupleView with Tuple2Term {
