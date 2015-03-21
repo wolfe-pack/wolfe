@@ -174,7 +174,7 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
       if (this(index) == null) {
         super.update(index, copyVector(value))
       } else {
-        if (adaptiveVectors) {
+        if (_adaptiveVectors) {
           (this(index), value) match {
             case (_: DenseTensor1, target: SparseIndexedTensor) =>
               super.update(index, copyVector(target))
@@ -198,7 +198,7 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
 
 
     def add(index: Int, value: Vect): Unit = {
-      if (adaptiveVectors) {
+      if (_adaptiveVectors) {
         if (this(index) == null) {
           this(index) = value.copy
         } else {
@@ -272,12 +272,16 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
 
   }
 
-  private var adaptiveVectors = false
+  private var _adaptiveVectors = false
   var recordChangedOffsets = false
 
   def setAdaptiveVectors(adaptive: Boolean): Unit = {
-    adaptiveVectors = adaptive
+    _adaptiveVectors = adaptive
   }
+
+  def adaptiveVectors = _adaptiveVectors
+
+
 
   def copyTo(target: Setting, targetOffsets: Offsets, targetMultiplier: Int): Unit = {
     disc.copyTo(target.disc, 0, targetOffsets.discOff * targetMultiplier, disc.length)
