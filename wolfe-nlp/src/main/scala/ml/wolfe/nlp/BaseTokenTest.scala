@@ -10,21 +10,28 @@ import scala.language.implicitConversions
 
 abstract class BaseTokenTest
 
-case class BasicTokenTest(word: String) extends BaseTokenTest with TokenWithStringLike
+case class BasicTokenTest(word: String) extends BaseTokenTest with TokenWithStringLike {
+
+}
 
 object BasicTokenTest {
 
-  def newBuilder: mutable.Builder[BasicTokenTest, Sentence2[BasicTokenTest]] = {
-    new mutable.ArrayBuffer[BasicTokenTest] mapResult( t=> Sentence2( t.toIndexedSeq))
+
+  implicit def basicTokenFromString(word: String) : BasicTokenTest = {
+    println("why not here... :(")
+    BasicTokenTest(word)
   }
 
-
-  implicit def basicTokenFromString(word: String) : BasicTokenTest = BasicTokenTest(word)
-
   implicit def canBuildFrom: CanBuildFrom[String, BasicTokenTest, Sentence2[BasicTokenTest]] = {
+    println("Here?")
     new CanBuildFrom[String, BasicTokenTest, Sentence2[BasicTokenTest]] {
-      override def apply(from: String): mutable.Builder[BasicTokenTest, Sentence2[BasicTokenTest]] = newBuilder
-      override def apply(): mutable.Builder[BasicTokenTest, Sentence2[BasicTokenTest]] = newBuilder
+      override def apply(from: String): mutable.Builder[BasicTokenTest, Sentence2[BasicTokenTest]] = {
+        val v = new mutable.ArrayBuffer[BasicTokenTest]
+        v += from
+        v mapResult( t=> Sentence2( t.toIndexedSeq))
+      }
+      override def apply(): mutable.Builder[BasicTokenTest, Sentence2[BasicTokenTest]] =
+        new mutable.ArrayBuffer[BasicTokenTest] mapResult( t=> Sentence2( t.toIndexedSeq))
     }
   }
 }
@@ -57,3 +64,4 @@ trait TokenWithLemmaLike {
 case class FullToken(word: String, offsets: CharOffsets, posTag: PosTag, lemma: String) extends BaseTokenTest
                            with TokenWithStringLike with TokenWithOffsetsLike with TokenWithPosTagLike
                            with TokenWithLemmaLike
+

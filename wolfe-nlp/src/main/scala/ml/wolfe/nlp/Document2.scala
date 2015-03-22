@@ -24,7 +24,10 @@ case class Document2[A <: BaseTokenTest with TokenWithStringLike,B <: Sentence2B
 object Document2 {
 
   def fromString[A <: BaseTokenTest with TokenWithStringLike, B <: Sentence2Base[A] with SentenceWithStringLike[A]](str: String)
-           (implicit cbf: CanBuildFrom[String, B, Document2[A,B]]) : Document2[A,B] = cbf.apply(str).result()
+           (implicit cbf: CanBuildFrom[String, B, Document2[A,B]]) : Document2[A,B] = {
+    println("Document Here1")
+    cbf.apply(str).result()
+  }
 }
 
 trait DocumentWithIdLike {

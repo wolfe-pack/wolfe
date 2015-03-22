@@ -21,16 +21,24 @@ object Sentence2 {
 
 
   implicit def fromString[A <: BaseTokenTest with TokenWithStringLike](str: String)
-                    (implicit cbf: CanBuildFrom[String, A, Sentence2[A]]) : Sentence2[A] = cbf.apply(str).result()
+                    (implicit cbf: CanBuildFrom[String, A, Sentence2[A]]) : Sentence2[A] = {
+    println("Here1")
+    cbf.apply(str).result()
+  }
 
   implicit def canBuildFrom[A <: BaseTokenTest with TokenWithStringLike]:
                             CanBuildFrom[String, Sentence2[A], Document2[A,Sentence2[A]]]  = {
+
+    println("Sentence Here2")
     new CanBuildFrom[String, Sentence2[A], Document2[A,Sentence2[A]]] {
-      def newBuilder: mutable.Builder[Sentence2[A], Document2[A, Sentence2[A]]] = {
-        new mutable.ArrayBuffer[Sentence2[A]] mapResult( t=> Document2[A, Sentence2[A]](t.toIndexedSeq))
+
+      override def apply(from: String): mutable.Builder[Sentence2[A], Document2[A, Sentence2[A]]] = {
+        println("Sentence Here3")
+        val ab = new mutable.ArrayBuffer[Sentence2[A]]
+        //ab += fromString[A](from)
+        ab mapResult( t=> Document2[A, Sentence2[A]](t.toIndexedSeq))
       }
-      override def apply(from: String): mutable.Builder[Sentence2[A], Document2[A, Sentence2[A]]] = newBuilder
-      override def apply(): mutable.Builder[Sentence2[A], Document2[A, Sentence2[A]]] = newBuilder
+      override def apply(): mutable.Builder[Sentence2[A], Document2[A, Sentence2[A]]] = ???
     }
   }
 }
