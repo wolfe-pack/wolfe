@@ -147,7 +147,9 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
 
 
     override def composer(args: Settings) = new Composer(args) {
+      output.recordChangedOffsets = true
       def eval()(implicit execution: Execution) = {
+        output.clearChangeRecord()
         output.disc(0) = input(0).disc(0)
         var offset = Offsets(discOff = 1)
         for (i <- 1 until input.length) {
