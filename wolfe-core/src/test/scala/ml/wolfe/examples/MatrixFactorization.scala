@@ -55,7 +55,7 @@ object MatrixFactorization extends App {
 
   //learning parameters
   val init = Settings(Thetas.createRandomSetting(random.nextGaussian() * 0.1))
-  val adaParams = AdaGradParameters(iterations = 100, learningRate = 1, initParams = init)
+  val adaParams = AdaGradParameters(epochs = 100, learningRate = 1, initParams = init)
 
   //do the training (argmax is a term, so it needs to be evaluated to do the optimization)
   val thetaStar = argmax(Thetas)(t => loss(t)) by Argmaxer.adaGrad(adaParams)
@@ -106,7 +106,7 @@ object BagOfWordsMatrixFactorization extends App {
   }
 
   val init = Settings(Thetas.createRandomSetting(random.nextGaussian() * 0.1))
-  val adaParams = AdaGradParameters(iterations = 100, learningRate = 1, initParams = init)
+  val adaParams = AdaGradParameters(epochs = 100, learningRate = 1, initParams = init)
 
   //do the training (argmax is a term, so it needs to be evaluated to do the optimization)
   val thetaStar = argmax(Thetas)(t => loss(t).argmaxBy(Argmaxer.adaGrad(adaParams))).eval()

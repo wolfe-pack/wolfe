@@ -90,7 +90,7 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
     def toDom = new RangeDom(values)
   }
 
-  implicit class RichSeq[T](values: Iterable[T]) {
+  implicit class RichSeq[T](values: Seq[T]) {
     def toDom = new DiscreteDom[T](values.toIndexedSeq)
 
     def toConst(implicit dom: TypedDom[T]) = fixedLengthSeq[T](values.toSeq)
