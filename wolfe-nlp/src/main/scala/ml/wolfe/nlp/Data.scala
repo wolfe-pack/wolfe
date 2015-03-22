@@ -70,6 +70,9 @@ trait DataIterator {
 
 
 
+
+
+
 object Data {
   def main(args: Array[String]): Unit = {
 
@@ -93,7 +96,7 @@ object Data {
     graph.link1to1(tokens2(0),tokens(2))
     println(tokens(2).hasNext)
     println(tokens(2).next)
-    val test : FancierToken = tokens(0).next
+    //val test : FancierToken = tokens(0).next
     println(tokens(2).next.getClass)
 
   }
