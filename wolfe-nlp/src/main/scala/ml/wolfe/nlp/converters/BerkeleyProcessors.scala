@@ -76,7 +76,7 @@ object BerkeleyProcessors {
       new ConstituentTree(new PreterminalNode(start = -1, end = -1, label = tree.getLabel, word = tree.getChildren.head.getLabel))
     }
     else {
-      new ConstituentTree(new NonterminalNode(start = -1, end = -1, label = tree.getLabel, headIdx = None), tree.getChildren.map(treeToTree(_)).toList)
+      new ConstituentTree(new NonterminalNode(start = -1, end = -1, label = tree.getLabel), tree.getChildren.map(treeToTree(_)).toList)
     }
   }
 

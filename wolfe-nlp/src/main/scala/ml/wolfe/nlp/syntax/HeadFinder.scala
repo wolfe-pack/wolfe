@@ -64,11 +64,11 @@ object ModifiedCollinsHeadFinder {
       case nonterminal: NonterminalNode => {
         val hidx = findHead(tree)
         val headedChildren = tree.children.map(annotate(_))
-        val headWord = headedChildren(hidx).node match {
-          case nt: NonterminalNode => nt.headWord.get
-          case pt: PreterminalNode => pt.word
+        val (headWord, tidx) = headedChildren(hidx).node match {
+          case nt: NonterminalNode => (nt.head.get.headWord, nt.head.get.tokenIdx)
+          case pt: PreterminalNode => (pt.word, pt.start)
         }
-        tree.copy(node = nonterminal.copy(headIdx = Some(hidx), headWord = Some(headWord)), children = headedChildren)
+        tree.copy(node = nonterminal.copy(head = Some(HeadInfo(headWord = headWord, headIdx = hidx, tokenIdx = tidx))), children = headedChildren)
       }
       case leaf: PreterminalNode => tree
       case _ => { System.err.println("Error - did not match tree node: " + tree.node); assert(false, ""); null.asInstanceOf[ConstituentTree] }
@@ -134,18 +134,18 @@ object ModifiedCollinsHeadFinder {
     val str = "(S (NP (DT the) (JJ quick) (JJ (AA (BB (CC brown)))) (NN fox)) (VP (VBD jumped) (PP (IN over) (NP (DT the) (JJ lazy) (NN dog)))) (. .))"
     val tree = ConstituentTreeFactory.stringToTree(str).get
     val ctree = annotate(tree)
-    println("Constituent Tree:\n" + ctree)
-    val dtree = ctree.toDependencyTree
-    println("Dependency Tree:\n" + dtree)
-    println(dtree)
-    println
-    println(dtree.shortestPath(0, 3))
-    println("-----------------------")
-    println(dtree.shortestPath(3, 0))
-    println("-----------------------")
-    println(dtree.shortestPath(3, 8))
-    println("-----------------------")
-    println(dtree.pathToString(dtree.shortestPath(3, 8).get))
+    println("Constituent Tree:\n" + ctree.toHeadedTreebankString)
+//    val dtree = ctree.toDependencyTree
+//    println("Dependency Tree:\n" + dtree)
+//    println(dtree)
+//    println
+//    println(dtree.shortestPath(0, 3))
+//    println("-----------------------")
+//    println(dtree.shortestPath(3, 0))
+//    println("-----------------------")
+//    println(dtree.shortestPath(3, 8))
+//    println("-----------------------")
+//    println(dtree.pathToString(dtree.shortestPath(3, 8).get))
   }
 
 

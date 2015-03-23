@@ -22,7 +22,7 @@ trait ConstituentNode {
   }
 }
 
-case class NonterminalNode(start: Int, end: Int, label: String, headIdx: Option[Int] = None, headWord: Option[String] = None) extends ConstituentNode {
+case class NonterminalNode(start: Int, end: Int, label: String, head: Option[HeadInfo] = None) extends ConstituentNode {
 
   override def isNonterminal = true
 
@@ -35,3 +35,5 @@ case class PreterminalNode(start: Int, end: Int, label: String, word: String) ex
 
   override def isPreterminal = true
 }
+
+case class HeadInfo(headWord: String, headIdx: Int, tokenIdx: Int)

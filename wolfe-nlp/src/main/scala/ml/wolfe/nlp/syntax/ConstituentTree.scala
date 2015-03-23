@@ -90,10 +90,10 @@ case class ConstituentTree(node: ConstituentNode, children : List[ConstituentTre
         case nt: NonterminalNode => {
           val len = t.length
           val height = index(numLeaves-len, numLeaves).size
-          index((numLeaves-len, numLeaves)) = index((numLeaves-len, numLeaves)) ++ List(new ConstituentSpan(numLeaves-len, numLeaves, t.label, height, head = nt.headWord))
+          index((numLeaves-len, numLeaves)) = index((numLeaves-len, numLeaves)) ++ List(new ConstituentSpan(numLeaves-len, numLeaves, t.label, height = height, head = nt.head))
         }
         case leaf: PreterminalNode => {
-          index((numLeaves, numLeaves + 1)) = index((numLeaves, numLeaves + 1)) ++ List(new ConstituentSpan(numLeaves, numLeaves + 1, t.label, 0, head = Some(leaf.word)))
+          index((numLeaves, numLeaves + 1)) = index((numLeaves, numLeaves + 1)) ++ List(new ConstituentSpan(numLeaves, numLeaves + 1, t.label, height = 0, head = Some(HeadInfo(headWord = leaf.word, headIdx = 0, tokenIdx = leaf.start))))
           numLeaves += 1
         }
       }
@@ -101,6 +101,7 @@ case class ConstituentTree(node: ConstituentNode, children : List[ConstituentTre
     index
   }
 
+/*
   def headOf(i: Int, j: Int): Option[String] = {
     if (i < 0 || j < 0) return None
     if (i > length || j > length) return None
@@ -139,14 +140,8 @@ case class ConstituentTree(node: ConstituentNode, children : List[ConstituentTre
     }.flatten
     DependencyTree(tokens = tokens.toIndexedSeq, arcs = arcs)
   }
+*/
 
-  override def toString: String = {
-    node match {
-      case x: NonterminalNode => "(%s %s)".format(x.label, children.map(_.toString()).mkString(" "))
-      case x: PreterminalNode => "(%s %s)".format(x.label, x.word)
-      case _ => "empty"
-    }
-  }
 
   def slice(i: Int, j: Int): ConstituentTree = {
     val ospans = toSpans.toArray
@@ -278,6 +273,26 @@ case class ConstituentTree(node: ConstituentNode, children : List[ConstituentTre
 
   def width: Int = {
     leaves.size
+  }
+
+  override def toString: String = {
+    toTreebankString
+  }
+
+  def toTreebankString: String = {
+    node match {
+      case x: NonterminalNode => "(%s %s)".format(x.label, children.map(_.toString()).mkString(" "))
+      case x: PreterminalNode => "(%s %s)".format(x.label, x.word)
+      case _ => "empty"
+    }
+  }
+
+  def toHeadedTreebankString: String = {
+    node match {
+      case x: NonterminalNode => "(%s-%s %s)".format(x.label, x.head.get.headWord, children.map(_.toHeadedTreebankString).mkString(" "))
+      case x: PreterminalNode => "(%s %s)".format(x.label, x.word)
+      case _ => "empty"
+    }
   }
 
   // Indexing Methods
