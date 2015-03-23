@@ -35,6 +35,7 @@ object Transformer {
   def groundVariables(toGround: Seq[AnyVar])(term: AnyTerm) = depthFirst(term) {
     case v: Var[_] if toGround.contains(v) => VarAtom(v)
     case VarSeqApply(a: Atom[_], i) => SeqAtom[Dom, VarSeqDom[Dom]](a.asInstanceOf[Atom[VarSeqDom[Dom]]], i)
+    case VarSeqLength(a :Atom[_]) => LengthAtom[VarSeqDom[Dom]](a.asInstanceOf[Atom[VarSeqDom[Dom]]])
   }
 
   def groundSums(term: AnyTerm) = depthFirst(term) {

@@ -64,7 +64,7 @@ trait GroundAtom[+D <: Dom] extends Atom[D] {
   self =>
   def offsets: Offsets
 
-  def varsToGround = Nil
+  def varsToGround:Seq[AnyVar] = Nil
 
   def grounder(settings: Settings) = new Grounder {
     def ground()(implicit execution: Execution) = self
@@ -120,12 +120,30 @@ case class SeqAtom[E <: Dom, S <: VarSeqDom[E]](seq: Atom[S], index: IntTerm) ex
     }
   }
   def name = toString
-
   def owner = seq.owner
 }
 
+trait GenericLengthAtom[S<:VarSeqDom[_]] extends Atom[IntDom]{
+  def seq:Atom[S]
+  val domain = seq.domain.lengthDom
+  def owner = seq.owner
+  def name = toString
+}
 
+case class LengthAtom[S<:VarSeqDom[_]](seq:Atom[S]) extends GenericLengthAtom[S] {
+  val varsToGround = seq.varsToGround
+  def grounder(settings: Settings) = new Grounder {
+    val seqGrounder = seq.grounder(settings.linkedSettings(varsToGround, seq.varsToGround))
+    def ground()(implicit execution: Execution) = {
+      val parent = seqGrounder.ground()
+      LengthGroundAtom[S](parent)
+    }
+  }
+}
 
+case class LengthGroundAtom[S <: VarSeqDom[_]](seq:GroundAtom[S]) extends GroundAtom[IntDom] with GenericLengthAtom[S] {
+  def offsets = seq.offsets
+}
 
 
 
