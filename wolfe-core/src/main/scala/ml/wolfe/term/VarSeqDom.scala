@@ -258,11 +258,13 @@ class RangeTerm(start: IntTerm, end: IntTerm) extends Composed[VarSeqDom[IntDom]
 
   def copy(args: IndexedSeq[ArgumentType]) = new RangeTerm(args(0), args(1))
 
-  val min = start.domain.start
-  val max = end.domain.end
-  val range = min until max
+  val startMin = start.domain.start
+  val startMax = start.domain.end - 1
+  val endMin = end.domain.start
+  val endMax = end.domain.end - 1
+  val range = startMin until endMax
 
-  val domain: VarSeqDom[IntDom] = new VarSeqDom(RangeDom(range), max - min, end.domain.start - start.domain.end)
+  val domain: VarSeqDom[IntDom] = new VarSeqDom(RangeDom(range), endMax - startMin, endMin - startMax)
 
   override def composer(args: Settings) = new Composer(args) {
     def eval()(implicit execution: Execution) = {
