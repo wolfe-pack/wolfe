@@ -9,14 +9,42 @@ import ml.wolfe.nlp.{CharOffsets, Token}
  * A sparse dependency tree.  Not all arcs require a head.
  * @param arcs tuples of child, head, and label fields for each token with a head.
  */
-case class DependencyTree(tokens: IndexedSeq[Token], arcs: Seq[(Int,Int,String)]) {
+case class Arc(parent: Int, child: Int, label: Option[String] = None)
+
+case class DependencyTree(tokens: IndexedSeq[Token], arcs: Seq[Arc]) {
+
+  def childOf(i: Int, j: Int): Boolean = arcs.exists(a => a.child == i && a.parent == j)
+
+  def parentOf(i: Int, j: Int): Boolean = arcs.exists(a => a.child == j && a.parent == i)
 
   def childrenOf(i: Int): Seq[Int] = {
-    arcs.filter(_._2 == i).map(_._1)
+    arcs.filter(_.parent == i).map(_.child)
+  }
+
+  // Should only be one, but for safety and symmetry
+  def parentsOf(i: Int): Seq[Int] = {
+    arcs.filter(_.child == i).map(_.parent)
+  }
+
+  def shortestPath(source: Int, dest: Int, visited: Seq[Int] = Seq(), max: Int = size): Option[Seq[(Int, String, Int)]] = {
+    if (max == 0) return None
+    if (childOf(source, dest)) return Some(Seq((source, "CHILD", dest)))
+    if (childOf(dest, source)) return Some(Seq((source, "PARENT", dest)))
+    val ccands = childrenOf(source).filter(c => !visited.contains(c)).map(c => (source, "CHILD", c))
+    val pcands = parentsOf(source).filter(c => !visited.contains(c)).map(c => (source, "PARENT", c))
+    val paths = (ccands ++ pcands).map { t =>
+      val c = t._3
+      val path = shortestPath(c, dest, visited :+ source, max = size-1)
+      path match {
+        case None => None
+        case Some(p) => Some(Seq(t) ++ p)
+      }
+    }.flatten
+    if (paths.nonEmpty) Some(paths.sortBy(_.size).head) else None
   }
 
   def shortestDirectedPath(source: Int, dest: Int, max: Int = size): Option[Seq[Int]] = {
-    if (arcs.exists(a => a._2 == source && a._1 == dest)) {
+    if (arcs.exists(a => a.parent == source && a.child == dest)) {
       Some(Seq(source, dest))
     }
     else if (max == 0) {
@@ -31,7 +59,21 @@ case class DependencyTree(tokens: IndexedSeq[Token], arcs: Seq[(Int,Int,String)]
     }
   }
 
-  def crosses(a1: (Int,Int,String), a2: (Int,Int,String)): Boolean = crosses(a1._1, a1._2, a2._1, a2._2)
+  def pathToString(list: Seq[(Int, String, Int)]): String = {
+    list.zipWithIndex.map { case(l,i) =>
+      val arrow = if (l._2 == "CHILD") "<--" else "-->"
+      if (i < list.size-1) tokens(l._1).word + arrow
+      else tokens(l._3).word
+    }.mkString("")
+  }
+
+  def root: Int = {
+    (0 until size).find(i => arcs.exists(_.child == i)).get
+  }
+
+  def crosses(a1: Arc, a2: Arc): Boolean = {
+    crosses(a1.child, a1.parent, a2.child, a2.parent)
+  }
 
   def crosses(ii: Int, ij: Int, ik: Int, il: Int): Boolean = {
     val (i,j) = if (ii < ij) (ii, ij) else (ij, ii)
@@ -39,21 +81,32 @@ case class DependencyTree(tokens: IndexedSeq[Token], arcs: Seq[(Int,Int,String)]
     (i < k && k < j && j < l) || (k < i && j < k && l < j)
   }
 
-  def hasHead(i: Int, j: Int) = arcs.exists(n => n._1 == i && n._2 == j)
+  def hasHead(i: Int, j: Int) = arcs.exists(n => n.child == i && n.parent == j)
 
-  def headOf(i: Int) = arcs.find(_._1 == i) match {
-    case Some(x) => Some(x._2)
+  def headOf(i: Int) = arcs.find(_.child == i) match {
+    case Some(x) => Some(x.parent)
     case _ => None
   }
 
-  def labelOf(i: Int) = arcs.find(_._1 == i) match {
-    case Some(x) => Some(x._3)
+  def labelOf(i: Int) = arcs.find(_.child == i) match {
+    case Some(x) => x.label
     case _ => None
   }
 
   def isProjective = !arcs.exists(a1 => arcs.exists(a2 => crosses(a1,a2)))
 
-  override def toString = arcs.mkString("\n")
+  def isLabeled = arcs.forall(_.label.isDefined)
+
+  override def toString = {
+    arcs.map { a =>
+      if (a.label.isDefined) {
+        tokens(a.parent).word + " -- " + a.label.get + " --> " + tokens(a.child).word
+      }
+      else {
+        tokens(a.parent).word + " ---> " + tokens(a.child).word
+      }
+    }.mkString("\n")
+  }
 
   def size = tokens.size
 }
@@ -71,7 +124,7 @@ object DependencyTree {
                             Token(word = "four", offsets = CharOffsets(3,4)),
                             Token(word = "five", offsets = CharOffsets(4,5)),
                             Token(word = "six", offsets = CharOffsets(5,6)))
-    val arcs = Seq((2,3), (1,2), (0,1), (4, 3), (5,4), (6,5)).map{p => (p._1, p._2, "blah")}
+    val arcs = Seq(Arc(2,3), Arc(1,2), Arc(0,1), Arc(4, 3), Arc(5,4), Arc(6,5))
     val tree = DependencyTree(tokens, arcs)
     println(tree.toString)
     println("SDP: " + tree.shortestDirectedPath(3,0))

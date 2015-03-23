@@ -72,10 +72,12 @@ object BerkeleyProcessors {
   }
 
   def treeToTree(tree: Tree[String]): ConstituentTree = {
-    if (tree.isPreTerminal)
-      new ConstituentTree(new PreterminalNode(label = tree.getLabel, word = tree.getChildren.head.getLabel))
-    else
-      new ConstituentTree(new NonterminalNode(label = tree.getLabel, head = -1), tree.getChildren.map(treeToTree(_)).toList)
+    if (tree.isPreTerminal) {
+      new ConstituentTree(new PreterminalNode(start = -1, end = -1, label = tree.getLabel, word = tree.getChildren.head.getLabel))
+    }
+    else {
+      new ConstituentTree(new NonterminalNode(start = -1, end = -1, label = tree.getLabel, headIdx = None), tree.getChildren.map(treeToTree(_)).toList)
+    }
   }
 
 ////  what it looks like when berkeley parser parses...without memorizing offsets :S

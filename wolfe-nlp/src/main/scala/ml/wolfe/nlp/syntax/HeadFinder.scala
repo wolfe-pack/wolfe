@@ -1,6 +1,6 @@
 package ml.wolfe.nlp.syntax
 
-import ml.wolfe.nlp.io.{DefaultTreebankReaderOptions, TreebankReader}
+import ml.wolfe.nlp.io.{ConstituentTreeFactory, DefaultTreebankReaderOptions, TreebankReader}
 
 import scala.collection.mutable
 
@@ -65,10 +65,10 @@ object ModifiedCollinsHeadFinder {
         val hidx = findHead(tree)
         val headedChildren = tree.children.map(annotate(_))
         val headWord = headedChildren(hidx).node match {
-          case nt: NonterminalNode => nt.headWord
+          case nt: NonterminalNode => nt.headWord.get
           case pt: PreterminalNode => pt.word
         }
-        tree.copy(node = nonterminal.copy(head = hidx, headWord = headWord), children = headedChildren)
+        tree.copy(node = nonterminal.copy(headIdx = Some(hidx), headWord = Some(headWord)), children = headedChildren)
       }
       case leaf: PreterminalNode => tree
     }
@@ -83,8 +83,6 @@ object ModifiedCollinsHeadFinder {
           case "right" => searchRight(tree, search)
           case "leftdis" => searchLeftDis(tree, search)
           case "rightdis" => searchRightDis(tree, search)
-//          case "leftexcept" => searchLeftExcept(tree, search)
-//          case "rightexcept" => searchRightExcept(tree, search)
         }
         if (guess > -1) return guess
       }
@@ -132,13 +130,22 @@ object ModifiedCollinsHeadFinder {
 
 
   def main(args: Array[String]) = {
-    val str = "((S (NP (DT the) (JJ quick) (JJ (AA (BB (CC brown)))) (NN fox)) (VP (VBD jumped) (PP (IN over) (NP (DT the) (JJ lazy) (NN dog)))) (. .)))"
-    val reader = new TreebankReader(filename = null)
-    val tree = reader.stringToTree(str, new DefaultTreebankReaderOptions)
-    val atree = annotate(tree)
-    for (i <- 0 until atree.length; j <- 1 to atree.length) {
-      if (atree.containsSpan(i,j)) println("(%d,%d,%s) = %s".format(i, j, atree.labelsOfSpan(i, j).take(1), atree.headOf(i, j)))
-    }
+    val str = "(S (NP (DT the) (JJ quick) (JJ (AA (BB (CC brown)))) (NN fox)) (VP (VBD jumped) (PP (IN over) (NP (DT the) (JJ lazy) (NN dog)))) (. .))"
+    val tree = ConstituentTreeFactory.stringToTree(str)
+    val ctree = annotate(tree)
+    println("Constituent Tree:\n" + ctree)
+    val dtree = ctree.toDependencyTree
+    println("Dependency Tree:\n" + dtree)
+    println(dtree)
+    println
+    println(dtree.shortestPath(0, 3))
+    println("-----------------------")
+    println(dtree.shortestPath(3, 0))
+    println("-----------------------")
+    println(dtree.shortestPath(3, 8))
+    println("-----------------------")
+    println(dtree.pathToString(dtree.shortestPath(3, 8).get))
   }
+
 
 }

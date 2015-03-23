@@ -4,7 +4,7 @@ import edu.arizona.sista.processors.{CorefChains => SISTACorefChains, Sentence =
 import edu.arizona.sista.struct.Tree
 import ml.wolfe.nlp._
 import ml.wolfe.nlp.ie.{EntityMention, CorefMention}
-import ml.wolfe.nlp.syntax.{ConstituentTree, DependencyTree, NonterminalNode, PreterminalNode}
+import ml.wolfe.nlp.syntax._
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -56,17 +56,25 @@ object SISTAConverter {
 
   def toWolfeDependencyTree(sent: SISTASent): DependencyTree = {
     val tokens = for (i <- 0 until sent.size) yield toWolfeToken(i, sent)
-    val dt = new DependencyTree(tokens, sent.dependencies.get.outgoingEdges.zipWithIndex.flatMap { case(x, i) => x.map { y => (i, y._1, y._2) }})
+    val dt = new DependencyTree(tokens, sent.dependencies.get.outgoingEdges.zipWithIndex.flatMap { case(x, i) => x.map { y => Arc(i, y._1, Some(y._2)) }})
 //    println(dt.toString())
     dt
   }
 
-  def treeToTree(tree: Tree[String]): ConstituentTree = {
+  def treeToTree(tree: Tree[String], leftMost: Int = 0): ConstituentTree = {
     if (tree.isPreTerminal) {
-      new ConstituentTree(new PreterminalNode(label = tree.value, word = tree.children.get.head.value))
+      new ConstituentTree(new PreterminalNode(start = leftMost, end = leftMost + 1, label = tree.value, word = tree.children.get.head.value))
     }
     else {
-      new ConstituentTree(new NonterminalNode(label = tree.value, head = tree.head), tree.children.get.map(treeToTree(_)).toList)
+      var tmpLeftMost = leftMost
+      val children = tree.children.get.map { t =>
+        val child = treeToTree(t, leftMost = tmpLeftMost)
+        tmpLeftMost = child.end
+        child
+      }
+      val rightMost = children.last.end
+      new ConstituentTree(new NonterminalNode(start = leftMost, end = rightMost, label = tree.value),
+                          children = children.toList)
     }
   }
 

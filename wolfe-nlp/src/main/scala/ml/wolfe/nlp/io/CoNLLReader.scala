@@ -2,7 +2,7 @@ package ml.wolfe.nlp.io
 
 import ml.wolfe.nlp._
 import ml.wolfe.nlp.semantics.{Predicate, SemanticFrame, SemanticRole}
-import ml.wolfe.nlp.syntax.{ModifiedCollinsHeadFinder, DependencyTree, ConstituentTree}
+import ml.wolfe.nlp.syntax.{Arc, ModifiedCollinsHeadFinder, DependencyTree, ConstituentTree}
 import ml.wolfe.nlp.ie.{CorefMention, CorefAnnotation, EntityMention}
 import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
@@ -60,7 +60,7 @@ class CoNLLReader(filename: String, delim: String = "\t") extends Iterable[Sente
     }
     val frames = preds.zip(argsets).map { case (p, a) => SemanticFrame(p, a) }
     assert(preds.size == argsets.size)
-    val dependencies = DependencyTree(tokens, cells.zipWithIndex.map { case (c, i) => (i + 1, c(8).toInt, c(10)) })
+    val dependencies = DependencyTree(tokens, cells.zipWithIndex.map { case (c, i) => Arc(i + 1, c(8).toInt, Some(c(10))) })
     Sentence(tokens, syntax = SyntaxAnnotation(tree = null, dependencies = dependencies), ie = IEAnnotation.empty.copy(semanticFrames = frames))
   }
 
@@ -69,7 +69,7 @@ class CoNLLReader(filename: String, delim: String = "\t") extends Iterable[Sente
     val tokens = cells.map { c =>
       Token(c(1), CharOffsets(c(0).toInt, c(0).toInt), posTag = c(4), lemma = c(2))
     }
-    val dependencies = DependencyTree(tokens, cells.zipWithIndex.map { case (c, i) => (i + 1, c(6).toInt, c(7)) })
+    val dependencies = DependencyTree(tokens, cells.zipWithIndex.map { case (c, i) => Arc(i + 1, c(6).toInt, Some(c(7))) })
     Sentence(tokens, syntax = SyntaxAnnotation(tree = null, dependencies = dependencies))
   }
 
@@ -145,7 +145,7 @@ class CoNLL2011Reader(filename: String, delim: String = "\t") extends Iterable[D
       val csyntaxCleaned = csyntax.mkString(" ").replaceAll("\\*", " * ").replaceAll("\\(", " ( ").replaceAll("\\)", " ) ").replaceAll(" +", " ")
       var tc = -1
       val csyntaxStr = csyntaxCleaned.map(c => if (c == '*') {tc += 1; "(" + pos(tc) + " " + words(tc) + ")"} else c.toString).mkString("")
-      val ctree = ModifiedCollinsHeadFinder.annotate(ConstituentTree.stringToTree(csyntaxStr))
+      val ctree = ModifiedCollinsHeadFinder.annotate(ConstituentTreeFactory.stringToTree(csyntaxStr))
       assert(ctree != null, "Null constituent tree")
 
       val entities = readStackFormatEntities(ner.toList)
@@ -163,7 +163,7 @@ class CoNLL2011Reader(filename: String, delim: String = "\t") extends Iterable[D
 
 
       val sense = (0 until grid.size).map(grid(_)(7))
-      Sentence(tokens, syntax = SyntaxAnnotation(tree = ctree, dependencies = null), ie = IEAnnotation(entityMentions = entities, semanticFrames = frames))
+      Sentence(tokens, syntax = SyntaxAnnotation(tree = ctree, dependencies = ctree.toDependencyTree), ie = IEAnnotation(entityMentions = entities, semanticFrames = frames))
     }.toIndexedSeq
 
 

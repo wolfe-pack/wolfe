@@ -16,6 +16,10 @@ case class ConstituentTree(node: ConstituentNode, children : List[ConstituentTre
 
   def label: String = node.label
 
+  def start: Int = node.start
+
+  def end: Int = node.end
+
   def isPreterminal = node.isPreterminal
 
   def isNonterminal = node.isNonterminal
@@ -30,11 +34,9 @@ case class ConstituentTree(node: ConstituentNode, children : List[ConstituentTre
       new ConstituentTree(node, children.map(_.coarsenLabels))
     }
     else {
-      if (isNonterminal) {
-        new ConstituentTree(new NonterminalNode(coarsed), children.map(_.coarsenLabels))
-      }
-      else {
-        new ConstituentTree(new PreterminalNode(coarsed, node.asInstanceOf[PreterminalNode].word), children.map(_.coarsenLabels))
+      node match {
+        case nt: NonterminalNode => copy(node = nt.copy(label = coarsed), children = children.map(_.coarsenLabels))
+        case pt: PreterminalNode => copy(node = pt.copy(label = coarsed))
       }
     }
   }
@@ -67,17 +69,15 @@ case class ConstituentTree(node: ConstituentNode, children : List[ConstituentTre
     //    println("setting yield")
     var tally = 0
     node match {
-      case x: NonterminalNode => {
-        //      println(" set nonterm")
+      case nt: NonterminalNode => {
         new ConstituentTree(node, children.map{ c =>
           val child = c.setYield(words, tags, offset + tally)
           tally += c.width
           child
         })
       }
-      case x: PreterminalNode => {
-        //       println("offset = " + offset)
-        new ConstituentTree(new PreterminalNode(tags(offset), words(offset)))
+      case pt: PreterminalNode => {
+        new ConstituentTree(node = pt.copy(label = tags(offset), word = words(offset)))
       }
     }
   }
@@ -93,7 +93,7 @@ case class ConstituentTree(node: ConstituentNode, children : List[ConstituentTre
           index((numLeaves-len, numLeaves)) = index((numLeaves-len, numLeaves)) ++ List(new ConstituentSpan(numLeaves-len, numLeaves, t.label, height, head = nt.headWord))
         }
         case leaf: PreterminalNode => {
-          index((numLeaves, numLeaves + 1)) = index((numLeaves, numLeaves + 1)) ++ List(new ConstituentSpan(numLeaves, numLeaves + 1, t.label, 0, head = leaf.word))
+          index((numLeaves, numLeaves + 1)) = index((numLeaves, numLeaves + 1)) ++ List(new ConstituentSpan(numLeaves, numLeaves + 1, t.label, 0, head = Some(leaf.word)))
           numLeaves += 1
         }
       }
@@ -104,10 +104,41 @@ case class ConstituentTree(node: ConstituentNode, children : List[ConstituentTre
   def headOf(i: Int, j: Int): Option[String] = {
     if (i < 0 || j < 0) return None
     if (i > length || j > length) return None
-    spans((i,j)).collectFirst{ case x => x.head }
+    spans((i,j)).collectFirst{ case x => x.head.get }
   }
 
+  def governingConstituent(i: Int): ConstituentTree = {
+    depthFirstSearch.toArray.filter(c => c.width > 1 && c.covers(i)).sortBy(_.width).head
+  }
 
+  def covers(i: Int): Boolean = {
+    start <= i && end > i
+  }
+
+  def tokenIndexOfHead: Option[Int] = {
+    node match {
+      case nt: NonterminalNode => {
+        nt.headIdx match {
+          case None => None
+          case Some(h) => children(h).tokenIndexOfHead
+        }
+      }
+      case pt: PreterminalNode => Some(pt.start)
+    }
+  }
+
+  def toDependencyTree: DependencyTree = {
+    val arcs = (0 until length).map{ i =>
+      val gc = depthFirstSearch.filter(st => st.width > 1 && st.covers(i)).toArray.sortBy(_.width).find { t =>
+        t.tokenIndexOfHead.get != i
+      }
+      gc match {
+        case Some(h) => Some(Arc(child = i, parent = h.tokenIndexOfHead.get))
+        case None => None
+      }
+    }.flatten
+    DependencyTree(tokens = tokens.toIndexedSeq, arcs = arcs)
+  }
 
   override def toString: String = {
     node match {
@@ -126,47 +157,48 @@ case class ConstituentTree(node: ConstituentNode, children : List[ConstituentTre
   }
 
   def binarize(mode: String = "RIGHT_0MARKOV"): ConstituentTree = {
+    ???
     //   println("-- " + children.map(_.label).mkString(", "))
-    if (children.size > 2) {
-      //val grandchildren = children.slice(1, children.size)
-      mode match {
-        case "RIGHT_0MARKOV" => {
-          println("right 0 markov")
-          val blabel = if (node.label.startsWith("@")) node.label else "@%s".format(node.label)
-          return new ConstituentTree(node, List[ConstituentTree](
-            children.head.binarize(mode),
-            new ConstituentTree(new NonterminalNode(blabel), children.slice(1, children.size)).binarize(mode)))
-        }
-        case "LEFT_0MARKOV" => {
-          println("left 0 markov")
-          val blabel = if (node.label.startsWith("@")) node.label else "@%s".format(node.label)
-          return new ConstituentTree(node, List[ConstituentTree](
-            new ConstituentTree(new NonterminalNode(blabel), children.slice(0, children.size-1)).binarize(mode),
-            children.last.binarize(mode)))
-        }
-        case "RIGHT_SINGLE" => {
-          println("right single")
-          return new ConstituentTree(node, List[ConstituentTree](
-            children(0).binarize(mode),
-            new ConstituentTree(new NonterminalNode("@"), children.slice(1, children.size)).binarize(mode)))
-        }
-        case "LEFT_SINGLE" => {
-          println("left single")
-          return new ConstituentTree(node, List[ConstituentTree](
-            new ConstituentTree(new NonterminalNode("@"), children.slice(0, children.size-1)).binarize(mode),
-            children.last.binarize(mode)))
-        }
-      }
-    }
-    else{
-      return new ConstituentTree(node, children.map(_.binarize(mode)))
-    }
+//    if (children.size > 2) {
+//      //val grandchildren = children.slice(1, children.size)
+//      mode match {
+//        case "RIGHT_0MARKOV" => {
+//          println("right 0 markov")
+//          val blabel = if (node.label.startsWith("@")) node.label else "@%s".format(node.label)
+//          return new ConstituentTree(node, List[ConstituentTree](
+//            children.head.binarize(mode),
+//            new ConstituentTree(new NonterminalNode(blabel), children.slice(1, children.size)).binarize(mode)))
+//        }
+//        case "LEFT_0MARKOV" => {
+//          println("left 0 markov")
+//          val blabel = if (node.label.startsWith("@")) node.label else "@%s".format(node.label)
+//          return new ConstituentTree(node, List[ConstituentTree](
+//            new ConstituentTree(new NonterminalNode(blabel), children.slice(0, children.size-1)).binarize(mode),
+//            children.last.binarize(mode)))
+//        }
+//        case "RIGHT_SINGLE" => {
+//          println("right single")
+//          return new ConstituentTree(node, List[ConstituentTree](
+//            children(0).binarize(mode),
+//            new ConstituentTree(new NonterminalNode("@"), children.slice(1, children.size)).binarize(mode)))
+//        }
+//        case "LEFT_SINGLE" => {
+//          println("left single")
+//          return new ConstituentTree(node, List[ConstituentTree](
+//            new ConstituentTree(new NonterminalNode("@"), children.slice(0, children.size-1)).binarize(mode),
+//            children.last.binarize(mode)))
+//        }
+//      }
+//    }
+//    else{
+//      return new ConstituentTree(node, children.map(_.binarize(mode)))
+//    }
   }
 
   def isBinarized: Boolean = node.label.contains("@")
 
   def removeUnaryChains(): ConstituentTree = {
-    return new ConstituentTree(node,
+    new ConstituentTree(node,
       if (children.size == 1) {
         val uh = unaryHelper()
         unaryHelper().map(_.removeUnaryChains())
@@ -184,17 +216,17 @@ case class ConstituentTree(node: ConstituentNode, children : List[ConstituentTre
       children(0).unaryHelper()
     }
     else {
-      return children
+      children
     }
   }
 
   def removeNones(): ConstituentTree = {
     val nchildren = children.map(_.removeNones()).filter(_ != null.asInstanceOf[ConstituentTree])
     if (label == "-NONE-" || label == "-RRB-" || label == "-LRB-" || (children.size > 0 && nchildren.size == 0)) {
-      return null.asInstanceOf[ConstituentTree]
+      null.asInstanceOf[ConstituentTree]
     }
     else {
-      return new ConstituentTree(node, nchildren)
+      new ConstituentTree(node, nchildren)
     }
   }
 
@@ -204,7 +236,7 @@ case class ConstituentTree(node: ConstituentNode, children : List[ConstituentTre
   }
 
   def nodemap(f: (ConstituentNode) => ConstituentNode): ConstituentTree = {
-    return new ConstituentTree(f(node), children.map(_.nodemap(f)))
+    new ConstituentTree(f(node), children.map(_.nodemap(f)))
   }
 
   private lazy val len = leaves.size
@@ -316,27 +348,62 @@ object ConstituentTree {
 
   val empty = ConstituentTree(node=null, children=List())
 
-  def stringToTree(str: String, options: TreebankReaderOptions = TreebankReaderOptions.default): ConstituentTree = {
-    str match {
-      case DOUBLE_PAREN_PATTERN() => {
-        val children = subexpressions(str).map(stringToTree(_, options))
-        ConstituentTreeFactory.buildTree(label=options.DEFAULT_LABEL, children=children)
-      }
-      case TOKEN_PATTERN(tag, word) => {
-        ConstituentTreeFactory.buildTree(label=tag, word=word)
-      }
-      case CONSTITUENT_PATTERN(label) => {
-        val children = subexpressions(str).map(stringToTree(_, options))
-        ConstituentTreeFactory.buildTree(label=label, children=children)
-      }
-      case EMPTY_PATTERN() => {
-        val children = subexpressions(str).map(stringToTree(_, options))
-        ConstituentTreeFactory.buildTree(label=options.DEFAULT_LABEL, children=children)
-      }
-      case _ => {
-        if (str != null) System.err.println("Not recognized: %s".format(str))
-        null.asInstanceOf[ConstituentTree]
-      }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+//
+//  def stringToTree(str: String, leftMost: Int = 0): ConstituentTree = {
+//    str match {
+//      case DOUBLE_PAREN_PATTERN() => {
+//        val children = findChildren(subexpressions(str), leftMost = leftMost)
+//        ConstituentTreeFactory.buildTree(start = leftMost, end = children.last.end, children=children)
+//      }
+//      case TOKEN_PATTERN(tag, word) => {
+//        ConstituentTreeFactory.buildTree(start = leftMost, end = leftMost + 1, label=tag, word = Some(word))
+//      }
+//      case CONSTITUENT_PATTERN(label) => {
+//        val children = findChildren(subexpressions(str), leftMost = leftMost)
+//        ConstituentTreeFactory.buildTree(start = leftMost, end = children.last.end, label=label, children=children)
+//      }
+////      case EMPTY_PATTERN() => {
+////        val children = findChildren(subexpressions(str), leftMost = leftMost)
+////        ConstituentTreeFactory.buildTree(start = leftMost, end = children.last.end, label=options.DEFAULT_LABEL, children=children)
+////      }
+//    }
+//  }
+
+  def findChildren(strs: List[String], leftMost: Int): List[ConstituentTree] = {
+    var tmpLeftMost = leftMost
+    strs.map { s =>
+      val child = stringToTree(s, leftMost = tmpLeftMost)
+      tmpLeftMost = child.end
+      child
     }
   }
 
@@ -357,17 +424,15 @@ object ConstituentTree {
     }
     subs.toList
   }
-}
-
-
-
-
-
-
-
-
-
-
+ */
+/*
+//      if (isNonterminal) {
+//        new ConstituentTree(new NonterminalNode(coarsed), children.map(_.coarsenLabels))
+//      }
+//      else {
+//        new ConstituentTree(new PreterminalNode(coarsed, node.asInstanceOf[PreterminalNode].word), children.map(_.coarsenLabels))
+//      }
+ */
 
 
 

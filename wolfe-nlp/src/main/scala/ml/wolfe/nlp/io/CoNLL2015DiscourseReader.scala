@@ -4,7 +4,7 @@ import java.nio.file.{Paths, Files}
 
 import ml.wolfe.nlp._
 import ml.wolfe.nlp.discourse.{DiscourseRelation, DiscourseArgument}
-import ml.wolfe.nlp.syntax.{DependencyTree, ConstituentTree}
+import ml.wolfe.nlp.syntax.{Arc, DependencyTree, ConstituentTree}
 import org.json4s.JsonAST.{JInt, JObject, JString}
 import org.json4s._
 import org.json4s.native.JsonMethods._
@@ -68,11 +68,11 @@ object CoNLL2015DiscourseReader {
           val label = dependency(0)
           val child = dependency(1).splitAt(dependency(1).lastIndexOf("-")+1)._2.toInt - 1
           val head = dependency(2).splitAt(dependency(2).lastIndexOf("-")+1)._2.toInt - 1
-          (child, head, label)
-        }.filterNot(_._3 == "root").toSeq
+          Arc(child, head, Some(label))
+        }.filterNot(_.label.get == "root").toSeq
 
         val parse_tree = "(ROOT" + sentence.parsetree.drop(1).dropRight(2) + ")"
-        val cons_tree = ConstituentTree.stringToTree(parse_tree)
+        val cons_tree = ConstituentTreeFactory.stringToTree(parse_tree)
         val dep_tree = DependencyTree(tokens, arcs)
 
         Sentence(tokens, new SyntaxAnnotation(cons_tree, dep_tree))

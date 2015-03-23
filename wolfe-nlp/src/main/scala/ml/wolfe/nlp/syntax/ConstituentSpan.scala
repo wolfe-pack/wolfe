@@ -3,7 +3,8 @@ package ml.wolfe.nlp.syntax
 /**
  * Created by narad on 3/19/15.
  */
-case class ConstituentSpan(left: Int, right: Int, label: String, var height: Int = 0, head: String = "") {
+case class ConstituentSpan(left: Int, right: Int, label: String,
+                           var height: Int = 0, head: Option[String] = None) {
 
   def width: Int = right - left
 

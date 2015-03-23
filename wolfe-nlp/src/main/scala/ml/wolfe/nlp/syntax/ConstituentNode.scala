@@ -7,6 +7,10 @@ trait ConstituentNode {
 
   def label:String
 
+  def start: Int
+
+  def end: Int
+
   def isNonterminal: Boolean = this match {
     case x: NonterminalNode => true
     case _ => false
@@ -18,14 +22,14 @@ trait ConstituentNode {
   }
 }
 
-case class NonterminalNode(label: String, head: Int = -1, headWord: String = "") extends ConstituentNode {
+case class NonterminalNode(start: Int, end: Int, label: String, headIdx: Option[Int] = None, headWord: Option[String] = None) extends ConstituentNode {
 
   override def isNonterminal = true
 
   override def isPreterminal = false
 }
 
-case class PreterminalNode(label: String, word: String) extends ConstituentNode {
+case class PreterminalNode(start: Int, end: Int, label: String, word: String) extends ConstituentNode {
 
   override def isNonterminal = false
 

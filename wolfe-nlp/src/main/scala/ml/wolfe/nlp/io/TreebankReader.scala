@@ -7,59 +7,12 @@ import scala.collection.mutable.ArrayBuffer
  * Created by narad on 8/4/14.
  */
 class TreebankReader(filename: String, options: TreebankReaderOptions = new DefaultTreebankReaderOptions) extends Iterable[ConstituentTree] {
-  private val TOKEN_PATTERN = """\(([^ \(]+) ([^ \)]+)\).*""".r
-  private val CONSTITUENT_PATTERN = """\(([^ ]+) .*""".r
-  private val EMPTY_PATTERN = """\( .*""".r
-  private val DOUBLE_PAREN_PATTERN = """\(\(+.*""".r
 
   def iterator: Iterator[ConstituentTree] = {
     val transformer = new TreeTransformer(options)
     val text = "(DOC %s)".format(scala.io.Source.fromFile(filename).getLines().filter(!_.startsWith("*")).mkString)
-    val t = stringToTree(text, options)
+    val t = ConstituentTreeFactory.stringToTree(text)
     t.children.map(transformer.transformTree(_)).iterator
-  }
-
-  // Double in ConstituentTree Object for now
-  def stringToTree(str: String, options: TreebankReaderOptions): ConstituentTree = {
-    str match {
-      case DOUBLE_PAREN_PATTERN() => {
-        val children = subexpressions(str).map(stringToTree(_, options))
-        return ConstituentTreeFactory.buildTree(label=options.DEFAULT_LABEL, children=children)
-      }
-      case TOKEN_PATTERN(tag, word) => {
-        ConstituentTreeFactory.buildTree(label=tag, word=word)
-      }
-      case CONSTITUENT_PATTERN(label) => {
-        val children = subexpressions(str).map(stringToTree(_, options))
-        return ConstituentTreeFactory.buildTree(label=label, children=children)
-      }
-      case EMPTY_PATTERN() => {
-        val children = subexpressions(str).map(stringToTree(_, options))
-        return ConstituentTreeFactory.buildTree(label=options.DEFAULT_LABEL, children=children)
-      }
-      case _ => {
-        if (str != null) System.err.println("Not recognized: %s".format(str))
-        return null.asInstanceOf[ConstituentTree]
-      }
-    }
-  }
-
-  def subexpressions(str: String, ldelim: Char='(', rdelim: Char=')'): List[String] = {
-    val subs = new ArrayBuffer[String]
-    var count = -1; var start = 0
-    str.zipWithIndex.foreach { case(letter, index) =>
-      if (letter == ldelim) {
-        count += 1
-        if (count == 1)
-          start = index
-      }
-      else if (letter == rdelim) {
-        count -= 1
-        if (count == 0)
-          subs += str.substring(start, index+1)
-      }
-    }
-    subs.toList
   }
 }
 
@@ -78,14 +31,14 @@ class TreeTransformer(options: TreebankReaderOptions) {
       if (t.children.size == 1) t = t.removeTopNode
     }
     if (options.FIX_ROOT) {
-      t = new ConstituentTree(NonterminalNode("TOP"), t.children)
+      t = new ConstituentTree(NonterminalNode(start = 0, end = t.length, label = "TOP"), t.children)
     }
     if (options.COARSEN_LABELS) {
       t = t.coarsenLabels
     }
     if (options.UNIFY_NONTERMS) {
       t = t.nodemap(n => {
-        if (n.isNonterminal) new NonterminalNode("X")
+        if (n.isNonterminal) new NonterminalNode(start = n.start, end = n.end, label = "X")
         else n
       })
     }
@@ -144,30 +97,79 @@ class DefaultTreebankReaderOptions extends TreebankReaderOptions {
 
 object ConstituentTreeFactory {
 
-  def buildTree(label: String = "SPAN", word: String = "", children: List[ConstituentTree] = List()): ConstituentTree = {
-    if (word == "") {
-      new ConstituentTree(new NonterminalNode(label), children)
-    }
-    else {
-      new ConstituentTree(new PreterminalNode(label, word), children)
+  private val TOKEN_PATTERN = """\(([^ \(]+) ([^ \)]+)\).*""".r
+  private val CONSTITUENT_PATTERN = """\(([^ ]+) .*""".r
+  private val EMPTY_PATTERN = """\( .*""".r
+  private val DOUBLE_PAREN_PATTERN = """\(\(+.*""".r
+
+
+
+  def stringToTree(str: String, leftMost: Int = 0): ConstituentTree = {
+    str match {
+      case DOUBLE_PAREN_PATTERN() => {
+        val children = findChildren(subexpressions(str), leftMost = leftMost)
+        ConstituentTreeFactory.buildTree(start = leftMost, end = children.last.end, children=children)
+      }
+      case TOKEN_PATTERN(tag, word) => {
+        ConstituentTreeFactory.buildTree(start = leftMost, end = leftMost + 1, label=tag, word = Some(word))
+      }
+      case CONSTITUENT_PATTERN(label) => {
+        val children = findChildren(subexpressions(str), leftMost = leftMost)
+        ConstituentTreeFactory.buildTree(start = leftMost, end = children.last.end, label=label, children=children)
+      }
     }
   }
 
-  def constructFromSpans(spans: Array[ConstituentSpan], slen: Int, words: Array[String] = Array(), tags: Array[String] = Array()): ConstituentTree = {
-    return ConstituentTreeFactory.buildTree(label="TOP", children=findChildren(spans.sortBy(sp => (sp.width * 1000) + sp.height).reverse, 0, slen, words, tags))
+  def findChildren(strs: List[String], leftMost: Int): List[ConstituentTree] = {
+    var tmpLeftMost = leftMost
+    strs.map { s =>
+      val child = stringToTree(s, leftMost = tmpLeftMost)
+      tmpLeftMost = child.end
+      child
+    }
   }
+
+  def subexpressions(str: String, ldelim: Char='(', rdelim: Char=')'): List[String] = {
+    val subs = new ArrayBuffer[String]
+    var count = -1; var start = 0
+    str.zipWithIndex.foreach { case(letter, index) =>
+      if (letter == ldelim) {
+        count += 1
+        if (count == 1)
+          start = index
+      }
+      else if (letter == rdelim) {
+        count -= 1
+        if (count == 0)
+          subs += str.substring(start, index+1)
+      }
+    }
+    subs.toList
+  }
+
+
+
+
+  // Methods for building ConstituentTree from spans
+
+  def constructFromSpans(spans: Array[ConstituentSpan], slen: Int, words: Array[String] = Array(), tags: Array[String] = Array()): ConstituentTree = {
+    ConstituentTreeFactory.buildTree(0, slen+1, label="TOP", children=findChildren(spans.sortBy(sp => (sp.width * 1000) + sp.height).reverse, 0, slen, words, tags))
+  }
+
+  def buildTree(start: Int, end: Int, label: String = "SPAN", word: Option[String] = None, children: List[ConstituentTree] = List()): ConstituentTree = {
+    word match {
+      case Some(w) => new ConstituentTree(new PreterminalNode(start = start, end = end, label = label, word = w), children)
+      case None => new ConstituentTree(new NonterminalNode(start = start, end = end, label = label), children)
+    }
+  }
+
 
   def findChildren(spans: Array[ConstituentSpan], start: Int, end: Int, words: Array[String] = Array(), tags: Array[String] = Array()): List[ConstituentTree] = {
     val children = new ArrayBuffer[ConstituentTree]
-    val max = findMaxSpan(spans, start, end)
+    val max = spans.find(s => s.start >= start && s.end <= end) //findMaxSpan(spans, start, end)
     max match {
       case None => {
-        if (words.isEmpty || tags.isEmpty) {
-          List.fill(end-start)(ConstituentTreeFactory.buildTree(label="TAG", word="TMP", children=List()))
-        }
-        else {
-          (start until end).map { i => ConstituentTreeFactory.buildTree(label=tags(i), word=words(i), children=List()) }.toList
-        }
+          (start until end).map { i => ConstituentTreeFactory.buildTree(start = i, end = i+1, label=tags(i), word=Some(words(i)), children=List()) }.toList
       }
       case Some(maxspan) => {
         if (maxspan.start > start) {
@@ -175,7 +177,7 @@ object ConstituentTreeFactory {
           if (leftChildren.size > 0) children ++= leftChildren
         }
         val cchildren = findChildren(spans.filter(_ != maxspan), maxspan.start, maxspan.end, words, tags)
-        children += ConstituentTreeFactory.buildTree(label=maxspan.label, children=cchildren)
+        children += ConstituentTreeFactory.buildTree(start = maxspan.start, end = maxspan.end, label=maxspan.label, children=cchildren)
         if (maxspan.end < end) {
           val rightChildren = findChildren(spans, maxspan.end, end, words, tags)
           if (rightChildren.size > 0) children ++= rightChildren
@@ -184,11 +186,5 @@ object ConstituentTreeFactory {
       }
     }
   }
-
-  def findMaxSpan(spans: Array[ConstituentSpan], start: Int, end: Int): Option[ConstituentSpan] = {
-    for (span <- spans) {
-      if (span.start >= start && span.end <= end) return Some(span)
-    }
-    return None
-  }
 }
+
