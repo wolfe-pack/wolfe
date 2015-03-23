@@ -115,7 +115,11 @@ object ConstituentTreeFactory {
       }
       case CONSTITUENT_PATTERN(label) => {
         val children = findChildren(subexpressions(str), leftMost = leftMost)
-        ConstituentTreeFactory.buildTree(start = leftMost, end = children.last.end, label=label, children=children)
+        ConstituentTreeFactory.buildTree(start = leftMost, end = children.last.end, label = label, children = children)
+      }
+      case _ => {
+        if (str != null) System.err.println("Not recognized: %s".format(str))
+        return null.asInstanceOf[ConstituentTree]
       }
     }
   }
