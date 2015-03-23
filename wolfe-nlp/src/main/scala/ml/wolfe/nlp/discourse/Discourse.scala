@@ -15,7 +15,7 @@ case class DiscourseRelation(arg1: DiscourseArgument,
 case class DiscourseArgument(text: String = "",
                              charOffsets: List[CharOffsets] = List.empty,
                              tokens: Seq[(Int, Int)] = Seq.empty) {
-  def charSpan:CharOffsets = CharOffsets(charOffsets.head.start,charOffsets.last.end)
+  def charSpan:CharOffsets = CharOffsets(charOffsets.head.start,charOffsets.last.end + 1)
 }
 
 object DiscourseArgument {
