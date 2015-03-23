@@ -11,6 +11,8 @@ trait ConstituentNode {
 
   def end: Int
 
+  def width = end - start
+
   def isNonterminal: Boolean = this match {
     case x: NonterminalNode => true
     case _ => false

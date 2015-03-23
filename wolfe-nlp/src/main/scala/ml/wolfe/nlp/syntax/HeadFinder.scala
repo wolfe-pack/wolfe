@@ -135,9 +135,8 @@ object ModifiedCollinsHeadFinder {
     val tree = ConstituentTreeFactory.stringToTree(str).get
     val ctree = annotate(tree)
     println("Constituent Tree:\n" + ctree.toHeadedTreebankString)
-//    val dtree = ctree.toDependencyTree
-//    println("Dependency Tree:\n" + dtree)
-//    println(dtree)
+    val dtree = ctree.toDependencyTree
+    println("Dependency Tree:\n" + dtree)
 //    println
 //    println(dtree.shortestPath(0, 3))
 //    println("-----------------------")

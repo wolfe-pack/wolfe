@@ -3,7 +3,7 @@ package ml.wolfe.nlp.syntax
 import ml.wolfe.nlp.Token
 import ml.wolfe.nlp.io.{ConstituentTreeFactory, TreebankReaderOptions}
 
-import scala.collection.mutable.{ArrayBuffer, HashMap, Map}
+import scala.collection.mutable.{ArrayBuffer, HashMap, Map => MMap}
 
 /**
  * Created by narad on 12/5/14.
@@ -82,7 +82,7 @@ case class ConstituentTree(node: ConstituentNode, children : List[ConstituentTre
     }
   }
 
-  def indexViaHash: Map[(Int,Int), List[ConstituentSpan]] = {
+  def indexViaHash: MMap[(Int,Int), List[ConstituentSpan]] = {
     val index = new HashMap[(Int,Int), List[ConstituentSpan]].withDefaultValue(List())
     var numLeaves = 0
     for (t <- leafFirstSearch) {
@@ -101,6 +101,33 @@ case class ConstituentTree(node: ConstituentNode, children : List[ConstituentTre
     index
   }
 
+  def indexParents(tree: ConstituentTree): Map[ConstituentTree, ConstituentTree] = {
+    ((tree.children map (c => c -> tree)) ++ (tree.children map (c => indexParents(c))).flatten.toMap).toMap
+  }
+
+  def parentOf(tree: ConstituentTree): Option[ConstituentTree] = parents.get(tree)
+
+  def parentOf(i: Int): Option[ConstituentTree] = {
+    depthFirstSearch.find( t => t.isPreterminal && t.start == i)
+  }
+
+  lazy val parents = indexParents(this)
+
+  def searchUpFrom(i: Int): Iterator[ConstituentTree] = {
+    val parent = parentOf(i)
+    parent match {
+      case Some(t) => searchUpFrom(t)
+      case None => Iterator.empty
+    }
+  }
+
+  def searchUpFrom(tree: ConstituentTree): Iterator[ConstituentTree] = {
+    parents.get(tree) match {
+      case Some(parent) =>  Iterator(parent) ++ searchUpFrom(parent)
+      case None => Iterator.empty
+    }
+  }
+
 /*
   def headOf(i: Int, j: Int): Option[String] = {
     if (i < 0 || j < 0) return None
@@ -112,9 +139,6 @@ case class ConstituentTree(node: ConstituentNode, children : List[ConstituentTre
     depthFirstSearch.toArray.filter(c => c.width > 1 && c.covers(i)).sortBy(_.width).head
   }
 
-  def covers(i: Int): Boolean = {
-    start <= i && end > i
-  }
 
   def tokenIndexOfHead: Option[Int] = {
     node match {
@@ -128,19 +152,25 @@ case class ConstituentTree(node: ConstituentNode, children : List[ConstituentTre
     }
   }
 
+  */
+
+  def covers(i: Int): Boolean = {
+    start <= i && end > i
+  }
+
   def toDependencyTree: DependencyTree = {
     val arcs = (0 until length).map{ i =>
-      val gc = depthFirstSearch.filter(st => st.width > 1 && st.covers(i)).toArray.sortBy(_.width).find { t =>
-        t.tokenIndexOfHead.get != i
-      }
+//      val gc: NonterminalNode = depthFirstSearch.toArray.filter(n => n.width > 1 && n.covers(i)).map(_.node).collect { case nt: NonterminalNode => nt }.sortBy(_.width).head
+      val usearch = searchUpFrom(i).toArray
+      val gc = usearch.find(t => t.isNonterminal && t.node.asInstanceOf[NonterminalNode].head.get.tokenIdx != i)
       gc match {
-        case Some(h) => Some(Arc(child = i, parent = h.tokenIndexOfHead.get))
+        case Some(t) => Some(Arc(child = i, parent = t.node.asInstanceOf[NonterminalNode].head.get.tokenIdx))
         case None => None
       }
     }.flatten
     DependencyTree(tokens = tokens.toIndexedSeq, arcs = arcs)
   }
-*/
+
 
 
   def slice(i: Int, j: Int): ConstituentTree = {
@@ -253,12 +283,8 @@ case class ConstituentTree(node: ConstituentNode, children : List[ConstituentTre
   }
 
   def height: Int = {
-    if (isLeaf) {
-      0
-    }
-    else {
-      children.map(_.height).max + 1
-    }
+    if (isLeaf) 0
+    else  children.map(_.height).max + 1
   }
 
   def isLeaf: Boolean = {
