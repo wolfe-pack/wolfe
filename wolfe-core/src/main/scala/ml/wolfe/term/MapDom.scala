@@ -1,5 +1,7 @@
 package ml.wolfe.term
 
+import scala.language.{postfixOps, reflectiveCalls}
+
 /**
  * @author riedel
  */
