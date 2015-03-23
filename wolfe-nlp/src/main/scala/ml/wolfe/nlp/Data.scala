@@ -14,7 +14,9 @@ import scala.collection.mutable
  * @param start index of the initial character in the token.
  * @param end index of the final character in the token
  */
-case class CharOffsets(start: Int, end: Int)
+case class CharOffsets(start: Int, end: Int) {
+  def contains(that:CharOffsets) = start <= that.start && end >= that.end
+}
 
 case class SentenceTokenRelation() extends ObjectGraphRelation {
   type Parent = Sentence

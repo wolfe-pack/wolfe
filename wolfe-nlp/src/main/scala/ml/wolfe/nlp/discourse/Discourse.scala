@@ -14,7 +14,9 @@ case class DiscourseRelation(arg1: DiscourseArgument,
 
 case class DiscourseArgument(text: String = "",
                              charOffsets: List[CharOffsets] = List.empty,
-                             tokens: Seq[(Int, Int)] = Seq.empty)
+                             tokens: Seq[(Int, Int)] = Seq.empty) {
+  def charSpan:CharOffsets = CharOffsets(charOffsets.head.start,charOffsets.last.end)
+}
 
 object DiscourseArgument {
   val empty = DiscourseArgument()
