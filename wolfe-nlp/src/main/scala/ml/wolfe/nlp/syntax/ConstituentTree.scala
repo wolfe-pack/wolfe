@@ -24,6 +24,12 @@ case class ConstituentTree(node: ConstituentNode, children : List[ConstituentTre
 
   def isNonterminal = node.isNonterminal
 
+  def tags: Iterator[String] = leaves.collect { case l: PreterminalNode => l.label }
+
+  def words: Iterator[String] = leaves.collect { case l: PreterminalNode => l.word }
+
+  def tokens: Iterator[Token] = leaves.collect { case l: PreterminalNode => Token(word = l.word, offsets = null, posTag = l.label) }
+
   def labelsOfSpan(i: Int, j: Int): Iterator[String] = {
     spans((i,j)).view.map(_.label).iterator
   }
@@ -58,12 +64,6 @@ case class ConstituentTree(node: ConstituentNode, children : List[ConstituentTre
       l = l.substring(0, l.indexOf("^"))
     return l
   }
-
-  def tags: Iterator[String] = leaves.collect { case l: PreterminalNode => l.label }
-
-  def words: Iterator[String] = leaves.collect { case l: PreterminalNode => l.word }
-
-  def tokens: Iterator[Token] = leaves.collect { case l: PreterminalNode => Token(word = l.word, offsets = null, posTag = l.label) }
 
   def setYield(words: Array[String], tags: Array[String], offset: Int = 0): ConstituentTree = {
     //    println("setting yield")

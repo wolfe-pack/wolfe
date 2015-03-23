@@ -71,6 +71,7 @@ object ModifiedCollinsHeadFinder {
         tree.copy(node = nonterminal.copy(headIdx = Some(hidx), headWord = Some(headWord)), children = headedChildren)
       }
       case leaf: PreterminalNode => tree
+      case _ => { System.err.println("Error - did not match tree node: " + tree.node); assert(false, ""); null.asInstanceOf[ConstituentTree] }
     }
   }
 
@@ -131,7 +132,7 @@ object ModifiedCollinsHeadFinder {
 
   def main(args: Array[String]) = {
     val str = "(S (NP (DT the) (JJ quick) (JJ (AA (BB (CC brown)))) (NN fox)) (VP (VBD jumped) (PP (IN over) (NP (DT the) (JJ lazy) (NN dog)))) (. .))"
-    val tree = ConstituentTreeFactory.stringToTree(str)
+    val tree = ConstituentTreeFactory.stringToTree(str).get
     val ctree = annotate(tree)
     println("Constituent Tree:\n" + ctree)
     val dtree = ctree.toDependencyTree

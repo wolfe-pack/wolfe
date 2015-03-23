@@ -145,7 +145,8 @@ class CoNLL2011Reader(filename: String, delim: String = "\t") extends Iterable[D
       val csyntaxCleaned = csyntax.mkString(" ").replaceAll("\\*", " * ").replaceAll("\\(", " ( ").replaceAll("\\)", " ) ").replaceAll(" +", " ")
       var tc = -1
       val csyntaxStr = csyntaxCleaned.map(c => if (c == '*') {tc += 1; "(" + pos(tc) + " " + words(tc) + ")"} else c.toString).mkString("")
-      val ctree = ModifiedCollinsHeadFinder.annotate(ConstituentTreeFactory.stringToTree(csyntaxStr))
+//      println("Cleaned syntax string: " + csyntaxStr)
+      val ctree = ModifiedCollinsHeadFinder.annotate(ConstituentTreeFactory.stringToTree(csyntaxStr).get)
       assert(ctree != null, "Null constituent tree")
 
       val entities = readStackFormatEntities(ner.toList)
@@ -163,7 +164,8 @@ class CoNLL2011Reader(filename: String, delim: String = "\t") extends Iterable[D
 
 
       val sense = (0 until grid.size).map(grid(_)(7))
-      Sentence(tokens, syntax = SyntaxAnnotation(tree = ctree, dependencies = ctree.toDependencyTree), ie = IEAnnotation(entityMentions = entities, semanticFrames = frames))
+      //ctree.toDependencyTree
+      Sentence(tokens, syntax = SyntaxAnnotation(tree = ctree, dependencies = null), ie = IEAnnotation(entityMentions = entities, semanticFrames = frames))
     }.toIndexedSeq
 
 

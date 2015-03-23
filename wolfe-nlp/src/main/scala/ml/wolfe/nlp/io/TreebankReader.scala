@@ -11,7 +11,7 @@ class TreebankReader(filename: String, options: TreebankReaderOptions = new Defa
   def iterator: Iterator[ConstituentTree] = {
     val transformer = new TreeTransformer(options)
     val text = "(DOC %s)".format(scala.io.Source.fromFile(filename).getLines().filter(!_.startsWith("*")).mkString)
-    val t = ConstituentTreeFactory.stringToTree(text)
+    val t = ConstituentTreeFactory.stringToTree(text).get
     t.children.map(transformer.transformTree(_)).iterator
   }
 }
@@ -42,7 +42,7 @@ class TreeTransformer(options: TreebankReaderOptions) {
         else n
       })
     }
-    return t
+    t
   }
 
 }
@@ -104,30 +104,33 @@ object ConstituentTreeFactory {
 
 
 
-  def stringToTree(str: String, leftMost: Int = 0): ConstituentTree = {
-    str match {
+  def stringToTree(str: String, leftMost: Int = 0): Option[ConstituentTree] = {
+    val cleaned = str.trim.replaceAll("\\( +", "(").replaceAll("\\) +\\)", "))")
+    val t = cleaned match {
       case DOUBLE_PAREN_PATTERN() => {
         val children = findChildren(subexpressions(str), leftMost = leftMost)
-        ConstituentTreeFactory.buildTree(start = leftMost, end = children.last.end, children=children)
+        Some(ConstituentTreeFactory.buildTree(start = leftMost, end = children.last.end, children=children))
       }
       case TOKEN_PATTERN(tag, word) => {
-        ConstituentTreeFactory.buildTree(start = leftMost, end = leftMost + 1, label=tag, word = Some(word))
+ //       println("TOKEN")
+        Some(ConstituentTreeFactory.buildTree(start = leftMost, end = leftMost + 1, label=tag, word = Some(word)))
       }
       case CONSTITUENT_PATTERN(label) => {
+//        println("CONST with label " + label + ".")
         val children = findChildren(subexpressions(str), leftMost = leftMost)
-        ConstituentTreeFactory.buildTree(start = leftMost, end = children.last.end, label = label, children = children)
+ //       println("children: " + children.mkString("\n"))
+        Some(ConstituentTreeFactory.buildTree(start = leftMost, end = children.last.end, label = label, children = children))
       }
-      case _ => {
-        if (str != null) System.err.println("Not recognized: %s".format(str))
-        return null.asInstanceOf[ConstituentTree]
-      }
+      case _ => None
     }
+//    println("RETURNING TREE: " + t)
+    t
   }
 
   def findChildren(strs: List[String], leftMost: Int): List[ConstituentTree] = {
     var tmpLeftMost = leftMost
     strs.map { s =>
-      val child = stringToTree(s, leftMost = tmpLeftMost)
+      val child = stringToTree(s, leftMost = tmpLeftMost).get
       tmpLeftMost = child.end
       child
     }

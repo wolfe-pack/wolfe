@@ -5,12 +5,22 @@ import ml.wolfe.nlp.{CharOffsets, Token}
 /**
  * Created by narad on 12/5/14.
  */
+
+
 /**
- * A sparse dependency tree.  Not all arcs require a head.
- * @param arcs tuples of child, head, and label fields for each token with a head.
+ * A container class for the arcs in a DependencyTree
+ * @param parent index of the parent (source) of the arc in the sentence.
+ * @param child index of the child (destination) of the arc in the sentence.
+ * @param label label of syntactic role expressed by the arc
  */
 case class Arc(parent: Int, child: Int, label: Option[String] = None)
 
+
+/**
+ * A sparse dependency tree.  Not all tokens require a head.
+ * @param tokens tokens of the sentence.
+ * @param arcs arcs of the DependencyTree.
+ */
 case class DependencyTree(tokens: IndexedSeq[Token], arcs: Seq[Arc]) {
 
   def childOf(i: Int, j: Int): Boolean = arcs.exists(a => a.child == i && a.parent == j)
@@ -44,11 +54,9 @@ case class DependencyTree(tokens: IndexedSeq[Token], arcs: Seq[Arc]) {
   }
 
   def shortestDirectedPath(source: Int, dest: Int, max: Int = size): Option[Seq[Int]] = {
+    if (max == 0) return None
     if (arcs.exists(a => a.parent == source && a.child == dest)) {
       Some(Seq(source, dest))
-    }
-    else if (max == 0) {
-      None
     }
     else {
       val subpaths = childrenOf(source).map(shortestDirectedPath(_, dest, max - 1)).flatten
@@ -56,6 +64,13 @@ case class DependencyTree(tokens: IndexedSeq[Token], arcs: Seq[Arc]) {
         None
       else
         Some(Seq(source) ++ subpaths.sortBy(_.size).head)
+    }
+  }
+
+  def pathAsString(i: Int, j: Int): String = {
+    shortestPath(i, j) match {
+      case Some(path) => pathToString(path)
+      case None => "None"
     }
   }
 

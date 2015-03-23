@@ -72,7 +72,7 @@ object CoNLL2015DiscourseReader {
         }.filterNot(_.label.get == "root").toSeq
 
         val parse_tree = "(ROOT" + sentence.parsetree.drop(1).dropRight(2) + ")"
-        val cons_tree = ConstituentTreeFactory.stringToTree(parse_tree)
+        val cons_tree = ConstituentTreeFactory.stringToTree(parse_tree).getOrElse(ConstituentTree.empty)
         val dep_tree = DependencyTree(tokens, arcs)
 
         Sentence(tokens, new SyntaxAnnotation(cons_tree, dep_tree))
