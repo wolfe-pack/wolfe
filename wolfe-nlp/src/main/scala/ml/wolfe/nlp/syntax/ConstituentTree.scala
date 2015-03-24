@@ -128,31 +128,13 @@ case class ConstituentTree(node: ConstituentNode, children : List[ConstituentTre
     }
   }
 
-/*
+
   def headOf(i: Int, j: Int): Option[String] = {
     if (i < 0 || j < 0) return None
     if (i > length || j > length) return None
-    spans((i,j)).collectFirst{ case x => x.head.get }
+    spans((i,j)).collectFirst{ case x => x.head.get.headWord }
   }
 
-  def governingConstituent(i: Int): ConstituentTree = {
-    depthFirstSearch.toArray.filter(c => c.width > 1 && c.covers(i)).sortBy(_.width).head
-  }
-
-
-  def tokenIndexOfHead: Option[Int] = {
-    node match {
-      case nt: NonterminalNode => {
-        nt.headIdx match {
-          case None => None
-          case Some(h) => children(h).tokenIndexOfHead
-        }
-      }
-      case pt: PreterminalNode => Some(pt.start)
-    }
-  }
-
-  */
 
   def covers(i: Int): Boolean = {
     start <= i && end > i
@@ -414,6 +396,25 @@ object ConstituentTree {
 
 
 
+/*
+  def governingConstituent(i: Int): ConstituentTree = {
+    depthFirstSearch.toArray.filter(c => c.width > 1 && c.covers(i)).sortBy(_.width).head
+  }
+
+
+  def tokenIndexOfHead: Option[Int] = {
+    node match {
+      case nt: NonterminalNode => {
+        nt.headIdx match {
+          case None => None
+          case Some(h) => children(h).tokenIndexOfHead
+        }
+      }
+      case pt: PreterminalNode => Some(pt.start)
+    }
+  }
+
+  */
 
 
 

@@ -67,17 +67,18 @@ case class DependencyTree(tokens: IndexedSeq[Token], arcs: Seq[Arc]) {
     }
   }
 
-  def pathAsString(i: Int, j: Int): String = {
-    shortestPath(i, j) match {
-      case Some(path) => pathToString(path)
-      case None => "None"
-    }
+  def pathToLexicalizedString(list: Seq[(Int, String, Int)]): String = {
+    list.zipWithIndex.map { case (l, i) =>
+      val arrow = if (l._2 == "CHILD") "<--" else "-->"
+      if (i < list.size - 1) tokens(l._1).word + arrow
+      else tokens(l._3).word
+    }.mkString("")
   }
 
-  def pathToString(list: Seq[(Int, String, Int)]): String = {
-    list.zipWithIndex.map { case(l,i) =>
+  def pathToPostagString(list: Seq[(Int, String, Int)]): String = {
+    list.zipWithIndex.map { case (l, i) =>
       val arrow = if (l._2 == "CHILD") "<--" else "-->"
-      if (i < list.size-1) tokens(l._1).word + arrow
+      if (i < list.size - 1) tokens(l._1).word + arrow
       else tokens(l._3).word
     }.mkString("")
   }

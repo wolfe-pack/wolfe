@@ -165,7 +165,7 @@ class CoNLL2011Reader(filename: String, delim: String = "\t") extends Iterable[D
 
       val sense = (0 until grid.size).map(grid(_)(7))
       //ctree.toDependencyTree
-      Sentence(tokens, syntax = SyntaxAnnotation(tree = ctree, dependencies = null), ie = IEAnnotation(entityMentions = entities, semanticFrames = frames))
+      Sentence(tokens, syntax = SyntaxAnnotation(tree = ctree, dependencies = ctree.toDependencyTree), ie = IEAnnotation(entityMentions = entities, semanticFrames = frames))
     }.toIndexedSeq
 
 
