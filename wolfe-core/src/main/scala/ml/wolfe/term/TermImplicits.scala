@@ -158,7 +158,8 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
 
     def -->(that: BoolTerm) = new Implies(term, that)
 
-    def unary_! = for (b <- term) yield !b
+    //def unary_olf = for (b <- term) yield !b todo: OLF
+    def unary_! = Dom.bools.own(new Unary_!(term))
 
     def <->(that: BoolTerm) = new DiscreteEquals[Boolean](term.asInstanceOf[DiscreteTerm[Boolean]], that.asInstanceOf[DiscreteTerm[Boolean]])
 
@@ -392,7 +393,7 @@ trait MathImplicits {
     def stringEquals(that: Any) = t.toString == that.toString
   }
 
-  implicit def intToRichIntTerm(int: Int): RichIntTerm = new RichIntTerm(Dom.ints.Const(int))
+  implicit def intToRichIntTerm(int: Int): RichIntTerm = new RichIntTerm(int)
 
   implicit class RichIntTerm(val term: IntTerm) {
     def +(that: IntTerm) = new BinaryIntFun(term, that, "+", _ + _, _ + _)

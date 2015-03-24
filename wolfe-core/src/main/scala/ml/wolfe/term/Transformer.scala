@@ -19,6 +19,25 @@ object Transformer {
     transformed
   }
 
+  def depthLast(term: AnyTerm)(partialFunction: PartialFunction[AnyTerm, AnyTerm]): AnyTerm = {
+    if(partialFunction.isDefinedAt(term)) partialFunction(term)
+    else term match {
+      case n: NAry =>
+        val transformed = n.arguments map ((t: AnyTerm) => depthLast(t)(partialFunction).asInstanceOf[n.ArgumentType])
+        val copied = n.copy(transformed)
+        copied
+      case t => t
+    }
+  }
+
+  def replace[D <: Dom](term: AnyTerm)(variable: Var[D], value:Term[D]): AnyTerm = {
+    depthLast(term){
+      case t: Memoized[_, _] => ???
+      case `variable` =>
+        value
+    }
+  }
+
   def clean(term: AnyTerm) = depthFirst(term) {
     case o: OwnedTerm[_] => o.self
   }
@@ -52,7 +71,8 @@ object Transformer {
         val doubleTerm = depthFirst(body) {
           case t if t == variable => element
         }
-        (body | variable << element).asInstanceOf[DoubleTerm]
+        //(body | variable << element).asInstanceOf[DoubleTerm]
+        replace(body)(variable, element).asInstanceOf[DoubleTerm]
         //doubleTerm.asInstanceOf[DoubleTerm]
       }
       val sumArgs = VarSeq(length, doubleTerms)

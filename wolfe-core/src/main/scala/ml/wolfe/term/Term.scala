@@ -620,6 +620,18 @@ trait BinaryDiscreteOperator[D <: Dom, A <: Dom] extends Composed[D] {
   }
 }
 
+class Unary_!(val arg: BoolTerm) extends UnaryTerm[BoolTerm, Dom.bools.type] {
+  override def copy(args: IndexedSeq[BoolTerm]) = new Unary_!(args(0))
+
+  override val domain: Dom.bools.type = Dom.bools
+
+  override def composer(args: Settings) = new Composer(args) {
+    def eval()(implicit execution: Execution) = {
+      output.disc(0) = 1 - input(0).disc(0)
+    }
+  }
+}
+
 
 class DiscreteEquals[T](var arg1: DiscreteTerm[T], var arg2: DiscreteTerm[T]) extends BinaryDiscreteOperator[BoolDom, GenericDiscreteDom[T]] {
   val domain = Dom.bools

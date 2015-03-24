@@ -29,7 +29,7 @@ class MaxProductBP(val objRaw: DoubleTerm,
   val atoms = wrt flatMap MaxProductBP.allAtoms
 
   //grounders take potentially ungrounded atoms and create grounded atoms based on the current observations
-  val atomGrounders = (atoms map (a => (a:AnyVar) -> a.grounder(observed.linkedSettings(observedVars, a.varsToGround)))).toMap
+  val atomGrounders = (obj.vars collect {case a:Atom[Dom] => (a:AnyVar) -> a.grounder(observed.linkedSettings(observedVars, a.varsToGround))}).toMap
 
   //current mapping from unground to ground atoms (e.g. doc(i+1).sentence(j) -> doc(2).sentence(4))
   val currentGroundings = new mutable.HashMap[AnyVar, AnyGroundAtom]
@@ -158,6 +158,7 @@ class MaxProductBP(val objRaw: DoubleTerm,
     }
 
     //update beliefs on nodes
+    result.foreach(_.resetToZero())
     for (n <- fg.activeNodes) {
       updateNodeBelief(n)
       integrateAtomIntoResult(n)
@@ -187,8 +188,9 @@ object MaxProductBP {
   def allAtoms(parent: GroundAtom[Dom]): List[GroundAtom[Dom]] = {
     parent.domain match {
       case s: AnySeqDom =>
-        Range(s.minLength, s.maxLength).toList flatMap (i =>
-          allAtoms(SeqGroundAtom[Dom, AnySeqDom](parent.asInstanceOf[GroundAtom[AnySeqDom]], i)))
+        LengthGroundAtom(parent.asInstanceOf[GroundAtom[AnySeqDom]]) ::
+          (Range(0, s.maxLength).toList flatMap (i =>
+          allAtoms(SeqGroundAtom[Dom, AnySeqDom](parent.asInstanceOf[GroundAtom[AnySeqDom]], i))))
       case d: ProductDom =>
         Nil
       case _ => parent :: Nil

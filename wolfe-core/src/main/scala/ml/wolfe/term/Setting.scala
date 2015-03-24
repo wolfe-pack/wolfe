@@ -530,7 +530,7 @@ class Msg(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMats: Int = 0
   }
 
   def argmax(target:Setting, offsets: Offsets = Offsets.zero): Unit = {
-    target.disc.resetToZero()
+
     for (i <- 0 until disc.length) {
       val argmaxIndex = maxIndex(disc(i).msg)
       target.disc(i + offsets.discOff) = argmaxIndex

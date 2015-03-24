@@ -94,11 +94,12 @@ case class VarAtom[D <: Dom](variable: Var[D]) extends GroundAtom[D] {
 case class SeqGroundAtom[E <: Dom, S <: VarSeqDom[E]](seq: GroundAtom[S], index: Int) extends GroundAtom[E] {
   val domain = seq.domain.elementDom
 
-  val offsets = seq.offsets + domain.lengths * index
+  val offsets = seq.offsets + Offsets(1, 0, 0, 0, 0) + domain.lengths * index
 
   def owner = seq.owner
 
-  def name = toString
+  def name = getClass.getSimpleName + "(" +
+    (if(productArity==0) "" else productIterator.map(_.toString).reduce(_ + "," + _)) + ")"
 }
 
 case class SeqAtom[E <: Dom, S <: VarSeqDom[E]](seq: Atom[S], index: IntTerm) extends Atom[E] {
@@ -119,7 +120,8 @@ case class SeqAtom[E <: Dom, S <: VarSeqDom[E]](seq: Atom[S], index: IntTerm) ex
       }
     }
   }
-  def name = toString
+  def name = getClass.getSimpleName + "(" +
+    (if(productArity==0) "" else productIterator.map(_.toString).reduce(_ + "," + _)) + ")"
   def owner = seq.owner
 }
 
@@ -127,7 +129,7 @@ trait GenericLengthAtom[S<:VarSeqDom[_]] extends Atom[IntDom]{
   def seq:Atom[S]
   val domain = seq.domain.lengthDom
   def owner = seq.owner
-  def name = toString
+  //def name = toString
 }
 
 case class LengthAtom[S<:VarSeqDom[_]](seq:Atom[S]) extends GenericLengthAtom[S] {
@@ -139,10 +141,14 @@ case class LengthAtom[S<:VarSeqDom[_]](seq:Atom[S]) extends GenericLengthAtom[S]
       LengthGroundAtom[S](parent)
     }
   }
+  def name = getClass.getSimpleName + "(" +
+    (if(productArity==0) "" else productIterator.map(_.toString).reduce(_ + "," + _)) + ")"
 }
 
 case class LengthGroundAtom[S <: VarSeqDom[_]](seq:GroundAtom[S]) extends GroundAtom[IntDom] with GenericLengthAtom[S] {
   def offsets = seq.offsets
+  def name = getClass.getSimpleName + "(" +
+    (if(productArity==0) "" else productIterator.map(_.toString).reduce(_ + "," + _)) + ")"
 }
 
 
