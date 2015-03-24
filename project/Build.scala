@@ -70,8 +70,8 @@ object BuildSettings {
     "com.google.api-client" % "google-api-client" % "1.14.1-beta",
     "com.googlecode.json-simple" % "json-simple" % "1.1",
     "org.json4s" %% "json4s-jackson" % "3.2.11",
-    "org.mongodb" %% "casbah" % "2.7.4"
-  //  "org.scala-lang.modules" %% "scala-pickling" % "0.10.0"
+    "org.mongodb" %% "casbah" % "2.7.4",
+    "org.scala-lang.modules" %% "scala-pickling" % "0.10.0"
 
 
  //   "edu.illinois.cs.cogcomp" % "IllinoisNerExtended" % "2.7"
