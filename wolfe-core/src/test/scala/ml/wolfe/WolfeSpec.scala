@@ -17,6 +17,7 @@ trait WolfeSpec extends WordSpec with Matchers {
   implicit val factorieVectorEq = new Equality[Vect] {
     def areEqual(a: Vect, b: Any) = b match {
       case v: Vect =>
+        //a.dim1 == v.dim1 &&
         a.activeDomain.forall(i => math.abs(a(i) - v(i)) < eps) &&
         v.activeDomain.forall(i => math.abs(a(i) - v(i)) < eps)
       case _ => false
