@@ -20,9 +20,9 @@ class RangeTermSpecs extends WolfeSpec {
       val start = Ints(0 until 2).Var
       val end = Ints(4 until 6).Var
       val range = start until end - 1
-      range.domain.minLength should be (1) //smallest = 2 until 3 // length == 1
-      range.domain.maxLength should be (5) //largest = 0 until 5 // length == 5
-      range.domain.elementDom.values should be (0 until 5)
+      range.domain.minLength should be (2) //smallest = 1 until 3 // length == 2
+      range.domain.maxLength should be (4) //largest = 0 until 4 // length == 4
+      range.domain.elementDom.values should be (0 until 4)
 
     }
 
