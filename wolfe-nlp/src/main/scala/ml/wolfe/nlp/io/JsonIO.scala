@@ -27,8 +27,8 @@ object JsonIO {
 
   def main(args: Array[String]) {
     import org.json4s._
-    import org.json4s.native.Serialization
-    import org.json4s.native.Serialization.{read, write}
+    import org.json4s.jackson.Serialization
+    import org.json4s.jackson.Serialization.{read, write}
     implicit val formats = Serialization.formats(NoTypeHints) + new IndexedSeqSerializer
     val token = Token("the", CharOffsets(0, 3))
     val sentence = Sentence(IndexedSeq(token))

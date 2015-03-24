@@ -1,6 +1,7 @@
 import java.io.IOException
-import sbt._
+
 import sbt.Keys._
+import sbt._
 import sbtrelease.ReleasePlugin._
 
 //import scoverage.ScoverageSbtPlugin._
@@ -63,13 +64,12 @@ object BuildSettings {
     "org.slf4j" % "slf4j-api" % "1.7.6",
     "org.slf4j" % "slf4j-simple" % "1.7.6",
     "org.apache.commons" % "commons-compress" % "1.8",
-//    "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.4.0-rc1",
  //   "com.typesafe" % "scalalogging-slf4j_2.10" % "1.1.0",
     "com.typesafe.scala-logging" % "scala-logging-slf4j_2.11" % "2.1.2",
     "com.google.apis" % "google-api-services-freebase" % "v1-rev31-1.13.2-beta",
     "com.google.api-client" % "google-api-client" % "1.14.1-beta",
     "com.googlecode.json-simple" % "json-simple" % "1.1",
-    "org.json4s" %% "json4s-native" % "3.2.10",
+    "org.json4s" %% "json4s-jackson" % "3.2.11",
     "org.mongodb" %% "casbah" % "2.7.4"
 
 
@@ -99,8 +99,8 @@ object BuildSettings {
   )
 
   val nlpDependencies = libraryDependencies ++= Seq(
-    "edu.arizona.sista" % "processors" % "3.3"
-   // "org.scala-lang" %% "scala-pickling" % "0.8.0"
+    "edu.arizona.sista" % "processors" % "3.3",
+    "org.scala-lang.modules" %% "scala-pickling" % "0.10.0"
   )
 
   val uiDependencies = libraryDependencies ++= Seq(

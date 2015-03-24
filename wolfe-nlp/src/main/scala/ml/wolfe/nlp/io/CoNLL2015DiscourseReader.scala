@@ -1,13 +1,11 @@
 package ml.wolfe.nlp.io
 
-import java.nio.file.{Paths, Files}
-
 import ml.wolfe.nlp._
 import ml.wolfe.nlp.discourse.{DiscourseRelation, DiscourseArgument}
 import ml.wolfe.nlp.syntax.{Arc, DependencyTree, ConstituentTree}
 import org.json4s.JsonAST.{JInt, JObject, JString}
 import org.json4s._
-import org.json4s.native.JsonMethods._
+import org.json4s.jackson.JsonMethods._
 import java.nio.charset.StandardCharsets
 
 import scala.io.Source
@@ -45,6 +43,7 @@ object CoNLL2015DiscourseReader {
     val content = lines_parses.mkString
     val json_parses = parse(content)
     val parses = json_parses.extract[Map[String, JSONDocument]]
+
 
 
     val documents = parses.map { document =>
@@ -114,8 +113,8 @@ object CoNLL2015DiscourseWriter {
     val sb = new StringBuilder
     documents.toIterator.foreach{ document =>
       val jSONDiscourseRelations = documentToJSONDiscourseRelations(document)
-      import org.json4s.native.Serialization.write
-      implicit val formats = org.json4s.native.Serialization.formats(NoTypeHints)
+      import org.json4s.jackson.Serialization.write
+      implicit val formats = org.json4s.jackson.Serialization.formats(NoTypeHints)
       jSONDiscourseRelations.foreach(relation => sb.append(write(relation) + "\n"))
     }
     scala.tools.nsc.io.File(filename).writeAll(sb.toString)

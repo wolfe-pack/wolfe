@@ -2,7 +2,7 @@ package ml.wolfe.nlp.io
 
 
 import org.json4s._
-import org.json4s.native.JsonParser._
+import org.json4s.jackson.JsonMethods._
 
 /**
  * @author mbosnjak
