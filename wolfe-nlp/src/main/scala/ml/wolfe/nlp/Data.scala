@@ -54,7 +54,7 @@ case class Token(word: String, offsets: CharOffsets, posTag: String = null, lemm
  * @param syntax syntactic annotation for the sentence.
  * @param ie information extraction style annotation for the sentence
  */
-case class Sentence(tokens: IndexedSeq[Token], syntax: SyntaxAnnotation = SyntaxAnnotation.empty, ie: IEAnnotation = IEAnnotation.empty) {
+case class Sentence(tokens: IndexedSeq[Token], syntax: SyntaxAnnotation = SyntaxAnnotation.empty, ie: IEAnnotation = IEAnnotation.empty, speaker: Option[String] = None) {
   def toText = tokens map (_.word) mkString " "
   def toTaggedText = tokens map (_.toTaggedText) mkString " "
   def document(implicit graph: ObjectGraph[DocumentSentenceRelation]) =
