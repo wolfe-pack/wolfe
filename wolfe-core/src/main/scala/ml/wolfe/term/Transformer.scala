@@ -26,13 +26,17 @@ object Transformer {
         val transformed = n.arguments map ((t: AnyTerm) => depthLast(t)(partialFunction).asInstanceOf[n.ArgumentType])
         val copied = n.copy(transformed)
         copied
-      case t => t
+      case t =>
+        t
     }
   }
 
   def replace[D <: Dom](term: AnyTerm)(variable: Var[D], value:Term[D]): AnyTerm = {
     depthLast(term){
-      case t: Memoized[_, _] => ???
+      case t if ! t.vars.contains(variable) =>
+        t
+      case t: Memoized[_, _] =>
+        Conditioned(t, variable, value)
       case `variable` =>
         value
     }

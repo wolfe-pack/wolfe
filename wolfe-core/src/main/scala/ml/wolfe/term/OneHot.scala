@@ -14,14 +14,16 @@ case class OneHot(index: IntTerm, value: DoubleTerm)(implicit val domain: Vector
 
 
   override def composer(args: Settings) = new Composer(args) {
-    output.vect(0) = new MutableSingletonTensor1(domain.dim, -1, 1.0)
+    output.vect(0) = new SparseTensor1(domain.dim)
 
-    val result:MutableSingletonTensor1 = output.vect(0).asInstanceOf[MutableSingletonTensor1]
+    val result = output.vect(0)
 
     def eval()(implicit execution: Execution) = {
       val index = input(0).disc(0)
       val value = input(1).cont(0)
-      result.move(index,value)
+      //result.move(index,value)
+      result.zero()
+      result(index) = value
       output.vect.recordChange(0)
     }
   }

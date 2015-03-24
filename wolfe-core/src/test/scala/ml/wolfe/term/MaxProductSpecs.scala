@@ -53,7 +53,7 @@ class MaxProductSpecs extends WolfeSpec {
       result should be (Seq(true, false, true, false, true))
     }
 
-    "optimize a linear chain in a perceptron loss" ignore {
+    "optimize a linear chain in a perceptron loss" in {
 
       implicit val random = new Random(0)
 
@@ -71,21 +71,24 @@ class MaxProductSpecs extends WolfeSpec {
 
       val train = Seq(Instance(IndexedSeq(0, 1, 2), IndexedSeq(true, false, true))).toConst
 
-      def model(x: X.Term, w: Weights.Term)(y: Y.Term) = {
-        sum(0 until x.length) { i => w dot oneHot(x(i), I(y(i)))} argmaxBy maxProduct(mpParams)
+      def model(x: X.Term, w: Weights.Term)(y: Y.Term) =
+        sum(0 until x.length) { i => w dot oneHot(x(i), I(y(i)))}
+
+      def hammingDistance(y1: Y.Term, y2:Y.Term) =
+        sum(0 until y1.length) { j => I(y1(j) <-> ! y2(j)) }
+
+      def instanceScore(x: X.Term, yGold: Y.Term)(w: Weights.Term) = {
+        model(x, w)(yGold) -
+          { max(Y)(y => model(x, w)(y) + hammingDistance(yGold, y)) by maxProduct(mpParams) }
       }
 
-      def instanceLL(x: X.Term, yGold: Y.Term)(w: Weights.Term) = {
-        max(Y)(y => model(x, w)(y)) - model(x, w)(yGold)
-      }
+      def score(w: Weights.Term) = sum(train) { i => instanceScore(i.x, i.y)(w)} argmaxBy adaGrad(adaParams)
 
-      def ll(w: Weights.Term) = sum(train) { i => instanceLL(i.x, i.y)(w)} argmaxBy adaGrad(adaParams)
+      def stochasticScore(w: Weights.Term) = shuffled(train) { i => instanceScore(i.x, i.y)(w)} argmaxBy adaGrad(adaParams)
 
-      def llStochastic(w: Weights.Term) = shuffled(train) { i => instanceLL(i.x, i.y)(w)} argmaxBy adaGrad(adaParams)
+      val wStar = argmax(Weights)(stochasticScore)
 
-      val wStar = argmax(Weights)(ll)
-
-
+      println(wStar.eval())
     }
 
   }

@@ -103,7 +103,7 @@ class MaxProductBP(val objRaw: DoubleTerm,
   def addPotential(pot: DoubleTerm): fg.Factor = {
     val vars = pot.vars.filter(hidden)
     val n2fs = vars.map(v => v -> v.domain.createZeroMsg()).toMap
-    val obsVarsInPot = vars.filter(observedVars.contains)
+    val obsVarsInPot = pot.vars.filter(observedVars.contains)
     val obsInPot = observed.linkedSettings(observedVars, obsVarsInPot)
 
     fg.addFactor(pot.asInstanceOf[DoubleTerm], new FactorContent(), vars.contains, targetFor) { variable =>
