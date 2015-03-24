@@ -371,7 +371,7 @@ class MatrixDotProduct[T1 <: Term[MatrixDom], T2 <: Term[MatrixDom]](val arg1: T
 
 }
 
-class VectorScaling[T1 <: VectorTerm, T2 <: DoubleTerm](val arg1: T1, arg2: T2) extends Composed[VectorDom] {
+class VectorScaling[T1 <: VectorTerm, T2 <: DoubleTerm](val arg1: T1, arg2: T2) extends Composed[GenericVectorDom] {
 
   self =>
 
@@ -384,7 +384,7 @@ class VectorScaling[T1 <: VectorTerm, T2 <: DoubleTerm](val arg1: T1, arg2: T2) 
   def copy(args: IndexedSeq[ArgumentType]) =
     new VectorScaling(args(0).asInstanceOf[VectorTerm], args(1).asInstanceOf[DoubleTerm])
 
-  override val domain: VectorDom = new VectorDom(arg1.domain.dim)
+  override val domain = arg1.domain
 }
 
 class VectorConcatenation[T1 <: VectorTerm, T2 <: VectorTerm](val arg1: T1, val arg2: T2) extends Composed[GenericVectorDom] {

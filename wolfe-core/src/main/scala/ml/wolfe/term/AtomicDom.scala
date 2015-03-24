@@ -1,6 +1,6 @@
 package ml.wolfe.term
 
-import cc.factorie.la.{DenseTensor1, DenseTensor2}
+import cc.factorie.la.{GrowableDenseTensor1, DenseTensor1, DenseTensor2}
 import ml.wolfe._
 import ml.wolfe.util.Math._
 
@@ -56,43 +56,42 @@ trait GenericVectorDom extends AtomicDom {
     msgs.vect(offsets.vectOff) = new VectMsg(marginals)
   }
 
-  def one = new DenseTensor1(dim, 1.0)
 
+  def variable(name: String) = StaticVectorVar(name)
+
+  case class StaticVectorVar(name: String) extends DomTerm with DomVar
+
+
+}
+
+class VectorDom(val dim: Int) extends GenericVectorDom {
+  def one = new DenseTensor1(dim, 1.0)
   def zero = new DenseTensor1(dim, 0.0)
 
   def Term(values: Double*) = {
     require(values.size == dim)
     Const(new DenseVector(values.toArray))
   }
+}
 
-  trait DomVar extends DomTerm with super.DomVar {
+class GrowableVectorDom(val dim: Int) extends GenericVectorDom {
+  def one = {
+    val result = new GrowableDenseTensor1(dim)
+    result := 1.0
+    result
   }
+  def zero = new GrowableDenseTensor1(dim)
 
-  case class StaticVectorVar(name: String) extends DomVar {
+  def Term(values: Double*) = {
+    require(values.size == dim)
+    val result = new GrowableDenseTensor1(values.size)
+    result := values.toArray
+    Const(result)
   }
-
 
 }
 
-class VectorDom(val dim: Int) extends GenericVectorDom {
 
-  def variable(name: String) = StaticVectorVar(name)
-
-}
-
-class UnitVectorDom(val dim: Int) extends GenericVectorDom {
-  dom =>
-
-  trait UnitVectorVar {
-    def projectValue(setting: Setting) = {
-//      setting.vect(offset).normalize()
-    }
-  }
-
-  def variable(name: String) =
-    new StaticVectorVar(name) with UnitVectorVar
-
-}
 
 
 class MatrixDom(val dim1: Int, dim2: Int) extends AtomicDom {

@@ -278,7 +278,7 @@ trait MathImplicits {
 
   def Vectors(dim: Int) = new VectorDom(dim)
 
-  def UnitVectors(dim: Int) = new UnitVectorDom(dim)
+  def GrowableVectors(initDim: Int = 1000) = new GrowableVectorDom(initDim)
 
   def Matrices(dim1: Int, dim2: Int) = new MatrixDom(dim1: Int, dim2: Int)
 

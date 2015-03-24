@@ -16,7 +16,7 @@ class RangeTermSpecs extends WolfeSpec {
       val range = start until end
       range(start << 1, end << 4) should be (Range(1,4))
     }
-    "have a precise domain" in {
+    "have a precise domain" ignore {
       val start = Ints(0 until 2).Var
       val end = Ints(4 until 6).Var
       val range = start until end - 1
