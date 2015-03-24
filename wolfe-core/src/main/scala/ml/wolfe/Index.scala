@@ -35,6 +35,21 @@ class SimpleIndex extends Serializable with Index {
     current
   }
 
+  def ++=(that:Map[Any,Int]): Unit = {
+    for ((k,v) <- that) {
+      map.put(k,v)
+    }
+  }
+
+  def toMap:Map[Any,Int] = {
+    val result = new mutable.HashMap[Any, Int]
+    map.forEachEntry(new TObjectIntProcedure[Any] {
+      def execute(a: Any, b: Int) = { result(a) = b; true }
+    })
+    result.toMap
+
+  }
+
   def key(index:Int) = inversed(index)
 
   def hasKey(key: Any) = map.containsKey(key)
