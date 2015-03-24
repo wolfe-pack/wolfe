@@ -3,7 +3,7 @@ package ml.wolfe.ui
 import java.io.{FileWriter, File}
 
 import org.json4s.NoTypeHints
-import org.json4s.native.Serialization
+import org.json4s.jackson.Serialization
 
 import scala.collection.mutable.ArrayBuffer
 
