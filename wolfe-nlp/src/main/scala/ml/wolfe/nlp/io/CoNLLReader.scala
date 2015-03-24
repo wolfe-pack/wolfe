@@ -135,6 +135,7 @@ class CoNLL2011Reader(filename: String, delim: String = "\t") extends Iterable[D
     val sents = chunks.map { chunk =>
       val grid = chunk.split("\n").filter(!_.startsWith("#")).map(_.replaceAll(" +", "\t").split("\t"))
       val numCols = grid(0).size
+      val speaker = grid(0)(9)
       val words = (0 until grid.size).map(grid(_)(3))
       val pos = (0 until grid.size).map(grid(_)(4))
       val lemma = (0 until grid.size).map(grid(_)(6))
@@ -165,7 +166,9 @@ class CoNLL2011Reader(filename: String, delim: String = "\t") extends Iterable[D
 
       val sense = (0 until grid.size).map(grid(_)(7))
       //ctree.toDependencyTree
-      Sentence(tokens, syntax = SyntaxAnnotation(tree = ctree, dependencies = ctree.toDependencyTree), ie = IEAnnotation(entityMentions = entities, semanticFrames = frames))
+      Sentence(tokens, syntax = SyntaxAnnotation(tree = ctree, dependencies = ctree.toDependencyTree),
+                       ie = IEAnnotation(entityMentions = entities, semanticFrames = frames),
+                       speaker = Some(speaker))
     }.toIndexedSeq
 
 
