@@ -16,6 +16,7 @@ import scala.collection.mutable
  */
 case class CharOffsets(start: Int, end: Int) {
   def contains(that:CharOffsets) = start <= that.start && end >= that.end
+  def expandRight(howMuch:Int) = copy(end = end + howMuch)
 }
 
 case class SentenceTokenRelation() extends ObjectGraphRelation {
