@@ -22,16 +22,15 @@ trait LinearChain[Label] {
   implicit val Thetas = Vectors(maxFeats)
   implicit val index = new SimpleIndex
   implicit val Labels = labels.toDom
-  implicit val Inputs = Input.Values(
+  implicit val Inputs = Pairs(
     Seqs(Vectors(maxFeats),0,maxLength),
     Seqs(Vectors(maxFeats),0,maxLength))
   implicit val Outputs = Seqs(Labels,0,maxLength)
   implicit val Instances = Pairs(Inputs, Outputs)
 
-
   def model(t: Thetas.Term)(x: Inputs.Term)(y: Outputs.Term) = {
-    val local = sum(0 until x.unary.length)(i => t dot (x.unary(i) conjoin feature(y(i))))
-    val pairwise =  sum(0 until x.unary.length - 1)(i => t dot (x.binary(i) conjoin feature(y(i) -> y(i+1))))
+    val local = sum(0 until x._1.length)(i => t dot (x._1(i) conjoin feature(y(i))))
+    val pairwise =  sum(0 until x._1.length - 1)(i => t dot (x._2(i) conjoin feature(y(i) -> y(i+1))))
     (local + pairwise) argmaxBy maxProduct(maxProductParams)
   }
 
@@ -44,8 +43,8 @@ trait LinearChain[Label] {
 object LinearChain {
   import LearningObjective._
 
+  type Input = (IndexedSeq[Vect],IndexedSeq[Vect])
   type Output[L] = IndexedSeq[L]
-  @domain case class Input(unary:IndexedSeq[Vect],binary:IndexedSeq[Vect])
 
   def train[L](data:Seq[(Input,Output[L])],classLabels: Seq[L],
                params: AdaGradParameters,
