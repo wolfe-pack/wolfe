@@ -10,7 +10,6 @@ import ml.wolfe.{SimpleIndex, Vect}
  */
 trait LinearClassifier[Label] {
 
-
   def labels: Seq[Label]
   def maxFeats: Int
   def thetaStar: Vect
@@ -30,6 +29,11 @@ trait LinearClassifier[Label] {
 
   lazy val predict = fun(Xs) { x => argmax(Labels)(model(Thetas.Const(thetaStar))(x)) }
 
+  /**
+   * Takes an input X and returns its best label according to the classifier.
+   * @param x the input feature vector
+   * @return the label with maximal score.
+   */
   def classify(x: X): Label = predict(x)
 
 }
