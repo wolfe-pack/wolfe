@@ -31,7 +31,6 @@ trait LinearChain[Label] {
   def model(t: Thetas.Term)(x: Inputs.Term)(y: Outputs.Term) = {
     sum(0 until x.unary.length)(i => t dot (x.unary(i) conjoin feature(y(i)))) +
       sum(0 until x.unary.length - 1)(i => t dot (x.binary(i) conjoin feature(y(i) -> y(i+1))))
-
   }
 
   lazy val predict =
