@@ -83,6 +83,11 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
     (a1:d1.Value,a2:d2.Value) => e.eval(a1,a2)
   }
 
+  implicit def pairToPairTerm[T1 <: AnyTerm, T2 <: AnyTerm](pair:(T1,T2)):Tuple2Dom[pair._1.domain.type,pair._2.domain.type]#Term = {
+    val dom = new Tuple2Dom[pair._1.domain.type,pair._2.domain.type](pair._1.domain,pair._2.domain)
+    dom.Term(pair._1.asInstanceOf[dom.dom1.Term],pair._2.asInstanceOf[dom.dom2.Term])
+  }
+
 
   implicit def toConvertable[T](value: T)(implicit domain: TypedDom[T]): ConvertableToTerm3[T, domain.type] = new ConvertableToTerm3[T, domain.type](value)(domain)
 
