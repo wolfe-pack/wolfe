@@ -1,11 +1,12 @@
 package ml.wolfe
 
-import java.io.{PrintStream, File}
+import java.io.{FileOutputStream, FileInputStream, PrintStream, File}
 
 import cc.factorie.la.DenseTensor1
 
 import scala.io.Source
 import scala.pickling._
+import scala.pickling.binary.BinaryPickle
 import scala.pickling.json.JSONPickle
 import scala.pickling.pickler.{PrimitivePicklers, MapPicklers, PrimitiveArrayPicklers}
 
@@ -84,12 +85,20 @@ object WolfePicklers extends FactoriePicklers with IndexPicklers {
     writer.close()
   }
 
+  def writeToFile(pkl:BinaryPickle,file:File) = {
+    val writer = new FileOutputStream(file)
+    writer.write(pkl.value)
+    writer.close()
+  }
   def loadJSON(file:File):JSONPickle = {
     val string = Source.fromFile(file).getLines().mkString("\n")
     val pkl = JSONPickle(string)
     JSONPickle(string)
   }
 
+  def loadBinary(file:File):BinaryPickle = {
+    BinaryPickle(new FileInputStream(file))
+  }
 
   implicit val symbolPickler: Pickler[Symbol] with Unpickler[Symbol] =
     new Pickler[Symbol] with Unpickler[Symbol] with PrimitivePicklers {
