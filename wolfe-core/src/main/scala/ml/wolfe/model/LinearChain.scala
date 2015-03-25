@@ -23,8 +23,8 @@ trait LinearChain[Label] {
   implicit val index = new SimpleIndex
   implicit val Labels = labels.toDom
   implicit val Inputs = Input.Values(
-    Seqs(Vectors(maxFeats * labels.size),0,maxLength),
-    Seqs(Vectors(maxFeats * labels.size),0,maxLength))
+    Seqs(Vectors(maxFeats),0,maxLength),
+    Seqs(Vectors(maxFeats),0,maxLength))
   implicit val Outputs = Seqs(Labels,0,maxLength)
   implicit val Instances = Pairs(Inputs, Outputs)
 
