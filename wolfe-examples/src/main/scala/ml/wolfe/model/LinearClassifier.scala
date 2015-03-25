@@ -1,5 +1,7 @@
 package ml.wolfe.model
 
+import java.io.File
+
 import ml.wolfe.term.TermImplicits._
 import ml.wolfe.term.{AdaGradParameters, Argmaxer, LearningObjective}
 import ml.wolfe.{SimpleIndex, Vect}
@@ -17,7 +19,7 @@ trait LinearClassifier[Label] {
   type Instance = (Vect, Label)
   type X = Vect
   val Thetas = Vectors(maxFeats)
-  implicit val index = new SimpleIndex
+  implicit def index:SimpleIndex
   implicit val Labels = labels.toDom
   implicit val Xs = Vectors(maxFeats * labels.size)
   //todo: this is too large generally
@@ -40,6 +42,10 @@ trait LinearClassifier[Label] {
 
 object LinearClassifier {
 
+  import ml.wolfe.WolfePicklers._
+  import scala.pickling.Defaults._
+  import scala.pickling.binary._
+
   /**
    * Train a classifier
    * @param data pairs of feature vector observations and labels.
@@ -57,10 +63,44 @@ object LinearClassifier {
     new LinearClassifier[L] {
       def labels = classLabels
       def maxFeats = maxFeatures
+      val index  = new SimpleIndex
       lazy val thetaStar =
         learn(Thetas)(t => LearningObjective.perceptron(data.toConst)(Labels)(model(t))) using Argmaxer.adaGrad(params)
     }
   }
+
+  /**
+   * Datastructure to be pickled and unpickled for storing and loading of models.
+   */
+  case class Pickleable[L](labels:Seq[L],index:SimpleIndex,thetaStar:Vect)
+
+
+  /**
+   * Store the model to a file.
+   * @param model model to store
+   * @param file file to store to.
+   * @tparam L type of labels.
+   */
+  def store[L](model:LinearClassifier[L], file:File): Unit = {
+    writeToFile(Pickleable(model.labels,model.index,model.thetaStar).pickle, file)
+  }
+
+  /**
+   * Load classifier from file.
+   * @param file file to load from
+   * @tparam L type of labels.
+   * @return classifier stored in the given file.
+   */
+  def load[L](file:File):LinearClassifier[L] = {
+    val m = loadBinary(file).unpickle[Pickleable[L]]
+    new LinearClassifier[L] {
+      def labels = m.labels
+      def maxFeats = m.thetaStar.dim1
+      lazy val index = m.index
+      lazy val thetaStar = m.thetaStar
+    }
+  }
+
 
 }
 
