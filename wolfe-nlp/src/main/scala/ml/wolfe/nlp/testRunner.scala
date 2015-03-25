@@ -16,7 +16,11 @@ object testRunner {
     println(d.sentences)
     println(d.sentences.size)
 
+    val r = Vector("Hello World")
+    println(r)
 
+    val t : IndexedSeq[IndexedSeq[String]] = Vector(Vector("Test"))
+    println(t)
     println("Why not?")
   }
 }

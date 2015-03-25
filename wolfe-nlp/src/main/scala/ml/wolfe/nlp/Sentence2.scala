@@ -3,6 +3,7 @@ package ml.wolfe.nlp
 import scala.collection.generic.CanBuildFrom
 import scala.collection.mutable
 import scala.language.implicitConversions
+import scala.language.higherKinds
 
 /**
  * @author Ingolf Becker
@@ -10,7 +11,7 @@ import scala.language.implicitConversions
  */
 
 
-abstract class Sentence2Base[A <: BaseTokenTest] {
+trait Sentence2Base[A <: BaseTokenTest] {
   val tokens: IndexedSeq[A]
 }
 
@@ -66,4 +67,11 @@ trait SentenceWithSyntaxAnnotationLike {
 trait SentenceWithIEAnnotationLike {
   this: Sentence2Base[BaseTokenTest] =>
   val ie = IEAnnotation
+}
+
+trait SentenceTokenizable {
+  this: Sentence2Base[BaseTokenTest] =>
+  def flatmap[A <: BaseTokenTest, B <: Sentence2Base[A]](tok : A => Seq[String])(implicit cbf: CanBuildFrom[B, String,B]) : B
+
+
 }

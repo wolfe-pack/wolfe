@@ -2,13 +2,19 @@ package ml.wolfe.nlp
 
 import scala.collection.generic.CanBuildFrom
 import scala.language.implicitConversions
+import scala.language.higherKinds
 
 /**
 * @author Ingolf Becker
 */
 
-abstract class Document2Base[A <: BaseTokenTest, B <: Sentence2Base[A]] {
+trait Document2Base[A <: BaseTokenTest, B <: Sentence2Base[A]] {
   val sentences: IndexedSeq[B]
+}
+
+object Document2Base {
+  def fromString() : Unit = ???
+
 }
 
 
@@ -24,9 +30,9 @@ case class Document2[A <: BaseTokenTest with TokenWithStringLike,B <: Sentence2B
 object Document2 {
 
   def fromString[A <: BaseTokenTest with TokenWithStringLike, B <: Sentence2Base[A] with SentenceWithStringLike[A]](str: String)
-           (implicit cbf: CanBuildFrom[String, B, Document2[A,B]]) : Document2[A,B] = {
+           (implicit cbfSentence: CanBuildFrom[String, B, Document2[A,B]] ): Document2[A,B] = {
     println("Document Here1")
-    cbf.apply(str).result()
+    cbfSentence.apply(str).result()
   }
 }
 
@@ -45,3 +51,8 @@ trait DocumentWithCoRefAnnotationLike {
 trait DocumentWithDiscourseAnnotationLike {
   val discourse: DiscourseAnnotation
 }
+
+//trait DocumentTokenizable[A, B] {
+//  self: Document2Base[A, B] =>
+//  def tokenize(implicit cbf: CanBuildFrom[A, B, A]) = ???
+//}

@@ -22,6 +22,7 @@ object BasicTokenTest {
     BasicTokenTest(word)
   }
 
+  //implicit def canBuildFrom2: CanBuildFrom[String, BasicTokenTest, BasicTokenTest]
   implicit def canBuildFrom: CanBuildFrom[String, BasicTokenTest, Sentence2[BasicTokenTest]] = {
     println("Here?")
     new CanBuildFrom[String, BasicTokenTest, Sentence2[BasicTokenTest]] {
