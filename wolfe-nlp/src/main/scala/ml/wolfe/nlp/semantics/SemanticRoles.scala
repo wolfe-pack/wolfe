@@ -35,7 +35,7 @@ case class Predicate(idx: Int, token: Token, sense: String)
 case class SemanticRole(start: Int, end: Int = -1, role: String) {
 
   def idx: Int = {
-    assert(end == -1, "SemanticRole is a span-based instance, and therefore indices should be referenced using start/end fields.")
+    assert(end == -1, "This SemanticRole is a span-based instance, and therefore indices should be referenced using start/end fields.")
     start
   }
 }

@@ -2,7 +2,7 @@ package ml.wolfe.nlp
 
 import breeze.linalg.SparseVector
 import ml.wolfe.nlp.discourse.DiscourseRelation
-import ml.wolfe.nlp.semantics.{SemanticFrame}
+import ml.wolfe.nlp.semantics.{SemanticRole, SemanticFrame}
 import ml.wolfe.nlp.ie.{EventMention, RelationMention, EntityMention}
 import ml.wolfe.nlp.syntax.{DependencyTree, ConstituentTree}
 
@@ -19,6 +19,10 @@ case class IEAnnotation(entityMentions: IndexedSeq[EntityMention]=IndexedSeq.emp
 
   def semanticRoleAt(i: Int, j: Int): Option[SemanticFrame] = {
     semanticFrames.find(f => f.roles.exists(r => r.start == i && r.end == j))
+  }
+
+  def semanticRoleArgAt(i: Int, j: Int): Option[SemanticRole] = {
+    semanticFrames.map(_.roles).flatten.find(r => r.start == i && r.end == j)
   }
 
   def semanticFrameSpanning(i: Int, j: Int): Option[SemanticFrame] = {
