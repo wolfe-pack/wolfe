@@ -48,8 +48,8 @@ object ModifiedCollinsHeadFinder {
   rules.put("WHNP", Array(Array("left", "WDT", "WP", "WP$", "WHADJP", "WHPP", "WHNP")))
   rules.put("WHPP", Array(Array("right", "IN", "TO", "FW")))
   rules.put("X", Array(Array("right", "S", "VP", "ADJP", "JJP", "NP", "SBAR", "PP", "X")))
-  rules.put("NP", Array(Array("rightdis", "NN", "NNP", "NNPS", "NNS", "NML", "NX", "POS", "JJR"), Array("left", "NP", "PRP"), Array("rightdis", "$", "ADJP", "JJP", "PRN", "FW"), Array("right", "CD"), Array("rightdis", "JJ", "JJS", "RB", "QP", "DT", "WDT", "RBR", "ADVP")))
-  rules.put("NML", Array(Array("rightdis", "NN", "NNP", "NNPS", "NNS", "NX", "NML", "POS", "JJR"), Array("left", "NP", "PRP"), Array("rightdis", "$", "ADJP", "JJP", "PRN"), Array("right", "CD"), Array("rightdis", "JJ", "JJS", "RB", "QP", "DT", "WDT", "RBR", "ADVP")))
+  rules.put("NP", Array(Array("rightdis", "NN", "NNP", "NNPS", "NNS", "NML", "NX", "JJR"), Array("left", "NP", "PRP"), Array("rightdis", "$", "ADJP", "JJP", "PRN", "FW"), Array("right", "CD"), Array("rightdis", "JJ", "JJS", "RB", "QP", "DT", "WDT", "RBR", "ADVP")))
+  rules.put("NML", Array(Array("rightdis", "NN", "NNP", "NNPS", "NNS", "NX", "NML", "JJR"), Array("left", "NP", "PRP"), Array("rightdis", "$", "ADJP", "JJP", "PRN"), Array("right", "CD"), Array("rightdis", "JJ", "JJS", "RB", "QP", "DT", "WDT", "RBR", "ADVP")))
   rules.put("POSSP", Array(Array("right", "POS")))
   rules.put("ROOT", Array(Array("left", "S", "SQ", "SINV", "SBAR", "FRAG")))
   rules.put("TYPO", Array(Array("left", "NN", "NP", "NML", "NNP", "NNPS", "TO", "VBD", "VBN", "MD", "VBZ", "VB", "VBG", "VBP", "VP", "ADJP", "JJP", "FRAG")))
@@ -131,7 +131,8 @@ object ModifiedCollinsHeadFinder {
 
 
   def main(args: Array[String]) = {
-    val str = "(S (NP (DT the) (JJ quick) (JJ (AA (BB (CC brown)))) (NN fox)) (VP (VBD jumped) (PP (IN over) (NP (DT the) (JJ lazy) (NN dog)))) (. .))"
+    //val str = "(S (NP (DT the) (JJ quick) (JJ (AA (BB (CC brown)))) (NN fox)) (VP (VBD jumped) (PP (IN over) (NP (DT the) (JJ lazy) (NN dog)))) (. .))"
+    val str = ("(NP (NP (DT the) (NN city) (POS 's)) (NN blend))")
     val tree = ConstituentTreeFactory.stringToTree(str).get
     val ctree = annotate(tree)
     println("Constituent Tree:\n" + ctree.toHeadedTreebankString)

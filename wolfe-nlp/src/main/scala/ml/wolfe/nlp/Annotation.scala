@@ -17,6 +17,15 @@ case class IEAnnotation(entityMentions: IndexedSeq[EntityMention]=IndexedSeq.emp
                         eventMentions: IndexedSeq[EventMention]=IndexedSeq.empty,
                         semanticFrames: IndexedSeq[SemanticFrame]= IndexedSeq.empty) {
 
+  def semanticRoleAt(i: Int, j: Int): Option[SemanticFrame] = {
+    semanticFrames.find(f => f.roles.exists(r => r.start == i && r.end == j))
+  }
+
+  def semanticFrameSpanning(i: Int, j: Int): Option[SemanticFrame] = {
+    semanticFrames.find { f =>
+      f.leftMostArg.start == i && f.rightMostArg.end == j
+    }
+  }
 }
 
 /**

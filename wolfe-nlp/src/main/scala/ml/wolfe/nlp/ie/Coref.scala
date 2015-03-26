@@ -13,6 +13,7 @@ import scala.collection.mutable.HashMap
  */
 case class CorefAnnotation(mentions: Seq[CorefMention] = Seq.empty) {
 
+
   def clusterOf(s: Int, i: Int, j: Int): Option[Int] = {
     mentions.find(m => m.sentence == s && m.start == i && m.end == j) match {
       case Some(x) => Some(x.clusterID)

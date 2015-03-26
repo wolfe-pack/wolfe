@@ -17,6 +17,10 @@ case class RoleMention(label: String, arg: EntityMention) {}
 
 case class SemanticFrame(predicate: Predicate, roles: Seq[SemanticRole]) {
 
+  def leftMostArg = roles.sortBy(_.start).head
+
+  def rightMostArg = roles.sortBy(_.end).last
+
   override def toString = {
     "Predicate %d (%s):\n%s".format(predicate.idx, predicate.token.word,
       roles.map{ r =>
