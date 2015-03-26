@@ -13,9 +13,6 @@ import scala.language.implicitConversions
  */
 package object nlp {
 
-
-
-
   def loadTxt(file: File, codec: Codec = Codec("ISO8859-1")) = {
 
     val source = Source.fromFile(file)(codec)
