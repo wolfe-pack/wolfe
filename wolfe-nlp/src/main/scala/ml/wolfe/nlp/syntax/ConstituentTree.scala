@@ -90,10 +90,10 @@ case class ConstituentTree(node: ConstituentNode, children : List[ConstituentTre
         case nt: NonterminalNode => {
           val len = t.length
           val height = index(numLeaves-len, numLeaves).size
-          index((numLeaves-len, numLeaves)) = index((numLeaves-len, numLeaves)) ++ List(new ConstituentSpan(numLeaves-len, numLeaves, t.label, height = height, head = nt.head))
+          index((numLeaves-len, numLeaves)) = index((numLeaves-len, numLeaves)) ++ List(new ConstituentSpan(numLeaves-len, numLeaves, t.label, height = height, headInfo = nt.headInfo))
         }
         case leaf: PreterminalNode => {
-          index((numLeaves, numLeaves + 1)) = index((numLeaves, numLeaves + 1)) ++ List(new ConstituentSpan(numLeaves, numLeaves + 1, t.label, height = 0, head = Some(HeadInfo(headWord = leaf.word, headIdx = 0, tokenIdx = leaf.start))))
+          index((numLeaves, numLeaves + 1)) = index((numLeaves, numLeaves + 1)) ++ List(new ConstituentSpan(numLeaves, numLeaves + 1, t.label, height = 0, headInfo = Some(HeadInfo(headWord = leaf.word, headIdx = 0, tokenIdx = leaf.start))))
           numLeaves += 1
         }
       }
@@ -129,10 +129,16 @@ case class ConstituentTree(node: ConstituentNode, children : List[ConstituentTre
   }
 
 
-  def headOf(i: Int, j: Int): Option[String] = {
+  def headwordOf(i: Int, j: Int): Option[String] = {
     if (i < 0 || j < 0) return None
     if (i > length || j > length) return None
-    spans((i,j)).collectFirst{ case x => x.head.get.headWord }
+    spans((i,j)).collectFirst{ case x => x.headInfo.get.headWord }
+  }
+
+  def headOf(i: Int, j: Int): Option[HeadInfo] = {
+    if (i < 0 || j < 0) return None
+    if (i > length || j > length) return None
+    spans((i,j)).head.headInfo
   }
 
 
@@ -144,9 +150,9 @@ case class ConstituentTree(node: ConstituentNode, children : List[ConstituentTre
     val arcs = (0 until length).map{ i =>
 //      val gc: NonterminalNode = depthFirstSearch.toArray.filter(n => n.width > 1 && n.covers(i)).map(_.node).collect { case nt: NonterminalNode => nt }.sortBy(_.width).head
       val usearch = searchUpFrom(i).toArray
-      val gc = usearch.find(t => t.isNonterminal && t.node.asInstanceOf[NonterminalNode].head.get.tokenIdx != i)
+      val gc = usearch.find(t => t.isNonterminal && t.node.asInstanceOf[NonterminalNode].headInfo.get.tokenIdx != i)
       gc match {
-        case Some(t) => Some(Arc(child = i, parent = t.node.asInstanceOf[NonterminalNode].head.get.tokenIdx))
+        case Some(t) => Some(Arc(child = i, parent = t.node.asInstanceOf[NonterminalNode].headInfo.get.tokenIdx))
         case None => None
       }
     }.flatten
@@ -297,7 +303,7 @@ case class ConstituentTree(node: ConstituentNode, children : List[ConstituentTre
 
   def toHeadedTreebankString: String = {
     node match {
-      case x: NonterminalNode => "(%s-%s %s)".format(x.label, x.head.get.headWord, children.map(_.toHeadedTreebankString).mkString(" "))
+      case x: NonterminalNode => "(%s-%s %s)".format(x.label, x.headInfo.get.headWord, children.map(_.toHeadedTreebankString).mkString(" "))
       case x: PreterminalNode => "(%s %s)".format(x.label, x.word)
       case _ => "empty"
     }

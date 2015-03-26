@@ -65,10 +65,10 @@ object ModifiedCollinsHeadFinder {
         val hidx = findHead(tree)
         val headedChildren = tree.children.map(annotate(_))
         val (headWord, tidx) = headedChildren(hidx).node match {
-          case nt: NonterminalNode => (nt.head.get.headWord, nt.head.get.tokenIdx)
+          case nt: NonterminalNode => (nt.headInfo.get.headWord, nt.headInfo.get.tokenIdx)
           case pt: PreterminalNode => (pt.word, pt.start)
         }
-        tree.copy(node = nonterminal.copy(head = Some(HeadInfo(headWord = headWord, headIdx = hidx, tokenIdx = tidx))), children = headedChildren)
+        tree.copy(node = nonterminal.copy(headInfo = Some(HeadInfo(headWord = headWord, headIdx = hidx, tokenIdx = tidx))), children = headedChildren)
       }
       case leaf: PreterminalNode => tree
       case _ => { System.err.println("Error - did not match tree node: " + tree.node); assert(false, ""); null.asInstanceOf[ConstituentTree] }
