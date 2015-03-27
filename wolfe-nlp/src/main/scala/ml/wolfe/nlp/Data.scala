@@ -18,6 +18,7 @@ case class CharOffsets(start: Int, end: Int) {
   def contains(that:CharOffsets) = start <= that.start && end >= that.end
   def expandRight(howMuch:Int) = copy(end = end + howMuch)
   def range = Range(start,end)
+  def +(offset:Int) = copy(start = start + offset, end = end + offset)
 }
 
 case class SentenceTokenRelation() extends ObjectGraphRelation {
@@ -40,8 +41,13 @@ case class DocumentSentenceRelation() extends ObjectGraphRelation {
 case class Token(word: String, offsets: CharOffsets, posTag: String = null, lemma: String = null) {
   def toTaggedText = word + "/" + posTag
   def toPrettyString = if (posTag != null) word + "/" + posTag else word
-  def idx = offsets.start // Should replace with index lookup in ObjectGraph
+  def idx = offsets.start
+  def +(that:Token) = Sentence(Vector(this)) + that
 
+}
+
+object Token {
+  def fromString(word:String) = Token(word, CharOffsets(0,word.length))
 }
 
 /**
@@ -56,6 +62,7 @@ case class Sentence(tokens: IndexedSeq[Token], syntax: SyntaxAnnotation = Syntax
   def size = tokens.size
   def offsets = CharOffsets(tokens.head.offsets.start,tokens.last.offsets.end)
   def toPrettyString = tokens.map(_.toPrettyString).mkString(" ")
+  def +(token: Token) = copy(tokens = tokens :+ token.copy(offsets = token.offsets + tokens.last.offsets.end + 1))
 
   def toCoNLLString = {
     // ID FORM LEMMA PLEMMA POS PPOS FEAT PFEAT HEAD PHEAD DEPREL PDEPREL FILLPRED PRED APREDs
