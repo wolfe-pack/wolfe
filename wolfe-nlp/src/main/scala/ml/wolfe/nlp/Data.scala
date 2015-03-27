@@ -115,6 +115,8 @@ case class Document(source: String,
   def entityMentionsAsBIOSeq = sentences flatMap (_.entityMentionsAsBIOSeq)
   def tokenWords = sentences flatMap (s => s.tokens.map(_.word))
 
+  lazy val navigable = new NavigableDocument(this)
+
 }
 
 object Document {

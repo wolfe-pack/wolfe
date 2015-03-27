@@ -11,8 +11,7 @@ class NavigableDocumentSpecs extends WolfeSpec {
     "allow back traversal" in {
       val pipeline = Document.fromString _ andThen SentenceSplitter andThen TokenSplitter
       val doc = pipeline("Sally met Harry. She was a girl. He was not.")
-      val nav = new NavigableDocument(doc)
-      import nav._
+      import doc.navigable._
       doc.sentences(1).tokens(2).sentence should be (doc.sentences(1))
       doc.sentences(1).tokens(2).offsets.tokens should be (Vector(doc.sentences(1).tokens(2)))
       doc.sentences(1).document should be (doc)
