@@ -46,7 +46,9 @@ trait MatrixFactorization {
   lazy val trainingDataTerm = trainingData.toConst
 
   //a user-defined function that samples a negative cell based on a positive one
-  def sampleNegCell(pos: Cells.Term): Cells.Term = pos.map(p => Cell(rand.nextInt(numRows), p.col))
+  def sampleNegCell(pos: Cell): Cell
+  
+  private def sampleNegCellTerm(pos: Cells.Term): Cells.Term = pos.map(p => sampleNegCell(p))
 
   //where learned parameters will be stored
   var thetaStar: Thetas.Value = _
@@ -66,7 +68,7 @@ trait MatrixFactorization {
     //we sample a positive cell, and memoize the result
     val pos = mem(trainingDataTerm.sampleShuffled)//.logged
     //based on the memoized positive cell, we sample a negative cell which needs to be memoized because it will reappear several times
-    val neg = mem(sampleNegCell(pos))//.logged
+    val neg = mem(sampleNegCellTerm(pos))//.logged
     //the loss based on positive and negative cell
     log(sigm(score(t)(pos))) + log(sigm(-score(t)(neg))) + regularize(t)(pos, neg)
   }
@@ -106,9 +108,22 @@ object MatrixFactorization {
       def k: Int = kParam
       def epochs: Int = epochsParam
       def alpha: Double = alphaParam
-      def trainingData: Seq[Cell] = data.map(t => Cell(t._1, t._2))
+      lazy val trainingData: Seq[Cell] = data.map(t => Cell(t._1, t._2))
       def numRows: Int = data.maxBy(_._1)._1 + 1
       def numCols: Int = data.maxBy(_._2)._2 + 1
+      //warning: this is slow!
+      def sampleNegCell(pos: Cell): Cell = {
+        def inner(pos: Cell, attempts: Int): Cell = {
+          val sample = Cell(rand.nextInt(numRows), pos.col)
+          if (attempts == 0) {
+            System.err.println("WARNING: Couldn't sample a negative cell for " + pos)
+            sample
+          } else if (trainingData.contains(sample)) {
+            inner(pos, attempts - 1)
+          } else sample
+        }
+        inner(pos, 100)
+      }
     }
     mf.train()
     mf
@@ -118,10 +133,8 @@ object MatrixFactorization {
 object MatrixFactorizationExample {
   def main(args: Array[String]) {
     val data = Seq(
-      0 -> 0,
-      0 -> 1,
-      1 -> 1,
-      1 -> 2,
+      0 -> 0, 0 -> 1,
+      1 -> 1, 1 -> 2,
       2 -> 2
     )
     val mf = MatrixFactorization.train(data, kParam = 10, epochsParam = 200)
