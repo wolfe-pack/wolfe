@@ -47,6 +47,7 @@ case class Token(word: String, offsets: CharOffsets, posTag: String = null, lemm
 }
 
 object Token {
+  def apply(word:String):Token = fromString(word)
   def fromString(word:String) = Token(word, CharOffsets(0,word.length))
 }
 
