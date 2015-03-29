@@ -80,6 +80,20 @@ class VarSeqDomSpecs extends WolfeSpec {
       result should be(IndexedSeq(true, true, true))
     }
 
+    "support length fields in sums" in {
+      val Words = List("the","cat","sat").toDom
+      val Tags = List("DT","NN","VBD").toDom
+      val Tokens = Pairs(Words,Tags)
+      val Sentences = Seqs(Tokens,0,3)
+      val s = Sentences.Var
+
+      def count(s:Sentences.Term) =
+        sum(0 until s.length){ t => I(s(t)._1 === Tags.Const("VBD")) }
+
+      count(s)(s << IndexedSeq("the"->"DT","cat" -> "NN", "sat" -> "VBD")) should be (1.0)
+    }
+
+
   }
 
 }

@@ -198,6 +198,8 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
 
   }
 
+  def blah = "blah"
+
   implicit class RichTerm[A <: Term[Dom]](val innerTerm: A) {
 
     def |[D <: Dom](assignment: Assignment[D]) = {

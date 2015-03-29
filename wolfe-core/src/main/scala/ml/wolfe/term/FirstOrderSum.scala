@@ -6,7 +6,7 @@ package ml.wolfe.term
  */
 case class FirstOrderSum[D <: Dom, Body <: DoubleTerm, R <: Term[VarSeqDom[D]]](range: R, variable: Var[D], body: Body) extends DoubleTerm {
   sum =>
-  def vars = (range.vars ++ body.vars).filterNot(_ == variable)
+  val vars = (range.vars ++ body.vars).filterNot(_ == variable).distinct
 
   val domain = body.domain
 
