@@ -192,8 +192,9 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
 
   implicit class RichVar[D <: Dom](val innerVar: Var[D]) {
     def <<(that: Term[D]) = Assignment(innerVar, that)
-
+    def :=(that: Term[D]) = Assignment(innerVar, that)
     def <<(that: innerVar.domain.Value) = Assignment(innerVar, innerVar.domain.Const(that))
+    def :=(that: innerVar.domain.Value) = Assignment(innerVar, innerVar.domain.Const(that))
 
   }
 

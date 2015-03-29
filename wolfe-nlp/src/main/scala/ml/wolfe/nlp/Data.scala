@@ -41,9 +41,8 @@ case class DocumentSentenceRelation() extends ObjectGraphRelation {
 case class Token(word: String, offsets: CharOffsets, posTag: String = null, lemma: String = null) {
   def toTaggedText = word + "/" + posTag
   def toPrettyString = if (posTag != null) word + "/" + posTag else word
-  def idx = offsets.start
   def +(that:Token) = Sentence(Vector(this)) + that
-
+  def idx = offsets.start // Should replace with index lookup in ObjectGraph
 }
 
 object Token {
@@ -160,8 +159,6 @@ object Document {
   }
 
 }
-
-
 
 object Data {
   def main(args: Array[String]) {
