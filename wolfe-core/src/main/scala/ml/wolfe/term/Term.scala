@@ -172,7 +172,6 @@ trait TermHelper[+D <: Dom] {
       count += 1
       wrt.domain.toValue(gradient(indexOfWrt))
     }
-
   }
 
   def maxMarginals[T <: Dom](target: Var[T], wrt: Var[T])(incoming: wrt.domain.Marginals)(args: Any*): target.domain.Marginals = {

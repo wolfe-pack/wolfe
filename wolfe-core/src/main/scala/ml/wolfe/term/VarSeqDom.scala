@@ -187,6 +187,8 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
     override def toString = s"""ISeq($length)(${elements.mkString(",")})"""
   }
 
+  override def toString = s"Seqs($elementDom,$minLength,$maxLength)"
+
 }
 
 case class VarSeqLength[S <: Term[VarSeqDom[_]]](seq: S) extends Composed[IntDom] {

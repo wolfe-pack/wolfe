@@ -212,6 +212,11 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
       case (result, assignment) => Conditioned[Dom, Dom](result, assignment.variable, assignment.value)
     }.eval().asInstanceOf[innerTerm.domain.Value]
 
+    def diff[D<:Dom](wrt: Var[D])(at: Assignment[Dom]*):wrt.domain.Value = {
+      val values = at.map(a => a.variable -> a.value.eval().asInstanceOf[Any]).toMap
+      val args = innerTerm.vars.map(values)
+      innerTerm.gradient(wrt,args:_*)
+    }
 
     def map[B](fun: innerTerm.domain.Value => B)(implicit targetDom: TypedDom[B]): targetDom.Term = {
       val result = new TermMap[A, targetDom.type] {

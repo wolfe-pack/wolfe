@@ -183,6 +183,8 @@ class DoubleDom extends AtomicDom {
   def zero = 0.0
 
   case class StaticDoubleVar(name: String) extends Var with DomTerm
+
+  override def toString = "Doubles"
 }
 
 trait GenericDiscreteDom[T] extends AtomicDom {
@@ -254,6 +256,8 @@ class DiscreteDom[T](val values: IndexedSeq[T]) extends GenericDiscreteDom[T] {
   def zero = values.head
 
   override val dimensions = Dimensions(Array(values.indices))
+
+  override def toString = s"""Discretes(${values.mkString(",")})"""
 }
 
 
