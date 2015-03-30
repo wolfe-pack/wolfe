@@ -152,4 +152,10 @@ object CoNLL2015TestReadWrite extends App {
   println("Reading DONE. Initiating writing.")
   CoNLL2015DiscourseWriter.writeDocumentsToJSON(output, "output.json")
   println("Writing DONE.")
+  import sys.process._
+  println("Running validator...")
+  println(s"python conll15st/validator.py output.json".!)
+  println("Running scorer...")
+  println(s"python conll15st/scorer.py data/conll15st-train-dev/conll15st_data/conll15-st-03-04-15-dev/pdtb-data.json output.json".!)
+  println("Done!")
 }
