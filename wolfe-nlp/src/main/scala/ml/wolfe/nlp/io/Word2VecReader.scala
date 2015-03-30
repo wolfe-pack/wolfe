@@ -88,11 +88,10 @@ class Word2Vec {
 
       words = readString(dis).toInt
       size = readString(dis).toInt
-      println("Words = " + words + "; size = " + size)
-      var word: String = null
+  //    println("Words = " + words + "; size = " + size)
       val vector = new ArrayBuffer[Float]
       for (i <- 0 until words) {
-        word = readString(dis)
+        val word = readString(dis)
         // If the filter fails, do not add the word to the dictionary
         // However, the floats still need to be read as in the following lines.
         if (!filter(word)) { // Filter failed
