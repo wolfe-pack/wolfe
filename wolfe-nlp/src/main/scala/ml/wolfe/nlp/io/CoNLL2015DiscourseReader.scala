@@ -105,7 +105,6 @@ object CoNLL2015DiscourseReader {
 }
 
 object CoNLL2015DiscourseWriter {
-
   case class JSONDiscourseRelation(
     Arg1: JSONDiscourseArgument,
     Arg2: JSONDiscourseArgument,
@@ -132,63 +131,24 @@ object CoNLL2015DiscourseWriter {
   }
 
   def documentToJSONDiscourseRelations(document: Document): Seq[JSONDiscourseRelation] = {
-    // pre-calculate document sentence lengths, needed for token offsets
-    var counter = 0
-    val sentence_lengths = document.sentences.map{ sentence =>
-      counter += sentence.size
-      counter
-    }
+    def sentenceTokenIndiciesToDocTokenIndices(discourseTokens: Seq[(Int, Int)]): Seq[Int] = discourseTokens.map(t => {
+      val (sIx, tIx) = t
+      document.sentences.slice(0, sIx).map(_.tokens.length).sum + tIx
+    })
 
-    def charOffsetsToTokenIndices(charOffsets: Seq[CharOffsets]): Seq[Int] = {
-      document.tokens.zipWithIndex.filter(t => {
-        val (token, ix) = t
-        val offsets = token.offsets //document level offsets?
-        charOffsets.exists(c => c.start == offsets.start && c.end == offsets.end)
-      }).map(_._2)
-    }
-
-    val ret = document.discourse.relations.map { relation =>
-
-      def charOffsetsToSpanList(x: List[CharOffsets]) = x.map{ offset => List(offset.start, offset.end)}
-      def rewriteTokens(sentenceTokenPairs: Seq[(Int, Int)]) = {
-        sentenceTokenPairs.map { pair =>
-          val sentenceID = pair._1
-          val tokenID = pair._2
-          val offsets = document.sentences(sentenceID).tokens(tokenID).offsets
-          val tokenOffset = sentence_lengths(if (sentenceID - 1 >= 0) sentenceID - 1 else 0) + tokenID
-          List(offsets.start, offsets.end, tokenOffset, sentenceID, tokenID)
-        }.toList
-      }
-
-
-      val arg1_characterspanlist = charOffsetsToTokenIndices(relation.arg1.charOffsets) //charOffsetsToSpanList(relation.arg1.charOffsets)
-      val arg2_characterspanlist = charOffsetsToTokenIndices(relation.arg2.charOffsets) //charOffsetsToSpanList(relation.arg2.charOffsets)
-      val connective_characterspanlist = charOffsetsToTokenIndices(relation.connective.charOffsets) //charOffsetsToSpanList(relation.connective.charOffsets)
-
-      /*
-      val arg1_tokens = rewriteTokens(relation.arg1.tokens)
-      val arg2_tokens = rewriteTokens(relation.arg2.tokens)
-      val connective_tokens = rewriteTokens(relation.connective.tokens)
-
-      val arg1 = JSONDiscourseArgument(arg1_tokens)
-      val arg2 = JSONDiscourseArgument(arg2_tokens)
-      val connective = JSONDiscourseArgument(connective_tokens)
-      */
-
-      val arg1 = JSONDiscourseArgument(arg1_characterspanlist)
-      val arg2 = JSONDiscourseArgument(arg2_characterspanlist)
-      val connective = JSONDiscourseArgument(connective_characterspanlist)
-
+    document.discourse.relations.map { relation =>
+      val arg1 = JSONDiscourseArgument(sentenceTokenIndiciesToDocTokenIndices(relation.arg1.tokens))
+      val arg2 = JSONDiscourseArgument(sentenceTokenIndiciesToDocTokenIndices(relation.arg2.tokens))
+      val connective = JSONDiscourseArgument(sentenceTokenIndiciesToDocTokenIndices(relation.connective.tokens))
       JSONDiscourseRelation(arg1, arg2, connective, document.id.get, relation.sense, relation.typ)
     }
-    ret
-
   }
 }
 
 object CoNLL2015TestReadWrite extends App {
   println("Initiating reader.")
-  val output = CoNLL2015DiscourseReader.loadData("/Users/matko/workspace/conll2015/data/conll15st-train-dev/conll15st_data/conll15-st-03-04-15-train/")
+  //val output = CoNLL2015DiscourseReader.loadData("./data/conll15st-train-dev/conll15st_data/conll15-st-03-04-15-train/")
+  val output = CoNLL2015DiscourseReader.loadData("./data/conll15st-train-dev/conll15st_data/conll15-st-03-04-15-dev/")
   println("Reading DONE. Initiating writing.")
   CoNLL2015DiscourseWriter.writeDocumentsToJSON(output, "output.json")
   println("Writing DONE.")
