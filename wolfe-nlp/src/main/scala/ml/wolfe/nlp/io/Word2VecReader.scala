@@ -113,7 +113,7 @@ class Word2Vec {
             vector.clear()
           }
         }
-        println(vocab.size)
+//        println(vocab.size)
       }
 
       // dis.readChar()
