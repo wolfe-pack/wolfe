@@ -291,7 +291,7 @@ trait MathImplicits {
 
   def Matrices(dim1: Int, dim2: Int) = new MatrixDom(dim1: Int, dim2: Int)
 
-  def vector(values: Double*) = new DenseTensor1(values.toArray)
+  def vector(values: Double*):Vect = new DenseTensor1(values.toArray)
 
   def matrix(values: Seq[Double]*) = {
     val tmp = new DenseTensor2(values.length, values.head.length)
