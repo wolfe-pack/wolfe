@@ -106,8 +106,19 @@ object CoNLL2015DiscourseReader {
 
 object CoNLL2015DiscourseWriter {
 
-  case class JSONDiscourseRelation(Arg1: JSONDiscourseArgument, Arg2: JSONDiscourseArgument, Connective: JSONDiscourseArgument, DocID: String, ID: Int, Sense: List[String], Type: String)
-  case class JSONDiscourseArgument(CharacterSpanList: List[List[Int]] , RawText: String, TokenList: List[List[Int]])
+  case class JSONDiscourseRelation(
+    Arg1: JSONDiscourseArgument,
+    Arg2: JSONDiscourseArgument,
+    Connective: JSONDiscourseArgument,
+    DocID: String,
+    //ID: Int,
+    Sense: Seq[String],
+    Type: String)
+  case class JSONDiscourseArgument(
+    //CharacterSpanList: List[List[Int]],
+    //RawText: String,
+    TokenList: Seq[Int]
+  )
 
   def writeDocumentsToJSON(documents: Iterable[Document], filename: String) = {
     val sb = new StringBuilder
@@ -127,6 +138,15 @@ object CoNLL2015DiscourseWriter {
       counter += sentence.size
       counter
     }
+
+    def charOffsetsToTokenIndices(charOffsets: Seq[CharOffsets]): Seq[Int] = {
+      document.tokens.zipWithIndex.filter(t => {
+        val (token, ix) = t
+        val offsets = token.offsets //document level offsets?
+        charOffsets.exists(c => c.start == offsets.start && c.end == offsets.end)
+      }).map(_._2)
+    }
+
     val ret = document.discourse.relations.map { relation =>
 
       def charOffsetsToSpanList(x: List[CharOffsets]) = x.map{ offset => List(offset.start, offset.end)}
@@ -140,19 +160,26 @@ object CoNLL2015DiscourseWriter {
         }.toList
       }
 
-      val arg1_characterspanlist = charOffsetsToSpanList(relation.arg1.charOffsets)
-      val arg2_characterspanlist = charOffsetsToSpanList(relation.arg2.charOffsets)
-      val connective_characterspanlist = charOffsetsToSpanList(relation.connective.charOffsets)
 
+      val arg1_characterspanlist = charOffsetsToTokenIndices(relation.arg1.charOffsets) //charOffsetsToSpanList(relation.arg1.charOffsets)
+      val arg2_characterspanlist = charOffsetsToTokenIndices(relation.arg2.charOffsets) //charOffsetsToSpanList(relation.arg2.charOffsets)
+      val connective_characterspanlist = charOffsetsToTokenIndices(relation.connective.charOffsets) //charOffsetsToSpanList(relation.connective.charOffsets)
+
+      /*
       val arg1_tokens = rewriteTokens(relation.arg1.tokens)
       val arg2_tokens = rewriteTokens(relation.arg2.tokens)
       val connective_tokens = rewriteTokens(relation.connective.tokens)
 
-      val arg1 = JSONDiscourseArgument(arg1_characterspanlist, relation.arg1.text, arg1_tokens)
-      val arg2 = JSONDiscourseArgument(arg2_characterspanlist, relation.arg2.text, arg2_tokens)
-      val connective = JSONDiscourseArgument(connective_characterspanlist, relation.connective.text, connective_tokens)
+      val arg1 = JSONDiscourseArgument(arg1_tokens)
+      val arg2 = JSONDiscourseArgument(arg2_tokens)
+      val connective = JSONDiscourseArgument(connective_tokens)
+      */
 
-      JSONDiscourseRelation(arg1, arg2, connective, document.id.get, relation.id.toInt, relation.sense, relation.typ)
+      val arg1 = JSONDiscourseArgument(arg1_characterspanlist)
+      val arg2 = JSONDiscourseArgument(arg2_characterspanlist)
+      val connective = JSONDiscourseArgument(connective_characterspanlist)
+
+      JSONDiscourseRelation(arg1, arg2, connective, document.id.get, relation.sense, relation.typ)
     }
     ret
 
