@@ -12,9 +12,8 @@ import scala.io.Source
 
 /**
  * @author matko
+ * @author rockt
  */
-
-
 object CoNLL2015DiscourseReader {
 
   implicit val formats = DefaultFormats
@@ -146,16 +145,20 @@ object CoNLL2015DiscourseWriter {
 }
 
 object CoNLL2015TestReadWrite extends App {
+  val useDev = true
   println("Initiating reader.")
-  //val output = CoNLL2015DiscourseReader.loadData("./data/conll15st-train-dev/conll15st_data/conll15-st-03-04-15-train/")
-  val output = CoNLL2015DiscourseReader.loadData("./data/conll15st-train-dev/conll15st_data/conll15-st-03-04-15-dev/")
-  println("Reading DONE. Initiating writing.")
+  val path =
+    if (useDev) "./data/conll15st-train-dev/conll15st_data/conll15-st-03-04-15-dev/"
+    else "./data/conll15st-train-dev/conll15st_data/conll15-st-03-04-15-train/"
+
+  val output = CoNLL2015DiscourseReader.loadData(path)
+  println("Read " + output + " documents. Now writing...")
   CoNLL2015DiscourseWriter.writeDocumentsToJSON(output, "output.json")
   println("Writing DONE.")
   import sys.process._
   println("Running validator...")
   println(s"python conll15st/validator.py output.json".!)
   println("Running scorer...")
-  println(s"python conll15st/scorer.py data/conll15st-train-dev/conll15st_data/conll15-st-03-04-15-dev/pdtb-data.json output.json".!)
+  println(s"python conll15st/scorer.py $path/pdtb-data.json output.json".!)
   println("Done!")
 }
