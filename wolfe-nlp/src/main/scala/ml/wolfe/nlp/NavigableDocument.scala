@@ -3,19 +3,19 @@ package ml.wolfe.nlp
 /**
  * @author riedel
  */
-class NavigableDocument(val doc: Document) {
+class NavigableDocument(val docToNavigate: Document) {
 
-  lazy val char2tokens = doc.sentences.flatMap {
+  lazy val char2tokens = docToNavigate.sentences.flatMap {
     _.tokens.zipWithIndex.flatMap {
       case (t, i) => t.offsets.range.map(_ ->(t, i))
     }
   }.toMap
 
-  lazy val char2sentence = doc.sentences.zipWithIndex.flatMap {
+  lazy val char2sentence = docToNavigate.sentences.zipWithIndex.flatMap {
     case (s, i) => s.offsets.range.map(_ ->(s, i))
   }.toMap
 
-  lazy val char2trees = doc.sentences.flatMap {
+  lazy val char2trees = docToNavigate.sentences.flatMap {
     s => s.syntax.tree.breadthFirstSearch.flatMap {
       t =>
         val offsets = CharOffsets(s.tokens(t.start).offsets.start, s.tokens(t.end).offsets.end)
@@ -26,10 +26,11 @@ class NavigableDocument(val doc: Document) {
 
   implicit class NavigableCharOffsets(offsets: CharOffsets) {
     def tokens = offsets.range.collect(char2tokens andThen (_._1)).distinct
+    def sentences = tokens.map(_.sentence).distinct
   }
 
   implicit class NavigableToken(token: Token) {
-    def document = doc
+    def document = docToNavigate
 
     def sentence = char2sentence(token.offsets.start)._1
 
@@ -39,9 +40,12 @@ class NavigableDocument(val doc: Document) {
   }
 
   implicit class NavigableSentence(sentence: Sentence) {
-    def document = doc
+    def document = docToNavigate
 
     def index = char2sentence(sentence.offsets.start)._2
+    def next = document.sentences.lift(index + 1)
+    def prev = document.sentences.lift(index - 1)
+
   }
 
 
