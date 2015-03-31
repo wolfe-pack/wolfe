@@ -84,22 +84,9 @@ trait MatrixFactorization {
     thetaStar = argmax(Thetas)(t => loss(t).argmaxBy(Argmaxer.adaGrad(adaParams))).eval()
   }
 
-  class Predictor(val thetaStar: Thetas.Value) {
-    def prob(theta: Thetas.Term)(cell: Cells.Term): DoubleTerm = sigm(score(theta)(cell))
+  lazy val probFun = fun(Cells) { x => sigm(score(thetaStar.toConst)(x)) }
 
-    val c = Cells.Var
-    val theta = Thetas.Const(thetaStar)
-    val probCalculator = prob(theta)(c)
-    val evaluator = probCalculator.evaluator()
-
-    def predict(row: Int, col: Int) = evaluator.eval(Cell(row, col))
-  }
-
-  private def predictor(theta: Thetas.Value = thetaStar) = new Predictor(theta)
-
-  lazy val defaultPredictor = predictor()
-
-  def predict(row: Int, col: Int) = defaultPredictor.predict(row, col)
+  def predict(row: Int, col: Int) = probFun(Cell(row, col))
 }
 
 object MatrixFactorization {
