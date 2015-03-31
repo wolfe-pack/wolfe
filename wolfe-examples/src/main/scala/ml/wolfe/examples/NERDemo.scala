@@ -14,36 +14,25 @@ import ml.wolfe.term._
  * @author rockt
  */
 object NERDemo extends App {
-  //data input
-  import NERDemoHelper._
-  val sentences = Seq(
-    """U.N. NNP B-NP B-ORG
-      |official NN I-NP O
-      |Ekeus NNP I-NP B-PER
-      |heads VBZ B-VP O
-      |for IN B-PP O
-      |Baghdad NNP B-NP B-LOC
-      |. . O O""".stripMargin,
-    """EU NNP B-NP B-ORG
-      |rejects VBZ B-VP O
-      |German JJ B-NP B-MISC
-      |call NN I-NP O
-      |. . O O """.stripMargin)
+  implicit val index = new SimpleIndex
+  implicit def tokensToInput(tokens: Seq[String]): Input = {
+    val biasFeatures = tokens.toIndexedSeq.map(t => feats("Blah"))
+    val transitionFeatures = tokens.toIndexedSeq.map(t => feats("Blubs"))
+    Input(biasFeatures, transitionFeatures)
+  }
 
-  val documents = toDocuments(sentences)
-  val train = documents.take(1)
-  val test = documents.tail
+  //data
+  val train: Seq[(Input, Output)] =
+    Seq(tokensToInput(Seq("My", "name", "is", "Wolfe", "!")) -> IndexedSeq("O", "O", "O", "B-PER", "O"))
+  val test: Seq[(Input, Output)] =
+    Seq(tokensToInput(Seq("Wolfe", "is", "awesome", ".")) -> IndexedSeq("B-PER", "O", "O", "O"))
 
-  val labels = documents.flatMap(_.entityMentionsAsBIOSeq).distinct
-  val trainPairs = documents.map(d => (d.tokenWords, d.entityMentionsAsBIOSeq))
-  val testPairs = test.map(d => (d.tokenWords, d.entityMentionsAsBIOSeq))
-  val trainInputs = train.map(_.tokenWords)
-  val testInputs = test.map(_.tokenWords)
+  val sentences = train ++ test
+  val labels = sentences.flatMap(_._2).distinct
 
   //model definition
+  val maxLength = sentences.map(_._2.length).max
   val maxFeats = 100
-  val maxLength = documents.flatMap(_.sentences.map(_.tokens.length)).max
-  implicit val index = new SimpleIndex
   implicit val Thetas = Vectors(maxFeats)
   implicit val Labels = labels.toDom
 
@@ -61,23 +50,11 @@ object NERDemo extends App {
 
   lazy val predict = fun(Inputs) { x => argmax(Outputs)(model(Thetas.Const(thetaStar))(x))}
   val params = AdaGradParameters(epochs = 100, learningRate = 0.1)
-  lazy val thetaStar = learn(Thetas)(t => perceptron(data.toConst)(Outputs)(model(t))) using Argmaxer.adaGrad(params)
+  lazy val thetaStar = learn(Thetas)(t => perceptron(train.toConst)(Outputs)(model(t))) using Argmaxer.adaGrad(params)
 
   def classify(input:Input):Output = predict(input)
 
-  implicit def tokensToInput(tokens: Seq[String]): Input = {
-    val biasFeatures = tokens.toIndexedSeq.map(t => feats("Blah"))
-    val transitionFeatures = tokens.toIndexedSeq.map(t => feats("Blubs"))
-    Input(biasFeatures, transitionFeatures)
-  }
-
-  def data: Seq[(Input,Output)] = trainPairs.map(p => (tokensToInput(p._1), p._2))
-
-  //training
-  println(train.head)
-  println(test.head)
-  thetaStar //does the training
-  println(classify(Seq("My", "name", "is", "Wolfe", "!")))
+  test.foreach(p => println(classify(p._1)))
 }
 
 object NERDemoHelper extends App {
