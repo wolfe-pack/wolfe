@@ -1,4 +1,4 @@
-package ml.wolfe.nlp.Data.structures
+package ml.wolfe.nlp.structures
 
 import ml.wolfe.nlp.DiscourseAnnotation
 

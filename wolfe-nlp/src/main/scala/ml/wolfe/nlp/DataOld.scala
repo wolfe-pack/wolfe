@@ -5,21 +5,14 @@ import scala.language.implicitConversions
 import scala.collection.mutable
 
 
-/**
- * Offsets for a natural language token.
- * @param start index of the initial character in the token.
- * @param end index of the final character in the token
- */
-case class CharOffsets(start: Int, end: Int)
-
 case class SentenceTokenRelation() extends ObjectGraphRelation {
-  type Parent = Sentence
-  type Child = Token
+  type Parent = SentenceOld
+  type Child = TokenOld
 }
 
 case class DocumentSentenceRelation() extends ObjectGraphRelation {
-  type Parent = Document
-  type Child = Sentence
+  type Parent = DocumentOld
+  type Child = SentenceOld
 }
 
 /**
@@ -29,7 +22,7 @@ case class DocumentSentenceRelation() extends ObjectGraphRelation {
  * @param posTag part-of-speech tag at token.
  * @param lemma lemma at token.
  */
-case class Token(word: String, offsets: CharOffsets, posTag: String = null, lemma: String = null) {
+case class TokenOld(word: String, offsets: CharOffsets, posTag: String = null, lemma: String = null) {
   def toTaggedText = word + "/" + posTag
   def sentence(implicit graph: ObjectGraph[SentenceTokenRelation]) =
     graph.receive(this)
@@ -105,7 +98,7 @@ object DataOld {
  * @param syntax syntactic annotation for the sentence.
  * @param ie information extraction style annotation for the sentence
  */
-case class Sentence(tokens: IndexedSeq[Token], syntax: SyntaxAnnotation = SyntaxAnnotation.empty, ie: IEAnnotation = IEAnnotation.empty) {
+case class SentenceOld(tokens: IndexedSeq[TokenOld], syntax: SyntaxAnnotation = SyntaxAnnotation.empty, ie: IEAnnotation = IEAnnotation.empty) {
   def toText = tokens map (_.word) mkString " "
   def toTaggedText = tokens map (_.toTaggedText) mkString " "
   def document(implicit graph: ObjectGraph[DocumentSentenceRelation]) =
@@ -143,7 +136,7 @@ case class Sentence(tokens: IndexedSeq[Token], syntax: SyntaxAnnotation = Syntax
    * Return a representation of the entity mentions as a sequence of BIO labels. This representation
    * is different from CoNLL in that every mention begins with B-X.
    */
-  def entityMentionsAsBIOSeq = {
+  def entityMentionsAsBIOSeq : Seq[String] = {
     val tokenIndex2Label = new mutable.HashMap[Int,String]() withDefaultValue "O"
     for (m <- ie.entityMentions) {
       tokenIndex2Label(m.start) = "B-" + m.label
@@ -160,8 +153,8 @@ case class Sentence(tokens: IndexedSeq[Token], syntax: SyntaxAnnotation = Syntax
  * @param sentences list of sentences.
  * @param ir information retrieval annotations for document.
  */
-case class Document(source: String,
-                    sentences: IndexedSeq[Sentence],
+case class DocumentOld(source: String,
+                    sentences: IndexedSeq[SentenceOld],
                     filename: Option[String] = None,
                     id: Option[String] = None,
                     ir: IRAnnotation = IRAnnotation.empty,
@@ -180,34 +173,34 @@ case class Document(source: String,
 
 }
 
-object Document {
+object DocumentOld {
 
-  def apply(sentences:Seq[IndexedSeq[String]]) : Document = {
+  def apply(sentences:Seq[IndexedSeq[String]]) : DocumentOld = {
     val source = sentences.map(_.mkString(" ")).mkString(" ")
     var start = 0
     val resultSentences = for (s <- sentences) yield {
       val tokens = for (t <- s) yield {
-        val tmp = Token(t, CharOffsets(start, start + t.length))
-        start += t.size + 1
+        val tmp = TokenOld(t, CharOffsets(start, start + t.length))
+        start += t.length + 1
         tmp
 
       }
-      Sentence(tokens)
+      SentenceOld(tokens)
     }
-    Document(source, resultSentences.toIndexedSeq)
+    DocumentOld(source, resultSentences.toIndexedSeq)
   }
 
-  def apply(source: String) : Document = Document(source, IndexedSeq(Sentence(IndexedSeq(Token(source,CharOffsets(0,source.length))))))
+  def apply(source: String) : DocumentOld = DocumentOld(source, IndexedSeq(SentenceOld(IndexedSeq(TokenOld(source,CharOffsets(0,source.length))))))
 
-  implicit def toDoc(source:String): Document = Document(source)
+  implicit def toDoc(source:String): DocumentOld = DocumentOld(source)
 
   /**
    * Creates a new Document based on the old document, where every token is surrounded by white spaces.
    * @param doc old Document
    * @return A normalised copy of the old Document
    */
-  def normalizeDoc(doc:Document) = {
-    Document(doc.sentences.map(_.tokens.map(_.word)))
+  def normalizeDoc(doc:DocumentOld) = {
+    DocumentOld(doc.sentences.map(_.tokens.map(_.word)))
   }
 
 }

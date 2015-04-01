@@ -1,4 +1,4 @@
-package ml.wolfe.nlp.Data.structures
+package ml.wolfe.nlp.structures
 
 /**
  * @author Ingolf Becker

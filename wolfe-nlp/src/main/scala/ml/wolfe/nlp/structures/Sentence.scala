@@ -1,6 +1,6 @@
-package ml.wolfe.nlp.Data.structures
+package ml.wolfe.nlp.structures
 
-import ml.wolfe.nlp.Data.generics.GenericSentenceCompanion
+import ml.wolfe.nlp.generics.GenericSentenceCompanion
 
 import scala.collection.generic.CanBuildFrom
 import scala.collection.immutable.IndexedSeq

@@ -1,4 +1,4 @@
-package ml.wolfe.nlp.Data.generics
+package ml.wolfe.nlp.generics
 
 import scala.collection.generic.CanBuildFrom
 import scala.collection.immutable.IndexedSeq

@@ -121,7 +121,7 @@ object SentenceSplitter extends (Document => Document) {
       }
       //turn last set of tokens into new sentence
       if (tokens.size > 0) {
-        sentences += Sentence(tokens)
+        sentences += Sentence(tokens.toIndexedSeq)
       }
       sentences
     }

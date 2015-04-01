@@ -1,7 +1,7 @@
 package ml.wolfe.nlp.Data
 
-import ml.wolfe.nlp.Data.generics.{GenericDocumentCompanion, GenericSentenceCompanion}
-import ml.wolfe.nlp.Data.structures._
+import ml.wolfe.nlp.generics.{GenericDocumentCompanion, GenericSentenceCompanion}
+import ml.wolfe.nlp.structures._
 
 import scala.collection.generic.CanBuildFrom
 import scala.collection.immutable.IndexedSeq
@@ -117,11 +117,11 @@ object Data2 {
 
     println("d52: " + d52)
 
-    val d6 = RichDocumentLike("Hello World, I am Ingolf")
+    val d6 = RichDocument("Hello World, I am Ingolf")
 
     println(d6)
 
-    val d7 = RichDocumentLike(Seq(Seq("Hello", "World!"), Seq("I", "am", "Ingolf.")))
+    val d7 = RichDocument(Seq(Seq("Hello", "World!"), Seq("I", "am", "Ingolf.")))
 
     println(d7)
     println(d7.toText)

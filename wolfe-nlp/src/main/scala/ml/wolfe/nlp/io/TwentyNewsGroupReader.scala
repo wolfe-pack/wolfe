@@ -53,6 +53,7 @@ object TwentyNewsGroupReader {
     val (train,test) = loadFromTarGz()
     println(train(0).ir.docLabel)
     println(train(0).tokens.size)
+
   }
 
 }

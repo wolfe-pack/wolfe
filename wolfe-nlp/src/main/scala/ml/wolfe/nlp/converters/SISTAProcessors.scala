@@ -1,8 +1,7 @@
 package ml.wolfe.nlp.converters
 
 import edu.arizona.sista.processors.corenlp.CoreNLPProcessor
-import ml.wolfe.nlp.{CorefAnnotation, Document}
-
+import ml.wolfe.nlp._
 /**
  * Convenience methods for processing NLP documents.
  *
@@ -20,6 +19,7 @@ object SISTAProcessors {
   def mkDocument(text: String): Document = {
     val result = sistaCoreNLPProcessor.mkDocument(text)
     val sentences = result.sentences map SISTAConverter.toWolfeSentence
+
     Document(text, sentences)
   }
 
