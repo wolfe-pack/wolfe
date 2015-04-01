@@ -70,7 +70,7 @@ trait DataIterator {
 
 
 
-object Data {
+object DataOld {
   def main(args: Array[String]): Unit = {
 
     case class FancierToken(word: String) extends DataStructure with DataIterator {
