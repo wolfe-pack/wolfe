@@ -1,37 +1,42 @@
 package ml.wolfe.model
 
-import ml.wolfe.{SimpleIndex, Vect}
 import ml.wolfe.term.TermImplicits._
 import ml.wolfe.term._
+import ml.wolfe.{SimpleIndex, Vect}
 
 /**
  * A simple linear chain labelling model.
  * @author riedel
  */
-trait LinearChain[Label] {
-  import LinearChain._
+trait SkipChainLinearChain[Label] {
   import Argmaxer._
+  import SkipChainLinearChain._
   
   def labels: Seq[Label]
   def maxFeats: Int
   def thetaStar: Vect
   def maxLength: Int
 
-  val maxProductParams = MaxProductParameters(10)
+  implicit val maxProductParams = MaxProductParameters(10)
 
   implicit val Thetas = Vectors(maxFeats)
   implicit val index = new SimpleIndex
   implicit val Labels = labels.toDom
   implicit val Inputs = Input.Values(
     Seqs(Vectors(maxFeats),0,maxLength),
-    Seqs(Vectors(maxFeats),0,maxLength))
+    Seqs(Vectors(maxFeats),0,maxLength),
+    Seqs(Pairs(Ints,Ints),0,10))
   implicit val Outputs = Seqs(Labels,0,maxLength)
   implicit val Instances = Pairs(Inputs, Outputs)
+
+  def skip(x: Inputs.Term)(y: Outputs.Term) = {
+    sum(x.matches) {p => 2.0 * I(y(p._1) === y(p._2))}
+  }
 
   def model(t: Thetas.Term)(x: Inputs.Term)(y: Outputs.Term) = {
     val local = sum(0 until x.unary.length)(i => t dot (x.unary(i) conjoin feature(y(i))))
     val pairwise =  sum(0 until x.unary.length - 1)(i => t dot (x.binary(i) conjoin feature(y(i) -> y(i+1))))
-    (local + pairwise) argmaxBy maxProduct(maxProductParams)
+    (local + pairwise + skip(x)(y)) argmaxBy maxProduct
   }
 
   lazy val predict =
@@ -40,15 +45,16 @@ trait LinearChain[Label] {
   def classify(input:Input):Output[Label] = predict(input)
 }
 
-object LinearChain {
+object SkipChainLinearChain {
   import LearningObjective._
 
   type Output[L] = IndexedSeq[L]
-  @domain case class Input(unary:IndexedSeq[Vect],binary:IndexedSeq[Vect])
+  @domain case class Input(unary:IndexedSeq[Vect],binary:IndexedSeq[Vect],
+                           matches:IndexedSeq[(Int,Int)])
 
   def train[L](data:Seq[(Input,Output[L])],classLabels: Seq[L],
                params: AdaGradParameters,
-               maxFeatures: Int = 1000, chainMaxLength:Int = 100):LinearChain[L] = new LinearChain[L] {
+               maxFeatures: Int = 1000, chainMaxLength:Int = 100):SkipChainLinearChain[L] = new SkipChainLinearChain[L] {
     lazy val thetaStar =
       learn(Thetas)(t => perceptron(data.toConst)(Outputs)(model(t))) using Argmaxer.adaGrad(params)
 
@@ -58,3 +64,6 @@ object LinearChain {
   }
 
 }
+
+
+
