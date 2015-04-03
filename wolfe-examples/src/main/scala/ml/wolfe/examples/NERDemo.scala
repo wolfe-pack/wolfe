@@ -42,13 +42,11 @@ object NERDemo extends App {
   implicit val Outputs = Seqs(Labels, 0, maxLength)
   implicit val Instances = Pairs(Inputs, Outputs)
 
-  def model(t: Thetas.Term)(x: Inputs.Term)(y: Outputs.Term) = {
-    val local = sum(0 until x.biasFeatures.length)(i => t dot (x.biasFeatures(i) conjoin feature(y(i))))
-    val pairwise = sum(0 until x.biasFeatures.length - 1)(i => t dot (x.transitionFeatures(i) conjoin feature(y(i) -> y(i+1))))
-    (local + pairwise) argmaxBy maxProduct(MaxProductParameters(iterations = 10))
-  }
+  def model(t: Thetas.Term)(x: Inputs.Term)(y: Outputs.Term) =
+    sum(0 until x.biasFeatures.length)(i => t dot (x.biasFeatures(i) conjoin feature(y(i)))) +
+    sum(0 until x.biasFeatures.length - 1)(i => t dot (x.transitionFeatures(i) conjoin feature(y(i) -> y(i+1))))
 
-  lazy val predict = fun(Inputs) { x => argmax(Outputs)(model(Thetas.Const(thetaStar))(x))}
+  lazy val predict = fun(Inputs) { x => argmax(Outputs)(model(Thetas.Const(thetaStar))(x)) by maxProduct(MaxProductParameters(iterations = 10)) }
   val params = AdaGradParameters(epochs = 100, learningRate = 0.1)
   lazy val thetaStar = learn(Thetas)(t => perceptron(train.toConst)(Outputs)(model(t))) using Argmaxer.adaGrad(params)
 
