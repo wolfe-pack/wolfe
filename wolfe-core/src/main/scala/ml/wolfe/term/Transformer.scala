@@ -140,7 +140,7 @@ object Transformer {
 
   def precalculate(term: AnyTerm) = depthLastAndReuse(term) {
     case t if t.isStatic => Precalculated(t)
-  }
+  }._1
 
 }
 

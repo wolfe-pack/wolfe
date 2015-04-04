@@ -311,9 +311,8 @@ class SparseL2[T1 <: VectorTerm, T2 <: VectorTerm](val arg: T1, val mask: T2 = n
 
   val arguments = if (mask == null) IndexedSeq(arg) else IndexedSeq(arg, mask)
 
-  def copy(args: IndexedSeq[ArgumentType]) = new DotProduct(args(0), args(1))
-
-
+  def copy(args: IndexedSeq[ArgumentType]) =
+    if (mask == null) new SparseL2(args(0), null) else new SparseL2(args(0),args(1))
 
   override def composer(args: Settings) = new Composer(args) {
     def eval()(implicit execution: Execution) = {
