@@ -53,6 +53,21 @@ class MaxProductSpecs extends WolfeSpec {
       result should be (Seq(true, false, true, false, true))
     }
 
+    "optimize a linear chain objective in high level code with even length" ignore {
+      val n = 10
+      val l = Ints(0 until 10).Var
+      val Y = Seqs(Bools, 0, n)
+      def model(y: Y.Term) = {
+        sum(0 until l) { i => I(y(i))} +
+          sum(0 until l - 1) { i => 10 * I(y(i) <-> ! y(i + 1))}
+      }
+      val mpParams = MaxProductParameters(10)
+      val result = argmax(Y)(y => model(y) subjectTo (y.length === l) argmaxBy maxProduct(mpParams))(l := 2)
+      println(result)
+      //result should be (Seq(true, false, true, false, true))
+    }
+
+
     "optimize a linear chain in a perceptron loss" in {
 
       implicit val random = new Random(0)
