@@ -23,6 +23,37 @@ class TransformerSpecs extends WolfeSpec {
     }
   }
 
+  "A reusing depth first transformer" should {
+    "return identical transformed terms for identical input terms" in {
+      val x = Doubles.Var
+      val t = x * x + x
+      val transformed = depthFirstAndReuse(t) {
+        case `x` => 2.0
+      }
+      val expected = 2.0.toConst * 2.0.toConst + 2.0.toConst
+      transformed._1 should beStringEqual(expected)
+      val Sum(Vector(Product(Vector(c1,c2)),c3)) = transformed._1
+      (c1 eq c2) should be(true)
+      (c1 eq c3) should be(true)
+    }
+  }
+
+  "A reusing depth last transformer" should {
+    "return identical transformed terms for identical input terms" in {
+      val x = Doubles.Var
+      val t = x * x + x
+      val transformed = depthLastAndReuse(t) {
+        case `x` => 2.0
+      }
+      val expected = 2.0.toConst * 2.0.toConst + 2.0.toConst
+      transformed._1 should beStringEqual(expected)
+      val Sum(Vector(Product(Vector(c1,c2)),c3)) = transformed._1
+      (c1 eq c2) should be(true)
+      (c1 eq c3) should be(true)
+    }
+  }
+
+
   "A sum flattener" should {
     "replace nested sums with one flat sum" in {
       val x = Doubles.Var
@@ -56,5 +87,7 @@ class TransformerSpecs extends WolfeSpec {
       Traversal.distinctSampleCount(t) should be(8)
     }
   }
+
+
 
 }

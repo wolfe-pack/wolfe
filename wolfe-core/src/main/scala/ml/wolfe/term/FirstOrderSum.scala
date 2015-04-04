@@ -25,10 +25,10 @@ case class FirstOrderSum[D <: Dom, Body <: DoubleTerm, R <: Term[VarSeqDom[D]]](
     this2body.linkTargetsToSource(termInputs, bodyInput)
     bodyInput(indexOfVar) = varInput
 
-    val bodyEval = body.evaluatorImpl(bodyInput)
+    //val bodyEval = body.evaluatorImpl(bodyInput)
     val rangeEval = range.evaluatorImpl(rangeInput)
 
-    val output = bodyEval.output
+    //val output = bodyEval.output
 
     def apply(execution:Execution)(procedure: => Unit): Unit = {
       rangeEval.eval()(execution)
@@ -40,7 +40,7 @@ case class FirstOrderSum[D <: Dom, Body <: DoubleTerm, R <: Term[VarSeqDom[D]]](
         //copy element into body input at variable index
         varInput :=(rangeEval.output, offset, elemLength)
         //evaluate body
-        bodyEval.eval()(execution)
+        //bodyEval.eval()(execution)
         //add to result
         procedure
         //move to next slot in range
@@ -50,30 +50,38 @@ case class FirstOrderSum[D <: Dom, Body <: DoubleTerm, R <: Term[VarSeqDom[D]]](
 
   }
 
-  override def evaluatorImpl(in: Settings) = new AbstractEvaluator(in)  {
+  class FirstOrderSumEvaluator(in:Settings) extends AbstractEvaluator(in)  {
     val output = domain.createSetting()
     val loop = new Loop(in)
+    val bodyEval = body.evaluatorImpl(loop.bodyInput)
 
     def eval()(implicit execution:Execution) = {
-      var result = 0.0
-      loop(execution) {
-        result += loop.output.cont(0)
-      }
-      output.cont(0) = result
-
+      output.cont(0) = calculateSum(loop,bodyEval.eval(),bodyEval.output.cont(0))
     }
   }
+
+  def calculateSum(loop:Loop, eval: =>Unit, value: => Double)(implicit execution:Execution): Double = {
+    var result = 0.0
+    loop(execution) {
+      eval
+      result += value
+    }
+    result
+  }
+
+  override def evaluatorImpl(in: Settings) = new FirstOrderSumEvaluator(in)
 
   override def differentiatorImpl(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
     new AbstractDifferentiator(in,err,gradientAcc,wrt) {
 
+      //val eval = evaluatorImpl(in)
+      //val loop = new Loop(in)
       val loop = new Loop(in)
-      val eval = evaluatorImpl(in)
-      val output = eval.output
       val bodyDiff = body.differentiatorImpl(wrt)(loop.bodyInput, err, gradientAccumulator.linkedSettings(vars,body.vars))
+      val output = domain.createSetting()
 
       def forward()(implicit execution:Execution) = {
-        eval.eval()
+        output.cont(0) = calculateSum(loop,bodyDiff.forward(),bodyDiff.output.cont(0))
       }
 
       def backward()(implicit execution:Execution) = {

@@ -1,5 +1,7 @@
 package ml.wolfe.term
 
+import ml.wolfe.util.ObjectId
+
 /**
  * @author riedel
  */
@@ -19,8 +21,60 @@ object Transformer {
     transformed
   }
 
+  def depthFirstAndReuse(term: AnyTerm, mapping: Map[ObjectId[AnyTerm], AnyTerm] = Map.empty)
+                        (partialFunction: PartialFunction[AnyTerm, AnyTerm]): (AnyTerm, Map[ObjectId[AnyTerm], AnyTerm]) = {
+    val termId = new ObjectId(term)
+    mapping.get(termId) match {
+      case Some(x) =>
+        (x, mapping)
+      case None =>
+        val (result, newMap) = term match {
+          case n: NAry =>
+            val (mappings, arguments) = n.arguments.foldLeft((mapping, IndexedSeq.empty[n.ArgumentType])) {
+              case ((map, args), arg) =>
+                val (t, m) = depthFirstAndReuse(arg, map)(partialFunction)
+                (map ++ m, args :+ t.asInstanceOf[n.ArgumentType])
+            }
+            val copied = n.copy(arguments)
+            (copied, mappings)
+          case t =>
+            (t, mapping)
+        }
+        val transformed = if (partialFunction.isDefinedAt(result)) partialFunction(result) else result
+        (transformed, newMap + (termId -> transformed))
+    }
+  }
+
+  def depthLastAndReuse(term: AnyTerm, mapping: Map[ObjectId[AnyTerm], AnyTerm] = Map.empty)
+                       (partialFunction: PartialFunction[AnyTerm, AnyTerm]): (AnyTerm, Map[ObjectId[AnyTerm], AnyTerm]) = {
+    val termId = new ObjectId(term)
+    mapping.get(termId) match {
+      case Some(x) =>
+        (x, mapping)
+      case None =>
+        if (partialFunction.isDefinedAt(term)) {
+          val result = partialFunction(term)
+          (result, mapping + (termId -> result))
+        } else {
+          term match {
+            case n: NAry =>
+              val (mappings, arguments) = n.arguments.foldLeft((mapping, IndexedSeq.empty[n.ArgumentType])) {
+                case ((map, args), arg) =>
+                  val (t, m) = depthLastAndReuse(arg, map)(partialFunction)
+                  (map ++ m, args :+ t.asInstanceOf[n.ArgumentType])
+              }
+              val copied = n.copy(arguments)
+              (copied, mappings)
+            case t =>
+              (t, mapping)
+          }
+        }
+    }
+  }
+
+
   def depthLast(term: AnyTerm)(partialFunction: PartialFunction[AnyTerm, AnyTerm]): AnyTerm = {
-    if(partialFunction.isDefinedAt(term)) partialFunction(term)
+    if (partialFunction.isDefinedAt(term)) partialFunction(term)
     else term match {
       case n: NAry =>
         val transformed = n.arguments map ((t: AnyTerm) => depthLast(t)(partialFunction).asInstanceOf[n.ArgumentType])
@@ -31,9 +85,9 @@ object Transformer {
     }
   }
 
-  def replace[D <: Dom](term: AnyTerm)(variable: Var[D], value:Term[D]): AnyTerm = {
-    depthLast(term){
-      case t if ! t.vars.contains(variable) =>
+  def replace[D <: Dom](term: AnyTerm)(variable: Var[D], value: Term[D]): AnyTerm = {
+    depthLast(term) {
+      case t if !t.vars.contains(variable) =>
         t
       case t: Memoized[_, _] =>
         Conditioned(t, variable, value)
@@ -58,7 +112,7 @@ object Transformer {
   def groundVariables(toGround: Seq[AnyVar])(term: AnyTerm) = depthFirst(term) {
     case v: Var[_] if toGround.contains(v) => VarAtom(v)
     case VarSeqApply(a: Atom[_], i) => SeqAtom[Dom, VarSeqDom[Dom]](a.asInstanceOf[Atom[VarSeqDom[Dom]]], i)
-    case VarSeqLength(a :Atom[_]) => LengthAtom[VarSeqDom[Dom]](a.asInstanceOf[Atom[VarSeqDom[Dom]]])
+    case VarSeqLength(a: Atom[_]) => LengthAtom[VarSeqDom[Dom]](a.asInstanceOf[Atom[VarSeqDom[Dom]]])
   }
 
   def groundSums(term: AnyTerm) = depthFirst(term) {
@@ -82,6 +136,10 @@ object Transformer {
       val sumArgs = VarSeq(length, doubleTerms)
       sum(doubleTerms, length)
     //varSeqSum[Term[VarSeqDom[TypedDom[Double]]]](sumArgs)
+  }
+
+  def precalculate(term: AnyTerm) = depthLastAndReuse(term) {
+    case t if t.isStatic => Precalculated(t)
   }
 
 }

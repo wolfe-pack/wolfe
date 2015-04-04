@@ -144,6 +144,20 @@ trait ProgressLogging extends FastLogging {
 
 
 /**
+ * A wrapper for objects that uses the identity hashmap and equals methods.
+ * @param value the value to be given an id.
+ * @tparam T type of value.
+ */
+class ObjectId[T <: AnyRef](val value:T) {
+  override def hashCode() = System.identityHashCode(value)
+
+  override def equals(obj: scala.Any) = obj match {
+    case o:ObjectId[_] => o.value eq value
+    case _ => false
+  }
+}
+
+/**
  * A function that turns "lifted" functions to Options into partial functions such that repeated calls
  * in isDefinedAt and apply are avoided by caching results.
  * @param f the lifted function to turn into a partial function.
