@@ -56,12 +56,8 @@ trait MatrixFactorization {
   //the per cell score
   def score(theta: Thetas.Term)(cell: Cells.Term): DoubleTerm = theta.rows(cell.row) dot theta.cols(cell.col)
 
-  def regularize(theta: Thetas.Term)(pos: Cells.Term, neg: Cells.Term): DoubleTerm = {
-    val colVect: VectorTerm = theta.cols(pos.map(_.col))
-    val rowPosVect: VectorTerm = theta.rows(pos.map(_.row))
-    val rowNegVect: VectorTerm = theta.rows(neg.map(_.row))
-    sum(Seq(colVect, rowPosVect, rowNegVect)) { v => v.l2() * lambda }
-  }
+  def regularize(theta: Thetas.Term)(pos: Cells.Term, neg: Cells.Term): DoubleTerm =
+    sum(Seq(theta.cols(pos.col), theta.rows(pos.row), theta.rows(neg.row))) { v => v.l2() * lambda }
 
   //training loss, stochastic term based on sampling a positive cell, and then a negative based on it.
   def loss(t: Thetas.Term): DoubleTerm = {
@@ -84,22 +80,9 @@ trait MatrixFactorization {
     thetaStar = argmax(Thetas)(t => loss(t).argmaxBy(Argmaxer.adaGrad(adaParams))).eval()
   }
 
-  class Predictor(val thetaStar: Thetas.Value) {
-    def prob(theta: Thetas.Term)(cell: Cells.Term): DoubleTerm = sigm(score(theta)(cell))
+  lazy val probFun = fun(Cells) { x => sigm(score(thetaStar.toConst)(x)) }
 
-    val c = Cells.Var
-    val theta = Thetas.Const(thetaStar)
-    val probCalculator = prob(theta)(c)
-    val evaluator = probCalculator.evaluator()
-
-    def predict(row: Int, col: Int) = evaluator.eval(Cell(row, col))
-  }
-
-  private def predictor(theta: Thetas.Value = thetaStar) = new Predictor(theta)
-
-  lazy val defaultPredictor = predictor()
-
-  def predict(row: Int, col: Int) = defaultPredictor.predict(row, col)
+  def predict(row: Int, col: Int) = probFun(Cell(row, col))
 }
 
 object MatrixFactorization {

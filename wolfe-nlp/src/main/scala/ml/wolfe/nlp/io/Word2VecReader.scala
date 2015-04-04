@@ -3,12 +3,8 @@ package ml.wolfe.nlp.io
 import java.io.DataInputStream
 import java.io.IOException
 import java.io._
-import java.util.HashMap
-import java.util.Map
-import java.util.StringTokenizer
 import java.util.zip.GZIPInputStream
-
-import scala.collection.mutable
+import gnu.trove.map.hash.THashMap
 import scala.collection.mutable.ArrayBuffer
 
 /**
@@ -36,37 +32,11 @@ object Word2VecReader {
 }
 
 
-/** A Scala port of the word2vec model.  This interface allows the user to access the vector representations
-  * output by the word2vec tool, as well as perform some common operations on those vectors.  It does NOT
-  * implement the actual continuous bag-of-words and skip-gram architectures for computing the vectors.
-  *
-  * More information on word2vec can be found here: https://code.google.com/p/word2vec/
-  *
-  * Example usage:
-  * {{{
-  * val model = new Word2Vec()
-  * model.load("vectors.bin")
-  * val results = model.distance(List("france"), N = 10)
-  *
-  * model.pprint(results)
-  * }}}
-  *
-  * @constructor Create a word2vec model.
-  *
-  * @author trananh
-  */
-
 class Word2Vec {
+  /** Map of words and their associated vector representations */
+  private val vocab = new THashMap[String, Array[Float]]() // mutable.HashMap[String, Array[Float]]()
   private val MAX_SIZE: Int = 50
 
-  /**
-   * Loads the google model
-   *
-   * @param path the path to the google model
-   * @return the loaded model
-   * @throws IOException
-   */
-  @throws(classOf[IOException])
   def load(path: String, filter: (String => Boolean) = _ => true, normalize: Boolean = true) = { //Word2Vec = {
     var dis: DataInputStream = null
     var bis: BufferedInputStream = null
@@ -74,8 +44,6 @@ class Word2Vec {
     var len: Double = 0
     var words: Int = 0
     var size: Int = 0
-    //    val w2v: Word2Vec = new Word2Vec
-
     try {
       if (path.endsWith(".gz")) {
         gis = new GZIPInputStream(new FileInputStream(path))
@@ -88,11 +56,9 @@ class Word2Vec {
 
       words = readString(dis).toInt
       size = readString(dis).toInt
-      println("Words = " + words + "; size = " + size)
-      var word: String = null
       val vector = new ArrayBuffer[Float]
       for (i <- 0 until words) {
-        word = readString(dis)
+        val word = readString(dis)
         // If the filter fails, do not add the word to the dictionary
         // However, the floats still need to be read as in the following lines.
         if (!filter(word)) { // Filter failed
@@ -104,19 +70,15 @@ class Word2Vec {
           }
           if (normalize) {
             val sum = vector.sum
-            //w2v.
             put(word, vector.toArray.map(_ / sum))
+            vector.clear()
           }
           else {
-            //w2v.
             put(word, vector.toArray)
+            vector.clear()
           }
         }
-        println(vocab.size)
       }
-
-      // dis.readChar()
-
     }
     catch {
       case e: Exception => println(e.getStackTrace.mkString("\n"))
@@ -124,20 +86,11 @@ class Word2Vec {
       bis.close
       dis.close
     }
-    //    w2v
   }
 
   def size = vocab.size
 
-  /**
-   * Read a string from a data input stream
-   * Credit to: https://github.com/NLPchina/Word2VEC_java/blob/master/src/com/ansj/vec/Word2VEC.java
-   *
-   * @param dis
-   * @return
-   * @throws IOException
-   */
-  @throws(classOf[IOException])
+
   private def readString(dis: DataInputStream): String = {
     var bytes: Array[Byte] = new Array[Byte](MAX_SIZE)
     var b: Byte = dis.readByte
@@ -154,21 +107,13 @@ class Word2Vec {
       }
     }
     sb.append(new String(bytes, 0, i + 1))
-    return sb.toString
+    sb.toString()
   }
 
-  /**
-   * Credit to: https://github.com/NLPchina/Word2VEC_java/blob/master/src/com/ansj/vec/Word2VEC.java
-   *
-   * @param is
-   * @return
-   * @throws IOException
-   */
-  @throws(classOf[IOException])
   def readFloat(is: InputStream): Float = {
     val bytes: Array[Byte] = new Array[Byte](4)
     is.read(bytes)
-    return getFloat(bytes)
+    getFloat(bytes)
   }
 
   /**
@@ -184,11 +129,8 @@ class Word2Vec {
     accum = accum | (b(1) & 0xff) << 8
     accum = accum | (b(2) & 0xff) << 16
     accum = accum | (b(3) & 0xff) << 24
-    return java.lang.Float.intBitsToFloat(accum)
+    java.lang.Float.intBitsToFloat(accum)
   }
-
-  /** Map of words and their associated vector representations */
-  private val vocab = new mutable.HashMap[String, Array[Float]]()
 
   /** Number of words */
   private var numWords = 0
@@ -196,68 +138,10 @@ class Word2Vec {
   /** Number of floating-point values associated with each word (i.e., length of the vectors) */
   private var vecSize = 0
 
-  /*  /** Load data from a binary file.
-      * @param filename Path to file containing word projections in the BINARY FORMAT.
-      * @param limit Maximum number of words to load from file (a.k.a. max vocab size).
-      * @param normalize Normalize the loaded vectors if true (default to true).
-      */
-    def load(filename: String, limit: Integer = Int.MaxValue, normalize: Boolean = true): Unit = {
-      // Check edge case
-      val file = new File(filename)
-      if (!file.exists()) {
-        throw new FileNotFoundException("Binary vector file not found <" + file.toString + ">")
-      }
+  def put(str: String, vec: Array[Float]) = vocab.put(str, vec)
 
-      // Create new reader to read data
-      val reader = new VecBinaryReader(file)
-
-      // Read header info
-      numWords = Integer.parseInt(reader.readToken())
-      vecSize = Integer.parseInt(reader.readToken())
-      println("\nFile contains " + numWords + " words with vector size " + vecSize)
-
-      // Read the vocab words and their associated vector representations
-      var word = ""
-      val vector = new Array[Float](vecSize)
-      var normFactor = 1f
-      for (_ <- 0 until math.min(numWords, limit)) {
-        // Read the word
-        word = reader.readToken()
-
-        // Read the vector representation (each vector contains vecSize number of floats)
-        for (i <- 0 until vector.length) vector(i) = reader.readFloat()
-
-        // Store the normalized vector representation, keyed by the word
-        normFactor = if (normalize) magnitude(vector).toFloat else 1f
-        vocab.put(word, vector.map(_ / normFactor) )
-
-        // Eat up the next delimiter character
-        try {
-          reader.read()
-        }
-        catch {
-          case e: Throwable => System.err.println("Error reading Word2Vec: " + e.getStackTrace.mkString("\n"))
-        }
-      }
-      println(vocab.size)
-      println("Loaded " + math.min(numWords, limit) + " words.\n")
-
-      // Finally, close the reader
-      reader.close()
-    }*/
-
-  def put(str: String, vec: Array[Float]) = {
-    vocab.put(str, vec)
-  }
-
-  /** Return the number of words in the vocab.
-    * @return Number of words in the vocab.
-    */
   def wordsCount: Int = numWords
 
-  /** Size of the vectors.
-    * @return Size of the vectors.
-    */
   def vectorSize: Int = vecSize
 
   /** Clear internal data. */
@@ -267,27 +151,16 @@ class Word2Vec {
     vecSize = 0
   }
 
-  /** Check if the word is present in the vocab map.
-    * @param word Word to be checked.
-    * @return True if the word is in the vocab map.
-    */
+
   def contains(word: String): Boolean = {
-    vocab.get(word).isDefined
+    vocab.containsKey(word)
   }
 
-  /** Get the vector representation for the word.
-    * @param word Word to retrieve vector for.
-    * @return The vector representation of the word.
-    */
-  def vector(word: String): Array[Float] = {
-    vocab.getOrElse(word, Array[Float]())
+  def vector(word: String): Option[Array[Float]] = {
+    if (contains(word)) Some(vocab.get(word))
+    else None
   }
 
-  /** Compute the Euclidean distance between two vectors.
-    * @param vec1 The first vector.
-    * @param vec2 The other vector.
-    * @return The Euclidean distance between the two vectors.
-    */
   def euclidean(vec1: Array[Float], vec2: Array[Float]): Double = {
     assert(vec1.length == vec2.length, "Uneven vectors!")
     var sum = 0.0
@@ -295,21 +168,11 @@ class Word2Vec {
     math.sqrt(sum)
   }
 
-  /** Compute the Euclidean distance between the vector representations of the words.
-    * @param word1 The first word.
-    * @param word2 The other word.
-    * @return The Euclidean distance between the vector representations of the words.
-    */
   def euclidean(word1: String, word2: String): Double = {
     assert(contains(word1) && contains(word2), "Out of dictionary word! " + word1 + " or " + word2)
-    euclidean(vocab.get(word1).get, vocab.get(word2).get)
+    euclidean(vector(word1).get, vector(word2).get)
   }
 
-  /** Compute the cosine similarity score between two vectors.
-    * @param vec1 The first vector.
-    * @param vec2 The other vector.
-    * @return The cosine similarity score of the two vectors.
-    */
   def cosine(vec1: Array[Float], vec2: Array[Float]): Double = {
     assert(vec1.length == vec2.length, "Uneven vectors!")
     var dot, sum1, sum2 = 0.0
@@ -321,32 +184,85 @@ class Word2Vec {
     dot / (math.sqrt(sum1) * math.sqrt(sum2))
   }
 
-  /** Compute the cosine similarity score between the vector representations of the words.
-    * @param word1 The first word.
-    * @param word2 The other word.
-    * @return The cosine similarity score between the vector representations of the words.
-    */
   def cosine(word1: String, word2: String): Double = {
     assert(contains(word1) && contains(word2), "Out of dictionary word! " + word1 + " or " + word2)
-    cosine(vocab.get(word1).get, vocab.get(word2).get)
+    cosine(vector(word1).get, vector(word2).get)
   }
 
-  /** Compute the magnitude of the vector.
-    * @param vec The vector.
-    * @return The magnitude of the vector.
-    */
   def magnitude(vec: Array[Float]): Double = {
     math.sqrt(vec.foldLeft(0.0){(sum, x) => sum + (x * x)})
   }
 
-  /** Normalize the vector.
-    * @param vec The vector.
-    * @return A normalized vector.
-    */
   def normalize(vec: Array[Float]): Array[Float] = {
     val mag = magnitude(vec).toFloat
     vec.map(_ / mag)
   }
+}
+
+
+/** ********************************************************************************
+  * Demo of the Scala ported word2vec model.
+  * ********************************************************************************
+  */
+object RunWord2Vec {
+
+  /** Demo. */
+  def main(args: Array[String]) {
+    // Load word2vec model from binary file.
+    val model = Word2VecReader.load(args(0))
+  }
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+
+
+ /*
+    // distance: Find N closest words
+    model.pprint(model.distance(List("france"), N = 10))
+    model.pprint(model.distance(List("france", "usa")))
+    model.pprint(model.distance(List("france", "usa", "usa")))
+
+    // analogy: "king" is to "queen", as "man" is to ?
+    model.pprint(model.analogy("king", "queen", "man", N = 10))
+
+    // rank: Rank a set of words by their respective distance to the central term
+    model.pprint(model.rank("apple", Set("orange", "soda", "lettuce")))
+    */
+
+  /** Pretty print the list of words and their associated scores.
+    * @param words List of (word, score) pairs to be printed.
+    */
+  def pprint(words: List[(String, Float)]) = {
+    println("\n%50s".format("Word") + (" " * 7) + "Cosine distance\n" + ("-" * 72))
+    println(words.map(s => "%50s".format(s._1) + (" " * 7) + "%15f".format(s._2)).mkString("\n"))
+  }
+
+
 
   /** Find the vector representation for the given list of word(s) by aggregating (summing) the
     * vector for each word.
@@ -469,67 +385,68 @@ class Word2Vec {
     nearestNeighbors(vocab.get(word).get, inSet = Option(set), N = set.size)
   }
 
-  /** Pretty print the list of words and their associated scores.
-    * @param words List of (word, score) pairs to be printed.
-    */
-  def pprint(words: List[(String, Float)]) = {
-    println("\n%50s".format("Word") + (" " * 7) + "Cosine distance\n" + ("-" * 72))
-    println(words.map(s => "%50s".format(s._1) + (" " * 7) + "%15f".format(s._2)).mkString("\n"))
-  }
-
-}
-
-
-/** ********************************************************************************
-  * Demo of the Scala ported word2vec model.
-  * ********************************************************************************
-  */
-object RunWord2Vec {
-
-  /** Demo. */
-  def main(args: Array[String]) {
-    // Load word2vec model from binary file.
-    val model = Word2VecReader.load(args(0)) //model.load(args(0)) //"../word2vec-scala/vectors.bin")
-
-    // distance: Find N closest words
-    model.pprint(model.distance(List("france"), N = 10))
-    model.pprint(model.distance(List("france", "usa")))
-    model.pprint(model.distance(List("france", "usa", "usa")))
-
-    // analogy: "king" is to "queen", as "man" is to ?
-    model.pprint(model.analogy("king", "queen", "man", N = 10))
-
-    // rank: Rank a set of words by their respective distance to the central term
-    model.pprint(model.rank("apple", Set("orange", "soda", "lettuce")))
-  }
-
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+ */
 
 
 
 /*
+
+
+
+ /*  /** Load data from a binary file.
+      * @param filename Path to file containing word projections in the BINARY FORMAT.
+      * @param limit Maximum number of words to load from file (a.k.a. max vocab size).
+      * @param normalize Normalize the loaded vectors if true (default to true).
+      */
+    def load(filename: String, limit: Integer = Int.MaxValue, normalize: Boolean = true): Unit = {
+      // Check edge case
+      val file = new File(filename)
+      if (!file.exists()) {
+        throw new FileNotFoundException("Binary vector file not found <" + file.toString + ">")
+      }
+
+      // Create new reader to read data
+      val reader = new VecBinaryReader(file)
+
+      // Read header info
+      numWords = Integer.parseInt(reader.readToken())
+      vecSize = Integer.parseInt(reader.readToken())
+      println("\nFile contains " + numWords + " words with vector size " + vecSize)
+
+      // Read the vocab words and their associated vector representations
+      var word = ""
+      val vector = new Array[Float](vecSize)
+      var normFactor = 1f
+      for (_ <- 0 until math.min(numWords, limit)) {
+        // Read the word
+        word = reader.readToken()
+
+        // Read the vector representation (each vector contains vecSize number of floats)
+        for (i <- 0 until vector.length) vector(i) = reader.readFloat()
+
+        // Store the normalized vector representation, keyed by the word
+        normFactor = if (normalize) magnitude(vector).toFloat else 1f
+        vocab.put(word, vector.map(_ / normFactor) )
+
+        // Eat up the next delimiter character
+        try {
+          reader.read()
+        }
+        catch {
+          case e: Throwable => System.err.println("Error reading Word2Vec: " + e.getStackTrace.mkString("\n"))
+        }
+      }
+      println(vocab.size)
+      println("Loaded " + math.min(numWords, limit) + " words.\n")
+
+      // Finally, close the reader
+      reader.close()
+    }*/
+
+
+
+
+
 import java.io.FileInputStream
 import java.util.zip.GZIPInputStream
 

@@ -138,7 +138,9 @@ case class ConstituentTree(node: ConstituentNode, children : List[ConstituentTre
   def headOf(i: Int, j: Int): Option[HeadInfo] = {
     if (i < 0 || j < 0) return None
     if (i > length || j > length) return None
-    if (spans.contains((i,j))) spans((i,j)).head.headInfo else None
+    if (spans.contains((i,j)) && spans((i,j)).nonEmpty) {
+      spans((i,j)).head.headInfo
+    } else None
   }
 
 

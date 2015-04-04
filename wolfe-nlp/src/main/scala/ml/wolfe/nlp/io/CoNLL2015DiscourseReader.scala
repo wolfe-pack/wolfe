@@ -12,9 +12,8 @@ import scala.io.Source
 
 /**
  * @author matko
+ * @author rockt
  */
-
-
 object CoNLL2015DiscourseReader {
 
   implicit val formats = DefaultFormats
@@ -105,9 +104,19 @@ object CoNLL2015DiscourseReader {
 }
 
 object CoNLL2015DiscourseWriter {
-
-  case class JSONDiscourseRelation(Arg1: JSONDiscourseArgument, Arg2: JSONDiscourseArgument, Connective: JSONDiscourseArgument, DocID: String, ID: Int, Sense: List[String], Type: String)
-  case class JSONDiscourseArgument(CharacterSpanList: List[List[Int]] , RawText: String, TokenList: List[List[Int]])
+  case class JSONDiscourseRelation(
+    Arg1: JSONDiscourseArgument,
+    Arg2: JSONDiscourseArgument,
+    Connective: JSONDiscourseArgument,
+    DocID: String,
+    //ID: Int,
+    Sense: Seq[String],
+    Type: String)
+  case class JSONDiscourseArgument(
+    //CharacterSpanList: List[List[Int]],
+    //RawText: String,
+    TokenList: Seq[Int]
+  )
 
   def writeDocumentsToJSON(documents: Iterable[Document], filename: String) = {
     val sb = new StringBuilder
@@ -121,48 +130,35 @@ object CoNLL2015DiscourseWriter {
   }
 
   def documentToJSONDiscourseRelations(document: Document): Seq[JSONDiscourseRelation] = {
-    // pre-calculate document sentence lengths, needed for token offsets
-    var counter = 0
-    val sentence_lengths = document.sentences.map{ sentence =>
-      counter += sentence.size
-      counter
+    def sentenceTokenIndiciesToDocTokenIndices(discourseTokens: Seq[(Int, Int)]): Seq[Int] = discourseTokens.map(t => {
+      val (sIx, tIx) = t
+      document.sentences.slice(0, sIx).map(_.tokens.length).sum + tIx
+    })
+
+    document.discourse.relations.map { relation =>
+      val arg1 = JSONDiscourseArgument(sentenceTokenIndiciesToDocTokenIndices(relation.arg1.tokens))
+      val arg2 = JSONDiscourseArgument(sentenceTokenIndiciesToDocTokenIndices(relation.arg2.tokens))
+      val connective = JSONDiscourseArgument(sentenceTokenIndiciesToDocTokenIndices(relation.connective.tokens))
+      JSONDiscourseRelation(arg1, arg2, connective, document.id.get, relation.sense, relation.typ)
     }
-    val ret = document.discourse.relations.map { relation =>
-
-      def charOffsetsToSpanList(x: List[CharOffsets]) = x.map{ offset => List(offset.start, offset.end)}
-      def rewriteTokens(sentenceTokenPairs: Seq[(Int, Int)]) = {
-        sentenceTokenPairs.map { pair =>
-          val sentenceID = pair._1
-          val tokenID = pair._2
-          val offsets = document.sentences(sentenceID).tokens(tokenID).offsets
-          val tokenOffset = sentence_lengths(if (sentenceID - 1 >= 0) sentenceID - 1 else 0) + tokenID
-          List(offsets.start, offsets.end, tokenOffset, sentenceID, tokenID)
-        }.toList
-      }
-
-      val arg1_characterspanlist = charOffsetsToSpanList(relation.arg1.charOffsets)
-      val arg2_characterspanlist = charOffsetsToSpanList(relation.arg2.charOffsets)
-      val connective_characterspanlist = charOffsetsToSpanList(relation.connective.charOffsets)
-
-      val arg1_tokens = rewriteTokens(relation.arg1.tokens)
-      val arg2_tokens = rewriteTokens(relation.arg2.tokens)
-      val connective_tokens = rewriteTokens(relation.connective.tokens)
-
-      val arg1 = JSONDiscourseArgument(arg1_characterspanlist, relation.arg1.text, arg1_tokens)
-      val arg2 = JSONDiscourseArgument(arg2_characterspanlist, relation.arg2.text, arg2_tokens)
-      val connective = JSONDiscourseArgument(connective_characterspanlist, relation.connective.text, connective_tokens)
-
-      JSONDiscourseRelation(arg1, arg2, connective, document.id.get, relation.id.toInt, relation.sense, relation.typ)
-    }
-    ret
-
   }
 }
 
 object CoNLL2015TestReadWrite extends App {
+  val useDev = true
   println("Initiating reader.")
-  val output = CoNLL2015DiscourseReader.loadData("/Users/matko/workspace/conll2015/data/conll15st-train-dev/conll15st_data/conll15-st-03-04-15-train/")
-  println("Reading DONE. Initiating writing.")
+  val path =
+    if (useDev) "./data/conll15st-train-dev/conll15st_data/conll15-st-03-04-15-dev/"
+    else "./data/conll15st-train-dev/conll15st_data/conll15-st-03-04-15-train/"
+
+  val output = CoNLL2015DiscourseReader.loadData(path)
+  println("Read " + output + " documents. Now writing...")
   CoNLL2015DiscourseWriter.writeDocumentsToJSON(output, "output.json")
   println("Writing DONE.")
+  import sys.process._
+  println("Running validator...")
+  println(s"python conll15st/validator.py output.json".!)
+  println("Running scorer...")
+  println(s"python conll15st/scorer.py $path/pdtb-data.json output.json".!)
+  println("Done!")
 }
