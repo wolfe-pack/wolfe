@@ -99,16 +99,25 @@ case class CorefMention(clusterID: Int, sentence: Int, start: Int, end: Int, hea
 
   override def toString = "[Coref Mention: Sent: %d, Start: %d, End: %d, Cluster: %d]".format(sentence, start, end, clusterID)
 
-  /*
-    override def toString = {
-      "[COREF MENTION\n" +
-      "  START: %d\n".format(start) +
-      "  END: %d\n".format(end) +
-        (if (head >= 0) "  HEAD: %d\n".format(head) else "") +
-      "  SENTENCE: %d\n".format(sentence) +
-      "  CLUSTER: %d]\n".format(clusterID)
-    }
-  */
-
   def width = end - start
 }
+
+
+
+
+
+
+
+
+
+
+/*
+  override def toString = {
+    "[COREF MENTION\n" +
+    "  START: %d\n".format(start) +
+    "  END: %d\n".format(end) +
+      (if (head >= 0) "  HEAD: %d\n".format(head) else "") +
+    "  SENTENCE: %d\n".format(sentence) +
+    "  CLUSTER: %d]\n".format(clusterID)
+  }
+*/
