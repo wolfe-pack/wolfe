@@ -12,13 +12,15 @@ import scala.collection.mutable.HashMap
  * @param mentions sequence of CorefMention elements
  */
 case class CorefAnnotation(mentions: Seq[CorefMention] = Seq.empty) {
+  type BareMention = (Int,Int,Int)
+
+  lazy val mentionToCluster: Map[BareMention, Int] = {
+    mentions.map(m => (m.sentence, m.start, m.end) -> m.clusterID)
+  }.toMap
 
 
   def clusterOf(s: Int, i: Int, j: Int): Option[Int] = {
-    mentions.find(m => m.sentence == s && m.start == i && m.end == j) match {
-      case Some(x) => Some(x.clusterID)
-      case _ => None
-    }
+    mentionToCluster.get((s,i,j))
   }
 
   def distanceInMentions(m1: CorefMention, m2: CorefMention): Int = {
@@ -26,7 +28,7 @@ case class CorefAnnotation(mentions: Seq[CorefMention] = Seq.empty) {
   }
 
   def hasMention(s: Int, i: Int, j: Int): Boolean = {
-    mentions.exists(m => m.sentence == s && m.start == i && m.end == j)
+    mentionToCluster.contains((s,i,j))
   }
 
   def mentionTokens(m: CorefMention, d: Document): IndexedSeq[Token] = {
@@ -35,24 +37,19 @@ case class CorefAnnotation(mentions: Seq[CorefMention] = Seq.empty) {
     d.sentences(m.sentence).tokens.slice(m.start, m.end)
   }
 
-  def mentionTokens(m: (Int,Int,Int), d: Document): IndexedSeq[Token] = {
-    mentionTokens(CorefMention(sentence = m._1, start = m._2, end = m._3, clusterID = -1), d)
+  def mentionTokens(m: BareMention, d: Document): IndexedSeq[Token] = {
+    assert(m._1 < d.sentences.size, "Document does not have a sentence at idx = %d.".format(m._1))
+    assert(d.sentences(m._1).size >= m._3, "Sentence at idx = %d is of len %d (queried mention ends at %d).".format(m._1, m._3))
+    d.sentences(m._1).tokens.slice(m._2, m._3)
   }
 
   def shareCluster(m1: CorefMention, m2: CorefMention): Boolean = {
-    shareCluster(m1.sentence, m1.start, m1.end, m2.sentence, m2.start, m2.end)
+    shareCluster((m1.sentence, m1.start, m1.end), (m2.sentence, m2.start, m2.end))
   }
 
-  def shareCluster(s1: Int, i1: Int, j1: Int, s2: Int, i2: Int, j2: Int): Boolean = {
-    if (askedBefore(s1, i1, j1, s2, i2, j2)) return cachedAnswer((s1, i1, j1, s2, i2, j2))
-    val answer = clusterOf(s1, i1, j1) == clusterOf(s2, i2, j2)
-    cachedAnswer((s1, i1, j1, s2, i2, j2)) = answer
-    answer
+  def shareCluster(m1: BareMention, m2: BareMention): Boolean = {
+    mentionToCluster(m1) == mentionToCluster(m2)
   }
-
-  val cachedAnswer = new HashMap[(Int,Int,Int,Int,Int,Int), Boolean]
-
-  def askedBefore(s1: Int, i1: Int, j1: Int, s2: Int, i2: Int, j2: Int) = cachedAnswer.contains((s1, i1, j1, s2, i2, j2))
 }
 
 object CorefAnnotation {
