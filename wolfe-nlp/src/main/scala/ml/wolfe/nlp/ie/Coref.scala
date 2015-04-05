@@ -31,6 +31,10 @@ case class CorefAnnotation(mentions: Seq[CorefMention] = Seq.empty) {
     mentionToCluster.contains((s,i,j))
   }
 
+  def hasMention(m: BareMention): Boolean = {
+    mentionToCluster.contains(m)
+  }
+
   def mentionTokens(m: CorefMention, d: Document): IndexedSeq[Token] = {
     assert(m.sentence < d.sentences.size, "Document does not have a sentence at idx = %d.".format(m.sentence))
     assert(d.sentences(m.sentence).size >= m.end, "Sentence at idx = %d is of len %d (queried mention ends at %d).".format(m.sentence, m.end))
