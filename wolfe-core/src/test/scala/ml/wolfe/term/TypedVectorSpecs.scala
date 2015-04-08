@@ -19,9 +19,6 @@ class TypedVectorSpecs extends WolfeSpec {
       val b = Bools.Var
       x(b).eval(x := vector(1,2), b := false) should be (1.0)
       x(b).eval(x := vector(1,2), b := true) should be (2.0)
-
-
-
     }
 
   }

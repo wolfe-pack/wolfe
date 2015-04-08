@@ -94,13 +94,13 @@ object GradientChecking {
 object Scratch extends App {
   import ml.wolfe.term.TermImplicits._
 
-  val a = Doubles.variable("a")
+  val a = Doubles.Variable("a")
 
-  val x = Vectors(3).variable("x")
-  val y = Vectors(3).variable("y")
-  val z = Vectors(5).variable("z")
+  val x = Vectors(3).Variable("x")
+  val y = Vectors(3).Variable("y")
+  val z = Vectors(5).Variable("z")
 
-  val A = Matrices(5,3).variable("A")
+  val A = Matrices(5,3).Variable("A")
 
   val complexTerm = sigm(tanh(((sigmVec(A * x) * a) dot tanhVec(z)) * a))
 

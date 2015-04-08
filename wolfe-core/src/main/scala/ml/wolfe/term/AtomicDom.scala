@@ -56,7 +56,7 @@ class MatrixDom(val dim1: Int, dim2: Int) extends AtomicDom {
     target.mats(offsets.matsOff) = new MatsMsg(zero)
   }
 
-  def variable(name: String): DomVar = new StaticMatrixVar(name)
+  def Variable(name: String): DomVar = new StaticMatrixVar(name)
 
   def one = new DenseTensor2(dim1, dim2, 1.0)
 
@@ -111,7 +111,7 @@ class DoubleDom extends AtomicDom {
 
   val lengths = Offsets(0, 1, 0, 0)
 
-  def variable(name: String): Var = StaticDoubleVar(name)
+  def Variable(name: String): Var = StaticDoubleVar(name)
 
   def one = 1.0
 
@@ -167,7 +167,7 @@ trait GenericDiscreteDom[T] extends AtomicDom {
 
   val lengths = Offsets(1, 0, 0, 0)
 
-  def variable(name: String) = StaticDiscVar(name)
+  def Variable(name: String) = StaticDiscVar(name)
 
 
   trait DomVar extends super.DomVar {

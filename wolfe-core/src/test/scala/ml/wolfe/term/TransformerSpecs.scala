@@ -70,7 +70,7 @@ class TransformerSpecs extends WolfeSpec {
       val indices = SeqConst(0, 1, 2)
       val term = sum(indices) { i => x(i) }
       val transformed = groundSums(term)
-      val i = Ints.variable("_i")
+      val i = Ints.Variable("_i")
       val expected = sum(indices.length)(x(0), x(1), x(2))
       transformed should beStringEqual(expected)
       transformed.eval(x := IndexedSeq(1.0, 2.0, 3.0)) should be(expected.eval(x := IndexedSeq(1.0, 2.0, 3.0)))

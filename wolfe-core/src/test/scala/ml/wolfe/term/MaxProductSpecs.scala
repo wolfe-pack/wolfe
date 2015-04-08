@@ -16,7 +16,7 @@ class MaxProductSpecs extends WolfeSpec {
   "A MaxProduct algorithm" should {
     "optimize a linear chain objective" in {
       val n = 5
-      val vars = Range(0, n) map (i => Bools.variable("y" + i))
+      val vars = Range(0, n) map (i => Bools.Variable("y" + i))
       val length = Ints(0 until n).Var
 
       def local(b: BoolTerm) = I(b)

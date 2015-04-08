@@ -70,14 +70,14 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
   }
 
   def fun[D <: Dom](d: Dom)(f: d.Term => Term[D]): d.Value => D#Value = {
-    val v = d.variable("v")
+    val v = d.Variable("v")
     val t = f(v)
     val e = t.evaluator()
     (x: d.Value) => e.eval(x)
   }
   def fun[D <: Dom](d1: Dom,d2:Dom)(f: (d1.Term,d2.Term) => Term[D]): (d1.Value,d2.Value) => D#Value = {
-    val v1 = d1.variable("v1")
-    val v2 = d2.variable("v2")
+    val v1 = d1.Variable("v1")
+    val v2 = d2.Variable("v2")
     val t = f(v1,v2)
     val e = t.evaluator()
     (a1:d1.Value,a2:d2.Value) => e.eval(a1,a2)
@@ -316,6 +316,8 @@ trait MathImplicits {
 
   def Vectors(dim: Int) = new VectorDom(dim)
 
+  def TypedVectors[D <: Dom](argDom:D) = new TypedVectorDom[argDom.type](argDom)
+
   def GrowableVectors(initDim: Int = 1000) = new GrowableVectorDom(initDim)
 
   def Matrices(dim1: Int, dim2: Int) = new MatrixDom(dim1: Int, dim2: Int)
@@ -452,7 +454,7 @@ trait MathImplicits {
   }
 
   def argmax[D <: Dom](dom: D)(obj: dom.Var => DoubleTerm): Argmax[dom.type] = {
-    val variable = dom.variable("_hidden")
+    val variable = dom.Variable("_hidden")
     val term = obj(variable)
     new Argmax[dom.type](term, variable)
   }
@@ -470,7 +472,7 @@ trait MathImplicits {
   //def eval(term: AnyTerm)(assignments: Assignment[Dom]*): term.domain.Value = term.eval(assignments:_*)
 
   def max[D <: Dom](dom: D)(obj: dom.Var => DoubleTerm) = {
-    val variable = dom.variable("_hidden")
+    val variable = dom.Variable("_hidden")
     val term = obj(variable)
     new Max(term, Seq(variable))
   }
@@ -495,7 +497,7 @@ trait MathImplicits {
 
 
   def sum2[E <: Dom, T <: Term[VarSeqDom[E]], Body <: DoubleTerm](indices: T)(body: indices.domain.elementDom.Var => Body) = {
-    val variable = indices.domain.elementDom.variable("_i")
+    val variable = indices.domain.elementDom.Variable("_i")
     val instantiatedBody = body(variable)
     new FirstOrderSum[E, Body, T](indices, variable, instantiatedBody)
   }

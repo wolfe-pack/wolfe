@@ -88,7 +88,7 @@ class Tuple2Dom[D1 <: Dom, D2 <: Dom](val dom1: D1, val dom2: D2) extends TupleD
   def zero = (dom1.zero, dom2.zero)
 
   def Const(value: Value) = new Tuple2Constructor(dom1.Const(value._1),dom2.Const(value._2))
-  def variable(name: String) = new Tuple2Var(name)
+  def Variable(name: String) = new Tuple2Var(name)
 
   object Term {
     def unapply(term:AnyTerm) = term match {

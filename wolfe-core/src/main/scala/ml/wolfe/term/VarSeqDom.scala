@@ -85,7 +85,7 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
   val lengths = (elementDom.lengths * maxLength) + Offsets(discOff = 1)
   override val dimensions = Dimensions(Array(minLength until maxLength + 1)) + elementDom.dimensions * maxLength
 
-  def variable(name: String): Var = new DomVar(name)
+  def Variable(name: String): Var = new DomVar(name)
 
 
   def one = for (i <- 0 until minLength) yield elementDom.one

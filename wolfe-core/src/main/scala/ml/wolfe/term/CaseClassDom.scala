@@ -202,7 +202,7 @@ object CaseClassDom {
               ..$fillZeroMsgStatements
             }
 
-            def variable(name: String) = new BaseVar(name) with DomVar {
+            def Variable(name: String) = new BaseVar(name) with DomVar {
               ..$staticVarArgs
             }
 

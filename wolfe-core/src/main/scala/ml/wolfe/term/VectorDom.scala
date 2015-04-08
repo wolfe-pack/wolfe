@@ -66,7 +66,7 @@ trait GenericVectorDom extends AtomicDom {
   }
 
 
-  def variable(name: String) = StaticVectorVar(name)
+  def Variable(name: String) = StaticVectorVar(name)
 
   case class StaticVectorVar(name: String) extends DomTerm with DomVar
 

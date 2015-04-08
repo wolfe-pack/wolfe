@@ -99,7 +99,7 @@ class MapDom1[K <: Dom, V <: Dom](keyDom: K, valueDom: V) extends MapDom[K,V](ke
   type Term = DomTerm
   type Var = DomVar
 
-  def variable(varName: String) = new Var(varName)
+  def Variable(varName: String) = new Var(varName)
 
   def Const(value: Value) = new SeqWrapper(seqDom.Const(map2seq(value)))
 
@@ -120,7 +120,7 @@ class MapDom2[K1 <: Dom, K2 <: Dom, V <:Dom](val keyDom1:K1, val keyDom2:K2, ove
 
   class Var(name:String) extends DomVar(name) with Term
 
-  def variable(varName: String) = new Var(varName)
+  def Variable(varName: String) = new Var(varName)
 
   def Const(value: Value) = new SeqWrapper(seqDom.Const(map2seq(value))) with Term
 
