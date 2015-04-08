@@ -1,18 +1,16 @@
 package ml.wolfe.term
 
 import cc.factorie.Factorie.DenseTensor1
-import cc.factorie.la.{GrowableSparseTensor1, GrowableDenseTensor1, SingletonTensor1, DenseTensor2}
-import ml.wolfe.term.TermImplicits.RichToLog
+import cc.factorie.la.{DenseTensor2, GrowableSparseTensor1}
 import ml.wolfe.{Index, Mat, Vect}
+
 import scala.language.implicitConversions
-import scala.reflect.ClassTag
-import scala.reflect.macros.blackbox
 import scala.util.Random
 
 /**
  * @author riedel
  */
-object TermImplicits extends NameProviderImplicits with MathImplicits with Stochastic with LoggedTerms with FVectors {
+object TermImplicits extends NameProviderImplicits with MathImplicits with Stochastic with LoggedTerms with FVectors with NGramCountsHelper{
 
   implicit val Doubles: Dom.doubles.type = Dom.doubles
   implicit val Bools: Dom.bools.type = Dom.bools
@@ -101,10 +99,15 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
     def toConst(implicit dom: TypedDom[T]) = fixedLengthSeq[T](values.toSeq)
   }
 
-  class RichSeqTerm[E<:Dom](seq:SeqTerm[E]) {
-    def slice(from: IntTerm, to: IntTerm)(implicit sliceDom: VarSeqDom[E]): sliceDom.Term = {
+  class RichSeqTerm[E<:Dom, S <: SeqTerm[E]](val seq:S) {
+    def slice(from: IntTerm, to: IntTerm)(implicit sliceDom: VarSeqDom[seq.domain.elementDom.type]): sliceDom.Term = {
       val result = new VarSeqSlice[Dom, SeqTerm[E], sliceDom.type](seq, from, to)(sliceDom)
       sliceDom.own(result.asInstanceOf[TypedTerm[sliceDom.Value]])
+    }
+
+    def :+(elem:seq.domain.elementDom.Term)(implicit appendedDom:VarSeqDom[seq.domain.elementDom.type]):appendedDom.Term = {
+      val result = new VarSeqAppend[Dom, SeqTerm[E], appendedDom.type](seq, elem)(appendedDom)
+      appendedDom.own(result.asInstanceOf[TypedTerm[appendedDom.Value]])
     }
   }
 
@@ -114,8 +117,8 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
 //  implicit def toRichSeqTerm[S <: VarSeqDom[_]](seq:S#Term):RichSeqTerm[seq.domain.elementDom.type,S] =
 //    new RichSeqTerm[seq.domain.elementDom.type,S](seq.asInstanceOf[seq.domain.Term])
 
-  implicit def toRichSeqTerm[E <: Dom](seq:SeqTerm[E]):RichSeqTerm[E] =
-    new RichSeqTerm[E](seq.asInstanceOf[SeqTerm[E]])
+  implicit def toRichSeqTerm[E <: Dom](seq:SeqTerm[E]):RichSeqTerm[E,seq.type] =
+    new RichSeqTerm[E,seq.type](seq)
 
   //  implicit def genericToConstant[T,D<:TypedDom[T]](t:T)(implicit dom:D):dom.Term = dom.const(t)
   //  implicit def genericToConstant[T,D<:TypedDom[T]](t:T)(implicit dom:D):dom.DomTerm = dom.const(t)

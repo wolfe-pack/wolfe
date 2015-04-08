@@ -169,6 +169,10 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
     def copyVector(v: Vect) = v match {
       case s: SingletonTensor1 => new SingletonTensor1(s.dim1, s.singleIndex, s.singleValue)
       case s: MutableSingletonTensor1 => new MutableSingletonTensor1(s.dim1, s.singleIndex, s.singleValue)
+      case s: GrowableSparseHashTensor1 =>
+        val result = new GrowableSparseHashTensor1(s.sizeProxy)
+        result += s
+        result
       case null => null
       case _ => v.copy
     }

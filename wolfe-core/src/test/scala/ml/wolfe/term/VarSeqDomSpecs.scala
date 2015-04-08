@@ -33,6 +33,16 @@ class VarSeqDomSpecs extends WolfeSpec {
       term.eval(x := IndexedSeq(false, true, false, true)) should be(IndexedSeq(true, false))
     }
 
+    "support append operations" in {
+      val n = 2
+      val x = Seqs(Bools, 0, n).Var
+      val e = Bools.Var
+      implicit val appendDom = Seqs(Bools, n + 1)
+      val term = x :+ e
+      term.eval(x := IndexedSeq(false, true), e := true) should be(IndexedSeq(false, true, true))
+    }
+
+
     "support constructing sequence terms" in {
       val n = 3
       val i = Ints(0 until n).Var
@@ -77,8 +87,8 @@ class VarSeqDomSpecs extends WolfeSpec {
       t.eval(x := args, i := 0) should be(IndexedSeq(1.0, 2.0))
       t.eval(x := args, i := 1) should be(IndexedSeq(3.0, 4.0))
 
-      t(i).eval(x := args, i:= 0) should be(1.0)
-      t(i).eval(x := args, i:= 1) should be(4.0)
+      t(i).eval(x := args, i := 0) should be(1.0)
+      t(i).eval(x := args, i := 1) should be(4.0)
     }
 
     "support argmax with length constraints" in {

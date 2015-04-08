@@ -14,27 +14,17 @@ class NGramCountSpecs extends WolfeSpec {
   implicit val random = new Random(0)
 
   "NGram Counts" should {
-    "count the number of ngrams in a dataset" ignore {
-      import NGramCountsHelper._
-      val BigramCounts = TypedVectors(Seqs(Bools, 2))
+    "count the number of ngrams in a dataset" in {
+      val Bigrams = Seqs(Bools, 2)
+      val BigramCounts = TypedVectors(Bigrams)
       val data = Seq(false, true, true, true)
-      val bigram = BigramCounts.argDom.Var
-      val bigramCounts = ngramCounts(data.toConst,2)(BigramCounts)
+      val bigram = Bigrams.Var
+      val bigramCounts = ngramCounts(data.toConst, 2)(BigramCounts)
       val term = bigramCounts(bigram)
 
-      println(term.eval(bigram := IndexedSeq(true, true)))
-
-
-
-
-
-//      val counts = NGram.ngramCounts(data, 2)
-//      val term = new SparsePotential(counts, ngram)
-//
-//      term.eval(ngram := IndexedSeq(true, true)) should be(2.0)
-//      term.eval(ngram := IndexedSeq(false, true)) should be(1.0)
-//      term.eval(ngram := IndexedSeq(false, false)) should be(0.0)
-
+      term.eval(bigram := IndexedSeq(true, true)) should be(2.0)
+      term.eval(bigram := IndexedSeq(false, true)) should be(1.0)
+      term.eval(bigram := IndexedSeq(false, false)) should be(0.0)
     }
 
   }

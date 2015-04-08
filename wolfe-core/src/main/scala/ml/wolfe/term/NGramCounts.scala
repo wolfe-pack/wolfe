@@ -18,9 +18,12 @@ case class NGramCounts[E <: Dom, C <: TypedVectorDom[VarSeqDom[E]]](data: SeqTer
 
     val from = Ints(0 until data.domain.maxLength - ngramOrder + 1).Variable("from")
     val window = data.slice(from, from + ngramOrder)(countsDom.argDom)
-
-    val windowEval = window.evaluatorImpl(args.linkedSettings(vars, window.vars))
     val fromVarIndex = window.vars.indexOf(from)
+    val windowInput = args.linkedSettings(vars, window.vars)
+    windowInput(fromVarIndex) = from.domain.createSetting()
+
+    val windowEval = window.evaluatorImpl(windowInput)
+
 
     def eval()(implicit execution: Execution) = {
       val length = input(0).disc(0)
@@ -30,13 +33,13 @@ case class NGramCounts[E <: Dom, C <: TypedVectorDom[VarSeqDom[E]]](data: SeqTer
         windowEval.input(fromVarIndex).disc(0) = i
         windowEval.eval()
         val index = countsDom.argDom.indexOfSetting(windowEval.output)
-        result(index) += 1.0
+        output.vect(0)(index) += 1.0
       }
     }
   }
 }
 
-object NGramCountsHelper {
+trait NGramCountsHelper {
   def ngramCounts[E <: Dom, C <: TypedVectorDom[VarSeqDom[E]]](data: SeqTerm[E], ngramOrder: Int)
                                                               (implicit countsDom: C) = {
     NGramCounts[E,countsDom.type](data,ngramOrder)(countsDom)

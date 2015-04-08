@@ -289,6 +289,34 @@ case class VarSeqSlice[+E <: Dom, S <: Term[VarSeqDom[E]], D <: VarSeqDom[E]](se
 }
 
 
+case class VarSeqAppend[+E <: Dom, S <: Term[VarSeqDom[E]], D <: VarSeqDom[E]](seq: S, elem:Term[E])
+                                                                              (implicit appendedDom: D) extends Composed[D] {
+  self =>
+  val domain = appendedDom
+
+  type ArgumentType = Term[Dom]
+
+  val arguments = IndexedSeq(seq, elem)
+
+  def copy(args: IndexedSeq[ArgumentType]) =
+    VarSeqAppend[E, S, D](args(0).asInstanceOf[S], args(1).asInstanceOf[Term[E]])
+
+  override def composer(args: Settings) = new Composer(args) {
+    val tgtOffsets = Offsets(discOff = 1)
+    val srcOffsets = Offsets(discOff = 1)
+
+    def eval()(implicit execution: Execution) = {
+      val length = input(0).disc(0)
+      output :=(input(0), srcOffsets, elem.domain.lengths * length, tgtOffsets)
+      output :=(input(1), Offsets.zero, elem.domain.lengths, tgtOffsets + elem.domain.lengths * length)
+      output.disc(0) = length + 1
+    }
+  }
+
+  override def toString = s"$seq :+ $elem"
+}
+
+
 class RangeTerm(start: IntTerm, end: IntTerm) extends Composed[VarSeqDom[IntDom]] {
 
 
