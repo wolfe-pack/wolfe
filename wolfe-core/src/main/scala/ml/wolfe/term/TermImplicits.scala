@@ -100,8 +100,8 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
   }
 
   class RichSeqTerm[E<:Dom, S <: SeqTerm[E]](val seq:S) {
-    def slice(from: IntTerm, to: IntTerm)(implicit sliceDom: VarSeqDom[seq.domain.elementDom.type]): sliceDom.Term = {
-      val result = new VarSeqSlice[Dom, SeqTerm[E], sliceDom.type](seq, from, to)(sliceDom)
+    def slice(from: IntTerm, to: IntTerm)(implicit sliceDom: VarSeqDom[E]): sliceDom.Term = {
+      val result = new VarSeqSlice[Dom, SeqTerm[E], VarSeqDom[E]](seq, from, to)(sliceDom)
       sliceDom.own(result.asInstanceOf[TypedTerm[sliceDom.Value]])
     }
 
