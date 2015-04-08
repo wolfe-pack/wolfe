@@ -631,7 +631,7 @@ class Unary_!(val arg: BoolTerm) extends UnaryTerm[BoolTerm, Dom.bools.type] {
 }
 
 
-class DiscreteEquals[T](var arg1: DiscreteTerm[T], var arg2: DiscreteTerm[T]) extends BinaryDiscreteOperator[BoolDom, GenericDiscreteDom[T]] {
+class DiscreteEquals[T](var arg1: Term[GenericDiscreteDom[T]], var arg2: Term[GenericDiscreteDom[T]]) extends BinaryDiscreteOperator[BoolDom, GenericDiscreteDom[T]] {
   val domain = Dom.bools
 
   def op(a1: Int, a2: Int) = if (a1 == a2) 1 else 0

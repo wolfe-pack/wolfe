@@ -15,15 +15,15 @@ object GradientChecking {
 
   def nextDouble = rand.nextDouble() * 2 - 1
 
-  def randomSetting[D <: Dom](v: Var[D]) = v match {
-    case x: DiscVar[_] => ???
-    case x: DoubleVar => nextDouble
-    case x: VectorVar => new DenseTensor1((0 until x.domain.zero.dim1).map(i => nextDouble).toArray)
-    case x: MatrixVar =>
-      val tmp = new DenseTensor2(x.domain.zero.dim1, x.domain.zero.dim2)
-      (0 until tmp.dim1).foreach(row => (0 until tmp.dim2).foreach(col => tmp(row, col) = nextDouble))
-      tmp
-  }
+//  def randomSetting[D <: Dom](v: Var[D]) = v match {
+//    case x: DiscVar[_] => ???
+//    case x: DoubleVar => nextDouble
+//    case x: VectorVar => new DenseTensor1((0 until x.domain.zero.dim1).map(i => nextDouble).toArray)
+//    case x: MatrixVar =>
+//      val tmp = new DenseTensor2(x.domain.zero.dim1, x.domain.zero.dim2)
+//      (0 until tmp.dim1).foreach(row => (0 until tmp.dim2).foreach(col => tmp(row, col) = nextDouble))
+//      tmp
+//  }
 
   def wiggle[D](value: D, epsilon: Double, ix: Int*): (D, D) = (value match {
     case x: Double => (x + epsilon, x - epsilon)
@@ -102,7 +102,7 @@ object Scratch extends App {
 
   val A = Matrices(5,3).Variable("A")
 
-  val complexTerm = sigm(tanh(((sigmVec(A * x) * a) dot tanhVec(z)) * a))
+//  val complexTerm = sigm(tanh(((sigmVec(A * x) * a) dot tanhVec(z)) * a))
 
   //GradientChecking(complexTerm, debug = true)()
 }

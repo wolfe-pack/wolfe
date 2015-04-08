@@ -181,12 +181,14 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
     //def unary_olf = for (b <- term) yield !b todo: OLF
     def unary_! = Dom.bools.own(new Unary_!(term))
 
-    def <->(that: BoolTerm) = new DiscreteEquals[Boolean](term.asInstanceOf[DiscreteTerm[Boolean]], that.asInstanceOf[DiscreteTerm[Boolean]])
+    def <->(that: BoolTerm) = new DiscreteEquals[Boolean](
+      term.asInstanceOf[Term[GenericDiscreteDom[Boolean]]],
+      that.asInstanceOf[Term[GenericDiscreteDom[Boolean]]])
 
   }
 
-  implicit class RichDiscreteTerm[T](term: DiscreteTerm[T]) {
-    def ===(that: DiscreteTerm[T]) = new DiscreteEquals(term, that)
+  implicit class RichDiscreteTerm[T](term: Term[GenericDiscreteDom[T]]) {
+    def ===(that: Term[GenericDiscreteDom[T]]) = new DiscreteEquals(term, that)
   }
 
   implicit class RichToLog[T <: Term[Dom]](val term: T) {
@@ -316,7 +318,7 @@ trait MathImplicits {
 
   def Vectors(dim: Int) = new VectorDom(dim)
 
-  def TypedVectors[D <: Dom](argDom:D) = new TypedVectorDom[argDom.type](argDom)
+  def TypedVectors[D<:Dom](argDom:D):TypedVectorDom[argDom.type] = new TypedVectorDom[argDom.type](argDom)
 
   def GrowableVectors(initDim: Int = 1000) = new GrowableVectorDom(initDim)
 
@@ -391,9 +393,12 @@ trait MathImplicits {
     def l2(mask: VectorTerm = null): DoubleTerm = new SparseL2(vect, mask)
   }
 
-  implicit class RichTypedVectTerm[D <: Dom](val vect:Term[TypedVectorDom[D]]) {
+  class RichTypedVectTerm[T <: Term[TypedVectorDom[Dom]]](val vect:T) {
     def apply(arg:vect.domain.argDom.Term) = new VectorApply(vect,arg.idx)
   }
+
+  implicit def toRichTypedVectTerm(vect:Term[TypedVectorDom[Dom]]):RichTypedVectTerm[vect.type] =
+    new RichTypedVectTerm[vect.type](vect)
 
   implicit class RichMatrixTerm(val mat: Term[MatrixDom]) {
     def dot(that: Term[MatrixDom]) = new MatrixDotProduct(mat, that)

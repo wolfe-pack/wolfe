@@ -16,7 +16,7 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
   type Value = IndexedSeq[elementDom.Value]
   type Var = DomVar
   type Term = DomTerm
-  //  type ElemDom = E
+  //type ElemDom = E
 
   def fixedSize = minLength == maxLength
 
@@ -110,10 +110,10 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
     }
 
     //todo: nasty, VarSeqDom[Dom] should be VarSeqDom[E] but that violates covariance
-//    def slice(from: IntTerm, to: IntTerm)(implicit sliceDom: VarSeqDom[elementDom.type]): sliceDom.Term = {
-//      val result = new VarSeqSlice[Dom, DomTerm, sliceDom.type](this, from, to)(sliceDom)
-//      sliceDom.own(result.asInstanceOf[TypedTerm[sliceDom.Value]])
-//    }
+    //    def slice(from: IntTerm, to: IntTerm)(implicit sliceDom: VarSeqDom[elementDom.type]): sliceDom.Term = {
+    //      val result = new VarSeqSlice[Dom, DomTerm, sliceDom.type](this, from, to)(sliceDom)
+    //      sliceDom.own(result.asInstanceOf[TypedTerm[sliceDom.Value]])
+    //    }
 
     def sampleShuffled(implicit random: Random) = apply(indexDom.shuffled)
 

@@ -122,12 +122,12 @@ class DoubleDom extends AtomicDom {
   override def toString = "Doubles"
 }
 
-trait GenericDiscreteDom[T] extends AtomicDom {
+trait GenericDiscreteDom[A] extends AtomicDom {
 
   dom =>
-  type Value = T
+  type Value = A
   type Var = DomVar
-  type Marginals = Map[T,Double]
+  type Marginals = Map[A,Double]
 
 
   def start = valueToInt(zero)
