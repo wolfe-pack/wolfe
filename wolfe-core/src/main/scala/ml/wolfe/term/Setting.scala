@@ -16,7 +16,7 @@ import scala.reflect.ClassTag
  * @param numCont number of continuous assignments.
  * @param numVect number of vector assignments.
  */
-final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMats: Int = 0, numSettings:Int = 0) {
+final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMats: Int = 0, numSettings: Int = 0) {
 
   setting =>
 
@@ -43,7 +43,7 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
 
   }
 
-  def randomize(eps: => Double):setting.type = {
+  def randomize(eps: => Double): setting.type = {
     cont.randomize(eps)
     vect.randomize(eps)
     mats.randomize(eps)
@@ -61,17 +61,21 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
     def resetToZero(offset: Int) = {
       if (array(offset) != null) array(offset) := 0.0
     }
+
     def randomize(eps: => Double) = {
       for (setting <- array; if setting != null) setting.randomize(eps)
     }
+
     def *=(scale: Double): Unit = {
       for (i <- 0 until length if array(i) != null) array(i) *= scale
       flagAllChanged()
     }
+
     def +=(that: Buffer[Setting]): Unit = {
       for (i <- 0 until length if array(i) != null) array(i) += that(i)
       flagAllChanged()
     }
+
     def :=(scale: Double): Unit = {
       for (i <- 0 until length) array(i) := scale
       flagAllChanged()
@@ -83,7 +87,6 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
     }
 
 
-
     def addIfChanged(that: Buffer[Setting]): Unit = {
       for (i <- that.changed()) {
         array(i) += that(i)
@@ -93,7 +96,6 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
 
 
   }
-
 
 
   final class ContBuffer(val length: Int) extends Buffer[Double](setting) {
@@ -164,9 +166,9 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
 
     def resetToZero(offset: Int) = array(offset).zero() // := 0
 
-    def copyVector(v:Vect) = v match {
-      case s:SingletonTensor1 => new SingletonTensor1(s.dim1,s.singleIndex,s.singleValue)
-      case s:MutableSingletonTensor1 => new MutableSingletonTensor1(s.dim1,s.singleIndex,s.singleValue)
+    def copyVector(v: Vect) = v match {
+      case s: SingletonTensor1 => new SingletonTensor1(s.dim1, s.singleIndex, s.singleValue)
+      case s: MutableSingletonTensor1 => new MutableSingletonTensor1(s.dim1, s.singleIndex, s.singleValue)
       case null => null
       case _ => v.copy
     }
@@ -283,7 +285,6 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
   def adaptiveVectors = _adaptiveVectors
 
 
-
   def copyTo(target: Setting, targetOffsets: Offsets, targetMultiplier: Int): Unit = {
     disc.copyTo(target.disc, 0, targetOffsets.discOff * targetMultiplier, disc.length)
     cont.copyTo(target.cont, 0, targetOffsets.contOff * targetMultiplier, cont.length)
@@ -343,7 +344,7 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
   }
 
 
-  def :=(value: Double = 0.0): Unit = {
+  def :=(value: Double): Unit = {
     cont := value
     vect := value
     mats := value
@@ -359,13 +360,12 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
 
   }
 
-  def :=(src: Setting, srcOffsets: Offsets, lengths: Offsets): Unit = {
-    disc :=(src.disc, srcOffsets.discOff, lengths.discOff)
-    cont :=(src.cont, srcOffsets.contOff, lengths.contOff)
-    vect :=(src.vect, srcOffsets.vectOff, lengths.vectOff)
-    mats :=(src.mats, srcOffsets.matsOff, lengths.matsOff)
-    settings :=(src.settings, srcOffsets.settingsOff, lengths.settingsOff)
-
+  def :=(src: Setting, srcOffsets: Offsets, lengths: Offsets, tgtOffsets: Offsets = Offsets.zero): Unit = {
+    disc :=(src.disc, srcOffsets.discOff, lengths.discOff, tgtOffsets.discOff)
+    cont :=(src.cont, srcOffsets.contOff, lengths.contOff, tgtOffsets.contOff)
+    vect :=(src.vect, srcOffsets.vectOff, lengths.vectOff, tgtOffsets.vectOff)
+    mats :=(src.mats, srcOffsets.matsOff, lengths.matsOff, tgtOffsets.matsOff)
+    settings :=(src.settings, srcOffsets.settingsOff, lengths.settingsOff, tgtOffsets.settingsOff)
   }
 
   def ensureSparsity(): Unit = {
@@ -392,7 +392,7 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
     for (i <- 0 until vect.length; j <- 0 until vect(i).size) if (math.abs(vect(i)(j) - that.vect(i)(j)) > eps) return false
     for (i <- 0 until mats.length; j <- 0 until mats(i).size) if (math.abs(mats(i)(j) - that.mats(i)(j)) > eps) return false
     for (i <- 0 until settings.length; if settings(i) != null && that.settings(i) != null)
-      return settings(i).epsEquals(eps,that.settings(i))
+      return settings(i).epsEquals(eps, that.settings(i))
 
     true
   }
@@ -400,10 +400,10 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
   override def toString = {
     s"""
        |${disc.mkString(" ")}
-       |${cont.mkString(" ")}
-       |${vect.mkString(" ")}
-       |${mats.mkString(" ")}
-       |${settings.mkString(" ")}
+        |${cont.mkString(" ")}
+        |${vect.mkString(" ")}
+        |${mats.mkString(" ")}
+        |${settings.mkString(" ")}
      """.stripMargin
   }
 }
@@ -458,10 +458,9 @@ final class Settings(val length: Int) extends IndexedSeq[Setting] {
     array(index) = value
   }
 
-  def toValues(doms:Seq[Dom]):Seq[Any] = for ((d,s) <- doms zip this) yield d.toValue(s)
+  def toValues(doms: Seq[Dom]): Seq[Any] = for ((d, s) <- doms zip this) yield d.toValue(s)
 
   //def toValues(vars:Seq[Variable]):Seq[Any] = toValues(vars map (_.domain))
-
 
 
   def linkedSettings(from: Seq[Var[Dom]], to: Seq[Var[Dom]]): Settings = {
@@ -471,7 +470,7 @@ final class Settings(val length: Int) extends IndexedSeq[Setting] {
     result
   }
 
-  def :=(that:Settings): Unit = {
+  def :=(that: Settings): Unit = {
     for (i <- 0 until length) {
       this(i) := that(i)
     }
@@ -507,7 +506,9 @@ class MatsMsg(var mean: Mat = null)
 
 
 class Msg(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMats: Int = 0) {
+
   import MoreArrayOps._
+
   final var disc = Array.ofDim[DiscMsg](numDisc)
   final var cont = Array.ofDim[ContMsg](numCont)
   final var vect = Array.ofDim[VectMsg](numVect)
@@ -522,14 +523,14 @@ class Msg(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMats: Int = 0
 
   final def +=(value: Msg): Unit = {
     for (i <- 0 until disc.length) {
-      incr(disc(i).msg,value.disc(i).msg)
+      incr(disc(i).msg, value.disc(i).msg)
     }
     for (i <- 0 until cont.length) {
       cont(i).mean += value.cont(i).mean
     }
   }
 
-  def argmax(target:Setting, offsets: Offsets = Offsets.zero): Unit = {
+  def argmax(target: Setting, offsets: Offsets = Offsets.zero): Unit = {
 
     for (i <- 0 until disc.length) {
       val argmaxIndex = maxIndex(disc(i).msg)
@@ -554,9 +555,9 @@ final class Msgs(val length: Int) extends IndexedSeq[Msg] {
 }
 
 object Msgs {
-  def apply(msgs:Seq[Msg]) = {
-    val result =new Msgs(msgs.length)
-    for ((msg,i) <- msgs.zipWithIndex) result(i) = msg
+  def apply(msgs: Seq[Msg]) = {
+    val result = new Msgs(msgs.length)
+    for ((msg, i) <- msgs.zipWithIndex) result(i) = msg
     result
   }
 }
@@ -684,12 +685,13 @@ abstract class Buffer[T: ClassTag](val setting: Setting) {
     flagAllChanged()
   }
 
-  def :=(src: Buffer[T], srcOffset: Int, srcLength: Int): Unit = {
-    System.arraycopy(src.array, srcOffset, array, 0, srcLength)
+  def :=(src: Buffer[T], srcOffset: Int, srcLength: Int, tgtOffset: Int = 0): Unit = {
+    System.arraycopy(src.array, srcOffset, array, tgtOffset, srcLength)
     flagAllChanged()
   }
 
-  def randomize(eps: =>Double)
+
+  def randomize(eps: => Double)
 
   def mkString(sep: String) = array.mkString(sep)
 }
@@ -703,18 +705,19 @@ object VariableMapping {
   }
 }
 
-case class Dimensions(discDims:Array[Range] = Array.empty) {
-  def +(that:Dimensions) = copy(discDims ++ that.discDims)
-  def *(times:Int) = {
+case class Dimensions(discDims: Array[Range] = Array.empty) {
+  def +(that: Dimensions) = copy(discDims ++ that.discDims)
+
+  def *(times: Int) = {
     val result = Array.ofDim[Range](discDims.length * times)
     for (i <- 0 until times)
-      System.arraycopy(discDims,0,result,i * discDims.length,discDims.length)
+      System.arraycopy(discDims, 0, result, i * discDims.length, discDims.length)
     Dimensions(result)
   }
 }
 
-case class Offsets(discOff: Int = 0, contOff: Int = 0, vectOff: Int = 0, matsOff: Int = 0, settingsOff:Int = 0) {
-  def +(disc: Int, cont: Int, vect: Int, mats: Int, settings:Int) =
+case class Offsets(discOff: Int = 0, contOff: Int = 0, vectOff: Int = 0, matsOff: Int = 0, settingsOff: Int = 0) {
+  def +(disc: Int, cont: Int, vect: Int, mats: Int, settings: Int) =
     Offsets(discOff + disc, contOff + cont, vectOff + vect, matsOff + mats, settingsOff + settings)
 
   def +(that: Offsets, scale: Int = 1) =
@@ -725,7 +728,7 @@ case class Offsets(discOff: Int = 0, contOff: Int = 0, vectOff: Int = 0, matsOff
       settingsOff + scale * that.settingsOff)
 
   def *(scale: Int) =
-    Offsets(scale * discOff, scale * contOff, scale * vectOff, scale * matsOff, scale* settingsOff)
+    Offsets(scale * discOff, scale * contOff, scale * vectOff, scale * matsOff, scale * settingsOff)
 }
 
 object Offsets {

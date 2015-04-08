@@ -90,7 +90,7 @@ object Transformer {
       case t if !t.vars.contains(variable) =>
         t
       case t: Memoized[_, _] =>
-        Conditioned(t, variable, value)
+        Substituted(t, variable, value)
       case `variable` =>
         value
     }

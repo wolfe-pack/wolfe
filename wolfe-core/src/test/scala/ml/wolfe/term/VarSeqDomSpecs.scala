@@ -14,7 +14,7 @@ class VarSeqDomSpecs extends WolfeSpec {
       val xs = Seqs(Bools, 0, 5)
       val x = xs.Var
       val value = IndexedSeq(true, false, true)
-      x.eval(value) should be(value)
+      x.eval(x := value) should be(value)
     }
 
     "support element access through integer terms" in {
@@ -22,7 +22,15 @@ class VarSeqDomSpecs extends WolfeSpec {
       val x = Seqs(Bools, 0, n).Var
       val i = Ints(0 until n).Var
       val value = IndexedSeq(true, false, true)
-      x(i).eval(value, 1) should be(false)
+      x(i).eval(x := value, i := 1) should be(false)
+    }
+
+    "support slice operations" in {
+      val n = 4
+      val x = Seqs(Bools, 0, n).Var
+      implicit val sliceDom = Seqs(Bools, 2)
+      val term = x.slice(1, 3)
+      term.eval(x := IndexedSeq(false, true, false, true)) should be(IndexedSeq(true, false))
     }
 
     "support constructing sequence terms" in {
@@ -30,7 +38,7 @@ class VarSeqDomSpecs extends WolfeSpec {
       val i = Ints(0 until n).Var
       val b = Bools.Var
       val term = SeqTerm(i)(b, !b, b)
-      term.eval(2, false) should be(IndexedSeq(false, true))
+      term.eval(i := 2, b := false) should be(IndexedSeq(false, true))
     }
 
     "supports gradients for sequence arguments" in {
@@ -66,31 +74,31 @@ class VarSeqDomSpecs extends WolfeSpec {
       val x = X.Var
       val t = x(i)
       val args = IndexedSeq(IndexedSeq(1.0, 2.0), IndexedSeq(3.0, 4.0))
-      t.eval(args, 0) should be(IndexedSeq(1.0, 2.0))
-      t.eval(args, 1) should be(IndexedSeq(3.0, 4.0))
+      t.eval(x := args, i := 0) should be(IndexedSeq(1.0, 2.0))
+      t.eval(x := args, i := 1) should be(IndexedSeq(3.0, 4.0))
 
-      t(i).eval(args, 0) should be(1.0)
-      t(i).eval(args, 1) should be(4.0)
+      t(i).eval(x := args, i:= 0) should be(1.0)
+      t(i).eval(x := args, i:= 1) should be(4.0)
     }
 
     "support argmax with length constraints" in {
       val X = Seqs(Bools, 0, 5)
-      val t = argmax(X) { x => sum(x) { i => I(i)} subjectTo (x.length === 3)}
+      val t = argmax(X) { x => sum(x) { i => I(i) } subjectTo (x.length === 3) }
       val result = t.eval()
       result should be(IndexedSeq(true, true, true))
     }
 
     "support length fields in sums" in {
-      val Words = List("the","cat","sat").toDom
-      val Tags = List("DT","NN","VBD").toDom
-      val Tokens = Pairs(Words,Tags)
-      val Sentences = Seqs(Tokens,0,3)
+      val Words = List("the", "cat", "sat").toDom
+      val Tags = List("DT", "NN", "VBD").toDom
+      val Tokens = Pairs(Words, Tags)
+      val Sentences = Seqs(Tokens, 0, 3)
       val s = Sentences.Var
 
-      def count(s:Sentences.Term) =
-        sum(0 until s.length){ t => I(s(t)._1 === Tags.Const("VBD")) }
+      def count(s: Sentences.Term) =
+        sum(0 until s.length) { t => I(s(t)._1 === Tags.Const("VBD")) }
 
-      count(s)(s << IndexedSeq("the"->"DT","cat" -> "NN", "sat" -> "VBD")) should be (1.0)
+      count(s).eval(s << IndexedSeq("the" -> "DT", "cat" -> "NN", "sat" -> "VBD")) should be(1.0)
     }
 
 

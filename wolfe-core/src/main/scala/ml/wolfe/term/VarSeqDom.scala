@@ -18,6 +18,7 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
   type Term = DomTerm
   //  type ElemDom = E
 
+  def fixedSize = minLength == maxLength
 
   val indexDom = new RangeDom(0 until maxLength)
 
@@ -108,6 +109,12 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
         ElemDom, SeqTerm, Index](this.asInstanceOf[SeqTerm], index))
     }
 
+    //todo: nasty, VarSeqDom[Dom] should be VarSeqDom[E] but that violates covariance
+//    def slice(from: IntTerm, to: IntTerm)(implicit sliceDom: VarSeqDom[elementDom.type]): sliceDom.Term = {
+//      val result = new VarSeqSlice[Dom, DomTerm, sliceDom.type](this, from, to)(sliceDom)
+//      sliceDom.own(result.asInstanceOf[TypedTerm[sliceDom.Value]])
+//    }
+
     def sampleShuffled(implicit random: Random) = apply(indexDom.shuffled)
 
     def sampleSequential: elementDom.Term = apply(indexDom.sequential)
@@ -148,6 +155,7 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
 
     override def composer(args: Settings) = new Composer(args) {
       output.recordChangedOffsets = true
+
       def eval()(implicit execution: Execution) = {
         output.clearChangeRecord()
         output.disc(0) = input(0).disc(0)
@@ -250,6 +258,36 @@ case class VarSeqApply[+E <: Dom, S <: Term[VarSeqDom[E]], I <: IntTerm](seq: S,
 
   override def toString = s"$seq($index)"
 }
+
+case class VarSeqSlice[+E <: Dom, S <: Term[VarSeqDom[E]], D <: VarSeqDom[E]](seq: S, from: IntTerm, to: IntTerm)
+                                                                             (implicit sliceDom: D) extends Composed[D] {
+  self =>
+  val domain = sliceDom
+
+  type ArgumentType = Term[Dom]
+
+  val arguments = IndexedSeq(seq, from, to)
+
+
+  def copy(args: IndexedSeq[ArgumentType]) =
+    VarSeqSlice[E, S, D](args(0).asInstanceOf[S], args(1).asInstanceOf[IntTerm], args(2).asInstanceOf[IntTerm])
+
+  override def composer(args: Settings) = new Composer(args) {
+    val tgtOffsets = Offsets(discOff = 1)
+
+    def eval()(implicit execution: Execution) = {
+      val from = input(1).disc(0)
+      val to = input(2).disc(0)
+      val offset = (seq.domain.elementDom.lengths * from) + Offsets(discOff = 1)
+      val length = seq.domain.elementDom.lengths * (to - from)
+      output :=(input(0), offset, length, tgtOffsets)
+      output.disc(0) = to - from
+    }
+  }
+
+  override def toString = s"$seq.slice($from,$to)"
+}
+
 
 class RangeTerm(start: IntTerm, end: IntTerm) extends Composed[VarSeqDom[IntDom]] {
 

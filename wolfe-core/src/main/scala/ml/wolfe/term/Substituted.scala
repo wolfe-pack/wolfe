@@ -3,7 +3,7 @@ package ml.wolfe.term
 /**
  * @author riedel
  */
-case class Conditioned[D <: Dom, V <: Dom](term:Term[D],variable:Var[V],value:Term[V]) extends NAry with Term[D] {
+case class Substituted[D <: Dom, V <: Dom](term:Term[D],variable:Var[V],value:Term[V]) extends NAry with Term[D] {
 
   val vars = (term.vars.filterNot(_ == variable) ++ value.vars).distinct
   val domain = term.domain
@@ -38,7 +38,7 @@ case class Conditioned[D <: Dom, V <: Dom](term:Term[D],variable:Var[V],value:Te
 
   override def toString = s"($term)|$variable << $value"
 
-  def copy(args: IndexedSeq[ArgumentType]) = Conditioned[D,V](args(0).asInstanceOf[Term[D]],variable,value.asInstanceOf[Term[V]])
+  def copy(args: IndexedSeq[ArgumentType]) = Substituted[D,V](args(0).asInstanceOf[Term[D]],variable,value.asInstanceOf[Term[V]])
 
 
 }

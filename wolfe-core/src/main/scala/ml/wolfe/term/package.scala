@@ -16,7 +16,7 @@ package object term {
   type AnySeqDom = VarSeqDom[Dom]
   type Mem = Memoized[Dom, AnyTerm]
   type SampleTerm = RangeDom#SampleTerm
-  type VarSeqTerm = VarSeqDom[Dom]#Term
+  type AnySeqTerm = VarSeqDom[Dom]#Term
   type SeqTerm[D <: Dom] = VarSeqDom[D]#Term
   type MapTerm[K<:Dom,V<:Dom] = MapDom[K,V]#Term
 

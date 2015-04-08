@@ -15,8 +15,8 @@ class FirstOrderSumSpecs extends WolfeSpec {
       val n = 3
       val indices = Seqs(Bools, 0, n).Var
       val term = sum(indices) { v => I(v) }
-      term(indices := IndexedSeq(false, true)) should be(1.0)
-      term(indices := IndexedSeq(false, true, true)) should be(2.0)
+      term.eval(indices := IndexedSeq(false, true)) should be(1.0)
+      term.eval(indices := IndexedSeq(false, true, true)) should be(2.0)
     }
 
     "evaluate nested sums" in {
@@ -24,7 +24,7 @@ class FirstOrderSumSpecs extends WolfeSpec {
       val indices = Seqs(Seqs(Bools, 0, n), 0, n).Var
       val term = sum(indices) { i => sum(i) { j => I(j) } }
       val args = IndexedSeq(IndexedSeq(true, true), IndexedSeq(false, true))
-      term(indices := args) should be(3.0)
+      term.eval(indices := args) should be(3.0)
     }
 
     "calculate its gradient" in {

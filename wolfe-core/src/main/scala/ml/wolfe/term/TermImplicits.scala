@@ -101,6 +101,21 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
     def toConst(implicit dom: TypedDom[T]) = fixedLengthSeq[T](values.toSeq)
   }
 
+  class RichSeqTerm[E<:Dom](seq:SeqTerm[E]) {
+    def slice(from: IntTerm, to: IntTerm)(implicit sliceDom: VarSeqDom[E]): sliceDom.Term = {
+      val result = new VarSeqSlice[Dom, SeqTerm[E], sliceDom.type](seq, from, to)(sliceDom)
+      sliceDom.own(result.asInstanceOf[TypedTerm[sliceDom.Value]])
+    }
+  }
+
+//  implicit def toRichSeqTerm(seq:AnySeqTerm):RichSeqTerm[seq.domain.elementDom.type,seq.domain.type] =
+//    new RichSeqTerm[seq.domain.elementDom.type,seq.domain.type](seq.asInstanceOf[seq.domain.Term])
+
+//  implicit def toRichSeqTerm[S <: VarSeqDom[_]](seq:S#Term):RichSeqTerm[seq.domain.elementDom.type,S] =
+//    new RichSeqTerm[seq.domain.elementDom.type,S](seq.asInstanceOf[seq.domain.Term])
+
+  implicit def toRichSeqTerm[E <: Dom](seq:SeqTerm[E]):RichSeqTerm[E] =
+    new RichSeqTerm[E](seq.asInstanceOf[SeqTerm[E]])
 
   //  implicit def genericToConstant[T,D<:TypedDom[T]](t:T)(implicit dom:D):dom.Term = dom.const(t)
   //  implicit def genericToConstant[T,D<:TypedDom[T]](t:T)(implicit dom:D):dom.DomTerm = dom.const(t)
@@ -188,30 +203,41 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
   //      new SeqApply[E,S,I](term,index)
   //  }
 
-  case class Assignment[+D <: Dom](variable: Var[D], value: Term[D])
+  case class Assignment[+D <: Dom](variable: Var[D], value: D#Value) {
+    def toSubstitution = Substitution[D](variable,variable.domain.Const(value.asInstanceOf[variable.domain.Value]))
+  }
+  case class Substitution[+D <: Dom](variable: Var[D], value: Term[D])
 
   implicit class RichVar[D <: Dom](val innerVar: Var[D]) {
-    def <<(that: Term[D]) = Assignment(innerVar, that)
-    def :=(that: Term[D]) = Assignment(innerVar, that)
-    def <<(that: innerVar.domain.Value) = Assignment(innerVar, innerVar.domain.Const(that))
-    def :=(that: innerVar.domain.Value) = Assignment(innerVar, innerVar.domain.Const(that))
+    def <<(that: Term[D]) = Substitution(innerVar, that)
+    def :=(that: Term[D]) = Substitution(innerVar, that)
+    def <<(that: innerVar.domain.Value):Assignment[D] = Assignment(innerVar, that)
+    def :=(that: innerVar.domain.Value):Assignment[D] = Assignment(innerVar, that)
 
   }
 
   implicit class RichTerm[A <: Term[Dom]](val innerTerm: A) {
 
-    def |[D <: Dom](assignment: Assignment[D]) = {
-      innerTerm.domain.own(Conditioned[Dom, Dom](innerTerm, assignment.variable, assignment.value).asInstanceOf[TypedTerm[innerTerm.domain.Value]])
+    def |[D <: Dom](substitution: Substitution[D]):innerTerm.domain.Term = {
+      innerTerm.domain.own(Substituted[Dom, Dom](innerTerm, substitution.variable, substitution.value).asInstanceOf[TypedTerm[innerTerm.domain.Value]])
     }
+
+    def |[D <: Dom](assignment: Assignment[D]):innerTerm.domain.Term = this | assignment.toSubstitution
 
     def idx = new IndexOf[innerTerm.domain.type](innerTerm.asInstanceOf[innerTerm.domain.Term])
 
-    def apply(assignments: Assignment[Dom]*): innerTerm.domain.Value = assignments.foldLeft[AnyTerm](innerTerm) {
-      case (result, assignment) => Conditioned[Dom, Dom](result, assignment.variable, assignment.value)
-    }.eval().asInstanceOf[innerTerm.domain.Value]
+    def eval(at: Assignment[Dom]*): innerTerm.domain.Value = {
+      val values = at.map(a => a.variable -> a.value).toMap
+      val args = innerTerm.vars.map(values)
+      innerTerm.evalUntyped(args:_*)
+    }
+
+//      assignments.foldLeft[AnyTerm](innerTerm) {
+//      case (result, assignment) => Substituted[Dom, Dom](result, assignment.variable, assignment.value)
+//    }.eval().asInstanceOf[innerTerm.domain.Value]
 
     def diff[D<:Dom](wrt: Var[D])(at: Assignment[Dom]*):wrt.domain.Value = {
-      val values = at.map(a => a.variable -> a.value.eval().asInstanceOf[Any]).toMap
+      val values = at.map(a => a.variable -> a.value).toMap
       val args = innerTerm.vars.map(values)
       innerTerm.gradient(wrt,args:_*)
     }
@@ -350,6 +376,8 @@ trait MathImplicits {
 
     def conjoin(that: VectorTerm)(implicit index: Index, dom: VectorDom) = new Conjoined(vect, that)
 
+    def apply(index:IntTerm) = new VectorApply(vect,index)
+
     //element-wise addition
     def :+(that: VectorTerm): VectorTerm = ???
 
@@ -359,6 +387,10 @@ trait MathImplicits {
     def cons(that: VectorTerm): VectorTerm = new VectorConcatenation(vect, that)
 
     def l2(mask: VectorTerm = null): DoubleTerm = new SparseL2(vect, mask)
+  }
+
+  implicit class RichTypedVectTerm[D <: Dom](val vect:Term[TypedVectorDom[D]]) {
+    def apply(arg:vect.domain.argDom.Term) = new VectorApply(vect,arg.idx)
   }
 
   implicit class RichMatrixTerm(val mat: Term[MatrixDom]) {
@@ -435,7 +467,7 @@ trait MathImplicits {
     def obj = objective
   }
 
-  def eval(term: AnyTerm): term.domain.Value = term.eval()
+  //def eval(term: AnyTerm)(assignments: Assignment[Dom]*): term.domain.Value = term.eval(assignments:_*)
 
   def max[D <: Dom](dom: D)(obj: dom.Var => DoubleTerm) = {
     val variable = dom.variable("_hidden")

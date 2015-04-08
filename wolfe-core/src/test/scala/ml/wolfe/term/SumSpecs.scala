@@ -15,7 +15,7 @@ class SumSpecs extends WolfeSpec {
       val x = Doubles.Var
       val y = Doubles.Var
       val t = x + x + y
-      t.eval(1.0,2.0) should be (4.0)
+      t.eval(x := 1.0, y := 2.0) should be (4.0)
     }
 
     "calculate its gradient" in {

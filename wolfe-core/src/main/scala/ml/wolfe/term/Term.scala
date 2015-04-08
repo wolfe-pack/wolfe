@@ -193,14 +193,14 @@ trait TermHelper[+D <: Dom] {
   }
 
 
-  def eval(args: Any*): domain.Value = {
+  def evalUntyped(args: Any*): domain.Value = {
     val argSettings = createSettings(args)
     val ev = evaluatorImpl(argSettings)
     ev.eval()(Execution(0))
     domain.toValue(ev.output)
   }
 
-  def !! = eval()
+//  def !! = eval()
 
 
   def gradient[V <: Dom](wrt: Var[V], args: Any*): wrt.domain.Value = {

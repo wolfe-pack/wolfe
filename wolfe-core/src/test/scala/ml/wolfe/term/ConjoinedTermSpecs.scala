@@ -18,10 +18,10 @@ class ConjoinedTermSpecs extends WolfeSpec {
       val j = Ints.Var
       val o = oneHot(i,2.0) conjoin oneHot(j, 2.0)
 
-      o(i << 0,j << 0) should equal (vector(4,0,0,0))
-      o(i << 0,j << 1) should equal (vector(0,4,0,0))
-      o(i << 1,j << 0) should equal (vector(0,0,4,0))
-      o(i << 1,j << 1) should equal (vector(0,0,0,4))
+      o.eval(i << 0,j << 0) should equal (vector(4,0,0,0))
+      o.eval(i << 0,j << 1) should equal (vector(0,4,0,0))
+      o.eval(i << 1,j << 0) should equal (vector(0,0,4,0))
+      o.eval(i << 1,j << 1) should equal (vector(0,0,0,4))
 
     }
 
