@@ -14,7 +14,7 @@ class NGramCountSpecs extends WolfeSpec {
   implicit val random = new Random(0)
 
   "NGram Counts" should {
-    "count the number of ngrams in a dataset" in {
+    "count the number of ngrams in a dataset" ignore {
       import NGramCountsHelper._
       val BigramCounts = TypedVectors(Seqs(Bools, 2))
       val data = Seq(false, true, true, true)
