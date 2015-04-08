@@ -42,6 +42,6 @@ case class NGramCounts[E <: Dom, C <: TypedVectorDom[VarSeqDom[E]]](data: SeqTer
 trait NGramCountsHelper {
   def ngramCounts[E <: Dom, C <: TypedVectorDom[VarSeqDom[E]]](data: SeqTerm[E], ngramOrder: Int)
                                                               (implicit countsDom: C) = {
-    NGramCounts[E,countsDom.type](data,ngramOrder)(countsDom)
+    NGramCounts[E, countsDom.type](data, ngramOrder)(countsDom)
   }
 }

@@ -105,10 +105,13 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
       sliceDom.own(result.asInstanceOf[TypedTerm[sliceDom.Value]])
     }
 
-    def :+(elem:seq.domain.elementDom.Term)(implicit appendedDom:VarSeqDom[seq.domain.elementDom.type]):appendedDom.Term = {
+    def append(elem:seq.domain.elementDom.Term)(implicit appendedDom:VarSeqDom[seq.domain.elementDom.type]):appendedDom.Term = {
       val result = new VarSeqAppend[Dom, SeqTerm[E], appendedDom.type](seq, elem)(appendedDom)
       appendedDom.own(result.asInstanceOf[TypedTerm[appendedDom.Value]])
     }
+     def :+(elem:seq.domain.elementDom.Term)(implicit appendedDom:VarSeqDom[seq.domain.elementDom.type]) =
+      append(elem)(appendedDom)
+
   }
 
 //  implicit def toRichSeqTerm(seq:AnySeqTerm):RichSeqTerm[seq.domain.elementDom.type,seq.domain.type] =
