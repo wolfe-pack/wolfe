@@ -7,6 +7,8 @@ import scala.collection.generic.CanBuildFrom
 import scala.collection.immutable.IndexedSeq
 import scala.collection.{IndexedSeqLike, mutable}
 
+import scala.language.{implicitConversions, higherKinds}
+
 /**
  * @author Ingolf Becker
  * @date 01/04/2015
@@ -26,4 +28,7 @@ object RichSentence extends GenericSentenceCompanion[RichSentence, TokenLike] {
   implicit def canBuildFrom[OldT <: TokenLike, NewT <: TokenLike]: CanBuildFrom[RichSentence[OldT], NewT, RichSentence[NewT]] = newCanBuildFrom
   def empty(): RichSentence[TokenLike] = new RichSentence[TokenLike](IndexedSeq.empty)
   def fromSentence[NewT <: TokenLike](old: RichSentence[_ <: TokenLike], tokens: IndexedSeq[NewT]): RichSentence[NewT] = new RichSentence[NewT](tokens, old.syntax, old.ie)
+  implicit def fromBaseSentence[OldS <: SentenceLike[_ <: TokenLike]](oldS: OldS): RichSentence[RichToken] = {
+    new RichSentence[RichToken]({for (t <- oldS.tokens) yield implicitly[RichToken](t)})
+  }
 }

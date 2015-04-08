@@ -14,3 +14,9 @@ trait RichTokenLike extends TokenLike with TokenWithPOSLike with TokenWithLemmaL
 
 case class RichToken(word: String, offsets: CharOffsets, posTag: POSTag = null, lemma: String = null) extends RichTokenLike
 
+
+object RichToken {
+  implicit def fromBaseToken[T <: TokenLike](old: T) : RichToken = {
+    new RichToken(old.word,old.offsets)
+  }
+}

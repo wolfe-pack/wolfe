@@ -47,6 +47,11 @@ object RichDocument extends GenericDocumentCompanion[RichDocument, SentenceLike,
       old.ir,
       old.coref,
       old.discourse)
+
+  implicit def fromBaseDocument[OldD <: DocumentLike[_ <: SentenceLike[_ <: TokenLike]]](base: OldD) : RichDocument[RichSentence[RichToken]] = {
+    new RichDocument[RichSentence[RichToken]](base.source,{for (s <- base.sentences) yield implicitly[RichSentence[RichToken]](s)})
+  }
+
   def empty(): RichDocument[SentenceLike[TokenLike]] =
     new RichDocument[SentenceLike[TokenLike]]("",
       IndexedSeq.empty,
@@ -60,15 +65,37 @@ object RichDocument extends GenericDocumentCompanion[RichDocument, SentenceLike,
 
 
   // Free of var's, but IntelliJ complains :P
+  /*
   def apply(sentences:Seq[Seq[String]]) = {
     sentences.foldLeft((0, RichDocument.newBuilder[RichSentence[RichTokenLike]]))({(b, s) =>
     { val x = s.foldLeft((b._1, RichSentence.newBuilder[RichTokenLike]))({(c, t) =>
       (c._1 + t.length + 1, c._2 += RichToken(t,CharOffsets(c._1,c._1 + t.length)))})
       (b._1 + x._1, b._2 += x._2.result())} } )._2.result()
   }
+  */
+
+  def apply(sentences:Seq[Seq[String]]) : RichDocument[RichSentence[RichToken]] = {
+    val source = sentences.map(_.mkString(" ")).mkString(" ")
+    var start = 0
+    val resultSentences = for (s <- sentences) yield {
+      val tokens = for (t <- s) yield {
+        val tmp = RichToken(t, CharOffsets(start, start + t.length))
+        start += t.length + 1
+        tmp
+
+      }
+      RichSentence(tokens.toIndexedSeq)
+    }
+    RichDocument(source, resultSentences.toIndexedSeq)
+  }
+
   implicit def toDoc(source:String): RichDocument[RichSentence[RichToken]] = RichDocument(source)
 
-  def normalizeDoc(doc: RichDocument[RichSentence[RichToken]]) = {
-    RichDocument(doc.sentences.map(_.tokens.map(_.word)))
-  }
+  /**
+   * Creates a new Document based on the old document, where every token is surrounded by white spaces.
+   * @param doc old Document
+   * @return A normalised copy of the old Document
+   */
+  def normalizeDoc(doc : DocumentLike[_ <: SentenceLike[_ <: TokenLike]]) = RichDocument(doc.map(_.map({x : TokenLike => x.word})))
+    //doc.map(_.map( { x => x.word }))
 }

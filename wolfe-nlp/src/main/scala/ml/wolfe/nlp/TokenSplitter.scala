@@ -1,48 +1,14 @@
 package ml.wolfe.nlp
 
-import scala.collection.mutable.ArrayBuffer
+import splitters.{TokenSplitter => TS, SentenceSplitter => SS}
 
 /**
  * @author Sebastian Riedel
  */
 object TokenSplitter extends (Document => Document) {
 
-  val oneCharTokens = Set(',','"','\'','(',')', '/', '[', ']')
-
-  def apply(doc: Document) = {
-    //go through all tokens and split the token at white space
-    val text = doc.source
-    val tokens = new ArrayBuffer[Token]
-    tokens.sizeHint(1000)
-
-    def split(token: Token) = {
-      tokens.clear()
-      val end = token.offsets.end
-      var offset = token.offsets.start
-      val buffer = new StringBuilder
-      while (offset < end) {
-        while (offset < end && Character.isWhitespace(text(offset))) { offset += 1 }
-        val newTokenStart = if (offset < end && oneCharTokens(text(offset))) {
-          tokens += Token(text(offset).toString,CharOffsets(offset,offset+1))
-          offset + 1
-        } else offset
-        buffer.clear()
-        while (offset < end && !Character.isWhitespace(text(offset))) {
-          buffer.append(text(offset))
-          offset += 1
-        }
-        if (oneCharTokens(text(offset - 1))) {
-          tokens += Token(buffer.toString().dropRight(1), CharOffsets(newTokenStart, offset-1))
-          tokens += Token(text(offset - 1).toString,CharOffsets(offset-1,offset))
-        } else {
-          //tokens += Token(text.substring(newTokenStart,offset), CharOffsets(newTokenStart, offset))
-          tokens += Token(buffer.toString(), CharOffsets(newTokenStart, offset))
-        }
-
-      }
-      IndexedSeq.empty ++ tokens
-    }
-    doc.copy(sentences = doc.sentences.map(s => s.copy(tokens = s.tokens.flatMap(split))))
+  def apply(doc: Document): Document = {
+    TS(doc)
   }
 
   def main(args: Array[String]) {
@@ -81,55 +47,8 @@ object TokenSplitter extends (Document => Document) {
 
 object SentenceSplitter extends (Document => Document) {
 
-  val sentenceEnds = Set('.', '?', ';')
-
-
-  def apply(doc: Document) = {
-    val text = doc.source
-    val buffer = new StringBuilder
-    val tokens = new ArrayBuffer[Token]
-    tokens.sizeHint(50)
-
-    def split(sentence: Sentence) = {
-      val sentences = new ArrayBuffer[Sentence]
-      for (token <- sentence.tokens) {
-        var start = token.offsets.start
-        val end = token.offsets.end
-        var offset = token.offsets.start
-        while (offset < end) {
-          while (offset < end && !sentenceEnds(text(offset))) {
-            buffer.append(text(offset))
-            offset += 1
-          }
-          if (offset < end && sentenceEnds(text(offset))) {
-            //create a new token until here.
-            val newToken = Token(buffer.toString(), CharOffsets(start, offset))
-            val punctToken = Token(text(offset).toString, CharOffsets(offset, offset + 1))
-            tokens += newToken
-            tokens += punctToken
-            sentences += Sentence(IndexedSeq.empty ++ tokens)
-            tokens.clear()
-            offset += 1
-            while (offset < end && Character.isWhitespace(text(offset))) { offset += 1 }
-            start = offset
-            buffer.clear()
-          } else {
-            tokens += Token(buffer.toString(), CharOffsets(start, offset))
-            buffer.clear()
-          }
-        }
-      }
-      //turn last set of tokens into new sentence
-      if (tokens.size > 0) {
-        sentences += Sentence(tokens.toIndexedSeq)
-      }
-      sentences
-    }
-    doc.copy(sentences = doc.sentences.flatMap(split))
-  }
-
-  def main(args: Array[String]) {
-    println(SentenceSplitter("This is Wolfe. What are you?"))
+  def apply(doc: Document) : Document = {
+    SS(doc)
   }
 
 }

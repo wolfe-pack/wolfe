@@ -199,7 +199,7 @@ object DocumentOld {
    * @param doc old Document
    * @return A normalised copy of the old Document
    */
-  def normalizeDoc(doc:DocumentOld) = {
+  def normalizeDoc(doc: DocumentOld) = {
     DocumentOld(doc.sentences.map(_.tokens.map(_.word)))
   }
 
