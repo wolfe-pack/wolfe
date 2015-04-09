@@ -2,7 +2,7 @@ package ml.wolfe.term
 
 import cc.factorie.la._
 import cc.factorie.util.SingletonIntSeq
-import ml.wolfe.Index
+import ml.wolfe.{SimpleIndex, Index}
 
 /**
  * @author riedel
@@ -53,22 +53,32 @@ class MutableSingletonTensor1(val dim1:Int, var singleIndex:Int, var singleValue
 
 }
 
+trait Indexer {
+  def index(dom:Dom,setting:Setting):Int
+}
 
-case class Indexed[T <: Term[Dom]](value: T)(implicit val index: Index) extends Composed[IntDom] {
+class DefaultIndexer(val index:Index = new SimpleIndex) extends Indexer {
+  def index(dom: Dom, setting: Setting) = {
+    val value = Seq() ++ setting.disc.array
+    val indexOfValue = index(value)
+    indexOfValue
+  }
+}
 
-  require(value.domain.isDiscrete, "can only index discrete terms")
+case class Indexed[T <: Term[Dom]](arg: T)(implicit val indexer: Indexer) extends Composed[IntDom] {
+
+  require(arg.domain.isDiscrete, "can only index discrete terms")
 
   type ArgumentType = T
 
-  def copy(args: IndexedSeq[ArgumentType]) = new Indexed[T](args(0))(index)
+  def copy(args: IndexedSeq[ArgumentType]) = new Indexed[T](args(0))(indexer)
 
-  val arguments = IndexedSeq(value)
+  val arguments = IndexedSeq(arg)
   val domain = Dom.ints
 
   override def composer(args: Settings) = new Composer(args) {
     def eval()(implicit execution: Execution) = {
-      val value = Seq() ++ input(0).disc.array
-      val indexOfValue = index(value)
+      val indexOfValue = indexer.index(arg.domain, input(0))
       output.disc(0) = indexOfValue
     }
   }

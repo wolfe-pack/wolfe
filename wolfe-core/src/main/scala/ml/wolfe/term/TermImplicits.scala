@@ -54,7 +54,9 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
   def ifThenElse[T <: Term[Dom]](cond: BoolTerm)(ifTrue: T)(ifFalse: T) =
     choice(boolToInt(cond))(ifFalse, ifTrue)
 
-  def indexed(value: AnyTerm)(implicit index: Index) = Indexed(value)
+  implicit def indexerToIndex(indexer:DefaultIndexer):Index = indexer.index
+
+  def indexed(value: AnyTerm)(implicit indexer: Indexer) = Indexed(value)
 
   //  implicit class ConvertableToTerm[T, D <: TypedDom[T]](value: T)(implicit val domain: D) {
   //    def toConst: domain.Term = domain.Const(value)
@@ -384,7 +386,7 @@ trait MathImplicits {
 
     def -(that: VectorTerm) = new VectorSum(IndexedSeq(vect, that * (-1.0)))
 
-    def conjoin(that: VectorTerm)(implicit index: Index, dom: VectorDom) = new Conjoined(vect, that)
+    def conjoin(that: VectorTerm)(implicit index: DefaultIndexer, dom: VectorDom) = new Conjoined(vect, that)(index.index,dom)
 
     def apply(index:IntTerm) = new VectorApply(vect,index)
 
@@ -528,7 +530,7 @@ trait MathImplicits {
 
   def oneHot(index: IntTerm, value: DoubleTerm = Dom.doubles.Const(1.0))(implicit dom: VectorDom): VectorTerm = OneHot(index, value)
 
-  def feature(feat: AnyTerm, value: DoubleTerm = Dom.doubles.Const(1.0))(implicit dom: VectorDom, index: Index) =
+  def feature(feat: AnyTerm, value: DoubleTerm = Dom.doubles.Const(1.0))(implicit dom: VectorDom, indexer: Indexer) =
     oneHot(indexed(feat), value)
 
   implicit def doubleToConstant(d: Double): Dom.doubles.Term = Dom.doubles.Const(d)

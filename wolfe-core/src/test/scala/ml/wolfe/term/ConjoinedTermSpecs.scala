@@ -12,7 +12,7 @@ class ConjoinedTermSpecs extends WolfeSpec {
   "A conjoined term" should {
     "provide a feature conjunction" in {
       implicit val V = Vectors(4)
-      implicit val index = new SimpleIndex
+      implicit val indexer = new DefaultIndexer()
 
       val i = Ints.Var
       val j = Ints.Var
