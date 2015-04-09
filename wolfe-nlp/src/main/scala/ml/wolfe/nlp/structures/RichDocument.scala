@@ -52,7 +52,7 @@ object RichDocument extends GenericDocumentCompanion[RichDocument, SentenceLike,
     new RichDocument[RichSentence[RichToken]](base.source,{for (s <- base.sentences) yield implicitly[RichSentence[RichToken]](s)})
   }
 
-  def empty(): RichDocument[SentenceLike[TokenLike]] =
+  override def empty(): RichDocument[SentenceLike[TokenLike]] =
     new RichDocument[SentenceLike[TokenLike]]("",
       IndexedSeq.empty,
       None,
@@ -64,6 +64,7 @@ object RichDocument extends GenericDocumentCompanion[RichDocument, SentenceLike,
   def apply(source: String) : RichDocument[RichSentence[RichToken]] = RichDocument(source, IndexedSeq(RichSentence(IndexedSeq(RichToken(source, CharOffsets(0,source.length))))))
 
 
+
   // Free of var's, but IntelliJ complains :P
   /*
   def apply(sentences:Seq[Seq[String]]) = {
@@ -73,6 +74,14 @@ object RichDocument extends GenericDocumentCompanion[RichDocument, SentenceLike,
       (b._1 + x._1, b._2 += x._2.result())} } )._2.result()
   }
   */
+
+  override implicit def canBuildFromBasic[OldD <: DocumentLike[S], S <: SentenceLike[_ <: TokenLike]]: CanBuildFrom[OldD, S, RichDocument[S]] = newCanBuildFromBasic
+  override def fromBasicDocument[OldD <: DocumentLike[S], S <: SentenceLike[_ <: TokenLike]](basic: OldD): RichDocument[S] = new RichDocument[S](basic.source, basic.sentences,
+    None,
+    None,
+    IRAnnotation.empty,
+    CorefAnnotation.empty,
+    DiscourseAnnotation.empty)
 
   def apply(sentences:Seq[Seq[String]]) : RichDocument[RichSentence[RichToken]] = {
     val source = sentences.map(_.mkString(" ")).mkString(" ")

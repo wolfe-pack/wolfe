@@ -21,18 +21,22 @@ private trait SentenceWithTreesLike[T <: TokenLike] extends SentenceLike[T] with
 
 private object SentenceWithTreesLike extends GenericSentenceCompanion[SentenceWithTreesLike, TokenLike] {
   implicit def canBuildFrom[OldT <: TokenLike, NewT <: TokenLike]: CanBuildFrom[SentenceWithTreesLike[OldT], NewT, SentenceWithTreesLike[NewT]] = newCanBuildFrom
-  def empty(): SentenceWithTreesLike[TokenLike] = new SentenceWithTreesLike[TokenLike] {val trees : String                = ""
+  override def empty(): SentenceWithTreesLike[TokenLike] = new SentenceWithTreesLike[TokenLike] {val trees : String                = ""
                                                                                         val tokens: IndexedSeq[TokenLike] = IndexedSeq.empty
   }
   def fromSentence[NewT <: TokenLike](old: SentenceWithTreesLike[_ <: TokenLike], tokens: IndexedSeq[NewT]): SentenceWithTreesLike[NewT] = new SentenceWithTrees[NewT](tokens, old.trees)
+  override implicit def canBuildFromBasic[OldS <: SentenceLike[T], T <: TokenLike]: CanBuildFrom[OldS, T, SentenceWithTreesLike[T]] = ???
+  override def fromBasicSentence[OldS <: SentenceLike[T], T <: TokenLike](basicS: OldS): SentenceWithTreesLike[T] = new SentenceWithTrees[T](basicS.tokens,"")
 }
 
 private case class SentenceWithTrees[T <: TokenLike](tokens: IndexedSeq[T], trees: String) extends SentenceWithTreesLike[T]
 
 private object SentenceWithStringLike extends GenericSentenceCompanion[SentenceWithStringLike, TokenLike] {
   implicit def canBuildFrom[OldT <: TokenLike, NewT <: TokenLike]: CanBuildFrom[SentenceWithStringLike[OldT], NewT, SentenceWithStringLike[NewT]] = newCanBuildFrom
-  def empty(): SentenceWithStringLike[TokenLike] = new SentenceWithString[TokenLike](IndexedSeq.empty)
+  override def empty(): SentenceWithStringLike[TokenLike] = new SentenceWithString[TokenLike](IndexedSeq.empty)
   def fromSentence[NewT <: TokenLike](old: SentenceWithStringLike[_ <: TokenLike], tokens: IndexedSeq[NewT]): SentenceWithStringLike[NewT] = new SentenceWithString[NewT](tokens)
+  override implicit def canBuildFromBasic[OldS <: SentenceLike[T], T <: TokenLike]: CanBuildFrom[OldS, T, SentenceWithStringLike[T]] = newCanBuildFromBasic
+  override def fromBasicSentence[OldS <: SentenceLike[T], T <: TokenLike](basicS: OldS): SentenceWithStringLike[T] = new SentenceWithString[T](basicS.tokens)
 }
 
 private trait SentenceWithStringLike[T <: TokenLike] extends SentenceLike[T] with IndexedSeq[T] with IndexedSeqLike[T,SentenceWithStringLike[T]]{
@@ -49,8 +53,10 @@ private trait DocumentWithTreesLike[S <: SentenceLike[_ <: TokenLike]] extends D
 private object DocumentWithTreesLike extends GenericDocumentCompanion[DocumentWithTreesLike, SentenceLike, TokenLike] {
 
   implicit def canBuildFrom[OldS <: SentenceLike[_ <: TokenLike], NewS <: SentenceLike[_ <: TokenLike]]: CanBuildFrom[DocumentWithTreesLike[OldS], NewS, DocumentWithTreesLike[NewS]] = newCanBuildFrom
-  def empty(): DocumentWithTreesLike[SentenceLike[TokenLike]] = new DocumentWithTrees("", "", IndexedSeq.empty)
+  override def empty(): DocumentWithTreesLike[SentenceLike[TokenLike]] = new DocumentWithTrees("", "", IndexedSeq.empty)
   def fromDocument[NewS <: SentenceLike[_ <: TokenLike]](old: DocumentWithTreesLike[_ <: SentenceLike[_ <: TokenLike]], sentences: IndexedSeq[NewS]): DocumentWithTreesLike[NewS] = new DocumentWithTrees[NewS](old.source, old.trees, sentences)
+  override implicit def canBuildFromBasic[OldD <: DocumentLike[S], S <: SentenceLike[_ <: TokenLike]]: CanBuildFrom[OldD, S, DocumentWithTreesLike[S]] = ???
+  override def fromBasicDocument[OldD <: DocumentLike[S], S <: SentenceLike[_ <: TokenLike]](basic: OldD): DocumentWithTreesLike[S] = new DocumentWithTrees[S](basic.source,"",basic.sentences)
 }
 
 private case class DocumentWithTrees[S <: SentenceLike[_ <: TokenLike]](source: String, trees: String, sentences: IndexedSeq[S]) extends DocumentWithTreesLike[S]

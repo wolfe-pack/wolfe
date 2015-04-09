@@ -26,9 +26,11 @@ case class RichSentence[T <: TokenLike](tokens: IndexedSeq[T],
 
 object RichSentence extends GenericSentenceCompanion[RichSentence, TokenLike] {
   implicit def canBuildFrom[OldT <: TokenLike, NewT <: TokenLike]: CanBuildFrom[RichSentence[OldT], NewT, RichSentence[NewT]] = newCanBuildFrom
-  def empty(): RichSentence[TokenLike] = new RichSentence[TokenLike](IndexedSeq.empty)
+  override def empty(): RichSentence[TokenLike] = new RichSentence[TokenLike](IndexedSeq.empty)
   def fromSentence[NewT <: TokenLike](old: RichSentence[_ <: TokenLike], tokens: IndexedSeq[NewT]): RichSentence[NewT] = new RichSentence[NewT](tokens, old.syntax, old.ie)
   implicit def fromBaseSentence[OldS <: SentenceLike[_ <: TokenLike]](oldS: OldS): RichSentence[RichToken] = {
     new RichSentence[RichToken]({for (t <- oldS.tokens) yield implicitly[RichToken](t)})
   }
+  override implicit def canBuildFromBasic[OldS <: SentenceLike[T], T <: TokenLike]: CanBuildFrom[OldS, T, RichSentence[T]] = newCanBuildFromBasic
+  override def fromBasicSentence[OldS <: SentenceLike[T], T <: TokenLike](basicS: OldS): RichSentence[T] = new RichSentence[T](basicS.tokens)
 }
