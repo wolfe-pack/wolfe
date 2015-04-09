@@ -42,8 +42,6 @@ trait SkipChainLinearChain[Label] {
   def skipChain(t: Thetas.Term)(x: Inputs.Term)(y: Outputs.Term) =
     crf(t)(x)(y) + skip(x)(y)
 
-  val prediction = argmax(Outputs)(skipChain(thetaStar)(doc.words))
-
   lazy val predict =
     fun(Inputs) { x => argmax(Outputs)(crf(Thetas.Const(thetaStar))(x))}
 
