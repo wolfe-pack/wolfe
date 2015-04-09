@@ -32,7 +32,7 @@ case class NGramCounts[E <: Dom, C <: TypedVectorDom[VarSeqDom[E]]](data: SeqTer
       for (i <- 0 until (length - ngramOrder + 1)) {
         windowEval.input(fromVarIndex).disc(0) = i
         windowEval.eval()
-        val index = countsDom.argDom.indexOfSetting(windowEval.output)
+        val index = countsDom.indexer.index(window.domain,windowEval.output)
         output.vect(0)(index) += 1.0
       }
     }
