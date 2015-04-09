@@ -10,7 +10,7 @@ import scala.util.Random
 /**
  * @author riedel
  */
-object TermImplicits extends NameProviderImplicits with MathImplicits with Stochastic with LoggedTerms with FVectors with NGramCountsHelper{
+object TermImplicits extends NameProviderImplicits with MathImplicits with Stochastic with LoggedTerms with FVectors with NGramCountsHelper {
 
   implicit val Doubles: Dom.doubles.type = Dom.doubles
   implicit val Bools: Dom.bools.type = Dom.bools
@@ -33,10 +33,10 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
 
   def Seqs[D <: Dom](elements: D, length: Int): VarSeqDom[elements.type] = Seqs(elements, length, length)
 
-  def Maps(keyDom:Dom,valueDom:Dom):MapDom1[keyDom.type,valueDom.type] = new MapDom1[keyDom.type,valueDom.type](keyDom,valueDom)
+  def Maps(keyDom: Dom, valueDom: Dom): MapDom1[keyDom.type, valueDom.type] = new MapDom1[keyDom.type, valueDom.type](keyDom, valueDom)
 
-  def Maps(keyDom1:Dom,keyDom2:Dom,valueDom:Dom):MapDom2[keyDom1.type,keyDom2.type,valueDom.type] =
-    new MapDom2[keyDom1.type,keyDom2.type,valueDom.type](keyDom1,keyDom2,valueDom)
+  def Maps(keyDom1: Dom, keyDom2: Dom, valueDom: Dom): MapDom2[keyDom1.type, keyDom2.type, valueDom.type] =
+    new MapDom2[keyDom1.type, keyDom2.type, valueDom.type](keyDom1, keyDom2, valueDom)
 
   def fixedLengthSeq[T](elements: Seq[T])(implicit dom: TypedDom[T]) = {
     Seqs(dom, elements.length).Const(elements.toIndexedSeq)
@@ -54,7 +54,7 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
   def ifThenElse[T <: Term[Dom]](cond: BoolTerm)(ifTrue: T)(ifFalse: T) =
     choice(boolToInt(cond))(ifFalse, ifTrue)
 
-  implicit def indexerToIndex(indexer:DefaultIndexer):Index = indexer.index
+  implicit def indexerToIndex(indexer: DefaultIndexer): Index = indexer.index
 
   def indexed(value: AnyTerm)(implicit indexer: Indexer) = Indexed(value)
 
@@ -75,17 +75,18 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
     val e = t.evaluator()
     (x: d.Value) => e.eval(x)
   }
-  def fun[D <: Dom](d1: Dom,d2:Dom)(f: (d1.Term,d2.Term) => Term[D]): (d1.Value,d2.Value) => D#Value = {
+
+  def fun[D <: Dom](d1: Dom, d2: Dom)(f: (d1.Term, d2.Term) => Term[D]): (d1.Value, d2.Value) => D#Value = {
     val v1 = d1.Variable("v1")
     val v2 = d2.Variable("v2")
-    val t = f(v1,v2)
+    val t = f(v1, v2)
     val e = t.evaluator()
-    (a1:d1.Value,a2:d2.Value) => e.eval(a1,a2)
+    (a1: d1.Value, a2: d2.Value) => e.eval(a1, a2)
   }
 
-  implicit def pairToPairTerm[T1 <: AnyTerm, T2 <: AnyTerm](pair:(T1,T2)):Tuple2Dom[pair._1.domain.type,pair._2.domain.type]#Term = {
-    val dom = new Tuple2Dom[pair._1.domain.type,pair._2.domain.type](pair._1.domain,pair._2.domain)
-    dom.Term(pair._1.asInstanceOf[dom.dom1.Term],pair._2.asInstanceOf[dom.dom2.Term])
+  implicit def pairToPairTerm[T1 <: AnyTerm, T2 <: AnyTerm](pair: (T1, T2)): Tuple2Dom[pair._1.domain.type, pair._2.domain.type]#Term = {
+    val dom = new Tuple2Dom[pair._1.domain.type, pair._2.domain.type](pair._1.domain, pair._2.domain)
+    dom.Term(pair._1.asInstanceOf[dom.dom1.Term], pair._2.asInstanceOf[dom.dom2.Term])
   }
 
 
@@ -101,29 +102,39 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
     def toConst(implicit dom: TypedDom[T]) = fixedLengthSeq[T](values.toSeq)
   }
 
-  class RichSeqTerm[E<:Dom, S <: SeqTerm[E]](val seq:S) {
+  class RichSeqTerm[E <: Dom, S <: SeqTerm[E]](val seq: S) {
     def slice(from: IntTerm, to: IntTerm)(implicit sliceDom: VarSeqDom[E]): sliceDom.Term = {
       val result = new VarSeqSlice[Dom, SeqTerm[E], VarSeqDom[E]](seq, from, to)(sliceDom)
       sliceDom.own(result.asInstanceOf[TypedTerm[sliceDom.Value]])
     }
 
-    def append(elem:seq.domain.elementDom.Term)(implicit appendedDom:VarSeqDom[seq.domain.elementDom.type]):appendedDom.Term = {
+    def takeRight(num:IntTerm)(implicit sliceDom: VarSeqDom[E]) = slice(seq.length - num, seq.length)
+
+    def take(num:IntTerm)(implicit sliceDom: VarSeqDom[E]) = slice(0, num)
+
+    def drop(num:IntTerm)(implicit sliceDom: VarSeqDom[E]) = slice(num,seq.length)
+
+    def dropRight(num:IntTerm)(implicit sliceDom: VarSeqDom[E]) = slice(0, seq.length - num)
+
+
+    def append(elem: seq.domain.elementDom.Term)(implicit appendedDom: VarSeqDom[seq.domain.elementDom.type]): appendedDom.Term = {
       val result = new VarSeqAppend[Dom, SeqTerm[E], appendedDom.type](seq, elem)(appendedDom)
       appendedDom.own(result.asInstanceOf[TypedTerm[appendedDom.Value]])
     }
-     def :+(elem:seq.domain.elementDom.Term)(implicit appendedDom:VarSeqDom[seq.domain.elementDom.type]) =
+
+    def :+(elem: seq.domain.elementDom.Term)(implicit appendedDom: VarSeqDom[seq.domain.elementDom.type]) =
       append(elem)(appendedDom)
 
   }
 
-//  implicit def toRichSeqTerm(seq:AnySeqTerm):RichSeqTerm[seq.domain.elementDom.type,seq.domain.type] =
-//    new RichSeqTerm[seq.domain.elementDom.type,seq.domain.type](seq.asInstanceOf[seq.domain.Term])
+  //  implicit def toRichSeqTerm(seq:AnySeqTerm):RichSeqTerm[seq.domain.elementDom.type,seq.domain.type] =
+  //    new RichSeqTerm[seq.domain.elementDom.type,seq.domain.type](seq.asInstanceOf[seq.domain.Term])
 
-//  implicit def toRichSeqTerm[S <: VarSeqDom[_]](seq:S#Term):RichSeqTerm[seq.domain.elementDom.type,S] =
-//    new RichSeqTerm[seq.domain.elementDom.type,S](seq.asInstanceOf[seq.domain.Term])
+  //  implicit def toRichSeqTerm[S <: VarSeqDom[_]](seq:S#Term):RichSeqTerm[seq.domain.elementDom.type,S] =
+  //    new RichSeqTerm[seq.domain.elementDom.type,S](seq.asInstanceOf[seq.domain.Term])
 
-  implicit def toRichSeqTerm[E <: Dom](seq:SeqTerm[E]):RichSeqTerm[E,seq.type] =
-    new RichSeqTerm[E,seq.type](seq)
+  implicit def toRichSeqTerm[E <: Dom](seq: SeqTerm[E]): RichSeqTerm[E, seq.type] =
+    new RichSeqTerm[E, seq.type](seq)
 
   //  implicit def genericToConstant[T,D<:TypedDom[T]](t:T)(implicit dom:D):dom.Term = dom.const(t)
   //  implicit def genericToConstant[T,D<:TypedDom[T]](t:T)(implicit dom:D):dom.DomTerm = dom.const(t)
@@ -160,23 +171,24 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
   //    term.argmax(variable).asInstanceOf[dom.Value]
   //  }
 
-  class RichMapTerm2[+M <: MapTerm[Tuple2Dom[_ <: Dom,_ <: Dom],_ <: Dom]](val term:M) {
-    def apply(k1:term.domain.keyDom.dom1.Term,k2:term.domain.keyDom.dom2.Term):term.domain.valueDom.Term = {
-      term.asInstanceOf[term.domain.Term](term.domain.keyDom.Term(k1,k2))
+  class RichMapTerm2[+M <: MapTerm[Tuple2Dom[_ <: Dom, _ <: Dom], _ <: Dom]](val term: M) {
+    def apply(k1: term.domain.keyDom.dom1.Term, k2: term.domain.keyDom.dom2.Term): term.domain.valueDom.Term = {
+      term.asInstanceOf[term.domain.Term](term.domain.keyDom.Term(k1, k2))
     }
 
   }
-  class RichMapTerm2New[T1 <:Dom, T2<:Dom, V <: Dom, M <: MapTerm[Tuple2Dom[T1,T2],V]](val term:M) {
-    def apply(k1:term.domain.keyDom.dom1.Term,k2:term.domain.keyDom.dom2.Term):term.domain.valueDom.Term = {
-      term.asInstanceOf[term.domain.Term](term.domain.keyDom.Term(k1,k2))
+
+  class RichMapTerm2New[T1 <: Dom, T2 <: Dom, V <: Dom, M <: MapTerm[Tuple2Dom[T1, T2], V]](val term: M) {
+    def apply(k1: term.domain.keyDom.dom1.Term, k2: term.domain.keyDom.dom2.Term): term.domain.valueDom.Term = {
+      term.asInstanceOf[term.domain.Term](term.domain.keyDom.Term(k1, k2))
     }
   }
 
-  implicit def toRichMapTerm2(m:MapTerm[Tuple2Dom[_ <: Dom,_ <: Dom],_ <: Dom]):RichMapTerm2[m.type] =
+  implicit def toRichMapTerm2(m: MapTerm[Tuple2Dom[_ <: Dom, _ <: Dom], _ <: Dom]): RichMapTerm2[m.type] =
     new RichMapTerm2[m.type](m)
 
-//  implicit def toRichMapTerm2New[T1 <:Dom, T2<:Dom, V <: Dom, M <: MapTerm[Tuple2Dom[T1,T2],V]](m:M):RichMapTerm2New[T1,T2,V,M] =
-//    new RichMapTerm2New[T1,T2,V,M](m)
+  //  implicit def toRichMapTerm2New[T1 <:Dom, T2<:Dom, V <: Dom, M <: MapTerm[Tuple2Dom[T1,T2],V]](m:M):RichMapTerm2New[T1,T2,V,M] =
+  //    new RichMapTerm2New[T1,T2,V,M](m)
 
 
   implicit class RichBoolTerm(term: BoolTerm) {
@@ -214,42 +226,46 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
   //  }
 
   case class Assignment[+D <: Dom](variable: Var[D], value: D#Value) {
-    def toSubstitution = Substitution[D](variable,variable.domain.Const(value.asInstanceOf[variable.domain.Value]))
+    def toSubstitution = Substitution[D](variable, variable.domain.Const(value.asInstanceOf[variable.domain.Value]))
   }
+
   case class Substitution[+D <: Dom](variable: Var[D], value: Term[D])
 
   implicit class RichVar[D <: Dom](val innerVar: Var[D]) {
     def <<(that: Term[D]) = Substitution(innerVar, that)
+
     def :=(that: Term[D]) = Substitution(innerVar, that)
-    def <<(that: innerVar.domain.Value):Assignment[D] = Assignment(innerVar, that)
-    def :=(that: innerVar.domain.Value):Assignment[D] = Assignment(innerVar, that)
+
+    def <<(that: innerVar.domain.Value): Assignment[D] = Assignment(innerVar, that)
+
+    def :=(that: innerVar.domain.Value): Assignment[D] = Assignment(innerVar, that)
 
   }
 
   implicit class RichTerm[A <: Term[Dom]](val innerTerm: A) {
 
-    def |[D <: Dom](substitution: Substitution[D]):innerTerm.domain.Term = {
+    def |[D <: Dom](substitution: Substitution[D]): innerTerm.domain.Term = {
       innerTerm.domain.own(Substituted[Dom, Dom](innerTerm, substitution.variable, substitution.value).asInstanceOf[TypedTerm[innerTerm.domain.Value]])
     }
 
-    def |[D <: Dom](assignment: Assignment[D]):innerTerm.domain.Term = this | assignment.toSubstitution
+    def |[D <: Dom](assignment: Assignment[D]): innerTerm.domain.Term = this | assignment.toSubstitution
 
-    def idx = indexed(innerTerm)(new CanonicalIndexer)//new IndexOf[innerTerm.domain.type](innerTerm.asInstanceOf[innerTerm.domain.Term])
+    def idx = indexed(innerTerm)(new CanonicalIndexer) //new IndexOf[innerTerm.domain.type](innerTerm.asInstanceOf[innerTerm.domain.Term])
 
     def eval(at: Assignment[Dom]*): innerTerm.domain.Value = {
       val values = at.map(a => a.variable -> a.value).toMap
       val args = innerTerm.vars.map(values)
-      innerTerm.evalUntyped(args:_*)
+      innerTerm.evalUntyped(args: _*)
     }
 
-//      assignments.foldLeft[AnyTerm](innerTerm) {
-//      case (result, assignment) => Substituted[Dom, Dom](result, assignment.variable, assignment.value)
-//    }.eval().asInstanceOf[innerTerm.domain.Value]
+    //      assignments.foldLeft[AnyTerm](innerTerm) {
+    //      case (result, assignment) => Substituted[Dom, Dom](result, assignment.variable, assignment.value)
+    //    }.eval().asInstanceOf[innerTerm.domain.Value]
 
-    def diff[D<:Dom](wrt: Var[D])(at: Assignment[Dom]*):wrt.domain.Value = {
+    def diff[D <: Dom](wrt: Var[D])(at: Assignment[Dom]*): wrt.domain.Value = {
       val values = at.map(a => a.variable -> a.value).toMap
       val args = innerTerm.vars.map(values)
-      innerTerm.gradient(wrt,args:_*)
+      innerTerm.gradient(wrt, args: _*)
     }
 
     def map[B](fun: innerTerm.domain.Value => B)(implicit targetDom: TypedDom[B]): targetDom.Term = {
@@ -286,8 +302,8 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
     //    def iterator = dom.iterator
   }
 
-  implicit class RichVect(val vect:Vect) {
-    def toIndexedString(implicit index:Index) = {
+  implicit class RichVect(val vect: Vect) {
+    def toIndexedString(implicit index: Index) = {
       val mapped = vect.activeElements.filter(_._2 != 0.0).map(pair => index.key(pair._1) -> pair._2).toSeq
       val sorted = mapped.sortBy(-_._2)
       sorted.map(pair => s"${pair._2}\t${pair._1}").mkString("\n")
@@ -326,14 +342,14 @@ trait MathImplicits {
 
   def Vectors(dim: Int) = new VectorDom(dim)
 
-  def TypedVectors[D<:Dom](argDom:D,indexer:Indexer = new DefaultIndexer()) =
-    new TypedVectorDom[argDom.type](argDom,indexer)
+  def TypedVectors[D <: Dom](argDom: D, indexer: Indexer = new DefaultIndexer()) =
+    new TypedVectorDom[argDom.type](argDom, indexer)
 
   def GrowableVectors(initDim: Int = 1000) = new GrowableVectorDom(initDim)
 
   def Matrices(dim1: Int, dim2: Int) = new MatrixDom(dim1: Int, dim2: Int)
 
-  def vector(values: Double*):Vect = new DenseTensor1(values.toArray)
+  def vector(values: Double*): Vect = new DenseTensor1(values.toArray)
 
   def matrix(values: Seq[Double]*) = {
     val tmp = new DenseTensor2(values.length, values.head.length)
@@ -387,9 +403,9 @@ trait MathImplicits {
 
     def -(that: VectorTerm) = new VectorSum(IndexedSeq(vect, that * (-1.0)))
 
-    def conjoin(that: VectorTerm)(implicit index: DefaultIndexer, dom: VectorDom) = new Conjoined(vect, that)(index.index,dom)
+    def conjoin(that: VectorTerm)(implicit index: DefaultIndexer, dom: VectorDom) = new Conjoined(vect, that)(index.index, dom)
 
-    def apply(index:IntTerm) = new VectorApply(vect,index)
+    def apply(index: IntTerm) = new VectorApply(vect, index)
 
     //element-wise addition
     def :+(that: VectorTerm): VectorTerm = ???
@@ -402,11 +418,11 @@ trait MathImplicits {
     def l2(mask: VectorTerm = null): DoubleTerm = new SparseL2(vect, mask)
   }
 
-  class RichTypedVectTerm[T <: Term[TypedVectorDom[Dom]]](val vect:T) {
-    def apply(arg:vect.domain.argDom.Term) = new VectorApply(vect,indexed(arg)(vect.domain.indexer))
+  class RichTypedVectTerm[T <: Term[TypedVectorDom[Dom]]](val vect: T) {
+    def apply(arg: vect.domain.argDom.Term) = new VectorApply(vect, indexed(arg)(vect.domain.indexer))
   }
 
-  implicit def toRichTypedVectTerm(vect:Term[TypedVectorDom[Dom]]):RichTypedVectTerm[vect.type] =
+  implicit def toRichTypedVectTerm(vect: Term[TypedVectorDom[Dom]]): RichTypedVectTerm[vect.type] =
     new RichTypedVectTerm[vect.type](vect)
 
   implicit class RichMatrixTerm(val mat: Term[MatrixDom]) {
@@ -552,7 +568,7 @@ trait MathImplicits {
 
   implicit def intToDouble(int: IntTerm): IntToDouble[int.type] = new IntToDouble[int.type](int)
 
-  implicit def valueToConst[T <: AnyRef](value:T)(implicit dom:TypedDom[T]):dom.Term = dom.Const(value)
+  implicit def valueToConst[T <: AnyRef](value: T)(implicit dom: TypedDom[T]): dom.Term = dom.Const(value)
 
 
   def boolToInt(bool: BoolTerm): Dom.ints.Term = {
