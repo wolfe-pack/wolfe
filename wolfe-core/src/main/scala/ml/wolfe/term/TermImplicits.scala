@@ -326,7 +326,8 @@ trait MathImplicits {
 
   def Vectors(dim: Int) = new VectorDom(dim)
 
-  def TypedVectors[D<:Dom](argDom:D):TypedVectorDom[argDom.type] = new TypedVectorDom[argDom.type](argDom)
+  def TypedVectors[D<:Dom](argDom:D,indexer:Indexer = new DefaultIndexer()) =
+    new TypedVectorDom[argDom.type](argDom,indexer)
 
   def GrowableVectors(initDim: Int = 1000) = new GrowableVectorDom(initDim)
 
