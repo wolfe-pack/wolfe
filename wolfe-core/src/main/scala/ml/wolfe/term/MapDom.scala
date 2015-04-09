@@ -41,7 +41,7 @@ abstract class MapDom[K <: Dom, V <: Dom](val keyDom: K, val valueDom: V) extend
 
     override val domain: dom.type = dom
 
-    def apply(key: keyDom.Term): valueDom.Term = seqTerm(IndexOf(key))._2
+    def apply(key: keyDom.Term): valueDom.Term = seqTerm(key.idx)._2
 
 
     def copy(args: IndexedSeq[ArgumentType]) = new SeqWrapper(args(0).asInstanceOf[seqDom.Term])
@@ -54,7 +54,7 @@ abstract class MapDom[K <: Dom, V <: Dom](val keyDom: K, val valueDom: V) extend
   }
 
   class DomVar(val name: String) extends DomTerm with super.DomVar {
-    def apply(key: keyDom.Term) = seqDom.own(this.asInstanceOf[TypedTerm[seqDom.Value]])(IndexOf(key))._2
+    def apply(key: keyDom.Term) = seqDom.own(this.asInstanceOf[TypedTerm[seqDom.Value]])(key.idx)._2
   }
 
 
@@ -99,7 +99,7 @@ class MapDom1[K <: Dom, V <: Dom](keyDom: K, valueDom: V) extends MapDom[K,V](ke
   type Term = DomTerm
   type Var = DomVar
 
-  def variable(varName: String) = new Var(varName)
+  def Variable(varName: String) = new Var(varName)
 
   def Const(value: Value) = new SeqWrapper(seqDom.Const(map2seq(value)))
 
@@ -120,7 +120,7 @@ class MapDom2[K1 <: Dom, K2 <: Dom, V <:Dom](val keyDom1:K1, val keyDom2:K2, ove
 
   class Var(name:String) extends DomVar(name) with Term
 
-  def variable(varName: String) = new Var(varName)
+  def Variable(varName: String) = new Var(varName)
 
   def Const(value: Value) = new SeqWrapper(seqDom.Const(map2seq(value))) with Term
 
@@ -129,17 +129,4 @@ class MapDom2[K1 <: Dom, K2 <: Dom, V <:Dom](val keyDom1:K1, val keyDom2:K2, ove
 
 }
 
-case class IndexOf[D <: Dom](term: Term[D]) extends Composed[RangeDom] {
-  val domain = new RangeDom(0 until term.domain.domainSize)
-  type ArgumentType = Term[D]
 
-  val arguments = IndexedSeq(term)
-
-  def copy(args: IndexedSeq[ArgumentType]) = IndexOf(args(0))
-
-  override def composer(args: Settings) = new Composer(args) {
-    def eval()(implicit execution: Execution) = {
-      output.disc(0) = term.domain.indexOfSetting(input(0))
-    }
-  }
-}

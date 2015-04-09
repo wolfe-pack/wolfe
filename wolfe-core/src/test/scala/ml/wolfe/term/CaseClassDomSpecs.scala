@@ -94,8 +94,8 @@ class CaseClassDomSpecs extends WolfeSpec {
       val worlds = World.Values(Bools, Doubles)
       val x = worlds.Var
       val y = x.rain
-      x.eval(World(true, 0.5)) should be(World(true, 0.5))
-      y.eval(World(true, 0.5)) should be(true)
+      x.eval(x := World(true, 0.5)) should be(World(true, 0.5))
+      y.eval(x := World(true, 0.5)) should be(true)
     }
 
     "create nested domains" in {
@@ -105,7 +105,7 @@ class CaseClassDomSpecs extends WolfeSpec {
       val params = Params.Values(Seqs(Doubles, 2))
       val x = params.Var
       val term = x.weights(1)
-      term.eval(Params(IndexedSeq(1.0, 2.0))) should be(2.0)
+      term.eval(x := Params(IndexedSeq(1.0, 2.0))) should be(2.0)
     }
 
     "work with classes defined elsewhere" in {
@@ -113,7 +113,7 @@ class CaseClassDomSpecs extends WolfeSpec {
       @domain case class Wrapped(vector: Vect)
       val X = Wrapped.Values(Vectors(2))
       val x = X.Var
-      x.eval(Wrapped(vector(1, 2))).vector should equal(vector(1, 2))
+      x.eval(x := Wrapped(vector(1, 2))).vector should equal(vector(1, 2))
     }
 
     "return all case class values as iterable" in {
@@ -135,14 +135,14 @@ class CaseClassDomSpecs extends WolfeSpec {
       val b = Bools.Var
       val d = Doubles.Var
       val term = Worlds.Term(b, d)
-      term.eval(true, 0.5) should be(World(true, 0.5))
+      term.eval(b := true, d := 0.5) should be(World(true, 0.5))
 
     }
 
     "Create a variable that has accessor terms" in {
       val Worlds = World.Values(Bools, Doubles)
       val x = Worlds.Var
-      (x.prob | x << World(true, 0.3)).eval() should be (0.3)
+      (x.prob | x <<  World(true, 0.3)).eval() should be (0.3)
 
     }
 

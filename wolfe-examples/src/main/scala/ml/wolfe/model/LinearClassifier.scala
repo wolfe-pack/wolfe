@@ -3,7 +3,7 @@ package ml.wolfe.model
 import java.io.File
 
 import ml.wolfe.term.TermImplicits._
-import ml.wolfe.term.{AdaGradParameters, Argmaxer, LearningObjective}
+import ml.wolfe.term.{DefaultIndexer, AdaGradParameters, Argmaxer, LearningObjective}
 import ml.wolfe.{SimpleIndex, Vect}
 
 /**
@@ -20,6 +20,7 @@ trait LinearClassifier[Label] {
   type X = Vect
   val Thetas = Vectors(maxFeats)
   implicit def index:SimpleIndex
+  implicit lazy val indexer = new DefaultIndexer(index)
   implicit val Labels = labels.toDom
   implicit val Xs = Vectors(maxFeats * labels.size)
   //todo: this is too large generally

@@ -91,9 +91,9 @@ trait Dom {
     result
   }
 
-  def variable(name: String): Var
+  def Variable(name: String): Var
 
-  def Var(implicit provider: NameProvider): Var = variable(provider.newName())
+  def Var(implicit provider: NameProvider): Var = Variable(provider.newName())
 
   def Const(value: Value): Term
 

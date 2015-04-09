@@ -13,8 +13,8 @@ class MapDomSpecs extends WolfeSpec {
     "create variables" in {
       val M = Maps(Bools, Ints)
       val m = M.Var
-      m(m << Map(false -> 1, true -> 2)) should be(Map(false -> 1, true -> 2))
-      m(m << Map(false -> 1)) should be(Map(false -> 1))
+      m.eval(m << Map(false -> 1, true -> 2)) should be(Map(false -> 1, true -> 2))
+      m.eval(m << Map(false -> 1)) should be(Map(false -> 1))
     }
 
     "access map elements of a variable" in {
@@ -22,14 +22,14 @@ class MapDomSpecs extends WolfeSpec {
       val m = M.Var
       val k = Bools.Var
       val t = m(k)
-      t(m << Map(false -> 5), k << false) should be(5)
+      t.eval(m << Map(false -> 5), k << false) should be(5)
     }
 
     "access map elements of a constant" in {
       implicit val M = Maps(Bools, Ints)
       val m = Map(false -> 1, true -> 2).toConst
       val k = Bools.Var
-      m(k)(k << true) should be(2)
+      m(k).eval(k << true) should be(2)
     }
 
     "supports gradients for map values" in {
@@ -45,7 +45,7 @@ class MapDomSpecs extends WolfeSpec {
       val M = Maps(Bools, Bools, Doubles)
       val m = M.Var
       val t = m(k,k)
-      t(m << Map((true,true)->2.0), k << true) should be (2.0)
+      t.eval(m << Map((true,true)->2.0), k << true) should be (2.0)
     }
 
     //

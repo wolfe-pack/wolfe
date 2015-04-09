@@ -55,7 +55,7 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
       result
     }
 
-    def createArgDiff(a: ArgumentType):a.Differentiator =
+    def createArgDiff(a: ArgumentType): a.Differentiator =
       if (a.vars.isEmpty || withRespectTo.forall(!a.vars.contains(_)))
         new a.EmptyDifferentiator(input.linkedSettings(vars, a.vars), createArgError(a), gradientAccumulator.linkedSettings(vars, a.vars), withRespectTo)
       else
@@ -98,6 +98,19 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
 
   }
 
+}
+
+class ManualTerm[D <: Dom](val compose: (Settings, Setting) => Unit, val arguments: IndexedSeq[AnyTerm], val domain: D) extends Composed[D] {
+
+  type ArgumentType = AnyTerm
+
+  def copy(args: IndexedSeq[ArgumentType]) = new ManualTerm[D](compose,args,domain)
+
+  override def composer(args: Settings) = new Composer(args) {
+    def eval()(implicit execution: Execution) = {
+      compose(input, output)
+    }
+  }
 }
 
 trait NAry {

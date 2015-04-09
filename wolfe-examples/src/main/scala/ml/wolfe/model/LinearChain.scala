@@ -21,6 +21,8 @@ trait LinearChain[Label] {
 
   implicit val Thetas = Vectors(maxFeats)
   implicit val index = new SimpleIndex
+  implicit val indexer = new DefaultIndexer(index)
+
   implicit val Labels = labels.toDom
   implicit val Inputs = Input.Values(
     Seqs(Vectors(maxFeats),0,maxLength),

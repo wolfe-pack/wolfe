@@ -1,6 +1,5 @@
 package ml.wolfe.examples
 
-import cc.factorie.la.DenseTensor1
 import ml.wolfe._
 import ml.wolfe.nlp.Document
 import ml.wolfe.nlp.io.CoNLLReader
@@ -14,7 +13,9 @@ import ml.wolfe.term._
  * @author rockt
  */
 object NERDemo extends App {
-  implicit val index = new SimpleIndex
+  implicit val index = new SimpleIndex()
+  implicit val indexer = new DefaultIndexer(index)
+
   implicit def tokensToInput(tokens: Seq[String]): Input = {
     val biasFeatures = tokens.toIndexedSeq.map(t => feats("Blah"))
     val transitionFeatures = tokens.toIndexedSeq.map(t => feats("Blubs"))

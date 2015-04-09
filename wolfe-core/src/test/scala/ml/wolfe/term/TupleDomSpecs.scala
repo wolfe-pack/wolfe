@@ -12,7 +12,7 @@ class TupleDomSpecs extends WolfeSpec {
   "A tuple domain" should {
     "create variables" in {
       val x = (Bools x Bools).Var
-      x.eval(false -> true) should be(false -> true)
+      x.eval(x := false -> true) should be(false -> true)
     }
 
     "construct constants" in {
@@ -23,8 +23,8 @@ class TupleDomSpecs extends WolfeSpec {
 
     "provide field access" in {
       val x = (Bools x Ints).Var
-      x._1(x << true -> 2) should be(true)
-      x._2(x << true -> 2) should be(2)
+      x._1.eval(x << true -> 2) should be(true)
+      x._2.eval(x << true -> 2) should be(2)
     }
 
     "supports gradients for tuple arguments" in {
@@ -42,7 +42,7 @@ class TupleDomSpecs extends WolfeSpec {
         case Tuples.Term(Tuples.dom1.Term(a1, _), a2) => a1 + a2
       }
       val term = obj(x)
-      term(x <<((1.0, false), 2.0)) should be(3.0)
+      term.eval(x <<((1.0, false), 2.0)) should be(3.0)
     }
 
 

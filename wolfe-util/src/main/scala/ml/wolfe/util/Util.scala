@@ -1,6 +1,7 @@
 package ml.wolfe.util
 
 import java.io._
+import java.nio.charset.MalformedInputException
 import java.util.concurrent.TimeUnit
 
 import cc.factorie.util.{FastLogging, Logger}
@@ -29,9 +30,30 @@ object Util {
     }
   }
 
+  /**
+   * Try a range of encodings on some statement until it doesn't fail.
+   * @param body body that uses encoding
+   * @param encodings list of encodings
+   * @tparam T type of value to return
+   * @return the value returned by the first successful encoding
+   */
+  def tryEncodings[T](body: String => T, encodings: List[String] = List("UTF-8", "ISO-8859-1")): T = encodings match {
+    case Nil => sys.error("Need at least one encoding")
+    case enc :: Nil =>
+      body(enc)
+    case enc :: tail =>
+      try {
+        body(enc)
+      } catch {
+        case e: MalformedInputException => tryEncodings(body, tail)
+      }
+  }
+
+
   def breakpoint() = {
     var a = 0 // set breakpoint here for use in macro-generated code...
   }
+
   /**
    * Recursively descend directory, returning a list of files.
    */
@@ -54,7 +76,8 @@ object Util {
   }
 
   def sig(x: Double) = 1.0 / (1.0 + math.exp(-x))
-  def sq(x:Double) = x * x
+
+  def sq(x: Double) = x * x
 
 }
 
@@ -66,7 +89,9 @@ object Iris {
   implicit val classes = Seq(Label("Iris-setosa"), Label("Iris-versicolor"), Label("Iris-virginica"))
 
   case class Label(label: String)
-  case class IrisData(features:IrisFeatures, irisClass: Label)
+
+  case class IrisData(features: IrisFeatures, irisClass: Label)
+
   case class IrisFeatures(sepalLength: Double, sepalWidth: Double, petalLength: Double, petalWidth: Double)
 
   def loadIris() = {
@@ -95,7 +120,7 @@ object Timer {
 
   def reportedVerbose(name: String): String = getTimeString(reported(name))
 
-  override def toString = timings.map({case (name,time) => s"$name: ${getTimeString(time)}"}).mkString("\n")
+  override def toString = timings.map({ case (name, time) => s"$name: ${getTimeString(time)}" }).mkString("\n")
 }
 
 
@@ -110,14 +135,14 @@ class ProgressBar(goal: Int, reportInterval: Int = 1, outputStream: OutputStream
     startTime = System.currentTimeMillis()
   }
 
-  def apply(msg: =>String = "", lineBreak: Boolean = false) {
+  def apply(msg: => String = "", lineBreak: Boolean = false) {
     if (completed == 0 && startTime == 0) start()
     if (completed % reportInterval == 0) {
       val percent = completed.toDouble / goal * 100
       val diffTime = System.currentTimeMillis() - startTime
       val estimatedTime = (((diffTime * (goal.toDouble / completed)) - diffTime) / 1000).toInt
       printWriter.print("\t[%6.2f".format(percent) + "%" + " %d/%d ".format(completed, goal) +
-      "%8s".format("~" + getTimeString(estimatedTime)) + "]\t" + msg + "\r")
+        "%8s".format("~" + getTimeString(estimatedTime)) + "]\t" + msg + "\r")
       if (lineBreak) printWriter.println()
     }
     if (goal == completed) printWriter.println()
@@ -129,15 +154,17 @@ class ProgressBar(goal: Int, reportInterval: Int = 1, outputStream: OutputStream
 /**
  * Hook into FACTORIE FastLogging that calls ProgressBar
  */
-class ProgressLogger(maxIterations: Int, name:String, outputStream: => OutputStream = System.out) extends Logger(name, outputStream) {
+class ProgressLogger(maxIterations: Int, name: String, outputStream: => OutputStream = System.out) extends Logger(name, outputStream) {
   val logEveryN = if (Conf.hasPath("logEveryN")) Conf.getInt("logEveryN") else 1
   val progressBar = new ProgressBar(maxIterations, logEveryN, outputStream)
   progressBar.start()
+
   override def info(msg: => Any): Unit = progressBar(msg.toString, lineBreak = true)
 }
 
 trait ProgressLogging extends FastLogging {
   def maxIterations(): Int
+
   override val logger: Logger =
     Logger.loggerMap.getOrElseUpdate(this.getClass.getName + "progress", new ProgressLogger(maxIterations(), this.getClass.getName + "progress"))
 }
@@ -148,11 +175,11 @@ trait ProgressLogging extends FastLogging {
  * @param value the value to be given an id.
  * @tparam T type of value.
  */
-class ObjectId[T <: AnyRef](val value:T) {
+class ObjectId[T <: AnyRef](val value: T) {
   override def hashCode() = System.identityHashCode(value)
 
   override def equals(obj: scala.Any) = obj match {
-    case o:ObjectId[_] => o.value eq value
+    case o: ObjectId[_] => o.value eq value
     case _ => false
   }
 }
@@ -163,7 +190,7 @@ class ObjectId[T <: AnyRef](val value:T) {
  * @param f the lifted function to turn into a partial function.
  */
 case class CachedPartialFunction[A, B](f: A => Option[B]) extends PartialFunction[A, B] {
-  private var cacheArg   : A         = _
+  private var cacheArg: A = _
   private var cacheResult: Option[B] = None
 
   def cache(x: A) = {

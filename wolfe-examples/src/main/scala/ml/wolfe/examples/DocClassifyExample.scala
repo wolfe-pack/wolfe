@@ -17,7 +17,8 @@ object DocClassifyExample extends App {
   import LearningObjective._
 
   implicit val random = new Random(0)
-  implicit val index = new SimpleIndex
+  implicit val index = new SimpleIndex()
+  implicit val indexer = new DefaultIndexer(index)
 
   val (trainDocs, testDocs) = TwentyNewsGroupReader.loadFromTarGz()
 

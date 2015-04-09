@@ -25,71 +25,6 @@ trait AtomicDom extends Dom {
   }
 }
 
-trait GenericVectorDom extends AtomicDom {
-  dom =>
-
-  def dim: Int
-
-  type Value = Vect
-  type Var = DomVar
-  type Marginals = Vect
-
-  val lengths = Offsets(0, 0, 1, 0)
-
-  def toValue(setting: Setting, offsets: Offsets) =
-    setting.vect(offsets.vectOff)
-
-
-  def toMarginals(msg: Msg, offsets: Offsets) = {
-    msg.vect(offsets.vectOff).mean
-  }
-
-  def fillZeroMsg(target: Msg, offsets: Offsets) = {
-    target.vect(offsets.vectOff) = new VectMsg(one)
-  }
-
-  def copyValue(value: Value, setting: Setting, offsets: Offsets) =
-    setting.vect(offsets.vectOff) = value
-
-
-  def copyMarginals(marginals: Marginals, msgs: Msg, offsets: Offsets) = {
-    msgs.vect(offsets.vectOff) = new VectMsg(marginals)
-  }
-
-
-  def variable(name: String) = StaticVectorVar(name)
-
-  case class StaticVectorVar(name: String) extends DomTerm with DomVar
-
-
-}
-
-class VectorDom(val dim: Int) extends GenericVectorDom {
-  def one = new DenseTensor1(dim, 1.0)
-  def zero = new DenseTensor1(dim, 0.0)
-
-  def Term(values: Double*) = {
-    require(values.size == dim)
-    Const(new DenseVector(values.toArray))
-  }
-}
-
-class GrowableVectorDom(val dim: Int) extends GenericVectorDom {
-  def one = {
-    val result = new GrowableDenseTensor1(dim)
-    result := 1.0
-    result
-  }
-  def zero = new GrowableDenseTensor1(dim)
-
-  def Term(values: Double*) = {
-    require(values.size == dim)
-    val result = new GrowableDenseTensor1(values.size)
-    result := values.toArray
-    Const(result)
-  }
-
-}
 
 
 
@@ -121,7 +56,7 @@ class MatrixDom(val dim1: Int, dim2: Int) extends AtomicDom {
     target.mats(offsets.matsOff) = new MatsMsg(zero)
   }
 
-  def variable(name: String): DomVar = new StaticMatrixVar(name)
+  def Variable(name: String): DomVar = new StaticMatrixVar(name)
 
   def one = new DenseTensor2(dim1, dim2, 1.0)
 
@@ -176,7 +111,7 @@ class DoubleDom extends AtomicDom {
 
   val lengths = Offsets(0, 1, 0, 0)
 
-  def variable(name: String): Var = StaticDoubleVar(name)
+  def Variable(name: String): Var = StaticDoubleVar(name)
 
   def one = 1.0
 
@@ -187,62 +122,7 @@ class DoubleDom extends AtomicDom {
   override def toString = "Doubles"
 }
 
-trait GenericDiscreteDom[T] extends AtomicDom {
 
-  dom =>
-  type Value = T
-  type Var = DomVar
-  type Marginals = Map[T,Double]
-
-
-  def start = valueToInt(zero)
-  def end = start + domainSize
-
-  def intToValue(int: Int): Value
-
-  def valueToInt(value: Value): Int
-
-  def domainSize: Int
-
-  def toValue(setting: Setting, offsets: Offsets = Offsets()) =
-    intToValue(setting.disc(offsets.discOff))
-
-
-  def domainValues = for (i <- start until end) yield intToValue(i)
-
-  def toMarginals(msg: Msg, offsets: Offsets) = {
-    val pairs = for (i <- start until end) yield intToValue(i) -> msg.disc(offsets.discOff).msg(i - start)
-    pairs.toMap
-  }
-
-  def copyValue(value: Value, setting: Setting, offsets: Offsets = Offsets()) =
-    setting.disc(offsets.discOff) = valueToInt(value)
-
-
-  def copyMarginals(marginals: Marginals, msgs: Msg, offsets: Offsets) = {
-    val start = valueToInt(zero)
-    val end = start + domainSize
-    val margs = domainValues map (v => marginals(v))
-    msgs.disc(offsets.discOff) = new DiscMsg(margs.toArray)
-  }
-
-  def fillZeroMsg(target: Msg, offsets: Offsets) = {
-    target.disc(offsets.discOff) = new DiscMsg(domainSize)
-  }
-
-  val lengths = Offsets(1, 0, 0, 0)
-
-  def variable(name: String) = StaticDiscVar(name)
-
-
-  trait DomVar extends super.DomVar {
-  }
-
-  case class StaticDiscVar(name: String) extends DomVar {
-  }
-
-
-}
 
 class DiscreteDom[T](val values: IndexedSeq[T]) extends GenericDiscreteDom[T] {
   val index = values.zipWithIndex.toMap

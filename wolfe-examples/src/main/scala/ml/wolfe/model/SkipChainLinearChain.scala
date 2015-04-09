@@ -20,7 +20,7 @@ trait SkipChainLinearChain[Label] {
   implicit val maxProductParams = MaxProductParameters(10)
 
   implicit val Thetas = Vectors(maxFeats)
-  implicit val index = new SimpleIndex
+  implicit val index = new DefaultIndexer()
   implicit val Labels = labels.toDom
   implicit val Inputs = Input.Values(
     Seqs(Vectors(maxFeats),0,maxLength),

@@ -12,16 +12,16 @@ class ConjoinedTermSpecs extends WolfeSpec {
   "A conjoined term" should {
     "provide a feature conjunction" in {
       implicit val V = Vectors(4)
-      implicit val index = new SimpleIndex
+      implicit val indexer = new DefaultIndexer()
 
       val i = Ints.Var
       val j = Ints.Var
       val o = oneHot(i,2.0) conjoin oneHot(j, 2.0)
 
-      o(i << 0,j << 0) should equal (vector(4,0,0,0))
-      o(i << 0,j << 1) should equal (vector(0,4,0,0))
-      o(i << 1,j << 0) should equal (vector(0,0,4,0))
-      o(i << 1,j << 1) should equal (vector(0,0,0,4))
+      o.eval(i << 0,j << 0) should equal (vector(4,0,0,0))
+      o.eval(i << 0,j << 1) should equal (vector(0,4,0,0))
+      o.eval(i << 1,j << 0) should equal (vector(0,0,4,0))
+      o.eval(i << 1,j << 1) should equal (vector(0,0,0,4))
 
     }
 

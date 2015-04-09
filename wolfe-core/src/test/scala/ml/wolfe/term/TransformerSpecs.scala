@@ -32,7 +32,7 @@ class TransformerSpecs extends WolfeSpec {
       }
       val expected = 2.0.toConst * 2.0.toConst + 2.0.toConst
       transformed._1 should beStringEqual(expected)
-      val Sum(Vector(Product(Vector(c1,c2)),c3)) = transformed._1
+      val Sum(Vector(Product(Vector(c1, c2)), c3)) = transformed._1
       (c1 eq c2) should be(true)
       (c1 eq c3) should be(true)
     }
@@ -47,7 +47,7 @@ class TransformerSpecs extends WolfeSpec {
       }
       val expected = 2.0.toConst * 2.0.toConst + 2.0.toConst
       transformed._1 should beStringEqual(expected)
-      val Sum(Vector(Product(Vector(c1,c2)),c3)) = transformed._1
+      val Sum(Vector(Product(Vector(c1, c2)), c3)) = transformed._1
       (c1 eq c2) should be(true)
       (c1 eq c3) should be(true)
     }
@@ -68,12 +68,12 @@ class TransformerSpecs extends WolfeSpec {
     "replace a first order sum with a propositional sum" in {
       val x = Seqs(Doubles, 3).Var
       val indices = SeqConst(0, 1, 2)
-      val term = sum(indices) { i => x(i)}
+      val term = sum(indices) { i => x(i) }
       val transformed = groundSums(term)
-      val i = Ints.variable("_i")
+      val i = Ints.Variable("_i")
       val expected = sum(indices.length)(x(0), x(1), x(2))
       transformed should beStringEqual(expected)
-      transformed.eval(IndexedSeq(1.0, 2.0, 3.0)) should be(expected.eval(IndexedSeq(1.0, 2.0, 3.0)))
+      transformed.eval(x := IndexedSeq(1.0, 2.0, 3.0)) should be(expected.eval(x := IndexedSeq(1.0, 2.0, 3.0)))
     }
   }
 
@@ -87,7 +87,6 @@ class TransformerSpecs extends WolfeSpec {
       Traversal.distinctSampleCount(t) should be(8)
     }
   }
-
 
 
 }

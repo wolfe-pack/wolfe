@@ -12,28 +12,28 @@ class IndexedTermSpecs extends WolfeSpec {
   "An indexed term" should {
     "index primitve values" in {
 
-      implicit val index = new SimpleIndex
+      implicit val indexer = new DefaultIndexer()
 
       val x = Bools.Var
       val i = indexed(x)
 
-      i(x << true) should be (0)
-      i(x << false) should be (1)
-      i(x << true) should be (0)
+      i.eval(x << true) should be (0)
+      i.eval(x << false) should be (1)
+      i.eval(x << true) should be (0)
 
 
     }
     "index case class values" in {
       @domain case class Data(x:Int,y:Boolean)
-      implicit val index = new SimpleIndex
+      implicit val index = new DefaultIndexer()
       implicit val Datas = Data.Values(Ints,Bools)
       val x = Datas.Var
       val i = indexed(x)
 
-      i(x << Data(1,false)) should be (0)
-      i(x << Data(10,false)) should be (1)
-      i(x << Data(10,true)) should be (2)
-      i(x << Data(10,false)) should be (1)
+      i.eval(x << Data(1,false)) should be (0)
+      i.eval(x << Data(10,false)) should be (1)
+      i.eval(x << Data(10,true)) should be (2)
+      i.eval(x << Data(10,false)) should be (1)
 
 
 

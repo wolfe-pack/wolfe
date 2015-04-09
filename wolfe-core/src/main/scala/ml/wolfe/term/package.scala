@@ -7,7 +7,7 @@ package object term {
   type DoubleVar = DoubleDom#DomVar
   type VectorVar = VectorDom#DomVar
   type MatrixVar = MatrixDom#DomVar
-  type DiscVar[T] = GenericDiscreteDom[T]#DomVar
+  //type DiscVar[T] = GenericDiscreteDom[T]#DomVar
   type Constant[D <: Dom] = D#Constant
   type AnyVar = Var[Dom]
   type AnyTerm = Term[Dom]
@@ -16,7 +16,7 @@ package object term {
   type AnySeqDom = VarSeqDom[Dom]
   type Mem = Memoized[Dom, AnyTerm]
   type SampleTerm = RangeDom#SampleTerm
-  type VarSeqTerm = VarSeqDom[Dom]#Term
+  type AnySeqTerm = VarSeqDom[Dom]#Term
   type SeqTerm[D <: Dom] = VarSeqDom[D]#Term
   type MapTerm[K<:Dom,V<:Dom] = MapDom[K,V]#Term
 
@@ -30,7 +30,7 @@ package object term {
   type MatrixTerm = Term[MatrixDom]
   type BoolDom = TypedDom[Boolean]
   type BoolTerm = TypedTerm[Boolean]
-  type DiscreteTerm[T] = Term[GenericDiscreteDom[T]]
+//  type DiscreteTerm[T] = Term[GenericDiscreteDom[T]]
 //  type IntTerm = DiscreteTerm[Int]
 
   type x[D1 <: Dom, D2 <:Dom] = Tuple2Dom[D1,D2]

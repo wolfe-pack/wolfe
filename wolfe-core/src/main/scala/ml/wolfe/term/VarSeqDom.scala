@@ -16,8 +16,9 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
   type Value = IndexedSeq[elementDom.Value]
   type Var = DomVar
   type Term = DomTerm
-  //  type ElemDom = E
+  //type ElemDom = E
 
+  def fixedSize = minLength == maxLength
 
   val indexDom = new RangeDom(0 until maxLength)
 
@@ -84,7 +85,7 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
   val lengths = (elementDom.lengths * maxLength) + Offsets(discOff = 1)
   override val dimensions = Dimensions(Array(minLength until maxLength + 1)) + elementDom.dimensions * maxLength
 
-  def variable(name: String): Var = new DomVar(name)
+  def Variable(name: String): Var = new DomVar(name)
 
 
   def one = for (i <- 0 until minLength) yield elementDom.one
@@ -107,6 +108,12 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
       elementDom.own(new VarSeqApply[
         ElemDom, SeqTerm, Index](this.asInstanceOf[SeqTerm], index))
     }
+
+    //todo: nasty, VarSeqDom[Dom] should be VarSeqDom[E] but that violates covariance
+    //    def slice(from: IntTerm, to: IntTerm)(implicit sliceDom: VarSeqDom[elementDom.type]): sliceDom.Term = {
+    //      val result = new VarSeqSlice[Dom, DomTerm, sliceDom.type](this, from, to)(sliceDom)
+    //      sliceDom.own(result.asInstanceOf[TypedTerm[sliceDom.Value]])
+    //    }
 
     def sampleShuffled(implicit random: Random) = apply(indexDom.shuffled)
 
@@ -148,6 +155,7 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
 
     override def composer(args: Settings) = new Composer(args) {
       output.recordChangedOffsets = true
+
       def eval()(implicit execution: Execution) = {
         output.clearChangeRecord()
         output.disc(0) = input(0).disc(0)
@@ -250,6 +258,64 @@ case class VarSeqApply[+E <: Dom, S <: Term[VarSeqDom[E]], I <: IntTerm](seq: S,
 
   override def toString = s"$seq($index)"
 }
+
+case class VarSeqSlice[+E <: Dom, S <: Term[VarSeqDom[E]], D <: VarSeqDom[E]](seq: S, from: IntTerm, to: IntTerm)
+                                                                             (implicit sliceDom: D) extends Composed[D] {
+  self =>
+  val domain = sliceDom
+
+  type ArgumentType = Term[Dom]
+
+  val arguments = IndexedSeq(seq, from, to)
+
+
+  def copy(args: IndexedSeq[ArgumentType]) =
+    VarSeqSlice[E, S, D](args(0).asInstanceOf[S], args(1).asInstanceOf[IntTerm], args(2).asInstanceOf[IntTerm])
+
+  override def composer(args: Settings) = new Composer(args) {
+    val tgtOffsets = Offsets(discOff = 1)
+
+    def eval()(implicit execution: Execution) = {
+      val from = input(1).disc(0)
+      val to = input(2).disc(0)
+      val offset = (seq.domain.elementDom.lengths * from) + Offsets(discOff = 1)
+      val length = seq.domain.elementDom.lengths * (to - from)
+      output :=(input(0), offset, length, tgtOffsets)
+      output.disc(0) = to - from
+    }
+  }
+
+  override def toString = s"$seq.slice($from,$to)"
+}
+
+
+case class VarSeqAppend[+E <: Dom, S <: Term[VarSeqDom[E]], D <: VarSeqDom[E]](seq: S, elem:Term[E])
+                                                                              (implicit appendedDom: D) extends Composed[D] {
+  self =>
+  val domain = appendedDom
+
+  type ArgumentType = Term[Dom]
+
+  val arguments = IndexedSeq(seq, elem)
+
+  def copy(args: IndexedSeq[ArgumentType]) =
+    VarSeqAppend[E, S, D](args(0).asInstanceOf[S], args(1).asInstanceOf[Term[E]])
+
+  override def composer(args: Settings) = new Composer(args) {
+    val tgtOffsets = Offsets(discOff = 1)
+    val srcOffsets = Offsets(discOff = 1)
+
+    def eval()(implicit execution: Execution) = {
+      val length = input(0).disc(0)
+      output :=(input(0), srcOffsets, elem.domain.lengths * length, tgtOffsets)
+      output :=(input(1), Offsets.zero, elem.domain.lengths, tgtOffsets + elem.domain.lengths * length)
+      output.disc(0) = length + 1
+    }
+  }
+
+  override def toString = s"$seq :+ $elem"
+}
+
 
 class RangeTerm(start: IntTerm, end: IntTerm) extends Composed[VarSeqDom[IntDom]] {
 

@@ -34,6 +34,10 @@ trait Term[+D <: Dom] extends TermHelper[D]  {
    */
   def isStatic: Boolean
 
+  def precalculate:domain.Term =
+    if (isStatic) domain.own(Precalculated(this).asInstanceOf[TypedTerm[domain.Value]])
+    else domain.own(this.asInstanceOf[TypedTerm[domain.Value]])
+
   def evaluatorImpl(in: Settings): Evaluator = ???
 
   def differentiatorImpl(wrt: Seq[AnyVar])(in: Settings, err: Setting, gradientAcc: Settings): Differentiator =
@@ -193,14 +197,14 @@ trait TermHelper[+D <: Dom] {
   }
 
 
-  def eval(args: Any*): domain.Value = {
+  def evalUntyped(args: Any*): domain.Value = {
     val argSettings = createSettings(args)
     val ev = evaluatorImpl(argSettings)
     ev.eval()(Execution(0))
     domain.toValue(ev.output)
   }
 
-  def !! = eval()
+//  def !! = eval()
 
 
   def gradient[V <: Dom](wrt: Var[V], args: Any*): wrt.domain.Value = {
@@ -631,7 +635,7 @@ class Unary_!(val arg: BoolTerm) extends UnaryTerm[BoolTerm, Dom.bools.type] {
 }
 
 
-class DiscreteEquals[T](var arg1: DiscreteTerm[T], var arg2: DiscreteTerm[T]) extends BinaryDiscreteOperator[BoolDom, GenericDiscreteDom[T]] {
+class DiscreteEquals[T](var arg1: Term[GenericDiscreteDom[T]], var arg2: Term[GenericDiscreteDom[T]]) extends BinaryDiscreteOperator[BoolDom, GenericDiscreteDom[T]] {
   val domain = Dom.bools
 
   def op(a1: Int, a2: Int) = if (a1 == a2) 1 else 0
