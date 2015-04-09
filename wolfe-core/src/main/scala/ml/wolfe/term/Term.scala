@@ -34,6 +34,10 @@ trait Term[+D <: Dom] extends TermHelper[D]  {
    */
   def isStatic: Boolean
 
+  def precalculate:domain.Term =
+    if (isStatic) domain.own(Precalculated(this).asInstanceOf[TypedTerm[domain.Value]])
+    else domain.own(this.asInstanceOf[TypedTerm[domain.Value]])
+
   def evaluatorImpl(in: Settings): Evaluator = ???
 
   def differentiatorImpl(wrt: Seq[AnyVar])(in: Settings, err: Setting, gradientAcc: Settings): Differentiator =
