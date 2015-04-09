@@ -26,7 +26,7 @@ case class NGramCounts[E <: Dom, C <: TypedVectorDom[VarSeqDom[E]]](data: SeqTer
 
     def eval()(implicit execution: Execution) = {
       val length = input(0).disc(0)
-      val result = new GrowableSparseHashTensor1(0 until 1000)
+      val result = new GrowableSparseHashTensor1(0 until 100000)
       output.vect(0) = result
       for (i <- 0 until (length - ngramOrder + 1)) {
         windowEval.input(fromVarIndex).disc(0) = i
