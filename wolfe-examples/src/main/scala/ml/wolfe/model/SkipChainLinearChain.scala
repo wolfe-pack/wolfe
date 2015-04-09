@@ -29,18 +29,23 @@ trait SkipChainLinearChain[Label] {
   implicit val Outputs = Seqs(Labels,0,maxLength)
   implicit val Instances = Pairs(Inputs, Outputs)
 
+  def crf(t: Thetas.Term)(x: Inputs.Term)(y: Outputs.Term) = {
+    val local = sum(0 until x.unary.length)(i => t dot (x.unary(i) conjoin feature(y(i))))
+    val pairwise =  sum(0 until x.unary.length - 1)(i => t dot (x.binary(i) conjoin feature(y(i) -> y(i+1))))
+    (local + pairwise) argmaxBy maxProduct
+  }
+
   def skip(x: Inputs.Term)(y: Outputs.Term) = {
     sum(x.matches) {p => 2.0 * I(y(p._1) === y(p._2))}
   }
 
-  def model(t: Thetas.Term)(x: Inputs.Term)(y: Outputs.Term) = {
-    val local = sum(0 until x.unary.length)(i => t dot (x.unary(i) conjoin feature(y(i))))
-    val pairwise =  sum(0 until x.unary.length - 1)(i => t dot (x.binary(i) conjoin feature(y(i) -> y(i+1))))
-    (local + pairwise + skip(x)(y)) argmaxBy maxProduct
-  }
+  def skipChain(t: Thetas.Term)(x: Inputs.Term)(y: Outputs.Term) =
+    crf(t)(x)(y) + skip(x)(y)
+
+  val prediction = argmax(Outputs)(skipChain(thetaStar)(doc.words))
 
   lazy val predict =
-    fun(Inputs) { x => argmax(Outputs)(model(Thetas.Const(thetaStar))(x))}
+    fun(Inputs) { x => argmax(Outputs)(crf(Thetas.Const(thetaStar))(x))}
 
   def classify(input:Input):Output[Label] = predict(input)
 }
@@ -56,7 +61,7 @@ object SkipChainLinearChain {
                params: AdaGradParameters,
                maxFeatures: Int = 1000, chainMaxLength:Int = 100):SkipChainLinearChain[L] = new SkipChainLinearChain[L] {
     lazy val thetaStar =
-      learn(Thetas)(t => perceptron(data.toConst)(Outputs)(model(t))) using Argmaxer.adaGrad(params)
+      learn(Thetas)(t => perceptron(data.toConst)(Outputs)(crf(t))) using Argmaxer.adaGrad(params)
 
     def labels = classLabels
     def maxFeats = maxFeatures
