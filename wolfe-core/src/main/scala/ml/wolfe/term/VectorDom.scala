@@ -73,7 +73,7 @@ trait GenericVectorDom extends AtomicDom {
 
 }
 
-class TypedVectorDom[+D <: Dom](val argDom:D) extends GenericVectorDom {
+class TypedVectorDom[+D <: Dom](val argDom:D, val indexer:Indexer = new CanonicalIndexer) extends GenericVectorDom {
 
   require(argDom.isDiscrete)
 

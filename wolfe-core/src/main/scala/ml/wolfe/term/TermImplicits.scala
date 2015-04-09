@@ -234,7 +234,7 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
 
     def |[D <: Dom](assignment: Assignment[D]):innerTerm.domain.Term = this | assignment.toSubstitution
 
-    def idx = new IndexOf[innerTerm.domain.type](innerTerm.asInstanceOf[innerTerm.domain.Term])
+    def idx = indexed(innerTerm)(new CanonicalIndexer)//new IndexOf[innerTerm.domain.type](innerTerm.asInstanceOf[innerTerm.domain.Term])
 
     def eval(at: Assignment[Dom]*): innerTerm.domain.Value = {
       val values = at.map(a => a.variable -> a.value).toMap
@@ -402,7 +402,7 @@ trait MathImplicits {
   }
 
   class RichTypedVectTerm[T <: Term[TypedVectorDom[Dom]]](val vect:T) {
-    def apply(arg:vect.domain.argDom.Term) = new VectorApply(vect,arg.idx)
+    def apply(arg:vect.domain.argDom.Term) = new VectorApply(vect,indexed(arg)(vect.domain.indexer))
   }
 
   implicit def toRichTypedVectTerm(vect:Term[TypedVectorDom[Dom]]):RichTypedVectTerm[vect.type] =

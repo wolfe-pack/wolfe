@@ -65,6 +65,12 @@ class DefaultIndexer(val index:Index = new SimpleIndex) extends Indexer {
   }
 }
 
+class CanonicalIndexer extends Indexer {
+  def index(dom: Dom, setting: Setting) = {
+    dom.indexOfSetting(setting)
+  }
+}
+
 case class Indexed[T <: Term[Dom]](arg: T)(implicit val indexer: Indexer) extends Composed[IntDom] {
 
   require(arg.domain.isDiscrete, "can only index discrete terms")
