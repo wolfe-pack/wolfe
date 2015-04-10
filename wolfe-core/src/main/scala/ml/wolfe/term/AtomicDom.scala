@@ -124,7 +124,10 @@ class DoubleDom extends AtomicDom {
 
 
 
-class DiscreteDom[T](val values: IndexedSeq[T]) extends GenericDiscreteDom[T] {
+class DiscreteDom[T](raw: IndexedSeq[T]) extends GenericDiscreteDom[T] {
+
+  val values = raw.distinct
+
   val index = values.zipWithIndex.toMap
 
   def intToValue(int: Int) = values(int)
@@ -138,7 +141,29 @@ class DiscreteDom[T](val values: IndexedSeq[T]) extends GenericDiscreteDom[T] {
   override val dimensions = Dimensions(Array(values.indices))
 
   override def toString = s"""Discretes(${values.mkString(",")})"""
+
+  def withOOV(oov:T) = new DiscreteOOVDom(raw, oov)
 }
+
+class DiscreteOOVDom[T](raw: IndexedSeq[T], val oov:T) extends GenericDiscreteDom[T] {
+
+  val values = (raw :+ oov).distinct
+
+  val index = values.zipWithIndex.toMap withDefaultValue -1
+
+  def intToValue(int: Int) = if (int == -1) oov else values(int)
+
+  def valueToInt(value: Value) = index(value)
+
+  def one = values.last
+
+  def zero = values.head
+
+  override val dimensions = Dimensions(Array(values.indices))
+
+  override def toString = s"""Discretes(${values.mkString(",")})"""
+}
+
 
 
 case class RangeDom(values: Range) extends GenericDiscreteDom[Int] {
