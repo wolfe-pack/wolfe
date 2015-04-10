@@ -436,6 +436,8 @@ trait MathImplicits {
 
     def -(that: DoubleTerm) = new Sum(IndexedSeq(term, that * (-1.0)))
 
+    //def -(that: IntTerm) = new Sum(IndexedSeq(term, that.toDouble * (-1.0)))
+
     //def *(that: DoubleTerm): Product = new Product(IndexedSeq(term, that))
 
     def *(that: DoubleTerm) = new Product(IndexedSeq(term, that))
