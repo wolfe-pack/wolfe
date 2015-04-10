@@ -1,18 +1,20 @@
 package ml.wolfe.nlp.structures
 
-import scala.language.implicitConversions
+import scala.language.{implicitConversions,reflectiveCalls}
 
 import scala.collection.immutable.IndexedSeq
 /**
  * @author Ingolf Becker
  * @date 31/03/2015
  */
-case class Token(word: String, offsets: CharOffsets) extends TokenLike
+case class Token(word: String, offsets: CharOffsets) extends TokenLike[Token]
 
-trait TokenLike {
+trait TokenLike[T <: TokenLike[T]] {
+  this: {def copy(word: String, offsets: CharOffsets): T} =>
   val word: String
   def toPrettyString = word
   val offsets: CharOffsets
+  def myCopy(word: String, offsets: CharOffsets): T = copy(word, offsets)
 }
 
 object TokenLike {

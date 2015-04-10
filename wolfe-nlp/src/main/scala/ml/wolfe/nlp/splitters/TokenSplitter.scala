@@ -13,21 +13,21 @@ object TokenSplitter {
 
   val oneCharTokens = Set(',', '"', '\'', '(', ')', '/', '[', ']')
 
-  def apply[D <: DocumentLike[_ <: SentenceLike[_ <: TokenLike]]](doc: D) = {
+  def apply[D <: DocumentLike[_ <: SentenceLike[_ <: TokenLike]]](doc: D): D = {
     //go through all tokens and split the token at white space
     val text = doc.source
-    val tokens = new ArrayBuffer[ml.wolfe.nlp.structures.Token]
+
     tokens.sizeHint(1000)
 
-    def split(token: TokenLike): IndexedSeq[ml.wolfe.nlp.structures.TokenLike] = {
-      tokens.clear()
+    def split[T <: TokenLike[T]](token: T): IndexedSeq[T] = {
+      val tokens = new ArrayBuffer[T]
       val end = token.offsets.end
       var offset = token.offsets.start
       val buffer = new StringBuilder
       while (offset < end) {
         while (offset < end && Character.isWhitespace(text(offset))) {offset += 1}
         val newTokenStart = if (offset < end && oneCharTokens(text(offset))) {
-          tokens += ml.wolfe.nlp.structures.Token(text(offset).toString, CharOffsets(offset, offset + 1))
+          tokens += token.myCopy(text(offset).toString, CharOffsets(offset, offset + 1))
           offset + 1
         } else offset
         buffer.clear()
@@ -36,17 +36,18 @@ object TokenSplitter {
           offset += 1
         }
         if (oneCharTokens(text(offset - 1))) {
-          tokens += ml.wolfe.nlp.structures.Token(buffer.toString().dropRight(1), CharOffsets(newTokenStart, offset - 1))
-          tokens += ml.wolfe.nlp.structures.Token(text(offset - 1).toString, CharOffsets(offset - 1, offset))
+
+          tokens += token.myCopy(buffer.toString().dropRight(1), CharOffsets(newTokenStart, offset - 1))
+          tokens += token.myCopy(text(offset - 1).toString, CharOffsets(offset - 1, offset))
         } else {
           //tokens += Token(text.substring(newTokenStart,offset), CharOffsets(newTokenStart, offset))
-          tokens += ml.wolfe.nlp.structures.Token(buffer.toString(), CharOffsets(newTokenStart, offset))
+          tokens += token.myCopy(buffer.toString(), CharOffsets(newTokenStart, offset))
         }
 
       }
       IndexedSeq.empty ++ tokens
     }
-    doc.map({ x: SentenceLike[_ <: TokenLike] => x.flatMap({ y: TokenLike => split(y) }) })
+    doc.map({ x: Sentence[Token] => x.flatMap({ y: Token => split(y) }) })
   }
 }
 
