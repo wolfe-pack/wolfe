@@ -489,6 +489,13 @@ trait MathImplicits {
     new Argmax[dom.type](term, variable)
   }
 
+  def sample[D <: Dom](dom: D)(obj: dom.Var => DoubleTerm)(implicit random:Random): Sample[dom.type] = {
+    val variable = dom.Variable("_hidden")
+    val term = obj(variable)
+    new Sample[dom.type](term, variable)
+  }
+
+
   abstract class LearnBuilder[D <: Dom](val dom: D) {
     def obj: dom.Var => DoubleTerm
 

@@ -1,5 +1,7 @@
 package ml.wolfe.term
 
+import scala.util.Random
+
 
 trait Argmaxer {
   val observed: Settings
@@ -9,8 +11,21 @@ trait Argmaxer {
   def argmax()(implicit execution: Execution)
 }
 
+trait Sampler {
+  val observed: Settings
+  val msgs: Msgs
+  val result: Settings
+
+  def sample()(implicit execution: Execution)
+}
+
+
 trait ArgmaxerFactory {
   def argmaxer(term: DoubleTerm, wrt: Seq[Var[Dom]])(obs: Settings, msgs: Msgs): Argmaxer
+}
+
+trait SamplerFactory {
+  def sampler(term: DoubleTerm, wrt: Seq[Var[Dom]])(obs: Settings, msgs: Msgs)(implicit random:Random): Sampler
 }
 
 

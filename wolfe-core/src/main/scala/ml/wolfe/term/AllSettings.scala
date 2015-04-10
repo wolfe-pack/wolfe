@@ -28,6 +28,16 @@ class AllSettings[T](val domains: IndexedSeq[Dom], toVaryCreator: => Settings)(f
     }
   }
 
+  def loopWhile(proc:Settings => Boolean): Unit = {
+    val it = iterator
+    var continue = true
+    while (it.hasNext && continue) {
+      continue = proc(it.toVary)
+      it.next()
+    }
+  }
+
+
   trait IteratorOverSettings[T] extends Iterator[T] {
     def toVary:Settings
   }

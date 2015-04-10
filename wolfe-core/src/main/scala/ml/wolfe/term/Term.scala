@@ -4,6 +4,7 @@ import cc.factorie.la.{SparseBinaryTensor1, SparseIndexedTensor1, DenseTensor1}
 import ml.wolfe.util.Math._
 
 import scala.collection.mutable
+import scala.util.Random
 
 /**
  * A term is an object that represents a computation of a value based on an assignment to free variables in the term.
@@ -58,6 +59,13 @@ trait Term[+D <: Dom] extends TermHelper[D]  {
     if (!domain.isDouble) sys.error("Argmax only supported for real valued terms")
     else if (wrt.forall(_.domain.isDiscrete)) new ExhaustiveSearchArgmaxer(this.asInstanceOf[DoubleTerm],wrt)(observed,msgs) else ???
   }
+
+  def samplerImpl(wrt: Seq[AnyVar])(observed: Settings, msgs: Msgs)(implicit random:Random): Sampler = {
+    //todo: this could be type safe, for example by adding the argmax method to the RichDoubleTerm
+    if (!domain.isDouble) sys.error("Sampler only supported for real valued terms")
+    else if (wrt.forall(_.domain.isDiscrete)) new ExhaustiveSampler(this.asInstanceOf[DoubleTerm],wrt)(observed,msgs) else ???
+  }
+
 
   trait Cached {
     private var calls = 0
