@@ -252,6 +252,8 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
 
     def idx = indexed(innerTerm)(new CanonicalIndexer) //new IndexOf[innerTerm.domain.type](innerTerm.asInstanceOf[innerTerm.domain.Term])
 
+    def index(implicit indexer:Indexer) = indexed(innerTerm)
+
     def eval(at: Assignment[Dom]*): innerTerm.domain.Value = {
       val values = at.map(a => a.variable -> a.value).toMap
       val args = innerTerm.vars.map(values)
