@@ -159,7 +159,7 @@ object CaseClassDom {
 
         val newTerm = q"""
           $caseClassDef
-          class $domClassName[..$argDomTypeParameters](..$domConstructorArgs) extends ml.wolfe.term.ProductDom {
+          class $domClassName[..$argDomTypeParameters](..$domConstructorArgs, val valueSemantics:Boolean = true) extends ml.wolfe.term.ProductDom {
             _dom =>
 
             import ml.wolfe.term._
@@ -171,13 +171,21 @@ object CaseClassDom {
             type Term = DomTerm
 
             def own(_term: TypedTerm[Value]):Term = $own
-            val lengths = $lengths
+            val lengths = if (valueSemantics) $lengths else $lengths + Offsets(discOff = 1)
             override val dimensions = $dimensions
 
             def one = new $caseClassTypeName(..$ones)
             def zero = new $caseClassTypeName(..$zeros)
 
             $marginalsCaseClassDef
+
+            private var _currentId = 0
+
+            private def nextId() = {
+              val oldId = _currentId
+              _currentId += 1
+              oldId
+            }
 
             def toValue(_setting:Setting,_offsets:Offsets):Value = {
               ..$toValueArgs
@@ -191,6 +199,16 @@ object CaseClassDom {
 
             def copyValue(_value:Value,_setting:Setting,_offsets:Offsets) {
               ..$copyValueStatements
+              if (!valueSemantics) _setting.disc(_offsets.discOff + lengths.discOff - 1) = nextId()
+            }
+
+            override def indexOfSetting(setting: Setting) = {
+              if (valueSemantics) super.indexOfSetting(setting) else setting.disc(lengths.discOff - 1)
+            }
+
+            override def settingOfIndex(index: Int, tgt: Setting) = {
+              require(valueSemantics, "Cannot convert indices to values for object semantics")
+              super.settingOfIndex(index, tgt)
             }
 
             def copyMarginals(_marginals: Marginals, _Msg: Msg, _offsets: Offsets) = {
@@ -233,6 +251,8 @@ object CaseClassDom {
           object $caseClassTermName {
             def Values[..$argDomTypeParameters](implicit ..$domConstructorArgs) =
               new $domClassName[..$argDomSingletonTypes](..$argNames)
+            def Objects[..$argDomTypeParameters](implicit ..$domConstructorArgs) =
+              new $domClassName[..$argDomSingletonTypes](..$argNames, false)
           }
         """
         //def dom:$domClassName = new $domClassName

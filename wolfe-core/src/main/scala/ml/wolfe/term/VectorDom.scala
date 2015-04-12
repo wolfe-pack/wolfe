@@ -99,3 +99,5 @@ class GrowableVectorDom(val dim: Int) extends GenericVectorDom {
   }
 
 }
+
+

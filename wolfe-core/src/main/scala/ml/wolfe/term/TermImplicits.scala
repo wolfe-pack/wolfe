@@ -616,7 +616,7 @@ trait FVectors {
     result
   }
 
-  def feats(elements: Any*)(implicit index: Index) = {
+  def feats(elements: Any*)(implicit index: Index):Vect = {
     val result = new GrowableSparseTensor1(elements)
     for (e <- elements) {
       result(index(e)) = 1.0

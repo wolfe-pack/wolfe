@@ -200,3 +200,7 @@ class Field[D <: Dom, Value](val product: TypedTerm[Value], val domain: D, val s
 
   override def toString = s"$product.$fieldName"
 }
+
+class PreIndexedDom[D <: Dom](dom:D)(implicit indexer:Indexer) extends Tuple2Dom(Dom.ints,dom) {
+
+}

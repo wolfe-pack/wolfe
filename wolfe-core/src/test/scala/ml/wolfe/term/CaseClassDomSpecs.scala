@@ -9,6 +9,7 @@ class CaseClassDomSpecs extends WolfeSpec {
 
   import TermImplicits._
 
+
   "A case class domain macro" should {
 
     @domain case class World(rain: Boolean, prob: Double)
@@ -143,7 +144,23 @@ class CaseClassDomSpecs extends WolfeSpec {
       val Worlds = World.Values(Bools, Doubles)
       val x = Worlds.Var
       (x.prob | x <<  World(true, 0.3)).eval() should be (0.3)
+    }
 
+    "create different indices for the same values when used with object semantics" in {
+      val Worlds = World.Objects(Bools,Doubles)
+      val s1 = Worlds.toSetting(World(true, 0.5))
+      val s2 = Worlds.toSetting(World(true, 0.5))
+
+      Worlds.indexOfSetting(s1) should not be Worlds.indexOfSetting(s2)
+    }
+
+    "create the same indices for the same values when used with value semantics" in {
+      @domain case class Example(x:Boolean, y:Boolean)
+      val Examples = Example.Values(Bools,Bools)
+      val s1 = Examples.toSetting(Example(true, false))
+      val s2 = Examples.toSetting(Example(true, false))
+
+      Examples.indexOfSetting(s1) should be (Examples.indexOfSetting(s2))
     }
 
 
