@@ -48,8 +48,8 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
 
   def mem[T <: Term[Dom]](term: T) = term.domain.own(new Memoized[Dom, T](term).asInstanceOf[TypedTerm[term.domain.Value]])
 
-  def cached[T <: Term[Dom]](keys:AnyTerm*)(term: T) =
-    term.domain.own(new CachedTerm[Dom, T](keys:_*)(term).asInstanceOf[TypedTerm[term.domain.Value]])
+  def cached[T <: Term[Dom]](keys: AnyTerm*)(term: T) =
+    term.domain.own(new CachedTerm[Dom, T](keys: _*)(term).asInstanceOf[TypedTerm[term.domain.Value]])
 
 
   def choice[T <: Term[Dom]](index: IntTerm)(choice1: T, choices: T*): choice1.domain.Term =
@@ -112,13 +112,13 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
       sliceDom.own(result.asInstanceOf[TypedTerm[sliceDom.Value]])
     }
 
-    def takeRight(num:IntTerm)(implicit sliceDom: VarSeqDom[E]) = slice(seq.length - num, seq.length)
+    def takeRight(num: IntTerm)(implicit sliceDom: VarSeqDom[E]) = slice(seq.length - num, seq.length)
 
-    def take(num:IntTerm)(implicit sliceDom: VarSeqDom[E]) = slice(0, num)
+    def take(num: IntTerm)(implicit sliceDom: VarSeqDom[E]) = slice(0, num)
 
-    def drop(num:IntTerm)(implicit sliceDom: VarSeqDom[E]) = slice(num,seq.length)
+    def drop(num: IntTerm)(implicit sliceDom: VarSeqDom[E]) = slice(num, seq.length)
 
-    def dropRight(num:IntTerm)(implicit sliceDom: VarSeqDom[E]) = slice(0, seq.length - num)
+    def dropRight(num: IntTerm)(implicit sliceDom: VarSeqDom[E]) = slice(0, seq.length - num)
 
 
     def append(elem: seq.domain.elementDom.Term)(implicit appendedDom: VarSeqDom[seq.domain.elementDom.type]): appendedDom.Term = {
@@ -256,7 +256,7 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
 
     def idx = indexed(innerTerm)(new CanonicalIndexer) //new IndexOf[innerTerm.domain.type](innerTerm.asInstanceOf[innerTerm.domain.Term])
 
-    def index(implicit indexer:Indexer) = indexed(innerTerm)
+    def index(implicit indexer: Indexer) = indexed(innerTerm)
 
     def eval(at: Assignment[Dom]*): innerTerm.domain.Value = {
       val values = at.map(a => a.variable -> a.value).toMap
@@ -497,7 +497,7 @@ trait MathImplicits {
     new Argmax[dom.type](term, variable)
   }
 
-  def sample[D <: Dom](dom: D)(obj: dom.Var => DoubleTerm)(implicit random:Random): Sample[dom.type] = {
+  def sample[D <: Dom](dom: D)(obj: dom.Var => DoubleTerm)(implicit random: Random): Sample[dom.type] = {
     val variable = dom.Variable("_hidden")
     val term = obj(variable)
     new Sample[dom.type](term, variable)
@@ -560,10 +560,17 @@ trait MathImplicits {
   //  def oneHot(index: Int, value: Double = 1.0)(implicit dom: VectorDom) =
   //    dom.Const(new SingletonTensor1(dom.dim, index, value))
 
-  def oneHot(index: IntTerm, value: DoubleTerm = Dom.doubles.Const(1.0))(implicit dom: VectorDom): VectorTerm = OneHot(index, value)
+  def oneHot(index: IntTerm, value: DoubleTerm = Dom.doubles.Const(1.0))(implicit dom: VectorDom): VectorTerm =
+    OneHot(index, value)
 
   def feature(feat: AnyTerm, value: DoubleTerm = Dom.doubles.Const(1.0))(implicit dom: VectorDom, indexer: Indexer) =
     oneHot(indexed(feat), value)
+
+  def feature(name: Symbol, keys: AnyTerm*)(implicit dom: VectorDom, index: Index) =
+    Feature(name, keys.toIndexedSeq, Doubles.one)(index, dom)
+
+  def feature(name: Symbol, value: DoubleTerm, keys: AnyTerm*)(implicit dom: VectorDom, index: Index) =
+    Feature(name, keys.toIndexedSeq, value)(index, dom)
 
   implicit def doubleToConstant(d: Double): Dom.doubles.Term = Dom.doubles.Const(d)
 
@@ -620,7 +627,7 @@ trait FVectors {
     result
   }
 
-  def feats(elements: Any*)(implicit index: Index):Vect = {
+  def feats(elements: Any*)(implicit index: Index): Vect = {
     val result = new GrowableSparseTensor1(elements)
     for (e <- elements) {
       result(index(e)) = 1.0

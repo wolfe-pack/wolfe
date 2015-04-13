@@ -30,7 +30,7 @@ case class OneHot(index: IntTerm, value: DoubleTerm)(implicit val domain: Vector
 
 
   override def differentiatorImpl(wrt: Seq[AnyVar])(in: Settings, err: Setting, gradientAcc: Settings) =
-    new ComposedDifferentiator(wrt,in,err,gradientAcc) {
+    new ComposedDifferentiator(wrt, in, err, gradientAcc) {
       def localBackProp()(implicit execution: Execution) = {
         val index = argOutputs(0).disc(0)
         argErrors(0).disc(0) = index //todo: this is nasty, needs to be fixed
@@ -43,10 +43,10 @@ case class OneHot(index: IntTerm, value: DoubleTerm)(implicit val domain: Vector
 }
 
 /** A one-dimensional one-hot Tensor. */
-class MutableSingletonTensor1(val dim1:Int, var singleIndex:Int, var singleValue:Double) extends SingletonIndexedTensor with Tensor1 {
+class MutableSingletonTensor1(val dim1: Int, var singleIndex: Int, var singleValue: Double) extends SingletonIndexedTensor with Tensor1 {
   def activeDomain = new SingletonIntSeq(singleIndex)
 
-  def move(i:Int, v:Double): Unit = {
+  def move(i: Int, v: Double): Unit = {
     singleIndex = i
     singleValue = v
   }
@@ -54,10 +54,10 @@ class MutableSingletonTensor1(val dim1:Int, var singleIndex:Int, var singleValue
 }
 
 trait Indexer {
-  def index(dom:Dom,setting:Setting):Int
+  def index(dom: Dom, setting: Setting): Int
 }
 
-class DefaultIndexer(val index:Index = new SimpleIndex) extends Indexer {
+class DefaultIndexer(val index: Index = new SimpleIndex) extends Indexer {
   def index(dom: Dom, setting: Setting) = {
     val value = Seq() ++ setting.disc.array
     val indexOfValue = index(value)
@@ -90,12 +90,39 @@ case class Indexed[T <: Term[Dom]](arg: T)(implicit val indexer: Indexer) extend
   }
 }
 
-case class Conjoined(arg1:VectorTerm,arg2:VectorTerm)(implicit val index:Index,val dom:VectorDom) extends Composed[VectorDom] {
+case class Feature(name: Symbol, keys: IndexedSeq[AnyTerm], value: DoubleTerm)(implicit val index: Index, val dom:VectorDom)
+  extends Composed[VectorDom] {
+
+  type ArgumentType = AnyTerm
+
+  val domain = dom
+  val arguments = keys :+ value
+
+  def copy(args: IndexedSeq[ArgumentType]) = Feature(name, args.dropRight(1), args.last.asInstanceOf[DoubleTerm])(index,dom)
+
+  override def composer(args: Settings) = new Composer(args) {
+
+    output.vect(0) = new SparseTensor1(domain.dim)
+    val result = output.vect(0)
+
+    def eval()(implicit execution: Execution) = {
+      val indices = name +: ((0 until input.length - 1) map (i => keys(i).domain.indexOfSetting(input(i))))
+      val indexOfKeys = index.index(indices)
+      val value = input.last.cont(0)
+      result.zero()
+      result(indexOfKeys) = value
+      output.vect.recordChange(0)
+    }
+  }
+
+}
+
+case class Conjoined(arg1: VectorTerm, arg2: VectorTerm)(implicit val index: Index, val dom: VectorDom) extends Composed[VectorDom] {
   type ArgumentType = VectorTerm
   val domain = dom
-  val arguments = IndexedSeq(arg1,arg2)
+  val arguments = IndexedSeq(arg1, arg2)
 
-  def copy(args: IndexedSeq[ArgumentType]) = Conjoined(args(0),args(1))(index,dom)
+  def copy(args: IndexedSeq[ArgumentType]) = Conjoined(args(0), args(1))(index, dom)
 
   override def composer(args: Settings) = new Composer(args) {
     output.vect(0) = new GrowableSparseTensor1(0 until 100)
@@ -105,7 +132,7 @@ case class Conjoined(arg1:VectorTerm,arg2:VectorTerm)(implicit val index:Index,v
       val a1 = input(0).vect(0)
       val a2 = input(1).vect(0)
       output.vect(0).zero()
-      for ((i1,v1) <- a1.activeElements; (i2,v2) <- a2.activeElements) {
+      for ((i1, v1) <- a1.activeElements; (i2, v2) <- a2.activeElements) {
         val i = index(i1 -> i2)
         output.vect(0)(i) = v1 * v2
       }

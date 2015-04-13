@@ -13,35 +13,36 @@ import ml.wolfe.term._
  * @author rockt
  */
 object NERDemo extends App {
-  implicit val valueIndex = new SimpleIndex()
-  implicit val termIndex = new DefaultIndexer(valueIndex)
 
-  @domain case class Input(localFeatures: IndexedSeq[Vect], transitionFeatures: IndexedSeq[Vect])
+  val params = AdaGradParameters(epochs = 100, learningRate = 0.1)
+  val mpParams = MaxProductParameters(iterations = 10)
+
+  implicit val index = new SimpleIndex()
+
+  @domain case class Input(word: IndexedSeq[String])
 
   type Output = IndexedSeq[String]
   type Instance = (Input, Output)
 
-  //def local()
-
-
-  def tokensToInput(tokens: Seq[String]): Input = {
-    val localFeatures = tokens.toIndexedSeq.map(t => feats("Blah"))
-    val transitionFeatures = tokens.toIndexedSeq.map(t => feats("Blubs"))
-    Input(localFeatures, transitionFeatures)
+  def local(x: Inputs.Term, y: Outputs.Term, i: IntTerm) = cached(x, y(i)) {
+    feature('bias, y(i)) +
+      feature('word, x.word(i), y(i))
   }
 
-  def labelToFeats(label: String) = {
-    feats('l -> label, 'lp -> label.take(1))
+  def pairwise(x: Inputs.Term, y: Outputs.Term, i: IntTerm) = cached(x, y(i)) {
+    feature('trans, y(i), y(i + 1))
   }
 
   //data
   val train =
-    Seq(tokensToInput(Seq("My", "name", "is", "Wolfe", "!")) -> IndexedSeq("O", "O", "O", "B-PER", "O"))
+    Seq(Input(IndexedSeq("My", "name", "is", "Wolfe", "!")) -> IndexedSeq("O", "O", "O", "B-PER", "O"))
   val test =
-    Seq(tokensToInput(Seq("Wolfe", "is", "awesome", ".")) -> IndexedSeq("B-PER", "O", "O", "O"))
+    Seq(Input(IndexedSeq("Wolfe", "is", "awesome", ".")) -> IndexedSeq("B-PER", "O", "O", "O"))
 
   val sentences = train ++ test
   val labels = sentences.flatMap(_._2).distinct
+  val words = (train flatMap (_._1.word)).distinct
+
 
   //model definition
   val maxLength = sentences.map(_._2.length).max
@@ -49,23 +50,34 @@ object NERDemo extends App {
 
   implicit val Thetas = Vectors(maxFeats)
   implicit val Labels = labels.toDom
-  implicit val LabelFeats = Maps(Labels, Vectors(maxFeats))
+  implicit val Words = words.toDom
 
-  implicit val Inputs = Input.Values(Seqs(Vectors(maxFeats), 0, maxLength), Seqs(Vectors(maxFeats), 0, maxLength))
+  implicit val Inputs = Input.Objects(Seqs(Words, 0, maxLength))
   implicit val Outputs = Seqs(Labels, 0, maxLength)
   implicit val Instances = Pairs(Inputs, Outputs)
 
-  def model(t: Thetas.Term)(x: Inputs.Term)(y: Outputs.Term) =
-    sum(0 until x.localFeatures.length)(i => t dot (x.localFeatures(i) conjoin feature(y(i)))) +
-      sum(0 until x.localFeatures.length - 1)(i => t dot (x.transitionFeatures(i) conjoin feature(y(i) -> y(i + 1))))
+  def model(t: Thetas.Term)(x: Inputs.Term)(y: Outputs.Term) = {
+    sum(0 until x.word.length)(i => t dot local(x, y, i)) +
+      sum(0 until x.word.length - 1)(i => t dot pairwise(x, y, i))
+  } argmaxBy maxProduct(mpParams)
 
-  lazy val predict = fun(Inputs) { x => argmax(Outputs)(model(Thetas.Const(thetaStar))(x)) by maxProduct(MaxProductParameters(iterations = 10)) }
-  val params = AdaGradParameters(epochs = 100, learningRate = 0.1)
-  lazy val thetaStar = learn(Thetas)(t => perceptron(train.toConst)(Outputs)(model(t))) using Argmaxer.adaGrad(params)
 
-  def classify(input: Input): Output = predict(input)
+  val thetaStar = learn(Thetas)(t => perceptron(train.toConst)(Outputs)(model(t))) using adaGrad(params)
 
-  test.foreach(p => println(classify(p._1)))
+  val predict = fun(Inputs) { x => argmax(Outputs)(model(Thetas.Const(thetaStar))(x)) by maxProduct(mpParams) }
+
+
+  //  def model(t: Thetas.Term)(x: Inputs.Term)(y: Outputs.Term) =
+  //    sum(0 until x.localFeatures.length)(i => t dot (x.localFeatures(i) conjoin feature(y(i)))) +
+  //      sum(0 until x.localFeatures.length - 1)(i => t dot (x.transitionFeatures(i) conjoin feature(y(i) -> y(i + 1))))
+  //
+  //  lazy val predict = fun(Inputs) { x => argmax(Outputs)(model(Thetas.Const(thetaStar))(x)) by maxProduct(MaxProductParameters(iterations = 10)) }
+  //  val params = AdaGradParameters(epochs = 100, learningRate = 0.1)
+  //  lazy val thetaStar = learn(Thetas)(t => perceptron(train.toConst)(Outputs)(model(t))) using Argmaxer.adaGrad(params)
+  //
+  //  def classify(input: Input): Output = predict(input)
+  //
+  //  test.foreach(p => println(classify(p._1)))
 }
 
 object NERDemoHelper extends App {
