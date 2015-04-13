@@ -48,7 +48,8 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
 
   def mem[T <: Term[Dom]](term: T) = term.domain.own(new Memoized[Dom, T](term).asInstanceOf[TypedTerm[term.domain.Value]])
 
-  def cached[T <: Term[Dom]](term: T) = term.domain.own(new CachedTerm[Dom, T](term).asInstanceOf[TypedTerm[term.domain.Value]])
+  def cached[T <: Term[Dom]](keys:AnyTerm*)(term: T) =
+    term.domain.own(new CachedTerm[Dom, T](keys:_*)(term).asInstanceOf[TypedTerm[term.domain.Value]])
 
 
   def choice[T <: Term[Dom]](index: IntTerm)(choice1: T, choices: T*): choice1.domain.Term =

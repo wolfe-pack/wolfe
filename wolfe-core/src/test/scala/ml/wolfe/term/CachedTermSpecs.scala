@@ -15,7 +15,9 @@ class CachedTermSpecs extends WolfeSpec {
     "return different value if input is different" in {
       var calls = 0
       val i = Ints(0 until 10).Var
-      val t = cached(i map { x => calls += 1; x })
+      val t = cached(i) {
+        i map { x => calls += 1; x }
+      }
       val eval = t.evaluator()
 
       eval.eval(i := 1) should be(1)

@@ -21,6 +21,9 @@ object NERDemo extends App {
   type Output = IndexedSeq[String]
   type Instance = (Input, Output)
 
+  //def local()
+
+
   def tokensToInput(tokens: Seq[String]): Input = {
     val localFeatures = tokens.toIndexedSeq.map(t => feats("Blah"))
     val transitionFeatures = tokens.toIndexedSeq.map(t => feats("Blubs"))
