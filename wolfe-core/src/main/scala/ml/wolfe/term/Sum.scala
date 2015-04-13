@@ -110,6 +110,8 @@ class VectorSum(val arguments: IndexedSeq[VectorTerm]) extends Composed[GenericV
     def eval()(implicit execution: Execution): Unit = {
       if (output.vect(0) != null) output.vect(0).zero()
       for (i <- 0 until size) output.vect.add(0,input(i).vect(0))
+//      println("Input:\n" + input.map(_.vect(0)).mkString("\n"))
+//      println("Output:\n" + output.vect(0))
     }
   }
 
