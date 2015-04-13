@@ -48,6 +48,9 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
 
   def mem[T <: Term[Dom]](term: T) = term.domain.own(new Memoized[Dom, T](term).asInstanceOf[TypedTerm[term.domain.Value]])
 
+  def cached[T <: Term[Dom]](term: T) = term.domain.own(new CachedTerm[Dom, T](term).asInstanceOf[TypedTerm[term.domain.Value]])
+
+
   def choice[T <: Term[Dom]](index: IntTerm)(choice1: T, choices: T*): choice1.domain.Term =
     choice1.domain.own(SeqTerm(choice1 +: choices: _*)(index).asInstanceOf[TypedTerm[choice1.domain.Value]])
 
@@ -73,7 +76,7 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
     val v = d.Variable("v")
     val t = f(v)
     val e = t.evaluator()
-    (x: d.Value) => e.eval(x)
+    (x: d.Value) => e.evalUntyped(x)
   }
 
   def fun[D <: Dom](d1: Dom, d2: Dom)(f: (d1.Term, d2.Term) => Term[D]): (d1.Value, d2.Value) => D#Value = {
@@ -81,7 +84,7 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
     val v2 = d2.Variable("v2")
     val t = f(v1, v2)
     val e = t.evaluator()
-    (a1: d1.Value, a2: d2.Value) => e.eval(a1, a2)
+    (a1: d1.Value, a2: d2.Value) => e.evalUntyped(a1, a2)
   }
 
   implicit def pairToPairTerm[T1 <: AnyTerm, T2 <: AnyTerm](pair: (T1, T2)): Tuple2Dom[pair._1.domain.type, pair._2.domain.type]#Term = {

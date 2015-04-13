@@ -361,7 +361,14 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
     vect := that.vect
     mats := that.mats
     settings := that.settings
+  }
 
+  def shallowCopy(to:Setting) = {
+    disc.shallowCopyTo(to.disc,0,0,disc.length)
+    cont.shallowCopyTo(to.cont,0,0,cont.length)
+    vect.shallowCopyTo(to.vect,0,0,vect.length)
+    mats.shallowCopyTo(to.mats,0,0,mats.length)
+    settings.shallowCopyTo(to.settings,0,0,settings.length)
   }
 
   def :=(src: Setting, srcOffsets: Offsets, lengths: Offsets, tgtOffsets: Offsets = Offsets.zero): Unit = {
@@ -669,6 +676,13 @@ abstract class Buffer[T: ClassTag](val setting: Setting) {
 
   def apply(index: Int) = array(index)
 
+  def shallowCopyTo(tgt: Buffer[T], srcPos: Int, tgtPos: Int, length: Int): Unit = {
+    System.arraycopy(array, srcPos, tgt.array, tgtPos, length)
+    if (tgt.shouldRecord)
+      tgt.changedIndices ++= Range(tgtPos, tgtPos + length)
+  }
+
+  //todo: this is weird because it's both shallow and deep depending on shouldRecord. Fix me.
   def copyTo(tgt: Buffer[T], srcPos: Int, tgtPos: Int, length: Int) = {
     if (length > 0) {
       if (!shouldRecord) {

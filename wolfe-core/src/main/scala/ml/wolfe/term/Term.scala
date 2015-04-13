@@ -1,6 +1,7 @@
 package ml.wolfe.term
 
 import cc.factorie.la.{SparseBinaryTensor1, SparseIndexedTensor1, DenseTensor1}
+import ml.wolfe.term.TermImplicits.Assignment
 import ml.wolfe.util.Math._
 
 import scala.collection.mutable
@@ -161,12 +162,20 @@ trait TermHelper[+D <: Dom] {
     val eval = evaluatorImpl(input)
     var count = 0
 
-    def eval(args: Any*): domain.Value = {
+    def evalUntyped(args: Any*): domain.Value = {
       for ((v, i) <- vars.zipWithIndex) v.domain.copyValue(args(i).asInstanceOf[v.domain.Value], input(i))
       eval.eval()(Execution(count))
       count += 1
       domain.toValue(eval.output)
     }
+
+    def eval(at: Assignment[Dom]*): domain.Value = {
+      val values = at.map(a => a.variable -> a.value).toMap
+      val args = vars.map(values)
+      evalUntyped(args: _*)
+    }
+
+
   }
 
   class ClientDifferentiator[T <: Dom](val wrt: Var[T]) {
