@@ -64,20 +64,10 @@ object NERDemo extends App {
 
   val thetaStar = learn(Thetas)(t => perceptron(train.toConst)(Outputs)(model(t))) using adaGrad(params)
 
-  val predict = fun(Inputs) { x => argmax(Outputs)(model(Thetas.Const(thetaStar))(x)) by maxProduct(mpParams) }
+  val predict = fun(Inputs) { x => argmax(Outputs)(model(Thetas.Const(thetaStar))(x)) }
 
+  test.foreach(p => println(predict(p._1)))
 
-  //  def model(t: Thetas.Term)(x: Inputs.Term)(y: Outputs.Term) =
-  //    sum(0 until x.localFeatures.length)(i => t dot (x.localFeatures(i) conjoin feature(y(i)))) +
-  //      sum(0 until x.localFeatures.length - 1)(i => t dot (x.transitionFeatures(i) conjoin feature(y(i) -> y(i + 1))))
-  //
-  //  lazy val predict = fun(Inputs) { x => argmax(Outputs)(model(Thetas.Const(thetaStar))(x)) by maxProduct(MaxProductParameters(iterations = 10)) }
-  //  val params = AdaGradParameters(epochs = 100, learningRate = 0.1)
-  //  lazy val thetaStar = learn(Thetas)(t => perceptron(train.toConst)(Outputs)(model(t))) using Argmaxer.adaGrad(params)
-  //
-  //  def classify(input: Input): Output = predict(input)
-  //
-  //  test.foreach(p => println(classify(p._1)))
 }
 
 object NERDemoHelper extends App {

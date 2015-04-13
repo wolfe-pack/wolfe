@@ -22,7 +22,6 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
 
   def composer(args: Settings): Composer = ???
 
-
   class ComposedEvaluator(in: Settings) extends Evaluator {
     val argEvals = arguments.map(a => a.evaluatorImpl(in.linkedSettings(vars, a.vars))).toArray
     val argOutputs = Settings.fromSeq(argEvals.map(_.output))

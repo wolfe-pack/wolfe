@@ -71,7 +71,6 @@ case class VarSeqSum[D <: TypedDom[Double], T <: Term[VarSeqDom[D]]](length: Int
     }
   }
 
-
   override def differentiatorImpl(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
     new ComposedDifferentiator(wrt,in,err,gradientAcc) {
 
@@ -105,6 +104,14 @@ class VectorSum(val arguments: IndexedSeq[VectorTerm]) extends Composed[GenericV
   def copy(args: IndexedSeq[ArgumentType]) = new VectorSum(args)
 
   val domain = arguments.head.domain
+
+  override def composer(args: Settings) = new Composer(args) {
+    output.setAdaptiveVectors(true)
+    def eval()(implicit execution: Execution): Unit = {
+      if (output.vect(0) != null) output.vect(0).zero()
+      for (i <- 0 until size) output.vect.add(0,input(i).vect(0))
+    }
+  }
 
 
 }

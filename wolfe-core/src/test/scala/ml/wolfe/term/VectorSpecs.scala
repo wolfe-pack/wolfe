@@ -30,8 +30,15 @@ class VectorSpecs extends WolfeSpec {
       val i = Ints.Var
       val term = x(i)
       term.eval(x := vector(1.0, 2.0), i := 1) should be (2.0)
+    }
+
+    "support addition" in {
+      val x = Vectors(2).Var
+      val t = x + x
+      t.eval(x := vector(1,2)) should equal (vector(2,4))
 
     }
+
   }
 
 

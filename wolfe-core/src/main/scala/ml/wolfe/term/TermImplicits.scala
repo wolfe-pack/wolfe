@@ -458,14 +458,15 @@ trait MathImplicits {
 
     def subjectTo(predicate: BoolTerm) = term + constraint(predicate)
 
-    def argmaxBy(factory: ArgmaxerFactory) = new ProxyTerm[TypedDom[Double]] {
+    def argmaxBy(factory: ArgmaxerFactory): ProxyTerm[TypedDom[Double]] = new ProxyTerm[TypedDom[Double]] {
       def self = term
 
       override def argmaxerImpl(wrt: Seq[Var[Dom]])(observed: Settings, msgs: Msgs) = {
         factory.argmaxer(term, wrt)(observed, msgs)
       }
 
-      def copy(args: IndexedSeq[ArgumentType]) = ???
+      def copy(args: IndexedSeq[ArgumentType]) =
+        new RichDoubleTerm(args(0)).argmaxBy(factory)
 
     }
 
