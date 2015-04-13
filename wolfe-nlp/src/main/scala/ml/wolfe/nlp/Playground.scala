@@ -5,6 +5,9 @@ package ml.wolfe.nlp
  */
 object Playground extends App {
 
+  import ml.wolfe.term.TermImplicits._
+
+  println(Doubles.Const(1.0) == Doubles.Const(1.0))
 
 //  def parse()
 }

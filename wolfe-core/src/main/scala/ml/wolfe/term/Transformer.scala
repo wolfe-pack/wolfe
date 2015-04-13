@@ -97,7 +97,8 @@ object Transformer {
   }
 
   def clean(term: AnyTerm) = depthFirst(term) {
-    case o: OwnedTerm[_] => o.self
+    case o: OwnedTerm[_] =>
+      o.self
   }
 
   def flattenSums(term: AnyTerm) = depthFirst(term) {

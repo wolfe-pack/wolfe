@@ -3,6 +3,7 @@ package ml.wolfe.term
 import ml.wolfe.term.Transformer._
 
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
 case class MaxProductParameters(iterations: Int)
 
@@ -20,7 +21,7 @@ class MaxProductBP(val objRaw: DoubleTerm,
   val result: Settings = Settings.fromSeq(wrt.map(_.domain.createSetting()))
 
   //get sum terms from objective
-  val obj = (clean _ andThen groundSums andThen flattenSums andThen groundVariables(wrt))(objRaw)
+  val obj = (groundSums _ andThen flattenSums andThen clean andThen groundVariables(wrt))(objRaw)
 
   //factor graph
   val fg = new FG[NodeContent, EdgeContent, FactorContent]
@@ -98,6 +99,19 @@ class MaxProductBP(val objRaw: DoubleTerm,
   def hidden(variable:AnyVar) = variable match {
     case a:AnyAtom => wrt.contains(a.owner)
     case _ => false
+  }
+
+
+  //todo: this is nasty: somehow vars may be "equal" but have different hash values! This is a hack around this
+  private def distinctHack[T](args:Seq[T]):Seq[T] = {
+    val result = new ArrayBuffer[T]
+    for (a <- args) {
+      if (!result.contains(a)) {
+        result += a
+      }
+    }
+    result.toSeq
+
   }
 
   def addPotential(pot: DoubleTerm): fg.Factor = {

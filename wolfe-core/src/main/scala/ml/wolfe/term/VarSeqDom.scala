@@ -32,6 +32,8 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
 
     override val domain: dom.type = dom
 
+    val test = 23
+
     def copy(args: IndexedSeq[ArgumentType]) = own(args(0))
 
     def elements = for (i <- 0 until maxLength) yield apply(i)
@@ -317,7 +319,7 @@ case class VarSeqAppend[+E <: Dom, S <: Term[VarSeqDom[E]], D <: VarSeqDom[E]](s
 }
 
 
-class RangeTerm(start: IntTerm, end: IntTerm) extends Composed[VarSeqDom[IntDom]] {
+case class RangeTerm(start: IntTerm, end: IntTerm) extends Composed[VarSeqDom[IntDom]] {
 
 
   type ArgumentType = IntTerm
@@ -344,5 +346,5 @@ class RangeTerm(start: IntTerm, end: IntTerm) extends Composed[VarSeqDom[IntDom]
     }
   }
 
-
+  override def toString = s"($start until $end)"
 }

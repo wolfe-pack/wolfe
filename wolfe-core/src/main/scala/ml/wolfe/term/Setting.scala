@@ -409,13 +409,11 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
   }
 
   override def toString = {
-    s"""
-       |${disc.mkString(" ")}
-        |${cont.mkString(" ")}
-        |${vect.mkString(" ")}
-        |${mats.mkString(" ")}
-        |${settings.mkString(" ")}
-     """.stripMargin
+    def renderIfNotEmpty(buffer:Buffer[_]) = {
+      if (buffer.length > 0) Some(buffer.mkString(" ")) else None
+    }
+    val rendered = Seq(renderIfNotEmpty(disc),renderIfNotEmpty(cont),renderIfNotEmpty(vect),renderIfNotEmpty(mats),renderIfNotEmpty(settings))
+    rendered.flatten.mkString("\n")
   }
 }
 
