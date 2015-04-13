@@ -14,14 +14,18 @@ import scala.language.implicitConversions
 
 trait SentenceBasis
 
-trait SentenceLike[T <: TokenLike] extends SentenceBasis with IndexedSeq[T] with IndexedSeqLike[T,SentenceLike[T]] {
+trait SentenceLike[S <: SentenceLike[S, T], T <: TokenLike] extends SentenceBasis with IndexedSeq[T] with IndexedSeqLike[T,SentenceLike[S, T]] {
+  this : S =>
   val tokens: IndexedSeq[T]
   def length: Int = tokens.length
   def apply(idx: Int): T = tokens(idx)
-  override protected def newBuilder: mutable.Builder[T, SentenceLike[T]] = SentenceLike.newBuilder
+  override protected def newBuilder: mutable.Builder[T, SentenceLike[S, T]] = SentenceLike.newBuilder
   def toText = tokens map (_.word) mkString " "
   def offsets = CharOffsets(tokens.head.offsets.start, tokens.last.offsets.end)
   def toPrettyString = tokens.map(_.toPrettyString).mkString(" ")
+
+  protected def companion: GenericSentenceCompanion[S, T]
+  def updatedCopy(newTokens: IndexedSeq[T]) : S = companion.overwriteTokens(this, newTokens)
 }
 
 object SentenceLike extends GenericSentenceCompanion[SentenceLike, TokenLike]{
