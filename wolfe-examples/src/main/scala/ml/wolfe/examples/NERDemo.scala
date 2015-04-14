@@ -15,7 +15,7 @@ import ml.wolfe.term._
 object NERDemo extends App {
 
   val params = AdaGradParameters(epochs = 5, learningRate = 0.1)
-  val mpParams = MaxProductParameters(iterations = 10)
+  val mpParams = MaxProductParameters(iterations = 3)
 
   implicit val index = new SimpleIndex()
 
@@ -24,12 +24,12 @@ object NERDemo extends App {
   type Output = IndexedSeq[String]
   type Instance = (Input, Output)
 
-  def local(x: Inputs.Term, y: Outputs.Term, i: IntTerm) = /*cached(x, y(i)) */ {
+  def local(x: Inputs.Term, y: Outputs.Term, i: IntTerm) = cached(x, i, y(i)) {
     feature('bias, y(i)) + //+
-    feature('word, x.word(i), y(i)) //+ Thetas.Const(Thetas.zero)
+      feature('word, x.word(i), y(i)) //+ Thetas.Const(Thetas.zero)
   }
 
-  def pairwise(x: Inputs.Term, y: Outputs.Term, i: IntTerm) =  /* cached(x, y(i)) */ {
+  def pairwise(x: Inputs.Term, y: Outputs.Term, i: IntTerm) = /* cached(x, y(i)) */ {
     feature('trans, y(i), y(i + 1))
   }
 
@@ -61,7 +61,7 @@ object NERDemo extends App {
   def model(t: Thetas.Term)(x: Inputs.Term)(y: Outputs.Term) = {
     sum(0 until x.word.length)(i => t dot local(x, y, i)) +
       sum(0 until x.word.length - 1)(i => t dot pairwise(x, y, i))
-  } subjectTo(y.length === x.word.length) argmaxBy maxProduct(mpParams)
+  } subjectTo (y.length === x.word.length) argmaxBy maxProduct(mpParams)
 
 
   val thetaStar = learn(Thetas)(t => perceptron(train.toConst)(Outputs)(model(t))) using adaGrad(params)

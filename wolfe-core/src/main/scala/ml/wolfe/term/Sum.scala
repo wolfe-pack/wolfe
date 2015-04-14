@@ -95,7 +95,7 @@ case class VarSeqSum[D <: TypedDom[Double], T <: Term[VarSeqDom[D]]](length: Int
 /**
  * @author riedel
  */
-class VectorSum(val arguments: IndexedSeq[VectorTerm]) extends Composed[GenericVectorDom] {
+case class VectorSum(arguments: IndexedSeq[VectorTerm]) extends Composed[GenericVectorDom] {
 
   sum =>
 

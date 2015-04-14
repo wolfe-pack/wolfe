@@ -28,6 +28,8 @@ class LogTerm[D <: Dom, T <: Term[D]](val toLog: T, val name:String = null) exte
 //        val inputValues = for ((v, s) <- vars zip input) yield v.domain.toValue(s)
 //        val inputString = if (inputValues.isEmpty) "[None]" else inputValues.mkString("\n -", "\n -", "")
         println("-----------------------------------")
+        println(s"""Vars:       ${vars.mkString(",")}""")
+        println(s"Input:      $input")
         println(s"Execution:  $execution")
         println(s"Term name:  $nameToShow")
         println(s"Term:       $toLog")

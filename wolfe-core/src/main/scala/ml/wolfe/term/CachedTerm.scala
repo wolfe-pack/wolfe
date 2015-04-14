@@ -6,7 +6,7 @@ import scala.collection.mutable
  * Caching values based on input arguments.
  * @author riedel
  */
-class CachedTerm[D <: Dom, T <: Term[D]](keys:AnyTerm*)(val term:T) extends NAry with Term[D] {
+case class CachedTerm[D <: Dom, T <: Term[D]](keys:AnyTerm*)(val term:T) extends NAry with Term[D] {
   val domain:term.domain.type = term.domain
   val vars = ((keys flatMap (_.vars)) ++ term.vars).distinct
 
@@ -15,7 +15,7 @@ class CachedTerm[D <: Dom, T <: Term[D]](keys:AnyTerm*)(val term:T) extends NAry
   override def evaluatorImpl(in: Settings) = new AbstractEvaluator(in) {
 
     val indexedVars = vars.toIndexedSeq
-    val innerEval = term.evaluatorImpl(in)
+    val innerEval = term.evaluatorImpl(in.linkedSettings(vars,term.vars))
     val output = domain.createSetting()
     val keyEvals = keys.toIndexedSeq map ( k =>  k -> k.evaluatorImpl(in.linkedSettings(vars,k.vars)))
 
