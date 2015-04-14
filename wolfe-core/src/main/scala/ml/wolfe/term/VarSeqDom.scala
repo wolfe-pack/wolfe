@@ -96,6 +96,9 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
 
   def Const(value: Value) = new Constructor(lengthDom.Const(value.length), value.map(elementDom.Const))
 
+
+  override def toIterable = super.toIterable.view.toList.distinct
+
   trait DomTerm extends super.DomTerm {
     def apply(index: Int): term.Term[E]
 
@@ -168,6 +171,7 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
         }
       }
     }
+
 
 
     override def differentiatorImpl(wrt: Seq[term.Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) = {

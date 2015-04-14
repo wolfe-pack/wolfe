@@ -111,6 +111,16 @@ class VarSeqDomSpecs extends WolfeSpec {
       count(s).eval(s << IndexedSeq("the" -> "DT", "cat" -> "NN", "sat" -> "VBD")) should be(1.0)
     }
 
+    "provide an iterable over all its elements" in {
+      val Values = Seqs(Bools, 1, 2)
+      val expected =
+        List(Vector(false), Vector(true), Vector(false, false), Vector(false, true), Vector(true, false), Vector(true, true))
+
+      Values.toIterable.sortBy(_.toString()) should be(expected.sortBy(_.toString()))
+
+
+    }
+
 
   }
 
