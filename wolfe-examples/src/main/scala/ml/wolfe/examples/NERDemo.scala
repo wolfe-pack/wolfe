@@ -29,7 +29,7 @@ object NERDemo extends App {
       feature('word, x.word(i), y(i)) //+ Thetas.Const(Thetas.zero)
   }
 
-  def pairwise(x: Inputs.Term, y: Outputs.Term, i: IntTerm) = /* cached(x, y(i)) */ {
+  def pairwise(x: Inputs.Term, y: Outputs.Term, i: IntTerm) = cached(x, i, y(i), y(i + 1))  {
     feature('trans, y(i), y(i + 1))
   }
 
