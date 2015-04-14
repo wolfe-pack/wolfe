@@ -53,7 +53,7 @@ abstract class MapDom[K <: Dom, V <: Dom](val keyDom: K, val valueDom: V) extend
     seq2map(seq)
   }
 
-  class DomVar(val name: String) extends DomTerm with super.DomVar {
+  class DomVar(val varName: String) extends DomTerm with super.DomVar {
     def apply(key: keyDom.Term) = seqDom.own(this.asInstanceOf[TypedTerm[seqDom.Value]])(key.idx)._2
   }
 
@@ -64,7 +64,7 @@ abstract class MapDom[K <: Dom, V <: Dom](val keyDom: K, val valueDom: V) extend
 
   def toMarginals(msg: Msg, offsets: Offsets) = {
     val seqMargs = seqDom.toMarginals(msg, offsets)
-    val map = for (((exists, valueMarg), index) <- seqMargs.elements zipWithIndex) yield
+    val map = for (((exists, valueMarg), index) <- seqMargs.elements.zipWithIndex) yield
       keyDom.indexToValue(index) -> (exists,valueMarg)
     map.toMap
   }
@@ -118,7 +118,7 @@ class MapDom2[K1 <: Dom, K2 <: Dom, V <:Dom](val keyDom1:K1, val keyDom2:K2, ove
     }
   }
 
-  class Var(name:String) extends DomVar(name) with Term
+  class Var(varName:String) extends DomVar(varName) with Term
 
   def Variable(varName: String) = new Var(varName)
 

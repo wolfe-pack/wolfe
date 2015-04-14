@@ -62,7 +62,7 @@ class MatrixDom(val dim1: Int, dim2: Int) extends AtomicDom {
 
   def zero = new DenseTensor2(dim1, dim2, 0.0)
 
-  case class StaticMatrixVar(name: String) extends DomVar {
+  case class StaticMatrixVar(varName: String) extends DomVar {
   }
 
   trait DomVar extends DomTerm with super.DomVar {
@@ -117,7 +117,7 @@ class DoubleDom extends AtomicDom {
 
   def zero = 0.0
 
-  case class StaticDoubleVar(name: String) extends Var with DomTerm
+  case class StaticDoubleVar(varName: String) extends Var with DomTerm
 
   override def toString = "Doubles"
 }

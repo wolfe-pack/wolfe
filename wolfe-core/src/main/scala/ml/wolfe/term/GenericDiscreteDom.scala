@@ -50,7 +50,7 @@ trait GenericDiscreteDom[A <: Any] extends AtomicDom {
 
   def Variable(name: String) = StaticDiscVar(name)
 
-  case class StaticDiscVar(name: String) extends DomVar
+  case class StaticDiscVar(varName: String) extends DomVar
 
 
 }

@@ -29,7 +29,7 @@ class Tuple2Dom[D1 <: Dom, D2 <: Dom](val dom1: D1, val dom2: D2) extends TupleD
     override def toString = s"(${_1},${_2})"
   }
 
-  class Tuple2Var(val name:String) extends DomVar with TupleView with Tuple2Term {
+  class Tuple2Var(val varName:String) extends DomVar with TupleView with Tuple2Term {
     def product = this
   }
 

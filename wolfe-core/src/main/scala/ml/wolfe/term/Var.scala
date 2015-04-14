@@ -5,7 +5,7 @@ package ml.wolfe.term
  */
 trait Var[+D <: Dom] extends Term[D] {
   self =>
-  def name: String
+  def varName: String
 
   def vars = Seq(this)
 
@@ -31,7 +31,7 @@ trait Var[+D <: Dom] extends Term[D] {
       }
     }
 
-  override def toString = name
+  override def toString = varName
 }
 
 /**
@@ -79,7 +79,7 @@ case class VarAtom[D <: Dom](variable: Var[D]) extends GroundAtom[D] {
 
   def owner = variable
 
-  def name = variable.name
+  def varName = variable.varName
 }
 
 //case class _1Atom[D <: Dom](parent:Atom[Tuple2Dom[D,_]]) extends Atom[D] {
@@ -98,7 +98,7 @@ case class SeqGroundAtom[E <: Dom, S <: VarSeqDom[E]](seq: GroundAtom[S], index:
 
   def owner = seq.owner
 
-  def name = getClass.getSimpleName + "(" +
+  def varName = getClass.getSimpleName + "(" +
     (if(productArity==0) "" else productIterator.map(_.toString).reduce(_ + "," + _)) + ")"
 }
 
@@ -120,7 +120,7 @@ case class SeqAtom[E <: Dom, S <: VarSeqDom[E]](seq: Atom[S], index: IntTerm) ex
       }
     }
   }
-  def name = getClass.getSimpleName + "(" +
+  def varName = getClass.getSimpleName + "(" +
     (if(productArity==0) "" else productIterator.map(_.toString).reduce(_ + "," + _)) + ")"
   def owner = seq.owner
 }
@@ -141,13 +141,13 @@ case class LengthAtom[S<:VarSeqDom[_]](seq:Atom[S]) extends GenericLengthAtom[S]
       LengthGroundAtom[S](parent)
     }
   }
-  def name = getClass.getSimpleName + "(" +
+  def varName = getClass.getSimpleName + "(" +
     (if(productArity==0) "" else productIterator.map(_.toString).reduce(_ + "," + _)) + ")"
 }
 
 case class LengthGroundAtom[S <: VarSeqDom[_]](seq:GroundAtom[S]) extends GroundAtom[IntDom] with GenericLengthAtom[S] {
   def offsets = seq.offsets
-  def name = getClass.getSimpleName + "(" +
+  def varName = getClass.getSimpleName + "(" +
     (if(productArity==0) "" else productIterator.map(_.toString).reduce(_ + "," + _)) + ")"
 }
 

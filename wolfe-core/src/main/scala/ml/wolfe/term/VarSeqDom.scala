@@ -132,7 +132,7 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
 
   }
 
-  class DomVar(name: String) extends BaseVar(name) with super.DomVar with DomTerm {
+  class DomVar(varName: String) extends BaseVar(varName) with super.DomVar with DomTerm {
     def apply(index: Int) = new VarSeqApply[E, Term, lengthDom.Term](this, lengthDom.Const(index))
 
     def length = new VarSeqLength[Term](this)

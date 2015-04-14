@@ -157,7 +157,7 @@ trait Dom {
 
   def zero: Value
 
-  abstract class BaseVar(val name: String) extends DomVar {
+  abstract class BaseVar(val varName: String) extends DomVar {
   }
 
   case class Constant(value: Value) extends DomTerm {
