@@ -26,9 +26,13 @@ class IntTermSpecs extends WolfeSpec {
       val t = i - 2
       t.domain.values should be (-2 until 2)
     }
-
-
   }
 
+  "The Ints domain" should {
+    "allow iteration over its elements" in {
+      val all = Ints.toIterable
+      all should be (Range(Int.MinValue,Int.MaxValue))
+    }
+  }
 
 }

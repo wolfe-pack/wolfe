@@ -180,6 +180,9 @@ case class RangeDom(values: Range) extends GenericDiscreteDom[Int] {
 
   def zero = values.start
 
+
+  override def toIterable = values
+
   override val dimensions = Dimensions(Array(values))
 
   trait SampleTerm extends Term {
