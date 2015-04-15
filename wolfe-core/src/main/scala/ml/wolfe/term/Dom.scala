@@ -36,8 +36,14 @@ trait Dom {
    */
   type SeqTerm = VarSeqDom[dom.type]#Term
 
-  //trait Test extends Term
+  /**
+   * This takes a term and makes it a term of this domain. Use this with care, it will only work when
+   * the term's setting based representation is compatible with this domain's setting based representation.
+   * @param term the term to be owned by the domain.
+   * @return a term with the same semantics, but owned by this domain.
+   */
   def own(term: TypedTerm[Value]): Term
+
 
   trait DomTerm extends term.Term[dom.type] {
     val domain: dom.type = dom
