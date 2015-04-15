@@ -48,6 +48,14 @@ class MapDomSpecs extends WolfeSpec {
       t.eval(m << Map((true,true)->2.0), k << true) should be (2.0)
     }
 
+    "provide an iterable view on the domain" in {
+      val M = Maps(Bools, Bools)
+      val expected = for (k1 <- Bools; k2 <- Bools; r1 <- Bools; r2 <- Bools; size <- 0 to 2) yield {
+        Map(k1 -> r1, k2 -> r2).take(size)
+      }
+      M.toIterable.sortBy(_.keys) should be (expected.toList.distinct.sortBy(_.keys))
+    }
+
     //
     //    "should make sparse updates when calculating the gradient" in {
     //      val n = 3

@@ -87,11 +87,13 @@ abstract class MapDom[K <: Dom, V <: Dom](val keyDom: K, val valueDom: V) extend
   }
 
   def lengths = seqDom.lengths
+  override val dimensions = seqDom.dimensions
 
   def zero = Map.empty
 
   def one = keyDom.toIterable.map(k => k -> valueDom.one).toMap
 
+  override def toIterable = super.toIterable.view.toList.distinct
 }
 
 class MapDom1[K <: Dom, V <: Dom](keyDom: K, valueDom: V) extends MapDom[K,V](keyDom,valueDom) {
