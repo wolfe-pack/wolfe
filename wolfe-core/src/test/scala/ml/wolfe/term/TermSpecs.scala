@@ -285,5 +285,21 @@ class TermSpecs extends WolfeSpec {
     }
   }
 
+  "A composed term that shares the same term" should {
+    "evaluate to the same value when evaluated twice" in {
+      @domain case class Theta(relations: IndexedSeq[Vect], pairs: IndexedSeq[Vect])
+      implicit val Thetas = Theta.Values(Seqs(Vectors(2), 3), Seqs(Vectors(2), 4))
+      def loss(t: Thetas.Term): DoubleTerm = {
+        val f: IntTerm = Seq(0, 1).toConst.sampleSequential
+        val i: IntTerm = 0
+        val r: VectorTerm = choice(f)(t.relations(i), t.relations(i))
+        r dot r
+      }
+      val e = loss(Thetas.one.toConst).evaluator()
+      //e.input shouldNot be(Settings())
+      e.eval() shouldBe e.eval()
+    }
+  }
+
 
 }
