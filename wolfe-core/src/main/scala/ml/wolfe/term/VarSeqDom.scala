@@ -241,6 +241,9 @@ case class VarSeqApply[+E <: Dom, S <: Term[VarSeqDom[E]], I <: IntTerm](seq: S,
     def eval()(implicit execution: Execution) = {
       val index = input(1).disc(0)
       val offset = (seq.domain.elementDom.lengths * index) + Offsets(discOff = 1)
+      if (input(0).vect.length > 0 && input(0).vect(0) == null) {
+        print()
+      }
       output :=(input(0), offset, seq.domain.elementDom.lengths)
     }
 

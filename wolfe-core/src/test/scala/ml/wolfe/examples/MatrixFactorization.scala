@@ -58,7 +58,7 @@ object MatrixFactorization extends App {
   val adaParams = AdaGradParameters(epochs = 100, learningRate = 1, initParams = init)
 
   //do the training (argmax is a term, so it needs to be evaluated to do the optimization)
-  val thetaStar = argmax(Thetas)(t => loss(t)) by Argmaxer.adaGrad(adaParams)
+  //val thetaStar = (argmax(Thetas)(t => loss(t)) by Argmaxer.adaGrad(adaParams)).eval()
 
 
 }
