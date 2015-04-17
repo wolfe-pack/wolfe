@@ -181,7 +181,7 @@ trait TermHelper[+D <: Dom] {
   class ClientDifferentiator[T <: Dom](val wrt: Var[T]) {
     val input = createInputSettings()
     val error = domain.toSetting(domain.one)
-    val gradient = createInputSettings()
+    val gradient = createZeroInputSettings()
     val diff = differentiatorImpl(Seq(wrt))(input, error, gradient)
     val indexOfWrt = vars.indexOf(wrt)
     var count = 0
