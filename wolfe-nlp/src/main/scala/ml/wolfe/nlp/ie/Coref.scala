@@ -14,13 +14,17 @@ import scala.collection.mutable.HashMap
 case class CorefAnnotation(mentions: Seq[CorefMention] = Seq.empty) {
   type BareMention = (Int,Int,Int)
 
-  lazy val mentionToCluster: Map[BareMention, Int] = {
+  lazy val mentionToID: Map[BareMention, Int] = {
     mentions.map(m => (m.sentence, m.start, m.end) -> m.clusterID)
   }.toMap
 
+  lazy val idToCluster: Map[Int, Seq[CorefMention]] = {
+    mentions.groupBy(_.clusterID)
+  }
+
 
   def clusterOf(s: Int, i: Int, j: Int): Option[Int] = {
-    mentionToCluster.get((s,i,j))
+    mentionToID.get((s,i,j))
   }
 
   def distanceInMentions(m1: CorefMention, m2: CorefMention): Int = {
@@ -28,11 +32,11 @@ case class CorefAnnotation(mentions: Seq[CorefMention] = Seq.empty) {
   }
 
   def hasMention(s: Int, i: Int, j: Int): Boolean = {
-    mentionToCluster.contains((s,i,j))
+    mentionToID.contains((s,i,j))
   }
 
   def hasMention(m: BareMention): Boolean = {
-    mentionToCluster.contains(m)
+    mentionToID.contains(m)
   }
 
   def mentionTokens(m: CorefMention, d: Document): IndexedSeq[Token] = {
@@ -52,7 +56,7 @@ case class CorefAnnotation(mentions: Seq[CorefMention] = Seq.empty) {
   }
 
   def shareCluster(m1: BareMention, m2: BareMention): Boolean = {
-    mentionToCluster(m1) == mentionToCluster(m2)
+    mentionToID(m1) == mentionToID(m2)
   }
 }
 
