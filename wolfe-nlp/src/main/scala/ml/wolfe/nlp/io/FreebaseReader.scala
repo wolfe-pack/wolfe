@@ -1,7 +1,7 @@
 package ml.wolfe.nlp.io
 
 import com.mongodb.casbah.Imports._
-import java.io.FileWriter
+import java.io.{File, FileWriter}
 
 import scala.util.matching.Regex
 
@@ -171,19 +171,22 @@ object FreebaseReader {
   val METH_PATTERN_1 = """getCandidateMIDs\([^.*]\)""".r
 
   def main(args: Array[String]) = {
-    if (args(0) == "interactive") {
+    if (args.length == 0) {
+      println("Reading Freebase from existing KB in %s...".format(args(0)))
+      val fb = loadFromDB()
+
+    }
+    else if (args(0) == "--interactive") {
+      println("Starting interactive Freebase console...")
       interactive()
     }
     else {
-//      val filename = "/Volumes/My Passport/freebase-rdf-latest.gz"
-//      val useExisting = false
-//      //val eventFile = args(2)
-//      println("DB file = " + filename)
-//      val fb = new FreebaseReader(filename, useExisting = useExisting)
-//      //    fb.test
-//      //    fb.load(filename, init = rebuild)
-//      fb.collectEvents()
-//      println("Done.")
+      println("Constructing new Freebase index from file <%s>...".format(args(0)))
+      //val filename = "/Volumes/My Passport/freebase-rdf-latest.gz"
+      assert(new File(args(0)).isFile, "File does not exist.")
+      val fb = loadFromFile(args(0))
+      fb.test
+      println("Finished.")
     }
   }
 
