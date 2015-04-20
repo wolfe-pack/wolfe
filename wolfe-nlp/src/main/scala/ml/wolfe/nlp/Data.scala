@@ -15,10 +15,13 @@ import scala.collection.mutable
  * @param end index of the final character in the token
  */
 case class CharOffsets(start: Int, end: Int) {
-  def contains(that:CharOffsets) = start <= that.start && end >= that.end
-  def expandRight(howMuch:Int) = copy(end = end + howMuch)
-  def range = Range(start,end)
-  def +(offset:Int) = copy(start = start + offset, end = end + offset)
+  def contains(that: CharOffsets) = start <= that.start && end >= that.end
+
+  def expandRight(howMuch: Int) = copy(end = end + howMuch)
+
+  def range = Range(start, end)
+
+  def +(offset: Int) = copy(start = start + offset, end = end + offset)
 }
 
 case class SentenceTokenRelation() extends ObjectGraphRelation {
@@ -40,14 +43,18 @@ case class DocumentSentenceRelation() extends ObjectGraphRelation {
  */
 case class Token(word: String, offsets: CharOffsets, posTag: String = null, lemma: String = null) {
   def toTaggedText = word + "/" + posTag
+
   def toPrettyString = if (posTag != null) word + "/" + posTag else word
-  def +(that:Token) = Sentence(Vector(this)) + that
+
+  def +(that: Token) = Sentence(Vector(this)) + that
+
   def idx = offsets.start // Should replace with index lookup in ObjectGraph
 }
 
 object Token {
-  def apply(word:String):Token = fromString(word)
-  def fromString(word:String) = Token(word, CharOffsets(0,word.length))
+  def apply(word: String): Token = fromString(word)
+
+  def fromString(word: String) = Token(word, CharOffsets(0, word.length))
 }
 
 /**
@@ -58,31 +65,36 @@ object Token {
  */
 case class Sentence(tokens: IndexedSeq[Token], syntax: SyntaxAnnotation = SyntaxAnnotation.empty, ie: IEAnnotation = IEAnnotation.empty, speaker: Option[String] = None) {
   def toText = tokens map (_.word) mkString " "
+
   def toTaggedText = tokens map (_.toTaggedText) mkString " "
+
   def size = tokens.size
-  def offsets = CharOffsets(tokens.head.offsets.start,tokens.last.offsets.end)
+
+  def offsets = CharOffsets(tokens.head.offsets.start, tokens.last.offsets.end)
+
   def toPrettyString = tokens.map(_.toPrettyString).mkString(" ")
+
   def +(token: Token) = copy(tokens = tokens :+ token.copy(offsets = token.offsets + tokens.last.offsets.end + 1))
 
   def toCoNLLString = {
     // ID FORM LEMMA PLEMMA POS PPOS FEAT PFEAT HEAD PHEAD DEPREL PDEPREL FILLPRED PRED APREDs
     val numPreds = ie.semanticFrames.size
-    tokens.zipWithIndex.map { case(t,i) =>
+    tokens.zipWithIndex.map { case (t, i) =>
       if (syntax.dependencies != null) {
-        val head = syntax.dependencies.headOf(i+1).getOrElse(-1)
-        val headLabel = syntax.dependencies.labelOf(i+1).getOrElse("null")
+        val head = syntax.dependencies.headOf(i + 1).getOrElse(-1)
+        val headLabel = syntax.dependencies.labelOf(i + 1).getOrElse("null")
         val morph = "-|-|-|-"
-        val sense = ie.semanticFrames.find(_.predicate.idx == i+1) match {
+        val sense = ie.semanticFrames.find(_.predicate.idx == i + 1) match {
           case Some(frame) => frame.predicate.sense
           case _ => "_"
         }
         val hasPred = if (sense != "_") "Y" else "_"
-        val roles = ie.semanticFrames.map(f => if (f.roles.exists(_.idx == i+1)) f.roles.find(_.idx == i+1).get.role else "_")
-        Seq(i+1, t.word, t.lemma, t.lemma, t.posTag, t.posTag, morph, morph, head, head,
-            headLabel, headLabel, hasPred, sense, roles.mkString("\t")).mkString("\t")
+        val roles = ie.semanticFrames.map(f => if (f.roles.exists(_.idx == i + 1)) f.roles.find(_.idx == i + 1).get.role else "_")
+        Seq(i + 1, t.word, t.lemma, t.lemma, t.posTag, t.posTag, morph, morph, head, head,
+          headLabel, headLabel, hasPred, sense, roles.mkString("\t")).mkString("\t")
       }
       else {
-        "%d\t%s\t%s\t%s\t%s\t%s".format(i+1, t.word, t.lemma, t.lemma, t.posTag, t.posTag)
+        "%d\t%s\t%s\t%s\t%s\t%s".format(i + 1, t.word, t.lemma, t.lemma, t.posTag, t.posTag)
       }
     }.mkString("\n")
   }
@@ -92,7 +104,7 @@ case class Sentence(tokens: IndexedSeq[Token], syntax: SyntaxAnnotation = Syntax
    * is different from CoNLL in that every mention begins with B-X.
    */
   def entityMentionsAsBIOSeq = {
-    val tokenIndex2Label = new mutable.HashMap[Int,String]() withDefaultValue "O"
+    val tokenIndex2Label = new mutable.HashMap[Int, String]() withDefaultValue "O"
     for (m <- ie.entityMentions) {
       tokenIndex2Label(m.start) = "B-" + m.label
       for (i <- m.start + 1 until m.end) tokenIndex2Label(i) = "I-" + m.label
@@ -117,18 +129,26 @@ case class Document(source: String,
                     discourse: DiscourseAnnotation = DiscourseAnnotation.empty) {
 
   def toText = sentences map (_.toText) mkString "\n"
+
   def toTaggedText = sentences map (_.toTaggedText) mkString "\n"
+
   def tokens = sentences flatMap (_.tokens)
+
   def entityMentionsAsBIOSeq = sentences flatMap (_.entityMentionsAsBIOSeq)
+
   def tokenWords = sentences flatMap (s => s.tokens.map(_.word))
 
   lazy val navigable = new NavigableDocument(this)
+
+  def change(sentIndex: Int)(f: Sentence => Sentence): Document = {
+    copy(sentences = sentences.zipWithIndex map (p => if (p._2 == sentIndex) f(p._1) else p._1))
+  }
 
 }
 
 object Document {
 
-  def apply(sentences:Seq[IndexedSeq[String]]) : Document = {
+  def apply(sentences: Seq[IndexedSeq[String]]): Document = {
     val source = sentences.map(_.mkString(" ")).mkString(" ")
     var start = 0
     val resultSentences = for (s <- sentences) yield {
@@ -143,18 +163,18 @@ object Document {
     Document(source, resultSentences.toIndexedSeq)
   }
 
-  def apply(source: String) : Document = Document(source, IndexedSeq(Sentence(IndexedSeq(Token(source,CharOffsets(0,source.length))))))
+  def apply(source: String): Document = Document(source, IndexedSeq(Sentence(IndexedSeq(Token(source, CharOffsets(0, source.length))))))
 
-  def fromString(source:String) = apply(source)
+  def fromString(source: String) = apply(source)
 
-  implicit def toDoc(source:String): Document = Document(source)
+  implicit def toDoc(source: String): Document = Document(source)
 
   /**
    * Creates a new Document based on the old document, where every token is surrounded by white spaces.
    * @param doc old Document
    * @return A normalised copy of the old Document
    */
-  def normalizeDoc(doc:Document) = {
+  def normalizeDoc(doc: Document) = {
     Document(doc.sentences.map(_.tokens.map(_.word)))
   }
 
