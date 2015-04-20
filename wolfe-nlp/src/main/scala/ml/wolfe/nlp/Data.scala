@@ -4,7 +4,7 @@ import breeze.linalg.SparseVector
 import edu.berkeley.nlp.entity.ConllDocReader
 import ml.wolfe.nlp.converters.SISTAProcessors
 import ml.wolfe.nlp.ie.CorefAnnotation
-import ml.wolfe.nlp.syntax.DependencyTree
+import ml.wolfe.nlp.syntax.{Arc, DependencyTree}
 
 import scala.language.implicitConversions
 import scala.collection.mutable
@@ -80,6 +80,9 @@ case class Sentence(tokens: IndexedSeq[Token], syntax: SyntaxAnnotation = Syntax
 
   def deps = syntax.dependencies
   def deps_=(dependencies:DependencyTree) = copy(syntax = syntax.copy(dependencies = dependencies))
+
+  def arcs = syntax.dependencies.arcs
+  def arcs_=(arcs:Seq[Arc]) =  copy(syntax = syntax.copy(dependencies = syntax.dependencies.copy(arcs = arcs)))
 
   def +(token: Token) = copy(tokens = tokens :+ token.copy(offsets = token.offsets + tokens.last.offsets.end + 1))
 
