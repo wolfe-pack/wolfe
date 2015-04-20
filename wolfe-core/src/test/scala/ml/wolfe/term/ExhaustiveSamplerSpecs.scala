@@ -15,8 +15,8 @@ class ExhaustiveSamplerSpecs extends WolfeSpec {
 
   "A sample term" should {
     "sample from a deterministic distribution" in {
-      sample(Bools)(x => I(x)).eval() should be(true)
-      sample(Bools)(x => 1.0 - I(x)).eval() should be(false)
+      sample(Bools)(x => constraint(x)).eval() should be(true)
+      sample(Bools)(x => -constraint(x)).eval() should be(false)
     }
 
     "sample from a uniform distribution" in {

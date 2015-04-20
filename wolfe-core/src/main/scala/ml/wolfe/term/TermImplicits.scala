@@ -602,11 +602,16 @@ trait MathImplicits {
 
 trait Stochastic {
 
+  this:MathImplicits =>
+
   import TermImplicits._
 
   def sampleSequential(range: Range) = Ints(range).sequential
 
   def sampleUniform(range: Range)(implicit random: Random) = Ints(range).uniform
+
+  def nextBoolean(prob:DoubleTerm)(implicit random: Random) = sample(Bools){b => I(b)}
+
 
 }
 

@@ -41,7 +41,7 @@ class ExhaustiveSampler(val obj:DoubleTerm, val wrt:Seq[AnyVar])(val observed:Se
 
     allSettings.loopSettings { settings =>
       objEval.eval()
-      normalizer += objEval.output.cont(0)
+      normalizer += math.exp(objEval.output.cont(0))
     }
 
     val sampled = random.nextDouble() * normalizer
@@ -49,7 +49,7 @@ class ExhaustiveSampler(val obj:DoubleTerm, val wrt:Seq[AnyVar])(val observed:Se
     var current = 0.0
     allSettings.loopWhile { settings =>
       objEval.eval()
-      current += objEval.output.cont(0)
+      current += math.exp(objEval.output.cont(0))
       val continue = current <= sampled
       if (!continue) result := settings
       continue
