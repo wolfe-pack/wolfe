@@ -172,9 +172,9 @@ object FreebaseReader {
 
   def main(args: Array[String]) = {
     if (args.length == 0) {
-      println("Reading Freebase from existing KB in %s...".format(args(0)))
+      println("Reading Freebase from existing KB...")
       val fb = loadFromDB()
-
+      fb.test()
     }
     else if (args(0) == "--interactive") {
       println("Starting interactive Freebase console...")
@@ -185,7 +185,7 @@ object FreebaseReader {
       //val filename = "/Volumes/My Passport/freebase-rdf-latest.gz"
       assert(new File(args(0)).isFile, "File does not exist.")
       val fb = loadFromFile(args(0))
-      fb.test
+      fb.test()
       println("Finished.")
     }
   }
