@@ -454,6 +454,8 @@ trait MathImplicits {
 
     def /(that: DoubleTerm) = new Div(term, that)
 
+    def >(that:DoubleTerm) = new GT(term,that)
+
     def unary_- = term * (-1.0)
 
     def subjectTo(predicate: BoolTerm) = term + constraint(predicate)
@@ -610,8 +612,9 @@ trait Stochastic {
 
   def sampleUniform(range: Range)(implicit random: Random) = Ints(range).uniform
 
-  def nextBoolean(prob:DoubleTerm)(implicit random: Random) = sample(Bools){b => I(b)}
+  def nextBoolean()(implicit random: Random) = nextDouble() > 0.5
 
+  def nextDouble()(implicit random: Random) = new SampleDouble(random.nextDouble())
 
 }
 
