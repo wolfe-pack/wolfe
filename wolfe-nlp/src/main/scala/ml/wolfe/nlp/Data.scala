@@ -4,6 +4,7 @@ import breeze.linalg.SparseVector
 import edu.berkeley.nlp.entity.ConllDocReader
 import ml.wolfe.nlp.converters.SISTAProcessors
 import ml.wolfe.nlp.ie.CorefAnnotation
+import ml.wolfe.nlp.syntax.DependencyTree
 
 import scala.language.implicitConversions
 import scala.collection.mutable
@@ -74,6 +75,12 @@ case class Sentence(tokens: IndexedSeq[Token], syntax: SyntaxAnnotation = Syntax
 
   def toPrettyString = tokens.map(_.toPrettyString).mkString(" ")
 
+  def synt_=(s:SyntaxAnnotation) = copy(syntax = s)
+  def synt = syntax
+
+  def deps = syntax.dependencies
+  def deps_=(dependencies:DependencyTree) = copy(syntax = syntax.copy(dependencies = dependencies))
+
   def +(token: Token) = copy(tokens = tokens :+ token.copy(offsets = token.offsets + tokens.last.offsets.end + 1))
 
   def toCoNLLString = {
@@ -143,6 +150,8 @@ case class Document(source: String,
   def change(sentIndex: Int)(f: Sentence => Sentence): Document = {
     copy(sentences = sentences.zipWithIndex map (p => if (p._2 == sentIndex) f(p._1) else p._1))
   }
+  def update(sentIndex:Int,f: Sentence => Sentence) = change(sentIndex)(f)
+
 
 }
 
@@ -188,9 +197,11 @@ object Data {
 
     println("coreference result: " + result.coref)
 
+    result.sentences.head.deps = null
+
     implicit val graph = new SimpleObjectGraph
 
-    val s = result.sentences.head
+    val s = result.sentences.head.synt = null
 
     val cr = new ConllDocReader(null)
     //s.linkTokens(graph) //build graph
