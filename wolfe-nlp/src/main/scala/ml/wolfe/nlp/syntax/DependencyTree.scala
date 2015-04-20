@@ -114,12 +114,13 @@ case class DependencyTree(tokens: IndexedSeq[Token], arcs: Seq[Arc]) {
   def isLabeled = arcs.forall(_.label.isDefined)
 
   override def toString = {
+    def word(index:Int) = tokens.lift(index).map(_.word).getOrElse(index.toString)
     arcs.map { a =>
       if (a.label.isDefined) {
-        tokens(a.parent).word + " -- " + a.label.get + " --> " + tokens(a.child).word
+        word(a.parent) + " -- " + a.label.get + " --> " + word(a.child)
       }
       else {
-        tokens(a.parent).word + " ---> " + tokens(a.child).word
+        word(a.parent) + " ---> " + word(a.child)
       }
     }.mkString("\n")
   }
