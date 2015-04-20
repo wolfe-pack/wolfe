@@ -96,6 +96,15 @@ class FreebaseReader(collection: MongoCollection) {
     }.filter(t => !(t._1 == "None" && t._2 == "None")).toMap
   }
 
+  def parentsOf(mid: String): Map[String, String] = {
+    val query = MongoDBObject("arg2" -> mid)
+    (collection find query).map { m =>
+      val t1 = m.getOrElse("attribute", "None").toString
+      val t2 = m.getOrElse("arg2", "None").toString
+      t1 -> t2
+    }.filter(t => !(t._1 == "None" && t._2 == "None")).toMap
+  }
+
   def getName(mid: String): Option[String] = getAttribute(mid, "title")
 
   def getDescription(mid: String): Option[String] = getAttribute(mid, "text")
@@ -110,6 +119,9 @@ class FreebaseReader(collection: MongoCollection) {
     println("Relation between Barack Obama and US? " + getRelationFromNames("Barack Obama", "United States of America"))
     println("Relation between Michelle and Barack? " + getRelationFromNames("Michelle Obama", "Barack Obama"))
     println("Relation between Michelle and US? " + getRelationFromNames("Michelle Obama", "United States of America"))
+
+    println(parentsOf("m.02y4yg"))
+
   }
 
   def testCollection: MongoCollection = {
