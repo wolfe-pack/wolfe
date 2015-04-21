@@ -124,7 +124,7 @@ class FreebaseReader(collection: MongoCollection) {
     println
     println(attributesOf("m.0h_c7_2"))
     println
-    println(rankByShare(Seq("m.02y4yg", "m.0ds6ccp", "m.0114czf1")))
+    println(rankByShare(Seq("m.02y4yg", "m.0ds6ccp", "m.0114czf1", "2012-01-13", "m.0cd72h")))
 
   }
 
