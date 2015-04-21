@@ -129,6 +129,11 @@ class FreebaseReader(collection: MongoCollection) {
   }
 
   def rankByShare(mids: Seq[String]): Map[String, Int] = {
+    for (m <- mids) {
+      println(m + ":")
+      parentsOf(m).map(p => "\t" + p._1 + " --> " + p._2)
+    }
+    println("-------")
     val allParents = mids.map(parentsOf(_)).toArray.flatten
     println(allParents.sortBy(_.toString).mkString("\n"))
     allParents.groupBy(_._2).map(p => p._1 -> p._2.size)
