@@ -100,7 +100,7 @@ class FreebaseReader(collection: MongoCollection) {
     val query = MongoDBObject("arg2" -> mid)
     (collection find query).map { m =>
       val t1 = m.getOrElse("attribute", "None").toString
-      val t2 = m.getOrElse("arg2", "None").toString
+      val t2 = m.getOrElse("arg1", "None").toString
       t1 -> t2
     }.filter(t => !(t._1 == "None" && t._2 == "None")).toMap
   }
@@ -121,8 +121,17 @@ class FreebaseReader(collection: MongoCollection) {
     println("Relation between Michelle and US? " + getRelationFromNames("Michelle Obama", "United States of America"))
 
     println(parentsOf("m.02y4yg"))
+    println("--" + attributesOf("0h_c7_2"))
+    println(rankByShare(Seq("m.02y4yg", "m.0ds6ccp")))
 
   }
+
+  def rankByShare(mids: Seq[String]): Map[String, Int] = {
+    val allParents = mids.map(parentsOf(_)).flatten
+    allParents.groupBy(_._2).map(p => p._1 -> p._2.size)
+  }
+
+
 
   def testCollection: MongoCollection = {
     val mongoClient = MongoClient("localhost", 27017)
