@@ -121,13 +121,16 @@ class FreebaseReader(collection: MongoCollection) {
     println("Relation between Michelle and US? " + getRelationFromNames("Michelle Obama", "United States of America"))
 
     println(parentsOf("m.02y4yg"))
-    println("--" + attributesOf("0h_c7_2"))
-    println(rankByShare(Seq("m.02y4yg", "m.0ds6ccp")))
+    println
+    println(attributesOf("m.0h_c7_2"))
+    println
+    println(rankByShare(Seq("m.02y4yg", "m.0ds6ccp", "m.0114czf1")))
 
   }
 
   def rankByShare(mids: Seq[String]): Map[String, Int] = {
-    val allParents = mids.map(parentsOf(_)).flatten
+    val allParents = mids.map(parentsOf(_)).flatten.toArray
+    println(allParents.sortBy(_.toString).mkString("\n"))
     allParents.groupBy(_._2).map(p => p._1 -> p._2.size)
   }
 
