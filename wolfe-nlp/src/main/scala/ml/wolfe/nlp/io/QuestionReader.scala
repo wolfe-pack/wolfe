@@ -63,6 +63,40 @@ object MCTestReader {
   }
 }
 
+
+class AristoReader(filename: String) extends Iterable[MultipleChoiceQuestion] {
+  def iterator: Iterator[MultipleChoiceQuestion] = {
+    val reader = io.Source.fromFile(filename).getLines().drop(28)
+    reader.map{ x =>
+      val fields = x.split("\t")
+      val question = fields(9)
+      val answer = fields(3)
+      val pattern = "(?m)(\\([A-Z]\\)|$)".r
+      val positions = pattern
+                .findAllMatchIn(question)
+                .map(_.start)
+                .sliding(2)
+                .toList
+      val position_first = positions(0)(0)
+      val answers = positions.map(x => question.slice(x(0), x(1)))
+      val choices = answers.map{ a =>
+        val label = pattern.findFirstIn(a).get
+        val text = pattern.replaceFirstIn(a, "").trim
+        AnswerChoice(label.charAt(1).toString, text, label.contains(answer))
+      }.toIndexedSeq
+      MultipleChoiceQuestion(question.substring(0, position_first).trim, choices, "")
+    }
+  }
+}
+
+
+object AristoReader extends App {
+  val filename = args.lift(0).getOrElse("Ariscienceexams.txt")
+    for (q <- new AristoReader(filename)) {
+      println(q + "\n")
+    }
+}
+
 case class MultiQuestion(id: String, author: String, passage: String, questions: Iterable[MultipleChoiceQuestion]) {
 
   override def toString = {
