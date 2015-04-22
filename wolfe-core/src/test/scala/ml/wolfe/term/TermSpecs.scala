@@ -285,27 +285,26 @@ class TermSpecs extends WolfeSpec {
     }
   }
 
-  "A composed term that shares the same term" should {
-    "evaluate to the same value when evaluated twice" ignore {
-      @domain case class Theta(relations: IndexedSeq[Vect], pairs: IndexedSeq[Vect])
-      implicit val Thetas = Theta.Values(Seqs(Vectors(1), 2), Seqs(Vectors(1), 2))
+  "A stochastic term over an empty sequence" should {
+    "not throw a null pointer exception" ignore {
+      import TermImplicits.Seqs
+      implicit val rand = ml.wolfe.util.Math.random
+
+      @domain case class Theta(params: IndexedSeq[Vect])
+      implicit val Thetas = Theta.Values(Seqs(Vectors(2), 4))
+
+      @domain case class User(items: IndexedSeq[Int])
+      implicit val Items = Ints(0 until 4)
+      implicit val Users = User.Values(Seqs(Items, 0, 2))
+      val users = Seq(User(IndexedSeq(0,1)), User(IndexedSeq()), User(IndexedSeq(1,2)), User(IndexedSeq()), User(IndexedSeq(3))).toConst
+
       def loss(t: Thetas.Term): DoubleTerm = {
-        val f: IntTerm = Seq(0, 1).toConst.sampleSequential
-        val r: DoubleTerm = choice(f)(t.relations(f) dot t.relations(f), t.relations(f) dot t.relations(f))
-        r
+        val user = mem(users.sampleShuffled)
+        sum(user.items) { ix => t.params(ix) dot t.params(ix) }
       }
-      val t = Thetas.Var
-      val d = loss(t).differentiator(t)
 
-      d.differentiate(Theta(IndexedSeq(vector(1)),IndexedSeq(vector(1))))
-      //d.input(0).clearChangeRecord()
-      d.diff.differentiate()
-
-      //problem to reproduce: at some point there exists a field evaluator with output null, and its input has recorded changes
-
-
+      val init = Settings(Thetas.createRandomSetting(random.nextGaussian()))
+      argmax(Thetas)(t => loss(t).argmaxBy(Argmaxer.adaGrad(AdaGradParameters(100, 0.01, initParams = init)))).eval()
     }
   }
-
-
 }

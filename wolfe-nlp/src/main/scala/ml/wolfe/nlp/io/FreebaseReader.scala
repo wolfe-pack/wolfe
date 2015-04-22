@@ -1,7 +1,7 @@
 package ml.wolfe.nlp.io
 
 import com.mongodb.casbah.Imports._
-import java.io.FileWriter
+import java.io.{File, FileWriter}
 
 import scala.util.matching.Regex
 
@@ -96,6 +96,15 @@ class FreebaseReader(collection: MongoCollection) {
     }.filter(t => !(t._1 == "None" && t._2 == "None")).toMap
   }
 
+  def parentsOf(mid: String): Map[String, String] = {
+    val query = MongoDBObject("arg2" -> mid)
+    (collection find query).map { m =>
+      val t1 = m.getOrElse("attribute", "None").toString
+      val t2 = m.getOrElse("arg1", "None").toString
+      t1 -> t2
+    }.filter(t => !(t._1 == "None" && t._2 == "None")).toMap
+  }
+
   def getName(mid: String): Option[String] = getAttribute(mid, "title")
 
   def getDescription(mid: String): Option[String] = getAttribute(mid, "text")
@@ -110,7 +119,27 @@ class FreebaseReader(collection: MongoCollection) {
     println("Relation between Barack Obama and US? " + getRelationFromNames("Barack Obama", "United States of America"))
     println("Relation between Michelle and Barack? " + getRelationFromNames("Michelle Obama", "Barack Obama"))
     println("Relation between Michelle and US? " + getRelationFromNames("Michelle Obama", "United States of America"))
+
+    println(parentsOf("m.02y4yg"))
+    println
+    println(attributesOf("m.0h_c7_2"))
+    println
+    println(rankByShare(Seq("m.02y4yg", "m.0ds6ccp", "m.0114czf1", "2012-01-13", "m.0cd72h")))
+
   }
+
+  def rankByShare(mids: Seq[String]): Map[String, Int] = {
+    for (m <- mids) {
+      println(m + ":")
+      println(parentsOf(m).map(p => "\t" + p._1 + " --> " + p._2).mkString("\n"))
+    }
+    println("-------")
+    val allParents = mids.map(parentsOf(_)).toArray.flatten
+    println(allParents.sortBy(_.toString).mkString("\n"))
+    allParents.groupBy(_._2).map(p => p._1 -> p._2.size)
+  }
+
+
 
   def testCollection: MongoCollection = {
     val mongoClient = MongoClient("localhost", 27017)
@@ -171,19 +200,22 @@ object FreebaseReader {
   val METH_PATTERN_1 = """getCandidateMIDs\([^.*]\)""".r
 
   def main(args: Array[String]) = {
-    if (args(0) == "interactive") {
+    if (args.length == 0) {
+      println("Reading Freebase from existing KB...")
+      val fb = loadFromDB()
+      fb.test()
+    }
+    else if (args(0) == "--interactive") {
+      println("Starting interactive Freebase console...")
       interactive()
     }
     else {
-//      val filename = "/Volumes/My Passport/freebase-rdf-latest.gz"
-//      val useExisting = false
-//      //val eventFile = args(2)
-//      println("DB file = " + filename)
-//      val fb = new FreebaseReader(filename, useExisting = useExisting)
-//      //    fb.test
-//      //    fb.load(filename, init = rebuild)
-//      fb.collectEvents()
-//      println("Done.")
+      println("Constructing new Freebase index from file <%s>...".format(args(0)))
+      //val filename = "/Volumes/My Passport/freebase-rdf-latest.gz"
+      assert(new File(args(0)).isFile, "File does not exist.")
+      val fb = loadFromFile(args(0))
+      fb.test()
+      println("Finished.")
     }
   }
 
