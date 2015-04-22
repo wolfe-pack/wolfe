@@ -288,7 +288,7 @@ class TermSpecs extends WolfeSpec {
   "A stochastic term over an empty sequence" should {
     "not throw a null pointer exception" ignore {
       import TermImplicits.Seqs
-      import ml.wolfe.util.Math.random
+      implicit val rand = ml.wolfe.util.Math.random
 
       @domain case class Theta(params: IndexedSeq[Vect])
       implicit val Thetas = Theta.Values(Seqs(Vectors(2), 4))
