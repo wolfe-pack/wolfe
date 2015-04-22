@@ -7,7 +7,7 @@ import scala.util.Random
  * @author rockt
  */
 object Math {
-  val random = new Random(1984l)
+  implicit val random = new Random(1984l)
 
   def sigmoid(theta: Double): Double = 1 / (1 + math.exp(-theta))
 
