@@ -296,10 +296,10 @@ class TermSpecs extends WolfeSpec {
       @domain case class User(items: IndexedSeq[Int])
       implicit val Items = Ints(0 until 4)
       implicit val Users = User.Values(Seqs(Items, 0, 2))
-      val users = Seq(User(IndexedSeq(0,1)), User(IndexedSeq()), User(IndexedSeq(1,2)), User(IndexedSeq()), User(IndexedSeq(3))).toConst
+      val users = Seq(User(IndexedSeq()), User(IndexedSeq(1))).toConst
 
       def loss(t: Thetas.Term): DoubleTerm = {
-        val user = mem(users.sampleShuffled)
+        val user = mem(users.sampleSequential)
         sum(user.items) { ix => t.params(ix) dot t.params(ix) }
       }
 
