@@ -38,8 +38,8 @@ case class DependencyTree(tokens: IndexedSeq[Token], arcs: Seq[Arc]) {
 
   def shortestPath(source: Int, dest: Int, visited: Seq[Int] = Seq(), max: Int = size): Option[Seq[(Int, String, Int)]] = {
     if (max == 0) return None
-    if (childOf(source, dest)) return Some(Seq((source, "CHILD", dest)))
-    if (childOf(dest, source)) return Some(Seq((source, "PARENT", dest)))
+    if (childOf(source, dest)) return Some(Seq((source, "PARENT", dest)))
+    if (childOf(dest, source)) return Some(Seq((source, "CHILD", dest)))
     val ccands = childrenOf(source).filter(c => !visited.contains(c)).map(c => (source, "CHILD", c))
     val pcands = parentsOf(source).filter(c => !visited.contains(c)).map(c => (source, "PARENT", c))
     val paths = (ccands ++ pcands).map { t =>
