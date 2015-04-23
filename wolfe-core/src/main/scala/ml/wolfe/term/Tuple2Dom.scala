@@ -182,9 +182,6 @@ case class Field[D <: Dom, Value](product: TypedTerm[Value], domain: D, start: O
 
     def eval()(implicit execution: Execution) = {
       input(0).copyTo(output,start,Offsets.zero,domain.lengths)
-      if (output.vect.length > 0 && output.vect(0) == null) {
-        print()
-      }
     }
   }
 

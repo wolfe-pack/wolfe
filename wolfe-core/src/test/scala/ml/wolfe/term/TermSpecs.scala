@@ -108,7 +108,7 @@ class TermSpecs extends WolfeSpec {
       val y = Doubles.Var
       val term = x * y * x * 0.5
       term.diff(x)(x := 2.0, y := 3.0) should be(6.0)
-      term.diff(y)(x := 2.0, y:= 3.0) should be(2.0)
+      term.diff(y)(x := 2.0, y := 3.0) should be(2.0)
     }
   }
 
@@ -286,7 +286,7 @@ class TermSpecs extends WolfeSpec {
   }
 
   "A stochastic term over an empty sequence" should {
-    "not throw a null pointer exception" ignore {
+    "not throw a null pointer exception" in {
       import TermImplicits.Seqs
       implicit val rand = ml.wolfe.util.Math.random
 
@@ -306,5 +306,41 @@ class TermSpecs extends WolfeSpec {
       val init = Settings(Thetas.createRandomSetting(random.nextGaussian()))
       argmax(Thetas)(t => loss(t).argmaxBy(Argmaxer.adaGrad(AdaGradParameters(100, 0.01, initParams = init)))).eval()
     }
+
+    "also not throw a null pointer exception" ignore {
+      //      import TermImplicits.Seqs
+      @domain case class Param(x: Vect, y: Vect)
+      implicit val Params = Param.Values(Vectors(1), Vectors(1))
+
+      val length = Ints(0 until 5).Var
+      val t = Params.Var
+      val obj = sum(length)(t.x dot t.y, t.x dot t.y)
+
+      val evaluator = obj.evaluator()
+      evaluator.input(1).recordChangedOffsets = true
+      evaluator.input(0).disc(0) = 1
+      Params.copyValue(Param(vector(1),vector(1)),evaluator.input(1))
+      evaluator.eval.eval()(Execution(0))
+      evaluator.input(1).clearChangeRecord()
+      evaluator.input(0).disc(0) = 2
+      evaluator.eval.eval()(Execution(0))
+
+      //      implicit val rand = ml.wolfe.util.Math.random
+      //
+      //      @domain case class Theta(params: IndexedSeq[Vect])
+      //      implicit val Thetas = Theta.Values(Seqs(Vectors(2), 4))
+      //
+      //      @domain case class User(items: IndexedSeq[Int])
+      //      implicit val Items = Ints(0 until 4)
+      //      implicit val Users = User.Values(Seqs(Items, 0, 2))
+      //      val users = Seq(User(IndexedSeq()), User(IndexedSeq(1))).toConst
+      //
+      //      def loss(t: Thetas.Term): DoubleTerm = {
+      //        val user = mem(users.sampleSequential)
+      //        sum(user.items) { ix => t.params(ix) dot t.params(ix) }
+      //      }
+      //
+    }
+
   }
 }
