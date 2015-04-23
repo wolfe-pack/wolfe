@@ -286,7 +286,7 @@ class TermSpecs extends WolfeSpec {
   }
 
   "A stochastic term over an empty sequence" should {
-    "not throw a null pointer exception" in {
+    "not throw a null pointer exception" ignore {
       import TermImplicits.Seqs
       implicit val rand = ml.wolfe.util.Math.random
 
