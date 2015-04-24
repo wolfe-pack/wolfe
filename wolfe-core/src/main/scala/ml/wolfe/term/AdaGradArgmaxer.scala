@@ -1,5 +1,6 @@
 package ml.wolfe.term
 
+import com.typesafe.scalalogging.slf4j.LazyLogging
 import ml.wolfe.util.ProgressBar
 
 import scala.math._
@@ -18,7 +19,7 @@ case class AdaGradParameters(epochs: Int,
 class AdaGradArgmaxer(val objRaw: DoubleTerm,
                        val wrt: Seq[Var[Dom]],
                        val observed: Settings,
-                       val msgs: Msgs)(implicit params: AdaGradParameters) extends Argmaxer {
+                       val msgs: Msgs)(implicit params: AdaGradParameters) extends Argmaxer with LazyLogging {
 
   import params._
 
@@ -59,6 +60,7 @@ class AdaGradArgmaxer(val objRaw: DoubleTerm,
   val gradientChangeRecorders = gradient map (s => new SettingChangeRecorder(s,false))
 
   def argmax()(implicit execution: Execution) = {
+    logger.info("Maximizing objective")
     val bar = new ProgressBar(epochs, if (epochs < 100) 1 else epochs / 100)
     bar.start()
 
@@ -82,6 +84,8 @@ class AdaGradArgmaxer(val objRaw: DoubleTerm,
       gradientStep(epoch, gradient, momentum, result, learningRate)
 
       objAccumulator += diff.output.cont(0)
+
+      //logger.info(s"${iteration % termsPerEpoch}/$termsPerEpoch\r")
 
       if ((iteration + 1) % termsPerEpoch == 0) {
         if (epochHook != null) {
