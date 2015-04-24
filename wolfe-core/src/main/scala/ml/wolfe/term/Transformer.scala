@@ -1,11 +1,12 @@
 package ml.wolfe.term
 
+import com.typesafe.scalalogging.slf4j.LazyLogging
 import ml.wolfe.util.ObjectId
 
 /**
  * @author riedel
  */
-object Transformer {
+object Transformer extends LazyLogging {
 
   import TermImplicits._
 
@@ -101,13 +102,16 @@ object Transformer {
       o.self
   }
 
-  def flattenSums(term: AnyTerm) = depthFirst(term) {
-    case Sum(args) => Sum(args flatMap {
-      case Sum(inner) =>
-        inner
-      case a =>
-        IndexedSeq(a)
-    })
+  def flattenSums(term: AnyTerm) = {
+    logger.info("Flattening sums")
+    depthFirst(term) {
+      case Sum(args) => Sum(args flatMap {
+        case Sum(inner) =>
+          inner
+        case a =>
+          IndexedSeq(a)
+      })
+    }
   }
 
   def groundVariables(toGround: Seq[AnyVar])(term: AnyTerm) = depthFirst(term) {
@@ -139,9 +143,12 @@ object Transformer {
     //varSeqSum[Term[VarSeqDom[TypedDom[Double]]]](sumArgs)
   }
 
-  def precalculate(term: AnyTerm) = depthLastAndReuse(term) {
-    case t if t.isStatic && !t.isInstanceOf[Precalculated[_]] => t.domain.own(Precalculated(t).asInstanceOf[TypedTerm[t.domain.Value]])
-  }._1
+  def precalculate(term: AnyTerm) = {
+    logger.info("Pre-calculation of terms")
+    depthLastAndReuse(term) {
+      case t if t.isStatic && !t.isInstanceOf[Precalculated[_]] => t.domain.own(Precalculated(t).asInstanceOf[TypedTerm[t.domain.Value]])
+    }._1
+  }
 
 }
 

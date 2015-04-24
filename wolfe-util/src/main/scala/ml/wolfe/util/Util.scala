@@ -5,6 +5,7 @@ import java.nio.charset.MalformedInputException
 import java.util.concurrent.TimeUnit
 
 import cc.factorie.util.{FastLogging, Logger}
+import com.typesafe.scalalogging.slf4j.LazyLogging
 import ml.wolfe.util._
 
 import scala.collection.mutable
@@ -124,8 +125,7 @@ object Timer {
 }
 
 
-class ProgressBar(goal: Int, reportInterval: Int = 1, outputStream: OutputStream = System.err) {
-  val printWriter = new PrintWriter(outputStream)
+class ProgressBar(goal: Int, reportInterval: Int = 1) extends LazyLogging {
 
   //fixme: can lead to getting stuck in ~very long
   private var completed: Int = 1
@@ -141,13 +141,13 @@ class ProgressBar(goal: Int, reportInterval: Int = 1, outputStream: OutputStream
       val percent = completed.toDouble / goal * 100
       val diffTime = System.currentTimeMillis() - startTime
       val estimatedTime = (((diffTime * (goal.toDouble / completed)) - diffTime) / 1000).toInt
-      printWriter.print("\t[%6.2f".format(percent) + "%" + " %d/%d ".format(completed, goal) +
+      logger.info("[%6.2f".format(percent) + "%" + " %d/%d ".format(completed, goal) +
         "%8s".format("~" + getTimeString(estimatedTime)) + "]\t" + msg + "\r")
-      if (lineBreak) printWriter.println()
+      //if (lineBreak) logger.info("")
     }
-    if (goal == completed) printWriter.println()
+    if (goal == completed) logger.info("")
     completed += 1
-    printWriter.flush()
+    //printWriter.flush()
   }
 }
 
@@ -156,7 +156,7 @@ class ProgressBar(goal: Int, reportInterval: Int = 1, outputStream: OutputStream
  */
 class ProgressLogger(maxIterations: Int, name: String, outputStream: => OutputStream = System.out) extends Logger(name, outputStream) {
   val logEveryN = if (Conf.hasPath("logEveryN")) Conf.getInt("logEveryN") else 1
-  val progressBar = new ProgressBar(maxIterations, logEveryN, outputStream)
+  val progressBar = new ProgressBar(maxIterations, logEveryN)
   progressBar.start()
 
   override def info(msg: => Any): Unit = progressBar(msg.toString, lineBreak = true)
