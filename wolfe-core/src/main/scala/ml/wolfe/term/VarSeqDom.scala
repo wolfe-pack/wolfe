@@ -159,14 +159,13 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
 
 
     override def composer(args: Settings) = new Composer(args) {
-      output.recordChangedOffsets = true
+      output.informListeners = true
 
       def eval()(implicit execution: Execution) = {
-        output.clearChangeRecord()
         output.disc(0) = input(0).disc(0)
         var offset = Offsets(discOff = 1)
         for (i <- 1 until input.length) {
-          input(i).copyTo(output, Offsets.zero, offset, domain.elementDom.lengths)
+          input(i).shallowCopyTo(output, Offsets.zero, offset, domain.elementDom.lengths)
           offset += domain.elementDom.lengths
         }
       }
@@ -241,9 +240,6 @@ case class VarSeqApply[+E <: Dom, S <: Term[VarSeqDom[E]], I <: IntTerm](seq: S,
     def eval()(implicit execution: Execution) = {
       val index = input(1).disc(0)
       val offset = (seq.domain.elementDom.lengths * index) + Offsets(discOff = 1)
-      if (input(0).vect.length > 0 && input(0).vect(0) == null) {
-        print()
-      }
       output :=(input(0), offset, seq.domain.elementDom.lengths)
     }
 
@@ -252,15 +248,12 @@ case class VarSeqApply[+E <: Dom, S <: Term[VarSeqDom[E]], I <: IntTerm](seq: S,
 
   override def differentiatorImpl(wrt: Seq[Var[Dom]])(in: Settings, err: Setting, gradientAcc: Settings) =
     new ComposedDifferentiator(wrt, in, err, gradientAcc) {
-      argErrors(0).recordChangedOffsets = true
 
       def localBackProp()(implicit execution: Execution) = {
         val length = argOutputs(0).disc(0)
         val index = argOutputs(1).disc(0)
         val offset = seq.domain.elementDom.lengths * index + Offsets(discOff = 1)
-        argErrors(0).resetToZero()
-        argErrors(0).disc := argOutputs(0).disc
-        error.copyTo(argErrors(0), Offsets.zero, offset, seq.domain.elementDom.lengths)
+        error.shallowCopyTo(argErrors(0), Offsets.zero, offset, seq.domain.elementDom.lengths)
       }
     }
 

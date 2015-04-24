@@ -16,9 +16,9 @@ class SettingSpecs extends WolfeSpec {
 
     "should remember updates" in {
       val setting = new Setting(numCont=2)
-      setting.recordChangedOffsets = true
+      val changes = new SettingChangeRecorder(setting, false)
       setting.cont(0) = 4
-      setting.cont.changed() should be (Set(0))
+      changes.cont.changes should be (Set(0))
 
     }
   }

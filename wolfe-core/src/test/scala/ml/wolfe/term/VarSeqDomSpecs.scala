@@ -70,10 +70,14 @@ class VarSeqDomSpecs extends WolfeSpec {
       val term = x(i) * x(i)
       val parameter = Settings(xs.toSetting(value), xs.lengthDom.toSetting(2))
       val gradient = term.createZeroInputSettings()
+      val changes = new SettingChangeRecorder(gradient(0),false)
       val diff = term.differentiatorImpl(Seq(x))(parameter, Setting.cont(1.0), gradient)
-      gradient(0).recordChangedOffsets = true
       diff.differentiate()
-      gradient(0).cont.changed() should be(Set(2))
+      changes.cont.changes should be(Set(0,1,2)) //because each field has to be initialized
+      changes.forget()
+      diff.input(1).disc(0) = 1
+      diff.differentiate()
+      changes.cont.changes should be(Set(1))
     }
 
 

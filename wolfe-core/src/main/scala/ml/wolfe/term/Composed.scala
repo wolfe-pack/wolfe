@@ -50,7 +50,7 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
     def createArgError(a: ArgumentType) = {
       val result = a.domain.createSetting()
       result.setAdaptiveVectors(true)
-      result.recordChangedOffsets = true
+      result.informListeners = true
       result
     }
 

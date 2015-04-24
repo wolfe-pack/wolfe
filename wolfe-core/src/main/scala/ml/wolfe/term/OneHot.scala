@@ -24,7 +24,7 @@ case class OneHot(index: IntTerm, value: DoubleTerm)(implicit val domain: Vector
       //result.move(index,value)
       result.zero()
       result(index) = value
-      output.vect.recordChange(0)
+      output.vect.broadcastChange(0)
     }
   }
 
@@ -111,7 +111,7 @@ case class Feature(name: Symbol, keys: IndexedSeq[AnyTerm], value: DoubleTerm)(i
       val value = input.last.cont(0)
       result.zero()
       result(indexOfKeys) = value
-      output.vect.recordChange(0)
+      output.vect.broadcastChange(0)
     }
   }
 

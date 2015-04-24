@@ -7,6 +7,7 @@ import cc.factorie.la._
 import ml.wolfe.{MoreArrayOps, Mat, Vect}
 
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 
 
@@ -24,147 +25,100 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
   val cont = new ContBuffer(numCont)
   val vect = new VectBuffer(numVect)
   val mats = new MatrixBuffer(numMats)
-  val settings = new SettingBuffer(numSettings)
-
-  def clearChangeRecord(): Unit = {
-    disc.resetChanges()
-    cont.resetChanges()
-    vect.resetChanges()
-    mats.resetChanges()
-    settings.resetChanges()
-  }
 
   def resetToZero(): Unit = {
     disc.resetToZero()
     cont.resetToZero()
     vect.resetToZero()
     mats.resetToZero()
-    settings.resetToZero()
-
   }
 
   def randomize(eps: => Double): setting.type = {
     cont.randomize(eps)
     vect.randomize(eps)
     mats.randomize(eps)
-    settings.randomize(eps)
     setting
   }
 
   final class DiscBuffer(val length: Int) extends Buffer[Int](setting) {
-    def resetToZero(offset: Int) = array(offset) = 0
+    def resetToZero(offset: Int) = {
+      this(offset) = 0
+      broadcastReset(offset)
+    }
 
     def randomize(eps: => Double) = {}
-  }
 
-  final class SettingBuffer(val length: Int) extends Buffer[Setting](setting) {
-    def resetToZero(offset: Int) = {
-      if (array(offset) != null) array(offset) := 0.0
+    def add(index: Int, value: Int) = {
+
     }
-
-    def randomize(eps: => Double) = {
-      for (setting <- array; if setting != null) setting.randomize(eps)
-    }
-
-    def *=(scale: Double): Unit = {
-      for (i <- 0 until length if array(i) != null) array(i) *= scale
-      flagAllChanged()
-    }
-
-    def +=(that: Buffer[Setting]): Unit = {
-      for (i <- 0 until length if array(i) != null) array(i) += that(i)
-      flagAllChanged()
-    }
-
-    def :=(scale: Double): Unit = {
-      for (i <- 0 until length) array(i) := scale
-      flagAllChanged()
-    }
-
-    override def :=(that: Buffer[Setting]): Unit = {
-      flagAllChanged()
-      for (i <- 0 until length) this(i) = that(i)
-    }
-
-
-    def addIfChanged(that: Buffer[Setting]): Unit = {
-      for (i <- that.changed()) {
-        array(i) += that(i)
-      }
-      addChanges(that.changed())
-    }
-
-
   }
 
 
   final class ContBuffer(val length: Int) extends Buffer[Double](setting) {
     def *=(scale: Double): Unit = {
       for (i <- 0 until length) array(i) *= scale
-      flagAllChanged()
+      broadcastAllChanged()
     }
 
     def :=(scale: Double): Unit = {
       for (i <- 0 until length) array(i) = scale
-      flagAllChanged()
+      broadcastAllChanged()
     }
 
     def +=(that: Buffer[Double]): Unit = {
       for (i <- 0 until length) array(i) += that(i)
-      flagAllChanged()
+      broadcastAllChanged()
     }
 
-    def addIfChanged(that: Buffer[Double]): Unit = {
-      for (i <- that.changed()) {
-        array(i) += that(i)
-      }
-      addChanges(that.changed())
+
+    def add(index: Int, value: Double) = {
+      array(index) += value
+      broadcastChange(index)
     }
 
-    def resetToZero(offset: Int) = array(offset) = 0.0
+    def resetToZero(offset: Int) = {
+      array(offset) = 0.0
+      broadcastReset(offset)
+    }
 
     def randomize(eps: => Double) = {
       for (i <- 0 until length) array(i) = array(i) + eps
-      flagAllChanged()
+      broadcastAllChanged()
     }
   }
 
   final class VectBuffer(val length: Int) extends Buffer[Vect](setting) {
     def *=(scale: Double): Unit = {
       for (i <- 0 until length) array(i) *= scale
-      flagAllChanged()
+      broadcastAllChanged()
     }
 
     def :=(scale: Double): Unit = {
-      flagAllChanged()
+      broadcastAllChanged()
       for (i <- 0 until length) array(i) := scale
     }
 
     override def :=(that: Buffer[Vect]): Unit = {
-      flagAllChanged()
+      broadcastAllChanged()
       for (i <- 0 until length) this(i) = that(i)
     }
 
     def +=(that: Buffer[Vect]): Unit = {
-      flagAllChanged()
+      broadcastAllChanged()
       for (i <- 0 until length) add(i, that(i))
-    }
-
-    def addIfChanged(that: Buffer[Vect]): Unit = {
-      for (i <- that.changed()) {
-        add(i, that(i))
-      }
-      addChanges(that.changed())
     }
 
     def randomize(eps: => Double) = {
       for (i <- 0 until length)
         for (j <- 0 until array(i).length)
           array(i)(j) += eps
-      flagAllChanged()
+      broadcastAllChanged()
     }
 
-    def resetToZero(offset: Int) = array(offset).zero() // := 0
+    def resetToZero(offset: Int) = {
+      array(offset).zero()
+      broadcastReset(offset)
+    }
 
     def copyVector(v: Vect) = v match {
       case s: SingletonTensor1 => new SingletonTensor1(s.dim1, s.singleIndex, s.singleValue)
@@ -189,10 +143,11 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
               super.update(index, copyVector(target))
             case (_, _) =>
               this(index) := value
+              broadcastChange(index)
           }
         } else {
           this(index) := value
-          recordChange(index)
+          broadcastChange(index)
         }
       }
     }
@@ -210,6 +165,7 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
           this(index) = value.copy
         } else {
           (this(index), value) match {
+            case (_,null) =>
             case (current: SparseIndexedTensor, arg: DenseTensor1) =>
               this(index) = arg.copy
               this(index) += current
@@ -218,6 +174,7 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
               this(index) += current
             case (_, _) =>
               this(index) += value
+              broadcastChange(index)
           }
         }
       } else {
@@ -231,28 +188,26 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
   final class MatrixBuffer(val length: Int) extends Buffer[Mat](setting) {
     def *=(scale: Double): Unit = {
       for (i <- 0 until length) array(i) *= scale
-      flagAllChanged()
+      broadcastAllChanged()
     }
 
     def :=(scale: Double): Unit = {
       for (i <- 0 until length) array(i) := scale
-      flagAllChanged()
+      broadcastAllChanged()
     }
 
     def +=(that: Buffer[Mat]): Unit = {
       for (i <- 0 until length) array(i) += that(i)
-      flagAllChanged()
+      broadcastAllChanged()
     }
 
-    def addIfChanged(that: Buffer[Mat]): Unit = {
-      for (i <- that.changed()) {
-        array(i) += that(i)
-      }
-      addChanges(that.changed())
+
+    def add(index: Int, value: Mat) = {
+      array(index) += value
+      broadcastChange(index)
     }
 
     override def :=(that: Buffer[Mat]): Unit = {
-      flagAllChanged()
       for (i <- 0 until length) this(i) = that(i)
     }
 
@@ -262,25 +217,28 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
         super.update(index, value.copy)
       } else {
         this(index) := value
-        recordChange(index)
+        broadcastChange(index)
       }
 
     }
 
 
-    def resetToZero(offset: Int) = array(offset) := 0
+    def resetToZero(offset: Int) = {
+      array(offset) := 0
+      broadcastReset(offset)
+    }
 
     def randomize(eps: => Double) = {
       for (i <- 0 until length)
         for (j <- 0 until array(i).length)
           array(i)(j) += eps
-      flagAllChanged()
+      broadcastAllChanged()
     }
 
   }
 
   private var _adaptiveVectors = false
-  var recordChangedOffsets = false
+  var informListeners = true
 
   def setAdaptiveVectors(adaptive: Boolean): Unit = {
     _adaptiveVectors = adaptive
@@ -289,36 +247,32 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
   def adaptiveVectors = _adaptiveVectors
 
 
-  def copyTo(target: Setting, targetOffsets: Offsets, targetMultiplier: Int): Unit = {
-    disc.copyTo(target.disc, 0, targetOffsets.discOff * targetMultiplier, disc.length)
-    cont.copyTo(target.cont, 0, targetOffsets.contOff * targetMultiplier, cont.length)
-    vect.copyTo(target.vect, 0, targetOffsets.vectOff * targetMultiplier, vect.length)
-    mats.copyTo(target.mats, 0, targetOffsets.matsOff * targetMultiplier, mats.length)
-    settings.copyTo(target.settings, 0, targetOffsets.settingsOff * targetMultiplier, settings.length)
+  def shallowCopyTo(target: Setting, targetOffsets: Offsets, targetMultiplier: Int): Unit = {
+    disc.shallowCopyTo(target.disc, 0, targetOffsets.discOff * targetMultiplier, disc.length)
+    cont.shallowCopyTo(target.cont, 0, targetOffsets.contOff * targetMultiplier, cont.length)
+    vect.shallowCopyTo(target.vect, 0, targetOffsets.vectOff * targetMultiplier, vect.length)
+    mats.shallowCopyTo(target.mats, 0, targetOffsets.matsOff * targetMultiplier, mats.length)
 
   }
 
-  def copyTo(target: Setting, srcOffsets: Offsets, targetOffsets: Offsets, length: Offsets): Unit = {
-    disc.copyTo(target.disc, srcOffsets.discOff, targetOffsets.discOff, length.discOff)
-    cont.copyTo(target.cont, srcOffsets.contOff, targetOffsets.contOff, length.contOff)
-    vect.copyTo(target.vect, srcOffsets.vectOff, targetOffsets.vectOff, length.vectOff)
-    mats.copyTo(target.mats, srcOffsets.matsOff, targetOffsets.matsOff, length.matsOff)
-    settings.copyTo(target.settings, srcOffsets.settingsOff, targetOffsets.settingsOff, length.settingsOff)
+  def shallowCopyTo(target: Setting, srcOffsets: Offsets, targetOffsets: Offsets, length: Offsets): Unit = {
+    disc.shallowCopyTo(target.disc, srcOffsets.discOff, targetOffsets.discOff, length.discOff)
+    cont.shallowCopyTo(target.cont, srcOffsets.contOff, targetOffsets.contOff, length.contOff)
+    vect.shallowCopyTo(target.vect, srcOffsets.vectOff, targetOffsets.vectOff, length.vectOff)
+    mats.shallowCopyTo(target.mats, srcOffsets.matsOff, targetOffsets.matsOff, length.matsOff)
 
   }
 
-  def copyTo(target: Setting, srcElementLength: Offsets, srcMultiplier: Int, tgtElementLength: Offsets, tgtMultiplier: Int,
-             length: Offsets, srcOffsets: Offsets = Offsets(), tgtOffsets: Offsets = Offsets()): Unit = {
-    disc.copyTo(target.disc, srcOffsets.discOff + length.discOff * srcMultiplier,
+  def shallowCopyTo(target: Setting, srcElementLength: Offsets, srcMultiplier: Int, tgtElementLength: Offsets, tgtMultiplier: Int,
+                    length: Offsets, srcOffsets: Offsets = Offsets(), tgtOffsets: Offsets = Offsets()): Unit = {
+    disc.shallowCopyTo(target.disc, srcOffsets.discOff + length.discOff * srcMultiplier,
       tgtOffsets.discOff + tgtElementLength.discOff * tgtMultiplier, length.discOff)
-    cont.copyTo(target.cont, srcOffsets.contOff + length.contOff * srcMultiplier,
+    cont.shallowCopyTo(target.cont, srcOffsets.contOff + length.contOff * srcMultiplier,
       tgtOffsets.contOff + tgtElementLength.contOff * tgtMultiplier, length.contOff)
-    vect.copyTo(target.vect, srcOffsets.vectOff + length.vectOff * srcMultiplier,
+    vect.shallowCopyTo(target.vect, srcOffsets.vectOff + length.vectOff * srcMultiplier,
       tgtOffsets.vectOff + tgtElementLength.vectOff * tgtMultiplier, length.vectOff)
-    mats.copyTo(target.mats, srcOffsets.matsOff + length.matsOff * srcMultiplier,
+    mats.shallowCopyTo(target.mats, srcOffsets.matsOff + length.matsOff * srcMultiplier,
       tgtOffsets.matsOff + tgtElementLength.matsOff * tgtMultiplier, length.matsOff)
-    settings.copyTo(target.settings, srcOffsets.settingsOff + length.settingsOff * srcMultiplier,
-      tgtOffsets.settingsOff + tgtElementLength.settingsOff * tgtMultiplier, length.settingsOff)
   }
 
 
@@ -326,8 +280,6 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
     cont *= scale
     vect *= scale
     mats *= scale
-    settings *= scale
-
   }
 
   def +=(that: Setting): Unit = {
@@ -335,24 +287,13 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
     cont += that.cont
     vect += that.vect
     mats += that.mats
-    settings += that.settings
 
   }
-
-  def addIfChanged(that: Setting): Unit = {
-    disc := that.disc //todo: this is odd but required to pass on discrete values in gradients
-    cont.addIfChanged(that.cont)
-    vect.addIfChanged(that.vect)
-    mats.addIfChanged(that.mats)
-    settings.addIfChanged(that.settings)
-  }
-
 
   def :=(value: Double): Unit = {
     cont := value
     vect := value
     mats := value
-    settings := value
   }
 
   def :=(that: Setting): Unit = {
@@ -360,15 +301,13 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
     cont := that.cont
     vect := that.vect
     mats := that.mats
-    settings := that.settings
   }
 
-  def shallowCopy(to:Setting) = {
-    disc.shallowCopyTo(to.disc,0,0,disc.length)
-    cont.shallowCopyTo(to.cont,0,0,cont.length)
-    vect.shallowCopyTo(to.vect,0,0,vect.length)
-    mats.shallowCopyTo(to.mats,0,0,mats.length)
-    settings.shallowCopyTo(to.settings,0,0,settings.length)
+  def shallowCopy(to: Setting) = {
+    disc.shallowCopyTo(to.disc, 0, 0, disc.length)
+    cont.shallowCopyTo(to.cont, 0, 0, cont.length)
+    vect.shallowCopyTo(to.vect, 0, 0, vect.length)
+    mats.shallowCopyTo(to.mats, 0, 0, mats.length)
   }
 
   def :=(src: Setting, srcOffsets: Offsets, lengths: Offsets, tgtOffsets: Offsets = Offsets.zero): Unit = {
@@ -376,7 +315,6 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
     cont :=(src.cont, srcOffsets.contOff, lengths.contOff, tgtOffsets.contOff)
     vect :=(src.vect, srcOffsets.vectOff, lengths.vectOff, tgtOffsets.vectOff)
     mats :=(src.mats, srcOffsets.matsOff, lengths.matsOff, tgtOffsets.matsOff)
-    settings :=(src.settings, srcOffsets.settingsOff, lengths.settingsOff, tgtOffsets.settingsOff)
   }
 
   def ensureSparsity(): Unit = {
@@ -396,23 +334,20 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
     if (cont.length != that.cont.length) return false
     if (vect.length != that.vect.length) return false
     if (mats.length != that.mats.length) return false
-    if (settings.length != that.settings.length) return false
 
     for (i <- 0 until disc.length) if (disc(i) != that.disc(i)) return false
     for (i <- 0 until cont.length) if (math.abs(cont(i) - that.cont(i)) > eps) return false
     for (i <- 0 until vect.length; j <- 0 until vect(i).size) if (math.abs(vect(i)(j) - that.vect(i)(j)) > eps) return false
     for (i <- 0 until mats.length; j <- 0 until mats(i).size) if (math.abs(mats(i)(j) - that.mats(i)(j)) > eps) return false
-    for (i <- 0 until settings.length; if settings(i) != null && that.settings(i) != null)
-      return settings(i).epsEquals(eps, that.settings(i))
 
     true
   }
 
   override def toString = {
-    def renderIfNotEmpty(buffer:Buffer[_]) = {
+    def renderIfNotEmpty(buffer: Buffer[_]) = {
       if (buffer.length > 0) Some(buffer.mkString(" ")) else None
     }
-    val rendered = Seq(renderIfNotEmpty(disc),renderIfNotEmpty(cont),renderIfNotEmpty(vect),renderIfNotEmpty(mats),renderIfNotEmpty(settings))
+    val rendered = Seq(renderIfNotEmpty(disc), renderIfNotEmpty(cont), renderIfNotEmpty(vect), renderIfNotEmpty(mats))
     rendered.flatten.mkString("\n")
   }
 }
@@ -625,49 +560,140 @@ final class VariableMapping(val srcIndex: Array[Int], val tgtIndex: Array[Int]) 
 
 }
 
+
+trait BufferListener {
+
+  def reset(index:Int)
+
+  def changed(index: Int)
+
+  def changed(indices: Iterable[Int])
+
+  def allChanged()
+}
+
+class BufferChangeRecorder[T](val buffer: Buffer[T], initAllChanges: Boolean = true) extends BufferListener {
+
+  buffer.listeners += this
+
+  private val changedIndices = new mutable.HashSet[Int]
+  private val resetIndices = new mutable.HashSet[Int]
+
+
+  if (initAllChanges) allChanged()
+
+  def changes = changedIndices
+  def resets = resetIndices
+
+  def changed(index: Int) = {
+    changedIndices += index
+  }
+
+  def changed(indices: Iterable[Int]) = {
+    changedIndices ++= indices
+  }
+
+
+  def reset(index: Int) = {
+    resetIndices += index
+  }
+
+  def allChanged() = {
+    changedIndices ++= Range(0, buffer.length)
+  }
+
+  def forget(): Unit = {
+    changedIndices.clear()
+    resetIndices.clear()
+  }
+
+  def addIfChanged(tgt: Buffer[T]): Unit = {
+    changedIndices foreach (i => tgt.add(i, buffer(i)))
+  }
+
+
+}
+
+class SettingChangeRecorder(val setting: Setting, initAllChanges: Boolean = true) {
+
+  def createRecorder[T](buffer: Buffer[T]) = {
+    new BufferChangeRecorder[T](buffer, initAllChanges)
+  }
+
+  val disc = createRecorder(setting.disc)
+  val cont = createRecorder(setting.cont)
+  val vect = createRecorder(setting.vect)
+  val mats = createRecorder(setting.mats)
+
+  def setChangesToZero(): Unit = {
+    disc.changes.toSet foreach setting.disc.resetToZero //using a toSet to make sure we work with a copy
+    cont.changes.toSet foreach setting.cont.resetToZero
+    vect.changes.toSet foreach setting.vect.resetToZero
+    mats.changes.toSet foreach setting.mats.resetToZero 
+  }
+
+  def forget(): Unit = {
+    disc.forget()
+    cont.forget()
+    vect.forget()
+    mats.forget()
+  }
+
+  def addIfChanged(tgt: Setting): Unit = {
+    cont.addIfChanged(tgt.cont)
+    vect.addIfChanged(tgt.vect)
+    mats.addIfChanged(tgt.mats)
+  }
+
+  def shallowCopyToIfChanged(target: Setting, srcOffsets: Offsets, targetOffsets: Offsets, lengths: Offsets): Unit = {
+    disc.buffer.shallowCopyTo(target.disc, srcOffsets.discOff, targetOffsets.discOff, lengths.discOff, disc.changes)
+    cont.buffer.shallowCopyTo(target.cont, srcOffsets.contOff, targetOffsets.contOff, lengths.contOff, cont.changes)
+    vect.buffer.shallowCopyTo(target.vect, srcOffsets.vectOff, targetOffsets.vectOff, lengths.vectOff, vect.changes)
+    mats.buffer.shallowCopyTo(target.mats, srcOffsets.matsOff, targetOffsets.matsOff, lengths.matsOff, mats.changes)
+
+  }
+
+
+}
+
 abstract class Buffer[T: ClassTag](val setting: Setting) {
   def length: Int
 
-  lazy val changedIndices = new mutable.HashSet[Int]
-  protected var allChanged = false
+  val array = Array.ofDim[T](length)
 
-  def resetChanges() = {
-    changedIndices.clear()
-    allChanged = false
-  }
+  val listeners = new ArrayBuffer[BufferListener]()
 
-  def addChanges(indices: Iterable[Int]): Unit = {
-    if (shouldRecord) changedIndices ++= indices
-  }
-
-  def resetToZero(): Unit = {
-    for (i <- changed()) resetToZero(i)
-    changedIndices.clear()
-    allChanged = false
-  }
+  def add(index: Int, value: T): Unit
 
   def resetToZero(offset: Int): Unit
 
-
-  protected def flagAllChanged() {
-    allChanged = true
+  def resetToZero(): Unit = {
+    //todo this informs listeners on a per index basis instead of in a batch way
+    for (i <- 0 until length) resetToZero(i)
   }
 
-  def shouldRecord = setting.recordChangedOffsets && !allChanged
-
-  def recordChange(offset: Int): Unit = {
-    if (shouldRecord) changedIndices += offset
+  def broadcastAllChanged() {
+    if (shouldBroadcast) for (l <- listeners) l.allChanged()
   }
 
-  val array = Array.ofDim[T](length)
-
-  def changed() = {
-    if (!setting.recordChangedOffsets || allChanged) Range(0, length) else changedIndices
+  def broadcastChange(offset: Int): Unit = {
+    if (shouldBroadcast) listeners foreach (_.changed(offset))
   }
+
+  def broadcastReset(offset: Int): Unit = {
+    if (shouldBroadcast) listeners foreach (_.reset(offset))
+  }
+
+
+  def broadcastChanges(offsets: Iterable[Int]): Unit = {
+    if (shouldBroadcast) listeners foreach (_.changed(offsets))
+  }
+
+  def shouldBroadcast = setting.informListeners
 
   def update(index: Int, value: T) = {
     array(index) = value
-    if (shouldRecord) changedIndices += index
+    broadcastChange(index)
   }
 
   def foreach(f: T => Unit) = (0 until length).foreach(x => f(apply(x)))
@@ -676,34 +702,25 @@ abstract class Buffer[T: ClassTag](val setting: Setting) {
 
   def shallowCopyTo(tgt: Buffer[T], srcPos: Int, tgtPos: Int, length: Int): Unit = {
     System.arraycopy(array, srcPos, tgt.array, tgtPos, length)
-    if (tgt.shouldRecord)
-      tgt.changedIndices ++= Range(tgtPos, tgtPos + length)
+    tgt.broadcastChanges(Range(tgtPos, tgtPos + length))
   }
 
-  //todo: this is weird because it's both shallow and deep depending on shouldRecord. Fix me.
-  def copyTo(tgt: Buffer[T], srcPos: Int, tgtPos: Int, length: Int) = {
-    if (length > 0) {
-      if (!shouldRecord) {
-        System.arraycopy(array, srcPos, tgt.array, tgtPos, length)
-        if (tgt.shouldRecord)
-          tgt.changedIndices ++= Range(tgtPos, tgtPos + length)
-      } else {
-        for (i <- changed() if i >= srcPos && i < srcPos + length) {
-          tgt(tgtPos + i - srcPos) = this(i)
-          if (tgt.shouldRecord) tgt.changedIndices += tgtPos + i - srcPos
-        }
-      }
-    }
+  def shallowCopyTo(tgt: Buffer[T], srcPos: Int, tgtPos: Int, length: Int, filter: collection.Set[Int]): Unit = {
+    val toCopy = filter filter (i => i >= srcPos && i < srcPos + length)
+    toCopy foreach (i => tgt.array(i - srcPos + tgtPos) = array(i))
+    tgt.broadcastChanges(toCopy map (i => i - srcPos + tgtPos))
   }
+
 
   def :=(value: Buffer[T]): Unit = {
     System.arraycopy(value.array, 0, array, 0, length)
-    flagAllChanged()
+    broadcastAllChanged()
   }
 
   def :=(src: Buffer[T], srcOffset: Int, srcLength: Int, tgtOffset: Int = 0): Unit = {
+    //todo: this can be implemented via shallowCopyTo, or vice versa
     System.arraycopy(src.array, srcOffset, array, tgtOffset, srcLength)
-    flagAllChanged()
+    broadcastAllChanged()
   }
 
 

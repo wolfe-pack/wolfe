@@ -23,15 +23,22 @@ trait Var[+D <: Dom] extends Term[D] {
     new AbstractDifferentiator(in, err, gradientAcc, wrt) {
       val output = in(0)
       val isWrt = wrt.contains(self)
+      val errorChanges = new SettingChangeRecorder(err)
 
       def forward()(implicit execution: Execution) {}
 
       def backward()(implicit execution: Execution): Unit = {
-        if (isWrt) gradientAccumulator(0).addIfChanged(error)
+        if (isWrt) {
+          //we always copy the discrete inputs to the discrete part of the gradient
+          input(0).disc.shallowCopyTo(gradientAccumulator(0).disc, 0, 0, input(0).disc.length)
+          errorChanges.addIfChanged(gradientAccumulator(0))
+          errorChanges.forget()
+        }
       }
+
+      override def toString = varName
     }
 
-  override def toString = varName
 }
 
 /**
@@ -64,7 +71,7 @@ trait GroundAtom[+D <: Dom] extends Atom[D] {
   self =>
   def offsets: Offsets
 
-  def varsToGround:Seq[AnyVar] = Nil
+  def varsToGround: Seq[AnyVar] = Nil
 
   def grounder(settings: Settings) = new Grounder {
     def ground()(implicit execution: Execution) = self
@@ -99,7 +106,7 @@ case class SeqGroundAtom[E <: Dom, S <: VarSeqDom[E]](seq: GroundAtom[S], index:
   def owner = seq.owner
 
   def varName = getClass.getSimpleName + "(" +
-    (if(productArity==0) "" else productIterator.map(_.toString).reduce(_ + "," + _)) + ")"
+    (if (productArity == 0) "" else productIterator.map(_.toString).reduce(_ + "," + _)) + ")"
 }
 
 case class SeqAtom[E <: Dom, S <: VarSeqDom[E]](seq: Atom[S], index: IntTerm) extends Atom[E] {
@@ -116,39 +123,48 @@ case class SeqAtom[E <: Dom, S <: VarSeqDom[E]](seq: Atom[S], index: IntTerm) ex
         val parent = seqGrounder.ground()
         indexEval.eval()
         val groundIndex = indexEval.output.disc(0)
-        SeqGroundAtom[E,S](parent,groundIndex)
+        SeqGroundAtom[E, S](parent, groundIndex)
       }
     }
   }
+
   def varName = getClass.getSimpleName + "(" +
-    (if(productArity==0) "" else productIterator.map(_.toString).reduce(_ + "," + _)) + ")"
+    (if (productArity == 0) "" else productIterator.map(_.toString).reduce(_ + "," + _)) + ")"
+
   def owner = seq.owner
 }
 
-trait GenericLengthAtom[S<:VarSeqDom[_]] extends Atom[IntDom]{
-  def seq:Atom[S]
+trait GenericLengthAtom[S <: VarSeqDom[_]] extends Atom[IntDom] {
+  def seq: Atom[S]
+
   val domain = seq.domain.lengthDom
+
   def owner = seq.owner
+
   //def name = toString
 }
 
-case class LengthAtom[S<:VarSeqDom[_]](seq:Atom[S]) extends GenericLengthAtom[S] {
+case class LengthAtom[S <: VarSeqDom[_]](seq: Atom[S]) extends GenericLengthAtom[S] {
   val varsToGround = seq.varsToGround
+
   def grounder(settings: Settings) = new Grounder {
     val seqGrounder = seq.grounder(settings.linkedSettings(varsToGround, seq.varsToGround))
+
     def ground()(implicit execution: Execution) = {
       val parent = seqGrounder.ground()
       LengthGroundAtom[S](parent)
     }
   }
+
   def varName = getClass.getSimpleName + "(" +
-    (if(productArity==0) "" else productIterator.map(_.toString).reduce(_ + "," + _)) + ")"
+    (if (productArity == 0) "" else productIterator.map(_.toString).reduce(_ + "," + _)) + ")"
 }
 
-case class LengthGroundAtom[S <: VarSeqDom[_]](seq:GroundAtom[S]) extends GroundAtom[IntDom] with GenericLengthAtom[S] {
+case class LengthGroundAtom[S <: VarSeqDom[_]](seq: GroundAtom[S]) extends GroundAtom[IntDom] with GenericLengthAtom[S] {
   def offsets = seq.offsets
+
   def varName = getClass.getSimpleName + "(" +
-    (if(productArity==0) "" else productIterator.map(_.toString).reduce(_ + "," + _)) + ")"
+    (if (productArity == 0) "" else productIterator.map(_.toString).reduce(_ + "," + _)) + ")"
 }
 
 
