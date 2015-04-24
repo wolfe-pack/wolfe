@@ -32,7 +32,7 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
     def eval()(implicit execution: Execution) = {
       var i = 0
       while (i < size && !comp.abort(i)) {
-        argEvals(i).optimizedEval()
+        argEvals(i).eval()
         i += 1
       }
       comp.eval()
@@ -80,7 +80,7 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
     def forward()(implicit execution: Execution) = {
       var i = 0
       while (i < size && !abortForward(i)) {
-        argDiffs(i).optimizedForward()
+        argDiffs(i).forward()
         i += 1
       }
       comp.eval()

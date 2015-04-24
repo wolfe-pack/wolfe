@@ -140,7 +140,7 @@ object Transformer {
   }
 
   def precalculate(term: AnyTerm) = depthLastAndReuse(term) {
-    case t if t.isStatic => t.domain.own(Precalculated(t).asInstanceOf[TypedTerm[t.domain.Value]])
+    case t if t.isStatic && !t.isInstanceOf[Precalculated[_]] => t.domain.own(Precalculated(t).asInstanceOf[TypedTerm[t.domain.Value]])
   }._1
 
 }

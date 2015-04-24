@@ -68,34 +68,13 @@ trait Term[+D <: Dom] extends TermHelper[D]  {
   }
 
 
-  trait Cached {
-    private var calls = 0
-
-    def useCached = isStatic && calls > 0
-
-    def cache[T](body: => Unit): Unit = {
-      if (!useCached) {
-        body
-      }
-      calls += 1
-    }
-  }
-
-  trait Evaluator extends ml.wolfe.term.Evaluator with Cached {
-
-    def optimizedEval()(implicit execution: Execution): Unit = {
-      cache(eval())
-    }
+  trait Evaluator extends ml.wolfe.term.Evaluator {
 
     override def toString = term.toString + ".evaluator"
   }
 
-  trait Differentiator extends ml.wolfe.term.Differentiator with Cached {
+  trait Differentiator extends ml.wolfe.term.Differentiator  {
     val needBackward = withRespectTo.exists(vars.contains)
-
-    def optimizedForward()(implicit execution: Execution): Unit = {
-      cache(forward())
-    }
 
     def optimizedBackward()(implicit execution: Execution): Unit = {
       if (needBackward) backward()
