@@ -458,6 +458,33 @@ class Msg(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMats: Int = 0
   final var vect = Array.ofDim[VectMsg](numVect)
   final var mats = Array.ofDim[MatsMsg](numMats)
 
+  final def :=(msg: Msg): Unit = {
+    assert(disc.length == msg.disc.length && cont.length == msg.cont.length &&
+      vect.length == msg.vect.length && mats.length == msg.mats.length)
+    disc = msg.disc.clone()
+    cont = msg.cont.clone()
+    vect = msg.vect.clone()
+    mats = msg.mats.clone()
+  }
+
+  override final def clone(): Msg = {
+    val res = new Msg(numDisc, numCont, numVect, numMats)
+    res := this
+    res
+  }
+
+  final def +(value: Msg): Msg = {
+    val res = this.clone()
+    res += value
+    res
+  }
+
+  final def -(value: Msg): Msg = {
+    val res = this.clone()
+    res -= value
+    res
+  }
+
   final def :=(value: Double): Unit = {
     for (i <- 0 until disc.length) util.Arrays.fill(disc(i).msg, value)
     for (i <- 0 until cont.length) cont(i).mean = value
@@ -471,6 +498,15 @@ class Msg(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMats: Int = 0
     }
     for (i <- 0 until cont.length) {
       cont(i).mean += value.cont(i).mean
+    }
+  }
+
+  final def -=(value: Msg): Unit = {
+    for (i <- 0 until disc.length) {
+      incr(disc(i).msg, value.disc(i).msg, -1.0)
+    }
+    for (i <- 0 until cont.length) {
+      cont(i).mean -= value.cont(i).mean
     }
   }
 
