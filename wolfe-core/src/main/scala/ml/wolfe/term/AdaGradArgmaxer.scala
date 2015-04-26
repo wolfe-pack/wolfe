@@ -70,7 +70,7 @@ class AdaGradArgmaxer(val objRaw: DoubleTerm,
     for (iteration <- 0 until iterations) {
       val epoch = iteration / termsPerEpoch
 
-      //reset all previous changes to the gradient back to zero, and then forgot changes
+      //reset all previous changes to the gradient back to zero, and then forget changes
       gradientChangeRecorders foreach (_.setChangesToZero())
       gradientChangeRecorders foreach (_.forget())
 
