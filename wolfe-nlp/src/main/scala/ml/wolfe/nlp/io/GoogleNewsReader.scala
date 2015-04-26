@@ -7,26 +7,22 @@ import ml.wolfe.nlp.ie.EntityMention
 /**
  * Created by narad on 2/27/15.
  */
-class GoogleNewsReader(filename: String) extends Iterable[Document] {
+class GoogleNewsReader(filename: String, verbose: Boolean = false) extends Iterable[Document] {
   val chunks = new ChunkReader(filename)
   val proto = new ProtoReader(ldelim = "{", rdelim = "}")
 
   def iterator: Iterator[Document] = {
-    chunks.view.map(c => parseProtoDocument("top {\n" + c + "\n}")).iterator
+    chunks.view.zipWithIndex.map { case(chunk, chunkIdx) =>
+      if (verbose) print("\rReading...%d.".format(chunkIdx))
+      parseProtoDocument("top {\n" + chunk + "\n}")
+    }.iterator
   }
 
   def parseProtoDocument(chunk: String): Document = {
     val parse = proto.parse(chunk)
     assert(parse.size == 1, "There should only be one top level node per document.")
     val sentences = parseProtoSentences(parse.head)
-    sentences.foreach { s =>
-      println(s)
-    }
     val entities = parseProtoEntities(parse.head)
-    entities.foreach { e =>
-      println(e)
-    }
-    println("END\n\n")
     Document(source = chunk, sentences = mergeSentencesAndEntities(sentences, entities))
   }
 
@@ -41,14 +37,6 @@ class GoogleNewsReader(filename: String) extends Iterable[Document] {
     }
   }
 
-//
-//        map { e =>
-//        val si = s.tokens.indexWhere(t => e.start == t.offsets.start)
-//        val ei = s.tokens.indexWhere(t => e.end == t.offsets.end)
-//        e.copy(start = si, end = ei + 1)
-//      }.filter(e => e.start > -1 && e.end > -1)))
-//    }
-//  }
 
   def parseProtoSentences(node: ProtoNode): IndexedSeq[Sentence] = {
     val sentences = new ArrayBuffer[Sentence]
@@ -115,17 +103,38 @@ class GoogleNewsReader(filename: String) extends Iterable[Document] {
 object GoogleNewsReader {
 
   def main(args: Array[String]): Unit = {
-    for (d <- new GoogleNewsReader(args(0))) {
-      for (s <- d.sentences) {
-        println(s.tokens.mkString(", "))
-        println(s.ie.entityMentions.mkString("\n"))
-        println
-      }
+    for (d <- new GoogleNewsReader(args(0), args.mkString(" ").contains("--verbose TRUE"))) {
+      val i = 0 // blah
     }
     println("Finished.")
   }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//
+//        map { e =>
+//        val si = s.tokens.indexWhere(t => e.start == t.offsets.start)
+//        val ei = s.tokens.indexWhere(t => e.end == t.offsets.end)
+//        e.copy(start = si, end = ei + 1)
+//      }.filter(e => e.start > -1 && e.end > -1)))
+//    }
+//  }
 
 //
 //  def iterator: Iterator[Document] = {

@@ -8,7 +8,7 @@ import java.io.{File, FileWriter}
 /**
  * Created by narad on 10/29/14.
  */
-class DistantSupervisionAnnotator { //extends FreebaseReader(filename = null, useExisting = true) {
+class DistantSupervisionAnnotator {
   val fbr = FreebaseReader.loadFromDB()
 
   def annotate(docs: Iterable[Document]): Iterable[Document] = docs.map(annotate(_))
