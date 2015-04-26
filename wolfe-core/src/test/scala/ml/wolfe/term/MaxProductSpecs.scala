@@ -14,6 +14,29 @@ class MaxProductSpecs extends WolfeSpec {
   import Argmaxer._
 
   "A MaxProduct algorithm" should {
+    "optimize single factor objective" in {
+      val vars = Seq(Bools.Variable("y0"), Bools.Variable("y1"))
+
+      val obj = I(vars(0) <-> ! vars(1)) //1.1 * I(vars(0)) + 1.1 * I(vars(1))
+
+      println("(true, true)  : " + (obj).evalUntyped(true, true))
+      println("(true, false)  : " + (obj).evalUntyped(true, false))
+      println("(false, true) : " + (obj).evalUntyped(false, true))
+      println("(false, false) : " + (obj).evalUntyped(false, false))
+      val mpParams = MaxProductParameters(10)
+
+      val observation = Settings.fromSeq(Seq())
+      val objWithArgmaxerSpecified = obj.argmaxBy(Argmaxer.maxProduct(mpParams))
+      val argmaxer = objWithArgmaxerSpecified.argmaxerImpl(vars)(observation, null)
+
+      argmaxer.argmax()(Execution(0))
+
+      val result = argmaxer.result.toValues(vars map (_.domain))
+
+      println(result)
+      result(0) should not be result(1)
+    }
+
     "optimize a linear chain objective" in {
       val n = 5
       val vars = Range(0, n) map (i => Bools.Variable("y" + i))
@@ -27,6 +50,7 @@ class MaxProductSpecs extends WolfeSpec {
       val obj = sum(vars.map(local), length) + sum(pairs.map(pair), length - 1)
 
       println((obj | length << 5).evalUntyped(true, true, true, true, true))
+      println((obj | length << 5).evalUntyped(true, false, true, false, true))
       val mpParams = MaxProductParameters(10)
 
       val observation = Settings.fromSeq(Seq(Setting.disc(5)))
