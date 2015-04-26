@@ -26,7 +26,7 @@ class AdagradSpecs extends WolfeSpec {
       val result = argmax(X) { x => obj(x) } by adaGrad
       result.eval() should equal(vector(2.0, 2.0))
     }
-    "optimize a sampled quadratic objective" ignore {
+    "optimize a sampled quadratic objective" in {
       import TermImplicits.Seqs
       implicit val rand = ml.wolfe.util.Math.random
 
@@ -40,14 +40,13 @@ class AdagradSpecs extends WolfeSpec {
 
       def loss(t: Thetas.Term): DoubleTerm = {
         val user = mem(users.sampleShuffled)
-        sum(user.items) { ix => { val x = t.params(ix); (x(0) * 4.0) - (x dot x) }}
-        //sum(user.items) { ix => { val x = t.params(ix); (x(0) * 4.0) - (x(0) * x(0)) }} //fixme: why does this give a different result?
+        sum(user.items) { ix => { val x = t.params(ix); 2 - (x dot x) }}
       }
 
       val init = Settings(Thetas.createRandomSetting(random.nextGaussian()))
       val thetaStar = (argmax(Thetas) { t => loss(t) } by adaGrad(AdaGradParameters(1000, 0.1, initParams = init))).eval()
-      thetaStar.params(1)(0) should be(2.0 +- eps)
-      thetaStar.params(2)(0) should be(2.0 +- eps)
+      thetaStar.params(1)(0) should be(0.0 +- eps)
+      thetaStar.params(2)(0) should be(0.0 +- eps)
     }
   }
 
