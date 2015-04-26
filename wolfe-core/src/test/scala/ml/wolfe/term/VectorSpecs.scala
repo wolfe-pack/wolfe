@@ -1,8 +1,7 @@
 package ml.wolfe.term
 
-import ml.wolfe.WolfeSpec
+import ml.wolfe._
 import ml.wolfe.term.TermImplicits._
-
 import scala.util.Random
 
 /**
@@ -36,11 +35,16 @@ class VectorSpecs extends WolfeSpec {
       val x = Vectors(2).Var
       val t = x + x
       t.eval(x := vector(1,2)) should equal (vector(2,4))
-
     }
-
   }
 
-
+  "A vector apply term" should {
+    "provide its constant gradient" ignore {
+      val x = Vectors(1).Var
+      val t = x(0)
+      val result = t.diff(x)(x := vector(3.0))
+      result(0) should be (1.0)
+    }
+  }
 }
 
