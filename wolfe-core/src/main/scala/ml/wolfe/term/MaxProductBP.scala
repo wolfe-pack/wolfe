@@ -17,6 +17,8 @@ class MaxProductBP(val objRaw: DoubleTerm,
 
   import params._
 
+  val synchronized = false
+
   val observedVars = objRaw.vars.filterNot(wrt.contains)
   val result: Settings = Settings.fromSeq(wrt.map(_.domain.createSetting()))
 
@@ -69,11 +71,14 @@ class MaxProductBP(val objRaw: DoubleTerm,
     }
   }
 
-  class NodeContent(val belief: Msg)
+  class NodeContent(val belief: Msg, var f2nChanged: Boolean = true)
 
   class EdgeContent(val maxMarginalizer: MaxMarginalizer, val f2n: Msg, val n2f: Msg)
 
-  class FactorContent()
+  class FactorContent(val maxMarginalizer: MaxMarginalizer) {
+    var n2fChanged: Boolean = true
+    def update()(implicit execution: Execution) = maxMarginalizer.maxMarginals()
+  }
 
   def addNodes(vars: Seq[AnyGroundAtom]): Unit = {
     for (v <- vars) {
@@ -120,11 +125,19 @@ class MaxProductBP(val objRaw: DoubleTerm,
     val obsVarsInPot = pot.vars.filter(observedVars.contains)
     val obsInPot = observed.linkedSettings(observedVars, obsVarsInPot)
 
-    fg.addFactor(pot.asInstanceOf[DoubleTerm], new FactorContent(), vars.contains, targetFor) { variable =>
-      val otherVars = vars.filterNot(_ == variable)
-      val otherN2Fs = Msgs(otherVars map n2fs)
-      val maxMarginalizer = pot.maxMarginalizerImpl(otherVars, obsVarsInPot)(obsInPot, otherN2Fs)
-      new EdgeContent(maxMarginalizer, maxMarginalizer.outputMsgs(0), n2fs(variable))
+    if (synchronized) {
+      val potMaxMarginalizer = pot.maxMarginalizerImpl(wrt, obsVarsInPot)(obsInPot, Msgs(vars map n2fs))
+      fg.addFactor(pot.asInstanceOf[DoubleTerm], new FactorContent(potMaxMarginalizer), vars.contains, targetFor) { variable =>
+        val outputMsg = potMaxMarginalizer.outputMsgs(vars.indexOf(variable))
+        new EdgeContent(null, outputMsg, n2fs(variable))
+      }
+    } else {
+      fg.addFactor(pot.asInstanceOf[DoubleTerm], new FactorContent(null), vars.contains, targetFor) { variable =>
+        val otherVars = vars.filterNot(_ == variable)
+        val otherN2Fs = Msgs(otherVars map n2fs)
+        val maxMarginalizer = pot.maxMarginalizerImpl(otherVars, obsVarsInPot)(obsInPot, otherN2Fs)
+        new EdgeContent(maxMarginalizer, maxMarginalizer.outputMsgs(0), n2fs(variable))
+      }
     }
   }
 
@@ -139,13 +152,32 @@ class MaxProductBP(val objRaw: DoubleTerm,
 
   def updateF2N(edge: fg.Edge)(implicit execution: Execution): Unit = {
     edge.content.maxMarginalizer.maxMarginals()
+    edge.node.content.f2nChanged = true
+  }
+
+  def updateFactor(factor: fg.Factor)(implicit execution: Execution): Unit = {
+    for(e <- factor.edges) {
+      if(e.node.content.f2nChanged) {
+        updateNodeBelief(e.node)
+        e.content.n2f := e.node.content.belief - e.content.f2n
+        factor.content.n2fChanged = true
+      }
+    }
+    if(factor.content.n2fChanged) {
+      factor.content.update()
+      assert(factor.content.maxMarginalizer.outputMsgs.head == factor.edges.head.content.f2n)
+      for (e <- factor.edges)
+        e.node.content.f2nChanged = true
+    }
   }
 
   def updateNodeBelief(node: fg.Node): Unit = {
+    if (!node.content.f2nChanged) return
     node.content.belief := 0.0
     for (e <- node.edges) {
       node.content.belief += e.content.f2n
     }
+    node.content.f2nChanged = false
   }
 
   def integrateAtomIntoResult(node:fg.Node): Unit = {
@@ -165,10 +197,16 @@ class MaxProductBP(val objRaw: DoubleTerm,
 
     //the actual message passing
     for (i <- 0 until iterations) {
-      for (e <- fg.activeEdges) {
-        updateN2Fs(e)
-        updateF2N(e)
-      }
+      if (synchronized)
+        for (f <- fg.activeFactors) {
+          assert(f.content.maxMarginalizer.outputMsgs.head == f.edges.head.content.f2n)
+          updateFactor(f)
+        }
+      else
+        for (e <- fg.activeEdges) {
+          updateN2Fs(e)
+          updateF2N(e)
+        }
     }
 
     //update beliefs on nodes
