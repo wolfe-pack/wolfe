@@ -6,7 +6,7 @@ import scala.collection.mutable
  * Each evaluator
  * @author riedel
  */
-class Memoized[D <: Dom, T <: Term[D]](val term:T) extends Term[D] {
+class Memoized[D <: Dom, T <: Term[D]](val term:T) extends Term[D] with NAry {
   val domain:term.domain.type = term.domain
   def vars = term.vars
 
@@ -15,6 +15,15 @@ class Memoized[D <: Dom, T <: Term[D]](val term:T) extends Term[D] {
   private val uniqueDiffs = new mutable.HashMap[Seq[Var[Dom]],Differentiator]()
   private var currentExecution: Execution = null
   private val inputs2ValueInCurrentExecution = new mutable.HashMap[Any,CurrentSettingForInput]
+
+
+  type ArgumentType = T
+
+
+  def arguments = mutable.IndexedSeq(term)
+
+
+  def copy(args: IndexedSeq[ArgumentType]) = new Memoized[D,T](args(0))
 
   class CurrentSettingForInput(val inputValue:Any) {
 

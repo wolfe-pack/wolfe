@@ -89,7 +89,7 @@ class TransformerSpecs extends WolfeSpec {
   }
 
   "A precalculator" should {
-    "precalculate terms inside memoized terms" ignore {
+    "precalculate terms inside memoized terms" in {
       implicit val rand = ml.wolfe.util.Math.random
       val x = Doubles.Var
       val t = mem(x * 4.0)

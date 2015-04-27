@@ -18,6 +18,9 @@ class AllSettings[T](val domains: IndexedSeq[Dom], toVaryCreator: => Settings)(f
   // .(for (d <- domains) yield d.dimensions.discDims).toArray
   val atomsLength = dims.length
 
+
+  override def toString() = s"AllSetings($domains)"
+
   override val size = (dims map (_.size)).product
 
   def loopSettings(proc:Settings => Unit): Unit = {

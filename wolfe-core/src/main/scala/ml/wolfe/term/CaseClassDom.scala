@@ -121,6 +121,13 @@ object CaseClassDom {
         val termConstructorArgs = argNames.map(n => q"val ${prefixName("_",n)}:$self.$n.Term")
         val termConstructorDefs = argNames.map(n => q"val $n:$self.$n.Term = ${prefixName("_",n)}")
 
+        def termCastedArgs(args:Tree) = argNames.zipWithIndex.map {
+          case (n,i) =>
+            val indexConst = Constant(i)
+            q"$args($indexConst).asInstanceOf[$self.$n.Term]"
+        }
+        val castArgs = termCastedArgs(q"args")
+
         val staticVarArgs = withOffsets(q"ml.wolfe.term.Offsets.zero") {
           case (name, off) =>
             val nameString = name.decodedName.toString
@@ -226,16 +233,17 @@ object CaseClassDom {
 
             def Const(_value: Value) = new DomTermImpl {
               ..$constArgs
+              def copy(args:IndexedSeq[ArgumentType]) = Term(..$castArgs)
             }
 
-            def Term(..$termConstructorArgs):Term = new DomTermImpl {
+            def Term(..$termConstructorArgs):DomTermImpl = new DomTermImpl {
               ..$termConstructorDefs
+              def copy(args:IndexedSeq[ArgumentType]) = Term(..$castArgs)
             }
 
             trait DomTermImpl extends DomTerm with super.DomTermImpl { _term =>
               type ArgumentType = ml.wolfe.term.Term[Dom]
               lazy val arguments:IndexedSeq[ml.wolfe.term.Term[Dom]] = IndexedSeq(..$composedArgs)
-              def copy(args:IndexedSeq[ArgumentType]) = ???
             }
 
             trait DomTerm extends super.DomTerm  {

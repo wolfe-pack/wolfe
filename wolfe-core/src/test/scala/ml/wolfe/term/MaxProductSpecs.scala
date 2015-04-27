@@ -14,7 +14,7 @@ class MaxProductSpecs extends WolfeSpec {
   import Argmaxer._
 
   "A MaxProduct algorithm" should {
-    "optimize single factor objective" in {
+    "optimize single factor objective" ignore {
       val vars = Seq(Bools.Variable("y0"), Bools.Variable("y1"))
 
       val obj = I(vars(0) <-> ! vars(1)) //1.1 * I(vars(0)) + 1.1 * I(vars(1))

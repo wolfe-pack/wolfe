@@ -146,6 +146,16 @@ class CaseClassDomSpecs extends WolfeSpec {
       (x.prob | x <<  World(true, 0.3)).eval() should be (0.3)
     }
 
+
+    "Create a copy method of case class terms" in {
+      val Worlds = World.Values(Bools, Doubles)
+      val b = Bools.Var
+      val d = Doubles.Var
+      val term = Worlds.Term(b,d)
+      val copied = term.copy(IndexedSeq(Bools.Const(true),d))
+      copied.eval(d := 0.5) should be (World(true,0.5))
+    }
+
     "create different indices for the same values when used with object semantics" in {
       val Worlds = World.Objects(Bools,Doubles)
       val s1 = Worlds.toSetting(World(true, 0.5))
