@@ -1,5 +1,6 @@
 package ml.wolfe.model
 
+import com.typesafe.scalalogging.slf4j.LazyLogging
 import ml.wolfe._
 import ml.wolfe.term.TermImplicits._
 import ml.wolfe.term._
@@ -85,12 +86,13 @@ trait MatrixFactorization {
   def predict(row: Int, col: Int) = probFun(Cell(row, col))
 }
 
-object MatrixFactorization {
-  def train(data: Seq[(Int, Int)], kParam: Int = 5, alphaParam: Double = 0.1, epochsParam: Int = 100): MatrixFactorization = {
+object MatrixFactorization extends LazyLogging {
+  def train(data: Seq[(Int, Int)], kParam: Int = 5, alphaParam: Double = 0.1, epochsParam: Int = 100, lambdaParam: Double = 0.0): MatrixFactorization = {
     val mf = new MatrixFactorization {
       def k: Int = kParam
       def epochs: Int = epochsParam
       def alpha: Double = alphaParam
+      override def lambda: DoubleTerm = -lambdaParam
       lazy val trainingData: Seq[Cell] = data.map(t => Cell(t._1, t._2))
       def numRows: Int = data.maxBy(_._1)._1 + 1
       def numCols: Int = data.maxBy(_._2)._2 + 1
@@ -99,7 +101,7 @@ object MatrixFactorization {
         def inner(pos: Cell, attempts: Int): Cell = {
           val sample = Cell(rand.nextInt(numRows), pos.col)
           if (attempts == 0) {
-            System.err.println("WARNING: Couldn't sample a negative cell for " + pos)
+            logger.warn("Couldn't sample a negative cell for " + pos)
             sample
           } else if (trainingData.contains(sample)) {
             inner(pos, attempts - 1)
@@ -110,26 +112,5 @@ object MatrixFactorization {
     }
     mf.train()
     mf
-  }
-}
-
-object MatrixFactorizationExample {
-  def main(args: Array[String]) {
-    val data = Seq(
-      0 -> 0, 0 -> 1,
-      1 -> 1, 1 -> 2,
-      2 -> 2
-    )
-    val mf = MatrixFactorization.train(data, kParam = 10, epochsParam = 200)
-    print(" " * 5)
-    (0 until mf.numCols).foreach(col => print("%4d ".format(col)))
-    println()
-    (0 until mf.numRows).foreach(row => {
-      print("%4d ".format(row))
-      (0 until mf.numCols).foreach(col => {
-        print("%1.2f ".format(mf.predict(row, col)))
-      })
-      println()
-    })
   }
 }
