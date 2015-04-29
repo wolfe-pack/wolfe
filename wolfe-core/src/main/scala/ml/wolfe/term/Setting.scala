@@ -1,10 +1,9 @@
 package ml.wolfe.term
 
-import java.lang.System._
 import java.util
 
 import cc.factorie.la._
-import ml.wolfe.{MoreArrayOps, Mat, Vect}
+import ml.wolfe.{Mat, MoreArrayOps, Vect}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -622,8 +621,8 @@ class BufferChangeRecorder[T](val buffer: Buffer[T], initAllChanges: Boolean = t
 
   buffer.listeners += this
 
-  private val changedIndices = new mutable.HashSet[Int]
-  private val resetIndices = new mutable.HashSet[Int]
+  private var changedIndices = new mutable.HashSet[Int]
+  private var resetIndices = new mutable.HashSet[Int]
 
 
   if (initAllChanges) allChanged()
@@ -650,8 +649,10 @@ class BufferChangeRecorder[T](val buffer: Buffer[T], initAllChanges: Boolean = t
   }
 
   def forget(): Unit = {
-    changedIndices.clear()
-    resetIndices.clear()
+    changedIndices = new mutable.HashSet[Int]
+    resetIndices = new mutable.HashSet[Int]
+    //changedIndices.clear() todo: this was slow because clearing the hashmap only meant setting entries to null.
+    //resetIndices.clear()
   }
 
   def addIfChanged(tgt: Buffer[T]): Unit = {

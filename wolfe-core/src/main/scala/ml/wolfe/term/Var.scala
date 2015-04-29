@@ -30,6 +30,7 @@ trait Var[+D <: Dom] extends Term[D] {
       def backward()(implicit execution: Execution): Unit = {
         if (isWrt) {
           //we always copy the discrete inputs to the discrete part of the gradient
+          //logger.info(errorChanges.vect.changes.size.toString)
           input(0).disc.shallowCopyTo(gradientAccumulator(0).disc, 0, 0, input(0).disc.length)
           errorChanges.addIfChanged(gradientAccumulator(0))
           errorChanges.forget()

@@ -1,6 +1,7 @@
 package ml.wolfe.term
 
 import cc.factorie.la.{SparseBinaryTensor1, SparseIndexedTensor1, DenseTensor1}
+import com.typesafe.scalalogging.slf4j.LazyLogging
 import ml.wolfe.term.TermImplicits.Assignment
 import ml.wolfe.util.Math._
 
@@ -129,7 +130,7 @@ trait Term[+D <: Dom] extends TermHelper[D]  {
  * Provides a range of convenience methods to access Term functionality in more type safe ways.
  * @tparam D
  */
-trait TermHelper[+D <: Dom] {
+trait TermHelper[+D <: Dom] extends LazyLogging {
   this: Term[D] =>
 
   def evaluator() = new ClientEvaluator
