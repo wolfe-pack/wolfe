@@ -13,6 +13,7 @@ import ml.wolfe.util.Math._
 trait MatrixFactorization {
   //dimensions of the matrix
   def numRows: Int
+
   def numCols: Int
 
   //fixed rank for factorization
@@ -43,12 +44,12 @@ trait MatrixFactorization {
 
   //a sequence of positive training cells
   def trainingData: Seq[Cell]
-  
+
   lazy val trainingDataTerm = trainingData.toConst
 
   //a user-defined function that samples a negative cell based on a positive one
   def sampleNegCell(pos: Cell): Cell
-  
+
   private def sampleNegCellTerm(pos: Cells.Term): Cells.Term = pos.map(p => sampleNegCell(p))
 
   //where learned parameters will be stored
@@ -58,7 +59,7 @@ trait MatrixFactorization {
   def score(theta: Thetas.Term)(cell: Cells.Term): DoubleTerm = theta.rows(cell.row) dot theta.cols(cell.col)
 
   def regularize(theta: Thetas.Term)(pos: Cells.Term, neg: Cells.Term): DoubleTerm =
-    0.0 // sum(Seq(theta.cols(pos.col), theta.rows(pos.row), theta.rows(neg.row))) { v => v.l2() * lambda }
+    sum(Seq(theta.cols(pos.col), theta.rows(pos.row), theta.rows(neg.row))) { v => v.l2() * lambda }
 
   //training loss, stochastic term based on sampling a positive cell, and then a negative based on it.
   def loss(t: Thetas.Term): DoubleTerm = {
@@ -67,8 +68,7 @@ trait MatrixFactorization {
     //based on the memoized positive cell, we sample a negative cell which needs to be memoized because it will reappear several times
     val neg = mem(sampleNegCellTerm(pos))
     //the loss based on positive and negative cell
-    log(sigm(score(t)(pos))) +
-      log(sigm(-score(t)(neg))) // + regularize(t)(pos, neg)
+    log(sigm(score(t)(pos))) + log(sigm(-score(t)(neg))) + regularize(t)(pos, neg)
   }
 
   implicit val rand = random
@@ -91,12 +91,19 @@ object MatrixFactorization extends LazyLogging {
   def train(data: Seq[(Int, Int)], kParam: Int = 5, alphaParam: Double = 0.1, epochsParam: Int = 100, lambdaParam: Double = 0.0): MatrixFactorization = {
     val mf = new MatrixFactorization {
       def k: Int = kParam
+
       def epochs: Int = epochsParam
+
       def alpha: Double = alphaParam
+
       override def lambda: DoubleTerm = -lambdaParam
+
       lazy val trainingData: Seq[Cell] = data.map(t => Cell(t._1, t._2))
+
       def numRows: Int = data.maxBy(_._1)._1 + 1
+
       def numCols: Int = data.maxBy(_._2)._2 + 1
+
       //warning: this is slow!
       def sampleNegCell(pos: Cell): Cell = {
         def inner(pos: Cell, attempts: Int): Cell = {
