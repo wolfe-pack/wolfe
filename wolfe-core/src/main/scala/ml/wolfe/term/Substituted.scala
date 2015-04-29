@@ -28,7 +28,7 @@ case class Substituted[D <: Dom, V <: Dom](term:Term[D],variable:Var[V],value:Te
 
     def eval()(implicit execution: Execution) = {
       valueEval.eval()
-      innerInput(indexOfVar) := valueEval.output
+      innerInput(indexOfVar) shallowAssign valueEval.output
       innerEval.eval()
     }
 

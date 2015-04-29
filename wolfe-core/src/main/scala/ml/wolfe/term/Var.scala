@@ -36,8 +36,8 @@ trait Var[+D <: Dom] extends Term[D] {
         }
       }
 
-      override def toString = varName
     }
+  override def toString = varName
 
 }
 

@@ -240,7 +240,7 @@ case class VarSeqApply[+E <: Dom, S <: Term[VarSeqDom[E]], I <: IntTerm](seq: S,
     def eval()(implicit execution: Execution) = {
       val index = input(1).disc(0)
       val offset = (seq.domain.elementDom.lengths * index) + Offsets(discOff = 1)
-      output :=(input(0), offset, seq.domain.elementDom.lengths)
+      output deepAssign (input(0), offset, seq.domain.elementDom.lengths)
     }
 
   }
@@ -253,7 +253,7 @@ case class VarSeqApply[+E <: Dom, S <: Term[VarSeqDom[E]], I <: IntTerm](seq: S,
         val length = argOutputs(0).disc(0)
         val index = argOutputs(1).disc(0)
         val offset = seq.domain.elementDom.lengths * index + Offsets(discOff = 1)
-        error.shallowCopyTo(argErrors(0), Offsets.zero, offset, seq.domain.elementDom.lengths)
+        error deepCopyTo(argErrors(0), Offsets.zero, offset, seq.domain.elementDom.lengths)
       }
     }
 
@@ -282,7 +282,7 @@ case class VarSeqSlice[+E <: Dom, S <: Term[VarSeqDom[E]], D <: VarSeqDom[E]](se
       val to = input(2).disc(0)
       val offset = (seq.domain.elementDom.lengths * from) + Offsets(discOff = 1)
       val length = seq.domain.elementDom.lengths * (to - from)
-      output :=(input(0), offset, length, tgtOffsets)
+      output shallowAssign(input(0), offset, length, tgtOffsets)
       output.disc(0) = to - from
     }
   }
@@ -309,8 +309,8 @@ case class VarSeqAppend[+E <: Dom, S <: Term[VarSeqDom[E]], D <: VarSeqDom[E]](s
 
     def eval()(implicit execution: Execution) = {
       val length = input(0).disc(0)
-      output :=(input(0), srcOffsets, elem.domain.lengths * length, tgtOffsets)
-      output :=(input(1), Offsets.zero, elem.domain.lengths, tgtOffsets + elem.domain.lengths * length)
+      output shallowAssign(input(0), srcOffsets, elem.domain.lengths * length, tgtOffsets)
+      output shallowAssign(input(1), Offsets.zero, elem.domain.lengths, tgtOffsets + elem.domain.lengths * length)
       output.disc(0) = length + 1
     }
   }

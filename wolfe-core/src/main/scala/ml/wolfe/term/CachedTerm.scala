@@ -29,7 +29,7 @@ case class CachedTerm[D <: Dom, T <: Term[D]](keys:AnyTerm*)(val term:T) extends
       val cached = inputs2Value.getOrElseUpdate(indices, {
         innerEval.eval()
         val result = domain.createSetting()
-        result := innerEval.output
+        result shallowAssign innerEval.output
         result
       })
       cached.shallowCopy(output)

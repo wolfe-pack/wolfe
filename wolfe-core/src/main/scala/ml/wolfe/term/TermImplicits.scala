@@ -283,6 +283,10 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
 
         def isStatic = false
 
+        def copy(args: IndexedSeq[ArgumentType]) = {
+          val arg = new RichTerm(args(0))
+          arg map fun.asInstanceOf[arg.innerTerm.domain.Value => B]
+        }
       }
       targetDom.own(result)
     }

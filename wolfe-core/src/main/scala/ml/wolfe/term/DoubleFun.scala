@@ -5,7 +5,7 @@ import ml.wolfe.util.Math._
 /**
  * @author riedel
  */
-class DoubleFun[T <: DoubleTerm](val arg: T, fun: Double => Double, deriv: Double => Double) extends ComposedDoubleTerm {
+class DoubleFun[T <: DoubleTerm](val arg: T, fun: Double => Double, deriv: Double => Double, val name:String) extends ComposedDoubleTerm {
   self =>
 
   type ArgumentType = T
@@ -13,7 +13,7 @@ class DoubleFun[T <: DoubleTerm](val arg: T, fun: Double => Double, deriv: Doubl
   val arguments = IndexedSeq(arg)
 
 
-  def copy(args: IndexedSeq[ArgumentType]) = new DoubleFun[T](args(0), fun, deriv)
+  def copy(args: IndexedSeq[ArgumentType]) = new DoubleFun[T](args(0), fun, deriv, name)
 
   override def composer(args: Settings) = new Composer(args) {
     def eval()(implicit execution: Execution) = {
@@ -27,6 +27,8 @@ class DoubleFun[T <: DoubleTerm](val arg: T, fun: Double => Double, deriv: Doubl
         argErrors(0).cont(0) = deriv(argOutputs(0).cont(0)) * error.cont(0)
       }
     }
+
+  override def toString = s"$name($arg)"
 }
 
 /**
@@ -59,15 +61,15 @@ class DoubleBinaryFun[T <: DoubleTerm](val arg1: T, arg2: T, fun: (Double, Doubl
 }
 
 
-class Sigmoid[T <: DoubleTerm](override val arg: T) extends DoubleFun(arg, sigmoid, sigmoidDeriv)
+class Sigmoid[T <: DoubleTerm](override val arg: T) extends DoubleFun(arg, sigmoid, sigmoidDeriv, "sigm")
 
-class Sqrt[T <: DoubleTerm](override val arg: T) extends DoubleFun(arg, math.sqrt, x => 0.5 / math.sqrt(x))
+class Sqrt[T <: DoubleTerm](override val arg: T) extends DoubleFun(arg, math.sqrt, x => 0.5 / math.sqrt(x),"sqrt")
 
-class Rectifier[T <: DoubleTerm](arg: T) extends DoubleFun(arg, x => if (x > 0.0) x else 0.0, x => if (x > 0.0) 1.0 else 0.0)
+class Rectifier[T <: DoubleTerm](arg: T) extends DoubleFun(arg, x => if (x > 0.0) x else 0.0, x => if (x > 0.0) 1.0 else 0.0, "rect")
 
-class Log[T <: DoubleTerm](override val arg: T) extends DoubleFun(arg, math.log, logDeriv)
+class Log[T <: DoubleTerm](override val arg: T) extends DoubleFun(arg, math.log, logDeriv, "log")
 
-class Tanh[T <: DoubleTerm](override val arg: T) extends DoubleFun(arg, tanh, tanhDeriv)
+class Tanh[T <: DoubleTerm](override val arg: T) extends DoubleFun(arg, tanh, tanhDeriv, "tanh")
 
 class Min2[T <: DoubleTerm](arg1: T, arg2: T) extends DoubleBinaryFun(arg1, arg2,
   (x1: Double, x2: Double) => math.min(x1, x2),

@@ -38,7 +38,7 @@ case class FirstOrderSum[D <: Dom, Body <: DoubleTerm, R <: Term[VarSeqDom[D]]](
       var offset = Offsets(discOff = 1)
       for (i <- 0 until length) {
         //copy element into body input at variable index
-        if (indexOfVar != -1) varInput :=(rangeEval.output, offset, elemLength)
+        if (indexOfVar != -1) varInput shallowAssign(rangeEval.output, offset, elemLength)
         //evaluate body
         //bodyEval.eval()(execution)
         //add to result

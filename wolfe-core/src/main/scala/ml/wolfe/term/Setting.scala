@@ -98,11 +98,6 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
       for (i <- 0 until length) array(i) := scale
     }
 
-    override def :=(that: Buffer[Vect]): Unit = {
-      broadcastAllChanged()
-      for (i <- 0 until length) this(i) = that(i)
-    }
-
     def +=(that: Buffer[Vect]): Unit = {
       broadcastAllChanged()
       for (i <- 0 until length) add(i, that(i))
@@ -165,7 +160,7 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
           this(index) = value.copy
         } else {
           (this(index), value) match {
-            case (_,null) =>
+            case (_, null) =>
             case (current: SparseIndexedTensor, arg: DenseTensor1) =>
               this(index) = arg.copy
               this(index) += current
@@ -207,11 +202,6 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
       broadcastChange(index)
     }
 
-    override def :=(that: Buffer[Mat]): Unit = {
-      for (i <- 0 until length) this(i) = that(i)
-    }
-
-
     override def update(index: Int, value: Mat): Unit = {
       if (this(index) == null) {
         super.update(index, value.copy)
@@ -252,7 +242,6 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
     cont.shallowCopyTo(target.cont, 0, targetOffsets.contOff * targetMultiplier, cont.length)
     vect.shallowCopyTo(target.vect, 0, targetOffsets.vectOff * targetMultiplier, vect.length)
     mats.shallowCopyTo(target.mats, 0, targetOffsets.matsOff * targetMultiplier, mats.length)
-
   }
 
   def shallowCopyTo(target: Setting, srcOffsets: Offsets, targetOffsets: Offsets, length: Offsets): Unit = {
@@ -260,7 +249,13 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
     cont.shallowCopyTo(target.cont, srcOffsets.contOff, targetOffsets.contOff, length.contOff)
     vect.shallowCopyTo(target.vect, srcOffsets.vectOff, targetOffsets.vectOff, length.vectOff)
     mats.shallowCopyTo(target.mats, srcOffsets.matsOff, targetOffsets.matsOff, length.matsOff)
+  }
 
+  def deepCopyTo(target: Setting, srcOffsets: Offsets, targetOffsets: Offsets, length: Offsets): Unit = {
+    disc.deepCopyTo(target.disc, srcOffsets.discOff, targetOffsets.discOff, length.discOff)
+    cont.deepCopyTo(target.cont, srcOffsets.contOff, targetOffsets.contOff, length.contOff)
+    vect.deepCopyTo(target.vect, srcOffsets.vectOff, targetOffsets.vectOff, length.vectOff)
+    mats.deepCopyTo(target.mats, srcOffsets.matsOff, targetOffsets.matsOff, length.matsOff)
   }
 
   def shallowCopyTo(target: Setting, srcElementLength: Offsets, srcMultiplier: Int, tgtElementLength: Offsets, tgtMultiplier: Int,
@@ -283,7 +278,7 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
   }
 
   def +=(that: Setting): Unit = {
-    disc := that.disc //todo: this is odd but required to pass on discrete values in gradients
+    disc shallowAssign that.disc //todo: this is odd but required to pass on discrete values in gradients
     cont += that.cont
     vect += that.vect
     mats += that.mats
@@ -296,11 +291,19 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
     mats := value
   }
 
-  def :=(that: Setting): Unit = {
-    disc := that.disc
-    cont := that.cont
-    vect := that.vect
-    mats := that.mats
+  def deepAssign(that: Setting): Unit = {
+    disc deepAssign that.disc
+    cont deepAssign that.cont
+    vect deepAssign that.vect
+    mats deepAssign that.mats
+  }
+
+
+  def shallowAssign(that: Setting): Unit = {
+    disc shallowAssign that.disc
+    cont shallowAssign that.cont
+    vect shallowAssign that.vect
+    mats shallowAssign that.mats
   }
 
   def shallowCopy(to: Setting) = {
@@ -310,11 +313,18 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
     mats.shallowCopyTo(to.mats, 0, 0, mats.length)
   }
 
-  def :=(src: Setting, srcOffsets: Offsets, lengths: Offsets, tgtOffsets: Offsets = Offsets.zero): Unit = {
-    disc :=(src.disc, srcOffsets.discOff, lengths.discOff, tgtOffsets.discOff)
-    cont :=(src.cont, srcOffsets.contOff, lengths.contOff, tgtOffsets.contOff)
-    vect :=(src.vect, srcOffsets.vectOff, lengths.vectOff, tgtOffsets.vectOff)
-    mats :=(src.mats, srcOffsets.matsOff, lengths.matsOff, tgtOffsets.matsOff)
+  def shallowAssign(src: Setting, srcOffsets: Offsets, lengths: Offsets, tgtOffsets: Offsets = Offsets.zero): Unit = {
+    disc shallowAssign(src.disc, srcOffsets.discOff, lengths.discOff, tgtOffsets.discOff)
+    cont shallowAssign(src.cont, srcOffsets.contOff, lengths.contOff, tgtOffsets.contOff)
+    vect shallowAssign(src.vect, srcOffsets.vectOff, lengths.vectOff, tgtOffsets.vectOff)
+    mats shallowAssign(src.mats, srcOffsets.matsOff, lengths.matsOff, tgtOffsets.matsOff)
+  }
+
+  def deepAssign(src: Setting, srcOffsets: Offsets, lengths: Offsets, tgtOffsets: Offsets = Offsets.zero): Unit = {
+    disc deepAssign(src.disc, srcOffsets.discOff, lengths.discOff, tgtOffsets.discOff)
+    cont deepAssign(src.cont, srcOffsets.contOff, lengths.contOff, tgtOffsets.contOff)
+    vect deepAssign(src.vect, srcOffsets.vectOff, lengths.vectOff, tgtOffsets.vectOff)
+    mats deepAssign(src.mats, srcOffsets.matsOff, lengths.matsOff, tgtOffsets.matsOff)
   }
 
   def ensureSparsity(): Unit = {
@@ -416,7 +426,7 @@ final class Settings(val length: Int) extends IndexedSeq[Setting] {
 
   def :=(that: Settings): Unit = {
     for (i <- 0 until length) {
-      this(i) := that(i)
+      this(i) shallowAssign that(i)
     }
   }
 
@@ -550,12 +560,12 @@ final class VariableMapping(val srcIndex: Array[Int], val tgtIndex: Array[Int]) 
   lazy val pairs = srcIndex zip tgtIndex
 
   def copyForwardDeep(src: Array[Setting], tgt: Array[Setting]) = {
-    for (i <- 0 until srcIndex.length) tgt(tgtIndex(i)) := src(srcIndex(i))
+    for (i <- 0 until srcIndex.length) tgt(tgtIndex(i)) shallowAssign src(srcIndex(i))
   }
 
   def copyForwardDeep(src: Settings, tgt: Settings) = {
     for (i <- 0 until srcIndex.length)
-      tgt(tgtIndex(i)) := src(srcIndex(i))
+      tgt(tgtIndex(i)) shallowAssign src(srcIndex(i))
   }
 
 
@@ -569,11 +579,11 @@ final class VariableMapping(val srcIndex: Array[Int], val tgtIndex: Array[Int]) 
 
 
   def copyBackwardDeep(src: Array[Setting], tgt: Array[Setting]) = {
-    for (i <- 0 until srcIndex.length) src(srcIndex(i)) := tgt(tgtIndex(i))
+    for (i <- 0 until srcIndex.length) src(srcIndex(i)) shallowAssign tgt(tgtIndex(i))
   }
 
   def copyBackwardDeep(src: Settings, tgt: Settings) = {
-    for (i <- 0 until srcIndex.length) src(srcIndex(i)) := tgt(tgtIndex(i))
+    for (i <- 0 until srcIndex.length) src(srcIndex(i)) shallowAssign tgt(tgtIndex(i))
   }
 
   def addBackward(src: Settings, tgt: Settings) = {
@@ -599,7 +609,7 @@ final class VariableMapping(val srcIndex: Array[Int], val tgtIndex: Array[Int]) 
 
 trait BufferListener {
 
-  def reset(index:Int)
+  def reset(index: Int)
 
   def changed(index: Int)
 
@@ -619,6 +629,7 @@ class BufferChangeRecorder[T](val buffer: Buffer[T], initAllChanges: Boolean = t
   if (initAllChanges) allChanged()
 
   def changes = changedIndices
+
   def resets = resetIndices
 
   def changed(index: Int) = {
@@ -665,7 +676,7 @@ class SettingChangeRecorder(val setting: Setting, initAllChanges: Boolean = true
     disc.changes.toSet foreach setting.disc.resetToZero //using a toSet to make sure we work with a copy
     cont.changes.toSet foreach setting.cont.resetToZero
     vect.changes.toSet foreach setting.vect.resetToZero
-    mats.changes.toSet foreach setting.mats.resetToZero 
+    mats.changes.toSet foreach setting.mats.resetToZero
   }
 
   def forget(): Unit = {
@@ -686,7 +697,13 @@ class SettingChangeRecorder(val setting: Setting, initAllChanges: Boolean = true
     cont.buffer.shallowCopyTo(target.cont, srcOffsets.contOff, targetOffsets.contOff, lengths.contOff, cont.changes)
     vect.buffer.shallowCopyTo(target.vect, srcOffsets.vectOff, targetOffsets.vectOff, lengths.vectOff, vect.changes)
     mats.buffer.shallowCopyTo(target.mats, srcOffsets.matsOff, targetOffsets.matsOff, lengths.matsOff, mats.changes)
+  }
 
+  def deepCopyToIfChanged(target: Setting, srcOffsets: Offsets, targetOffsets: Offsets, lengths: Offsets): Unit = {
+    disc.buffer.deepCopyTo(target.disc, srcOffsets.discOff, targetOffsets.discOff, lengths.discOff, disc.changes)
+    cont.buffer.deepCopyTo(target.cont, srcOffsets.contOff, targetOffsets.contOff, lengths.contOff, cont.changes)
+    vect.buffer.deepCopyTo(target.vect, srcOffsets.vectOff, targetOffsets.vectOff, lengths.vectOff, vect.changes)
+    mats.buffer.deepCopyTo(target.mats, srcOffsets.matsOff, targetOffsets.matsOff, lengths.matsOff, mats.changes)
   }
 
 
@@ -741,22 +758,40 @@ abstract class Buffer[T: ClassTag](val setting: Setting) {
     tgt.broadcastChanges(Range(tgtPos, tgtPos + length))
   }
 
+  def deepCopyTo(tgt: Buffer[T], srcPos: Int, tgtPos: Int, length: Int): Unit = {
+    for (i <- 0 until length) tgt(tgtPos + i) = this(srcPos + i)
+  }
+
   def shallowCopyTo(tgt: Buffer[T], srcPos: Int, tgtPos: Int, length: Int, filter: collection.Set[Int]): Unit = {
     val toCopy = filter filter (i => i >= srcPos && i < srcPos + length)
     toCopy foreach (i => tgt.array(i - srcPos + tgtPos) = array(i))
     tgt.broadcastChanges(toCopy map (i => i - srcPos + tgtPos))
   }
 
+  def deepCopyTo(tgt: Buffer[T], srcPos: Int, tgtPos: Int, length: Int, filter: collection.Set[Int]): Unit = {
+    val toCopy = filter filter (i => i >= srcPos && i < srcPos + length)
+    toCopy foreach (i => tgt(i - srcPos + tgtPos) = this(i))
+  }
 
-  def :=(value: Buffer[T]): Unit = {
+
+  def shallowAssign(value: Buffer[T]): Unit = {
     System.arraycopy(value.array, 0, array, 0, length)
     broadcastAllChanged()
   }
 
-  def :=(src: Buffer[T], srcOffset: Int, srcLength: Int, tgtOffset: Int = 0): Unit = {
+  def deepAssign(value: Buffer[T]): Unit = {
+    for (i <- 0 until value.length) this(i) = value(i)
+  }
+
+  def shallowAssign(src: Buffer[T], srcOffset: Int, srcLength: Int, tgtOffset: Int = 0): Unit = {
     //todo: this can be implemented via shallowCopyTo, or vice versa
     System.arraycopy(src.array, srcOffset, array, tgtOffset, srcLength)
     broadcastAllChanged()
+  }
+
+  def deepAssign(src: Buffer[T], srcOffset: Int, srcLength: Int, tgtOffset: Int = 0): Unit = {
+    //todo: this can be implemented via shallowCopyTo, or vice versa
+    for (i <- 0 until srcLength) this(tgtOffset + i) = src(srcOffset + i)
   }
 
 

@@ -58,16 +58,17 @@ trait MatrixFactorization {
   def score(theta: Thetas.Term)(cell: Cells.Term): DoubleTerm = theta.rows(cell.row) dot theta.cols(cell.col)
 
   def regularize(theta: Thetas.Term)(pos: Cells.Term, neg: Cells.Term): DoubleTerm =
-    sum(Seq(theta.cols(pos.col), theta.rows(pos.row), theta.rows(neg.row))) { v => v.l2() * lambda }
+    0.0 // sum(Seq(theta.cols(pos.col), theta.rows(pos.row), theta.rows(neg.row))) { v => v.l2() * lambda }
 
   //training loss, stochastic term based on sampling a positive cell, and then a negative based on it.
   def loss(t: Thetas.Term): DoubleTerm = {
     //we sample a positive cell, and memoize the result
-    val pos = mem(trainingDataTerm.sampleShuffled)//.logged
+    val pos = mem(trainingDataTerm.sampleShuffled)
     //based on the memoized positive cell, we sample a negative cell which needs to be memoized because it will reappear several times
-    val neg = mem(sampleNegCellTerm(pos))//.logged
+    val neg = mem(sampleNegCellTerm(pos))
     //the loss based on positive and negative cell
-    log(sigm(score(t)(pos))) + log(sigm(-score(t)(neg))) + regularize(t)(pos, neg)
+    log(sigm(score(t)(pos))) +
+      log(sigm(-score(t)(neg))) // + regularize(t)(pos, neg)
   }
 
   implicit val rand = random

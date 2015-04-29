@@ -195,7 +195,7 @@ case class Field[D <: Dom, Value](product: TypedTerm[Value], domain: D, start: O
     val recorder = new SettingChangeRecorder(input(0))
 
     def eval()(implicit execution: Execution) = {
-      recorder.shallowCopyToIfChanged(output, start, Offsets.zero, domain.lengths)
+      recorder.deepCopyToIfChanged(output, start, Offsets.zero, domain.lengths)
       recorder.forget()
     }
   }
@@ -205,7 +205,7 @@ case class Field[D <: Dom, Value](product: TypedTerm[Value], domain: D, start: O
       val recorder = new SettingChangeRecorder(error)
 
       def localBackProp()(implicit execution: Execution) = {
-        recorder.shallowCopyToIfChanged(argErrors(0), Offsets.zero, start, domain.lengths)
+        recorder.deepCopyToIfChanged(argErrors(0), Offsets.zero, start, domain.lengths)
         recorder.forget()
       }
     }

@@ -8,7 +8,7 @@ import org.scalatest.{Matchers, WordSpec}
 class MatrixFactorizationSpec extends WordSpec with Matchers {
   val eps = 0.05
   "A matrix factorization model" should {
-    "optimize a log likelihood loss" ignore {
+    "recover a data matrix when using sufficient dimension k" in {
       val observed = Seq(0 -> 0, 0 -> 1, 1 -> 1, 2 -> 0)
       val unobserved = Seq(1 -> 0, 2 -> 1)
       val mf = MatrixFactorization.train(observed, kParam = 100, epochsParam = 100, lambdaParam = 0.0)

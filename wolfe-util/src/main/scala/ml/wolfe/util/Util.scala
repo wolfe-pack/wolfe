@@ -182,6 +182,8 @@ class ObjectId[T <: AnyRef](val value: T) {
     case o: ObjectId[_] => o.value eq value
     case _ => false
   }
+
+  override def toString = value.toString
 }
 
 /**

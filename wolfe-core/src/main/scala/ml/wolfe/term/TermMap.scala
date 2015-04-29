@@ -3,13 +3,18 @@ package ml.wolfe.term
 /**
  * @author riedel
  */
-trait TermMap[A <: Term[Dom], D <: Dom] extends Term[D] {
+trait TermMap[A <: Term[Dom], D <: Dom] extends Term[D] with NAry {
   val term:A
   val domain:D
   def f(arg:term.domain.Value):domain.Value
 
-  def vars = term.vars
 
+
+  type ArgumentType = A
+
+  def arguments = IndexedSeq(term)
+
+  def vars = term.vars
 
   override def evaluatorImpl(in: Settings) = new AbstractEvaluator(in) {
     val termEval = term.evaluatorImpl(in)
@@ -26,7 +31,7 @@ trait TermMap[A <: Term[Dom], D <: Dom] extends Term[D] {
     val output = domain.createSetting()
   }
 
-  def differentiatorOld(wrt: Seq[Var[Dom]]) = ???
+  override def toString = s"TermMap($term)"
 }
 
 trait TermFlatMap[A <: Term[Dom], D <: Dom] extends Term[D] {
@@ -51,7 +56,7 @@ trait TermFlatMap[A <: Term[Dom], D <: Dom] extends Term[D] {
         val mapped = f(value)
         val mappedEval = mapped.evaluatorImpl(input.linkedSettings(vars,mapped.vars))
         mappedEval.eval()
-        output := mappedEval.output
+        output shallowAssign mappedEval.output
       }
     }
     val output = domain.createSetting()

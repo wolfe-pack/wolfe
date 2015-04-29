@@ -77,7 +77,7 @@ case class VarSeqSum[D <: TypedDom[Double], T <: Term[VarSeqDom[D]]](length: Int
       def localBackProp()(implicit execution: Execution) = {
         val length = argOutputs(0).disc(0)
         for (i <- 0 until length) {
-          argErrors(i+1) := error
+          argErrors(i+1) shallowAssign error
         }
       }
 

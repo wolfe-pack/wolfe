@@ -32,7 +32,7 @@ class Memoized[D <: Dom, T <: Term[D]](val term:T) extends Term[D] with NAry {
 
     def updateIfNeeded(body: => Setting): Unit = {
       if (needsUpdate) {
-        output := body
+        output shallowAssign body
         needsUpdate = false
       }
     }
@@ -60,7 +60,7 @@ class Memoized[D <: Dom, T <: Term[D]](val term:T) extends Term[D] with NAry {
         uniqueEval.eval()
         uniqueEval.output
       }
-      cachedOut := outputSetting.output
+      cachedOut shallowAssign outputSetting.output
     }
 
     val output: Setting = cachedOut
@@ -88,7 +88,7 @@ class Memoized[D <: Dom, T <: Term[D]](val term:T) extends Term[D] with NAry {
           diff.forward()
           diff.output
         }
-        cachedOut := outputSetting.output
+        cachedOut shallowAssign outputSetting.output
       }
 
       def backward()(implicit execution: Execution) = {

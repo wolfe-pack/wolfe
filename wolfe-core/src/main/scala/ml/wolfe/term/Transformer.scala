@@ -65,7 +65,7 @@ object Transformer extends LazyLogging {
                   (map ++ m, args :+ t.asInstanceOf[n.ArgumentType])
               }
               val copied = n.copy(arguments)
-              (copied, mappings)
+              (copied, mappings + (termId -> copied))
             case t =>
               (t, mapping)
           }
@@ -97,21 +97,21 @@ object Transformer extends LazyLogging {
     }
   }
 
-  def clean(term: AnyTerm) = depthFirst(term) {
+  def clean(term: AnyTerm) = depthFirstAndReuse(term) {
     case o: OwnedTerm[_] =>
       o.self
-  }
+  }._1
 
   def flattenSums(term: AnyTerm) = {
     logger.info("Flattening sums")
-    depthFirst(term) {
+    depthFirstAndReuse(term) {
       case Sum(args) => Sum(args flatMap {
         case Sum(inner) =>
           inner
         case a =>
           IndexedSeq(a)
       })
-    }
+    }._1
   }
 
   def groundVariables(toGround: Seq[AnyVar])(term: AnyTerm) = depthFirst(term) {
