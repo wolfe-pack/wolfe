@@ -25,7 +25,7 @@ class AdaGradArgmaxer(val objRaw: DoubleTerm,
 
   val preprocess = optimizeTerm match {
     case true => Transformer.clean _ andThen Transformer.precalculate andThen Transformer.groundSums andThen Transformer.flattenSums
-    case false => Transformer.clean _ andThen Transformer.precalculate andThen Transformer.flattenSums // //andThen Transformer.clean _ andThen
+    case false => Transformer.precalculate _ andThen Transformer.clean andThen Transformer.flattenSums // //andThen Transformer.clean _ andThen
   }
   val obj = preprocess(objRaw)
 
