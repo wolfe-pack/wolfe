@@ -1,9 +1,9 @@
 package ml.wolfe.nlp.syntax
 
 import ml.wolfe.nlp.Token
-import ml.wolfe.nlp.io.{ConstituentTreeFactory, TreebankReaderOptions}
+import ml.wolfe.nlp.io.ConstituentTreeFactory
 
-import scala.collection.mutable.{ArrayBuffer, HashMap, Map => MMap}
+import scala.collection.mutable.HashMap // , Map => MMap}
 
 /**
  * Created by narad on 12/5/14.
@@ -82,8 +82,8 @@ case class ConstituentTree(node: ConstituentNode, children : List[ConstituentTre
     }
   }
 
-  def indexViaHash: MMap[(Int,Int), List[ConstituentSpan]] = {
-    val index = new HashMap[(Int,Int), List[ConstituentSpan]].withDefaultValue(List())
+  def indexViaHash: collection.mutable.Map[(Int,Int), List[ConstituentSpan]] = {
+    val index = new collection.mutable.HashMap[(Int,Int), List[ConstituentSpan]].withDefaultValue(List())
     var numLeaves = 0
     for (t <- leafFirstSearch) {
       t.node match {
@@ -123,7 +123,7 @@ case class ConstituentTree(node: ConstituentNode, children : List[ConstituentTre
 
   def searchUpFrom(tree: ConstituentTree): Iterator[ConstituentTree] = {
     parents.get(tree) match {
-      case Some(parent) =>  Iterator(parent) ++ searchUpFrom(parent)
+      case Some(parent) =>  Iterator.single(parent) ++ searchUpFrom(parent)
       case None => Iterator.empty
     }
   }
@@ -132,7 +132,9 @@ case class ConstituentTree(node: ConstituentNode, children : List[ConstituentTre
   def headwordOf(i: Int, j: Int): Option[String] = {
     if (i < 0 || j < 0) return None
     if (i > length || j > length) return None
-    spans((i,j)).collectFirst{ case x => x.headInfo.get.headWord }
+    if (spans((i,j)).isEmpty) return None
+    Some(spans((i,j)).head.headInfo.get.headWord)
+//    spans((i,j)).collectFirst{ case x => x.headInfo.get.headWord }
   }
 
   def headOf(i: Int, j: Int): Option[HeadInfo] = {
@@ -150,9 +152,9 @@ case class ConstituentTree(node: ConstituentNode, children : List[ConstituentTre
 
   def toDependencyTree: DependencyTree = {
     val arcs = (0 until length).map{ i =>
-//      val gc: NonterminalNode = depthFirstSearch.toArray.filter(n => n.width > 1 && n.covers(i)).map(_.node).collect { case nt: NonterminalNode => nt }.sortBy(_.width).head
-      val usearch = searchUpFrom(i).toArray
-      val gc = usearch.find(t => t.isNonterminal && t.node.asInstanceOf[NonterminalNode].headInfo.get.tokenIdx != i)
+      val gc = searchUpFrom(i).find { t =>
+        t.isNonterminal && t.node.asInstanceOf[NonterminalNode].headInfo.get.tokenIdx != i
+      }
       gc match {
         case Some(t) => Some(Arc(child = i, parent = t.node.asInstanceOf[NonterminalNode].headInfo.get.tokenIdx))
         case None => None
@@ -297,16 +299,16 @@ case class ConstituentTree(node: ConstituentNode, children : List[ConstituentTre
 
   def toTreebankString: String = {
     node match {
-      case x: NonterminalNode => "(%s %s)".format(x.label, children.map(_.toString()).mkString(" "))
-      case x: PreterminalNode => "(%s %s)".format(x.label, x.word)
+      case x: NonterminalNode => "(" + x.label + " " + children.map(_.toString()).mkString(" ") + ")"
+      case x: PreterminalNode => "(" + x.label + " " + x.word
       case _ => "empty"
     }
   }
 
   def toHeadedTreebankString: String = {
     node match {
-      case x: NonterminalNode => "(%s-%s %s)".format(x.label, x.headInfo.get.headWord, children.map(_.toHeadedTreebankString).mkString(" "))
-      case x: PreterminalNode => "(%s %s)".format(x.label, x.word)
+      case x: NonterminalNode => "(" + x.label + "-" + x.headInfo.get.headWord + " " + children.map(_.toString()).mkString(" ") + ")"
+      case x: PreterminalNode => "(" + x.label + " " + x.word
       case _ => "empty"
     }
   }
@@ -355,9 +357,9 @@ case class ConstituentTree(node: ConstituentNode, children : List[ConstituentTre
     spans((i,j)).exists(s => s.label == l)
   }
 
-  def toSpans: Iterable[ConstituentSpan] = {
-//    for (i <- 0 until length; j <- 1 to length; k <- 0 until spans(i)(j).size) yield spans(i)(j)(k)
-    (for (i <- 0 until length; j <- 1 to length if spans.contains((i,j))) yield spans((i,j))).flatten  //spans(i)(j)(k)
+  lazy val toSpans: Iterable[ConstituentSpan] = {
+//    (for (i <- 0 until length; j <- 1 to length if spans.contains((i,j))) yield spans((i,j))).flatten
+    spans.values.flatten
   }
 
   def toNonterminalSpans: Iterable[ConstituentSpan] = {
@@ -405,6 +407,9 @@ object ConstituentTree {
 
 
 /*
+
+//      val gc: NonterminalNode = depthFirstSearch.toArray.filter(n => n.width > 1 && n.covers(i)).map(_.node).collect { case nt: NonterminalNode => nt }.sortBy(_.width).head
+
   def governingConstituent(i: Int): ConstituentTree = {
     depthFirstSearch.toArray.filter(c => c.width > 1 && c.covers(i)).sortBy(_.width).head
   }

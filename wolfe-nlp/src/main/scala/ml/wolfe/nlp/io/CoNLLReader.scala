@@ -23,10 +23,6 @@ class CoNLLReader(filename: String, delim: String = "\t") extends Iterable[Sente
       val lines = s.split("\n")
       val cols = lines.head.split(delim)
       val numFields = cols.size
-      //      if (isNumber(cols(1)) && isNumber(cols(2))) {
-      //        // Identified as a file from the CoNLL 2011 Coreference Task
-      //        fromCoNLL2011(lines)
-      //      }
       if (numFields >= 12)
       // Identified as a file from the CoNLL SRL tasks of 2008/2009
         fromCoNLL2009(lines)
@@ -140,16 +136,15 @@ class CoNLL2011Reader(filename: String, delim: String = "\t") extends Iterable[D
       val pos = (0 until grid.size).map(grid(_)(4))
       val lemma = (0 until grid.size).map(grid(_)(6))
       val tokens = words.zip(pos).zipWithIndex.map { case (p, i) => Token(p._1, CharOffsets(i, i + 1), p._2, lemma = lemma(i))}
-      val csyntax = (0 until grid.size).map(grid(_)(5))
-      val ner = (0 until grid.size).map(i => fixNestedField(grid(i)(10)))
 
+      val csyntax = (0 until grid.size).map(grid(_)(5))
       val csyntaxCleaned = csyntax.mkString(" ").replaceAll("\\*", " * ").replaceAll("\\(", " ( ").replaceAll("\\)", " ) ").replaceAll(" +", " ")
       var tc = -1
       val csyntaxStr = csyntaxCleaned.map(c => if (c == '*') {tc += 1; "(" + pos(tc) + " " + words(tc) + ")"} else c.toString).mkString("")
-//      println("Cleaned syntax string: " + csyntaxStr)
       val ctree = ModifiedCollinsHeadFinder.annotate(ConstituentTreeFactory.stringToTree(csyntaxStr).get)
       assert(ctree != null, "Null constituent tree")
 
+      val ner = (0 until grid.size).map(i => fixNestedField(grid(i)(10)))
       val entities = readStackFormatEntities(ner.toList)
 
 
@@ -164,28 +159,29 @@ class CoNLL2011Reader(filename: String, delim: String = "\t") extends Iterable[D
       val frames = predicates.zip(args).map { case(p,r) => SemanticFrame(predicate = p, roles = r)}
 
 
-      val sense = (0 until grid.size).map(grid(_)(7))
-      //ctree.toDependencyTree
       Sentence(tokens, syntax = SyntaxAnnotation(tree = ctree, dependencies = ctree.toDependencyTree),
                        ie = IEAnnotation(entityMentions = entities, semanticFrames = frames),
                        speaker = Some(speaker))
     }.toIndexedSeq
 
 
-    val mentions = chunks.zipWithIndex.map { case(chunk, cidx) =>
-      val grid = chunk.split("\n").filter(!_.startsWith("#")).map(_.replaceAll(" +", "\t").split("\t"))
+    val mentions = chunks.zipWithIndex.map { case(c, cidx) =>
+      val grid = c.split("\n").filter(!_.startsWith("#")).map(_.replaceAll(" +", "\t").split("\t"))
       readStackFormatCoref(grid.map(_.last).toList, sidx = cidx)
-    }.flatten
+    }.flatten.toArray
 
-    val chunkFilename = chunk.split("\n").find(_.startsWith("#begin document")) //Option[String] = None
-    Document(source = chunks.mkString("\n"), filename = chunkFilename, sentences = sents, coref = CorefAnnotation(mentions = mentions.toSeq))
+    val chunkFilename = chunk.split("\n").find(_.startsWith("#begin document"))
+    Document(
+      source = chunks.mkString("\n"),
+      filename = chunkFilename,
+      sentences = sents,
+      coref = CorefAnnotation(mentions = mentions))
   }
 
-  //.map(s => if (!s.contains("*")) s.replaceFirst("\\)", "*)") else s)
   def fixNestedField(str: String): String = {
     if (!str.contains("*")) str.replaceFirst("\\)", "*)")
     else if (str.startsWith("(")) str.replaceAll("\\(", "*(").substring(1)
-    else str // str.replaceAll("\\(", " ( ").replaceAll("\\)", " ) ").replaceAll(" +", " ")
+    else str
   }
 
 
@@ -196,14 +192,12 @@ class CoNLL2011Reader(filename: String, delim: String = "\t") extends Iterable[D
   }
 
   def readStackFormatSRL(l: List[String]): Array[SemanticRole] = {
-//    println(l.mkString(", "))
     stackReader(l.toArray, startPattern="""\(([^\*]+)\*""".r, endPattern = """(\*)\)""".r, matchString = false).map{
       case(pidx, aidx, role) => SemanticRole(start = pidx, end = aidx+1, role = role)
     }
   }
 
   def readStackFormatCoref(l: List[String], sidx: Int): Array[CorefMention] = {
-//    println(l.mkString(", "))
     stackReader(l.toArray, startPattern="""\(([0-9]+)""".r, endPattern = """([0-9]+)\)""".r, matchString = true).map{
       case(start, end, cluster) => CorefMention(cluster.toInt, sentence = sidx, start = start, end = end+1, head = -1)
     }
@@ -228,13 +222,6 @@ class CoNLL2011Reader(filename: String, delim: String = "\t") extends Iterable[D
       found += ((s._1, e._1, s._2))
     }
     found.toArray
-  }
-
-  def recursiveStackReader(list: List[String], startPattern: Regex, endPattern: Regex): List[(Int, Int, String)] = {
-    if (list.head.matches(" ")) {
-
-    }
-    ???
   }
 }
 

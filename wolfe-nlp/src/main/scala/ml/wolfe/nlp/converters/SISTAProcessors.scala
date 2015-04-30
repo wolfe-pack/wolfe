@@ -44,7 +44,7 @@ object SISTAProcessors {
   def annotate(text: String): Document = {
     val result = sistaCoreNLPProcessor.annotate(text)
     val sentences = result.sentences map SISTAConverter.toWolfeSentence
-    val coref = SISTAConverter.toWolfeCoreference(result.coreferenceChains.get)
+    val coref = SISTAConverter.toWolfeCoreference(result.coreferenceChains.get).toArray
     Document(text, sentences, coref = CorefAnnotation(coref))
   }
 
@@ -80,7 +80,7 @@ object SISTAProcessors {
       sistaCoreNLPProcessor.resolveCoreference(result)
     }
     val sentences = result.sentences map SISTAConverter.toFullWolfeSentence
-    val corefSeq = result.coreferenceChains.map(c => SISTAConverter.toWolfeCoreference(c))
+    val corefSeq = result.coreferenceChains.map(c => SISTAConverter.toWolfeCoreference(c).toArray)
     Document(text, sentences, coref = corefSeq.map(CorefAnnotation(_)).getOrElse(CorefAnnotation.empty))
   }
 

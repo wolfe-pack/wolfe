@@ -4,27 +4,56 @@ package ml.wolfe.nlp.ie
  * Created by narad on 3/20/15.
  */
 
+import java.util
+
 import ml.wolfe.nlp.{Document, Token}
 
 import scala.collection.mutable.HashMap
+import scala.collection.JavaConversions._
+
 /**
  * Class to represent coreference annotation
  * @param mentions sequence of CorefMention elements
  */
-case class CorefAnnotation(mentions: Seq[CorefMention] = Seq.empty) {
+case class CorefAnnotation(mentions: IndexedSeq[CorefMention] = IndexedSeq.empty) {
   type BareMention = (Int,Int,Int)
 
-  lazy val mentionToID: Map[BareMention, Int] = {
-    mentions.map(m => (m.sentence, m.start, m.end) -> m.clusterID)
-  }.toMap
+  lazy val mentionToID: java.util.Map[BareMention, Int] = {
+    val map = new util.HashMap[BareMention, Int]()
+    mentions.foreach(m => map.put((m.sentence, m.start, m.end), m.clusterID))
+    map
+  }
 
-  lazy val idToCluster: Map[Int, Seq[CorefMention]] = {
+//    mentions.map(m => (m.sentence, m.start, m.end) -> m.clusterID)
+//  }.toMap
+
+  lazy val idToCluster: java.util.Map[Int, Seq[CorefMention]] = {
     mentions.groupBy(_.clusterID)
   }
 
 
+  def clusterContaining(m: BareMention): Option[Seq[CorefMention]] = {
+    clusterContaining(m._1, m._2, m._3)
+  }
+
+  def clusterContaining(s: Int, i: Int, j: Int): Option[Seq[CorefMention]] = {
+    val key = (s,i,j)
+    if (mentionToID.contains(key)) {
+      val idx = mentionToID(key)
+      if (idToCluster.contains(idx)) return Some(idToCluster(idx))
+    }
+    None
+  }
+
+  //    if (idToCluster.contains((s,i,j))) Some(idToCluster.get((s,i,j))) else None
+
+
+  def clusterOf(m: BareMention): Option[Int] = {
+    clusterOf(m._1, m._2, m._3)
+  }
+
   def clusterOf(s: Int, i: Int, j: Int): Option[Int] = {
-    mentionToID.get((s,i,j))
+    if (mentionToID.containsKey((s,i,j))) Some(mentionToID.get((s,i,j))) else None
   }
 
   def distanceInMentions(m1: CorefMention, m2: CorefMention): Int = {
@@ -56,7 +85,11 @@ case class CorefAnnotation(mentions: Seq[CorefMention] = Seq.empty) {
   }
 
   def shareCluster(m1: BareMention, m2: BareMention): Boolean = {
-    mentionToID(m1) == mentionToID(m2)
+    mentionToID.contains(m1) && mentionToID.contains(m2) && mentionToID(m1) == mentionToID(m2)
+  }
+
+  lazy val clusterPairs: Iterator[(CorefMention, CorefMention)] = {
+    for (cluster <- idToCluster.values.iterator; i <- 0 until cluster.size; j <- i+1 until cluster.size) yield (cluster(i), cluster(j))
   }
 }
 

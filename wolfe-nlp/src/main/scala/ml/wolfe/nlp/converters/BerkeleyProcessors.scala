@@ -135,9 +135,9 @@ object BerkeleyProcessors {
 
       val clustering = allPredBackptrsAndPredClusterings(0)._2.bind(docGraph.getMentions, false)
 
-      val ret = for ((mention, clusterID) <- clustering.ments.zipWithIndex) yield {
+      val ret = (for ((mention, clusterID) <- clustering.ments.zipWithIndex) yield {
         CorefMention(clustering.clustering.getClusterIdx(clusterID), mention.sentIdx, mention.startIdx, mention.endIdx, mention.headIdx)
-      }
+      }).toArray
       Document(text, result.sentences, coref = CorefAnnotation(ret))
     }
   }
