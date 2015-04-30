@@ -307,7 +307,7 @@ class TermSpecs extends WolfeSpec {
       argmax(Thetas)(t => loss(t).argmaxBy(Argmaxer.adaGrad(AdaGradParameters(100, 0.01, initParams = init)))).eval()
     }
 
-//    "also not throw a null pointer exception" ignore {
+    //    "also not throw a null pointer exception" ignore {
 //      //      import TermImplicits.Seqs
 //      @domain case class Param(x: Vect, y: Vect)
 //      implicit val Params = Param.Values(Vectors(1), Vectors(1))

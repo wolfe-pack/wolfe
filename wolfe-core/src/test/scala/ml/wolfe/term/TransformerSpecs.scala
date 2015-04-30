@@ -1,6 +1,7 @@
 package ml.wolfe.term
 
-import ml.wolfe.WolfeSpec
+import ml.wolfe._
+import ml.wolfe.util.Math._
 
 /**
  * @author riedel
@@ -51,6 +52,16 @@ class TransformerSpecs extends WolfeSpec {
       (t1 eq t2) should be (true)
     }
 
+    "not throw a class cast exception when using an ifThenElse term" in {
+      @domain case class Theta(params: IndexedSeq[Vect])
+      implicit val Thetas = Theta.Values(Seqs(Vectors(2), 3))
+      def loss(t: Thetas.Term): DoubleTerm = {
+        val score: DoubleTerm = t.params(0) dot t.params(0)
+        ifThenElse(true.toConst)(score)(score)
+      }
+      val init = Settings(Thetas.createRandomSetting(random.nextGaussian()))
+      argmax(Thetas)(t => loss(t).argmaxBy(Argmaxer.adaGrad(AdaGradParameters(100, 0.01, initParams = init)))).eval()
+    }
   }
 
   "A reusing depth last transformer" should {

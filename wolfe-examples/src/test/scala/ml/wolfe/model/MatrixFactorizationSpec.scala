@@ -1,12 +1,17 @@
 package ml.wolfe.model
 
+import ml.wolfe.Vect
+import ml.wolfe.term._
+import ml.wolfe.term.TermImplicits._
+import ml.wolfe.term.Transformer._
+import ml.wolfe.util.Math._
 import org.scalatest.{Matchers, WordSpec}
 
 /**
  * @author rockt
  */
 class MatrixFactorizationSpec extends WordSpec with Matchers {
-  val eps = 0.05
+  val eps = 0.01
   "A matrix factorization model" should {
     "recover a data matrix when using sufficient dimension k" in {
       val observed = Seq(0 -> 0, 0 -> 1, 1 -> 1, 2 -> 0)
