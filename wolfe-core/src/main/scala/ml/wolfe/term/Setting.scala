@@ -512,7 +512,15 @@ class Msg(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMats: Int = 0
 
   final def -=(value: Msg): Unit = {
     for (i <- 0 until disc.length) {
-      incr(disc(i).msg, value.disc(i).msg, -1.0)
+      val d = disc(i).msg
+      val v = value.disc(i).msg
+      require(v.length == d.length)
+      var idx = 0
+      while (idx < d.length) {
+        if (v(idx).isNegInfinity) d(idx) = 0.0
+        else d(idx) -= v(idx)
+        idx += 1
+      }
     }
     for (i <- 0 until cont.length) {
       cont(i).mean -= value.cont(i).mean
