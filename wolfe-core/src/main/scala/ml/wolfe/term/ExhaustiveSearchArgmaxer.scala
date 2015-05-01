@@ -8,10 +8,10 @@ import ml.wolfe.term
  * @author riedel
  */
 class ExhaustiveSearchMaxMarginalizer(val obj: DoubleTerm, val wrt: Seq[Var[Dom]],val observed: Seq[Var[Dom]],
-                                       val input: Settings, val inputMsgs: Msgs) extends MaxMarginalizer {
+                                       val input: Settings, val inputMsgs: Msgs, reverseMsgsAlso: Boolean = false) extends MaxMarginalizer {
 
   require(wrt.forall(_.domain.isDiscrete), "Cannot do exhaustive search over continuous domains")
-  val target = obj.vars.filterNot(v => wrt.contains(v) || observed.contains(v))
+  val target = obj.vars.filterNot(v => (if(reverseMsgsAlso) false else wrt.contains(v)) || observed.contains(v))
   val varyingVars = (wrt ++ target).distinct
 
   val settingsToVary = Settings.fromSeq(varyingVars.map(_.domain.createSetting()))
@@ -52,7 +52,17 @@ class ExhaustiveSearchMaxMarginalizer(val obj: DoubleTerm, val wrt: Seq[Var[Dom]
         for (i <- 0 until outputMsgs(targetIndex).disc.length) {
           val currentValue = currentSetting.disc(i)
           val tgt = outputMsgs(targetIndex).disc(i)
-          tgt.msg(currentValue) = math.max(tgt.msg(currentValue), penalized)
+          var score = penalized
+          if(reverseMsgsAlso) {
+            // TODO: next call is quite slow
+            val wrtIndex = toVary2wrt.getTgtIndex(targetIndex)
+            for (i <- 0 until inputMsgs(wrtIndex).disc.length) {
+              val currentValue = currentSetting.disc(i)
+              val currentMsg = inputMsgs(wrtIndex).disc(i).msg(currentValue)
+              score -= currentMsg
+            }
+          }
+          tgt.msg(currentValue) = math.max(tgt.msg(currentValue), score)
         }
       }
     }

@@ -46,12 +46,12 @@ trait Term[+D <: Dom] extends TermHelper[D]  {
   def differentiatorImpl(wrt: Seq[AnyVar])(in: Settings, err: Setting, gradientAcc: Settings): Differentiator =
     new EmptyDifferentiator(in, err, gradientAcc, wrt)
 
-  def maxMarginalizerImpl(wrt: Seq[AnyVar], observed: Seq[AnyVar])(input: Settings, inputMsgs: Msgs): MaxMarginalizer = {
+  def maxMarginalizerImpl(wrt: Seq[AnyVar], observed: Seq[AnyVar])(input: Settings, inputMsgs: Msgs, reverseMsgsAlso: Boolean = false): MaxMarginalizer = {
     //todo: this could be type safe, for example by adding the argmax method to the RichDoubleTerm
     val varying = vars filterNot observed.contains
     if (!domain.isDouble) sys.error("Argmax only supported for real valued terms")
     else if (varying.forall(_.domain.isDiscrete))
-      new ExhaustiveSearchMaxMarginalizer(this.asInstanceOf[DoubleTerm], wrt, observed, input, inputMsgs)
+      new ExhaustiveSearchMaxMarginalizer(this.asInstanceOf[DoubleTerm], wrt, observed, input, inputMsgs, reverseMsgsAlso)
     else ???
   }
 

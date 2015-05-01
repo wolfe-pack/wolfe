@@ -17,7 +17,7 @@ class MaxProductBP(val objRaw: DoubleTerm,
 
   import params._
 
-  val synchronized = false
+  val synchronized = true
 
   val observedVars = objRaw.vars.filterNot(wrt.contains)
   val result: Settings = Settings.fromSeq(wrt.map(_.domain.createSetting()))
@@ -126,7 +126,7 @@ class MaxProductBP(val objRaw: DoubleTerm,
     val obsInPot = observed.linkedSettings(observedVars, obsVarsInPot)
 
     if (synchronized) {
-      val potMaxMarginalizer = pot.maxMarginalizerImpl(wrt, obsVarsInPot)(obsInPot, Msgs(vars map n2fs))
+      val potMaxMarginalizer = pot.maxMarginalizerImpl(vars, obsVarsInPot)(obsInPot, Msgs(vars map n2fs), true)
       fg.addFactor(pot.asInstanceOf[DoubleTerm], new FactorContent(potMaxMarginalizer), vars.contains, targetFor) { variable =>
         val outputMsg = potMaxMarginalizer.outputMsgs(vars.indexOf(variable))
         new EdgeContent(null, outputMsg, n2fs(variable))
@@ -165,7 +165,6 @@ class MaxProductBP(val objRaw: DoubleTerm,
     }
     if(factor.content.n2fChanged) {
       factor.content.update()
-      assert(factor.content.maxMarginalizer.outputMsgs.head == factor.edges.head.content.f2n)
       for (e <- factor.edges)
         e.node.content.f2nChanged = true
     }
@@ -199,7 +198,6 @@ class MaxProductBP(val objRaw: DoubleTerm,
     for (i <- 0 until iterations) {
       if (synchronized)
         for (f <- fg.activeFactors) {
-          assert(f.content.maxMarginalizer.outputMsgs.head == f.edges.head.content.f2n)
           updateFactor(f)
         }
       else
