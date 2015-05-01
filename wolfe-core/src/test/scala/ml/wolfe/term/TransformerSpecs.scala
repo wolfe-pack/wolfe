@@ -48,8 +48,8 @@ class TransformerSpecs extends WolfeSpec {
       val m2 = mem(2.0.toConst map (_ + 1.0))
       val expected = m2 - m2
       transformed._1 should beStringEqual(expected)
-      val Sum(Vector(t1,Product(Vector(t2,_)))) = transformed._1
-      (t1 eq t2) should be (true)
+      val Sum(Vector(t1, Product(Vector(t2, _)))) = transformed._1
+      (t1 eq t2) should be(true)
     }
 
     "not throw a class cast exception when using an ifThenElse term" ignore {
@@ -59,8 +59,8 @@ class TransformerSpecs extends WolfeSpec {
         val score: DoubleTerm = t.params(0) dot t.params(0)
         ifThenElse(true.toConst)(score)(score)
       }
-      val init = Settings(Thetas.createRandomSetting(random.nextGaussian()))
-      argmax(Thetas)(t => loss(t).argmaxBy(Argmaxer.adaGrad(AdaGradParameters(100, 0.01, initParams = init)))).eval()
+      val obj = loss(Thetas.Variable("t"))
+      val result = (precalculate _ andThen clean)(obj)
     }
   }
 
@@ -87,8 +87,8 @@ class TransformerSpecs extends WolfeSpec {
       val m2 = mem(2.0.toConst map (_ + 1.0))
       val expected = m2 - m2
       transformed._1 should beStringEqual(expected)
-      val Sum(Vector(t1,Product(Vector(t2,_)))) = transformed._1
-      (t1 eq t2) should be (true)
+      val Sum(Vector(t1, Product(Vector(t2, _)))) = transformed._1
+      (t1 eq t2) should be(true)
     }
 
   }
