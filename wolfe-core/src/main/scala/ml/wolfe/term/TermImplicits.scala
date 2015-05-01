@@ -38,6 +38,8 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
   def Maps(keyDom1: Dom, keyDom2: Dom, valueDom: Dom): MapDom2[keyDom1.type, keyDom2.type, valueDom.type] =
     new MapDom2[keyDom1.type, keyDom2.type, valueDom.type](keyDom1, keyDom2, valueDom)
 
+  def Graphs(keyDom1: Dom, keyDom2: Dom) = Maps(keyDom1,keyDom2,Bools)
+
   def fixedLengthSeq[T](elements: Seq[T])(implicit dom: TypedDom[T]) = {
     Seqs(dom, elements.length).Const(elements.toIndexedSeq)
   }
