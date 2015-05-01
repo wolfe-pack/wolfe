@@ -146,7 +146,8 @@ object Transformer extends LazyLogging {
   def precalculate(term: AnyTerm) = {
     logger.info("Pre-calculation of terms")
     depthLastAndReuse(term) {
-      case t if t.isStatic && !t.isInstanceOf[Precalculated[_]] => t.domain.own(Precalculated(t).asInstanceOf[TypedTerm[t.domain.Value]])
+      case t if t.isStatic && !t.isInstanceOf[Precalculated[_]] =>
+        t.domain.own(Precalculated(t).asInstanceOf[TypedTerm[t.domain.Value]])
     }._1
   }
 

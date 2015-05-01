@@ -154,7 +154,7 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
     val arguments = length +: elements
 
     def copy(args: IndexedSeq[ArgumentType]) = new Constructor(
-      args(0).asInstanceOf[lengthDom.Term],
+      args(0).asInstanceOf[IntTerm],
       args.drop(1).asInstanceOf[IndexedSeq[elementDom.Term]])
 
 
