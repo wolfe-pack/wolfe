@@ -103,9 +103,11 @@ class GoogleNewsReader(filename: String, verbose: Boolean = false) extends Itera
 object GoogleNewsReader {
 
   def main(args: Array[String]): Unit = {
+    val time = System.currentTimeMillis()
     for (d <- new GoogleNewsReader(args(0), args.mkString(" ").contains("--verbose TRUE"))) {
       val i = 0 // blah
     }
+    println(System.currentTimeMillis() - time)
     println("Finished.")
   }
 }
