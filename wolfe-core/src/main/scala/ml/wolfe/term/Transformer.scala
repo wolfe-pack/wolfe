@@ -120,6 +120,27 @@ object Transformer extends LazyLogging {
     case VarSeqLength(a: Atom[_]) => LengthAtom[VarSeqDom[Dom]](a.asInstanceOf[Atom[VarSeqDom[Dom]]])
   }
 
+  /**
+   * Creates more fine grained atoms for each atom that still has internal structure.
+   * @param term the term to shatter
+   * @return a term where each atom with a structured domain is replaced by a term of the same shape
+   *         that constructs the structure using finer grained atoms.
+   */
+  def shatterAtoms(term: AnyTerm):AnyTerm = depthLast(term) {
+    case a:Atom[_] => a.domain match {
+      case d:VarSeqDom[Dom] =>
+        //atom has more structure, create new atoms
+        val parentAtom = a.asInstanceOf[Atom[VarSeqDom[Dom]]]
+        val elements = Range(0, d.maxLength) map
+          (i => shatterAtoms(SeqAtom[Dom, VarSeqDom[Dom]](parentAtom, d.indexDom.Const(i))))
+        val lengthAtom = LengthAtom(parentAtom)
+        val shattered = new VarSeqConstructor[Dom,VarSeqDom[Dom]](lengthAtom,elements,d)
+        shattered
+      case _ => a
+    }
+  }
+
+
   def groundSums(term: AnyTerm) = depthFirst(term) {
     case FirstOrderSum(indices, variable, body) =>
       val length = indices match {

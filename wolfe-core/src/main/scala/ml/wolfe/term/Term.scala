@@ -538,7 +538,7 @@ case class Product(arguments: IndexedSeq[DoubleTerm]) extends ComposedDoubleTerm
 
 
 
-case class Iverson[T <: BoolTerm](val arg: T) extends UnaryTerm[T, DoubleDom] with ComposedDoubleTerm {
+case class Iverson[T <: BoolTerm](arg: T) extends UnaryTerm[T, DoubleDom] with ComposedDoubleTerm {
 
 
   override def composer(args: Settings) = new Composer(args) {
