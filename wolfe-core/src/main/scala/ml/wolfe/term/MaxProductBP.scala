@@ -23,7 +23,7 @@ class MaxProductBP(val objRaw: DoubleTerm,
   val result: Settings = Settings.fromSeq(wrt.map(_.domain.createSetting()))
 
   //get sum terms from objective
-  val obj = (groundSums _ andThen flattenSums andThen clean andThen groundVariables(wrt))(objRaw)
+  val obj = (groundSums _ andThen flattenSums andThen clean andThen atomizeVariables(wrt))(objRaw)
 
   //factor graph
   val fg = new FG[NodeContent, EdgeContent, FactorContent]

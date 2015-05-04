@@ -1,7 +1,6 @@
 package ml.wolfe.term
 
 import ml.wolfe._
-import ml.wolfe.util.Math._
 
 /**
  * @author riedel
@@ -96,7 +95,6 @@ class TransformerSpecs extends WolfeSpec {
 
   }
 
-
   "A sum flattener" should {
     "replace nested sums with one flat sum" in {
       val x = Doubles.Var
@@ -117,6 +115,34 @@ class TransformerSpecs extends WolfeSpec {
       val expected = sum(indices.length)(x(0), x(1), x(2))
       transformed should beStringEqual(expected)
       transformed.eval(x := IndexedSeq(1.0, 2.0, 3.0)) should be(expected.eval(x := IndexedSeq(1.0, 2.0, 3.0)))
+    }
+  }
+
+  "A atom shattering" should {
+    "create the most fine grained atoms for nested sequence variables" in {
+      val n = 2
+      val Graphs = Seqs(Seqs(Bools, 0, n), 1, n)
+      val y = Graphs.Var
+      val atom = VarAtom(y)
+      val transformed = shatterAtoms(atom)
+      def edgeAtomsForChild(child: Int) = {
+        val parents = SeqAtom[VarSeqDom[Dom],VarSeqDom[VarSeqDom[Dom]]](atom, Graphs.indexDom.Const(child))
+        new VarSeqConstructor[Dom,VarSeqDom[Dom]](
+          LengthAtom(parents),
+          Range(0, n) map (parent => SeqAtom[Dom, VarSeqDom[Dom]](parents, parent)),
+          Graphs.elementDom
+        )
+      }
+      def edgeAtoms() = {
+        new VarSeqConstructor[VarSeqDom[Dom],VarSeqDom[VarSeqDom[Dom]]](
+          LengthAtom(atom),
+          Range(0, n) map (child => edgeAtomsForChild(child)),
+          Graphs
+        )
+      }
+
+      val expected = edgeAtoms()
+      transformed should beStringEqual(expected)
     }
   }
 
