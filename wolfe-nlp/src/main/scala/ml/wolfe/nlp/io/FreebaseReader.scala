@@ -105,6 +105,18 @@ class FreebaseReader(collection: MongoCollection) {
     }.filter(t => !(t._1 == "None" && t._2 == "None")).toMap
   }
 
+  def parentsOf(mids: Seq[String]): Map[String, String] = {
+    // val nor = $nor { ("foo" $gte 15 $lt 35 $ne 16) + ("x" -> "y") }
+    val query = "arg2" $all (mids.mkString(", "))
+
+ //   val query = MongoDBObject("arg2 : { $in : [ %s ]}".format(mids.mkString(", ")))
+    (collection find query).map { m =>
+      val t1 = m.getOrElse("attribute", "None").toString
+      val t2 = m.getOrElse("arg1", "None").toString
+      t1 -> t2
+    }.filter(t => !(t._1 == "None" && t._2 == "None")).toMap
+  }
+
   def getName(mid: String): Option[String] = getAttribute(mid, "title")
 
   def getDescription(mid: String): Option[String] = getAttribute(mid, "text")
