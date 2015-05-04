@@ -173,7 +173,7 @@ object ConstituentTreeFactory {
 
   def findChildren(spans: Array[ConstituentSpan], start: Int, end: Int, words: Array[String] = Array(), tags: Array[String] = Array()): List[ConstituentTree] = {
     val children = new ArrayBuffer[ConstituentTree]
-    val max = spans.find(s => s.start >= start && s.end <= end) //findMaxSpan(spans, start, end)
+    val max = spans.find(s => s.start >= start && s.end <= end)
     max match {
       case None => {
           (start until end).map { i => ConstituentTreeFactory.buildTree(start = i, end = i+1, label=tags(i), word=Some(words(i)), children=List()) }.toList

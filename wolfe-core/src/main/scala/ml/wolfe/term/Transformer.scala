@@ -114,11 +114,11 @@ object Transformer extends LazyLogging {
     }._1
   }
 
-  def groundVariables(toGround: Seq[AnyVar])(term: AnyTerm) = depthFirst(term) {
+  def atomizeVariables(toGround: Seq[AnyVar])(term: AnyTerm) = depthFirstAndReuse(term) {
     case v: Var[_] if toGround.contains(v) => VarAtom(v)
     case VarSeqApply(a: Atom[_], i) => SeqAtom[Dom, VarSeqDom[Dom]](a.asInstanceOf[Atom[VarSeqDom[Dom]]], i)
     case VarSeqLength(a: Atom[_]) => LengthAtom[VarSeqDom[Dom]](a.asInstanceOf[Atom[VarSeqDom[Dom]]])
-  }
+  }._1
 
   /**
    * Creates more fine grained atoms for each atom that still has internal structure.
@@ -126,7 +126,7 @@ object Transformer extends LazyLogging {
    * @return a term where each atom with a structured domain is replaced by a term of the same shape
    *         that constructs the structure using finer grained atoms.
    */
-  def shatterAtoms(term: AnyTerm):AnyTerm = depthLast(term) {
+  def shatterAtoms(term: AnyTerm):AnyTerm = depthLastAndReuse(term) {
     case a:Atom[_] => a.domain match {
       case d:VarSeqDom[Dom] =>
         //atom has more structure, create new atoms
@@ -138,7 +138,7 @@ object Transformer extends LazyLogging {
         shattered
       case _ => a
     }
-  }
+  }._1
 
 
   def groundSums(term: AnyTerm) = depthFirst(term) {
