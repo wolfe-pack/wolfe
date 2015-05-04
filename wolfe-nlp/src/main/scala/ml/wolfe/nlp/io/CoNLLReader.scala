@@ -4,6 +4,7 @@ import ml.wolfe.nlp._
 import ml.wolfe.nlp.semantics.{Predicate, SemanticFrame, SemanticRole}
 import ml.wolfe.nlp.syntax.{Arc, ModifiedCollinsHeadFinder, DependencyTree, ConstituentTree}
 import ml.wolfe.nlp.ie.{CorefMention, CorefAnnotation, EntityMention}
+import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import scala.util.matching.Regex
@@ -83,7 +84,18 @@ class CoNLLReader(filename: String, delim: String = "\t") extends Iterable[Sente
   }
 
   def fromCoNLL2000(lines: IndexedSeq[String]): Sentence = {
-    ???
+    val cells = lines.map(_.split(" "))
+    val chunkTags = cells.map(_.apply(2))
+    def isContinuation(tag:String) = tag.startsWith("I-")
+
+    val chunkStarts = chunkTags.zipWithIndex filter (x => ! isContinuation(x._1))
+    val chunkEnds = chunkStarts.tail.map(_._2 - 1) :+ (chunkTags.length - 1)
+    val chunks =for (((begin, start), end) <- chunkStarts zip chunkEnds) yield {
+      val chunkType = begin.substring(begin.indexOf("-") + 1)
+      EntityMention(chunkType, start, end)
+    }
+    val tokens = cells.map( c => Token(c(0), CharOffsets(0, c(0).length), posTag = c(1)))
+    Sentence(tokens, ie = IEAnnotation(entityMentions = chunks))
   }
 }
 
@@ -114,9 +126,11 @@ object CoNLLReader {
   }
 
   def main(args: Array[String]) {
-    val data = new CoNLLReader("/Users/sriedel/corpora/conll03/eng.train", " ").take(100).toIndexedSeq
+    //val data = new CoNLLReader("/Users/sriedel/corpora/conll03/eng.train", " ").take(100).toIndexedSeq
+    val data = new CoNLLReader("/home/luke/conll2000/train.txt", " ").take(100).toIndexedSeq
     val doc = Document(data(1).toText, IndexedSeq(data(1)))
-    println(data(1))
+    println(data(1).toPrettyString)
+    println(data(1).ie.entityMentions)
   }
 }
 
