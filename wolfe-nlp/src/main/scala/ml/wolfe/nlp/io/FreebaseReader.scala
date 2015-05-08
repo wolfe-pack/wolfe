@@ -107,7 +107,7 @@ class FreebaseReader(collection: MongoCollection) {
 
   def parentsOf(mids: Seq[String]): Map[String, String] = {
     // val nor = $nor { ("foo" $gte 15 $lt 35 $ne 16) + ("x" -> "y") }
-    val query = "arg2" $all (mids.mkString(", "))
+    val query = "array" $all mids.map("arg2" -> _)
 
  //   val query = MongoDBObject("arg2 : { $in : [ %s ]}".format(mids.mkString(", ")))
     (collection find query).map { m =>
