@@ -12,11 +12,11 @@ class GZipReader(filename: String) extends Iterator[String] {
 
   var nextUp = br.readLine()
 
-  def close = br.close()
+  def close() = br.close()
 
   def hasNext = nextUp != null
 
-  def next = {
+  def next() = {
     val cur = nextUp
     nextUp = br.readLine()
     cur

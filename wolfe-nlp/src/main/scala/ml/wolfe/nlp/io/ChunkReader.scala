@@ -9,9 +9,16 @@ class ChunkReader(filename: String, delim: String="^[ \t]*$", iencoding: String=
   def iterator: Iterator[String] = {
     var lines = Array[String]()
     try {
-      val src = scala.io.Source.fromFile(filename, iencoding)
-      lines = src.getLines().toArray
-      src.close()
+      if (filename.endsWith(".gz")) {
+        val src = new GZipReader(filename)
+        lines = src.toArray
+        src.close()
+      }
+      else {
+        val src = scala.io.Source.fromFile(filename, iencoding)
+        lines = src.getLines().toArray
+        src.close()
+      }
     }
     catch {
       case e: Exception => System.err.println("Error reading file <%s> in ChunkReader.read (encoding:%s):\n%s".format(filename, iencoding, e.getStackTrace.mkString("\n")))
