@@ -98,6 +98,8 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
 
   implicit def toConvertable[T](value: T)(implicit domain: TypedDom[T]): ConvertableToTerm3[T, domain.type] = new ConvertableToTerm3[T, domain.type](value)(domain)
 
+  implicit def evalResultToResult[T](evalResult:EvalResult[T]):T = evalResult.value
+
   implicit class RichRange(values: Range) {
     def toDom = new RangeDom(values)
   }
@@ -264,6 +266,12 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
       val values = at.map(a => a.variable -> a.value).toMap
       val args = innerTerm.vars.map(values)
       innerTerm.evalUntyped(args: _*)
+    }
+
+    def evalResult(at: Assignment[Dom]*):EvalResult[innerTerm.domain.Value] = {
+      val values = at.map(a => a.variable -> a.value).toMap
+      val args = innerTerm.vars.map(values)
+      innerTerm.evalResultUntyped(args: _*)
     }
 
     //      assignments.foldLeft[AnyTerm](innerTerm) {

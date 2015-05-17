@@ -37,6 +37,11 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
       }
       comp.eval()
     }
+
+    override def tree:Seq[ml.wolfe.term.Evaluator] = {
+      this +: argEvals.flatMap(_.tree).toSeq
+    }
+
   }
 
   override def evaluatorImpl(in: Settings) = new ComposedEvaluator(in)

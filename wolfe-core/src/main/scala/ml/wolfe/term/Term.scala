@@ -106,6 +106,10 @@ trait Term[+D <: Dom] extends TermHelper[D]  {
 
   abstract class AbstractEvaluator(val input: Settings) extends Evaluator
 
+  trait ArgmaxEvaluator {
+    val maxer:Argmaxer
+  }
+
   abstract class AbstractDifferentiator(val input: Settings,
                                         val error: Setting,
                                         val gradientAccumulator: Settings,
@@ -199,6 +203,13 @@ trait TermHelper[+D <: Dom] extends LazyLogging {
     val ev = evaluatorImpl(argSettings)
     ev.eval()(Execution(0))
     domain.toValue(ev.output)
+  }
+
+  def evalResultUntyped(args: Any*): EvalResult[domain.Value] = {
+    val argSettings = createSettings(args)
+    val ev = evaluatorImpl(argSettings)
+    ev.eval()(Execution(0))
+    new EvalResult(domain.toValue(ev.output), ev)
   }
 
 //  def !! = eval()

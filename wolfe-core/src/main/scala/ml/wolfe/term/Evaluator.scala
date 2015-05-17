@@ -7,6 +7,10 @@ trait Evaluator {
   val input:Settings
   val output:Setting
   def eval()(implicit execution:Execution)
+
+  def tree:Seq[Evaluator] = {
+    Seq(this)
+  }
 }
 
 case class Execution(num:Int, typ:Execution.ExeType = Execution.Eval)

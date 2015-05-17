@@ -90,8 +90,8 @@ class Argmax[D <: Dom](val obj: DoubleTerm, val wrt: Var[D]) extends Term[D] {
 
   def isStatic = false
 
-  override def evaluatorImpl(in: Settings) = new AbstractEvaluator(in) {
-    val maxer = obj.argmaxerImpl(Seq(wrt))(in, null)
+  override def evaluatorImpl(in: Settings) = new AbstractEvaluator(in) with ArgmaxEvaluator {
+    override val maxer = obj.argmaxerImpl(Seq(wrt))(in, null)
 
     def eval()(implicit execution: Execution) = {
       maxer.argmax()
