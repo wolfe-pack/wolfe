@@ -90,7 +90,7 @@ case class CorefAnnotation(mentions: IndexedSeq[CorefMention] = IndexedSeq.empty
 
  lazy val cpairs = (for (cluster <- idToCluster.values.iterator; i <- 0 until cluster.size; j <- i+1 until cluster.size) yield (cluster(i), cluster(j))).toList
 
-  def clusterPairs: Iterator[(CorefMention, CorefMention)] = cpairs.iterator
+  def clusterPairs: Iterator[(CorefMention, CorefMention)] = Iterator.empty //cpairs.iterator
 
 }
 
