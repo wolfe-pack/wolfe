@@ -88,9 +88,9 @@ case class CorefAnnotation(mentions: IndexedSeq[CorefMention] = IndexedSeq.empty
     mentionToID.contains(m1) && mentionToID.contains(m2) && mentionToID(m1) == mentionToID(m2)
   }
 
-  lazy val cp = (for (cluster <- idToCluster.values.iterator; i <- 0 until cluster.size; j <- i+1 until cluster.size) yield (cluster(i), cluster(j))).toList
+//  lazy val cp = .toList
 
-  def clusterPairs: Iterator[(CorefMention, CorefMention)] = cp.iterator
+  def clusterPairs: Iterator[(CorefMention, CorefMention)] = (for (cluster <- idToCluster.values.iterator; i <- 0 until cluster.size; j <- i+1 until cluster.size) yield (cluster(i), cluster(j)))
   //{
   //  for (cluster <- idToCluster.values.iterator; i <- 0 until cluster.size; j <- i+1 until cluster.size) yield (cluster(i), cluster(j))
   //}
