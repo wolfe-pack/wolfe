@@ -10,6 +10,7 @@ import ml.wolfe.nlp.{Document, Token}
 
 import scala.collection.mutable.HashMap
 import scala.collection.JavaConversions._
+import scala.collection.parallel.mutable.ParHashMap
 
 /**
  * Class to represent coreference annotation
@@ -18,8 +19,9 @@ import scala.collection.JavaConversions._
 case class CorefAnnotation(mentions: IndexedSeq[CorefMention] = IndexedSeq.empty) {
   type BareMention = (Int,Int,Int)
 
-  lazy val mentionToID: java.util.Map[BareMention, Int] = {
-    val map = new util.HashMap[BareMention, Int]()
+  lazy val mentionToID: ParHashMap[BareMention, Int] = {
+//    val map = new util.HashMap[BareMention, Int]()
+    val map = new ParHashMap[BareMention, Int]()
     mentions.foreach(m => map.put((m.sentence, m.start, m.end), m.clusterID))
     map
   }
@@ -53,7 +55,7 @@ case class CorefAnnotation(mentions: IndexedSeq[CorefMention] = IndexedSeq.empty
   }
 
   def clusterOf(s: Int, i: Int, j: Int): Option[Int] = {
-    if (mentionToID.containsKey((s,i,j))) Some(mentionToID.get((s,i,j))) else None
+    if (mentionToID.contains((s,i,j))) mentionToID.get((s,i,j)) else None
   }
 
   def distanceInMentions(m1: CorefMention, m2: CorefMention): Int = {
@@ -88,9 +90,10 @@ case class CorefAnnotation(mentions: IndexedSeq[CorefMention] = IndexedSeq.empty
     mentionToID.contains(m1) && mentionToID.contains(m2) && mentionToID(m1) == mentionToID(m2)
   }
 
- lazy val cpairs = (for (cluster <- idToCluster.values.iterator; i <- 0 until cluster.size; j <- i+1 until cluster.size) yield (cluster(i), cluster(j))).toList
+ // lazy val cpairs = (for (cluster <- idToCluster.values.iterator; i <- 0 until cluster.size; j <- i+1 until cluster.size) yield (cluster(i), cluster(j))).toList
 
-  def clusterPairs: Iterator[(CorefMention, CorefMention)] = Iterator.empty //cpairs.iterator
+  def clusterPairs: Iterator[(CorefMention, CorefMention)] = for (cluster <- idToCluster.values.iterator; i <- 0 until cluster.size; j <- i+1 until cluster.size) yield (cluster(i), cluster(j))
+  //cpairs.iterator
 
 }
 
