@@ -1,48 +1,76 @@
 package ml.wolfe.examples
 
 import ml.wolfe._
-import ml.wolfe.model.LinearChain
-import ml.wolfe.nlp.{Token, Sentence, Document}
+import ml.wolfe.nlp.{Sentence, Document}
 import ml.wolfe.nlp.io.CoNLLReader
 import ml.wolfe.term.Argmaxer._
 import ml.wolfe.term.LearningObjective._
 import ml.wolfe.term.TermImplicits._
 import ml.wolfe.term._
 
-/**
- * @author riedel
- * @author rockt
- */
-
 object ChunkingDemo extends App {
+  implicit val index = new SimpleIndex()
+  @domain case class Input(words: IndexedSeq[String])
+  type Output = IndexedSeq[String]
+  type Instance = (Input, Output)
 
-  val train = new CoNLLReader("wolfe-examples/src/main/resources/ml/wolfe/datasets/conll2000/train.txt", " ").take(2).toIndexedSeq
-  //val test = new CoNLLReader("wolfe-examples/src/main/resources/ml/wolfe/datasets/conll2000/test.txt", " ").take(2).toIndexedSeq
-
-
-  def getChunkTags(s:Sentence) = {
-    val chunkTags = Array.fill(s.tokens.length)("O")
-    s.ie.entityMentions.foreach { chunk =>
-      chunkTags(chunk.start) = if (chunk.label == "O") "O" else "B-" + chunk.label
-      for (i <- chunk.start+1 until chunk.end) chunkTags(i) = "I-" + chunk.label
-    }
-    collection.immutable.IndexedSeq(chunkTags:_*)
-  }
-
-  val labels = train.flatMap(getChunkTags).distinct
-  implicit val index = new SimpleIndex
-  val input = for(s <- train) yield LinearChain.Input(
-    s.tokens.map(t => feats(t.posTag) + feats(t.word)),
-    s.tokens.map(t => feats(t.posTag) + feats(t.word))
+//  val connl2000Train = new CoNLLReader("wolfe/wolfe-examples/src/main/resources/ml/wolfe/datasets/conll2000/train.txt", " ")
+//  val connl2000Test = new CoNLLReader("wolfe/wolfe-examples/src/main/resources/ml/wolfe/datasets/conll2000/test.txt", " ")
+//  def getChunkTags(s:Sentence) = {
+//    val chunkTags = Array.fill(s.tokens.length)("O")
+//    s.ie.entityMentions.foreach { chunk =>
+//      chunkTags(chunk.start) = if (chunk.label == "O") "O" else "B-" + chunk.label
+//      for (i <- chunk.start+1 until chunk.end) chunkTags(i) = "I-" + chunk.label
+//    }
+//    collection.immutable.IndexedSeq(chunkTags:_*)
+//  }
+//  def toInstance(s:Sentence):(Input, Output) = {
+//    Input(s.tokens.map(_.word.toString)) -> getChunkTags(s)
+//  }
+//  val train = connl2000Train.take(50).map(toInstance).toIndexedSeq
+//  val test = connl2000Test.take(10).map(toInstance).toIndexedSeq
+  val train = Seq(
+    Input(IndexedSeq("Welcome", "to", "Wolfe", "!")) -> IndexedSeq("O", "O", "WOLFE", "omg"),
+    Input(IndexedSeq("Wolfe", "is", "great", "!")) -> IndexedSeq("WOLFE", "O", "O", "omg")
   )
-  val output = train.map(getChunkTags)
+  val test = Seq(
+    Input(IndexedSeq("Wolfe", "is", "awesome", "!")) -> IndexedSeq("WOLFE", "O", "O", "omg"),
+    Input(IndexedSeq("I", "love", "Wolfe", ".")) -> IndexedSeq("O", "O", "WOLFE", "omg")
+  )
+
+
+  val sentences = train ++ test
+  val labels = sentences.flatMap(_._2).distinct
+  val words = (train flatMap (_._1.words)).distinct
+
+  //model definition
+  val maxLength = sentences.map(_._2.length).max
+  val maxFeats = 20000
+
+  implicit val Thetas = Vectors(maxFeats)
+  implicit val Labels = labels.toDom
+  implicit val Words = words.toDom withOOV "[OOV]"
+
+  implicit val Inputs = Input.Objects(Seqs(Words, 0, maxLength))
+  implicit val Outputs = Seqs(Labels, 0, maxLength)
+  implicit val Instances = Pairs(Inputs, Outputs)
+
+  def model(t: Thetas.Term)(x: Inputs.Term)(y: Outputs.Term) = {
+    sum(0 until x.words.length)(i => t dot feature('word, x.words(i), y(i)))
+  } subjectTo (y.length === x.words.length) argmaxBy maxProduct(mpParams)
+
   val params = AdaGradParameters(epochs = 5, learningRate = 0.1)
+  val mpParams = MaxProductParameters(iterations = 3)
+  val thetaStar = learn(Thetas)(t => perceptron(train.toConst)(Outputs)(model(t))) using adaGrad(params)
+  println("Theta* = ")
+  println(thetaStar.toIndexedString)
 
-
-  println("Training")
-  val linearChain = LinearChain.train(input zip output, labels, params)
-  println("Trained.")
-
-  //println(linearChain.classify(input.head))
+  val predict = fun(Inputs) { x => argmax(Outputs)(model(Thetas.Const(thetaStar))(x)) }
+  println("Prediction = ")
+  test.foreach(p => {
+    val words = p._1.words
+    val labels = predict(p._1)
+    println((words zip labels).map(x => x._1 + "/" + x._2))
+  })
 
 }
