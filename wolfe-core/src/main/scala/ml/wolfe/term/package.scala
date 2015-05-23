@@ -36,7 +36,7 @@ package object term {
   type x[D1 <: Dom, D2 <:Dom] = Tuple2Dom[D1,D2]
 
 //  type MapDom[K <: Dom, V <: Dom] = VarSeqDom[Tuple2Dom[Dom.bools.type,V]]
-
+  type Pred[A] = Map[A, Boolean]
 
 
 }
