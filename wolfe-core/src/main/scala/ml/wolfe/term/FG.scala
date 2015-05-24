@@ -86,4 +86,14 @@ class FG[NodeContent, EdgeContent, FactorContent] {
     activeFactors += factor
   }
 
+  case class MessageRecord(edge: Edge, direction:String, message:Msg)
+  val messageHistory:ArrayBuffer[ArrayBuffer[MessageRecord]] = ArrayBuffer()
+
+  def recordF2N(edge:Edge, message:Msg): Unit = {
+    messageHistory += ArrayBuffer(MessageRecord(edge, "F2N", message))
+  }
+  def recordN2F(edge:Edge, message:Msg): Unit = {
+    messageHistory += ArrayBuffer(MessageRecord(edge, "N2F", message))
+  }
+
 }

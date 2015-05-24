@@ -147,12 +147,14 @@ class MaxProductBP(val objRaw: DoubleTerm,
       for (o <- e.node.edges; if o != e) {
         e.content.n2f += o.content.f2n
       }
+      fg.recordN2F(e, e.content.n2f)
     }
   }
 
   def updateF2N(edge: fg.Edge)(implicit execution: Execution): Unit = {
     edge.content.maxMarginalizer.maxMarginals()
     edge.node.content.f2nChanged = true
+    fg.recordF2N(edge, edge.content.f2n)
   }
 
   def updateFactor(factor: fg.Factor)(implicit execution: Execution): Unit = {
@@ -160,13 +162,16 @@ class MaxProductBP(val objRaw: DoubleTerm,
       if(e.node.content.f2nChanged) {
         updateNodeBelief(e.node)
         e.content.n2f := e.node.content.belief - e.content.f2n
+        fg.recordN2F(e, e.content.n2f)
         factor.content.n2fChanged = true
       }
     }
     if(factor.content.n2fChanged) {
       factor.content.update()
-      for (e <- factor.edges)
+      for (e <- factor.edges) {
+        fg.recordF2N(e, e.content.f2n)
         e.node.content.f2nChanged = true
+      }
     }
   }
 
