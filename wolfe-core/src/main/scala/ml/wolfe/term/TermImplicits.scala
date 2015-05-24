@@ -171,8 +171,12 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
   //implicit def seqToSeqTerm[E <: Dom : SeqDom](elems:Seq[Term[E]]) = seq(implicitly[SeqDom[E]])(elems: _*)
 
 
-  implicit def discToConstant[T: DiscreteDom](value: T): Constant[DiscreteDom[T]] =
-    implicitly[DiscreteDom[T]].Const(value)
+//  implicit def discToConstant[T: DiscreteDom](value: T): Constant[DiscreteDom[T]] =
+//    implicitly[DiscreteDom[T]].Const(value)
+
+  implicit def discToConstant[T](value: T)(implicit dom:DiscreteDom[T]):dom.Term =
+    dom.Const(value)
+
 
 
   //  def argmax[D <: Dom](dom: D)(obj: dom.Variable => DoubleTerm): dom.Value = {
