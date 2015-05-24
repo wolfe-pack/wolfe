@@ -13,30 +13,29 @@ object SmokesCancer {
 
   @domain case class World(smokes: Pred[Symbol], cancer: Pred[Symbol])
 
-  val persons = Seq('Anna, 'Bob, 'Charlie).toDom
+  implicit val Persons = Seq('Anna, 'Bob, 'Charlie).toDom
+  val persons = Seq('Anna, 'Bob, 'Charlie).toConst
 
-  val friends = Set(('Anna, 'Bob),('Anna, 'Charlie)).flatMap(x => Set(x,x.swap))
+  implicit val Friends = Maps(Persons, Persons, Bools)
+  val friendsSet = Set(('Anna, 'Bob),('Anna, 'Charlie)).flatMap(x => Set(x,x.swap))
+  val friends = (for(p1 <- Persons.values; p2 <- Persons.values) yield (p1->p2)->friendsSet((p1,p2))).toMap.toConst
 
-  implicit val Worlds = World.Values(Preds(persons), Preds(persons))
+  implicit val Worlds = World.Values(Preds(Persons), Preds(Persons))
 
   /**
    * Questions:
-   * - Do we need persons.Const() everywhere? (lines 35-39)
-   * - Do we need Bools.Const() (line 39)
-   * - Why do Maps have missing keys? Can we create a separate function for all possible predicates?
-   * - How can I constrain Maps not to have missing keys?
-   * - How do I score the argmax state? see line 50, why doesn't score(res) work?
-   * - How do I constrain the domain, instead of constraining the objective (using subjectTo)?
-   * - Why doesn't argmax work for either res or res2? (lines 49 and 52)
+   * - How can I constrain Maps not to have missing keys? (todo: sameer, add CompleteMaps)
+   * - Get value => Domain.Const(value) to work implicitly? (todo: seb)
+   * - Why doesn't argmax work for either res or res2? (lines 49 and 52) (todo: seb)
    */
   def score(w: Worlds.Term): DoubleTerm = {
     import w._
-    sum(persons.values) {
-      p => 12.0 * I(cancer(persons.Const(p)))
-    } + sum(persons.values) {
-      p => 1.0 * I(smokes(persons.Const(p)) --> cancer(persons.Const(p)))
-    } + sum(persons.values) { p1 => sum(persons.values) { p2 =>
-      1.0 * I(Bools.Const(friends(p1, p2)) --> (smokes(persons.Const(p1)) <-> smokes(persons.Const(p2))))
+    sum(persons) {
+      p => 12.0 * I(cancer(p))
+    } + sum(persons) {
+      p => 1.0 * I(smokes(p) --> cancer(p))
+    } + sum(persons) { p1 => sum(persons) { p2 =>
+      1.0 * I(friends(p1, p2) --> (smokes(p1) <-> smokes(p2)))
     }
     }
   }
@@ -46,9 +45,9 @@ object SmokesCancer {
     for (w <- Worlds) {
       println(w + ": " + score(Worlds.Const(w)).eval())
     }
-    val res = argmax(Worlds)(score)
-    println(res.eval() + ": " + score(Worlds.Const(res.eval())).eval())
-    val res2 = argmax(Worlds)(w => score(w) subjectTo(w.smokes(persons.Const('Anna)) && w.smokes(persons.Const('Bob))))
+    val res = argmax(Worlds)(score).eval()
+    println(res + ": " + score(Worlds.Const(res)).eval())
+    val res2 = argmax(Worlds)(w => score(w) subjectTo(w.smokes(Persons.Const('Anna)) && w.smokes(Persons.Const('Bob))))
     println(res2.eval() + ": " + score(Worlds.Const(res2.eval())).eval())
   }
 
