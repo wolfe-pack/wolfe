@@ -2,6 +2,9 @@ package ml.wolfe.nlp.io
 
 import com.mongodb.casbah.Imports._
 import java.io.{File, FileWriter}
+import com.mongodb.{MongoClient => JMongoClient}
+import scala.collection.JavaConversions._
+
 
 import scala.util.matching.Regex
 
@@ -105,11 +108,17 @@ class FreebaseReader(collection: MongoCollection) {
     }.filter(t => !(t._1 == "None" && t._2 == "None")).toMap
   }
 
+
+  def parentsOfSimple(mid: String): Map[String, String] = {
+    val query = MongoDBObject("arg2" -> mid)
+    (collection find query).map { m =>
+      mid -> m.toString
+    }.toMap
+  }
+
   def parentsOf(mids: Seq[String]): Map[String, String] = {
     // val nor = $nor { ("foo" $gte 15 $lt 35 $ne 16) + ("x" -> "y") }
     val query = "array" $all mids.map("arg2" -> _)
-
- //   val query = MongoDBObject("arg2 : { $in : [ %s ]}".format(mids.mkString(", ")))
     (collection find query).map { m =>
       val t1 = m.getOrElse("attribute", "None").toString
       val t2 = m.getOrElse("arg1", "None").toString
@@ -192,6 +201,10 @@ class FreebaseReader(collection: MongoCollection) {
     println("Event queries finished in %1.1fm".format(time/60))
   }
 
+  def printStats(coll: MongoCollection = collection): Unit = {
+    println("Indexes:\n" + coll.getIndexInfo.mkString("\n"))
+  }
+
 //  def findAllIn(s: Map[String, String]): Seq[String] = findAllIn(new MongoDBObject(s))
 //
 //  def findAllIn(q: MongoDBObject): Seq[String] = {
@@ -199,6 +212,28 @@ class FreebaseReader(collection: MongoCollection) {
 //  }
 
 }
+
+
+class JavaFreebaseReader(collection: com.mongodb.DBCollection) {
+
+  def parentsOf(mid: String): scala.collection.Map[String, String] = {
+    val cursor = collection.find(new BasicDBObject("arg2", mid))
+    val hmap = new scala.collection.mutable.HashMap[String, String]
+    while (cursor.hasNext) {
+      val c = cursor.next()
+      hmap += c.get("attribute").toString -> c.get("arg1").toString
+    }
+    hmap
+  }
+}
+
+/*    val query = MongoDBObject("arg2" -> mid)
+    (collection find query).map { m =>
+      val t1 = m.getOrElse("attribute", "None").toString
+      val t2 = m.getOrElse("arg1", "None").toString
+      t1 -> t2
+    }.filter(t => !(t._1 == "None" && t._2 == "None")).toMap
+  }*/
 
 object FreebaseReader {
   // Loading Patterns
@@ -212,32 +247,59 @@ object FreebaseReader {
   val METH_PATTERN_1 = """getCandidateMIDs\([^.*]\)""".r
 
   def main(args: Array[String]) = {
-    if (args.length == 0) {
-      println("Reading Freebase from existing KB...")
-      val fb = loadFromDB()
-      fb.test()
-    }
-    else if (args(0) == "--interactive") {
-      println("Starting interactive Freebase console...")
-      interactive()
-    }
-    else {
-      println("Constructing new Freebase index from file <%s>...".format(args(0)))
-      //val filename = "/Volumes/My Passport/freebase-rdf-latest.gz"
-      assert(new File(args(0)).isFile, "File does not exist.")
-      val fb = loadFromFile(args(0))
-      fb.test()
-      println("Finished.")
-    }
+    val jfr = javaLoadFromDB()
+    jfr.parentsOf("m.09c7w0")
+//    if (args.length == 0) {
+//      println("Reading Freebase from existing KB...")
+//      val fb = loadFromDB()
+//      fb.printStats()
+//      fb.test()
+//    }
+//    else if (args(0) == "--interactive") {
+//      println("Starting interactive Freebase console...")
+//      interactive()
+//    }
+//    else {
+//      println("Constructing new Freebase index from file <%s>...".format(args(0)))
+//      //val filename = "/Volumes/My Passport/freebase-rdf-latest.gz"
+//      assert(new File(args(0)).isFile, "File does not exist.")
+//      val fb = loadFromFile(args(0))
+//      fb.test()
+//      println("Finished.")
+//    }
   }
 
   def loadFromDB(port: Int = 27017): FreebaseReader = {
     println("Connecting to local Mongo database at port %d...".format(port))
     val mongoClient = MongoClient("localhost", port)
-    val db = mongoClient("FB")
+    val client = mongoClient("FB")
     println("Existing Collections:")
-    println(db.collectionNames.map("\t" + _).mkString("\n"))
-    new FreebaseReader(db("FB"))
+    println(client.collectionNames.map("\t" + _).mkString("\n"))
+    println("Establishing indices...")
+    // Set indexes
+    val coll = client("FB")
+    coll.ensureIndex("mid")
+    coll.ensureIndex("arg1")
+    coll.ensureIndex("arg2")
+    coll.ensureIndex("type")
+    coll.ensureIndex("attribute")
+    coll.ensureIndex("title")
+    println("Done.")
+    new FreebaseReader(coll)
+  }
+
+  def javaLoadFromDB(port: Int = 27017): JavaFreebaseReader = {
+    val mongoClient = new JMongoClient( "localhost" , port )
+    val db = mongoClient.getDB("FB")
+    val names = db.getCollectionNames
+    for (n <- names) println(n)
+    val coll = db.getCollection("FB")
+    new JavaFreebaseReader(coll)
+//    val cursor = coll.find(new BasicDBObject("arg2", "m.02mjmr"))
+//    while (cursor.hasNext) {
+//      println(cursor.next())
+//    }
+//    println("Loaded.")
   }
 
   def loadFromFile(filename: String, port: Int = 27017): FreebaseReader = {
