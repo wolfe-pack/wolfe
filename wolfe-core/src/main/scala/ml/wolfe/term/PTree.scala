@@ -37,6 +37,8 @@ case class PTree(parse: Term[VarSeqDom[VarSeqDom[BooleanDom]]], slen: IntTerm) e
       if (actualLength != expectedLength) return
       for (mod <- 0 until actualLength) if (maxNumHeads(parse)(mod) != expectedLength) return
 
+      //println("correct length")
+
       //instantiate head array
       if (heads == null || heads.length < actualLength) {
         heads = Array.ofDim[Int](actualLength)
@@ -60,6 +62,8 @@ case class PTree(parse: Term[VarSeqDom[VarSeqDom[BooleanDom]]], slen: IntTerm) e
         if (heads(mod) == -1) root = mod
       }
       if (tokensWithHeads != actualLength - 1) return
+      //println("right number of heads")
+
 
       //test whether there are loops
       for (mod <- 0 until actualLength; if !visited(mod)) {
@@ -72,6 +76,7 @@ case class PTree(parse: Term[VarSeqDom[VarSeqDom[BooleanDom]]], slen: IntTerm) e
           current = heads(current)
         } while (current != -1)
       }
+      //println("no loops")
 
       //test whether there are crossing edges
       //todo: quadratic right now, should be possible in linear fashion
@@ -86,6 +91,8 @@ case class PTree(parse: Term[VarSeqDom[VarSeqDom[BooleanDom]]], slen: IntTerm) e
           if (l1 < l2 && r1 > l2 && r2 > r1 || l1 > l2 && l1 < r2 && r2 < r1) return //detected crossing edges
         }
       }
+      //println("no crossing edges")
+
 
       output.cont(0) = 0.0
 
