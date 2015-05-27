@@ -552,11 +552,18 @@ final class Msgs(val length: Int) extends IndexedSeq[Msg] {
 }
 
 object Msgs {
-  def apply(msgs: Seq[Msg]) = {
+  def apply(msg1:Msg, other: Msg*):Msgs = {
+    val msgs = msg1 +: other
+    apply(msgs)
+  }
+
+  def apply(msgs: Seq[Msg]):Msgs = {
     val result = new Msgs(msgs.length)
     for ((msg, i) <- msgs.zipWithIndex) result(i) = msg
     result
   }
+
+
 }
 
 

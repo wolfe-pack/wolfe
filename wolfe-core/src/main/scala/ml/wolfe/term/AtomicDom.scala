@@ -180,6 +180,10 @@ case class RangeDom(values: Range) extends GenericDiscreteDom[Int] {
 
   def zero = values.start
 
+  override def fillZeroMsg(target: Msg, offsets: Offsets) = {
+    target.disc(offsets.discOff) = new DiscMsg(values.last + 1)
+  }
+
 
   override def toIterable = values
 

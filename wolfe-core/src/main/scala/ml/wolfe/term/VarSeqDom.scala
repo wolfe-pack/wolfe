@@ -39,7 +39,9 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
     def elements = for (i <- 0 until maxLength) yield apply(i)
   }
 
-  case class Marginals(length: lengthDom.Marginals, elements: IndexedSeq[elementDom.Marginals])
+  case class Marginals(length: lengthDom.Marginals, elements: IndexedSeq[elementDom.Marginals]) {
+    def apply(i:Int) = elements(i)
+  }
 
   def startOfElements(offsets: Offsets) = offsets.copy(discOff = offsets.discOff + 1)
 

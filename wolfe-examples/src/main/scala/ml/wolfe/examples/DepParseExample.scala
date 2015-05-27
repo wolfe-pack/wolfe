@@ -45,30 +45,5 @@ object DepParseExample {
 
 }
 
-abstract class PTree(parse:Term[VarSeqDom[VarSeqDom[BooleanDom]]],slen:IntTerm) extends ComposedDoubleTerm {
-
-
-  def copy(args: IndexedSeq[ArgumentType]) = ???
-
-  def arguments = ???
-
-  type ArgumentType = this.type
-
-  override def maxMarginalizerImpl(wrt: Seq[AnyVar], observed: Seq[AnyVar])
-                                  (input: Settings, inputMsgs: Msgs, reverseMsgsAlso: Boolean) = {
-    new MaxMarginalizer {
-      //require that the parse variable term is a sequence of sequence of boolean vars
-      //require that wrt contains all variable (we don't do partial msgs right now
-      //require that reverseMsgAlso is true (we want to get msgs on target vars)
-
-      //require(parse.isInstanceOf[AnyVar])
-      def maxMarginals()(implicit execution: Execution) = ???
-
-      val input: Settings = ???
-      val outputMsgs: Msgs = ???
-      val inputMsgs: Msgs = ???
-    }
-  }
-}
 
 

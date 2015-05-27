@@ -25,7 +25,7 @@ trait ArgmaxerFactory {
 }
 
 trait SamplerFactory {
-  def sampler(term: DoubleTerm, wrt: Seq[Var[Dom]])(obs: Settings, msgs: Msgs)(implicit random:Random): Sampler
+  def sampler(term: DoubleTerm, wrt: Seq[Var[Dom]])(obs: Settings, msgs: Msgs)(implicit random: Random): Sampler
 }
 
 
@@ -44,14 +44,22 @@ object Argmaxer {
 
 }
 
-
-trait MaxMarginalizer {
-
+trait MessageCalculator {
   val input: Settings
   val inputMsgs: Msgs
   val outputMsgs: Msgs
 
+}
+
+trait MaxMarginalizer extends MessageCalculator {
+
   def maxMarginals()(implicit execution: Execution)
+}
+
+trait Marginalizer extends MessageCalculator {
+
+  def marginals()(implicit execution: Execution)
+
 }
 
 

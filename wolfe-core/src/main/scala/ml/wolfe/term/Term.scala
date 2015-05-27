@@ -46,12 +46,23 @@ trait Term[+D <: Dom] extends TermHelper[D]  {
   def differentiatorImpl(wrt: Seq[AnyVar])(in: Settings, err: Setting, gradientAcc: Settings): Differentiator =
     new EmptyDifferentiator(in, err, gradientAcc, wrt)
 
-  def maxMarginalizerImpl(wrt: Seq[AnyVar], observed: Seq[AnyVar])(input: Settings, inputMsgs: Msgs, reverseMsgsAlso: Boolean = false): MaxMarginalizer = {
-    //todo: this could be type safe, for example by adding the argmax method to the RichDoubleTerm
+  def maxMarginalizerImpl(wrt: Seq[AnyVar], observed: Seq[AnyVar])
+                         (input: Settings, inputMsgs: Msgs, reverseMsgsAlso: Boolean = false): MaxMarginalizer = {
+    //todo: this could be type safe, for example by adding the maxMarginalizerImpl method to the RichDoubleTerm
     val varying = vars filterNot observed.contains
-    if (!domain.isDouble) sys.error("Argmax only supported for real valued terms")
+    if (!domain.isDouble) sys.error("MaxMarginals only supported for real valued terms")
     else if (varying.forall(_.domain.isDiscrete))
       new ExhaustiveSearchMaxMarginalizer(this.asInstanceOf[DoubleTerm], wrt, observed, input, inputMsgs, reverseMsgsAlso)
+    else ???
+  }
+
+  def marginalizerImpl(wrt: Seq[AnyVar], observed: Seq[AnyVar])
+                         (input: Settings, inputMsgs: Msgs, reverseMsgsAlso: Boolean = false): Marginalizer = {
+    //todo: this could be type safe, for example by adding the marginalizerImpl method to the RichDoubleTerm
+    val varying = vars filterNot observed.contains
+    if (!domain.isDouble) sys.error("Marginals only supported for real valued terms")
+    else if (varying.forall(_.domain.isDiscrete))
+      new ExhaustiveSearchMarginalizer(this.asInstanceOf[DoubleTerm], wrt, observed, input, inputMsgs, reverseMsgsAlso)
     else ???
   }
 
@@ -187,6 +198,16 @@ trait TermHelper[+D <: Dom] extends LazyLogging {
     maxMarger.maxMarginals()(Execution(0))
     target.domain.toMarginals(maxMarger.outputMsgs(0))
   }
+
+  def marginals[T <: Dom](target: Var[T], wrt: Var[T])(incoming: wrt.domain.Marginals)(args: Any*): target.domain.Marginals = {
+    val observed = vars.filter(v => v != wrt && v != target)
+    val observedSettings = Dom.createSettings(observed, args)
+    val incomingMsgs = Msgs(Seq(wrt.domain.toMsgs(incoming)))
+    val maxMarger = marginalizerImpl(Seq(wrt), observed)(observedSettings, incomingMsgs)
+    maxMarger.marginals()(Execution(0))
+    target.domain.toMarginals(maxMarger.outputMsgs(0))
+  }
+
 
   def argmax[V <: Dom](wrt: Var[V], args: Any*): wrt.domain.Value = {
     val observed = vars.filter(_ != wrt)
