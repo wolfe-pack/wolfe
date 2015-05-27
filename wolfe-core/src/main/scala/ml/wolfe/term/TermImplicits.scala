@@ -38,7 +38,12 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
   def Maps(keyDom1: Dom, keyDom2: Dom, valueDom: Dom): MapDom2[keyDom1.type, keyDom2.type, valueDom.type] =
     new MapDom2[keyDom1.type, keyDom2.type, valueDom.type](keyDom1, keyDom2, valueDom)
 
-  def Preds(keyDom: Dom) = Maps(keyDom, Bools)
+  def FullMaps(keyDom: Dom, valueDom: Dom): FullMapDom1[keyDom.type, valueDom.type] = new FullMapDom1[keyDom.type, valueDom.type](keyDom, valueDom)
+
+  def FullMaps(keyDom1: Dom, keyDom2: Dom, valueDom: Dom): FullMapDom2[keyDom1.type, keyDom2.type, valueDom.type] =
+    new FullMapDom2[keyDom1.type, keyDom2.type, valueDom.type](keyDom1, keyDom2, valueDom)
+
+  def Preds(keyDom: Dom) = FullMaps(keyDom, Bools)
 
   def Graphs(keyDom1: Dom, keyDom2: Dom) = Maps(keyDom1,keyDom2,Bools)
 

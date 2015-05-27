@@ -16,7 +16,7 @@ object SmokesCancer {
   implicit val Persons = Seq('Anna, 'Bob, 'Charlie).toDom
   val persons = Seq('Anna, 'Bob, 'Charlie).toConst
 
-  implicit val Friends = Maps(Persons, Persons, Bools)
+  implicit val Friends = FullMaps(Persons, Persons, Bools)
   val friendsSet = Set(('Anna, 'Bob),('Anna, 'Charlie)).flatMap(x => Set(x,x.swap))
   val friends = (for(p1 <- Persons.values; p2 <- Persons.values) yield (p1->p2)->friendsSet((p1,p2))).toMap.toConst
 
@@ -31,7 +31,7 @@ object SmokesCancer {
   def score(w: Worlds.Term): DoubleTerm = {
     import w._
     sum(persons) {
-      p => 12.0 * I(cancer(p))
+      p => -2.0 * I(cancer(p))
     } + sum(persons) {
       p => 1.0 * I(smokes(p) --> cancer(p))
     } + sum(persons) { p1 => sum(persons) { p2 =>
