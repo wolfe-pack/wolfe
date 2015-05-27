@@ -1,7 +1,9 @@
 package ml.wolfe.term
 
+import ml.wolfe.term.MaxProductBP.Schedule
 import ml.wolfe.term.Transformer._
 
+import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
@@ -16,8 +18,8 @@ class MaxProductBP(val objRaw: DoubleTerm,
                    val msgs: Msgs)(implicit params: MaxProductParameters) extends Argmaxer {
 
   import params._
-
-  val synchronized = true
+  import Schedule.Schedule
+  val schedule:Schedule = Schedule.default
 
   val observedVars = objRaw.vars.filterNot(wrt.contains)
   val result: Settings = Settings.fromSeq(wrt.map(_.domain.createSetting()))
@@ -125,7 +127,7 @@ class MaxProductBP(val objRaw: DoubleTerm,
     val obsVarsInPot = pot.vars.filter(observedVars.contains)
     val obsInPot = observed.linkedSettings(observedVars, obsVarsInPot)
 
-    if (synchronized) {
+    if (schedule == Schedule.synchronized) {
       val potMaxMarginalizer = pot.maxMarginalizerImpl(vars, obsVarsInPot)(obsInPot, Msgs(vars map n2fs), true)
       fg.addFactor(pot.asInstanceOf[DoubleTerm], new FactorContent(potMaxMarginalizer), vars.contains, targetFor) { variable =>
         val outputMsg = potMaxMarginalizer.outputMsgs(vars.indexOf(variable))
@@ -141,7 +143,7 @@ class MaxProductBP(val objRaw: DoubleTerm,
     }
   }
 
-  def updateN2Fs(edge: fg.Edge): Unit = {
+  /*def updateN2Fs(edge: fg.Edge): Unit = {
     for (e <- edge.factor.edges; if e != edge) {
       e.content.n2f := 0.0
       for (o <- e.node.edges; if o != e) {
@@ -149,6 +151,14 @@ class MaxProductBP(val objRaw: DoubleTerm,
       }
       fg.recordN2F(e, e.content.n2f)
     }
+  }*/
+
+  def updateN2F(edge: fg.Edge): Unit = {
+    edge.content.n2f := 0.0
+    for (o <- edge.node.edges; if o != edge) {
+      edge.content.n2f += o.content.f2n
+    }
+    fg.recordN2F(edge, edge.content.n2f)
   }
 
   def updateF2N(edge: fg.Edge)(implicit execution: Execution): Unit = {
@@ -189,6 +199,8 @@ class MaxProductBP(val objRaw: DoubleTerm,
     node.content.belief.argmax(result(wrt.indexOf(atom.owner)),atom.offsets)
   }
 
+
+
   def argmax()(implicit execution: Execution) = {
     //clear the current factor graph
     fg.deactivate()
@@ -200,17 +212,21 @@ class MaxProductBP(val objRaw: DoubleTerm,
     factors.activate()
 
     //the actual message passing
-    for (i <- 0 until iterations) {
-      if (synchronized)
-        for (f <- fg.activeFactors) {
+    schedule match {
+      case Schedule.synchronized =>
+        for (i <- 0 until iterations; f <- fg.activeFactors) {
           updateFactor(f)
         }
-      else
-        for (e <- fg.activeEdges) {
-          updateN2Fs(e)
-          updateF2N(e)
+      case Schedule.default =>
+        val mpSchedule = fg.scheduleForwardBackward()
+        for (i <- 0 until iterations; de <- mpSchedule) {
+          if(de.isF2N)
+            updateF2N(de.edge)
+          else
+            updateN2F(de.edge)
         }
     }
+
 
     //update beliefs on nodes
     result.foreach(_.resetToZero())
@@ -235,6 +251,7 @@ class MaxProductBP(val objRaw: DoubleTerm,
 
 }
 
+
 object MaxProductBP {
 
   def allAtoms(variable: AnyVar): List[GroundAtom[Dom]] = allAtoms(VarAtom(variable))
@@ -250,6 +267,11 @@ object MaxProductBP {
         Nil
       case _ => parent :: Nil
     }
+  }
+
+  object Schedule extends Enumeration {
+    type Schedule = Value
+    val synchronized, default = Value
   }
 }
 

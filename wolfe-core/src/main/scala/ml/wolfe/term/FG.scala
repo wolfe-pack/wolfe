@@ -1,5 +1,6 @@
 package ml.wolfe.term
 
+import scala.annotation.tailrec
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable
 
@@ -85,6 +86,48 @@ class FG[NodeContent, EdgeContent, FactorContent] {
     }
     activeFactors += factor
   }
+
+  case class DirectedEdge(edge:Edge, isF2N:Boolean) {
+    def flip = DirectedEdge(edge, !isF2N)
+    override def toString = if(isF2N) {
+      "DirectedEdge(" + edge.factor + " -> " + edge.node + ")"
+    } else {
+      "DirectedEdge(" + edge.node + " -> " + edge.factor + ")"
+    }
+  }
+
+  def scheduleForward(): Seq[DirectedEdge] = {
+    @tailrec
+    def scheduleAcc(queue:Seq[Node], done: Seq[Node], acc: Seq[DirectedEdge]): Seq[DirectedEdge] = {
+      queue match {
+        case Nil =>
+          val unseen = activeNodes.find(! done.contains(_))
+          unseen match {
+            case None => acc
+            case Some(n) => scheduleAcc(Seq(n), done, acc)
+          }
+
+        case head :: tail =>
+          if (done.contains(head)) {
+            scheduleAcc(tail, done, acc)
+          } else {
+            val newEdges = head.edges.filter(e => !acc.exists(_.edge == e) && activeEdges.contains(e)).flatMap{ e1 =>
+              (e1.factor.edges.filter(activeEdges.contains) - e1).map{ e2 =>
+                DirectedEdge(e2, isF2N = false)
+              } :+ DirectedEdge(e1, isF2N = true)
+            }
+            scheduleAcc(tail, head +: done, newEdges ++ acc)
+          }
+      }
+    }
+    scheduleAcc(Seq(), Seq(), Seq())
+  }
+  def scheduleForwardBackward(): Seq[DirectedEdge] = {
+    val forward = scheduleForward()
+    val backward = forward.reverseMap(_.flip)
+    forward ++ backward
+  }
+
 
   case class MessageRecord(edge: Edge, direction:String, message:Msg)
   val messageHistory:ArrayBuffer[ArrayBuffer[MessageRecord]] = ArrayBuffer()
