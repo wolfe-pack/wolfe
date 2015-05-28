@@ -22,7 +22,7 @@ object FactorGraphRenderer {
         |                head.js(fgScriptLocation);
         |             }
         |             head.ready(function() {
-        |                var fgData = ${indent(29, fgData)};
+        |                var fgData = ${indentStr(29, fgData)};
         |                FG.create("$id", fgData);
         |            });
         |    </script>
