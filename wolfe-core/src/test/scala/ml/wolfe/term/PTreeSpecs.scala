@@ -22,15 +22,16 @@ class PTreeSpecs extends WolfeSpec {
     for (mod <- 0 until slen) yield for (head <- 0 until slen) yield graph(head -> mod)
   }
 
-  def treesAtRoot(root: Int, t2: Int, t3: Int) =
-    Seq(
-      Set(root -> t2, t2 -> t3),
-      Set(root -> t2, root -> t3),
-      Set(root -> t3, t3 -> t2)
-    )
+  val trees = Seq(
+    Set(0 -> 1, 1 -> 2, 2 -> 3),
+    Set(0 -> 1, 1 -> 2, 1 -> 3),
+    Set(0 -> 1, 1 -> 3, 3 -> 2),
+    Set(0 -> 2, 2 -> 1, 2 -> 3),
+    Set(0 -> 3, 3 -> 2, 2 -> 1),
+    Set(0 -> 3, 3 -> 1, 1 -> 2),
+    Set(0 -> 3, 3 -> 1, 3 -> 2)
+  ) map (toParse(_, 4))
 
-  //all correct trees?
-  val trees = (treesAtRoot(0, 1, 2) ++ treesAtRoot(1, 0, 2) ++ treesAtRoot(2, 1, 0)) map (toParse(_, 3))
 
   //examples of wrong trees
   val withCycles = Seq(
@@ -64,7 +65,8 @@ class PTreeSpecs extends WolfeSpec {
     "evaluate to 0 if the input is a projective tree" in {
 
       for (tree <- trees) {
-        constraint.eval(parse := tree, slen := 3) should be(0.0)
+        println(tree)
+        constraint.eval(parse := tree, slen := 4) should be(0.0)
       }
     }
 
@@ -95,32 +97,87 @@ class PTreeSpecs extends WolfeSpec {
 
   "A PTree term over a fixed length parse" should {
 
-    val length = 3
+    val length = 4
     val Parses = Seqs(Seqs(Bools, length), length)
     val slen = Ints.Var
-    val parse = Parses.Var
-    val constraint = PTree(parse, slen)
 
 
     "evaluate marginals in a brute-force manner for a single structured parse variable" in {
+      val parse = Parses.Var
+      val constraint = PTree(parse, slen)
       val input = Settings(Setting.disc(length))
       val msg = Msgs(Parses.createZeroMsg())
       val marginalizer = new ExhaustiveSearchMarginalizer(constraint, Seq(parse), Seq(slen), input, msg, true)
       marginalizer.marginals()
       val result = Parses.toMarginals(marginalizer.outputMsgs(0))
       //the exponentiated log-marginals should correspond to counts
-      //there are 9 legal parses
-      //each non-self-loop appears in 3 such parses (and is false in 6)
+      //there are 7 legal parses
+      println(result)
+
       for (m <- 0 until length; h <- 0 until length) {
-        if (h == m) {
+        if (h == m || m == 0) {
           result(m)(h)(true) should be(Double.NegativeInfinity)
-          result(m)(h)(false) should be(math.log(9) +- eps)
-        } else {
-          result(m)(h)(true) should be(math.log(3) +- eps)
-          result(m)(h)(false) should be(math.log(6) +- eps)
+          result(m)(h)(false) should be(math.log(7) +- eps)
         }
+      }
+      for ((h,m) <- Seq(0 -> 1, 1 -> 2, 3 -> 2, 0 -> 3)) {
+        result(m)(h)(true) should be(math.log(3) +- eps)
+        result(m)(h)(false) should be(math.log(4) +- eps)
+      }
+      for ((h,m) <- Seq(2 -> 3, 1 -> 3, 2 -> 1, 3 -> 1)) {
+        result(m)(h)(true) should be(math.log(2) +- eps)
+        result(m)(h)(false) should be(math.log(5) +- eps)
+      }
+
+      for ((h,m) <- Seq(0 -> 2)) {
+        result(m)(h)(true) should be(math.log(1) +- eps)
+        result(m)(h)(false) should be(math.log(6) +- eps)
+      }
+
+    }
+
+    "evaluate marginals in a brute-force manner for a grounded parse variable" in {
+      def nodePerEdge(h: Int, m: Int) = Bools.Variable(s"edge($h,$m)")
+      val nodeMap = (for (m <- 0 until length; h <- 0 until length) yield (h, m) -> nodePerEdge(h, m)).toMap
+      def nodesPerMod(m: Int) = for (h <- 0 until length) yield nodeMap(h, m)
+
+      val nodes = for (m <- 0 until length)
+        yield Parses.elementDom.Term(Parses.elementDom.lengthDom.Variable("l" + m), nodesPerMod(m))
+
+      val parse = Parses.Term(Parses.lengthDom.Variable("length"), nodes)
+      val constraint = PTree(parse, slen)
+
+      val input = Settings(Setting.disc(length))
+      val parseVars = parse.vars
+      val msgs = Msgs(parseVars map (_.domain.createZeroMsg))
+
+      val bruteForceMarginalizer = new ExhaustiveSearchMarginalizer(constraint, parseVars, Seq(slen), input, msgs, true)
+      val dpMarginalizer = constraint.marginalizerImpl(parseVars, Seq(slen))(input, msgs, true) //new ExhaustiveSearchMarginalizer(constraint, parseVars, Seq(slen), input, msgs, true)
+
+      bruteForceMarginalizer.marginals()(Execution(0))
+      dpMarginalizer.marginals()(Execution(0))
+
+      //figure out indices of nodes
+      val indices = nodeMap map { case ((h, m), node) => (h, m) -> parseVars.indexOf(node) }
+
+      val result = (for (m <- 0 until length; h <- 0 until length)
+        yield (m, h) -> Bools.toMarginals(bruteForceMarginalizer.outputMsgs(indices(h, m)))).toMap
+
+      val resultDP = (for (m <- 0 until length; h <- 0 until length)
+        yield (m, h) -> Bools.toMarginals(dpMarginalizer.outputMsgs(indices(h, m)))).toMap
+
+      for (m <- 0 until length; h <- 0 until length) {
+        val margBrute = result(m, h).expNormalize
+        val margDP = resultDP(m, h).expNormalize
+        println((h, m))
+        println(margBrute)
+        println(margDP)
 
       }
+
+      println(result)
+
+
     }
 
 

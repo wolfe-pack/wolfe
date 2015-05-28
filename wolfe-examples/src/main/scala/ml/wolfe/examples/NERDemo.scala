@@ -25,8 +25,8 @@ object NERDemo extends App {
   type Instance = (Input, Output)
 
   def local(x: Inputs.Term, y: Outputs.Term, i: IntTerm) = cached(x, i, y(i)) {
-    feature('bias, y(i)) + //+
-      feature('word, x.word(i), y(i)) //+ Thetas.Const(Thetas.zero)
+    feature('bias, y(i)) //+ //+
+      //feature('word, x.word(i), y(i)) //+ Thetas.Const(Thetas.zero)
   }
 
   def pairwise(x: Inputs.Term, y: Outputs.Term, i: IntTerm) = cached(x, i, y(i), y(i + 1))  {
@@ -59,8 +59,8 @@ object NERDemo extends App {
   implicit val Instances = Pairs(Inputs, Outputs)
 
   def model(t: Thetas.Term)(x: Inputs.Term)(y: Outputs.Term) = {
-    sum(0 until x.word.length)(i => t dot local(x, y, i)) +
-      sum(0 until x.word.length - 1)(i => t dot pairwise(x, y, i))
+    sum(0 until x.word.length)(i => t dot local(x, y, i))
+    //+      sum(0 until x.word.length - 1)(i => t dot pairwise(x, y, i))
   } subjectTo (y.length === x.word.length) argmaxBy maxProduct(mpParams)
 
 

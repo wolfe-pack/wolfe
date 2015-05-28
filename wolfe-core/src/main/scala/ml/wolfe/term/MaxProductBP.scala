@@ -34,7 +34,8 @@ class MaxProductBP(val objRaw: DoubleTerm,
   val atoms = wrt flatMap MaxProductBP.allAtoms
 
   //grounders take potentially ungrounded atoms and create grounded atoms based on the current observations
-  val atomGrounders = (obj.vars collect {case a:Atom[Dom] => (a:AnyVar) -> a.grounder(observed.linkedSettings(observedVars, a.varsToGround))}).toMap
+  val atomGrounders = (obj.vars collect {
+    case a:Atom[Dom] => (a:AnyVar) -> a.grounder(observed.linkedSettings(observedVars, a.varsToGround))}).toMap
 
   //current mapping from unground to ground atoms (e.g. doc(i+1).sentence(j) -> doc(2).sentence(4))
   val currentGroundings = new mutable.HashMap[AnyVar, AnyGroundAtom]
