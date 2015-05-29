@@ -136,7 +136,7 @@ class PTreeSpecs extends WolfeSpec {
 
     }
 
-    "evaluate marginals in a brute-force manner for a grounded parse variable" in {
+    "evaluate marginals using dynamic programming for a grounded parse variable" in {
       def nodePerEdge(h: Int, m: Int) = Bools.Variable(s"edge($h,$m)")
       val nodeMap = (for (m <- 0 until length; h <- 0 until length) yield (h, m) -> nodePerEdge(h, m)).toMap
       def nodesPerMod(m: Int) = for (h <- 0 until length) yield nodeMap(h, m)
@@ -169,13 +169,12 @@ class PTreeSpecs extends WolfeSpec {
       for (m <- 0 until length; h <- 0 until length) {
         val margBrute = result(m, h).expNormalize
         val margDP = resultDP(m, h).expNormalize
-        println((h, m))
-        println(margBrute)
-        println(margDP)
-
+        margDP(true) should be (margBrute(true) +- eps)
+        margDP(false) should be (margBrute(false) +- eps)
       }
-
-      println(result)
+      val lengthBrute = Parses.lengthDom.toMarginals(bruteForceMarginalizer.outputMsgs(parseVars.indexOf(parse.length))).expNormalize
+      val lengthDP = Parses.lengthDom.toMarginals(dpMarginalizer.outputMsgs(parseVars.indexOf(parse.length))).expNormalize
+      lengthDP should be (lengthBrute)
 
 
     }

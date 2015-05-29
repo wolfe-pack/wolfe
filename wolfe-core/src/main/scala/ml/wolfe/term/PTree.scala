@@ -183,7 +183,12 @@ case class PTree(parse: Term[VarSeqDom[VarSeqDom[BooleanDom]]], slen: IntTerm) e
         //todo: currently we ignore (root,m) msgs
 
         def inMsgForEdge(h: Int, m: Int) = inputMsgs(nodeIndices(m)(h)).disc(0).msg
+
         def outMsgForEdge(h: Int, m: Int) = outputMsgs(nodeIndices(m)(h)).disc(0).msg
+
+        def outLengthPerMod(m: Int) = outputMsgs(numHeadsPerModIndices(m)).disc(0).msg
+
+        def outLength() = outputMsgs(numModsIndex).disc(0).msg
 
         def marginals()(implicit execution: Execution) = {
           //get sentence length
@@ -244,7 +249,7 @@ case class PTree(parse: Term[VarSeqDom[VarSeqDom[BooleanDom]]], slen: IntTerm) e
           // Calculate the potential's log partition function
           //    println("tkmat = [%s]".format(tkmat.mkString(", ")))
           //    println("gradmat = [%s]".format(gradmat.mkString(", ")))
-          val z = sumTree(tkmat, gradmat, slen, multirooted=false)
+          val z = sumTree(tkmat, gradmat, slen, multirooted = false)
           //    println(z)
           // Originally had a check here for Z != 0
           // Compute outgoing messages in terms of Z and incoming messages
@@ -266,10 +271,21 @@ case class PTree(parse: Term[VarSeqDom[VarSeqDom[BooleanDom]]], slen: IntTerm) e
 
               //indexedEdges(head, dep).msgs.asDiscrete.f2n(0) = m(0)
               //indexedEdges(head, dep).msgs.asDiscrete.f2n(1) = m(1)
-              outMsgForEdge(head,dep)(0) = m(0)
-              outMsgForEdge(head,dep)(1) = m(1)
-
+              outMsgForEdge(head, dep)(0) = m(0)
+              outMsgForEdge(head, dep)(1) = m(1)
             }
+            //deterministic edges and length settings
+            for (m <- 0 to slen) {
+              outMsgForEdge(m, m)(0) = 0.0
+              outMsgForEdge(m, m)(1) = Double.NegativeInfinity
+              outMsgForEdge(m, 0)(0) = 0.0
+              outMsgForEdge(m, 0)(1) = Double.NegativeInfinity
+              util.Arrays.fill(outLengthPerMod(m), Double.NegativeInfinity)
+              outLengthPerMod(m)(slen + 1) = 0.0
+            }
+            util.Arrays.fill(outLength, Double.NegativeInfinity)
+            outLength(slen + 1) = 0.0
+
           }
         }
 

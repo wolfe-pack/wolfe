@@ -184,6 +184,12 @@ case class RangeDom(values: Range) extends GenericDiscreteDom[Int] {
     target.disc(offsets.discOff) = new DiscMsg(values.last + 1)
   }
 
+  override def toMarginals(msg: Msg, offsets: Offsets) = {
+    val pairs = for (i <- start until end) yield intToValue(i) -> msg.disc(offsets.discOff).msg(i)
+    pairs.toMap
+  }
+
+
 
   override def toIterable = values
 
