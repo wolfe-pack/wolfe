@@ -1,7 +1,7 @@
 package ml.wolfe.term
 
 import cc.factorie.Factorie.DenseTensor1
-import cc.factorie.la.{DenseTensor2, GrowableSparseTensor1}
+import cc.factorie.la.{Tensor1, DenseTensor2, GrowableSparseTensor1}
 import ml.wolfe.{Index, Mat, Vect}
 
 import scala.language.implicitConversions
@@ -339,7 +339,21 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
       val sorted = mapped.sortBy(-_._2)
       sorted.map(pair => s"${pair._2}\t${pair._1}").mkString("\n")
     }
+
+    def toMap(implicit index: Index) = {
+      vect.activeElements.filter(_._2 != 0.0).map(pair => index.key(pair._1) -> pair._2)
+    }
   }
+
+  def Vect(map:Map[Any, Double])(implicit index: Index): Tensor1 = {
+    val result = new GrowableSparseTensor1(0 until (index.size + map.size))
+    for ((key, value) <- map) {
+      result(index(key)) = value
+    }
+    result
+  }
+
+  def Vect(elems: (Any, Double)*)(implicit index: Index):Tensor1 = Vect(elems.toMap)
 
   ////  implicit class RichVarSeqTerm[E <: Dom, T <: Term[VarSeqDom[E]]](val term: T) {
   ////    def apply(index: Int) =
