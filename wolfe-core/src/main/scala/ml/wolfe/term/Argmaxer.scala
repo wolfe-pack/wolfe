@@ -41,6 +41,11 @@ object Argmaxer {
       new MaxProductBP(term, wrt, obs, msgs)(params)
   }
 
+  def bruteForce = new ArgmaxerFactory {
+    def argmaxer(term: DoubleTerm, wrt: Seq[Var[Dom]])(obs: Settings, msgs: Msgs) =
+      new ExhaustiveSearchArgmaxer(term, wrt)(obs, msgs)
+  }
+
 
 }
 
