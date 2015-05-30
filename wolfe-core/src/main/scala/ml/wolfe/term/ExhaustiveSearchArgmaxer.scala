@@ -81,7 +81,7 @@ class ExhaustiveSearchMaxMarginalizer(obj: DoubleTerm, wrt: Seq[Var[Dom]], obser
   extends ExhaustiveMessageCalculator(obj,wrt,observed,input,inputMsgs,reverseMsgsAlso) with MaxMarginalizer {
   def aggregate(current: Double, score: Double) = max(current, score)
 
-  def maxMarginals()(implicit execution: Execution) = calculate()
+  def updateMessages()(implicit execution: Execution) = calculate()
 
   def initialValue = Double.NegativeInfinity
 }
@@ -90,7 +90,7 @@ class ExhaustiveSearchMarginalizer(obj: DoubleTerm, wrt: Seq[Var[Dom]], observed
                              input: Settings, inputMsgs: Msgs, reverseMsgsAlso: Boolean = false)
   extends ExhaustiveMessageCalculator(obj,wrt,observed,input,inputMsgs,reverseMsgsAlso) with Marginalizer {
   def aggregate(current: Double, score: Double) = log(exp(current) + exp(score))
-  def marginals()(implicit execution: Execution = Execution(0)) = calculate()
+  def updateMessages()(implicit execution: Execution = Execution(0)) = calculate()
   def initialValue = Double.NegativeInfinity
 
 

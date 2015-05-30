@@ -122,7 +122,7 @@ object FactorGraphRenderer {
     val pairs = vars.dropRight(1) zip vars.drop(1)
     val obj = sum(vars.map(local), length) + sum(pairs.map(pair), length - 1)
     val observation = Settings.fromSeq(Seq(Setting.disc(5)))
-    val argmaxer = new MaxProductBP(obj, vars, observation, null)(new MaxProductParameters(1))
+    val argmaxer = new MaxProductBP(obj, vars, observation, null)(BPParameters(1))
     argmaxer.argmax()(Execution(0))
     val fg = argmaxer.fg
 

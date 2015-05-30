@@ -36,7 +36,7 @@ object Argmaxer {
       new AdaGradArgmaxer(term, wrt, obs, msgs)
   }
 
-  def maxProduct(implicit params: MaxProductParameters) = new ArgmaxerFactory {
+  def maxProduct(implicit params: BPParameters) = new ArgmaxerFactory {
     def argmaxer(term: DoubleTerm, wrt: Seq[Var[Dom]])(obs: Settings, msgs: Msgs) =
       new MaxProductBP(term, wrt, obs, msgs)(params)
   }
@@ -54,16 +54,16 @@ trait MessageCalculator {
   val inputMsgs: Msgs
   val outputMsgs: Msgs
 
+  def updateMessages()(implicit execution: Execution)
+
+
 }
 
 trait MaxMarginalizer extends MessageCalculator {
 
-  def maxMarginals()(implicit execution: Execution)
 }
 
 trait Marginalizer extends MessageCalculator {
-
-  def marginals()(implicit execution: Execution)
 
 }
 

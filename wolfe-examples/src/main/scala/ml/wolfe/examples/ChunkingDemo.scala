@@ -60,7 +60,7 @@ object ChunkingDemo extends App {
   } subjectTo (y.length === x.words.length) argmaxBy maxProduct(mpParams)
 
   val params = AdaGradParameters(epochs = 5, learningRate = 0.1)
-  val mpParams = MaxProductParameters(iterations = 3)
+  val mpParams = BPParameters(iterations = 3)
   val thetaStar = learn(Thetas)(t => perceptron(train.toConst)(Outputs)(model(t))) using adaGrad(params)
   println("Theta* = ")
   println(thetaStar.toIndexedString)

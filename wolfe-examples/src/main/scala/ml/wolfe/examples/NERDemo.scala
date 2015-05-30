@@ -15,7 +15,7 @@ import ml.wolfe.term._
 object NERDemo extends App {
 
   val params = AdaGradParameters(epochs = 5, learningRate = 0.1)
-  val mpParams = MaxProductParameters(iterations = 3)
+  val mpParams = BPParameters(iterations = 3)
 
   implicit val index = new SimpleIndex()
 

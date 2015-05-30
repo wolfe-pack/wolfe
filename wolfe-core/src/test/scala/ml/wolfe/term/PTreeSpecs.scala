@@ -108,7 +108,7 @@ class PTreeSpecs extends WolfeSpec {
       val input = Settings(Setting.disc(length))
       val msg = Msgs(Parses.createZeroMsg())
       val marginalizer = new ExhaustiveSearchMarginalizer(constraint, Seq(parse), Seq(slen), input, msg, true)
-      marginalizer.marginals()
+      marginalizer.updateMessages()
       val result = Parses.toMarginals(marginalizer.outputMsgs(0))
       //the exponentiated log-marginals should correspond to counts
       //there are 7 legal parses
@@ -154,8 +154,8 @@ class PTreeSpecs extends WolfeSpec {
       val bruteForceMarginalizer = new ExhaustiveSearchMarginalizer(constraint, parseVars, Seq(slen), input, msgs, true)
       val dpMarginalizer = constraint.marginalizerImpl(parseVars, Seq(slen))(input, msgs, true) //new ExhaustiveSearchMarginalizer(constraint, parseVars, Seq(slen), input, msgs, true)
 
-      bruteForceMarginalizer.marginals()(Execution(0))
-      dpMarginalizer.marginals()(Execution(0))
+      bruteForceMarginalizer.updateMessages()(Execution(0))
+      dpMarginalizer.updateMessages()(Execution(0))
 
       //figure out indices of nodes
       val indices = nodeMap map { case ((h, m), node) => (h, m) -> parseVars.indexOf(node) }
@@ -175,6 +175,17 @@ class PTreeSpecs extends WolfeSpec {
       val lengthBrute = Parses.lengthDom.toMarginals(bruteForceMarginalizer.outputMsgs(parseVars.indexOf(parse.length))).expNormalize
       val lengthDP = Parses.lengthDom.toMarginals(dpMarginalizer.outputMsgs(parseVars.indexOf(parse.length))).expNormalize
       lengthDP should be (lengthBrute)
+    }
+
+    "evaluate marginals within a sum product algorithm" in {
+      val y = Parses.Var
+      val constraint = PTree(y, slen)
+      val model = constraint + I(y(0.toConst)(1.toConst))
+      val msg = Msgs(Parses.createZeroMsg())
+      val input = Settings(Setting.disc(length))
+      val marginalizerBrute = new ExhaustiveSearchMarginalizer(model, Seq(y), Seq(slen), input, msg, true)
+      val marginalizerBP = new ExhaustiveSearchMarginalizer(model, Seq(y), Seq(slen), input, msg, true)
+
 
 
     }

@@ -190,7 +190,7 @@ case class PTree(parse: Term[VarSeqDom[VarSeqDom[BooleanDom]]], slen: IntTerm) e
 
         def outLength() = outputMsgs(numModsIndex).disc(0).msg
 
-        def marginals()(implicit execution: Execution) = {
+        def updateMessages()(implicit execution: Execution) = {
           //get sentence length
           lengthEval.eval()
           val slen = lengthEval.output.disc(0) - 1 // slen in this code is the number of actual tokens w/o ROOT
