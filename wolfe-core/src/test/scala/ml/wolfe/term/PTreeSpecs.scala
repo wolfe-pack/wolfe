@@ -180,15 +180,30 @@ class PTreeSpecs extends WolfeSpec {
     "evaluate marginals within a sum product algorithm" in {
       val y = Parses.Var
       val constraint = PTree(y, slen)
-      val model = constraint + I(y(0.toConst)(1.toConst))
+      val model = constraint + I(y(1.toConst)(0.toConst)) * 1.0
       val msg = Msgs(Parses.createZeroMsg())
       val input = Settings(Setting.disc(length))
       val marginalizerBrute = new ExhaustiveSearchMarginalizer(model, Seq(y), Seq(slen), input, msg, true)
 
-      val marginalizerBP = new SumProductBP(model, Seq(y), input, msg)(BPParameters(1, BP.Schedule.synchronized))
+      val marginalizerBP = new SumProductBP(model, Seq(y), input, msg)(BPParameters(2, BP.Schedule.synchronized))
 
       //marginalizerBrute.updateMessages()(Execution(0))
       marginalizerBP.updateMessages()(Execution(0))
+      marginalizerBrute.updateMessages()(Execution(0))
+
+      val resultBP = Parses.toMarginals(marginalizerBP.outputMsgs(0))
+      val resultBrute = Parses.toMarginals(marginalizerBrute.outputMsgs(0))
+
+
+      for (m <- 0 until length; h <- 0 until length) {
+        val margBrute = resultBrute(m)(h).expNormalize
+        val margBP = resultBP(m)(h).expNormalize
+
+        margBP(true) should be (margBrute(true) +- eps)
+      }
+
+
+
 
 
     }
