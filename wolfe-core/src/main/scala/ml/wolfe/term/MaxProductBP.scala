@@ -1,6 +1,5 @@
 package ml.wolfe.term
 
-import ml.wolfe.term.MaxProductBP.Schedule
 import ml.wolfe.term.Transformer._
 
 import scala.annotation.tailrec
@@ -36,7 +35,7 @@ class MaxProductBP(val objRaw: DoubleTerm,
 }
 
 
-object MaxProductBP {
+object BP {
 
   def allAtoms(variable: AnyVar): List[GroundAtom[Dom]] = allAtoms(VarAtom(variable))
 
@@ -65,6 +64,7 @@ object MaxProductBP {
  */
 trait BP {
 
+  import BP._
   import Schedule.Schedule
 
   def wrt:Seq[AnyVar]
@@ -84,7 +84,7 @@ trait BP {
   val fg = new FG[NodeContent, EdgeContent, FactorContent]
 
   //all hidden atoms
-  val atoms = wrt flatMap MaxProductBP.allAtoms
+  val atoms = wrt flatMap BP.allAtoms
 
   //grounders take potentially ungrounded atoms and create grounded atoms based on the current observations
   val atomGrounders = (obj.vars collect {
