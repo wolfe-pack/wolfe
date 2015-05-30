@@ -8,11 +8,12 @@ import math._
  * @author riedel
  */
 abstract class ExhaustiveMessageCalculator(val obj: DoubleTerm, val wrt: Seq[Var[Dom]], val observed: Seq[Var[Dom]],
-                                  val input: Settings, val inputMsgs: Msgs, reverseMsgsAlso: Boolean = false)
+                                           val input: Settings, val inputMsgs: Msgs, reverseMsgsAlso: Boolean = false)
   extends MessageCalculator {
 
   def aggregate(current: Double, score: Double): Double
-  def initialValue:Double
+
+  def initialValue: Double
 
   require(wrt.forall(_.domain.isDiscrete), "Cannot do exhaustive search over continuous domains")
   val target = obj.vars.filterNot(v => (if (reverseMsgsAlso) false else wrt.contains(v)) || observed.contains(v))
@@ -77,8 +78,8 @@ abstract class ExhaustiveMessageCalculator(val obj: DoubleTerm, val wrt: Seq[Var
 }
 
 class ExhaustiveSearchMaxMarginalizer(obj: DoubleTerm, wrt: Seq[Var[Dom]], observed: Seq[Var[Dom]],
-                                input: Settings, inputMsgs: Msgs, reverseMsgsAlso: Boolean = false)
-  extends ExhaustiveMessageCalculator(obj,wrt,observed,input,inputMsgs,reverseMsgsAlso) with MaxMarginalizer {
+                                      input: Settings, inputMsgs: Msgs, reverseMsgsAlso: Boolean = false)
+  extends ExhaustiveMessageCalculator(obj, wrt, observed, input, inputMsgs, reverseMsgsAlso) with MaxMarginalizer {
   def aggregate(current: Double, score: Double) = max(current, score)
 
   def updateMessages()(implicit execution: Execution) = calculate()
@@ -87,10 +88,12 @@ class ExhaustiveSearchMaxMarginalizer(obj: DoubleTerm, wrt: Seq[Var[Dom]], obser
 }
 
 class ExhaustiveSearchMarginalizer(obj: DoubleTerm, wrt: Seq[Var[Dom]], observed: Seq[Var[Dom]],
-                             input: Settings, inputMsgs: Msgs, reverseMsgsAlso: Boolean = false)
-  extends ExhaustiveMessageCalculator(obj,wrt,observed,input,inputMsgs,reverseMsgsAlso) with Marginalizer {
+                                   input: Settings, inputMsgs: Msgs, reverseMsgsAlso: Boolean = false)
+  extends ExhaustiveMessageCalculator(obj, wrt, observed, input, inputMsgs, reverseMsgsAlso) with Marginalizer {
   def aggregate(current: Double, score: Double) = log(exp(current) + exp(score))
+
   def updateMessages()(implicit execution: Execution = Execution(0)) = calculate()
+
   def initialValue = Double.NegativeInfinity
 
 

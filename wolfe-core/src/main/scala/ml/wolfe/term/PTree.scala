@@ -9,7 +9,8 @@ import scala.collection.mutable
  */
 case class PTree(parse: Term[VarSeqDom[VarSeqDom[BooleanDom]]], slen: IntTerm) extends ComposedDoubleTerm {
 
-  def copy(args: IndexedSeq[ArgumentType]) = ???
+  def copy(args: IndexedSeq[ArgumentType]) =
+    PTree(args(0).asInstanceOf[Term[VarSeqDom[VarSeqDom[BooleanDom]]]],args(1).asInstanceOf[IntTerm])
 
   val arguments = IndexedSeq(parse, slen)
 
@@ -115,10 +116,10 @@ case class PTree(parse: Term[VarSeqDom[VarSeqDom[BooleanDom]]], slen: IntTerm) e
 
       val target = vars.filterNot(observed.contains)
 
-      require(parse.isInstanceOf[VarSeqDom[Dom]#Constructor],
+      require(parse.isInstanceOf[VarSeqConstructor[Dom,VarSeqDom[Dom]]],
         "parse needs to be constructed sequence of bool sequence")
 
-      val parseConstructor = parse.asInstanceOf[VarSeqDom[VarSeqDom[BoolDom]]#Constructor]
+      val parseConstructor = parse.asInstanceOf[VarSeqConstructor[VarSeqDom[BoolDom],VarSeqDom[VarSeqDom[BoolDom]]]]
 
       val maxLength = parse.domain.maxLength
 
@@ -127,11 +128,11 @@ case class PTree(parse: Term[VarSeqDom[VarSeqDom[BooleanDom]]], slen: IntTerm) e
 
       val numModsVar = parseConstructor.length.asInstanceOf[Var[IntDom]]
 
-      for (m <- 0 until maxLength) require(parseConstructor.elements(m).isInstanceOf[VarSeqDom[Dom]#Constructor],
+      for (m <- 0 until maxLength) require(parseConstructor.elements(m).isInstanceOf[VarSeqConstructor[Dom,VarSeqDom[Dom]]],
         "the sequence of booleans per modifier needs to be constructed")
 
       val nodesPerMod = for (m <- 0 until maxLength)
-        yield parseConstructor.elements(m).asInstanceOf[VarSeqDom[BoolDom]#Constructor]
+        yield parseConstructor.elements(m).asInstanceOf[VarSeqConstructor[BoolDom,VarSeqDom[BoolDom]]]
 
 
       for (m <- 0 until maxLength) require(parseConstructor.length.isInstanceOf[Var[Dom]],
@@ -400,7 +401,7 @@ case class PTree(parse: Term[VarSeqDom[VarSeqDom[BooleanDom]]], slen: IntTerm) e
       }
     } catch {
       case (e: IllegalArgumentException) =>
-        logger.debug(e.getMessage)
+        logger.info(e.getMessage)
         super.marginalizerImpl(wrt, observed)(in, inMsgs, reverseMsgsAlso)
     }
 

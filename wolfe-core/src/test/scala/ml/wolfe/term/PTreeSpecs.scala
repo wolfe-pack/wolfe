@@ -120,16 +120,16 @@ class PTreeSpecs extends WolfeSpec {
           result(m)(h)(false) should be(math.log(7) +- eps)
         }
       }
-      for ((h,m) <- Seq(0 -> 1, 1 -> 2, 3 -> 2, 0 -> 3)) {
+      for ((h, m) <- Seq(0 -> 1, 1 -> 2, 3 -> 2, 0 -> 3)) {
         result(m)(h)(true) should be(math.log(3) +- eps)
         result(m)(h)(false) should be(math.log(4) +- eps)
       }
-      for ((h,m) <- Seq(2 -> 3, 1 -> 3, 2 -> 1, 3 -> 1)) {
+      for ((h, m) <- Seq(2 -> 3, 1 -> 3, 2 -> 1, 3 -> 1)) {
         result(m)(h)(true) should be(math.log(2) +- eps)
         result(m)(h)(false) should be(math.log(5) +- eps)
       }
 
-      for ((h,m) <- Seq(0 -> 2)) {
+      for ((h, m) <- Seq(0 -> 2)) {
         result(m)(h)(true) should be(math.log(1) +- eps)
         result(m)(h)(false) should be(math.log(6) +- eps)
       }
@@ -169,12 +169,12 @@ class PTreeSpecs extends WolfeSpec {
       for (m <- 0 until length; h <- 0 until length) {
         val margBrute = result(m, h).expNormalize
         val margDP = resultDP(m, h).expNormalize
-        margDP(true) should be (margBrute(true) +- eps)
-        margDP(false) should be (margBrute(false) +- eps)
+        margDP(true) should be(margBrute(true) +- eps)
+        margDP(false) should be(margBrute(false) +- eps)
       }
       val lengthBrute = Parses.lengthDom.toMarginals(bruteForceMarginalizer.outputMsgs(parseVars.indexOf(parse.length))).expNormalize
       val lengthDP = Parses.lengthDom.toMarginals(dpMarginalizer.outputMsgs(parseVars.indexOf(parse.length))).expNormalize
-      lengthDP should be (lengthBrute)
+      lengthDP should be(lengthBrute)
     }
 
     "evaluate marginals within a sum product algorithm" in {
@@ -184,8 +184,11 @@ class PTreeSpecs extends WolfeSpec {
       val msg = Msgs(Parses.createZeroMsg())
       val input = Settings(Setting.disc(length))
       val marginalizerBrute = new ExhaustiveSearchMarginalizer(model, Seq(y), Seq(slen), input, msg, true)
-      val marginalizerBP = new ExhaustiveSearchMarginalizer(model, Seq(y), Seq(slen), input, msg, true)
 
+      val marginalizerBP = new SumProductBP(model, Seq(y), input, msg)(BPParameters(1, BP.Schedule.synchronized))
+
+      //marginalizerBrute.updateMessages()(Execution(0))
+      marginalizerBP.updateMessages()(Execution(0))
 
 
     }

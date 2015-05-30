@@ -2,12 +2,10 @@ package ml.wolfe.term
 
 import ml.wolfe.term.Transformer._
 
-import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-case class MaxProductParameters(iterations: Int)
-case class BPParameters(iterations: Int)
+case class BPParameters(iterations: Int, schedule: BP.Schedule.Schedule = BP.Schedule.default)
 
 /**
  * @author riedel
@@ -17,20 +15,43 @@ class MaxProductBP(val objRaw: DoubleTerm,
                    val observed: Settings,
                    val msgs: Msgs)(implicit val params: BPParameters) extends BP with Argmaxer {
 
-  def createMsgCalculator(pot:DoubleTerm, vars:Seq[AnyVar],observed:Seq[AnyVar],obsInPot:Settings,msgs:Msgs, reverseMsg:Boolean):MessageCalculator = {
+  def createMsgCalculator(pot: DoubleTerm, vars: Seq[AnyVar], observed: Seq[AnyVar], obsInPot: Settings, msgs: Msgs, reverseMsg: Boolean): MessageCalculator = {
     pot.maxMarginalizerImpl(vars, observed)(obsInPot, msgs, reverseMsg)
   }
 
-  def argmax()(implicit execution: Execution) = {
+
+}
+
+class SumProductBP(val objRaw: DoubleTerm,
+                   val wrt: Seq[AnyVar],
+                   val observed: Settings,
+                   val msgs: Msgs)(implicit val params: BPParameters) extends BP with Marginalizer with Argmaxer {
+
+
+  def createMsgCalculator(pot: DoubleTerm, vars: Seq[AnyVar], observed: Seq[AnyVar], obsInPot: Settings, msgs: Msgs, reverseMsg: Boolean): MessageCalculator = {
+    pot.marginalizerImpl(vars, observed)(obsInPot, msgs, reverseMsg)
+  }
+
+
+  def updateMessages()(implicit execution: Execution) = {
     doMessagePassing()
 
-    //update beliefs on nodes
-    result.foreach(_.resetToZero())
     for (n <- fg.activeNodes) {
-      updateNodeBelief(n)
-      integrateAtomIntoResult(n)
+      integrateAtomIntoResultMsgs(n)
     }
   }
+
+  def integrateAtomIntoResultMsgs(node: fg.Node): Unit = {
+    val atom = node.variable
+    val ownerIndex = wrt.indexOf(atom.owner) //todo: this is slow, do this in advance
+    for (i <- 0 until node.content.belief.disc.length)
+      outputMsgs(ownerIndex).disc(atom.offsets.discOff + i).msg = node.content.belief.disc(i).msg //todo: cont variables
+  }
+
+
+  val input = observed
+  val outputMsgs = Msgs(wrt map (_.domain.createZeroMsg()))
+  val inputMsgs = msgs
 
 }
 
@@ -64,21 +85,27 @@ object BP {
  */
 trait BP {
 
+  //todo: here we assume that the variables to max/sum over (wrt) are the ones we need to calculate messages for (target)
+
   import BP._
   import Schedule.Schedule
 
-  def wrt:Seq[AnyVar]
-  def objRaw:DoubleTerm
-  def params:BPParameters
-  def observed:Settings
-  
-  val schedule: Schedule = Schedule.default
+  def wrt: Seq[AnyVar]
+
+  def objRaw: DoubleTerm
+
+  def params: BPParameters
+
+  def observed: Settings
+
+  val schedule: Schedule = params.schedule
 
   val observedVars = objRaw.vars.filterNot(wrt.contains)
   val result: Settings = Settings.fromSeq(wrt.map(_.domain.createSetting()))
 
+  val pipeline = groundSums _ andThen flattenSums andThen clean andThen atomizeVariables(wrt) andThen shatterAtoms
   //get sum terms from objective
-  val obj = (groundSums _ andThen flattenSums andThen clean andThen atomizeVariables(wrt))(objRaw)
+  val obj = pipeline(objRaw)
 
   //factor graph
   val fg = new FG[NodeContent, EdgeContent, FactorContent]
@@ -177,8 +204,8 @@ trait BP {
 
   }
 
-  def createMsgCalculator(pot:DoubleTerm, vars:Seq[AnyVar],observed:Seq[AnyVar],
-                          obsInPot:Settings,msgs:Msgs, reverseMsg:Boolean):MessageCalculator
+  def createMsgCalculator(pot: DoubleTerm, vars: Seq[AnyVar], observed: Seq[AnyVar],
+                          obsInPot: Settings, msgs: Msgs, reverseMsg: Boolean): MessageCalculator
 
   def addPotential(pot: DoubleTerm): fg.Factor = {
     val vars = pot.vars.filter(hidden)
@@ -196,7 +223,7 @@ trait BP {
       fg.addFactor(pot.asInstanceOf[DoubleTerm], new FactorContent(null), vars.contains, targetFor) { variable =>
         val otherVars = vars.filterNot(_ == variable)
         val otherN2Fs = Msgs(otherVars map n2fs)
-        val maxMarginalizer = createMsgCalculator(pot, otherVars, obsVarsInPot,obsInPot, otherN2Fs,false)
+        val maxMarginalizer = createMsgCalculator(pot, otherVars, obsVarsInPot, obsInPot, otherN2Fs, false)
         new EdgeContent(maxMarginalizer, maxMarginalizer.outputMsgs(0), n2fs(variable))
       }
     }
@@ -253,11 +280,10 @@ trait BP {
     node.content.f2nChanged = false
   }
 
-  def integrateAtomIntoResult(node: fg.Node): Unit = {
+  def integrateAtomIntoResultState(node: fg.Node): Unit = {
     val atom = node.variable
     node.content.belief.argmax(result(wrt.indexOf(atom.owner)), atom.offsets)
   }
-
 
   def doMessagePassing()(implicit execution: Execution) = {
     //clear the current factor graph
@@ -285,10 +311,22 @@ trait BP {
         }
     }
 
+    for (n <- fg.activeNodes) {
+      updateNodeBelief(n)
+    }
+
 
   }
 
+  def argmax()(implicit execution: Execution) = {
+    doMessagePassing()
 
+    //update beliefs on nodes
+    result.foreach(_.resetToZero())
+    for (n <- fg.activeNodes) {
+      integrateAtomIntoResultState(n)
+    }
+  }
 
 
   def clearGroundings(execution: Execution): Unit = {
