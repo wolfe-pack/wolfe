@@ -149,7 +149,7 @@ object Transformer extends LazyLogging {
       }
       val doubleTerms = for (i <- 0 until indices.domain.maxLength) yield {
         val element = indices match {
-          case v: VarSeqDom[_]#Term => v(i)
+          case v: VarSeqDom[_]#Term => v.elementAt(i)
           case v => new VarSeqApply[Dom, Term[VarSeqDom[Dom]], IntTerm](v, i.toConst)
         }
         val doubleTerm = depthFirst(body) {

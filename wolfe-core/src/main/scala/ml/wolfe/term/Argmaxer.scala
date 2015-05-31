@@ -28,6 +28,11 @@ trait SamplerFactory {
   def sampler(term: DoubleTerm, wrt: Seq[Var[Dom]])(obs: Settings, msgs: Msgs)(implicit random: Random): Sampler
 }
 
+trait MarginalizerFactory {
+  def marginalizer(term: DoubleTerm, wrt: Seq[AnyVar], observed: Seq[AnyVar])
+                  (input: Settings, inputMsgs: Msgs, reverseMsgsAlso: Boolean): Marginalizer
+}
+
 
 object Argmaxer {
 
@@ -46,6 +51,23 @@ object Argmaxer {
       new ExhaustiveSearchArgmaxer(term, wrt)(obs, msgs)
   }
 
+}
+
+object Marginalizer {
+  def sumProduct(implicit params:BPParameters = BPParameters(2)) = new MarginalizerFactory {
+    def marginalizer(term: DoubleTerm, wrt: Seq[AnyVar],
+                     observed: Seq[AnyVar])(input: Settings, inputMsgs: Msgs, reverseMsgsAlso: Boolean) = {
+      require(reverseMsgsAlso)
+      new SumProductBP(term,wrt,input,inputMsgs)
+    }
+  }
+
+  def bruteForce = new MarginalizerFactory {
+    def marginalizer(term: DoubleTerm, wrt: Seq[AnyVar], observed: Seq[AnyVar])(
+      input: Settings, inputMsgs: Msgs, reverseMsgsAlso: Boolean) = {
+      new ExhaustiveSearchMarginalizer(term, wrt,observed,input,inputMsgs,reverseMsgsAlso)
+    }
+  }
 
 }
 

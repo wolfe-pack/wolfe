@@ -26,7 +26,7 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
   def own(term: TypedTerm[Value]) = new OwnedTerm[Value] with Term {
     def self = term
 
-    def apply(index: Int) = new VarSeqApply[E, Term, lengthDom.Term](this, lengthDom.Const(index))
+    def elementAt(index: Int) = new VarSeqApply[E, Term, lengthDom.Term](this, lengthDom.Const(index))
 
     def length = new VarSeqLength[Term](this)
 
@@ -36,7 +36,7 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
 
     def copy(args: IndexedSeq[ArgumentType]) = own(args(0))
 
-    def elements = for (i <- 0 until maxLength) yield apply(i)
+    def elements = for (i <- 0 until maxLength) yield elementAt(i)
   }
 
   case class Marginals(length: lengthDom.Marginals, elements: IndexedSeq[elementDom.Marginals]) {
@@ -102,7 +102,7 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
   override def toIterable = super.toIterable.view.toList.distinct
 
   trait DomTerm extends super.DomTerm {
-    def apply(index: Int): term.Term[E]
+    def elementAt(index: Int): term.Term[E]
 
     def length: IntTerm
 
@@ -135,11 +135,11 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
   }
 
   class DomVar(varName: String) extends BaseVar(varName) with super.DomVar with DomTerm {
-    def apply(index: Int) = new VarSeqApply[E, Term, lengthDom.Term](this, lengthDom.Const(index))
+    def elementAt(index: Int) = new VarSeqApply[E, Term, lengthDom.Term](this, lengthDom.Const(index))
 
     def length = new VarSeqLength[Term](this)
 
-    def elements = for (i <- 0 until maxLength) yield apply(i)
+    def elements = for (i <- 0 until maxLength) yield elementAt(i)
 
 
   }
@@ -167,7 +167,7 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
 class VarSeqConstructor[+E <: Dom, D <: VarSeqDom[E]](val length: IntTerm,
                                                       val elements: IndexedSeq[Term[E]],
                                                       val domain: D) extends Composed[D] {
-  def apply(index: Int) = elements(index)
+  def elementAt(index: Int) = elements(index)
 
   type ArgumentType = term.Term[Dom]
 

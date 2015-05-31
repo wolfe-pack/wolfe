@@ -134,7 +134,6 @@ case class PTree(parse: Term[VarSeqDom[VarSeqDom[BooleanDom]]], slen: IntTerm) e
       val nodesPerMod = for (m <- 0 until maxLength)
         yield parseConstructor.elements(m).asInstanceOf[VarSeqConstructor[BoolDom,VarSeqDom[BoolDom]]]
 
-
       for (m <- 0 until maxLength) require(parseConstructor.length.isInstanceOf[Var[Dom]],
         "the indicator of number of heads per modifier needs to be a variable")
 
@@ -192,6 +191,7 @@ case class PTree(parse: Term[VarSeqDom[VarSeqDom[BooleanDom]]], slen: IntTerm) e
         def outLength() = outputMsgs(numModsIndex).disc(0).msg
 
         def updateMessages()(implicit execution: Execution) = {
+          logger.info("Calculating PTree marginals")
           //get sentence length
           lengthEval.eval()
           val slen = lengthEval.output.disc(0) - 1 // slen in this code is the number of actual tokens w/o ROOT

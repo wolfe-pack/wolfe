@@ -10,7 +10,8 @@ import scala.util.Random
 /**
  * @author riedel
  */
-object TermImplicits extends NameProviderImplicits with MathImplicits with Stochastic with LoggedTerms with FVectors with NGramCountsHelper {
+object TermImplicits extends NameProviderImplicits with MathImplicits with Stochastic
+with LoggedTerms with FVectors with NGramCountsHelper with CombinatorialConstraints {
 
   implicit val Doubles: Dom.doubles.type = Dom.doubles
   implicit val Bools: Dom.bools.type = Dom.bools
@@ -45,7 +46,7 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
 
   def Preds(keyDom: Dom) = FullMaps(keyDom, Bools)
 
-  def Graphs(keyDom1: Dom, keyDom2: Dom) = Maps(keyDom1,keyDom2,Bools)
+  def Graphs(keyDom1: Dom, keyDom2: Dom) = Maps(keyDom1, keyDom2, Bools)
 
   def fixedLengthSeq[T](elements: Seq[T])(implicit dom: TypedDom[T]) = {
     Seqs(dom, elements.length).Const(elements.toIndexedSeq)
@@ -105,7 +106,7 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
 
   implicit def toConvertable[T](value: T)(implicit domain: TypedDom[T]): ConvertableToTerm3[T, domain.type] = new ConvertableToTerm3[T, domain.type](value)(domain)
 
-  implicit def evalResultToResult[T](evalResult:EvalResult[T]):T = evalResult.value
+  implicit def evalResultToResult[T](evalResult: EvalResult[T]): T = evalResult.value
 
   implicit class RichRange(values: Range) {
     def toDom = new RangeDom(values)
@@ -176,12 +177,11 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
   //implicit def seqToSeqTerm[E <: Dom : SeqDom](elems:Seq[Term[E]]) = seq(implicitly[SeqDom[E]])(elems: _*)
 
 
-//  implicit def discToConstant[T: DiscreteDom](value: T): Constant[DiscreteDom[T]] =
-//    implicitly[DiscreteDom[T]].Const(value)
+  //  implicit def discToConstant[T: DiscreteDom](value: T): Constant[DiscreteDom[T]] =
+  //    implicitly[DiscreteDom[T]].Const(value)
 
-  implicit def discToConstant[T](value: T)(implicit dom:DiscreteDom[T]):dom.Term =
+  implicit def discToConstant[T](value: T)(implicit dom: DiscreteDom[T]): dom.Term =
     dom.Const(value)
-
 
 
   //  def argmax[D <: Dom](dom: D)(obj: dom.Variable => DoubleTerm): dom.Value = {
@@ -279,7 +279,7 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
       innerTerm.evalUntyped(args: _*)
     }
 
-    def evalResult(at: Assignment[Dom]*):EvalResult[innerTerm.domain.Value] = {
+    def evalResult(at: Assignment[Dom]*): EvalResult[innerTerm.domain.Value] = {
       val values = at.map(a => a.variable -> a.value).toMap
       val args = innerTerm.vars.map(values)
       innerTerm.evalResultUntyped(args: _*)
@@ -345,7 +345,7 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
     }
   }
 
-  def Vect(map:Map[Any, Double])(implicit index: Index): Tensor1 = {
+  def Vect(map: Map[Any, Double])(implicit index: Index): Tensor1 = {
     val result = new GrowableSparseTensor1(0 until (index.size + map.size))
     for ((key, value) <- map) {
       result(index(key)) = value
@@ -353,7 +353,7 @@ object TermImplicits extends NameProviderImplicits with MathImplicits with Stoch
     result
   }
 
-  def Vect(elems: (Any, Double)*)(implicit index: Index):Tensor1 = Vect(elems.toMap)
+  def Vect(elems: (Any, Double)*)(implicit index: Index): Tensor1 = Vect(elems.toMap)
 
   ////  implicit class RichVarSeqTerm[E <: Dom, T <: Term[VarSeqDom[E]]](val term: T) {
   ////    def apply(index: Int) =
@@ -422,7 +422,12 @@ trait MathImplicits {
   //  def I[T <: BoolTerm](term: T) = new Iverson(term)
   def I(term: BoolTerm) = new Iverson(term)
 
-  def constraint(term: BoolTerm) = log(I(term))
+  def constraint(term: BoolTerm) = {
+    term match {
+      case InverseLogIverson(doubleTerm) => doubleTerm
+      case _ => log(I(term))
+    }
+  }
 
   def sigmVec[T <: VectorTerm](term: T) = new VectorSigmoid(term)
 
@@ -493,7 +498,7 @@ trait MathImplicits {
 
     def /(that: DoubleTerm) = new Div(term, that)
 
-    def >(that:DoubleTerm) = new GT(term,that)
+    def >(that: DoubleTerm) = new GT(term, that)
 
     def unary_- = term * (-1.0)
 
@@ -508,6 +513,20 @@ trait MathImplicits {
 
       def copy(args: IndexedSeq[ArgumentType]) =
         new RichDoubleTerm(args(0)).argmaxBy(factory)
+
+    }
+
+    def marginalsBy(factory: MarginalizerFactory): ProxyTerm[TypedDom[Double]] = new ProxyTerm[TypedDom[Double]] {
+      def self = term
+
+
+      override def marginalizerImpl(wrt: Seq[AnyVar], observed: Seq[AnyVar])
+                                   (input: Settings, inputMsgs: Msgs, reverseMsgsAlso: Boolean) = {
+        factory.marginalizer(term, wrt, observed)(input, inputMsgs, reverseMsgsAlso)
+      }
+
+      def copy(args: IndexedSeq[ArgumentType]) =
+        new RichDoubleTerm(args(0)).marginalsBy(factory)
 
     }
 
@@ -537,6 +556,26 @@ trait MathImplicits {
     val variable = dom.Variable("_hidden")
     val term = obj(variable)
     new Argmax[dom.type](term, variable)
+  }
+
+  trait PseudoTerm[T] {
+    def eval(assignments: Assignment[Dom]*): T
+  }
+
+  def marginals[D <: Dom](dom: D)(obj: dom.Var => DoubleTerm): PseudoTerm[dom.Marginals] = {
+    val variable = dom.Variable("_hidden")
+    val term = obj(variable)
+    new PseudoTerm[dom.Marginals] {
+      def eval(assignments: Assignment[Dom]*) = {
+        val observed = assignments map (_.variable)
+        val input = Settings.fromSeq(assignments map (a => a.variable.domain.toSetting(a.value.asInstanceOf[a.variable.domain.Value])))
+        val inputMsgs = Msgs(dom.createZeroMsg())
+        val marginalizer = term.marginalizerImpl(Seq(variable), observed)(input, inputMsgs, true)
+        marginalizer.updateMessages()(Execution(0))
+        dom.toMarginals(marginalizer.outputMsgs(0))
+      }
+    }
+    //new Argmax[dom.type](term, variable)
   }
 
   def sample[D <: Dom](dom: D)(obj: dom.Var => DoubleTerm)(implicit random: Random): Sample[dom.type] = {
@@ -643,7 +682,7 @@ trait MathImplicits {
 
 trait Stochastic {
 
-  this:MathImplicits =>
+  this: MathImplicits =>
 
   import TermImplicits._
 
@@ -656,6 +695,19 @@ trait Stochastic {
   def nextDouble()(implicit random: Random) = new SampleDouble(random.nextDouble())
 
 }
+
+trait CombinatorialConstraints {
+
+  type ParseDom = VarSeqDom[VarSeqDom[BooleanDom]]
+
+  def projectiveTree(parse: Term[ParseDom], slen: IntTerm) = {
+    val ptree = PTree(parse, slen)
+    InverseLogIverson(ptree)
+  }
+
+
+}
+
 
 trait LoggedTerms extends NamedValueImplicits {
 

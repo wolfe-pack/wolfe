@@ -202,11 +202,33 @@ class PTreeSpecs extends WolfeSpec {
         margBP(true) should be (margBrute(true) +- eps)
       }
 
+    }
+
+    "evaluate marginals using the marginals operator" in {
+
+      implicit val params = BPParameters(2, BP.Schedule.synchronized)
+
+      def model(y:Parses.Term, slen:IntTerm) = {
+        I(y(1)(0)) subjectTo projectiveTree(y,slen)
+      }
+
+      val resultBP = marginals(Parses)(y => model(y,4) marginalsBy Marginalizer.sumProduct).eval()
+      val resultBrute = marginals(Parses)(y => model(y,4) marginalsBy Marginalizer.bruteForce).eval()
+
+      for (m <- 0 until length; h <- 0 until length) {
+        val margBrute = resultBrute(m)(h).expNormalize
+        val margBP = resultBP(m)(h).expNormalize
+
+        margBP(true) should be (margBrute(true) +- eps)
+      }
+
 
 
 
 
     }
+
+
 
 
   }

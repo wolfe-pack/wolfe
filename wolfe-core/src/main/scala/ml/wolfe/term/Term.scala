@@ -587,6 +587,7 @@ case class Iverson[T <: BoolTerm](arg: T) extends UnaryTerm[T, DoubleDom] with C
 }
 
 
+
 class IntToDouble[T <: IntTerm](val int: T) extends ComposedDoubleTerm {
   type ArgumentType = T
 
@@ -661,6 +662,19 @@ class Unary_!(val arg: BoolTerm) extends UnaryTerm[BoolTerm, Dom.bools.type] {
       output.disc(0) = 1 - input(0).disc(0)
     }
   }
+}
+
+case class InverseLogIverson(arg:DoubleTerm) extends UnaryTerm[DoubleTerm, Dom.bools.type] {
+  override def copy(args: IndexedSeq[DoubleTerm]) = InverseLogIverson(args(0))
+
+  override val domain: Dom.bools.type = Dom.bools
+
+  override def composer(args: Settings) = new Composer(args) {
+    def eval()(implicit execution: Execution) = {
+      output.disc(0) = if (input(0).cont(0) == Double.NegativeInfinity) 0 else 1
+    }
+  }
+
 }
 
 
