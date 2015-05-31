@@ -108,6 +108,8 @@ case class SeqGroundAtom[E <: Dom, S <: VarSeqDom[E]](seq: GroundAtom[S], index:
 
   def varName = getClass.getSimpleName + "(" +
     (if (productArity == 0) "" else productIterator.map(_.toString).reduce(_ + "," + _)) + ")"
+
+  override def toString() = seq.toString + "(" + index.toString + ")"
 }
 
 case class SeqAtom[E <: Dom, S <: VarSeqDom[E]](seq: Atom[S], index: IntTerm) extends Atom[E] {
@@ -133,6 +135,8 @@ case class SeqAtom[E <: Dom, S <: VarSeqDom[E]](seq: Atom[S], index: IntTerm) ex
     (if (productArity == 0) "" else productIterator.map(_.toString).reduce(_ + "," + _)) + ")"
 
   def owner = seq.owner
+
+  override def toString() = seq.toString + "(" + index.toString + ")"
 }
 
 trait GenericLengthAtom[S <: VarSeqDom[_]] extends Atom[IntDom] {
