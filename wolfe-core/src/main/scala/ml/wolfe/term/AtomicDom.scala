@@ -198,16 +198,20 @@ case class RangeDom(values: Range) extends GenericDiscreteDom[Int] {
   trait SampleTerm extends Term {
 
     def isStatic = false
+    private var currentExecution: Execution = null
+    private var currentValue: Int = -1
 
     abstract class Evaluator(in: Settings) extends AbstractEvaluator(in) {
       val output = createSetting()
-      private var currentExecution: Execution = null
-      private var currentValue: Int = -1
 
       def nextValue(): Int
 
       def eval()(implicit execution: Execution) = {
-        currentValue = nextValue()
+        if (execution != currentExecution) {
+          currentExecution = execution
+          currentValue = nextValue()
+        }
+        //currentValue = nextValue()
         output.disc(0) = currentValue
       }
 

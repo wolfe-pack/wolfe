@@ -2,6 +2,8 @@ package ml.wolfe.term
 
 import ml.wolfe.WolfeSpec
 
+import scala.util.Random
+
 /**
  * @author riedel
  */
@@ -11,10 +13,19 @@ class TermMonadSpecs extends WolfeSpec {
 
   "The term monad" should {
     "support map operations" in {
-      val x = Bools.Variable("x")
+      val x = Bools.Var
       val t = x.map(!_)
       t.eval(x := true) should be(false)
     }
+
+    "return the same mapped value on the same execution" in {
+      val random = new Random(0)
+      val y = Ints.Var
+      val m = y map (_ + random.nextInt())
+      val t = m === m
+      t.eval(y := 0) should be (true)
+    }
+
     "support flatMap operations" in {
       val x = Bools.Variable("x")
       val y = Bools.Variable("y")

@@ -14,19 +14,21 @@ trait TermMap[A <: Term[Dom], D <: Dom] extends Term[D] with NAry {
 
   def arguments = IndexedSeq(term)
 
+  private var currentExecution:Execution = null
+  private var mapped:domain.Value = null.asInstanceOf[domain.Value]
+
   def vars = term.vars
 
   override def evaluatorImpl(in: Settings) = new AbstractEvaluator(in) {
     val termEval = term.evaluatorImpl(in)
-    var currentExecution:Execution = null
     def eval()(implicit execution: Execution): Unit = {
       if (currentExecution != execution) {
         termEval.eval()
         val value = term.domain.toValue(termEval.output)
-        val mapped = f(value)
-        domain.copyValue(mapped, output)
+        mapped = f(value)
         currentExecution = execution
       }
+      domain.copyValue(mapped, output)
     }
     val output = domain.createSetting()
   }

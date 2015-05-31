@@ -23,8 +23,16 @@ class SampleSpecs extends WolfeSpec {
       e.evalUntyped() should be(0)
     }
 
-    "generate different values in different positions" in {
+    "generate the same value in different positions for the same execution" in {
       val r = sampleUniform(0 until 100000)
+      val t = r === r
+      val e = t.evaluator()
+      e.evalUntyped() should be(true)
+    }
+
+
+    "generate different values in different positions if fresh sample terms are used" in {
+      def r = sampleUniform(0 until 100000)
       val t = r === r
       val e = t.evaluator()
       e.evalUntyped() should be(false)
