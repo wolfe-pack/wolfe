@@ -1,13 +1,11 @@
 package ml.wolfe.term
 
-import ml.wolfe.term.MaxProductBP.Schedule
 import ml.wolfe.term.Transformer._
 
-import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-case class MaxProductParameters(iterations: Int)
+case class BPParameters(iterations: Int, schedule: BP.Schedule.Schedule = BP.Schedule.default)
 
 /**
  * @author riedel
@@ -15,27 +13,110 @@ case class MaxProductParameters(iterations: Int)
 class MaxProductBP(val objRaw: DoubleTerm,
                    val wrt: Seq[AnyVar],
                    val observed: Settings,
-                   val msgs: Msgs)(implicit params: MaxProductParameters) extends Argmaxer {
+                   val msgs: Msgs)(implicit val params: BPParameters) extends BP with Argmaxer {
 
-  import params._
+  def createMsgCalculator(pot: DoubleTerm, vars: Seq[AnyVar], observed: Seq[AnyVar], obsInPot: Settings, msgs: Msgs, reverseMsg: Boolean): MessageCalculator = {
+    pot.maxMarginalizerImpl(vars, observed)(obsInPot, msgs, reverseMsg)
+  }
+
+
+}
+
+class SumProductBP(val objRaw: DoubleTerm,
+                   val wrt: Seq[AnyVar],
+                   val observed: Settings,
+                   val msgs: Msgs)(implicit val params: BPParameters) extends BP with Marginalizer with Argmaxer {
+
+
+  def createMsgCalculator(pot: DoubleTerm, vars: Seq[AnyVar], observed: Seq[AnyVar], obsInPot: Settings, msgs: Msgs, reverseMsg: Boolean): MessageCalculator = {
+    pot.marginalizerImpl(vars, observed)(obsInPot, msgs, reverseMsg)
+  }
+
+
+  def updateMessages()(implicit execution: Execution) = {
+    doMessagePassing()
+
+    for (n <- fg.activeNodes) {
+      integrateAtomIntoResultMsgs(n)
+    }
+  }
+
+  def integrateAtomIntoResultMsgs(node: fg.Node): Unit = {
+    val atom = node.variable
+    val ownerIndex = wrt.indexOf(atom.owner) //todo: this is slow, do this in advance
+    for (i <- 0 until node.content.belief.disc.length)
+      outputMsgs(ownerIndex).disc(atom.offsets.discOff + i).msg = node.content.belief.disc(i).msg //todo: cont variables
+  }
+
+
+  val input = observed
+  val outputMsgs = Msgs(wrt map (_.domain.createZeroMsg()))
+  val inputMsgs = msgs
+
+}
+
+
+object BP {
+
+  def allAtoms(variable: AnyVar): List[GroundAtom[Dom]] = allAtoms(VarAtom(variable))
+
+  //todo: make this tail-recursive
+  def allAtoms(parent: GroundAtom[Dom]): List[GroundAtom[Dom]] = {
+    parent.domain match {
+      case s: AnySeqDom =>
+        LengthGroundAtom(parent.asInstanceOf[GroundAtom[AnySeqDom]]) ::
+          (Range(0, s.maxLength).toList flatMap (i =>
+            allAtoms(SeqGroundAtom[Dom, AnySeqDom](parent.asInstanceOf[GroundAtom[AnySeqDom]], i))))
+      case d: ProductDom =>
+        Nil
+      case _ => parent :: Nil
+    }
+  }
+
+  object Schedule extends Enumeration {
+    type Schedule = Value
+    val synchronized, default = Value
+  }
+
+}
+
+/**
+ * @author riedel
+ */
+trait BP {
+
+  //todo: here we assume that the variables to max/sum over (wrt) are the ones we need to calculate messages for (target)
+
+  import BP._
   import Schedule.Schedule
-  val schedule:Schedule = Schedule.default
+
+  def wrt: Seq[AnyVar]
+
+  def objRaw: DoubleTerm
+
+  def params: BPParameters
+
+  def observed: Settings
+
+  val schedule: Schedule = params.schedule
 
   val observedVars = objRaw.vars.filterNot(wrt.contains)
   val result: Settings = Settings.fromSeq(wrt.map(_.domain.createSetting()))
 
+  val pipeline = groundSums _ andThen flattenSums andThen clean andThen atomizeVariables(wrt) andThen shatterAtoms
   //get sum terms from objective
-  val obj = (groundSums _ andThen flattenSums andThen clean andThen atomizeVariables(wrt))(objRaw)
+  val obj = pipeline(objRaw)
 
   //factor graph
   val fg = new FG[NodeContent, EdgeContent, FactorContent]
 
   //all hidden atoms
-  val atoms = wrt flatMap MaxProductBP.allAtoms
+  val atoms = wrt flatMap BP.allAtoms
 
   //grounders take potentially ungrounded atoms and create grounded atoms based on the current observations
   val atomGrounders = (obj.vars collect {
-    case a:Atom[Dom] => (a:AnyVar) -> a.grounder(observed.linkedSettings(observedVars, a.varsToGround))}).toMap
+    case a: Atom[Dom] => (a: AnyVar) -> a.grounder(observed.linkedSettings(observedVars, a.varsToGround))
+  }).toMap
 
   //current mapping from unground to ground atoms (e.g. doc(i+1).sentence(j) -> doc(2).sentence(4))
   val currentGroundings = new mutable.HashMap[AnyVar, AnyGroundAtom]
@@ -76,11 +157,12 @@ class MaxProductBP(val objRaw: DoubleTerm,
 
   class NodeContent(val belief: Msg, var f2nChanged: Boolean = true)
 
-  class EdgeContent(val maxMarginalizer: MaxMarginalizer, val f2n: Msg, val n2f: Msg)
+  class EdgeContent(val maxMarginalizer: MessageCalculator, val f2n: Msg, val n2f: Msg)
 
-  class FactorContent(val maxMarginalizer: MaxMarginalizer) {
+  class FactorContent(val messageCalculator: MessageCalculator) {
     var n2fChanged: Boolean = true
-    def update()(implicit execution: Execution) = maxMarginalizer.maxMarginals()
+
+    def update()(implicit execution: Execution) = messageCalculator.updateMessages()
   }
 
   def addNodes(vars: Seq[AnyGroundAtom]): Unit = {
@@ -104,14 +186,14 @@ class MaxProductBP(val objRaw: DoubleTerm,
     }
   }
 
-  def hidden(variable:AnyVar) = variable match {
-    case a:AnyAtom => wrt.contains(a.owner)
+  def hidden(variable: AnyVar) = variable match {
+    case a: AnyAtom => wrt.contains(a.owner)
     case _ => false
   }
 
 
   //todo: this is nasty: somehow vars may be "equal" but have different hash values! This is a hack around this
-  private def distinctHack[T](args:Seq[T]):Seq[T] = {
+  private def distinctHack[T](args: Seq[T]): Seq[T] = {
     val result = new ArrayBuffer[T]
     for (a <- args) {
       if (!result.contains(a)) {
@@ -122,6 +204,9 @@ class MaxProductBP(val objRaw: DoubleTerm,
 
   }
 
+  def createMsgCalculator(pot: DoubleTerm, vars: Seq[AnyVar], observed: Seq[AnyVar],
+                          obsInPot: Settings, msgs: Msgs, reverseMsg: Boolean): MessageCalculator
+
   def addPotential(pot: DoubleTerm): fg.Factor = {
     val vars = pot.vars.filter(hidden)
     val n2fs = vars.map(v => v -> v.domain.createZeroMsg()).toMap
@@ -129,7 +214,7 @@ class MaxProductBP(val objRaw: DoubleTerm,
     val obsInPot = observed.linkedSettings(observedVars, obsVarsInPot)
 
     if (schedule == Schedule.synchronized) {
-      val potMaxMarginalizer = pot.maxMarginalizerImpl(vars, obsVarsInPot)(obsInPot, Msgs(vars map n2fs), true)
+      val potMaxMarginalizer = createMsgCalculator(pot, vars, obsVarsInPot, obsInPot, Msgs(vars map n2fs), true)
       fg.addFactor(pot.asInstanceOf[DoubleTerm], new FactorContent(potMaxMarginalizer), vars.contains, targetFor) { variable =>
         val outputMsg = potMaxMarginalizer.outputMsgs(vars.indexOf(variable))
         new EdgeContent(null, outputMsg, n2fs(variable))
@@ -138,7 +223,7 @@ class MaxProductBP(val objRaw: DoubleTerm,
       fg.addFactor(pot.asInstanceOf[DoubleTerm], new FactorContent(null), vars.contains, targetFor) { variable =>
         val otherVars = vars.filterNot(_ == variable)
         val otherN2Fs = Msgs(otherVars map n2fs)
-        val maxMarginalizer = pot.maxMarginalizerImpl(otherVars, obsVarsInPot)(obsInPot, otherN2Fs)
+        val maxMarginalizer = createMsgCalculator(pot, otherVars, obsVarsInPot, obsInPot, otherN2Fs, false)
         new EdgeContent(maxMarginalizer, maxMarginalizer.outputMsgs(0), n2fs(variable))
       }
     }
@@ -163,21 +248,21 @@ class MaxProductBP(val objRaw: DoubleTerm,
   }
 
   def updateF2N(edge: fg.Edge)(implicit execution: Execution): Unit = {
-    edge.content.maxMarginalizer.maxMarginals()
+    edge.content.maxMarginalizer.updateMessages()
     edge.node.content.f2nChanged = true
     fg.recordF2N(edge, edge.content.f2n)
   }
 
   def updateFactor(factor: fg.Factor)(implicit execution: Execution): Unit = {
-    for(e <- factor.edges) {
-      if(e.node.content.f2nChanged) {
+    for (e <- factor.edges) {
+      if (e.node.content.f2nChanged) {
         updateNodeBelief(e.node)
         e.content.n2f := e.node.content.belief - e.content.f2n
         fg.recordN2F(e, e.content.n2f)
         factor.content.n2fChanged = true
       }
     }
-    if(factor.content.n2fChanged) {
+    if (factor.content.n2fChanged) {
       factor.content.update()
       for (e <- factor.edges) {
         fg.recordF2N(e, e.content.f2n)
@@ -195,14 +280,12 @@ class MaxProductBP(val objRaw: DoubleTerm,
     node.content.f2nChanged = false
   }
 
-  def integrateAtomIntoResult(node:fg.Node): Unit = {
+  def integrateAtomIntoResultState(node: fg.Node): Unit = {
     val atom = node.variable
-    node.content.belief.argmax(result(wrt.indexOf(atom.owner)),atom.offsets)
+    node.content.belief.argmax(result(wrt.indexOf(atom.owner)), atom.offsets)
   }
 
-
-
-  def argmax()(implicit execution: Execution) = {
+  def doMessagePassing()(implicit execution: Execution) = {
     //clear the current factor graph
     fg.deactivate()
 
@@ -215,30 +298,36 @@ class MaxProductBP(val objRaw: DoubleTerm,
     //the actual message passing
     schedule match {
       case Schedule.synchronized =>
-        for (i <- 0 until iterations; f <- fg.activeFactors) {
+        for (i <- 0 until params.iterations; f <- fg.activeFactors) {
           updateFactor(f)
         }
       case Schedule.default =>
         val mpSchedule = fg.scheduleForwardBackward()
-        for (i <- 0 until iterations; de <- mpSchedule) {
-          if(de.isF2N)
+        for (i <- 0 until params.iterations; de <- mpSchedule) {
+          if (de.isF2N)
             updateF2N(de.edge)
           else
             updateN2F(de.edge)
         }
     }
 
+    for (n <- fg.activeNodes) {
+      updateNodeBelief(n)
+    }
+
+
+  }
+
+  def argmax()(implicit execution: Execution) = {
+    doMessagePassing()
 
     //update beliefs on nodes
     result.foreach(_.resetToZero())
     for (n <- fg.activeNodes) {
-      updateNodeBelief(n)
-      integrateAtomIntoResult(n)
+      integrateAtomIntoResultState(n)
     }
-
-    //compose atomic results to results for the original
-
   }
+
 
   def clearGroundings(execution: Execution): Unit = {
     currentExecution = execution
@@ -252,27 +341,4 @@ class MaxProductBP(val objRaw: DoubleTerm,
 
 }
 
-
-object MaxProductBP {
-
-  def allAtoms(variable: AnyVar): List[GroundAtom[Dom]] = allAtoms(VarAtom(variable))
-
-  //todo: make this tail-recursive
-  def allAtoms(parent: GroundAtom[Dom]): List[GroundAtom[Dom]] = {
-    parent.domain match {
-      case s: AnySeqDom =>
-        LengthGroundAtom(parent.asInstanceOf[GroundAtom[AnySeqDom]]) ::
-          (Range(0, s.maxLength).toList flatMap (i =>
-          allAtoms(SeqGroundAtom[Dom, AnySeqDom](parent.asInstanceOf[GroundAtom[AnySeqDom]], i))))
-      case d: ProductDom =>
-        Nil
-      case _ => parent :: Nil
-    }
-  }
-
-  object Schedule extends Enumeration {
-    type Schedule = Value
-    val synchronized, default = Value
-  }
-}
 

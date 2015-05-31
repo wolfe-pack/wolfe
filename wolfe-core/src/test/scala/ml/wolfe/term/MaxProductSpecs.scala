@@ -23,7 +23,7 @@ class MaxProductSpecs extends WolfeSpec {
       println("(true, false)  : " + (obj).evalUntyped(true, false))
       println("(false, true) : " + (obj).evalUntyped(false, true))
       println("(false, false) : " + (obj).evalUntyped(false, false))
-      val mpParams = MaxProductParameters(10)
+      val mpParams = BPParameters(10)
 
       val observation = Settings.fromSeq(Seq())
       val objWithArgmaxerSpecified = obj.argmaxBy(Argmaxer.maxProduct(mpParams))
@@ -51,7 +51,7 @@ class MaxProductSpecs extends WolfeSpec {
 
       println((obj | length << 5).evalUntyped(true, true, true, true, true))
       println((obj | length << 5).evalUntyped(true, false, true, false, true))
-      val mpParams = MaxProductParameters(10)
+      val mpParams = BPParameters(10)
 
       val observation = Settings.fromSeq(Seq(Setting.disc(5)))
       val objWithArgmaxerSpecified = obj.argmaxBy(Argmaxer.maxProduct(mpParams))
@@ -72,7 +72,7 @@ class MaxProductSpecs extends WolfeSpec {
         sum(0 until length) { i => I(y(i))} +
           sum(0 until length - 1) { i => I(y(i) <-> ! y(i + 1))}
       }
-      val mpParams = MaxProductParameters(10)
+      val mpParams = BPParameters(10)
       val result = argmax(Y)(y => model(5)(y) subjectTo (y.length === 5) argmaxBy maxProduct(mpParams)).eval()
       result should be (Seq(true, false, true, false, true))
     }
@@ -85,7 +85,7 @@ class MaxProductSpecs extends WolfeSpec {
         sum(0 until l) { i => I(y(i))} +
           sum(0 until l - 1) { i => 10 * I(y(i) <-> ! y(i + 1))}
       }
-      val mpParams = MaxProductParameters(10)
+      val mpParams = BPParameters(10)
       val result = argmax(Y)(y => model(y) subjectTo (y.length === l) argmaxBy maxProduct(mpParams)).eval(l := 2)
       println(result)
       //result should be (Seq(true, false, true, false, true))
@@ -96,7 +96,7 @@ class MaxProductSpecs extends WolfeSpec {
 
       implicit val random = new Random(0)
 
-      val mpParams = MaxProductParameters(10)
+      val mpParams = BPParameters(10)
       val adaParams = AdaGradParameters(100, 0.1)
 
       val n = 5

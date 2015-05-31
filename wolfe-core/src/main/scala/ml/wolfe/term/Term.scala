@@ -195,7 +195,7 @@ trait TermHelper[+D <: Dom] extends LazyLogging {
     val observedSettings = Dom.createSettings(observed, args)
     val incomingMsgs = Msgs(Seq(wrt.domain.toMsgs(incoming)))
     val maxMarger = maxMarginalizerImpl(Seq(wrt), observed)(observedSettings, incomingMsgs)
-    maxMarger.maxMarginals()(Execution(0))
+    maxMarger.updateMessages()(Execution(0))
     target.domain.toMarginals(maxMarger.outputMsgs(0))
   }
 
@@ -204,7 +204,7 @@ trait TermHelper[+D <: Dom] extends LazyLogging {
     val observedSettings = Dom.createSettings(observed, args)
     val incomingMsgs = Msgs(Seq(wrt.domain.toMsgs(incoming)))
     val maxMarger = marginalizerImpl(Seq(wrt), observed)(observedSettings, incomingMsgs)
-    maxMarger.marginals()(Execution(0))
+    maxMarger.updateMessages()(Execution(0))
     target.domain.toMarginals(maxMarger.outputMsgs(0))
   }
 

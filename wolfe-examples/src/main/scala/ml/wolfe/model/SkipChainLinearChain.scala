@@ -17,7 +17,7 @@ trait SkipChainLinearChain[Label] {
   def thetaStar: Vect
   def maxLength: Int
 
-  implicit val maxProductParams = MaxProductParameters(10)
+  implicit val maxProductParams = BPParameters(10)
 
   implicit val Thetas = Vectors(maxFeats)
   implicit val index = new DefaultIndexer()

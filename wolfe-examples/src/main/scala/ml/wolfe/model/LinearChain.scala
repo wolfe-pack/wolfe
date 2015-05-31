@@ -17,7 +17,7 @@ trait LinearChain[Label] {
   def thetaStar: Vect
   def maxLength: Int
 
-  val maxProductParams = MaxProductParameters(10)
+  val maxProductParams = BPParameters(10)
 
   implicit val Thetas = Vectors(maxFeats)
   implicit val index = new SimpleIndex
