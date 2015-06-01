@@ -9,15 +9,6 @@ class PTreeSpecs extends WolfeSpec {
 
   import ml.wolfe.term.TermImplicits._
 
-  implicit class MarginalsMap[T](map: Map[T, Double]) {
-    def sum = map.values.sum
-
-    def expNormalize = {
-      val normalizer = math.log(map.mapValues(math.exp).valuesIterator.sum)
-      map map (p => p.copy(_2 = math.exp(p._2 - normalizer)))
-    }
-  }
-
   def toParse(graph: Set[(Int, Int)], slen: Int): IndexedSeq[IndexedSeq[Boolean]] = {
     for (mod <- 0 until slen) yield for (head <- 0 until slen) yield graph(head -> mod)
   }

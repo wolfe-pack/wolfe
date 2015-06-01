@@ -11,7 +11,7 @@ import scala.util.Random
  * @author riedel
  */
 object TermImplicits extends NameProviderImplicits with MathImplicits with Stochastic
-with LoggedTerms with FVectors with NGramCountsHelper with CombinatorialConstraints {
+with LoggedTerms with FVectors with NGramCountsHelper with CombinatorialConstraints with Marginals {
 
   implicit val Doubles: Dom.doubles.type = Dom.doubles
   implicit val Bools: Dom.bools.type = Dom.bools
@@ -327,10 +327,15 @@ with LoggedTerms with FVectors with NGramCountsHelper with CombinatorialConstrai
   }
 
 
-  implicit class RichDom[D <: Dom](val dom: D) {
+  implicit def toRichDom(dom:Dom):RichDom[dom.type] = new RichDom[dom.type](dom)
+
+  class RichDom[D <: Dom](val dom: D) {
     //def x[D2 <: Dom](that: D2): Tuple2Dom[D, D2] = new Tuple2Dom[D, D2](dom, that)
 
     //    def iterator = dom.iterator
+
+    def apply(value:dom.Value):dom.Term = dom.Const(value)
+
   }
 
   implicit class RichVect(val vect: Vect) {
@@ -687,6 +692,17 @@ trait MathImplicits {
     Dom.ints.own(bool.asInstanceOf[IntTerm])
   }
 
+}
+
+trait Marginals {
+  implicit class MarginalsMap[T](map: Map[T, Double]) {
+    def sum = map.values.sum
+
+    def expNormalize = {
+      val normalizer = math.log(map.mapValues(math.exp).valuesIterator.sum)
+      map map (p => p.copy(_2 = math.exp(p._2 - normalizer)))
+    }
+  }
 }
 
 trait Stochastic {

@@ -44,14 +44,22 @@ object DepParseExample extends App {
   def model(t: Thetas.Term, x: Sentences.Term, y: Parses.Term) =
     linear(t, x, y) subjectTo projectiveTree(y, x.word.length)
 
-  val theta = zeros + weight('bias, 1.0, true)
+  val theta = zeros + weight('bias, 1.0, true) + weight('pos_00, 1.0, Tags.Const("NN"), Tags.Const("DT"), true)
 
   implicit val params = BPParameters(2, BP.Schedule.synchronized)
 
   val margs = marginals(Parses) { y => model(theta, s1.toConst, y) marginalsBy Marginalizer.sumProduct }
-//
+  //
   println(theta.eval())
-  println(margs.eval())
+
+  val evalMargs = margs.eval()
+
+  println(evalMargs)
+  println(evalMargs(1)(2).expNormalize)
+  println(evalMargs(2)(1).expNormalize)
+
+
+
 
 
 }

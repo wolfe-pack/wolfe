@@ -23,8 +23,8 @@ abstract class ExhaustiveMessageCalculator(val obj: DoubleTerm, val wrt: Seq[Var
   val objInput = obj.createInputSettings()
 
   val toVary2wrt = VariableMapping(varyingVars, wrt)
-//  println(obj)
-//  println(toVary2wrt)
+  //  println(obj)
+  //  println(toVary2wrt)
   val toVary2target = VariableMapping(varyingVars, target)
 
   val toVary2obj = VariableMapping(varyingVars, obj.vars)
@@ -69,7 +69,9 @@ abstract class ExhaustiveMessageCalculator(val obj: DoubleTerm, val wrt: Seq[Var
             for (i <- 0 until inputMsgs(wrtIndex).disc.length) {
               val currentValue = currentSetting.disc(i)
               val currentMsg = inputMsgs(wrtIndex).disc(i).msg(currentValue)
-              score -= currentMsg
+              if (currentMsg.isNegInfinity && score.isNegInfinity) score = 0.0 //todo: this doesn't always make sense
+              else
+                score -= currentMsg
             }
           }
           tgt.msg(currentValue) = aggregate(tgt.msg(currentValue), score) //math.max(tgt.msg(currentValue), score)
@@ -93,7 +95,9 @@ class ExhaustiveSearchMaxMarginalizer(obj: DoubleTerm, wrt: Seq[Var[Dom]], obser
 class ExhaustiveSearchMarginalizer(obj: DoubleTerm, wrt: Seq[Var[Dom]], observed: Seq[Var[Dom]],
                                    input: Settings, inputMsgs: Msgs, reverseMsgsAlso: Boolean = false)
   extends ExhaustiveMessageCalculator(obj, wrt, observed, input, inputMsgs, reverseMsgsAlso) with Marginalizer {
-  def aggregate(current: Double, score: Double) = log(exp(current) + exp(score))
+  def aggregate(current: Double, score: Double) = {
+    log(exp(current) + exp(score))
+  }
 
   def updateMessages()(implicit execution: Execution = Execution(0)) = calculate()
 
