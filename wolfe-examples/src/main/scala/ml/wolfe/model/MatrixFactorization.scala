@@ -64,9 +64,9 @@ trait MatrixFactorization {
   //training loss, stochastic term based on sampling a positive cell, and then a negative based on it.
   def loss(t: Thetas.Term): DoubleTerm = {
     //we sample a positive cell, and memoize the result
-    val pos = mem(trainingDataTerm.sampleShuffled)
+    val pos = trainingDataTerm.sampleShuffled
     //based on the memoized positive cell, we sample a negative cell which needs to be memoized because it will reappear several times
-    val neg = mem(sampleNegCellTerm(pos))
+    val neg = sampleNegCellTerm(pos)
     //the loss based on positive and negative cell
     log(sigm(score(t)(pos))) + log(sigm(-score(t)(neg))) + regularize(t)(pos, neg)
   }
