@@ -164,8 +164,8 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
               this(index) = arg.copy
               this(index) += current
             case (current: DenseTensor1, arg: SparseIndexedTensor) =>
-              this(index) = arg.copy
-              this(index) += current
+              //this(index) = arg.copy
+              this(index) += arg
             case (_, _) =>
               this(index) += value
               broadcastChange(index)

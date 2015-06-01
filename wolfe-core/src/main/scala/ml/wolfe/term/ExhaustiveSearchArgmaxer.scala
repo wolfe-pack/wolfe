@@ -23,7 +23,10 @@ abstract class ExhaustiveMessageCalculator(val obj: DoubleTerm, val wrt: Seq[Var
   val objInput = obj.createInputSettings()
 
   val toVary2wrt = VariableMapping(varyingVars, wrt)
+//  println(obj)
+//  println(toVary2wrt)
   val toVary2target = VariableMapping(varyingVars, target)
+
   val toVary2obj = VariableMapping(varyingVars, obj.vars)
   val obs2full = VariableMapping(observed, obj.vars)
 

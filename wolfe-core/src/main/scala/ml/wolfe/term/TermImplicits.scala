@@ -443,13 +443,15 @@ trait MathImplicits {
 
   def l2Squared[T <: VectorTerm](term: T) = term dot term
 
-  implicit class RichVectTerm(val vect: VectorTerm) {
+  implicit def toRichVectTerm(vect:VectorTerm):RichVectTerm[vect.type] = new RichVectTerm[vect.type](vect)
+
+  class RichVectTerm[T <: VectorTerm](val vect: T) {
 
     def dot(that: VectorTerm) = new DotProduct(vect, that)
 
     def *(that: Term[DoubleDom]) = new VectorScaling(vect, that)
 
-    def +(that: VectorTerm) = new VectorSum(IndexedSeq(vect, that))
+    def +(that: VectorTerm):vect.domain.Term = vect.domain.own(new VectorSum(IndexedSeq(vect, that)))
 
     def -(that: VectorTerm) = new VectorSum(IndexedSeq(vect, that * (-1.0)))
 
@@ -644,6 +646,8 @@ trait MathImplicits {
   def oneHot(index: IntTerm, value: DoubleTerm = Dom.doubles.Const(1.0))(implicit dom: VectorDom): VectorTerm =
     OneHot(index, value)
 
+  def zeros(implicit dom: VectorDom) = dom.Const(dom.zero)
+
   def feature(feat: AnyTerm, value: DoubleTerm = Dom.doubles.Const(1.0))(implicit dom: VectorDom, indexer: Indexer) =
     oneHot(indexed(feat), value)
 
@@ -653,9 +657,14 @@ trait MathImplicits {
   def feature(name: Symbol, value: DoubleTerm, keys: AnyTerm*)(implicit dom: VectorDom, index: Index) =
     Feature(name, keys.toIndexedSeq, value)(index, dom)
 
+  def weight(name: Symbol, value: Double, keys: AnyTerm*)(implicit dom: VectorDom, index: Index) =
+    Feature(name, keys.toIndexedSeq, Doubles.Const(value))(index, dom)
+
   implicit def doubleToConstant(d: Double): Dom.doubles.Term = Dom.doubles.Const(d)
 
   implicit def intToConstant(i: Int): Constant[IntDom] = new RangeDom(i until i + 1).Const(i)
+
+  implicit def boolToConstant(i: Boolean): Bools.Term = Bools.Const(i)
 
   implicit def doubleToRichConstant(d: Double): RichDoubleTerm = new RichDoubleTerm(doubleToConstant(d))
 

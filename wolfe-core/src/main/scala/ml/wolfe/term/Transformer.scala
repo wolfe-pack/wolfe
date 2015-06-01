@@ -141,7 +141,7 @@ object Transformer extends LazyLogging {
   }._1
 
 
-  def groundSums(term: AnyTerm) = depthFirst(term) {
+  def groundSums(term: AnyTerm):AnyTerm = depthFirst(term) {
     case FirstOrderSum(indices, variable, body) =>
       val length = indices match {
         case i: VarSeqDom[_]#Term => i.length
@@ -153,10 +153,13 @@ object Transformer extends LazyLogging {
           case v => new VarSeqApply[Dom, Term[VarSeqDom[Dom]], IntTerm](v, i.toConst)
         }
         val doubleTerm = depthFirst(body) {
-          case t if t == variable => element
+          case t if t == variable =>
+            element
         }
         //(body | variable << element).asInstanceOf[DoubleTerm]
-        replace(body)(variable, element).asInstanceOf[DoubleTerm]
+        val grounded = replace(body)(variable, element).asInstanceOf[DoubleTerm]
+        val recursed = groundSums(grounded).asInstanceOf[DoubleTerm]
+        recursed
         //doubleTerm.asInstanceOf[DoubleTerm]
       }
       val sumArgs = VarSeq(length, doubleTerms)

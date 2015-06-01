@@ -4,9 +4,19 @@ package ml.wolfe.term
 /**
  * @author riedel
  */
-case class FirstOrderSum[D <: Dom, Body <: DoubleTerm, R <: Term[VarSeqDom[D]]](range: R, variable: Var[D], body: Body) extends DoubleTerm {
+case class FirstOrderSum[D <: Dom, Body <: DoubleTerm, R <: Term[VarSeqDom[D]]](range: R, variable: Var[D], body: Body)
+  extends DoubleTerm with NAry {
   sum =>
   val vars = (range.vars ++ body.vars).filterNot(_ == variable).distinct
+
+
+
+  type ArgumentType = AnyTerm
+
+  def arguments = IndexedSeq(range,body)
+
+  def copy(args: IndexedSeq[ArgumentType]) =
+    FirstOrderSum(args(0).asInstanceOf[Term[VarSeqDom[D]]],variable, args(1).asInstanceOf[DoubleTerm])
 
   val domain = body.domain
 

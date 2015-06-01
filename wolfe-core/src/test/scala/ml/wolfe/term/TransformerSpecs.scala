@@ -116,6 +116,21 @@ class TransformerSpecs extends WolfeSpec {
       transformed should beStringEqual(expected)
       transformed.eval(x := IndexedSeq(1.0, 2.0, 3.0)) should be(expected.eval(x := IndexedSeq(1.0, 2.0, 3.0)))
     }
+
+    "replace a nested first order sum with a propositional sum" in {
+      val x = Seqs(Seqs(Doubles,3),3).Var
+      val indices = SeqConst(0, 1, 2)
+      val term = sum(indices) { i => sum(indices) {j => x(i)(j) }}
+      val transformed = groundSums(term)
+      val expected = sum(indices.length)(
+        sum(indices.length)(x(0)(0),x(0)(1),x(0)(2)),
+        sum(indices.length)(x(1)(0),x(1)(1),x(1)(2)),
+        sum(indices.length)(x(2)(0),x(2)(1),x(2)(2)))
+
+      transformed should beStringEqual(expected)
+    }
+
+
   }
 
   "A atom shattering" should {

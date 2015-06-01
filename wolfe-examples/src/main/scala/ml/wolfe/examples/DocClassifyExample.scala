@@ -90,10 +90,10 @@ object DocClassifyExampleNew extends App {
     t.weights(y) dot x.feats
   }
 
-  val wStar = learn(Thetas)(t => perceptron(train)(Labels)(model(t))) using adaGrad
-  val predict = fun(Docs) { d => argmax(Labels)(model(wStar.toConst)(d))}
-
-  println(predict(trainInstances(0)._1))
+//  val wStar = learn(Thetas)(t => perceptron(train)(Labels)(model(t))) using adaGrad
+//  val predict = fun(Docs) { d => argmax(Labels)(model(wStar.toConst)(d))}
+//
+//  println(predict(trainInstances(0)._1))
 
 
 }

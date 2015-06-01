@@ -48,9 +48,9 @@ trait GenericDiscreteDom[A <: Any] extends AtomicDom {
 
   val lengths = Offsets(1, 0, 0, 0)
 
-  def Variable(name: String) = StaticDiscVar(name)
+  def Variable(name: String) = new StaticDiscVar(name)
 
-  case class StaticDiscVar(varName: String) extends DomVar
+  class StaticDiscVar(val varName: String) extends DomVar
 
 
 }
