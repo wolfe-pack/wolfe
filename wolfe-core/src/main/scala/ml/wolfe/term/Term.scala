@@ -296,6 +296,8 @@ trait ProxyTerm[D <: Dom] extends Term[D] with NAry {
 
 trait OwnedTerm[T] extends ProxyTerm[TypedDom[T]] {
 
+  def keep:Boolean = false
+
 }
 
 

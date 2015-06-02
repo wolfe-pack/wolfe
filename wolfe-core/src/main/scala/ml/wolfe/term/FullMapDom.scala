@@ -55,7 +55,7 @@ abstract class FullMapDom[K <: Dom, V <: Dom](val keyDom: K, val valueDom: V) ex
   }
 
   class DomVar(val varName: String) extends DomTerm with super.DomVar {
-    def apply(key: keyDom.Term) = seqDom.own(this.asInstanceOf[TypedTerm[seqDom.Value]])(key.idx)
+    def apply(key: keyDom.Term) = seqDom.own(this.asInstanceOf[TypedTerm[seqDom.Value]],keepAfterCleaning = true)(key.idx)
   }
 
 
@@ -107,7 +107,8 @@ class FullMapDom1[K <: Dom, V <: Dom](keyDom: K, valueDom: V) extends FullMapDom
   def Const(value: Value) = new SeqWrapper(seqDom.Const(map2seq(value)))
 
   //trait Test extends Term
-  def own(term: TypedTerm[Value]) = new SeqWrapper(seqDom.own(term.asInstanceOf[TypedTerm[seqDom.Value]]))
+  def own(term: TypedTerm[Value]) =
+    new SeqWrapper(seqDom.own(term.asInstanceOf[TypedTerm[seqDom.Value]],keepAfterCleaning = true))
 
 }
 
@@ -128,6 +129,7 @@ class FullMapDom2[K1 <: Dom, K2 <: Dom, V <:Dom](val keyDom1:K1, val keyDom2:K2,
   def Const(value: Value) = new SeqWrapper(seqDom.Const(map2seq(value))) with Term
 
   //trait Test extends Term
-  def own(term: TypedTerm[Value]) = new SeqWrapper(seqDom.own(term.asInstanceOf[TypedTerm[seqDom.Value]])) with Term
+  def own(term: TypedTerm[Value]) =
+    new SeqWrapper(seqDom.own(term.asInstanceOf[TypedTerm[seqDom.Value]], keepAfterCleaning = true)) with Term
 
 }

@@ -98,7 +98,7 @@ object Transformer extends LazyLogging {
   }
 
   def clean(term: AnyTerm) = depthFirstAndReuse(term) {
-    case o: OwnedTerm[_] =>
+    case o: OwnedTerm[_] if !o.keep =>
       o.self
   }._1
 

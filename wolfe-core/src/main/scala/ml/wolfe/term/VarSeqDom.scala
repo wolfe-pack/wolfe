@@ -23,7 +23,10 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
   val indexDom = new RangeDom(0 until maxLength)
 
   //trait Test extends Term
-  def own(term: TypedTerm[Value]) = new OwnedTerm[Value] with Term {
+
+  def own(term: TypedTerm[Value]): Term = own(term,keepAfterCleaning = true)
+
+  def own(term: TypedTerm[Value], keepAfterCleaning:Boolean):Term = new OwnedTerm[Value] with Term {
     def self = term
 
     def elementAt(index: Int) = new VarSeqApply[E, Term, lengthDom.Term](this, lengthDom.Const(index))
@@ -34,9 +37,11 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
 
     val test = 23
 
-    def copy(args: IndexedSeq[ArgumentType]) = own(args(0))
+    def copy(args: IndexedSeq[ArgumentType]) = own(args(0),keepAfterCleaning)
 
     def elements = for (i <- 0 until maxLength) yield elementAt(i)
+
+    override def keep = keepAfterCleaning
   }
 
   case class Marginals(length: lengthDom.Marginals, elements: IndexedSeq[elementDom.Marginals]) {

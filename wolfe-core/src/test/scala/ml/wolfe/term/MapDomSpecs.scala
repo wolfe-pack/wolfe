@@ -56,6 +56,7 @@ class MapDomSpecs extends WolfeSpec {
       M.toIterable.sortBy(_.keys) should be (expected.toList.distinct.sortBy(_.keys))
     }
 
+
     //
     //    "should make sparse updates when calculating the gradient" in {
     //      val n = 3
@@ -94,6 +95,17 @@ class MapDomSpecs extends WolfeSpec {
     //      result should be(IndexedSeq(true, true, true))
     //    }
 
+  }
+
+  "A full map" should {
+
+    "support cleaning transformations" in {
+      val Maps = FullMaps(Bools,Bools)
+      val m = Maps.Var
+      val t = m(true)
+      val result = Transformer.clean(t)
+      result should beStringEqual(t)
+    }
   }
 
 }
