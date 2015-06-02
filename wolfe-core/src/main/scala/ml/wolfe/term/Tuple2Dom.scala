@@ -182,7 +182,7 @@ trait ProductDom extends Dom {
 
 }
 
-case class Field[D <: Dom, Value](product: TypedTerm[Value], domain: D, start: Offsets)(fieldName: String = start.toString) extends Composed[D] {
+case class Field[D <: Dom, Value](product: TypedTerm[Value], domain: D, start: Offsets)(val fieldName: String = start.toString) extends Composed[D] {
 
   type ArgumentType = TypedTerm[Value]
   val arguments = IndexedSeq(product)

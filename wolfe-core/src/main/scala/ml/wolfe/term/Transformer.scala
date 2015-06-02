@@ -118,6 +118,7 @@ object Transformer extends LazyLogging {
     case v: Var[_] if toGround.contains(v) => VarAtom(v)
     case VarSeqApply(a: Atom[_], i) => SeqAtom[Dom, VarSeqDom[Dom]](a.asInstanceOf[Atom[VarSeqDom[Dom]]], i)
     case VarSeqLength(a: Atom[_]) => LengthAtom[VarSeqDom[Dom]](a.asInstanceOf[Atom[VarSeqDom[Dom]]])
+    case f@Field(product:Atom[_],dom,offsets) => FieldAtom(product,dom,offsets,f.fieldName)
   }._1
 
   /**
@@ -137,7 +138,8 @@ object Transformer extends LazyLogging {
         val shattered = new VarSeqConstructor[Dom,VarSeqDom[Dom]](lengthAtom,elements,d)
         shattered
       case _ => a
-    }
+    } //todo: deal with maps
+
   }._1
 
 

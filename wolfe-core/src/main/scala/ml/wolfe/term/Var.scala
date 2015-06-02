@@ -139,6 +139,33 @@ case class SeqAtom[E <: Dom, S <: VarSeqDom[E]](seq: Atom[S], index: IntTerm) ex
   override def toString() = seq.toString + "(" + index.toString + ")"
 }
 
+case class FieldAtom[D<:Dom](product:Atom[Dom], domain:D, offsets: Offsets, fieldName:String) extends Atom[D] {
+  def owner = product.owner
+
+  def varsToGround = product.varsToGround
+
+  def grounder(settings: Settings) = new Grounder {
+    val productGrounder = product.grounder(settings.linkedSettings(varsToGround, product.varsToGround))
+
+    def ground()(implicit execution: Execution) = {
+      val parent = productGrounder.ground()
+      FieldGroundAtom(parent,domain,offsets,fieldName)
+    }
+  }
+
+  def varName = s"$product.$fieldName"
+}
+
+case class FieldGroundAtom[D<:Dom](product:GroundAtom[Dom], domain:D, fieldOffsets: Offsets, fieldName:String) extends GroundAtom[D] {
+  def owner = product.owner
+
+  def varName = s"$product.$fieldName"
+
+  def offsets = product.offsets + fieldOffsets
+}
+
+
+
 trait GenericLengthAtom[S <: VarSeqDom[_]] extends Atom[IntDom] {
   def seq: Atom[S]
 
