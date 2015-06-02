@@ -92,7 +92,7 @@ object BuildSettings {
 //    "org.scalamacros" %% "quasiquotes" % "2.0.0",
     "org.scalanlp" %% "breeze" % "0.8.1",
     //"org.scalanlp" %% "breeze-natives" % "0.8.1",
-    "org.sameersingh.htmlgen" % "htmlgen" % "0.3-SNAPSHOT"
+    "org.sameersingh.htmlgen" % "htmlgen" % "0.3"
     //    "org.scalanlp" %% "breeze-math" % "0.3",
     //    "org.scalanlp" %% "breeze-learn" % "0.3",
     //    "org.scalanlp" %% "breeze-process" % "0.3",
