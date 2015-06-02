@@ -92,7 +92,7 @@ object BuildSettings {
 //    "org.scalamacros" %% "quasiquotes" % "2.0.0",
     "org.scalanlp" %% "breeze" % "0.8.1",
     //"org.scalanlp" %% "breeze-natives" % "0.8.1",
-    "org.sameersingh.htmlgen" % "htmlgen" % "0.2"
+    "org.sameersingh.htmlgen" % "htmlgen" % "0.3-SNAPSHOT"
     //    "org.scalanlp" %% "breeze-math" % "0.3",
     //    "org.scalanlp" %% "breeze-learn" % "0.3",
     //    "org.scalanlp" %% "breeze-process" % "0.3",
@@ -139,6 +139,8 @@ object BuildSettings {
       scalacOptions ++= Seq("-feature"),
       resolvers ++= Seq(
         "IESL Release" at "https://dev-iesl.cs.umass.edu/nexus/content/groups/public",
+        Resolver.mavenLocal,
+        Resolver.defaultLocal,
         Resolver.sonatypeRepo("snapshots"),
         Resolver.sonatypeRepo("releases"),
         "UIUC Releases" at "http://cogcomp.cs.illinois.edu/m2repo"
