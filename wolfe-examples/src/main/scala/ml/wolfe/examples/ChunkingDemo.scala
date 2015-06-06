@@ -7,6 +7,7 @@ import ml.wolfe.term.Argmaxer._
 import ml.wolfe.term.LearningObjective._
 import ml.wolfe.term.TermImplicits._
 import ml.wolfe.term._
+import ml.wolfe.nlp.{Sentence, Document}
 
 object ChunkingDemo extends App {
   implicit val index = new SimpleIndex()
@@ -73,4 +74,13 @@ object ChunkingDemo extends App {
     println((words zip labels).map(x => x._1 + "/" + x._2))
   })
 
+  // chunking demo
+  val n = 5
+  val Y = Seqs(Bools, 0, n)
+  def model(length: IntTerm)(y: Y.Term) = {
+    sum(0 until length) { i => I(y(i))} +
+      sum(0 until length - 1) { i => I(y(i) <-> ! y(i + 1))}
+  }
+  val result = argmax(Y)(y => model(5)(y) subjectTo (y.length === 5) argmaxBy maxProduct(mpParams)).evalResult()
+  result.factorGraphs.head
 }
