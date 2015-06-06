@@ -11,16 +11,16 @@ import ml.wolfe.util.Math._
  */
 object SmokesCancer {
 
-  @domain case class World(smokes: Pred[Symbol], cancer: Pred[Symbol])
+  val p = Seq('Anna, 'Bob, 'Charlie)
+  val friendsSet = Set(('Anna, 'Bob),('Anna, 'Charlie)).flatMap(x => Set(x,x.swap))
 
-  implicit val Persons = Seq('Anna, 'Bob, 'Charlie).toDom
-  val persons = Seq('Anna, 'Bob, 'Charlie).toConst
+  implicit val Persons = p.toDom
+  val persons = p.toConst
+  @domain case class World(smokes: Pred[Symbol], cancer: Pred[Symbol])
+  implicit val Worlds = World.Values(Preds(Persons), Preds(Persons))
 
   implicit val Friends = FullMaps(Persons, Persons, Bools)
-  val friendsSet = Set(('Anna, 'Bob),('Anna, 'Charlie)).flatMap(x => Set(x,x.swap))
   val friends = (for(p1 <- Persons.values; p2 <- Persons.values) yield (p1->p2)->friendsSet((p1,p2))).toMap.toConst
-
-  implicit val Worlds = World.Values(Preds(Persons), Preds(Persons))
 
   /**
    * Questions:
