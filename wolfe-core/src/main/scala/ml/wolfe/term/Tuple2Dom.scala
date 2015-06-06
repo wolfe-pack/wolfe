@@ -205,6 +205,7 @@ case class Field[D <: Dom, Value](product: TypedTerm[Value], domain: D, start: O
       val recorder = new SettingChangeRecorder(error)
 
       def localBackProp()(implicit execution: Execution) = {
+
         recorder.deepCopyToIfChanged(argErrors(0), Offsets.zero, start, domain.lengths)
         recorder.forget()
       }

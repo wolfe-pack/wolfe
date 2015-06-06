@@ -24,9 +24,9 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
 
   //trait Test extends Term
 
-  def own(term: TypedTerm[Value]): Term = own(term,keepAfterCleaning = true)
+  def own(term: TypedTerm[Value]): Term = own(term, keepAfterCleaning = false)
 
-  def own(term: TypedTerm[Value], keepAfterCleaning:Boolean):Term = new OwnedTerm[Value] with Term {
+  def own(term: TypedTerm[Value], keepAfterCleaning: Boolean): Term = new OwnedTerm[Value] with Term {
     def self = term
 
     def elementAt(index: Int) = new VarSeqApply[E, Term, lengthDom.Term](this, lengthDom.Const(index))
@@ -37,7 +37,7 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
 
     val test = 23
 
-    def copy(args: IndexedSeq[ArgumentType]) = own(args(0),keepAfterCleaning)
+    def copy(args: IndexedSeq[ArgumentType]) = own(args(0), keepAfterCleaning)
 
     def elements = for (i <- 0 until maxLength) yield elementAt(i)
 
@@ -45,7 +45,7 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
   }
 
   case class Marginals(length: lengthDom.Marginals, elements: IndexedSeq[elementDom.Marginals]) {
-    def apply(i:Int) = elements(i)
+    def apply(i: Int) = elements(i)
   }
 
   def startOfElements(offsets: Offsets) = offsets.copy(discOff = offsets.discOff + 1)
