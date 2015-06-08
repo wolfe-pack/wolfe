@@ -186,7 +186,7 @@ object Traversal {
     def term: SampleTerm
   }
 
-  case class Alone(term: SampleTerm, id: String = java.util.UUID.randomUUID.toString) extends UniqueSampleTerm
+  case class Alone(term: SampleTerm) extends UniqueSampleTerm
 
   case class InMem(term: SampleTerm, mem: Mem) extends UniqueSampleTerm
 
@@ -195,7 +195,7 @@ object Traversal {
       case m: Memoized[_, _] =>
         val children = uniqueSampleTerms(m.term)
         for (c <- children) yield c match {
-          case Alone(t, _) => InMem(t, m.asInstanceOf[Mem])
+          case Alone(t) => InMem(t, m.asInstanceOf[Mem])
           case t => t
         }
       case s: SampleTerm => Alone(s) :: Nil

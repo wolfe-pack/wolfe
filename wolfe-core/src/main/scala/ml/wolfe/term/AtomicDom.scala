@@ -225,9 +225,9 @@ case class RangeDom(values: Range) extends GenericDiscreteDom[Int] {
 
   def shuffled(implicit random: Random) = new SampleShuffled()
 
-  def sequential = SampleSequential
+  def sequential = new SampleSequential
 
-  case class SampleUniform(implicit random: Random) extends SampleTerm {
+  class SampleUniform(implicit random: Random) extends SampleTerm {
     override def evaluatorImpl(in: Settings) = new Evaluator(in) {
 
       def nextValue() = random.nextInt(domainSize) + values.start
@@ -235,7 +235,7 @@ case class RangeDom(values: Range) extends GenericDiscreteDom[Int] {
     }
   }
 
-  case class SampleShuffled(implicit random: Random) extends SampleTerm {
+  class SampleShuffled(implicit random: Random) extends SampleTerm {
     val indexed = values.toIndexedSeq
 
     override def evaluatorImpl(in: Settings) = new Evaluator(in) {
@@ -250,7 +250,7 @@ case class RangeDom(values: Range) extends GenericDiscreteDom[Int] {
     }
   }
 
-  case object SampleSequential extends SampleTerm {
+  class SampleSequential extends SampleTerm {
     override def evaluatorImpl(in: Settings) = new Evaluator(in) {
       var iterator = values.iterator
 

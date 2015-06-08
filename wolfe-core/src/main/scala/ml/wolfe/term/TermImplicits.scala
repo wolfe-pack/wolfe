@@ -640,7 +640,7 @@ trait MathImplicits {
 
   def shuffled(indices: VarSeqDom[Dom]#Term)(body: indices.domain.elementDom.Term => DoubleTerm)(implicit random: Random) = {
     import TermImplicits._
-    val i = mem(indices.sampleShuffled)
+    val i = indices.sampleShuffled
     val term = body(i.asInstanceOf[indices.domain.elementDom.Term])
     term
   }

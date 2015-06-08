@@ -16,7 +16,7 @@ class MatrixFactorizationSpec extends WordSpec with Matchers {
     "recover a data matrix when using sufficient dimension k" in {
       val observed = Seq(0 -> 0, 0 -> 1, 1 -> 1, 2 -> 0)
       val unobserved = Seq(1 -> 0, 2 -> 1)
-      val mf = MatrixFactorization.train(observed, kParam = 2, epochsParam = 1000, lambdaParam = 0.0)
+      val mf = MatrixFactorization.train(observed, kParam = 100, epochsParam = 100, lambdaParam = 0.0)
       print(" " * 5)
       (0 until mf.numCols).foreach(col => print("%4d ".format(col)))
       println()

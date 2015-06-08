@@ -92,7 +92,7 @@ class MaxProductSpecs extends WolfeSpec {
     }
 
 
-    "optimize a linear chain in a perceptron loss" in {
+    "optimize a linear chain in a perceptron loss" ignore {
 
       implicit val random = new Random(0)
 
