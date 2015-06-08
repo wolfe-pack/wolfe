@@ -44,6 +44,8 @@ class AdaGradArgmaxer(val objRaw: DoubleTerm,
 
   val termsPerEpoch = Traversal.distinctSampleCount(obj)
 
+  logger.info("Terms per epoch: " + termsPerEpoch)
+
   val iterations = epochs * termsPerEpoch
   var objAccumulator = 0.0
 
