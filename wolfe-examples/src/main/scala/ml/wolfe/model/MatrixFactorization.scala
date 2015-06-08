@@ -66,11 +66,12 @@ trait MatrixFactorization {
   //training loss, stochastic term based on sampling a positive cell, and then a negative based on it.
   def loss(t: Thetas.Term): DoubleTerm = {
     //we sample a positive cell, and memoize the result
-    val pos = trainingDataTerm.sampleShuffled
-    //based on the memoized positive cell, we sample a negative cell which needs to be memoized because it will reappear several times
-    val neg = sampleNegCellTerm(pos)
-    //the loss based on positive and negative cell
-    log(sigm(score(t)(pos))) + log(sigm(-score(t)(neg))) + regularize(t)(pos, neg)
+    shuffled(trainingDataTerm) { pos =>
+      //based on the memoized positive cell, we sample a negative cell which needs to be memoized because it will reappear several times
+      val neg = mem(sampleNegCellTerm(pos))
+      //the loss based on positive and negative cell
+      log(sigm(score(t)(pos))) + log(sigm(-score(t)(neg))) + regularize(t)(pos, neg)
+    }
   }
 
   def train() = {
@@ -99,10 +100,11 @@ object MatrixFactorization extends LazyLogging {
       override def lambda: DoubleTerm = -lambdaParam
 
       lazy val trainingData: Seq[Cell] = data.map(t => Cell(t._1, t._2))
+      lazy val trainingSet = scala.collection.immutable.HashSet(trainingData:_*)
 
-      def numRows: Int = data.maxBy(_._1)._1 + 1
+      lazy val numRows: Int = data.maxBy(_._1)._1 + 1
 
-      def numCols: Int = data.maxBy(_._2)._2 + 1
+      lazy val numCols: Int = data.maxBy(_._2)._2 + 1
 
       //warning: this is slow!
       def sampleNegCell(pos: Cell): Cell = {
@@ -111,7 +113,7 @@ object MatrixFactorization extends LazyLogging {
           if (attempts == 0) {
             logger.warn("Couldn't sample a negative cell for " + pos)
             sample
-          } else if (trainingData.contains(sample)) {
+          } else if (trainingSet.contains(sample)) {
             inner(pos, attempts - 1)
           } else sample
         }
