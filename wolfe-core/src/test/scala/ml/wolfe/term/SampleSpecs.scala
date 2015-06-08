@@ -47,7 +47,7 @@ class SampleSpecs extends WolfeSpec {
     }
 
     "sample to query a user value" in {
-      def myValue(iTerm: IntTerm) = for (i <- iTerm) yield i % 2 == 0
+      def myValue(iTerm: IntTerm) = iTerm convertValue (i => i % 2 == 0)
       val r = myValue(sampleSequential(0 until 3))
       val e = r.evaluator()
       e.eval() should be(true)
@@ -70,7 +70,7 @@ class SampleSpecs extends WolfeSpec {
     "combine with first order sums" in {
       val n = 4
       implicit val I = Seqs(Ints, 0, n)
-      def indices(iTerm: IntTerm): I.Term = iTerm map (i => IndexedSeq() ++ (0 until i))
+      def indices(iTerm: IntTerm): I.Term = iTerm convertValue (i => IndexedSeq() ++ (0 until i))
       val t = sum(indices(sampleSequential(1 until n))) { i => i: DoubleTerm }
       val e = t.evaluator()
       e.eval() should be(0.0)

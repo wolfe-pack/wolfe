@@ -39,12 +39,12 @@ class TransformerSpecs extends WolfeSpec {
 
     "return identical transformed terms for identical composed input terms" in {
       val x = Doubles.Var
-      val m = mem(x map (_ + 1.0))
+      val m = mem(x convertValue (_ + 1.0))
       val t = m - m
       val transformed = depthFirstAndReuse(t) {
         case `x` => 2.0
       }
-      val m2 = mem(2.0.toConst map (_ + 1.0))
+      val m2 = mem(2.0.toConst convertValue (_ + 1.0))
       val expected = m2 - m2
       transformed._1 should beStringEqual(expected)
       val Sum(Vector(t1, Product(Vector(t2, _)))) = transformed._1
@@ -81,12 +81,12 @@ class TransformerSpecs extends WolfeSpec {
     }
     "return identical transformed terms for identical composed input terms" in {
       val x = Doubles.Var
-      val m = mem(x map (_ + 1.0))
+      val m = mem(x convertValue (_ + 1.0))
       val t = m - m
       val transformed = depthLastAndReuse(t) {
         case `x` => 2.0
       }
-      val m2 = mem(2.0.toConst map (_ + 1.0))
+      val m2 = mem(2.0.toConst convertValue (_ + 1.0))
       val expected = m2 - m2
       transformed._1 should beStringEqual(expected)
       val Sum(Vector(t1, Product(Vector(t2, _)))) = transformed._1

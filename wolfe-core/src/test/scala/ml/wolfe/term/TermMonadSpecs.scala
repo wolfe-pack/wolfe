@@ -14,14 +14,14 @@ class TermMonadSpecs extends WolfeSpec {
   "The term monad" should {
     "support map operations" in {
       val x = Bools.Var
-      val t = x.map(!_)
+      val t = x convertValue (!_)
       t.eval(x := true) should be(false)
     }
 
     "return the same mapped value on the same execution" in {
       val random = new Random(0)
       val y = Ints.Var
-      val m = y map (_ + random.nextInt())
+      val m = y convertValue (_ + random.nextInt())
       val t = m === m
       t.eval(y := 0) should be (true)
     }
@@ -29,14 +29,14 @@ class TermMonadSpecs extends WolfeSpec {
     "support flatMap operations" in {
       val x = Bools.Variable("x")
       val y = Bools.Variable("y")
-      val t = for (xv <- x; yv <- y) yield !xv || yv
+      val t = x convertValues(xv => y convertValue (yv => !xv || yv))
       for (xv <- Bools; yv <- Bools) {
         t.eval(x := xv, y := yv) should be(!xv || yv)
       }
     }
     "support flatMap operations with repeated terms" in {
       val x = Bools.Variable("x")
-      val t = for (xv1 <- x; xv2 <- x) yield !xv1 || xv2
+      val t = x convertValues(xv1 => x convertValue (xv2 => !xv1 || xv2))
       for (xv <- Bools) {
         t.eval(x := xv) should be(!xv || xv)
       }

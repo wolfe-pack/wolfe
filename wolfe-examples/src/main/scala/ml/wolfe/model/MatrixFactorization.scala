@@ -50,7 +50,7 @@ trait MatrixFactorization {
   //a user-defined function that samples a negative cell based on a positive one
   def sampleNegCell(pos: Cell): Cell
 
-  private def sampleNegCellTerm(pos: Cells.Term): Cells.Term = pos.map(p => sampleNegCell(p))
+  private def sampleNegCellTerm(pos: Cells.Term): Cells.Term = pos convertValue(p => sampleNegCell(p))
 
   //where learned parameters will be stored
   var thetaStar: Thetas.Value = _

@@ -295,8 +295,8 @@ with LoggedTerms with FVectors with NGramCountsHelper with CombinatorialConstrai
       innerTerm.gradient(wrt, args: _*)
     }
 
-    def map[B](fun: innerTerm.domain.Value => B)(implicit targetDom: TypedDom[B]): targetDom.Term = {
-      val result = new TermMap[A, targetDom.type] {
+    def convertValue[B](fun: innerTerm.domain.Value => B)(implicit targetDom: TypedDom[B]): targetDom.Term = {
+      val result = new ConvertValueTerm[A, targetDom.type] {
         val term: innerTerm.type = innerTerm
         val domain: targetDom.type = targetDom
 
@@ -306,15 +306,15 @@ with LoggedTerms with FVectors with NGramCountsHelper with CombinatorialConstrai
 
         def copy(args: IndexedSeq[ArgumentType]) = {
           val arg = new RichTerm(args(0))
-          arg map fun.asInstanceOf[arg.innerTerm.domain.Value => B]
+          arg convertValue fun.asInstanceOf[arg.innerTerm.domain.Value => B]
         }
       }
       targetDom.own(result)
     }
 
-    def flatMap[B: TypedDom](fun: innerTerm.domain.Value => Term[TypedDom[B]]) = {
+    def convertValues[B: TypedDom](fun: innerTerm.domain.Value => Term[TypedDom[B]]) = {
       val targetDom = implicitly[TypedDom[B]]
-      new TermFlatMap[A, TypedDom[B]] {
+      new ConvertValuesTerm[A, TypedDom[B]] {
         val term: innerTerm.type = innerTerm
         val domain: TypedDom[B] = targetDom
 
@@ -644,6 +644,8 @@ trait MathImplicits {
     val term = body(i.asInstanceOf[indices.domain.elementDom.Term])
     term
   }
+
+  def map[A <: Dom,B <: Dom](range: SeqTerm[A])(body: Term[A] => Term[B]): SeqTerm[B] = ??? //new MapSeqTerm(range)(body)
 
   //  def oneHot(index: Int, value: Double = 1.0)(implicit dom: VectorDom) =
   //    dom.Const(new SingletonTensor1(dom.dim, index, value))
