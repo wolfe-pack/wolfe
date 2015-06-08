@@ -197,15 +197,23 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
 
 
     def add(index: Int, value: Mat) = {
-      array(index) += value
-      broadcastChange(index)
+      if (this(index) == null) {
+        this(index) = value.copy
+      } else {
+        (this(index), value) match {
+          case (_, null) =>
+          case (_, _) =>
+            array(index) += value
+            broadcastChange(index)
+        }
+      }
     }
 
     override def update(index: Int, value: Mat): Unit = {
       if (this(index) == null) {
         super.update(index, value.copy)
       } else {
-        this(index) := value
+        this.array(index) = value
         broadcastChange(index)
       }
 

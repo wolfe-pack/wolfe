@@ -3,8 +3,14 @@ package ml.wolfe.term
 /**
  * @author riedel
  */
-class Max(val obj: DoubleTerm, val wrt: Seq[Var[Dom]]) extends DoubleTerm {
+class Max(val obj: DoubleTerm, val wrt: Seq[Var[Dom]]) extends DoubleTerm with Unary {
   self =>
+  override def argument: ArgumentType = obj
+
+  override def copy(arg: ArgumentType): Term[Dom] = new Max(arg, wrt)
+
+  override type ArgumentType = DoubleTerm
+
   val domain = Dom.doubles
   val vars = obj.vars.filterNot(wrt.contains)
 
@@ -67,7 +73,7 @@ class Max(val obj: DoubleTerm, val wrt: Seq[Var[Dom]]) extends DoubleTerm {
 
   override def evaluatorImpl(in: Settings) = new MaxEvaluator(in)
 
-  def by(factory: ArgmaxerFactory) = {
+  def by(factory: ArgmaxerFactory): Max = {
     val newObj = new ProxyTerm[TypedDom[Double]] {
       def self = obj
 
@@ -75,7 +81,7 @@ class Max(val obj: DoubleTerm, val wrt: Seq[Var[Dom]]) extends DoubleTerm {
         factory.argmaxer(obj, wrt)(observed, msgs)
       }
 
-      def copy(args: IndexedSeq[ArgumentType]) = ???
+      def copy(args: IndexedSeq[ArgumentType]) = new Max(args(0), wrt).by(factory)
     }
     new Max(newObj, wrt)
   }

@@ -76,6 +76,7 @@ class AdaGradArgmaxer(val objRaw: DoubleTerm,
 
       //add term gradient into result gradient
       diff.differentiate()(Execution(iteration, Execution.Diff))
+      assert(!diff.output.cont(0).isNaN)
 
       //now update the momentum, need to call atoms again because atoms may have changed if objective is dynamic
       addSquared(gradient, momentum)
@@ -84,6 +85,7 @@ class AdaGradArgmaxer(val objRaw: DoubleTerm,
       gradientStep(epoch, gradient, momentum, result, learningRate)
 
       objAccumulator += diff.output.cont(0)
+      assert(!objAccumulator.isNaN)
 
       //logger.info(s"${iteration % termsPerEpoch}/$termsPerEpoch\r")
 
@@ -91,6 +93,7 @@ class AdaGradArgmaxer(val objRaw: DoubleTerm,
         if (epochHook != null) {
           val parameters = for ((v, s) <- wrt zip result) yield v.domain.toValue(s)
           val text = epochHook(parameters.toIndexedSeq, (iteration + 1) / termsPerEpoch)
+          assert(!objAccumulator.isNaN)
           bar(s"Obj: $objAccumulator $text", lineBreak = true)
         } else {
           bar(s"Obj: $objAccumulator", lineBreak = true)

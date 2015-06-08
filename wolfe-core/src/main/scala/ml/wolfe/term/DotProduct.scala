@@ -167,10 +167,10 @@ class MatrixVectorProduct[T1 <: MatrixTerm, T2 <: VectorTerm](val arg1: T1, val 
         require(A.dim2 == x.dim1, s"dimensions don't match: ${A.toDimensionsString} * ${x.dim1}")
         require(A.dim1 == errorVec.dim1, s"dimensions don't match: ${A.toDimensionsString} * ${x.dim1} => ${errorVec.dim1}")
 
-        argErrors(0).mats(0) := 0.0
-        argErrors(1).vect(0) := 0.0
-        argErrors(0).mats(0) += errorVec outer x
-        argErrors(1).vect(0) += A.t * errorVec
+        //argErrors(0).mats(0) := 0.0
+        //argErrors(1).vect(0) := 0.0
+        argErrors(0).mats(0) = (errorVec outer x).asInstanceOf[ml.wolfe.Mat]
+        argErrors(1).vect(0) = A.t * errorVec
 
       }
     }
