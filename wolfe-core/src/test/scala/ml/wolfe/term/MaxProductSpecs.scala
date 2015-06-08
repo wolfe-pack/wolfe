@@ -92,7 +92,7 @@ class MaxProductSpecs extends WolfeSpec {
     }
 
 
-    "optimize a linear chain in a perceptron loss" ignore {
+    "optimize a linear chain in a perceptron loss" in {
 
       implicit val random = new Random(0)
 
@@ -118,7 +118,7 @@ class MaxProductSpecs extends WolfeSpec {
 
       def instanceScore(x: X.Term, yGold: Y.Term)(w: Weights.Term) = {
         model(x, w)(yGold) -
-          { max(Y)(y => model(x, w)(y) + hammingDistance(yGold, y)) by maxProduct(mpParams) }
+          { max(Y)(y => (model(x, w)(y) + hammingDistance(yGold, y)) argmaxBy maxProduct(mpParams)) }
       }
 
       def score(w: Weights.Term) = sum(train) { i => instanceScore(i.x, i.y)(w)} argmaxBy adaGrad(adaParams)
