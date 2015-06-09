@@ -168,9 +168,9 @@ object MultiTaskCRF extends App {
 
   val linErr = run(CRFModel, Data.test)
   print(s"linErr: $linErr")
-  val multErr = run(MultiTaskModel, Data.test)
-  print(s"multErr: $multErr")
-  val neuralErr = run(NeuralModel, Data.test)
-  print(s"neuralErr: $neuralErr")
+//  val multErr = run(MultiTaskModel, Data.test)
+//  print(s"multErr: $multErr")
+//  val neuralErr = run(NeuralModel, Data.test)
+//  print(s"neuralErr: $neuralErr")
 
 }

@@ -207,7 +207,7 @@ case class RangeDom(values: Range) extends GenericDiscreteDom[Int] {
       def nextValue(): Int
 
       def eval()(implicit execution: Execution) = {
-        if (execution != currentExecution) {
+        if (currentExecution == null || currentExecution.num != execution.num) {
           currentExecution = execution
           currentValue = nextValue()
         }
