@@ -114,8 +114,9 @@ case class Feature(name: Symbol, keys: IndexedSeq[AnyTerm], value: DoubleTerm)(i
       output.vect.broadcastChange(0)
     }
   }
-
 }
+
+
 
 case class Conjoined(arg1: VectorTerm, arg2: VectorTerm)(implicit val index: Index, val dom: VectorDom) extends Composed[VectorDom] {
   type ArgumentType = VectorTerm

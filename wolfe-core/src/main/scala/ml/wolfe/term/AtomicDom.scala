@@ -210,7 +210,6 @@ case class RangeDom(values: Range) extends GenericDiscreteDom[Int] {
         if (currentExecution == null || currentExecution.num != execution.num) {
           currentExecution = execution
           currentValue = nextValue()
-          println("current value: " + currentValue)
         }
         //currentValue = nextValue()
         output.disc(0) = currentValue
