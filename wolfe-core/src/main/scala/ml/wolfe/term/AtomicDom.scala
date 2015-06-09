@@ -210,6 +210,7 @@ case class RangeDom(values: Range) extends GenericDiscreteDom[Int] {
         if (currentExecution == null || currentExecution.num != execution.num) {
           currentExecution = execution
           currentValue = nextValue()
+          println("current value: " + currentValue)
         }
         //currentValue = nextValue()
         output.disc(0) = currentValue
@@ -239,10 +240,10 @@ case class RangeDom(values: Range) extends GenericDiscreteDom[Int] {
     val indexed = values.toIndexedSeq
 
     override def evaluatorImpl(in: Settings) = new Evaluator(in) {
-      private var shuffled = random.shuffle(indexed).toIterator
+      private var shuffled:Iterator[Int] = null// random.shuffle(indexed).toIterator
 
       def nextValue() = {
-        if (!shuffled.hasNext) {
+        if (shuffled == null || !shuffled.hasNext) {
           shuffled = random.shuffle(indexed).toIterator
         }
         shuffled.next()

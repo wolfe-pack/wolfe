@@ -9,11 +9,15 @@ import ml.wolfe._
 import ml.wolfe.nlp.{Sentence, SentenceSplitter, TokenSplitter}
 import ml.wolfe.util.Math.random
 
+import scala.util.Random
+
 /**
  * @author sameer
  * @since 6/6/15.
  */
 object MultiTaskCRF extends App {
+
+  implicit val random = new Random(0)
 
   object Data {
     val connl2000Train = new CoNLLReader("wolfe-examples/src/main/resources/ml/wolfe/datasets/conll2000/train.txt", " ")
@@ -38,8 +42,8 @@ object MultiTaskCRF extends App {
       s.tokens.map(_.word.toString) -> getPosTags(s)
     }
 
-    val train = connl2000Train.take(50).map(toInstance).toIndexedSeq
-    val test = connl2000Test.take(10).map(toInstance).toIndexedSeq
+    val train = connl2000Train.take(3).map(toInstance).toIndexedSeq
+    val test = connl2000Test.take(1).map(toInstance).toIndexedSeq
 
     val words = (train ++ test).flatMap(_._1).distinct
     val tags = (train ++ test).flatMap(_._2).distinct
@@ -88,7 +92,7 @@ object MultiTaskCRF extends App {
     } subjectTo (y.length === x.length) argmaxBy Argmaxer.maxProduct
 
     val init = Settings(Thetas.createRandomSetting(random.nextGaussian() * 0.1))
-    val params = AdaGradParameters(10, 0.1, 0.1, initParams=init)
+    val params = AdaGradParameters(3, 0.1, 0.1, initParams=init)
     lazy val thetaStar =
       learn(Thetas)(t => perceptron(train.toConst)(Y)(model(t))) using Argmaxer.adaGrad(params)
 

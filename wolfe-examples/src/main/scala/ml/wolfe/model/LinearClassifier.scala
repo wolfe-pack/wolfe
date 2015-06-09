@@ -6,6 +6,8 @@ import ml.wolfe.term.TermImplicits._
 import ml.wolfe.term.{DefaultIndexer, AdaGradParameters, Argmaxer, LearningObjective}
 import ml.wolfe.{SimpleIndex, Vect}
 
+import scala.util.Random
+
 /**
  * Simple wrapper around linear models to simplify the use of classifiers.
  * @author riedel
@@ -25,6 +27,7 @@ trait LinearClassifier[Label] {
   implicit val Xs = Vectors(maxFeats * labels.size)
   //todo: this is too large generally
   implicit val Instances = Pairs(Xs, Labels)
+  implicit val random = new Random
 
   def model(t: Thetas.Term)(x: Xs.Term)(y: Labels.Term) = {
     t dot (x conjoin feature(y))

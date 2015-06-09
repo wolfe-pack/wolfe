@@ -639,7 +639,6 @@ trait MathImplicits {
     sum2[Dom, Term[VarSeqDom[Dom]], Body](indices)(body)
 
   def shuffled(indices: VarSeqDom[Dom]#Term)(body: indices.domain.elementDom.Term => DoubleTerm)(implicit random: Random) = {
-    import TermImplicits._
     val i = indices.sampleShuffled
     val term = body(i.asInstanceOf[indices.domain.elementDom.Term])
     term
