@@ -121,8 +121,7 @@ object BuildSettings {
     Seq(
       //incOptions := incOptions.value.withNameHashing(false),
       initialCommands := """
-        import ml.wolfe.Wolfe._
-        import ml.wolfe.macros.OptimizedOperators._
+        import ml.wolfe.term.TermImplicits
                          """
     ) ++ net.virtualvoid.sbt.graph.Plugin.graphSettings
 

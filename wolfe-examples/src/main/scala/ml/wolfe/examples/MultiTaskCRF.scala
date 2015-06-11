@@ -42,7 +42,7 @@ object MultiTaskCRF extends App {
       s.tokens.map(_.word.toString) -> getPosTags(s)
     }
 
-    val train = connl2000Train.take(3).map(toInstance).toIndexedSeq
+    val train = connl2000Train.take(50).map(toInstance).toIndexedSeq
     val test = connl2000Test.take(1).map(toInstance).toIndexedSeq
 
     val words = (train ++ test).flatMap(_._1).distinct
@@ -83,16 +83,23 @@ object MultiTaskCRF extends App {
     @domain case class Theta(w: Vect, wb: Vect)
 
     implicit val Thetas = Theta.Values(Features, TransitionFeats)
-    implicit val maxProductParams = BPParameters(iterations = 2)
+    implicit val maxProductParams = BPParameters(iterations = 1)
+
+    def local(x: X.Term, y: Y.Term, i:IntTerm) = {
+      feature('bias, y(i)) + feature('word, y(i) -> x(i))
+    }
+
+    def transition(x: X.Term, y: Y.Term, i:IntTerm) = {
+      feature('pair, y(i) -> y(i + 1))(TransitionFeats, transIndex)
+    }
 
     def model(w: Thetas.Term)(x: X.Term)(y: Y.Term) = {
-      sum(0 until x.length) { i => w.w dot feature('bias, y(i))} +
-        sum(0 until x.length) { i => w.w dot feature('word, y(i) -> x(i))} +
-        sum(0 until x.length - 1) { i => w.wb dot feature('pair, y(i) -> y(i + 1))(TransitionFeats, transIndex)}
+      sum(0 until x.length) { i => w.w dot local(x,y,i)} +
+        sum(0 until x.length - 1) { i => w.wb dot transition(x,y,i) }
     } subjectTo (y.length === x.length) argmaxBy Argmaxer.maxProduct
 
-    val init = Settings(Thetas.createRandomSetting(random.nextGaussian() * 0.1))
-    val params = AdaGradParameters(3, 0.1, 0.1, initParams=init)
+    val init = Settings(Thetas.createZeroSetting())
+    val params = AdaGradParameters(100, 0.1, 0.1, initParams=init)
     lazy val thetaStar =
       learn(Thetas)(t => perceptron(train.toConst)(Y)(model(t))) using Argmaxer.adaGrad(params)
 
