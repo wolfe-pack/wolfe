@@ -83,7 +83,7 @@ object MultiTaskCRF extends App {
     @domain case class Theta(w: Vect, wb: Vect)
 
     implicit val Thetas = Theta.Values(Features, TransitionFeats)
-    implicit val maxProductParams = BPParameters(iterations = 1)
+    implicit val maxProductParams = BPParameters(iterations = 1, cachePotentials = true)
 
     def local(x: X.Term, y: Y.Term, i:IntTerm) = {
       feature('bias, y(i)) + feature('word, y(i) -> x(i))

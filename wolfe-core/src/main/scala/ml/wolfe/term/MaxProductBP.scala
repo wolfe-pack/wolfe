@@ -5,7 +5,9 @@ import ml.wolfe.term.Transformer._
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-case class BPParameters(iterations: Int, schedule: BP.Schedule.Schedule = BP.Schedule.default)
+case class BPParameters(iterations: Int,
+                        schedule: BP.Schedule.Schedule = BP.Schedule.default,
+                        cachePotentials: Boolean = false)
 
 /**
  * @author riedel
@@ -137,6 +139,7 @@ trait BP {
   case class SingleFactor(factor: fg.Factor) extends FactorGroup {
     def activate()(implicit execution: Execution) = {
       fg.activate(factor)
+      if (params.cachePotentials) factor.potential.asInstanceOf[CachedPotential[DoubleTerm]].clearCache()
     }
   }
 
@@ -212,18 +215,21 @@ trait BP {
     val n2fs = vars.map(v => v -> v.domain.createZeroMsg()).toMap
     val obsVarsInPot = pot.vars.filter(observedVars.contains)
     val obsInPot = observed.linkedSettings(observedVars, obsVarsInPot)
+    val potToPutOnFactor =
+      if (params.cachePotentials) new CachedPotential[DoubleTerm](vars: _*)(pot.asInstanceOf[DoubleTerm])
+      else pot.asInstanceOf[DoubleTerm]
 
     if (schedule == Schedule.synchronized) {
-      val potMaxMarginalizer = createMsgCalculator(pot, vars, obsVarsInPot, obsInPot, Msgs(vars map n2fs), true)
-      fg.addFactor(pot.asInstanceOf[DoubleTerm], new FactorContent(potMaxMarginalizer), vars.contains, targetFor) { variable =>
+      val potMaxMarginalizer = createMsgCalculator(potToPutOnFactor, vars, obsVarsInPot, obsInPot, Msgs(vars map n2fs), true)
+      fg.addFactor(potToPutOnFactor, new FactorContent(potMaxMarginalizer), vars.contains, targetFor) { variable =>
         val outputMsg = potMaxMarginalizer.outputMsgs(vars.indexOf(variable))
         new EdgeContent(null, outputMsg, n2fs(variable))
       }
     } else {
-      fg.addFactor(pot.asInstanceOf[DoubleTerm], new FactorContent(null), vars.contains, targetFor) { variable =>
+      fg.addFactor(potToPutOnFactor, new FactorContent(null), vars.contains, targetFor) { variable =>
         val otherVars = vars.filterNot(_ == variable)
         val otherN2Fs = Msgs(otherVars map n2fs)
-        val maxMarginalizer = createMsgCalculator(pot, otherVars, obsVarsInPot, obsInPot, otherN2Fs, false)
+        val maxMarginalizer = createMsgCalculator(potToPutOnFactor, otherVars, obsVarsInPot, obsInPot, otherN2Fs, false)
         new EdgeContent(maxMarginalizer, maxMarginalizer.outputMsgs(0), n2fs(variable))
       }
     }

@@ -4,6 +4,8 @@ import cc.factorie.la._
 import cc.factorie.util.SingletonIntSeq
 import ml.wolfe.{SimpleIndex, Index}
 
+import scala.collection.mutable.ArrayBuffer
+
 /**
  * @author riedel
  */
@@ -106,7 +108,9 @@ case class Feature(name: Symbol, keys: IndexedSeq[AnyTerm], value: DoubleTerm)(i
     val result = output.vect(0)
 
     def eval()(implicit execution: Execution) = {
-      val indices = name +: ((0 until input.length - 1) map (i => keys(i).domain.indexOfSetting(input(i))))
+      val indices = new ArrayBuffer[Any]
+      indices += name
+      for (i <- 0 until input.length - 1) indices += keys(i).domain.indexOfSetting(input(i))
       val indexOfKeys = index.index(indices)
       val value = input.last.cont(0)
       result.zero()
