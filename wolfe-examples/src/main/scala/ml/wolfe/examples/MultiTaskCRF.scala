@@ -86,11 +86,11 @@ object MultiTaskCRF extends App {
     implicit val maxProductParams = BPParameters(iterations = 1, cachePotentials = true)
 
     def local(x: X.Term, y: Y.Term, i:IntTerm) = {
-      feature('bias, y(i)) + feature('word, y(i) -> x(i))
+      feature('bias, y(i)) + feature('word, y(i) , x(i))
     }
 
     def transition(x: X.Term, y: Y.Term, i:IntTerm) = {
-      feature('pair, y(i) -> y(i + 1))(TransitionFeats, transIndex)
+      feature('pair, y(i), y(i + 1))(TransitionFeats, transIndex)
     }
 
     def model(w: Thetas.Term)(x: X.Term)(y: Y.Term) = {

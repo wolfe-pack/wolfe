@@ -72,8 +72,6 @@ class CachedPotential[T <: DoubleTerm](keys:AnyTerm*)(val term:T) extends NAry w
     util.Arrays.fill(key2Set,false)
   }
 
-
-
   override def evaluatorImpl(in: Settings) = new AbstractEvaluator(in) {
 
     val indexedVars = vars.toIndexedSeq
