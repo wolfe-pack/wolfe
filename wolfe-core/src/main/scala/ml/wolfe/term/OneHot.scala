@@ -99,6 +99,7 @@ case class Feature(name: Symbol, keys: IndexedSeq[AnyTerm], value: DoubleTerm)(i
 
   val domain = dom
   val arguments = keys :+ value
+  val indexOfValue = keys.length
 
   def copy(args: IndexedSeq[ArgumentType]) = Feature(name, args.dropRight(1), args.last.asInstanceOf[DoubleTerm])(index,dom)
 
@@ -112,7 +113,7 @@ case class Feature(name: Symbol, keys: IndexedSeq[AnyTerm], value: DoubleTerm)(i
       indices += name
       for (i <- 0 until input.length - 1) indices += keys(i).domain.indexOfSetting(input(i))
       val indexOfKeys = index.index(indices)
-      val value = input.last.cont(0)
+      val value = input(indexOfValue).cont(0)
       result.zero()
       result(indexOfKeys) = value
       output.vect.broadcastChange(0)
