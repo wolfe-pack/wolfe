@@ -69,7 +69,7 @@ object SISTAProcessors {
                srl: Boolean = false,
                prereqs: Boolean = false): Document = {
     val result = sistaCoreNLPProcessor.mkDocument(text)
-    if (posTagger || (prereqs && (coreference || parser))) sistaCoreNLPProcessor.tagPartsOfSpeech(result)
+    if (posTagger || (prereqs && (coreference || parser || ner))) sistaCoreNLPProcessor.tagPartsOfSpeech(result)
     if (parser || (prereqs && coreference)) sistaCoreNLPProcessor.parse(result)
     if (lemmatizer || (prereqs && coreference)) sistaCoreNLPProcessor.lemmatize(result)
     if (ner || (prereqs && coreference)) sistaCoreNLPProcessor.recognizeNamedEntities(result)
