@@ -71,7 +71,7 @@ object SISTAProcessors {
     val result = sistaCoreNLPProcessor.mkDocument(text)
     if (posTagger || (prereqs && (coreference || parser || ner))) sistaCoreNLPProcessor.tagPartsOfSpeech(result)
     if (parser || (prereqs && coreference)) sistaCoreNLPProcessor.parse(result)
-    if (lemmatizer || (prereqs && coreference)) sistaCoreNLPProcessor.lemmatize(result)
+    if (lemmatizer || (prereqs && (coreference || ner))) sistaCoreNLPProcessor.lemmatize(result)
     if (ner || (prereqs && coreference)) sistaCoreNLPProcessor.recognizeNamedEntities(result)
     // NO SRL SUPPORT IN CoreNLP
     // if (srl) sistaCoreNLPProcessor.labelSemanticRoles(result)
