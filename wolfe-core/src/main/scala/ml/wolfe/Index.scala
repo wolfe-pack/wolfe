@@ -2,6 +2,7 @@ package ml.wolfe
 
 import gnu.trove.strategy.HashingStrategy
 import gnu.trove.map.custom_hash.TObjectIntCustomHashMap
+import ml.wolfe.term.{Dom, Setting}
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.{GenMap, mutable}
 import gnu.trove.procedure.TObjectIntProcedure
@@ -18,6 +19,13 @@ trait Index {
   def hasKey(key:Any) : Boolean
   def inverse(): GenMap[Int, Any]
   def key(index:Int):Any
+
+  def featureIndex(name:Symbol,settings:Array[Setting],domains:Array[Dom]):Int = {
+    val indices = new ArrayBuffer[Any]
+    indices += name
+    for (i <- 0 until settings.length) indices += domains(i).indexOfSetting(settings(i))
+    index(indices)
+  }
 
 }
 

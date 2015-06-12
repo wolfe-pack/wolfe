@@ -107,12 +107,11 @@ case class Feature(name: Symbol, keys: IndexedSeq[AnyTerm], value: DoubleTerm)(i
 
     output.vect(0) = new SparseTensor1(domain.dim)
     val result = output.vect(0)
+    val keySettings = input.dropRight(1).toArray
+    val keyDoms = keys.map(_.domain).toArray
 
     def eval()(implicit execution: Execution) = {
-      val indices = new ArrayBuffer[Any]
-      indices += name
-      for (i <- 0 until input.length - 1) indices += keys(i).domain.indexOfSetting(input(i))
-      val indexOfKeys = index.index(indices)
+      val indexOfKeys = index.featureIndex(name, keySettings,keyDoms)//index.index(indices)
       val value = input(indexOfValue).cont(0)
       result.zero()
       result(indexOfKeys) = value
