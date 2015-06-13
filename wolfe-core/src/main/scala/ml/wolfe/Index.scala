@@ -119,37 +119,37 @@ class SimpleIndex extends Serializable with Index {
 
 }
 
-class SimpleFeatureIndex(val maxDenseCount:Int = 50000, val denseThresholdCount:Int = 10000) extends FeatureIndex {
-  private val sparseMap = new TObjectIntHashMap[Any]
-  private val registeredTemplates = new ArrayBuffer[TemplateIndices]
-  private var currentDenseOffset = 0
-
-  class TemplateIndices(val templateName:Symbol, val domains:IndexedSeq[Dom],
-                        val templateIndex:Int, val sparse:Boolean, val offset:Int) {
-    def featureIndex(settings:Array[Setting]):Int = {
-      val indices = new ArrayBuffer[Any]
-      indices += templateName
-      for (i <- 0 until settings.length) indices += domains(i).indexOfSetting(settings(i))
-      index(indices)
-    }
-  }
-
-
-  def register(templateName: Symbol, domains: Seq[Dom]) = {
-    registeredTemplates.find(_.templateName == templateName) match {
-      case Some(i) =>
-        require(i.domains == domains)
-        i.templateIndex
-      case None =>
-        val index = registeredTemplates.length
-
-        val newIndices = new TemplateIndices(templateName, domains.toIndexedSeq, index)
-        registeredTemplates += newIndices
-        index
-    }
-  }
-
-}
+//class SimpleFeatureIndex(val maxDenseCount:Int = 50000, val denseThresholdCount:Int = 10000) extends FeatureIndex {
+//  private val sparseMap = new TObjectIntHashMap[Any]
+//  private val registeredTemplates = new ArrayBuffer[TemplateIndices]
+//  private var currentDenseOffset = 0
+//
+//  class TemplateIndices(val templateName:Symbol, val domains:IndexedSeq[Dom],
+//                        val templateIndex:Int, val sparse:Boolean, val offset:Int) {
+//    def featureIndex(settings:Array[Setting]):Int = {
+//      val indices = new ArrayBuffer[Any]
+//      indices += templateName
+//      for (i <- 0 until settings.length) indices += domains(i).indexOfSetting(settings(i))
+//      index(indices)
+//    }
+//  }
+//
+//
+//  def register(templateName: Symbol, domains: Seq[Dom]) = {
+//    registeredTemplates.find(_.templateName == templateName) match {
+//      case Some(i) =>
+//        require(i.domains == domains)
+//        i.templateIndex
+//      case None =>
+//        val index = registeredTemplates.length
+//
+//        val newIndices = new TemplateIndices(templateName, domains.toIndexedSeq, index)
+//        registeredTemplates += newIndices
+//        index
+//    }
+//  }
+//
+//}
 
 
 //trait FactorieVectorBuilder {
