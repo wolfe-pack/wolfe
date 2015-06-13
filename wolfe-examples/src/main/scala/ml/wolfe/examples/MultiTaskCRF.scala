@@ -65,7 +65,7 @@ object MultiTaskCRF extends App {
     implicit val Instances = Pairs(X, Y)
 
     val numFeats = N * L + L
-    implicit val Features = Vectors(numFeats)
+    implicit val Features = Vectors(numFeats + 100000)
     val TransitionFeats = Vectors(L*L)
   }
 
@@ -76,7 +76,7 @@ object MultiTaskCRF extends App {
   object CRFModel extends Model {
 
     implicit val index = new SimpleIndex()
-    val transIndex = new SimpleIndex()
+    val transIndex = new SimpleFeatureIndex()
     import Data._
 
     // model domains
