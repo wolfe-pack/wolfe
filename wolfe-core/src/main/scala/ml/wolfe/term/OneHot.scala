@@ -2,7 +2,7 @@ package ml.wolfe.term
 
 import cc.factorie.la._
 import cc.factorie.util.SingletonIntSeq
-import ml.wolfe.{SimpleIndex, Index}
+import ml.wolfe.{FeatureIndex, SimpleIndex, Index}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -92,7 +92,8 @@ case class Indexed[T <: Term[Dom]](arg: T)(implicit val indexer: Indexer) extend
   }
 }
 
-case class Feature(name: Symbol, keys: IndexedSeq[AnyTerm], value: DoubleTerm)(implicit val index: Index, val dom:VectorDom)
+case class Feature(name: Symbol, keys: IndexedSeq[AnyTerm], value: DoubleTerm)
+                  (implicit val index: FeatureIndex, val dom:VectorDom)
   extends Composed[VectorDom] {
 
   type ArgumentType = AnyTerm
@@ -101,6 +102,10 @@ case class Feature(name: Symbol, keys: IndexedSeq[AnyTerm], value: DoubleTerm)(i
   val arguments = keys :+ value
   val indexOfValue = keys.length
 
+  val keyDoms = keys.map(_.domain)
+
+  val templateIndex = index.register(name,keyDoms)
+
   def copy(args: IndexedSeq[ArgumentType]) = Feature(name, args.dropRight(1), args.last.asInstanceOf[DoubleTerm])(index,dom)
 
   override def composer(args: Settings) = new Composer(args) {
@@ -108,10 +113,9 @@ case class Feature(name: Symbol, keys: IndexedSeq[AnyTerm], value: DoubleTerm)(i
     output.vect(0) = new SparseTensor1(domain.dim)
     val result = output.vect(0)
     val keySettings = input.dropRight(1).toArray
-    val keyDoms = keys.map(_.domain).toArray
 
     def eval()(implicit execution: Execution) = {
-      val indexOfKeys = index.featureIndex(name, keySettings,keyDoms)//index.index(indices)
+      val indexOfKeys = index.featureIndex(templateIndex, keySettings)//index.index(indices)
       val value = input(indexOfValue).cont(0)
       result.zero()
       result(indexOfKeys) = value

@@ -2,7 +2,7 @@ package ml.wolfe
 
 import gnu.trove.strategy.HashingStrategy
 import gnu.trove.map.custom_hash.TObjectIntCustomHashMap
-import ml.wolfe.term.{Dom, Setting}
+import ml.wolfe.term.{VectorDom, Dom, Setting}
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.{GenMap, mutable}
 import gnu.trove.procedure.TObjectIntProcedure
@@ -12,7 +12,7 @@ import gnu.trove.map.hash.TObjectIntHashMap
 /**
  * @author Sebastian Riedel
  */
-trait Index {
+trait Index extends FeatureIndex {
   def size: Int
   def apply(key: Any): Int = index(key)
   def index(key: Any): Int
@@ -20,12 +20,39 @@ trait Index {
   def inverse(): GenMap[Int, Any]
   def key(index:Int):Any
 
-  def featureIndex(name:Symbol,settings:Array[Setting],domains:Array[Dom]):Int = {
-    val indices = new ArrayBuffer[Any]
-    indices += name
-    for (i <- 0 until settings.length) indices += domains(i).indexOfSetting(settings(i))
-    index(indices)
+  class TemplateIndices(val templateName:Symbol, val domains:IndexedSeq[Dom], val templateIndex:Int) {
+    def featureIndex(settings:Array[Setting]):Int = {
+      val indices = new ArrayBuffer[Any]
+      indices += templateName
+      for (i <- 0 until settings.length) indices += domains(i).indexOfSetting(settings(i))
+      index(indices)
+    }
   }
+  private val registeredTemplates = new ArrayBuffer[TemplateIndices]
+
+
+  def register(templateName: Symbol, domains: Seq[Dom]) = {
+    registeredTemplates.find(_.templateName == templateName) match {
+      case Some(i) =>
+        require(i.domains == domains)
+        i.templateIndex
+      case None =>
+        val index = registeredTemplates.length
+        val newIndices = new TemplateIndices(templateName, domains.toIndexedSeq, index)
+        registeredTemplates += newIndices
+        index
+    }
+  }
+
+  def featureIndex(templateIndex:Int,settings:Array[Setting]):Int = {
+    registeredTemplates(templateIndex).featureIndex(settings)
+  }
+
+}
+
+trait FeatureIndex {
+  def register(templateName:Symbol,domains:Seq[Dom]):Int
+  def featureIndex(templateIndex:Int,settings:Array[Setting]):Int
 
 }
 
@@ -89,6 +116,38 @@ class SimpleIndex extends Serializable with Index {
     this
   }
 
+
+}
+
+class SimpleFeatureIndex(val maxDenseCount:Int = 50000, val denseThresholdCount:Int = 10000) extends FeatureIndex {
+  private val sparseMap = new TObjectIntHashMap[Any]
+  private val registeredTemplates = new ArrayBuffer[TemplateIndices]
+  private var currentDenseOffset = 0
+
+  class TemplateIndices(val templateName:Symbol, val domains:IndexedSeq[Dom],
+                        val templateIndex:Int, val sparse:Boolean, val offset:Int) {
+    def featureIndex(settings:Array[Setting]):Int = {
+      val indices = new ArrayBuffer[Any]
+      indices += templateName
+      for (i <- 0 until settings.length) indices += domains(i).indexOfSetting(settings(i))
+      index(indices)
+    }
+  }
+
+
+  def register(templateName: Symbol, domains: Seq[Dom]) = {
+    registeredTemplates.find(_.templateName == templateName) match {
+      case Some(i) =>
+        require(i.domains == domains)
+        i.templateIndex
+      case None =>
+        val index = registeredTemplates.length
+
+        val newIndices = new TemplateIndices(templateName, domains.toIndexedSeq, index)
+        registeredTemplates += newIndices
+        index
+    }
+  }
 
 }
 

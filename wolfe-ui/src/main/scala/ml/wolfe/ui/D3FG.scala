@@ -3,6 +3,7 @@ package ml.wolfe.ui
 import ml.wolfe.term._
 import ml.wolfe.ui.Json._
 import org.sameersingh.htmlgen.{HTML, RawHTML}
+import scala.language.implicitConversions
 
 import scala.util.Random
 
