@@ -263,7 +263,7 @@ case class VarSeqApply[+E <: Dom, S <: Term[VarSeqDom[E]], I <: IntTerm](seq: S,
     def eval()(implicit execution: Execution) = {
       val index = input(1).disc(0)
       val offset = (seq.domain.elementDom.lengths * index) + Offsets(discOff = 1)
-      output deepAssign(input(0), offset, seq.domain.elementDom.lengths)
+      output shallowAssign (input(0), offset, seq.domain.elementDom.lengths)
     }
 
   }
@@ -347,7 +347,7 @@ case class RangeTerm(start: IntTerm, end: IntTerm) extends Composed[VarSeqDom[In
 
   type ArgumentType = IntTerm
 
-  def arguments = IndexedSeq(start, end)
+  val arguments = IndexedSeq(start, end)
 
   def copy(args: IndexedSeq[ArgumentType]) = new RangeTerm(args(0), args(1))
 

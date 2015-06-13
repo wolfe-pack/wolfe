@@ -787,9 +787,11 @@ abstract class Buffer[T: ClassTag](val setting: Setting) {
   }
 
   def shallowCopyTo(tgt: Buffer[T], srcPos: Int, tgtPos: Int, length: Int, filter: collection.Set[Int]): Unit = {
-    val toCopy = filter filter (i => i >= srcPos && i < srcPos + length)
-    toCopy foreach (i => tgt.array(i - srcPos + tgtPos) = array(i))
-    tgt.broadcastChanges(toCopy map (i => i - srcPos + tgtPos))
+    if (filter.nonEmpty) {
+      val toCopy = filter filter (i => i >= srcPos && i < srcPos + length)
+      toCopy foreach (i => tgt.array(i - srcPos + tgtPos) = array(i))
+      tgt.broadcastChanges(toCopy map (i => i - srcPos + tgtPos))
+    }
   }
 
   def deepCopyTo(tgt: Buffer[T], srcPos: Int, tgtPos: Int, length: Int, filter: collection.Set[Int]): Unit = {
