@@ -117,12 +117,16 @@ class ManualTerm[D <: Dom](val compose: (Settings, Setting) => Unit, val argumen
   }
 }
 
-trait NAry {
+trait NAry extends Term[Dom] {
   type ArgumentType <: Term[Dom]
 
   def arguments: IndexedSeq[ArgumentType]
 
   def copy(args: IndexedSeq[ArgumentType]): Term[Dom]
+
+  def copyIfDifferent(args: IndexedSeq[ArgumentType]) : Term[Dom] = {
+    if (args == arguments) this else copy(args)
+  }
 
 }
 

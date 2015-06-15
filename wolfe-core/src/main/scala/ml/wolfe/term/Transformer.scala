@@ -14,7 +14,7 @@ object Transformer extends LazyLogging {
     val result = term match {
       case n: NAry =>
         val transformed = n.arguments map ((t: AnyTerm) => depthFirst(t)(partialFunction).asInstanceOf[n.ArgumentType])
-        val copied = n.copy(transformed)
+        val copied = n.copyIfDifferent(transformed)
         copied
       case t => t
     }
@@ -36,7 +36,7 @@ object Transformer extends LazyLogging {
                 val (t, m) = depthFirstAndReuse(arg, map)(partialFunction)
                 (map ++ m, args :+ t.asInstanceOf[n.ArgumentType])
             }
-            val copied = n.copy(arguments)
+            val copied = n.copyIfDifferent(arguments)
             (copied, mappings)
           case t =>
             (t, mapping)
@@ -64,7 +64,7 @@ object Transformer extends LazyLogging {
                   val (t, m) = depthLastAndReuse(arg, map)(partialFunction)
                   (map ++ m, args :+ t.asInstanceOf[n.ArgumentType])
               }
-              val copied = n.copy(arguments)
+              val copied = n.copyIfDifferent(arguments)
               (copied, mappings + (termId -> copied))
             case t =>
               (t, mapping)
@@ -79,7 +79,7 @@ object Transformer extends LazyLogging {
     else term match {
       case n: NAry =>
         val transformed = n.arguments map ((t: AnyTerm) => depthLast(t)(partialFunction).asInstanceOf[n.ArgumentType])
-        val copied = n.copy(transformed)
+        val copied = n.copyIfDifferent(transformed)
         copied
       case t =>
         t
