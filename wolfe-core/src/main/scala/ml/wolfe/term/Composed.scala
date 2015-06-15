@@ -1,5 +1,7 @@
 package ml.wolfe.term
 
+import scala.collection.mutable
+
 /**
  * @author riedel
  */
@@ -44,7 +46,7 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
 
   }
 
-  override def evaluatorImpl(in: Settings) = new ComposedEvaluator(in)
+  override def evaluatorImpl(in: Settings):Evaluator = new ComposedEvaluator(in)
 
   abstract class ComposedDifferentiator(val withRespectTo: Seq[Var[Dom]],
                                         val input: Settings,
@@ -102,6 +104,55 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
 
   }
 
+}
+
+trait ComposedWithReusingEvaluator[D <: Dom] extends Composed[D] {
+
+  private val evaluators = new mutable.HashMap[Settings,Evaluator]()
+
+  class ReusingEvaluator(val self:Evaluator) extends Evaluator with BufferListener {
+    val input = self.input
+    val output = self.output
+
+    private var needUpdate = true
+    private var lastExecution:Execution = null
+
+    for (s <- input; b <- s.buffers) b.listeners += this
+
+
+    def reset(index: Int) = {
+      needUpdate = true
+    }
+
+    def changed(index: Int) = {
+      needUpdate = true
+    }
+
+
+    def changed(indices: Iterable[Int]) = {
+      needUpdate = true
+    }
+
+    def allChanged() = {
+      needUpdate = true
+    }
+
+
+    def eval()(implicit execution: Execution) = {
+      if (needUpdate || lastExecution != execution) {
+        self.eval()
+        lastExecution = execution
+        needUpdate = false
+      } else {
+
+      }
+    }
+  }
+
+  override def evaluatorImpl(in: Settings) = {
+    val actual = super.evaluatorImpl(in)
+    new ReusingEvaluator(actual)
+  }
 }
 
 class ManualTerm[D <: Dom](val compose: (Settings, Setting) => Unit, val arguments: IndexedSeq[AnyTerm], val domain: D) extends Composed[D] {

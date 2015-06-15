@@ -25,6 +25,8 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
   val vect = new VectBuffer(numVect)
   val mats = new MatrixBuffer(numMats)
 
+  val buffers = mutable.IndexedSeq(disc,cont,vect,mats)
+
   def resetToZero(): Unit = {
     disc.resetToZero()
     cont.resetToZero()
