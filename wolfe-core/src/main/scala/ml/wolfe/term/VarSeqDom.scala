@@ -101,6 +101,9 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
 
   def zero = for (i <- 0 until minLength) yield elementDom.zero
 
+
+  override def sparseZero = for (i <- 0 until minLength) yield elementDom.sparseZero
+
   def Const(value: Value) = new Constructor(lengthDom.Const(value.length), value.map(elementDom.Const))
 
 

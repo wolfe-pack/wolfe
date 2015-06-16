@@ -1,7 +1,7 @@
 package ml.wolfe.term
 
 import cc.factorie.DenseTensor1
-import cc.factorie.la.{SparseHashTensor1, GrowableDenseTensor1}
+import cc.factorie.la.{SparseIndexedTensor1, SparseIndexedTensor, SparseHashTensor1, GrowableDenseTensor1}
 import ml.wolfe._
 
 /**
@@ -11,6 +11,8 @@ class VectorDom(val dim: Int) extends GenericVectorDom {
   def one = new DenseTensor1(dim, 1.0)
 
   def zero = new DenseTensor1(dim, 0.0)
+
+  override def sparseZero = new SparseIndexedTensor1(dim)
 
   def Term(values: Double*) = {
     require(values.size == dim)

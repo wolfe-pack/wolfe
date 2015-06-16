@@ -97,6 +97,13 @@ trait Dom {
     result
   }
 
+  def createSparseZeroSetting(): Setting = {
+    val result = createSetting()
+    copyValue(sparseZero, result)
+    result
+  }
+
+
   def Variable(name: String): Var
 
   def Var(implicit provider: NameProvider): Var = Variable(provider.newName())
@@ -162,6 +169,8 @@ trait Dom {
   def one: Value
 
   def zero: Value
+
+  def sparseZero = zero
 
   abstract class BaseVar(val varName: String) extends DomVar {
   }

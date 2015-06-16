@@ -39,7 +39,7 @@ class AdaGradArgmaxer(val objRaw: DoubleTerm,
 
   val scale = new Setting(numCont = 1)
 
-  val gradient = Settings.fromSeq(wrt.map(_.domain.createZeroSetting()))
+  val gradient = Settings.fromSeq(wrt.map(_.domain.createSparseZeroSetting()))
   val momentum = Settings.fromSeq(wrt.map(_.domain.createZeroSetting()))
 
   val termsPerEpoch = Traversal.distinctSampleCount(obj)

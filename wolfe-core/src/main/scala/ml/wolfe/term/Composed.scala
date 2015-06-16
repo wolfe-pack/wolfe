@@ -10,7 +10,7 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
   self =>
 
 
-  def size = arguments.length
+  lazy val size = arguments.length
 
   lazy val vars = arguments.flatMap(_.vars).toSeq.distinct
 
