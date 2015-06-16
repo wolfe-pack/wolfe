@@ -1,5 +1,10 @@
 package ml.wolfe.term
 
+import cc.factorie.la.SparseIndexedTensor1
+import ml.wolfe.Vect
+import scalaxy.loops._
+import scala.language.postfixOps
+
 /**
  * @author riedel
  */
@@ -13,10 +18,31 @@ class DotProduct[T1 <: VectorTerm, T2 <: VectorTerm](val arg1: T1, val arg2: T2)
 
   def copy(args: IndexedSeq[ArgumentType]) = new DotProduct(args(0), args(1))
 
+  def sparseDot(s1: SparseIndexedTensor1, arg2: Vect) = {
+    var result = 0.0
+    for (i <- 0 until s1._unsafeActiveDomainSize optimized) {
+      val index = s1._indices(i)
+      val value = s1._values(i)
+      result += value * arg2(index)
+    }
+    result
+  }
+
+  def ownDot(arg1: Vect, arg2: Vect) = {
+    arg1 match {
+      case s1: SparseIndexedTensor1 => sparseDot(s1, arg2)
+      case _ =>
+        arg2 match {
+          case s2: SparseIndexedTensor1 => sparseDot(s2, arg1)
+          case _ => arg1 dot arg2
+        }
+    }
+  }
 
   override def composer(args: Settings) = new Composer(args) {
     def eval()(implicit execution: Execution) = {
-      output.cont(0) = input(0).vect(0) dot input(1).vect(0)
+      output.cont(0) = ownDot(input(0).vect(0), input(1).vect(0))
+      //output.cont(0) = input(0).vect(0) dot input(1).vect(0)
     }
   }
 
