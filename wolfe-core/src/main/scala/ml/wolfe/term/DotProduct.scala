@@ -24,12 +24,15 @@ class DotProduct[T1 <: VectorTerm, T2 <: VectorTerm](val arg1: T1, val arg2: T2)
   override def differentiatorImpl(wrt: Seq[AnyVar])(in: Settings, err: Setting, gradientAcc: Settings) =
     new ComposedDifferentiator(wrt, in, err, gradientAcc) {
 
+      val diffArg1 = wrt.exists(arg1.vars.contains)
+      val diffArg2 = wrt.exists(arg2.vars.contains)
+
       def localBackProp()(implicit execution: Execution) = {
 
         val scale = error.cont(0)
 
-        if (arg1.vars.nonEmpty) argErrors(0).vect.set(0, argOutputs(1).vect(0), scale)
-        if (arg2.vars.nonEmpty) argErrors(1).vect.set(0, argOutputs(0).vect(0), scale)
+        if (diffArg1) argErrors(0).vect.set(0, argOutputs(1).vect(0), scale)
+        if (diffArg2) argErrors(1).vect.set(0, argOutputs(0).vect(0), scale)
 
       }
     }
