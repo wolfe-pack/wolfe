@@ -3,6 +3,8 @@ package ml.wolfe.term
 import java.util
 
 import scala.collection.mutable
+import scalaxy.loops._
+import scala.language.postfixOps
 
 /**
  * Caching values based on input arguments.
@@ -77,11 +79,12 @@ class CachedPotential[T <: DoubleTerm](keys:AnyTerm*)(val term:T) extends NAry w
     val indexedVars = vars.toIndexedSeq
     val innerEval = term.evaluatorImpl(in.linkedSettings(vars,term.vars))
     val output = domain.createSetting()
-    val keyEvals = keys.toIndexedSeq map ( k =>  k -> k.evaluatorImpl(in.linkedSettings(vars,k.vars)))
+    val keyEvals = keys.toArray map ( k =>  k -> k.evaluatorImpl(in.linkedSettings(vars,k.vars)))
 
     def currentKey()(implicit execution: Execution) = {
       var result = 0
-      for (k <- keyEvals) {
+      for (i <- 0 until keyEvals.length optimized) {
+        val k = keyEvals(i)
         k._2.eval()
         val index = k._1.domain.indexOfSetting(k._2.output)
         result = index + result * k._1.domain.domainSize

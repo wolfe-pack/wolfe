@@ -159,6 +159,7 @@ class SimpleFeatureIndex(val maxDenseCount: Int = 50000, val denseCountThreshold
 
   class TemplateIndices(val templateName: Symbol, val domains: IndexedSeq[Dom],
                         val templateIndex: Int, val sparse: Boolean, val offset: Int) {
+    val domainArray = domains.toArray
     def featureIndex(settings: Array[Setting]): Int = {
       val raw = if (sparse) {
         val indices = new ArrayBuffer[Any]
@@ -170,7 +171,7 @@ class SimpleFeatureIndex(val maxDenseCount: Int = 50000, val denseCountThreshold
         var i = 0
         while (i < domains.length) {
           val setting = settings(i)
-          val dom = domains(i)
+          val dom = domainArray(i)
           val index = dom.indexOfSetting(setting)
           result = index + result * dom.domainSize
           i += 1
