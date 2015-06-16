@@ -30,7 +30,7 @@ class Max(val obj: DoubleTerm, val wrt: Seq[Var[Dom]]) extends DoubleTerm with U
       this2obj.linkTargetsToSource(in, objInput)
       wrt2obj.linkTargetsToSource(eval.argmaxer.result, objInput)
 
-      val objGradient = obj.createZeroInputSettings()
+      val objGradient = obj.createSparseZeroInputSettings()
       this2obj.pairs foreach { case (src, tgt) => objGradient(tgt).setAdaptiveVectors(gradientAcc(src).adaptiveVectors) }
 
       val diff = obj.differentiatorImpl(diffWrt)(objInput, err, objGradient)
