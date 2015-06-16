@@ -3,6 +3,7 @@ package ml.wolfe.term
 import java.util
 
 import cc.factorie.la._
+import ml.wolfe.util.FastIntSet
 import ml.wolfe.{Mat, MoreArrayOps, Vect}
 
 import scala.collection.mutable
@@ -646,8 +647,8 @@ class BufferChangeRecorder[T](val buffer: Buffer[T], initAllChanges: Boolean = t
 
   buffer.listeners += this
 
-  private var changedIndices = new mutable.HashSet[Int]
-  private var resetIndices = new mutable.HashSet[Int]
+  private var changedIndices = new FastIntSet(buffer.length)//new mutable.HashSet[Int]
+  private var resetIndices = new FastIntSet(buffer.length)//new mutable.HashSet[Int]
 
 
   if (initAllChanges) allChanged()
@@ -674,8 +675,8 @@ class BufferChangeRecorder[T](val buffer: Buffer[T], initAllChanges: Boolean = t
   }
 
   def forget(): Unit = {
-    changedIndices = new mutable.HashSet[Int]
-    resetIndices = new mutable.HashSet[Int]
+    changedIndices.clear()// = new mutable.HashSet[Int]
+    resetIndices.clear()// = new mutable.HashSet[Int]
     //changedIndices.clear() todo: this was slow because clearing the hashmap only meant setting entries to null.
     //resetIndices.clear()
   }
@@ -790,9 +791,13 @@ abstract class Buffer[T: ClassTag](val setting: Setting) {
 
   def shallowCopyTo(tgt: Buffer[T], srcPos: Int, tgtPos: Int, length: Int, filter: collection.Set[Int]): Unit = {
     if (filter.nonEmpty) {
-      val toCopy = filter filter (i => i >= srcPos && i < srcPos + length)
-      toCopy foreach (i => tgt.array(i - srcPos + tgtPos) = array(i))
-      tgt.broadcastChanges(toCopy map (i => i - srcPos + tgtPos))
+      for (i <- filter) {
+        if (i >= srcPos && i < srcPos + length) {
+          val targetIndex = i - srcPos + tgtPos
+          tgt.array(targetIndex) = array(i)
+          tgt.broadcastChange(targetIndex)
+        }
+      }
     }
   }
 
