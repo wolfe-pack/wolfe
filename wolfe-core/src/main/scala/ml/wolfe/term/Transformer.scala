@@ -97,6 +97,11 @@ object Transformer extends LazyLogging {
     }
   }
 
+  /**
+   * Removes "OwnedTerms" that are mostly just used for type safety on the client side.
+   * @param term term to clean
+   * @return term without owned terms.
+   */
   def clean(term: AnyTerm) = depthFirstAndReuse(term) {
     case o: OwnedTerm[_] if !o.keep =>
       o.self

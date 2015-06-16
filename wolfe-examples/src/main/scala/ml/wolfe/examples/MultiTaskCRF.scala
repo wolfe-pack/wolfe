@@ -42,7 +42,7 @@ object MultiTaskCRF extends App {
       s.tokens.map(_.word.toString) -> getPosTags(s)
     }
 
-    val train = connl2000Train.take(50).map(toInstance).toIndexedSeq
+    val train = connl2000Train.take(100).map(toInstance).toIndexedSeq
     val test = connl2000Test.take(1).map(toInstance).toIndexedSeq
 
     val words = (train ++ test).flatMap(_._1).distinct
@@ -65,7 +65,7 @@ object MultiTaskCRF extends App {
     implicit val Instances = Pairs(X, Y)
 
     val numFeats = N * L + L
-    implicit val Features = Vectors(numFeats + 100000)
+    implicit val Features = Vectors(numFeats + 1000000)
     val TransitionFeats = Vectors(L*L)
   }
 
@@ -75,7 +75,7 @@ object MultiTaskCRF extends App {
 
   object CRFModel extends Model {
 
-    implicit val index = new SimpleIndex()
+    implicit val index = new SimpleFeatureIndex()//(maxDenseCount = 100000, denseCountThreshold = 100000)
     val transIndex = new SimpleFeatureIndex()
     import Data._
 

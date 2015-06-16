@@ -105,7 +105,14 @@ trait BP {
   val observedVars = objRaw.vars.filterNot(wrt.contains)
   val result: Settings = Settings.fromSeq(wrt.map(_.domain.createSetting()))
 
-  val pipeline = groundSums _ andThen flattenSums andThen clean andThen atomizeVariables(wrt) andThen shatterAtoms
+  val pipeline =
+    clean _ andThen
+      FeatureTransformer.aggregateFeatures andThen
+      groundSums andThen
+      flattenSums andThen
+      clean andThen
+      atomizeVariables(wrt) andThen
+      shatterAtoms
   //get sum terms from objective
   val obj = pipeline(objRaw)
 

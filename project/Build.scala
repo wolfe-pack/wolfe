@@ -45,7 +45,10 @@ object BuildSettings {
   val buildSettings = Defaults.defaultSettings ++ Seq(
     organization := buildOrganization,
     scalaVersion := buildScalaVersion,
-    scalacOptions := Seq("-unchecked", "-deprecation", "-feature", "-language:existentials"),//, "-Ylog-classpath"), //, "-Yrangepos"?
+    scalacOptions := Seq(
+      "-unchecked", "-deprecation",
+      "-optimise", "-Yclosure-elim", "-Yinline",
+      "-feature", "-language:existentials"),//, "-Ylog-classpath"), //, "-Yrangepos"?
     shellPrompt := ShellPrompt.buildShellPrompt,
     fork in run := true, //use a fresh JVM for sbt run
     connectInput in run := true //to use readLine after sbt run
@@ -71,7 +74,9 @@ object BuildSettings {
     "com.googlecode.json-simple" % "json-simple" % "1.1",
     "org.json4s" %% "json4s-jackson" % "3.2.11",
     "org.mongodb" %% "casbah" % "2.7.4",
-    "org.scala-lang.modules" %% "scala-pickling" % "0.10.0"
+    "org.scala-lang.modules" %% "scala-pickling" % "0.10.0",
+    "com.nativelibs4java" %% "scalaxy-loops" % "0.3.3" % "provided",
+    "com.nativelibs4java" %% "scalaxy-streams" % "0.3.4" % "provided"
 
 
  //   "edu.illinois.cs.cogcomp" % "IllinoisNerExtended" % "2.7"
