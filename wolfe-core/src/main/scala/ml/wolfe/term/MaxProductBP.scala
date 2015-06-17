@@ -1,5 +1,7 @@
 package ml.wolfe.term
 
+import java.util
+
 import ml.wolfe.term.Transformer._
 
 import scala.collection.mutable
@@ -165,7 +167,7 @@ trait BP {
     }
   }
 
-  class NodeContent(val belief: Msg, var f2nChanged: Boolean = true)
+  class NodeContent(val belief: Msg, val deterministicBelief: Msg, var f2nChanged: Boolean = true)
 
   class EdgeContent(val maxMarginalizer: MessageCalculator, val f2n: Msg, val n2f: Msg)
 
@@ -177,7 +179,7 @@ trait BP {
 
   def addNodes(vars: Seq[AnyGroundAtom]): Unit = {
     for (v <- vars) {
-      fg.addNode(v, new NodeContent(v.domain.createZeroMsg()))
+      fg.addNode(v, new NodeContent(v.domain.createZeroMsg(), v.domain.createZeroMsg()))
     }
   }
 
@@ -260,6 +262,18 @@ trait BP {
     fg.recordN2F(edge, edge.content.n2f)
   }
 
+  def updateDeterministicN2F(edge: fg.Edge): Unit = {
+    edge.content.n2f := 0.0
+    for (o <- edge.node.edges; if o != edge) {
+      edge.content.n2f += o.content.f2n
+    }
+    for(discMsg <- edge.content.n2f.disc) {
+      val argmax = discMsg.argmax()
+      util.Arrays.fill(discMsg.msg, Double.NegativeInfinity)
+      discMsg.msg(argmax) = 0
+    }
+  }
+
   def updateF2N(edge: fg.Edge)(implicit execution: Execution): Unit = {
     edge.content.maxMarginalizer.updateMessages()
     edge.node.content.f2nChanged = true
@@ -284,6 +298,22 @@ trait BP {
     }
   }
 
+  def updateFactorDeterministic(factor: fg.Factor)(implicit execution: Execution): Unit = {
+    for (e <- factor.edges) {
+      if (e.node.content.f2nChanged) {
+        updateDeterministicBelief(e.node)
+        e.content.n2f := e.node.content.deterministicBelief - e.content.f2n
+        factor.content.n2fChanged = true
+      }
+    }
+    if (factor.content.n2fChanged) {
+      factor.content.update()
+      for (e <- factor.edges) {
+        e.node.content.f2nChanged = true
+      }
+    }
+  }
+
   def updateNodeBelief(node: fg.Node): Unit = {
     if (!node.content.f2nChanged) return
     node.content.belief := 0.0
@@ -293,9 +323,16 @@ trait BP {
     node.content.f2nChanged = false
   }
 
+  def updateDeterministicBelief(node: fg.Node): Unit = {
+    node.content.deterministicBelief := 0.0
+    for (e <- node.edges) {
+      node.content.deterministicBelief += e.content.f2n
+    }
+  }
+
   def integrateAtomIntoResultState(node: fg.Node): Unit = {
     val atom = node.variable
-    node.content.belief.argmax(result(wrt.indexOf(atom.owner)), atom.offsets)
+    node.content.deterministicBelief.argmax(result(wrt.indexOf(atom.owner)), atom.offsets)
   }
 
   def doMessagePassing()(implicit execution: Execution) = {
@@ -328,7 +365,24 @@ trait BP {
       updateNodeBelief(n)
     }
 
+    schedule match {
+      case Schedule.synchronized =>
+        for (f <- fg.activeFactors) {
+          updateFactorDeterministic(f)
+        }
+      case Schedule.default =>
+        val deterministicSchedule = fg.scheduleForward()
+        for (de <- deterministicSchedule) {
+          if (de.isF2N)
+            updateF2N(de.edge)
+          else
+            updateDeterministicN2F(de.edge)
+        }
+    }
 
+    for (n <- fg.activeNodes) {
+      updateDeterministicBelief(n)
+    }
   }
 
   def argmax()(implicit execution: Execution) = {
