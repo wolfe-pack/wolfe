@@ -1,7 +1,7 @@
 package ml.wolfe.nlp.converters
 
 import edu.arizona.sista.processors.{CorefChains => SISTACorefChains, Sentence => SISTASent}
-import edu.arizona.sista.struct.Tree
+import edu.arizona.sista.struct.{Tree => SistaTree}
 import ml.wolfe.nlp._
 import ml.wolfe.nlp.ie.{EntityMention, CorefMention}
 import ml.wolfe.nlp.syntax._
@@ -61,7 +61,7 @@ object SISTAConverter {
     dt
   }
 
-  def treeToTree(tree: Tree[String], leftMost: Int = 0): ConstituentTree = {
+  def treeToTree(tree: SistaTree, leftMost: Int = 0): ConstituentTree = {
     if (tree.isPreTerminal) {
       new ConstituentTree(new PreterminalNode(start = leftMost, end = leftMost + 1, label = tree.value, word = tree.children.get.head.value))
     }
@@ -103,5 +103,4 @@ object SISTAConverter {
       case _ => IndexedSeq()
     }
   }
-
 }
