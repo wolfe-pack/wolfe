@@ -75,59 +75,64 @@ object SISTAProcessors {
    * @return fully annotated document
    */
 
-  def annotate(text: String,
+  def annotateWithParse(text: String,
                posTagger: Boolean=false,
                lemmatizer: Boolean=false,
-               parser: Boolean=false,
+               parser: Option[ParserModel] = None,
                ner: Boolean=false,
                coreference: Boolean=false,
                srl: Boolean = false,
                prereqs: Boolean = false): WolfeDocument = {
-    println("again making doc...")
     val result = sistaCoreNLPProcessor.mkDocument(text)
-    if (posTagger || (prereqs && (coreference || parser || ner))) sistaCoreNLPProcessor.tagPartsOfSpeech(result)
-    if (parser || (prereqs && coreference)) sistaCoreNLPProcessor.parse(result)
+    if (posTagger || (prereqs && (coreference || parser.isDefined || ner))) sistaCoreNLPProcessor.tagPartsOfSpeech(result)
+    if (parser.isDefined || (prereqs && coreference)) parse(result, parser.get)  //sistaCoreNLPProcessor.parse(result)
     if (lemmatizer || (prereqs && (coreference || ner))) sistaCoreNLPProcessor.lemmatize(result)
     if (ner || (prereqs && coreference)) sistaCoreNLPProcessor.recognizeNamedEntities(result)
-    // NO SRL SUPPORT IN CoreNLP
-    // if (srl) sistaCoreNLPProcessor.labelSemanticRoles(result)
+    if (srl) ??? // sistaCoreNLPProcessor.labelSemanticRoles(result)
     if (coreference && !prereqs) {
-      require(posTagger && lemmatizer && ner && parser, "Coreference resolution requires execution of POS tagger, lemmatizer, NER and parser")
+      require(posTagger && lemmatizer && ner && parser.isDefined, "Coreference resolution requires execution of POS tagger, lemmatizer, NER and parser")
       sistaCoreNLPProcessor.resolveCoreference(result)
     }
-    sistaToWolfeDocument(result, text = text)
+    SISTAConverter.sistaToWolfeDocument(result, text = text)
   }
 
-  def sistaToWolfeDocument(doc: SistaDocument, text: String = ""): WolfeDocument = {
-    val sentences = doc.sentences map SISTAConverter.toFullWolfeSentence
-    val corefSeq = doc.coreferenceChains.map(c => SISTAConverter.toWolfeCoreference(c).toArray)
-    WolfeDocument(text, sentences, coref = corefSeq.map(CorefAnnotation(_)).getOrElse(CorefAnnotation.empty))
+  def annotate(text: String, posTagger: Boolean=false, lemmatizer: Boolean=false, parser: Boolean=false,ner: Boolean=false,coreference: Boolean=false,srl: Boolean = false, prereqs: Boolean = false): WolfeDocument = {
+    annotateWithParse(text, posTagger, lemmatizer, if (parser) Some(StanfordCollapsedDependency) else None, ner, coreference, srl, prereqs)
   }
 
-  def parse(words: Array[String], mode: String = "NN"): WolfeDocument = {
-    val doc = sistaCoreNLPProcessor.mkDocument(words.mkString(" "))
+//  def parse(doc: WolfeDocument, model: ParserModel = StanfordCollapsedDependency): WolfeDocument = {
+//    SISTAConverter.sistaToWolfeDocument(sistaCoreNLPProcessor.mkDocument(doc.source))
+//  }
+
+  def parse(doc: SistaDocument, model: ParserModel = StanfordCollapsedDependency): SistaDocument = {
     sistaCoreNLPProcessor.tagPartsOfSpeech(doc)
     sistaCoreNLPProcessor.lemmatize(doc)
-    if (mode == "BASIC") {
-      basicSistaCoreNLPProcessor.parse(doc)
+    model match {
+      case MaltParser => maltSistaCoreNLPProcessor.parse(doc)
+      case StanfordBasicDependency => basicSistaCoreNLPProcessor.parse(doc)
+      case StanfordCollapsedDependency => sistaCoreNLPProcessor.parse(doc)
+      case StanfordNeuralDependency => nnSistaCoreNLPProcessor.parse(doc)
     }
-    else if (mode == "MALT") {
-      maltSistaCoreNLPProcessor.parse(doc)
-    }
-    else if (mode == "NN") {
-      nnSistaCoreNLPProcessor.parse(doc)
-    }
-    else {
-      // Default to the standard Stanford parser
-      sistaCoreNLPProcessor.parse(doc)
-    }
-    sistaToWolfeDocument(doc, text = words.mkString(" "))
-  }
-
-  def main(args: Array[String]): Unit = {
-    val sent = "the quick brown fox jumped over the lazy dog ."
-    val tokens = sent.split(" ").map(w => WolfeToken(word = w))
-    parse(tokens.map(_.word))
-    annotate(sent,  ner = true, parser = true, prereqs = true)
+    doc
   }
 }
+
+sealed trait ParserModel
+case object MaltParser extends ParserModel
+case object StanfordBasicDependency extends ParserModel
+case object StanfordCollapsedDependency extends ParserModel
+case object StanfordNeuralDependency extends ParserModel
+
+
+
+
+
+
+
+
+// def main(args: Array[String]): Unit = {
+//    val sent = "the quick brown fox jumped over the lazy dog ."
+//    val tokens = sent.split(" ").map(w => WolfeToken(word = w))
+//    parse(tokens.map(_.word))
+//    annotate(sent,  ner = true, parser = true, prereqs = true)
+//  }
