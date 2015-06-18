@@ -134,6 +134,8 @@ class DiscreteDom[T](raw: IndexedSeq[T]) extends GenericDiscreteDom[T] {
 
   def valueToInt(value: Value) = index(value)
 
+  override def indexOfSetting(setting: Setting) = setting.disc(0)
+
   def one = values.last
 
   def zero = values.head

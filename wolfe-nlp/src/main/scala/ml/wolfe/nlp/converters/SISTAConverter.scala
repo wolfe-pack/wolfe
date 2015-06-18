@@ -1,9 +1,9 @@
 package ml.wolfe.nlp.converters
 
-import edu.arizona.sista.processors.{CorefChains => SISTACorefChains, Sentence => SISTASent}
-import edu.arizona.sista.struct.Tree
+import edu.arizona.sista.processors.{CorefChains => SISTACorefChains, Document => SISTADocument, Sentence => SISTASent}
+import edu.arizona.sista.struct.{Tree => SistaTree}
 import ml.wolfe.nlp._
-import ml.wolfe.nlp.ie.{EntityMention, CorefMention}
+import ml.wolfe.nlp.ie.{CorefAnnotation, EntityMention, CorefMention}
 import ml.wolfe.nlp.syntax._
 
 import scala.collection.mutable.ArrayBuffer
@@ -47,6 +47,12 @@ object SISTAConverter {
              syntax = new SyntaxAnnotation(tree = ctree, dependencies = dtree))
   }
 
+  def sistaToWolfeDocument(doc: SISTADocument, text: String = ""): Document = {
+    val sentences = doc.sentences map toFullWolfeSentence
+    val corefSeq = doc.coreferenceChains.map(toWolfeCoreference(_).toArray)
+    Document(text, sentences, coref = corefSeq.map(CorefAnnotation(_)).getOrElse(CorefAnnotation.empty))
+  }
+
   def toWolfeConstituentTree(sent: SISTASent): ConstituentTree = {
     sent.syntacticTree match {
       case Some(tree) => treeToTree(tree)
@@ -57,11 +63,10 @@ object SISTAConverter {
   def toWolfeDependencyTree(sent: SISTASent): DependencyTree = {
     val tokens = for (i <- 0 until sent.size) yield toWolfeToken(i, sent)
     val dt = new DependencyTree(tokens, sent.dependencies.get.outgoingEdges.zipWithIndex.flatMap { case(x, i) => x.map { y => Arc(i, y._1, Some(y._2)) }})
-//    println(dt.toString())
     dt
   }
 
-  def treeToTree(tree: Tree[String], leftMost: Int = 0): ConstituentTree = {
+  def treeToTree(tree: SistaTree, leftMost: Int = 0): ConstituentTree = {
     if (tree.isPreTerminal) {
       new ConstituentTree(new PreterminalNode(start = leftMost, end = leftMost + 1, label = tree.value, word = tree.children.get.head.value))
     }
@@ -103,5 +108,4 @@ object SISTAConverter {
       case _ => IndexedSeq()
     }
   }
-
 }

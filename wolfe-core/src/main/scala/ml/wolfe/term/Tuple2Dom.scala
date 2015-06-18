@@ -182,7 +182,8 @@ trait ProductDom extends Dom {
 
 }
 
-case class Field[D <: Dom, Value](product: TypedTerm[Value], domain: D, start: Offsets)(val fieldName: String = start.toString) extends Composed[D] {
+case class Field[D <: Dom, Value](product: TypedTerm[Value], domain: D, start: Offsets)(val fieldName: String = start.toString)
+  extends ComposedWithReusingEvaluator[D] {
 
   type ArgumentType = TypedTerm[Value]
   val arguments = IndexedSeq(product)
@@ -195,7 +196,7 @@ case class Field[D <: Dom, Value](product: TypedTerm[Value], domain: D, start: O
     val recorder = new SettingChangeRecorder(input(0))
 
     def eval()(implicit execution: Execution) = {
-      recorder.deepCopyToIfChanged(output, start, Offsets.zero, domain.lengths)
+      recorder.shallowCopyToIfChanged(output, start, Offsets.zero, domain.lengths)
       recorder.forget()
     }
   }
@@ -206,7 +207,7 @@ case class Field[D <: Dom, Value](product: TypedTerm[Value], domain: D, start: O
 
       def localBackProp()(implicit execution: Execution) = {
 
-        recorder.deepCopyToIfChanged(argErrors(0), Offsets.zero, start, domain.lengths)
+        recorder.shallowCopyToIfChanged(argErrors(0), Offsets.zero, start, domain.lengths)
         recorder.forget()
       }
     }

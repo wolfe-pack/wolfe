@@ -246,7 +246,7 @@ object FreebaseReader {
   // Interactive Patterns
   val METH_PATTERN_1 = """getCandidateMIDs\([^.*]\)""".r
 
-  def main(args: Array[String]) = {
+  def main(args: Array[String]) {
     val jfr = javaLoadFromDB()
     jfr.parentsOf("m.09c7w0")
 //    if (args.length == 0) {

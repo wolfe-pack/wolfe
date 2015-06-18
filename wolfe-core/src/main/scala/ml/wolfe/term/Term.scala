@@ -260,6 +260,11 @@ trait TermHelper[+D <: Dom] extends LazyLogging {
     Settings.fromSeq(vars.map(_.domain.createZeroSetting()))
   }
 
+  def createSparseZeroInputSettings() = {
+    Settings.fromSeq(vars.map(_.domain.createSparseZeroSetting()))
+  }
+
+
 }
 
 trait ProxyTerm[D <: Dom] extends Term[D] with NAry {

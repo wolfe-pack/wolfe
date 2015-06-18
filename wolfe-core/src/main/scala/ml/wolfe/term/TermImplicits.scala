@@ -2,7 +2,7 @@ package ml.wolfe.term
 
 import cc.factorie.Factorie.DenseTensor1
 import cc.factorie.la.{Tensor1, DenseTensor2, GrowableSparseTensor1}
-import ml.wolfe.{Index, Mat, Vect}
+import ml.wolfe._
 
 import scala.language.implicitConversions
 import scala.util.Random
@@ -657,13 +657,13 @@ trait MathImplicits {
   def feature(feat: AnyTerm, value: DoubleTerm = Dom.doubles.Const(1.0))(implicit dom: VectorDom, indexer: Indexer) =
     oneHot(indexed(feat), value)
 
-  def feature(name: Symbol, keys: AnyTerm*)(implicit dom: VectorDom, index: Index) =
+  def feature(name: Symbol, keys: AnyTerm*)(implicit dom: VectorDom, index: FeatureIndex) =
     Feature(name, keys.toIndexedSeq, Doubles.one)(index, dom)
 
-  def feature(name: Symbol, value: DoubleTerm, keys: AnyTerm*)(implicit dom: VectorDom, index: Index) =
+  def feature(name: Symbol, value: DoubleTerm, keys: AnyTerm*)(implicit dom: VectorDom, index: FeatureIndex) =
     Feature(name, keys.toIndexedSeq, value)(index, dom)
 
-  def weight(name: Symbol, value: Double, keys: AnyTerm*)(implicit dom: VectorDom, index: Index) =
+  def weight(name: Symbol, value: Double, keys: AnyTerm*)(implicit dom: VectorDom, index: FeatureIndex) =
     Feature(name, keys.toIndexedSeq, Doubles.Const(value))(index, dom)
 
   implicit def doubleToConstant(d: Double): Dom.doubles.Term = Dom.doubles.Const(d)

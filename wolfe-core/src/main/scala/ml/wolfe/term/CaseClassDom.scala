@@ -114,6 +114,7 @@ object CaseClassDom {
         val fillZeroMsgStatements = withOffsets() {case (name,off) => q"$self.$name.fillZeroMsg(_target, $off)"}
         val ones = argNames.map(n => q"$n.one")
         val zeros = argNames.map(n => q"$n.zero")
+        val sparseZeros = argNames.map(n => q"$n.sparseZero")
 
         val termArgsDef = argNames.map(n => q"def $n:${arg2DomTypeName(n)}#Term")
         val varArgsDef = argNames.map(n => q"def $n:${arg2DomTypeName(n)}#Term")
@@ -183,6 +184,7 @@ object CaseClassDom {
 
             def one = new $caseClassTypeName(..$ones)
             def zero = new $caseClassTypeName(..$zeros)
+            override def sparseZero = new $caseClassTypeName(..$sparseZeros)
 
             $marginalsCaseClassDef
 
