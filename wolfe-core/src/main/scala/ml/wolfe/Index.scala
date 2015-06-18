@@ -81,12 +81,14 @@ trait FeatureIndex {
   def oneHot(name: Symbol, keys: AnyTerm*) =
     Feature(name, keys.toIndexedSeq, Doubles.one, true)(this, this.dom)
 
-  def oneHot(name: Symbol, dense: Boolean, keys: AnyTerm*) =
-    Feature(name, keys.toIndexedSeq, Doubles.one, dense)(this, this.dom)
-
+  def oneHot(name: Symbol, eager: Boolean, keys: AnyTerm*) =
+    Feature(name, keys.toIndexedSeq, Doubles.one, eager)(this, this.dom)
 
   def oneHot(name: Symbol, value: DoubleTerm, keys: AnyTerm*) =
-    Feature(name, keys.toIndexedSeq, value)(this, this.dom)
+    Feature(name, keys.toIndexedSeq, value, true)(this, this.dom)
+
+  def oneHot(name: Symbol, eager: Boolean, value: DoubleTerm, keys: AnyTerm*) =
+    Feature(name, keys.toIndexedSeq, value, eager)(this, this.dom)
 
   def keyOf(index: Int): Any
 
