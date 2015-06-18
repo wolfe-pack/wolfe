@@ -752,20 +752,19 @@ abstract class Buffer[T: ClassTag](val setting: Setting) {
     for (i <- 0 until length) resetToZero(i)
   }
 
-  def broadcastAllChanged() {
+  final def broadcastAllChanged() {
     if (shouldBroadcast) for (l <- listeners) l.allChanged()
   }
 
-  def broadcastChange(offset: Int): Unit = {
+  final def broadcastChange(offset: Int): Unit = {
     if (shouldBroadcast) listeners foreach (_.changed(offset))
   }
 
-  def broadcastReset(offset: Int): Unit = {
+  final def broadcastReset(offset: Int): Unit = {
     if (shouldBroadcast) listeners foreach (_.reset(offset))
   }
 
-
-  def broadcastChanges(offsets: Iterable[Int]): Unit = {
+  final def broadcastChanges(offsets: Iterable[Int]): Unit = {
     if (shouldBroadcast) listeners foreach (_.changed(offsets))
   }
 

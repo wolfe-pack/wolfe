@@ -13,7 +13,6 @@ class HierarchicalIndex extends Index {
 
   def size = _size
 
-
   def key(index: Int) = ???
 
   def hasKey(key: Any) = ???

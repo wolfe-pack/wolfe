@@ -3,12 +3,12 @@ package ml.wolfe
 import com.typesafe.scalalogging.slf4j.LazyLogging
 import gnu.trove.strategy.HashingStrategy
 import gnu.trove.map.custom_hash.TObjectIntCustomHashMap
-import ml.wolfe.term.{VectorDom, Dom, Setting}
+import ml.wolfe.term._
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.{GenMap, mutable}
 import gnu.trove.procedure.TObjectIntProcedure
 import java.io.{ObjectInputStream, ObjectOutputStream}
-import gnu.trove.map.hash.TObjectIntHashMap
+import gnu.trove.map.hash.{TIntObjectHashMap, TObjectIntHashMap}
 import scalaxy.loops._
 import scala.language.postfixOps
 
@@ -43,7 +43,7 @@ trait Index extends FeatureIndex {
   private val registeredTemplates = new ArrayBuffer[TemplateIndices]
 
 
-  def register(templateName: Symbol, domains: Seq[Dom]) = {
+  def register(templateName: Symbol, domains: Seq[Dom],dense: Boolean) = {
     registeredTemplates.find(_.templateName == templateName) match {
       case Some(i) =>
         require(i.domains == domains)
@@ -60,12 +60,40 @@ trait Index extends FeatureIndex {
     registeredTemplates(templateIndex).featureIndex(settings)
   }
 
+  def dom = ???
+
+  def invert(index: Int) = ???
+
+  def keyOf(index: Int) = ???
+
 }
 
 trait FeatureIndex {
-  def register(templateName: Symbol, domains: Seq[Dom]): Int
+
+  import TermImplicits._
+
+  def register(templateName: Symbol, domains: Seq[Dom], dense: Boolean = false): Int
 
   def featureIndex(templateIndex: Int, settings: Array[Setting]): Int
+
+  def dom: VectorDom
+
+  def oneHot(name: Symbol, keys: AnyTerm*) =
+    Feature(name, keys.toIndexedSeq, Doubles.one, true)(this, this.dom)
+
+  def oneHot(name: Symbol, dense: Boolean, keys: AnyTerm*) =
+    Feature(name, keys.toIndexedSeq, Doubles.one, dense)(this, this.dom)
+
+
+  def oneHot(name: Symbol, value: DoubleTerm, keys: AnyTerm*) =
+    Feature(name, keys.toIndexedSeq, value)(this, this.dom)
+
+  def keyOf(index: Int): Any
+
+  def toMap(vect: Vect): Map[Any, Double] = {
+    vect.activeElements.map { case (i, v) => keyOf(i) -> v }.toMap
+  }
+
 
 }
 
@@ -110,7 +138,7 @@ class SimpleIndex extends Serializable with Index {
     val result = new mutable.HashMap[Int, Any]
     map.forEachEntry(new TObjectIntProcedure[Any] {
       def execute(a: Any, b: Int) = {
-        result(b) = a;
+        result(b) = a
         true
       }
     })
@@ -141,49 +169,99 @@ class SimpleIndex extends Serializable with Index {
     this
   }
 
-
 }
 
-class SimpleFeatureIndex(val maxDenseCount: Int = 50000, val denseCountThreshold: Int = 10000)
+class SimpleFeatureIndex(implicit val dom: VectorDom)
   extends FeatureIndex with LazyLogging {
-  private val sparseMap = new TObjectIntHashMap[Any]
+  val dim = dom.dim
+
+  private val sparseMap = new TObjectIntHashMap[IndexedSeq[Any]]
+  private var sparseMapUpdated = false
+  private val inverseMap = new TIntObjectHashMap[IndexedSeq[Any]]()
   private val registeredTemplates = new ArrayBuffer[TemplateIndices]
   private var currentDenseOffset = 0
+  private val index2template = Array.ofDim[Int](dim)
 
-  private def index(args: Any): Int = {
-    val oldSize = sparseMap.size()
-    val current = sparseMap.adjustOrPutValue(args, 0, sparseMap.size)
-    current
+
+
+
+  private def syncInverseMap(): Unit = {
+    if (sparseMapUpdated) {
+      inverseMap.clear()
+      sparseMap.forEachEntry(new TObjectIntProcedure[IndexedSeq[Any]] {
+        def execute(a: IndexedSeq[Any], b: Int) = {
+          inverseMap.put(b, a)
+          true
+        }
+      })
+      sparseMapUpdated = false
+    }
   }
 
+  def keyOfSparse(index: Int) = {
+    syncInverseMap()
+    val settingIndices = inverseMap.get(index).drop(1).asInstanceOf[IndexedSeq[Int]]
+    val template = registeredTemplates(index2template(index))
+    val values = for ((i,d) <- settingIndices zip template.domains) yield d.indexToValue(i)
+    template.templateName +: values
+
+  }
 
   class TemplateIndices(val templateName: Symbol, val domains: IndexedSeq[Dom],
                         val templateIndex: Int, val sparse: Boolean, val offset: Int) {
     val domainArray = domains.toArray
+
+    private def index(args: IndexedSeq[Any]): Int = {
+      val oldSize = sparseMap.size()
+      val current = sparseMap.adjustOrPutValue(args, 0, sparseMap.size)
+      index2template(current) = templateIndex
+      current
+    }
+
+    def featureIndexDense(settings: Array[Setting]) = {
+      var result = 0
+      var i = 0
+      while (i < domains.length) {
+        val setting = settings(i)
+        val dom = domainArray(i)
+        val index = dom.indexOfSetting(setting)
+        result = index + result * dom.domainSize
+        i += 1
+      }
+      result
+    }
+
+
+    def keyOfDense(index: Int) = {
+      val setting = Array.ofDim[Any](domains.length)
+      var i = domains.length - 1
+      var result = index
+      while (i >= 0) {
+        val dom = domainArray(i)
+        val local = result % dom.domainSize
+        val value = dom.indexToValue(local)
+        setting(i) = value
+        result = result / dom.domainSize
+        i -= 1
+      }
+      (templateName +: setting).toIndexedSeq
+    }
+
     def featureIndex(settings: Array[Setting]): Int = {
-      val raw = if (sparse) {
+      if (sparse) {
+        sparseMapUpdated = true
         val indices = new ArrayBuffer[Any]
         indices += templateName
         for (i <- 0 until settings.length optimized) indices += domains(i).indexOfSetting(settings(i))
-        index(indices)
+        dim - index(indices) - 1
       } else {
-        var result = 0
-        var i = 0
-        while (i < domains.length) {
-          val setting = settings(i)
-          val dom = domainArray(i)
-          val index = dom.indexOfSetting(setting)
-          result = index + result * dom.domainSize
-          i += 1
-        }
-        result
+        featureIndexDense(settings) + offset
       }
-      raw + offset
     }
   }
 
 
-  def register(templateName: Symbol, domains: Seq[Dom]) = {
+  def register(templateName: Symbol, domains: Seq[Dom], dense: Boolean) = {
     registeredTemplates.find(_.templateName == templateName) match {
       case Some(i) =>
         require(i.domains == domains)
@@ -191,12 +269,12 @@ class SimpleFeatureIndex(val maxDenseCount: Int = 50000, val denseCountThreshold
       case None =>
         val index = registeredTemplates.length
         val size = domains.map(_.domainSize).product
-        val dense = currentDenseOffset + size < maxDenseCount && size < denseCountThreshold
-        val offset = if (!dense) maxDenseCount else currentDenseOffset
+        //val dense = currentDenseOffset + size < maxDenseCount && size < denseCountThreshold
+        val offset = if (!dense) -dim else currentDenseOffset
         if (dense) currentDenseOffset += size
         val newIndices = new TemplateIndices(templateName, domains.toIndexedSeq, index, !dense, offset)
         registeredTemplates += newIndices
-        logger.info(s"""Registered $templateName as ${if (dense) "dense" else "sparse"} template""")
+        logger.info( s"""Registered $templateName as ${if (dense) "dense" else "sparse"} template""")
         index
     }
   }
@@ -204,6 +282,20 @@ class SimpleFeatureIndex(val maxDenseCount: Int = 50000, val denseCountThreshold
   def featureIndex(templateIndex: Int, settings: Array[Setting]) = {
     val template = registeredTemplates(templateIndex)
     template.featureIndex(settings)
+  }
+
+  def keyOf(index: Int) = {
+    if (index < currentDenseOffset) {
+      registeredTemplates.reverse.find(t => !t.sparse && t.offset < index) match {
+        case Some(t) =>
+          val actual = index - t.offset
+          t.keyOfDense(actual)
+        case None => sys.error("Value not indexed")
+      }
+    } else {
+      val actual = dim - index - 1
+      keyOfSparse(actual)
+    }
   }
 }
 

@@ -2,7 +2,8 @@ package ml.wolfe.term
 
 import ml.wolfe.term
 import math._
-
+import scalaxy.loops._
+import scala.language.postfixOps
 
 /**
  * @author riedel
@@ -50,7 +51,7 @@ abstract class ExhaustiveMessageCalculator(val obj: DoubleTerm, val wrt: Seq[Var
       //println(penalized)
       for ((toVaryIndex, wrtIndex) <- toVary2wrt.pairs) {
         val currentSetting = settings(toVaryIndex)
-        for (i <- 0 until inputMsgs(wrtIndex).disc.length) {
+        for (i <- 0 until inputMsgs(wrtIndex).disc.length optimized) {
           val currentValue = currentSetting.disc(i)
           val currentMsg = inputMsgs(wrtIndex).disc(i).msg(currentValue)
           penalized += currentMsg
@@ -59,14 +60,14 @@ abstract class ExhaustiveMessageCalculator(val obj: DoubleTerm, val wrt: Seq[Var
       //now update outgoing messages with the max of their current value and the new score
       for ((toVaryIndex, targetIndex) <- toVary2target.pairs) {
         val currentSetting = settings(toVaryIndex)
-        for (i <- 0 until outputMsgs(targetIndex).disc.length) {
+        for (i <- 0 until outputMsgs(targetIndex).disc.length optimized) {
           val currentValue = currentSetting.disc(i)
           val tgt = outputMsgs(targetIndex).disc(i)
           var score = penalized
           if (reverseMsgsAlso) {
             // TODO: next call is quite slow
             val wrtIndex = toVary2wrt.getTgtIndex(targetIndex)
-            for (i <- 0 until inputMsgs(wrtIndex).disc.length) {
+            for (i <- 0 until inputMsgs(wrtIndex).disc.length optimized ) {
               val currentValue = currentSetting.disc(i)
               val currentMsg = inputMsgs(wrtIndex).disc(i).msg(currentValue)
               if (currentMsg.isNegInfinity && score.isNegInfinity) score = 0.0 //todo: this doesn't always make sense
@@ -85,7 +86,7 @@ abstract class ExhaustiveMessageCalculator(val obj: DoubleTerm, val wrt: Seq[Var
 class ExhaustiveSearchMaxMarginalizer(obj: DoubleTerm, wrt: Seq[Var[Dom]], observed: Seq[Var[Dom]],
                                       input: Settings, inputMsgs: Msgs, reverseMsgsAlso: Boolean = false)
   extends ExhaustiveMessageCalculator(obj, wrt, observed, input, inputMsgs, reverseMsgsAlso) with MaxMarginalizer {
-  def aggregate(current: Double, score: Double) = max(current, score)
+  def aggregate(current: Double, score: Double) = if (current < score) score else current //max(current, score)
 
   def updateMessages()(implicit execution: Execution) = calculate()
 

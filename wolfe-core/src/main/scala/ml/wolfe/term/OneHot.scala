@@ -94,7 +94,7 @@ case class Indexed[T <: Term[Dom]](arg: T)(implicit val indexer: Indexer) extend
   }
 }
 
-case class Feature(name: Symbol, keys: IndexedSeq[AnyTerm], value: DoubleTerm)
+case class Feature(name: Symbol, keys: IndexedSeq[AnyTerm], value: DoubleTerm, dense:Boolean = false)
                   (implicit val index: FeatureIndex, val dom: VectorDom)
   extends Composed[VectorDom] {
 
@@ -106,7 +106,7 @@ case class Feature(name: Symbol, keys: IndexedSeq[AnyTerm], value: DoubleTerm)
 
   val keyDoms = keys.map(_.domain)
 
-  val templateIndex = index.register(name, keyDoms)
+  val templateIndex = index.register(name, keyDoms, dense)
 
   def copy(args: IndexedSeq[ArgumentType]) = Feature(name, args.dropRight(1), args.last.asInstanceOf[DoubleTerm])(index, dom)
 
@@ -180,11 +180,11 @@ object FeatureTransformer {
   import Transformer._
 
   def aggregateFeatures(term:AnyTerm) = depthFirstAndReuse(term) {
-    case VectorSum(IndexedSeq(a1@Feature(_,_,_),a2@Feature(_,_,_))) if a1.dom == a2.dom && a1.index == a2.index =>
+    case VectorSum(IndexedSeq(a1:Feature,a2:Feature)) if a1.dom == a2.dom && a1.index == a2.index =>
       FeatureSum(Seq(a1,a2))
-    case VectorSum(IndexedSeq(a1@Feature(_,_,_),a2@FeatureSum(args))) if a1.dom == a2.dom && a1.index == a2.index =>
+    case VectorSum(IndexedSeq(a1:Feature,a2@FeatureSum(args))) if a1.dom == a2.dom && a1.index == a2.index =>
       FeatureSum(a1 +: args)
-    case VectorSum(IndexedSeq(a1@FeatureSum(args),a2@Feature(_,_,_))) if a1.dom == a2.dom && a1.index == a2.index =>
+    case VectorSum(IndexedSeq(a1@FeatureSum(args),a2:Feature)) if a1.dom == a2.dom && a1.index == a2.index =>
       FeatureSum(args :+ a2)
     case VectorSum(IndexedSeq(a1@FeatureSum(args1),a2@FeatureSum(args2))) if a1.dom == a2.dom && a1.index == a2.index =>
       FeatureSum(args1 ++ args2)

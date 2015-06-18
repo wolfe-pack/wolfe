@@ -12,8 +12,8 @@ class FeatureTransformerSpecs extends WolfeSpec {
 
   "A feature aggregator" should {
     "aggregate sums of feature terms into a feature sum" in {
-      implicit val index = new SimpleFeatureIndex()
       implicit val Thetas = Vectors(10)
+      implicit val index = new SimpleFeatureIndex()
       val b1 = Bools.Var
       val b2 = Bools.Var
       val f1 = feature('b1,b1)

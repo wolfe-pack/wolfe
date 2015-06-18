@@ -35,8 +35,6 @@ class IndexedTermSpecs extends WolfeSpec {
       i.eval(x << Data(10,true)) should be (2)
       i.eval(x << Data(10,false)) should be (1)
 
-
-
     }
 
 

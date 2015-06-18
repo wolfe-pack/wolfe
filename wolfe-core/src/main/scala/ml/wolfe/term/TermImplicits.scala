@@ -2,7 +2,7 @@ package ml.wolfe.term
 
 import cc.factorie.Factorie.DenseTensor1
 import cc.factorie.la.{Tensor1, DenseTensor2, GrowableSparseTensor1}
-import ml.wolfe.{FeatureIndex, Index, Mat, Vect}
+import ml.wolfe._
 
 import scala.language.implicitConversions
 import scala.util.Random
