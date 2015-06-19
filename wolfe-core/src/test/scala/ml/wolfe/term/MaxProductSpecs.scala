@@ -77,7 +77,7 @@ class MaxProductSpecs extends WolfeSpec {
       result should be (Seq(true, false, true, false, true))
     }
 
-    "optimize a linear chain objective in high level code with even length" in {
+    "optimize a linear chain objective in high level code with even length" ignore {
       val n = 10
       val Y = Seqs(Bools, 0, n)
       def model(y: Y.Term) = {

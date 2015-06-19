@@ -332,7 +332,7 @@ trait BP {
 
   def integrateAtomIntoResultState(node: fg.Node): Unit = {
     val atom = node.variable
-    node.content.deterministicBelief.argmax(result(wrt.indexOf(atom.owner)), atom.offsets)
+    node.content.belief.argmax(result(wrt.indexOf(atom.owner)), atom.offsets)
   }
 
   def doMessagePassing()(implicit execution: Execution) = {
