@@ -1,5 +1,7 @@
 package ml.wolfe.nlp.io
 
+import ml.wolfe.util.Util
+
 /**
  * Created by narad on 9/11/14.
  */
@@ -15,7 +17,7 @@ class ChunkReader(filename: String, delim: String="^[ \t]*$", iencoding: String=
         src.close()
       }
       else {
-        val src = scala.io.Source.fromFile(filename, iencoding)
+        val src = scala.io.Source.fromInputStream(Util.getStreamFromClassPathOrFile(filename), iencoding)
         lines = src.getLines().toArray
         src.close()
       }

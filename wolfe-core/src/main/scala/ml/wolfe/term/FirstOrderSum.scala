@@ -9,8 +9,6 @@ case class FirstOrderSum[D <: Dom, Body <: DoubleTerm, R <: Term[VarSeqDom[D]]](
   sum =>
   val vars = (range.vars ++ body.vars).filterNot(_ == variable).distinct
 
-
-
   type ArgumentType = AnyTerm
 
   def arguments = IndexedSeq(range,body)

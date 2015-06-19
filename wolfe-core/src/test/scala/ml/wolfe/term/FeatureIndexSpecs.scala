@@ -13,7 +13,7 @@ class FeatureIndexSpecs extends WolfeSpec {
 
     "provide an inverse mapping" in {
       val dom = Vectors(100000)
-      val index = new SimpleFeatureIndex()(dom)
+      val index = new SimpleFeatureIndex(dom)
       val b1 = Bools.Var
       val b2 = Bools.Var
       val i3 = Ints(0 until 5).Var

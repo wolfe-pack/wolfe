@@ -84,8 +84,8 @@ object MultiTaskCRF extends App {
     implicit val Thetas = Theta.Values(Features, TransitionFeats)
     implicit val maxProductParams = BPParameters(iterations = 1, cachePotentials = true)
 
-    val localIndex = new SimpleFeatureIndex()(Features)
-    val transIndex = new SimpleFeatureIndex()(TransitionFeats)
+    val localIndex = new SimpleFeatureIndex(Features)
+    val transIndex = new SimpleFeatureIndex(TransitionFeats)
 
     def local(x: X.Term, y: Y.Term, i: IntTerm) = {
       localIndex.oneHot('bias, y(i)) + localIndex.oneHot('word, y(i), x(i))

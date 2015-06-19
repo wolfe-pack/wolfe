@@ -152,6 +152,10 @@ with LoggedTerms with FVectors with NGramCountsHelper with CombinatorialConstrai
   implicit def toRichSeqTerm[E <: Dom](seq: SeqTerm[E]): RichSeqTerm[E, seq.type] =
     new RichSeqTerm[E, seq.type](seq)
 
+//  implicit def toRichSeqTermFromTerm[E <: Dom](seq: Term[VarSeqDom[E]]): RichSeqTerm[E, seq.domain.Term] =
+//    new RichSeqTerm[E, seq.domain.Term](seq.domain.own(seq.asInstanceOf[TypedTerm[seq.domain.Value]]))
+
+
   //  implicit def genericToConstant[T,D<:TypedDom[T]](t:T)(implicit dom:D):dom.Term = dom.const(t)
   //  implicit def genericToConstant[T,D<:TypedDom[T]](t:T)(implicit dom:D):dom.DomTerm = dom.const(t)
 
@@ -650,7 +654,7 @@ trait MathImplicits {
   //    dom.Const(new SingletonTensor1(dom.dim, index, value))
 
   def oneHot(index: IntTerm, value: DoubleTerm = Dom.doubles.Const(1.0))(implicit dom: VectorDom): VectorTerm =
-    OneHot(index, value)
+    OneHotOld(index, value)
 
   def zeros(implicit dom: VectorDom) = dom.Const(dom.zero)
 
@@ -658,13 +662,13 @@ trait MathImplicits {
     oneHot(indexed(feat), value)
 
   def feature(name: Symbol, keys: AnyTerm*)(implicit dom: VectorDom, index: FeatureIndex) =
-    Feature(name, keys.toIndexedSeq, Doubles.one)(index, dom)
+    OneHot(name, keys.toIndexedSeq, Doubles.one)(index, dom)
 
   def feature(name: Symbol, value: DoubleTerm, keys: AnyTerm*)(implicit dom: VectorDom, index: FeatureIndex) =
-    Feature(name, keys.toIndexedSeq, value)(index, dom)
+    OneHot(name, keys.toIndexedSeq, value)(index, dom)
 
   def weight(name: Symbol, value: Double, keys: AnyTerm*)(implicit dom: VectorDom, index: FeatureIndex) =
-    Feature(name, keys.toIndexedSeq, Doubles.Const(value))(index, dom)
+    OneHot(name, keys.toIndexedSeq, Doubles.Const(value))(index, dom)
 
   implicit def doubleToConstant(d: Double): Dom.doubles.Term = Dom.doubles.Const(d)
 

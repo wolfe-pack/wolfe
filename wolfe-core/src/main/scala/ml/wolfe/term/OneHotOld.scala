@@ -11,7 +11,7 @@ import scala.collection.mutable.ArrayBuffer
 /**
  * @author riedel
  */
-case class OneHot(index: IntTerm, value: DoubleTerm)(implicit val domain: VectorDom) extends Composed[VectorDom] {
+case class OneHotOld(index: IntTerm, value: DoubleTerm)(implicit val domain: VectorDom) extends Composed[VectorDom] {
 
   type ArgumentType = AnyTerm
   val arguments = IndexedSeq(index, value)
@@ -43,7 +43,7 @@ case class OneHot(index: IntTerm, value: DoubleTerm)(implicit val domain: Vector
     }
 
   def copy(args: IndexedSeq[ArgumentType]) =
-    OneHot(args(0).asInstanceOf[IntTerm], args(1).asInstanceOf[DoubleTerm])(domain)
+    OneHotOld(args(0).asInstanceOf[IntTerm], args(1).asInstanceOf[DoubleTerm])(domain)
 }
 
 /** A one-dimensional one-hot Tensor. */
@@ -94,7 +94,7 @@ case class Indexed[T <: Term[Dom]](arg: T)(implicit val indexer: Indexer) extend
   }
 }
 
-case class Feature(name: Symbol, keys: IndexedSeq[AnyTerm], value: DoubleTerm, dense:Boolean = false)
+case class OneHot(name: Symbol, keys: IndexedSeq[AnyTerm], value: DoubleTerm, dense:Boolean = false)
                   (implicit val index: FeatureIndex, val dom: VectorDom)
   extends Composed[VectorDom] {
 
@@ -108,7 +108,7 @@ case class Feature(name: Symbol, keys: IndexedSeq[AnyTerm], value: DoubleTerm, d
 
   val templateIndex = index.register(name, keyDoms, dense)
 
-  def copy(args: IndexedSeq[ArgumentType]) = Feature(name, args.dropRight(1), args.last.asInstanceOf[DoubleTerm])(index, dom)
+  def copy(args: IndexedSeq[ArgumentType]) = OneHot(name, args.dropRight(1), args.last.asInstanceOf[DoubleTerm])(index, dom)
 
   override def composer(args: Settings) = new Composer(args) {
 
@@ -126,7 +126,7 @@ case class Feature(name: Symbol, keys: IndexedSeq[AnyTerm], value: DoubleTerm, d
   }
 }
 
-case class FeatureSum(features: Seq[Feature]) extends Composed[VectorDom] {
+case class FeatureSum(features: Seq[OneHot]) extends Composed[VectorDom] {
   val domain = features.head.dom
   val index = features.head.index
   val templates = features.toArray
@@ -147,7 +147,7 @@ case class FeatureSum(features: Seq[Feature]) extends Composed[VectorDom] {
     val newFeatures = for (i <- 0 until templates.length) yield {
       val newKeys = indicesOfKeys(i).map(args)
       val newValue = arguments(indicesOfValues(i)).asInstanceOf[DoubleTerm]
-      val newFeature = Feature(features(i).name,newKeys,newValue)(index,domain)
+      val newFeature = OneHot(features(i).name,newKeys,newValue)(index,domain)
       newFeature
     }
     FeatureSum(newFeatures)
@@ -180,11 +180,11 @@ object FeatureTransformer {
   import Transformer._
 
   def aggregateFeatures(term:AnyTerm) = depthFirstAndReuse(term) {
-    case VectorSum(IndexedSeq(a1:Feature,a2:Feature)) if a1.dom == a2.dom && a1.index == a2.index =>
+    case VectorSum(IndexedSeq(a1:OneHot,a2:OneHot)) if a1.dom == a2.dom && a1.index == a2.index =>
       FeatureSum(Seq(a1,a2))
-    case VectorSum(IndexedSeq(a1:Feature,a2@FeatureSum(args))) if a1.dom == a2.dom && a1.index == a2.index =>
+    case VectorSum(IndexedSeq(a1:OneHot,a2@FeatureSum(args))) if a1.dom == a2.dom && a1.index == a2.index =>
       FeatureSum(a1 +: args)
-    case VectorSum(IndexedSeq(a1@FeatureSum(args),a2:Feature)) if a1.dom == a2.dom && a1.index == a2.index =>
+    case VectorSum(IndexedSeq(a1@FeatureSum(args),a2:OneHot)) if a1.dom == a2.dom && a1.index == a2.index =>
       FeatureSum(args :+ a2)
     case VectorSum(IndexedSeq(a1@FeatureSum(args1),a2@FeatureSum(args2))) if a1.dom == a2.dom && a1.index == a2.index =>
       FeatureSum(args1 ++ args2)

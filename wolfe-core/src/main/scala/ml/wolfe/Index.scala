@@ -1,16 +1,17 @@
 package ml.wolfe
 
+import java.io.{ObjectInputStream, ObjectOutputStream}
+
 import com.typesafe.scalalogging.slf4j.LazyLogging
-import gnu.trove.strategy.HashingStrategy
 import gnu.trove.map.custom_hash.TObjectIntCustomHashMap
+import gnu.trove.map.hash.{TIntObjectHashMap, TObjectIntHashMap}
+import gnu.trove.procedure.TObjectIntProcedure
 import ml.wolfe.term._
+
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.{GenMap, mutable}
-import gnu.trove.procedure.TObjectIntProcedure
-import java.io.{ObjectInputStream, ObjectOutputStream}
-import gnu.trove.map.hash.{TIntObjectHashMap, TObjectIntHashMap}
-import scalaxy.loops._
 import scala.language.postfixOps
+import scalaxy.loops._
 
 // Optional.
 
@@ -79,16 +80,16 @@ trait FeatureIndex {
   def dom: VectorDom
 
   def oneHot(name: Symbol, keys: AnyTerm*) =
-    Feature(name, keys.toIndexedSeq, Doubles.one, true)(this, this.dom)
+    OneHot(name, keys.toIndexedSeq, Doubles.one, true)(this, this.dom)
 
   def oneHot(name: Symbol, eager: Boolean, keys: AnyTerm*) =
-    Feature(name, keys.toIndexedSeq, Doubles.one, eager)(this, this.dom)
+    OneHot(name, keys.toIndexedSeq, Doubles.one, eager)(this, this.dom)
 
   def oneHot(name: Symbol, value: DoubleTerm, keys: AnyTerm*) =
-    Feature(name, keys.toIndexedSeq, value, true)(this, this.dom)
+    OneHot(name, keys.toIndexedSeq, value, true)(this, this.dom)
 
   def oneHot(name: Symbol, eager: Boolean, value: DoubleTerm, keys: AnyTerm*) =
-    Feature(name, keys.toIndexedSeq, value, eager)(this, this.dom)
+    OneHot(name, keys.toIndexedSeq, value, eager)(this, this.dom)
 
   def keyOf(index: Int): Any
 
@@ -173,7 +174,7 @@ class SimpleIndex extends Serializable with Index {
 
 }
 
-class SimpleFeatureIndex(implicit val dom: VectorDom)
+class SimpleFeatureIndex(val dom: VectorDom)
   extends FeatureIndex with LazyLogging {
   val dim = dom.dim
 
@@ -288,7 +289,7 @@ class SimpleFeatureIndex(implicit val dom: VectorDom)
 
   def keyOf(index: Int) = {
     if (index < currentDenseOffset) {
-      registeredTemplates.reverse.find(t => !t.sparse && t.offset < index) match {
+      registeredTemplates.reverse.find(t => !t.sparse && t.offset <= index) match {
         case Some(t) =>
           val actual = index - t.offset
           t.keyOfDense(actual)

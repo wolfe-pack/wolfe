@@ -4,6 +4,7 @@ import com.typesafe.scalalogging.slf4j.LazyLogging
 import ml.wolfe.util.ProgressBar
 
 import scala.math._
+import scala.util.Random
 
 case class AdaGradParameters(epochs: Int,
                              learningRate: Double,
@@ -17,15 +18,31 @@ case class AdaGradParameters(epochs: Int,
  * @author riedel
  */
 class AdaGradArgmaxer(val objRaw: DoubleTerm,
-                       val wrt: Seq[Var[Dom]],
-                       val observed: Settings,
-                       val msgs: Msgs)(implicit params: AdaGradParameters) extends Argmaxer with LazyLogging {
+                      val wrt: Seq[Var[Dom]],
+                      val observed: Settings,
+                      val msgs: Msgs)(implicit params: AdaGradParameters) extends Argmaxer with LazyLogging {
 
   import params._
+  import Transformer._
+
+  private val random = new Random(0)
+
+  def stochastifySum(term: DoubleTerm) = {
+    term match {
+      case FirstOrderSum(range, variable, body) =>
+        val sampled = VarSeqApply[Dom,Term[VarSeqDom[Dom]],IntTerm](range, range.domain.indexDom.shuffled(random))//range.sampleShuffled(random)
+        replace(body)(variable,sampled)
+      case _ => term
+    }
+  }
+
 
   val preprocess = optimizeTerm match {
-    case true => Transformer.clean _ andThen Transformer.precalculate andThen Transformer.groundSums andThen Transformer.flattenSums
-    case false => Transformer.precalculate _ andThen Transformer.clean andThen Transformer.flattenSums // //andThen Transformer.clean _ andThen
+    case true =>
+      //I think this hasn't been tested for a while, and the order of clean/precalculate seems different
+      stochastifySum _ andThen clean andThen precalculate andThen groundSums andThen flattenSums
+    case false =>
+      stochastifySum _ andThen precalculate andThen clean andThen flattenSums // //andThen Transformer.clean _ andThen
   }
   val obj = preprocess(objRaw)
 
@@ -59,7 +76,7 @@ class AdaGradArgmaxer(val objRaw: DoubleTerm,
 
   val diff = obj.differentiatorImpl(wrt)(result, scale, gradient)
 
-  val gradientChangeRecorders = gradient map (s => new SettingChangeRecorder(s,false))
+  val gradientChangeRecorders = gradient map (s => new SettingChangeRecorder(s, false))
 
   def argmax()(implicit execution: Execution) = {
     logger.info("Maximizing objective")

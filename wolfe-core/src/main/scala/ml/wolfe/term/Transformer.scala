@@ -87,14 +87,14 @@ object Transformer extends LazyLogging {
   }
 
   def replace[D <: Dom](term: AnyTerm)(variable: Var[D], value: Term[D]): AnyTerm = {
-    depthLast(term) {
+    depthLastAndReuse(term) {
       case t if !t.vars.contains(variable) =>
         t
       case t: Memoized[_, _] =>
         Substituted(t, variable, value)
       case `variable` =>
         value
-    }
+    }._1
   }
 
   /**
