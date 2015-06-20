@@ -10,7 +10,7 @@ class MapSeqTermSpecs extends WolfeSpec {
   import ml.wolfe.term.TermImplicits._
 
   "A variable sequence length identity map" should {
-    "evaluate to itself" ignore {
+    "evaluate to itself" in {
       val n = 3
       val indices = Seqs(Bools, 0, n).Var
       val term = map(indices) { v => v }
@@ -20,7 +20,7 @@ class MapSeqTermSpecs extends WolfeSpec {
   }
 
   "A variable sequence length indicator map" should {
-    "evaluate to itself as doubles" ignore {
+    "evaluate to itself as doubles" in {
       val n = 3
       val indices = Seqs(Bools, 0, n).Var
       val term = map(indices) { v => I(v) }

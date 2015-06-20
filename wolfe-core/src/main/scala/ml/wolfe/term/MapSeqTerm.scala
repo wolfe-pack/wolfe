@@ -14,7 +14,9 @@ case class MapSeqTerm[D <: Dom, To <: Dom,  R <: Term[VarSeqDom[D]], Body <: Ter
 
   override def isStatic: Boolean = range.isStatic && body.isStatic
 
-  override def vars: Seq[AnyVar] = body.vars ++ range.vars ++ Seq(variable)
+  //override def vars: Seq[AnyVar] = body.vars ++ range.vars //++ Seq(variable)
+  val vars = (range.vars ++ body.vars).filterNot(_ == variable).distinct
+
 
   override def arguments: IndexedSeq[ArgumentType] = IndexedSeq(range,body)
 
