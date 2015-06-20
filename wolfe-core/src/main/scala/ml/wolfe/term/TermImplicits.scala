@@ -648,7 +648,11 @@ trait MathImplicits {
     term
   }
 
-  def map[A <: Dom,B <: Dom](range: SeqTerm[A])(body: Term[A] => Term[B]): SeqTerm[B] = ??? //new MapSeqTerm(range)(body)
+  def map[To <: Term[Dom],  T <: Term[VarSeqDom[Dom]]](indices: T)(body: indices.domain.elementDom.Var => To) = {
+    val variable = indices.domain.elementDom.Variable("_i")
+    val instantiatedBody = body(variable)
+    new MapSeqTerm[Dom, Dom, T, To](indices, variable, instantiatedBody)
+  }
 
   //  def oneHot(index: Int, value: Double = 1.0)(implicit dom: VectorDom) =
   //    dom.Const(new SingletonTensor1(dom.dim, index, value))
