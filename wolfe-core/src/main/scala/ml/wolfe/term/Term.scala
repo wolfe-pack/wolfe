@@ -35,7 +35,13 @@ trait Term[+D <: Dom] extends TermHelper[D]  {
    * Is this term guaranteed to evaluate to the same value each it is called
    * @return true iff the evaluator always evaluates to the same value (over all executions)
    */
-  def isStatic: Boolean
+  lazy val isStatic = vars.isEmpty && !toList.exists(_.isInstanceOf[SampleTerm])
+
+  /**
+   * Return a list of all sub terms in this term (including the term itself).
+   * @return all subterms.
+   */
+  def toList:List[AnyTerm] = this :: Nil
 
   def precalculate:domain.Term =
     if (isStatic) domain.own(Precalculated(this).asInstanceOf[TypedTerm[domain.Value]])
@@ -279,7 +285,7 @@ trait ProxyTerm[D <: Dom] extends Term[D] with NAry {
    * Is this term guaranteed to evaluate to the same value each it is called
    * @return true iff the evaluator always evaluates to the same value (over all executions)
    */
-  def isStatic = self.isStatic
+  //def isStatic = self.isStatic
 
   type ArgumentType = Term[D]
 

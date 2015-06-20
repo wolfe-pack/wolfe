@@ -8,7 +8,7 @@ class Sample[D <: Dom](val obj: DoubleTerm, val wrt: Var[D])(implicit random:Ran
 
   val vars = obj.vars.filter(_ != wrt)
 
-  def isStatic = false
+  //def isStatic = false
 
   override def evaluatorImpl(in: Settings) = new AbstractEvaluator(in) {
     val sampler = obj.samplerImpl(Seq(wrt))(in, null)

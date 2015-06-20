@@ -9,12 +9,11 @@ trait Composed[+D <: Dom] extends Term[D] with NAry {
 
   self =>
 
-
   lazy val size = arguments.length
 
   lazy val vars = arguments.flatMap(_.vars).toSeq.distinct
 
-  lazy val isStatic = arguments forall (_.isStatic)
+  //lazy val isStatic = arguments forall (_.isStatic)
 
   abstract class Composer(in: Settings) extends AbstractEvaluator(in) {
     val output = self.domain.createSetting()
@@ -179,6 +178,7 @@ trait NAry extends Term[Dom] {
     if (args == arguments) this else copy(args)
   }
 
+  override def toList = this :: arguments.toList.flatMap(_.toList)
 }
 
 trait Unary extends NAry {

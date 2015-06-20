@@ -33,6 +33,8 @@ class Tuple2Dom[D1 <: Dom, D2 <: Dom](val dom1: D1, val dom2: D2) extends TupleD
 
   class Tuple2Var(val varName: String) extends DomVar with TupleView with Tuple2Term {
     def product = this
+
+    override def toString = varName
   }
 
   class Tuple2Constructor(a1: dom1.Term, a2: dom2.Term) extends Tuple2Term with TupleConstructor {

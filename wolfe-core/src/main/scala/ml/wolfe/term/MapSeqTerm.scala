@@ -12,7 +12,7 @@ case class MapSeqTerm[D <: Dom, To <: Dom,  R <: Term[VarSeqDom[D]], Body <: Ter
   extends Term[VarSeqDom[To]] with NAry {
   override val domain: VarSeqDom[To] = new VarSeqDom(body.domain, range.domain.maxLength, range.domain.minLength)
 
-  override def isStatic: Boolean = range.isStatic && body.isStatic
+  //override def isStatic: Boolean = range.isStatic && body.isStatic
 
   //override def vars: Seq[AnyVar] = body.vars ++ range.vars //++ Seq(variable)
   val vars = (range.vars ++ body.vars).filterNot(_ == variable).distinct

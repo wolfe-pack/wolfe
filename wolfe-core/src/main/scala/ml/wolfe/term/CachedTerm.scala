@@ -14,7 +14,7 @@ case class CachedTerm[D <: Dom, T <: Term[D]](keys:AnyTerm*)(val term:T) extends
   val domain:term.domain.type = term.domain
   val vars = ((keys flatMap (_.vars)) ++ term.vars).distinct
 
-  def isStatic = term.isStatic
+  //def isStatic = term.isStatic
 
   override def evaluatorImpl(in: Settings) = new AbstractEvaluator(in) {
 
@@ -62,7 +62,7 @@ class CachedPotential[T <: DoubleTerm](keys:AnyTerm*)(val term:T) extends NAry w
 
   require(keys.forall(_.domain.isDiscrete))
 
-  def isStatic = term.isStatic
+  //def isStatic = term.isStatic
 
   private val keyCount = keys.map(_.domain.domainSize).product
   private val key2Value = Array.ofDim[Double](keyCount)

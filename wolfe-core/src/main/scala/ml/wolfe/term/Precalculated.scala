@@ -16,7 +16,7 @@ case class Precalculated[D <: Dom](term: Term[D]) extends Term[D] {
 
   val domain = term.domain
 
-  def isStatic = true
+  //def isStatic = true
 
   val setting = term match {
 //    case s: VarSeqDom[_]#Constructor if s.domain.elementDom.isInstanceOf[VectorDom] =>

@@ -178,7 +178,7 @@ trait Dom {
   case class Constant(value: Value) extends DomTerm {
     self =>
 
-    def isStatic = true
+    //def isStatic = true
 
     val vars = Seq.empty
 

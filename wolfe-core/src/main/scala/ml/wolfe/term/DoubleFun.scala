@@ -85,7 +85,7 @@ class SampleDouble(next: => Double) extends Term[Dom.doubles.type] {
 
   def vars = Nil
 
-  def isStatic = false
+  //def isStatic = false
 
   override def evaluatorImpl(in: Settings) = new AbstractEvaluator(in) {
     def eval()(implicit execution: Execution) = {

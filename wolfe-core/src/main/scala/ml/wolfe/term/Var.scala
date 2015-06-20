@@ -9,7 +9,7 @@ trait Var[+D <: Dom] extends Term[D] {
 
   def vars = Seq(this)
 
-  def isStatic = false
+  //def isStatic = false
 
   override def evaluatorImpl(in: Settings) = new Evaluator {
     def eval()(implicit execution: Execution) = {}

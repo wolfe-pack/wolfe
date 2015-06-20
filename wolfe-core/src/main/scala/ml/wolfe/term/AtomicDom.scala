@@ -199,7 +199,7 @@ case class RangeDom(values: Range) extends GenericDiscreteDom[Int] {
 
   trait SampleTerm extends Term {
 
-    def isStatic = false
+    //def isStatic = false
     private var currentExecution: Execution = null
     private var currentValue: Int = -1
 

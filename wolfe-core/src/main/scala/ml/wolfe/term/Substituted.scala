@@ -12,7 +12,7 @@ case class Substituted[D <: Dom, V <: Dom](term:Term[D],variable:Var[V],value:Te
     case v:Var[_] if v == variable => value
   }
 
-  lazy val isStatic = substituted.isStatic
+  //lazy val isStatic = substituted.isStatic
 
   type ArgumentType = Term[Dom]
   val arguments = IndexedSeq(term,value)

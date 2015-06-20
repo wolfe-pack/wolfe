@@ -43,7 +43,7 @@ class Memoized[D <: Dom, T <: Term[D]](val term:T) extends Term[D] with NAry {
 
   }
 
-  def isStatic = term.isStatic
+  //def isStatic = term.isStatic
 
   override def evaluatorImpl(in: Settings) = new AbstractEvaluator(in) {
     private val cachedOut = domain.createSetting()

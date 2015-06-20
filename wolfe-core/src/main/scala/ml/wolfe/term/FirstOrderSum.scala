@@ -18,7 +18,7 @@ case class FirstOrderSum[D <: Dom, Body <: DoubleTerm, R <: Term[VarSeqDom[D]]](
 
   val domain = body.domain
 
-  def isStatic = false //todo
+  //def isStatic = false //todo
 
   val this2body = VariableMapping(vars, body.vars)
   val this2range = VariableMapping(vars, range.vars)

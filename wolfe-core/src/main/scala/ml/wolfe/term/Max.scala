@@ -14,7 +14,7 @@ class Max(val obj: DoubleTerm, val wrt: Seq[Var[Dom]]) extends DoubleTerm with U
   val domain = Dom.doubles
   val vars = obj.vars.filterNot(wrt.contains)
 
-  def isStatic = false
+  //def isStatic = false
 
   val this2obj = VariableMapping(vars, obj.vars)
   val wrt2obj = VariableMapping(wrt, obj.vars)
@@ -89,12 +89,19 @@ class Max(val obj: DoubleTerm, val wrt: Seq[Var[Dom]]) extends DoubleTerm with U
 
 }
 
-class Argmax[D <: Dom](val obj: DoubleTerm, val wrt: Var[D]) extends Term[D] {
+case class Argmax[D <: Dom](obj: DoubleTerm, wrt: Var[D]) extends Term[D] with Unary {
   val domain = wrt.domain
 
   val vars = obj.vars.filter(_ != wrt)
 
-  def isStatic = false
+  //def isStatic = false
+
+
+  type ArgumentType = DoubleTerm
+
+  def argument = obj
+
+  def copy(arg: ArgumentType) = Argmax(arg,wrt)
 
   override def evaluatorImpl(in: Settings) = new AbstractEvaluator(in) with ArgmaxEvaluator {
     override val maxer = obj.argmaxerImpl(Seq(wrt))(in, null)

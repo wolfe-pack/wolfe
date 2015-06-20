@@ -307,7 +307,7 @@ with LoggedTerms with FVectors with NGramCountsHelper with CombinatorialConstrai
 
         def f(arg: term.domain.Value) = fun(arg)
 
-        def isStatic = false
+        //def isStatic = false
 
         def copy(args: IndexedSeq[ArgumentType]) = {
           val arg = new RichTerm(args(0))
@@ -323,7 +323,7 @@ with LoggedTerms with FVectors with NGramCountsHelper with CombinatorialConstrai
         val term: innerTerm.type = innerTerm
         val domain: TypedDom[B] = targetDom
 
-        def isStatic = false
+        //def isStatic = false
 
         def f(arg: term.domain.Value): Term[TypedDom[B]] = fun(arg)
       }
