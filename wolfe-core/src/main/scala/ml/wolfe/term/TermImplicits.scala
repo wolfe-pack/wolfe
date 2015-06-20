@@ -132,6 +132,7 @@ with LoggedTerms with FVectors with NGramCountsHelper with CombinatorialConstrai
 
     def dropRight(num: IntTerm)(implicit sliceDom: VarSeqDom[E]) = slice(0, seq.length - num)
 
+    def map[To <: Term[Dom]](f:seq.domain.elementDom.Var => To) = TermImplicits.map[To,S](seq)(f)
 
     def append(elem: seq.domain.elementDom.Term)(implicit appendedDom: VarSeqDom[seq.domain.elementDom.type]): appendedDom.Term = {
       val result = new VarSeqAppend[Dom, SeqTerm[E], appendedDom.type](seq, elem)(appendedDom)
