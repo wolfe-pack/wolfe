@@ -9,8 +9,8 @@ import ml.wolfe.nlp.{CharOffsets, Token}
 
 /**
  * A container class for the arcs in a DependencyTree
- * @param parent index of the parent (source) of the arc in the sentence.
- * @param child index of the child (destination) of the arc in the sentence.
+ * @param parent index of the parent (head / source) of the arc in the sentence.
+ * @param child index of the child (modifier / target) of the arc in the sentence.
  * @param label label of syntactic role expressed by the arc
  */
 case class Arc(parent: Int, child: Int, label: Option[String] = None)
@@ -18,6 +18,7 @@ case class Arc(parent: Int, child: Int, label: Option[String] = None)
 
 /**
  * A sparse dependency tree.  Not all tokens require a head.
+ * Methods assume a 0-offset token index (i.e., does not posit the existence of a dummy root node)
  * @param tokens tokens of the sentence.
  * @param arcs arcs of the DependencyTree.
  */
@@ -84,7 +85,7 @@ case class DependencyTree(tokens: IndexedSeq[Token], arcs: Seq[Arc]) {
   }
 
   def root: Int = {
-    (0 until size).find(i => arcs.exists(_.child == i)).get
+    (1 until size).filter(child => !arcs.exists(_.child == child)).head
   }
 
   def crosses(a1: Arc, a2: Arc): Boolean = {
@@ -120,7 +121,7 @@ case class DependencyTree(tokens: IndexedSeq[Token], arcs: Seq[Arc]) {
         word(a.parent) + " -- " + a.label.get + " --> " + word(a.child)
       }
       else {
-        word(a.parent) + " ---> " + word(a.child)
+        word(a.parent) + " --> " + word(a.child)
       }
     }.mkString("\n")
   }
@@ -135,16 +136,19 @@ object DependencyTree {
   val empty = DependencyTree(tokens = IndexedSeq(), arcs = Seq())
 
   def main(args: Array[String]) {
-    val tokens = IndexedSeq(Token(word = "one", offsets = CharOffsets(0,1)),
-                            Token(word = "two", offsets = CharOffsets(1,2)),
-                            Token(word = "three", offsets = CharOffsets(2,3)),
-                            Token(word = "four", offsets = CharOffsets(3,4)),
-                            Token(word = "five", offsets = CharOffsets(4,5)),
-                            Token(word = "six", offsets = CharOffsets(5,6)))
-    val arcs = Seq(Arc(2,3), Arc(1,2), Arc(0,1), Arc(4, 3), Arc(5,4), Arc(6,5))
+    val tokens = IndexedSeq(Token(word = "the", offsets = CharOffsets(0,1)),
+                            Token(word = "cat", offsets = CharOffsets(1,2)),
+                            Token(word = "scratched", offsets = CharOffsets(2,3)),
+                            Token(word = "the", offsets = CharOffsets(3,4)),
+                            Token(word = "man", offsets = CharOffsets(4,5)),
+                            Token(word = "with", offsets = CharOffsets(5,6)),
+                            Token(word = "claws", offsets = CharOffsets(6,7)))
+    println("Sentence:\n\t" + tokens.map(_.word).zipWithIndex.map(p => p._2 + ":" + p._1).mkString(" ") + "\n")
+    val arcs = Seq(Arc(1,0), Arc(2,1), Arc(4,3), Arc(2, 4), Arc(2,5), Arc(5,6))
     val tree = DependencyTree(tokens, arcs)
-    println(tree.toString)
-    println("SDP: " + tree.shortestDirectedPath(3,0))
-    println(tree.shortestDirectedPath(6,1))
+    println("Parse:\n" + tree.toString + "\n")
+    println("Root = " + tokens(tree.root).word)
+    println("SDP(2,0): " + tree.shortestDirectedPath(2,0))
+    println("SDP(6,0): " + tree.shortestDirectedPath(6,0))
   }
 }
