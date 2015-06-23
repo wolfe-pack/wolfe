@@ -96,7 +96,7 @@ class FG[NodeContent, EdgeContent, FactorContent] {
     }
   }
 
-  def scheduleForward(): Seq[DirectedEdge] = {
+  def scheduleInward(): Seq[DirectedEdge] = {
     @tailrec
     def scheduleAcc(queue:Seq[Node], done: Seq[Node], acc: Seq[DirectedEdge]): Seq[DirectedEdge] = {
       queue match {
@@ -112,7 +112,7 @@ class FG[NodeContent, EdgeContent, FactorContent] {
             scheduleAcc(tail, done, acc)
           } else {
             val newEdges = head.edges.filter(e => !acc.exists(_.edge == e) && activeEdges.contains(e)).flatMap{ e1 =>
-              (e1.factor.edges.filter(activeEdges.contains) - e1).map{ e2 =>
+              e1.factor.edges.filter(e => e != e1 && activeEdges.contains(e)).map{ e2 =>
                 DirectedEdge(e2, isF2N = false)
               } :+ DirectedEdge(e1, isF2N = true)
             }
@@ -122,12 +122,14 @@ class FG[NodeContent, EdgeContent, FactorContent] {
     }
     scheduleAcc(Seq(), Seq(), Seq())
   }
-  def scheduleForwardBackward(): Seq[DirectedEdge] = {
-    val forward = scheduleForward()
-    val backward = forward.reverseMap(_.flip)
-    forward ++ backward
+
+  def scheduleInwardOutward(): Seq[DirectedEdge] = {
+    val inward = scheduleInward()
+    val outward = inward.reverseMap(_.flip)
+    inward ++ outward
   }
 
+  def scheduleOutward(): Seq[DirectedEdge] = scheduleInward().reverseMap(_.flip)
 
   case class MessageRecord(edge: Edge, direction:String, message:Msg)
   val messageHistory:ArrayBuffer[ArrayBuffer[MessageRecord]] = ArrayBuffer()

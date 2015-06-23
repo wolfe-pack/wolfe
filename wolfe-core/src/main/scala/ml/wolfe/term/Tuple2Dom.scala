@@ -108,7 +108,7 @@ class Tuple2Dom[D1 <: Dom, D2 <: Dom](val dom1: D1, val dom2: D2) extends TupleD
 
 }
 
-trait TupleDom extends Dom {
+trait TupleDom extends DomWithDomTerm {
   dom =>
   type Value <: scala.Product
 
@@ -153,7 +153,7 @@ trait TupleDom extends Dom {
 
 }
 
-trait ProductDom extends Dom {
+trait ProductDom extends DomWithDomTerm {
   dom =>
 
   type Value <: scala.Product

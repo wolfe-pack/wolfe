@@ -3,7 +3,7 @@ package ml.wolfe.term
 /**
  * @author riedel
  */
-abstract class MapDom[K <: Dom, V <: Dom](val keyDom: K, val valueDom: V) extends Dom {
+abstract class MapDom[K <: Dom, V <: Dom](val keyDom: K, val valueDom: V) extends DomWithDomTerm {
 
   dom =>
 

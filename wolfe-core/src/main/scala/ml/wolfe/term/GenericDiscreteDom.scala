@@ -7,7 +7,6 @@ trait GenericDiscreteDom[A <: Any] extends AtomicDom {
 
   dom =>
   type Value = A
-  type Var = DomVar
   type Marginals = Map[A,Double]
 
 
@@ -50,7 +49,9 @@ trait GenericDiscreteDom[A <: Any] extends AtomicDom {
 
   def Variable(name: String) = new StaticDiscVar(name)
 
-  class StaticDiscVar(val varName: String) extends DomVar
+  class StaticDiscVar(val varName: String) extends Var {
+    override val domain: dom.type = dom
+  }
 
 
 }

@@ -352,7 +352,7 @@ trait BP {
           updateFactor(f)
         }
       case Schedule.default =>
-        val mpSchedule = fg.scheduleForwardBackward()
+        val mpSchedule = fg.scheduleInwardOutward()
         for (i <- 0 until params.iterations; de <- mpSchedule) {
           if (de.isF2N)
             updateF2N(de.edge)
@@ -371,12 +371,13 @@ trait BP {
           updateFactorDeterministic(f)
         }
       case Schedule.default =>
-        val deterministicSchedule = fg.scheduleForward()
+        val deterministicSchedule = fg.scheduleOutward()
         for (de <- deterministicSchedule) {
-          if (de.isF2N)
+          if (de.isF2N) {
             updateF2N(de.edge)
-          else
+          } else {
             updateDeterministicN2F(de.edge)
+          }
         }
     }
 

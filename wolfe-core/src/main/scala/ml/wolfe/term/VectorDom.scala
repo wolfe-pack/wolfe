@@ -42,7 +42,6 @@ trait GenericVectorDom extends AtomicDom {
   def dim: Int
 
   type Value = Vect
-  type Var = DomVar
   type Marginals = Vect
 
   val lengths = Offsets(0, 0, 1, 0)
@@ -70,7 +69,9 @@ trait GenericVectorDom extends AtomicDom {
 
   def Variable(name: String) = StaticVectorVar(name)
 
-  case class StaticVectorVar(varName: String) extends DomTerm with DomVar
+  case class StaticVectorVar(varName: String) extends Var {
+    override val domain: dom.type = dom
+  }
 
 
 }

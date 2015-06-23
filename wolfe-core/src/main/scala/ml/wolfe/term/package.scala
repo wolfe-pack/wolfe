@@ -4,11 +4,10 @@ package ml.wolfe
  * @author riedel
  */
 package object term {
-  type DoubleVar = DoubleDom#DomVar
-  type VectorVar = VectorDom#DomVar
-  type MatrixVar = MatrixDom#DomVar
+  type DoubleVar = DoubleDom#Var
+  type VectorVar = VectorDom#Var
+  type MatrixVar = MatrixDom#Var
   //type DiscVar[T] = GenericDiscreteDom[T]#DomVar
-  type Constant[D <: Dom] = D#Constant
   type AnyVar = Var[Dom]
   type AnyTerm = Term[Dom]
   type AnyAtom = Atom[Dom]

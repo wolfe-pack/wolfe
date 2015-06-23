@@ -7,7 +7,7 @@ import scala.util.Random
 /**
  * @author riedel
  */
-class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength: Int = 0) extends Dom {
+class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength: Int = 0) extends DomWithDomTerm {
 
   dom =>
 

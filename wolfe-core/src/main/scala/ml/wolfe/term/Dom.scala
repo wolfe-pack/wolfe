@@ -44,13 +44,6 @@ trait Dom {
    */
   def own(term: TypedTerm[Value]): Term
 
-
-  trait DomTerm extends term.Term[dom.type] {
-    val domain: dom.type = dom
-  }
-
-  trait DomVar extends term.Var[dom.type] with DomTerm
-
   def toValue(setting: Setting, offsets: Offsets = Offsets()): Value
 
   def toMarginals(msg: Msg, offsets: Offsets = Offsets()): Marginals
@@ -171,26 +164,7 @@ trait Dom {
   def zero: Value
 
   def sparseZero = zero
-
-  abstract class BaseVar(val varName: String) extends DomVar {
-  }
-
-  case class Constant(value: Value) extends DomTerm {
-    self =>
-
-    //def isStatic = true
-
-    val vars = Seq.empty
-
-    override def evaluatorImpl(in: Settings) = new AbstractEvaluator(in) {
-      def eval()(implicit execution: Execution) {}
-
-      val output = domain.toSetting(value.asInstanceOf[domain.Value])
-    }
-
-    override def toString = value.toString
-  }
-
+  
 
   import scala.language.implicitConversions
 
@@ -204,6 +178,22 @@ trait Dom {
     new AllSettings[Value](IndexedSeq(this), settingToVary)(s => toValue(s(0)))
   }
 
+}
+
+case class Constant[+D <: Dom](domain:D, value: Any) extends term.Term[D] {
+  self =>
+
+  override lazy val isStatic = true
+
+  val vars = Seq.empty
+
+  override def evaluatorImpl(in: Settings) = new AbstractEvaluator(in) {
+    def eval()(implicit execution: Execution) {}
+
+    val output = domain.toSetting(value.asInstanceOf[domain.Value])
+  }
+
+  override def toString = value.toString
 }
 
 object Dom {
@@ -222,7 +212,15 @@ object Dom {
 }
 
 
+trait DomWithDomTerm extends Dom {
+  dom =>
 
+  trait DomTerm extends term.Term[dom.type] {
+    val domain: dom.type = dom
+  }
 
+  trait DomVar extends term.Var[dom.type] with DomTerm
 
-
+  abstract class BaseVar(val varName: String) extends DomVar {
+  }
+}

@@ -25,7 +25,7 @@ trait Term[+D <: Dom] extends TermHelper[D]  {
   val domain: D
 
   /**
-   * The sequence of free variables in this term. Notice that the order of this sequence determines the order
+   * The sequence of (distinct) free variables in this term. Notice that the order of this sequence determines the order
    * of arguments to be passed into the evaluation methods.
    * @return the sequence of free variables in this term.
    */

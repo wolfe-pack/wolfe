@@ -89,9 +89,23 @@ class MaxProductSpecs extends WolfeSpec {
       for(i <- 0 until n - 1) {
         result(i) should not be result(i+1)
       }
-
     }
 
+    "optimize a linear chain objective with multiple solutions" ignore {
+      val n = 5
+      val t = 3
+      implicit val Y = Seqs(Ints(0 until t), 0, n)
+
+      val mpParams = BPParameters(10)
+      def model(y: Y.Term) = {
+        sum(0 until n - 1) { i => I(y(i+1) === y(i)+1 || y(i+1) === y(i)-t+1)}
+      } subjectTo (y.length === n) argmaxBy maxProduct(mpParams)
+      val result = argmax(Y)(model).eval()
+
+      println(result)
+      model(Y.Const(result)).eval() should be (n-1)
+
+    }
 
     "optimize a linear chain in a perceptron loss" in {
 

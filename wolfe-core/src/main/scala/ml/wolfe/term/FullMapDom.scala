@@ -5,7 +5,7 @@ package ml.wolfe.term
  * @author riedel
  * @since 5/26/15.
  */
-abstract class FullMapDom[K <: Dom, V <: Dom](val keyDom: K, val valueDom: V) extends Dom {
+abstract class FullMapDom[K <: Dom, V <: Dom](val keyDom: K, val valueDom: V) extends DomWithDomTerm {
 
   dom =>
 
