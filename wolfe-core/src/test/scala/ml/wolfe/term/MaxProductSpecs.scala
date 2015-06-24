@@ -112,7 +112,6 @@ class MaxProductSpecs extends WolfeSpec {
       implicit val random = new Random(0)
 
       val mpParams = BPParameters(10)
-      val adaParams = AdaGradParameters(100, 0.1)
 
       val n = 5
       val X = Seqs(Ints(0 until 3), 0, n)
@@ -136,13 +135,26 @@ class MaxProductSpecs extends WolfeSpec {
           { max(Y)(y => (model(x, w)(y) + hammingDistance(yGold, y)) argmaxBy maxProduct(mpParams)) }
       }
 
-      def score(w: Weights.Term) = sum(train) { i => instanceScore(i.x, i.y)(w)} argmaxBy adaGrad(adaParams)
+      def score(w: Weights.Term) = sum(train) { i => instanceScore(i.x, i.y)(w)}
 
-      def stochasticScore(w: Weights.Term) = shuffled(train) { i => instanceScore(i.x, i.y)(w)} argmaxBy adaGrad(adaParams)
+      def stochasticScore(w: Weights.Term) = shuffled(train) { i => instanceScore(i.x, i.y)(w)}
 
-      val wStar = argmax(Weights)(stochasticScore)
 
-      println(wStar.eval())
+      var oldScore = Double.NegativeInfinity
+      def epochHook(i:Int, parameters:IndexedSeq[Any], score:Double) = {
+        (score <= 0) should be (true)
+        if(i % 10 == 0) {
+          (oldScore <= score) should be(true)
+          oldScore = score
+        }
+        ""
+      }
+      val adaParams = AdaGradParameters(100, 0.1, epochHook = epochHook)
+
+      val wStar = (argmax(Weights)(stochasticScore) by adaGrad(adaParams)).eval()
+
+      score(Weights.Const(wStar)).eval() should be (0d)
+
     }
 
   }

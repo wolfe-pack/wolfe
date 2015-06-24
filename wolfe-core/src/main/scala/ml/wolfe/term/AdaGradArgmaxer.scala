@@ -10,7 +10,7 @@ case class AdaGradParameters(epochs: Int,
                              learningRate: Double,
                              delta: Double = 0.0,
                              initParams: Settings = new Settings(0),
-                             epochHook: (IndexedSeq[Any], Int) => String = null,
+                             epochHook: (Int, IndexedSeq[Any], Double) => String = null, // Iteration, parameters, objective
                              adaptiveVectors: Boolean = true,
                              optimizeTerm: Boolean = false)
 
@@ -111,7 +111,7 @@ class AdaGradArgmaxer(val objRaw: DoubleTerm,
       if ((iteration + 1) % termsPerEpoch == 0) {
         if (epochHook != null) {
           val parameters = for ((v, s) <- wrt zip result) yield v.domain.toValue(s)
-          val text = epochHook(parameters.toIndexedSeq, (iteration + 1) / termsPerEpoch)
+          val text = epochHook((iteration + 1) / termsPerEpoch, parameters.toIndexedSeq, objAccumulator)
           assert(!objAccumulator.isNaN)
           bar(s"Obj: $objAccumulator $text", lineBreak = true)
         } else {
