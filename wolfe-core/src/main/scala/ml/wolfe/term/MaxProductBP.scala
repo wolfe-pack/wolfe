@@ -167,7 +167,7 @@ trait BP {
     }
   }
 
-  class NodeContent(val belief: Msg, val deterministicBelief: Msg, var f2nChanged: Boolean = true)
+  class NodeContent(val belief: Msg, val deterministicBelief: Msg, var f2nChanged: Boolean = true, var isDeterministicBeliefSet: Boolean = false)
 
   class EdgeContent(val maxMarginalizer: MessageCalculator, val f2n: Msg, val n2f: Msg)
 
@@ -263,15 +263,8 @@ trait BP {
   }
 
   def updateDeterministicN2F(edge: fg.Edge): Unit = {
-    edge.content.n2f := 0.0
-    for (o <- edge.node.edges; if o != edge) {
-      edge.content.n2f += o.content.f2n
-    }
-    for(discMsg <- edge.content.n2f.disc) {
-      val argmax = discMsg.argmax()
-      util.Arrays.fill(discMsg.msg, Double.NegativeInfinity)
-      discMsg.msg(argmax) = 0
-    }
+    updateDeterministicBelief(edge.node)
+    edge.content.n2f := edge.node.content.deterministicBelief - edge.content.f2n
   }
 
   def updateF2N(edge: fg.Edge)(implicit execution: Execution): Unit = {
@@ -324,15 +317,26 @@ trait BP {
   }
 
   def updateDeterministicBelief(node: fg.Node): Unit = {
-    node.content.deterministicBelief := 0.0
-    for (e <- node.edges) {
-      node.content.deterministicBelief += e.content.f2n
+    if(! node.content.isDeterministicBeliefSet) {
+      node.content.deterministicBelief := 0.0
+      for (e <- node.edges) {
+        node.content.deterministicBelief += e.content.f2n
+      }
+
+      for (discMsg <- node.content.deterministicBelief.disc) {
+        val argmax = discMsg.argmax()
+        val maxval = discMsg.msg(argmax)
+        util.Arrays.fill(discMsg.msg, Double.NegativeInfinity)
+        discMsg.msg(argmax) = maxval
+      }
+
+      node.content.isDeterministicBeliefSet = true
     }
   }
 
   def integrateAtomIntoResultState(node: fg.Node): Unit = {
     val atom = node.variable
-    node.content.belief.argmax(result(wrt.indexOf(atom.owner)), atom.offsets)
+    node.content.deterministicBelief.argmax(result(wrt.indexOf(atom.owner)), atom.offsets)
   }
 
   def doMessagePassing()(implicit execution: Execution) = {
@@ -365,6 +369,8 @@ trait BP {
       updateNodeBelief(n)
     }
 
+    fg.activeNodes.foreach{ _.content.isDeterministicBeliefSet = false }
+
     schedule match {
       case Schedule.synchronized =>
         for (f <- fg.activeFactors) {
@@ -384,6 +390,12 @@ trait BP {
     for (n <- fg.activeNodes) {
       updateDeterministicBelief(n)
     }
+
+//    for((v, n) <- fg.nodes) {
+//      println(v)
+//      println("  Belief: " + n.content.belief.disc(0).msg.mkString(", "))
+//      println("  Determ: " + n.content.deterministicBelief.disc(0).msg.mkString(", "))
+//    }
   }
 
   def argmax()(implicit execution: Execution) = {

@@ -460,13 +460,21 @@ class DiscMsg(var msg: Array[Double]) {
 
   def isDiracAt(index: Int) =
     Range(0, msg.length).filterNot(_ == index).forall(msg(_) == Double.NegativeInfinity)
+
+  override def clone() = new DiscMsg(msg.clone())
 }
 
-class ContMsg(var mean: Double = 0.0)
+class ContMsg(var mean: Double = 0.0) {
+  override def clone() = new ContMsg(mean)
+}
 
-class VectMsg(var mean: Vect = null)
+class VectMsg(var mean: Vect = null) {
+  override def clone() = new VectMsg(mean.copy)
+}
 
-class MatsMsg(var mean: Mat = null)
+class MatsMsg(var mean: Mat = null) {
+  override def clone() = new MatsMsg(mean.copy)
+}
 
 
 class Msg(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMats: Int = 0) {
@@ -481,10 +489,10 @@ class Msg(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMats: Int = 0
   final def :=(msg: Msg): Unit = {
     assert(disc.length == msg.disc.length && cont.length == msg.cont.length &&
       vect.length == msg.vect.length && mats.length == msg.mats.length)
-    disc = msg.disc.clone()
-    cont = msg.cont.clone()
-    vect = msg.vect.clone()
-    mats = msg.mats.clone()
+    disc = msg.disc.map(_.clone())
+    cont = msg.cont.map(_.clone())
+    vect = msg.vect.map(_.clone())
+    mats = msg.mats.map(_.clone())
   }
 
   override final def clone(): Msg = {

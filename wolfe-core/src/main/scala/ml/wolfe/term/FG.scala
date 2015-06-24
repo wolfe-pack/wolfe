@@ -89,10 +89,14 @@ class FG[NodeContent, EdgeContent, FactorContent] {
 
   case class DirectedEdge(edge:Edge, isF2N:Boolean) {
     def flip = DirectedEdge(edge, !isF2N)
+    def nodeAtom(n:Node) = nodes.find(_._2 == n).map(_._1)
+    def nodeStr(n:Node) = nodeAtom(n).get.toString
+    def factorStr(f:Factor) = f.edges.map(e => nodeStr(e.node)).mkString("Factor( ", ", ", " )")
+
     override def toString = if(isF2N) {
-      "DirectedEdge(" + edge.factor + " -> " + edge.node + ")"
+      "DirectedEdge( " + factorStr(edge.factor) + " -> " + nodeStr(edge.node) + " )"
     } else {
-      "DirectedEdge(" + edge.node + " -> " + edge.factor + ")"
+      "DirectedEdge( " + nodeStr(edge.node) + " -> " + factorStr(edge.factor) + " )"
     }
   }
 
