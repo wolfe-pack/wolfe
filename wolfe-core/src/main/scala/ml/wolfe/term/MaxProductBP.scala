@@ -369,33 +369,50 @@ trait BP {
       updateNodeBelief(n)
     }
 
-    fg.activeNodes.foreach{ _.content.isDeterministicBeliefSet = false }
+    val isSolutionUnique = fg.activeNodes.forall{ n =>
+      n.content.belief.disc.forall{ discMsg =>
+        val maxval = discMsg.msg(discMsg.argmax())
+        discMsg.msg.count( _ == maxval) == 1
+      }
+    }
 
-    schedule match {
-      case Schedule.synchronized =>
-        for (f <- fg.activeFactors) {
-          updateFactorDeterministic(f)
-        }
-      case Schedule.default =>
-        val deterministicSchedule = fg.scheduleOutward()
-        for (de <- deterministicSchedule) {
-          if (de.isF2N) {
-            updateF2N(de.edge)
-          } else {
-            updateDeterministicN2F(de.edge)
+    if(isSolutionUnique) {
+      fg.activeNodes.foreach { n =>
+        n.content.deterministicBelief := n.content.belief
+      }
+    } else {
+      fg.activeNodes.foreach {
+        _.content.isDeterministicBeliefSet = false
+      }
+
+      schedule match {
+        case Schedule.synchronized =>
+          for (f <- fg.activeFactors) {
+            updateFactorDeterministic(f)
           }
-        }
+        case Schedule.default =>
+          val deterministicSchedule = fg.scheduleOutward()
+          for (de <- deterministicSchedule) {
+            if (de.isF2N) {
+              updateF2N(de.edge)
+            } else {
+              updateDeterministicN2F(de.edge)
+            }
+          }
+      }
+
+      for (n <- fg.activeNodes) {
+        updateDeterministicBelief(n)
+      }
+
+      //    for((v, n) <- fg.nodes) {
+      //      println(v)
+      //      println("  Belief: " + n.content.belief.disc(0).msg.mkString(", "))
+      //      println("  Determ: " + n.content.deterministicBelief.disc(0).msg.mkString(", "))
+      //    }
+
     }
 
-    for (n <- fg.activeNodes) {
-      updateDeterministicBelief(n)
-    }
-
-//    for((v, n) <- fg.nodes) {
-//      println(v)
-//      println("  Belief: " + n.content.belief.disc(0).msg.mkString(", "))
-//      println("  Determ: " + n.content.deterministicBelief.disc(0).msg.mkString(", "))
-//    }
   }
 
   def argmax()(implicit execution: Execution) = {
