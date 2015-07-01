@@ -31,6 +31,9 @@ case class CorefAnnotation(mentions: IndexedSeq[CorefMention] = IndexedSeq.empty
     mentions.groupBy(_.clusterID)
   }
 
+  def clusters: Array[Seq[CorefMention]] = {
+    idToCluster.values.iterator().toArray
+  }
 
   def clusterContaining(m: BareMention): Option[Seq[CorefMention]] = {
     clusterContaining(m._1, m._2, m._3)
