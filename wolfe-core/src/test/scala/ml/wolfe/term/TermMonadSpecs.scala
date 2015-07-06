@@ -34,12 +34,22 @@ class TermMonadSpecs extends WolfeSpec {
         t.eval(x := xv, y := yv) should be(!xv || yv)
       }
     }
+
     "support flatMap operations with repeated terms" in {
       val x = Bools.Variable("x")
       val t = x convertValues(xv1 => x convertValue (xv2 => !xv1 || xv2))
       for (xv <- Bools) {
         t.eval(x := xv) should be(!xv || xv)
       }
+    }
+
+    "behave within an argmax" ignore {
+      val X = Seqs(Seq(1,2).toDom, 5)
+      def foo(x:X.Term) = sum(0 until 5) { i =>
+        x(i).convertValue{ v => v * 2.0 }
+      }
+      val bar = argmax(X)(foo) by Argmaxer.bruteForce
+      bar.eval().toList should be (List(2, 2, 2, 2, 2))
     }
 
   }
