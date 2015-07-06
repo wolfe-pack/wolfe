@@ -35,7 +35,12 @@ trait Term[+D <: Dom] extends TermHelper[D]  {
    * Is this term guaranteed to evaluate to the same value each it is called
    * @return true iff the evaluator always evaluates to the same value (over all executions)
    */
-  lazy val isStatic = vars.isEmpty && !toList.exists(_.isInstanceOf[SampleTerm])
+  lazy val isStatic = vars.isEmpty && !isStochastic
+
+  /**
+   * Does this term have some stochastic subterms.
+   */
+  lazy val isStochastic = toList.exists(_.isInstanceOf[SampleTerm])
 
   /**
    * Return a list of all sub terms in this term (including the term itself).

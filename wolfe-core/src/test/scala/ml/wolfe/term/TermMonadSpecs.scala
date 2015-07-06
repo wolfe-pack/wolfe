@@ -43,7 +43,7 @@ class TermMonadSpecs extends WolfeSpec {
       }
     }
 
-    "behave within an argmax" ignore {
+    "behave within an argmax" in {
       val X = Seqs(Seq(1,2).toDom, 5)
       def foo(x:X.Term) = sum(0 until 5) { i =>
         x(i).convertValue{ v => v * 2.0 }

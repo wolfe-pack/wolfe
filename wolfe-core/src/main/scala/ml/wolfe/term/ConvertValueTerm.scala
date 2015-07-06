@@ -16,16 +16,26 @@ trait ConvertValueTerm[A <: Term[Dom], D <: Dom] extends Term[D] with NAry {
 
   private var currentExecution:Execution = null
   private var mapped:domain.Value = null.asInstanceOf[domain.Value]
+  private var inputValue:term.domain.Value = _
 
   def vars = term.vars
 
   override def evaluatorImpl(in: Settings) = new AbstractEvaluator(in) {
     val termEval = term.evaluatorImpl(in)
+
+
+    def updateInput()(implicit execution: Execution):Boolean = {
+      termEval.eval()
+      val oldValue = inputValue
+      inputValue = term.domain.toValue(termEval.output)
+      oldValue != inputValue
+    }
+
+
     def eval()(implicit execution: Execution): Unit = {
-      if (currentExecution != execution) {
-        termEval.eval()
-        val value = term.domain.toValue(termEval.output)
-        mapped = f(value)
+      if (updateInput() || currentExecution != execution) {
+        //updateInput()
+        mapped = f(inputValue)
         currentExecution = execution
       }
       domain.copyValue(mapped, output)
