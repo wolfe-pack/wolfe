@@ -72,7 +72,7 @@ with LoggedTerms with FVectors with NGramCountsHelper with CombinatorialConstrai
 
   def indexed(value: AnyTerm)(implicit indexer: Indexer) = Indexed(value)
 
-  //  implicit class ConvertableToTerm[T, D <: TypedDom[T]](value: T)(implicit val domain: D) {
+  //  implicit class ConvertableToTerm[T, D <: TypedDom[T]](value: T)(implicit val domain: D) {v
   //    def toConst: domain.Term = domain.Const(value)
   //  }
   //  implicit class ConvertableToTerm2[T](value: T)(implicit val domain: TypedDom[T]) {
@@ -431,6 +431,8 @@ trait MathImplicits {
 
   //  def I[T <: BoolTerm](term: T) = new Iverson(term)
   def I(term: BoolTerm) = new Iverson(term)
+
+  def logI(term: BoolTerm) = new LogIverson(term)
 
   def constraint(term: BoolTerm) = {
     term match {

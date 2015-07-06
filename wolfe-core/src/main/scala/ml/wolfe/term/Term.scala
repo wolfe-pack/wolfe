@@ -421,6 +421,24 @@ case class Iverson[T <: BoolTerm](arg: T) extends UnaryTerm[T, DoubleDom] with C
   override def toString = s"I($arg)"
 }
 
+
+
+case class LogIverson[T <: BoolTerm](arg: T) extends UnaryTerm[T, DoubleDom] with ComposedDoubleTerm {
+
+
+  override def composer(args: Settings) = new Composer(args) {
+    def eval()(implicit execution: Execution) = {
+      output.cont(0) = if (input(0).disc(0) == 0) Double.NegativeInfinity else 0.0
+    }
+  }
+
+  def copy(args: IndexedSeq[ArgumentType]) = new LogIverson(args(0))
+
+  def differentiatorOld(wrt: Seq[AnyVar]) = ???
+
+  override def toString = s"logI($arg)"
+}
+
 class IntToDouble[T <: IntTerm](val int: T) extends ComposedDoubleTerm {
   type ArgumentType = T
 
