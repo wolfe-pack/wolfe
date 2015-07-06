@@ -421,8 +421,6 @@ case class Iverson[T <: BoolTerm](arg: T) extends UnaryTerm[T, DoubleDom] with C
   override def toString = s"I($arg)"
 }
 
-
-
 class IntToDouble[T <: IntTerm](val int: T) extends ComposedDoubleTerm {
   type ArgumentType = T
 
@@ -439,6 +437,21 @@ class IntToDouble[T <: IntTerm](val int: T) extends ComposedDoubleTerm {
 
 
   def differentiatorOld(wrt: Seq[AnyVar]) = ???
+}
+
+class DoubleToDouble[T <: DoubleTerm](val double: T) extends ComposedDoubleTerm {
+  type ArgumentType = T
+
+  def arguments = IndexedSeq(double)
+
+  def copy(args: IndexedSeq[ArgumentType]) = new DoubleToDouble(args(0))
+
+  override def composer(args: Settings) = new Composer(args) {
+    def eval()(implicit execution: Execution) = {
+      output.cont(0) = double.domain.toValue(input(0))
+    }
+  }
+
 }
 
 case class Identity[D <: Dom, T <: Term[D]](self: T) extends ProxyTerm[D] {

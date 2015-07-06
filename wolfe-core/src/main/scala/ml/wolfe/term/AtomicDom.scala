@@ -23,6 +23,7 @@ trait AtomicDom extends Dom {
 
     def copy(args: IndexedSeq[ArgumentType]) = own(args(0))
   }
+
 }
 
 
@@ -116,6 +117,8 @@ class DoubleDom extends AtomicDom {
   class StaticDoubleVar(val varName: String) extends Var {
     override val domain: dom.type = dom
   }
+
+  def fromDiscrete(term: DoubleTerm) = new DoubleToDouble(term)
 
   override def toString = "Doubles"
 }
