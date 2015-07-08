@@ -428,6 +428,7 @@ trait MathImplicits {
   def tanh[T <: DoubleTerm](term: T) = new Tanh(term)
 
   def log[T <: DoubleTerm](term: T) = new Log(term)
+  def exp[T <: DoubleTerm](term: T) = new Exp(term)
 
   //  def I[T <: BoolTerm](term: T) = new Iverson(term)
   def I(term: BoolTerm) = new Iverson(term)

@@ -13,8 +13,8 @@ class MaxTermSpecs extends WolfeSpec {
     "evaluate to the maximum over its domain" in {
       val x = Bools.Var
       val term = max(Bools) { y => I(y && x)}
-      term.eval(x << false) should be(0.0)
-      term.eval(x << true) should be(1.0)
+      term.eval(x := false) should be(0.0)
+      term.eval(x := true) should be(1.0)
     }
 
     "provide an element of its sub-gradient" in {

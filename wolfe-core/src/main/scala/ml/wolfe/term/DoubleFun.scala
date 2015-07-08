@@ -69,6 +69,9 @@ class Rectifier[T <: DoubleTerm](arg: T) extends DoubleFun(arg, x => if (x > 0.0
 
 class Log[T <: DoubleTerm](override val arg: T) extends DoubleFun(arg, math.log, logDeriv, "log")
 
+case class Exp[T <: DoubleTerm](override val arg: T) extends DoubleFun(arg, math.exp, math.exp, "exp")
+
+
 class Tanh[T <: DoubleTerm](override val arg: T) extends DoubleFun(arg, tanh, tanhDeriv, "tanh")
 
 class Min2[T <: DoubleTerm](arg1: T, arg2: T) extends DoubleBinaryFun(arg1, arg2,
