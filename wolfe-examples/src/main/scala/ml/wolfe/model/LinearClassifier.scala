@@ -15,13 +15,17 @@ import scala.util.Random
 trait LinearClassifier[Label] {
 
   def labels: Seq[Label]
+
   def maxFeats: Int
+
   def thetaStar: Vect
 
   type Instance = (Vect, Label)
   type X = Vect
   val Thetas = Vectors(maxFeats)
-  implicit def index:SimpleIndex
+
+  implicit def index: SimpleIndex
+
   implicit lazy val indexer = new DefaultIndexer(index)
   implicit val Labels = labels.toDom
   implicit val Xs = Vectors(maxFeats * labels.size)
@@ -33,7 +37,10 @@ trait LinearClassifier[Label] {
     t dot (x conjoin feature(y))
   }
 
-  lazy val predict = fun(Xs) { x => argmax(Labels)(model(Thetas.Const(thetaStar))(x)) }
+  lazy val predict: Vect => Label = fun(Xs) { x => argmax(Labels)(model(Thetas.Const(thetaStar))(x)) }
+
+  lazy val score: (Vect, Label) => Double = fun(Xs, Labels) { (x, y) => model(Thetas.Const(thetaStar))(x)(y) }
+
 
   /**
    * Takes an input X and returns its best label according to the classifier.
@@ -66,8 +73,10 @@ object LinearClassifier {
 
     new LinearClassifier[L] {
       def labels = classLabels
+
       def maxFeats = maxFeatures
-      val index  = new SimpleIndex
+
+      val index = new SimpleIndex
       lazy val thetaStar =
         learn(Thetas)(t => LearningObjective.perceptron(data.toConst)(Labels)(model(t))) using Argmaxer.adaGrad(params)
     }
@@ -76,7 +85,7 @@ object LinearClassifier {
   /**
    * Datastructure to be pickled and unpickled for storing and loading of models.
    */
-  case class Pickleable[L](labels:Seq[L],index:SimpleIndex,thetaStar:Vect)
+  case class Pickleable[L](labels: Seq[L], index: SimpleIndex, thetaStar: Vect)
 
 
   /**
@@ -85,8 +94,8 @@ object LinearClassifier {
    * @param file file to store to.
    * @tparam L type of labels.
    */
-  def store[L](model:LinearClassifier[L], file:File): Unit = {
-    writeToFile(Pickleable(model.labels,model.index,model.thetaStar).pickle, file)
+  def store[L](model: LinearClassifier[L], file: File): Unit = {
+    writeToFile(Pickleable(model.labels, model.index, model.thetaStar).pickle, file)
   }
 
   /**
@@ -95,11 +104,13 @@ object LinearClassifier {
    * @tparam L type of labels.
    * @return classifier stored in the given file.
    */
-  def load[L](file:File):LinearClassifier[L] = {
+  def load[L](file: File): LinearClassifier[L] = {
     val m = loadBinary(file).unpickle[Pickleable[L]]
     new LinearClassifier[L] {
       def labels = m.labels
+
       def maxFeats = m.thetaStar.dim1
+
       lazy val index = m.index
       lazy val thetaStar = m.thetaStar
     }

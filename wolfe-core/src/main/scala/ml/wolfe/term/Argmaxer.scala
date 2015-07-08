@@ -28,6 +28,7 @@ trait SamplerFactory {
   def sampler(term: DoubleTerm, wrt: Seq[Var[Dom]])(obs: Settings, msgs: Msgs)(implicit random: Random): Sampler
 }
 
+
 trait MarginalizerFactory {
   def marginalizer(term: DoubleTerm, wrt: Seq[AnyVar], observed: Seq[AnyVar])
                   (input: Settings, inputMsgs: Msgs, reverseMsgsAlso: Boolean): Marginalizer

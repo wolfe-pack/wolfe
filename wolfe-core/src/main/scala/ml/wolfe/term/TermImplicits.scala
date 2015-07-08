@@ -616,7 +616,11 @@ trait MathImplicits {
     val term = obj(variable)
     new Max(term, Seq(variable))
   }
-
+  def logZ[D <: Dom](dom: D)(obj: dom.Var => DoubleTerm) = {
+    val variable = dom.Variable("_hidden")
+    val term = obj(variable)
+    new LogZ(term, variable)
+  }
   def sum[T](dom: Seq[T])(arg: T => DoubleTerm) = new Sum(dom.toIndexedSeq.map(arg))
 
   def sum(args: DoubleTerm*) = new Sum(args.toIndexedSeq)
