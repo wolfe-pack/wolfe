@@ -26,6 +26,14 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
 
   def own(term: TypedTerm[Value]): Term = own(term, keepAfterCleaning = false)
 
+  override def hamming(x1:Term, x2:Term):DoubleTerm = {
+    import TermImplicits._
+    val indexVar = indexDom.Variable("_i")
+    val elementDistance = elementDom.hamming(x1(indexVar),x2(indexVar))
+    FirstOrderSum(RangeTerm(0,x1.length),indexVar,elementDistance)
+  }
+
+
   def own(term: TypedTerm[Value], keepAfterCleaning: Boolean): Term = new OwnedTerm[Value] with Term {
     def self = term
 

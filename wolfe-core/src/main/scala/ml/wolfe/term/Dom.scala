@@ -56,6 +56,8 @@ trait Dom {
 
   def ==>(that:Dom) = new MapDom1[dom.type,that.type](dom,that)
 
+  def hamming(x1:Term, x2:Term):DoubleTerm = ???
+
   def toSetting(value: Value): Setting = {
     val result = createSetting()
     copyValue(value, result)

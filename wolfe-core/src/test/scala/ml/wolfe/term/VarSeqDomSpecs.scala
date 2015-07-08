@@ -42,6 +42,12 @@ class VarSeqDomSpecs extends WolfeSpec {
       term.eval(x := IndexedSeq(false, true), e := true) should be(IndexedSeq(false, true, true))
     }
 
+    "provide a hamming distance" in {
+      val X = Seqs(Bools, 0, 3)
+      val x1 = X.Var
+      val x2 = X.Var
+      X.hamming(x1,x2).eval(x1 := Vector(true,false,true), x2 := Vector(false, false, false)) should be (2.0)
+    }
 
     "support constructing sequence terms" in {
       val n = 3

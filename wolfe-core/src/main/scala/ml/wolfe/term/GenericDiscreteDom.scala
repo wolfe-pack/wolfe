@@ -1,5 +1,7 @@
 package ml.wolfe.term
 
+import ml.wolfe.term
+
 /**
  * @author riedel
  */
@@ -53,5 +55,7 @@ trait GenericDiscreteDom[A <: Any] extends AtomicDom {
     override val domain: dom.type = dom
   }
 
-
+  override def hamming(x1: Term, x2: Term): DoubleTerm = {
+    Iverson(Unary_!(DiscreteEquals(x1,x2)))
+  }
 }

@@ -409,8 +409,8 @@ trait MathImplicits {
   def matrix(values: Seq[Double]*) = {
     val tmp = new DenseTensor2(values.length, values.head.length)
 
-    (0 until values.length).foreach(row => {
-      (0 until values(row).length).foreach(col => {
+    values.indices.foreach(row => {
+      values(row).indices.foreach(col => {
         tmp(row, col) = values(row)(col)
       })
     })
@@ -418,6 +418,7 @@ trait MathImplicits {
     tmp
   }
 
+  def hamming(x1:AnyTerm)(x2:x1.domain.Term) = x1.domain.hamming(x1.asInstanceOf[x1.domain.Term],x2)
 
   def sigm[T <: DoubleTerm](term: T) = new Sigmoid(term)
 

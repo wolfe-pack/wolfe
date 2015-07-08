@@ -523,7 +523,7 @@ trait BinaryDiscreteOperator[D <: Dom, A <: Dom] extends Composed[D] {
   }
 }
 
-class Unary_!(val arg: BoolTerm) extends UnaryTerm[BoolTerm, Dom.bools.type] {
+case class Unary_!(arg: BoolTerm) extends UnaryTerm[BoolTerm, Dom.bools.type] {
   override def copy(args: IndexedSeq[BoolTerm]) = new Unary_!(args(0))
 
   override val domain: Dom.bools.type = Dom.bools
@@ -549,7 +549,7 @@ case class InverseLogIverson(arg:DoubleTerm) extends UnaryTerm[DoubleTerm, Dom.b
 }
 
 
-class DiscreteEquals[T](var arg1: Term[GenericDiscreteDom[T]], var arg2: Term[GenericDiscreteDom[T]]) extends BinaryDiscreteOperator[BoolDom, GenericDiscreteDom[T]] {
+case class DiscreteEquals[T](arg1: Term[GenericDiscreteDom[T]], arg2: Term[GenericDiscreteDom[T]]) extends BinaryDiscreteOperator[BoolDom, GenericDiscreteDom[T]] {
   val domain = Dom.bools
 
   def op(a1: Int, a2: Int) = if (a1 == a2) 1 else 0
@@ -557,7 +557,7 @@ class DiscreteEquals[T](var arg1: Term[GenericDiscreteDom[T]], var arg2: Term[Ge
   def name = "==="
 }
 
-class And(val arg1: BoolTerm, val arg2: BoolTerm) extends BinaryDiscreteOperator[BoolDom, BoolDom] {
+case class And(arg1: BoolTerm, arg2: BoolTerm) extends BinaryDiscreteOperator[BoolDom, BoolDom] {
   def op(a1: Int, a2: Int) = if (a1 != 0 && a2 != 0) 1 else 0
 
   val domain = Dom.bools
@@ -566,7 +566,7 @@ class And(val arg1: BoolTerm, val arg2: BoolTerm) extends BinaryDiscreteOperator
 
 }
 
-class Or(val arg1: BoolTerm, val arg2: BoolTerm) extends BinaryDiscreteOperator[BoolDom, BoolDom] {
+case class Or(arg1: BoolTerm, arg2: BoolTerm) extends BinaryDiscreteOperator[BoolDom, BoolDom] {
   def op(a1: Int, a2: Int) = if (a1 != 0 || a2 != 0) 1 else 0
 
   val domain = Dom.bools
@@ -575,7 +575,7 @@ class Or(val arg1: BoolTerm, val arg2: BoolTerm) extends BinaryDiscreteOperator[
 
 }
 
-class Implies(val arg1: BoolTerm, val arg2: BoolTerm) extends BinaryDiscreteOperator[BoolDom, BoolDom] {
+case class Implies(arg1: BoolTerm, arg2: BoolTerm) extends BinaryDiscreteOperator[BoolDom, BoolDom] {
   def op(a1: Int, a2: Int) = if (a1 == 0 || a2 != 0) 1 else 0
 
   val domain = Dom.bools

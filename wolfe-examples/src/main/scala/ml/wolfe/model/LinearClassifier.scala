@@ -2,6 +2,7 @@ package ml.wolfe.model
 
 import java.io.File
 
+import ml.wolfe.model.LinearClassifier.{Modes, Objective}
 import ml.wolfe.term.TermImplicits._
 import ml.wolfe.term.{DefaultIndexer, AdaGradParameters, Argmaxer, LearningObjective}
 import ml.wolfe.{SimpleIndex, Vect}
@@ -57,6 +58,12 @@ object LinearClassifier {
   import scala.pickling.Defaults._
   import scala.pickling.binary._
 
+  object Modes extends Enumeration {
+    val Logistic, Hinge = Value
+  }
+
+  case class Objective(mode: Modes.Value = Modes.Hinge, margin: Double = 0.0)
+
   /**
    * Train a classifier
    * @param data pairs of feature vector observations and labels.
@@ -69,7 +76,8 @@ object LinearClassifier {
   def train[L](data: Seq[(Vect, L)],
                classLabels: Seq[L],
                params: AdaGradParameters,
-               maxFeatures: Int = 1000): LinearClassifier[L] = {
+               maxFeatures: Int = 1000,
+               objective: Objective = Objective()): LinearClassifier[L] = {
 
     new LinearClassifier[L] {
       def labels = classLabels
@@ -77,7 +85,14 @@ object LinearClassifier {
       def maxFeats = maxFeatures
 
       val index = new SimpleIndex
-      lazy val thetaStar =
+      lazy val thetaStar = objective.mode match {
+        case Modes.Hinge =>
+          learn(Thetas)(t => LearningObjective.hinge(Labels)(data.toConst)(model(t))(objective.margin)) using Argmaxer.adaGrad(params)
+        case Modes.Logistic =>
+          learn(Thetas)(t => LearningObjective.logLikelihood(Labels)(data.toConst)(model(t))(objective.margin)) using Argmaxer.adaGrad(params)
+      }
+
+      lazy val thetaStar2 =
         learn(Thetas)(t => LearningObjective.perceptron(data.toConst)(Labels)(model(t))) using Argmaxer.adaGrad(params)
     }
   }
@@ -127,7 +142,8 @@ object LinearClassifierExample {
     implicit val index = new SimpleIndex
     val data = Seq(feats("A") -> true, feats("B") -> false)
     val labels = Seq(false, true)
-    val classifier = LinearClassifier.train(data, labels, AdaGradParameters(10, 0.1))
+    val classifier = LinearClassifier.train(data, labels, AdaGradParameters(100, 0.1),
+      objective = Objective(mode = Modes.Hinge, margin = 0.0))
     println(classifier.classify(feats("A")))
     println(classifier.classify(feats("B")))
 

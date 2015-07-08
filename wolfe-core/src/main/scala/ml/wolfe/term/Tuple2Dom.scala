@@ -160,7 +160,6 @@ trait ProductDom extends DomWithDomTerm {
 
   def productName = dom.getClass.getSimpleName
 
-
   trait DomTermImpl extends super.DomTerm with Composed[dom.type] {
 
 

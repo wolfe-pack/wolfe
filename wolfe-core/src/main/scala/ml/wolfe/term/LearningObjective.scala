@@ -32,10 +32,41 @@ object LearningObjective {
                                               (implicit random: Random): DoubleTerm = {
 
     //shuffled(data) { i => max(space) {model(i._1)} - model(i._1)(i._2)}
-    shuffled(data) { i => model(i._1)(i._2) - max(space) {
-      model(i._1)
-    }
+    shuffled(data) { i => model(i._1)(i._2) - max(space)(model(i._1))
     }
   }
+
+  def perceptron[X <: Dom, Y <: Dom, W <: Dom](space: Y)
+                                              (data: SeqTerm[X x space.type])
+                                              (model: X#Term => space.type#Term => DoubleTerm) = {
+
+    //shuffled(data) { i => max(space) {model(i._1)} - model(i._1)(i._2)}
+    sum(data) { i => model(i._1)(i._2) - max(space)(model(i._1)) }
+  }
+
+  def hinge[X <: Dom, Y <: Dom, W <: Dom](space: Y)
+                                         (data: SeqTerm[X x space.type])
+                                         (model: X#Term => space.type#Term => DoubleTerm)
+                                         (margin: Double = 1.0): DoubleTerm = {
+
+    //shuffled(data) { i => max(space) {model(i._1)} - model(i._1)(i._2)}
+    margin match {
+      case 0.0 => sum(data) { i => model(i._1)(i._2) - max(space)(model(i._1)) }
+      case m => sum(data) { i => model(i._1)(i._2) - max(space)(y => model(i._1)(y) + space.hamming(i._2, y) * m) }
+    }
+  }
+
+  def logLikelihood[X <: Dom, Y <: Dom, W <: Dom](space: Y)
+                                                 (data: SeqTerm[X x space.type])
+                                                 (model: X#Term => space.type#Term => DoubleTerm)
+                                                 (margin: Double = 0.0): DoubleTerm = {
+
+    //shuffled(data) { i => max(space) {model(i._1)} - model(i._1)(i._2)}
+    margin match {
+      case 0.0 => sum(data) { i => model(i._1)(i._2) - logZ(space)(y => model(i._1)(y)) }
+      case m => sum(data) { i => model(i._1)(i._2) - logZ(space)(y => model(i._1)(y) + space.hamming(i._2, y) * m) }
+    }
+  }
+
 
 }

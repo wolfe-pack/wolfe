@@ -25,4 +25,5 @@ class DomSpec extends WolfeSpec {
       M(0) shouldNot be(M(1))
     }
   }
+
 }
