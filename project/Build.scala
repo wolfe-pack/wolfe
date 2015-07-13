@@ -106,7 +106,8 @@ object BuildSettings {
 
   val nlpDependencies = libraryDependencies ++= Seq(
     "edu.arizona.sista" %% "processors" % "5.2",
-    "edu.arizona.sista" %% "processors" % "5.2" classifier "models"
+    "edu.arizona.sista" %% "processors" % "5.2" classifier "models",
+    "net.sandrogrzicic" %% "scalabuff-runtime" % "1.4.0"
   )
 
   val uiDependencies = libraryDependencies ++= Seq(
