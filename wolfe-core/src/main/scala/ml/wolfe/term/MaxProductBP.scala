@@ -109,6 +109,7 @@ trait BP {
 
   val pipeline =
     clean _ andThen
+      precalculate andThen
       FeatureTransformer.aggregateFeatures andThen
       groundSums andThen
       flattenSums andThen

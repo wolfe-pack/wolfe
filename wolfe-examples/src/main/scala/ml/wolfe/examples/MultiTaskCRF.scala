@@ -137,6 +137,55 @@ object MultiTaskCRF extends App {
     val predict = fun(X) { x => argmax(Y)(model(Thetas.Const(thetaStar))(x)) }
   }
 
+  object SingleLayerNeuralCRF extends Model {
+
+    import Data._
+    import Argmaxer._
+
+    val localIndex = new SimpleFeatureIndex(Features)
+    val transIndex = new SimpleFeatureIndex(TransitionFeats)
+
+    val k = 10
+
+    // model domains
+    @domain case class Theta(A: Mat, w: Vect, wb: Vect)
+
+    implicit val Thetas = Theta.Values(Matrices(k, numFeats), Vectors(k), TransitionFeats)
+    implicit val maxProductParams = BPParameters(iterations = 2)
+
+    val init = Settings(Thetas.createRandomSetting(random.nextGaussian() * 0.1))
+    val params = AdaGradParameters(10, 0.1, 0.1, initParams = init)
+
+    def local(x: X.Term, y: Y.Term, i: IntTerm) = {
+      localIndex.oneHot('bias, y(i)) + localIndex.oneHot('word, y(i), x(i))
+    }
+
+    def transition(x: X.Term, y: Y.Term, i: IntTerm) = {
+      transIndex.oneHot('pair, y(i), y(i + 1))
+    }
+
+    def model(w: Thetas.Term)(x: X.Term)(y: Y.Term) = {
+      sum(0 until x.length) { i => w.w dot (w.A * local(x,y,i)) } +
+      sum(0 until x.length - 1) { i => w.wb dot transition(x,y,i)}
+    } subjectTo (y.length === x.length) argmaxBy maxProduct
+
+    def hamming(yGold:Y.Term, y:Y.Term) =
+      sum(0 until yGold.length) {i => 1.0 - I(yGold(i) === y(i))}
+
+    def lossAugmented(t:Thetas.Term)(x:X.Term, y:Y.Term, yGold:Y.Term) =
+      {model(t)(x)(y) + hamming(yGold,y)} argmaxBy maxProduct
+
+    def learnObj(t:Thetas.Term) =
+      sum(train.toConst){ xy => model(t)(xy._1)(xy._2) -
+                                max(Y) {y => lossAugmented(t)(xy._1, y, xy._2)}}
+
+    val thetaStar =
+      argmax(Thetas)(theta => learnObj(theta)) by adaGrad(params)
+
+    val predict = fun(X) { x => argmax(Y)(model(thetaStar.precalculate)(x)) }
+  }
+
+
   object NeuralModel extends Model {
 
     implicit val index = new SimpleIndex()
