@@ -29,12 +29,17 @@ class ChunkReader(filename: String, delim: String="^[ \t]*$", iencoding: String=
   }
 
   def readNext(lines: Array[String]): String = {
-    val start = processed
+    var start = processed
     while (processed < lines.size) {
       val line = lines(processed)
       processed += 1
       if (line.matches(delim)) {
-        return lines.slice(start, processed-1).mkString("\n")
+        if (start == processed-1) {
+          start = processed
+        }
+        else {
+          return lines.slice(start, processed-1).mkString("\n")
+        }
       }
     }
     if (start == processed) {
@@ -52,7 +57,7 @@ class ChunkReader(filename: String, delim: String="^[ \t]*$", iencoding: String=
 object ChunkReader {
 
   def main(args: Array[String]) {
-    read(args(0))
+    for (c <- read(args(0))) println(c + "\n")
   }
 
   def read(filename: String): Iterator[String] = {
