@@ -13,13 +13,14 @@ import scala.collection.mutable.ArrayBuffer
 object Word2VecReader {
 
   def main(args: Array[String]): Unit = {
-    load(args(0))
+    val w2v = load(args(0))
+    println("Read embeddings for " + w2v.size + " words.")
   }
 
-  def load(filename: String, filter: (String => Boolean) = _ => true, normalize: Boolean = true): Word2Vec = {
+  def load(filename: String, filter: (String => Boolean) = _ => true, normalize: Boolean = true, format: String = "GOOGLE"): Word2Vec = {
     val w2v = new Word2Vec
     try {
-      w2v.load(filename, filter, normalize)
+      w2v.load(filename, filter, normalize, format)
     }
     catch {
       case e: Exception => {
@@ -37,7 +38,14 @@ class Word2Vec {
   private val vocab = new THashMap[String, Array[Float]]() // mutable.HashMap[String, Array[Float]]()
   private val MAX_SIZE: Int = 50
 
-  def load(path: String, filter: (String => Boolean) = _ => true, normalize: Boolean = true) = { //Word2Vec = {
+  def load(path: String, filter: (String => Boolean) = _ => true, normalize: Boolean = true, format: String = "GOOGLE") = {
+    format match {
+      case "GOOGLE" => loadGoogleFormat(path, filter, normalize)
+      case "STANFORD" => loadStanfordFormat(path, filter, normalize)
+    }
+  }
+
+  def loadGoogleFormat(path: String, filter: (String => Boolean) = _ => true, normalize: Boolean = true) = {
     var dis: DataInputStream = null
     var bis: BufferedInputStream = null
     var gis: GZIPInputStream = null
@@ -85,6 +93,13 @@ class Word2Vec {
     } finally {
       bis.close
       dis.close
+    }
+  }
+
+  def loadStanfordFormat(path: String, filter: (String => Boolean) = _ => true, normalize: Boolean = true) = {
+    for (line <- io.Source.fromFile(path).getLines()) {
+      val cols = line.split(" ")
+      if (filter(cols(0))) put(cols(0), cols.slice(1, cols.size).map(_.toFloat))
     }
   }
 
@@ -209,7 +224,7 @@ object RunWord2Vec {
   /** Demo. */
   def main(args: Array[String]) {
     // Load word2vec model from binary file.
-    val model = Word2VecReader.load(args(0))
+    val model = Word2VecReader.load(args(0), format = "STANFORD")
   }
 
 }
