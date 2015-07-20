@@ -20,7 +20,7 @@ class VectorDom(val dim: Int) extends GenericVectorDom {
   }
 }
 
-class VectorApply(vect: VectorTerm, index: IntTerm) extends ComposedDoubleTerm {
+case class VectorApply(vect: VectorTerm, index: IntTerm) extends ComposedDoubleTerm {
   type ArgumentType = AnyTerm
 
   val arguments = IndexedSeq(vect, index)

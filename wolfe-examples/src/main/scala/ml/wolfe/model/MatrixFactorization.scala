@@ -124,3 +124,4 @@ object MatrixFactorization extends LazyLogging {
     mf
   }
 }
+

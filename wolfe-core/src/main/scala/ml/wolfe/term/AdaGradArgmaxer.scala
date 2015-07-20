@@ -27,11 +27,12 @@ class AdaGradArgmaxer(val objRaw: DoubleTerm,
 
   private val random = new Random(0)
 
-  def stochastifySum(term: DoubleTerm) = {
+  def stochastifySum(term: DoubleTerm):DoubleTerm = {
     term match {
       case FirstOrderSum(range, variable, body) =>
+        val newBody = stochastifySum(body)
         val sampled = VarSeqApply[Dom,Term[VarSeqDom[Dom]],IntTerm](range, range.domain.indexDom.shuffled(random))//range.sampleShuffled(random)
-        replace(body)(variable,sampled)
+        replace(body)(variable,sampled).asInstanceOf[DoubleTerm]
       case _ => term
     }
   }

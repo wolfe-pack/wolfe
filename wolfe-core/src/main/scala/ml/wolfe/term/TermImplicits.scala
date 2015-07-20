@@ -79,6 +79,10 @@ with LoggedTerms with FVectors with NGramCountsHelper with CombinatorialConstrai
   //    def toConst2: domain.Term = domain.Const(value)
   //  }
 
+  implicit class RichWolfeInt(i:Int) {
+    def toConst:IntTerm = intToConstant(i)
+  }
+
   class ConvertableToTerm3[T, D <: TypedDom[T]](value: T)(implicit val domain: D) {
     def toConst: domain.Term = domain.Const(value)
   }
@@ -132,7 +136,7 @@ with LoggedTerms with FVectors with NGramCountsHelper with CombinatorialConstrai
 
     def dropRight(num: IntTerm)(implicit sliceDom: VarSeqDom[E]) = slice(0, seq.length - num)
 
-    def map[To <: Term[Dom]](f:seq.domain.elementDom.Var => To) = TermImplicits.map[To,S](seq)(f)
+    def map[To <: Term[Dom]](f: seq.domain.elementDom.Var => To) = TermImplicits.map[To, S](seq)(f)
 
     def append(elem: seq.domain.elementDom.Term)(implicit appendedDom: VarSeqDom[seq.domain.elementDom.type]): appendedDom.Term = {
       val result = new VarSeqAppend[Dom, SeqTerm[E], appendedDom.type](seq, elem)(appendedDom)
@@ -153,8 +157,8 @@ with LoggedTerms with FVectors with NGramCountsHelper with CombinatorialConstrai
   implicit def toRichSeqTerm[E <: Dom](seq: SeqTerm[E]): RichSeqTerm[E, seq.type] =
     new RichSeqTerm[E, seq.type](seq)
 
-//  implicit def toRichSeqTermFromTerm[E <: Dom](seq: Term[VarSeqDom[E]]): RichSeqTerm[E, seq.domain.Term] =
-//    new RichSeqTerm[E, seq.domain.Term](seq.domain.own(seq.asInstanceOf[TypedTerm[seq.domain.Value]]))
+  //  implicit def toRichSeqTermFromTerm[E <: Dom](seq: Term[VarSeqDom[E]]): RichSeqTerm[E, seq.domain.Term] =
+  //    new RichSeqTerm[E, seq.domain.Term](seq.domain.own(seq.asInstanceOf[TypedTerm[seq.domain.Value]]))
 
 
   //  implicit def genericToConstant[T,D<:TypedDom[T]](t:T)(implicit dom:D):dom.Term = dom.const(t)
@@ -332,14 +336,14 @@ with LoggedTerms with FVectors with NGramCountsHelper with CombinatorialConstrai
   }
 
 
-  implicit def toRichDom(dom:Dom):RichDom[dom.type] = new RichDom[dom.type](dom)
+  implicit def toRichDom(dom: Dom): RichDom[dom.type] = new RichDom[dom.type](dom)
 
   class RichDom[D <: Dom](val dom: D) {
     //def x[D2 <: Dom](that: D2): Tuple2Dom[D, D2] = new Tuple2Dom[D, D2](dom, that)
 
     //    def iterator = dom.iterator
 
-    def apply(value:dom.Value):dom.Term = dom.Const(value)
+    def apply(value: dom.Value): dom.Term = dom.Const(value)
 
   }
 
@@ -418,17 +422,20 @@ trait MathImplicits {
     tmp
   }
 
-  def hamming(x1:AnyTerm)(x2:x1.domain.Term) = x1.domain.hamming(x1.asInstanceOf[x1.domain.Term],x2)
+  def hamming(x1: AnyTerm)(x2: x1.domain.Term) = x1.domain.hamming(x1.asInstanceOf[x1.domain.Term], x2)
 
   def sigm[T <: DoubleTerm](term: T) = new Sigmoid(term)
 
   def sqrt[T <: DoubleTerm](term: T) = new Sqrt(term)
+
+  def sq[T <: DoubleTerm](term: T) = new Sq(term)
 
   def rect[T <: DoubleTerm](term: T) = new Rectifier(term)
 
   def tanh[T <: DoubleTerm](term: T) = new Tanh(term)
 
   def log[T <: DoubleTerm](term: T) = new Log(term)
+
   def exp[T <: DoubleTerm](term: T) = new Exp(term)
 
   //  def I[T <: BoolTerm](term: T) = new Iverson(term)
@@ -457,7 +464,7 @@ trait MathImplicits {
 
   def l2Squared[T <: VectorTerm](term: T) = term dot term
 
-  implicit def toRichVectTerm(vect:VectorTerm):RichVectTerm[vect.type] = new RichVectTerm[vect.type](vect)
+  implicit def toRichVectTerm(vect: VectorTerm): RichVectTerm[vect.type] = new RichVectTerm[vect.type](vect)
 
   class RichVectTerm[T <: VectorTerm](val vect: T) {
 
@@ -465,13 +472,13 @@ trait MathImplicits {
 
     def *(that: Term[DoubleDom]) = new VectorScaling(vect, that)
 
-    def +(that: VectorTerm):vect.domain.Term = vect.domain.own(new VectorSum(IndexedSeq(vect, that)))
+    def +(that: VectorTerm): vect.domain.Term = vect.domain.own(new VectorSum(IndexedSeq(vect, that)))
 
     def -(that: VectorTerm) = new VectorSum(IndexedSeq(vect, that * (-1.0)))
 
     def conjoin(that: VectorTerm)(implicit index: DefaultIndexer, dom: VectorDom) = new Conjoined(vect, that)(index.index, dom)
 
-    def apply(index: IntTerm) = new VectorApply(vect, index)
+    def apply(index: IntTerm) = VectorApply(vect, index)
 
     //element-wise addition
     def :+(that: VectorTerm): VectorTerm = ???
@@ -493,6 +500,8 @@ trait MathImplicits {
 
   implicit class RichMatrixTerm(val mat: Term[MatrixDom]) {
     def dot(that: Term[MatrixDom]) = new MatrixDotProduct(mat, that)
+
+    def apply(i: IntTerm, j: IntTerm) = MatrixApply(mat, i, j)
 
     def *(that: VectorTerm) = new MatrixVectorProduct(mat, that)
   }
@@ -565,8 +574,9 @@ trait MathImplicits {
     def until(end: IntTerm) = new RangeTerm(term, end)
 
     def toDouble = intToDouble(term)
-
   }
+
+  implicit def rangeToRangeTerm(range: Range): RangeTerm = RangeTerm(intToConstant(range.start), intToConstant(range.end))
 
   def argmax[D <: Dom](dom: D)(obj: dom.Var => DoubleTerm): Argmax[dom.type] = {
     val variable = dom.Variable("_hidden")
@@ -618,11 +628,13 @@ trait MathImplicits {
     val term = obj(variable)
     new Max(term, Seq(variable))
   }
+
   def logZ[D <: Dom](dom: D)(obj: dom.Var => DoubleTerm) = {
     val variable = dom.Variable("_hidden")
     val term = obj(variable)
     new LogZ(term, variable)
   }
+
   def sum[T](dom: Seq[T])(arg: T => DoubleTerm) = new Sum(dom.toIndexedSeq.map(arg))
 
   def sum(args: DoubleTerm*) = new Sum(args.toIndexedSeq)
@@ -657,7 +669,7 @@ trait MathImplicits {
     term
   }
 
-  def map[To <: Term[Dom],  T <: Term[VarSeqDom[Dom]]](indices: T)(body: indices.domain.elementDom.Var => To) = {
+  def map[To <: Term[Dom], T <: Term[VarSeqDom[Dom]]](indices: T)(body: indices.domain.elementDom.Var => To) = {
     val variable = indices.domain.elementDom.Variable("_i")
     val instantiatedBody = body(variable)
     new MapSeqTerm[Dom, Dom, T, To](indices, variable, instantiatedBody)
@@ -713,6 +725,7 @@ trait MathImplicits {
 }
 
 trait Marginals {
+
   implicit class MarginalsMap[T](map: Map[T, Double]) {
     def sum = map.values.sum
 
@@ -721,6 +734,7 @@ trait Marginals {
       map map (p => p.copy(_2 = math.exp(p._2 - normalizer)))
     }
   }
+
 }
 
 trait Stochastic {
