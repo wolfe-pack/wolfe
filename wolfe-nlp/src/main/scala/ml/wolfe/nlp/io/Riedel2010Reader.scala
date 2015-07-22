@@ -1,6 +1,7 @@
 package ml.wolfe.nlp.io
 
 import java.io.FileInputStream
+import java.util.zip.GZIPInputStream
 
 import ml.wolfe.SimpleFeatureIndex
 import ml.wolfe.nlp.io.DocumentProtos.Riedel2010Relation
@@ -11,10 +12,10 @@ import ml.wolfe.term.domain
 
 
 object Riedel2010Reader {
-  def read(path: String) = {
+  def read(path: String, gzip: Boolean = false) = {
 
     // Load data
-    val fis = new FileInputStream(path)
+    val fis = if(gzip) new GZIPInputStream(new FileInputStream(path)) else new FileInputStream(path)
     val rels = Stream.continually {
       DocumentProtos.Riedel2010Relation.parseDelimitedFrom(fis)
     }.takeWhile(_.isDefined).map(_.get).toArray
