@@ -3,12 +3,12 @@ package ml.wolfe.nlp.io
 import java.io.FileInputStream
 import java.util.zip.GZIPInputStream
 
-import ml.wolfe.SimpleFeatureIndex
+import ml.wolfe.{Vect, SimpleFeatureIndex}
 import ml.wolfe.nlp.io.DocumentProtos.Riedel2010Relation
 import ml.wolfe.nlp.{TokenSplitter, Sentence}
 import ml.wolfe.nlp.ie.RelationMention
 import ml.wolfe.term.TermImplicits._
-import ml.wolfe.term.domain
+import ml.wolfe.term._
 
 
 object Riedel2010Reader {
@@ -20,32 +20,47 @@ object Riedel2010Reader {
     }.takeWhile(_.isDefined).map(_.get).toSeq
   }
 
+  case class Bag(label:String, instances:IndexedSeq[Instance])
+  case class Instance(features:IndexedSeq[String])
+
   def read(path: String, gzip: Boolean = false) = {
 
     // Load data
     val fis = if(gzip) new GZIPInputStream(new FileInputStream(path)) else new FileInputStream(path)
     val rels = Stream.continually {
       DocumentProtos.Riedel2010Relation.parseDelimitedFrom(fis)
-    }.takeWhile(_.isDefined).map(_.get).toArray
+    }.takeWhile(_.isDefined).map(_.get).toIndexedSeq
 
     // Set up domains
     /*case class EntityPair(arg1:String, arg2:String)
     val _entityPairs = rels.map{ rel:Riedel2010Relation => EntityPair(rel.sourceGuid, rel.destGuid)}
     implicit val EntityPairs = _entityPairs.toDom*/
 
-    val _labels = rels.map{ rel:Riedel2010Relation => rel.relType}.toSeq.distinct
-    val _Labels = _labels.toDom withOOV "[OOV]"
+    val _labels = rels.map{ rel:Riedel2010Relation => rel.relType}.distinct
+//    val _Labels = _labels.toDom withOOV "[OOV]"
+//
+//    val allFeatures = (for(rel <- rels; mention <- rel.mention; feature <- mention.feature) yield feature).distinct
+//    val maxFeatures = (for(rel <- rels; mention <- rel.mention) yield mention.feature.size).max
+//    val maxMentions = (for(rel <- rels) yield rel.mention.size).max
 
     new {
-      implicit val Labels = _Labels
-      val labels = _labels.map(Labels.Const)
+//      val Labels = _Labels
+//      val labels = _labels//.toConst(Labels)
+//
+//      val Features = allFeatures.toDom
+//      val FeatureSeqSeqs = Seqs(Seqs(Features, 0, maxFeatures), 0, maxMentions)
 
-      case class Bag(/*entityPair: EntityPairs.Term, */label:Labels.Term, instances:Seq[Seq[String]])
+      val allLabels = (for(rel <- rels) yield rel.relType).distinct
+      val allFeatures = (for(rel <- rels; mention <- rel.mention; feature <- mention.feature) yield feature).distinct
+      val maxFeatures = (for(rel <- rels; mention <- rel.mention) yield mention.feature.size).max
+      val maxInstances = (for(rel <- rels) yield rel.mention.size).max
+
       val bags = rels.map{ rel:Riedel2010Relation => Bag(
         //entityPair = EntityPairs.Const(EntityPair(rel.sourceGuid, rel.destGuid)),
-        label = Labels.Const(rel.relType),
-        instances = rel.mention.map(_.feature)
+        label = rel.relType,
+        instances = rel.mention.toIndexedSeq.map(m => Instance(m.feature.toIndexedSeq))
       )}
+
     }
   }
 

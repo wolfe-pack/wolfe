@@ -3,6 +3,7 @@ package ml.wolfe.term
 import ml.wolfe.term
 
 import scala.util.Random
+import ml.wolfe.term.TermImplicits._
 
 /**
  * @author riedel
@@ -100,6 +101,7 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
   }
 
   val lengths = (elementDom.lengths * maxLength) + Offsets(discOff = 1)
+
   override val dimensions = Dimensions(Array(minLength until maxLength + 1)) + elementDom.dimensions * maxLength
 
   def Variable(name: String): Var = new DomVar(name)
@@ -121,6 +123,8 @@ class VarSeqDom[+E <: Dom](val elementDom: E, val maxLength: Int, val minLength:
     def elementAt(index: Int): term.Term[E]
 
     def length: IntTerm
+
+    def indices = 0 until length
 
     def elements: IndexedSeq[term.Term[E]] // = for (i <- 0 until maxLength) yield apply(i)
 

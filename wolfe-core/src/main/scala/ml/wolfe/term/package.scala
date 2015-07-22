@@ -29,6 +29,7 @@ package object term {
   type MatrixTerm = Term[MatrixDom]
   type BoolDom = TypedDom[Boolean]
   type BoolTerm = TypedTerm[Boolean]
+
 //  type DiscreteTerm[T] = Term[GenericDiscreteDom[T]]
 //  type IntTerm = DiscreteTerm[Int]
 

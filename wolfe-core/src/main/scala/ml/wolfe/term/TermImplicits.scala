@@ -663,6 +663,25 @@ trait MathImplicits {
   def sum[T <: Term[VarSeqDom[Dom]], Body <: DoubleTerm](indices: T)(body: indices.domain.elementDom.Var => Body) =
     sum2[Dom, Term[VarSeqDom[Dom]], Body](indices)(body)
 
+
+//  def sum[T, Body <: DoubleTerm](indices: Seq[T])(body: Var[TypedDom[T]] => Body)(implicit dom: TypedDom[T]): FirstOrderSum[Dom, Body, Term[VarSeqDom[Dom]]] = {
+//    sum(indices.toConst(dom))(body)
+//  }
+
+//  def sum[Body <: DoubleTerm](indices: Seq[Int])(body: Var[IntDom] => Body): FirstOrderSum[Dom, Body, Term[VarSeqDom[Dom]]] = {
+//    sum(indices.toConst)(body)
+//  }
+
+
+
+
+
+
+
+
+
+
+
   def shuffled(indices: VarSeqDom[Dom]#Term)(body: indices.domain.elementDom.Term => DoubleTerm)(implicit random: Random) = {
     val i = indices.sampleShuffled
     val term = body(i.asInstanceOf[indices.domain.elementDom.Term])
