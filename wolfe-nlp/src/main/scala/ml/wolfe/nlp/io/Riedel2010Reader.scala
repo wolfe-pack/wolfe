@@ -12,6 +12,14 @@ import ml.wolfe.term.domain
 
 
 object Riedel2010Reader {
+  def readRelations(path: String, gzip: Boolean = false) = {
+    // Load data
+    val fis = if (gzip) new GZIPInputStream(new FileInputStream(path)) else new FileInputStream(path)
+    Stream.continually {
+      DocumentProtos.Riedel2010Relation.parseDelimitedFrom(fis)
+    }.takeWhile(_.isDefined).map(_.get).toSeq
+  }
+
   def read(path: String, gzip: Boolean = false) = {
 
     // Load data
@@ -44,7 +52,7 @@ object Riedel2010Reader {
 
 }
 
-private object DocumentProtos{
+object DocumentProtos{
 
   final case class Riedel2010Document (
                                         `filename`: String = "",
