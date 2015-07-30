@@ -54,9 +54,9 @@ trait Dom {
 
   def x(that: Dom) = new Tuple2Dom[dom.type, that.type](dom, that)
 
-  def ==>(that:Dom) = new MapDom1[dom.type,that.type](dom,that)
+  def ==>(that: Dom) = new MapDom1[dom.type, that.type](dom, that)
 
-  def hamming(x1:Term, x2:Term):DoubleTerm = ???
+  def hamming(x1: Term, x2: Term): DoubleTerm = ???
 
   def toSetting(value: Value): Setting = {
     val result = createSetting()
@@ -105,12 +105,17 @@ trait Dom {
 
   def Const(value: Value): Term
 
+  def Consts(values: Seq[Value]): VarSeqDom[dom.type]#Term = {
+    val seqDom = new VarSeqDom[dom.type](dom, values.length, values.length)
+    seqDom.Const(values.toIndexedSeq)
+  }
+
   def lengths: Offsets
 
   def dimensions: Dimensions = Dimensions()
 
   lazy val domainSize = {
-    require(isDiscrete,"domain size is only defined for discrete domains")
+    require(isDiscrete, "domain size is only defined for discrete domains")
     dimensions.discDims.map(_.size).product
   }
 
@@ -124,9 +129,9 @@ trait Dom {
     result
   }
 
-  def indexToValue(index:Int) = {
+  def indexToValue(index: Int) = {
     val setting = createSetting()
-    settingOfIndex(index,setting)
+    settingOfIndex(index, setting)
     toValue(setting)
   }
 
@@ -166,7 +171,7 @@ trait Dom {
   def zero: Value
 
   def sparseZero = zero
-  
+
 
   import scala.language.implicitConversions
 
@@ -182,7 +187,7 @@ trait Dom {
 
 }
 
-case class Constant[+D <: Dom](domain:D, value: Any) extends term.Term[D] {
+case class Constant[+D <: Dom](domain: D, value: Any) extends term.Term[D] {
   self =>
 
   override lazy val isStatic = true
@@ -225,4 +230,5 @@ trait DomWithDomTerm extends Dom {
 
   abstract class BaseVar(val varName: String) extends DomVar {
   }
+
 }
