@@ -66,7 +66,9 @@ class CoNLLReader(filename: String, delim: String = "\t") extends Iterable[Sente
     val tokens = cells.map { c =>
       Token(c(1), CharOffsets(c(0).toInt, c(0).toInt), posTag = c(4), lemma = c(2))
     }
-    val dependencies = DependencyTree(tokens, cells.zipWithIndex.map { case (c, i) => Arc(i + 1, c(6).toInt, Some(c(7))) })
+    val dependencies = DependencyTree(tokens, cells.zipWithIndex.map { case (c, i) =>
+      Arc(child = i + 1, parent = c(6).toInt, label = Some(c(7)))
+    })
     Sentence(tokens, syntax = SyntaxAnnotation(tree = null, dependencies = dependencies))
   }
 

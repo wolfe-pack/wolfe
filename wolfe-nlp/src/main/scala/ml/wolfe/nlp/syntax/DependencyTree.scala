@@ -13,7 +13,9 @@ import ml.wolfe.nlp.{CharOffsets, Token}
  * @param child index of the child (modifier / target) of the arc in the sentence.
  * @param label label of syntactic role expressed by the arc
  */
-case class Arc(parent: Int, child: Int, label: Option[String] = None)
+case class Arc(parent: Int, child: Int, label: Option[String] = None) {
+  override def toString = "(" + parent + " -> " + child + ", " + label + ")"
+}
 
 
 /**

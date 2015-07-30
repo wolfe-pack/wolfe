@@ -811,7 +811,21 @@ trait FVectors {
     result
   }
 
+  def featsFromMap(elements: scala.collection.Map[Any, Double])(implicit index: Index): Vect = {
+    val result = new GrowableSparseTensor1(elements)
+    for ((e,v) <- elements) {
+      result(index(e)) = v
+    }
+    result
+  }
 
+  def featsFromMapWithoutIndex(elements: scala.collection.Map[Int, Double]): Vect = {
+    val result = new GrowableSparseTensor1(elements)
+    for ((e,v) <- elements) {
+      result(e) = v
+    }
+    result
+  }
 }
 
 
