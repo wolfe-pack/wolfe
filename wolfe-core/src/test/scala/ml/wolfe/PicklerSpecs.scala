@@ -1,6 +1,6 @@
 package ml.wolfe
 
-import cc.factorie.la.DenseTensor1
+import cc.factorie.la.{SparseTensor1, DenseTensor1}
 
 import scala.pickling.Pickler
 
@@ -24,6 +24,16 @@ class PicklerSpecs extends WolfeSpec {
       factorieVectorEq.areEqual(result,vector) should be (true) //todo: why does implicit eq not work here?
       //result should equal (vector)
 
+    }
+
+    "store and load sparse tensor 1 objects in json" in {
+      import scala.pickling.json._
+      val vector = new SparseVector(10)
+      vector(2) = 2.0
+      vector(1) = 1.0
+      val pkl = vector.pickle
+      val result = pkl.unpickle[SparseTensor1]
+      factorieVectorEq.areEqual(result,vector) should be (true) //todo: why does implicit eq not work here?
     }
 
     "store vectors within case classes" in {

@@ -2,7 +2,7 @@ package ml.wolfe
 
 import java.io.{FileOutputStream, FileInputStream, PrintStream, File}
 
-import cc.factorie.la.DenseTensor1
+import cc.factorie.la.{SparseTensor1, DenseTensor1}
 
 import scala.io.Source
 import scala.pickling._
@@ -43,6 +43,72 @@ trait FactoriePicklers {
         new DenseVector(values.asInstanceOf[Array[Double]])
       }
     }
+
+  implicit val sparseTensor1Pickler: Pickler[SparseTensor1] with Unpickler[SparseTensor1] =
+    new Pickler[SparseTensor1] with Unpickler[SparseTensor1]
+      with PrimitiveArrayPicklers with PrimitivePicklers {
+
+      implicit val arrayPickler = doubleArrayPickler
+      implicit val myIntArrayPickler = intArrayPickler
+
+
+      def pickle(picklee: SparseTensor1, builder: PBuilder) = {
+        builder.beginEntry(picklee)
+        builder.putField("dim", b => {
+          b.hintTag(implicitly[FastTypeTag[Int]])
+          b.hintStaticallyElidedType()
+          intPickler.pickle(picklee.dim1,b)
+        })
+        builder.putField("indices",b => {
+          b.hintTag(implicitly[FastTypeTag[Array[Int]]])
+          b.hintStaticallyElidedType()
+          myIntArrayPickler.pickle(picklee._indices,b)
+        })
+        builder.putField("values",b => {
+          b.hintTag(implicitly[FastTypeTag[Array[Double]]])
+          b.hintStaticallyElidedType()
+          arrayPickler.pickle(picklee._values,b)
+        })
+        builder.endEntry()
+      }
+
+      def tag = FastTypeTag[SparseTensor1]
+
+      def unpickle(tag: String, reader: PReader) = {
+        val dim1 = {
+          val reader1 = reader.readField("dim")
+          reader1.hintTag(implicitly[FastTypeTag[Int]])
+          reader1.hintStaticallyElidedType()
+          val tag = reader1.beginEntry()
+          val result = intPickler.unpickle(tag, reader1)
+          reader1.endEntry()
+          result.asInstanceOf[Int]
+        }
+        val indices = {
+          val reader1 = reader.readField("indices")
+          reader1.hintTag(implicitly[FastTypeTag[Array[Int]]])
+          reader1.hintStaticallyElidedType()
+          val tag = reader1.beginEntry()
+          val result = myIntArrayPickler.unpickle(tag, reader1)
+          reader1.endEntry()
+          result.asInstanceOf[Array[Int]]
+        }
+        val values = {
+          val reader1 = reader.readField("values")
+          reader1.hintTag(implicitly[FastTypeTag[Array[Double]]])
+          reader1.hintStaticallyElidedType()
+          val tag = reader1.beginEntry()
+          val result = arrayPickler.unpickle(tag, reader1)
+          reader1.endEntry()
+          result.asInstanceOf[Array[Double]]
+        }
+        val result = new SparseVector(dim1)
+        result.ensureCapacity(indices.length)
+        for (i <- indices.indices) result(indices(i)) = values(i)
+        result
+      }
+    }
+
 }
 
 trait IndexPicklers {
