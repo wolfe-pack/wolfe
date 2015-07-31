@@ -236,7 +236,8 @@ with LoggedTerms with FVectors with NGramCountsHelper with CombinatorialConstrai
   }
 
   implicit class RichDiscreteTerm[T](term: Term[GenericDiscreteDom[T]]) {
-    def ===(that: Term[GenericDiscreteDom[T]]) = new DiscreteEquals(term, that)
+    def ===(that: Term[GenericDiscreteDom[T]]) = DiscreteEquals(term, that)
+    def !==(that: Term[GenericDiscreteDom[T]]) = Unary_!(DiscreteEquals(term, that))
   }
 
   implicit class RichToLog[T <: Term[Dom]](val term: T) {

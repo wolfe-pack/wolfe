@@ -162,7 +162,6 @@ trait ProductDom extends DomWithDomTerm {
 
   trait DomTermImpl extends super.DomTerm with Composed[dom.type] {
 
-
     override def toString = s"""$productName(${arguments.mkString(",")})"""
 
     override def composer(args: Settings) = new Composer(args) {
