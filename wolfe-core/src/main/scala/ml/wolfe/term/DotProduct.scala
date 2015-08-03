@@ -1,6 +1,6 @@
 package ml.wolfe.term
 
-import cc.factorie.la.SparseIndexedTensor1
+import cc.factorie.la.{DenseTensor2, SparseIndexedTensor1}
 import ml.wolfe.Vect
 import scalaxy.loops._
 import scala.language.postfixOps
@@ -189,6 +189,10 @@ class MatrixVectorProduct[T1 <: MatrixTerm, T2 <: VectorTerm](val arg1: T1, val 
   override def differentiatorImpl(wrt: Seq[AnyVar])(in: Settings, err: Setting, gradientAcc: Settings) =
     new ComposedDifferentiator(wrt, in, err, gradientAcc) {
 
+      val diffArg1 = wrt.exists(arg1.vars.contains)
+      val diffArg2 = wrt.exists(arg2.vars.contains)
+
+
       def localBackProp()(implicit execution: Execution) = {
         val A = argOutputs(0).mats(0)
         val x = argOutputs(1).vect(0)
@@ -196,10 +200,20 @@ class MatrixVectorProduct[T1 <: MatrixTerm, T2 <: VectorTerm](val arg1: T1, val 
         require(A.dim2 == x.dim1, s"dimensions don't match: ${A.toDimensionsString} * ${x.dim1}")
         require(A.dim1 == errorVec.dim1, s"dimensions don't match: ${A.toDimensionsString} * ${x.dim1} => ${errorVec.dim1}")
 
+        //
+
         //argErrors(0).mats(0) := 0.0
         //argErrors(1).vect(0) := 0.0
-        argErrors(0).mats(0) = (errorVec outer x).asInstanceOf[ml.wolfe.Mat]
-        argErrors(1).vect(0) = A.t * errorVec
+//        if (argErrors(0).mats(0) == null) {
+//          argErrors(0).mats(0) = new DenseTensor2(A.dim1,A.dim2)
+//        }
+//        for (i <- 0 until A.dim1 optimized; j <- 0 until A.dim2 optimized) {
+//          argErrors(0).mats(0)
+//        }
+
+
+        if (diffArg1) argErrors(0).mats(0) = (errorVec outer x).asInstanceOf[ml.wolfe.Mat]
+        if (diffArg2) argErrors(1).vect(0) = A.t * errorVec
 
       }
     }

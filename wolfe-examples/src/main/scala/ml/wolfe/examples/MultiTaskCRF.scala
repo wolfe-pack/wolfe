@@ -55,7 +55,7 @@ object MultiTaskCRF extends App {
     // number of labels
     val L = tags.length
     // number of unary features
-    val N = words.length
+    val N = words.length + 1
 
     // data domains
     implicit val Words = words.toDom withOOV "[OOV]"
@@ -65,7 +65,7 @@ object MultiTaskCRF extends App {
     implicit val Instances = Pairs(X, Y)
 
     val numFeats = N * L + L
-    implicit val Features = Vectors(numFeats + 1000000)
+    implicit val Features = Vectors(numFeats)
     val TransitionFeats = Vectors(L * L)
   }
 
@@ -117,9 +117,6 @@ object MultiTaskCRF extends App {
 
   object MultiTaskModel extends Model {
 
-    implicit val index = new SimpleIndex()
-    val transIndex = new SimpleIndex()
-
     import Data._
 
     val k = 10
@@ -128,12 +125,22 @@ object MultiTaskCRF extends App {
     @domain case class Theta(a: Mat, w: Vect, wb: Vect)
 
     implicit val Thetas = Theta.Values(Matrices(k, numFeats), Vectors(k), TransitionFeats)
-    implicit val maxProductParams = BPParameters(iterations = 2)
+    implicit val maxProductParams = BPParameters(iterations = 1)
+
+    val localIndex = new SimpleFeatureIndex(Features)
+    val transIndex = new SimpleFeatureIndex(TransitionFeats)
+
+    def local(x: X.Term, y: Y.Term, i: IntTerm) = {
+      localIndex.oneHot('bias, y(i)) + localIndex.oneHot('word, y(i), x(i))
+    }
+
+    def transition(x: X.Term, y: Y.Term, i: IntTerm) = {
+      transIndex.oneHot('pair, y(i), y(i + 1))
+    }
 
     def model(w: Thetas.Term)(x: X.Term)(y: Y.Term) = {
-      sum(0 until x.length) { i => w.w dot (w.a * feature('bias, y(i))) } +
-        sum(0 until x.length) { i => w.w dot (w.a * feature('word, x(i) -> y(i))) } +
-        sum(0 until x.length - 1) { i => w.wb dot feature('pair, y(i), y(i + 1))(TransitionFeats, transIndex) }
+      sum(0 until x.length) { i => w.w dot (w.a * local(x, y, i)) } +
+        sum(0 until x.length - 1) { i => w.wb dot transition(x, y, i) }
     } subjectTo (y.length === x.length) argmaxBy Argmaxer.maxProduct
 
     val init = Settings(Thetas.createRandomSetting(random.nextGaussian() * 0.1))
@@ -145,7 +152,7 @@ object MultiTaskCRF extends App {
       error.toString
     }
 
-    val params = AdaGradParameters(10, 0.1, 0.1, initParams = init, epochHook = myEpochHook)
+    val params = AdaGradParameters(10, 0.1, 0.1, initParams = init, epochHook = null)
     lazy val thetaStar =
       learn(Thetas)(t => perceptron(train.toConst)(Y)(model(t))) using Argmaxer.adaGrad(params)
 
@@ -248,10 +255,10 @@ object MultiTaskCRF extends App {
     errs / total
   }
 
-  val linErr = run(CRFModel, Data.test)
-  print(s"linErr: $linErr")
-//    val multErr = run(MultiTaskModel, Data.test)
-//    print(s"multErr: $multErr")
+//  val linErr = run(CRFModel, Data.test)
+//  print(s"linErr: $linErr")
+    val multErr = run(MultiTaskModel, Data.test)
+    print(s"multErr: $multErr")
   //  val neuralErr = run(NeuralModel, Data.test)
   //  print(s"neuralErr: $neuralErr")
 
