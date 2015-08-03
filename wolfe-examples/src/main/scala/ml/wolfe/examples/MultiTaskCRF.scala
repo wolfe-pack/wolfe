@@ -42,7 +42,7 @@ object MultiTaskCRF extends App {
       s.tokens.map(_.word.toString) -> getPosTags(s)
     }
 
-    val train = connl2000Train.take(100).map(toInstance).toIndexedSeq
+    val train = connl2000Train.take(10).map(toInstance).toIndexedSeq
     val test = connl2000Test.take(1).map(toInstance).toIndexedSeq
 
     val words = (train ++ test).flatMap(_._1).distinct
@@ -71,6 +71,7 @@ object MultiTaskCRF extends App {
 
   trait Model {
     def predict: IndexedSeq[String] => IndexedSeq[String]
+
   }
 
   object CRFModel extends Model {
@@ -101,7 +102,13 @@ object MultiTaskCRF extends App {
     } subjectTo (y.length === x.length) argmaxBy Argmaxer.maxProduct
 
     val init = Settings(Thetas.createZeroSetting())
-    val params = AdaGradParameters(100, 0.1, 0.1, initParams = init)
+    def myEpochHook(epoch:Int, params:IndexedSeq[Any],obj:Double) = {
+      val epochThetaStar = params.head.asInstanceOf[Theta]
+      val epochPredict = fun(X) { x => argmax(Y)(model(Thetas.Const(epochThetaStar))(x)) }
+      val error = run(epochPredict,test)
+      error.toString
+    }
+    val params = AdaGradParameters(100, 0.1, 0.1, initParams = init, epochHook = myEpochHook)
     lazy val thetaStar =
       learn(Thetas)(t => perceptron(train.toConst)(Y)(model(t))) using Argmaxer.adaGrad(params)
 
@@ -130,7 +137,15 @@ object MultiTaskCRF extends App {
     } subjectTo (y.length === x.length) argmaxBy Argmaxer.maxProduct
 
     val init = Settings(Thetas.createRandomSetting(random.nextGaussian() * 0.1))
-    val params = AdaGradParameters(10, 0.1, 0.1, initParams = init)
+
+    def myEpochHook(epoch:Int, params:IndexedSeq[Any],obj:Double) = {
+      val epochThetaStar = params.head.asInstanceOf[Theta]
+      val epochPredict = fun(X) { x => argmax(Y)(model(Thetas.Const(epochThetaStar))(x)) }
+      val error = run(epochPredict,test)
+      error.toString
+    }
+
+    val params = AdaGradParameters(10, 0.1, 0.1, initParams = init, epochHook = myEpochHook)
     lazy val thetaStar =
       learn(Thetas)(t => perceptron(train.toConst)(Y)(model(t))) using Argmaxer.adaGrad(params)
 
@@ -215,12 +230,15 @@ object MultiTaskCRF extends App {
 
     val predict = fun(X) { x => argmax(Y)(model(Thetas.Const(thetaStar))(x)) }
   }
-
   def run(m: Model, test: Seq[(IndexedSeq[String], IndexedSeq[String])]): Double = {
+    run(m.predict, test)
+  }
+
+  def run(predict:IndexedSeq[String] => IndexedSeq[String], test: Seq[(IndexedSeq[String], IndexedSeq[String])]): Double = {
     var errs = 0.0
     var total = 0.0
     for ((x, y) <- test) {
-      val yh = m.predict(x)
+      val yh = predict(x)
       assert(yh.length == y.length)
       for (i <- 0 until y.length) {
         if (yh(i) != y(i)) errs += 1.0
@@ -232,8 +250,8 @@ object MultiTaskCRF extends App {
 
   val linErr = run(CRFModel, Data.test)
   print(s"linErr: $linErr")
-  //  val multErr = run(MultiTaskModel, Data.test)
-  //  print(s"multErr: $multErr")
+//    val multErr = run(MultiTaskModel, Data.test)
+//    print(s"multErr: $multErr")
   //  val neuralErr = run(NeuralModel, Data.test)
   //  print(s"neuralErr: $neuralErr")
 
