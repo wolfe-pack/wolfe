@@ -62,6 +62,8 @@ class MatrixDom(val dim1: Int, dim2: Int) extends AtomicDom {
 
   def zero = new DenseTensor2(dim1, dim2, 0.0)
 
+  override def sparseZero: Mat = null
+
   class StaticMatrixVar(val varName: String) extends Var {
     override val domain: dom.type = dom
   }
