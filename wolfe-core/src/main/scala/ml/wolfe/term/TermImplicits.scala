@@ -657,12 +657,31 @@ trait MathImplicits {
   def sum2[E <: Dom, T <: Term[VarSeqDom[E]], Body <: DoubleTerm](indices: T)(body: indices.domain.elementDom.Var => Body) = {
     val variable = indices.domain.elementDom.Variable("_i")
     val instantiatedBody = body(variable)
-    new FirstOrderSum[E, Body, T](indices, variable, instantiatedBody)
+    new FirstOrderDoubleSum[E, Body, T](indices, variable, instantiatedBody)
+  }
+
+  def vsum2[E <: Dom, T <: Term[VarSeqDom[E]], Body <: VectorTerm](indices: T)(body: indices.domain.elementDom.Var => Body) = {
+    val variable = indices.domain.elementDom.Variable("_i")
+    val instantiatedBody = body(variable)
+    new FirstOrderVectorSum[E, Body, T](indices, variable, instantiatedBody)
   }
 
   def sum[T <: Term[VarSeqDom[Dom]], Body <: DoubleTerm](indices: T)(body: indices.domain.elementDom.Var => Body) =
     sum2[Dom, Term[VarSeqDom[Dom]], Body](indices)(body)
 
+  def vsum[T <: Term[VarSeqDom[Dom]], Body <: VectorTerm](indices: T)(body: indices.domain.elementDom.Var => Body) = {
+    vsum2[Dom, Term[VarSeqDom[Dom]], Body](indices)(body)
+  }
+
+//  def sum[T <: Term[VarSeqDom[Dom]], S:ClassDef](indices: T)(body: indices.domain.elementDom.Var => S) = {
+//
+//  }
+//    sum2[Dom, Term[VarSeqDom[Dom]], DoubleTerm](indices)(body)
+//
+//  def sum[T <: Term[VarSeqDom[Dom]]](indices: T) = {
+//    (body: indices.domain.elementDom.Var => VectorTerm) =
+//      vsum2[Dom, Term[VarSeqDom[Dom]], VectorTerm](indices)(body)
+//  }
 
 //  def sum[T, Body <: DoubleTerm](indices: Seq[T])(body: Var[TypedDom[T]] => Body)(implicit dom: TypedDom[T]): FirstOrderSum[Dom, Body, Term[VarSeqDom[Dom]]] = {
 //    sum(indices.toConst(dom))(body)

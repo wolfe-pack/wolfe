@@ -7,6 +7,9 @@ import ml.wolfe.term._
 
 object Riedel2010Example extends App {
 
+  val x: Doubles.Term = ???
+  x + x
+
   val d = Riedel2010Reader.read("/home/luke/Desktop/protobuff/train-Multiple.pb")
 
   val Labels = d.allLabels.toDom withOOV "[OOV]"

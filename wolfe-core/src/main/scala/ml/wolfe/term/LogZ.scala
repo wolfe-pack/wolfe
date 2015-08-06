@@ -22,7 +22,7 @@ class LogZ(val obj: DoubleTerm, val wrt: Var[Dom]) extends DoubleTerm with Unary
     val elements = wrt.domain.toIterable.toIndexedSeq
     val Ranges = Seqs(wrt.domain, elements.length)
     val range = Ranges.Const(elements)
-    val sum = FirstOrderSum(range, wrt, exp(obj))
+    val sum = FirstOrderDoubleSum(range, wrt, exp(obj))
     val logZ = log(sum)
     logZ
   }

@@ -1,6 +1,8 @@
 package ml.wolfe.term
 
+import cc.factorie.la.{Tensor1, DenseTensor1}
 import ml.wolfe.WolfeSpec
+import ml.wolfe.term.TermImplicits._
 
 /**
  * @author riedel
@@ -9,6 +11,19 @@ class FirstOrderSumSpecs extends WolfeSpec {
 
   import ml.wolfe.term.TermImplicits._
 
+  "A variable sequence length first order *vector* sum" should {
+    "evaluate to the sum of its arguments" in {
+      val Vects = Vectors(3)
+      val vects = Seqs(Vects, 3).Const(IndexedSeq(
+        Tensor1(1, 0, 0),
+        Tensor1(0, 2, 0),
+        Tensor1(0, 2, 3)
+      ))
+
+      val term = vsum((0 until 3).toConst) { i => vects(i) }
+      term.eval().toSeq should be(Seq(1.0, 4.0, 3.0))
+    }
+  }
 
   "A variable sequence length first order sum" should {
     "evaluate to the sum of its arguments" in {
