@@ -236,7 +236,8 @@ with LoggedTerms with FVectors with NGramCountsHelper with CombinatorialConstrai
   }
 
   implicit class RichDiscreteTerm[T](term: Term[GenericDiscreteDom[T]]) {
-    def ===(that: Term[GenericDiscreteDom[T]]) = new DiscreteEquals(term, that)
+    def ===(that: Term[GenericDiscreteDom[T]]) = DiscreteEquals(term, that)
+    def !==(that: Term[GenericDiscreteDom[T]]) = Unary_!(DiscreteEquals(term, that))
   }
 
   implicit class RichToLog[T <: Term[Dom]](val term: T) {
@@ -830,7 +831,21 @@ trait FVectors {
     result
   }
 
+  def featsFromMap(elements: scala.collection.Map[Any, Double])(implicit index: Index): Vect = {
+    val result = new GrowableSparseTensor1(elements)
+    for ((e,v) <- elements) {
+      result(index(e)) = v
+    }
+    result
+  }
 
+  def featsFromMapWithoutIndex(elements: scala.collection.Map[Int, Double]): Vect = {
+    val result = new GrowableSparseTensor1(elements)
+    for ((e,v) <- elements) {
+      result(e) = v
+    }
+    result
+  }
 }
 
 

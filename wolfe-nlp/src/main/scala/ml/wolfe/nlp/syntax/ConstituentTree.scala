@@ -299,16 +299,16 @@ case class ConstituentTree(node: ConstituentNode, children : List[ConstituentTre
 
   def toTreebankString: String = {
     node match {
-      case x: NonterminalNode => "(" + x.label + " " + children.map(_.toString()).mkString(" ") + ")"
-      case x: PreterminalNode => "(" + x.label + " " + x.word
+      case x: NonterminalNode => "(" + x.label + " " + children.map(_.toString).mkString(" ") + ")"
+      case x: PreterminalNode => "(" + x.label + " " + x.word + ")"
       case _ => "empty"
     }
   }
 
   def toHeadedTreebankString: String = {
     node match {
-      case x: NonterminalNode => "(" + x.label + "-" + x.headInfo.get.headWord + " " + children.map(_.toString()).mkString(" ") + ")"
-      case x: PreterminalNode => "(" + x.label + " " + x.word
+      case x: NonterminalNode => "(" + x.label + "-" + x.headInfo.get.headWord + " " + children.map(_.toHeadedTreebankString).mkString(" ") + ")"
+      case x: PreterminalNode => "(" + x.label + " " + x.word + ")"
       case _ => "empty"
     }
   }

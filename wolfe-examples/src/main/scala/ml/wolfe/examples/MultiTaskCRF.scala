@@ -42,7 +42,7 @@ object MultiTaskCRF extends App {
       s.tokens.map(_.word.toString) -> getPosTags(s)
     }
 
-    val train = connl2000Train.take(100).map(toInstance).toIndexedSeq
+    val train = connl2000Train.take(1000).map(toInstance).toIndexedSeq
     val test = connl2000Test.take(1).map(toInstance).toIndexedSeq
 
     val words = (train ++ test).flatMap(_._1).distinct
@@ -55,7 +55,7 @@ object MultiTaskCRF extends App {
     // number of labels
     val L = tags.length
     // number of unary features
-    val N = words.length
+    val N = words.length + 1
 
     // data domains
     implicit val Words = words.toDom withOOV "[OOV]"
@@ -65,12 +65,13 @@ object MultiTaskCRF extends App {
     implicit val Instances = Pairs(X, Y)
 
     val numFeats = N * L + L
-    implicit val Features = Vectors(numFeats + 1000000)
+    implicit val Features = Vectors(numFeats)
     val TransitionFeats = Vectors(L * L)
   }
 
   trait Model {
     def predict: IndexedSeq[String] => IndexedSeq[String]
+
   }
 
   object CRFModel extends Model {
@@ -101,7 +102,13 @@ object MultiTaskCRF extends App {
     } subjectTo (y.length === x.length) argmaxBy Argmaxer.maxProduct
 
     val init = Settings(Thetas.createZeroSetting())
-    val params = AdaGradParameters(100, 0.1, 0.1, initParams = init)
+    def myEpochHook(epoch:Int, params:IndexedSeq[Any],obj:Double) = {
+      val epochThetaStar = params.head.asInstanceOf[Theta]
+      val epochPredict = fun(X) { x => argmax(Y)(model(Thetas.Const(epochThetaStar))(x)) }
+      val error = run(epochPredict,test)
+      error.toString
+    }
+    val params = AdaGradParameters(100, 0.1, 0.1, initParams = init, epochHook = myEpochHook)
     lazy val thetaStar =
       learn(Thetas)(t => perceptron(train.toConst)(Y)(model(t))) using Argmaxer.adaGrad(params)
 
@@ -109,9 +116,6 @@ object MultiTaskCRF extends App {
   }
 
   object MultiTaskModel extends Model {
-
-    implicit val index = new SimpleIndex()
-    val transIndex = new SimpleIndex()
 
     import Data._
 
@@ -121,16 +125,34 @@ object MultiTaskCRF extends App {
     @domain case class Theta(a: Mat, w: Vect, wb: Vect)
 
     implicit val Thetas = Theta.Values(Matrices(k, numFeats), Vectors(k), TransitionFeats)
-    implicit val maxProductParams = BPParameters(iterations = 2)
+    implicit val maxProductParams = BPParameters(iterations = 1)
+
+    val localIndex = new SimpleFeatureIndex(Features)
+    val transIndex = new SimpleFeatureIndex(TransitionFeats)
+
+    def local(x: X.Term, y: Y.Term, i: IntTerm) = {
+      localIndex.oneHot('bias, y(i)) + localIndex.oneHot('word, y(i), x(i))
+    }
+
+    def transition(x: X.Term, y: Y.Term, i: IntTerm) = {
+      transIndex.oneHot('pair, y(i), y(i + 1))
+    }
 
     def model(w: Thetas.Term)(x: X.Term)(y: Y.Term) = {
-      sum(0 until x.length) { i => w.w dot (w.a * feature('bias, y(i))) } +
-        sum(0 until x.length) { i => w.w dot (w.a * feature('word, x(i) -> y(i))) } +
-        sum(0 until x.length - 1) { i => w.wb dot feature('pair, y(i), y(i + 1))(TransitionFeats, transIndex) }
+      sum(0 until x.length) { i => w.w dot (w.a * local(x, y, i)) } +
+        sum(0 until x.length - 1) { i => w.wb dot transition(x, y, i) }
     } subjectTo (y.length === x.length) argmaxBy Argmaxer.maxProduct
 
     val init = Settings(Thetas.createRandomSetting(random.nextGaussian() * 0.1))
-    val params = AdaGradParameters(10, 0.1, 0.1, initParams = init)
+
+    def myEpochHook(epoch:Int, params:IndexedSeq[Any],obj:Double) = {
+      val epochThetaStar = params.head.asInstanceOf[Theta]
+      val epochPredict = fun(X) { x => argmax(Y)(model(Thetas.Const(epochThetaStar))(x)) }
+      val error = run(epochPredict,test)
+      error.toString
+    }
+
+    val params = AdaGradParameters(10, 0.1, 0.1, initParams = init, epochHook = null)
     lazy val thetaStar =
       learn(Thetas)(t => perceptron(train.toConst)(Y)(model(t))) using Argmaxer.adaGrad(params)
 
@@ -215,12 +237,15 @@ object MultiTaskCRF extends App {
 
     val predict = fun(X) { x => argmax(Y)(model(Thetas.Const(thetaStar))(x)) }
   }
-
   def run(m: Model, test: Seq[(IndexedSeq[String], IndexedSeq[String])]): Double = {
+    run(m.predict, test)
+  }
+
+  def run(predict:IndexedSeq[String] => IndexedSeq[String], test: Seq[(IndexedSeq[String], IndexedSeq[String])]): Double = {
     var errs = 0.0
     var total = 0.0
     for ((x, y) <- test) {
-      val yh = m.predict(x)
+      val yh = predict(x)
       assert(yh.length == y.length)
       for (i <- 0 until y.length) {
         if (yh(i) != y(i)) errs += 1.0
@@ -230,10 +255,10 @@ object MultiTaskCRF extends App {
     errs / total
   }
 
-  val linErr = run(CRFModel, Data.test)
-  print(s"linErr: $linErr")
-  //  val multErr = run(MultiTaskModel, Data.test)
-  //  print(s"multErr: $multErr")
+//  val linErr = run(CRFModel, Data.test)
+//  print(s"linErr: $linErr")
+    val multErr = run(MultiTaskModel, Data.test)
+    print(s"multErr: $multErr")
   //  val neuralErr = run(NeuralModel, Data.test)
   //  print(s"neuralErr: $neuralErr")
 

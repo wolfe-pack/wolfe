@@ -144,6 +144,10 @@ case class CorefMention(clusterID: Int, sentence: Int, start: Int, end: Int, hea
 
   override def toString = "[Coref Mention: Sent: %d, Start: %d, End: %d, Cluster: %d]".format(sentence, start, end, clusterID)
 
+  def toTokens(doc: Document): Seq[Token] = doc.sentences(sentence).tokens.slice(start, end)
+
+  def toWords(doc: Document): Seq[String] = toTokens(doc).map(_.word)
+
   def width = end - start
 }
 

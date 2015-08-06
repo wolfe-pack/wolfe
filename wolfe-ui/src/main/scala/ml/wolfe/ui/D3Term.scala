@@ -3,7 +3,7 @@ package ml.wolfe.ui
 import java.util.UUID
 
 import ml.wolfe.term._
-import org.sameersingh.htmlgen.{RawHTML, HTML}
+import org.sameersingh.htmlgen.{HTML, RawHTML}
 
 /**
  * @author riedel
@@ -17,6 +17,8 @@ object D3Term {
       term match {
         case c:Constant[_] => c.value.toString
         case v:AnyVar => v.varName
+        case d:ProductDom#DomTermImpl => d.domain.productName
+        case t:Tuple2Dom[_,_]#Tuple2Constructor => "Tuple2"
         case t => t.getClass.getSimpleName
       }
     }
