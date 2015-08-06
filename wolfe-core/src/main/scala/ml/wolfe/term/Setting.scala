@@ -26,7 +26,7 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
   val vect = new VectBuffer(numVect)
   val mats = new MatrixBuffer(numMats)
 
-  val buffers = mutable.IndexedSeq(disc,cont,vect,mats)
+  val buffers = mutable.IndexedSeq(disc, cont, vect, mats)
 
   def resetToZero(): Unit = {
     disc.resetToZero()
@@ -201,7 +201,9 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
 
     def add(index: Int, value: Mat) = {
       if (this(index) == null) {
-        this(index) = value.copy
+        if (value != null) {
+          this(index) = value.copy
+        }
       } else {
         (this(index), value) match {
           case (_, null) =>
@@ -214,7 +216,8 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
 
     override def update(index: Int, value: Mat): Unit = {
       if (this(index) == null) {
-        super.update(index, value.copy)
+        if (value != null)
+          super.update(index, value.copy)
       } else {
         this.array(index) = value
         broadcastChange(index)
@@ -222,9 +225,9 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
 
     }
 
-
     def resetToZero(offset: Int) = {
-      array(offset) := 0
+      //      array(offset) := 0
+      array(offset) = null
       broadcastReset(offset)
     }
 
@@ -571,12 +574,12 @@ final class Msgs(val length: Int) extends IndexedSeq[Msg] {
 }
 
 object Msgs {
-  def apply(msg1:Msg, other: Msg*):Msgs = {
+  def apply(msg1: Msg, other: Msg*): Msgs = {
     val msgs = msg1 +: other
     apply(msgs)
   }
 
-  def apply(msgs: Seq[Msg]):Msgs = {
+  def apply(msgs: Seq[Msg]): Msgs = {
     val result = new Msgs(msgs.length)
     for ((msg, i) <- msgs.zipWithIndex) result(i) = msg
     result
@@ -655,8 +658,9 @@ class BufferChangeRecorder[T](val buffer: Buffer[T], initAllChanges: Boolean = t
 
   buffer.listeners += this
 
-  private var changedIndices = new FastIntSet(buffer.length)//new mutable.HashSet[Int]
-  private var resetIndices = new FastIntSet(buffer.length)//new mutable.HashSet[Int]
+  private var changedIndices = new FastIntSet(buffer.length)
+  //new mutable.HashSet[Int]
+  private var resetIndices = new FastIntSet(buffer.length) //new mutable.HashSet[Int]
 
 
   if (initAllChanges) allChanged()
@@ -683,8 +687,8 @@ class BufferChangeRecorder[T](val buffer: Buffer[T], initAllChanges: Boolean = t
   }
 
   def forget(): Unit = {
-    changedIndices.clear()// = new mutable.HashSet[Int]
-    resetIndices.clear()// = new mutable.HashSet[Int]
+    changedIndices.clear() // = new mutable.HashSet[Int]
+    resetIndices.clear() // = new mutable.HashSet[Int]
     //changedIndices.clear() todo: this was slow because clearing the hashmap only meant setting entries to null.
     //resetIndices.clear()
   }
