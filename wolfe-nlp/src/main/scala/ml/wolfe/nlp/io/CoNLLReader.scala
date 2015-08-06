@@ -159,7 +159,7 @@ class CoNLL2011Reader(filename: String, headFinder: HeadFinder) extends Iterable
       val csyntaxCleaned = csyntax.mkString(" ").replaceAll("\\*", " * ").replaceAll("\\(", " ( ").replaceAll("\\)", " ) ").replaceAll(" +", " ")
       var tc = -1
       val csyntaxStr = csyntaxCleaned.map(c => if (c == '*') {tc += 1; "(" + pos(tc) + " " + words(tc) + ")"} else c.toString).mkString("")
-      println(csyntaxStr)
+//      println(csyntaxStr)
       val ctree = headFinder.annotate(ConstituentTreeFactory.stringToTree(csyntaxStr).get)
       assert(ctree != null, "Null constituent tree")
 
