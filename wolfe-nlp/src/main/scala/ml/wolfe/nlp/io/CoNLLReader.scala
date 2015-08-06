@@ -2,9 +2,8 @@ package ml.wolfe.nlp.io
 
 import ml.wolfe.nlp._
 import ml.wolfe.nlp.semantics.{Predicate, SemanticFrame, SemanticRole}
-import ml.wolfe.nlp.syntax.{Arc, ModifiedCollinsHeadFinder, DependencyTree, ConstituentTree}
+import ml.wolfe.nlp.syntax._
 import ml.wolfe.nlp.ie.{CorefMention, CorefAnnotation, EntityMention}
-import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import scala.util.matching.Regex
@@ -137,7 +136,7 @@ object CoNLLReader {
   }
 }
 
-class CoNLL2011Reader(filename: String, delim: String = "\t") extends Iterable[Document] {
+class CoNLL2011Reader(filename: String, headFinder: HeadFinder) extends Iterable[Document] {
 
   def iterator: Iterator[Document] = {
     new ChunkReader(filename, delim = "^#end\\ document.*").map(mkCoNLL2011Document(_)).iterator
@@ -147,6 +146,8 @@ class CoNLL2011Reader(filename: String, delim: String = "\t") extends Iterable[D
     val chunks = chunk.split("\n\n")
     val sents = chunks.map { chunk =>
       val grid = chunk.split("\n").filter(!_.startsWith("#")).map(_.replaceAll(" +", "\t").split("\t"))
+//      println("numCols = " + grid(0).size)
+//      println(chunk + "\n")
       val numCols = grid(0).size
       val speaker = grid(0)(9)
       val words = (0 until grid.size).map(grid(_)(3))
@@ -158,7 +159,8 @@ class CoNLL2011Reader(filename: String, delim: String = "\t") extends Iterable[D
       val csyntaxCleaned = csyntax.mkString(" ").replaceAll("\\*", " * ").replaceAll("\\(", " ( ").replaceAll("\\)", " ) ").replaceAll(" +", " ")
       var tc = -1
       val csyntaxStr = csyntaxCleaned.map(c => if (c == '*') {tc += 1; "(" + pos(tc) + " " + words(tc) + ")"} else c.toString).mkString("")
-      val ctree = ModifiedCollinsHeadFinder.annotate(ConstituentTreeFactory.stringToTree(csyntaxStr).get)
+      println(csyntaxStr)
+      val ctree = headFinder.annotate(ConstituentTreeFactory.stringToTree(csyntaxStr).get)
       assert(ctree != null, "Null constituent tree")
 
       val ner = (0 until grid.size).map(i => fixNestedField(grid(i)(10)))
@@ -254,7 +256,7 @@ object CoNLL2011Reader extends App {
   var numCrossing = 0
   var numASpans = 0
   var numNSpans = 0
-  for (doc <- new CoNLL2011Reader(args(0))) {
+  for (doc <- new CoNLL2011Reader(args(0), new ModifiedCollinsHeadFinder)) {
     dlens(doc.sentences.size) += 1
     for (m <- doc.coref.mentions) {
       mlens(m.width) += 1
@@ -332,7 +334,7 @@ object CoNLL2011Test extends App {
                  |wb/eng/00/eng_0010   4   25    properly     RB   (ADVP*))))))))))))))))))       -    -   -    _jules_  *         *)        *             *)   (ARGM-MNR*)   (ARGM-MNR*)    3)
                  |wb/eng/00/eng_0010   4   26           .      .                        *))       -    -   -    _jules_  *         *         *             *             *             *     -
                  |""".stripMargin
-  val reader = new CoNLL2011Reader(filename = null)
+  val reader = new CoNLL2011Reader(filename = null, headFinder = new ModifiedCollinsHeadFinder)
   val doc = reader.mkCoNLL2011Document(sample)
   println(doc)
   println("Coref:")
