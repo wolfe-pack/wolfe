@@ -61,9 +61,15 @@ object SISTAConverter {
   }
 
   def toWolfeDependencyTree(sent: SISTASent): DependencyTree = {
-    val tokens = for (i <- 0 until sent.size) yield toWolfeToken(i, sent)
-    val dt = new DependencyTree(tokens, sent.dependencies.get.outgoingEdges.zipWithIndex.flatMap { case(x, i) => x.map { y => Arc(i, y._1, Some(y._2)) }})
-    dt
+    sent.dependencies match {
+      case Some(dependencies) => {
+        val tokens = for (i <- 0 until sent.size) yield toWolfeToken(i, sent)
+        new DependencyTree(tokens, sent.dependencies.get.outgoingEdges.zipWithIndex.flatMap {
+          case(x, i) => x.map { y => Arc(i, y._1, Some(y._2)) }
+        })
+      }
+      case None => DependencyTree.empty
+    }
   }
 
   def treeToTree(tree: SistaTree, leftMost: Int = 0): ConstituentTree = {
