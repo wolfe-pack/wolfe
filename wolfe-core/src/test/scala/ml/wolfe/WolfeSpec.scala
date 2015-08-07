@@ -24,9 +24,9 @@ trait WolfeSpec extends WordSpec with Matchers {
     }
   }
 
-  implicit val factorieMatrixEq = new Equality[Mat] {
-    def areEqual(a: Mat, b: Any) = b match {
-      case v: Mat =>
+  implicit val factorieMatrixEq = new Equality[Mat2] {
+    def areEqual(a: Mat2, b: Any) = b match {
+      case v: Mat2 =>
         a.activeDomain.forall(i => math.abs(a(i) - v(i)) < eps) &&
           v.activeDomain.forall(i => math.abs(a(i) - v(i)) < eps)
       case _ => false

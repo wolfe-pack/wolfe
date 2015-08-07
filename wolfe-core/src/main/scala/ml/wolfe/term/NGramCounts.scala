@@ -1,6 +1,7 @@
 package ml.wolfe.term
 
 import cc.factorie.la.GrowableSparseHashTensor1
+import ml.wolfe.FactorieVect
 import ml.wolfe.term.TermImplicits._
 
 
@@ -27,7 +28,7 @@ case class NGramCounts[E <: Dom, C <: TypedVectorDom[VarSeqDom[E]]](data: SeqTer
     def eval()(implicit execution: Execution) = {
       val length = input(0).disc(0)
       val result = new GrowableSparseHashTensor1(0 until 100000)
-      output.vect(0) = result
+      output.vect(0) = new FactorieVect(result)
       for (i <- 0 until (length - ngramOrder + 1)) {
         windowEval.input(fromVarIndex).disc(0) = i
         windowEval.eval()

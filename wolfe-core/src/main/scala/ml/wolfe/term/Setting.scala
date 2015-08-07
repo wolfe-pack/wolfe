@@ -4,7 +4,7 @@ import java.util
 
 import cc.factorie.la._
 import ml.wolfe.util.FastIntSet
-import ml.wolfe.{Mat, MoreArrayOps, Vect}
+import ml.wolfe._
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -89,7 +89,7 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
     }
   }
 
-  final class VectBuffer(val length: Int) extends Buffer[Vect](setting) {
+  final class VectBuffer(val length: Int) extends Buffer[Vect2](setting) {
     def *=(scale: Double): Unit = {
       for (i <- 0 until length) array(i) *= scale
       broadcastAllChanged()
@@ -100,15 +100,14 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
       for (i <- 0 until length) array(i) := scale
     }
 
-    def +=(that: Buffer[Vect]): Unit = {
+    def +=(that: Buffer[Vect2]): Unit = {
       broadcastAllChanged()
-      for (i <- 0 until length) add(i, that(i))
+      for (i <- 0 until length) array(i) += that(i) //
     }
 
     def randomize(eps: => Double) = {
       for (i <- 0 until length)
-        for (j <- 0 until array(i).length)
-          array(i)(j) += eps
+          array(i).randomize(eps)
       broadcastAllChanged()
     }
 
@@ -117,72 +116,25 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
       broadcastReset(offset)
     }
 
-    def copyVector(v: Vect) = v match {
-      case s: SingletonTensor1 => new SingletonTensor1(s.dim1, s.singleIndex, s.singleValue)
-      case s: MutableSingletonTensor1 => new MutableSingletonTensor1(s.dim1, s.singleIndex, s.singleValue)
-      case s: GrowableSparseHashTensor1 =>
-        val result = new GrowableSparseHashTensor1(s.sizeProxy)
-        result += s
-        result
-      case null => null
-      case _ => v.copy
-    }
-
-    override def update(index: Int, value: Vect): Unit = {
-      if (this(index) == null) {
-        super.update(index, copyVector(value))
-      } else {
-        if (_adaptiveVectors) {
-          (this(index), value) match {
-            case (_: DenseTensor1, target: SparseIndexedTensor) =>
-              super.update(index, copyVector(target))
-            case (_: SparseIndexedTensor, target: DenseTensor1) =>
-              super.update(index, copyVector(target))
-            case (_, _) =>
-              this(index) := value
-              broadcastChange(index)
-          }
-        } else {
-          this(index) := value
-          broadcastChange(index)
-        }
-      }
+    override def update(index: Int, value: Vect2): Unit = {
+      this(index) := value
+      broadcastChange(index)
     }
 
 
-    def set(index: Int, value: Vect, scale: Double): Unit = {
+    def set(index: Int, value: Vect2, scale: Double): Unit = {
       update(index, value)
       this(index) *= scale
     }
 
 
-    def add(index: Int, value: Vect): Unit = {
-      if (_adaptiveVectors) {
-        if (this(index) == null) {
-          this(index) = value.copy
-        } else {
-          (this(index), value) match {
-            case (_, null) =>
-            case (current: SparseIndexedTensor, arg: DenseTensor1) =>
-              this(index) = arg.copy
-              this(index) += current
-            case (current: DenseTensor1, arg: SparseIndexedTensor) =>
-              //this(index) = arg.copy
-              this(index) += arg
-            case (_, _) =>
-              this(index) += value
-              broadcastChange(index)
-          }
-        }
-      } else {
-        this(index) += value
-      }
+    def add(index: Int, value: Vect2): Unit = {
+      this(index) += value
+      broadcastChange(index)
     }
-
-
   }
 
-  final class MatrixBuffer(val length: Int) extends Buffer[Mat](setting) {
+  final class MatrixBuffer(val length: Int) extends Buffer[Mat2](setting) {
     def *=(scale: Double): Unit = {
       for (i <- 0 until length) array(i) *= scale
       broadcastAllChanged()
@@ -193,13 +145,13 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
       broadcastAllChanged()
     }
 
-    def +=(that: Buffer[Mat]): Unit = {
+    def +=(that: Buffer[Mat2]): Unit = {
       for (i <- 0 until length) array(i) += that(i)
       broadcastAllChanged()
     }
 
 
-    def add(index: Int, value: Mat) = {
+    def add(index: Int, value: Mat2) = {
       if (this(index) == null) {
         if (value != null) {
           this(index) = value.copy
@@ -214,14 +166,9 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
       }
     }
 
-    override def update(index: Int, value: Mat): Unit = {
-      if (this(index) == null) {
-        if (value != null)
-          super.update(index, value.copy)
-      } else {
-        this.array(index) = value
-        broadcastChange(index)
-      }
+    override def update(index: Int, value: Mat2): Unit = {
+      this(index) := value
+      broadcastChange(index)
 
     }
 
@@ -233,8 +180,7 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
 
     def randomize(eps: => Double) = {
       for (i <- 0 until length)
-        for (j <- 0 until array(i).length)
-          array(i)(j) += eps
+        array(i).randomize(eps)
       broadcastAllChanged()
     }
 
@@ -343,9 +289,12 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
   def ensureSparsity(): Unit = {
     for (i <- 0 until vect.length) {
       vect(i) match {
-        case d: DenseTensor1 =>
-          vect(i) = new SparseTensor1(d.dim1)
-        case _ =>
+        case f: FactorieVect => f.self match {
+          case d: DenseTensor1 =>
+            vect(i) = FactorieVect.sparse(d.dim1)
+          case _ =>
+        }
+        case _ => ???
       }
     }
 
@@ -360,8 +309,9 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
 
     for (i <- 0 until disc.length) if (disc(i) != that.disc(i)) return false
     for (i <- 0 until cont.length) if (math.abs(cont(i) - that.cont(i)) > eps) return false
-    for (i <- 0 until vect.length; j <- 0 until vect(i).size) if (math.abs(vect(i)(j) - that.vect(i)(j)) > eps) return false
-    for (i <- 0 until mats.length; j <- 0 until mats(i).size) if (math.abs(mats(i)(j) - that.mats(i)(j)) > eps) return false
+    for (i <- 0 until vect.length; j <- 0 until vect(i).dim) if (math.abs(vect(i)(j) - that.vect(i)(j)) > eps) return false
+    for (i <- 0 until mats.length;
+         i1 <- 0 until mats(i).dim1; i2 <- 0 until mats(i).dim2) if (math.abs(mats(i)(i1,i2) - that.mats(i)(i1,i2)) > eps) return false
 
     true
   }
@@ -471,11 +421,11 @@ class ContMsg(var mean: Double = 0.0) {
   override def clone() = new ContMsg(mean)
 }
 
-class VectMsg(var mean: Vect = null) {
+class VectMsg(var mean: Vect2 = null) {
   override def clone() = new VectMsg(mean.copy)
 }
 
-class MatsMsg(var mean: Mat = null) {
+class MatsMsg(var mean: Mat2 = null) {
   override def clone() = new MatsMsg(mean.copy)
 }
 

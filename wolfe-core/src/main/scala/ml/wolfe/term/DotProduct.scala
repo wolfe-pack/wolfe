@@ -41,8 +41,8 @@ class DotProduct[T1 <: VectorTerm, T2 <: VectorTerm](val arg1: T1, val arg2: T2)
 
   override def composer(args: Settings) = new Composer(args) {
     def eval()(implicit execution: Execution) = {
-      output.cont(0) = ownDot(input(0).vect(0), input(1).vect(0))
-      //output.cont(0) = input(0).vect(0) dot input(1).vect(0)
+//      output.cont(0) = ownDot(input(0).vect(0), input(1).vect(0))
+      output.cont(0) = input(0).vect(0) dot input(1).vect(0)
     }
   }
 
@@ -197,8 +197,8 @@ class MatrixVectorProduct[T1 <: MatrixTerm, T2 <: VectorTerm](val arg1: T1, val 
         val A = argOutputs(0).mats(0)
         val x = argOutputs(1).vect(0)
         val errorVec = error.vect(0)
-        require(A.dim2 == x.dim1, s"dimensions don't match: ${A.toDimensionsString} * ${x.dim1}")
-        require(A.dim1 == errorVec.dim1, s"dimensions don't match: ${A.toDimensionsString} * ${x.dim1} => ${errorVec.dim1}")
+        require(A.dim2 == x.dim, s"dimensions don't match: ${A.dim1.toString + "x" +A.dim2.toString } * ${x.dim}")
+        require(A.dim1 == errorVec.dim, s"dimensions don't match: ${A.dim1.toString + "x" +A.dim2.toString} * ${x.dim} => ${errorVec.dim}")
 
         //
 
@@ -212,7 +212,7 @@ class MatrixVectorProduct[T1 <: MatrixTerm, T2 <: VectorTerm](val arg1: T1, val 
 //        }
 
 
-        if (diffArg1) argErrors(0).mats(0) = (errorVec outer x).asInstanceOf[ml.wolfe.Mat]
+        if (diffArg1) argErrors(0).mats(0) = (errorVec outer x).asInstanceOf[ml.wolfe.Mat2]
         if (diffArg2) argErrors(1).vect(0) = A.t * errorVec
 
       }

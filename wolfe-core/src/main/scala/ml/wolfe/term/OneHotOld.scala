@@ -2,7 +2,7 @@ package ml.wolfe.term
 
 import cc.factorie.la._
 import cc.factorie.util.SingletonIntSeq
-import ml.wolfe.{FeatureIndex, SimpleIndex, Index}
+import ml.wolfe.{FactorieVect, FeatureIndex, SimpleIndex, Index}
 import scalaxy.loops._
 import scala.language.postfixOps
 
@@ -18,7 +18,7 @@ case class OneHotOld(index: IntTerm, value: DoubleTerm)(implicit val domain: Vec
 
 
   override def composer(args: Settings) = new Composer(args) {
-    output.vect(0) = new SparseTensor1(domain.dim)
+    output.vect(0) = new FactorieVect(new SparseTensor1(domain.dim))
 
     val result = output.vect(0)
 
@@ -112,7 +112,7 @@ case class OneHot(name: Symbol, keys: IndexedSeq[AnyTerm], value: DoubleTerm, de
 
   override def composer(args: Settings) = new Composer(args) {
 
-    output.vect(0) = new SparseTensor1(domain.dim)
+    output.vect(0) = new FactorieVect(new SparseTensor1(domain.dim))
     val result = output.vect(0)
     val keySettings = input.dropRight(1).toArray
 
@@ -155,7 +155,7 @@ case class FeatureSum(features: Seq[OneHot]) extends Composed[VectorDom] {
 
   override def composer(args: Settings) = new Composer(args) {
 
-    output.vect(0) = new SparseTensor1(domain.dim)
+    output.vect(0) = new FactorieVect(new SparseTensor1(domain.dim))
     val result = output.vect(0)
     val keySettings = input.dropRight(1).toArray
     val templateKeySettings = indicesOfKeys map (_.map(input))
@@ -200,7 +200,7 @@ case class Conjoined(arg1: VectorTerm, arg2: VectorTerm)(implicit val index: Ind
   def copy(args: IndexedSeq[ArgumentType]) = Conjoined(args(0), args(1))(index, dom)
 
   override def composer(args: Settings) = new Composer(args) {
-    output.vect(0) = new GrowableSparseTensor1(0 until 100)
+    output.vect(0) = new FactorieVect(new GrowableSparseTensor1(0 until 100))
 
     //    output.vect(0) = new SparseIndexedTensor1(1000)
 

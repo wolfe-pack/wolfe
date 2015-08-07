@@ -32,8 +32,8 @@ trait AtomicDom extends Dom {
 
 class MatrixDom(val dim1: Int, dim2: Int) extends AtomicDom {
   dom =>
-  type Value = Mat
-  type Marginals = Mat
+  type Value = Mat2
+  type Marginals = Mat2
 
   val lengths = Offsets(0, 0, 0, 1)
 
@@ -58,11 +58,11 @@ class MatrixDom(val dim1: Int, dim2: Int) extends AtomicDom {
 
   def Variable(name: String): Var = new StaticMatrixVar(name)
 
-  def one = new DenseTensor2(dim1, dim2, 1.0)
+  def one = new FactorieMat(new DenseTensor2(dim1, dim2, 1.0))
 
-  def zero = new DenseTensor2(dim1, dim2, 0.0)
+  def zero = new FactorieMat(new DenseTensor2(dim1, dim2, 0.0))
 
-  override def sparseZero: Mat = null
+  override def sparseZero: Mat2 = null
 
   class StaticMatrixVar(val varName: String) extends Var {
     override val domain: dom.type = dom

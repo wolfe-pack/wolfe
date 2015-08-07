@@ -8,15 +8,15 @@ import ml.wolfe._
  * @author riedel
  */
 class VectorDom(val dim: Int) extends GenericVectorDom {
-  def one = new DenseTensor1(dim, 1.0)
+  def one = new FactorieVect(new DenseTensor1(dim, 1.0))
 
-  def zero = new DenseTensor1(dim, 0.0)
+  def zero = new FactorieVect(new DenseTensor1(dim, 0.0))
 
-  override def sparseZero = new SparseIndexedTensor1(dim)
+  override def sparseZero = new FactorieVect(new SparseIndexedTensor1(dim))
 
   def Term(values: Double*) = {
     require(values.size == dim)
-    Const(new DenseVector(values.toArray))
+    Const(new FactorieVect(new DenseVector(values.toArray)))
   }
 }
 
@@ -41,8 +41,8 @@ trait GenericVectorDom extends AtomicDom {
 
   def dim: Int
 
-  type Value = Vect
-  type Marginals = Vect
+  type Value = Vect2
+  type Marginals = Vect2
 
   val lengths = Offsets(0, 0, 1, 0)
 
@@ -66,7 +66,6 @@ trait GenericVectorDom extends AtomicDom {
     msgs.vect(offsets.vectOff) = new VectMsg(marginals)
   }
 
-
   def Variable(name: String) = StaticVectorVar(name)
 
   case class StaticVectorVar(varName: String) extends Var {
@@ -82,23 +81,23 @@ class TypedVectorDom[+D <: Dom](val argDom:D, val indexer:Indexer = new Canonica
 
   def dim = argDom.domainSize
   def one = ???
-  def zero = new SparseHashTensor1(dim)
+  def zero = new FactorieVect(new SparseHashTensor1(dim))
 }
 
 class GrowableVectorDom(val dim: Int) extends GenericVectorDom {
   def one = {
     val result = new GrowableDenseTensor1(dim)
     result := 1.0
-    result
+    new FactorieVect(result)
   }
 
-  def zero = new GrowableDenseTensor1(dim)
+  def zero = new FactorieVect(new GrowableDenseTensor1(dim))
 
   def Term(values: Double*) = {
     require(values.size == dim)
     val result = new GrowableDenseTensor1(values.size)
     result := values.toArray
-    Const(result)
+    Const(new FactorieVect(result))
   }
 
 }

@@ -24,16 +24,27 @@ trait Vect2 {
 
   def dot(that: Vect2): Double
 
-  def :*(that: Vect2, scale: Double)
+  def :*(that: Vect2, scale: Double = 1.0)
 
   def update(i: Int, value: Double)
 
   def randomize(eps: => Double): Unit
 
+  def oneNorm:Double
+
   def zero(): Unit
 
   def foreachActiveElement(f: (Int, Double) => Unit): Unit
 
+  def activeDomain:Seq[Int]
+
+  def activeElements:Iterator[(Int,Double)]
+
+  def outer(that:Vect2):Mat2
+
+  def copy:Vect2
+
+  def mapValues(fun:Double => Double, receiver:Vect2):Unit
 }
 
 object FactorieVect {
@@ -42,9 +53,17 @@ object FactorieVect {
   def dense(dim: Int) = new FactorieVect(new DenseTensor1(dim))
 
   def dense(elements: Array[Double]) = new FactorieVect(new DenseTensor1(elements))
+
+  def matchFVect[T](that: Vect2)(proc: Tensor1 => T): T = that match {
+    case f: FactorieVect => proc(f.self)
+    case _ => throw new UnsupportedOperationException
+  }
 }
 
 class FactorieVect(var self: Tensor1) extends Vect2 {
+
+  import FactorieVect._
+
   def dim = self.dim1
 
   def apply(i: Int) = self(i)
@@ -54,10 +73,11 @@ class FactorieVect(var self: Tensor1) extends Vect2 {
       self(j) += eps
   }
 
-  private def matchFVect[T](that: Vect2)(proc: Tensor1 => T): T = that match {
-    case f: FactorieVect => proc(f.self)
-    case _ => throw new UnsupportedOperationException
-  }
+
+  def activeDomain = self.activeDomain.toSeq
+
+
+  def activeElements = self.activeElements
 
   def :=(scale: Double) = self := scale
 
@@ -68,6 +88,15 @@ class FactorieVect(var self: Tensor1) extends Vect2 {
   def dot(that: Vect2) = matchFVect(that)(ownDot(self, _))
 
   def update(i: Int, value: Double) = self(i) = value
+
+
+  def oneNorm = self.oneNorm
+
+  def copy = new FactorieVect(self.copy)
+
+  def mapValues(fun: (Double) => Double, receiver: Vect2) = {
+    self.foreachActiveElement((ix, v) => receiver.update(ix, fun(v)))
+  }
 
   def :*(other: Vect2, scale: Double) = {
     self match {
@@ -141,5 +170,5 @@ class FactorieVect(var self: Tensor1) extends Vect2 {
     }
   }
 
-
+  def outer(that: Vect2) = matchFVect(that)(v => new FactorieMat((self outer v).asInstanceOf[Tensor2]))
 }

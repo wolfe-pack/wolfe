@@ -14,7 +14,7 @@ object MFEstimator {
 
   @domain case class Factorization(a: IndexedSeq[Vect], v: IndexedSeq[Vect])
 
-  def learn(mat: Mat, k: Int = 2, 
+  def learn(mat: Mat2, k: Int = 2,
             l2Reg: Double = 0.1, l1Reg:Double = 0.1,
             epochs:Int = 10, logistic: Boolean = false): Factorization = {
     val n = mat.dim1

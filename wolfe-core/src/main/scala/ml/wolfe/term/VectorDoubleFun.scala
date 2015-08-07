@@ -22,7 +22,8 @@ class VectorDoubleFun[T <: VectorTerm](val arg: T, fun: Double => Double, deriv:
 
   override def composer(args: Settings) = new Composer(args) {
     def eval()(implicit execution: Execution) = {
-      output.vect(0) = input(0).vect(0).mapValues(fun, output.vect(0))
+      input(0).vect(0).mapValues(fun, output.vect(0))
+      //output.vect(0) = input(0).vect(0).mapValues(fun, output.vect(0))
     }
   }
 
@@ -31,8 +32,8 @@ class VectorDoubleFun[T <: VectorTerm](val arg: T, fun: Double => Double, deriv:
     new ComposedDifferentiator(wrt,in,err,gradientAcc) {
 
       def localBackProp()(implicit execution: Execution) = {
-        argErrors(0).vect(0) = argOutputs(0).vect(0).mapValues(deriv, argErrors(0).vect(0)) :* error.vect(0).asInstanceOf[DenseTensor1]
-
+        argOutputs(0).vect(0).mapValues(deriv, argErrors(0).vect(0))
+        argOutputs(0).vect(0) :* error.vect(0)
       }
     }
 }
@@ -63,7 +64,7 @@ class L1Norm[T <: VectorTerm](val arg:T) extends ComposedDoubleTerm {
 
       def localBackProp()(implicit execution: Execution) = {
         val scale = error.cont(0)
-        for (i <- 0 until argOutputs(0).vect(0).dim1) {
+        for (i <- 0 until argOutputs(0).vect(0).dim) {
           val current = argOutputs(0).vect(0)(i)
           argErrors(0).vect(0)(i) = if (current > 0.0) scale else if (current < 0) -scale else 0.0
         }

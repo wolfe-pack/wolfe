@@ -1,7 +1,7 @@
 package ml.wolfe.term
 
 import cc.factorie.la.{DenseTensor2, DenseTensor1}
-import ml.wolfe.{SimpleIndex, Mat, Vect}
+import ml.wolfe.{SimpleIndex, Mat2, Vect}
 
 import scala.util.Random
 import org.scalautils.Tolerance._
@@ -33,7 +33,7 @@ object GradientChecking {
       xPos.update(ix(0), xPos(ix(0)) + epsilon)
       xNeg.update(ix(0), xNeg(ix(0)) - epsilon)
       (xPos, xNeg)
-    case x: Mat =>
+    case x: Mat2 =>
       val xPos = x.copy
       val xNeg = x.copy
       xPos.update(ix(0), ix(1), xPos(ix(0), ix(1)) + epsilon)

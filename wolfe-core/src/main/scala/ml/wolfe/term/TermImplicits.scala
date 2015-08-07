@@ -727,11 +727,11 @@ trait MathImplicits {
 
   implicit def intToDoubleConstant(d: Int): Dom.doubles.Term = Dom.doubles.Const(d)
 
-  implicit def vectToConstant(d: Vect): Constant[VectorDom] = Vectors(d.dim1).Const(d)
+  implicit def vectToConstant(d: Vect): Constant[VectorDom] = Vectors(d.dim1).Const(new FactorieVect(d))
 
-  implicit def vectToConstantWithDom(d: Vect)(implicit dom: VectorDom): dom.Term = dom.Const(d)
+  implicit def vectToConstantWithDom(d: Vect)(implicit dom: VectorDom): dom.Term = dom.Const(new FactorieVect(d))
 
-  implicit def matToConstant(d: Mat): Constant[MatrixDom] = Matrices(d.dim1, d.dim2).Const(d)
+  implicit def matToConstant(d: Mat2): Constant[MatrixDom] = Matrices(d.dim1, d.dim2).Const(d)
 
   implicit def intToDouble(int: IntTerm): IntToDouble[int.type] = new IntToDouble[int.type](int)
 

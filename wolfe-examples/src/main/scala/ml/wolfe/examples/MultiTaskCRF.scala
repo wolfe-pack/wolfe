@@ -122,7 +122,7 @@ object MultiTaskCRF extends App {
     val k = 10
 
     // model domains
-    @domain case class Theta(a: Mat, w: Vect, wb: Vect)
+    @domain case class Theta(a: Mat2, w: Vect, wb: Vect)
 
     implicit val Thetas = Theta.Values(Matrices(k, numFeats), Vectors(k), TransitionFeats)
     implicit val maxProductParams = BPParameters(iterations = 1)
@@ -170,7 +170,7 @@ object MultiTaskCRF extends App {
     val k = 10
 
     // model domains
-    @domain case class Theta(A: Mat, w: Vect, wb: Vect)
+    @domain case class Theta(A: Mat2, w: Vect, wb: Vect)
 
     implicit val Thetas = Theta.Values(Matrices(k, numFeats), Vectors(k), TransitionFeats)
     implicit val maxProductParams = BPParameters(iterations = 2)
@@ -219,7 +219,7 @@ object MultiTaskCRF extends App {
     val bk = 10
 
     // model domains
-    @domain case class Theta(a: Mat, b: Mat, w: Vect, wb: Vect)
+    @domain case class Theta(a: Mat2, b: Mat2, w: Vect, wb: Vect)
 
     implicit val Thetas = Theta.Values(Matrices(ak, bk), Matrices(bk, numFeats), Vectors(ak), TransitionFeats)
     implicit val maxProductParams = BPParameters(iterations = 2)
