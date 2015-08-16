@@ -43,7 +43,7 @@ object SISTAConverter {
     val dtree = toWolfeDependencyTree(sent)
     val entities = toWolfeEntities(sent)
     Sentence(tokens,
-             ie = new IEAnnotation(entityMentions = entities, relationMentions = null, eventMentions = null, semanticFrames = null),
+             ie = new IEAnnotation(entityMentions = entities, relationMentions = IndexedSeq(), eventMentions = IndexedSeq(), semanticFrames = IndexedSeq()),
              syntax = new SyntaxAnnotation(tree = ctree, dependencies = dtree))
   }
 
