@@ -23,7 +23,13 @@ object D3Plotter {
       series.points.map(p => s"{x:${p._1}, y:${p._2}}").mkString("[", ",", "]")
     }
 
-    def seriesToJson(series: XYSeries, color: String = colors.head) = s"""|{|values: ${seriesDataToJson(series)},|key: "${series.name}",|color: '$color',|area: false|}
+    def seriesToJson(series: XYSeries, color: String = colors.head) = s"""
+     |{
+     |values: ${seriesDataToJson(series)},
+     |key: "${series.name}",
+     |color: '$color',
+     |area: false
+     |}
        """.stripMargin
 
 
@@ -115,6 +121,7 @@ object D3Plotter {
     println(html)
     RawHTML(html)
   }
+
 
 
   def main(args: Array[String]) {
