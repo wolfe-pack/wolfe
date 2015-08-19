@@ -1,21 +1,17 @@
-package event.io
+package ml.wolfe.nlp.io
 
 import ml.wolfe.nlp.syntax.DependencyTree
 import ml.wolfe.nlp._
-import scala.pickling.binary.StreamOutput
 import scala.pickling.pickler._
 import scala.pickling._
-import scala.xml.Elem
 import java.io.{FileInputStream, FileOutputStream, File}
-
 import scala.pickling.Defaults._
-import scala.pickling.binary._
 
 /**
  * Created by narad on 09/08/15.
  */
 object NLPPicklers {
-
+  import scala.pickling.binary._
   import DocumentPickler._
 
   def lazyPickle(iter: Iterator[Document], file: File): Unit = {
