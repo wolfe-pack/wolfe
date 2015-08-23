@@ -45,7 +45,6 @@ class NavigableDocument(val docToNavigate: Document) {
     def index = char2sentence(sentence.offsets.start)._2
     def next = document.sentences.lift(index + 1)
     def prev = document.sentences.lift(index - 1)
-
   }
 
 
