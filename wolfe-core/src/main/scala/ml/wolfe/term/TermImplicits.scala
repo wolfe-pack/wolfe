@@ -507,7 +507,16 @@ trait MathImplicits {
     def *(that: VectorTerm) = new MatrixVectorProduct(mat, that)
   }
 
-  implicit class RichDoubleTerm(term: DoubleTerm) {
+  implicit class RichDoubleTerm(val term: DoubleTerm) {
+
+    def differ(wrt: Seq[Var[Dom]])(in:Map[AnyVar,Setting],gradientAcc:Map[AnyVar,Setting]) = {
+      val inSettings = Settings.fromSeq(term.vars map in)
+      val accSettings = Settings.fromSeq(term.vars map in)
+      val err = Setting.cont(1.0)
+      term.differentiatorImpl(wrt)(inSettings,err, accSettings)
+    }
+
+
     def +(that: DoubleTerm) = new Sum(IndexedSeq(term, that))
 
     def -(that: DoubleTerm) = new Sum(IndexedSeq(term, that * (-1.0)))

@@ -454,6 +454,10 @@ object Settings {
   }
 
   def apply(settings: Setting*) = fromSeq(settings.toIndexedSeq)
+
+  def apply(vars:AnyVar*) = (vars map (v => v -> v.domain.createSetting())).toMap
+  def zeroes(vars:AnyVar*) = (vars map (v => v -> v.domain.createZeroSetting())).toMap
+
 }
 
 class DiscMsg(var msg: Array[Double]) {
