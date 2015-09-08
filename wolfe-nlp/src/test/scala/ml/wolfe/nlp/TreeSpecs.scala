@@ -34,7 +34,7 @@ class TreeSpecs extends WolfeSpec {
     }
 
     "find the correct shortest directed path" in {
-      val path = tree.shortestPath(2, 0).get
+      val path = tree.shortestDirectedPath(2, 0).get
       val result = path.map(_.source) ++ Seq(path.last.dest)
       val correct = Seq(2, 1, 0)
       result should equal(correct)
