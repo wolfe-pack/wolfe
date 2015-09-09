@@ -155,33 +155,6 @@ case class PathArc(source: Int, dest: Int, parent: Int, child: Int, label: Optio
  */
 object DependencyTree {
   val empty = DependencyTree(tokens = IndexedSeq(), arcs = Seq())
-
-  def main(args: Array[String]) {
-    val tokens = IndexedSeq(
-      Token(word = "the", offsets = CharOffsets(0,1)),
-      Token(word = "cat", offsets = CharOffsets(1,2)),
-      Token(word = "scratched", offsets = CharOffsets(2,3)),
-      Token(word = "the", offsets = CharOffsets(3,4)),
-      Token(word = "man", offsets = CharOffsets(4,5)),
-      Token(word = "with", offsets = CharOffsets(5,6)),
-      Token(word = "claws", offsets = CharOffsets(6,7)))
-    val arcs = Seq(
-      Arc(1,0, Some("DET")),
-      Arc(2,1, Some("SUBJ")),
-      Arc(4,3, Some("DET")),
-      Arc(2,4, Some("OBJ")),
-      Arc(2,5, Some("PREP")),
-      Arc(5,6, Some("PRP")))
-    val tree = DependencyTree(tokens, arcs)
-
-    println("Sentence:\n\t" + tokens.map(_.word).zipWithIndex.map(p => p._2 + ":" + p._1).mkString(" ") + "\n")
-    println("Parse:\n" + tree.toString + "\n")
-    println("Root: " + tokens(tree.root).word)
-    println("Shortest Directed Path(2,0): " + tree.shortestDirectedPath(2,0))
-    println("Shortest Directed Path(6,0): " + tree.shortestDirectedPath(6,0))
-    println("Shortest Path(2,0): " + tree.shortestPath(2,0))
-    println("Shortest Path(6,0): " + tree.shortestPath(6,0))
-  }
 }
 
 

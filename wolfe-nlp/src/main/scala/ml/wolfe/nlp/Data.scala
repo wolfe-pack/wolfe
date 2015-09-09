@@ -69,6 +69,10 @@ case class Sentence(tokens: IndexedSeq[Token], syntax: SyntaxAnnotation = Syntax
 
   def toTaggedText = tokens map (_.toTaggedText) mkString " "
 
+  def words = tokens map (_.word)
+
+  def posTags = tokens map (_.posTag)
+
   def size = tokens.size
 
   def offsets = CharOffsets(tokens.head.offsets.start, tokens.last.offsets.end)
