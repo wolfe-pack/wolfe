@@ -1,8 +1,5 @@
 package ml.wolfe.term
 
-
-import ml.wolfe.term
-
 import scala.annotation.StaticAnnotation
 import scala.language.experimental.macros
 import scala.reflect.macros.whitebox
@@ -27,11 +24,14 @@ object CaseClassDom {
         val caseClassTermName = caseClassDef.name.toTermName
         val caseClassTypeName = caseClassDef.name.toTypeName
 
+        //println(caseClassDef.name)
+
         //TokenDom
         val domClassName = TypeName(c.freshName(caseClassTermName.decodedName.toString + "Dom"))
 
         //List(val rains:...,val prob:...)
-        val q"case class ${_}(..${caseClassArgs: List[ValDef]})" = caseClassDef
+        val q"case class ${_}[..${genTypes:List[TypeDef]}](..${caseClassArgs: List[ValDef]})" = caseClassDef
+
         val caseClassArgTypeNames = caseClassArgs.map{case q"${_} val ${_}:$typ = ${_}" => typ}
         //println(caseClassArgTypes)
 //        val typedCaseClassArgs = caseClassArgs.map(a => c.typecheck(a))
@@ -57,12 +57,20 @@ object CaseClassDom {
         val argDomTypeParameters = for ((argDomTypeName, caseClassArgTypeName) <- argDomTypeNames zip caseClassArgTypeNames) yield {
           q"type $argDomTypeName <: ml.wolfe.term.TypedDom[$caseClassArgTypeName]"
         }
+        val genTypenames = for (t <- genTypes) yield tq"${t.name}"
+        //println("typeNames")
+        //println(genTypenames.head.getClass)
+
+        val mergedTypeParameters = genTypes ::: argDomTypeParameters
 
         //List(val rains:Dom_rains,...)
         val domConstructorArgs = for ((arg, typ) <- argNames zip argDomTypeNames) yield q"val $arg:$typ"
 
         //List(rains.type,prob.type)
         val argDomSingletonTypes = argNames.map(n => tq"$n.type")
+        val mergedSingletonTypes = genTypenames ::: argDomSingletonTypes
+
+        //println(mergedSingletonTypes)
 
         //for named self reference
         val self = q"_dom" //TermName(c.freshName("dom"))
@@ -167,14 +175,14 @@ object CaseClassDom {
 
         val newTerm = q"""
           $caseClassDef
-          class $domClassName[..$argDomTypeParameters](..$domConstructorArgs, val valueSemantics:Boolean = true) extends ml.wolfe.term.ProductDom {
+          class $domClassName[..$mergedTypeParameters](..$domConstructorArgs, val valueSemantics:Boolean = true) extends ml.wolfe.term.ProductDom {
             _dom =>
 
             import ml.wolfe.term._
 
             override def productName = $classNameString
 
-            type Value = $caseClassTypeName
+            type Value = $caseClassTypeName[..$genTypenames]
             type Var = DomVar
             type Term = DomTerm
 
@@ -182,9 +190,9 @@ object CaseClassDom {
             val lengths = if (valueSemantics) $lengths else $lengths + Offsets(discOff = 1)
             override val dimensions = $dimensions
 
-            def one = new $caseClassTypeName(..$ones)
-            def zero = new $caseClassTypeName(..$zeros)
-            override def sparseZero = new $caseClassTypeName(..$sparseZeros)
+            def one = new $caseClassTypeName[..$genTypenames](..$ones)
+            def zero = new $caseClassTypeName[..$genTypenames](..$zeros)
+            override def sparseZero = new $caseClassTypeName[..$genTypenames](..$sparseZeros)
 
             $marginalsCaseClassDef
 
@@ -198,7 +206,7 @@ object CaseClassDom {
 
             def toValue(_setting:Setting,_offsets:Offsets):Value = {
               ..$toValueArgs
-              new $caseClassTypeName(..$argNames)
+              new $caseClassTypeName[..$genTypenames](..$argNames)
             }
 
             def toMarginals(_Msg:Msg,_offsets:Offsets):Marginals = {
@@ -259,15 +267,25 @@ object CaseClassDom {
 
           }
           object $caseClassTermName {
-            def Values[..$argDomTypeParameters](implicit ..$domConstructorArgs) =
-              new $domClassName[..$argDomSingletonTypes](..$argNames)
-            def Objects[..$argDomTypeParameters](implicit ..$domConstructorArgs) =
-              new $domClassName[..$argDomSingletonTypes](..$argNames, false)
+
+            class ValuesConstructor[..$genTypes] {
+              def apply[..$argDomTypeParameters](implicit ..$domConstructorArgs) =
+                new $domClassName[..$mergedSingletonTypes](..$argNames)
+            }
+            class ObjectsConstructor[..$genTypes] {
+              def apply[..$argDomTypeParameters](implicit ..$domConstructorArgs) =
+                new $domClassName[..$mergedSingletonTypes](..$argNames,false)
+            }
+            def Values[..$genTypes] =
+              new ValuesConstructor[..$genTypenames]
+            def Objects[..$genTypes] =
+              new ObjectsConstructor[..$genTypenames]
           }
         """
         //def dom:$domClassName = new $domClassName
 //        println(newTerm)
 
+//        println(newTerm)
         c.Expr[Any](newTerm)
       case _ => c.abort(c.enclosingPosition, "Can't create domain")
     }
@@ -278,4 +296,5 @@ object CaseClassDom {
 class domain extends StaticAnnotation {
   def macroTransform(annottees: Any*): Any = macro CaseClassDom.implOnClass
 }
+
 

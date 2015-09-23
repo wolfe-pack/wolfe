@@ -173,7 +173,15 @@ class CaseClassDomSpecs extends WolfeSpec {
       Examples.indexOfSetting(s1) should be (Examples.indexOfSetting(s2))
     }
 
+    "should support generics" in {
+      @domain case class Stack[C](store:IndexedSeq[C])
+
+      val Stacks = Stack.Values[Double](Seqs(Doubles,5))
+      Stacks.store.elementDom should be (Doubles)
+
+    }
 
   }
+
 
 }
