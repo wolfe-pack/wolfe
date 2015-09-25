@@ -30,38 +30,58 @@ object CaseClassDom {
         val domClassName = TypeName(c.freshName(caseClassTermName.decodedName.toString + "Dom"))
 
         //List(val rains:...,val prob:...)
-        val q"case class ${_}[..${genTypes:List[TypeDef]}](..${caseClassArgs: List[ValDef]})" = caseClassDef
+        val q"case class ${_}[..${genTypes: List[TypeDef]}](..${caseClassArgs: List[ValDef]})" = caseClassDef
 
-        val caseClassArgTypeNames = caseClassArgs.map{case q"${_} val ${_}:$typ = ${_}" => typ}
-        //println(caseClassArgTypes)
-//        val typedCaseClassArgs = caseClassArgs.map(a => c.typecheck(a))
-//        val typedCaseClassArgs = caseClassArgs.map(a => q"{${c.typecheck(a)}}").map{case q"{$a}" => a}
-//        println(caseClassArgs.map(a => q"{c.typecheck(a)}"))
+        val caseClassArgTypeNames: List[Tree] = caseClassArgs.map { case q"${_} val ${_}:$typ = ${_}" => typ }
 
         //List(rains,prob)
         val caseClassArgNames = caseClassArgs.map(_.name)
         def argNames = caseClassArgNames
-        def prefixName(prefix:String, name:TermName) = TermName(prefix + name.decodedName.toString)
+        def prefixName(prefix: String, name: TermName) = TermName(prefix + name.decodedName.toString)
 
         val argName2Index = argNames.zipWithIndex.toMap
-
-        //List(Boolean,Double)
-//        println(caseClassArgTypeNames.map(a => a.symbol.info))
-        //val caseClassArgTypeNames = typedCaseClassArgs.map(a => a.symbol.info)
 
         //List(Dom_rains, Dom_prob)
         val arg2DomTypeName = argNames.map(n => n -> TypeName(c.freshName("Dom_") + n.toString)).toMap
         val argDomTypeNames = argNames.map(arg2DomTypeName)
 
-        //List(Dom_rains <: TypedDom[Boolean],...)
-        val argDomTypeParameters = for ((argDomTypeName, caseClassArgTypeName) <- argDomTypeNames zip caseClassArgTypeNames) yield {
-          q"type $argDomTypeName <: ml.wolfe.term.TypedDom[$caseClassArgTypeName]"
+        //        val covariantArgDomTypeParameters = for (t <- argDomTypeParameters) yield q"+$t"
+        def covariant(typeExpr: TypeDef): TypeDef = {
+          TypeDef(Modifiers(typeExpr.mods.flags | Flag.COVARIANT), typeExpr.name, typeExpr.tparams, typeExpr.rhs)
         }
-        val genTypenames = for (t <- genTypes) yield tq"${t.name}"
-        //println("typeNames")
-        //println(genTypenames.head.getClass)
+        //          val cc = q"case class A[+$typeExpr](t:Any)"
+        //          val q"case class A[$hack](..${_})" = cc
+        //          hack
+        //        }
 
+        //List(Dom_rains <: TypedDom[Boolean],...)
+        val argDomTypeParameters: List[TypeDef] = {
+          for ((argDomTypeName, caseClassArgTypeName) <- argDomTypeNames zip caseClassArgTypeNames)
+            yield {
+              q"type $argDomTypeName <: ml.wolfe.term.TypedDom[$caseClassArgTypeName]"
+            }
+        }
+
+        val covariantArgDomTypeParameters = argDomTypeParameters map (t => covariant(t))
+
+        //map (t => covariant(t))
+
+        val genTypenames = for (t <- genTypes) yield tq"${t.name}"
+
+        def createRightTypeHack(typeName: TypeName, bound: Tree) = {
+          val q"object Blah { type Test2[$t] = Double }" = q"object Blah { type Test2[$typeName <: ml.wolfe.term.TypedDom[$bound]] = Double}"
+          t
+        }
+        val argDomTypeParametersHack: List[TypeDef] = for ((argDomTypeName, caseClassArgTypeName) <- argDomTypeNames zip caseClassArgTypeNames)
+          yield createRightTypeHack(argDomTypeName, caseClassArgTypeName)
+
+        val typeParameterHack = genTypes ::: argDomTypeParametersHack
+        val covariantMergedTypeParameters = genTypes ::: covariantArgDomTypeParameters
         val mergedTypeParameters = genTypes ::: argDomTypeParameters
+        val mergedTypeParametersNames = genTypenames ::: argDomTypeParameters.map(t => tq"${t.name}")
+
+        val argDomTypeLowerBounds = for (caseClassArgTypeName <- caseClassArgTypeNames) yield tq"ml.wolfe.term.TypedDom[$caseClassArgTypeName]"
+        val mergedTypeBounds = genTypenames ::: argDomTypeLowerBounds
 
         //List(val rains:Dom_rains,...)
         val domConstructorArgs = for ((arg, typ) <- argNames zip argDomTypeNames) yield q"val $arg:$typ"
@@ -69,12 +89,13 @@ object CaseClassDom {
         //List(rains.type,prob.type)
         val argDomSingletonTypes = argNames.map(n => tq"$n.type")
         val mergedSingletonTypes = genTypenames ::: argDomSingletonTypes
+        val mergedTypesFromTypeParameters = genTypenames ::: argDomTypeNames.map(n => tq"$n")
 
         //println(mergedSingletonTypes)
 
         //for named self reference
         val self = q"_dom" //TermName(c.freshName("dom"))
-        val selfDef = q"val $self:$domClassName[..$argDomSingletonTypes]"
+      val selfDef = q"val $self:$domClassName[..$argDomSingletonTypes]"
 
         //for Marginals class
         val marginalArguments = for (d <- argNames) yield {
@@ -115,11 +136,11 @@ object CaseClassDom {
           }
         }
 
-        val toValueArgs = withOffsets(q"_offsets") { case (name, off) => q"val $name = $self.$name.toValue(_setting, $off)"}
-        val toMarginalsArgs = withOffsets(q"_offsets") { case (name, off) => q"val $name = $self.$name.toMarginals(_Msg, $off)"}
-        val copyValueStatements = withOffsets() {case (name,off) => q"$self.$name.copyValue(_value.$name, _setting, $off)"}
-        val copyMarginalStatements = withOffsets() {case (name,off) => q"$self.$name.copyMarginals(_marginals.$name, _Msg, $off)"}
-        val fillZeroMsgStatements = withOffsets() {case (name,off) => q"$self.$name.fillZeroMsg(_target, $off)"}
+        val toValueArgs = withOffsets(q"_offsets") { case (name, off) => q"val $name = $self.$name.toValue(_setting, $off)" }
+        val toMarginalsArgs = withOffsets(q"_offsets") { case (name, off) => q"val $name = $self.$name.toMarginals(_Msg, $off)" }
+        val copyValueStatements = withOffsets() { case (name, off) => q"$self.$name.copyValue(_value.$name, _setting, $off)" }
+        val copyMarginalStatements = withOffsets() { case (name, off) => q"$self.$name.copyMarginals(_marginals.$name, _Msg, $off)" }
+        val fillZeroMsgStatements = withOffsets() { case (name, off) => q"$self.$name.fillZeroMsg(_target, $off)" }
         val ones = argNames.map(n => q"$n.one")
         val zeros = argNames.map(n => q"$n.zero")
         val sparseZeros = argNames.map(n => q"$n.sparseZero")
@@ -127,11 +148,11 @@ object CaseClassDom {
         val termArgsDef = argNames.map(n => q"def $n:${arg2DomTypeName(n)}#Term")
         val varArgsDef = argNames.map(n => q"def $n:${arg2DomTypeName(n)}#Term")
 
-        val termConstructorArgs = argNames.map(n => q"val ${prefixName("_",n)}:$self.$n.Term")
-        val termConstructorDefs = argNames.map(n => q"val $n:$self.$n.Term = ${prefixName("_",n)}")
+        val termConstructorArgs = argNames.map(n => q"val ${prefixName("_", n)}:$self.$n.Term")
+        val termConstructorDefs = argNames.map(n => q"val $n:$self.$n.Term = ${prefixName("_", n)}")
 
-        def termCastedArgs(args:Tree) = argNames.zipWithIndex.map {
-          case (n,i) =>
+        def termCastedArgs(args: Tree) = argNames.zipWithIndex.map {
+          case (n, i) =>
             val indexConst = Constant(i)
             q"$args($indexConst).asInstanceOf[$self.$n.Term]"
         }
@@ -142,13 +163,13 @@ object CaseClassDom {
             val nameString = name.decodedName.toString
             val nameConst = Constant(nameString)
             q"""val $name:$self.$name.Term = $self.$name.own(new Field(this,$self.$name,$off)($nameConst))"""
-//
-//            q"""def $name = $self.$name.variable(name + "." + $nameConst,$off, if (owner == null) this else owner)"""
+          //
+          //            q"""def $name = $self.$name.variable(name + "." + $nameConst,$off, if (owner == null) this else owner)"""
         }
 
         val constArgs = withOffsets(q"_offsets") {
           case (name, off) =>
-          q"val $name:$self.$name.Term = $self.$name.Const(_value.$name)"
+            q"val $name:$self.$name.Term = $self.$name.Const(_value.$name)"
         }
 
         val composedArgs = argNames.map(n => q"_term.$n.asInstanceOf[ml.wolfe.term.Term[ml.wolfe.term.Dom]]")
@@ -158,7 +179,7 @@ object CaseClassDom {
             val nameString = name.decodedName.toString
             val nameConst = Constant(nameString)
             q"""val $name = $self.$name.own(new Field(_term,$self.$name,$off)($nameConst))"""
-//            q"""val $name:$self.$name.Term = ???"""
+          //            q"""val $name:$self.$name.Term = ???"""
 
         }
 
@@ -175,7 +196,7 @@ object CaseClassDom {
 
         val newTerm = q"""
           $caseClassDef
-          class $domClassName[..$mergedTypeParameters](..$domConstructorArgs, val valueSemantics:Boolean = true) extends ml.wolfe.term.ProductDom {
+          class $domClassName[..$covariantMergedTypeParameters](..$domConstructorArgs, val valueSemantics:Boolean = true) extends ml.wolfe.term.ProductDom {
             _dom =>
 
             import ml.wolfe.term._
@@ -268,6 +289,9 @@ object CaseClassDom {
           }
           object $caseClassTermName {
 
+            type Dom[..$genTypes] = $domClassName[..$mergedTypeBounds]
+            type Term[..$genTypes] = $domClassName[..$mergedTypeBounds]#Term
+
             class ValuesConstructor[..$genTypes] {
               def apply[..$argDomTypeParameters](implicit ..$domConstructorArgs) =
                 new $domClassName[..$mergedSingletonTypes](..$argNames)
@@ -283,13 +307,21 @@ object CaseClassDom {
           }
         """
         //def dom:$domClassName = new $domClassName
-//        println(newTerm)
+        //        println(newTerm)
+        //        type Dom[..$mergedTypeParameters] = $domClassName[..$mergedTypesFromTypeParameters]
+        //            type Test2[C, Dom_19store <: ml.wolfe.term.TypedDom[IndexedSeq[C]]] = Seq[Double];
+        //            type Dom[..typeParameterHack] = $domClassName[..$mergedTypesFromTypeParameters]
+        //            type Dom[..typeParameterHack] = Seq[Double]
+
+        //            type Dom[..$typeParameterHack] = $domClassName[..$mergedTypesFromTypeParameters]
+        //            type Term[..$typeParameterHack] = ml.wolfe.term.Term[$domClassName[..$mergedTypesFromTypeParameters]]
 
 //        println(newTerm)
         c.Expr[Any](newTerm)
       case _ => c.abort(c.enclosingPosition, "Can't create domain")
     }
   }
+
 
 }
 

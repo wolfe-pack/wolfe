@@ -179,6 +179,22 @@ class CaseClassDomSpecs extends WolfeSpec {
       val Stacks = Stack.Values[Double](Seqs(Doubles,5))
       Stacks.store.elementDom should be (Doubles)
 
+      val test:Stack.Dom[Double] = Stacks
+
+      val v:Stack.Term[Double] = Stacks.Variable("x")
+
+//      v.store
+
+      def example[C](stack:Stack.Term[C]) = ??? //stack.store(0)
+
+//      def head[C,D <: TypedDom[IndexedSeq[C]]](stack:Stack.Dom[C,D]#Term) = stack.store
+//
+//
+//      val typed:Stack.Dom[Double,_] = Stacks
+//      val term:Term[Stack.Dom[_,_]] = Stacks.Variable("x")
+      //def (stack: Stack.Term[C,]
+      //trait Test2[type A]
+
     }
 
   }
