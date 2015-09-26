@@ -27,7 +27,7 @@ object Typer {
 
   def main(args: Array[String]) {
     import Wolfe._
-    val i = Var[Int]
+    val i = Variable[Int]("i")
 
     println(domain(i in RangeDom(0 until 3))(i + i))
   }

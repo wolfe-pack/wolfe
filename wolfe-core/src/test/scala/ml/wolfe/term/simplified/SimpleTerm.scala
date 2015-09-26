@@ -1,7 +1,8 @@
 package ml.wolfe.term.simplified
 
-import scala.language.implicitConversions
-
+/**
+ * @author riedel
+ */
 object SimpleTerm {
 
   import Wolfe._
@@ -34,4 +35,3 @@ object SimpleTerm {
   }
 
 }
-
