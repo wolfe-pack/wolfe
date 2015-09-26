@@ -9,7 +9,6 @@ class CaseClassDomSpecs extends WolfeSpec {
 
   import TermImplicits._
 
-
   "A case class domain macro" should {
 
     @domain case class World(rain: Boolean, prob: Double)
