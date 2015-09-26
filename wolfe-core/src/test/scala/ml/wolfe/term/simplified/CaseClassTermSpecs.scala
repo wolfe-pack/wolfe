@@ -24,6 +24,7 @@ class CaseClassTermSpecs extends WolfeSpec {
       eval(v := 3.0)(t) should be (Good(Stack(Seq(1.0),3.0)))
     }
 
+
     "provide a term unapply method" in {
       @term case class Stack[C](store: Seq[C], active: Double)
       val r = Constant(Stack(Seq(1.0),2.0)) match {

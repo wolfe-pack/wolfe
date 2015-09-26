@@ -6,12 +6,16 @@ import Accumulation._
 /**
  * @author riedel
  */
-trait BaseEval extends Evaluator {
+object BaseEval extends Evaluator {
 
   import Wolfe._
 
-  def partial[T](bindings: Bindings) = {
-    def e[A](term:STerm[A]) = eval(bindings)(term)
+  implicit class EvaluatorTerm[T](val term: STerm[T]) {
+    def eval(bindings: Binding[Any]*) = BaseEval.eval(Bindings(bindings: _*))(term)
+  }
+
+  def partial[T](bindings: Bindings, backoff:Evaluator) = {
+    def e[A](term: STerm[A]) = backoff.eval(bindings)(term)
     val result: PartialFunction[STerm[T], T Or Every[ErrorMsg]] = {
 
       case Constant(t) =>
@@ -47,6 +51,14 @@ trait BaseEval extends Evaluator {
              va <- vs.map(a => eval(bindings + (variable := a))(body)).combined)
           yield va
 
+      case SeqSlice(s, from, to) =>
+        for (vs <- e(s); vfrom <- e(from); vto <- e(to)) yield
+        vs.slice(vfrom, vto)
+
+      case SeqFill(length, elem) =>
+        for (vlength <- e(length); velem <- e(elem)) yield
+        Seq.fill(vlength)(velem)
+
       case GetElement(p, index) =>
         for (vp <- e(p)) yield
         vp.productElement(index).asInstanceOf[T]
@@ -66,14 +78,6 @@ trait BaseEval extends Evaluator {
   }
 }
 
-object BaseEval extends BaseEval {
-
-  implicit class EvaluatorTerm[T](val term: STerm[T]) {
-    def eval(bindings: Binding[Any]*) = BaseEval.eval(Bindings(bindings: _*))(term)
-  }
-
-}
-
 object BaseEvalTest {
   def main(args: Array[String]) {
     import Wolfe._
@@ -91,16 +95,17 @@ object BaseEvalTest {
 
 trait Evaluator {
 
-  def partial[T](bindings: Bindings): PartialFunction[STerm[T], T Or Every[ErrorMsg]]
+  def partial[T](bindings: Bindings, backoff: Evaluator): PartialFunction[STerm[T], T Or Every[ErrorMsg]]
 
   def eval[T](bindings: Bindings)(term: STerm[T]) =
-    partial(bindings)(term)
+    partial(bindings, this)(term)
 
   def eval[T](bindings: Binding[Any]*)(term: STerm[T]): T Or Every[ErrorMsg] =
     eval(Bindings(bindings: _*))(term)
 
-  def +(that:Evaluator) = new Evaluator {
-    def partial[T](bindings: Bindings) = partial[T](bindings) orElse that.partial[T](bindings)
+  def +(that: Evaluator) = new Evaluator {
+    def partial[T](bindings: Bindings,backoff:Evaluator) =
+      partial[T](bindings,backoff) orElse that.partial[T](bindings,backoff)
   }
 
 }

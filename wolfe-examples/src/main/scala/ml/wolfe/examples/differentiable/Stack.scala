@@ -44,14 +44,14 @@ object StackOps {
 
     //val evaluator = DefaultEval + StackEval
 
-    val evaluator = new BaseEval {}// with DiffEval {}
+    val evaluator = DiffEval + BaseEval
 
   }
 }
 
-trait DiffEval extends Evaluator {
-  def partial[T](bindings: Bindings): PartialFunction[STerm[T], Or[T, Every[ErrorMsg]]] = {
-    case Push(stack,push,pop,value) => for (vs <- eval(bindings)(stack)) yield vs //todo: implement this
+object DiffEval extends Evaluator {
+  def partial[T](bindings: Bindings, backoff:Evaluator): PartialFunction[STerm[T], Or[T, Every[ErrorMsg]]] = {
+    case Push(stack,push,pop,value) => for (vs <- backoff.eval(bindings)(stack)) yield vs //todo: implement this
   }
 }
 
