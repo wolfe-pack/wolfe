@@ -128,6 +128,8 @@ case class TermNotSupported(term: STerm[Any]) extends ErrorMsg {
 
 
 trait Bindings {
+
+  def apply[T](variable:Var[T]) = get(variable).get
   def get[T](variable: Var[T]): Option[T]
 
   def +[T](binding: Binding[T]): Bindings
