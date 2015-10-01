@@ -88,7 +88,14 @@ case class Sentence(tokens: IndexedSeq[Token], syntax: SyntaxAnnotation = Syntax
   def arcs = syntax.dependencies.arcs
   def arcs_=(arcs:Seq[Arc]) =  copy(syntax = syntax.copy(dependencies = syntax.dependencies.copy(arcs = arcs)))
 
-  def +(token: Token) = copy(tokens = tokens :+ token.copy(offsets = token.offsets + tokens.last.offsets.end + 1))
+  def +(token: Token) = {
+    if (tokens.isEmpty) {
+      copy(tokens = IndexedSeq(token.copy(offsets = CharOffsets(0, token.word.length))))
+    }
+    else {
+      copy(tokens = tokens :+ token.copy(offsets = token.offsets + tokens.last.offsets.end + 1))
+    }
+  }
 
   def toCoNLLString = {
     // ID FORM LEMMA PLEMMA POS PPOS FEAT PFEAT HEAD PHEAD DEPREL PDEPREL FILLPRED PRED APREDs
@@ -125,7 +132,11 @@ case class Sentence(tokens: IndexedSeq[Token], syntax: SyntaxAnnotation = Syntax
     }
     for (i <- 0 until tokens.size) yield tokenIndex2Label(i)
   }
+}
 
+object Sentence {
+
+  def empty = Sentence(tokens = IndexedSeq[Token]())
 }
 
 /**
