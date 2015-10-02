@@ -54,6 +54,16 @@ case class SeqAppend[+E](s: STerm[Seq[E]], elem: STerm[E]) extends STerm[Seq[E]]
   def parts = Seq(s, elem)
 }
 
+/**
+ * Applies a fold-left on a term representing a sequence.
+ * @param s the term representing the sequence to apply the fold-left to.
+ * @param init the initial result passed into the first application of the operator.
+ * @param op the operator that transforms the current result and the current element into the next result.
+ * @tparam E the type of elements in the sequence.
+ * @tparam S the type of the result.
+ */
+case class SeqFoldLeft[E, S](s: STerm[Seq[E]], init: STerm[S], op: (STerm[S], STerm[E]) => STerm[S]) extends STerm[S]
+
 case class SeqFill[+E](length: STerm[Int], element: STerm[E]) extends STerm[Seq[E]]
 
 case class SeqPointWiseMax(s1: STerm[Seq[Double]], s2: STerm[Seq[Double]]) extends STerm[Seq[Double]]
@@ -111,15 +121,17 @@ case class ConstructProduct[+T <: Product](args: Seq[STerm[Any]], constructor: S
  */
 trait BinaryOperation[T1, T2] extends Composed {
   def arg1: STerm[T1]
+
   def arg2: STerm[T2]
+
   def parts = Seq(arg1, arg2)
 }
 
-case class Plus[N](arg1: STerm[N], arg2: STerm[N])(implicit val numeric: Numeric[N]) extends STerm[N] with BinaryOperation[N,N]
+case class Plus[N](arg1: STerm[N], arg2: STerm[N])(implicit val numeric: Numeric[N]) extends STerm[N] with BinaryOperation[N, N]
 
-case class Minus[N](arg1: STerm[N], arg2: STerm[N])(implicit val numeric: Numeric[N]) extends STerm[N] with BinaryOperation[N,N]
+case class Minus[N](arg1: STerm[N], arg2: STerm[N])(implicit val numeric: Numeric[N]) extends STerm[N] with BinaryOperation[N, N]
 
 case class Sum[N](args: STerm[Seq[N]])(implicit val numeric: Numeric[N]) extends STerm[N]
 
-case class Times[N](arg1: STerm[N], arg2: STerm[N])(implicit val numeric: Numeric[N]) extends STerm[N] with BinaryOperation[N,N]
+case class Times[N](arg1: STerm[N], arg2: STerm[N])(implicit val numeric: Numeric[N]) extends STerm[N] with BinaryOperation[N, N]
 
