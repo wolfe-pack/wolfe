@@ -4,7 +4,7 @@ import java.io.{File, PrintWriter}
 
 import org.sameersingh.htmlgen.RawHTML
 import org.sameersingh.scalaplot.Style.Color
-import org.sameersingh.scalaplot.{XYSeries, XYChart, Chart}
+import org.sameersingh.scalaplot.{XYChart, XYSeries}
 
 /**
  * @author Sebastian Riedel
@@ -99,9 +99,7 @@ object D3Plotter {
        |chart.yAxis     //Chart y-axis settings
        |.axisLabel("${ylabel(chart.y.label)}")
        |.tickFormat(${if (chart.y.isLog) "logFormat" else "linearFormat"});
-                                                                                                                 |
-                                                                                                                                                                                                                             |
-                                                                                                                                                                                                                             | ${if (chart.x.isLog) "chart.xScale(d3.scale.log());" else ""}
+       | ${if (chart.x.isLog) "chart.xScale(d3.scale.log());" else ""}
        | ${if (chart.y.isLog) "chart.yScale(d3.scale.log());" else ""}
        |
        |/* Done setting the chart up? Time to render it!*/
