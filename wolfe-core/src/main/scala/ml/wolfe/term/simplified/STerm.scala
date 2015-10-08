@@ -135,3 +135,14 @@ case class Sum[N](args: STerm[Seq[N]])(implicit val numeric: Numeric[N]) extends
 
 case class Times[N](arg1: STerm[N], arg2: STerm[N])(implicit val numeric: Numeric[N]) extends STerm[N] with BinaryOperation[N, N]
 
+trait Vect
+trait Mat
+
+case class MatVectProduct(A:STerm[Mat], x:STerm[Vect]) extends STerm[Vect]
+case class Tanh(x:STerm[Vect]) extends STerm[Vect]
+case class VectPlus(x1:STerm[Vect], x2:STerm[Vect]) extends STerm[Vect]
+
+case class Sigmoid(x:STerm[Vect]) extends STerm[Vect]
+case class ComponentMult(x1:STerm[Vect], x2:STerm[Vect]) extends STerm[Vect]
+
+

@@ -5,7 +5,7 @@ import ml.wolfe.term.{NameProviderImplicits, NameProvider}
 /**
  * @author riedel
  */
-object Wolfe extends NameProviderImplicits with SeqHelper {
+object Wolfe extends NameProviderImplicits with SeqHelper with LinAlg {
 
   def Variable[T](name: String) = new Var[T](name)
 
@@ -83,5 +83,21 @@ trait SeqHelper {
     def -(that: STerm[Seq[Double]]) = SeqMinus(s, that)
   }
 
+
+}
+
+trait LinAlg {
+
+  implicit class MatHelper(mat:STerm[Mat]) {
+    def *(x:STerm[Vect]) = MatVectProduct(mat,x)
+  }
+
+  implicit class VectHelper(vect:STerm[Vect]) {
+    def +(x:STerm[Vect]) = VectPlus(vect,x)
+    def *(x:STerm[Vect]) = ComponentMult(vect,x)
+  }
+
+  def tanh(x:STerm[Vect]) = Tanh(x)
+  def sigmoid(x:STerm[Vect]) = Sigmoid(x)
 
 }
