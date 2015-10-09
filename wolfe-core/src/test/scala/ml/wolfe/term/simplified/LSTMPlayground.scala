@@ -36,3 +36,45 @@ object LSTMPlayground {
   }
 
 }
+
+/**
+ * @author rockt
+ */
+object LSTMPlayground2 {
+
+  def main(args: Array[String]) {
+
+    import Wolfe._
+
+    @term case class Cell(c: Vect, h: Vect)
+    @term case class Theta(W: Mat, b_i: Vect, b_c: Vect, b_f: Vect, b_o: Vect, V_o: Mat, init:Cell)
+
+    def concat(arg1: STerm[Vect], arg2: STerm[Vect]): STerm[Vect] = ???
+    def select(arg1: STerm[Vect], arg2: Int): STerm[Vect] = ???
+
+    def next(t: STerm[Theta])(last: STerm[Cell], x: STerm[Vect]) = {
+      val H = concat(x, last.h)
+
+      val M: STerm[Vect] = t.W * H
+
+      val M_i = select(M, 1)
+      val M_c = select(M, 2)
+      val M_f = select(M, 3)
+      val M_o = select(M, 4)
+
+      val i_t = sigmoid(M_i + t.b_i)
+      val c_tilde = tanh(M_c + t.b_c)
+      val f_t = sigmoid(M_f + t.b_f)
+      val c = i_t * c_tilde + f_t * last.c
+      val o_t = sigmoid(M_o + t.V_o * c + t.b_o)
+      val h = o_t * tanh(c)
+      Cell.Term(c, h)
+    }
+
+    val x = Var[Seq[Vect]]
+    val theta = Var[Theta]
+
+    val model = x.foldLeft(theta.init)(next(theta))
+  }
+
+}
