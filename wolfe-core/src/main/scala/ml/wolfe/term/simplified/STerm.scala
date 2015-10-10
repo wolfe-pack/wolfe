@@ -64,6 +64,8 @@ case class SeqAppend[+E](s: STerm[Seq[E]], elem: STerm[E]) extends STerm[Seq[E]]
  */
 case class SeqFoldLeft[E, S](s: STerm[Seq[E]], init: STerm[S], op: (STerm[S], STerm[E]) => STerm[S]) extends STerm[S]
 
+case class SeqScanLeft[E, S](s: STerm[Seq[E]], init: STerm[S], op: (STerm[S], STerm[E]) => STerm[S]) extends STerm[Seq[S]]
+
 case class SeqFill[+E](length: STerm[Int], element: STerm[E]) extends STerm[Seq[E]]
 
 case class SeqPointWiseMax(s1: STerm[Seq[Double]], s2: STerm[Seq[Double]]) extends STerm[Seq[Double]]

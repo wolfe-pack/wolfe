@@ -73,6 +73,8 @@ trait SeqHelper {
     def slice(from: STerm[Int], to: STerm[Int]) = SeqSlice(s, from, to)
 
     def foldLeft[S](init: STerm[S])(op: (STerm[S], STerm[E]) => STerm[S]): STerm[S] = SeqFoldLeft(s, init, op)
+
+    def scanLeft[S](init: STerm[S])(op: (STerm[S], STerm[E]) => STerm[S]): STerm[Seq[S]] = SeqScanLeft(s, init, op)
   }
 
   implicit class NumericSeqTerm[E](val s: STerm[Seq[E]])(implicit numeric: Numeric[E]) {

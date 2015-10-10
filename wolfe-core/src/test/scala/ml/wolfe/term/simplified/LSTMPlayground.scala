@@ -53,9 +53,9 @@ object LSTMPlayground2 {
     def select(arg1: STerm[Vect], arg2: Int): STerm[Vect] = ???
 
     def next(t: STerm[Theta])(last: STerm[Cell], x: STerm[Vect]) = {
-      val H = concat(x, last.h)
+      val xh = concat(x, last.h)
 
-      val M: STerm[Vect] = t.W * H
+      val M: STerm[Vect] = t.W * xh
 
       val M_i = select(M, 1)
       val M_c = select(M, 2)
@@ -71,10 +71,13 @@ object LSTMPlayground2 {
       Cell.Term(c, h)
     }
 
-    val x = Var[Seq[Vect]]
+    val xs = Var[Seq[Vect]]
     val theta = Var[Theta]
 
-    val model = x.foldLeft(theta.init)(next(theta))
-  }
+    //if you only need the last output representation
+    val last: STerm[Cell] = xs.foldLeft(theta.init)(next(theta))
 
+    //if you need all output vectors
+    val mapped: STerm[Seq[Cell]] = xs.scanLeft(theta.init)(next(theta))
+  }
 }
