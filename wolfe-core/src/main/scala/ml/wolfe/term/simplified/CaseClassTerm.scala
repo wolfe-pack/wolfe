@@ -94,6 +94,7 @@ object CaseClassTerm {
             def construct[..$genTypes](args:Seq[Any]) = new $caseClassTypeName(..$castArgs)
             implicit class RichTerm[..$genTypes](val term:ml.wolfe.term.simplified.STerm[$caseClassTypeName[..$genTypenames]]) {
               ..$getterMethods
+              def pimped:this.type = this
             }
             object Term {
               def apply[..$genTypes](..$termArgs) =

@@ -32,6 +32,10 @@ object LSTMPlayground {
 
     val model = x.foldLeft(theta.init)(next(theta))
 
+    //pretending we have AD implementations
+    //val diff = differentiator(model, wrt = theta)
+    //val gradient = diff.gradient( x := someX, theta := someTheta)
+
 
   }
 
