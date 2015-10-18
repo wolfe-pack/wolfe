@@ -139,6 +139,8 @@ object Sentence {
   def empty = Sentence(tokens = IndexedSeq[Token]())
 }
 
+object FancySentence {}
+
 /**
  * A document consisting of sentences.
  * @param source the source text.
