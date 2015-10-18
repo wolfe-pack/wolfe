@@ -105,7 +105,7 @@ object BerkeleyProcessors {
     val updatedSentences = result.sentences.map{sentence =>
       val tokenizedSentenceArray = sentence.tokens.map(token => token.word)
       val ctree = PreprocessingDriver.parse(parser, backoffParser, tokenizedSentenceArray.toList)
-      sentence.copy(syntax = new SyntaxAnnotation(tree = toWolfeConstituentTree(ctree), dependencies = null))
+      sentence.copy(syntax = new SyntaxAnnotation(constituency = Some(toWolfeConstituentTree(ctree))))
     }
     Document(text, updatedSentences)
   }

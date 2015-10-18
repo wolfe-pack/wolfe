@@ -24,13 +24,13 @@ class DistantSupervisionAnnotator {
           case _=> None
         }
       }
-      s.copy(ie = s.ie.copy(relationMentions = relations))
+      s.copy(ie = s.ie.copy(relationMentions = Some(relations)))
     })
   }
 
   // Should change to Iterator
   def entityPairs(s: Sentence): IndexedSeq[((EntityMention, Int), (EntityMention, Int))] = {
-    for (x <- s.ie.entityMentions.zipWithIndex; y <- s.ie.entityMentions.zipWithIndex) yield (x,y)
+    for (x <- s.ie.entityMentions.get.zipWithIndex; y <- s.ie.entityMentions.get.zipWithIndex) yield (x,y)
   }
 
 }

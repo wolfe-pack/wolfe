@@ -25,7 +25,7 @@ object MultiTaskCRF extends App {
 
     def getChunkTags(s: Sentence) = {
       val chunkTags = Array.fill(s.tokens.length)("O")
-      s.ie.entityMentions.foreach { chunk =>
+      s.ie.entityMentions.getOrElse(IndexedSeq.empty) foreach { chunk =>
         chunkTags(chunk.start) = if (chunk.label == "O") "O" else "B-" + chunk.label
         for (i <- chunk.start + 1 until chunk.end) chunkTags(i) = "I-" + chunk.label
       }

@@ -57,7 +57,9 @@ class CoNLLReader(filename: String, delim: String = "\t") extends Iterable[Sente
     val frames = preds.zip(argsets).map { case (p, a) => SemanticFrame(p, a) }
     assert(preds.size == argsets.size)
     val dependencies = DependencyTree(tokens, cells.zipWithIndex.map { case (c, i) => Arc(i + 1, c(8).toInt, Some(c(10))) })
-    Sentence(tokens, syntax = SyntaxAnnotation(tree = null, dependencies = dependencies), ie = IEAnnotation.empty.copy(semanticFrames = frames))
+    Sentence(tokens,
+      syntax = SyntaxAnnotation(dependencies = Some(dependencies)),
+      ie = IEAnnotation.empty.copy(semanticFrames = Some(frames)))
   }
 
   def fromCoNLLX(lines: IndexedSeq[String]): Sentence = {
@@ -68,7 +70,7 @@ class CoNLLReader(filename: String, delim: String = "\t") extends Iterable[Sente
     val dependencies = DependencyTree(tokens, cells.zipWithIndex.map { case (c, i) =>
       Arc(child = i + 1, parent = c(6).toInt, label = Some(c(7)))
     })
-    Sentence(tokens, syntax = SyntaxAnnotation(tree = null, dependencies = dependencies))
+    Sentence(tokens, syntax = SyntaxAnnotation(dependencies = Some(dependencies)))
   }
 
   def fromCoNLL2003(lines: IndexedSeq[String]): Sentence = {
@@ -81,7 +83,7 @@ class CoNLLReader(filename: String, delim: String = "\t") extends Iterable[Sente
     val tokens = cells.foldLeft(List.empty[Token])(join).reverse
     val ner = cells.map(_.apply(3))
     val mentions = CoNLLReader.collectMentions(ner)
-    Sentence(tokens.toIndexedSeq, ie = IEAnnotation(entityMentions = mentions.toIndexedSeq))
+    Sentence(tokens.toIndexedSeq, ie = IEAnnotation(entityMentions = Some(mentions.toIndexedSeq)))
   }
 
   def fromCoNLL2000(lines: IndexedSeq[String]): Sentence = {
@@ -95,7 +97,7 @@ class CoNLLReader(filename: String, delim: String = "\t") extends Iterable[Sente
 //      val chunkType = if(begin == "O") "" else begin.substring(begin.indexOf("-") + 1)
 //      EntityMention(chunkType, start, end)
 //    }
-    val chunks = CoNLLReader.collectMentions(chunkTags).toIndexedSeq
+    val chunks = Some(CoNLLReader.collectMentions(chunkTags).toIndexedSeq)
     val tokens = cells.map( c => Token(c(0), CharOffsets(0, c(0).length), posTag = c(1)))
     Sentence(tokens, ie = IEAnnotation(entityMentions = chunks))
   }
@@ -178,9 +180,11 @@ class CoNLL2011Reader(filename: String, headFinder: HeadFinder) extends Iterable
       val frames = predicates.zip(args).map { case(p,r) => SemanticFrame(predicate = p, roles = r)}
 
 
-      Sentence(tokens, syntax = SyntaxAnnotation(tree = ctree, dependencies = ctree.toDependencyTree),
-                       ie = IEAnnotation(entityMentions = entities, semanticFrames = frames),
-                       speaker = Some(speaker))
+      Sentence(tokens,
+        syntax = SyntaxAnnotation(constituency = Some(ctree),
+                                  dependencies = Some(ctree.toDependencyTree)),
+                                  ie = IEAnnotation(entityMentions = Some(entities), semanticFrames = Some(frames)),
+                                  speaker = Some(speaker))
     }.toIndexedSeq
 
 
@@ -261,9 +265,9 @@ object CoNLL2011Reader extends App {
     for (m <- doc.coref.mentions) {
       mlens(m.width) += 1
       numMentions += 1
-      if (doc.sentences(m.sentence).syntax.tree.containsSpan(m.start, m.end)) numASpans += 1
-      if (doc.sentences(m.sentence).syntax.tree.spansAt(m.start, m.end).count(_.label.startsWith("N")) > 0) numNSpans += 1
-      doc.sentences(m.sentence).syntax.tree.spansAt(m.start, m.end).foreach { sp => mentionConsts(sp.label) += 1}
+      if (doc.sentences(m.sentence).syntax.constituency.get.containsSpan(m.start, m.end)) numASpans += 1
+      if (doc.sentences(m.sentence).syntax.constituency.get.spansAt(m.start, m.end).count(_.label.startsWith("N")) > 0) numNSpans += 1
+      doc.sentences(m.sentence).syntax.constituency.get.spansAt(m.start, m.end).foreach { sp => mentionConsts(sp.label) += 1}
     }
     for (m1 <- doc.coref.mentions; m2 <- doc.coref.mentions if m1 != m2) {
       if (m1.nests(m2)) numNested += 1

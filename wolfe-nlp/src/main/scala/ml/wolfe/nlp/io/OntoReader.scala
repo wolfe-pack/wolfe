@@ -2,6 +2,7 @@ package ml.wolfe.nlp.io
 import ml.wolfe.nlp._
 import ml.wolfe.nlp.semantics.{Predicate, SemanticRole, SemanticFrame}
 import ml.wolfe.nlp.ie.{EntityMention}
+import ml.wolfe.nlp.syntax.ConstituentTree
 import scala.collection.mutable.ArrayBuffer
 import scala.util.matching.Regex
 import java.io.File
@@ -41,7 +42,7 @@ class OntoReader(dir: String, pattern: String = ".*") extends Iterable[Document]
     val corefs = mkIE(corefFile, propFile)
 //    val frames = mkFrames(propFile)
     val sentences = trees.zip(corefs).map{ case(t, ie) =>
-      Sentence(t.tokens.toIndexedSeq, syntax = SyntaxAnnotation(tree = t, dependencies = null), ie = ie)}
+      Sentence(t.tokens.toIndexedSeq, syntax = SyntaxAnnotation(constituency = Some(t)), ie = ie)}
     Document(source = "", sentences = sentences)
   }
 
@@ -72,7 +73,7 @@ class OntoReader(dir: String, pattern: String = ".*") extends Iterable[Document]
   def mkIE(corefFile: String, propFile: String): IndexedSeq[IEAnnotation] = {
     val frames = mkFrames(propFile).groupBy(_._1)
     mkCoref(corefFile).zipWithIndex.map { case(ie, idx) =>
-      ie.copy(semanticFrames = if (frames.contains(idx)) frames(idx).map(_._2).toIndexedSeq else IndexedSeq())
+      ie.copy(semanticFrames = if (frames.contains(idx)) Some(frames(idx).map(_._2).toIndexedSeq) else Some(IndexedSeq()))
     }
   }
 
@@ -115,7 +116,7 @@ class OntoReader(dir: String, pattern: String = ".*") extends Iterable[Document]
         }
         count += 1
       }
-      IEAnnotation(entityMentions = entities, relationMentions = null, eventMentions = null, semanticFrames = null)
+      IEAnnotation(entityMentions = Some(entities))
     }
   }
 
@@ -140,7 +141,7 @@ object OntoReader {
   def main(args: Array[String]) {
     for (o <- new OntoReader(args(0)); s <- o.sentences) {
       println("Tokens:\n" + s.tokens.mkString(" "))
-      println("Parse:\n" + s.syntax.tree)
+      println("Parse:\n" + s.syntax.constituency.getOrElse(ConstituentTree.empty))
       println("Entities:\n" + s.ie.entityMentions.mkString(" "))
       println
     }

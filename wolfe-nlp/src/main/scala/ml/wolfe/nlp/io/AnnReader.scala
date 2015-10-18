@@ -3,6 +3,7 @@ import ml.wolfe.nlp._
 import ml.wolfe.nlp.converters.SISTAProcessors
 import ml.wolfe.nlp.ie.{RelationMention, EntityMention, EventMention}
 import ml.wolfe.nlp.semantics.RoleMention
+import ml.wolfe.nlp.syntax.{DependencyTree, ConstituentTree}
 
 import scala.util.matching.Regex
 
@@ -63,17 +64,17 @@ class AnnReader(dir: String, pattern: String = ".*") extends Iterable[Document] 
         t.copy(start = si, end = ei)
       }
     }
-    s.copy(ie = IEAnnotation(entities, relationMentions = null, eventMentions = null, semanticFrames = null))
+    s.copy(ie = IEAnnotation(entityMentions = Some(entities)))
   }
 
   def addRelations(s: Sentence, annotations: Array[String]): Sentence = {
     val relations = annotations.collect { CachedPartialFunction[String, RelationMention](containsRelation(s,_)) }.toIndexedSeq
-    s.copy(ie = s.ie.copy(relationMentions = relations))
+    s.copy(ie = s.ie.copy(relationMentions = Some(relations)))
   }
 
   def addEvents(s: Sentence, annotations: Array[String]): Sentence = {
     val events = annotations.collect { CachedPartialFunction[String, EventMention](containsEvent(s,_)) }.toIndexedSeq
-    s.copy(ie = s.ie.copy(eventMentions = events))
+    s.copy(ie = s.ie.copy(eventMentions = Some(events)))
   }
 
   def containsEntity(s: Sentence, t: EntityMention): Boolean = {
@@ -91,8 +92,8 @@ class AnnReader(dir: String, pattern: String = ".*") extends Iterable[Document] 
   def containsRelation(s: Sentence, ann: String): Option[RelationMention] = {
     ann match {
       case R_PATTERN(id, name, a1, a2) => {
-        val a1idx = s.ie.entityMentions.indexWhere(_.id == a1)
-        val a2idx = s.ie.entityMentions.indexWhere(_.id == a2)
+        val a1idx = s.ie.entityMentions.getOrElse(IndexedSeq.empty).indexWhere(_.id == a1)
+        val a2idx = s.ie.entityMentions.getOrElse(IndexedSeq.empty).indexWhere(_.id == a2)
         Some(RelationMention(name, a1idx, a2idx, id = id))
       }
       case _=> None
@@ -102,15 +103,15 @@ class AnnReader(dir: String, pattern: String = ".*") extends Iterable[Document] 
   def containsEvent(s: Sentence, ann: String): Option[EventMention] = {
     ann match {
       case E_PATTERN(id, name, trigger, arguments) => {
-        val tidx = s.ie.entityMentions.indexWhere(_.id == trigger)
+        val tidx = s.ie.entityMentions.getOrElse(IndexedSeq.empty).indexWhere(_.id == trigger)
         val roles = arguments.split(" ").collect {
-          case ROLE_PATTERN(role, term) if containsRole(s.ie.entityMentions, trigger, term) => {
-            val aidx = s.ie.entityMentions.indexWhere(_.id == term)
-            RoleMention(role, s.ie.entityMentions(aidx))
+          case ROLE_PATTERN(role, term) if containsRole(s.ie.entityMentions.getOrElse(IndexedSeq.empty), trigger, term) => {
+            val aidx = s.ie.entityMentions.getOrElse(IndexedSeq.empty).indexWhere(_.id == term)
+            RoleMention(role, s.ie.entityMentions.get(aidx))
           }
         }
         if (!roles.isEmpty) {
-          Some(EventMention(name, s.ie.entityMentions(tidx), roles))
+          Some(EventMention(name, s.ie.entityMentions.get(tidx), roles))
         }
         else {
           None
@@ -136,8 +137,8 @@ object AnnReader {
         println("Entities:\n" + s.ie.entityMentions.mkString("\n") + "\n")
         println("Relations:\n" + s.ie.entityMentions.mkString("\n") + "\n")
         println("Events:\n" + s.ie.eventMentions.mkString("\n") + "\n")
-        println("Dependencies:\n" + s.syntax.dependencies)
-        println("Parse:\n" + s.syntax.tree)
+        println("Dependencies:\n" + s.syntax.dependencies.getOrElse(DependencyTree.empty))
+        println("Parse:\n" + s.syntax.constituency.getOrElse(ConstituentTree.empty))
         println
       }
     }

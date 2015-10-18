@@ -1,5 +1,7 @@
 package ml.wolfe.nlp
 
+import ml.wolfe.nlp.syntax.ConstituentTree
+
 /**
  * @author riedel
  */
@@ -16,7 +18,7 @@ class NavigableDocument(val docToNavigate: Document) {
   }.toMap
 
   lazy val char2trees = docToNavigate.sentences.flatMap {
-    s => s.syntax.tree.breadthFirstSearch.flatMap {
+    s => s.syntax.constituency.getOrElse(ConstituentTree.empty).breadthFirstSearch.flatMap {
       t =>
         val offsets = CharOffsets(s.tokens(t.start).offsets.start, s.tokens(t.end).offsets.end)
         offsets.range map (_ -> t)

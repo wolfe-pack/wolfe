@@ -5,7 +5,7 @@ import ml.wolfe.nlp.ie.EntityMention
 import ml.wolfe.nlp.syntax.{Arc, DependencyTree}
 
 /**
- * Specs for pickling Wolfe-NLP data structures
+ * Specs for pickling Wolfe-NLP data structures.
  * Trivial for now, but should be revisited when
  * trickier picklers are implemented (ConstituentTree)
  *
@@ -43,17 +43,17 @@ class NLPPicklersSpecs extends WolfeSpec {
     "store and load dependency trees in json" in {
       import scala.pickling.json._
 
-      val pkl = SyntaxAnnotation(tree = null, dependencies = dtree).pickle
+      val pkl = SyntaxAnnotation(dependencies = Some(dtree)).pickle
       val result = pkl.unpickle[SyntaxAnnotation]
-      result.dependencies should equal(dtree)
+      result.dependencies.get should equal(dtree)
     }
 
     "store and load dependency trees in binary" in {
       import scala.pickling.binary._
 
-      val pkl = SyntaxAnnotation(tree = null, dependencies = dtree).pickle
+      val pkl = SyntaxAnnotation(dependencies = Some(dtree)).pickle
       val result = pkl.unpickle[SyntaxAnnotation]
-      result.dependencies should equal(dtree)
+      result.dependencies.get should equal(dtree)
     }
   }
 
@@ -61,7 +61,7 @@ class NLPPicklersSpecs extends WolfeSpec {
     "store and load a sequence of IE fields in json" in {
       import scala.pickling.json._
 
-      val ie = IEAnnotation(entityMentions = entities, relationMentions = IndexedSeq())
+      val ie = IEAnnotation(entityMentions = Some(entities))
       val pkl = ie.pickle
       val result = pkl.unpickle[IEAnnotation]
       result should equal(ie)
@@ -70,11 +70,10 @@ class NLPPicklersSpecs extends WolfeSpec {
     "store and load dependency trees in binary" in {
       import scala.pickling.binary._
 
-      val ie = IEAnnotation(entityMentions = entities, relationMentions = IndexedSeq())
+      val ie = IEAnnotation(entityMentions = Some(entities))
       val pkl = ie.pickle
       val result = pkl.unpickle[IEAnnotation]
       result should equal(ie)
     }
   }
-
 }

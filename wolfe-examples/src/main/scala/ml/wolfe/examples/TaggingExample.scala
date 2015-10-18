@@ -44,11 +44,11 @@ object TaggingExample {
       d.copy(sentences =
         (d.sentences zip d.sentences.scanLeft(0)(_ + _.tokens.length)).map {
           case (sen, off) => sen.copy(ie = IEAnnotation({
-            entityMentions
+            Some(entityMentions
               .filter(x => x.start >= off && x.start < off + sen.size)
               .map(x => EntityMention(x.label, x.start-off, x.end-off))
               .toIndexedSeq
-          }))
+            )}))
         }
       )
     }

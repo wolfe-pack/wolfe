@@ -156,7 +156,7 @@ object BratRenderer {
   def bratIE(doc: Document) = {
     val id = "brat" + Math.abs(doc.hashCode()).toString
 
-    val entityLabels = doc.sentences.flatMap(_.ie.entityMentions.map(_.label)).distinct
+    val entityLabels = doc.sentences.flatMap(_.ie.entityMentions.getOrElse(IndexedSeq.empty).map(_.label)).distinct
     val entities = mkEntities(doc)
     val sentenceBoundaries = mkSentenceBoundaries(doc)
     val tokenOffsets = mkTokenOffsets(doc)
@@ -204,7 +204,7 @@ object BratRenderer {
   }
 
   def mkEntities(doc: Document): IndexedSeq[String] = {
-    val mentions = for (s <- doc.sentences; em <- s.ie.entityMentions) yield {
+    val mentions = for (s <- doc.sentences; em <- s.ie.entityMentions.getOrElse(IndexedSeq.empty)) yield {
       val t1 = s.tokens(em.start)
       val t2 = s.tokens(em.end - 1)
       (em.label,s"[[${ t1.offsets.start },${ t2.offsets.end }]]")

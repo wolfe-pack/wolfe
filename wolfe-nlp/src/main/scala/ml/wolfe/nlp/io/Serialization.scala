@@ -166,14 +166,14 @@ object SyntaxPickler {
 
 
       def pickle(picklee: SyntaxAnnotation, builder: PBuilder) = {
-        spickler.pickle(picklee.dependencies, builder)
+        spickler.pickle(picklee.dependencies.getOrElse(DependencyTree.empty), builder)
       }
 
       def tag = FastTypeTag[SyntaxAnnotation]
 
       def unpickle(tag: String, reader: PReader) = {
         val dtree = sunpickler.unpickle(tag, reader).asInstanceOf[DependencyTree]
-        SyntaxAnnotation(tree = null, dependencies = dtree)
+        SyntaxAnnotation(dependencies = Some(dtree))
       }
     }
 }

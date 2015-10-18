@@ -3,7 +3,7 @@ package ml.wolfe.nlp
 import breeze.linalg.SparseVector
 import edu.berkeley.nlp.entity.ConllDocReader
 import ml.wolfe.nlp.converters.SISTAProcessors
-import ml.wolfe.nlp.ie.CorefAnnotation
+import ml.wolfe.nlp.ie.{EntityMention, CorefAnnotation}
 import ml.wolfe.nlp.syntax.{Arc, DependencyTree}
 
 import scala.language.implicitConversions
@@ -83,10 +83,10 @@ case class Sentence(tokens: IndexedSeq[Token], syntax: SyntaxAnnotation = Syntax
   def synt = syntax
 
   def deps = syntax.dependencies
-  def deps_=(dependencies:DependencyTree) = copy(syntax = syntax.copy(dependencies = dependencies))
+  def deps_=(dependencies:DependencyTree) = copy(syntax = syntax.copy(dependencies = Some(dependencies)))
 
-  def arcs = syntax.dependencies.arcs
-  def arcs_=(arcs:Seq[Arc]) =  copy(syntax = syntax.copy(dependencies = syntax.dependencies.copy(arcs = arcs)))
+  def arcs = syntax.dependencies.get.arcs
+  def arcs_=(arcs:Seq[Arc]) =  copy(syntax = syntax.copy(dependencies = Some(syntax.dependencies.get.copy(arcs = arcs))))
 
   def +(token: Token) = {
     if (tokens.isEmpty) {
@@ -97,28 +97,28 @@ case class Sentence(tokens: IndexedSeq[Token], syntax: SyntaxAnnotation = Syntax
     }
   }
 
-  def toCoNLLString = {
-    // ID FORM LEMMA PLEMMA POS PPOS FEAT PFEAT HEAD PHEAD DEPREL PDEPREL FILLPRED PRED APREDs
-    val numPreds = ie.semanticFrames.size
-    tokens.zipWithIndex.map { case (t, i) =>
-      if (syntax.dependencies != null) {
-        val head = syntax.dependencies.headOf(i + 1).getOrElse(-1)
-        val headLabel = syntax.dependencies.labelOf(i + 1).getOrElse("null")
-        val morph = "-|-|-|-"
-        val sense = ie.semanticFrames.find(_.predicate.idx == i + 1) match {
-          case Some(frame) => frame.predicate.sense
-          case _ => "_"
-        }
-        val hasPred = if (sense != "_") "Y" else "_"
-        val roles = ie.semanticFrames.map(f => if (f.roles.exists(_.idx == i + 1)) f.roles.find(_.idx == i + 1).get.role else "_")
-        Seq(i + 1, t.word, t.lemma, t.lemma, t.posTag, t.posTag, morph, morph, head, head,
-          headLabel, headLabel, hasPred, sense, roles.mkString("\t")).mkString("\t")
-      }
-      else {
-        "%d\t%s\t%s\t%s\t%s\t%s".format(i + 1, t.word, t.lemma, t.lemma, t.posTag, t.posTag)
-      }
-    }.mkString("\n")
-  }
+//  def toCoNLLString = {
+//    // ID FORM LEMMA PLEMMA POS PPOS FEAT PFEAT HEAD PHEAD DEPREL PDEPREL FILLPRED PRED APREDs
+//    val numPreds = ie.semanticFrames.size
+//    tokens.zipWithIndex.map { case (t, i) =>
+//      if (syntax.dependencies != null) {
+//        val head = syntax.dependencies.headOf(i + 1).getOrElse(-1)
+//        val headLabel = syntax.dependencies.labelOf(i + 1).getOrElse("null")
+//        val morph = "-|-|-|-"
+//        val sense = ie.semanticFrames.find(_.predicate.idx == i + 1) match {
+//          case Some(frame) => frame.predicate.sense
+//          case _ => "_"
+//        }
+//        val hasPred = if (sense != "_") "Y" else "_"
+//        val roles = ie.semanticFrames.map(f => if (f.roles.exists(_.idx == i + 1)) f.roles.find(_.idx == i + 1).get.role else "_")
+//        Seq(i + 1, t.word, t.lemma, t.lemma, t.posTag, t.posTag, morph, morph, head, head,
+//          headLabel, headLabel, hasPred, sense, roles.mkString("\t")).mkString("\t")
+//      }
+//      else {
+//        "%d\t%s\t%s\t%s\t%s\t%s".format(i + 1, t.word, t.lemma, t.lemma, t.posTag, t.posTag)
+//      }
+//    }.mkString("\n")
+//  }
 
   /**
    * Return a representation of the entity mentions as a sequence of BIO labels. This representation
@@ -126,7 +126,7 @@ case class Sentence(tokens: IndexedSeq[Token], syntax: SyntaxAnnotation = Syntax
    */
   def entityMentionsAsBIOSeq = {
     val tokenIndex2Label = new mutable.HashMap[Int, String]() withDefaultValue "O"
-    for (m <- ie.entityMentions) {
+    for (m <- ie.entityMentions.getOrElse(IndexedSeq.empty[EntityMention])) {
       tokenIndex2Label(m.start) = "B-" + m.label
       for (i <- m.start + 1 until m.end) tokenIndex2Label(i) = "I-" + m.label
     }
@@ -138,8 +138,6 @@ object Sentence {
 
   def empty = Sentence(tokens = IndexedSeq[Token]())
 }
-
-object FancySentence {}
 
 /**
  * A document consisting of sentences.

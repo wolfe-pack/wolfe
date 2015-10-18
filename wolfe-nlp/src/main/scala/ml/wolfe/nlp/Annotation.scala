@@ -12,31 +12,31 @@ import ml.wolfe.nlp.syntax.{DependencyTree, ConstituentTree}
  * @param relationMentions sequence of relation mentions found in the sentence.
  * @param eventMentions sequence of event mentions found in the sentence.
  */
-case class IEAnnotation(entityMentions: IndexedSeq[EntityMention]=IndexedSeq.empty,
-                        relationMentions: IndexedSeq[RelationMention]=IndexedSeq.empty,
-                        eventMentions: IndexedSeq[EventMention]=IndexedSeq.empty,
-                        semanticFrames: IndexedSeq[SemanticFrame]= IndexedSeq.empty) {
-
-  def semanticRoleAt(i: Int, j: Int): Option[SemanticFrame] = {
-    semanticFrames.find(f => f.roles.exists(r => r.start == i && r.end == j))
-  }
-
-  def semanticRoleArgAt(i: Int, j: Int): Option[SemanticRole] = {
-    semanticFrames.map(_.roles).flatten.find(r => r.start == i && r.end == j)
-  }
-
-  def semanticFrameSpanning(i: Int, j: Int): Option[SemanticFrame] = {
-    semanticFrames.find { f =>
-      f.leftMostArg.start == i && f.rightMostArg.end == j
-    }
-  }
+case class IEAnnotation(entityMentions:   Option[IndexedSeq[EntityMention]]   = None,
+                        relationMentions: Option[IndexedSeq[RelationMention]] = None,
+                        eventMentions:    Option[IndexedSeq[EventMention]]    = None,
+                        semanticFrames:   Option[IndexedSeq[SemanticFrame]]   = None) {
+//
+//  def semanticRoleAt(i: Int, j: Int): Option[SemanticFrame] = {
+//    semanticFrames.find { f => f.roles.exists(r => r.start == i && r.end == j))
+//  }
+//
+//  def semanticRoleArgAt(i: Int, j: Int): Option[SemanticRole] = {
+//    semanticFrames.map(_.roles).flatten.find(r => r.start == i && r.end == j)
+//  }
+//
+//  def semanticFrameSpanning(i: Int, j: Int): Option[SemanticFrame] = {
+//    semanticFrames.find { f =>
+//      f.leftMostArg.start == i && f.rightMostArg.end == j
+//    }
+//  }
 }
 
 /**
  * Companion object for the IEAnnotation class.
  */
 object IEAnnotation {
-  val empty = IEAnnotation(IndexedSeq.empty, IndexedSeq.empty, IndexedSeq.empty, IndexedSeq.empty)
+  val empty = IEAnnotation()
 }
 
 
@@ -72,16 +72,17 @@ object IRAnnotation {
 
 /**
  * A container for syntactic annotation.
- * @param tree constituent tree for the sentence.
+ * @param constituency constituent tree for the sentence.
  * @param dependencies dependency tree for the sentence.
  */
-case class SyntaxAnnotation(tree: ConstituentTree, dependencies: DependencyTree) {}
+case class SyntaxAnnotation(constituency: Option[ConstituentTree] = None,
+                            dependencies: Option[DependencyTree] = None) {}
 
 /**
  * Companion object for the SyntaxAnnotation class.
  */
 object SyntaxAnnotation {
-  val empty = SyntaxAnnotation(tree = ConstituentTree.empty, dependencies = DependencyTree.empty)
+  val empty = SyntaxAnnotation()
 }
 
 
