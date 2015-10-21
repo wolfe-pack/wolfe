@@ -59,43 +59,58 @@ object CaseClassTerm {
   def implOnClass(c: whitebox.Context)(annottees: c.Expr[Any]*): c.Expr[Any] = {
     import c.universe._
 
+
     annottees.map(_.tree).toList match {
       case (caseClassDef: ClassDef) :: _ =>
 
         val caseClassTermName = caseClassDef.name.toTermName
         val caseClassTypeName = caseClassDef.name.toTypeName
-        val q"case class ${_}[..${genTypes: List[TypeDef]}](..${caseClassArgs: List[ValDef]})" = caseClassDef
-        val genTypenames = for (t <- genTypes) yield tq"${t.name}"
-        val caseClassArgNames = caseClassArgs.map(_.name)
-        val caseClassArgTypeNames: List[Tree] = caseClassArgs.map { case q"${_} val ${_}:$typ = ${_}" => typ }
+        val (genTypes, caseClassArgs, newClassDef, createApply) = caseClassDef  match {
+          case q"case class ${_}[..${genTypes: List[TypeDef]}](..${caseClassArgs: List[ValDef]})" =>
+            (genTypes, caseClassArgs, caseClassDef, true)
 
+//          case q"class $name[..${genTypes: List[TypeDef]}](..${classArgs: List[ValDef]}) extends ..$superclasses { ..$body}" =>
+//            //todo: this should only do the public vals
+              //todo: for this to work the classDef needs to be typechecked, but then the first case fails
+//            println(caseClassDef)
+//            val classVals: List[ValDef] = body.collect { case v@ValDef(_, _, _, _) if !v.mods.hasFlag(Flag.PRIVATE) => v }
+//            println(classVals.map(_.rhs.tpe).mkString("\n"))
+//            val productType = tq"Product"
+//            val newClassDef =
+//              q"""
+//                class $name[..$genTypes]() extends ..${productType :: superclasses} {
+//                  ..$body
+//                  def productElement(i:Int) = ???
+//                  def productArity = 0
+//                }
+//              """
+//            (genTypes, classVals, newClassDef, false)
+        }
+        val caseClassArgNames = caseClassArgs.map(_.name)
+        val genTypenames = for (t <- genTypes) yield tq"${t.name}"
+
+        val caseClassArgTypeNames: List[Tree] = caseClassArgs.map { case q"${_} val ${_}:$typ = ${_}" => typ }
 
         val getters = for ((argType, index) <- caseClassArgTypeNames.zipWithIndex) yield {
           q"ml.wolfe.term.simplified.GetElement[$argType](term,${Literal(Constant(index))})"
         }
 
-        val getterMethods = for ((argName,getter) <- caseClassArgNames zip getters) yield {
+        val getterMethods = for ((argName, getter) <- caseClassArgNames zip getters) yield {
           q"def $argName = $getter"
         }
-        val castArgs = for ((argType,index) <- caseClassArgTypeNames.zipWithIndex) yield {
-          q"args(${Literal(Constant(index))}).asInstanceOf[$argType]"
-        }
-        val termArgs = for (((argName,argType), index) <- (caseClassArgNames zip caseClassArgTypeNames).zipWithIndex) yield {
-          q"val $argName:ml.wolfe.term.simplified.STerm[$argType]"
-        }
-        val domArgs = for (((argName,argType), index) <- (caseClassArgNames zip caseClassArgTypeNames).zipWithIndex) yield {
-          q"val $argName:ml.wolfe.term.simplified.Dom[$argType]"
-        }
 
-        val newTerm = q"""
-          $caseClassDef
-          object $caseClassTermName {
-
+        val termObject = if (createApply) {
+          val castArgs = for ((argType, index) <- caseClassArgTypeNames.zipWithIndex) yield {
+            q"args(${Literal(Constant(index))}).asInstanceOf[$argType]"
+          }
+          val termArgs = for (((argName, argType), index) <- (caseClassArgNames zip caseClassArgTypeNames).zipWithIndex) yield {
+            q"val $argName:ml.wolfe.term.simplified.STerm[$argType]"
+          }
+          val domArgs = for (((argName, argType), index) <- (caseClassArgNames zip caseClassArgTypeNames).zipWithIndex) yield {
+            q"val $argName:ml.wolfe.term.simplified.Dom[$argType]"
+          }
+          q"""
             def construct[..$genTypes](args:Seq[Any]) = new $caseClassTypeName(..$castArgs)
-            implicit class RichTerm[..$genTypes](val term:ml.wolfe.term.simplified.STerm[$caseClassTypeName[..$genTypenames]]) {
-              ..$getterMethods
-              def pimped:this.type = this
-            }
             object Term {
               def apply[..$genTypes](..$termArgs) =
                 ml.wolfe.term.simplified.ConstructProduct(Seq(..$caseClassArgNames),construct[..$genTypenames])
@@ -105,10 +120,27 @@ object CaseClassTerm {
             }
             def Values[..$genTypes](..$domArgs) =
               ml.wolfe.term.simplified.ProductDom(Seq(..$caseClassArgNames), construct[..$genTypenames])
+         """
+        }
+        else q""
+
+
+        val newTerm =
+          q"""
+          $newClassDef
+          object $caseClassTermName {
+
+            implicit class RichTerm[..$genTypes](val term:ml.wolfe.term.simplified.STerm[$caseClassTypeName[..$genTypenames]]) {
+              ..$getterMethods
+              def pimped:this.type = this
+            }
+
+            ..$termObject
+
           }
             """
 
-//        println(newTerm)
+        //println(newTerm)
         c.Expr[Any](newTerm)
       case _ => c.abort(c.enclosingPosition, "Can't create domain")
     }

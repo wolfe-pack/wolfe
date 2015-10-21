@@ -11,7 +11,7 @@ class CaseClassTermSpecs extends WolfeSpec {
   import BaseEval._
   import Wolfe._
 
-  "A case class term macro" should {
+  "A term macro" should {
     "provide getters on terms" in {
       @term case class Stack[C](store: Seq[C], strength: Seq[Double])
       val v = Var[Stack[Double]]
@@ -40,6 +40,13 @@ class CaseClassTermSpecs extends WolfeSpec {
       Tests.doms(0) should be (RangeDom(0 until 2))
       Tests.doms(1) should be (RangeDom(2 until 3))
     }
+
+//    "work with plain classes" in {
+//      @term class Param(k:Int) {
+//        val List(w,i) = List(1.0, 2.0)
+//      }
+//
+//    }
 
   }
 }
