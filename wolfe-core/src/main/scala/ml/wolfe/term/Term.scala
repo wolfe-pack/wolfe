@@ -4,17 +4,17 @@ package ml.wolfe.term
  * A Term is an expression that evaluates to a specific value given a binding to the free variables in the expression.
  * @author riedel
  */
-trait STerm[+T]
+trait Term[+T]
 
 /**
  * A term that is composed of sub-terms.
  */
-trait Composed extends STerm[Any] {
+trait Composed extends Term[Any] {
   /**
    * The sub-terms of this term.
    * @return a sequence of terms that determine the semantics of this term.
    */
-  def parts: Seq[STerm[Any]]
+  def parts: Seq[Term[Any]]
 }
 
 /**
@@ -22,7 +22,7 @@ trait Composed extends STerm[Any] {
  * @param value the value the term evaluates to.
  * @tparam T the type of value it represents.
  */
-case class Constant[+T](value: T) extends STerm[T]
+case class Constant[+T](value: T) extends Term[T]
 
 /**
  * A variable evaluates to the value it is bound to in a variable binding. This is not a case class, meaning
@@ -30,7 +30,7 @@ case class Constant[+T](value: T) extends STerm[T]
  * @param name the name of the variable.
  * @tparam T the type of values the variable can be bound to.
  */
-class Var[+T](val name: String) extends STerm[T] {
+class Var[+T](val name: String) extends Term[T] {
   override def toString = name
 }
 
@@ -40,7 +40,7 @@ class Var[+T](val name: String) extends STerm[T] {
  * @param i the term that represents the integer index.
  * @tparam E the type of elements in the sequence.
  */
-case class SeqApply[+E](s: STerm[Seq[E]], i: STerm[Int]) extends STerm[E] with Composed {
+case class SeqApply[+E](s: Term[Seq[E]], i: Term[Int]) extends Term[E] with Composed {
   def parts = Seq(s, i)
 }
 
@@ -50,7 +50,7 @@ case class SeqApply[+E](s: STerm[Seq[E]], i: STerm[Int]) extends STerm[E] with C
  * @param elem the element to append
  * @tparam E the type of elements in the sequence.
  */
-case class SeqAppend[+E](s: STerm[Seq[E]], elem: STerm[E]) extends STerm[Seq[E]] with Composed {
+case class SeqAppend[+E](s: Term[Seq[E]], elem: Term[E]) extends Term[Seq[E]] with Composed {
   def parts = Seq(s, elem)
 }
 
@@ -62,19 +62,19 @@ case class SeqAppend[+E](s: STerm[Seq[E]], elem: STerm[E]) extends STerm[Seq[E]]
  * @tparam E the type of elements in the sequence.
  * @tparam S the type of the result.
  */
-case class SeqFoldLeft[E, S](s: STerm[Seq[E]], init: STerm[S], op: (STerm[S], STerm[E]) => STerm[S]) extends STerm[S]
+case class SeqFoldLeft[E, S](s: Term[Seq[E]], init: Term[S], op: (Term[S], Term[E]) => Term[S]) extends Term[S]
 
-case class SeqScanLeft[E, S](s: STerm[Seq[E]], init: STerm[S], op: (STerm[S], STerm[E]) => STerm[S]) extends STerm[Seq[S]]
+case class SeqScanLeft[E, S](s: Term[Seq[E]], init: Term[S], op: (Term[S], Term[E]) => Term[S]) extends Term[Seq[S]]
 
-case class SeqFill[+E](length: STerm[Int], element: STerm[E]) extends STerm[Seq[E]]
+case class SeqFill[+E](length: Term[Int], element: Term[E]) extends Term[Seq[E]]
 
-case class SeqPointWiseMax(s1: STerm[Seq[Double]], s2: STerm[Seq[Double]]) extends STerm[Seq[Double]]
+case class SeqPointWiseMax(s1: Term[Seq[Double]], s2: Term[Seq[Double]]) extends Term[Seq[Double]]
 
-case class SeqMinus(s1: STerm[Seq[Double]], s2: STerm[Seq[Double]]) extends STerm[Seq[Double]]
+case class SeqMinus(s1: Term[Seq[Double]], s2: Term[Seq[Double]]) extends Term[Seq[Double]]
 
-case class RangeTerm(from: STerm[Int], to: STerm[Int]) extends STerm[Seq[Int]]
+case class RangeTerm(from: Term[Int], to: Term[Int]) extends Term[Seq[Int]]
 
-case class SeqSlice[+E](s: STerm[Seq[E]], from: STerm[Int], to: STerm[Int]) extends STerm[Seq[E]]
+case class SeqSlice[+E](s: Term[Seq[E]], from: Term[Int], to: Term[Int]) extends Term[Seq[E]]
 
 /**
  * Represents the map operation on sequences.
@@ -84,21 +84,21 @@ case class SeqSlice[+E](s: STerm[Seq[E]], from: STerm[Int], to: STerm[Int]) exte
  * @tparam A original element type in the sequence.
  * @tparam B new element type.
  */
-case class SeqMap[A, +B](s: STerm[Seq[A]], f: STerm[A] => STerm[B]) extends STerm[Seq[B]]
+case class SeqMap[A, +B](s: Term[Seq[A]], f: Term[A] => Term[B]) extends Term[Seq[B]]
 
 /**
  * A term that represents the length of a sequence.
  * @param s the sequence of which we want to return the length.
  * @tparam E the element type of the sequence.
  */
-case class SeqLength[+E](s: STerm[Seq[E]]) extends STerm[Int]
+case class SeqLength[+E](s: Term[Seq[E]]) extends Term[Int]
 
 /**
  * A term that represents the contruction of a sequence based on argument terms.
  * @param args a sequence of terms that are evaluated to become the arguments of the result sequence.
  * @tparam E the type of elements in the sequence.
  */
-case class SeqConstructor[+E](args: Seq[STerm[E]]) extends STerm[Seq[E]]
+case class SeqConstructor[+E](args: Seq[Term[E]]) extends Term[Seq[E]]
 
 /**
  * A term that represents the element-th element of a product value.
@@ -106,7 +106,7 @@ case class SeqConstructor[+E](args: Seq[STerm[E]]) extends STerm[Seq[E]]
  * @param element the index of the element to return.
  * @tparam T the type of the element to return.
  */
-case class GetElement[+T](product: STerm[Product], element: Int) extends STerm[T]
+case class GetElement[+T](product: Term[Product], element: Int) extends Term[T]
 
 /**
  * A term representing the construction of a product value.
@@ -114,7 +114,7 @@ case class GetElement[+T](product: STerm[Product], element: Int) extends STerm[T
  * @param constructor a constructor that takes the arguments and returns the actual product value.
  * @tparam T the type of the product.
  */
-case class ConstructProduct[+T <: Product](args: Seq[STerm[Any]], constructor: Seq[Any] => T) extends STerm[T]
+case class ConstructProduct[+T <: Product](args: Seq[Term[Any]], constructor: Seq[Any] => T) extends Term[T]
 
 /**
  * A composed term with two arguments.
@@ -122,29 +122,28 @@ case class ConstructProduct[+T <: Product](args: Seq[STerm[Any]], constructor: S
  * @tparam T2 the value type of the second term.
  */
 trait BinaryOperation[T1, T2] extends Composed {
-  def arg1: STerm[T1]
+  def arg1: Term[T1]
 
-  def arg2: STerm[T2]
+  def arg2: Term[T2]
 
   def parts = Seq(arg1, arg2)
 }
 
-case class Plus[N](arg1: STerm[N], arg2: STerm[N])(implicit val numeric: Numeric[N]) extends STerm[N] with BinaryOperation[N, N]
+case class Plus[N](arg1: Term[N], arg2: Term[N])(implicit val numeric: Numeric[N]) extends Term[N] with BinaryOperation[N, N]
 
-case class Minus[N](arg1: STerm[N], arg2: STerm[N])(implicit val numeric: Numeric[N]) extends STerm[N] with BinaryOperation[N, N]
+case class Minus[N](arg1: Term[N], arg2: Term[N])(implicit val numeric: Numeric[N]) extends Term[N] with BinaryOperation[N, N]
 
-case class Sum[N](args: STerm[Seq[N]])(implicit val numeric: Numeric[N]) extends STerm[N]
+case class Sum[N](args: Term[Seq[N]])(implicit val numeric: Numeric[N]) extends Term[N]
 
-case class Times[N](arg1: STerm[N], arg2: STerm[N])(implicit val numeric: Numeric[N]) extends STerm[N] with BinaryOperation[N, N]
-
-trait Vect
-trait Mat
-
-case class MatVectProduct(A:STerm[Mat], x:STerm[Vect]) extends STerm[Vect]
-case class Tanh(x:STerm[Vect]) extends STerm[Vect]
-case class VectPlus(x1:STerm[Vect], x2:STerm[Vect]) extends STerm[Vect]
-
-case class Sigmoid(x:STerm[Vect]) extends STerm[Vect]
-case class ComponentMult(x1:STerm[Vect], x2:STerm[Vect]) extends STerm[Vect]
+case class Times[N](arg1: Term[N], arg2: Term[N])(implicit val numeric: Numeric[N]) extends Term[N] with BinaryOperation[N, N]
 
 
+
+trait Tensor
+
+case class Tanh(x: Term[Tensor]) extends Term[Tensor]
+case class Sigmoid(x: Term[Tensor]) extends Term[Tensor]
+
+case class ComponentPlus(x1: Term[Tensor], x2: Term[Tensor]) extends Term[Tensor]
+case class ComponentMul(x1: Term[Tensor], x2: Term[Tensor]) extends Term[Tensor]
+case class TensorMul(x1: Term[Tensor], x2: Term[Tensor]) extends Term[Tensor]

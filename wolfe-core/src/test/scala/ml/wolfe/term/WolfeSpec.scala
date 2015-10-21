@@ -1,6 +1,6 @@
 package ml.wolfe.term
 
-import ml.wolfe.term.{Mat, Vect}
+import ml.wolfe.term.Tensor
 import org.scalactic.Equality
 import org.scalatest.{Matchers, WordSpec}
 

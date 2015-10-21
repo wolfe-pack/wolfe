@@ -9,10 +9,10 @@ import org.scalautils._
 object Typer {
 
 
-  def domain[T](domains: DomainBinding[Any]*)(term: STerm[T]): Dom[T] Or Every[ErrorMsg] =
+  def domain[T](domains: DomainBinding[Any]*)(term: Term[T]): Dom[T] Or Every[ErrorMsg] =
     domain(Domains(domains: _*))(term)
 
-  def domain[T](domains: Domains)(term: STerm[T]): Dom[T] Or Every[ErrorMsg] = term match {
+  def domain[T](domains: Domains)(term: Term[T]): Dom[T] Or Every[ErrorMsg] = term match {
     case v: Var[_] =>
       domains.get(v) match {
         case Some(d) => Good(d)
@@ -57,7 +57,7 @@ object Typer {
     println(domain(i in RangeDom(0 until 3))(i + i))
   }
 
-  implicit class TypeTerm[T](val term: STerm[T]) {
+  implicit class TypeTerm[T](val term: Term[T]) {
     def dom(bindings: DomainBinding[Any]*) = Typer.domain(Domains(bindings: _*))(term)
     def dom(implicit domains: Domains) = Typer.domain(domains)(term)
 

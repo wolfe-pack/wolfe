@@ -5,21 +5,22 @@ import ml.wolfe.term._
 /**
  * @author riedel
  */
+/*
 object LSTMPlayground {
 
   def main(args: Array[String]) {
 
     import Wolfe._
 
-    @term case class Cell(c: Vect, h: Vect)
-    @term case class Theta(W_i: Mat, U_i: Mat, b_i: Vect,
-                           W_c: Mat, U_c: Mat, b_c: Vect,
-                           W_f: Mat, U_f: Mat, b_f: Vect,
-                           W_o: Mat, U_o: Mat,
-                           V_o: Mat, b_o: Vect,
+    @term case class Cell(c: Tensor, h: Tensor)
+    @term case class Theta(W_i: Tensor, U_i: Tensor, b_i: Tensor,
+                           W_c: Tensor, U_c: Tensor, b_c: Tensor,
+                           W_f: Tensor, U_f: Tensor, b_f: Tensor,
+                           W_o: Tensor, U_o: Tensor,
+                           V_o: Tensor, b_o: Tensor,
                            init:Cell)
 
-    def next(t: STerm[Theta])(last: STerm[Cell], x: STerm[Vect]) = {
+    def next(t: Term[Theta])(last: Term[Cell], x: Term[Tensor]) = {
       val i_t = sigmoid(t.W_i * x + t.U_i * last.h + t.b_i)
       val c_tilde = tanh(t.W_c * x + t.U_c * last.h + t.b_c)
       val f_t = sigmoid(t.W_f * x + t.U_f * last.h + t.b_f)
@@ -29,7 +30,7 @@ object LSTMPlayground {
       Cell.Term(c, h)
     }
 
-    val x = Var[Seq[Vect]]
+    val x = Var[Seq[Tensor]]
     val theta = Var[Theta]
 
     val model = x.foldLeft(theta.init)(next(theta))
@@ -52,16 +53,16 @@ object LSTMPlayground2 {
 
     import Wolfe._
 
-    @term case class Cell(c: Vect, h: Vect)
-    @term case class Theta(W: Mat, b_i: Vect, b_c: Vect, b_f: Vect, b_o: Vect, V_o: Mat, init:Cell)
+    @term case class Cell(c: Tensor, h: Tensor)
+    @term case class Theta(W: Tensor, b_i: Tensor, b_c: Tensor, b_f: Tensor, b_o: Tensor, V_o: Tensor, init:Cell)
 
-    def concat(arg1: STerm[Vect], arg2: STerm[Vect]): STerm[Vect] = ???
-    def select(arg1: STerm[Vect], arg2: Int): STerm[Vect] = ???
+    def concat(arg1: Term[Tensor], arg2: Term[Tensor]): Term[Tensor] = ???
+    def select(arg1: Term[Tensor], arg2: Int): Term[Tensor] = ???
 
-    def next(t: STerm[Theta])(last: STerm[Cell], x: STerm[Vect]) = {
+    def next(t: Term[Theta])(last: Term[Cell], x: Term[Tensor]) = {
       val xh = concat(x, last.h)
 
-      val M: STerm[Vect] = t.W * xh
+      val M: Term[Tensor] = t.W * xh
 
       val M_i = select(M, 1)
       val M_c = select(M, 2)
@@ -77,13 +78,14 @@ object LSTMPlayground2 {
       Cell.Term(c, h)
     }
 
-    val xs = Var[Seq[Vect]]
+    val xs = Var[Seq[Tensor]]
     val theta = Var[Theta]
 
     //if you only need the last output representation
-    val last: STerm[Cell] = xs.foldLeft(theta.init)(next(theta))
+    val last: Term[Cell] = xs.foldLeft(theta.init)(next(theta))
 
     //if you need all output vectors
-    val mapped: STerm[Seq[Cell]] = xs.scanLeft(theta.init)(next(theta))
+    val mapped: Term[Seq[Cell]] = xs.scanLeft(theta.init)(next(theta))
   }
 }
+*/

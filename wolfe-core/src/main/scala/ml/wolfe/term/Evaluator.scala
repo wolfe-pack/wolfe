@@ -8,13 +8,13 @@ import Wolfe._
  * @author riedel
  */
 object BaseEval extends Evaluator {
-  implicit class EvaluatorTerm[T](val term: STerm[T]) {
+  implicit class EvaluatorTerm[T](val term: Term[T]) {
     def eval(bindings: Binding[Any]*) = BaseEval.eval(Bindings(bindings: _*))(term)
   }
 
   def partial[T](bindings: Bindings, backoff:Evaluator) = {
-    def e[A](term: STerm[A]) = backoff.eval(bindings)(term)
-    val result: PartialFunction[STerm[T], T Or Every[ErrorMsg]] = {
+    def e[A](term: Term[A]) = backoff.eval(bindings)(term)
+    val result: PartialFunction[Term[T], T Or Every[ErrorMsg]] = {
 
       case Constant(t) =>
         Good(t)
@@ -92,12 +92,12 @@ object BaseEvalTest {
 
 trait Evaluator {
 
-  def partial[T](bindings: Bindings, backoff: Evaluator): PartialFunction[STerm[T], T Or Every[ErrorMsg]]
+  def partial[T](bindings: Bindings, backoff: Evaluator): PartialFunction[Term[T], T Or Every[ErrorMsg]]
 
-  def eval[T](bindings: Bindings)(term: STerm[T]) =
+  def eval[T](bindings: Bindings)(term: Term[T]) =
     partial(bindings, this)(term)
 
-  def eval[T](bindings: Binding[Any]*)(term: STerm[T]): T Or Every[ErrorMsg] =
+  def eval[T](bindings: Binding[Any]*)(term: Term[T]): T Or Every[ErrorMsg] =
     eval(Bindings(bindings: _*))(term)
 
   def +(that: Evaluator) = new Evaluator {
@@ -110,7 +110,7 @@ trait Evaluator {
 trait ErrorMsg {
   def msg: String
 
-  def term: STerm[Any]
+  def term: Term[Any]
 }
 
 case class VariableNotBound(variable: Var[Any]) extends ErrorMsg {
@@ -119,7 +119,7 @@ case class VariableNotBound(variable: Var[Any]) extends ErrorMsg {
   def msg = s"Variable $variable is not bound"
 }
 
-case class TermNotSupported(term: STerm[Any]) extends ErrorMsg {
+case class TermNotSupported(term: Term[Any]) extends ErrorMsg {
   def msg = s"Not supported: $term"
 }
 

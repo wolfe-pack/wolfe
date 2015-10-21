@@ -25,7 +25,7 @@ object SimpleTerm {
 
   }
 
-  def dom[T](binding: Map[Var[Any], Dom[Any]])(term: STerm[Any]): Dom[Any] = term match {
+  def dom[T](binding: Map[Var[Any], Dom[Any]])(term: Term[Any]): Dom[Any] = term match {
     case v: Var[_] => binding(v)
     case SeqApply(s, i) => dom(binding)(s) match {
       case SeqDom(e, _, _) => e

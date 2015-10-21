@@ -5,6 +5,7 @@ import scala.language.dynamics
 /**
  * @author riedel
  */
+/*
 trait Module[T] {
   def output: Data
 
@@ -83,3 +84,4 @@ object ModuleCompiler {
   //    ???
   //  }
 }
+*/

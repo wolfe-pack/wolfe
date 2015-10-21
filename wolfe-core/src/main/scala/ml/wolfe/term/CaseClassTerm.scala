@@ -22,17 +22,17 @@ object CaseClassTerm {
         case Seq(v, n) => new Test(v.asInstanceOf[C], n.asInstanceOf[Double])
       }
 
-      object Term {
+      object TestTerm {
 
-        def apply[C](value: STerm[C], number: STerm[Double]) =
+        def apply[C](value: Term[C], number: Term[Double]) =
           ConstructProduct(Seq(value, number), construct[C])
 
-        def unapply[C](term: STerm[Test[C]]) =
+        def unapply[C](term: Term[Test[C]]) =
           Some(GetElement[C](term, 0), GetElement[Double](term, 1))
 
       }
 
-      implicit class RichTerm[C](val t: STerm[Test[C]]) {
+      implicit class RichTerm[C](val t: Term[Test[C]]) {
         def value = GetElement[C](t, 0)
 
         def number = GetElement[Double](t, 1)
@@ -45,13 +45,13 @@ object CaseClassTerm {
 
     import Test._
 
-    def test[C](t: STerm[Test[C]]): STerm[Test[C]] = Test.Term(t.value, t.number + 2.0)
+    def test[C](t: Term[Test[C]]): Term[Test[C]] = Test.TestTerm(t.value, t.number + 2.0)
 
 
     val t = Variable[Test[Int]]("t")
     val i = Variable[Int]("i")
     val d = Variable[Double]("d")
-    val c = Test.Term[Int](i, d)
+    val c = Test.TestTerm[Int](i, d)
 
     println(eval(t := Test(1, 2.0))(t.value))
     println(eval(i := 1, d := 2.0)(c.value))
@@ -83,7 +83,7 @@ object CaseClassTerm {
           q"args(${Literal(Constant(index))}).asInstanceOf[$argType]"
         }
         val termArgs = for (((argName,argType), index) <- (caseClassArgNames zip caseClassArgTypeNames).zipWithIndex) yield {
-          q"val $argName:ml.wolfe.term.STerm[$argType]"
+          q"val $argName:ml.wolfe.term.Term[$argType]"
         }
         val domArgs = for (((argName,argType), index) <- (caseClassArgNames zip caseClassArgTypeNames).zipWithIndex) yield {
           q"val $argName:ml.wolfe.term.Dom[$argType]"
@@ -94,7 +94,7 @@ object CaseClassTerm {
           object $caseClassTermName {
 
             def construct[..$genTypes](args:Seq[Any]) = new $caseClassTypeName(..$castArgs)
-            implicit class RichTerm[..$genTypes](val term:ml.wolfe.term.STerm[$caseClassTypeName[..$genTypenames]]) {
+            implicit class RichTerm[..$genTypes](val term:ml.wolfe.term.Term[$caseClassTypeName[..$genTypenames]]) {
               ..$getterMethods
               def pimped:this.type = this
             }
@@ -102,7 +102,7 @@ object CaseClassTerm {
               def apply[..$genTypes](..$termArgs) =
                 ml.wolfe.term.ConstructProduct(Seq(..$caseClassArgNames),construct[..$genTypenames])
 
-              def unapply[..$genTypes](term:ml.wolfe.term.STerm[$caseClassTypeName[..$genTypenames]]) =
+              def unapply[..$genTypes](term:ml.wolfe.term.Term[$caseClassTypeName[..$genTypenames]]) =
                 Some(..$getters)
             }
             def Values[..$genTypes](..$domArgs) =
@@ -119,7 +119,7 @@ object CaseClassTerm {
 }
 
 
-class term extends StaticAnnotation {
+class termdef extends StaticAnnotation {
   def macroTransform(annottees: Any*): Any = macro CaseClassTerm.implOnClass
 }
 
