@@ -24,7 +24,6 @@ object BaseEval extends Evaluator {
         case None => Bad(One(VariableNotBound(v)))
       }
 
-        /*
       case p: Plus[_] =>
         for (v1 <- e(p.arg1);
              v2 <- e(p.arg2)) yield
@@ -71,7 +70,6 @@ object BaseEval extends Evaluator {
         c(va)
 
       case term => Bad(One(TermNotSupported(term)))
-      */
 
     }
     result
