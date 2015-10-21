@@ -35,4 +35,3 @@ object NameProvider {
     c.Expr[NameProvider](result)
   }
 }
-
