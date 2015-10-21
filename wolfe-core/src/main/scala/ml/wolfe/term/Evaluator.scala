@@ -1,8 +1,9 @@
 package ml.wolfe.term
 
+import ml.wolfe.Language
 import org.scalautils._
 import Accumulation._
-import Wolfe._
+import Language._
 
 /**
  * @author riedel

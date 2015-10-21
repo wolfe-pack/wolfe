@@ -1,5 +1,6 @@
 package ml.wolfe.term
 
+import ml.wolfe.Language
 import ml.wolfe.term._
 
 import scala.annotation.StaticAnnotation
@@ -12,7 +13,7 @@ import scala.reflect.macros.whitebox
 object CaseClassTerm {
 
   import BaseEval._
-  import Wolfe._
+  import Language._
 
   def main(args: Array[String]) {
     case class Test[C](value: C, number: Double)

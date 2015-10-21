@@ -1,5 +1,6 @@
 package ml.wolfe.term
 
+import ml.wolfe.Language
 import ml.wolfe.term._
 
 /**
@@ -7,7 +8,7 @@ import ml.wolfe.term._
  */
 object SimpleTerm {
 
-  import Wolfe._
+  import Language._
 
   def main(args: Array[String]) {
     implicit val domains = new Domains

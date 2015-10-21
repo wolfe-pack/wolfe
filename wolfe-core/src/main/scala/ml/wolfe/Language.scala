@@ -1,11 +1,11 @@
-package ml.wolfe.term
+package ml.wolfe
 
-import ml.wolfe.term.NameProviderImplicits
+import ml.wolfe.term._
 
 /**
  * @author riedel
  */
-object Wolfe extends NameProviderImplicits with SeqHelper with LinAlg {
+object Language extends NameProviderImplicits with SeqHelper with LinAlg {
 
   def Variable[T](name: String) = new Var[T](name)
 

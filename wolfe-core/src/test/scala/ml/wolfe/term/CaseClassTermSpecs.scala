@@ -1,5 +1,6 @@
 package ml.wolfe.term
 
+import ml.wolfe.Language
 import ml.wolfe.term.WolfeSpec
 import ml.wolfe.term._
 import org.scalautils.Good
@@ -10,7 +11,7 @@ import org.scalautils.Good
 class CaseClassTermSpecs extends WolfeSpec {
 
   import BaseEval._
-  import Wolfe._
+  import Language._
 
   "A case class term macro" should {
     "provide getters on terms" in {

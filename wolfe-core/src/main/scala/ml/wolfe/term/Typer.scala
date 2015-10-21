@@ -1,5 +1,6 @@
 package ml.wolfe.term
 
+import ml.wolfe.Language
 import org.scalautils.Accumulation._
 import org.scalautils._
 
@@ -50,7 +51,7 @@ object Typer {
 
   def main(args: Array[String]) {
 
-    import Wolfe._
+    import Language._
 
     val i = Variable[Int]("i")
 
