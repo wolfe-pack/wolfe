@@ -89,12 +89,16 @@ trait SeqHelper {
 }
 
 trait LinAlg {
-  implicit class TensorHelper(t: Term[Tensor]) {
-    def +(x: Term[Tensor]) = ComponentPlus(t, x)
-    def :*(x: Term[Tensor]) = ComponentMul(t, x)
-    def *(x: Term[Tensor]) = TensorMul(t, x)
+  implicit class TensorHelper(term: Term[Tensor]) {
+    def +(x: Term[Tensor]) = ComponentPlus(term, x)
+    def :*(x: Term[Tensor]) = ComponentMul(term, x)
+    def *(x: Term[Tensor]) = TensorMul(term, x)
+    def t = Transpose(term)
   }
 
   def tanh(x: Term[Tensor]) = Tanh(x)
   def sigmoid(x: Term[Tensor]) = Sigmoid(x)
+  def concat(args:Term[Tensor]*) = Concat(args.toSeq)
+  def max(args:Term[Tensor]*) = Max(args.toSeq)
+
 }
