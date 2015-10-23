@@ -62,9 +62,11 @@ case class SeqAppend[+E](s: Term[Seq[E]], elem: Term[E]) extends Term[Seq[E]] wi
  * @tparam E the type of elements in the sequence.
  * @tparam S the type of the result.
  */
-case class SeqFoldLeft[E, S](s: Term[Seq[E]], init: Term[S], op: (Term[S], Term[E]) => Term[S]) extends Term[S]
+case class Foldl[E, S](s: Term[Seq[E]], init: Term[S], op: (Term[S], Term[E]) => Term[S]) extends Term[S]
 
-case class SeqScanLeft[E, S](s: Term[Seq[E]], init: Term[S], op: (Term[S], Term[E]) => Term[S]) extends Term[Seq[S]]
+case class Unfoldr[E, S](init: Term[S], op: (Term[S], Term[S]) => Term[E]) extends Term[Seq[E]]
+
+case class MapAccumR[E, S](s: Term[Seq[E]], init: Term[S], op: (Term[S], Term[E]) => Term[S]) extends Term[Seq[S]]
 
 case class SeqFill[+E](length: Term[Int], element: Term[E]) extends Term[Seq[E]]
 

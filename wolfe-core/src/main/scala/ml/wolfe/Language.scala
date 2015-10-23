@@ -72,9 +72,12 @@ trait SeqHelper {
 
     def slice(from: Term[Int], to: Term[Int]) = SeqSlice(s, from, to)
 
-    def foldLeft[S](init: Term[S])(op: (Term[S], Term[E]) => Term[S]): Term[S] = SeqFoldLeft(s, init, op)
+    //terminology from http://colah.github.io/posts/2015-09-NN-Types-FP/
+    def foldl[S](init: Term[S])(op: (Term[S], Term[E]) => Term[S]): Term[S] = Foldl(s, init, op)
 
-    def scanLeft[S](init: Term[S])(op: (Term[S], Term[E]) => Term[S]): Term[Seq[S]] = SeqScanLeft(s, init, op)
+    //def unfoldr //needs to be applied to a term instead of a seq of terms
+
+    def mapAccumR[S](init: Term[S])(op: (Term[S], Term[E]) => Term[S]): Term[Seq[S]] = MapAccumR(s, init, op)
   }
 
   implicit class NumericSeqTerm[E](val s: Term[Seq[E]])(implicit numeric: Numeric[E]) {
