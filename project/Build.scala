@@ -93,8 +93,8 @@ object BuildSettings {
 
   val coreDependencies = libraryDependencies ++= Seq(
     "net.sf.trove4j" % "trove4j" % "3.0.3",
-    "cc.factorie" % "factorie_2.11" % "1.1",
-//    "org.scalamacros" %% "quasiquotes" % "2.0.0",
+    "org.nd4j" % "nd4s_2.12.0-M1" % "0.4-rc3",
+  //    "org.scalamacros" %% "quasiquotes" % "2.0.0",
     "org.scalanlp" %% "breeze" % "0.8.1",
     //"org.scalanlp" %% "breeze-natives" % "0.8.1",
     "org.sameersingh.htmlgen" % "htmlgen" % "0.3"
