@@ -1,6 +1,8 @@
 package ml.wolfe.term
 
 import ml.wolfe.Language
+import ml.wolfe.term.WolfeSpec
+import ml.wolfe.term._
 import org.scalautils.Good
 
 /**
