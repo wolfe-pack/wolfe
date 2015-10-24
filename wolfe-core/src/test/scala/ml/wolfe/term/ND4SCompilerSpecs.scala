@@ -15,7 +15,7 @@ class ND4SCompilerSpecs extends WolfeSpec {
     "support forward evaluation of matrix vector multiplication" ignore {
       val W = Var[Tensor]
       val x = Var[Tensor]
-      val term = W * x
+      val term = sigmoid(W * x)
 
       val module = ND4SCompiler.compile(term)
       module.init(W := ???)
@@ -26,7 +26,7 @@ class ND4SCompilerSpecs extends WolfeSpec {
     "support backward evaluation of matrix vector multiplication" ignore {
       val W = Var[Tensor]
       val x = Var[Tensor]
-      val term = W * x
+      val term = sigmoid(W * x)
 
       val module = ND4SCompiler.compile(term)
       module.init(W := ???)

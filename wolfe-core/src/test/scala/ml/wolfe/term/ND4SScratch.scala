@@ -9,4 +9,5 @@ import org.nd4j.linalg.factory.Nd4j
 object ND4SScratch extends App {
   val arr = (1 to 9).asNDArray(3,3)
   println(arr)
+
 }
