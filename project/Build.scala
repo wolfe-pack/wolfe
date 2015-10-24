@@ -39,7 +39,7 @@ object ShellPrompt {
 object BuildSettings {
   val buildName         = "wolfe"
   val buildOrganization = "ml.wolfe"
-  val buildScalaVersion = "2.11.4"
+  val buildScalaVersion = "2.11.7"
   val buildSbtVersion = "0.13.7"
 
   val buildSettings = Defaults.defaultSettings ++ Seq(
@@ -167,7 +167,7 @@ object Build extends Build {
 //  lazy val word2vec = ProjectRef(uri("git://github.com/trananh/word2vec-scala.git"), "word2vec-scala")
 
   lazy val macroSettings = Seq(
-    addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0-M1" cross CrossVersion.full)
+    addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0-SNAPSHOT" cross CrossVersion.full)
   )
 
   lazy val root = Project(
