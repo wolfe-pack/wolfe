@@ -1,6 +1,7 @@
 package ml.wolfe.compiler
 
-import ml.wolfe.term.{Var, Tensor, Binding, Term}
+import ml.wolfe.Tensor
+import ml.wolfe.term.{Binding, Term, Var}
 
 /**
  * @author rockt

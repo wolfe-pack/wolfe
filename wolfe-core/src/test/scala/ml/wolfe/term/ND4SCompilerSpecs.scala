@@ -1,6 +1,6 @@
 package ml.wolfe.term
 
-import ml.wolfe.Language
+import ml.wolfe.{Tensor, Language}
 import ml.wolfe.compiler.ND4SCompiler
 import org.scalautils.Good
 

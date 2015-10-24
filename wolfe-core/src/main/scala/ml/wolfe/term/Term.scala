@@ -1,5 +1,7 @@
 package ml.wolfe.term
 
+import ml.wolfe.Tensor
+
 /**
  * A Term is an expression that evaluates to a specific value given a binding to the free variables in the expression.
  * @author riedel
@@ -138,10 +140,6 @@ case class Minus[N](arg1: Term[N], arg2: Term[N])(implicit val numeric: Numeric[
 case class Sum[N](args: Term[Seq[N]])(implicit val numeric: Numeric[N]) extends Term[N]
 
 case class Times[N](arg1: Term[N], arg2: Term[N])(implicit val numeric: Numeric[N]) extends Term[N] with BinaryOperation[N, N]
-
-
-
-trait Tensor
 
 case class Tanh(x: Term[Tensor]) extends Term[Tensor]
 case class Sigmoid(x: Term[Tensor]) extends Term[Tensor]
