@@ -129,6 +129,7 @@ trait Bindings {
 
   def apply[T](variable:Var[T]) = get(variable).get
   def get[T](variable: Var[T]): Option[T]
+  def contains[T](variable: Var[T]) = get(variable).isDefined
 
   def +[T](binding: Binding[T]): Bindings
 }
