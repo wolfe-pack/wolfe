@@ -13,10 +13,6 @@ import scala.collection.mutable
 object ND4SCompiler {
 
 
-  //  def valueToArray(value:Any, dst:Array[Any]) = value match {
-  //    case p:Product =>
-  //  }
-
   def compile[T](term: Term[T]): Module[T] = {
 
     val var2InputBox = new mutable.HashMap[Var[Any], InputBox]()
@@ -95,17 +91,10 @@ class Table(numTables: Int = 0) {
   var tensor:Tensor = _
   val children = Array.ofDim[Table](numTables)
 
-//  def apply(index: Int): Tensor = children(index).tensor
-//
-//  def update(index: Int, value: Tensor) = children(index).tensor = value
-
   def +=(that: Table, scale: Double = 1.0): Unit = {
     tensor += that.tensor * scale
     for (i <- children.indices) children(i) +=(that.children(i), scale)
   }
-
-  //val isTensor:Array[Boolean]
-  //updateGlobal(globalIndex:
 
 }
 
