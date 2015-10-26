@@ -1,9 +1,8 @@
-package ml.wolfe.term
+package ml.wolfe.compiler.nd4s
 
 import breeze.linalg.DenseMatrix
-import ml.wolfe.{Tensor, Language}
-import ml.wolfe.compiler.ND4SCompiler
-import org.scalautils.Good
+import ml.wolfe.term.{WolfeSpec, termdef}
+import ml.wolfe.{Language, Tensor}
 
 /**
  * @author riedel

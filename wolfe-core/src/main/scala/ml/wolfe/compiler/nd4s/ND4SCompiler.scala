@@ -1,4 +1,4 @@
-package ml.wolfe.compiler
+package ml.wolfe.compiler.nd4s
 
 import breeze.linalg.DenseMatrix
 import breeze.numerics.sigmoid
@@ -16,6 +16,13 @@ object ND4SCompiler extends LazyLogging {
 
   case class CompilationError(term: Term[Any], msg: String)
 
+  def deriveDomainFromValue(value: Any): Dom[Any] = value match {
+    case d: DenseMatrix[_] => TensorDom(List(d.rows, d.cols))
+    case p: Product =>
+      val argDoms = p.productIterator.toList.map(deriveDomainFromValue)
+      ProductDom(argDoms, null)
+  }
+
   def compile[T](term: Term[T]): Module[T] = {
 
     logger.info(s"Remembering for compilation: $term.")
@@ -31,33 +38,54 @@ object ND4SCompiler extends LazyLogging {
 
       implicit def asGood(box: Box): Box Or Every[CompilationError] = Good(box)
 
-      def compile(term: Term[Any]): Box Or Every[CompilationError] = {
+      implicit def asBad(error: CompilationError): Bad[Nothing, One[CompilationError]] = Bad(One(error))
 
-        term match {
+
+      def compile(termToCompileToBox: Term[Any]): Box Or Every[CompilationError] = {
+
+        def tensorDom(dom: Dom[Any]): TensorDom Or One[CompilationError] = dom match {
+          case t: TensorDom => Good(t)
+          case _ => Bad(One(CompilationError(termToCompileToBox, s"Expected a tensor domain but got: $dom")))
+        }
+
+        def productDom(dom: Dom[Any]): ProductDom[Product] Or One[CompilationError] = dom match {
+          case t: ProductDom[_] => Good(t)
+          case _ => Bad(One(CompilationError(termToCompileToBox, s"Expected a product domain but got: $dom")))
+        }
+
+        def check[A](predicate: Boolean, result: A, msg: String) =
+          if (predicate) Good(result) else Bad(One(CompilationError(termToCompileToBox, msg)))
+
+        termToCompileToBox match {
           case v: Var[_] if paramBindings.contains(v) =>
-            var2ParamBox.getOrElseUpdate(v, {
-              val result = new ParamBox(v)
-              result
-            })
+            var2ParamBox.getOrElseUpdate(v, new ParamBox(v, deriveDomainFromValue(paramBindings(v))))
+
           case v: Var[_] if inputBindings.contains(v) =>
-            var2InputBox.getOrElseUpdate(v, {
-              val result = new InputBox(v)
-              result
-            })
+            var2InputBox.getOrElseUpdate(v, new InputBox(v, deriveDomainFromValue(inputBindings(v))))
+
+          case v: Var[_] =>
+            Bad(One(CompilationError(v, s"Variable $v has not been bound yet. Bind it using init() or forward().")))
 
           case Sigmoid(arg) =>
-            for (argBox <- compile(arg)) yield new SigmoidBox(argBox)
+            for (argBox <- compile(arg); d <- tensorDom(argBox.dom))
+              yield new SigmoidBox(argBox, d)
 
           case TensorMul(arg1, arg2) =>
-            for (arg1Box <- compile(arg1);
-                 arg2Box <- compile(arg2)) yield new TensorProductBox(arg1Box, arg2Box)
+            for (arg1Box <- compile(arg1); d1 <- tensorDom(arg1Box.dom);
+                 arg2Box <- compile(arg2); d2 <- tensorDom(arg2Box.dom);
+                 d <- check(d1.dims(1) == d2.dims(0), TensorDom(List(d1.dims(0), d2.dims(1))),
+                   s"Tensor multiplication dimension mismatch: $d1 * $d2"))
+              yield new TensorProductBox(arg1Box, arg2Box, d)
 
           case ComponentPlus(arg1, arg2) =>
-            for (arg1Box <- compile(arg1);
-                 arg2Box <- compile(arg2)) yield new TensorPlusBox(arg1Box, arg2Box)
+            for (arg1Box <- compile(arg1); d1 <- tensorDom(arg1Box.dom);
+                 arg2Box <- compile(arg2); d2 <- tensorDom(arg2Box.dom);
+                 d <- check(d1.dims == d2.dims, d1, s"Tensor plus domains don't match: $d1 != $d2"))
+              yield new TensorPlusBox(arg1Box, arg2Box, d)
 
           case GetElement(arg, element) =>
-            for (argBox <- compile(arg)) yield new GetElementBox(argBox, element)
+            for (argBox <- compile(arg); d <- productDom(argBox.dom))
+              yield new GetElementBox(argBox, element, d.doms(element))
         }
       }
 
@@ -69,7 +97,7 @@ object ND4SCompiler extends LazyLogging {
               logger.info("Compilation completed")
               box
             case Bad(Every(errors)) =>
-              sys.error("Compilated failed with errors: " + errors)
+              sys.error("Compilation failed with errors: " + errors)
           }
         }
       }
@@ -170,9 +198,11 @@ trait Box {
 
   def gradInputs: Table
 
+  def dom: Dom[Any]
+
 }
 
-class ParamBox(val variable: Var[Any]) extends Box {
+class ParamBox(val variable: Var[Any], val dom: Dom[Any]) extends Box {
   var output: Table = _
   var grad: Table = _
   var gradInputs: Table = _
@@ -191,7 +221,7 @@ class ParamBox(val variable: Var[Any]) extends Box {
 
 }
 
-class InputBox(val variable: Var[Any]) extends Box {
+class InputBox(val variable: Var[Any], val dom: Dom[Any]) extends Box {
   var output: Table = _
   var gradInputs: Table = _
 
@@ -205,7 +235,7 @@ class InputBox(val variable: Var[Any]) extends Box {
 
 }
 
-class SigmoidBox(input: Box) extends Box {
+class SigmoidBox(input: Box, val dom: TensorDom) extends Box {
   val output = new Table(1)
   val gradInputs = new Table(1)
 
@@ -221,7 +251,7 @@ class SigmoidBox(input: Box) extends Box {
   }
 }
 
-class TensorProductBox(arg1: Box, arg2: Box) extends Box {
+class TensorProductBox(arg1: Box, arg2: Box, val dom: TensorDom) extends Box {
   val output = new Table(1)
   val gradInputs = new Table(2)
 
@@ -237,7 +267,7 @@ class TensorProductBox(arg1: Box, arg2: Box) extends Box {
   }
 }
 
-class TensorPlusBox(arg1: Box, arg2: Box) extends Box {
+class TensorPlusBox(arg1: Box, arg2: Box, val dom: TensorDom) extends Box {
   val output = new Table(1)
   val gradInputs = new Table(2)
 
@@ -253,7 +283,7 @@ class TensorPlusBox(arg1: Box, arg2: Box) extends Box {
 }
 
 
-class GetElementBox(arg: Box, index: Int) extends Box {
+class GetElementBox(arg: Box, index: Int, val dom: Dom[Any]) extends Box {
   var output: Table = _
 
   def forward() = {

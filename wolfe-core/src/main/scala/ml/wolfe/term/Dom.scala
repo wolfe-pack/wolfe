@@ -1,5 +1,7 @@
 package ml.wolfe.term
 
+import ml.wolfe.Tensor
+
 /**
  * A domain Dom represents a set of values that a particular term can evaluate to.
  *
@@ -25,6 +27,8 @@ case object Doubles extends Dom[Double]
 
 case class Tuple2Dom[+T1, +T2](dom1: Dom[T1], dom2: Dom[T2]) extends Dom[(T1, T2)]
 
-case class ProductDom[+T <: Product](doms: Seq[Dom[Any]], constructor: Seq[Any] => T) extends Dom[T] {
+case class ProductDom[+T <: Product](doms: Seq[Dom[Any]], constructor: Seq[Any] => T) extends Dom[T]
 
+case class TensorDom(dims:List[Int]) extends Dom[Tensor] {
+  override def toString = "R^{" + dims.mkString(" x ") + "}"
 }
