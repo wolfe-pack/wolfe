@@ -123,7 +123,7 @@ case class TermNotSupported(term: Term[Any]) extends ErrorMsg {
 }
 
 
-trait Bindings {
+trait Bindings extends Iterable[Binding[Any]] {
 
   def apply[T](variable:Var[T]) = get(variable).get
   def get[T](variable: Var[T]): Option[T]
@@ -155,6 +155,8 @@ class MutableBindings extends Bindings {
     result.map = map + (binding.variable -> binding.value)
     result
   }
+
+  def iterator = map.iterator.map(p => Binding[Any](p._1,p._2))
 }
 
 case class Binding[+T](variable: Var[T], value: T)

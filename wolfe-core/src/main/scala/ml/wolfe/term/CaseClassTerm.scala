@@ -1,6 +1,7 @@
 package ml.wolfe.term
 
-import ml.wolfe.Language
+import breeze.linalg.DenseMatrix
+import ml.wolfe.{Tensor, Language}
 import ml.wolfe.term._
 
 import scala.annotation.StaticAnnotation
@@ -56,6 +57,16 @@ object CaseClassTerm {
 
     println(eval(t := Test(1, 2.0))(t.value))
     println(eval(i := 1, d := 2.0)(c.value))
+
+    class Params(k:Int) {
+      val W = DenseMatrix.ones[Double](k,k)
+    }
+
+    case class ParamsCaseClass(W:Tensor) {
+      def this(k:Int) {
+        this(DenseMatrix.ones[Double](k,k))
+      }
+    }
 
   }
 
