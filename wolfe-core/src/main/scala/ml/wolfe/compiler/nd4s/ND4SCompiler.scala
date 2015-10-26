@@ -20,7 +20,10 @@ object ND4SCompiler extends LazyLogging {
     case d: DenseMatrix[_] => TensorDom(List(d.rows, d.cols))
     case p: Product =>
       val argDoms = p.productIterator.toList.map(deriveDomainFromValue)
-      ProductDom(argDoms, null)
+      val constructor = p.getClass.getConstructors.head
+      def construct(args:Seq[Any]) =
+        constructor.newInstance(args.asInstanceOf[Seq[AnyRef]]:_*).asInstanceOf[Product]
+      ProductDom(argDoms, construct)
   }
 
   def compile[T](term: Term[T]): Module[T] = {
