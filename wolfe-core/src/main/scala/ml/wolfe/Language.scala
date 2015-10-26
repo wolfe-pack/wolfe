@@ -8,10 +8,10 @@ import scala.language.implicitConversions
  */
 object Language extends NameProviderImplicits with SeqHelper with LinAlg {
 
-  implicit def toLambdaAbstraction[A,B](f:Term[A] => Term[B]):LambdaAbstraction[A,B] = {
+  implicit def toLambdaAbstraction[A,B](f:Term[A] => Term[B]):LambdaAbstraction1[A,B] = {
     val arg = Variable("_lambdaArg")
     val body = f(arg)
-    LambdaAbstraction(arg,body)
+    LambdaAbstraction1(arg,body)
   }
 
   def Variable[T](name: String) = new Var[T](name)
