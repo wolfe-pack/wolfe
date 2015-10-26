@@ -1,11 +1,18 @@
 package ml.wolfe
 
 import ml.wolfe.term._
+import scala.language.implicitConversions
 
 /**
  * @author riedel
  */
 object Language extends NameProviderImplicits with SeqHelper with LinAlg {
+
+  implicit def toLambdaAbstraction[A,B](f:Term[A] => Term[B]):LambdaAbstraction[A,B] = {
+    val arg = Variable("_lambdaArg")
+    val body = f(arg)
+    LambdaAbstraction(arg,body)
+  }
 
   def Variable[T](name: String) = new Var[T](name)
 
@@ -64,7 +71,7 @@ trait SeqHelper {
   implicit class SeqTerm[E](val s: Term[Seq[E]]) {
     def apply(i: Term[Int]) = SeqApply[E](s, i)
 
-    def map[B](f: Term[E] => Term[B]) = SeqMap(s, f)
+    def map[B](f: Term[E] => Term[B]) = SeqMap(s, Language.toLambdaAbstraction(f))
 
     def :+(that: Term[E]) = SeqAppend(s, that)
 

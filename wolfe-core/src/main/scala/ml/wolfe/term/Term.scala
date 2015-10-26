@@ -57,6 +57,15 @@ case class SeqAppend[+E](s: Term[Seq[E]], elem: Term[E]) extends Term[Seq[E]] wi
 }
 
 /**
+ * A symbolic representation of a function. 
+ * @param argument the function argument.
+ * @param body a body that may contain the function argument.
+ * @tparam A the argument type.
+ * @tparam B the return type.
+ */
+case class LambdaAbstraction[A,+B](argument:Var[A],body:Term[B]) extends Term[A => B]
+
+/**
  * Applies a fold-left on a term representing a sequence.
  * @param s the term representing the sequence to apply the fold-left to.
  * @param init the initial result passed into the first application of the operator.
@@ -88,7 +97,7 @@ case class SeqSlice[+E](s: Term[Seq[E]], from: Term[Int], to: Term[Int]) extends
  * @tparam A original element type in the sequence.
  * @tparam B new element type.
  */
-case class SeqMap[A, +B](s: Term[Seq[A]], f: Term[A] => Term[B]) extends Term[Seq[B]]
+case class SeqMap[A, +B](s: Term[Seq[A]], f: LambdaAbstraction[A,B]) extends Term[Seq[B]]
 
 /**
  * A term that represents the length of a sequence.

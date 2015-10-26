@@ -44,10 +44,8 @@ object BaseEval extends Evaluator {
         for (vs <- e(s)) yield vs.length
 
       case SeqMap(s, f) =>
-        var variable = new Var[Any]("_tmp")
-        val body = f(variable)
         for (vs <- e(s);
-             va <- vs.map(a => eval(bindings + (variable := a))(body)).combined)
+             va <- vs.map(a => eval(bindings + (f.argument := a))(f.body)).combined)
           yield va
 
       case SeqSlice(s, from, to) =>
