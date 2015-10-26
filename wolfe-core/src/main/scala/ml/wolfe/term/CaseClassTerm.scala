@@ -49,9 +49,9 @@ object CaseClassTerm {
     def test[C](t: Term[Test[C]]): Term[Test[C]] = Test.TestTerm(t.value, t.number + 2.0)
 
 
-    val t = Variable[Test[Int]]("t")
-    val i = Variable[Int]("i")
-    val d = Variable[Double]("d")
+    val t = Var[Test[Int]]("t")
+    val i = Var[Int]("i")
+    val d = Var[Double]("d")
     val c = Test.TestTerm[Int](i, d)
 
     println(eval(t := Test(1, 2.0))(t.value))

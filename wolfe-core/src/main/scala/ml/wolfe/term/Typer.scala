@@ -53,7 +53,7 @@ object Typer {
 
     import Language._
 
-    val i = Variable[Int]("i")
+    val i = Var[Int]("i")
 
     println(domain(i in RangeDom(0 until 3))(i + i))
   }

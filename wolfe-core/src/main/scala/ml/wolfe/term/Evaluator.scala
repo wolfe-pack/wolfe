@@ -83,7 +83,7 @@ object BaseEvalTest {
     val i = Ints.Variable("i")
     println(eval(Bindings(i := 1))(i + i))
 
-    val s = Variable[Seq[Double]]("s")
+    val s = Var[Seq[Double]]("s")
     println(eval(s := Seq(1.0, 2.0))(s map (_ + 2.0)))
 
   }
