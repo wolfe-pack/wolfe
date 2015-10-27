@@ -4,6 +4,7 @@ import breeze.linalg.DenseMatrix
 import breeze.numerics.sigmoid
 import com.typesafe.scalalogging.slf4j.LazyLogging
 import ml.wolfe.Tensor
+import ml.wolfe.compiler.Module
 import ml.wolfe.term._
 import org.scalautils._
 
@@ -179,18 +180,7 @@ object Table {
 
 }
 
-trait Module[T] {
-  def gradient[G](param: Var[G]): G
 
-  def backward(output: T)
-
-  def output(): T
-
-  def forward(bindings: Binding[Any]*)
-
-  def init(bindings: Binding[Any]*)
-
-}
 
 trait Box {
   def forward()
