@@ -101,6 +101,7 @@ object BuildSettings {
     "org.nd4j" % "nd4j-jblas" % "0.4-rc3.5",
     "org.jblas" % "jblas" % "1.2.3",
     "org.nd4j" % "jcublas" % "6.5",
+    "org.zeromq" % "jeromq" % "0.3.5",
 
   //    "org.scalamacros" %% "quasiquotes" % "2.0.0",
     "org.scalanlp" %% "breeze" % "0.8.1",
