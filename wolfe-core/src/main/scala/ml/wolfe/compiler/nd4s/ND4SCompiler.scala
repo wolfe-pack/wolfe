@@ -90,6 +90,8 @@ object ND4SCompiler extends LazyLogging {
           case GetElement(arg, element) =>
             for (argBox <- compile(arg); d <- productDom(argBox.dom))
               yield new GetElementBox(argBox, element, d.doms(element))
+
+          case _ => Bad(One(CompilationError(term, "Not supported for ND4S compilation yet: " + term)))
         }
       }
 
