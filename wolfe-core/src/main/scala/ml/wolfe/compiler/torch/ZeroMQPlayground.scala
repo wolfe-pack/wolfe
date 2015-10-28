@@ -21,6 +21,14 @@ object ZeroMQPlayground {
 
     println(test2)
 
+    //could we write:
+    //$.a = $.torch.Tensor(2)
+    //$.b = $.a + $.b
+    //$.func = function(@.x, @.y){ @.x + @.y}
+    //get($.b)
+    //get($.a)
+    //get(torch.Tensor(2))
+
   }
 
 }

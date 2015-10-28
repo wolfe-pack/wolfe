@@ -2,147 +2,132 @@ package ml.wolfe.compiler.nd4s
 
 import breeze.linalg.DenseMatrix
 import breeze.numerics.sigmoid
-import com.typesafe.scalalogging.slf4j.LazyLogging
 import ml.wolfe.Tensor
-import ml.wolfe.compiler.Module
+import ml.wolfe.compiler.{DelayedCompiler, Module}
 import ml.wolfe.term._
 import org.scalautils._
 
 import scala.collection.mutable
+import scala.language.implicitConversions
 
 /**
  * @author rockt
  */
-object ND4SCompiler extends LazyLogging {
-
-  case class CompilationError(term: Term[Any], msg: String)
+object ND4SCompiler extends DelayedCompiler {
 
   def deriveDomainFromValue(value: Any): Dom[Any] = value match {
     case d: DenseMatrix[_] => TensorDom(List(d.rows, d.cols))
     case p: Product =>
       val argDoms = p.productIterator.toList.map(deriveDomainFromValue)
       val constructor = p.getClass.getConstructors.head
-      def construct(args:Seq[Any]) =
-        constructor.newInstance(args.asInstanceOf[Seq[AnyRef]]:_*).asInstanceOf[Product]
+      def construct(args: Seq[Any]) =
+        constructor.newInstance(args.asInstanceOf[Seq[AnyRef]]: _*).asInstanceOf[Product]
       ProductDom(argDoms, construct)
   }
 
-  def compile[T](term: Term[T]): Module[T] = {
+  implicit def asGood(box: Box): Box Or Every[CompilationError] = Good(box)
 
-    logger.info(s"Remembering for compilation: $term.")
+  implicit def asBad(error: CompilationError): Bad[Nothing, One[CompilationError]] = Bad(One(error))
 
-    new Module[T] {
+  def compileBox(termToCompileToBox: Term[Any],
+                 paramBindings: Bindings, inputBindings: Bindings,
+                 var2InputBox: mutable.HashMap[Var[Any], InputBox],
+                 var2ParamBox: mutable.HashMap[Var[Any], ParamBox]): Box Or Every[CompilationError] = {
 
-      val var2InputBox = new mutable.HashMap[Var[Any], InputBox]()
-      val var2ParamBox = new mutable.HashMap[Var[Any], ParamBox]()
-      var compiled: Box = null
-      var paramBindings: Bindings = _
-      var inputBindings: Bindings = _
-      var paramBoxesNeedUpdate = false
+    def comp(term:Term[Any]) = compileBox(term, paramBindings, inputBindings, var2InputBox, var2ParamBox)
 
-      implicit def asGood(box: Box): Box Or Every[CompilationError] = Good(box)
-
-      implicit def asBad(error: CompilationError): Bad[Nothing, One[CompilationError]] = Bad(One(error))
-
-
-      def compile(termToCompileToBox: Term[Any]): Box Or Every[CompilationError] = {
-
-        def tensorDom(dom: Dom[Any]): TensorDom Or One[CompilationError] = dom match {
-          case t: TensorDom => Good(t)
-          case _ => Bad(One(CompilationError(termToCompileToBox, s"Expected a tensor domain but got: $dom")))
-        }
-
-        def productDom(dom: Dom[Any]): ProductDom[Product] Or One[CompilationError] = dom match {
-          case t: ProductDom[_] => Good(t)
-          case _ => Bad(One(CompilationError(termToCompileToBox, s"Expected a product domain but got: $dom")))
-        }
-
-        def check[A](predicate: Boolean, result: A, msg: String) =
-          if (predicate) Good(result) else Bad(One(CompilationError(termToCompileToBox, msg)))
-
-        termToCompileToBox match {
-          case v: Var[_] if paramBindings.contains(v) =>
-            var2ParamBox.getOrElseUpdate(v, new ParamBox(v, deriveDomainFromValue(paramBindings(v))))
-
-          case v: Var[_] if inputBindings.contains(v) =>
-            var2InputBox.getOrElseUpdate(v, new InputBox(v, deriveDomainFromValue(inputBindings(v))))
-
-          case v: Var[_] =>
-            Bad(One(CompilationError(v, s"Variable $v has not been bound yet. Bind it using init() or forward().")))
-
-          case Sigmoid(arg) =>
-            for (argBox <- compile(arg); d <- tensorDom(argBox.dom))
-              yield new SigmoidBox(argBox, d)
-
-          case TensorMul(arg1, arg2) =>
-            for (arg1Box <- compile(arg1); d1 <- tensorDom(arg1Box.dom);
-                 arg2Box <- compile(arg2); d2 <- tensorDom(arg2Box.dom);
-                 d <- check(d1.dims(1) == d2.dims(0), TensorDom(List(d1.dims(0), d2.dims(1))),
-                   s"Tensor multiplication dimension mismatch: $d1 * $d2"))
-              yield new TensorProductBox(arg1Box, arg2Box, d)
-
-          case ComponentPlus(arg1, arg2) =>
-            for (arg1Box <- compile(arg1); d1 <- tensorDom(arg1Box.dom);
-                 arg2Box <- compile(arg2); d2 <- tensorDom(arg2Box.dom);
-                 d <- check(d1.dims == d2.dims, d1, s"Tensor plus domains don't match: $d1 != $d2"))
-              yield new TensorPlusBox(arg1Box, arg2Box, d)
-
-          case GetElement(arg, element) =>
-            for (argBox <- compile(arg); d <- productDom(argBox.dom))
-              yield new GetElementBox(argBox, element, d.doms(element))
-
-          case _ => Bad(One(CompilationError(term, "Not supported for ND4S compilation yet: " + term)))
-        }
-      }
-
-      private def updateCompilation() {
-        if (compiled == null) {
-          logger.info(s"Compiling: $term.")
-          compiled = compile(term) match {
-            case Good(box) =>
-              logger.info("Compilation completed")
-              box
-            case Bad(Every(errors)) =>
-              sys.error("Compilation failed with errors: " + errors)
-          }
-        }
-      }
-
-      def gradient[G](param: Var[G]) = {
-        val paramBox = var2ParamBox(param)
-        paramBox.grad.asInstanceOf[G] //todo: this needs to be converted back
-      }
-
-      def init(bindings: Binding[Any]*) = {
-        paramBindings = Bindings(bindings: _*)
-        paramBoxesNeedUpdate = true
-      }
-
-      def forward(bindings: Binding[Any]*) = {
-        inputBindings = Bindings(bindings: _*)
-        updateCompilation()
-        for (binding <- inputBindings; box <- var2InputBox.get(binding.variable)) {
-          box.output = Table.toTable(binding.value)
-        }
-        if (paramBoxesNeedUpdate) for (binding <- paramBindings; box <- var2ParamBox.get(binding.variable)) {
-          box.output = Table.toTable(binding.value)
-        }
-        compiled.forward()
-      }
-
-      def output() = {
-        compiled.output.tensor.asInstanceOf[T] //todo: this needs to convert back
-      }
-
-      def backward(output: T) = {
-        compiled.backward(Table(output.asInstanceOf[Tensor]))
-      }
+    def tensorDom(dom: Dom[Any]): TensorDom Or One[CompilationError] = dom match {
+      case t: TensorDom => Good(t)
+      case _ => Bad(One(CompilationError(termToCompileToBox, s"Expected a tensor domain but got: $dom")))
     }
 
+    def productDom(dom: Dom[Any]): ProductDom[Product] Or One[CompilationError] = dom match {
+      case t: ProductDom[_] => Good(t)
+      case _ => Bad(One(CompilationError(termToCompileToBox, s"Expected a product domain but got: $dom")))
+    }
+
+    def check[A](predicate: Boolean, result: A, msg: String) =
+      if (predicate) Good(result) else Bad(One(CompilationError(termToCompileToBox, msg)))
+
+    termToCompileToBox match {
+      case v: Var[_] if paramBindings.contains(v) =>
+        var2ParamBox.getOrElseUpdate(v, new ParamBox(v, deriveDomainFromValue(paramBindings(v))))
+
+      case v: Var[_] if inputBindings.contains(v) =>
+        var2InputBox.getOrElseUpdate(v, new InputBox(v, deriveDomainFromValue(inputBindings(v))))
+
+      case v: Var[_] =>
+        Bad(One(CompilationError(v, s"Variable $v has not been bound yet. Bind it using init() or forward().")))
+
+      case Sigmoid(arg) =>
+        for (argBox <- comp(arg); d <- tensorDom(argBox.dom))
+          yield new SigmoidBox(argBox, d)
+
+      case TensorMul(arg1, arg2) =>
+        for (arg1Box <- comp(arg1); d1 <- tensorDom(arg1Box.dom);
+             arg2Box <- comp(arg2); d2 <- tensorDom(arg2Box.dom);
+             d <- check(d1.dims(1) == d2.dims(0), TensorDom(List(d1.dims(0), d2.dims(1))),
+               s"Tensor multiplication dimension mismatch: $d1 * $d2"))
+          yield new TensorProductBox(arg1Box, arg2Box, d)
+
+      case ComponentPlus(arg1, arg2) =>
+        for (arg1Box <- comp(arg1); d1 <- tensorDom(arg1Box.dom);
+             arg2Box <- comp(arg2); d2 <- tensorDom(arg2Box.dom);
+             d <- check(d1.dims == d2.dims, d1, s"Tensor plus domains don't match: $d1 != $d2"))
+          yield new TensorPlusBox(arg1Box, arg2Box, d)
+
+      case GetElement(arg, element) =>
+        for (argBox <- comp(arg); d <- productDom(argBox.dom))
+          yield new GetElementBox(argBox, element, d.doms(element))
+
+      case _ => Bad(One(CompilationError(termToCompileToBox, "Not supported for ND4S compilation yet: " + termToCompileToBox)))
+    }
   }
 
-}
+  def compile[T](term: Term[T], paramBindings: Bindings, inputBindings: Bindings) = {
+    val var2InputBox = new mutable.HashMap[Var[Any], InputBox]()
+    val var2ParamBox = new mutable.HashMap[Var[Any], ParamBox]()
 
+    for (box <- compileBox(term, paramBindings, inputBindings, var2InputBox, var2ParamBox)) yield {
+      new Module[T] {
+        var paramBindings: Bindings = _
+        var inputBindings: Bindings = _
+        var paramBoxesNeedUpdate = false
+
+        def gradient[G](param: Var[G]) = {
+          val paramBox = var2ParamBox(param)
+          paramBox.grad.asInstanceOf[G] //todo: this needs to be converted back
+        }
+
+        def init(bindings: Binding[Any]*) = {
+          paramBindings = Bindings(bindings: _*)
+          paramBoxesNeedUpdate = true
+        }
+
+        def forward(bindings: Binding[Any]*) = {
+          inputBindings = Bindings(bindings: _*)
+          for (binding <- inputBindings; box <- var2InputBox.get(binding.variable)) {
+            box.output = Table.toTable(binding.value)
+          }
+          if (paramBoxesNeedUpdate) for (binding <- paramBindings; box <- var2ParamBox.get(binding.variable)) {
+            box.output = Table.toTable(binding.value)
+          }
+          paramBoxesNeedUpdate = false
+          box.forward()
+        }
+
+        def output() = {
+          box.output.tensor.asInstanceOf[T] //todo: this needs to convert back
+        }
+
+        def backward(output: T) = {
+          box.backward(Table(output.asInstanceOf[Tensor]))
+        }
+
+      }
+    }
+  }
+}
 
 class Table(numTables: Int = 0) {
 
@@ -181,7 +166,6 @@ object Table {
   }
 
 }
-
 
 
 trait Box {
@@ -292,3 +276,4 @@ class GetElementBox(arg: Box, index: Int, val dom: Dom[Any]) extends Box {
 
   }
 }
+
