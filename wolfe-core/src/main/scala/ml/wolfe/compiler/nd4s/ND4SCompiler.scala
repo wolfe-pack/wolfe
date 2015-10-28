@@ -90,9 +90,6 @@ object ND4SCompiler extends DelayedCompiler {
 
     for (box <- compileBox(term, paramBindings, inputBindings, var2InputBox, var2ParamBox)) yield {
       new Module[T] {
-        var paramBindings: Bindings = _
-        var inputBindings: Bindings = _
-        var paramBoxesNeedUpdate = false
 
         def gradient[G](param: Var[G]) = {
           val paramBox = var2ParamBox(param)
@@ -100,19 +97,15 @@ object ND4SCompiler extends DelayedCompiler {
         }
 
         def init(bindings: Binding[Any]*) = {
-          paramBindings = Bindings(bindings: _*)
-          paramBoxesNeedUpdate = true
+          for (binding <- bindings; box <- var2ParamBox.get(binding.variable)) {
+            box.output = Table.toTable(binding.value)
+          }
         }
 
         def forward(bindings: Binding[Any]*) = {
-          inputBindings = Bindings(bindings: _*)
-          for (binding <- inputBindings; box <- var2InputBox.get(binding.variable)) {
+          for (binding <- bindings; box <- var2InputBox.get(binding.variable)) {
             box.output = Table.toTable(binding.value)
           }
-          if (paramBoxesNeedUpdate) for (binding <- paramBindings; box <- var2ParamBox.get(binding.variable)) {
-            box.output = Table.toTable(binding.value)
-          }
-          paramBoxesNeedUpdate = false
           box.forward()
         }
 
