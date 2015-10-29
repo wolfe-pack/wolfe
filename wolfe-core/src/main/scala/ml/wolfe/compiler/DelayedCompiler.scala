@@ -11,7 +11,7 @@ import org.scalautils._
  */
 trait DelayedCompiler extends LazyLogging {
 
-  case class CompilationError(term: Term[Any], msg: String)
+  case class CompilationError(term: Term[Any], msg: String) extends ErrorMsg
 
   def compile[T](term: Term[T]): Module[T] = {
 
