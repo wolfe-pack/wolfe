@@ -9,6 +9,8 @@ import org.scalautils._
  */
 object Typer {
 
+  case class TypedTerm[T](term: Term[T], dom: Dom[T])
+
 
   def domain[T](domains: DomainBinding[Any]*)(term: Term[T]): Dom[T] Or Every[ErrorMsg] =
     domain(Domains(domains: _*))(term)
@@ -48,6 +50,34 @@ object Typer {
       }
   }
 
+  def typedTerm[T](domains: Domains)(term: Term[T]): TypedTerm[T] Or Every[ErrorMsg] = term match {
+    case v: Var[_] =>
+      domains.get(v) match {
+        case Some(d) => Good(TypedTerm(v, d))
+        case None => Bad(One(VariableNotBound(v)))
+      }
+
+    case x@SeqApply(s, _) =>
+      for (d <- typedTerm(domains)(s);
+           TypedTerm(t, SeqDom(e, _, _)) = d) yield TypedTerm(x, e)
+
+    case ConstructProduct(args, constructor) =>
+      for (argDoms <- args.map(typedTerm(domains)).combined) yield TypedTerm(term, ProductDom(argDoms.map(_.dom), constructor))
+
+    case GetElement(product, index) =>
+      for (dom <- typedTerm(domains)(product);
+           TypedTerm(prod, ProductDom(doms, _)) = dom) yield TypedTerm(term, doms(index).asInstanceOf[Dom[T]])
+
+    case Plus(a1, a2) =>
+      for (d1 <- typedTerm(domains)(a1);
+           d2 <- typedTerm(domains)(a2)) yield {
+        (d1, d2) match {
+          case (TypedTerm(_, RangeDom(r1)), TypedTerm(_, RangeDom(r2))) =>
+            TypedTerm(term, RangeDom(Range(r1.start + r2.start, r1.end + r2.end)))
+        }
+      }
+  }
+
 
   def main(args: Array[String]) {
 
@@ -60,6 +90,7 @@ object Typer {
 
   implicit class TypeTerm[T](val term: Term[T]) {
     def dom(bindings: DomainBinding[Any]*) = Typer.domain(Domains(bindings: _*))(term)
+
     def dom(implicit domains: Domains) = Typer.domain(domains)(term)
 
   }
