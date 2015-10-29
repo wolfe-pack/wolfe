@@ -35,8 +35,8 @@ object TorchCompiler extends DelayedCompiler {
   }
 
   def main(args: Array[String]) {
-    val W = Var[Tensor]
-    val x = Var[Tensor]
+    val W = Var[Tensor]("W")
+    val x = Var[Tensor]("x")
     val term = sigmoid(W * x)
 
     val module = TorchCompiler.compile(term)
