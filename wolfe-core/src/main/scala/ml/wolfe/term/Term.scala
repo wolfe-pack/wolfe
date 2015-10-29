@@ -63,7 +63,16 @@ case class SeqAppend[+E](s: Term[Seq[E]], elem: Term[E]) extends Term[Seq[E]] wi
  * @tparam A the argument type.
  * @tparam B the return type.
  */
-case class LambdaAbstraction1[A,+B](argument:Var[A],body:Term[B]) extends Term[A => B]
+case class LambdaAbstraction1[A, +B](argument: Var[A], body: Term[B]) extends Term[A => B]
+
+/**
+ * Apply a lambda abstraction to an argument.
+ * @param fun the function to apply.
+ * @param arg the argument to apply the function to.
+ * @tparam A type of arguments.
+ * @tparam B type of result.
+ */
+case class Apply1[A, +B](fun: LambdaAbstraction1[A, B], arg: Term[A]) extends Term[B]
 
 /**
  * Applies a fold-left on a term representing a sequence.
@@ -97,7 +106,7 @@ case class SeqSlice[+E](s: Term[Seq[E]], from: Term[Int], to: Term[Int]) extends
  * @tparam A original element type in the sequence.
  * @tparam B new element type.
  */
-case class SeqMap[A, +B](s: Term[Seq[A]], f: LambdaAbstraction1[A,B]) extends Term[Seq[B]]
+case class SeqMap[A, +B](s: Term[Seq[A]], f: LambdaAbstraction1[A, B]) extends Term[Seq[B]]
 
 /**
  * A term that represents the length of a sequence.
@@ -151,12 +160,19 @@ case class Sum[N](args: Term[Seq[N]])(implicit val numeric: Numeric[N]) extends 
 case class Times[N](arg1: Term[N], arg2: Term[N])(implicit val numeric: Numeric[N]) extends Term[N] with BinaryOperation[N, N]
 
 case class Tanh(x: Term[Tensor]) extends Term[Tensor]
+
 case class Sigmoid(x: Term[Tensor]) extends Term[Tensor]
 
 case class ComponentPlus(x1: Term[Tensor], x2: Term[Tensor]) extends Term[Tensor]
+
 case class ComponentMul(x1: Term[Tensor], x2: Term[Tensor]) extends Term[Tensor]
+
 case class TensorMul(x1: Term[Tensor], x2: Term[Tensor]) extends Term[Tensor]
-case class Concat(args:Seq[Term[Tensor]]) extends Term[Tensor]
-case class Max(args:Seq[Term[Tensor]]) extends Term[Tensor]
-case class Tensor2Double(x:Term[Tensor]) extends Term[Double]
-case class Transpose(x:Term[Tensor]) extends Term[Tensor]
+
+case class Concat(args: Seq[Term[Tensor]]) extends Term[Tensor]
+
+case class Max(args: Seq[Term[Tensor]]) extends Term[Tensor]
+
+case class Tensor2Double(x: Term[Tensor]) extends Term[Double]
+
+case class Transpose(x: Term[Tensor]) extends Term[Tensor]

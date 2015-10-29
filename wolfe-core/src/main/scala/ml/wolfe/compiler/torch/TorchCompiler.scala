@@ -6,13 +6,22 @@ import java.util.UUID
 import breeze.linalg.DenseMatrix
 import ml.wolfe.Language._
 import ml.wolfe._
-import ml.wolfe.compiler.DelayedCompiler
-import ml.wolfe.term.{Bindings, Term}
+import ml.wolfe.compiler.{Module, DelayedCompiler}
+import ml.wolfe.term.Var
+import ml.wolfe.term._
+import org.scalautils.Good
 
 /**
  * @author riedel
  */
 object TorchCompiler extends DelayedCompiler {
+
+  object nn {
+    case class Linear(params:Var[Tensor]) extends Term[Tensor => Tensor]
+    case class Sequential(modules:List[Term[Tensor => Tensor]]) extends Term[Tensor => Tensor]
+    case class Parallel(modules:List[Term[Tensor => Tensor]]) extends Term[Tensor => Tensor]
+    case class Concat(modules:List[Term[Tensor => Tensor]]) extends Term[Tensor => Tensor]
+  }
 
   def compile[T](term: Term[T], paramBindings: Bindings, inputBindings: Bindings) = {
     val client = new TorchZeroMQClient()
@@ -31,7 +40,19 @@ object TorchCompiler extends DelayedCompiler {
     client.call("dofile")(scriptFile.getAbsolutePath)
     val result = client.call("test")()
     println(result)
-    ???
+    Good(new Module[T] {
+      def gradient[G](param: Var[G]) = ???
+
+      def init(bindings: Binding[Any]*) = {
+        //call module.params(W) = ???)
+      }
+
+      def forward(bindings: Binding[Any]*) = ???
+
+      def output() = ???
+
+      def backward(output: T) = ???
+    })
   }
 
   def main(args: Array[String]) {
