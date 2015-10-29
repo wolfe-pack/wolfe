@@ -72,7 +72,7 @@ case class LambdaAbstraction1[A, +B](argument: Var[A], body: Term[B]) extends Te
  * @tparam A type of arguments.
  * @tparam B type of result.
  */
-case class Apply1[A, +B](fun: LambdaAbstraction1[A, B], arg: Term[A]) extends Term[B]
+case class Apply1[A, +B](fun: Term[A => B], arg: Term[A]) extends Term[B]
 
 /**
  * Applies a fold-left on a term representing a sequence.

@@ -9,7 +9,7 @@ import ml.wolfe._
 import ml.wolfe.compiler.{Module, DelayedCompiler}
 import ml.wolfe.term.Var
 import ml.wolfe.term._
-import org.scalautils.Good
+import org.scalautils.{Every, Or, Good}
 
 /**
  * @author riedel
@@ -17,16 +17,31 @@ import org.scalautils.Good
 object TorchCompiler extends DelayedCompiler {
 
   object nn {
-    case class Linear(params:Var[Tensor]) extends Term[Tensor => Tensor]
-    case class Sequential(modules:List[Term[Tensor => Tensor]]) extends Term[Tensor => Tensor]
-    case class Parallel(modules:List[Term[Tensor => Tensor]]) extends Term[Tensor => Tensor]
-    case class Concat(modules:List[Term[Tensor => Tensor]]) extends Term[Tensor => Tensor]
+
+    case class Linear(params: Var[Tensor]) extends Term[Tensor => Tensor]
+
+    case class Sequential(modules: List[Term[Tensor => Tensor]]) extends Term[Tensor => Tensor]
+
+    case class Parallel(modules: List[Term[Tensor => Tensor]]) extends Term[Tensor => Tensor]
+
+    case class Concat(modules: List[Term[Tensor => Tensor]]) extends Term[Tensor => Tensor]
+
   }
+
+  case class TypedTerm[T](term:Term[T],dom:Dom[T])
+
+  def preCompile[T](term: Term[T], paramBindings: Bindings, inputBindings: Bindings): TypedTerm[T] Or Every[CompilationError] = {
+    term match {
+      case TensorMul(v:Var[_],arg) => Good(TypedTerm(Apply1(nn.Linear(v),arg), ???))
+    }
+    ???
+  }
+
 
   def compile[T](term: Term[T], paramBindings: Bindings, inputBindings: Bindings) = {
     val client = new TorchZeroMQClient()
     val uuid = UUID.randomUUID().toString
-    val scriptFile = File.createTempFile(uuid,".lua")
+    val scriptFile = File.createTempFile(uuid, ".lua")
     val scriptOut = new PrintWriter(scriptFile)
     logger.info(s"Creating lua file: $scriptFile")
     val script =
