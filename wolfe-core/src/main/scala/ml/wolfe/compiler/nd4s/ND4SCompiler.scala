@@ -15,15 +15,7 @@ import scala.language.implicitConversions
  */
 object ND4SCompiler extends DelayedCompiler {
 
-  def deriveDomainFromValue(value: Any): Dom[Any] = value match {
-    case d: DenseMatrix[_] => TensorDom(List(d.rows, d.cols))
-    case p: Product =>
-      val argDoms = p.productIterator.toList.map(deriveDomainFromValue)
-      val constructor = p.getClass.getConstructors.head
-      def construct(args: Seq[Any]) =
-        constructor.newInstance(args.asInstanceOf[Seq[AnyRef]]: _*).asInstanceOf[Product]
-      ProductDom(argDoms, construct)
-  }
+  import Typer._
 
   implicit def asGood(box: Box): Box Or Every[CompilationError] = Good(box)
 

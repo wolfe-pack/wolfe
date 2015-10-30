@@ -7,9 +7,7 @@ import breeze.linalg.DenseMatrix
 import ml.wolfe.Language._
 import ml.wolfe._
 import ml.wolfe.compiler.{DelayedCompiler, Module}
-import ml.wolfe.term.Typer.TypedTerm
 import ml.wolfe.term.{Var, _}
-import org.scalautils.Accumulation._
 import org.scalautils.{Every, Good, Or}
 
 

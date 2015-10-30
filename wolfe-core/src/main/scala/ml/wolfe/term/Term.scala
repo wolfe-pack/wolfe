@@ -143,13 +143,20 @@ case class ConstructProduct[+T <: Product](args: Seq[Term[Any]], constructor: Se
  * @tparam T1 the value type of the first term.
  * @tparam T2 the value type of the second term.
  */
-trait BinaryOperation[T1, T2] extends Composed {
+trait BinaryOperation[+T1, +T2] extends Composed {
   def arg1: Term[T1]
 
   def arg2: Term[T2]
 
   def parts = Seq(arg1, arg2)
 }
+
+trait UnaryOperation[+T] extends Composed {
+  def arg: Term[T]
+  def parts = Seq(arg)
+}
+
+trait DomainPreserving[+T] extends UnaryOperation[T]
 
 case class Plus[N](arg1: Term[N], arg2: Term[N])(implicit val numeric: Numeric[N]) extends Term[N] with BinaryOperation[N, N]
 
@@ -159,9 +166,9 @@ case class Sum[N](args: Term[Seq[N]])(implicit val numeric: Numeric[N]) extends 
 
 case class Times[N](arg1: Term[N], arg2: Term[N])(implicit val numeric: Numeric[N]) extends Term[N] with BinaryOperation[N, N]
 
-case class Tanh(x: Term[Tensor]) extends Term[Tensor]
+case class Tanh(arg: Term[Tensor]) extends DomainPreserving[Tensor]
 
-case class Sigmoid(x: Term[Tensor]) extends Term[Tensor]
+case class Sigmoid(arg: Term[Tensor]) extends DomainPreserving[Tensor]
 
 case class ComponentPlus(x1: Term[Tensor], x2: Term[Tensor]) extends Term[Tensor]
 
