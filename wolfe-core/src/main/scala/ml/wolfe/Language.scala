@@ -25,8 +25,10 @@ object Language extends NameProviderImplicits with SeqHelper with LinAlg {
 
   implicit class BindingCreator[T](variable: Var[T]) {
     def :=(value: T) = Binding(variable, value)
+  }
 
-    def in(dom: Dom[T]) = DomainBinding(variable, dom)
+  implicit class DomBindingCreator[T](term: Term[T]) {
+    def in(dom: Dom[T]) = DomainBinding(term, dom)
   }
 
   implicit class IntTerm(i: Term[Int]) {

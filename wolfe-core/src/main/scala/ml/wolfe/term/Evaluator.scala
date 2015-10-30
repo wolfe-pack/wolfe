@@ -108,17 +108,19 @@ trait Evaluator {
 
 trait ErrorMsg {
   def msg: String
-
-  def term: Term[Any]
 }
 
-case class VariableNotBound(variable: Var[Any]) extends ErrorMsg {
+trait TermErrorMsg extends ErrorMsg {
+  def term:Term[Any]
+}
+
+case class VariableNotBound(variable: Var[Any]) extends TermErrorMsg {
   def term = variable
 
   def msg = s"Variable $variable is not bound"
 }
 
-case class TermNotSupported(term: Term[Any]) extends ErrorMsg {
+case class TermNotSupported(term: Term[Any]) extends TermErrorMsg {
   def msg = s"Not supported: $term"
 }
 

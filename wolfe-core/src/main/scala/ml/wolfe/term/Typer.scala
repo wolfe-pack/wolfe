@@ -9,6 +9,9 @@ import org.scalautils._
  */
 object Typer {
 
+  import Language._
+
+
   case class TypedTerm[T](term: Term[T], dom: Dom[T])
 
 
@@ -50,32 +53,41 @@ object Typer {
       }
   }
 
-  def typedTerm[T](domains: Domains)(term: Term[T]): TypedTerm[T] Or Every[ErrorMsg] = term match {
-    case v: Var[_] =>
-      domains.get(v) match {
-        case Some(d) => Good(TypedTerm(v, d))
-        case None => Bad(One(VariableNotBound(v)))
-      }
+  case class TyperError(term: Term[Any], domains: Domains, msg: String) extends ErrorMsg
 
-    case x@SeqApply(s, _) =>
-      for (d <- typedTerm(domains)(s);
-           TypedTerm(t, SeqDom(e, _, _)) = d) yield TypedTerm(x, e)
+  def check[T, A, E <: ErrorMsg](value: T, error: E)(fun: PartialFunction[T, A]): A Or One[E] = {
+    if (fun.isDefinedAt(value)) Good(fun(value)) else Bad(One(error))
+  }
 
-    case ConstructProduct(args, constructor) =>
-      for (argDoms <- args.map(typedTerm(domains)).combined) yield TypedTerm(term, ProductDom(argDoms.map(_.dom), constructor))
-
-    case GetElement(product, index) =>
-      for (dom <- typedTerm(domains)(product);
-           TypedTerm(prod, ProductDom(doms, _)) = dom) yield TypedTerm(term, doms(index).asInstanceOf[Dom[T]])
-
-    case Plus(a1, a2) =>
-      for (d1 <- typedTerm(domains)(a1);
-           d2 <- typedTerm(domains)(a2)) yield {
-        (d1, d2) match {
-          case (TypedTerm(_, RangeDom(r1)), TypedTerm(_, RangeDom(r2))) =>
-            TypedTerm(term, RangeDom(Range(r1.start + r2.start, r1.end + r2.end)))
+  def domains(varDoms: Domains)(term: Term[Any]): Domains Or Every[ErrorMsg] = {
+    def dom(term: Term[Any]) = domains(varDoms)(term)
+    term match {
+      case v: Var[_] =>
+        varDoms.get(v) match {
+          case Some(_) => Good(varDoms)
+          case None => Bad(One(VariableNotBound(v)))
         }
-      }
+      case sa@SeqApply(s, i) =>
+        for (ds <- dom(s);
+             di <- dom(i);
+             elemDom <- check(ds(s), TyperError(s, ds, "not a sequence domain")) { case SeqDom(eD, _, _) => eD })
+          yield (ds ++ di) + (sa in elemDom)
+
+      case ge@GetElement(p, e) =>
+        for (dp <- dom(p);
+             de <- dom(e);
+             doms <- check(dp(p), TyperError(p, dp, "not a product domain")) { case ProductDom(d, _) => d })
+          yield (dp ++ de) + (ge in doms(e))
+
+      case tm@TensorMul(x1, x2) =>
+        for (dx1 <- dom(x1);
+             dx2 <- dom(x2);
+             dims1 <- check(dx1(x1), TyperError(x1, dx1, "not a tensor domain")) { case TensorDom(d) => d };
+             dims2 <- check(dx2(x2), TyperError(x2, dx2, "not a tensor domain")) { case TensorDom(d) => d })
+          yield (dx1 ++ dx2) + (tm in TensorDom(List(dims1(0), dims2(1))))
+
+
+    }
   }
 
 
@@ -99,21 +111,36 @@ object Typer {
 }
 
 class Domains {
-  private var map: Map[Var[Any], Dom[Any]] = Map.empty
+  private var map: Map[Term[Any], Dom[Any]] = Map.empty
 
-  def get[T](variable: Var[T]): Option[Dom[T]] = map.get(variable).asInstanceOf[Option[Dom[T]]]
+  def get[T](term: Term[T]): Option[Dom[T]] = map.get(term).asInstanceOf[Option[Dom[T]]]
 
-  def update[T](variable: Var[T], dom: Dom[T]) = {
-    map += (variable -> dom)
+  def update[T](term: Term[T], dom: Dom[T]) = {
+    map += (term -> dom)
   }
+
+  def apply[T](term: Term[T]) = get(term).get
+
+  def +(binding: DomainBinding[Any]) = {
+    val result = new Domains
+    result.map = map + (binding.term -> binding.dom)
+    result
+  }
+
+  def ++(domains: Domains) = {
+    val result = new Domains
+    result.map = map ++ domains.map
+    result
+  }
+
 }
 
-case class DomainBinding[+T](variable: Var[T], dom: Dom[T])
+case class DomainBinding[+T](term: Term[T], dom: Dom[T])
 
 object Domains {
   def apply(bindings: DomainBinding[Any]*) = {
     val r = new Domains
-    r.map = bindings.map(b => b.variable -> b.dom).toMap
+    r.map = bindings.map(b => b.term -> b.dom).toMap
     r
   }
 }
