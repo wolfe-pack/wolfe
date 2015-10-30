@@ -9,7 +9,7 @@ import org.scalautils._
  * determine domain sizes etc.
  * @author riedel
  */
-trait DelayedCompiler extends LazyLogging {
+trait DelayedCompiler extends Compiler with LazyLogging  {
 
   case class CompilationError(term: Term[Any], msg: String) extends ErrorMsg
 
