@@ -41,7 +41,7 @@ class TyperSpecs extends WolfeSpec {
       doms should be (List(Doubles,Doubles))
       construct(Seq(1.0,2.0)) should be (Test(1.0,2.0))
 
-    }typ
+    }
 
 
   }
