@@ -44,7 +44,7 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
 
   final class DiscBuffer(val length: Int) extends Buffer[Int](setting) {
     def resetToZero(offset: Int) = {
-      this(offset) = 0
+      this (offset) = 0
       broadcastReset(offset)
     }
 
@@ -129,21 +129,21 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
     }
 
     override def update(index: Int, value: Vect): Unit = {
-      if (this(index) == null) {
+      if (this (index) == null) {
         super.update(index, copyVector(value))
       } else {
         if (_adaptiveVectors) {
-          (this(index), value) match {
+          (this (index), value) match {
             case (_: DenseTensor1, target: SparseIndexedTensor) =>
               super.update(index, copyVector(target))
             case (_: SparseIndexedTensor, target: DenseTensor1) =>
               super.update(index, copyVector(target))
             case (_, _) =>
-              this(index) := value
+              this (index) := value
               broadcastChange(index)
           }
         } else {
-          this(index) := value
+          this (index) := value
           broadcastChange(index)
         }
       }
@@ -152,30 +152,35 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
 
     def set(index: Int, value: Vect, scale: Double): Unit = {
       update(index, value)
-      this(index) *= scale
+      this (index) *= scale
     }
 
 
     def add(index: Int, value: Vect): Unit = {
       if (_adaptiveVectors) {
-        if (this(index) == null) {
-          this(index) = value.copy
+        if (this (index) == null) {
+          this (index) = value.copy
         } else {
-          (this(index), value) match {
+          (this (index), value) match {
             case (_, null) =>
             case (current: SparseIndexedTensor, arg: DenseTensor1) =>
-              this(index) = arg.copy
-              this(index) += current
+              this (index) = arg.copy
+              this (index) += current
             case (current: DenseTensor1, arg: SparseIndexedTensor) =>
               //this(index) = arg.copy
-              this(index) += arg
+              this (index) += arg
             case (_, _) =>
-              this(index) += value
+              this (index) += value
               broadcastChange(index)
           }
         }
       } else {
-        this(index) += value
+        if (value != null) {
+          if (this (index) == null)
+            this (index) = value.copy
+          else
+            this (index) += value
+        }
       }
     }
 
@@ -200,12 +205,12 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
 
 
     def add(index: Int, value: Mat) = {
-      if (this(index) == null) {
+      if (this (index) == null) {
         if (value != null) {
-          this(index) = value.copy
+          this (index) = value.copy
         }
       } else {
-        (this(index), value) match {
+        (this (index), value) match {
           case (_, null) =>
           case (_, _) =>
             array(index) += value
@@ -215,7 +220,7 @@ final class Setting(numDisc: Int = 0, numCont: Int = 0, numVect: Int = 0, numMat
     }
 
     override def update(index: Int, value: Mat): Unit = {
-      if (this(index) == null) {
+      if (this (index) == null) {
         if (value != null)
           super.update(index, value.copy)
       } else {
@@ -439,7 +444,7 @@ final class Settings(val length: Int) extends IndexedSeq[Setting] {
 
   def :=(that: Settings): Unit = {
     for (i <- 0 until length) {
-      this(i) shallowAssign that(i)
+      this (i) shallowAssign that(i)
     }
   }
 
@@ -455,8 +460,9 @@ object Settings {
 
   def apply(settings: Setting*) = fromSeq(settings.toIndexedSeq)
 
-  def apply(vars:AnyVar*) = (vars map (v => v -> v.domain.createSetting())).toMap
-  def zeroes(vars:AnyVar*) = (vars map (v => v -> v.domain.createZeroSetting())).toMap
+  def apply(vars: AnyVar*) = (vars map (v => v -> v.domain.createSetting())).toMap
+
+  def zeroes(vars: AnyVar*) = (vars map (v => v -> v.domain.createZeroSetting())).toMap
 
 }
 
@@ -801,7 +807,7 @@ abstract class Buffer[T: ClassTag](val setting: Setting) {
   }
 
   def deepCopyTo(tgt: Buffer[T], srcPos: Int, tgtPos: Int, length: Int): Unit = {
-    for (i <- 0 until length) tgt(tgtPos + i) = this(srcPos + i)
+    for (i <- 0 until length) tgt(tgtPos + i) = this (srcPos + i)
   }
 
   def shallowCopyTo(tgt: Buffer[T], srcPos: Int, tgtPos: Int, length: Int, filter: collection.Set[Int]): Unit = {
@@ -818,7 +824,7 @@ abstract class Buffer[T: ClassTag](val setting: Setting) {
 
   def deepCopyTo(tgt: Buffer[T], srcPos: Int, tgtPos: Int, length: Int, filter: collection.Set[Int]): Unit = {
     val toCopy = filter filter (i => i >= srcPos && i < srcPos + length)
-    toCopy foreach (i => tgt(i - srcPos + tgtPos) = this(i))
+    toCopy foreach (i => tgt(i - srcPos + tgtPos) = this (i))
   }
 
 
@@ -828,7 +834,7 @@ abstract class Buffer[T: ClassTag](val setting: Setting) {
   }
 
   def deepAssign(value: Buffer[T]): Unit = {
-    for (i <- 0 until value.length) this(i) = value(i)
+    for (i <- 0 until value.length) this (i) = value(i)
   }
 
   def shallowAssign(src: Buffer[T], srcOffset: Int, srcLength: Int, tgtOffset: Int = 0): Unit = {
@@ -839,7 +845,7 @@ abstract class Buffer[T: ClassTag](val setting: Setting) {
 
   def deepAssign(src: Buffer[T], srcOffset: Int, srcLength: Int, tgtOffset: Int = 0): Unit = {
     //todo: this can be implemented via shallowCopyTo, or vice versa
-    for (i <- 0 until srcLength) this(tgtOffset + i) = src(srcOffset + i)
+    for (i <- 0 until srcLength) this (tgtOffset + i) = src(srcOffset + i)
   }
 
 
