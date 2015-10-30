@@ -1,6 +1,7 @@
 package ml.wolfe.term
 
 import ml.wolfe.Language
+import ml.wolfe.term.Typer.TyperError
 import org.scalautils.Accumulation._
 import org.scalautils._
 
@@ -83,8 +84,11 @@ object Typer {
         for (dx1 <- dom(x1);
              dx2 <- dom(x2);
              dims1 <- check(dx1(x1), TyperError(x1, dx1, "not a tensor domain")) { case TensorDom(d) => d };
-             dims2 <- check(dx2(x2), TyperError(x2, dx2, "not a tensor domain")) { case TensorDom(d) => d })
-          yield (dx1 ++ dx2) + (tm in TensorDom(List(dims1(0), dims2(1))))
+             dims2 <- check(dx2(x2), TyperError(x2, dx2, "not a tensor domain")) { case TensorDom(d) => d };
+             dims <- if (dims1(1) == dims2(0))
+               Good(List(dims1(0), dims2(1))) else
+               Bad(One(TyperError(tm, dx1 ++ dx2, s"domains don't match: $dims1 * $dims2"))))
+          yield (dx1 ++ dx2) + (tm in TensorDom(dims))
 
 
     }
@@ -131,6 +135,15 @@ class Domains {
     val result = new Domains
     result.map = map ++ domains.map
     result
+  }
+
+  def check[D <: Dom[Any]](term:Term[Any]): D Or One[ErrorMsg] = {
+    try {
+      Good(this(term).asInstanceOf[D])
+    } catch {
+      case c:ClassCastException => Bad(One(TyperError(term, this, "Expected different domain type")))
+      case c:NoSuchElementException => Bad(One(TyperError(term, this, "domain not assigned")))
+    }
   }
 
 }

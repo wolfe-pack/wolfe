@@ -22,23 +22,23 @@ object TorchCompiler extends DelayedCompiler {
 
   object nn {
 
-    case class Linear(params: Var[Tensor], arg:Term[Tensor]) extends TorchTerm[Tensor]
+    case class Linear(params: Var[Tensor], arg: Term[Tensor], in: Int, out: Int) extends TorchTerm[Tensor]
 
   }
 
+  def preCompile[T](term: Term[T], domains: Domains): Term[T] Or Every[CompilationError] = {
 
-  def preCompile[T](term: Term[T], paramBindings: Bindings, inputBindings: Bindings): TypedTerm[T] Or Every[CompilationError] = {
-
-    def c[A](term: Term[A]) = preCompile(term,paramBindings,inputBindings)
+    def c[A](term: Term[A]) = preCompile(term, domains)
 
     term match {
-      case TensorMul(v:Var[_],arg) =>
-        c(arg) match {
-          case Good(TypedTerm(input,TensorDom(dims))) => Good(TypedTerm(nn.Linear(v,input),???))
-          case b => b
+      case TensorMul(v: Var[_], arg) =>
+        domains(v) match {
+          case TensorDom(List(d1, d2)) => for (t <- c(arg)) yield nn.Linear(v, t, d1, d2)
+          case TensorDom(List(d1)) => for (t <- c(arg)) yield nn.Linear(v, t, d1, 1)
+          case _ => Good(term)
         }
+      case _=> Good(term)
     }
-    ???
   }
 
 
