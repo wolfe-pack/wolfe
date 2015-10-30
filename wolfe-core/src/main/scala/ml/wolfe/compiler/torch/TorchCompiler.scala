@@ -41,6 +41,11 @@ object TorchCompiler extends DelayedCompiler {
 
 
   def compile[T](term: Term[T], paramBindings: Bindings, inputBindings: Bindings) = {
+    val variableDomainBindings = (paramBindings ++ inputBindings) map {b => b.variable in Typer.deriveDomainFromValue(b.value)}
+    val variableDomains = Domains(variableDomainBindings.toSeq:_*)
+    val domains = Typer.domains(variableDomains)(term)
+
+
     val client = new TorchZeroMQClient()
     val uuid = UUID.randomUUID().toString
     val scriptFile = File.createTempFile(uuid, ".lua")

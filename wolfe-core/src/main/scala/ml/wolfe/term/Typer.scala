@@ -76,8 +76,8 @@ object Typer {
                Bad(One(TyperError(tm, dx1 ++ dx2, s"domains don't match: $dims1 * $dims2"))))
           yield (dx1 ++ dx2) + (tm in TensorDom(dims))
 
-      case d: DomainPreserving[_] =>
-        for (ds <- dom(d.arg)) yield ds + (d in ds(d.arg))
+      case d: DomainPreserving =>
+        for (ds <- (d.parts map dom).combined) yield ds.reduce(_ ++ _) + (d in ds.head(d.parts.head))
 
     }
   }

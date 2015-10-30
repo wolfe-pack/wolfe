@@ -130,8 +130,8 @@ trait Bindings extends Iterable[Binding[Any]] {
   def apply[T](variable:Var[T]) = get(variable).get
   def get[T](variable: Var[T]): Option[T]
   def contains[T](variable: Var[T]) = get(variable).isDefined
-
   def +[T](binding: Binding[T]): Bindings
+  def ++(bindings:Bindings):Bindings
 }
 
 object Bindings {
@@ -158,7 +158,17 @@ class MutableBindings extends Bindings {
     result
   }
 
+
+  def ++(bindings: Bindings) = {
+    val result = new MutableBindings
+    result.map = map ++ (bindings.map(b => b.variable -> b.value)).toMap
+    result
+
+  }
+
   def iterator = map.iterator.map(p => Binding[Any](p._1,p._2))
+
+
 }
 
 case class Binding[+T](variable: Var[T], value: T)
