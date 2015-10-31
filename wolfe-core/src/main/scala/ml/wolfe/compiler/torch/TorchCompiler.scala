@@ -67,7 +67,7 @@ object TorchCompiler extends DelayedCompiler {
     }
     val definition =
       s"${if (result.definition != "") result.definition + "\n" else ""}$variable = ${luaExpr(result.varName)}"
-    result.copy(variable,definition,inputNodes)
+    result.copy(variable, definition, inputNodes)
   }
 
   case class LuaCompilationResult(varName: String, definition: String,
@@ -98,6 +98,9 @@ object TorchCompiler extends DelayedCompiler {
       |require 'nngraph'
     """.stripMargin
 
+  case class ParameterMapping(param: Var[Any],
+                              initFunName: String, initFunDef: String,
+                              gradFunName: String, gradFunDef: String)
 
   def compile[T](term: Term[T], paramBindings: Bindings, inputBindings: Bindings) = {
     val variableDomainBindings = (paramBindings ++ inputBindings) map { b => b.variable in Typer.deriveDomainFromValue(b.value) }
@@ -110,41 +113,68 @@ object TorchCompiler extends DelayedCompiler {
       val nameGenerator = new NameGenerator
       val compilationResult = compileToLua(precompiled)(LuaCompilationContext(paramBindings, inputBindings), nameGenerator)
 
-      val initFunctions = (for (param <- paramBindings) yield {
-        val funName = "init" + param.variable.name
-        val weightUpdates = for ((lin, name) <- compilationResult.linearUnits.filter(_._1.weight == param.variable)) yield {
+      val parameterMapping = (for (param <- paramBindings) yield {
+        val weightModules = compilationResult.linearUnits.filter(_._1.weight == param.variable)
+        val biasModules = compilationResult.linearUnits.filter(_._1.bias == param.variable)
+        val weightUpdates = for ((lin, name) <- weightModules) yield {
           s"$name.data.module.weight = ${param.variable.name}"
         }
-        val biasUpdates = for ((lin, name) <- compilationResult.linearUnits.filter(_._1.bias == param.variable)) yield {
+        val biasUpdates = for ((lin, name) <- biasModules) yield {
           s"$name.data.module.bias = ${param.variable.name}"
         }
 
-        val fun =
+        val initName = "init" + param.variable.name
+        val initDef =
           s"""
-             |function $funName(${param.variable.name})
+             |function $initName(${param.variable.name})
              |  ${(weightUpdates ++ biasUpdates).mkString("\n  ")}
              |end
         """.stripMargin
-        param.variable -> (funName, fun)
+
+        val gradName = "grad" + param.variable.name
+        val gradResult = if (weightModules.nonEmpty) weightModules.head._2 + ".data.module.gradWeight" else
+          biasModules.head._2 + ".data.module.gradBias"
+        val gradDef =
+          s"""
+            |function $gradName()
+            |  return $gradResult
+            |end
+          """.stripMargin
+
+        param.variable -> ParameterMapping(param.variable, initName, initDef, gradName, gradDef)
       }).toMap
+
+
       val gmod = "gmod"
-      val initFunctionsDef = initFunctions.values.map(_._2).mkString("\n")
+      val initFunctionsDef = parameterMapping.values.map(_.initFunDef).mkString("\n")
+      val gradFunctionsDef = parameterMapping.values.map(_.gradFunDef).mkString("\n")
+
       val orderedInputNodes = compilationResult.inputNodes.toSeq
-      val forwardFunctionDef = {
-        val forwardArgs = if (orderedInputNodes.size == 1) orderedInputNodes.head._1.name else
-          orderedInputNodes.map(_._1.name).mkString("{",", ", "}")
+      val forwardDef = {
+        val forwardArgs = if (orderedInputNodes.size == 1) orderedInputNodes.head._1.name
+        else
+          orderedInputNodes.map(_._1.name).mkString("{", ", ", "}")
         s"""
-          |function forward(${orderedInputNodes.map(_._1.name).mkString(",")})
-          |  $gmod:forward($forwardArgs)
-          |end
+           |function forward(${orderedInputNodes.map(_._1.name).mkString(",")})
+           |  lastForwardArguments = $forwardArgs
+           |  $gmod:forward(lastForwardArguments)
+           |end
         """.stripMargin
       }
       val outputDef =
         s"""
-          |function output()
-          |  return $gmod.output
-          |end
+           |function output()
+           |  return $gmod.output
+           |end
         """.stripMargin
+
+      val backwardDef =
+        s"""
+           |function backward(gradOutput)
+           |  $gmod:backward(lastForwardArguments,gradOutput)
+           |end
+        """.stripMargin
+
 
       val script =
         s"""
@@ -152,7 +182,9 @@ object TorchCompiler extends DelayedCompiler {
            |${compilationResult.definition}
            |$gmod = nn.gModule({${orderedInputNodes.map(_._2).mkString(",")}},{${compilationResult.varName}})
            |$initFunctionsDef
-           |$forwardFunctionDef
+           |$gradFunctionsDef
+           |$forwardDef
+           |$backwardDef
            |$outputDef
         """.stripMargin
 
@@ -165,26 +197,34 @@ object TorchCompiler extends DelayedCompiler {
       scriptOut.close()
       client.call("dofile")(scriptFile.getAbsolutePath)
       new Module[T] {
-        def gradient[G](param: Var[G]) = ???
+
+
+        def gradient[G](param: Var[G]) = {
+          //for the given parameter, find the linear unit that owns it
+          val gradName = parameterMapping(param).gradFunName
+          client.call(gradName)().asInstanceOf[G]
+        }
 
         def init(bindings: Binding[Any]*) = {
           for (binding <- bindings) {
-            val funName = initFunctions(binding.variable)._1
+            val funName = parameterMapping(binding.variable).initFunName
             client.call(funName)(binding.value)
           }
         }
 
         def forward(bindings: Binding[Any]*) = {
-          val bindingMap = Bindings(bindings:_*)
-          val args = orderedInputNodes.map(p => bindingMap(p._1))
-          client.call("forward")(args:_*)
+          val lastForwardBinding = Bindings(bindings: _*)
+          val args = orderedInputNodes.map(p => lastForwardBinding(p._1))
+          client.call("forward")(args: _*)
         }
 
         def output() = {
           client.call("output")().asInstanceOf[T]
         }
 
-        def backward(output: T) = ???
+        def backward(output: T) = {
+          client.call("backward")(output)
+        }
       }
     }
 
@@ -203,6 +243,10 @@ object TorchCompiler extends DelayedCompiler {
 
     println(module.output())
     println(module.output().isInstanceOf[DenseMatrix[_]])
+
+    module.backward(DenseMatrix(1.0, 1.0))
+
+    println(module.gradient(W))
 
   }
 }
