@@ -264,8 +264,8 @@ case class ComponentPlus(arg1: Term[Tensor], arg2: Term[Tensor])
 case class ComponentMul(arg1: Term[Tensor], arg2: Term[Tensor])
   extends BinaryOperation[Tensor, Tensor, Tensor] with DomainPreserving with RequiresEqualArgumentDomains
 
-case class TensorMul(x1: Term[Tensor], x2: Term[Tensor])
-  extends Term[Tensor]
+case class TensorMul(arg1: Term[Tensor], arg2: Term[Tensor])
+  extends BinaryOperation[Tensor, Tensor, Tensor]
 
 case class Concat(args: Seq[Term[Tensor]])
   extends Term[Tensor]

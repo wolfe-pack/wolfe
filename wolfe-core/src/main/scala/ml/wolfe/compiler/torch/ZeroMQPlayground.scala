@@ -1,9 +1,9 @@
 package ml.wolfe.compiler.torch
 
 import breeze.linalg.DenseMatrix
-import com.typesafe.scalalogging.slf4j.LazyLogging
-import org.json4s.jackson.JsonMethods._
+import com.typesafe.scalalogging.LazyLogging
 import org.zeromq.ZMQ
+
 import scala.language.dynamics
 
 /**
@@ -36,8 +36,8 @@ object ZeroMQPlayground {
 
 class TorchZeroMQClient(port: Int = 7000) extends LazyLogging {
 
-  import org.json4s._
   import org.json4s.JsonDSL._
+  import org.json4s._
   import org.json4s.jackson.JsonMethods._
 
   val context = ZMQ.context(1)
