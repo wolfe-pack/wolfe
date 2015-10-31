@@ -6,7 +6,70 @@ import ml.wolfe.Tensor
  * A Term is an expression that evaluates to a specific value given a binding to the free variables in the expression.
  * @author riedel
  */
-trait Term[+T]
+trait Term[+T] {
+
+  /**
+   * Depth-first transformation of the term tree by first transforming the children and then matching
+   * on the parent node with new children.
+   * @param transformer transformation function.
+   * @return the transformed term.
+   */
+  def transform(transformer: PartialFunction[Term[Any], Term[Any]]): Term[T] = {
+    val result = this match {
+      case c: Composed =>
+        val args = c.parts map (p => p.transform(transformer))
+        val transformed = c.clone(args)
+        if (transformer.isDefinedAt(transformed)) transformer(transformed) else transformed
+      case t => if (transformer.isDefinedAt(t)) transformer(t) else t
+    }
+    result.asInstanceOf[Term[T]]
+  }
+
+  /**
+   * Collect elements from the term tree.
+   * @param collector a partial function that catches specific objects
+   * @tparam A the type of objects in the result list.
+   * @return the list of all collected elements from the tree.
+   */
+  def collect[A](collector: PartialFunction[Term[Any], A]): List[A] = {
+    val result = this match {
+      case c: Composed =>
+        val collected = c.parts.toList flatMap (p => p.collect(collector))
+        if (collector.isDefinedAt(c)) collector(c) :: collected else collected
+      case t => if (collector.isDefinedAt(t)) collector(t) :: Nil else Nil
+    }
+    result
+  }
+
+  /**
+   * Collect the variables in this term.
+   * @return a (distinct) list of the variables in this tree.
+   */
+  def vars = collect { case v:Var[_] => v }.distinct
+
+}
+
+object Term {
+  /**
+   * Depth-first transformation of a term tree by first transforming the children and then matching
+   * on the parent node with new children.
+   * @param term term to transform.
+   * @param transformer transformation function.
+   * @tparam T type of input term.
+   * @return the transformed term.
+   */
+  def transform[T](term: Term[T])(transformer: PartialFunction[Term[Any], Term[Any]]): Term[T] = {
+    term match {
+      case c: Composed =>
+        val args = c.parts map (p => transform(p)(transformer))
+        val transformed = c.clone(args)
+        if (transformer.isDefinedAt(transformed)) transformer(transformed) else transformed
+      case t => if (transformer.isDefinedAt(t)) transformer(t).asInstanceOf[Term[T]] else t
+    }
+  }
+
+}
+
 
 /**
  * A term that is composed of sub-terms.
