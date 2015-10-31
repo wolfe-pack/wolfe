@@ -23,19 +23,47 @@ object TorchCompiler extends DelayedCompiler {
 
   object nn {
 
-    case class Linear(weight: Var[Tensor], bias: Var[Tensor], arg: Term[Tensor], in: Int, out: Int) extends TorchTerm[Tensor]
+    case class Linear(weight: ParamSelector[Tensor], bias: Var[Tensor], arg: Term[Tensor], in: Int, out: Int) extends TorchTerm[Tensor]
 
   }
 
-  def preCompile[T](term: Term[T], domains: Domains): Term[T] Or Every[CompilationError] = {
+  case class ParamSelector[+T](param: Var[Any], term: Term[T], path: List[Term[Any]]) extends TorchTerm[T] {
+    override def toString = pathString(path)
+  }
 
-    def c[A](term: Term[A]) = preCompile(term, domains)
+  def pathString(path: List[Term[Any]]) =
+    path.map {
+      case v: Var[_] => v.name
+      case GetElement(_, element) => "[" + element + "]"
+    }.mkString(".")
+
+
+  case class CompilationContext(paramBindings: Bindings,
+                                inputBindings: Bindings,
+                                domains: Domains = Domains()) {
+
+    object SelectorPattern {
+      def unapply[T](term: Term[T]): Option[ParamSelector[T]] = term match {
+        case v: Var[_] if paramBindings.contains(v) => Some(ParamSelector(v, v, v :: Nil))
+        case GetElement(SelectorPattern(ParamSelector(v, _, path)), _) => Some(ParamSelector(v, term, term :: path))
+        case _ => None
+      }
+    }
+
+  }
+
+
+  def preCompile[T](term: Term[T], context: CompilationContext): Term[T] Or Every[CompilationError] = {
+
+    def c[A](term: Term[A]) = preCompile(term, context)
+
+    import context._
 
     term match {
-      case ComponentPlus(TensorMul(v: Var[_], arg), bias: Var[_]) =>
-        domains(v) match {
-          case TensorDom(List(d1, d2)) => for (t <- c(arg)) yield nn.Linear(v, bias, t, d1, d2)
-          case TensorDom(List(d1)) => for (t <- c(arg)) yield nn.Linear(v, bias, t, d1, 1)
+      case ComponentPlus(TensorMul(SelectorPattern(weight), arg), bias: Var[_]) =>
+        context.domains(weight.term) match {
+          case TensorDom(List(d1, d2)) => for (t <- c(arg)) yield nn.Linear(weight, bias, t, d1, d2)
+          case TensorDom(List(d1)) => for (t <- c(arg)) yield nn.Linear(weight, bias, t, d1, 1)
           case _ => Good(term)
         }
 
@@ -58,7 +86,7 @@ object TorchCompiler extends DelayedCompiler {
   }
 
   def stackNodes(arg: Term[Any], namePrefix: String, luaExpr: String => String)
-                (implicit context: LuaCompilationContext, generator: NameGenerator) = {
+                (implicit context: CompilationContext, generator: NameGenerator) = {
     val result = compileToLua(arg)
     val variable = generator.newName(namePrefix)
     val inputNodes = arg match {
@@ -75,10 +103,8 @@ object TorchCompiler extends DelayedCompiler {
                                   paramExpressions: Map[Var[Any], String] = Map.empty,
                                   linearUnits: List[(nn.Linear, String)] = Nil)
 
-  case class LuaCompilationContext(paramBindings: Bindings,
-                                   inputBindings: Bindings)
 
-  def compileToLua(term: Term[Any])(implicit context: LuaCompilationContext,
+  def compileToLua(term: Term[Any])(implicit context: CompilationContext,
                                     generator: NameGenerator): LuaCompilationResult = {
     term match {
       case lin@nn.Linear(_, _, arg, in, out) =>
@@ -107,17 +133,18 @@ object TorchCompiler extends DelayedCompiler {
     val variableDomains = Domains(variableDomainBindings.toSeq: _*)
 
     for (domains <- Typer.domains(variableDomains)(term);
-         precompiled <- preCompile(term, domains)) yield {
+         context = CompilationContext(paramBindings, inputBindings, domains);
+         precompiled <- preCompile(term, context)) yield {
 
       println(precompiled)
       val nameGenerator = new NameGenerator
-      val compilationResult = compileToLua(precompiled)(LuaCompilationContext(paramBindings, inputBindings), nameGenerator)
+      val compilationResult = compileToLua(precompiled)(context, nameGenerator)
 
       val parameterMapping = (for (param <- paramBindings) yield {
-        val weightModules = compilationResult.linearUnits.filter(_._1.weight == param.variable)
+        val weightModules = compilationResult.linearUnits.filter(_._1.weight.param == param.variable)
         val biasModules = compilationResult.linearUnits.filter(_._1.bias == param.variable)
         val weightUpdates = for ((lin, name) <- weightModules) yield {
-          s"$name.data.module.weight = ${param.variable.name}"
+          s"$name.data.module.weight = ${lin.weight}"
         }
         val biasUpdates = for ((lin, name) <- biasModules) yield {
           s"$name.data.module.bias = ${param.variable.name}"
@@ -132,13 +159,14 @@ object TorchCompiler extends DelayedCompiler {
         """.stripMargin
 
         val gradName = "grad" + param.variable.name
-        val gradResult = if (weightModules.nonEmpty) weightModules.head._2 + ".data.module.gradWeight" else
+        val gradResult = if (weightModules.nonEmpty) weightModules.head._2 + ".data.module.gradWeight"
+        else
           biasModules.head._2 + ".data.module.gradBias"
         val gradDef =
           s"""
-            |function $gradName()
-            |  return $gradResult
-            |end
+             |function $gradName()
+             |  return $gradResult
+             |end
           """.stripMargin
 
         param.variable -> ParameterMapping(param.variable, initName, initDef, gradName, gradDef)
