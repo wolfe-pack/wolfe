@@ -68,6 +68,6 @@ trait DelayedCompiler extends Compiler with LazyLogging  {
 
   }
 
-  def compile[T](term: Term[T], paramBindings: Bindings, inputBindings: Bindings): Module[T] Or Every[CompilationError]
+  def compile[T](term: Term[T], paramBindings: Bindings, inputBindings: Bindings): Module[T] Or Every[ErrorMsg]
 
 }

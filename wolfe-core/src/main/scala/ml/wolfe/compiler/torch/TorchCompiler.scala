@@ -8,7 +8,10 @@ import ml.wolfe.Language._
 import ml.wolfe._
 import ml.wolfe.compiler.{DelayedCompiler, Module}
 import ml.wolfe.term.{Var, _}
-import org.scalautils.{Every, Good, Or}
+import org.scalautils.{Accumulation, Every, Good, Or}
+import Accumulation._
+
+import scala.collection.mutable
 
 
 /**
@@ -20,7 +23,7 @@ object TorchCompiler extends DelayedCompiler {
 
   object nn {
 
-    case class Linear(params: Var[Tensor], arg: Term[Tensor], in: Int, out: Int) extends TorchTerm[Tensor]
+    case class Linear(weight: Var[Tensor], bias:Var[Tensor], arg: Term[Tensor], in: Int, out: Int) extends TorchTerm[Tensor]
 
   }
 
@@ -29,61 +32,128 @@ object TorchCompiler extends DelayedCompiler {
     def c[A](term: Term[A]) = preCompile(term, domains)
 
     term match {
-      case TensorMul(v: Var[_], arg) =>
+      case ComponentPlus(TensorMul(v: Var[_], arg), bias: Var[_]) =>
         domains(v) match {
-          case TensorDom(List(d1, d2)) => for (t <- c(arg)) yield nn.Linear(v, t, d1, d2)
-          case TensorDom(List(d1)) => for (t <- c(arg)) yield nn.Linear(v, t, d1, 1)
+          case TensorDom(List(d1, d2)) => for (t <- c(arg)) yield nn.Linear(v, bias, t, d1, d2)
+          case TensorDom(List(d1)) => for (t <- c(arg)) yield nn.Linear(v, bias, t, d1, 1)
           case _ => Good(term)
         }
-      case _=> Good(term)
+
+      case cp: ComposedProduct =>
+        for (args <- (cp.parts map c).combined) yield cp.clone(args)
+
+      case _ => Good(term)
     }
   }
 
+  case class LuaVariableAndDef(variable: String, definition: String)
+
+  class VarNameGenerator {
+    val counts = new mutable.HashMap[String, Int] withDefaultValue -1
+
+    def newName(prefix: String) = {
+      counts(prefix) += 1
+      prefix + counts(prefix)
+    }
+  }
+
+  def stackNodes(arg: Term[Any], namePrefix: String, luaExpr: String => String)
+                (implicit context: LuaCompilationContext, generator: VarNameGenerator) = {
+    val result = compileToLua(arg)
+    val variable = generator.newName(namePrefix)
+    val inputNodes = arg match {
+      case v:Var[_] => result.inputNodes + (v -> variable)
+      case _ => result.inputNodes
+    }
+    val definition =
+      s"${if (result.definition != "") result.definition + "\n" else ""}$variable = ${luaExpr(result.varName)}"
+    LuaCompilationResult(variable, definition, inputNodes)
+  }
+
+  case class LuaCompilationResult(varName: String, definition: String,
+                                  inputNodes: Map[Var[Any],String],
+                                  paramExpressions: Map[Var[Any], String] = Map.empty)
+
+  case class LuaCompilationContext(paramBindings: Bindings,
+                                   inputBindings: Bindings)
+
+  def compileToLua(term: Term[Any])(implicit context: LuaCompilationContext,
+                                    generator: VarNameGenerator): LuaCompilationResult = {
+    term match {
+      case nn.Linear(_, _, arg, in, out) =>
+        //todo: remember to set "linear.weight = [expr for weight term]" whenever the param that controls weight is changed
+        stackNodes(arg, "linear", a => s"nn.Linear($in,$out)($a)")
+
+      case Sigmoid(arg) =>
+        stackNodes(arg, "sigm", a => s"nn.Sigmoid()($a)")
+
+      case v: Var[_] => LuaCompilationResult("", "", Map.empty)
+    }
+  }
+
+  val preamble =
+    """
+      |require 'nn'
+      |require 'nngraph'
+    """.stripMargin
+
 
   def compile[T](term: Term[T], paramBindings: Bindings, inputBindings: Bindings) = {
-    val variableDomainBindings = (paramBindings ++ inputBindings) map {b => b.variable in Typer.deriveDomainFromValue(b.value)}
-    val variableDomains = Domains(variableDomainBindings.toSeq:_*)
-    val domains = Typer.domains(variableDomains)(term)
+    val variableDomainBindings = (paramBindings ++ inputBindings) map { b => b.variable in Typer.deriveDomainFromValue(b.value) }
+    val variableDomains = Domains(variableDomainBindings.toSeq: _*)
 
+    for (domains <- Typer.domains(variableDomains)(term);
+         precompiled <- preCompile(term, domains)) yield {
 
-    val client = new TorchZeroMQClient()
-    val uuid = UUID.randomUUID().toString
-    val scriptFile = File.createTempFile(uuid, ".lua")
-    val scriptOut = new PrintWriter(scriptFile)
-    logger.info(s"Creating lua file: $scriptFile")
-    val script =
-      """
-        |function test()
-        |  return "Test"
-        |end
-      """.stripMargin
-    scriptOut.println(script)
-    scriptOut.close()
-    client.call("dofile")(scriptFile.getAbsolutePath)
-    val result = client.call("test")()
-    println(result)
-    Good(new Module[T] {
-      def gradient[G](param: Var[G]) = ???
+      println(precompiled)
+      val compilationResult = compileToLua(precompiled)(LuaCompilationContext(paramBindings,inputBindings),new VarNameGenerator)
 
-      def init(bindings: Binding[Any]*) = {
-        //call module.params(W) = ???)
+      val client = new TorchZeroMQClient()
+      val uuid = UUID.randomUUID().toString
+      val scriptFile = File.createTempFile(uuid, ".lua")
+      val scriptOut = new PrintWriter(scriptFile)
+      logger.info(s"Creating lua file: $scriptFile")
+      val script =
+        s"""
+           |$preamble
+           |${compilationResult.definition}
+           |gmod = nn.gModule({${compilationResult.inputNodes.values.mkString(",")}},{${compilationResult.varName}})
+        """.stripMargin
+      scriptOut.println(script)
+      scriptOut.close()
+      client.call("dofile")(scriptFile.getAbsolutePath)
+      //      val result = client.call("test")()
+      //      println(result)
+      new Module[T] {
+        def gradient[G](param: Var[G]) = ???
+
+        def init(bindings: Binding[Any]*) = {
+          //need to know mapping from variables to lua expressions that correspond to weights
+          //then call set on these weights
+          //call module.params(W) = ???)
+        }
+
+        def forward(bindings: Binding[Any]*) = {
+          //
+        }
+
+        def output() = ???
+
+        def backward(output: T) = ???
       }
+    }
 
-      def forward(bindings: Binding[Any]*) = ???
 
-      def output() = ???
-
-      def backward(output: T) = ???
-    })
   }
 
   def main(args: Array[String]) {
     val W = Var[Tensor]("W")
     val x = Var[Tensor]("x")
-    val term = sigmoid(W * x)
+    val b = Var[Tensor]("b")
+    val term = sigmoid(W * x + b)
 
     val module = TorchCompiler.compile(term)
-    module.init(W := DenseMatrix.ones(2, 2))
+    module.init(W := DenseMatrix.ones(2, 2), b := DenseMatrix(0.0, 0.0))
     module.forward(x := DenseMatrix(1.0, 2.0))
 
   }
