@@ -3,5 +3,11 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 cd $DIR/../
-echo [info] Wolfe 0.8
+cat << "EOF"
+ _ _ _     _ ___
+| | | |___| |  _|___
+| | | | . | |  _| -_|
+|_____|___|_|_| |___| v0.8
+
+EOF
 sbt console
