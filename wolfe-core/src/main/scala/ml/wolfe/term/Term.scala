@@ -155,14 +155,14 @@ case class ConstructProduct[+T <: Product](args: Seq[Term[Any]], constructor: Se
  * @tparam T1 the value type of the first term.
  * @tparam T2 the value type of the second term.
  */
-trait BinaryOperation[+T1, +T2, +T] extends Term[T] with ComposedProduct {
+trait BinaryOperation[+T1, +T2, +R] extends Term[R] with ComposedProduct {
   this: Product =>
   def arg1: Term[T1]
 
   def arg2: Term[T2]
 }
 
-trait UnaryOperation[+T] extends ComposedProduct {
+trait UnaryOperation[+T, +R] extends Term[R] with ComposedProduct {
   this: Product =>
   def arg: Term[T]
 }
@@ -190,10 +190,10 @@ case class Times[N](arg1: Term[N], arg2: Term[N])(implicit val numeric: Numeric[
   extends Term[N] with BinaryOperation[N, N, N]
 
 case class Tanh(arg: Term[Tensor])
-  extends UnaryOperation[Tensor] with DomainPreserving
+  extends UnaryOperation[Tensor, Tensor] with DomainPreserving
 
 case class Sigmoid(arg: Term[Tensor])
-  extends UnaryOperation[Tensor] with DomainPreserving
+  extends UnaryOperation[Tensor, Tensor] with DomainPreserving
 
 case class ComponentPlus(arg1: Term[Tensor], arg2: Term[Tensor])
   extends BinaryOperation[Tensor, Tensor, Tensor] with DomainPreserving with RequiresEqualArgumentDomains
@@ -211,7 +211,7 @@ case class Max(args: Seq[Term[Tensor]])
   extends Term[Tensor]
 
 case class Tensor2Double(arg: Term[Tensor])
-  extends Term[Double] with ComposedProduct
+  extends UnaryOperation[Tensor, Double] with ComposedProduct
 
 case class Transpose(arg: Term[Tensor])
-  extends UnaryOperation[Tensor]
+  extends UnaryOperation[Tensor, Tensor]

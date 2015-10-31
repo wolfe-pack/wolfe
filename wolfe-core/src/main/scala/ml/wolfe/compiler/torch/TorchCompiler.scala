@@ -23,7 +23,7 @@ object TorchCompiler extends DelayedCompiler {
 
   object nn {
 
-    case class Linear(weight: Var[Tensor], bias:Var[Tensor], arg: Term[Tensor], in: Int, out: Int) extends TorchTerm[Tensor]
+    case class Linear(weight: Var[Tensor], bias: Var[Tensor], arg: Term[Tensor], in: Int, out: Int) extends TorchTerm[Tensor]
 
   }
 
@@ -48,7 +48,7 @@ object TorchCompiler extends DelayedCompiler {
 
   case class LuaVariableAndDef(variable: String, definition: String)
 
-  class VarNameGenerator {
+  class NameGenerator {
     val counts = new mutable.HashMap[String, Int] withDefaultValue -1
 
     def newName(prefix: String) = {
@@ -58,31 +58,32 @@ object TorchCompiler extends DelayedCompiler {
   }
 
   def stackNodes(arg: Term[Any], namePrefix: String, luaExpr: String => String)
-                (implicit context: LuaCompilationContext, generator: VarNameGenerator) = {
+                (implicit context: LuaCompilationContext, generator: NameGenerator) = {
     val result = compileToLua(arg)
     val variable = generator.newName(namePrefix)
     val inputNodes = arg match {
-      case v:Var[_] => result.inputNodes + (v -> variable)
+      case v: Var[_] => result.inputNodes + (v -> variable)
       case _ => result.inputNodes
     }
     val definition =
       s"${if (result.definition != "") result.definition + "\n" else ""}$variable = ${luaExpr(result.varName)}"
-    LuaCompilationResult(variable, definition, inputNodes)
+    result.copy(variable,definition,inputNodes)
   }
 
   case class LuaCompilationResult(varName: String, definition: String,
-                                  inputNodes: Map[Var[Any],String],
-                                  paramExpressions: Map[Var[Any], String] = Map.empty)
+                                  inputNodes: Map[Var[Any], String],
+                                  paramExpressions: Map[Var[Any], String] = Map.empty,
+                                  linearUnits: List[(nn.Linear, String)] = Nil)
 
   case class LuaCompilationContext(paramBindings: Bindings,
                                    inputBindings: Bindings)
 
   def compileToLua(term: Term[Any])(implicit context: LuaCompilationContext,
-                                    generator: VarNameGenerator): LuaCompilationResult = {
+                                    generator: NameGenerator): LuaCompilationResult = {
     term match {
-      case nn.Linear(_, _, arg, in, out) =>
-        //todo: remember to set "linear.weight = [expr for weight term]" whenever the param that controls weight is changed
-        stackNodes(arg, "linear", a => s"nn.Linear($in,$out)($a)")
+      case lin@nn.Linear(_, _, arg, in, out) =>
+        val result = stackNodes(arg, "linear", a => s"nn.Linear($in,$out)($a)")
+        result.copy(linearUnits = (lin -> result.varName) :: result.linearUnits)
 
       case Sigmoid(arg) =>
         stackNodes(arg, "sigm", a => s"nn.Sigmoid()($a)")
@@ -106,38 +107,82 @@ object TorchCompiler extends DelayedCompiler {
          precompiled <- preCompile(term, domains)) yield {
 
       println(precompiled)
-      val compilationResult = compileToLua(precompiled)(LuaCompilationContext(paramBindings,inputBindings),new VarNameGenerator)
+      val nameGenerator = new NameGenerator
+      val compilationResult = compileToLua(precompiled)(LuaCompilationContext(paramBindings, inputBindings), nameGenerator)
+
+      val initFunctions = (for (param <- paramBindings) yield {
+        val funName = "init" + param.variable.name
+        val weightUpdates = for ((lin, name) <- compilationResult.linearUnits.filter(_._1.weight == param.variable)) yield {
+          s"$name.weight = ${param.variable.name}"
+        }
+        val biasUpdates = for ((lin, name) <- compilationResult.linearUnits.filter(_._1.bias == param.variable)) yield {
+          s"$name.bias = ${param.variable.name}"
+        }
+
+        val fun =
+          s"""
+             |function $funName(${param.variable.name})
+             |  ${(weightUpdates ++ biasUpdates).mkString("\n  ")}
+             |end
+        """.stripMargin
+        param.variable -> (funName, fun)
+      }).toMap
+      val gmod = "gmod"
+      val initFunctionsDef = initFunctions.values.map(_._2).mkString("\n")
+      val orderedInputNodes = compilationResult.inputNodes.toSeq
+      val forwardFunctionDef = {
+        val forwardArgs = if (orderedInputNodes.size == 1) orderedInputNodes.head._1.name else
+          orderedInputNodes.map(_._1.name).mkString("{",", ", "}")
+        s"""
+          |function forward(${orderedInputNodes.map(_._1.name).mkString(",")})
+          |  $gmod:forward($forwardArgs)
+          |end
+        """.stripMargin
+      }
+      val outputDef =
+        s"""
+          |function output()
+          |  return $gmod.output
+          |end
+        """.stripMargin
+
+      val script =
+        s"""
+           |$preamble
+           |${compilationResult.definition}
+           |$gmod = nn.gModule({${orderedInputNodes.map(_._2).mkString(",")}},{${compilationResult.varName}})
+           |$initFunctionsDef
+           |$forwardFunctionDef
+           |$outputDef
+        """.stripMargin
 
       val client = new TorchZeroMQClient()
       val uuid = UUID.randomUUID().toString
       val scriptFile = File.createTempFile(uuid, ".lua")
       val scriptOut = new PrintWriter(scriptFile)
       logger.info(s"Creating lua file: $scriptFile")
-      val script =
-        s"""
-           |$preamble
-           |${compilationResult.definition}
-           |gmod = nn.gModule({${compilationResult.inputNodes.values.mkString(",")}},{${compilationResult.varName}})
-        """.stripMargin
       scriptOut.println(script)
       scriptOut.close()
       client.call("dofile")(scriptFile.getAbsolutePath)
-      //      val result = client.call("test")()
-      //      println(result)
       new Module[T] {
         def gradient[G](param: Var[G]) = ???
 
         def init(bindings: Binding[Any]*) = {
-          //need to know mapping from variables to lua expressions that correspond to weights
-          //then call set on these weights
-          //call module.params(W) = ???)
+          for (binding <- bindings) {
+            val funName = initFunctions(binding.variable)._1
+            client.call(funName)(binding.value)
+          }
         }
 
         def forward(bindings: Binding[Any]*) = {
-          //
+          val bindingMap = Bindings(bindings:_*)
+          val args = orderedInputNodes.map(p => bindingMap(p._1))
+          client.call("forward")(args:_*)
         }
 
-        def output() = ???
+        def output() = {
+          client.call("output")().asInstanceOf[T]
+        }
 
         def backward(output: T) = ???
       }
@@ -155,6 +200,9 @@ object TorchCompiler extends DelayedCompiler {
     val module = TorchCompiler.compile(term)
     module.init(W := DenseMatrix.ones(2, 2), b := DenseMatrix(0.0, 0.0))
     module.forward(x := DenseMatrix(1.0, 2.0))
+
+    println(module.output())
+    println(module.output().isInstanceOf[DenseMatrix[_]])
 
   }
 }

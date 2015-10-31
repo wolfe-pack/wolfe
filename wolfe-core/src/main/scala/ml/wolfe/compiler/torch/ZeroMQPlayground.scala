@@ -1,5 +1,6 @@
 package ml.wolfe.compiler.torch
 
+import breeze.linalg.DenseMatrix
 import com.typesafe.scalalogging.slf4j.LazyLogging
 import org.json4s.jackson.JsonMethods._
 import org.zeromq.ZMQ
@@ -33,7 +34,7 @@ object ZeroMQPlayground {
 
 }
 
-class TorchZeroMQClient(port:Int = 7000) extends LazyLogging {
+class TorchZeroMQClient(port: Int = 7000) extends LazyLogging {
 
   import org.json4s._
   import org.json4s.JsonDSL._
@@ -46,19 +47,42 @@ class TorchZeroMQClient(port:Int = 7000) extends LazyLogging {
   socket.connect(s"tcp://localhost:$port")
 
 
-  def toJson(value:Any) = {
+  def toJson(value: Any) = {
     value match {
-      case i:Int => JInt(i)
-      case d:Double => JDouble(d)
+      case i: Int => JInt(i)
+      case d: Double => JDouble(d)
+      case t: DenseMatrix[_] =>
+        val dims = if (t.cols == 1) List(t.rows) else List(t.rows, t.cols) //todo: currently pretending n x 1 matrices are vectors
+        ("_datatype" -> "tensor") ~
+          ("dims" -> dims) ~
+          ("storage" -> t.toArray.toList.asInstanceOf[List[Double]])
       case _ => JString(value.toString)
     }
   }
 
-  def call(function:String)(args:Any*):Any = {
+  def fromJson(value: JValue) = {
+    implicit val formats = DefaultFormats
+    value match {
+      case JInt(i) => i
+      case JDouble(d) => d
+      case obj: JObject if obj \ "_datatype" == JString("tensor") =>
+        val dims = (obj \ "dims").extract[List[Int]]
+        val storage = (obj \ "storage").extract[List[Double]]
+        dims match {
+          case List(rows, cols) =>
+            new DenseMatrix[Double](rows, cols, storage.toArray)
+          case List(rows) =>
+            new DenseMatrix[Double](rows, 1, storage.toArray)
+        }
+      case _ => value
+    }
+  }
+
+  def call(function: String)(args: Any*): Any = {
     call(function.split("\\.").toList)(args.toList)
   }
 
-  def call(function:List[String])(args:List[Any]):Any = {
+  def call(function: List[String])(args: List[Any]): Any = {
     val json =
       ("cmd" -> "call") ~
         ("msg" -> (
@@ -68,15 +92,20 @@ class TorchZeroMQClient(port:Int = 7000) extends LazyLogging {
 
     val jsonString = compact(render(json))
 
+    logger.info(s"Calling Lua function: ${function.mkString(".")}")
+
     socket.send(jsonString)
 
     val msg = socket.recvStr()
-    msg
+
+    val jsonMsg = parse(msg)
+    val decoded = fromJson(jsonMsg)
+    decoded
   }
 
   val global = new Module(Nil)
 
-  class Module(prefix:List[String]) extends Dynamic {
+  class Module(prefix: List[String]) extends Dynamic {
 
     def selectDynamic(name: String) = new Module(prefix :+ name)
 
