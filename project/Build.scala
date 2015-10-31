@@ -137,7 +137,7 @@ object BuildSettings {
     Seq(
       //incOptions := incOptions.value.withNameHashing(false),
       initialCommands := """
-        import ml.wolfe.term.TermImplicits
+        import ml.wolfe.term.Language._
                          """
     ) ++ net.virtualvoid.sbt.graph.Plugin.graphSettings
 

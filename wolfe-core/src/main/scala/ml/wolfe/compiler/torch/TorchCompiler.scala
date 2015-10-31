@@ -113,10 +113,10 @@ object TorchCompiler extends DelayedCompiler {
       val initFunctions = (for (param <- paramBindings) yield {
         val funName = "init" + param.variable.name
         val weightUpdates = for ((lin, name) <- compilationResult.linearUnits.filter(_._1.weight == param.variable)) yield {
-          s"$name.weight = ${param.variable.name}"
+          s"$name.data.module.weight = ${param.variable.name}"
         }
         val biasUpdates = for ((lin, name) <- compilationResult.linearUnits.filter(_._1.bias == param.variable)) yield {
-          s"$name.bias = ${param.variable.name}"
+          s"$name.data.module.bias = ${param.variable.name}"
         }
 
         val fun =
@@ -198,8 +198,8 @@ object TorchCompiler extends DelayedCompiler {
     val term = sigmoid(W * x + b)
 
     val module = TorchCompiler.compile(term)
-    module.init(W := DenseMatrix.ones(2, 2), b := DenseMatrix(0.0, 0.0))
-    module.forward(x := DenseMatrix(1.0, 2.0))
+    module.init(W := DenseMatrix.ones(2, 2), b := DenseMatrix(1.0, 2.0))
+    module.forward(x := DenseMatrix(1.0, 1.0))
 
     println(module.output())
     println(module.output().isInstanceOf[DenseMatrix[_]])
