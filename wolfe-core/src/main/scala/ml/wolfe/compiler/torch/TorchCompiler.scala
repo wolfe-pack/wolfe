@@ -23,7 +23,8 @@ object TorchCompiler extends DelayedCompiler {
 
   object nn {
 
-    case class Linear(weight: ParamSelector[Tensor], bias: Var[Tensor], arg: Term[Tensor], in: Int, out: Int) extends TorchTerm[Tensor]
+    case class Linear(weight: ParamSelector[Tensor], bias: ParamSelector[Tensor],
+                      arg: Term[Tensor], in: Int, out: Int) extends TorchTerm[Tensor]
 
   }
 
@@ -60,7 +61,7 @@ object TorchCompiler extends DelayedCompiler {
     import context._
 
     term match {
-      case ComponentPlus(TensorMul(SelectorPattern(weight), arg), bias: Var[_]) =>
+      case ComponentPlus(TensorMul(SelectorPattern(weight), arg), SelectorPattern(bias)) =>
         context.domains(weight.term) match {
           case TensorDom(List(d1, d2)) => for (t <- c(arg)) yield nn.Linear(weight, bias, t, d1, d2)
           case TensorDom(List(d1)) => for (t <- c(arg)) yield nn.Linear(weight, bias, t, d1, 1)
@@ -142,7 +143,7 @@ object TorchCompiler extends DelayedCompiler {
 
       val parameterMapping = (for (param <- paramBindings) yield {
         val weightModules = compilationResult.linearUnits.filter(_._1.weight.param == param.variable)
-        val biasModules = compilationResult.linearUnits.filter(_._1.bias == param.variable)
+        val biasModules = compilationResult.linearUnits.filter(_._1.bias.param == param.variable)
         val weightUpdates = for ((lin, name) <- weightModules) yield {
           s"$name.data.module.weight = ${lin.weight}"
         }
