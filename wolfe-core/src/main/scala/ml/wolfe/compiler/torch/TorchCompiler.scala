@@ -124,6 +124,9 @@ object TorchCompiler extends DelayedCompiler {
       case Sigmoid(arg) =>
         stackNodes(arg, "sigm", a => s"nn.Sigmoid()($a)")
 
+      case GetElement(arg,element) =>
+        stackNodes(arg, "select", a => s"nn.SelectTable(${element + 1})($a)")
+
       case v: Var[_] => LuaCompilationResult("", "", Map.empty)
     }
   }

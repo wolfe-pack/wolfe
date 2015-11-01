@@ -13,15 +13,17 @@ object TorchPlayground extends App {
 
 
   @termdef case class Params(W: Tensor, b: Tensor)
+  @termdef case class Input(x: Tensor)
+
 
   val params = Var[Params]
-  val x = Var[Tensor]
-  val term = sigmoid(params.W * x + params.b)
+  val input = Var[Input]
+  val term = sigmoid(params.W * input.x + params.b)
 
   val module = TorchCompiler.compile(term)
 
   module.init(params := Params(DenseMatrix.ones(2, 2), DenseMatrix(1.0, 0.0)))
-  module.forward(x := DenseMatrix(1.0, 2.0))
+  module.forward(input := Input(DenseMatrix(1.0, 2.0)))
 
   println(module.output())
 
