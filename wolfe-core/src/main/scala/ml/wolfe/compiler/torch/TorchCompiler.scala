@@ -29,14 +29,14 @@ object TorchCompiler extends DelayedCompiler {
   }
 
   case class ParamSelector[+T](param: Var[Any], term: Term[T], path: List[Term[Any]]) extends TorchTerm[T] {
-    override def toString = pathString(path)
+    override def toString = pathString(path.reverse)
   }
 
   def pathString(path: List[Term[Any]]) =
     path.map {
       case v: Var[_] => v.name
-      case GetElement(_, element) => "[" + element + "]"
-    }.mkString(".")
+      case GetElement(_, element) => "[" + (element + 1) + "]"
+    }.mkString("")
 
 
   case class CompilationContext(paramBindings: Bindings,
@@ -148,7 +148,7 @@ object TorchCompiler extends DelayedCompiler {
           s"$name.data.module.weight = ${lin.weight}"
         }
         val biasUpdates = for ((lin, name) <- biasModules) yield {
-          s"$name.data.module.bias = ${param.variable.name}"
+          s"$name.data.module.bias = ${lin.bias}"
         }
 
         val initName = "init" + param.variable.name
@@ -160,9 +160,6 @@ object TorchCompiler extends DelayedCompiler {
         """.stripMargin
 
         val gradName = "grad" + param.variable.name
-        val gradResult = if (weightModules.nonEmpty) weightModules.head._2 + ".data.module.gradWeight"
-        else
-          biasModules.head._2 + ".data.module.gradBias"
 
         def createResult(dom:Dom[Any], parent:Term[Any], path:List[Term[Any]] = Nil):String = {
           dom match {
@@ -183,6 +180,11 @@ object TorchCompiler extends DelayedCompiler {
               result.mkString("{", ",", "}")
           }
         }
+        val gradResult = createResult(domains(param.variable), param.variable, param.variable :: Nil)
+//        val gradResult = if (weightModules.nonEmpty) weightModules.head._2 + ".data.module.gradWeight"
+//        else
+//          biasModules.head._2 + ".data.module.gradBias"
+
 
         val gradDef =
           s"""

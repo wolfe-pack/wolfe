@@ -20,7 +20,7 @@ object TorchPlayground extends App {
 
   val module = TorchCompiler.compile(term)
 
-  module.init(params := Params(DenseMatrix.ones(2, 2), DenseMatrix(1.0, 1.0)))
+  module.init(params := Params(DenseMatrix.ones(2, 2), DenseMatrix(1.0, 0.0)))
   module.forward(x := DenseMatrix(1.0, 2.0))
 
   println(module.output())
