@@ -163,6 +163,27 @@ object TorchCompiler extends DelayedCompiler {
         val gradResult = if (weightModules.nonEmpty) weightModules.head._2 + ".data.module.gradWeight"
         else
           biasModules.head._2 + ".data.module.gradBias"
+
+        def createResult(dom:Dom[Any], parent:Term[Any], path:List[Term[Any]] = Nil):String = {
+          dom match {
+            case t:TensorDom =>
+              //find a linear module with this path
+              weightModules.find(_._1.weight.path == path) match {
+                case Some((lin,name)) => s"$name.data.module.gradWeight"
+                case _ => biasModules.find(_._1.bias.path == path) match {
+                  case Some((lin,name)) => s"$name.data.module.gradBias"
+                  case _ => sys.error("parameters must be bias or weight terms in linear models")
+                }
+              }
+            case ProductDom(doms,_) =>
+              val result = for ((d,i) <- doms.zipWithIndex) yield {
+                val next = GetElement(parent.asInstanceOf[Term[Product]], i)
+                createResult(d, next, next :: path)
+              }
+              result.mkString("{", ",", "}")
+          }
+        }
+
         val gradDef =
           s"""
              |function $gradName()
