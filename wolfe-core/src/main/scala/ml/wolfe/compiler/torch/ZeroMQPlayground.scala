@@ -47,7 +47,7 @@ class TorchZeroMQClient(port: Int = 7000) extends LazyLogging {
   socket.connect(s"tcp://localhost:$port")
 
 
-  def toJson(value: Any):JValue = {
+  def toJson(value: Any): JValue = {
     value match {
       case i: Int => JInt(i)
       case d: Double => JDouble(d)
@@ -56,14 +56,14 @@ class TorchZeroMQClient(port: Int = 7000) extends LazyLogging {
         ("_datatype" -> "tensor") ~
           ("dims" -> dims) ~
           ("storage" -> t.toArray.toList.asInstanceOf[List[Double]])
-      case p:Product =>
+      case p: Product =>
         val args = p.productIterator.map(toJson).toList
         JArray(args)
       case _ => JString(value.toString)
     }
   }
 
-  def fromJson(value: JValue) = {
+  def fromJson(value: JValue): Any = {
     implicit val formats = DefaultFormats
     value match {
       case JInt(i) => i
@@ -77,6 +77,8 @@ class TorchZeroMQClient(port: Int = 7000) extends LazyLogging {
           case List(rows) =>
             new DenseMatrix[Double](rows, 1, storage.toArray)
         }
+      case JArray(args) =>
+        args.map(fromJson)
       case _ => value
     }
   }

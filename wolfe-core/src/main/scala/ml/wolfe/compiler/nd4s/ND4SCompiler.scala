@@ -88,6 +88,12 @@ object ND4SCompiler extends DelayedCompiler {
           paramBox.grad.asInstanceOf[G] //todo: this needs to be converted back
         }
 
+
+        def param[P](param: Var[P]) = {
+          val paramBox = var2ParamBox(param)
+          paramBox.output.asInstanceOf[P]
+        }
+
         def init(bindings: Binding[Any]*) = {
           for (binding <- bindings; box <- var2ParamBox.get(binding.variable)) {
             box.output = Table.toTable(binding.value)

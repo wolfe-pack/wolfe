@@ -25,6 +25,12 @@ object TorchPlayground extends App {
 
   println(module.output())
 
+  module.backward(DenseMatrix(1.0, 2.0))
+
+  val gradient = module.gradient(params)
+  println(gradient)
+
+  println(module.param(params))
 
 
 }

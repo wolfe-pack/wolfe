@@ -6,14 +6,16 @@ import ml.wolfe.term.{Binding, Var}
  * @author riedel
  */
 trait Module[T] {
-   def gradient[G](param: Var[G]): G
+  def gradient[G](param: Var[G]): G
 
-   def backward(output: T)
+  def param[P](param:Var[P]):P
 
-   def output(): T
+  def backward(output: T)
 
-   def forward(bindings: Binding[Any]*)
+  def output(): T
 
-   def init(bindings: Binding[Any]*)
+  def forward(bindings: Binding[Any]*)
 
- }
+  def init(bindings: Binding[Any]*)
+
+}

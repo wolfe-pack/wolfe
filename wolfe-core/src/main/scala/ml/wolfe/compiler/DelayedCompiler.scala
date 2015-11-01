@@ -39,6 +39,11 @@ trait DelayedCompiler extends Compiler with LazyLogging  {
         compiled.gradient(param)
       }
 
+
+      def param[P](param: Var[P]) = {
+        compiled.param(param)
+      }
+
       def init(bindings: Binding[Any]*) = {
         paramBindings = Bindings(bindings: _*)
         if (compiled != null) compiled.init(bindings: _*)

@@ -77,6 +77,15 @@ object TorchCompiler extends DelayedCompiler {
 
   case class LuaVariableAndDef(variable: String, definition: String)
 
+  def toWolfeObject(value: Any, dom: Dom[Any]): Any = {
+    (value, dom) match {
+      case (l: List[_], ProductDom(doms, constructor)) =>
+        val args = for ((a, d) <- l zip doms) yield toWolfeObject(a, d)
+        constructor(args)
+      case _ => value
+    }
+  }
+
   class NameGenerator {
     val counts = new mutable.HashMap[String, Int] withDefaultValue -1
 
@@ -127,7 +136,8 @@ object TorchCompiler extends DelayedCompiler {
 
   case class ParameterMapping(param: Var[Any],
                               initFunName: String, initFunDef: String,
-                              gradFunName: String, gradFunDef: String)
+                              gradFunName: String, gradFunDef: String,
+                              paramFunName:String, paramFunDef:String)
 
   def compile[T](term: Term[T], paramBindings: Bindings, inputBindings: Bindings) = {
     val variableDomainBindings = (paramBindings ++ inputBindings) map { b => b.variable in Typer.deriveDomainFromValue(b.value) }
@@ -159,33 +169,30 @@ object TorchCompiler extends DelayedCompiler {
              |end
         """.stripMargin
 
-        val gradName = "grad" + param.variable.name
 
-        def createResult(dom:Dom[Any], parent:Term[Any], path:List[Term[Any]] = Nil):String = {
+        def createResult(dom: Dom[Any], parent: Term[Any], path: List[Term[Any]] = Nil,
+                         weightAccessor: String = "gradWeight",
+                         biasAccessor: String = "gradBias"): String = {
           dom match {
-            case t:TensorDom =>
+            case t: TensorDom =>
               //find a linear module with this path
               weightModules.find(_._1.weight.path == path) match {
-                case Some((lin,name)) => s"$name.data.module.gradWeight"
+                case Some((lin, name)) => s"$name.data.module.$weightAccessor"
                 case _ => biasModules.find(_._1.bias.path == path) match {
-                  case Some((lin,name)) => s"$name.data.module.gradBias"
+                  case Some((lin, name)) => s"$name.data.module.$biasAccessor"
                   case _ => sys.error("parameters must be bias or weight terms in linear models")
                 }
               }
-            case ProductDom(doms,_) =>
-              val result = for ((d,i) <- doms.zipWithIndex) yield {
+            case ProductDom(doms, _) =>
+              val result = for ((d, i) <- doms.zipWithIndex) yield {
                 val next = GetElement(parent.asInstanceOf[Term[Product]], i)
-                createResult(d, next, next :: path)
+                createResult(d, next, next :: path, weightAccessor, biasAccessor)
               }
               result.mkString("{", ",", "}")
           }
         }
+        val gradName = "grad" + param.variable.name
         val gradResult = createResult(domains(param.variable), param.variable, param.variable :: Nil)
-//        val gradResult = if (weightModules.nonEmpty) weightModules.head._2 + ".data.module.gradWeight"
-//        else
-//          biasModules.head._2 + ".data.module.gradBias"
-
-
         val gradDef =
           s"""
              |function $gradName()
@@ -193,13 +200,24 @@ object TorchCompiler extends DelayedCompiler {
              |end
           """.stripMargin
 
-        param.variable -> ParameterMapping(param.variable, initName, initDef, gradName, gradDef)
+        val paramName = "param" + param.variable.name
+        val paramResult = createResult(domains(param.variable), param.variable, param.variable :: Nil,
+          "weight", "bias")
+        val paramDef =
+          s"""
+             |function $paramName()
+             |  return $paramResult
+             |end
+          """.stripMargin
+
+        param.variable -> ParameterMapping(param.variable, initName, initDef, gradName, gradDef,paramName,paramDef)
       }).toMap
 
 
       val gmod = "gmod"
       val initFunctionsDef = parameterMapping.values.map(_.initFunDef).mkString("\n")
       val gradFunctionsDef = parameterMapping.values.map(_.gradFunDef).mkString("\n")
+      val paramFunctionsDef = parameterMapping.values.map(_.paramFunDef).mkString("\n")
 
       val orderedInputNodes = compilationResult.inputNodes.toSeq
       val forwardDef = {
@@ -235,6 +253,7 @@ object TorchCompiler extends DelayedCompiler {
            |$gmod = nn.gModule({${orderedInputNodes.map(_._2).mkString(",")}},{${compilationResult.varName}})
            |$initFunctionsDef
            |$gradFunctionsDef
+           |$paramFunctionsDef
            |$forwardDef
            |$backwardDef
            |$outputDef
@@ -250,11 +269,20 @@ object TorchCompiler extends DelayedCompiler {
       client.call("dofile")(scriptFile.getAbsolutePath)
       new Module[T] {
 
-
         def gradient[G](param: Var[G]) = {
           //for the given parameter, find the linear unit that owns it
           val gradName = parameterMapping(param).gradFunName
-          client.call(gradName)().asInstanceOf[G]
+          val ret = client.call(gradName)()
+          val dom = domains(param)
+          toWolfeObject(ret, dom).asInstanceOf[G]
+        }
+
+
+        def param[P](param: Var[P]) = {
+          val paramName = parameterMapping(param).paramFunName
+          val ret = client.call(paramName)()
+          val dom = domains(param)
+          toWolfeObject(ret, dom).asInstanceOf[P]
         }
 
         def init(bindings: Binding[Any]*) = {
