@@ -61,9 +61,8 @@ object Typer {
 
       case ge@GetElement(p, e) =>
         for (dp <- dom(p);
-             de <- dom(e);
              doms <- check(dp(p), TyperError(p, dp, "not a product domain")) { case ProductDom(d, _) => d })
-          yield (dp ++ de) + (ge in doms(e))
+          yield dp + (ge in doms(e))
 
       case tm@TensorMul(x1, x2) =>
         for (dx1 <- dom(x1);

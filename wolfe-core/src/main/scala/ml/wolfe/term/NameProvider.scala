@@ -26,7 +26,7 @@ object NameProvider {
   def createValDefBasedProviderImpl(c:blackbox.Context):c.Expr[NameProvider] = {
     import c.universe._
     val owner = c.internal.enclosingOwner
-    val name = owner.name.decodedName.toString
+    val name = owner.name.decodedName.toString.trim
     val asConst = Constant(name)
 
     val result = q"""
