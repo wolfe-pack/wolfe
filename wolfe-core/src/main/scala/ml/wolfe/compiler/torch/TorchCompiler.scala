@@ -15,6 +15,7 @@ import scala.collection.mutable
 
 
 /**
+ * Make sure to run 'th src/lua/torch_server.lua' while running the compiled module.
  * @author riedel
  */
 object TorchCompiler extends DelayedCompiler {

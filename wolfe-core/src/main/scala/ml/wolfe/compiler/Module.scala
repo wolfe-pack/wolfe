@@ -1,6 +1,6 @@
 package ml.wolfe.compiler
 
-import ml.wolfe.term.{Binding, Var}
+import ml.wolfe.term.{Bindings, Binding, Var}
 
 /**
  * @author riedel
@@ -8,7 +8,7 @@ import ml.wolfe.term.{Binding, Var}
 trait Module[T] {
   def gradient[G](param: Var[G]): G
 
-  def param[P](param:Var[P]):P
+  def param[P](param: Var[P]): P
 
   def backward(output: T)
 
@@ -18,4 +18,8 @@ trait Module[T] {
 
   def init(bindings: Binding[Any]*)
 
+  def train(data: Seq[(Bindings, T)], params: TrainParams) = ???
+
 }
+
+case class TrainParams(iterations: Int, learningRate: Double)
