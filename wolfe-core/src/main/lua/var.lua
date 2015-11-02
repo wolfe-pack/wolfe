@@ -5,7 +5,8 @@
 -- Time: 18:44
 -- To change this template use File | Settings | File Templates.
 --
-local Var, parent = torch.class('nn.Var', 'nn.Module')
+local nn = require "nn"
+local Var, parent = torch.class('Var', 'nn.Module')
 
 function Var:__init(inputSize, outputSize)
     parent.__init(self)
@@ -36,11 +37,13 @@ function Var:reset(stdv)
 end
 
 function Var:updateOutput(input)
+    self.output:resize(self.weight:size(1), self.weight:size(2))
     self.output:copy(self.weight)
     return self.output
 end
 
 function Var:updateGradInput(input, gradOutput)
+
 end
 
 function Var:accGradParameters(input, gradOutput, scale)
@@ -55,6 +58,6 @@ Var.sharedAccUpdateGradParameters = Var.accUpdateGradParameters
 
 function Var:__tostring__()
     return torch.type(self) ..
-            string.format('Var(%d x %d)', self.weight:size(2), self.weight:size(1))
+            string.format('(%d x %d)', self.weight:size(2), self.weight:size(1))
 end
 
