@@ -5,7 +5,7 @@ import breeze.numerics.sigmoid
 import ml.wolfe.Tensor
 import ml.wolfe.compiler.{DelayedCompiler, Module}
 import ml.wolfe.term._
-import org.scalautils._
+import org.scalactic._
 
 import scala.collection.mutable
 import scala.language.implicitConversions

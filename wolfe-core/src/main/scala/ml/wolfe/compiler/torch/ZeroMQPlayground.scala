@@ -1,9 +1,12 @@
 package ml.wolfe.compiler.torch
 
+import java.util.concurrent.TimeoutException
+
 import breeze.linalg.DenseMatrix
 import com.typesafe.scalalogging.LazyLogging
 import org.zeromq.ZMQ
 
+import scala.concurrent.{ExecutionContext, Await, Future}
 import scala.language.dynamics
 
 /**
@@ -34,6 +37,27 @@ object ZeroMQPlayground {
 
 }
 
+object TorchZeroMQClient extends LazyLogging {
+  def serverOnline(port: Int = 7000) = {
+    logger.info("Testing whether torch server is online.")
+    import scala.concurrent.duration._
+    import ExecutionContext.Implicits.global
+    val client = new TorchZeroMQClient(port)
+    val result = Future {
+      client.call("string.lower")("AB")
+    }
+    try {
+      val ret = Await.result(result, 1100.milliseconds) == "ab"
+      logger.info("Torch server is online.")
+      ret
+    } catch {
+      case e: TimeoutException =>
+        logger.info("Torch server is offline.")
+        false
+    }
+  }
+}
+
 class TorchZeroMQClient(port: Int = 7000) extends LazyLogging {
 
   import org.json4s.JsonDSL._
@@ -51,6 +75,7 @@ class TorchZeroMQClient(port: Int = 7000) extends LazyLogging {
     value match {
       case i: Int => JInt(i)
       case d: Double => JDouble(d)
+      case s: String => JString(s)
       case t: DenseMatrix[_] =>
         val dims = if (t.cols == 1) List(t.rows) else List(t.rows, t.cols) //todo: currently pretending n x 1 matrices are vectors
         ("_datatype" -> "tensor") ~
@@ -68,6 +93,7 @@ class TorchZeroMQClient(port: Int = 7000) extends LazyLogging {
     value match {
       case JInt(i) => i
       case JDouble(d) => d
+      case JString(s) => s
       case obj: JObject if obj \ "_datatype" == JString("tensor") =>
         val dims = (obj \ "dims").extract[List[Int]]
         val storage = (obj \ "storage").extract[List[Double]]

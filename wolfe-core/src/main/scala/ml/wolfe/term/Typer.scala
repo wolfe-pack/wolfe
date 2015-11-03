@@ -3,8 +3,8 @@ package ml.wolfe.term
 import breeze.linalg.DenseMatrix
 import ml.wolfe.Language
 import ml.wolfe.term.Typer.TyperError
-import org.scalautils.Accumulation._
-import org.scalautils._
+import org.scalactic.Accumulation._
+import org.scalactic._
 
 /**
  * @author riedel

@@ -27,8 +27,8 @@ object BuildSettings {
   )
 
   val globalDependencies = libraryDependencies ++= Seq(
-    "org.scalautils" % "scalautils_2.11" % "2.1.5",
-    "org.scalatest" % "scalatest_2.11" % "2.2.1" % "test",
+    "org.scalactic" % "scalactic_2.11" % "2.2.4",
+    "org.scalatest" % "scalatest_2.11" % "2.2.4" % "test",
     "com.typesafe" % "config" % "1.2.1",
     "org.slf4j" % "slf4j-api" % "1.7.10",
     "org.slf4j" % "slf4j-simple" % "1.7.10",

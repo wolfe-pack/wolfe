@@ -1,6 +1,9 @@
 package ml.wolfe.term
 
+import breeze.linalg.DenseMatrix
+import ml.wolfe.Tensor
 import org.scalatest.{Matchers, WordSpec}
+import org.scalactic.Equality
 
 /**
  * Default Specs for Wolfe.
@@ -12,6 +15,16 @@ trait WolfeSpec extends WordSpec with Matchers {
   val eps = 0.0001
 
   def beStringEqual(that:Any) = be(that.toString) compose( (f:Any) => f.toString)
+
+  implicit val breezeMatrixEqual = new Equality[Tensor] {
+    def areEqual(a: Tensor, b: Any) = b match {
+      case v: DenseMatrix[_] =>
+        (a.activeValuesIterator.zip(v.asInstanceOf[Tensor].activeValuesIterator)).forall{
+          case (x1,x2) => math.abs(x1 - x2) < eps
+        }
+      case _ => false
+    }
+  }
 
 
   /*

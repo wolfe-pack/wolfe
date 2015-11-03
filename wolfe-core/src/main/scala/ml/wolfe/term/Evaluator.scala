@@ -1,7 +1,7 @@
 package ml.wolfe.term
 
 import ml.wolfe.Language
-import org.scalautils._
+import org.scalactic._
 import Accumulation._
 import Language._
 

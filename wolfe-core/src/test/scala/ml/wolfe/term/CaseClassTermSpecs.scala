@@ -1,7 +1,7 @@
 package ml.wolfe.term
 
 import ml.wolfe.Language
-import org.scalautils.Good
+import org.scalactic.Good
 
 /**
  * @author riedel
