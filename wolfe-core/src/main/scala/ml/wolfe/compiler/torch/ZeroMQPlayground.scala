@@ -1,9 +1,12 @@
 package ml.wolfe.compiler.torch
 
+import java.util.concurrent.TimeoutException
+
 import breeze.linalg.DenseMatrix
 import com.typesafe.scalalogging.LazyLogging
 import org.zeromq.ZMQ
 
+import scala.concurrent.{ExecutionContext, Await, Future}
 import scala.language.dynamics
 
 /**
@@ -34,11 +37,24 @@ object ZeroMQPlayground {
 
 }
 
-object TorchZeroMQClient {
+object TorchZeroMQClient extends LazyLogging {
   def serverOnline(port: Int = 7000) = {
+    logger.info("Testing whether torch server is online.")
+    import scala.concurrent.duration._
+    import ExecutionContext.Implicits.global
     val client = new TorchZeroMQClient(port)
-    val result = client.call("string.lower")("AB")
-    result == "ab"
+    val result = Future {
+      client.call("string.lower")("AB")
+    }
+    try {
+      val ret = Await.result(result, 1100.milliseconds) == "ab"
+      logger.info("Torch server is online.")
+      ret
+    } catch {
+      case e: TimeoutException =>
+        logger.info("Torch server is offline.")
+        false
+    }
   }
 }
 
