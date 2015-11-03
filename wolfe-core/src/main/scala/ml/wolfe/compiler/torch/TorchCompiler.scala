@@ -8,7 +8,7 @@ import ml.wolfe.Language._
 import ml.wolfe._
 import ml.wolfe.compiler.{DelayedCompiler, Module}
 import ml.wolfe.term.{Var, _}
-import org.scalautils.{Accumulation, Every, Good, Or}
+import org.scalactic.{Accumulation, Every, Good, Or}
 import Accumulation._
 
 import scala.collection.mutable

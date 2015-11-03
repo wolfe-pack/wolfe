@@ -2,7 +2,7 @@ package ml.wolfe.compiler
 
 import com.typesafe.scalalogging.LazyLogging
 import ml.wolfe.term._
-import org.scalautils._
+import org.scalactic._
 
 /**
  * This compiler delays compilation until it has received initial parameters and input values in order to

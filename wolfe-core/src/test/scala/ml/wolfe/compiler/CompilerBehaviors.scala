@@ -3,14 +3,13 @@ package ml.wolfe.compiler
 import breeze.linalg.DenseMatrix
 import ml.wolfe.Language._
 import ml.wolfe._
-import ml.wolfe.term.termdef
-import org.scalatest.{Matchers, WordSpec}
+import ml.wolfe.term.{WolfeSpec, termdef}
 
 /**
  * @author riedel
  */
 trait CompilerBehaviors extends {
-  this: WordSpec with Matchers =>
+  this: WolfeSpec =>
 
   def supportForwardActivation(newCompiler: => Compiler): Unit = {
     "support forward evaluation of matrix vector multiplication" in {
@@ -38,7 +37,8 @@ trait CompilerBehaviors extends {
       val module = newCompiler.compile(term)
       module.init(params := Params(DenseMatrix.ones(2, 2), DenseMatrix(1.0, 1.0)))
       module.forward(input := Input(DenseMatrix(1.0, 2.0)))
-      module.output() should be(breeze.numerics.sigmoid(DenseMatrix(3.0, 3.0) + DenseMatrix(1.0, 1.0)))
+      val expected = breeze.numerics.sigmoid(DenseMatrix(3.0, 3.0) + DenseMatrix(1.0, 1.0))
+      module.output() should equal(expected)
     }
 
   }
