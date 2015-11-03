@@ -5,9 +5,10 @@
 -- Time: 18:44
 -- To change this template use File | Settings | File Templates.
 --
-local nn = require "nn"
+require "nn"
 require "nngraph"
-local StructVar, parent = torch.class('StructVar', 'nn.Module')
+
+local StructVar, parent = torch.class('wolfe.StructVar', 'nn.Module')
 
 function StructVar:__init(dims)
     parent.__init(self)

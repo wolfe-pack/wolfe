@@ -6,9 +6,11 @@
 -- To change this template use File | Settings | File Templates.
 --
 
-dofile("struct_var.lua")
+require "wolfe"
 
-v = StructVar({torch.LongStorage({1,1}), torch.LongStorage({2,2})})()
+-- dofile("struct_var.lua")
+
+v = wolfe.StructVar({torch.LongStorage({1,1}), torch.LongStorage({2,2})})()
 sig = nn.Sigmoid()(nn.SelectTable(2)(v))
 g = nn.gModule({v},{sig})
 ret = g:forward({})
