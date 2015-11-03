@@ -111,7 +111,7 @@ object Build extends Build {
   lazy val root = Project(
     id = "wolfe",
     base = file("."),
-    settings = buildSettings ++ publishSettings ++ generalSettings ++ releaseSettings
+    settings = buildSettings ++ publishSettings ++ generalSettings ++ releaseSettings ++ macroSettings ++ globalSettings
   ) aggregate(core) dependsOn (core)
 
   lazy val core = Project(

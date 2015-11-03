@@ -35,7 +35,7 @@ class CaseClassTermSpecs extends WolfeSpec {
 
     "provide a domain constructor" in {
       @termdef case class Test[C](a:C, b:Int)
-      val Tests = Test.Values(RangeDom(0 until 2), RangeDom(2 until 3))
+      val Tests = Test.Dom(RangeDom(0 until 2), RangeDom(2 until 3))
       Tests shouldBe a [ProductDom[_]]
       Tests.doms(0) should be (RangeDom(0 until 2))
       Tests.doms(1) should be (RangeDom(2 until 3))

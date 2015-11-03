@@ -117,7 +117,7 @@ object CaseClassTerm {
               def unapply[..$genTypes](term:ml.wolfe.term.Term[$caseClassTypeName[..$genTypenames]]) =
                 Some(..$getters)
             }
-            def Values[..$genTypes](..$domArgs) =
+            def Dom[..$genTypes](..$domArgs) =
               ml.wolfe.term.ProductDom(Seq(..$caseClassArgNames), construct[..$genTypenames])
           }
             """
