@@ -203,7 +203,11 @@ case class SeqConstructor[+E](args: Seq[Term[E]]) extends Term[Seq[E]]
  * @param element the index of the element to return.
  * @tparam T the type of the element to return.
  */
-case class GetElement[+T](product: Term[Product], element: Int) extends Term[T]
+case class GetElement[+T](product: Term[Product], element: Int) extends Term[T] with Composed {
+  def parts = Seq(product)
+
+  def clone(args: Seq[Term[Any]]) = GetElement(args(0).asInstanceOf[Term[Product]], element)
+}
 
 /**
  * A term representing the construction of a product value.

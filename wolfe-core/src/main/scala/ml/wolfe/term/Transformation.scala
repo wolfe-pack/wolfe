@@ -40,6 +40,17 @@ object Transformation {
     shattered
 
   }
+
+  /**
+   * Simplifies Product(a1,a2,a3)(1) to a2.
+   * @param term the term to collapse getters in.
+   * @tparam T value type of term.
+   * @return the term with occurrences of collapsable getters collapsed.
+   */
+  def collapseGetters[T](term: Term[T]) = term.transform {
+    case GetElement(ConstructProduct(args, _), i) => args(i)
+  }
+
 }
 
 /**
