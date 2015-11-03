@@ -20,7 +20,7 @@ trait CompilerBehaviors extends {
       val module = newCompiler.compile(term)
       module.init(W := DenseMatrix.ones(2, 2))
       module.forward(x := DenseMatrix(1.0, 2.0))
-      module.output() should be(breeze.numerics.sigmoid(DenseMatrix(3.0, 3.0)))
+      module.output() should equal (breeze.numerics.sigmoid(DenseMatrix(3.0, 3.0)))
     }
   }
 

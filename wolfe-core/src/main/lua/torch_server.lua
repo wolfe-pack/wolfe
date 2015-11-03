@@ -3,6 +3,8 @@ local json = require("dkjson")
 local zmq = require "lzmq"
 local context = zmq.init(1)
 
+require("wolfe")
+
 local socket = context:socket(zmq.REP)
 socket:bind("tcp://*:7000")
 
