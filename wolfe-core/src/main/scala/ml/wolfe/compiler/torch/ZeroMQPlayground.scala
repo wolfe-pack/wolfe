@@ -77,13 +77,14 @@ class TorchZeroMQClient(port: Int = 7000) extends LazyLogging {
       case d: Double => JDouble(d)
       case s: String => JString(s)
       case t: DenseMatrix[_] =>
-        val dims = if (t.cols == 1) List(t.rows) else List(t.rows, t.cols) //todo: currently pretending n x 1 matrices are vectors
+        val dims = List(t.rows, t.cols) //if (t.cols == 1) List(t.rows) else List(t.rows, t.cols) //todo: currently pretending n x 1 matrices are vectors
         ("_datatype" -> "tensor") ~
           ("dims" -> dims) ~
           ("storage" -> t.toArray.toList.asInstanceOf[List[Double]])
       case p: Product =>
         val args = p.productIterator.map(toJson).toList
         JArray(args)
+      case s:Seq[_] => JArray(s.toList.map(toJson))
       case _ => JString(value.toString)
     }
   }

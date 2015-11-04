@@ -10,8 +10,9 @@ class TorchCompilerSpecs extends WolfeSpec with CompilerBehaviors {
 
   "A Torch Compiler" should {
     if (TorchZeroMQClient.serverOnline()) {
-      //supportForwardActivation(TorchCompiler)
+      supportForwardActivation(TorchCompiler)
       supportForwardActivationWithComposedValues(TorchCompiler)
+      supportBackwardPass(TorchCompiler)
     }
   }
 
