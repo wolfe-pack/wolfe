@@ -15,7 +15,7 @@ object BaseEval extends Evaluator {
 
   def partial[T](bindings: Bindings, backoff:Evaluator) = {
     def e[A](term: Term[A]) = backoff.eval(bindings)(term)
-    val result: PartialFunction[Term[T], T Or Every[ErrorMsg]] = {
+    val result: PartialFunction[Term[T], T Or Every[WolfeError]] = {
 
       case Constant(t) =>
         Good(t)
@@ -91,12 +91,12 @@ object BaseEvalTest {
 
 trait Evaluator {
 
-  def partial[T](bindings: Bindings, backoff: Evaluator): PartialFunction[Term[T], T Or Every[ErrorMsg]]
+  def partial[T](bindings: Bindings, backoff: Evaluator): PartialFunction[Term[T], T Or Every[WolfeError]]
 
   def eval[T](bindings: Bindings)(term: Term[T]) =
     partial(bindings, this)(term)
 
-  def eval[T](bindings: Binding[Any]*)(term: Term[T]): T Or Every[ErrorMsg] =
+  def eval[T](bindings: Binding[Any]*)(term: Term[T]): T Or Every[WolfeError] =
     eval(Bindings(bindings: _*))(term)
 
   def +(that: Evaluator) = new Evaluator {
@@ -106,11 +106,11 @@ trait Evaluator {
 
 }
 
-trait ErrorMsg {
+abstract class WolfeError extends RuntimeException{
   def msg: String
 }
 
-trait TermErrorMsg extends ErrorMsg {
+trait TermErrorMsg extends WolfeError {
   def term:Term[Any]
 }
 

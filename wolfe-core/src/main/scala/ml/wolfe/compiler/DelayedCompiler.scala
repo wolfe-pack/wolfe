@@ -11,7 +11,7 @@ import org.scalactic._
  */
 trait DelayedCompiler extends Compiler with LazyLogging  {
 
-  case class CompilationError(term: Term[Any], msg: String) extends ErrorMsg
+  case class CompilationError(term: Term[Any], msg: String) extends WolfeError
 
   def compile[T](term: Term[T]): Module[T] = {
 
@@ -73,6 +73,6 @@ trait DelayedCompiler extends Compiler with LazyLogging  {
 
   }
 
-  def compile[T](term: Term[T], paramBindings: Bindings, inputBindings: Bindings): Module[T] Or Every[ErrorMsg]
+  def compile[T](term: Term[T], paramBindings: Bindings, inputBindings: Bindings): Module[T] Or Every[WolfeError]
 
 }

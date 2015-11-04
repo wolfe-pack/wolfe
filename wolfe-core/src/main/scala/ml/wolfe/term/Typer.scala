@@ -13,9 +13,9 @@ object Typer {
 
   import Language._
 
-  case class TyperError(term: Term[Any], domains: Domains, msg: String) extends ErrorMsg
+  case class TyperError(term: Term[Any], domains: Domains, msg: String) extends WolfeError
 
-  case class CantDeriveDomainFromValue(value: Any) extends ErrorMsg {
+  case class CantDeriveDomainFromValue(value: Any) extends WolfeError {
     val msg = "Can't derive domain for value: " + value
   }
 
@@ -38,14 +38,14 @@ object Typer {
   }
 
 
-  def check[T, A, E <: ErrorMsg](value: T, error: E)(fun: PartialFunction[T, A]): A Or One[E] = {
+  def check[T, A, E <: WolfeError](value: T, error: E)(fun: PartialFunction[T, A]): A Or One[E] = {
     if (fun.isDefinedAt(value)) Good(fun(value)) else Bad(One(error))
   }
 
-  def domains(varDoms: DomainBinding[Any]*)(term: Term[Any]): Domains Or Every[ErrorMsg] =
+  def domains(varDoms: DomainBinding[Any]*)(term: Term[Any]): Domains Or Every[WolfeError] =
     domains(Domains(varDoms: _*))(term)
 
-  def domains(varDoms: Domains)(term: Term[Any]): Domains Or Every[ErrorMsg] = {
+  def domains(varDoms: Domains)(term: Term[Any]): Domains Or Every[WolfeError] = {
     def dom(term: Term[Any]) = domains(varDoms)(term)
     term match {
       case v: Var[_] =>
@@ -117,7 +117,7 @@ class Domains {
     result
   }
 
-  def check[D <: Dom[Any]](term: Term[Any]): D Or One[ErrorMsg] = {
+  def check[D <: Dom[Any]](term: Term[Any]): D Or One[WolfeError] = {
     try {
       Good(this (term).asInstanceOf[D])
     } catch {
