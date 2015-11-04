@@ -1,0 +1,6 @@
+#!/bin/bash
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd $DIR/../wolfe-core/src/main/lua/
+echo Running Torch Server ...
+th torch_server.lua

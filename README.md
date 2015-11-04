@@ -40,9 +40,9 @@ Compilers
 ```
 luarocks install dkjson
 ```
-- Before compilation, run the Torch server
+- Run the Torch server
 ```
-th wolfe-core/src/main/lua/torch_server.lua
+bin/wolfe-torch 
 ```
 
 ## ND4S
