@@ -71,6 +71,7 @@ object BuildSettings {
       initialCommands := """
         import ml.wolfe._
         import Language._
+        import ml.wolfe.term._
                          """
     ) ++ net.virtualvoid.sbt.graph.Plugin.graphSettings
 

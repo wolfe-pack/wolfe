@@ -111,7 +111,7 @@ case class Constant[+T](value: T) extends Term[T]
  * @param name the name of the variable.
  * @tparam T the type of values the variable can be bound to.
  */
-class Var[+T](val name: String) extends Term[T] {
+class Var[+T](val name: String) extends Term[T] with Accessor {
   override def toString = name
 }
 
@@ -121,7 +121,7 @@ class Var[+T](val name: String) extends Term[T] {
  * @param i the term that represents the integer index.
  * @tparam E the type of elements in the sequence.
  */
-case class SeqApply[+E](s: Term[Seq[E]], i: Term[Int]) extends Term[E] with ComposedProduct
+case class SeqApply[+E](s: Term[Seq[E]], i: Term[Int]) extends Term[E] with ComposedProduct with Accessor
 
 /**
  * A term that represents the original sequence with an element appended to its end.
@@ -198,12 +198,17 @@ case class SeqLength[+E](s: Term[Seq[E]]) extends Term[Int] with ComposedProduct
 case class SeqConstructor[+E](args: Seq[Term[E]]) extends Term[Seq[E]]
 
 /**
+ * An accessor is a term that accesses a sub-part of a composed object.
+ */
+sealed trait Accessor extends Term[Any]
+
+/**
  * A term that represents the element-th element of a product value.
  * @param product the product of which we want to return an element.
  * @param element the index of the element to return.
  * @tparam T the type of the element to return.
  */
-case class GetElement[+T](product: Term[Product], element: Int) extends Term[T] with Composed {
+case class GetElement[+T](product: Term[Product], element: Int) extends Term[T] with Composed with Accessor {
   def parts = Seq(product)
 
   def clone(args: Seq[Term[Any]]) = GetElement(args(0).asInstanceOf[Term[Product]], element)
