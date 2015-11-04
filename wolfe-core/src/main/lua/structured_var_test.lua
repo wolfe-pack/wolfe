@@ -10,7 +10,7 @@ require "wolfe"
 
 -- dofile("struct_var.lua")
 
-v = wolfe.StructVar({torch.LongStorage({1,1}), torch.LongStorage({2,2})})()
+v = wolfe.StructParam({torch.LongStorage({1,1}), torch.LongStorage({2,2})})()
 sig = nn.Sigmoid()(nn.SelectTable(2)(v))
 g = nn.gModule({v},{sig})
 

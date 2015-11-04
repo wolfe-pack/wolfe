@@ -152,7 +152,7 @@ object TorchCompiler extends DelayedCompiler {
           case None =>
             val name = generator.newName("param")
             val tableSig = tableSignature(context.domains(v))
-            LuaCompilationResult(name, s"$name = wolfe.StructVar($tableSig)()", paramNodes = Map(v -> name))
+            LuaCompilationResult(name, s"$name = wolfe.StructParam($tableSig)()", paramNodes = Map(v -> name))
         }
 
       case v: Var[_] if context.inputBindings.contains(v) =>

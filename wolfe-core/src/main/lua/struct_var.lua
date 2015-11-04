@@ -8,9 +8,9 @@
 require "nn"
 require "nngraph"
 
-local StructVar, parent = torch.class('wolfe.StructVar', 'nn.Module')
+local StructParam, parent = torch.class('wolfe.StructParam', 'nn.Module')
 
-function StructVar:__init(dims)
+function StructParam:__init(dims)
     parent.__init(self)
 
     self.weight = createNestedTable(dims)
@@ -55,11 +55,11 @@ function resetNestedTable(data, stdv)
     end
 end
 
-function StructVar:reset(stdv)
+function StructParam:reset(stdv)
     resetNestedTable(self.weight, stdv)
 end
 
-function StructVar:updateOutput(input)
+function StructParam:updateOutput(input)
     self.output = self.weight
     --    if input:dim() == 1 then
     --        self.output:resize(self.weight:size(2))
@@ -83,7 +83,7 @@ function StructVar:updateOutput(input)
     return self.output
 end
 
-function StructVar:updateGradInput(input, gradOutput)
+function StructParam:updateGradInput(input, gradOutput)
     if self.gradInput then
 
         --        local nElement = self.gradInput:nElement()
@@ -113,7 +113,8 @@ function addNestedTable(target, scale, toAdd)
     end
 end
 
-function StructVar:accGradParameters(input, gradOutput, scale)
+function StructParam:accGradParameters(input, gradOutput, scale)
+    --print("accGradParameters")
     scale = scale or 1
     --    if input:dim() == 1 then
     --        self.gradWeight:addr(scale, gradOutput, input)
@@ -130,10 +131,10 @@ function StructVar:accGradParameters(input, gradOutput, scale)
 end
 
 -- we do not need to accumulate parameters when sharing
-StructVar.sharedAccUpdateGradParameters = StructVar.accUpdateGradParameters
+StructParam.sharedAccUpdateGradParameters = StructParam.accUpdateGradParameters
 
 
-function StructVar:__tostring__()
+function StructParam:__tostring__()
     return torch.type(self) ..
             "TODO"
 end
