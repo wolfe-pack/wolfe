@@ -13,6 +13,7 @@ require "wolfe"
 v = wolfe.StructVar({torch.LongStorage({1,1}), torch.LongStorage({2,2})})()
 sig = nn.Sigmoid()(nn.SelectTable(2)(v))
 g = nn.gModule({v},{sig})
+
 ret = g:forward({})
 print(ret)
 ret = g:backward({}, torch.ones(2,2))
