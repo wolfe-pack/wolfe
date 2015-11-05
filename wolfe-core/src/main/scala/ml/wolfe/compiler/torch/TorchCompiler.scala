@@ -56,25 +56,8 @@ object TorchCompiler extends DelayedCompiler {
   }
 
 
-  def preCompile[T](term: Term[T], context: CompilationContext): Term[T] Or Every[CompilationError] = {
-
-    def c[A](term: Term[A]) = preCompile(term, context)
-
-    import context._
-
-    term match {
-      //      case ComponentPlus(TensorMul(SelectorPattern(weight), arg), SelectorPattern(bias)) =>
-      //        context.domains(weight.term) match {
-      //          case TensorDom(List(d1, d2)) => for (t <- c(arg)) yield nn.Linear(weight, bias, t, d1, d2)
-      //          case TensorDom(List(d1)) => for (t <- c(arg)) yield nn.Linear(weight, bias, t, d1, 1)
-      //          case _ => Good(term)
-      //        }
-      //
-      //      case cp: ComposedProduct =>
-      //        for (args <- (cp.parts map c).combined) yield cp.clone(args)
-
-      case _ => Good(term)
-    }
+  def preCompile[T](term: Term[T], context: CompilationContext): Term[T] = {
+    term
   }
 
   case class LuaVariableAndDef(variable: String, definition: String)
@@ -182,7 +165,7 @@ object TorchCompiler extends DelayedCompiler {
 
     for (domains <- Typer.domains(variableDomains)(term);
          context = CompilationContext(paramBindings, inputBindings, domains);
-         precompiled <- preCompile(term, context)) yield {
+         precompiled = preCompile(term, context)) yield {
 
       println(precompiled)
       val nameGenerator = new NameGenerator
