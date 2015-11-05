@@ -21,53 +21,47 @@ trait CompilerBehaviors extends {
 
       val module = newCompiler.compile(term)
       module.init(W := ones(2,2))
-      module.forward(x := Seq(1.0, 2.0).asNDArray(2).t)
+      module.forward(x := vec(1.0, 2.0).t)
 
-      module.output() should equal (sigmoid(Seq(3.0, 3.0).asNDArray(2)))
+      module.output() should equal (sigmoid(vec(3.0, 3.0)))
     }
   }
 
   def supportForwardActivationWithComposedValues(newCompiler: => Compiler): Unit = {
-
     //todo: build better spec structure to avoid repetition in spec text
-    "support forward evaluation of matrix vector multiplication with composed values" ignore {
-      /*
+    "support forward evaluation of matrix vector multiplication with composed values" in {
       @termdef case class Params(W: Tensor, b: Tensor)
       @termdef case class Input(x: Tensor)
       val params = Var[Params]
       val input = Var[Input]
-      val term = sigmoid(params.W * input.x + params.b)
+      val term = sigm(params.W * input.x + params.b)
 
       val module = newCompiler.compile(term)
-      module.init(params := Params(DenseMatrix.ones(2, 2), DenseMatrix(1.0, 1.0)))
-      module.forward(input := Input(DenseMatrix(1.0, 2.0)))
+      module.init(params := Params(ones(2, 2), vec(1.0, 1.0).t))
+      module.forward(input := Input(vec(1.0, 2.0).t))
 
-      val expected = breeze.numerics.sigmoid(DenseMatrix(3.0, 3.0) + DenseMatrix(1.0, 1.0))
+      val expected = sigmoid(vec(3.0, 3.0) + vec(1.0, 1.0))
       module.output() should equal(expected)
-      */
     }
-
   }
-  def supportBackwardPass(newCompiler: => Compiler): Unit = {
 
-    "support backward evaluation of matrix vector multiplication" ignore {
-      /*
+  def supportBackwardPass(newCompiler: => Compiler): Unit = {
+    "support backward evaluation of matrix vector multiplication" in {
       val W = Var[Tensor]
       val x = Var[Tensor]
-      val term = sigmoid(W * x)
+      val term = sigm(W * x)
 
       val module = newCompiler.compile(term)
-      module.init(W := DenseMatrix.ones(2, 2))
-      module.forward(x := DenseMatrix(1.0, 2.0))
-      module.backward(DenseMatrix(1.0, 1.0))
+      module.init(W := ones(2, 2))
+      module.forward(x := vec(1.0, 2.0).t)
+      module.backward(vec(1.0, 1.0))
 
-      val y_pre = DenseMatrix.ones[Double](2,2) * DenseMatrix(1.0, 2.0)
-      val y = breeze.numerics.sigmoid(y_pre)
-      val gradY = ((y :* (-1.0)) + 1.0) :* y
+      val y_pre = ones(2,2) * vec(1.0, 2.0).t
+      val y = sigmoid(y_pre)
+      val gradY = (-y + 1.0) :* y
 
-      val expected = DenseMatrix(1.0, 2.0) * gradY.t
+      val expected = vec(1.0, 2.0) * gradY.t
       module.gradient(W) should equal (expected)
-      */
     }
 
   }

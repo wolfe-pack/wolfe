@@ -35,11 +35,5 @@ object PimpMyND4S {
     }
 
     def toArray: Array[Double] = ???
-
-    def mul[B](that: INDArray)(implicit ev: NDArrayEvidence[A, B]): B = {
-      require(self.isMatrix)
-      require(that.isVector)
-      (that ** self).asInstanceOf[B]
-    }
   }
 }

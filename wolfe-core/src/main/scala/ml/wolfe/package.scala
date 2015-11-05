@@ -11,4 +11,7 @@ package object wolfe {
 
   def ones(dims: Int*) = Array.fill(dims.product)(1.0).asNDArray(dims: _*)
   def zeros(dims: Int*) = Array.fill(dims.product)(0.0).asNDArray(dims: _*)
+  
+  def vec(v: Double*) = v.asNDArray(v.length)
+  def mat(v: Double*)(dims: Int*) = v.asNDArray(dims: _*)
 }
