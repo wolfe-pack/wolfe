@@ -8,6 +8,18 @@
 
 require "wolfe"
 
+v = wolfe.ParamAccess({torch.LongStorage({2,2}), torch.LongStorage({2,2})},{"?"})()
+sig = nn.Sigmoid()(v)
+g = nn.gModule({v},{sig})
+
+ret = g:forward({2})
+print(ret)
+
+ret = g:backward({}, torch.ones(2,2))
+print(ret)
+
+
+
 -- dofile("struct_var.lua")
 
 v = wolfe.StructParam({torch.LongStorage({1,1}), torch.LongStorage({2,2})})()

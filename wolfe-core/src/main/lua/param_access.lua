@@ -19,7 +19,25 @@ function ParamAccess:__init(dims,path)
     self.weight = createNestedTable(dims)
     self.gradWeight = createNestedTable(dims)
 
+    self.templatePath = path
+    self.inputIndices = {}
+    self.constantIndices = {}
+    self.currentPath = {}
+    for k,v in pairs(path) do
+        if v == "?" then
+            table.insert(self.inputIndices,k)
+        else
+            table.insert(self.constantIndices,k)
+            self.currentPath[k] = v
+        end
+    end
+
+    print("---")
+    print(path)
+    print(self.currentPath)
+    print(self.inputIndices)
     self:reset()
+
 end
 
 
@@ -62,26 +80,31 @@ function ParamAccess:reset(stdv)
     resetNestedTable(self.weight, stdv)
 end
 
+function getValue(parent, path, index)
+    if (path[index] == nil) then
+        return parent
+    else
+        return getValue(parent[path[index]], path, index + 1)
+    end
+end
+
+function ParamAccess:updatePath(input)
+    print(self.inputIndices)
+
+    for k,v in pairs(self.inputIndices) do
+        self.currentPath[v] = input[k]
+    end
+end
+
 function ParamAccess:updateOutput(input)
-    self.output = self.weight
-    --    if input:dim() == 1 then
-    --        self.output:resize(self.weight:size(2))
-    --        self.output:addmv(1, self.weight, input)
-    --    elseif input:dim() == 2 then
-    --        local nframe = input:size(1)
-    --        local nElement = self.output:nElement()
-    --        self.output:resize(nframe, self.bias:size(1))
-    --        if self.output:nElement() ~= nElement then
-    --            self.output:zero()
-    --        end
-    --        self.addBuffer = self.addBuffer or input.new()
-    --        if self.addBuffer:nElement() ~= nframe then
-    --            self.addBuffer:resize(nframe):fill(1)
-    --        end
-    --        self.output:addmm(0, self.output, 1, input, self.weight:t())
-    --    else
-    --        error('input must be vector or matrix')
-    --    end
+
+    self:updatePath(input)
+
+    print(input)
+    print(self.weight)
+    print(self.currentPath)
+    print(self.inputIndices)
+    self.output = getValue(self.weight, self.currentPath, 1)
 
     return self.output
 end
@@ -89,18 +112,15 @@ end
 function ParamAccess:updateGradInput(input, gradOutput)
     if self.gradInput then
 
-        --        local nElement = self.gradInput:nElement()
-        --        self.gradInput:resizeAs(input)
-        --        if self.gradInput:nElement() ~= nElement then
-        --            self.gradInput:zero()
-        --        end
-        --        if input:dim() == 1 then
-        --            self.gradInput:addmv(0, 1, self.weight:t(), gradOutput)
-        --        elseif input:dim() == 2 then
-        --            self.gradInput:addmm(0, 1, gradOutput, self.weight)
-        --        end
+        if #self.inputIndices > 0 then
+            self.gradInput = {}
+            for k,_ in pairs(self.inputIndices) do
+                self.gradInput[k] = torch.Tensor()
+            end
+        else
+            self.gradInput = torch.Tensor()
+        end
 
-        self.gradInput = torch.Tensor()
         return self.gradInput
     end
 end
@@ -119,18 +139,14 @@ end
 function ParamAccess:accGradParameters(input, gradOutput, scale)
     --print("accGradParameters")
     scale = scale or 1
-    --    if input:dim() == 1 then
-    --        self.gradWeight:addr(scale, gradOutput, input)
-    --- -        self.gradBias:add(scale, gradOutput)
-    -- elseif input:dim() == 2 then
 
-    addNestedTable(self.gradWeight, scale, gradOutput)
+    -- need to add grad output to the sub table corresponding to the path
+    self:updatePath(input)
 
---    self.gradWeight:add(scale, gradOutput)
-    --self.gradWeight = gradOutput
-    --self.gradWeight:addmm(scale, gradOutput:t(), input)
-    --        self.gradBias:addmv(scale, gradOutput:t(), self.addBuffer)
-    --    end
+    local subGradWeights = getValue(self.gradWeight, self.currentPath, 1)
+
+    addNestedTable(subGradWeights, scale, gradOutput)
+
 end
 
 -- we do not need to accumulate parameters when sharing
