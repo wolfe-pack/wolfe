@@ -1,12 +1,12 @@
 package ml.wolfe.term
 
-import breeze.linalg.DenseMatrix
 import ml.wolfe.{Tensor, Language}
 import ml.wolfe.term._
 
 import scala.annotation.StaticAnnotation
 import scala.language.experimental.macros
 import scala.reflect.macros.whitebox
+import org.nd4s.Implicits._
 
 /**
  * @author riedel
@@ -59,12 +59,12 @@ object CaseClassTerm {
     println(eval(i := 1, d := 2.0)(c.value))
 
     class Params(k:Int) {
-      val W = DenseMatrix.ones[Double](k,k)
+      val W = Seq.fill(1)(k*k).asNDArray(k,k)
     }
 
     case class ParamsCaseClass(W:Tensor) {
       def this(k:Int) {
-        this(DenseMatrix.ones[Double](k,k))
+        this(Seq.fill(1)(k*k).asNDArray(k,k))
       }
     }
 

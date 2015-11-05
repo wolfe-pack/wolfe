@@ -11,6 +11,7 @@ class ND4SCompilerSpecs extends WolfeSpec with CompilerBehaviors {
   "An ND4SCompiler" should {
     supportForwardActivation(ND4SCompiler)
     supportForwardActivationWithComposedValues(ND4SCompiler)
+    supportBackwardPass(ND4SCompiler)
   }
 
 }

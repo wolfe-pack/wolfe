@@ -1,14 +1,17 @@
 package ml.wolfe.compiler.nd4s
 
-import breeze.linalg.DenseMatrix
-import breeze.numerics.sigmoid
 import ml.wolfe.Tensor
 import ml.wolfe.compiler.{DelayedCompiler, Module}
 import ml.wolfe.term._
+import org.nd4j.linalg.api.ndarray.INDArray
 import org.scalactic._
 
 import scala.collection.mutable
 import scala.language.implicitConversions
+
+import PimpMyND4S._
+import org.nd4s.Implicits._
+import org.nd4j.linalg.ops.transforms.Transforms._
 
 /**
  * @author rockt
@@ -148,12 +151,11 @@ object Table {
       val table = new Table(values.length)
       for (i <- values.indices) table.children(i) = values(i)
       table
-    case t: DenseMatrix[_] =>
+    case t: INDArray =>
       val result = new Table()
       result.tensor = t.asInstanceOf[Tensor]
       result
-    case _ => sys.error(s"We can't convert $value to table")
-
+    case _ => sys.error(s"We can't convert $value of class ${value.getClass} to table")
   }
 
 }
@@ -216,8 +218,7 @@ class SigmoidBox(input: Box, val dom: TensorDom) extends Box {
 
   def backward(gradOutput: Table) = {
     val y = sigmoid(input.output.tensor)
-    val oneMinusY = y :* (-1) + 1.0
-    gradInputs.tensor = (y :* oneMinusY) :* gradOutput.tensor
+    gradInputs.tensor = (y :* (-y + 1)) :* gradOutput.tensor
   }
 }
 
@@ -228,12 +229,12 @@ class TensorProductBox(arg1: Box, arg2: Box, val dom: TensorDom) extends Box {
   def forward() = {
     arg1.forward()
     arg2.forward()
-    output.tensor = arg1.output.tensor * arg2.output.tensor
+    output.tensor = arg1.output.tensor ** arg2.output.tensor
   }
 
   def backward(gradOutput: Table) = {
-    gradInputs.children(0).tensor = gradOutput.tensor * arg2.output.tensor.t
-    gradInputs.children(1).tensor = arg1.output.tensor * gradOutput.tensor.t
+    gradInputs.children(0).tensor = gradOutput.tensor outer arg2.output.tensor
+    gradInputs.children(1).tensor = arg1.output.tensor outer gradOutput.tensor
   }
 }
 

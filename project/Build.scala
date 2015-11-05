@@ -47,12 +47,7 @@ object BuildSettings {
     "org.nd4j" % "nd4j-jblas" % "0.4-rc3.5",
     "org.jblas" % "jblas" % "1.2.4",
     "org.nd4j" % "jcublas" % "6.5",
-    "org.zeromq" % "jeromq" % "0.3.5",
-    "org.scalanlp" %% "breeze" % "0.11.2"
-//    "org.scalanlp" %% "breeze-natives" % "0.11.2",
-//    "org.scalanlp" %% "breeze-viz" % "0.11.2"
-
-    //"org.scalanlp" %% "breeze-natives" % "0.8.1",
+    "org.zeromq" % "jeromq" % "0.3.5"
   )
 
   val publishSettings = Seq(

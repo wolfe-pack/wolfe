@@ -109,7 +109,7 @@ trait LinAlg {
   }
 
   def tanh(x: Term[Tensor]) = Tanh(x)
-  def sigmoid(x: Term[Tensor]) = Sigmoid(x)
+  def sigm(x: Term[Tensor]) = Sigmoid(x)
   def concat(args:Term[Tensor]*) = Concat(args.toSeq)
   def max(args:Term[Tensor]*) = Max(args.toSeq)
 

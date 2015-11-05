@@ -2,12 +2,16 @@ package ml.wolfe.compiler.torch
 
 import java.util.concurrent.TimeoutException
 
-import breeze.linalg.DenseMatrix
 import com.typesafe.scalalogging.LazyLogging
+import ml.wolfe.Tensor
+import org.nd4j.linalg.api.ndarray.INDArray
 import org.zeromq.ZMQ
 
 import scala.concurrent.{ExecutionContext, Await, Future}
 import scala.language.dynamics
+import ml.wolfe.compiler.nd4s.PimpMyND4S._
+import org.nd4s.Implicits._
+
 
 /**
  * @author riedel
@@ -76,7 +80,7 @@ class TorchZeroMQClient(port: Int = 7000) extends LazyLogging {
       case i: Int => JInt(i)
       case d: Double => JDouble(d)
       case s: String => JString(s)
-      case t: DenseMatrix[_] =>
+      case t: Tensor =>
         val dims = List(t.rows, t.cols) //if (t.cols == 1) List(t.rows) else List(t.rows, t.cols) //todo: currently pretending n x 1 matrices are vectors
         ("_datatype" -> "tensor") ~
           ("dims" -> dims) ~
@@ -100,9 +104,9 @@ class TorchZeroMQClient(port: Int = 7000) extends LazyLogging {
         val storage = (obj \ "storage").extract[List[Double]]
         dims match {
           case List(rows, cols) =>
-            new DenseMatrix[Double](rows, cols, storage.toArray)
+            storage.asNDArray(rows, cols)
           case List(rows) =>
-            new DenseMatrix[Double](rows, 1, storage.toArray)
+            storage.asNDArray(rows, 1)
         }
       case JArray(args) =>
         args.map(fromJson)
