@@ -34,10 +34,11 @@ object BuildSettings {
     "org.slf4j" % "slf4j-simple" % "1.7.10",
     "org.apache.commons" % "commons-compress" % "1.8",
     "com.typesafe.scala-logging" %% "scala-logging" % "3.1.0",
-    "org.json4s" %% "json4s-jackson" % "3.2.11",
+    "org.json4s" %% "json4s-jackson" % "3.2.11"
+//    "com.lihaoyi" % "ammonite-repl" % "0.4.8" % "test" cross CrossVersion.full
 //    "org.scala-lang.modules" %% "scala-pickling" % "0.10.0",
-    "com.nativelibs4java" %% "scalaxy-loops" % "0.3.3" % "provided",
-    "com.nativelibs4java" %% "scalaxy-streams" % "0.3.4" % "provided"
+//    "com.nativelibs4java" %% "scalaxy-loops" % "0.3.3" % "provided",
+//    "com.nativelibs4java" %% "scalaxy-streams" % "0.3.4" % "provided"
   )
 
   val coreDependencies = libraryDependencies ++= Seq(
@@ -68,6 +69,7 @@ object BuildSettings {
   val generalSettings =
     Seq(
       //incOptions := incOptions.value.withNameHashing(false),
+//      initialCommands in (Test, console) := """ammonite.repl.Repl.run("")""",
       initialCommands := """
         import ml.wolfe._
         import Language._
