@@ -11,13 +11,13 @@ require "nngraph"
 local ParamAccess, parent = torch.class('wolfe.ParamAccess', 'nn.Module')
 
 -- path is an array that indicates which elements of the path are fixed and which are input
--- if a path element is nil, its value depends on the input, otherwise its fixed to be the given integer.
--- e.g.: {1, nil, 4, nil} will represent the path {1, input[1], 4, input[2]}
+-- if a path element is "?", its value depends on the input, otherwise its fixed to be the given integer.
+-- e.g.: {1, "?", 4, "?"} will represent the path {1, input[1], 4, input[2]}
 function ParamAccess:__init(dims,path)
     parent.__init(self)
 
+    self.dims = dims
     self.weight = createNestedTable(dims)
-    self.gradWeight = createNestedTable(dims)
 
     self.templatePath = path
     self.inputIndices = {}
@@ -80,6 +80,20 @@ function ParamAccess:reset(stdv)
     resetNestedTable(self.weight, stdv)
 end
 
+function tieNestedTable(owner, sharer)
+    if torch.type(owner) == "torch.DoubleTensor" then
+        sharer:set(owner)
+    else
+        for k, v in pairs(owner) do
+            tieNestedTable(v, sharer[k])
+        end
+    end
+end
+
+function ParamAccess:shareWeight(other)
+    tieNestedTable(self.weight, other.weight)
+end
+
 function getValue(parent, path, index)
     if (path[index] == nil) then
         return parent
@@ -136,6 +150,20 @@ function addNestedTable(target, scale, toAdd)
     end
 end
 
+function ParamAccess:parameters()
+    --todo: this is problematic because the gradient is a sub-tree but the parameter isn't
+    return {table.flatten(self.weight), table.flatten(self.gradWeight)}
+end
+
+function ParamAccess:zeroGradParameters()
+    self.gradWeight:zero()
+end
+
+function ParamAccess:updateParameters(learningRate)
+    local current = getValue(self.weight, self.currentPath, 1)
+    addNestedTable(current,-learningRate,self.gradWeight)
+end
+
 function ParamAccess:accGradParameters(input, gradOutput, scale)
     --print("accGradParameters")
     scale = scale or 1
@@ -143,10 +171,14 @@ function ParamAccess:accGradParameters(input, gradOutput, scale)
     -- need to add grad output to the sub table corresponding to the path
     self:updatePath(input)
 
-    local subGradWeights = getValue(self.gradWeight, self.currentPath, 1)
+    if self.gradWeight == nil then
+        local subdims = getValue(self.dims, self.currentPath, 1)
+        self.gradWeight = createNestedTable(subdims)
+    end
 
-    addNestedTable(subGradWeights, scale, gradOutput)
+    addNestedTable(self.gradWeight, scale, gradOutput)
 
+    --todo: when/how are gradients reset?
 end
 
 -- we do not need to accumulate parameters when sharing

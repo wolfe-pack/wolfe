@@ -15,9 +15,9 @@ import scala.collection.mutable
 
 
 /**
- * Make sure to run 'th src/lua/torch_server.lua' while running the compiled module.
- * @author riedel
- */
+  * Make sure to run 'th src/lua/torch_server.lua' while running the compiled module.
+  * @author riedel
+  */
 object TorchCompiler extends DelayedCompiler {
 
   sealed trait TorchTerm[+T] extends Term[T]
@@ -94,8 +94,11 @@ object TorchCompiler extends DelayedCompiler {
     val result2 = compileToLua(arg2)(context.copy(previous = result1), generator)
     val variable = generator.newName(namePrefix)
     val definition = result1.definition + "\n" + result2.definition + "\n" + s"$variable = ${luaExpr(result1.varName, result2.varName)}"
-    LuaCompilationResult(variable, definition, result1.inputNodes ++ result2.inputNodes,
-      result1.paramNodes ++ result2.paramNodes, result1.linearUnits ++ result2.linearUnits)
+    LuaCompilationResult(variable, definition,
+      result1.inputNodes ++ result2.inputNodes,
+      result1.paramNodes ++ result2.paramNodes,
+      result1.paramAccessors ++ result2.paramAccessors,
+      result1.linearUnits ++ result2.linearUnits)
   }
 
 
@@ -107,6 +110,7 @@ object TorchCompiler extends DelayedCompiler {
   case class LuaCompilationResult(varName: String, definition: String,
                                   inputNodes: Map[Var[Any], String] = Map.empty,
                                   paramNodes: Map[Var[Any], String] = Map.empty,
+                                  paramAccessors: Map[VarAccess[Any], String] = Map.empty,
                                   linearUnits: List[(nn.Linear, String)] = Nil)
 
 
@@ -128,6 +132,15 @@ object TorchCompiler extends DelayedCompiler {
 
       case ComponentPlus(arg1, arg2) =>
         stackTwoNodes(arg1, arg2, "plus", { case (a1, a2) => s"nn.CAddTable()({$a1, $a2})" })
+
+      case va@VarAccess(v, path) =>
+        val name = generator.newName("paramAccess")
+        val tableSig = tableSignature(context.domains(v))
+        val pathSpec = path.map {
+          case ge@GetElement(_, e) => e.toString
+          case _ => "?"
+        }.mkString("{", ",", "}")
+        LuaCompilationResult(name, s"$name = wolfe.ParamAccess($tableSig,$pathSpec)()", paramAccessors = Map(va -> name))
 
       case v: Var[_] if context.paramBindings.contains(v) =>
         context.previous.paramNodes.get(v) match {
@@ -173,7 +186,11 @@ object TorchCompiler extends DelayedCompiler {
 
       val parameterMapping = (for (param <- paramBindings) yield {
         val nodeName = compilationResult.paramNodes(param.variable)
+        val accessors = compilationResult.paramAccessors.filterKeys(_.variable == param.variable).values.toSeq
+        val headNodeName = accessors.head
         val initName = "init_" + param.variable.name
+        //todo: need ParamAccess.shareWeight function that ties the nested tensors (but only parameter, not gradient)
+        val sharing = for (other <- accessors.tail) yield s"$headNodeName:shareWeight($other, 'weight')"
         val initDef =
           s"""
              |function $initName(${param.variable.name})
