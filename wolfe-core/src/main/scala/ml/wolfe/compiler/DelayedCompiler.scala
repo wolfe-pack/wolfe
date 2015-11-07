@@ -69,6 +69,10 @@ trait DelayedCompiler extends Compiler with LazyLogging  {
       def backward(output: T) = {
         compiled.backward(output)
       }
+
+      def updateParameters(learningRate: Double) = {
+        compiled.updateParameters(learningRate)
+      }
     }
 
   }

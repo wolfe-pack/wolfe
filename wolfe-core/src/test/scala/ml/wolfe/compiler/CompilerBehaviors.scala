@@ -6,8 +6,8 @@ import ml.wolfe._
 import ml.wolfe.term.{WolfeSpec, termdef}
 
 /**
- * @author riedel
- */
+  * @author riedel
+  */
 trait CompilerBehaviors extends {
   this: WolfeSpec =>
 
@@ -21,7 +21,7 @@ trait CompilerBehaviors extends {
       module.init(W := DenseMatrix.ones(2, 2))
       module.forward(x := DenseMatrix(1.0, 2.0))
 
-      module.output() should equal (breeze.numerics.sigmoid(DenseMatrix(3.0, 3.0)))
+      module.output() should equal(breeze.numerics.sigmoid(DenseMatrix(3.0, 3.0)))
     }
   }
 
@@ -44,6 +44,7 @@ trait CompilerBehaviors extends {
     }
 
   }
+
   def supportBackwardPass(newCompiler: => Compiler): Unit = {
 
     "support backward evaluation of matrix vector multiplication" in {
@@ -56,19 +57,19 @@ trait CompilerBehaviors extends {
       module.forward(x := DenseMatrix(1.0, 2.0))
       module.backward(DenseMatrix(1.0, 1.0))
 
-      val y_pre = DenseMatrix.ones[Double](2,2) * DenseMatrix(1.0, 2.0)
+      val y_pre = DenseMatrix.ones[Double](2, 2) * DenseMatrix(1.0, 2.0)
       val y = breeze.numerics.sigmoid(y_pre)
       val gradY = ((y :* (-1.0)) + 1.0) :* y
 
       val expected = DenseMatrix(1.0, 2.0) * gradY.t
-      module.gradient(W) should equal (expected)
+      module.gradient(W) should equal(expected)
     }
   }
 
   def supportMatrixFactorization(newCompiler: => Compiler) = {
     import breeze.{numerics => num}
 
-    @termdef case class Theta(cols:Seq[Tensor], rows:Seq[Tensor])
+    @termdef case class Theta(cols: Seq[Tensor], rows: Seq[Tensor])
 
     val theta = Var[Theta]
     val row = Var[Int]
@@ -77,32 +78,48 @@ trait CompilerBehaviors extends {
     val score = theta.rows(row) * theta.cols(col)
     val loss = log(sigmoid(score * target))
 
-    def init = DenseMatrix.ones[Double](2,1)
-    def scalar(value:Double) = DenseMatrix.fill(1,1)(value)
+    def init = DenseMatrix.ones[Double](2, 1)
+    def scalar(value: Double) = DenseMatrix.fill(1, 1)(value)
 
     "support the forward pass for a matrix factorization model" in {
 
       val module = newCompiler.compile(loss)
-      module.init(theta := Theta(Seq(init,init),Seq(init.t, init.t)))
+      module.init(theta := Theta(Seq(init, init), Seq(init.t, init.t)))
       module.forward(row := 0, col := 0, target := scalar(1))
 
       val expected = num.log(num.sigmoid(init.t * init))
-      module.output() should equal (expected)
+      module.output() should equal(expected)
     }
 
     "support the backward pass for a matrix factorization model" in {
 
       val module = newCompiler.compile(loss)
-      module.init(theta := Theta(Seq(init,init),Seq(init.t, init.t)))
-      module.forward(row := 0, col := 0, target := scalar(1.0))
+      module.init(theta := Theta(Seq(init, init), Seq(init.t, init.t)))
+      module.forward(row := 0, col := 1, target := scalar(1.0))
       module.backward(scalar(1.0))
 
-      val expected = DenseMatrix(1 - num.sigmoid(2),1 - num.sigmoid(2))
+      val expected = DenseMatrix(1 - num.sigmoid(2), 1 - num.sigmoid(2))
       val result = module.gradient(theta)
-      result.rows(0) should equal (expected)
-      result.cols(0) should equal (expected.t)
+      result.rows(0) should equal(expected)
+      result.cols(1) should equal(expected.t)
     }
 
+    "support parameter updates for a matrix factorization model" in {
+
+      val module = newCompiler.compile(loss)
+      module.init(theta := Theta(Seq(init, init), Seq(init.t, init.t)))
+      module.forward(row := 0, col := 1, target := scalar(1.0))
+      module.backward(scalar(1.0))
+      module.updateParameters(1.0)
+
+      val gradient = DenseMatrix((1 - num.sigmoid(2), 1 - num.sigmoid(2)))
+      val updated = init.t + gradient
+      val result = module.param(theta)
+      result.rows(0) should equal(updated)
+      result.rows(1) should equal(init.t)
+      result.cols(0) should equal(init)
+      result.cols(1) should equal(updated.t)
+    }
 
 
   }

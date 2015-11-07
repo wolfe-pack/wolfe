@@ -232,7 +232,7 @@ object TorchCompiler extends DelayedCompiler {
         val paramDef =
           s"""
              |function $paramName()
-             |  return $headNodeName.data.module.weight
+             |  return $headNodeName.weight
              |end
           """.stripMargin
 
@@ -284,6 +284,14 @@ object TorchCompiler extends DelayedCompiler {
            |end
         """.stripMargin
 
+      val updateCalls = compilationResult.paramAccessors.values.toSeq.sorted.map(
+        n => s"$n.data.module:updateParameters(-learningRate)")
+      val updateDef =
+        s"""
+           |function updateParameters(learningRate)
+           |  ${updateCalls.mkString("\n  ")}
+           |end
+         """.stripMargin
 
       val script =
         s"""
@@ -296,6 +304,7 @@ object TorchCompiler extends DelayedCompiler {
            |$forwardDef
            |$backwardDef
            |$outputDef
+           |$updateDef
         """.stripMargin
 
       val client = new TorchZeroMQClient()
@@ -342,6 +351,10 @@ object TorchCompiler extends DelayedCompiler {
 
         def backward(output: T) = {
           client.call("backward")(output)
+        }
+
+        def updateParameters(learningRate: Double) = {
+          client.call("updateParameters")(learningRate)
         }
       }
     }
