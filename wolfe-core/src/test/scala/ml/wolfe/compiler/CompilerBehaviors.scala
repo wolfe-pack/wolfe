@@ -97,8 +97,10 @@ trait CompilerBehaviors extends {
       module.forward(row := 0, col := 0, target := scalar(1.0))
       module.backward(scalar(1.0))
 
-      println(module.gradient(theta))
-
+      val expected = DenseMatrix(1 - num.sigmoid(2),1 - num.sigmoid(2))
+      val result = module.gradient(theta)
+      result.rows(0) should equal (expected)
+      result.cols(0) should equal (expected.t)
     }
 
 
