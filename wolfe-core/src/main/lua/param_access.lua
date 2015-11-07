@@ -13,33 +13,37 @@ local ParamAccess, parent = torch.class('wolfe.ParamAccess', 'nn.Module')
 -- path is an array that indicates which elements of the path are fixed and which are input
 -- if a path element is "?", its value depends on the input, otherwise its fixed to be the given integer.
 -- e.g.: {1, "?", 4, "?"} will represent the path {1, input[1], 4, input[2]}
-function ParamAccess:__init(dims,path)
+function ParamAccess:__init(path)
     parent.__init(self)
 
-    self.dims = dims
-    self.weight = createNestedTable(dims)
+    --self.dims = dims
+    --self.weight = weight
 
     self.templatePath = path
     self.inputIndices = {}
     self.constantIndices = {}
     self.currentPath = {}
-    for k,v in pairs(path) do
+    for k, v in pairs(path) do
         if v == "?" then
-            table.insert(self.inputIndices,k)
+            table.insert(self.inputIndices, k)
         else
-            table.insert(self.constantIndices,k)
+            table.insert(self.constantIndices, k)
             self.currentPath[k] = v
         end
     end
 
-    print("---")
-    print(path)
-    print(self.currentPath)
-    print(self.inputIndices)
-    self:reset()
-
+--    print("---")
+--    print(path)
+--    print(self.currentPath)
+--    print(self.inputIndices)
+    --self:reset()
+    --self:initWeights()
 end
 
+function ParamAccess:initWeight(dims)
+    self.dims = dims
+    self.weight = createNestedTable(self.dims)
+end
 
 function createNestedTable(dims)
     if torch.type(dims) == "torch.LongStorage" then
@@ -58,7 +62,7 @@ function resetNestedTable(data, stdv)
         if stdv then
             stdv = stdv * math.sqrt(3)
         else
-            stdv =  0.1 --1. / math.sqrt(data:size(2))
+            stdv = 0.1 --1. / math.sqrt(data:size(2))
         end
         if nn.oldSeed then
             for i = 1, data:size(1) do
@@ -91,7 +95,9 @@ function tieNestedTable(owner, sharer)
 end
 
 function ParamAccess:shareWeight(other)
-    tieNestedTable(self.weight, other.weight)
+    other.weight = self.weight
+    other.dims = self.dims
+    --tieNestedTable(self.weight, other.weight)
 end
 
 function getValue(parent, path, index)
@@ -103,21 +109,27 @@ function getValue(parent, path, index)
 end
 
 function ParamAccess:updatePath(input)
-    print(self.inputIndices)
+--    print("Update Path")
+--    print(self.inputIndices)
+--    print(self.currentPath)
+--
+--    print(input)
 
-    for k,v in pairs(self.inputIndices) do
+    for k, v in pairs(self.inputIndices) do
         self.currentPath[v] = input[k]
     end
 end
 
 function ParamAccess:updateOutput(input)
 
-    self:updatePath(input)
+--    print("---")
+--    print(input)
+--    print(self.weight)
 
-    print(input)
-    print(self.weight)
-    print(self.currentPath)
-    print(self.inputIndices)
+    self:updatePath(input)
+--    print(self.currentPath)
+--    print(self.inputIndices)
+
     self.output = getValue(self.weight, self.currentPath, 1)
 
     return self.output
@@ -128,7 +140,7 @@ function ParamAccess:updateGradInput(input, gradOutput)
 
         if #self.inputIndices > 0 then
             self.gradInput = {}
-            for k,_ in pairs(self.inputIndices) do
+            for k, _ in pairs(self.inputIndices) do
                 self.gradInput[k] = torch.Tensor()
             end
         else
@@ -140,9 +152,14 @@ function ParamAccess:updateGradInput(input, gradOutput)
 end
 
 
-function addNestedTable(target, scale, toAdd)
-    if torch.type(target) == "torch.DoubleTensor" then
-        target:add(scale,toAdd)
+local function addNestedTable(target, scale, toAdd)
+    if torch.type(toAdd) == "torch.DoubleTensor" then
+        if torch.type(target) == "torch.DoubleTensor" then
+            target:add(scale, toAdd)
+        else
+            target = toAdd:clone()
+            target:mul(scale)
+        end
     else
         for k, v in pairs(target) do
             addNestedTable(v, scale, toAdd[k])
@@ -150,9 +167,11 @@ function addNestedTable(target, scale, toAdd)
     end
 end
 
+
 function ParamAccess:parameters()
+    error("ParamAccess does not support the parameters() function")
     --todo: this is problematic because the gradient is a sub-tree but the parameter isn't
-    return {table.flatten(self.weight), table.flatten(self.gradWeight)}
+    return { table.flatten(self.weight), table.flatten(self.gradWeight) }
 end
 
 function ParamAccess:zeroGradParameters()
@@ -161,7 +180,7 @@ end
 
 function ParamAccess:updateParameters(learningRate)
     local current = getValue(self.weight, self.currentPath, 1)
-    addNestedTable(current,-learningRate,self.gradWeight)
+    addNestedTable(current, -learningRate, self.gradWeight)
 end
 
 function ParamAccess:accGradParameters(input, gradOutput, scale)
@@ -189,5 +208,33 @@ function ParamAccess:__tostring__()
     return torch.type(self) ..
             "TODO"
 end
+
+-- functions for aggregating gradients over param access modules
+local function getOrCreateValue(parent, path, index, dims)
+    if (path[index] == nil) then
+        return parent
+    else
+        if parent[path[index]] == nil then
+            if torch.type(dims[path[index]]) == "torch.LongStorage" then
+                parent[path[index]] = torch.Tensor(dims[path[index]])
+            else
+                parent[path[index]] = {}
+            end
+        end
+        return getValue(parent[path[index]], path, index + 1, dims[path[index]])
+    end
+end
+
+function wolfe.aggregateGradients(paramAccessors)
+    local result = {}
+    for i = 1, #paramAccessors do
+        local pa = paramAccessors[i]
+        --get or create path until pa.currentPath
+        local target = getOrCreateValue(result, pa.currentPath, 1, pa.dims)
+        addNestedTable(target, 1, pa.gradWeight)
+    end
+    return result
+end
+
 
 

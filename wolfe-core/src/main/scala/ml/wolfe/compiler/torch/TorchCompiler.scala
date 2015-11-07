@@ -187,12 +187,18 @@ object TorchCompiler extends DelayedCompiler {
       val parameterMapping = (for (param <- paramBindings) yield {
         val nodeName = compilationResult.paramNodes(param.variable)
         val accessors = compilationResult.paramAccessors.filterKeys(_.variable == param.variable).values.toSeq
-        val headNodeName = accessors.head
         val initName = "init_" + param.variable.name
-        //todo: need ParamAccess.shareWeight function that ties the nested tensors (but only parameter, not gradient)
-        val sharing = for (other <- accessors.tail) yield s"$headNodeName:shareWeight($other, 'weight')"
+//        val headNodeName = accessors.head
+//        val sharing = for (other <- accessors.tail) yield s"$headNodeName:shareWeight($other, 'weight')"
+//        val setupParams =
+//          s"""
+//             |$headNodeName:initWeights()
+//             |${sharing.mkString("\n")}
+//           """.stripMargin
+//        $setupParams
         val initDef =
           s"""
+             |
              |function $initName(${param.variable.name})
              |  $nodeName.data.module.weight = ${param.variable.name}
              |end
