@@ -12,7 +12,8 @@ local ParamAccess, parent = torch.class('wolfe.ParamAccess', 'nn.Module')
 
 -- path is an array that indicates which elements of the path are fixed and which are input
 -- if a path element is "?", its value depends on the input, otherwise its fixed to be the given integer.
--- e.g.: {1, "?", 4, "?"} will represent the path {1, input[1], 4, input[2]}
+-- we also use 0 offsets because this is consistent with scala
+-- e.g.: {0, "?", 3, "?"} will represent the path {1, input[1], 4, input[2]}
 function ParamAccess:__init(path)
     parent.__init(self)
 
@@ -28,7 +29,7 @@ function ParamAccess:__init(path)
             table.insert(self.inputIndices, k)
         else
             table.insert(self.constantIndices, k)
-            self.currentPath[k] = v
+            self.currentPath[k] = v + 1
         end
     end
 
@@ -114,9 +115,14 @@ function ParamAccess:updatePath(input)
 --    print(self.currentPath)
 --
 --    print(input)
-
+    local wrapped = {}
+    if type(input) ~= "table" then
+        wrapped[1] = input
+    else
+        wrapped = input
+    end
     for k, v in pairs(self.inputIndices) do
-        self.currentPath[v] = input[k]
+        self.currentPath[v] = wrapped[k] + 1
     end
 end
 

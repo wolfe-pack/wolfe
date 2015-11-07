@@ -81,10 +81,11 @@ class TorchZeroMQClient(port: Int = 7000) extends LazyLogging {
         ("_datatype" -> "tensor") ~
           ("dims" -> dims) ~
           ("storage" -> t.toArray.toList.asInstanceOf[List[Double]])
+      case s:Seq[_] =>
+        JArray(s.toList.map(toJson))
       case p: Product =>
         val args = p.productIterator.map(toJson).toList
         JArray(args)
-      case s:Seq[_] => JArray(s.toList.map(toJson))
       case _ => JString(value.toString)
     }
   }

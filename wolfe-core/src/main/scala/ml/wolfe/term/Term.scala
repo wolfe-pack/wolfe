@@ -267,6 +267,9 @@ case class Tanh(arg: Term[Tensor])
 case class Sigmoid(arg: Term[Tensor])
   extends UnaryOperation[Tensor, Tensor] with DomainPreserving
 
+case class Log(arg: Term[Tensor])
+  extends UnaryOperation[Tensor, Tensor] with DomainPreserving
+
 case class ComponentPlus(arg1: Term[Tensor], arg2: Term[Tensor])
   extends BinaryOperation[Tensor, Tensor, Tensor] with DomainPreserving with RequiresEqualArgumentDomains
 

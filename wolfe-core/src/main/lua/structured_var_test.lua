@@ -10,8 +10,8 @@ require "wolfe"
 
 -- matrix factorization
 
-local col = wolfe.ParamAccess({ 1, "?" })()
-local row = wolfe.ParamAccess({ 2, "?" })()
+local col = wolfe.ParamAccess({ 0, "?" })()
+local row = wolfe.ParamAccess({ 0, "?" })()
 local dot = nn.MM()({ col, row })
 local loss = nn.Log()(nn.Sigmoid()(dot))
 local mf = nn.gModule({ col, row }, { loss })
@@ -31,10 +31,10 @@ weight[1][1] = torch.ones(1, 2):mul(0.0001)
 for i = 1, 10 do
 
     print("Iteration " .. i)
-    local mfForward = mf:forward({ { 1 }, { 1 } })
+    local mfForward = mf:forward({ { 0 }, { 0 } })
     print(mfForward)
 
-    mf:backward({ { 1 }, { 1 } }, torch.ones(1))
+    mf:backward({ { 0 }, { 0 } }, torch.ones(1))
 
     print(row.data.module.gradWeight)
     print(col.data.module.gradWeight)

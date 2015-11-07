@@ -7,8 +7,8 @@ import org.scalactic.Accumulation._
 import org.scalactic._
 
 /**
- * @author riedel
- */
+  * @author riedel
+  */
 object Typer {
 
   import Language._
@@ -21,8 +21,12 @@ object Typer {
 
   def deriveDomainFromValue[T](value: T): Dom[T] = {
     val result = value match {
+      case i: Int => Ints
       case d: Double => Doubles
       case d: DenseMatrix[_] => TensorDom(List(d.rows, d.cols))
+      case s: Seq[_] =>
+        val argDom = deriveDomainFromValue(s.head)
+        SeqDom(argDom, s.length, s.length)
       case p: Product =>
         val argDoms = p.productIterator.toList.map(deriveDomainFromValue)
         val clazz = p.getClass
@@ -72,7 +76,7 @@ object Typer {
              dims <- if (dims1.last == dims2.head)
                Good(dims1.dropRight(1) ::: dims2.drop(1))
              else
-               Bad(One(TyperError(tm, dx1 ++ dx2, s"domains don't match: $dims1 * $dims2"))))
+               Bad(One(TyperError(tm, dx1 ++ dx2, s"domains don't match: $dims1 * $dims2 in $tm"))))
           yield (dx1 ++ dx2) + (tm in TensorDom(dims))
 
       case d: DomainPreserving =>

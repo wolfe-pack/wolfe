@@ -113,6 +113,7 @@ object TorchCompiler extends DelayedCompiler {
 
 
   def tableSignature(dom: Dom[Any]): String = dom match {
+    case SeqDom(elemDom, _, maxLength) => Range(0, maxLength).map(_ => tableSignature(elemDom)).mkString("{", ", ", "}")
     case TensorDom(dims) => s"torch.LongStorage({${dims.mkString(", ")}})"
     case ProductDom(doms, _) => doms.map(tableSignature).mkString("{", ", ", "}")
   }
@@ -134,6 +135,9 @@ object TorchCompiler extends DelayedCompiler {
       case Sigmoid(arg) =>
         stackOneNode(arg, "sigm", a => s"nn.Sigmoid()($a)")
 
+      case Log(arg) =>
+        stackOneNode(arg, "log", a => s"nn.Log()($a)")
+
       case GetElement(arg, element) =>
         stackOneNode(arg, "select", a => s"nn.SelectTable(${element + 1})($a)")
 
@@ -146,7 +150,7 @@ object TorchCompiler extends DelayedCompiler {
       case va@VarAccess(v, path) =>
         def tableString(args: Seq[String]) = if (args.isEmpty) "" else args.mkString("{", ",", "}")
         val pathSpec = path.reverse.drop(1).map {
-          case ge@GetElement(_, e) => (e + 1).toString
+          case ge@GetElement(_, e) => e.toString
           case _ => "\"?\""
         }.mkString("{", ", ", "}")
         //if there are dynamic elements in the path they should become inputs
@@ -206,7 +210,9 @@ object TorchCompiler extends DelayedCompiler {
           s"""
              |$setupParams
              |function $initName(${param.variable.name})
-             |  ${setAll.mkString("\n")}
+             |  print("Init:")
+             |  print(${param.variable.name})
+             |  ${setAll.mkString("\n  ")}
              |end
         """.stripMargin
 
