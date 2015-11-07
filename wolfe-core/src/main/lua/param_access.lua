@@ -84,7 +84,7 @@ function ParamAccess:reset(stdv)
     resetNestedTable(self.weight, stdv)
 end
 
-function tieNestedTable(owner, sharer)
+local function tieNestedTable(owner, sharer)
     if torch.type(owner) == "torch.DoubleTensor" then
         sharer:set(owner)
     else
@@ -131,6 +131,11 @@ function ParamAccess:updateOutput(input)
 --    print(self.inputIndices)
 
     self.output = getValue(self.weight, self.currentPath, 1)
+
+    print("Output:")
+    print(self.output)
+    print(self.weight)
+    print(self.currentPath)
 
     return self.output
 end
@@ -226,9 +231,19 @@ local function getOrCreateValue(parent, path, index, dims)
 end
 
 function wolfe.aggregateGradients(paramAccessors)
-    local result = {}
+    local result
     for i = 1, #paramAccessors do
         local pa = paramAccessors[i]
+        if result == nil then
+            if torch.type(pa.dims) == "torch.LongStorage" then
+                result = torch.Tensor(pa.dims):zero()
+            else
+                result = {}
+            end
+        end
+        print("Gradient")
+        print(pa.gradWeight)
+        print(result)
         --get or create path until pa.currentPath
         local target = getOrCreateValue(result, pa.currentPath, 1, pa.dims)
         addNestedTable(target, 1, pa.gradWeight)

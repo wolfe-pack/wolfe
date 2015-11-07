@@ -57,7 +57,8 @@ object TorchCompiler extends DelayedCompiler {
 
 
   def preCompile[T](term: Term[T], context: CompilationContext): Term[T] = {
-    term
+
+    Transformation.induceAccessors(term, context.paramBindings.contains)
   }
 
   case class LuaVariableAndDef(variable: String, definition: String)
@@ -80,30 +81,39 @@ object TorchCompiler extends DelayedCompiler {
     }
   }
 
-  def stackNodes(arg: Term[Any], namePrefix: String, luaExpr: String => String)
-                (implicit context: CompilationContext, generator: NameGenerator) = {
-    val result = compileToLua(arg)
-    val variable = generator.newName(namePrefix)
-    val definition = result.definition + "\n" + s"$variable = ${luaExpr(result.varName)}"
-    result.copy(variable, definition)
+  def stackOneNode(arg: Term[Any], namePrefix: String, luaExpr: String => String)
+                  (implicit context: CompilationContext, generator: NameGenerator) = {
+    stackNodes(Seq(arg), namePrefix, args => luaExpr(args(0)))
   }
 
   def stackTwoNodes(arg1: Term[Any], arg2: Term[Any], namePrefix: String, luaExpr: (String, String) => String)
                    (implicit context: CompilationContext, generator: NameGenerator) = {
-    val result1 = compileToLua(arg1)
-    val result2 = compileToLua(arg2)(context.copy(previous = result1), generator)
+    stackNodes(Seq(arg1, arg2), namePrefix, args => luaExpr(args(0), args(1)))
+  }
+
+  def stackNodes(args: Seq[Term[Any]], namePrefix: String, luaExpr: Seq[String] => String)
+                (implicit context: CompilationContext, generator: NameGenerator) = {
+    val contexts = args.scanLeft(context) {
+      case (lastContext, arg) => lastContext.copy(previous = compileToLua(arg)(lastContext, generator))
+    }
+    val results = contexts.tail.map(_.previous)
     val variable = generator.newName(namePrefix)
-    val definition = result1.definition + "\n" + result2.definition + "\n" + s"$variable = ${luaExpr(result1.varName, result2.varName)}"
+    val definition =
+      if (results.nonEmpty)
+        s"""|${results.map(_.definition).mkString("\n")}
+            |$variable = ${luaExpr(results.map(_.varName))}""".stripMargin
+      else s"$variable = ${luaExpr(results.map(_.varName))}"
+
     LuaCompilationResult(variable, definition,
-      result1.inputNodes ++ result2.inputNodes,
-      result1.paramNodes ++ result2.paramNodes,
-      result1.paramAccessors ++ result2.paramAccessors,
-      result1.linearUnits ++ result2.linearUnits)
+      results.map(_.inputNodes).foldLeft(Map.empty[Var[Any], String])(_ ++ _),
+      results.map(_.paramNodes).foldLeft(Map.empty[Var[Any], String])(_ ++ _),
+      results.map(_.paramAccessors).foldLeft(Map.empty[VarAccess[Any], String])(_ ++ _),
+      results.map(_.linearUnits).foldLeft(List.empty[(nn.Linear, String)])(_ ++ _))
   }
 
 
   def tableSignature(dom: Dom[Any]): String = dom match {
-    case TensorDom(dims) => s"torch.LongStorage({${dims.mkString(",")}})"
+    case TensorDom(dims) => s"torch.LongStorage({${dims.mkString(", ")}})"
     case ProductDom(doms, _) => doms.map(tableSignature).mkString("{", ", ", "}")
   }
 
@@ -122,10 +132,10 @@ object TorchCompiler extends DelayedCompiler {
       //        result.copy(linearUnits = (lin -> result.varName) :: result.linearUnits)
 
       case Sigmoid(arg) =>
-        stackNodes(arg, "sigm", a => s"nn.Sigmoid()($a)")
+        stackOneNode(arg, "sigm", a => s"nn.Sigmoid()($a)")
 
       case GetElement(arg, element) =>
-        stackNodes(arg, "select", a => s"nn.SelectTable(${element + 1})($a)")
+        stackOneNode(arg, "select", a => s"nn.SelectTable(${element + 1})($a)")
 
       case TensorMul(arg1, arg2) =>
         stackTwoNodes(arg1, arg2, "mm", { case (a1, a2) => s"nn.MM()({$a1, $a2})" })
@@ -134,22 +144,17 @@ object TorchCompiler extends DelayedCompiler {
         stackTwoNodes(arg1, arg2, "plus", { case (a1, a2) => s"nn.CAddTable()({$a1, $a2})" })
 
       case va@VarAccess(v, path) =>
-        val name = generator.newName("paramAccess")
-        val tableSig = tableSignature(context.domains(v))
-        val pathSpec = path.map {
-          case ge@GetElement(_, e) => e.toString
-          case _ => "?"
-        }.mkString("{", ",", "}")
-        LuaCompilationResult(name, s"$name = wolfe.ParamAccess($tableSig,$pathSpec)()", paramAccessors = Map(va -> name))
-
-      case v: Var[_] if context.paramBindings.contains(v) =>
-        context.previous.paramNodes.get(v) match {
-          case Some(varName) => context.previous.copy(varName = varName, definition = "")
-          case None =>
-            val name = generator.newName("param")
-            val tableSig = tableSignature(context.domains(v))
-            LuaCompilationResult(name, s"$name = wolfe.StructParam($tableSig)()", paramNodes = Map(v -> name))
+        def tableString(args: Seq[String]) = if (args.isEmpty) "" else args.mkString("{", ",", "}")
+        val pathSpec = path.reverse.drop(1).map {
+          case ge@GetElement(_, e) => (e + 1).toString
+          case _ => "\"?\""
+        }.mkString("{", ", ", "}")
+        //if there are dynamic elements in the path they should become inputs
+        val inputs = path.reverse.drop(1).collect {
+          case SeqApply(_, index) => index
         }
+        val result = stackNodes(inputs, "paramAccess", args => s"wolfe.ParamAccess($pathSpec)(${tableString(args)})")
+        result.copy(paramAccessors = Map(va -> result.varName))
 
       case v: Var[_] if context.inputBindings.contains(v) =>
         context.previous.inputNodes.get(v) match {
@@ -185,30 +190,32 @@ object TorchCompiler extends DelayedCompiler {
       val compilationResult = compileToLua(precompiled)(context, nameGenerator)
 
       val parameterMapping = (for (param <- paramBindings) yield {
-        val nodeName = compilationResult.paramNodes(param.variable)
+        //val nodeName = compilationResult.paramNodes(param.variable)
         val accessors = compilationResult.paramAccessors.filterKeys(_.variable == param.variable).values.toSeq
         val initName = "init_" + param.variable.name
-//        val headNodeName = accessors.head
-//        val sharing = for (other <- accessors.tail) yield s"$headNodeName:shareWeight($other, 'weight')"
-//        val setupParams =
-//          s"""
-//             |$headNodeName:initWeights()
-//             |${sharing.mkString("\n")}
-//           """.stripMargin
-//        $setupParams
+        val headNodeName = accessors.head + ".data.module"
+        val sharing = for (other <- accessors.tail) yield s"$headNodeName:shareWeight($other.data.module)"
+        val setupParams =
+          s"""
+             |local dims = ${tableSignature(domains(param.variable))}
+             |$headNodeName:initWeight(dims)
+             |${sharing.mkString("\n")}
+           """.stripMargin
+        val setAll = for (mod <- accessors) yield s"$mod.data.module.weight = ${param.variable.name}"
         val initDef =
           s"""
-             |
+             |$setupParams
              |function $initName(${param.variable.name})
-             |  $nodeName.data.module.weight = ${param.variable.name}
+             |  ${setAll.mkString("\n")}
              |end
         """.stripMargin
 
         val gradName = "grad_" + param.variable.name
+        val modules = accessors.map(_ + ".data.module").mkString("{", ",", "}")
         val gradDef =
           s"""
              |function $gradName()
-             |  return $nodeName.data.module.gradWeight
+             |  return wolfe.aggregateGradients($modules)
              |end
           """.stripMargin
 
@@ -216,7 +223,7 @@ object TorchCompiler extends DelayedCompiler {
         val paramDef =
           s"""
              |function $paramName()
-             |  return $nodeName.data.module.weight
+             |  return $headNodeName.data.module.weight
              |end
           """.stripMargin
 
@@ -229,12 +236,13 @@ object TorchCompiler extends DelayedCompiler {
       val gradFunctionsDef = parameterMapping.values.map(_.gradFunDef).mkString("\n")
       val paramFunctionsDef = parameterMapping.values.map(_.paramFunDef).mkString("\n")
 
-      val orderedInputNodes = compilationResult.inputNodes.toSeq
-      val orderedParamNodes = compilationResult.paramNodes.toSeq
-      val mixedInputNodes = orderedParamNodes ++ orderedInputNodes
-      val numParams = orderedParamNodes.length
-      val numInputs = orderedInputNodes.length
-      val inputNames = orderedInputNodes.map(_._1.name).mkString(",")
+      val inputNodes = compilationResult.inputNodes.toSeq
+      val inputNodeNames = inputNodes.map(_._2)
+      val paramNodeNames = compilationResult.paramAccessors.filterNot(_._1.isDynamic).values.toSeq
+      val mixedInputNodes = paramNodeNames ++ inputNodeNames
+      val numParams = paramNodeNames.length
+      val numInputs = inputNodeNames.length
+      //val inputNames = orderedInputNodes.map(_._1.name).mkString(",")
 
       val forwardDef =
         s"""
@@ -247,6 +255,7 @@ object TorchCompiler extends DelayedCompiler {
            |  for i=${numParams + 1}, ${numParams + numInputs} do
            |    lastForwardArguments[i] = input[i - $numParams]
            |  end
+           |  print("forward")
            |  print(lastForwardArguments)
            |  $gmod:forward(lastForwardArguments)
            |end
@@ -271,7 +280,7 @@ object TorchCompiler extends DelayedCompiler {
         s"""
            |$preamble
            |${compilationResult.definition}
-           |$gmod = nn.gModule({${mixedInputNodes.map(_._2).mkString(",")}},{${compilationResult.varName}})
+           |$gmod = nn.gModule({${mixedInputNodes.mkString(",")}},{${compilationResult.varName}})
            |$initFunctionsDef
            |$gradFunctionsDef
            |$paramFunctionsDef
@@ -315,7 +324,7 @@ object TorchCompiler extends DelayedCompiler {
 
         def forward(bindings: Binding[Any]*) = {
           val lastForwardBinding = Bindings(bindings: _*)
-          val args = orderedInputNodes.map(p => lastForwardBinding(p._1))
+          val args = inputNodes.map(p => lastForwardBinding(p._1))
           client.call("forward")(args)
         }
 

@@ -75,4 +75,6 @@ object Transformation {
   * @param path the path from the root variable to this atom, with the leaf term first and the root variable last.
   * @tparam T the value type of the atom.
   */
-case class VarAccess[+T](variable: Var[Any], path: List[Accessor]) extends Term[T]
+case class VarAccess[+T](variable: Var[Any], path: List[Accessor]) extends Term[T] {
+  def isDynamic = path.collectFirst { case SeqApply(_, _) => true }.getOrElse(false)
+}
