@@ -65,29 +65,44 @@ trait CompilerBehaviors extends {
     }
   }
 
-  def supportForwardPassInMatrixFactorization(newCompiler: => Compiler) = {
-    "support the forward pass in a matrix factorization model" in {
-      @termdef case class Theta(cols:Seq[Tensor], rows:Seq[Tensor])
+  def supportMatrixFactorization(newCompiler: => Compiler) = {
+    import breeze.{numerics => num}
 
-      val theta = Var[Theta]
-      val row = Var[Int]
-      val col = Var[Int]
-      val target = Var[Tensor] //double in {-1,1}
-      val score = theta.rows(row) * theta.cols(col)
-      val loss = log(sigmoid(score * target))
+    @termdef case class Theta(cols:Seq[Tensor], rows:Seq[Tensor])
 
-      def init = DenseMatrix.ones[Double](2,1)
-      def scalar(value:Double) = DenseMatrix.fill(1,1)(value)
+    val theta = Var[Theta]
+    val row = Var[Int]
+    val col = Var[Int]
+    val target = Var[Tensor] //double in {-1,1}
+    val score = theta.rows(row) * theta.cols(col)
+    val loss = log(sigmoid(score * target))
+
+    def init = DenseMatrix.ones[Double](2,1)
+    def scalar(value:Double) = DenseMatrix.fill(1,1)(value)
+
+    "support the forward pass for a matrix factorization model" in {
 
       val module = newCompiler.compile(loss)
       module.init(theta := Theta(Seq(init,init),Seq(init.t, init.t)))
       module.forward(row := 0, col := 0, target := scalar(1))
 
-      import breeze.{numerics => num}
-
       val expected = num.log(num.sigmoid(init.t * init))
       module.output() should equal (expected)
     }
+
+    "support the backward pass for a matrix factorization model" in {
+
+      val module = newCompiler.compile(loss)
+      module.init(theta := Theta(Seq(init,init),Seq(init.t, init.t)))
+      module.forward(row := 0, col := 0, target := scalar(1.0))
+      module.backward(scalar(1.0))
+
+      println(module.gradient(theta))
+
+    }
+
+
+
   }
 
 }

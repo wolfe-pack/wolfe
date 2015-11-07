@@ -68,6 +68,9 @@ object TorchCompiler extends DelayedCompiler {
       case (l: List[_], ProductDom(doms, constructor)) =>
         val args = for ((a, d) <- l zip doms) yield toWolfeObject(a, d)
         constructor(args)
+      case (l: List[_], SeqDom(elemDom, minLength, _)) =>
+        val seq = l.toIndexedSeq.lift
+        Range(0, math.max(l.length,minLength)) map (i => seq(i).map(toWolfeObject(_, elemDom)).orNull)
       case _ => value
     }
   }
@@ -312,7 +315,6 @@ object TorchCompiler extends DelayedCompiler {
           val dom = domains(param)
           toWolfeObject(ret, dom).asInstanceOf[G]
         }
-
 
         def param[P](param: Var[P]) = {
           val paramName = parameterMapping(param).paramFunName

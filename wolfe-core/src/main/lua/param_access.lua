@@ -222,17 +222,20 @@ end
 
 -- functions for aggregating gradients over param access modules
 local function getOrCreateValue(parent, path, index, dims)
+    print("----")
+    print(parent)
+    print(path[index])
     if (path[index] == nil) then
         return parent
     else
         if parent[path[index]] == nil then
             if torch.type(dims[path[index]]) == "torch.LongStorage" then
-                parent[path[index]] = torch.Tensor(dims[path[index]])
+                parent[path[index]] = torch.Tensor(dims[path[index]]):zero()
             else
                 parent[path[index]] = {}
             end
         end
-        return getValue(parent[path[index]], path, index + 1, dims[path[index]])
+        return getOrCreateValue(parent[path[index]], path, index + 1, dims[path[index]])
     end
 end
 
@@ -249,11 +252,22 @@ function wolfe.aggregateGradients(paramAccessors)
         end
         print("Gradient")
         print(pa.gradWeight)
+        print("Result")
         print(result)
+        print("Path")
+        print(pa.currentPath)
+        print("dims")
+        print(pa.dims)
         --get or create path until pa.currentPath
         local target = getOrCreateValue(result, pa.currentPath, 1, pa.dims)
+        print("Target")
+        print(target)
+
         addNestedTable(target, 1, pa.gradWeight)
     end
+    print(result[1][1])
+    print(result[2][1])
+
     return result
 end
 

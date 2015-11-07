@@ -13,7 +13,7 @@ class TorchCompilerSpecs extends WolfeSpec with CompilerBehaviors {
       supportForwardActivation(TorchCompiler)
       supportForwardActivationWithComposedValues(TorchCompiler)
       supportBackwardPass(TorchCompiler)
-      supportForwardPassInMatrixFactorization(TorchCompiler)
+      supportMatrixFactorization(TorchCompiler)
     }
 
   }

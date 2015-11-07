@@ -76,6 +76,7 @@ class TorchZeroMQClient(port: Int = 7000) extends LazyLogging {
       case i: Int => JInt(i)
       case d: Double => JDouble(d)
       case s: String => JString(s)
+      case null => JNull
       case t: DenseMatrix[_] =>
         val dims = List(t.rows, t.cols) //if (t.cols == 1) List(t.rows) else List(t.rows, t.cols) //todo: currently pretending n x 1 matrices are vectors
         ("_datatype" -> "tensor") ~
@@ -96,6 +97,7 @@ class TorchZeroMQClient(port: Int = 7000) extends LazyLogging {
       case JInt(i) => i
       case JDouble(d) => d
       case JString(s) => s
+      case JNull => null
       case obj: JObject if obj \ "_datatype" == JString("tensor") =>
         val dims = (obj \ "dims").extract[List[Int]]
         val storage = (obj \ "storage").extract[List[Double]]
