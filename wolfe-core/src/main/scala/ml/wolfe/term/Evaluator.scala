@@ -9,13 +9,14 @@ import Language._
  * @author riedel
  */
 object BaseEval extends Evaluator {
+
   implicit class EvaluatorTerm[T](val term: Term[T]) {
     def eval(bindings: Binding[Any]*) = BaseEval.eval(Bindings(bindings: _*))(term)
   }
 
-  def partial[T](bindings: Bindings, backoff:Evaluator) = {
+  def partial[T](bindings: Bindings, backoff: Evaluator) = {
     def e[A](term: Term[A]) = backoff.eval(bindings)(term)
-    val result: PartialFunction[Term[T], T Or Every[ErrorMsg]] = {
+    val result: PartialFunction[Term[T], T Or Every[WolfeError]] = {
 
       case Constant(t) =>
         Good(t)
@@ -91,27 +92,28 @@ object BaseEvalTest {
 
 trait Evaluator {
 
-  def partial[T](bindings: Bindings, backoff: Evaluator): PartialFunction[Term[T], T Or Every[ErrorMsg]]
+  def partial[T](bindings: Bindings, backoff: Evaluator): PartialFunction[Term[T], T Or Every[WolfeError]]
 
   def eval[T](bindings: Bindings)(term: Term[T]) =
     partial(bindings, this)(term)
 
-  def eval[T](bindings: Binding[Any]*)(term: Term[T]): T Or Every[ErrorMsg] =
+  def eval[T](bindings: Binding[Any]*)(term: Term[T]): T Or Every[WolfeError] =
     eval(Bindings(bindings: _*))(term)
 
   def +(that: Evaluator) = new Evaluator {
-    def partial[T](bindings: Bindings,backoff:Evaluator) =
+    def partial[T](bindings: Bindings, backoff: Evaluator) =
       partial[T](bindings,backoff) orElse that.partial[T](bindings,backoff)
   }
 
 }
 
-trait ErrorMsg {
+abstract class WolfeError extends RuntimeException {
   def msg: String
+  override def getMessage = msg
 }
 
-trait TermErrorMsg extends ErrorMsg {
-  def term:Term[Any]
+abstract class TermErrorMsg extends WolfeError {
+  def term: Term[Any]
 }
 
 case class VariableNotBound(variable: Var[Any]) extends TermErrorMsg {
@@ -127,11 +129,15 @@ case class TermNotSupported(term: Term[Any]) extends TermErrorMsg {
 
 trait Bindings extends Iterable[Binding[Any]] {
 
-  def apply[T](variable:Var[T]) = get(variable).get
+  def apply[T](variable: Var[T]) = get(variable).get
+
   def get[T](variable: Var[T]): Option[T]
+
   def contains[T](variable: Var[T]) = get(variable).isDefined
+
   def +[T](binding: Binding[T]): Bindings
-  def ++(bindings:Bindings):Bindings
+
+  def ++(bindings: Bindings): Bindings
 }
 
 object Bindings {

@@ -8,23 +8,27 @@ import org.scalactic._
 import ml.wolfe.compiler.nd4s.PimpMyND4S._
 
 /**
- * @author riedel
- */
+  * @author riedel
+  */
 object Typer {
 
   import Language._
 
-  case class TyperError(term: Term[Any], domains: Domains, msg: String) extends ErrorMsg
+  case class TyperError(term: Term[Any], domains: Domains, msg: String) extends WolfeError
 
-  case class CantDeriveDomainFromValue(value: Any) extends ErrorMsg {
+  case class CantDeriveDomainFromValue(value: Any) extends WolfeError {
     val msg = "Can't derive domain for value: " + value
   }
 
   def deriveDomainFromValue[T](value: T): Dom[T] = {
     val result = value match {
+      case i: Int => Ints
       case d: Double => Doubles
       case d: Tensor =>
         TensorDom(List(d.rows, d.cols))
+      case s: Seq[_] =>
+        val argDom = deriveDomainFromValue(s.head)
+        SeqDom(argDom, s.length, s.length)
       case p: Product =>
         val argDoms = p.productIterator.toList.map(deriveDomainFromValue)
         val clazz = p.getClass
@@ -40,14 +44,14 @@ object Typer {
   }
 
 
-  def check[T, A, E <: ErrorMsg](value: T, error: E)(fun: PartialFunction[T, A]): A Or One[E] = {
+  def check[T, A, E <: WolfeError](value: T, error: E)(fun: PartialFunction[T, A]): A Or One[E] = {
     if (fun.isDefinedAt(value)) Good(fun(value)) else Bad(One(error))
   }
 
-  def domains(varDoms: DomainBinding[Any]*)(term: Term[Any]): Domains Or Every[ErrorMsg] =
+  def domains(varDoms: DomainBinding[Any]*)(term: Term[Any]): Domains Or Every[WolfeError] =
     domains(Domains(varDoms: _*))(term)
 
-  def domains(varDoms: Domains)(term: Term[Any]): Domains Or Every[ErrorMsg] = {
+  def domains(varDoms: Domains)(term: Term[Any]): Domains Or Every[WolfeError] = {
     def dom(term: Term[Any]) = domains(varDoms)(term)
     term match {
       case v: Var[_] =>
@@ -74,7 +78,7 @@ object Typer {
              dims <- if (dims1.last == dims2.head)
                Good(dims1.dropRight(1) ::: dims2.drop(1))
              else
-               Bad(One(TyperError(tm, dx1 ++ dx2, s"domains don't match: $dims1 * $dims2"))))
+               Bad(One(TyperError(tm, dx1 ++ dx2, s"domains don't match: $dims1 * $dims2 in $tm"))))
           yield (dx1 ++ dx2) + (tm in TensorDom(dims))
 
       case d: DomainPreserving =>
@@ -119,7 +123,7 @@ class Domains {
     result
   }
 
-  def check[D <: Dom[Any]](term: Term[Any]): D Or One[ErrorMsg] = {
+  def check[D <: Dom[Any]](term: Term[Any]): D Or One[WolfeError] = {
     try {
       Good(this (term).asInstanceOf[D])
     } catch {

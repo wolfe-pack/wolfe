@@ -31,4 +31,19 @@ git clone git@github.com:wolfe-pack/wolfe.git
 Since sbt support has been integrated into [Intellij Idea](https://www.jetbrains.com/idea/) version 13, simply importing `wolfe` as a new project in Intellij Idea causes all dependencies to be resolved. Plus, Intellij Idea automatically refreshes the project when `Build.scala` is changed. 
 
 
+Compilers
+=========
 
+## Torch
+- Requires a [Torch](http://torch.ch/) installation
+- Requires `dkjson`
+```
+luarocks install dkjson
+```
+- Run the Torch server
+```
+bin/wolfe-torch 
+```
+
+## ND4S
+TODO

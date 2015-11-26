@@ -80,15 +80,17 @@ class TorchZeroMQClient(port: Int = 7000) extends LazyLogging {
       case i: Int => JInt(i)
       case d: Double => JDouble(d)
       case s: String => JString(s)
+      case null => JNull
       case t: Tensor =>
         val dims = List(t.rows, t.cols) //if (t.cols == 1) List(t.rows) else List(t.rows, t.cols) //todo: currently pretending n x 1 matrices are vectors
         ("_datatype" -> "tensor") ~
           ("dims" -> dims) ~
           ("storage" -> t.toArray.toList.asInstanceOf[List[Double]])
+      case s:Seq[_] =>
+        JArray(s.toList.map(toJson))
       case p: Product =>
         val args = p.productIterator.map(toJson).toList
         JArray(args)
-      case s:Seq[_] => JArray(s.toList.map(toJson))
       case _ => JString(value.toString)
     }
   }
@@ -99,6 +101,7 @@ class TorchZeroMQClient(port: Int = 7000) extends LazyLogging {
       case JInt(i) => i
       case JDouble(d) => d
       case JString(s) => s
+      case JNull => null
       case obj: JObject if obj \ "_datatype" == JString("tensor") =>
         val dims = (obj \ "dims").extract[List[Int]]
         val storage = (obj \ "storage").extract[List[Double]]

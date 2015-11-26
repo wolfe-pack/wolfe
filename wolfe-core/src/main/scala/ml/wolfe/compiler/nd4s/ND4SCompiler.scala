@@ -91,7 +91,6 @@ object ND4SCompiler extends DelayedCompiler {
           paramBox.grad.asInstanceOf[G] //todo: this needs to be converted back
         }
 
-
         def param[P](param: Var[P]) = {
           val paramBox = var2ParamBox(param)
           paramBox.output.asInstanceOf[P]
@@ -118,6 +117,7 @@ object ND4SCompiler extends DelayedCompiler {
           box.backward(Table(output.asInstanceOf[Tensor]))
         }
 
+        def updateParameters(learningRate: Double) = ???
       }
     }
   }

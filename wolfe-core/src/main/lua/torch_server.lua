@@ -36,7 +36,7 @@ function serialize(data)
 end
 
 function deserialize(data)
-    if data["_datatype"] == "tensor" then
+    if type(data) == "table" and data["_datatype"] == "tensor" then
         local dims = data["dims"]
         local storage = torch.Storage(data["storage"])
         local dimsStorage = torch.LongStorage(table.getn(dims))
