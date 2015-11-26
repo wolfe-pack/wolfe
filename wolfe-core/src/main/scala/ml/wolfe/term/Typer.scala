@@ -24,7 +24,6 @@ object Typer {
     val result = value match {
       case d: Double => Doubles
       case d: Tensor =>
-        println("dims: " + d.dimsString)
         TensorDom(List(d.rows, d.cols))
       case p: Product =>
         val argDoms = p.productIterator.toList.map(deriveDomainFromValue)

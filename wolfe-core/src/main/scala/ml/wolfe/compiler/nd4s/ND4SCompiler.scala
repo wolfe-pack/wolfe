@@ -249,7 +249,8 @@ class TensorPlusBox(arg1: Box, arg2: Box, val dom: TensorDom) extends Box {
   }
 
   def backward(gradOutput: Table) = {
-    //todo
+    gradInputs.children(0).tensor = gradOutput.tensor
+    gradInputs.children(1).tensor = gradOutput.tensor
   }
 }
 
