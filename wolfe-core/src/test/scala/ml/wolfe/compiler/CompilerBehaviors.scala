@@ -59,7 +59,7 @@ trait CompilerBehaviors extends {
       val y = num.sigmoid(y_pre)
       val gradY = (-y + 1.0) :* y
 
-      val expected = (vec(1.0, 2.0) outer gradY).t
+      val expected = (vec(1.0, 2.0) outer gradY).t //TODO: double-check
 
       module.gradient(W) should equal (expected)
     }

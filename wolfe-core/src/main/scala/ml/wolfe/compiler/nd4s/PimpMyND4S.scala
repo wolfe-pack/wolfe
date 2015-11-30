@@ -21,7 +21,11 @@ object PimpMyND4S {
 
     def isTensor = !(self.isVector || self.isMatrix)
 
-    def :*[B](that: INDArray)(implicit ev: NDArrayEvidence[A, B]): A = self * that
+    def :*[B](that: INDArray)(implicit ev: NDArrayEvidence[A, B]): A = {
+      //fixme: get rid of this special case
+      if (self.isColumnVector && that.isRowVector) (self.T * that).asInstanceOf[A]
+      else self * that
+    }
 
     def outer[B](that: INDArray)(implicit ev: NDArrayEvidence[A, B]): A = {
       require(self.isVector)

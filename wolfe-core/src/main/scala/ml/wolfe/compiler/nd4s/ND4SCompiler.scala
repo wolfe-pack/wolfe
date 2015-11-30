@@ -88,7 +88,8 @@ object ND4SCompiler extends DelayedCompiler {
 
         def gradient[G](param: Var[G]) = {
           val paramBox = var2ParamBox(param)
-          paramBox.grad.asInstanceOf[G] //todo: this needs to be converted back
+          //paramBox.grad.asInstanceOf[G] //todo: this needs to be converted back
+          paramBox.grad.tensor.asInstanceOf[G]
         }
 
         def param[P](param: Var[P]) = {
@@ -114,7 +115,7 @@ object ND4SCompiler extends DelayedCompiler {
         }
 
         def backward(output: T) = {
-          box.backward(Table(output.asInstanceOf[Tensor]))
+          box.backward(Table.toTable(output.asInstanceOf[Tensor]))
         }
 
         def updateParameters(learningRate: Double) = ???
@@ -136,6 +137,8 @@ class Table(numTables: Int = 0) {
 }
 
 object Table {
+  //fixme: where is this used?
+  /*
   def apply(tensors: Tensor*) = {
     val result = new Table(tensors.length)
     for (i <- tensors.indices) {
@@ -144,6 +147,7 @@ object Table {
     }
     result
   }
+  */
 
   def toTable(value: Any): Table = value match {
     case p: Product =>
@@ -157,7 +161,6 @@ object Table {
       result
     case _ => sys.error(s"We can't convert $value of class ${value.getClass} to table")
   }
-
 }
 
 
@@ -179,8 +182,9 @@ class ParamBox(val variable: Var[Any], val dom: Dom[Any]) extends Box {
   var grad: Table = _
   var gradInputs: Table = _
 
-  def backward(gradOutput: Table) = {
-    grad += gradOutput
+  def backward(gradOutput: Table) = grad match {
+    case null => grad = gradOutput
+    case _ => grad += gradOutput
   }
 
   def forward() = {
@@ -219,6 +223,7 @@ class SigmoidBox(input: Box, val dom: TensorDom) extends Box {
   def backward(gradOutput: Table) = {
     val y = sigmoid(input.output.tensor)
     gradInputs.tensor = (y :* (-y + 1)) :* gradOutput.tensor
+    input.backward(Table.toTable(gradInputs.tensor))
   }
 }
 
@@ -233,8 +238,10 @@ class TensorProductBox(arg1: Box, arg2: Box, val dom: TensorDom) extends Box {
   }
 
   def backward(gradOutput: Table) = {
-    gradInputs.children(0).tensor = gradOutput.tensor outer arg2.output.tensor
-    gradInputs.children(1).tensor = arg1.output.tensor outer gradOutput.tensor
+    gradInputs.children(0) = Table.toTable(gradOutput.tensor outer arg2.output.tensor)
+    gradInputs.children(1) = Table.toTable(arg1.output.tensor ** gradOutput.tensor)
+    arg1.backward(gradInputs.children(0))
+    arg2.backward(gradInputs.children(1))
   }
 }
 
