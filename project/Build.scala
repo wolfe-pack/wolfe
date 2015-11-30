@@ -104,7 +104,7 @@ object Build extends Build {
   import BuildSettings._
 
   lazy val macroSettings = Seq(
-    addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0-SNAPSHOT" cross CrossVersion.full)
+    addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
   )
 
   lazy val root = Project(

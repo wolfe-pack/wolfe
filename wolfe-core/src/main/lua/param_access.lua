@@ -33,10 +33,10 @@ function ParamAccess:__init(path)
         end
     end
 
---    print("---")
---    print(path)
---    print(self.currentPath)
---    print(self.inputIndices)
+    --    print("---")
+    --    print(path)
+    --    print(self.currentPath)
+    --    print(self.inputIndices)
     --self:reset()
     --self:initWeights()
 end
@@ -110,11 +110,11 @@ function getValue(parent, path, index)
 end
 
 function ParamAccess:updatePath(input)
---    print("Update Path")
---    print(self.inputIndices)
---    print(self.currentPath)
---
---    print(input)
+    --    print("Update Path")
+    --    print(self.inputIndices)
+    --    print(self.currentPath)
+    --
+    --    print(input)
     local wrapped = {}
     if type(input) ~= "table" then
         wrapped[1] = input
@@ -128,13 +128,13 @@ end
 
 function ParamAccess:updateOutput(input)
 
---    print("---")
---    print(input)
---    print(self.weight)
+    --    print("---")
+    --    print(input)
+    --    print(self.weight)
 
     self:updatePath(input)
---    print(self.currentPath)
---    print(self.inputIndices)
+    --    print(self.currentPath)
+    --    print(self.inputIndices)
 
     self.output = getValue(self.weight, self.currentPath, 1)
 
@@ -239,8 +239,7 @@ local function getOrCreateValue(parent, path, index, dims)
     end
 end
 
-function wolfe.aggregateGradients(paramAccessors)
-    local result
+function wolfe.aggregateGradients(paramAccessors, result)
     for i = 1, #paramAccessors do
         local pa = paramAccessors[i]
         if result == nil then
@@ -269,6 +268,11 @@ function wolfe.aggregateGradients(paramAccessors)
     print(result[2][1])
 
     return result
+end
+
+function wolfe.adagradUpdate(sparseGradient, denseWeights, learningRate, learningDecayRate)
+
+    local result
 end
 
 
