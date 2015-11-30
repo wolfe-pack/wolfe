@@ -14,4 +14,12 @@ package object wolfe {
   
   def vec(v: Double*) = v.asNDArray(v.length)
   def mat(v: Double*)(dims: Int*) = v.asNDArray(dims: _*)
+
+  implicit class RichDouble(d: Double) {
+    def toTensor: Tensor = vec(d)
+  }
+
+  implicit class RichInt(i: Int) {
+    def toTensor: Tensor = vec(i)
+  }
 }

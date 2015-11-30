@@ -59,7 +59,7 @@ trait CompilerBehaviors extends {
       val y = num.sigmoid(y_pre)
       val gradY = (-y + 1.0) :* y
 
-      val expected = vec(1.0, 2.0) outer gradY
+      val expected = (vec(1.0, 2.0) outer gradY).t
 
       module.gradient(W) should equal (expected)
     }
@@ -84,7 +84,7 @@ trait CompilerBehaviors extends {
       module.init(theta := Theta(Seq(init, init), Seq(init.t, init.t)))
       module.forward(row := 0, col := 0, target := scalar(1))
 
-      val expected = log(sigmoid(init.t dot init))
+      val expected = num.log(num.sigmoid(init.t dot init))
       module.output() should equal(expected)
     }
 

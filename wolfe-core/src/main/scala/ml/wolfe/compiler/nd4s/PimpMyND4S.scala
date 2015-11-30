@@ -3,8 +3,8 @@ package ml.wolfe.compiler.nd4s
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4s.NDArrayEvidence
 import org.nd4s.Implicits._
-import org.nd4j.linalg.ops.transforms.Transforms._
-
+import org.nd4j.linalg.ops.transforms.{Transforms => num}
+import ml.wolfe._
 
 /**
  * @author rockt
@@ -30,10 +30,11 @@ object PimpMyND4S {
         case (true, true) => self ** that
         case (false, true) => self.T.asInstanceOf[A] ** that
         case (true, false) => self ** that.T
-        case (false, false) => self.asInstanceOf[A] ** that.T
+        case (false, false) => self.T.asInstanceOf[A] ** that.T
       }
     }
 
-    def toArray: Array[Double] = ???
+    //fixme: this is a terrible hack!
+    def toArray: Array[Double] = self.data().array().asInstanceOf[Array[_]].map(_.toString.toDouble)
   }
 }

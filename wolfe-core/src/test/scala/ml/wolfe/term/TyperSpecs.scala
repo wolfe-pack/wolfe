@@ -28,7 +28,7 @@ class TyperSpecs extends WolfeSpec {
 
     "infer domains for domain preserving operators" in {
       val W = Var[Tensor]
-      val term = sigm(W)
+      val term = sigmoid(W)
       Typer.domains(W in TensorDom(List(3,4)))(term).get(term) should be (TensorDom(List(3,4)))
     }
 

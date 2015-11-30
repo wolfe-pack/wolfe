@@ -1,5 +1,6 @@
 package ml.wolfe.compiler.nd4s
 
+import ml.wolfe._
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4s.Implicits._
@@ -29,4 +30,9 @@ object ND4SScratch extends App {
 
   //matrix-vector product
   println(W ** x.t)
+
+  //sigmoid of a scalar
+  println(sigmoid(vec(2.0))(0))
+
+  println(W.toArray.toList)
 }

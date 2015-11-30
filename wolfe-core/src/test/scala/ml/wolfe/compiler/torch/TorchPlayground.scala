@@ -18,7 +18,7 @@ object TorchPlayground extends App {
 
   val params = Var[Params]
   val input = Var[Input]
-  val term = sigm(params.W * input.x + params.b)
+  val term = sigmoid(params.W * input.x + params.b)
 
   val module = TorchCompiler.compile(term)
 

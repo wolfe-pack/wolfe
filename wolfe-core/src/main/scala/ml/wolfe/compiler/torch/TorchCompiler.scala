@@ -15,7 +15,7 @@ import scala.collection.mutable
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4s.NDArrayEvidence
 import org.nd4s.Implicits._
-import org.nd4j.linalg.ops.transforms.Transforms._
+import org.nd4j.linalg.ops.transforms.{Transforms => num}
 
 /**
   * Make sure to run 'th src/lua/torch_server.lua' while running the compiled module.
@@ -369,7 +369,7 @@ object TorchCompiler extends DelayedCompiler {
     val W = Var[Tensor]("W")
     val x = Var[Tensor]("x")
     val b = Var[Tensor]("b")
-    val term = ml.wolfe.Language.sigm(W * x + b)
+    val term = sigmoid(W * x + b)
 
     val module = TorchCompiler.compile(term)
     module.init(W := Seq.fill(4)(1).asNDArray(), b := Seq(1.0, 2.0).asNDArray())
