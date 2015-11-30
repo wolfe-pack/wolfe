@@ -43,17 +43,13 @@ object BuildSettings {
 
   val coreDependencies = libraryDependencies ++= Seq(
     "net.sf.trove4j" % "trove4j" % "3.0.3",
-    //"org.nd4j" % "nd4s_2.12.0-M1" % "0.4-rc3",
+    "org.nd4j" % "nd4s_2.11" % "0.4-rc3",
     "org.nd4j" % "nd4j-api" % "0.4-rc3.5",
-    "org.nd4j" % "nd4j-jblas" % "0.4-rc3.5",
-    "org.jblas" % "jblas" % "1.2.4",
-    "org.nd4j" % "jcublas" % "6.5",
-    "org.zeromq" % "jeromq" % "0.3.5",
-    "org.scalanlp" %% "breeze" % "0.11.2"
-//    "org.scalanlp" %% "breeze-natives" % "0.11.2",
-//    "org.scalanlp" %% "breeze-viz" % "0.11.2"
-
-    //"org.scalanlp" %% "breeze-natives" % "0.8.1",
+    "org.nd4j" % "nd4j-x86" % "0.4-rc3.6",
+    //"org.nd4j" % "nd4j-jblas" % "0.4-rc3.5",
+    //"org.jblas" % "jblas" % "1.2.4",
+    //"org.nd4j" % "jcublas" % "6.5",
+    "org.zeromq" % "jeromq" % "0.3.5"
   )
 
   val publishSettings = Seq(

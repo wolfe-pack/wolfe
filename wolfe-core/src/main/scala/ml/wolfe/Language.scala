@@ -113,5 +113,4 @@ trait LinAlg {
   def log(x: Term[Tensor]) = Log(x)
   def concat(args:Term[Tensor]*) = Concat(args.toSeq)
   def max(args:Term[Tensor]*) = Max(args.toSeq)
-
 }

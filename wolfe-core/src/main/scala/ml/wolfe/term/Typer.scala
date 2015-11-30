@@ -1,10 +1,11 @@
 package ml.wolfe.term
 
-import breeze.linalg.DenseMatrix
-import ml.wolfe.Language
+import ml.wolfe.{Tensor, Language}
 import ml.wolfe.term.Typer.TyperError
+import org.nd4j.linalg.api.ndarray.INDArray
 import org.scalactic.Accumulation._
 import org.scalactic._
+import ml.wolfe.compiler.nd4s.PimpMyND4S._
 
 /**
   * @author riedel
@@ -23,7 +24,8 @@ object Typer {
     val result = value match {
       case i: Int => Ints
       case d: Double => Doubles
-      case d: DenseMatrix[_] => TensorDom(List(d.rows, d.cols))
+      case d: Tensor =>
+        TensorDom(List(d.rows, d.cols))
       case s: Seq[_] =>
         val argDom = deriveDomainFromValue(s.head)
         SeqDom(argDom, s.length, s.length)

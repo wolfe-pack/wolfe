@@ -3,7 +3,6 @@ package ml.wolfe.compiler.torch
 import java.io.{File, PrintWriter}
 import java.util.UUID
 
-import breeze.linalg.DenseMatrix
 import ml.wolfe.Language._
 import ml.wolfe._
 import ml.wolfe.compiler.{DelayedCompiler, Module}
@@ -13,6 +12,10 @@ import Accumulation._
 
 import scala.collection.mutable
 
+import org.nd4j.linalg.api.ndarray.INDArray
+import org.nd4s.NDArrayEvidence
+import org.nd4s.Implicits._
+import org.nd4j.linalg.ops.transforms.{Transforms => num}
 
 /**
   * Make sure to run 'th src/lua/torch_server.lua' while running the compiled module.
@@ -369,13 +372,13 @@ object TorchCompiler extends DelayedCompiler {
     val term = sigmoid(W * x + b)
 
     val module = TorchCompiler.compile(term)
-    module.init(W := DenseMatrix.ones(2, 2), b := DenseMatrix(1.0, 2.0))
-    module.forward(x := DenseMatrix(1.0, 1.0))
+    module.init(W := Seq.fill(4)(1).asNDArray(), b := Seq(1.0, 2.0).asNDArray())
+    module.forward(x := Seq(1.0, 1.0).asNDArray())
 
     println(module.output())
-    println(module.output().isInstanceOf[DenseMatrix[_]])
+    println(module.output().isInstanceOf[INDArray])
 
-    module.backward(DenseMatrix(1.0, 1.0))
+    module.backward(Seq(1.0, 1.0).asNDArray())
 
     println(module.gradient(W))
 
