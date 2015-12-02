@@ -141,6 +141,18 @@ case class SeqAppend[+E](s: Term[Seq[E]], elem: Term[E]) extends Term[Seq[E]] wi
 case class LambdaAbstraction1[A, +B](argument: Var[A], body: Term[B]) extends Term[A => B]
 
 /**
+  * A symbolic representation of a function.
+  * @param argument1 the first function argument.
+  * @param argument2 the second function argument.
+  * @param body a body that may contain the function argument.
+  * @tparam A1 the argument type of argument 1.
+  * @tparam A2 the argument type of argument 2.
+  * @tparam B the return type.
+  */
+case class LambdaAbstraction2[A1,A2, +B](argument1: Var[A1], argument2:Var[A2], body: Term[B]) extends Term[(A1,A2) => B]
+
+
+/**
  * Apply a lambda abstraction to an argument.
  * @param fun the function to apply.
  * @param arg the argument to apply the function to.
@@ -157,7 +169,7 @@ case class Apply1[A, +B](fun: Term[A => B], arg: Term[A]) extends Term[B]
  * @tparam E the type of elements in the sequence.
  * @tparam S the type of the result.
  */
-case class Foldl[E, S](s: Term[Seq[E]], init: Term[S], op: (Term[S], Term[E]) => Term[S]) extends Term[S]
+case class Foldl[E, S](s: Term[Seq[E]], init: Term[S], op: LambdaAbstraction2[S,E,S]) extends Term[S]
 
 case class Unfoldr[E, S](init: Term[S], op: (Term[S], Term[S]) => Term[E]) extends Term[Seq[E]]
 

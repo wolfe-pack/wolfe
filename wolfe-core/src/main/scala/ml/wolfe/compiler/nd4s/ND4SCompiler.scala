@@ -7,6 +7,7 @@ import org.nd4j.linalg.api.ndarray.INDArray
 import org.scalactic._
 
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
 
 import PimpMyND4S._
@@ -277,3 +278,39 @@ class GetElementBox(arg: Box, index: Int, val dom: Dom[Any]) extends Box {
   }
 }
 
+class FoldlBox(argSeq:Box, init:Box, op:(Box,Box) => Box) extends Box {
+  var output: Table = _
+  val gradInputs = new Table(1)
+
+  //unroll the graph by creating new boxes for each
+  val resultBoxes = new ArrayBuffer[Box]
+  val elemDom = init.dom
+
+  var lastResultBox = init
+
+  def appendResultBoxes(howMany:Int): Unit = {
+    for (i <- resultBoxes.length until resultBoxes.length + howMany) {
+      val elem = new GetElementBox(argSeq, i, elemDom)
+      lastResultBox = op(lastResultBox, elem)
+      resultBoxes += lastResultBox
+    }
+  }
+
+  appendResultBoxes(2)
+
+  def forward() = {
+    argSeq.forward()
+    val currentLength = argSeq.output.children.length
+    if (currentLength > resultBoxes.length) {
+      appendResultBoxes(currentLength - resultBoxes.length)
+    }
+    for (b <- resultBoxes.take(currentLength)) {
+      b.forward()
+    }
+    output = resultBoxes(currentLength-1).output
+  }
+
+  def backward(gradOutput: Table) = ???
+
+  def dom = resultBoxes.head.dom
+}

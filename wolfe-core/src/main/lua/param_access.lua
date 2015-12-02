@@ -164,6 +164,14 @@ end
 
 
 local function addNestedTable(target, scale, toAdd)
+--    local function ifExists(target,toAdd)
+--        target:add(scale, toAdd)
+--    end
+--    local function ifNotExists(target,toAdd)
+--        target = toAdd:clone()
+--        target:mul(scale)
+--    end
+--    processNestedTable(target,toAdd,ifExists,ifNotExists)
     if torch.type(toAdd) == "torch.DoubleTensor" then
         if torch.type(target) == "torch.DoubleTensor" then
             target:add(scale, toAdd)
@@ -177,6 +185,21 @@ local function addNestedTable(target, scale, toAdd)
         end
     end
 end
+
+local function processNestedTable(target, toAdd, ifExists, ifNotExists)
+    if torch.type(toAdd) == "torch.DoubleTensor" then
+        if torch.type(target) == "torch.DoubleTensor" then
+            ifExists(target,toAdd)
+        else
+            ifNotExists(target,toAdd)
+        end
+    else
+        for k, v in pairs(target) do
+            addNestedTable(v, scale, toAdd[k], ifExists, ifNotExists)
+        end
+    end
+end
+
 
 
 function ParamAccess:parameters()
@@ -270,10 +293,17 @@ function wolfe.aggregateGradients(paramAccessors, result)
     return result
 end
 
-function wolfe.adagradUpdate(sparseGradient, denseWeights, learningRate, learningDecayRate)
-
+function wolfe.adagradUpdate(accessors, learningRate, learningDecayRate)
+    local head = accessors[1]
+    --aggregate sparse gradient from accessors (remember all state variables in accessor head)
+    --remember paths to update
+    --append dense moments to dense weights (init like weights first if not yet there)
+    --update moments by going over sparseGradients (useNestedProcess)
+    --update denseWeights
     local result
 end
+
+
 
 
 

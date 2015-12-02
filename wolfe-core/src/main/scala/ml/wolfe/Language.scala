@@ -14,6 +14,14 @@ object Language extends NameProviderImplicits with SeqHelper with LinAlg {
     LambdaAbstraction1(arg,body)
   }
 
+  implicit def toLambdaAbstraction2[A1,A2,B](f:(Term[A1],Term[A2]) => Term[B]):LambdaAbstraction2[A1,A2,B] = {
+    val arg1 = Var("_lambdaArg1")
+    val arg2 = Var("_lambdaArg2")
+    val body = f(arg1,arg2)
+    LambdaAbstraction2(arg1,arg2, body)
+  }
+
+
   def Var[T](name: String) = new Var[T](name)
 
   def Var[T](implicit provider: NameProvider) = new Var[T](provider.newName())
@@ -82,7 +90,7 @@ trait SeqHelper {
     def slice(from: Term[Int], to: Term[Int]) = SeqSlice(s, from, to)
 
     //terminology from http://colah.github.io/posts/2015-09-NN-Types-FP/
-    def foldl[S](init: Term[S])(op: (Term[S], Term[E]) => Term[S]): Term[S] = Foldl(s, init, op)
+    def foldl[S](init: Term[S])(op: (Term[S], Term[E]) => Term[S]): Term[S] = Foldl(s, init, Language.toLambdaAbstraction2(op))
 
     //def unfoldr //needs to be applied to a term instead of a seq of terms
 
