@@ -15,8 +15,8 @@ import org.nd4s.Implicits._
 import org.nd4j.linalg.ops.transforms.Transforms._
 
 /**
- * @author rockt
- */
+  * @author rockt
+  */
 object ND4SCompiler extends DelayedCompiler {
 
   import Typer._
@@ -28,9 +28,10 @@ object ND4SCompiler extends DelayedCompiler {
   def compileBox(termToCompileToBox: Term[Any],
                  paramBindings: Bindings, inputBindings: Bindings,
                  var2InputBox: mutable.HashMap[Var[Any], InputBox],
-                 var2ParamBox: mutable.HashMap[Var[Any], ParamBox]): Box Or Every[CompilationError] = {
+                 var2ParamBox: mutable.HashMap[Var[Any], ParamBox],
+                 var2Substitution: Map[Var[Any], Box] = Map.empty): Box Or Every[CompilationError] = {
 
-    def comp(term:Term[Any]) = compileBox(term, paramBindings, inputBindings, var2InputBox, var2ParamBox)
+    def comp(term: Term[Any]) = compileBox(term, paramBindings, inputBindings, var2InputBox, var2ParamBox)
 
     def tensorDom(dom: Dom[Any]): TensorDom Or One[CompilationError] = dom match {
       case t: TensorDom => Good(t)
@@ -46,6 +47,9 @@ object ND4SCompiler extends DelayedCompiler {
       if (predicate) Good(result) else Bad(One(CompilationError(termToCompileToBox, msg)))
 
     termToCompileToBox match {
+      case v: Var[_] if var2Substitution.contains(v) =>
+        var2Substitution(v)
+
       case v: Var[_] if paramBindings.contains(v) =>
         var2ParamBox.getOrElseUpdate(v, new ParamBox(v, deriveDomainFromValue(paramBindings(v))))
 
@@ -75,6 +79,16 @@ object ND4SCompiler extends DelayedCompiler {
       case GetElement(arg, element) =>
         for (argBox <- comp(arg); d <- productDom(argBox.dom))
           yield new GetElementBox(argBox, element, d.doms(element))
+
+      case Foldl(seq, init, op) =>
+        def boxOp(current: Box, elem: Box) = {
+          compileBox(op.body, paramBindings, inputBindings, var2InputBox, var2ParamBox,
+            Map(op.argument1 -> current, op.argument2 -> elem)).get
+        }
+
+        for (seqBox <- comp(seq); initBox <- comp(init)) yield {
+          new FoldlBox(seqBox, initBox, boxOp)
+        }
 
       case _ => Bad(One(CompilationError(termToCompileToBox, "Not supported for ND4S compilation yet: " + termToCompileToBox)))
     }
@@ -278,7 +292,7 @@ class GetElementBox(arg: Box, index: Int, val dom: Dom[Any]) extends Box {
   }
 }
 
-class FoldlBox(argSeq:Box, init:Box, op:(Box,Box) => Box) extends Box {
+class FoldlBox(val argSeq: Box, val init: Box, op: (Box, Box) => Box) extends Box {
   var output: Table = _
   val gradInputs = new Table(0)
 
@@ -290,7 +304,7 @@ class FoldlBox(argSeq:Box, init:Box, op:(Box,Box) => Box) extends Box {
 
   var lastResultBox = init
 
-  def unrollMore(howMany:Int): Unit = {
+  def unrollMore(howMany: Int): Unit = {
     for (i <- resultBoxes.length until resultBoxes.length + howMany) {
       val elem = new GetElementBox(argSeq, i, elemDom)
       elemBoxes += elem
@@ -307,11 +321,12 @@ class FoldlBox(argSeq:Box, init:Box, op:(Box,Box) => Box) extends Box {
     if (currentLength > resultBoxes.length) {
       unrollMore(currentLength - resultBoxes.length)
     }
+    init.forward()
     for (i <- 0 until currentLength) {
       elemBoxes(i).forward()
       resultBoxes(i).forward()
     }
-    output = resultBoxes(currentLength-1).output
+    output = resultBoxes(currentLength - 1).output
   }
 
   def backward(gradOutput: Table) = {
@@ -323,6 +338,7 @@ class FoldlBox(argSeq:Box, init:Box, op:(Box,Box) => Box) extends Box {
       currentGradOutput = resultBoxes(i).gradInputs.children(0) //or (1)?
       elemBoxes(i).backward(resultBoxes(i).gradInputs.children(1))
     }
+    init.backward(currentGradOutput)
   }
 
   def dom = resultBoxes.head.dom
