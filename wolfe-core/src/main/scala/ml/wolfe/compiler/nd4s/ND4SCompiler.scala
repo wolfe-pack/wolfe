@@ -280,37 +280,50 @@ class GetElementBox(arg: Box, index: Int, val dom: Dom[Any]) extends Box {
 
 class FoldlBox(argSeq:Box, init:Box, op:(Box,Box) => Box) extends Box {
   var output: Table = _
-  val gradInputs = new Table(1)
+  val gradInputs = new Table(0)
 
   //unroll the graph by creating new boxes for each
   val resultBoxes = new ArrayBuffer[Box]
+  val elemBoxes = new ArrayBuffer[Box]
+
   val elemDom = init.dom
 
   var lastResultBox = init
 
-  def appendResultBoxes(howMany:Int): Unit = {
+  def unrollMore(howMany:Int): Unit = {
     for (i <- resultBoxes.length until resultBoxes.length + howMany) {
       val elem = new GetElementBox(argSeq, i, elemDom)
+      elemBoxes += elem
       lastResultBox = op(lastResultBox, elem)
       resultBoxes += lastResultBox
     }
   }
 
-  appendResultBoxes(2)
+  unrollMore(2)
 
   def forward() = {
     argSeq.forward()
     val currentLength = argSeq.output.children.length
     if (currentLength > resultBoxes.length) {
-      appendResultBoxes(currentLength - resultBoxes.length)
+      unrollMore(currentLength - resultBoxes.length)
     }
-    for (b <- resultBoxes.take(currentLength)) {
-      b.forward()
+    for (i <- 0 until currentLength) {
+      elemBoxes(i).forward()
+      resultBoxes(i).forward()
     }
     output = resultBoxes(currentLength-1).output
   }
 
-  def backward(gradOutput: Table) = ???
+  def backward(gradOutput: Table) = {
+    //where does the gradient go?
+    val currentLength = argSeq.output.children.length
+    var currentGradOutput = gradOutput
+    for (i <- currentLength - 1 to 0 by -1) {
+      resultBoxes(i).backward(currentGradOutput)
+      currentGradOutput = resultBoxes(i).gradInputs.children(0) //or (1)?
+      elemBoxes(i).backward(resultBoxes(i).gradInputs.children(1))
+    }
+  }
 
   def dom = resultBoxes.head.dom
 }
