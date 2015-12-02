@@ -20,9 +20,9 @@ trait CompilerBehaviors extends {
       val term = sigmoid(W * x)
 
       val module = newCompiler.compile(term)
-      module.init(W := ones(2,2))
+      module.init(W := ones(2, 2))
       module.forward(x := vec(1.0, 2.0).t)
-      module.output() should equal (num.sigmoid(vec(3.0, 3.0)))
+      module.output() should equal(num.sigmoid(vec(3.0, 3.0)))
     }
   }
 
@@ -55,13 +55,37 @@ trait CompilerBehaviors extends {
       module.forward(x := vec(1.0, 2.0).t)
       module.backward(vec(1.0, 1.0))
 
-      val y_pre = ones(2,2) ** vec(1.0, 2.0).t
+      val y_pre = ones(2, 2) ** vec(1.0, 2.0).t
       val y = num.sigmoid(y_pre)
       val gradY = (-y + 1.0) :* y
 
       val expected = (vec(1.0, 2.0) outer gradY).t //TODO: double-check
 
-      module.gradient(W) should equal (expected)
+      module.gradient(W) should equal(expected)
+    }
+  }
+
+  def supportFoldL(newCompiler: => Compiler) = {
+
+    "support forward pass for a foldl term" in {
+      val S = Var[Seq[Tensor]]
+      val I = Var[Tensor]
+
+      val term = S.foldl(I)(_ + _)
+
+      val module = newCompiler.compile(term)
+
+      module.init(I := ones(2,2))
+
+      module.forward(S := Seq(ones(2,2),ones(2,2)))
+      module.output() should equal (ones(2,2) * 3.0)
+
+      module.forward(S := Seq(ones(2,2)))
+      module.output() should equal (ones(2,2) * 2.0)
+
+      module.forward(S := Seq(ones(2,2),ones(2,2),ones(2,2)))
+      module.output() should equal (ones(2,2) * 4.0)
+
     }
   }
 
@@ -75,7 +99,7 @@ trait CompilerBehaviors extends {
     val score = theta.rows(row) * theta.cols(col)
     val loss = log(sigmoid(score * target))
 
-    def init = ones(2,1)
+    def init = ones(2, 1)
     def scalar(value: Double) = vec(value)
 
     "support the forward pass for a matrix factorization model" in {

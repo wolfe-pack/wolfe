@@ -31,7 +31,7 @@ object ND4SCompiler extends DelayedCompiler {
                  var2ParamBox: mutable.HashMap[Var[Any], ParamBox],
                  var2Substitution: Map[Var[Any], Box] = Map.empty): Box Or Every[CompilationError] = {
 
-    def comp(term: Term[Any]) = compileBox(term, paramBindings, inputBindings, var2InputBox, var2ParamBox)
+    def comp(term: Term[Any]) = compileBox(term, paramBindings, inputBindings, var2InputBox, var2ParamBox, var2Substitution)
 
     def tensorDom(dom: Dom[Any]): TensorDom Or One[CompilationError] = dom match {
       case t: TensorDom => Good(t)
@@ -165,6 +165,11 @@ object Table {
   */
 
   def toTable(value: Any): Table = value match {
+    case s:Seq[_] =>
+      val values = s.map(toTable).toIndexedSeq
+      val table = new Table(values.length)
+      for (i <- values.indices) table.children(i) = values(i)
+      table
     case p: Product =>
       val values = p.productIterator.map(toTable).toIndexedSeq
       val table = new Table(values.length)

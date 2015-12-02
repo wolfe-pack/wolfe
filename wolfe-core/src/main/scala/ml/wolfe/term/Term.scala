@@ -150,6 +150,11 @@ case class LambdaAbstraction1[A, +B](argument: Var[A], body: Term[B]) extends Te
   * @tparam B the return type.
   */
 case class LambdaAbstraction2[A1,A2, +B](argument1: Var[A1], argument2:Var[A2], body: Term[B]) extends Term[(A1,A2) => B]
+  with Composed {
+
+  def parts = Seq(body)
+  def clone(args: Seq[Term[Any]]) = LambdaAbstraction2(argument1,argument2,args(0).asInstanceOf[Term[B]])
+}
 
 
 /**

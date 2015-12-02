@@ -32,6 +32,18 @@ class TyperSpecs extends WolfeSpec {
       Typer.domains(W in TensorDom(List(3,4)))(term).get(term) should be (TensorDom(List(3,4)))
     }
 
+    "infer foldl types" in {
+      val S = Var[Seq[Tensor]]
+      val I = Var[Tensor]
+
+      val term = S.foldl(I)(_ + _)
+
+      val domains = Typer.domains(S in SeqDom(TensorDom(List(3,1)),1,3), I in TensorDom(List(3,1)))(term)
+
+      domains.get(term) should be (TensorDom(List(3,1)))
+
+    }
+
     "infer a product domain from a case class value" in {
       @termdef case class Test(a:Double, b:Double)
 

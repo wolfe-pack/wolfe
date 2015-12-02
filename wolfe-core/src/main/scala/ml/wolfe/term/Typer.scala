@@ -51,6 +51,8 @@ object Typer {
   def domains(varDoms: DomainBinding[Any]*)(term: Term[Any]): Domains Or Every[WolfeError] =
     domains(Domains(varDoms: _*))(term)
 
+
+
   def domains(varDoms: Domains)(term: Term[Any]): Domains Or Every[WolfeError] = {
     def dom(term: Term[Any]) = domains(varDoms)(term)
     term match {
@@ -62,8 +64,15 @@ object Typer {
       case sa@SeqApply(s, i) =>
         for (ds <- dom(s);
              di <- dom(i);
-             elemDom <- check(ds(s), TyperError(s, ds, "not a sequence domain")) { case SeqDom(eD, _, _) => eD })
+             elemDom <- elemDomain(s, ds))
           yield (ds ++ di) + (sa in elemDom)
+
+      case fl@Foldl(seq, init, op) =>
+        for (dseq <- dom(seq);
+             dinit <- dom(init);
+             elemDom <- seqDomain(seq,varDoms).map(_.elemDom);
+             typedArgs = varDoms + (op.argument1 in dinit(init)) + (op.argument2 in elemDom);
+             dop <- domains(typedArgs)(op)) yield (dseq ++ dinit ++ dop) + (fl in dinit(init))
 
       case ge@GetElement(p, e) =>
         for (dp <- dom(p);
@@ -81,10 +90,25 @@ object Typer {
                Bad(One(TyperError(tm, dx1 ++ dx2, s"domains don't match: $dims1 * $dims2 in $tm"))))
           yield (dx1 ++ dx2) + (tm in TensorDom(dims))
 
+      case lam@LambdaAbstraction2(a1,a2,body) =>
+        for (da1 <- dom(a1);
+             da2 <- dom(a2);
+             dbody <- dom(body))
+          yield (da1 ++ da2 ++ dbody) + (lam in FunDom2(da1(a1),da2(a2),dbody(body)))
+
       case d: DomainPreserving =>
         for (ds <- (d.parts map dom).combined) yield ds.reduce(_ ++ _) + (d in ds.head(d.parts.head))
 
     }
+  }
+
+
+  def elemDomain(s: Term[Seq[Any]], ds: Domains): Or[Dom[Any], One[TyperError]] = {
+    check(ds(s), TyperError(s, ds, "not a sequence domain")) { case SeqDom(eD, _, _) => eD }
+  }
+
+  def seqDomain(s: Term[Seq[Any]], ds: Domains): Or[SeqDom[Any], One[TyperError]] = {
+    check(ds(s), TyperError(s, ds, "not a sequence domain")) { case s:SeqDom[_] => s }
   }
 
 
@@ -132,6 +156,7 @@ class Domains {
     }
   }
 
+  override def toString = map.mkString("\n")
 }
 
 case class DomainBinding[+T](term: Term[T], dom: Dom[T])
