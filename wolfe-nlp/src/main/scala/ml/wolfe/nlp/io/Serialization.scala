@@ -111,6 +111,7 @@ object SentencePickler {
           b.hintStaticallyElidedType()
           indexedSeqPickler[Token].pickle(picklee.tokens, b)
         })
+        /*
         builder.putField("syntax", b => {
           b.hintTag(implicitly[FastTypeTag[SyntaxAnnotation]])
           b.hintStaticallyElidedType()
@@ -121,6 +122,7 @@ object SentencePickler {
           b.hintStaticallyElidedType()
           iePickler.pickle(picklee.ie, b)
         })
+*/
         builder.endEntry()
       }
 
@@ -135,6 +137,7 @@ object SentencePickler {
         val tokens = indexedSeqPickler[Token].unpickle(tagTokens, readerTokens).asInstanceOf[IndexedSeq[Token]]
         readerTokens.endEntry()
 
+/*
         val readerSyntax = reader.readField("syntax")
         readerSyntax.hintTag(FastTypeTag[SyntaxAnnotation])
         readerSyntax.hintStaticallyElidedType()
@@ -150,8 +153,7 @@ object SentencePickler {
         val tagIE = readerIE.beginEntry()
         val ie = iePickler.unpickle(tagIE, readerIE).asInstanceOf[IEAnnotation]
         readerIE.endEntry()
-
-        Sentence(tokens = tokens, syntax = syntax, ie = ie)
+*/        Sentence(tokens = tokens) //, syntax = syntax, ie = ie)
       }
     }
 }
@@ -161,19 +163,19 @@ object SyntaxPickler {
   implicit val syntaxPickler: Pickler[SyntaxAnnotation] with Unpickler[SyntaxAnnotation] =
     new Pickler[SyntaxAnnotation] with Unpickler[SyntaxAnnotation] with PrimitivePicklers {
 
-      val spickler: Pickler[DependencyTree] = Pickler.generate[DependencyTree]
-      val sunpickler: Unpickler[DependencyTree] = Unpickler.generate[DependencyTree]
+      val spickler: Pickler[Option[DependencyTree]] = Pickler.generate[Option[DependencyTree]]
+      val sunpickler: Unpickler[Option[DependencyTree]] = Unpickler.generate[Option[DependencyTree]]
 
 
       def pickle(picklee: SyntaxAnnotation, builder: PBuilder) = {
-        spickler.pickle(picklee.dependencies.getOrElse(DependencyTree.empty), builder)
+        spickler.pickle(picklee.dependencies, builder)
       }
 
       def tag = FastTypeTag[SyntaxAnnotation]
 
       def unpickle(tag: String, reader: PReader) = {
-        val dtree = sunpickler.unpickle(tag, reader).asInstanceOf[DependencyTree]
-        SyntaxAnnotation(dependencies = Some(dtree))
+        val dtreeOption = sunpickler.unpickle(tag, reader).asInstanceOf[Option[DependencyTree]]
+        SyntaxAnnotation(dependencies = dtreeOption)
       }
     }
 }
