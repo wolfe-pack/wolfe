@@ -50,6 +50,12 @@ case class CorefAnnotation(mentions: IndexedSeq[CorefMention] = IndexedSeq.empty
 
   //    if (idToCluster.contains((s,i,j))) Some(idToCluster.get((s,i,j))) else None
 
+  def headsCluster(m1: BareMention): Boolean = {
+    clusterContaining(m1) match {
+      case Some(cluster) => cluster.exists(m2 => m2.sentence < m1._1)
+    }
+  }
+
 
   def clusterOf(m: BareMention): Option[Int] = {
     clusterOf(m._1, m._2, m._3)

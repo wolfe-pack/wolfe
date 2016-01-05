@@ -16,20 +16,20 @@ case class IEAnnotation(entityMentions:   Option[IndexedSeq[EntityMention]]   = 
                         relationMentions: Option[IndexedSeq[RelationMention]] = None,
                         eventMentions:    Option[IndexedSeq[EventMention]]    = None,
                         semanticFrames:   Option[IndexedSeq[SemanticFrame]]   = None) {
-//
-//  def semanticRoleAt(i: Int, j: Int): Option[SemanticFrame] = {
-//    semanticFrames.find { f => f.roles.exists(r => r.start == i && r.end == j))
-//  }
-//
-//  def semanticRoleArgAt(i: Int, j: Int): Option[SemanticRole] = {
-//    semanticFrames.map(_.roles).flatten.find(r => r.start == i && r.end == j)
-//  }
-//
-//  def semanticFrameSpanning(i: Int, j: Int): Option[SemanticFrame] = {
-//    semanticFrames.find { f =>
-//      f.leftMostArg.start == i && f.rightMostArg.end == j
-//    }
-//  }
+
+  def semanticRoleAt(i: Int, j: Int): Option[SemanticFrame] = {
+    semanticFrames.get.find { f => f.roles.exists(r => r.start == i && r.end == j) }
+  }
+
+  def semanticRoleArgAt(i: Int, j: Int): Option[SemanticRole] = {
+    semanticFrames.get.map(_.roles).flatten.find(r => r.start == i && r.end == j)
+  }
+
+  def semanticFrameSpanning(i: Int, j: Int): Option[SemanticFrame] = {
+    semanticFrames.get.find { f =>
+      f.leftMostArg.start == i && f.rightMostArg.end == j
+    }
+  }
 }
 
 /**
