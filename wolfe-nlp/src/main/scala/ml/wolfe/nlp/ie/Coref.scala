@@ -101,6 +101,28 @@ case class CorefAnnotation(mentions: IndexedSeq[CorefMention] = IndexedSeq.empty
 
   def clusterPairs: Iterator[(CorefMention, CorefMention)] = cpairs.iterator
 
+
+
+  override def equals(o: Any): Boolean = o match {
+    case that: CorefAnnotation => {
+      if (this.mentions.size != that.mentions.size) return false
+      val idMap: Map[Int, Int] = this.clusters.map(_.head).map { m1 =>
+        val f = that.mentions.find { m2 =>
+          m1.sentence == m2.sentence && m1.start == m2.start && m1.end == m2.end
+        }
+        val otherClusterID = f match {
+          case Some(m) => m.clusterID
+          case _ => -1
+        }
+        m1.clusterID -> otherClusterID
+      }.toMap
+      this.mentions.forall { m1 =>
+        idMap(m1.clusterID) == that.clusterOf(m1.sentence, m1.start, m1.end).get
+      }
+    }
+    case _ => false
+  }
+
 }
 
 object CorefAnnotation {
